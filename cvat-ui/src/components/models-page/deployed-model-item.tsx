@@ -1,5 +1,5 @@
 // Copyright (C) 2020-2022 Intel Corporation
-// Copyright (C) 2022-2023 CVAT.ai Corporation
+// Copyright (C) 2022-2024 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -17,8 +17,8 @@ import Divider from 'antd/lib/divider';
 import Card from 'antd/lib/card';
 import Dropdown from 'antd/lib/dropdown';
 import Button from 'antd/lib/button';
-import Menu from 'antd/lib/menu';
 
+import Menu from 'components/dropdown-menu';
 import Preview from 'components/common/preview';
 import { usePlugins } from 'utils/hooks';
 import { CombinedState } from 'reducers';
@@ -166,9 +166,9 @@ export default function DeployedModelItem(props: Props): JSX.Element {
             >
                 <Meta
                     title={(
-                        <span onClick={onOpenModel} className='cvat-models-item-title' aria-hidden>
+                        <Text ellipsis={{ tooltip: model.name }} onClick={onOpenModel} className='cvat-models-item-title' aria-hidden>
                             {model.name}
-                        </span>
+                        </Text>
                     )}
                     description={(
                         <div className='cvat-models-item-description'>
@@ -178,7 +178,11 @@ export default function DeployedModelItem(props: Props): JSX.Element {
                             </Row>
                             {
                                 menuItems.length !== 0 && (
-                                    <Dropdown overlay={modelMenu}>
+                                    <Dropdown
+                                        trigger={['click']}
+                                        destroyPopupOnHide
+                                        overlay={modelMenu}
+                                    >
                                         <Button className='cvat-deployed-model-details-button' type='link' size='large' icon={<MoreOutlined />} />
                                     </Dropdown>
                                 )

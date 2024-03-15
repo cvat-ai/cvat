@@ -22,7 +22,7 @@ django-compressor==4.3.1
 django-cors-headers==3.5.0
 django-crum==0.7.9
 django-filter==2.4.0
-django-health-check==3.17.0
+django-health-check>=3.18.1,<4
 django-rq==2.8.1
 django-sendfile2==0.7.0
 Django~=4.2.1
@@ -51,4 +51,3 @@ rq-scheduler==0.13.1
 rq==1.15.1
 rules>=3.3
 Shapely==1.7.1
-tensorflow==2.11.1 # Optional requirement of Datumaro. Use tensorflow-macos==2.8.0 for Mac M1

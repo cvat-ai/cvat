@@ -28,13 +28,15 @@ export interface LoginData {
 
 interface Props {
     renderResetPassword: boolean;
+    renderRegistrationComponent: boolean;
+    renderBasicLoginComponent: boolean;
     fetching: boolean;
     onSubmit(loginData: LoginData): void;
 }
 
 function LoginFormComponent(props: Props): JSX.Element {
     const {
-        fetching, onSubmit, renderResetPassword,
+        fetching, onSubmit, renderResetPassword, renderRegistrationComponent, renderBasicLoginComponent,
     } = props;
 
     const authQuery = useAuthQuery();
@@ -79,7 +81,7 @@ function LoginFormComponent(props: Props): JSX.Element {
                     )
                 }
                 {
-                    !credential && (
+                    !credential && renderRegistrationComponent && (
                         <Row>
                             <Col className='cvat-credentials-link'>
                                 <Text strong>
@@ -110,65 +112,69 @@ function LoginFormComponent(props: Props): JSX.Element {
                     onSubmit(loginData);
                 }}
             >
-                <Form.Item
-                    className='cvat-credentials-form-item'
-                    name='credential'
-                >
-                    <Input
-                        autoComplete='credential'
-                        prefix={<Text>Email or username</Text>}
-                        className={credential ? 'cvat-input-floating-label-above' : 'cvat-input-floating-label'}
-                        suffix={credential && (
-                            <Icon
-                                component={ClearIcon}
-                                onClick={() => {
-                                    setCredential('');
-                                    form.setFieldsValue({ credential: '', password: '' });
-                                }}
-                            />
-                        )}
-                        onChange={(event) => {
-                            const { value } = event.target;
-                            setCredential(value);
-                            if (!value) form.setFieldsValue({ credential: '', password: '' });
-                        }}
-                    />
-                </Form.Item>
-                {
-                    credential && (
+                {renderBasicLoginComponent && (
+                    <>
                         <Form.Item
                             className='cvat-credentials-form-item'
-                            name='password'
-                            rules={[
-                                {
-                                    required: true,
-                                    message: 'Please specify a password',
-                                },
-                            ]}
+                            name='credential'
                         >
-                            <CVATSigningInput
-                                type={CVATInputType.PASSWORD}
-                                id='password'
-                                placeholder='Password'
-                                autoComplete='password'
+                            <Input
+                                autoComplete='credential'
+                                prefix={<Text>Email or username</Text>}
+                                className={credential ? 'cvat-input-floating-label-above' : 'cvat-input-floating-label'}
+                                suffix={credential && (
+                                    <Icon
+                                        component={ClearIcon}
+                                        onClick={() => {
+                                            setCredential('');
+                                            form.setFieldsValue({ credential: '', password: '' });
+                                        }}
+                                    />
+                                )}
+                                onChange={(event) => {
+                                    const { value } = event.target;
+                                    setCredential(value);
+                                    if (!value) form.setFieldsValue({ credential: '', password: '' });
+                                }}
                             />
                         </Form.Item>
-                    )
-                }
-                {
-                    !!credential && (
-                        <Form.Item>
-                            <Button
-                                className='cvat-credentials-action-button'
-                                loading={fetching}
-                                disabled={!credential}
-                                htmlType='submit'
-                            >
-                                Next
-                            </Button>
-                        </Form.Item>
-                    )
-                }
+                        {
+                            credential && (
+                                <Form.Item
+                                    className='cvat-credentials-form-item'
+                                    name='password'
+                                    rules={[
+                                        {
+                                            required: true,
+                                            message: 'Please specify a password',
+                                        },
+                                    ]}
+                                >
+                                    <CVATSigningInput
+                                        type={CVATInputType.PASSWORD}
+                                        id='password'
+                                        placeholder='Password'
+                                        autoComplete='password'
+                                    />
+                                </Form.Item>
+                            )
+                        }
+                        {
+                            !!credential && (
+                                <Form.Item>
+                                    <Button
+                                        className='cvat-credentials-action-button'
+                                        loading={fetching}
+                                        disabled={!credential}
+                                        htmlType='submit'
+                                    >
+                                        Next
+                                    </Button>
+                                </Form.Item>
+                            )
+                        }
+                    </>
+                )}
                 {
                     pluginsToRender.map(({ component: Component }, index) => (
                         <Component targetProps={props} targetState={{ credential }} key={index} />

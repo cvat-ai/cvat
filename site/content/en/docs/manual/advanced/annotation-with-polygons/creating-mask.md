@@ -33,7 +33,6 @@ There are several formats in CVAT that can be used to export masks:
 - `MOTS`
 - `ICDAR`
 - `COCO` (RLE-encoded instance masks, [guide](/docs/manual/advanced/formats/format-coco))
-- `TFRecord` ([over Datumaro](https://github.com/cvat-ai/datumaro/blob/develop/docs/user_manual.md), [guide](/docs/manual/advanced/formats/format-tfrecord)):
 - `Datumaro`
 
 An example of exported masks (in the `Segmentation Mask` format):

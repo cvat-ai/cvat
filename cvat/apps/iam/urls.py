@@ -16,8 +16,11 @@ from cvat.apps.iam.views import (
     ConfirmEmailViewEx, LoginViewEx
 )
 
+BASIC_LOGIN_PATH_NAME = 'rest_login'
+BASIC_REGISTER_PATH_NAME = 'rest_register'
+
 urlpatterns = [
-    path('login', LoginViewEx.as_view(), name='rest_login'),
+    path('login', LoginViewEx.as_view(), name=BASIC_LOGIN_PATH_NAME),
     path('logout', LogoutView.as_view(), name='rest_logout'),
     path('signing', SigningView.as_view(), name='signing'),
     path('rules', RulesView.as_view(), name='rules'),
@@ -25,7 +28,7 @@ urlpatterns = [
 
 if settings.IAM_TYPE == 'BASIC':
     urlpatterns += [
-        path('register', RegisterViewEx.as_view(), name='rest_register'),
+        path('register', RegisterViewEx.as_view(), name=BASIC_REGISTER_PATH_NAME),
         # password
         path('password/reset', PasswordResetView.as_view(),
             name='rest_password_reset'),

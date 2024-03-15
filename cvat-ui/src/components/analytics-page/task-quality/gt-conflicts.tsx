@@ -1,20 +1,17 @@
-// Copyright (C) 2023 CVAT.ai Corporation
+// Copyright (C) 2023-2024 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
-import '../styles.scss';
-
 import React from 'react';
 import Text from 'antd/lib/typography/Text';
-import { QualityReport, QualitySummary, Task } from 'cvat-core-wrapper';
-import { useSelector } from 'react-redux';
-import { CombinedState } from 'reducers';
 import { Col, Row } from 'antd/lib/grid';
+
+import { QualityReport, QualitySummary } from 'cvat-core-wrapper';
 import AnalyticsCard from '../views/analytics-card';
-import { percent, clampValue } from './common';
+import { percent, clampValue } from '../utils/text-formatting';
 
 interface Props {
-    task: Task;
+    taskReport: QualityReport | null;
 }
 
 interface ConflictTooltipProps {
@@ -72,10 +69,7 @@ export function ConflictsTooltip(props: ConflictTooltipProps): JSX.Element {
 }
 
 function GTConflicts(props: Props): JSX.Element {
-    const { task } = props;
-    const tasksReports: QualityReport[] = useSelector((state: CombinedState) => state.analytics.quality.tasksReports);
-    const taskReport = tasksReports.find((report: QualityReport) => report.taskId === task.id);
-
+    const { taskReport } = props;
     let conflictsRepresentation: string | number = 'N/A';
     let reportSummary;
     if (taskReport) {

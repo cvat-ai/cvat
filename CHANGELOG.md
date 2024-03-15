@@ -16,6 +16,123 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 <!-- scriv-insert-here -->
 
+<a id='changelog-2.11.2'></a>
+## \[2.11.2\] - 2024-03-11
+
+### Changed
+
+- Sped up resource updates when there are no matching webhooks
+  (<https://github.com/opencv/cvat/pull/7553>)
+
+### Fixed
+
+- Job and task `updated_date` are no longer bumped twice when updating
+  annotations
+  (<https://github.com/opencv/cvat/pull/7556>)
+
+- Sending `PATCH /jobs/{id}/data/meta` on each job save even if nothing changed in meta data
+  (<https://github.com/opencv/cvat/pull/7560>)
+- Sending `GET /jobs/{id}/data/meta` twice on each job load
+  (<https://github.com/opencv/cvat/pull/7560>)
+
+- Made analytics report update job scheduling more efficient
+  (<https://github.com/opencv/cvat/pull/7576>)
+
+- Fixed being unable to connect to in-mem Redis
+  when the password includes URL-unsafe characters
+  (<https://github.com/opencv/cvat/pull/7577>)
+
+- Segment anything decoder is loaded anytime when CVAT is opened, but might be not required
+  (<https://github.com/opencv/cvat/pull/7564>)
+
+<a id='changelog-2.11.1'></a>
+## \[2.11.1\] - 2024-03-05
+
+### Added
+
+- Single shape annotation mode allowing to easily annotate scenarious where a user
+only needs to draw one object on one image (<https://github.com/opencv/cvat/pull/7486>)
+
+### Fixed
+
+- Fixed a problem with Korean/Chinese characters in attribute annotation mode
+  (<https://github.com/opencv/cvat/pull/7380>)
+
+- Fixed incorrect working time calculation in the case where an event
+  occurred during another event
+  (<https://github.com/opencv/cvat/pull/7511>)
+
+- Fixed working time not being calculated for the first event in each batch
+  sent from the UI
+  (<https://github.com/opencv/cvat/pull/7511>)
+
+- Submit button is enabled while creating a ground truth job
+  (<https://github.com/opencv/cvat/pull/7540>)
+
+<a id='changelog-2.11.0'></a>
+## \[2.11.0\] - 2024-02-23
+
+### Added
+
+- Added `dataset:export` and `dataset:import` events that are logged when
+  the user initiates an export or import of a project, task or job
+  (<https://github.com/opencv/cvat/pull/7476>)
+
+### Changed
+
+- Now menus in the web interface are triggered by click, not by hover as before
+  (<https://github.com/opencv/cvat/pull/7431>)
+
+### Removed
+
+- Removed support for the TFRecord dataset format
+  (<https://github.com/opencv/cvat/pull/7416>)
+
+### Fixed
+
+- On quality page for a task, only the first page with jobs has quality report metrics
+  (<https://github.com/opencv/cvat/pull/7441>)
+
+- Side effects of data changes, such as the sending of webhooks,
+  are no longer triggered until after the changes have been committed
+  to the database
+  (<https://github.com/opencv/cvat/pull/7460>,
+  <https://github.com/opencv/cvat/pull/7477>)
+
+<a id='changelog-2.10.3'></a>
+## \[2.10.3\] - 2024-02-09
+
+### Changed
+
+- The "message" field of the payload of send:exception events
+  no longer includes a trailing linebreak
+  (<https://github.com/opencv/cvat/pull/7407>)
+
+- Annotation guide is opened automatically if not seen yet when the job is "new annotation"
+  (<https://github.com/opencv/cvat/pull/7410>)
+- Annotation guide will be opened automatically if this is specified in a link `/tasks/<id>/jobs/<id>?openGuide`
+  (<https://github.com/opencv/cvat/pull/7410>)
+
+- Reduced number of server requests, made by clients
+  (<https://github.com/opencv/cvat/pull/7446>)
+
+- Server exception rest_framework.exceptions.NotAuthenticated is not logged by analytics anymore
+  (<https://github.com/opencv/cvat/pull/7457>)
+
+### Fixed
+
+- Prevented zombie processes from accumulating in the Kvrocks container
+  (<https://github.com/opencv/cvat/pull/7412>)
+
+- Fix Redis exceptions crashing the `/api/server/health/` endpoint
+  (<https://github.com/opencv/cvat/pull/7417>)
+
+- Unhandled exception "Cannot read properties of null (reading 'plot')"
+  (<https://github.com/opencv/cvat/pull/7422>)
+
+- Unhandled exception "Cannot read properties of undefined (reading 'toLowerCase')"
+  (<https://github.com/opencv/cvat/pull/7421>)
+
 <a id='changelog-2.10.2'></a>
 ## \[2.10.2\] - 2024-01-26
 

@@ -7,7 +7,7 @@ from enum import Enum
 from django.contrib.auth.models import User
 from django.db import models
 
-from cvat.apps.engine.models import Project
+from cvat.apps.engine.models import Project, TimestampedModel
 from cvat.apps.organizations.models import Organization
 
 
@@ -34,7 +34,7 @@ class WebhookContentTypeChoice(str, Enum):
         return self.value
 
 
-class Webhook(models.Model):
+class Webhook(TimestampedModel):
     target_url = models.URLField(max_length=8192)
     description = models.CharField(max_length=128, default="", blank=True)
 
@@ -49,9 +49,6 @@ class Webhook(models.Model):
 
     is_active = models.BooleanField(default=True)
     enable_ssl = models.BooleanField(default=True)
-
-    created_date = models.DateTimeField(auto_now_add=True)
-    updated_date = models.DateTimeField(auto_now=True)
 
     owner = models.ForeignKey(
         User, null=True, blank=True, on_delete=models.SET_NULL, related_name="+"
@@ -82,7 +79,7 @@ class Webhook(models.Model):
         ]
 
 
-class WebhookDelivery(models.Model):
+class WebhookDelivery(TimestampedModel):
     webhook = models.ForeignKey(
         Webhook, on_delete=models.CASCADE, related_name="deliveries"
     )
@@ -90,9 +87,6 @@ class WebhookDelivery(models.Model):
 
     status_code = models.PositiveIntegerField(null=True, default=None)
     redelivery = models.BooleanField(default=False)
-
-    created_date = models.DateTimeField(auto_now_add=True)
-    updated_date = models.DateTimeField(auto_now=True)
 
     changed_fields = models.CharField(max_length=4096, default="")
 

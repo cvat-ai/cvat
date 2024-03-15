@@ -1,12 +1,13 @@
 // Copyright (C) 2022 Intel Corporation
+// Copyright (C) 2024 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
 /// <reference types="cypress" />
 
-context('Delete a label from a task.', () => {
+context('Task status updated after initial save.', () => {
     const labelName = 'car';
-    const taskName = 'Test correct state changing on first annotations save';
+    const taskName = 'Test task status updated after initial save';
     const attrName = 'Dummy attribute';
     const textDefaultValue = 'Test';
     const imagesCount = 1;
@@ -36,30 +37,27 @@ context('Delete a label from a task.', () => {
         cy.imageGenerator(imagesFolder, imageFileName, width, height, color, posX, posY, labelName, imagesCount);
         cy.createZipArchive(directoryToArchive, archivePath);
         cy.createAnnotationTask(taskName, labelName, attrName, textDefaultValue, archiveName);
-        cy.openTask(taskName);
     });
 
     after(() => {
-        cy.goToTaskList();
         cy.deleteTask(taskName);
+    });
+
+    afterEach(() => {
+        cy.goToTaskList();
     });
 
     describe(`Testing "${labelName}"`, () => {
         it('State of the created task should be "new".', () => {
+            cy.openTask(taskName);
             cy.get('.cvat-job-item .cvat-job-item-state').invoke('text').should('equal', 'New');
         });
 
         it('Create object, save annotation, state should be "in progress"', () => {
-            cy.intercept('GET', /\/api\/users.*/).as('searchUsers');
-            cy.openJob();
+            cy.openTaskJob(taskName);
             cy.createRectangle(rectangleData);
             cy.saveJob();
             cy.interactMenu('Open the task');
-            cy.wait('@searchUsers');
-            cy.get('.cvat-job-item').each(() => {
-                cy.wait('@searchUsers');
-            });
-            cy.reload();
             cy.get('.cvat-job-item .cvat-job-item-state').invoke('text').should('equal', 'In progress');
         });
     });

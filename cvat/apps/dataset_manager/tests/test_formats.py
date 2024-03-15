@@ -295,7 +295,6 @@ class TaskExportTest(_DbTestBase):
             'MOTS PNG 1.0',
             'PASCAL VOC 1.1',
             'Segmentation mask 1.1',
-            'TFRecord 1.0',
             'YOLO 1.1',
             'ImageNet 1.0',
             'CamVid 1.0',
@@ -326,7 +325,6 @@ class TaskExportTest(_DbTestBase):
             'MOTS PNG 1.0',
             'PASCAL VOC 1.1',
             'Segmentation mask 1.1',
-            'TFRecord 1.0',
             'YOLO 1.1',
             'ImageNet 1.0',
             'CamVid 1.0',
@@ -381,7 +379,6 @@ class TaskExportTest(_DbTestBase):
             # ('MOTS PNG 1.0', 'mots_png'), # does not support
             ('PASCAL VOC 1.1', 'voc'),
             ('Segmentation mask 1.1', 'voc'),
-            ('TFRecord 1.0', 'tf_detection_api'),
             ('YOLO 1.1', 'yolo'),
             ('ImageNet 1.0', 'imagenet_txt'),
             ('CamVid 1.0', 'camvid'),

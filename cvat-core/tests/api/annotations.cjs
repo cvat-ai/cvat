@@ -1,5 +1,5 @@
 // Copyright (C) 2020-2022 Intel Corporation
-// Copyright (C) 2022-2023 CVAT.ai Corporation
+// Copyright (C) 2022-2024 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -956,29 +956,29 @@ describe('Feature: search frame', () => {
     test('applying different filters', async () => {
         const job = (await cvat.jobs.get({ jobID: 102 }))[0];
         await job.annotations.clear(true);
-        let frame = await job.annotations.search(JSON.parse('[{"and":[{"==":[{"var":"type"},"tag"]}]}]'), 495, 994);
+        let frame = await job.annotations.search(495, 994, { annotationsFilters: JSON.parse('[{"and":[{"==":[{"var":"type"},"tag"]}]}]') });
         expect(frame).toBe(500);
-        frame = await job.annotations.search(JSON.parse('[{"and":[{"==":[{"var":"type"},"tag"]},{"==":[{"var":"label"},"bicycle"]}]}]'), 495, 994);
+        frame = await job.annotations.search(495, 994, { annotationsFilters: JSON.parse('[{"and":[{"==":[{"var":"type"},"tag"]},{"==":[{"var":"label"},"bicycle"]}]}]') });
         expect(frame).toBe(500);
-        frame = await job.annotations.search(JSON.parse('[{"and":[{"==":[{"var":"type"},"track"]},{"==":[{"var":"label"},"bicycle"]}]}]'), 495, 994);
+        frame = await job.annotations.search(495, 994, { annotationsFilters: JSON.parse('[{"and":[{"==":[{"var":"type"},"track"]},{"==":[{"var":"label"},"bicycle"]}]}]') });
         expect(frame).toBe(null);
 
-        frame = await job.annotations.search(JSON.parse('[{"and":[{"==":[{"var":"type"},"shape"]},{"==":[{"var":"shape"},"rectangle"]}]}]'), 495, 994);
+        frame = await job.annotations.search(495, 994, { annotationsFilters: JSON.parse('[{"and":[{"==":[{"var":"type"},"shape"]},{"==":[{"var":"shape"},"rectangle"]}]}]') });
         expect(frame).toBe(510);
-        frame = await job.annotations.search(JSON.parse('[{"and":[{"==":[{"var":"type"},"shape"]},{"==":[{"var":"shape"},"rectangle"]}]}]'), 511, 994);
+        frame = await job.annotations.search(511, 994, { annotationsFilters: JSON.parse('[{"and":[{"==":[{"var":"type"},"shape"]},{"==":[{"var":"shape"},"rectangle"]}]}]') });
         expect(frame).toBe(null);
-        frame = await job.annotations.search(JSON.parse('[{"and":[{"==":[{"var":"type"},"shape"]},{"==":[{"var":"shape"},"polygon"]}]}]'), 511, 994);
+        frame = await job.annotations.search(511, 994, { annotationsFilters: JSON.parse('[{"and":[{"==":[{"var":"type"},"shape"]},{"==":[{"var":"shape"},"polygon"]}]}]') });
         expect(frame).toBe(520);
-        frame = await job.annotations.search(JSON.parse('[{"and":[{"==":[{"var":"attr.motorcycle.model"},"some text for test"]}]}]'), 495, 994);
+        frame = await job.annotations.search(495, 994, { annotationsFilters: JSON.parse('[{"and":[{"==":[{"var":"attr.motorcycle.model"},"some text for test"]}]}]') });
         expect(frame).toBe(520);
-        frame = await job.annotations.search(JSON.parse('[{"and":[{"==":[{"var":"attr.motorcycle.model"},"some text for test"]},{"==":[{"var":"shape"},"ellipse"]}]}]'), 495, 994);
+        frame = await job.annotations.search(495, 994, { annotationsFilters: JSON.parse('[{"and":[{"==":[{"var":"attr.motorcycle.model"},"some text for test"]},{"==":[{"var":"shape"},"ellipse"]}]}]') });
         expect(frame).toBe(null);
 
-        frame = await job.annotations.search(JSON.parse('[{"and":[{"<=":[450,{"var":"width"},550]}]}]'), 540, 994);
+        frame = await job.annotations.search(540, 994, { annotationsFilters: JSON.parse('[{"and":[{"<=":[450,{"var":"width"},550]}]}]') });
         expect(frame).toBe(563);
-        frame = await job.annotations.search(JSON.parse('[{"and":[{"<=":[450,{"var":"width"},550]}]}]'), 588, 994);
+        frame = await job.annotations.search(588, 994, { annotationsFilters: JSON.parse('[{"and":[{"<=":[450,{"var":"width"},550]}]}]') });
         expect(frame).toBe(null);
-        frame = await job.annotations.search(JSON.parse('[{"and":[{">=":[{"var":"width"},500]},{"<=":[{"var":"height"},300]}]}]'), 540, 994);
+        frame = await job.annotations.search(540, 994, { annotationsFilters: JSON.parse('[{"and":[{">=":[{"var":"width"},500]},{"<=":[{"var":"height"},300]}]}]') });
         expect(frame).toBe(575);
     });
 });

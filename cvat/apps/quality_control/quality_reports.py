@@ -484,13 +484,15 @@ class ComparisonReportFrameSummary(_Serializable):
         }
         return cls(
             **{field: d[field] for field in optional_fields if field in d},
-            **dict(
-                conflicts_by_type={
-                    AnnotationConflictType(k): v for k, v in d["conflicts_by_type"].items()
-                }
-            )
-            if "conflicts_by_type" in d
-            else {},
+            **(
+                dict(
+                    conflicts_by_type={
+                        AnnotationConflictType(k): v for k, v in d["conflicts_by_type"].items()
+                    }
+                )
+                if "conflicts_by_type" in d
+                else {}
+            ),
             conflicts=[AnnotationConflict.from_dict(v) for v in d["conflicts"]],
             annotations=ComparisonReportAnnotationsSummary.from_dict(d["annotations"]),
             annotation_components=ComparisonReportAnnotationComponentsSummary.from_dict(

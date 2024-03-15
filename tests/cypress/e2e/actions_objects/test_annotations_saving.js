@@ -1,11 +1,11 @@
-// Copyright (C) 2023 CVAT.ai Corporation
+// Copyright (C) 2023-2024 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
 /// <reference types="cypress" />
 
-context('Test export hash when saving annotations', () => {
-    const taskName = 'Test export hash when saving annotations';
+context('Test annotations saving works correctly', () => {
+    const taskName = 'Test annotations saving works correctly';
     const serverFiles = {
         images: ['image_1.jpg', 'image_2.jpg', 'image_3.jpg'],
     };
@@ -28,6 +28,14 @@ context('Test export hash when saving annotations', () => {
     let taskID = null;
     let jobID = null;
 
+    function useShortcut(clientID, shortcut) {
+        cy.get('body').click();
+        cy.get(`#cvat-objects-sidebar-state-item-${clientID}`).trigger('mouseover');
+        cy.get(`#cvat-objects-sidebar-state-item-${clientID}`).should('have.class', 'cvat-objects-sidebar-state-active-item');
+        cy.get('body').type(shortcut);
+        cy.hideTooltips();
+    }
+
     before(() => {
         cy.headlessLogin();
         cy.visit('/tasks/create');
@@ -45,14 +53,15 @@ context('Test export hash when saving annotations', () => {
         cy.wait('@getJobsRequest', { requestTimeout: 10000 }).then((interception) => {
             expect(interception.response.statusCode).to.equal(200);
             jobID = interception.response.body.results[0].id;
+
+            cy.visit(`/tasks/${taskID}/jobs/${jobID}`);
+            cy.get('.cvat-canvas-container').should('exist').and('be.visible');
         });
     });
 
-    describe('Check saving twice', () => {
-        it('Saving twice different shapes', () => {
-            cy.visit(`/tasks/${taskID}/jobs/${jobID}`);
-            cy.get('.cvat-canvas-container').should('exist').and('be.visible');
-
+    describe('Check object saving works correctly', () => {
+        it('Create different objects, save twice. Update, delete. Export hash works as expected', () => {
+            // client id 1
             cy.createRectangle({
                 points: 'By 2 Points',
                 type: 'Shape',
@@ -63,6 +72,7 @@ context('Test export hash when saving annotations', () => {
                 secondY: 400,
             });
 
+            // client id 2
             cy.createRectangle({
                 points: 'By 2 Points',
                 type: 'Track',
@@ -73,6 +83,7 @@ context('Test export hash when saving annotations', () => {
                 secondY: 450,
             });
 
+            // client id 3
             cy.createEllipse({
                 type: 'Shape',
                 labelName: generalLabel.name,
@@ -82,6 +93,7 @@ context('Test export hash when saving annotations', () => {
                 secondY: 400,
             });
 
+            // client id 4
             cy.createEllipse({
                 type: 'Track',
                 labelName: generalLabel.name,
@@ -91,6 +103,7 @@ context('Test export hash when saving annotations', () => {
                 secondY: 450,
             });
 
+            // client id 5
             cy.createPolygon({
                 reDraw: false,
                 type: 'Shape',
@@ -105,6 +118,7 @@ context('Test export hash when saving annotations', () => {
                 numberOfPoints: null,
             });
 
+            // client id 6
             cy.createPolygon({
                 reDraw: false,
                 type: 'Track',
@@ -119,6 +133,7 @@ context('Test export hash when saving annotations', () => {
                 numberOfPoints: null,
             });
 
+            // client id 7
             cy.createSkeleton({
                 xtl: 150,
                 ytl: 350,
@@ -128,6 +143,7 @@ context('Test export hash when saving annotations', () => {
                 type: 'Shape',
             });
 
+            // client id 8
             cy.createSkeleton({
                 xtl: 200,
                 ytl: 400,
@@ -137,11 +153,16 @@ context('Test export hash when saving annotations', () => {
                 type: 'Track',
             });
 
+            // client id 9
             cy.createTag(generalLabel.name);
 
-            cy.intercept('PATCH', `/api/jobs/${jobID}/annotations**action=create**`).as('createJobAnnotations');
-            cy.intercept('PATCH', `/api/jobs/${jobID}/annotations**action=update`).as('updateJobAnnotations');
-            cy.intercept('PATCH', `/api/jobs/${jobID}/annotations**action=delete`).as('deleteJobAnnotations');
+            let createCounter = 0;
+            let deleteCounter = 0;
+            let updateCounter = 0;
+
+            cy.intercept('PATCH', `/api/jobs/${jobID}/annotations**action=create**`, () => createCounter++).as('createJobAnnotations');
+            cy.intercept('PATCH', `/api/jobs/${jobID}/annotations**action=delete`, () => deleteCounter++).as('deleteJobAnnotations');
+            cy.intercept('PATCH', `/api/jobs/${jobID}/annotations**action=update`, () => updateCounter++).as('updateJobAnnotations');
 
             cy.saveJob();
             cy.wait('@createJobAnnotations').then((interception) => {
@@ -150,41 +171,37 @@ context('Test export hash when saving annotations', () => {
                 expect(shapes.length).to.be.equal(4);
                 expect(tags.length).to.be.equal(1);
             });
+            cy.saveJob();
 
-            cy.wait('@updateJobAnnotations').then((interception) => {
-                const { shapes, tags, tracks } = interception.response.body;
-                expect(tracks.length).to.be.equal(0);
-                expect(shapes.length).to.be.equal(0);
-                expect(tags.length).to.be.equal(0);
-            });
-
-            cy.wait('@deleteJobAnnotations').then((interception) => {
-                const { shapes, tags, tracks } = interception.response.body;
-                expect(tracks.length).to.be.equal(0);
-                expect(shapes.length).to.be.equal(0);
-                expect(tags.length).to.be.equal(0);
-            });
+            for (const clientID of [1, 2, 3, 4, 5, 6, 7, 13]) {
+                useShortcut(clientID, 'q');
+            }
 
             cy.saveJob();
-            cy.wait('@createJobAnnotations').then((interception) => {
-                const { shapes, tags, tracks } = interception.response.body;
-                expect(tracks.length).to.be.equal(0);
-                expect(shapes.length).to.be.equal(0);
-                expect(tags.length).to.be.equal(0);
-            });
-
             cy.wait('@updateJobAnnotations').then((interception) => {
                 const { shapes, tags, tracks } = interception.response.body;
-                expect(tracks.length).to.be.equal(0);
-                expect(shapes.length).to.be.equal(0);
+                expect(tracks.length).to.be.equal(4);
+                expect(shapes.length).to.be.equal(4);
                 expect(tags.length).to.be.equal(0);
             });
+            cy.saveJob();
 
+            for (const clientID of [1, 2, 3, 4, 5, 6, 7, 13, 19]) {
+                useShortcut(clientID, '{shift}{del}');
+                cy.get(`#cvat-objects-sidebar-state-item-${clientID}`).should('not.exist');
+            }
+
+            cy.saveJob();
             cy.wait('@deleteJobAnnotations').then((interception) => {
                 const { shapes, tags, tracks } = interception.response.body;
-                expect(tracks.length).to.be.equal(0);
-                expect(shapes.length).to.be.equal(0);
-                expect(tags.length).to.be.equal(0);
+                expect(tracks.length).to.be.equal(4);
+                expect(shapes.length).to.be.equal(4);
+                expect(tags.length).to.be.equal(1);
+            });
+            cy.saveJob().then(() => {
+                expect(createCounter).to.be.equal(1);
+                expect(deleteCounter).to.be.equal(1);
+                expect(updateCounter).to.be.equal(1);
             });
         });
     });

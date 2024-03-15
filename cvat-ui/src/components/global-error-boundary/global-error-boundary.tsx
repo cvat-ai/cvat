@@ -1,4 +1,5 @@
 // Copyright (C) 2020-2022 Intel Corporation
+// Copyright (C) 2024 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -16,9 +17,10 @@ import ErrorStackParser from 'error-stack-parser';
 import { ThunkDispatch } from 'utils/redux';
 import { resetAfterErrorAsync } from 'actions/boundaries-actions';
 import { CombinedState } from 'reducers';
-import logger, { LogType } from 'cvat-logger';
+import logger, { EventScope } from 'cvat-logger';
 import CVATTooltip from 'components/common/cvat-tooltip';
 import config from 'config';
+import { saveLogsAsync } from 'actions/annotation-actions';
 
 interface OwnProps {
     children: JSX.Element;
@@ -34,6 +36,7 @@ interface StateToProps {
 
 interface DispatchToProps {
     restore(): void;
+    saveLogs(): void;
 }
 
 interface State {
@@ -60,6 +63,9 @@ function mapStateToProps(state: CombinedState): StateToProps {
 
 function mapDispatchToProps(dispatch: ThunkDispatch): DispatchToProps {
     return {
+        saveLogs(): void {
+            dispatch(saveLogsAsync());
+        },
         restore(): void {
             dispatch(resetAfterErrorAsync());
         },
@@ -84,7 +90,7 @@ class GlobalErrorBoundary extends React.PureComponent<Props, State> {
     }
 
     public componentDidCatch(error: Error, errorInfo: React.ErrorInfo): void {
-        const { job } = this.props;
+        const { job, saveLogs } = this.props;
         const parsed = ErrorStackParser.parse(error);
 
         const logPayload = {
@@ -97,9 +103,9 @@ class GlobalErrorBoundary extends React.PureComponent<Props, State> {
         };
 
         if (job) {
-            job.logger.log(LogType.exception, logPayload);
+            job.logger.log(EventScope.exception, logPayload).then(saveLogs);
         } else {
-            logger.log(LogType.exception, logPayload);
+            logger.log(EventScope.exception, logPayload).then(saveLogs);
         }
     }
 
@@ -132,7 +138,7 @@ class GlobalErrorBoundary extends React.PureComponent<Props, State> {
                             <Paragraph>
                                 <Paragraph strong>What has happened?</Paragraph>
                                 <Paragraph>Program error has just occurred</Paragraph>
-                                <Collapse accordion>
+                                <Collapse accordion defaultActiveKey={['errorMessage']}>
                                     <Collapse.Panel header='Error message' key='errorMessage'>
                                         <Text type='danger'>
                                             <TextArea
