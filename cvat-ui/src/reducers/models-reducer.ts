@@ -101,14 +101,17 @@ export default function (state = defaultState, action: ModelsActions | AuthActio
             };
         }
         case ModelsActionTypes.GET_INFERENCE_STATUS_SUCCESS: {
-            const { inferences } = state;
+            const { inferences, requestedInferenceIDs } = state;
 
             if (action.payload.activeInference.status === 'finished') {
+                delete requestedInferenceIDs[action.payload.activeInference.id];
+
                 return {
                     ...state,
                     inferences: Object.fromEntries(
                         Object.entries(inferences).filter(([key]): boolean => +key !== action.payload.taskID),
                     ),
+                    requestedInferenceIDs: { ...requestedInferenceIDs },
                 };
             }
 
