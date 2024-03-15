@@ -28,34 +28,20 @@ def _export(dst_file, temp_dir, instance_data, save_images=False):
 def _import(src_file, temp_dir, instance_data, load_data_callback=None, **kwargs):
     if zipfile.is_zipfile(src_file):
         zipfile.ZipFile(src_file).extractall(temp_dir)
-        rename_path_mapping, temp_dir = update_annotation_data(temp_dir)
-        reverse_path_mapping = {value: key for key, value in rename_path_mapping.items()}
-        reverse_path_id_mapping = {key.rsplit('.', 1)[0]: value for key, value in reverse_path_mapping.items()}
+        rename_path_mapping, src_file = update_annotation_data(src_file)
+        reverse_path_id_mapping = {key.rsplit('.', 1)[0]: value.rsplit('.', 1)[0]
+                                   for value, key in rename_path_mapping.items()}
         dataset = Dataset.import_from(temp_dir, 'coco_instances', env=dm_env)
-        counter = 0
-        instance_data._frame_mapping ={}
-        for key, value in rename_path_mapping.items():
-            instance_data._frame_mapping[key] = counter
-            counter += 1
-        for item in dataset:
-            item.id = reverse_path_id_mapping[item.id]
         if load_data_callback is not None:
             load_data_callback(dataset, instance_data)
-        import_dm_annotations(dataset, instance_data)
+        import_dm_annotations(dataset, instance_data, reverse_path_id_mapping)
     else:
         rename_path_mapping, src_file = update_annotation_data(src_file)
-        reverse_path_mapping = {value: key for key, value in rename_path_mapping.items()}
-        reverse_path_id_mapping = {key.rsplit('.', 1)[0]: value for key, value in reverse_path_mapping.items()}
+        reverse_path_id_mapping = {key.rsplit('.', 1)[0]: value.rsplit('.', 1)[0]
+                                   for value, key in rename_path_mapping.items()}
         dataset = Dataset.import_from(src_file.name,
             'coco_instances', env=dm_env)
-        counter = 0
-        instance_data._frame_mapping ={}
-        for key, value in rename_path_mapping.items():
-            instance_data._frame_mapping[key] = counter
-            counter += 1
-        for item in dataset:
-            item.id = reverse_path_id_mapping[item.id]
-        import_dm_annotations(dataset, instance_data)
+        import_dm_annotations(dataset, instance_data, reverse_path_id_mapping)
 
 @exporter(name='COCO Keypoints', ext='ZIP', version='1.0')
 def _export(dst_file, temp_dir, instance_data, save_images=False):

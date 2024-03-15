@@ -1887,11 +1887,14 @@ def convert_cvat_anno_to_dm(
 def match_dm_item(
     item: dm.DatasetItem,
     instance_data: Union[ProjectData, CommonData],
-    root_hint: Optional[str] = None
+    Remap: Optional[str]  = None,
+    root_hint: Optional[str] = None,
 ) -> int:
     is_video = instance_data.meta[instance_data.META_FIELD]['mode'] == 'interpolation'
 
     frame_number = None
+    if frame_number is None and item.has_image and Remap is not None:
+        frame_number = instance_data.match_frame(Remap + item.image.ext, root_hint)
     if frame_number is None and item.has_image:
         frame_number = instance_data.match_frame(item.id + item.image.ext, root_hint)
     if frame_number is None:
@@ -1925,7 +1928,7 @@ def find_dataset_root(
 
     return prefix
 
-def import_dm_annotations(dm_dataset: dm.Dataset, instance_data: Union[ProjectData, CommonData]):
+def import_dm_annotations(dm_dataset: dm.Dataset, instance_data: Union[ProjectData, CommonData], Mapping: Optional[Dict[str, str]]  = None):
     if len(dm_dataset) == 0:
         return
 
@@ -1963,8 +1966,14 @@ def import_dm_annotations(dm_dataset: dm.Dataset, instance_data: Union[ProjectDa
     tracks = {}
 
     for item in dm_dataset:
-        frame_number = instance_data.abs_frame_id(
+        if Mapping is not None:
+            remap = Mapping[item.id]
+            frame_number = instance_data.abs_frame_id(
+            match_dm_item(item, instance_data, remap, root_hint=root_hint))
+        else:
+            frame_number = instance_data.abs_frame_id(
             match_dm_item(item, instance_data, root_hint=root_hint))
+
 
         if (isinstance(instance_data.db_instance, Job)
             and instance_data.db_instance.type == JobType.GROUND_TRUTH
