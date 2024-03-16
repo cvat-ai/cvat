@@ -1078,6 +1078,7 @@ class TestPatchSettings(_PermissionTestBase):
 @pytest.mark.usefixtures("restore_db_per_function")
 class TestQualityReportMetrics(_PermissionTestBase):
     demo_task_id = 22  # this task reproduces all the checkable cases
+    demo_task_id_multiple_jobs = 23  # this task reproduces cases for multiple jobs
 
     @pytest.mark.parametrize("task_id", [demo_task_id])
     def test_report_summary(self, task_id, tasks, jobs, quality_reports):
