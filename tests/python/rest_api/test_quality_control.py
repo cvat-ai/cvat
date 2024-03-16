@@ -1204,9 +1204,7 @@ class TestQualityReportMetrics(_PermissionTestBase):
         assert new_report["summary"]["conflict_count"] != old_report["summary"]["conflict_count"]
 
     @pytest.mark.usefixtures("restore_db_per_class")
-    def test_accumulation_annotation_conflicts_multiple_jobs(
-            self, admin_user
-    ):
+    def test_accumulation_annotation_conflicts_multiple_jobs(self, admin_user):
         report = self.create_quality_report(admin_user, self.demo_task_id_multiple_jobs)
         with make_api_client(admin_user) as api_client:
             (_, response) = api_client.quality_api.retrieve_report_data(report["id"])
