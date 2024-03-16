@@ -62,10 +62,12 @@ function JobsPageComponent(): JSX.Element {
                     <Pagination
                         className='cvat-jobs-page-pagination'
                         onChange={(page: number) => {
-                            dispatch(getJobsAsync({
-                                ...query,
-                                page,
-                            }));
+                            dispatch(
+                                getJobsAsync({
+                                    ...query,
+                                    page,
+                                }),
+                            );
                         }}
                         showSizeChanger={false}
                         total={count}
@@ -76,7 +78,18 @@ function JobsPageComponent(): JSX.Element {
                 </Col>
             </Row>
         </>
-    ) : <Empty description={<Text>No results matched your search...</Text>} />;
+    ) : (
+        <div className='cvat-empty-jobs-list'>
+            <Empty description={(
+                <Row justify='center' align='middle'>
+                    <Col>
+                        <Text>No results matched your search...</Text>
+                    </Col>
+                </Row>
+            )}
+            />
+        </div>
+    );
 
     return (
         <div className='cvat-jobs-page'>
@@ -110,9 +123,7 @@ function JobsPageComponent(): JSX.Element {
                     );
                 }}
             />
-            { fetching ? (
-                <Spin size='large' className='cvat-spinner' />
-            ) : content }
+            {fetching ? <Spin size='large' className='cvat-spinner' /> : content}
         </div>
     );
 }
