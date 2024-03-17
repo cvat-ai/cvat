@@ -80,7 +80,7 @@ class TestPostJobs:
         return response
 
     @pytest.mark.parametrize("task_mode", ["annotation", "interpolation"])
-    def test_can_create_gt_job_with_manual_frames(self, admin_user, tasks, task_mode):
+    def test_can_create_gt_job_with_manual_frames(self, admin_user, tasks, jobs, task_mode):
         user = admin_user
         job_frame_count = 4
         task = next(
@@ -90,6 +90,7 @@ class TestPostJobs:
             and not t["organization"]
             and t["mode"] == task_mode
             and t["size"] > job_frame_count
+            and not any(j for j in jobs if j["task_id"] == t["id"] and j["type"] == "ground_truth")
         )
         task_id = task["id"]
         with make_api_client(user) as api_client:
@@ -116,7 +117,7 @@ class TestPostJobs:
         assert job_frame_ids == gt_job_meta.included_frames
 
     @pytest.mark.parametrize("task_mode", ["annotation", "interpolation"])
-    def test_can_create_gt_job_with_random_frames(self, admin_user, tasks, task_mode):
+    def test_can_create_gt_job_with_random_frames(self, admin_user, tasks, jobs, task_mode):
         user = admin_user
         job_frame_count = 3
         required_task_frame_count = job_frame_count + 1
@@ -127,6 +128,7 @@ class TestPostJobs:
             and not t["organization"]
             and t["mode"] == task_mode
             and t["size"] > required_task_frame_count
+            and not any(j for j in jobs if j["task_id"] == t["id"] and j["type"] == "ground_truth")
         )
         task_id = task["id"]
 
@@ -576,7 +578,7 @@ class TestGetJobs:
 class TestGetGtJobData:
     @pytest.mark.usefixtures("restore_db_per_function")
     @pytest.mark.parametrize("task_mode", ["annotation", "interpolation"])
-    def test_can_get_gt_job_meta(self, admin_user, tasks, task_mode):
+    def test_can_get_gt_job_meta(self, admin_user, tasks, jobs, task_mode):
         user = admin_user
         job_frame_count = 4
         task = next(
@@ -586,6 +588,7 @@ class TestGetGtJobData:
             and not t["organization"]
             and t["mode"] == task_mode
             and t["size"] > job_frame_count
+            and not any(j for j in jobs if j["task_id"] == t["id"] and j["type"] == "ground_truth")
         )
         task_id = task["id"]
         with make_api_client(user) as api_client:
@@ -674,7 +677,7 @@ class TestGetGtJobData:
 
     @pytest.mark.parametrize("task_mode", ["annotation", "interpolation"])
     @pytest.mark.parametrize("quality", ["compressed", "original"])
-    def test_can_get_gt_job_chunk(self, admin_user, tasks, task_mode, quality):
+    def test_can_get_gt_job_chunk(self, admin_user, tasks, jobs, task_mode, quality):
         user = admin_user
         job_frame_count = 4
         task = next(
@@ -684,6 +687,7 @@ class TestGetGtJobData:
             and not t["organization"]
             and t["mode"] == task_mode
             and t["size"] > job_frame_count
+            and not any(j for j in jobs if j["task_id"] == t["id"] and j["type"] == "ground_truth")
         )
         task_id = task["id"]
         with make_api_client(user) as api_client:
@@ -728,6 +732,7 @@ class TestGetGtJobData:
         with make_api_client(user) as api_client:
             (task_jobs, _) = api_client.jobs_api.list(task_id=task_id, type="ground_truth")
             if task_jobs.results:
+                # TODO: to modify this to only get gt_job only with the mentioned frames
                 gt_job = task_jobs.results[0]
             else:
                 job_spec = {
@@ -743,7 +748,7 @@ class TestGetGtJobData:
 
     @pytest.mark.parametrize("task_mode", ["annotation", "interpolation"])
     @pytest.mark.parametrize("quality", ["compressed", "original"])
-    def test_can_get_gt_job_frame(self, admin_user, tasks, task_mode, quality):
+    def test_can_get_gt_job_frame(self, admin_user, tasks, jobs, task_mode, quality):
         user = admin_user
         job_frame_count = 4
         task = next(
@@ -753,6 +758,7 @@ class TestGetGtJobData:
             and not t["organization"]
             and t["mode"] == task_mode
             and t["size"] > job_frame_count
+            and not any(j for j in jobs if j["task_id"] == t["id"] and j["type"] == "ground_truth")
         )
         task_id = task["id"]
         with make_api_client(user) as api_client:
