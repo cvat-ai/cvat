@@ -160,7 +160,7 @@
             "name": "server: django",
             "type": "python",
             "request": "launch",
-            "stopOnEntry": false,
+            // "stopOnEntry": false,
             "justMyCode": false,
             "python": "${command:python.interpreterPath}",
             "program": "${workspaceRoot}/manage.py",

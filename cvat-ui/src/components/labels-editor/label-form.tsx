@@ -5,7 +5,9 @@
 
 import React, { RefObject } from 'react';
 import { Row, Col } from 'antd/lib/grid';
-import Icon, { DeleteOutlined, PlusCircleOutlined } from '@ant-design/icons';
+import Icon, {
+    DeleteOutlined, DownOutlined, PlusCircleOutlined, UpOutlined,
+} from '@ant-design/icons';
 import Input from 'antd/lib/input';
 import Button from 'antd/lib/button';
 import Checkbox from 'antd/lib/checkbox';
@@ -115,6 +117,16 @@ export default class LabelForm extends React.Component<Props> {
             if (!label) {
                 this.focus();
             }
+        }
+    };
+
+    private swapId = (index1: number, index2: number): void => {
+        if (this.formRef.current) {
+            const attributes = this.formRef.current.getFieldValue('attributes');
+            const temp = { ...attributes[index1] };
+            attributes[index1] = { ...attributes[index2] };
+            attributes[index2] = temp;
+            this.formRef.current?.setFieldsValue({ attributes });
         }
     };
 
@@ -443,6 +455,34 @@ export default class LabelForm extends React.Component<Props> {
         );
     }
 
+    private renderUpIcon(fieldInstance: any): JSX.Element {
+        const { key } = fieldInstance;
+        return (
+            <CVATTooltip title='move up'>
+                <Button
+                    className='cvat-up-arrow-icon'
+                    onClick={() => this.swapId(key, key - 1)}
+                    shape='circle'
+                    icon={<UpOutlined />}
+                />
+            </CVATTooltip>
+        );
+    }
+
+    private renderDownIcon(fieldInstance: any): JSX.Element {
+        const { key } = fieldInstance;
+        return (
+            <CVATTooltip title='move down'>
+                <Button
+                    className='cvat-down-arrow-icon'
+                    onClick={() => this.swapId(key, key + 1)}
+                    icon={<DownOutlined />}
+                    shape='circle'
+                />
+            </CVATTooltip>
+        );
+    }
+
     private renderAttribute = (fieldInstance: any): JSX.Element | null => {
         const { key } = fieldInstance;
         const attr = this.formRef.current?.getFieldValue('attributes')[key];
@@ -456,6 +496,8 @@ export default class LabelForm extends React.Component<Props> {
                         cvat-attribute-id={attr.id}
                         className='cvat-attribute-inputs-wrapper'
                     >
+                        <Col span={1}>{this.renderUpIcon(fieldInstance)}</Col>
+                        <Col span={1}>{this.renderDownIcon(fieldInstance)}</Col>
                         <Col span={5}>{this.renderAttributeNameInput(fieldInstance, attr)}</Col>
                         <Col span={4}>{this.renderAttributeTypeInput(fieldInstance, attr)}</Col>
                         <Col span={6}>
