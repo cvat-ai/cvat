@@ -461,7 +461,10 @@ export default class LabelForm extends React.Component<Props> {
             <CVATTooltip title='move up'>
                 <Button
                     className='cvat-up-arrow-icon'
-                    onClick={() => this.swapId(key, key - 1)}
+                    onClick={() => {
+                        if (key > 0) return this.swapId(key, key - 1);
+                        return null;
+                    }}
                     shape='circle'
                     icon={<UpOutlined />}
                 />
@@ -471,11 +474,15 @@ export default class LabelForm extends React.Component<Props> {
 
     private renderDownIcon(fieldInstance: any): JSX.Element {
         const { key } = fieldInstance;
+        const length = this.formRef.current?.getFieldValue('attributes').length;
         return (
             <CVATTooltip title='move down'>
                 <Button
                     className='cvat-down-arrow-icon'
-                    onClick={() => this.swapId(key, key + 1)}
+                    onClick={() => {
+                        if (key < length - 1) return this.swapId(key, key + 1);
+                        return null;
+                    }}
                     icon={<DownOutlined />}
                     shape='circle'
                 />
