@@ -1,4 +1,4 @@
-// Copyright (C) 2021-2023 Intel Corporation
+// Copyright (C) 2024 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -19,7 +19,7 @@ context('Creating a label with an empty label name.', () => {
             cy.get('.cvat-constructor-viewer-new-item').click();
             cy.get('button[type="submit"]').click();
 
-            cy.contains('[role="alert"]', 'Label name cannot be empty')
+            cy.contains('[role="alert"]', 'Please specify a name')
                 .should('exist')
                 .and('be.visible');
         });
