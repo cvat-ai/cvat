@@ -631,16 +631,17 @@ class CommonData(InstanceLabelData):
 
         return match
 
-    def match_frame_fuzzy(self, path: str, *, path_has_ext: bool = True) -> Optional[int]:
+    def match_frame_fuzzy(self, path: str, Mapping: Optional[Dict[str, str]], *, path_has_ext: bool = True) -> Optional[int]:
         # Preconditions:
         # - The input dataset is full, i.e. all items present. Partial dataset
         # matching can't be correct for all input cases.
         # - path is the longest path of input dataset in terms of path parts
 
-        if path_has_ext:
-            path = self._get_filename(path)
+        if Mapping:
+            path = Mapping[path]
 
         path = Path(path).parts
+
         for p, v in self._frame_mapping.items():
             if Path(p).parts[-len(path):] == path: # endswith() for paths
                 return v
@@ -1896,7 +1897,7 @@ def match_dm_item(
 
     frame_number = None
     if frame_number is None and item.has_image and Remap is not None:
-        frame_number = instance_data.match_frame(Remap + item.image.ext, root_hint)
+        frame_number = instance_data.match_frame(Remap, root_hint)
     if frame_number is None and item.has_image:
         frame_number = instance_data.match_frame(item.id + item.image.ext, root_hint)
     if frame_number is None:
@@ -1912,14 +1913,14 @@ def match_dm_item(
     return frame_number
 
 def find_dataset_root(
-    dm_dataset: dm.IDataset, instance_data: Union[ProjectData, CommonData]
+    dm_dataset: dm.IDataset, instance_data: Union[ProjectData, CommonData], Mapping: Optional[Dict[str, str]]
 ) -> Optional[str]:
     longest_path_item = max(dm_dataset, key=lambda item: len(Path(item.id).parts), default=None)
     if longest_path_item is None:
         return None
     longest_path = longest_path_item.id
 
-    matched_frame_number = instance_data.match_frame_fuzzy(longest_path, path_has_ext=False)
+    matched_frame_number = instance_data.match_frame_fuzzy(longest_path, Mapping, path_has_ext=False)
     if matched_frame_number is None:
         return None
 
@@ -1963,7 +1964,7 @@ def import_dm_annotations(dm_dataset: dm.Dataset, instance_data: Union[ProjectDa
 
     label_cat = dm_dataset.categories()[dm.AnnotationType.label]
 
-    root_hint = find_dataset_root(dm_dataset, instance_data)
+    root_hint = find_dataset_root(dm_dataset, instance_data, Mapping)
 
     tracks = {}
 

@@ -37,7 +37,7 @@ def _import(src_file, temp_dir, instance_data, load_data_callback=None, **kwargs
         import_dm_annotations(dataset, instance_data, reverse_path_id_mapping)
     else:
         rename_path_mapping, src_file = update_annotation_data(src_file)
-        reverse_path_id_mapping = {key.rsplit('.', 1)[0]: value.rsplit('.', 1)[0]
+        reverse_path_id_mapping = {key.rsplit('.', 1)[0]: value
                                    for value, key in rename_path_mapping.items()}
         dataset = Dataset.import_from(src_file.name,
             'coco_instances', env=dm_env)
