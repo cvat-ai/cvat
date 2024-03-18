@@ -704,6 +704,8 @@ class TestGetGtJobData:
                 gt_job.id, number=0, quality=quality, type="chunk"
             )
             assert response.status == HTTPStatus.OK
+            (_, gt_job_del_response) = api_client.jobs_api.destroy(gt_job.id)
+            assert gt_job_del_response.status == HTTPStatus.NO_CONTENT, "newly created gt_job couldn't be deleted"
 
         frame_range = range(
             task_meta.start_frame, min(task_meta.stop_frame + 1, task_meta.chunk_size), frame_step
@@ -746,6 +748,7 @@ class TestGetGtJobData:
 
         return gt_job
 
+    @pytest.mark.usefixtures("restore_db_per_function")
     @pytest.mark.parametrize("task_mode", ["annotation", "interpolation"])
     @pytest.mark.parametrize("quality", ["compressed", "original"])
     def test_can_get_gt_job_frame(self, admin_user, tasks, jobs, task_mode, quality):
