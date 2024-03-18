@@ -1,15 +1,11 @@
-<table>
-  <tr>
-    <td>
-      <img src="/site/content/en/images/cvat-readme-gif.gif" alt="CVAT Platform" style="width: 100%; max-width: 800px;">
-    </td>
-    <td>
-      <a href="https://app.cvat.ai/">
-        <img src="/site/content/en/images/cvat-readme-button-tr-bg.png" alt="Start Annotating Now" style="width: 100%; max-width: 600px;">
-      </a>
-    </td>
-  </tr>
-</table>
+<p align="center">
+  <img src="/site/content/en/images/cvat-readme-gif.gif" alt="CVAT Platform" width="100%" max-width="800px">
+</p>
+<p align="center">
+  <a href="https://app.cvat.ai/">
+    <img src="/site/content/en/images/cvat-readme-button-tr-bg.png" alt="Start Annotating Now" width="100%" max-width="600px">
+  </a>
+</p>
 
 # Computer Vision Annotation Tool (CVAT)
 
