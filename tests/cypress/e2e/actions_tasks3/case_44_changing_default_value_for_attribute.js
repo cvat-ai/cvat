@@ -33,7 +33,7 @@ context('Changing a default value for an attribute.', () => {
     });
 
     describe(`Testing case "${caseId}", issue 2968`, () => {
-        it('Add a label, add text (leave it’s value empty by default) & checkbox attributes.', () => {
+        it('Add a label, add text (leave its value empty by default) & checkbox attributes.', () => {
             cy.intercept('PATCH', '/api/tasks/**').as('patchTask');
             cy.addNewLabel({ name: additionalLabel }, additionalAttrsLabel);
             cy.wait('@patchTask').its('response.statusCode').should('equal', 200);
