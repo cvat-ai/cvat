@@ -1,5 +1,5 @@
 // Copyright (C) 2022 Intel Corporation
-// Copyright (C) 2023 CVAT.ai Corporation
+// Copyright (C) 2023-2024 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -62,12 +62,10 @@ function JobsPageComponent(): JSX.Element {
                     <Pagination
                         className='cvat-jobs-page-pagination'
                         onChange={(page: number) => {
-                            dispatch(
-                                getJobsAsync({
-                                    ...query,
-                                    page,
-                                }),
-                            );
+                            dispatch(getJobsAsync({
+                                ...query,
+                                page,
+                            }));
                         }}
                         showSizeChanger={false}
                         total={count}
