@@ -732,7 +732,7 @@ class TestGetGtJobData:
         with make_api_client(user) as api_client:
             (task_jobs, _) = api_client.jobs_api.list(task_id=task_id, type="ground_truth")
             if task_jobs.results:
-                # TODO: to modify this to only get gt_job only with the mentioned frames
+                assert not frames, "specific frames requested but gt_job exists"
                 gt_job = task_jobs.results[0]
             else:
                 job_spec = {
