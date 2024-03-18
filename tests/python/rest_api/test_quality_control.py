@@ -1214,4 +1214,16 @@ class TestQualityReportMetrics(_PermissionTestBase):
         task_confusion_matrix = report_data["comparison_summary"]["annotations"][
             "confusion_matrix"
         ]["rows"]
+
+        expected_frame_confusion_matrix = {
+            "5": [[1, 0, 0], [0, 0, 0], [0, 0, 0]],
+            "7": [[1, 0, 0], [0, 0, 0], [0, 0, 0]],
+            "4": [[0, 0, 1], [0, 0, 0], [1, 0, 0]],
+        }
+        for frame_id in report_data["frame_results"].keys():
+            assert (
+                report_data["frame_results"][frame_id]["annotations"]["confusion_matrix"]["rows"]
+                == expected_frame_confusion_matrix[frame_id]
+            )
+
         assert task_confusion_matrix == [[2, 0, 1], [0, 0, 0], [1, 0, 0]]
