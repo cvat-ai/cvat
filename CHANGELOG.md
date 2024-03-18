@@ -26,9 +26,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
-- Fixed label constructor behavior for empty label names by modifying validations and added tests
-  (<https://github.com/opencv/cvat/pull/7627>)
-
 - Job and task `updated_date` are no longer bumped twice when updating
   annotations
   (<https://github.com/opencv/cvat/pull/7556>)
