@@ -705,7 +705,9 @@ class TestGetGtJobData:
             )
             assert response.status == HTTPStatus.OK
             (_, gt_job_del_response) = api_client.jobs_api.destroy(gt_job.id)
-            assert gt_job_del_response.status == HTTPStatus.NO_CONTENT, "newly created gt_job couldn't be deleted"
+            assert (
+                gt_job_del_response.status == HTTPStatus.NO_CONTENT
+            ), "newly created gt_job couldn't be deleted"
 
         frame_range = range(
             task_meta.start_frame, min(task_meta.stop_frame + 1, task_meta.chunk_size), frame_step
