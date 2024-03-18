@@ -2355,8 +2355,7 @@ class QualityReportUpdateManager:
         task_mean_shape_ious = []
         task_frame_results = {}
         task_frame_results_counts = {}
-        confusion_matrices = []
-        count_confusion_matrix_labels = 0
+        confusion_matrix = None
         for r in job_reports.values():
             task_intersection_frames.update(r.comparison_summary.frames)
             task_conflicts.extend(r.conflicts)
@@ -2366,10 +2365,11 @@ class QualityReportUpdateManager:
             else:
                 task_annotations_summary = deepcopy(r.comparison_summary.annotations)
 
-            confusion_matrices.append(r.comparison_summary.annotations.confusion_matrix.rows)
-            count_confusion_matrix_labels = len(
-                r.comparison_summary.annotations.confusion_matrix.labels
-            )
+            if confusion_matrix is None:
+                num_labels = len(r.comparison_summary.annotations.confusion_matrix.labels)
+                confusion_matrix = np.zeros((num_labels, num_labels), dtype=int)
+
+            confusion_matrix += r.comparison_summary.annotations.confusion_matrix.rows
 
             if task_ann_components_summary:
                 task_ann_components_summary.accumulate(r.comparison_summary.annotation_components)
@@ -2400,13 +2400,6 @@ class QualityReportUpdateManager:
 
                 task_frame_results_counts[frame_id] = 1 + frame_results_count
                 task_frame_results[frame_id] = task_frame_result
-
-        if confusion_matrices:
-            confusion_matrix = np.sum(confusion_matrices, axis=0)
-        else:
-            confusion_matrix = np.zeros(
-                (count_confusion_matrix_labels, count_confusion_matrix_labels), dtype=int
-            )
 
         task_annotations_summary.confusion_matrix.rows = confusion_matrix
 
