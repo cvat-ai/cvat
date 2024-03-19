@@ -11,10 +11,11 @@ from rest_framework import serializers
 from allauth.account import app_settings
 from allauth.account.utils import filter_users_by_email
 from allauth.account.adapter import get_adapter
-from allauth.utils import email_address_exists
 from allauth.account.utils import setup_user_email
+from allauth.account.models import EmailAddress
 
 from django.conf import settings
+from django.contrib.auth import get_user_model
 
 from cvat.apps.iam.forms import ResetPasswordFormEx
 from cvat.apps.iam.utils import get_dummy_user
@@ -34,6 +35,15 @@ class RegisterSerializerEx(RegisterSerializer):
         return data
 
     def validate_email(self, email):
+        def email_address_exists(email):
+            if (
+                not (ret := EmailAddress.objects.filter(email__iexact=email).exists())
+                and (email_field := app_settings.USER_MODEL_EMAIL_FIELD)
+            ):
+                users = get_user_model().objects
+                ret = users.filter(**{email_field + "__iexact": email}).exists()
+            return ret
+
         email = get_adapter().clean_email(email)
         if app_settings.UNIQUE_EMAIL:
             if email and email_address_exists(email):
