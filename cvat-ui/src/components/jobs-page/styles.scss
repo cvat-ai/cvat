@@ -146,8 +146,8 @@
     .cvat-jobs-page-list {
         display: flex;
         flex-wrap: wrap;
-        padding-top: 8px;
-        padding-bottom: 8px;
+        padding-top: $grid-unit-size;
+        padding-bottom: $grid-unit-size;
     }
 
     .cvat-job-card-more-button {
