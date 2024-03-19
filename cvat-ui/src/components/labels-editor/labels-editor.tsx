@@ -1,5 +1,5 @@
 // Copyright (C) 2020-2022 Intel Corporation
-// Copyright (C) 2023 CVAT.ai Corporation
+// Copyright (C) 2023-2024 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -11,6 +11,7 @@ import ModalConfirm from 'antd/lib/modal/confirm';
 import {
     EditOutlined, BuildOutlined, ExclamationCircleOutlined,
 } from '@ant-design/icons';
+import notification from 'antd/lib/notification';
 
 import { SerializedLabel, SerializedAttribute } from 'cvat-core-wrapper';
 import RawViewer from './raw-viewer';
@@ -207,6 +208,10 @@ export default class LabelsEditor extends React.PureComponent<LabelsEditorProps,
             .map((label: LabelOptColor): LabelOptColor => transformLabel(label));
 
         onSubmit(output);
+        notification.success({
+            message: 'The label has been created!',
+            className: 'cvat-notification-create-label-success',
+        });
     }
 
     public render(): JSX.Element {
