@@ -17,8 +17,6 @@ import CVATTooltip from 'components/common/cvat-tooltip';
 import { ObjectType, ShapeType, ColorBy } from 'reducers';
 import { DimensionType, Job } from 'cvat-core-wrapper';
 
-import ColorPicker from './color-picker';
-
 interface Props {
     readonly: boolean;
     serverID: number | null;
@@ -45,7 +43,7 @@ interface Props {
     toBackground(): void;
     toForeground(): void;
     resetCuboidPerspective(): void;
-    changeColorPickerVisible(visible: boolean): void;
+    setColorPickerVisible(visible: boolean): void;
     edit(): void;
     slice(): void;
     jobInstance: Job;
@@ -223,30 +221,16 @@ function ToForegroundItem(props: ItemProps): JSX.Element {
 
 function SwitchColorItem(props: ItemProps): JSX.Element {
     const { toolProps, ...rest } = props;
-    const {
-        color,
-        colorPickerVisible,
-        changeColorShortcut,
-        colorBy,
-        changeColor,
-        changeColorPickerVisible,
-    } = toolProps;
+    const { changeColorShortcut, colorBy, setColorPickerVisible } = toolProps;
+
     return (
-        <Menu.Item {...rest}>
-            <ColorPicker
-                value={color}
-                onChange={changeColor}
-                visible={colorPickerVisible}
-                onVisibleChange={changeColorPickerVisible}
-                resetVisible={false}
-            >
-                <CVATTooltip title={`${changeColorShortcut}`}>
-                    <Button type='link' className='cvat-object-item-menu-change-color'>
-                        <Icon component={ColorizeIcon} />
-                        {`Change ${colorBy.toLowerCase()} color`}
-                    </Button>
-                </CVATTooltip>
-            </ColorPicker>
+        <Menu.Item {...rest} onClick={() => setColorPickerVisible(true)}>
+            <CVATTooltip title={`${changeColorShortcut}`}>
+                <Button type='link' className='cvat-object-item-menu-change-color'>
+                    <Icon component={ColorizeIcon} />
+                    {`Change ${colorBy.toLowerCase()} color`}
+                </Button>
+            </CVATTooltip>
         </Menu.Item>
     );
 }
@@ -292,7 +276,11 @@ export default function ItemMenu(props: Props): JSX.Element {
     const is2D = jobInstance.dimension === DimensionType.DIMENSION_2D;
 
     return (
-        <Menu className='cvat-object-item-menu' selectable={false}>
+        <Menu
+            onClick={() => window.document.body.dispatchEvent(new MouseEvent('mousedown', { bubbles: true }))}
+            className='cvat-object-item-menu'
+            selectable={false}
+        >
             <CreateURLItem key={MenuKeys.CREATE_URL} toolProps={props} />
             {!readonly && objectType !== ObjectType.TAG && (
                 <MakeCopyItem key={MenuKeys.COPY} toolProps={props} />

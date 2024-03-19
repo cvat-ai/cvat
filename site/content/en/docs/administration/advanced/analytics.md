@@ -125,6 +125,8 @@ Server events:
 
 - `create:label`, `update:label`, `delete:label`
 
+- `export:dataset`, `import:dataset`
+
 Client events:
 
 - `load:cvat`
@@ -146,6 +148,7 @@ Client events:
 - `press:shortcut`
 - `send:debug_info`
 
+- `run:annotations_action`
 - `click:element`
 
 <!--lint enable maximum-line-length-->

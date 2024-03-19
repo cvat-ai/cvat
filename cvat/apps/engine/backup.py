@@ -17,6 +17,7 @@ from datetime import datetime
 from tempfile import NamedTemporaryFile
 
 import django_rq
+from attr.converters import to_bool
 from django.conf import settings
 from django.db import transaction
 from django.utils import timezone
@@ -25,8 +26,7 @@ from rest_framework import serializers, status
 from rest_framework.parsers import JSONParser
 from rest_framework.renderers import JSONRenderer
 from rest_framework.response import Response
-from rest_framework.exceptions import ValidationError, PermissionDenied, NotFound
-from distutils.util import strtobool
+from rest_framework.exceptions import ValidationError
 
 import cvat.apps.dataset_manager as dm
 from cvat.apps.engine import models
@@ -38,12 +38,12 @@ from cvat.apps.engine.serializers import (AttributeSerializer, DataSerializer,
 from cvat.apps.engine.utils import (
     av_scan_paths, process_failed_job, configure_dependent_job_to_download_from_cs,
     get_rq_job_meta, get_import_rq_id, import_resource_with_clean_up_after,
-    sendfile, define_dependent_job, get_rq_lock_by_user
+    sendfile, define_dependent_job, get_rq_lock_by_user, build_backup_file_name,
 )
 from cvat.apps.engine.models import (
     StorageChoice, StorageMethodChoice, DataChoice, Task, Project, Location)
 from cvat.apps.engine.task import JobFileMapping, _create_thread
-from cvat.apps.engine.cloud_provider import db_storage_to_storage_instance
+from cvat.apps.engine.cloud_provider import download_file_from_bucket, export_resource_to_cloud_storage
 from cvat.apps.engine.location import StorageType, get_location_configuration
 from cvat.apps.engine.view_utils import get_cloud_storage_for_import_or_export
 from cvat.apps.dataset_manager.views import TASK_CACHE_TTL, PROJECT_CACHE_TTL, get_export_cache_dir, clear_export_cache, log_exception
@@ -944,7 +944,7 @@ def export(db_instance, request, queue_name):
     else:
         raise Exception(
             "Unexpected type of db_instance: {}".format(type(db_instance)))
-    use_settings = strtobool(str(use_target_storage_conf))
+    use_settings = to_bool(use_target_storage_conf)
     obj = db_instance if use_settings else request.query_params
     location_conf = get_location_configuration(
         obj=obj,
@@ -955,54 +955,49 @@ def export(db_instance, request, queue_name):
     queue = django_rq.get_queue(queue_name)
     rq_id = f"export:{obj_type}.id{db_instance.pk}-by-{request.user}"
     rq_job = queue.fetch_job(rq_id)
+
+    last_instance_update_time = timezone.localtime(db_instance.updated_date)
+    timestamp = datetime.strftime(last_instance_update_time, "%Y_%m_%d_%H_%M_%S")
+    location = location_conf.get('location')
+
     if rq_job:
-        last_project_update_time = timezone.localtime(db_instance.updated_date)
         rq_request = rq_job.meta.get('request', None)
         request_time = rq_request.get("timestamp", None) if rq_request else None
-        if request_time is None or request_time < last_project_update_time:
-            rq_job.cancel()
+        if request_time is None or request_time < last_instance_update_time:
+            # in case the server is configured with ONE_RUNNING_JOB_IN_QUEUE_PER_USER
+            # we have to enqueue dependent jobs after canceling one
+            rq_job.cancel(enqueue_dependents=settings.ONE_RUNNING_JOB_IN_QUEUE_PER_USER)
             rq_job.delete()
         else:
             if rq_job.is_finished:
-                file_path = rq_job.return_value()
-                if action == "download" and os.path.exists(file_path):
-                    rq_job.delete()
+                if location == Location.LOCAL:
+                    file_path = rq_job.return_value()
 
-                    timestamp = datetime.strftime(last_project_update_time,
-                        "%Y_%m_%d_%H_%M_%S")
-                    filename = filename or "{}_{}_backup_{}{}".format(
-                        obj_type, db_instance.name, timestamp,
-                        os.path.splitext(file_path)[1]).lower()
+                    if not file_path:
+                        return Response('A result for exporting job was not found for finished RQ job', status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
-                    location = location_conf.get('location')
-                    if location == Location.LOCAL:
+                    elif not os.path.exists(file_path):
+                        return Response('The result file does not exist in export cache', status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+                    filename = filename or build_backup_file_name(
+                        class_name=obj_type,
+                        identifier=db_instance.name,
+                        timestamp=timestamp,
+                        extension=os.path.splitext(file_path)[1]
+                    )
+
+                    if action == "download":
+                        rq_job.delete()
                         return sendfile(request, file_path, attachment=True,
                             attachment_filename=filename)
-                    elif location == Location.CLOUD_STORAGE:
-                        try:
-                            storage_id = location_conf['storage_id']
-                        except KeyError:
-                            raise serializers.ValidationError(
-                                'Cloud storage location was selected as the destination,'
-                                ' but cloud storage id was not specified')
 
-                        db_storage = get_cloud_storage_for_import_or_export(
-                            storage_id=storage_id, request=request,
-                            is_default=location_conf['is_default'])
-                        storage = db_storage_to_storage_instance(db_storage)
+                    return Response(status=status.HTTP_201_CREATED)
 
-                        try:
-                            storage.upload_file(file_path, filename)
-                        except (ValidationError, PermissionDenied, NotFound) as ex:
-                            msg = str(ex) if not isinstance(ex, ValidationError) else \
-                                '\n'.join([str(d) for d in ex.detail])
-                            return Response(data=msg, status=ex.status_code)
-                        return Response(status=status.HTTP_200_OK)
-                    else:
-                        raise NotImplementedError()
+                elif location == Location.CLOUD_STORAGE:
+                    rq_job.delete()
+                    return Response(status=status.HTTP_200_OK)
                 else:
-                    if os.path.exists(file_path):
-                        return Response(status=status.HTTP_201_CREATED)
+                    raise NotImplementedError()
             elif rq_job.is_failed:
                 exc_info = rq_job.meta.get('formatted_exception', str(rq_job.exc_info))
                 rq_job.delete()
@@ -1014,10 +1009,31 @@ def export(db_instance, request, queue_name):
     ttl = dm.views.PROJECT_CACHE_TTL.total_seconds()
     user_id = request.user.id
 
+    func = _create_backup if location == Location.LOCAL else export_resource_to_cloud_storage
+    func_args = (db_instance, Exporter, '{}_backup.zip'.format(obj_type), logger, cache_ttl)
+
+    if location == Location.CLOUD_STORAGE:
+        try:
+            storage_id = location_conf['storage_id']
+        except KeyError:
+            raise serializers.ValidationError(
+                'Cloud storage location was selected as the destination,'
+                ' but cloud storage id was not specified')
+
+        db_storage = get_cloud_storage_for_import_or_export(
+            storage_id=storage_id, request=request,
+            is_default=location_conf['is_default'])
+        filename_pattern = build_backup_file_name(
+            class_name=obj_type,
+            identifier=db_instance.name,
+            timestamp=timestamp,
+        )
+        func_args = (db_storage, filename, filename_pattern, _create_backup) + func_args
+
     with get_rq_lock_by_user(queue, user_id):
         queue.enqueue_call(
-            func=_create_backup,
-            args=(db_instance, Exporter, '{}_backup.zip'.format(obj_type), logger, cache_ttl),
+            func=func,
+            args=func_args,
             job_id=rq_id,
             meta=get_rq_job_meta(request=request, db_obj=db_instance),
             depends_on=define_dependent_job(queue, user_id, rq_id=rq_id),
@@ -1026,12 +1042,6 @@ def export(db_instance, request, queue_name):
         )
     return Response(status=status.HTTP_202_ACCEPTED)
 
-
-def _download_file_from_bucket(db_storage, filename, key):
-    storage = db_storage_to_storage_instance(db_storage)
-
-    with storage.download_fileobj(key) as data, open(filename, 'wb+') as f:
-        f.write(data.getbuffer())
 
 def _import(importer, request, queue, rq_id, Serializer, file_field_name, location_conf, filename=None):
     rq_job = queue.fetch_job(rq_id)
@@ -1077,7 +1087,7 @@ def _import(importer, request, queue, rq_id, Serializer, file_field_name, locati
             dependent_job = configure_dependent_job_to_download_from_cs(
                 queue=queue,
                 rq_id=rq_id,
-                rq_func=_download_file_from_bucket,
+                rq_func=download_file_from_bucket,
                 db_storage=db_storage,
                 filename=filename,
                 key=key,

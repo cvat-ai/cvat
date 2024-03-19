@@ -1,5 +1,5 @@
 // Copyright (C) 2020-2022 Intel Corporation
-// Copyright (C) 2022 CVAT.ai Corporation
+// Copyright (C) 2022-2024 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -83,14 +83,14 @@ Cypress.Commands.add('openProjectActions', (projectName) => {
         .parents('.cvat-projects-project-item-card')
         .within(() => {
             cy.get('.cvat-projects-project-item-description').within(() => {
-                cy.get('[type="button"]').trigger('mouseover');
+                cy.get('[type="button"]').click();
             });
         });
 });
 
 Cypress.Commands.add('clickInProjectMenu', (item, fromProjectPage, projectName = '') => {
     if (fromProjectPage) {
-        cy.get('.cvat-project-top-bar-actions').trigger('mouseover');
+        cy.get('.cvat-project-top-bar-actions').click();
     } else {
         cy.openProjectActions(projectName);
     }
@@ -254,7 +254,7 @@ Cypress.Commands.add('getDownloadFileName', () => {
 });
 
 Cypress.Commands.add('waitForFileUploadToCloudStorage', () => {
-    cy.intercept('GET', '**=download').as('download');
+    cy.intercept('GET', /.*\/(annotations|dataset|backup)/).as('download');
     cy.wait('@download', { requestTimeout: 7000 }).then((interseption) => {
         expect(interseption.response.statusCode).to.be.equal(200);
     });

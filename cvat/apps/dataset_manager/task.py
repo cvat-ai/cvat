@@ -12,7 +12,6 @@ from datumaro.components.errors import DatasetError, DatasetImportError, Dataset
 
 from django.db import transaction
 from django.db.models.query import Prefetch
-from django.utils import timezone
 from rest_framework.exceptions import ValidationError
 
 from cvat.apps.engine import models, serializers
@@ -389,48 +388,54 @@ class JobAnnotation:
         self.ir_data.tags = tags
 
     def _set_updated_date(self):
-        db_task = self.db_job.segment.task
-        db_task.updated_date = timezone.now()
-        db_task.save()
+        self.db_job.segment.task.touch()
+        self.db_job.touch()
 
-    def _save_to_db(self, data):
+    @staticmethod
+    def _data_is_empty(data):
+        return not (data["tags"] or data["shapes"] or data["tracks"])
+
+    def _create(self, data):
         self.reset()
         self._save_tags_to_db(data["tags"])
         self._save_shapes_to_db(data["shapes"])
         self._save_tracks_to_db(data["tracks"])
 
-        return self.ir_data.tags or self.ir_data.shapes or self.ir_data.tracks
-
-    def _create(self, data):
-        if self._save_to_db(data):
-            self._set_updated_date()
-            self.db_job.save()
-
     def create(self, data):
         self._create(data)
         handle_annotations_change(self.db_job, self.data, "create")
 
+        if not self._data_is_empty(self.data):
+            self._set_updated_date()
+
     def put(self, data):
         deleted_data = self._delete()
         handle_annotations_change(self.db_job, deleted_data, "delete")
+
+        deleted_data_is_empty = self._data_is_empty(deleted_data)
+
         self._create(data)
         handle_annotations_change(self.db_job, self.data, "create")
 
+        if not deleted_data_is_empty or not self._data_is_empty(self.data):
+            self._set_updated_date()
 
     def update(self, data):
         self._delete(data)
         self._create(data)
         handle_annotations_change(self.db_job, self.data, "update")
 
+        if not self._data_is_empty(self.data):
+            self._set_updated_date()
+
     def _delete(self, data=None):
-        deleted_shapes = 0
         deleted_data = {}
         if data is None:
             self.init_from_db()
             deleted_data = self.data
-            deleted_shapes += self.db_job.labeledimage_set.all().delete()[0]
-            deleted_shapes += self.db_job.labeledshape_set.all().delete()[0]
-            deleted_shapes += self.db_job.labeledtrack_set.all().delete()[0]
+            self.db_job.labeledimage_set.all().delete()
+            self.db_job.labeledshape_set.all().delete()
+            self.db_job.labeledtrack_set.all().delete()
         else:
             labeledimage_ids = [image["id"] for image in data["tags"]]
             labeledshape_ids = [shape["id"] for shape in data["shapes"]]
@@ -449,9 +454,9 @@ class JobAnnotation:
             self.ir_data.shapes = data['shapes']
             self.ir_data.tracks = data['tracks']
 
-            deleted_shapes += labeledimage_set.delete()[0]
-            deleted_shapes += labeledshape_set.delete()[0]
-            deleted_shapes += labeledtrack_set.delete()[0]
+            labeledimage_set.delete()
+            labeledshape_set.delete()
+            labeledtrack_set.delete()
 
             deleted_data = {
                 "tags": data["tags"],
@@ -459,14 +464,14 @@ class JobAnnotation:
                 "tracks": data["tracks"],
             }
 
-        if deleted_shapes:
-            self._set_updated_date()
-
         return deleted_data
 
     def delete(self, data=None):
         deleted_data = self._delete(data)
         handle_annotations_change(self.db_job, deleted_data, "delete")
+
+        if not self._data_is_empty(deleted_data):
+            self._set_updated_date()
 
     @staticmethod
     def _extend_attributes(attributeval_set, default_attribute_values):
@@ -551,9 +556,9 @@ class JobAnnotation:
         for db_shape in db_shapes:
             self._extend_attributes(db_shape.labeledshapeattributeval_set,
                 self.db_attributes[db_shape.label_id]["all"].values())
-            db_shape.elements = []
 
             if db_shape.parent is None:
+                db_shape.elements = []
                 shapes[db_shape.id] = db_shape
             else:
                 if db_shape.parent not in elements:
@@ -647,6 +652,7 @@ class JobAnnotation:
                 default_attribute_values = db_shape["trackedshapeattributeval_set"]
 
             if db_track.parent is None:
+                db_track.elements = []
                 tracks[db_track.id] = db_track
             else:
                 if db_track.parent not in elements:

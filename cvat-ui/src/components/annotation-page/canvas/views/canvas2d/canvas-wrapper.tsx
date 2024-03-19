@@ -1,5 +1,5 @@
 // Copyright (C) 2020-2022 Intel Corporation
-// Copyright (C) 2022-2023 CVAT.ai Corporation
+// Copyright (C) 2022-2024 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -18,11 +18,11 @@ import GlobalHotKeys, { KeyMap } from 'utils/mousetrap-react';
 import {
     ColorBy, GridColor, ObjectType, Workspace, ShapeType, ActiveControl, CombinedState,
 } from 'reducers';
-import { LogType } from 'cvat-logger';
+import { EventScope } from 'cvat-logger';
 import { Canvas, HighlightSeverity, CanvasHint } from 'cvat-canvas-wrapper';
 import { Canvas3d } from 'cvat-canvas3d-wrapper';
 import {
-    AnnotationConflict, FramesMetaData, Job, ObjectState, QualityConflict, getCore,
+    AnnotationConflict, FramesMetaData, ObjectState, QualityConflict, getCore,
 } from 'cvat-core-wrapper';
 import config from 'config';
 import CVATTooltip from 'components/common/cvat-tooltip';
@@ -72,8 +72,7 @@ interface StateToProps {
     activatedStateID: number | null;
     activatedElementID: number | null;
     activatedAttributeID: number | null;
-    statesSources: number[];
-    annotations: any[];
+    annotations: ObjectState[];
     frameData: any;
     frameAngle: number;
     canvasIsReady: boolean;
@@ -125,12 +124,12 @@ interface DispatchToProps {
     onResetCanvas: () => void;
     updateActiveControl: (activeControl: ActiveControl) => void;
     onUpdateAnnotations(states: ObjectState[]): void;
-    onCreateAnnotations(sessionInstance: Job, frame: number, states: ObjectState[]): void;
-    onMergeAnnotations(sessionInstance: Job, frame: number, states: ObjectState[]): void;
-    onSplitAnnotations(sessionInstance: Job, frame: number, state: ObjectState): void;
-    onGroupAnnotations(sessionInstance: Job, frame: number, states: ObjectState[]): void;
-    onJoinAnnotations(sessionInstance: Job, states: ObjectState[], points: number[]): void;
-    onSliceAnnotations(sessionInstance: Job, state: ObjectState, results: number[][]): void;
+    onCreateAnnotations(states: ObjectState[]): void;
+    onMergeAnnotations(states: ObjectState[]): void;
+    onSplitAnnotations(state: ObjectState): void;
+    onGroupAnnotations(states: ObjectState[]): void;
+    onJoinAnnotations(states: ObjectState[], points: number[]): void;
+    onSliceAnnotations(state: ObjectState, results: number[][]): void;
     onActivateObject: (activatedStateID: number | null, activatedElementID: number | null) => void;
     onAddZLayer(): void;
     onSwitchZLayer(cur: number): void;
@@ -162,7 +161,6 @@ function mapStateToProps(state: CombinedState): StateToProps {
                 activatedStateID,
                 activatedElementID,
                 activatedAttributeID,
-                statesSources,
                 zLayer: { cur: curZLayer, min: minZLayer, max: maxZLayer },
                 highlightedConflict,
             },
@@ -251,7 +249,6 @@ function mapStateToProps(state: CombinedState): StateToProps {
             activeControl === ActiveControl.DRAW_POLYLINE ||
             activeControl === ActiveControl.DRAW_MASK ||
             activeControl === ActiveControl.EDIT,
-        statesSources,
         conflicts,
         showGroundTruth,
         highlightedConflict,
@@ -274,23 +271,23 @@ function mapDispatchToProps(dispatch: any): DispatchToProps {
         onUpdateAnnotations(states: ObjectState[]): void {
             dispatch(updateAnnotationsAsync(states));
         },
-        onCreateAnnotations(sessionInstance: Job, frame: number, states: ObjectState[]): void {
-            dispatch(createAnnotationsAsync(sessionInstance, frame, states));
+        onCreateAnnotations(states: ObjectState[]): void {
+            dispatch(createAnnotationsAsync(states));
         },
-        onMergeAnnotations(sessionInstance: Job, frame: number, states: ObjectState[]): void {
-            dispatch(mergeAnnotationsAsync(sessionInstance, frame, states));
+        onMergeAnnotations(states: ObjectState[]): void {
+            dispatch(mergeAnnotationsAsync(states));
         },
-        onGroupAnnotations(sessionInstance: Job, frame: number, states: ObjectState[]): void {
-            dispatch(groupAnnotationsAsync(sessionInstance, frame, states));
+        onGroupAnnotations(states: ObjectState[]): void {
+            dispatch(groupAnnotationsAsync(states));
         },
-        onJoinAnnotations(sessionInstance: Job, states: ObjectState[], points: number[]): void {
-            dispatch(joinAnnotationsAsync(sessionInstance, states, points));
+        onJoinAnnotations(states: ObjectState[], points: number[]): void {
+            dispatch(joinAnnotationsAsync(states, points));
         },
-        onSliceAnnotations(sessionInstance: Job, state: ObjectState, results: number[][]): void {
-            dispatch(sliceAnnotationsAsync(sessionInstance, state, results));
+        onSliceAnnotations(state: ObjectState, results: number[][]): void {
+            dispatch(sliceAnnotationsAsync(state, results));
         },
-        onSplitAnnotations(sessionInstance: any, frame: number, state: ObjectState): void {
-            dispatch(splitAnnotationsAsync(sessionInstance, frame, state));
+        onSplitAnnotations(state: ObjectState): void {
+            dispatch(splitAnnotationsAsync(state));
         },
         onActivateObject(activatedStateID: number | null, activatedElementID: number | null = null): void {
             if (activatedStateID === null) {
@@ -375,7 +372,7 @@ class CanvasWrapperComponent extends React.PureComponent<Props> {
         wrapper.appendChild(canvasInstance.html());
 
         canvasInstance.configure({
-            forceDisableEditing: workspace === Workspace.REVIEW_WORKSPACE,
+            forceDisableEditing: workspace === Workspace.REVIEW,
             undefinedAttrValue: config.UNDEFINED_ATTRIBUTE_VALUE,
             displayAllText: showObjectsTextAlways,
             autoborders: automaticBordering,
@@ -431,7 +428,6 @@ class CanvasWrapperComponent extends React.PureComponent<Props> {
             showProjections,
             colorBy,
             onFetchAnnotation,
-            statesSources,
             showGroundTruth,
             highlightedConflict,
             imageFilters,
@@ -485,12 +481,15 @@ class CanvasWrapperComponent extends React.PureComponent<Props> {
         }
 
         if (prevProps.highlightedConflict !== highlightedConflict) {
-            const severity: HighlightSeverity | null =
-                highlightedConflict?.severity ? (highlightedConflict?.severity as any) : null;
-            const highlightedElementsIDs = highlightedConflict?.annotationConflicts.map(
-                (conflict: AnnotationConflict) => conflict.clientID,
-            );
-            canvasInstance.highlight(highlightedElementsIDs || null, severity);
+            const severity: HighlightSeverity | undefined = highlightedConflict
+                ?.severity as unknown as HighlightSeverity;
+            const highlightedClientIDs = (highlightedConflict?.annotationConflicts || [])
+                .map((conflict: AnnotationConflict) => annotations
+                    .find((state) => state.serverID === conflict.serverID && state.objectType === conflict.type),
+                ).filter((state: ObjectState | undefined) => !!state)
+                .map((state) => state?.clientID) as number[];
+
+            canvasInstance.highlight(highlightedClientIDs, severity || null);
         }
 
         if (gridSize !== prevProps.gridSize) {
@@ -526,7 +525,6 @@ class CanvasWrapperComponent extends React.PureComponent<Props> {
 
         if (
             prevProps.annotations !== annotations ||
-            prevProps.statesSources !== statesSources ||
             prevProps.frameData !== frameData ||
             prevProps.curZLayer !== curZLayer
         ) {
@@ -550,11 +548,11 @@ class CanvasWrapperComponent extends React.PureComponent<Props> {
         }
 
         if (prevProps.workspace !== workspace) {
-            if (workspace === Workspace.REVIEW_WORKSPACE) {
+            if (workspace === Workspace.REVIEW) {
                 canvasInstance.configure({
                     forceDisableEditing: true,
                 });
-            } else if (prevProps.workspace === Workspace.REVIEW_WORKSPACE) {
+            } else if (prevProps.workspace === Workspace.REVIEW) {
                 canvasInstance.configure({
                     forceDisableEditing: false,
                 });
@@ -656,41 +654,41 @@ class CanvasWrapperComponent extends React.PureComponent<Props> {
         };
 
         if (isDrawnFromScratch) {
-            jobInstance.logger.log(LogType.drawObject, { count: 1, duration, ...payload });
+            jobInstance.logger.log(EventScope.drawObject, { count: 1, duration, ...payload });
         } else {
-            jobInstance.logger.log(LogType.pasteObject, { count: 1, duration, ...payload });
+            jobInstance.logger.log(EventScope.pasteObject, { count: 1, duration, ...payload });
         }
 
         const objectState = new cvat.classes.ObjectState(state);
-        onCreateAnnotations(jobInstance, frame, [objectState]);
+        onCreateAnnotations([objectState]);
     };
 
     private onCanvasObjectsMerged = (event: any): void => {
         const {
-            jobInstance, frame, onMergeAnnotations, updateActiveControl,
+            jobInstance, onMergeAnnotations, updateActiveControl,
         } = this.props;
 
         updateActiveControl(ActiveControl.CURSOR);
         const { states, duration } = event.detail;
-        jobInstance.logger.log(LogType.mergeObjects, {
+        jobInstance.logger.log(EventScope.mergeObjects, {
             duration,
             count: states.length,
         });
-        onMergeAnnotations(jobInstance, frame, states);
+        onMergeAnnotations(states);
     };
 
     private onCanvasObjectsGroupped = (event: any): void => {
         const {
-            jobInstance, frame, onGroupAnnotations, updateActiveControl,
+            jobInstance, onGroupAnnotations, updateActiveControl,
         } = this.props;
 
         updateActiveControl(ActiveControl.CURSOR);
         const { states, duration } = event.detail;
-        jobInstance.logger.log(LogType.groupObjects, {
+        jobInstance.logger.log(EventScope.groupObjects, {
             duration,
             count: states.length,
         });
-        onGroupAnnotations(jobInstance, frame, states);
+        onGroupAnnotations(states);
     };
 
     private onCanvasObjectsJoined = (event: any): void => {
@@ -700,25 +698,25 @@ class CanvasWrapperComponent extends React.PureComponent<Props> {
 
         updateActiveControl(ActiveControl.CURSOR);
         const { states, points, duration } = event.detail;
-        jobInstance.logger.log(LogType.joinObjects, {
+        jobInstance.logger.log(EventScope.joinObjects, {
             duration,
             count: states.length,
         });
-        onJoinAnnotations(jobInstance, states, points);
+        onJoinAnnotations(states, points);
     };
 
     private onCanvasTrackSplitted = (event: any): void => {
         const {
-            jobInstance, frame, onSplitAnnotations, updateActiveControl,
+            jobInstance, onSplitAnnotations, updateActiveControl,
         } = this.props;
 
         updateActiveControl(ActiveControl.CURSOR);
         const { state, duration } = event.detail;
-        jobInstance.logger.log(LogType.splitObjects, {
+        jobInstance.logger.log(EventScope.splitObjects, {
             duration,
             count: 1,
         });
-        onSplitAnnotations(jobInstance, frame, state);
+        onSplitAnnotations(state);
     };
 
     private onCanvasPositionSelected = (event: any): void => {
@@ -732,7 +730,7 @@ class CanvasWrapperComponent extends React.PureComponent<Props> {
         const { workspace, activatedStateID, onActivateObject } = this.props;
 
         if ((e.target as HTMLElement).tagName === 'svg' && e.button !== 2) {
-            if (activatedStateID !== null && workspace !== Workspace.ATTRIBUTE_ANNOTATION) {
+            if (activatedStateID !== null && workspace !== Workspace.ATTRIBUTES) {
                 onActivateObject(null, null);
             }
         }
@@ -748,23 +746,23 @@ class CanvasWrapperComponent extends React.PureComponent<Props> {
     private onCanvasShapeDragged = (e: any): void => {
         const { jobInstance } = this.props;
         const { id } = e.detail;
-        jobInstance.logger.log(LogType.dragObject, { id });
+        jobInstance.logger.log(EventScope.dragObject, { id });
     };
 
     private onCanvasShapeResized = (e: any): void => {
         const { jobInstance } = this.props;
         const { id } = e.detail;
-        jobInstance.logger.log(LogType.resizeObject, { id });
+        jobInstance.logger.log(EventScope.resizeObject, { id });
     };
 
     private onCanvasImageFitted = (): void => {
         const { jobInstance } = this.props;
-        jobInstance.logger.log(LogType.fitImage);
+        jobInstance.logger.log(EventScope.fitImage);
     };
 
     private onCanvasZoomChanged = (): void => {
         const { jobInstance } = this.props;
-        jobInstance.logger.log(LogType.zoomImage);
+        jobInstance.logger.log(EventScope.zoomImage);
     };
 
     private onCanvasShapeClicked = (e: any): void => {
@@ -798,12 +796,11 @@ class CanvasWrapperComponent extends React.PureComponent<Props> {
             jobInstance, activatedStateID, activatedElementID, workspace, onActivateObject,
         } = this.props;
 
-        if (![Workspace.STANDARD, Workspace.REVIEW_WORKSPACE].includes(workspace)) {
+        if (![Workspace.STANDARD, Workspace.REVIEW].includes(workspace)) {
             return;
         }
 
         const result = await jobInstance.annotations.select(event.detail.states, event.detail.x, event.detail.y);
-
         if (result && result.state) {
             if (['polyline', 'points'].includes(result.state.shapeType)) {
                 if (result.distance > MAX_DISTANCE_TO_OPEN_SHAPE) {
@@ -840,12 +837,12 @@ class CanvasWrapperComponent extends React.PureComponent<Props> {
         const { jobInstance, updateActiveControl, onSliceAnnotations } = this.props;
         const { state, results, duration } = event.detail;
         updateActiveControl(ActiveControl.CURSOR);
-        jobInstance.logger.log(LogType.sliceObject, {
+        jobInstance.logger.log(EventScope.sliceObject, {
             count: 1,
             duration,
             clientID: state.clientID,
         });
-        onSliceAnnotations(jobInstance, state, results);
+        onSliceAnnotations(state, results);
     };
     private onCanvasDragStart = (): void => {
         const { updateActiveControl } = this.props;
@@ -907,7 +904,7 @@ class CanvasWrapperComponent extends React.PureComponent<Props> {
 
         if (activatedStateID !== null) {
             const [activatedState] = annotations.filter((state: any): boolean => state.clientID === activatedStateID);
-            if (workspace === Workspace.ATTRIBUTE_ANNOTATION) {
+            if (workspace === Workspace.ATTRIBUTES) {
                 if (activatedState.objectType !== ObjectType.TAG) {
                     canvasInstance.focus(activatedStateID, aamZoomMargin);
                 } else {
@@ -917,21 +914,21 @@ class CanvasWrapperComponent extends React.PureComponent<Props> {
             if (activatedState && activatedState.objectType !== ObjectType.TAG) {
                 canvasInstance.activate(activatedStateID, activatedAttributeID);
             }
-        } else if (workspace === Workspace.ATTRIBUTE_ANNOTATION) {
+        } else if (workspace === Workspace.ATTRIBUTES) {
             canvasInstance.fit();
         }
     }
 
     private updateCanvas(): void {
         const {
-            curZLayer, annotations, frameData, statesSources,
-            workspace, groundTruthJobFramesMeta, frame, imageFilters,
+            curZLayer, annotations, frameData,
+            workspace, groundTruthJobFramesMeta,
+            frame, imageFilters,
         } = this.props;
-        const { canvasInstance } = this.props as { canvasInstance: Canvas };
 
+        const { canvasInstance } = this.props as { canvasInstance: Canvas };
         if (frameData !== null && canvasInstance) {
             const filteredAnnotations = filterAnnotations(annotations, {
-                statesSources,
                 frame,
                 groundTruthJobFramesMeta,
                 workspace,
@@ -1121,7 +1118,12 @@ class CanvasWrapperComponent extends React.PureComponent<Props> {
 
                 <BrushTools />
 
-                <Dropdown trigger={['click']} placement='topCenter' overlay={<ImageSetupsContent />}>
+                <Dropdown
+                    destroyPopupOnHide
+                    trigger={['click']}
+                    placement='topCenter'
+                    overlay={<ImageSetupsContent />}
+                >
                     <UpOutlined className='cvat-canvas-image-setups-trigger' />
                 </Dropdown>
 

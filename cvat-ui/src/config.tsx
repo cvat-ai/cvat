@@ -5,8 +5,8 @@
 
 import React from 'react';
 
-const UNDEFINED_ATTRIBUTE_VALUE = '__undefined__';
 const NO_BREAK_SPACE = '\u00a0';
+const UNDEFINED_ATTRIBUTE_VALUE = '__undefined__';
 const CHANGELOG_URL = 'https://github.com/opencv/cvat/blob/develop/CHANGELOG.md';
 const LICENSE_URL = 'https://github.com/opencv/cvat/blob/develop/LICENSE';
 const DISCORD_URL = 'https://discord.gg/fNR3eXfk6C';
@@ -127,6 +127,10 @@ const RESET_NOTIFICATIONS_PATHS = {
 const BUCKET_CONTENT_KEY = 'All files';
 
 const NUMERIC_VALUE_CLAMP_THRESHOLD = 5000;
+const OPENCV_PATH = '/assets/opencv_4.8.0.js';
+
+const LOCAL_STORAGE_SEEN_GUIDES_MEMORY_LIMIT = 10;
+const LOCAL_STORAGE_LAST_FRAME_MEMORY_LIMIT = 20;
 
 export default {
     UNDEFINED_ATTRIBUTE_VALUE,
@@ -164,4 +168,7 @@ export default {
     RESET_NOTIFICATIONS_PATHS,
     BUCKET_CONTENT_KEY,
     NUMERIC_VALUE_CLAMP_THRESHOLD,
+    OPENCV_PATH,
+    LOCAL_STORAGE_SEEN_GUIDES_MEMORY_LIMIT,
+    LOCAL_STORAGE_LAST_FRAME_MEMORY_LIMIT,
 };

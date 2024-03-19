@@ -6,12 +6,12 @@ import { omit, throttle } from 'lodash';
 import { ArgumentError } from './exceptions';
 import { SerializedCollection } from './server-response-types';
 import { Job, Task } from './session';
-import { ObjectType } from './enums';
+import { EventScope, ObjectType } from './enums';
 import ObjectState from './object-state';
 import { getAnnotations, getCollection } from './annotations';
 
 export interface SingleFrameActionInput {
-    collection: Omit<SerializedCollection, 'tracks' | 'tags'>;
+    collection: Omit<SerializedCollection, 'tracks' | 'tags' | 'version'>;
     frameData: {
         width: number;
         height: number;
@@ -20,7 +20,7 @@ export interface SingleFrameActionInput {
 }
 
 export interface SingleFrameActionOutput {
-    collection: Omit<SerializedCollection, 'tracks' | 'tags'>;
+    collection: Omit<SerializedCollection, 'tracks' | 'tags' | 'version'>;
 }
 
 export enum ActionParameterType {
@@ -114,6 +114,11 @@ async function runSingleFrameChain(
     cancelled: () => boolean,
 ): Promise<void> {
     type IDsToHandle = { shapes: number[] };
+    const event = await instance.logger.log(EventScope.annotationsAction, {
+        from: frameFrom,
+        to: frameTo,
+        chain: actionsChain.map((action) => action.name).join(' => '),
+    }, true);
 
     // if called too fast, it will freeze UI, so, add throttling here
     const wrappedOnProgress = throttle(onProgress, 100, { leading: true, trailing: true });
@@ -216,6 +221,8 @@ async function runSingleFrameChain(
             tracks: exportedCollection.tracks,
             tags: exportedCollection.tags,
         });
+
+        event.close();
     } finally {
         wrappedOnProgress('Finalizing', 100);
         await Promise.all(actionsChain.map((action) => action.destroy()));

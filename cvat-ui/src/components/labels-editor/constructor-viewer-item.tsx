@@ -1,5 +1,5 @@
 // Copyright (C) 2020-2022 Intel Corporation
-// Copyright (C) 2023 CVAT.ai Corporation
+// Copyright (C) 2023-2024 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -8,6 +8,7 @@ import { DeleteOutlined, EditOutlined } from '@ant-design/icons';
 import Text from 'antd/lib/typography/Text';
 
 import CVATTooltip from 'components/common/cvat-tooltip';
+import { computeTextColor } from 'utils/compute-text-color';
 import config from 'config';
 import { LabelOptColor } from './common';
 
@@ -24,18 +25,7 @@ export default function ConstructorViewerItem(props: ConstructorViewerItemProps)
     } = props;
 
     const backgroundColor = color || config.NEW_LABEL_COLOR;
-    let textColor = '#ffffff';
-    try {
-        // convert color to grayscale and from the result get better text color
-        // (for darken background -> lighter text, etc.)
-        const [r, g, b] = [backgroundColor.slice(1, 3), backgroundColor.slice(3, 5), backgroundColor.slice(5, 7)];
-        const grayscale = (parseInt(r, 16) + parseInt(g, 16) + parseInt(b, 16)) / 3;
-        if (grayscale - 128 >= 0) {
-            textColor = '#000000';
-        }
-    } catch (_: any) {
-        // nothing to do
-    }
+    const textColor = computeTextColor(backgroundColor);
 
     return (
         <div style={{ background: backgroundColor }} className='cvat-constructor-viewer-item'>

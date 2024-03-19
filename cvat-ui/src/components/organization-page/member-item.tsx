@@ -1,4 +1,5 @@
 // Copyright (C) 2021-2022 Intel Corporation
+// Copyright (C) 2024 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -7,14 +8,13 @@ import { useSelector } from 'react-redux';
 import Select from 'antd/lib/select';
 import Text from 'antd/lib/typography/Text';
 import Dropdown from 'antd/lib/dropdown';
-import Menu from 'antd/lib/menu';
-// eslint-disable-next-line import/no-extraneous-dependencies
-import { MenuInfo } from 'rc-menu/lib/interface';
 import { Row, Col } from 'antd/lib/grid';
 import moment from 'moment';
 import { DeleteOutlined, MoreOutlined } from '@ant-design/icons';
 import Modal from 'antd/lib/modal';
 import { CombinedState } from 'reducers';
+import Menu, { MenuInfo } from 'components/dropdown-menu';
+
 import { Membership } from 'cvat-core-wrapper';
 
 export interface Props {
@@ -42,20 +42,23 @@ function MemberItem(props: Props): JSX.Element {
     const { username: selfUserName } = useSelector((state: CombinedState) => state.auth.user);
 
     const invitationActionsMenu = invitation && (
-        <Dropdown overlay={(
-            <Menu onClick={(action: MenuInfo) => {
-                if (action.key === MenuKeys.RESEND_INVITATION) {
-                    onResendInvitation(invitation.key);
-                } else if (action.key === MenuKeys.DELETE_INVITATION) {
-                    onDeleteInvitation(invitation.key);
-                }
-            }}
-            >
-                <Menu.Item key={MenuKeys.RESEND_INVITATION}>Resend invitation</Menu.Item>
-                <Menu.Divider />
-                <Menu.Item key={MenuKeys.DELETE_INVITATION}>Remove invitation</Menu.Item>
-            </Menu>
-        )}
+        <Dropdown
+            destroyPopupOnHide
+            trigger={['click']}
+            overlay={(
+                <Menu onClick={(action: MenuInfo) => {
+                    if (action.key === MenuKeys.RESEND_INVITATION) {
+                        onResendInvitation(invitation.key);
+                    } else if (action.key === MenuKeys.DELETE_INVITATION) {
+                        onDeleteInvitation(invitation.key);
+                    }
+                }}
+                >
+                    <Menu.Item key={MenuKeys.RESEND_INVITATION}>Resend invitation</Menu.Item>
+                    <Menu.Divider />
+                    <Menu.Item key={MenuKeys.DELETE_INVITATION}>Remove invitation</Menu.Item>
+                </Menu>
+            )}
         >
             <MoreOutlined className='cvat-organization-invitation-actions-button cvat-menu-icon' />
         </Dropdown>

@@ -1,5 +1,5 @@
 // Copyright (C) 2020-2022 Intel Corporation
-// Copyright (C) 2022-2023 CVAT.ai Corporation
+// Copyright (C) 2022-2024 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -254,17 +254,18 @@ describe('Feature: delete a task', () => {
 
 describe('Feature: delete a label', () => {
     test('delete a label', async () => {
-        let result = await cvat.tasks.get({
+        const [task] = await cvat.tasks.get({
             id: 100,
         });
 
-        const labelsLength = result[0].labels.length;
-        const deletedLabels = result[0].labels.filter((el) => el.name !== 'person');
-        result[0].labels = deletedLabels;
-        result[0].save();
-        result = await cvat.tasks.get({
+        const labelsLength = task.labels.length;
+        const deletedLabels = task.labels.filter((el) => el.name !== 'person');
+        task.labels = deletedLabels;
+        const updatedTask = await task.save();
+        const [newlyRequestTask] = await cvat.tasks.get({
             id: 100,
         });
-        expect(result[0].labels).toHaveLength(labelsLength - 1);
+        expect(updatedTask.labels).toHaveLength(labelsLength - 1);
+        expect(newlyRequestTask.labels).toHaveLength(labelsLength - 1);
     });
 });

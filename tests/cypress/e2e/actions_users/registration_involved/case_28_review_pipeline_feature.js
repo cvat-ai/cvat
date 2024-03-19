@@ -71,7 +71,7 @@ context('Review pipeline feature', () => {
         cy.get('.cvat-tasks-page').should('exist').and('be.visible');
         cy.headlessCreateTask(taskSpec, dataSpec).then((response) => {
             taskID = response.taskID;
-            jobIDs = response.jobID;
+            jobIDs = response.jobIDs;
         });
         cy.logout();
     });
@@ -97,10 +97,11 @@ context('Review pipeline feature', () => {
         });
     });
 
+    const customIssueDescription = 'Issue with a custom text';
     describe('Testing review pipeline: interaction between requester/annotator/reviewer', {
         scrollBehavior: false,
     }, () => {
-        it('Review pipeline', () => {
+        it('Review pipeline, part 1', () => {
             // Annotator, reviewer login, the task is not visible
             for (const user of Object.values(additionalUsers)) {
                 cy.login(user.username, user.password);
@@ -170,7 +171,6 @@ context('Review pipeline feature', () => {
             cy.get('#cvat_canvas_content').click({ force: true }); // Close the context menu
 
             // The reviewer creates different issues with a custom text
-            const customIssueDescription = 'Issue with a custom text';
             cy.goToNextFrame(1);
             cy.createIssueFromObject(2, 'Open an issue ...', customIssueDescription);
             cy.checkIssueLabel(customIssueDescription);
@@ -179,11 +179,18 @@ context('Review pipeline feature', () => {
             // Use one of items to create quick issue on another object on another frame. Issue has been created
             cy.goToNextFrame(2);
             cy.createIssueFromObject(3, 'Quick issue ...', customIssueDescription);
-
-            const countIssuesByFrame = [[0, 1, 'Wrong position'], [1, 1, customIssueDescription], [2, 1, customIssueDescription]];
             // The reviewer reloads the page, all the issues still exist
             cy.reload();
             cy.get('.cvat-canvas-container').should('exist');
+        });
+
+        it('Review pipeline, part 2', () => {
+            // this is the same test, but Cypress can't handle too many commands
+            // in one test, sometimes raising out of memory exception
+            // this test is devided artifically into two parts
+            // https://github.com/cypress-io/cypress/issues/27415
+
+            const countIssuesByFrame = [[0, 1, 'Wrong position'], [1, 1, customIssueDescription], [2, 1, customIssueDescription]];
             for (const [frame, issues, text] of countIssuesByFrame) {
                 cy.goCheckFrameNumber(frame);
                 cy.get('.cvat_canvas_issue_region').should('have.length', issues);

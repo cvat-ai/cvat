@@ -78,7 +78,7 @@
     "source-map-support": "^0.5.19",
     "style-loader": "^1.0.0",
     "stylelint": "^15.10.2",
-    "stylelint-config-standard-scss": "^10.0.0",
+    "stylelint-config-standard-scss": "^11.1.0",
     "typescript": "5.0.2",
     "vfile-reporter-json": "^2.0.2",
     "webpack": "^5.76.0",
@@ -128,6 +128,8 @@
   },
   "dependencies": {
     "@types/fabric": "^4.5.7",
-    "fabric": "^5.2.1"
+    "@types/lodash": "^4.14.191",
+    "fabric": "^5.2.1",
+    "lodash": "^4.17.21"
   }
 }

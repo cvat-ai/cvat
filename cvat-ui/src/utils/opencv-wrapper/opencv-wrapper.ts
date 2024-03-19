@@ -5,6 +5,7 @@
 
 import { ObjectState, ShapeType, getCore } from 'cvat-core-wrapper';
 import waitFor from 'utils/wait-for';
+import config from 'config';
 import HistogramEqualizationImplementation, { HistogramEqualization } from './histogram-equalization';
 import TrackerMImplementation from './tracker-mil';
 import IntelligentScissorsImplementation, { IntelligentScissors } from './intelligent-scissors';
@@ -64,7 +65,7 @@ export class OpenCVWrapper {
     }
 
     private async inject(): Promise<void> {
-        const response = await fetch('/assets/opencv_4.8.0.js');
+        const response = await fetch(config.OPENCV_PATH);
         if (response.status !== 200) {
             throw new Error(`Response status ${response.status}. ${response.statusText}`);
         }

@@ -1,5 +1,5 @@
 // Copyright (C) 2020-2022 Intel Corporation
-// Copyright (C) 2023 CVAT.ai Corporation
+// Copyright (C) 2023-2024 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -308,21 +308,22 @@ context('Filters functionality.', () => {
 
         it('Verify to show all filters', () => {
             cy.checkFiltersModalOpened();
-            cy.get('.recently-used-wrapper').trigger('mouseover');
-            cy.get('.ant-dropdown')
-                .not('.ant-dropdown-hidden')
-                .within(() => {
-                    cvatFiltesList.forEach((filterValue) => cy.contains('[role="menuitem"]', filterValue));
+            cy.get('.cvat-recently-used-filters-wrapper').click();
+            cy.get('.cvat-recently-used-filters-dropdown').should('exist').and('be.visible').within(() => {
+                cvatFiltesList.forEach((filterValue) => {
+                    cy.get('li').contains('[role="menuitem"]', filterValue).should('have.length', 1);
                 });
+            });
+            cy.get('.cvat-recently-used-filters-wrapper').click();
         });
 
         it('Select filter: type == "shape"', () => {
-            cy.selectFilterValue('type == "shape"'); // #cvat_canvas_shape_1,3, #cvat-objects-sidebar-state-item-1,3
+            cy.selectFilterValue(new RegExp('^type == "shape"$'));
             checkingFilterApplication([1, 3]);
         });
 
         it('Select filter: objectID == 4', () => {
-            cy.selectFilterValue('objectID == 4'); // #cvat_canvas_shape_4, #cvat-objects-sidebar-state-item-4
+            cy.selectFilterValue(new RegExp('^objectID == 4$'));
             checkingFilterApplication([4]);
         });
     });

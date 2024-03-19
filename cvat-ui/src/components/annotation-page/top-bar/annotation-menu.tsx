@@ -1,5 +1,5 @@
 // Copyright (C) 2020-2022 Intel Corporation
-// Copyright (C) 2022 CVAT.ai Corporation
+// Copyright (C) 2022-2024 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -7,16 +7,15 @@ import React from 'react';
 import ReactDOM from 'react-dom';
 import { withRouter, RouteComponentProps } from 'react-router';
 
-import Menu from 'antd/lib/menu';
 import Modal from 'antd/lib/modal';
 import Text from 'antd/lib/typography/Text';
 import InputNumber from 'antd/lib/input-number';
 import Checkbox from 'antd/lib/checkbox';
 import Collapse from 'antd/lib/collapse';
 
-// eslint-disable-next-line import/no-extraneous-dependencies
-import { MenuInfo } from 'rc-menu/lib/interface';
 import CVATTooltip from 'components/common/cvat-tooltip';
+import Menu, { MenuInfo } from 'components/dropdown-menu';
+
 import { getCore, JobStage } from 'cvat-core-wrapper';
 import AnnotationsActionsModalContent from '../annotations-actions/annotations-actions-modal';
 
@@ -29,7 +28,7 @@ interface Props {
     stopFrame: number;
     removeAnnotations(startnumber: number | null, endnumber: number | null, delTrackKeyframesOnly: boolean): void;
     setForceExitAnnotationFlag(forceExit: boolean): void;
-    saveAnnotations(jobInstance: any, afterSave?: () => void): void;
+    saveAnnotations(afterSave?: () => void): void;
 }
 
 export enum Actions {
@@ -72,7 +71,7 @@ function AnnotationMenuComponent(props: Props & RouteComponentProps): JSX.Elemen
                         children: 'No',
                     },
                     onOk: () => {
-                        saveAnnotations(jobInstance, () => onClickMenu(_params));
+                        saveAnnotations(() => onClickMenu(_params));
                     },
                     onCancel: () => {
                         // do not ask leave confirmation
@@ -187,7 +186,14 @@ function AnnotationMenuComponent(props: Props & RouteComponentProps): JSX.Elemen
     };
 
     return (
-        <Menu onClick={(params: MenuInfo) => onClickMenuWrapper(params)} className='cvat-annotation-menu' selectable={false}>
+        <Menu
+            triggerSubMenuAction='click'
+            onClick={(params: MenuInfo) => {
+                onClickMenuWrapper(params);
+            }}
+            className='cvat-annotation-menu'
+            selectable={false}
+        >
             <Menu.Item key={Actions.LOAD_JOB_ANNO}>Upload annotations</Menu.Item>
             <Menu.Item key={Actions.EXPORT_JOB_DATASET}>Export job dataset</Menu.Item>
             <Menu.Item key={Actions.REMOVE_ANNOTATIONS}>Remove annotations</Menu.Item>

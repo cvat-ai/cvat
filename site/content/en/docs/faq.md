@@ -138,7 +138,7 @@ To do this, you will need to edit `traefik.http.<router>.cvat.rule` docker label
 (see [the documentation](https://doc.traefik.io/traefik/routing/routers/#rule) on Traefik rules for more details):
 
 ```yaml
-  cvat:
+  cvat_server:
     labels:
       - traefik.http.routers.cvat.rule=(Host(`example1.com`) || Host(`example2.com`)) &&
           PathPrefix(`/api/`, `/analytics/`, `/static/`, `/admin`, `/documentation/`, `/django-rq`)

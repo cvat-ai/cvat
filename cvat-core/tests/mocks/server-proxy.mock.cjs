@@ -294,10 +294,7 @@ class ServerProxy {
             if (Number.isInteger(filter.id)) {
                 // A specific object is requested
                 const results = jobsDummyData.results.filter((job) => job.id === filter.id);
-                return {
-                    results: results,
-                    count: results.length,
-                }
+                return Object.assign(results, { count: results.length });
             }
 
             function makeJsonFilter(jsonExpr) {
@@ -339,10 +336,7 @@ class ServerProxy {
             }
 
             return (
-                jobs ? {
-                    results: jobs,
-                    count: jobs.length,
-                } : {
+                jobs ? Object.assign(jobs, { count: jobs.length }) : {
                     detail: 'Not found.',
                 }
             );
@@ -361,7 +355,7 @@ class ServerProxy {
                 }
             }
 
-            return (await getJobs({ id })).results[0];
+            return (await getJobs({ id }))[0];
         }
 
         async function getUsers() {

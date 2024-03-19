@@ -31,7 +31,7 @@ import {
 import { CameraAction, Canvas3d, ViewsDOM } from 'cvat-canvas3d-wrapper';
 
 import CVATTooltip from 'components/common/cvat-tooltip';
-import { LogType } from 'cvat-logger';
+import { EventScope } from 'cvat-logger';
 import { getCore, ObjectState, Job } from 'cvat-core-wrapper';
 import GlobalHotKeys from 'utils/mousetrap-react';
 
@@ -60,10 +60,10 @@ interface StateToProps {
 interface DispatchToProps {
     onSetupCanvas(): void;
     onResetCanvas(): void;
-    onCreateAnnotations(sessionInstance: Job, frame: number, states: ObjectState[]): void;
-    onGroupAnnotations(sessionInstance: Job, frame: number, states: ObjectState[]): void;
-    onMergeAnnotations(sessionInstance: Job, frame: number, states: ObjectState[]): void;
-    onSplitAnnotations(sessionInstance: Job, frame: number, state: ObjectState): void;
+    onCreateAnnotations(states: ObjectState[]): void;
+    onGroupAnnotations(states: ObjectState[]): void;
+    onMergeAnnotations(states: ObjectState[]): void;
+    onSplitAnnotations(state: ObjectState): void;
     onUpdateAnnotations(states: ObjectState[]): void;
     onActivateObject: (activatedStateID: number | null) => void;
     updateActiveControl: (activeControl: ActiveControl) => void;
@@ -127,17 +127,17 @@ function mapDispatchToProps(dispatch: any): DispatchToProps {
         onResetCanvas(): void {
             dispatch(resetCanvas());
         },
-        onCreateAnnotations(sessionInstance: Job, frame: number, states: ObjectState[]): void {
-            dispatch(createAnnotationsAsync(sessionInstance, frame, states));
+        onCreateAnnotations(states: ObjectState[]): void {
+            dispatch(createAnnotationsAsync(states));
         },
-        onGroupAnnotations(sessionInstance: Job, frame: number, states: ObjectState[]): void {
-            dispatch(groupAnnotationsAsync(sessionInstance, frame, states));
+        onGroupAnnotations(states: ObjectState[]): void {
+            dispatch(groupAnnotationsAsync(states));
         },
-        onMergeAnnotations(sessionInstance: Job, frame: number, states: ObjectState[]): void {
-            dispatch(mergeAnnotationsAsync(sessionInstance, frame, states));
+        onMergeAnnotations(states: ObjectState[]): void {
+            dispatch(mergeAnnotationsAsync(states));
         },
-        onSplitAnnotations(sessionInstance: Job, frame: number, state: ObjectState): void {
-            dispatch(splitAnnotationsAsync(sessionInstance, frame, state));
+        onSplitAnnotations(state: ObjectState): void {
+            dispatch(splitAnnotationsAsync(state));
         },
         onActivateObject(activatedStateID: number | null): void {
             if (activatedStateID === null) {
@@ -481,9 +481,9 @@ const Canvas3DWrapperComponent = React.memo((props: Props): null => {
         const { state, duration } = event.detail;
         const isDrawnFromScratch = !state.label;
         if (isDrawnFromScratch) {
-            jobInstance.logger.log(LogType.drawObject, { count: 1, duration });
+            jobInstance.logger.log(EventScope.drawObject, { count: 1, duration });
         } else {
-            jobInstance.logger.log(LogType.pasteObject, { count: 1, duration });
+            jobInstance.logger.log(EventScope.pasteObject, { count: 1, duration });
         }
 
         state.objectType = state.objectType || activeObjectType;
@@ -492,7 +492,7 @@ const Canvas3DWrapperComponent = React.memo((props: Props): null => {
         state.frame = frame;
         state.zOrder = 0;
         const objectState = new cvat.classes.ObjectState(state);
-        onCreateAnnotations(jobInstance, frame, [objectState]);
+        onCreateAnnotations([objectState]);
     };
 
     const onCanvasClick = (e: MouseEvent): void => {
@@ -600,17 +600,17 @@ const Canvas3DWrapperComponent = React.memo((props: Props): null => {
     const onCanvasObjectsGroupped = (event: CustomEvent<{ states: ObjectState[] }>): void => {
         const { states } = event.detail;
         updateActiveControl(ActiveControl.CURSOR);
-        onGroupAnnotations(jobInstance, frame, states);
+        onGroupAnnotations(states);
     };
 
     const onCanvasObjectsMerged = (event: CustomEvent<{ states: ObjectState[] }>): void => {
         const { states } = event.detail;
-        onMergeAnnotations(jobInstance, frame, states);
+        onMergeAnnotations(states);
     };
 
     const onCanvasTrackSplitted = (event: CustomEvent<{ state: ObjectState }>): void => {
         const { state } = event.detail;
-        onSplitAnnotations(jobInstance, frame, state);
+        onSplitAnnotations(state);
     };
 
     useEffect(() => {

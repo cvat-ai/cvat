@@ -44,13 +44,11 @@ _CacheObject = Dict[str, Any]
 
 class _CacheObjectModel(metaclass=ABCMeta):
     @abstractmethod
-    def dump(self) -> _CacheObject:
-        ...
+    def dump(self) -> _CacheObject: ...
 
     @classmethod
     @abstractmethod
-    def load(cls, obj: _CacheObject):
-        ...
+    def load(cls, obj: _CacheObject): ...
 
 
 _ModelType = TypeVar("_ModelType", bound=Union[OpenApiModel, _CacheObjectModel])
@@ -115,8 +113,7 @@ class CacheManager(metaclass=ABCMeta):
         return self._save_object(path, self._serialize_model(model))
 
     @abstractmethod
-    def retrieve_task(self, task_id: int) -> Task:
-        ...
+    def retrieve_task(self, task_id: int) -> Task: ...
 
     @abstractmethod
     def ensure_task_model(
@@ -126,16 +123,13 @@ class CacheManager(metaclass=ABCMeta):
         model_type: Type[_ModelType],
         downloader: Callable[[], _ModelType],
         model_description: str,
-    ) -> _ModelType:
-        ...
+    ) -> _ModelType: ...
 
     @abstractmethod
-    def ensure_chunk(self, task: Task, chunk_index: int) -> None:
-        ...
+    def ensure_chunk(self, task: Task, chunk_index: int) -> None: ...
 
     @abstractmethod
-    def retrieve_project(self, project_id: int) -> Project:
-        ...
+    def retrieve_project(self, project_id: int) -> Project: ...
 
 
 class _CacheManagerOnline(CacheManager):

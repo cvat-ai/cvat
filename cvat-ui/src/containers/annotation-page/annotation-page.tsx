@@ -1,4 +1,5 @@
 // Copyright (C) 2020-2022 Intel Corporation
+// Copyright (C) 2024 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -62,14 +63,17 @@ function mapDispatchToProps(dispatch: any, own: OwnProps): DispatchToProps {
     const jobID = +params.jid;
     const searchParams = new URLSearchParams(window.location.search);
     const initialFilters: object[] = [];
-    let initialFrame: number | null = null;
+    const initialOpenGuide = searchParams.has('openGuide');
 
-    if (searchParams.has('frame')) {
-        const searchFrame = +(searchParams.get('frame') as string);
-        if (!Number.isNaN(searchFrame)) {
-            initialFrame = searchFrame;
-        }
-    }
+    const parsedPointsCount = +(searchParams.get('defaultPointsCount') || 'NaN');
+    const defaultLabel = searchParams.get('defaultLabel') || null;
+    const defaultPointsCount = Number.isInteger(parsedPointsCount) && parsedPointsCount >= 1 ? parsedPointsCount : null;
+    const initialWorkspace = Object.entries(Workspace).find(([key]) => (
+        key === searchParams.get('defaultWorkspace')?.toUpperCase()
+    )) || null;
+
+    const parsedFrame = +(searchParams.get('frame') || 'NaN');
+    const initialFrame = Number.isInteger(parsedFrame) && parsedFrame >= 0 ? parsedFrame : null;
 
     if (searchParams.has('serverID') && searchParams.has('type')) {
         const serverID = searchParams.get('serverID');
@@ -81,13 +85,30 @@ function mapDispatchToProps(dispatch: any, own: OwnProps): DispatchToProps {
         }
     }
 
-    if (searchParams.has('frame') || searchParams.has('object')) {
-        own.history.replace(own.history.location.pathname);
+    const initialSize = searchParams.size;
+    searchParams.delete('frame');
+    searchParams.delete('serverID');
+    searchParams.delete('type');
+    searchParams.delete('openGuide');
+
+    if (searchParams.size !== initialSize) {
+        own.history.replace(`${own.history.location.pathname}?${searchParams.toString()}`);
     }
 
     return {
         getJob(): void {
-            dispatch(getJobAsync(taskID, jobID, initialFrame, initialFilters));
+            dispatch(getJobAsync({
+                taskID,
+                jobID,
+                initialFrame,
+                initialFilters,
+                queryParameters: {
+                    initialOpenGuide,
+                    defaultLabel,
+                    defaultPointsCount,
+                    ...(initialWorkspace ? { initialWorkspace: initialWorkspace[1] } : { initialWorkspace }),
+                },
+            }));
         },
         saveLogs(): void {
             dispatch(saveLogsAsync());

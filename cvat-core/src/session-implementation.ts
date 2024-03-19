@@ -1,13 +1,14 @@
 // Copyright (C) 2019-2022 Intel Corporation
-// Copyright (C) 2022-2023 CVAT.ai Corporation
+// Copyright (C) 2022-2024 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
+import { omit } from 'lodash';
 import { ArgumentError } from './exceptions';
 import { HistoryActions, JobType, RQStatus } from './enums';
 import { Storage } from './storage';
 import { Task as TaskClass, Job as JobClass } from './session';
-import loggerStorage from './logger-storage';
+import logger from './logger';
 import serverProxy from './server-proxy';
 import {
     getFrame,
@@ -22,8 +23,7 @@ import {
     decodePreview,
 } from './frames';
 import Issue from './issue';
-import { Label } from './labels';
-import { SerializedLabel } from './server-response-types';
+import { SerializedLabel, SerializedTask } from './server-response-types';
 import { checkObjectType } from './common';
 import {
     getCollection, getSaver, clearAnnotations, getAnnotations,
@@ -209,8 +209,7 @@ export function implementJob(Job) {
         return findFrame(this.id, frameFrom, frameTo, filters);
     };
 
-    // TODO: Check filter for annotations
-    Job.prototype.annotations.get.implementation = async function (frame, allTracks, filters, groundTruthJobId) {
+    Job.prototype.annotations.get.implementation = async function (frame, allTracks, filters) {
         if (!Array.isArray(filters)) {
             throw new ArgumentError('Filters must be an array');
         }
@@ -223,7 +222,7 @@ export function implementJob(Job) {
             throw new ArgumentError(`Frame ${frame} does not exist in the job`);
         }
 
-        const annotationsData = await getAnnotations(this, frame, allTracks, filters, groundTruthJobId);
+        const annotationsData = await getAnnotations(this, frame, allTracks, filters);
         const deletedFrames = await getDeletedFrames('job', this.id);
         if (frame in deletedFrames) {
             return [];
@@ -232,9 +231,17 @@ export function implementJob(Job) {
         return annotationsData;
     };
 
-    Job.prototype.annotations.search.implementation = function (filters, frameFrom, frameTo) {
-        if (!Array.isArray(filters)) {
-            throw new ArgumentError('Filters must be an array');
+    Job.prototype.annotations.search.implementation = function (frameFrom, frameTo, searchParameters) {
+        if ('annotationsFilters' in searchParameters && !Array.isArray(searchParameters.annotationsFilters)) {
+            throw new ArgumentError('Annotations filters must be an array');
+        }
+
+        if ('generalFilters' in searchParameters && typeof searchParameters.generalFilters.isEmptyFrame !== 'boolean') {
+            throw new ArgumentError('General filter isEmptyFrame must be a boolean');
+        }
+
+        if ('annotationsFilters' in searchParameters && 'generalFilters' in searchParameters) {
+            throw new ArgumentError('Both annotations filters and general fiters could not be used together');
         }
 
         if (!Number.isInteger(frameFrom) || !Number.isInteger(frameTo)) {
@@ -249,23 +256,7 @@ export function implementJob(Job) {
             throw new ArgumentError('The stop frame is out of the job');
         }
 
-        return getCollection(this).search(filters, frameFrom, frameTo);
-    };
-
-    Job.prototype.annotations.searchEmpty.implementation = function (frameFrom, frameTo) {
-        if (!Number.isInteger(frameFrom) || !Number.isInteger(frameTo)) {
-            throw new ArgumentError('The start and end frames both must be an integer');
-        }
-
-        if (frameFrom < this.startFrame || frameFrom > this.stopFrame) {
-            throw new ArgumentError('The start frame is out of the job');
-        }
-
-        if (frameTo < this.startFrame || frameTo > this.stopFrame) {
-            throw new ArgumentError('The stop frame is out of the job');
-        }
-
-        return getCollection(this).searchEmpty(frameFrom, frameTo);
+        return getCollection(this).search(frameFrom, frameTo, searchParameters);
     };
 
     Job.prototype.annotations.save.implementation = async function (onUpdate) {
@@ -308,7 +299,7 @@ export function implementJob(Job) {
     };
 
     Job.prototype.annotations.statistics.implementation = function () {
-        return getCollection(this).statistics({ jobID: this.id });
+        return getCollection(this).statistics();
     };
 
     Job.prototype.annotations.put.implementation = function (objectStates) {
@@ -365,9 +356,9 @@ export function implementJob(Job) {
         return getHistory(this).get();
     };
 
-    Job.prototype.logger.log.implementation = async function (logType, payload, wait) {
-        const result = await loggerStorage.log(
-            logType,
+    Job.prototype.logger.log.implementation = async function (scope, payload, wait) {
+        const result = await logger.log(
+            scope,
             {
                 ...payload,
                 project_id: this.projectId,
@@ -421,19 +412,15 @@ export function implementTask(Task) {
                 taskData.assignee_id = taskData.assignee_id.id;
             }
 
-            await Promise.all((taskData.labels || []).map((label: Label): Promise<unknown> => {
+            for await (const label of taskData.labels || []) {
                 if (label.deleted) {
-                    return serverProxy.labels.delete(label.id);
+                    await serverProxy.labels.delete(label.id);
+                } else if (label.patched) {
+                    await serverProxy.labels.update(label.id, label.toJSON());
                 }
+            }
 
-                if (label.patched) {
-                    return serverProxy.labels.update(label.id, label.toJSON());
-                }
-
-                return Promise.resolve();
-            }));
-
-            // leave only new labels to create them via project PATCH request
+            // leave only new labels to create them via task PATCH request
             taskData.labels = (taskData.labels || [])
                 .filter((label: SerializedLabel) => !Number.isInteger(label.id)).map((el) => el.toJSON());
             if (!taskData.labels.length) {
@@ -442,19 +429,19 @@ export function implementTask(Task) {
 
             this._updateTrigger.reset();
 
-            let serializedTask = null;
+            let serializedTask: SerializedTask = null;
             if (Object.keys(taskData).length) {
                 serializedTask = await serverProxy.tasks.save(this.id, taskData);
             } else {
                 [serializedTask] = (await serverProxy.tasks.get({ id: this.id }));
             }
+
             const labels = await serverProxy.labels.get({ task_id: this.id });
             const jobs = await serverProxy.jobs.get({ task_id: this.id }, true);
-
             return new Task({
-                ...serializedTask,
+                ...omit(serializedTask, ['jobs', 'labels']),
                 progress: serializedTask.jobs,
-                jobs: jobs.results,
+                jobs,
                 labels: labels.results,
             });
         }
@@ -511,9 +498,9 @@ export function implementTask(Task) {
         }, true);
 
         return new Task({
-            ...task,
+            ...omit(task, ['jobs', 'labels']),
+            jobs,
             progress: task.jobs,
-            jobs: jobs.results,
             labels: labels.results,
         });
     };
@@ -523,7 +510,7 @@ export function implementTask(Task) {
     ): Promise<TaskClass> {
         if (Number.isInteger(this.id) && this.size === 0) {
             const serializedTask = await serverProxy.tasks.listenToCreate(this.id, onUpdate);
-            return new Task(serializedTask);
+            return new Task(omit(serializedTask, ['labels', 'jobs']));
         }
 
         return this;
@@ -687,7 +674,7 @@ export function implementTask(Task) {
             throw new ArgumentError(`Frame ${frame} does not exist in the task`);
         }
 
-        const result = await getAnnotations(this, frame, allTracks, filters, null);
+        const result = await getAnnotations(this, frame, allTracks, filters);
         const deletedFrames = await getDeletedFrames('task', this.id);
         if (frame in deletedFrames) {
             return [];
@@ -696,9 +683,17 @@ export function implementTask(Task) {
         return result;
     };
 
-    Task.prototype.annotations.search.implementation = function (filters, frameFrom, frameTo) {
-        if (!Array.isArray(filters) || filters.some((filter) => typeof filter !== 'string')) {
-            throw new ArgumentError('The filters argument must be an array of strings');
+    Task.prototype.annotations.search.implementation = function (frameFrom, frameTo, searchParameters) {
+        if ('annotationsFilters' in searchParameters && !Array.isArray(searchParameters.annotationsFilters)) {
+            throw new ArgumentError('Annotations filters must be an array');
+        }
+
+        if ('generalFilters' in searchParameters && typeof searchParameters.generalFilters.isEmptyFrame !== 'boolean') {
+            throw new ArgumentError('General filter isEmptyFrame must be a boolean');
+        }
+
+        if ('annotationsFilters' in searchParameters && 'generalFilters' in searchParameters) {
+            throw new ArgumentError('Both annotations filters and general fiters could not be used together');
         }
 
         if (!Number.isInteger(frameFrom) || !Number.isInteger(frameTo)) {
@@ -713,23 +708,7 @@ export function implementTask(Task) {
             throw new ArgumentError('The stop frame is out of the task');
         }
 
-        return getCollection(this).search(filters, frameFrom, frameTo);
-    };
-
-    Task.prototype.annotations.searchEmpty.implementation = function (frameFrom, frameTo) {
-        if (!Number.isInteger(frameFrom) || !Number.isInteger(frameTo)) {
-            throw new ArgumentError('The start and end frames both must be an integer');
-        }
-
-        if (frameFrom < 0 || frameFrom >= this.size) {
-            throw new ArgumentError('The start frame is out of the task');
-        }
-
-        if (frameTo < 0 || frameTo >= this.size) {
-            throw new ArgumentError('The stop frame is out of the task');
-        }
-
-        return getCollection(this).searchEmpty(frameFrom, frameTo);
+        return getCollection(this).search(frameFrom, frameTo, searchParameters);
     };
 
     Task.prototype.annotations.save.implementation = async function (onUpdate) {
@@ -772,7 +751,7 @@ export function implementTask(Task) {
     };
 
     Task.prototype.annotations.statistics.implementation = function () {
-        return getCollection(this).statistics({});
+        return getCollection(this).statistics();
     };
 
     Task.prototype.annotations.put.implementation = function (objectStates) {
@@ -829,9 +808,9 @@ export function implementTask(Task) {
         return getHistory(this).get();
     };
 
-    Task.prototype.logger.log.implementation = async function (logType, payload, wait) {
-        const result = await loggerStorage.log(
-            logType,
+    Task.prototype.logger.log.implementation = async function (scope, payload, wait) {
+        const result = await logger.log(
+            scope,
             {
                 ...payload,
                 project_id: this.projectId,

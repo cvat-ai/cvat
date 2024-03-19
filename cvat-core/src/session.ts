@@ -1,5 +1,5 @@
 // Copyright (C) 2019-2022 Intel Corporation
-// Copyright (C) 2022-2023 CVAT.ai Corporation
+// Copyright (C) 2022-2024 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -15,8 +15,10 @@ import { ArgumentError, ScriptingError } from './exceptions';
 import { Label } from './labels';
 import User from './user';
 import { FieldUpdateTrigger } from './common';
-import { SerializedJob, SerializedTask } from './server-response-types';
+import { SerializedJob, SerializedLabel, SerializedTask } from './server-response-types';
 import AnnotationGuide from './guide';
+import { FrameData } from './frames';
+import Statistics from './statistics';
 
 function buildDuplicatedAPI(prototype) {
     Object.defineProperties(prototype, {
@@ -69,35 +71,24 @@ function buildDuplicatedAPI(prototype) {
                     return result;
                 },
 
-                async get(frame, allTracks = false, filters = [], groundTruthJobId = null) {
+                async get(frame, allTracks = false, filters = []) {
                     const result = await PluginRegistry.apiWrapper.call(
                         this,
                         prototype.annotations.get,
                         frame,
                         allTracks,
                         filters,
-                        groundTruthJobId,
                     );
                     return result;
                 },
 
-                async search(filters, frameFrom, frameTo) {
+                async search(frameFrom, frameTo, searchParameters) {
                     const result = await PluginRegistry.apiWrapper.call(
                         this,
                         prototype.annotations.search,
-                        filters,
                         frameFrom,
                         frameTo,
-                    );
-                    return result;
-                },
-
-                async searchEmpty(frameFrom, frameTo) {
-                    const result = await PluginRegistry.apiWrapper.call(
-                        this,
-                        prototype.annotations.searchEmpty,
-                        frameFrom,
-                        frameTo,
+                        searchParameters,
                     );
                     return result;
                 },
@@ -270,11 +261,11 @@ function buildDuplicatedAPI(prototype) {
         }),
         logger: Object.freeze({
             value: {
-                async log(logType, payload = {}, wait = false) {
+                async log(scope, payload = {}, wait = false) {
                     const result = await PluginRegistry.apiWrapper.call(
                         this,
                         prototype.logger.log,
-                        logType,
+                        scope,
                         payload,
                         wait,
                     );
@@ -323,12 +314,11 @@ export class Session {
         slice: CallableFunction;
         clear: CallableFunction;
         search: CallableFunction;
-        searchEmpty: CallableFunction;
         upload: CallableFunction;
         select: CallableFunction;
         import: CallableFunction;
         export: CallableFunction;
-        statistics: CallableFunction;
+        statistics: () => Promise<Statistics>;
         hasUnsavedChanges: CallableFunction;
         exportDataset: CallableFunction;
     };
@@ -342,7 +332,7 @@ export class Session {
     };
 
     public frames: {
-        get: CallableFunction;
+        get: (frame: number, isPlaying?: boolean, step?: number) => Promise<FrameData>;
         delete: CallableFunction;
         restore: CallableFunction;
         save: CallableFunction;
@@ -376,7 +366,6 @@ export class Session {
             slice: Object.getPrototypeOf(this).annotations.slice.bind(this),
             clear: Object.getPrototypeOf(this).annotations.clear.bind(this),
             search: Object.getPrototypeOf(this).annotations.search.bind(this),
-            searchEmpty: Object.getPrototypeOf(this).annotations.searchEmpty.bind(this),
             upload: Object.getPrototypeOf(this).annotations.upload.bind(this),
             select: Object.getPrototypeOf(this).annotations.select.bind(this),
             import: Object.getPrototypeOf(this).annotations.import.bind(this),
@@ -436,7 +425,7 @@ export class Job extends Session {
     public readonly sourceStorage: Storage;
     public readonly targetStorage: Storage;
 
-    constructor(initialData: Readonly<SerializedJob>) {
+    constructor(initialData: Readonly<Omit<SerializedJob, 'labels'> & { labels?: SerializedLabel[] }>) {
         super();
         const data = {
             id: undefined,
@@ -683,7 +672,11 @@ export class Task extends Session {
     public readonly cloudStorageID: number;
     public readonly sortingMethod: string;
 
-    constructor(initialData: SerializedTask) {
+    constructor(initialData: Readonly<Omit<SerializedTask, 'labels' | 'jobs'> & {
+        labels?: SerializedLabel[];
+        progress?: SerializedTask['jobs'];
+        jobs?: SerializedJob[];
+    }>) {
         super();
 
         const data = {
@@ -742,13 +735,13 @@ export class Task extends Session {
         data.jobs = [];
 
         data.progress = {
-            completedJobs: initialData?.jobs?.completed || 0,
-            totalJobs: initialData?.jobs?.count || 0,
-            validationJobs: initialData?.jobs?.validation || 0,
+            completedJobs: initialData.progress?.completed || 0,
+            totalJobs: initialData.progress?.count || 0,
+            validationJobs: initialData.progress?.validation || 0,
             annotationJobs:
-                (initialData?.jobs?.count || 0) -
-                (initialData?.jobs?.validation || 0) -
-                (initialData?.jobs?.completed || 0),
+                (initialData.progress?.count || 0) -
+                (initialData.progress?.validation || 0) -
+                (initialData.progress?.completed || 0),
         };
 
         data.files = Object.freeze({

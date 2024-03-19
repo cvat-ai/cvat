@@ -1,5 +1,5 @@
 // Copyright (C) 2020-2022 Intel Corporation
-// Copyright (C) 2022-2023 CVAT.ai Corporation
+// Copyright (C) 2022-2024 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -73,7 +73,7 @@ interface StateToProps {
 interface DispatchToProps {
     onInteractionStart(activeInteractor: MLModel, activeLabelID: number): void;
     updateAnnotations(statesToUpdate: any[]): void;
-    createAnnotations(sessionInstance: any, frame: number, statesToCreate: any[]): void;
+    createAnnotations(statesToCreate: any[]): void;
     fetchAnnotations(): void;
     onSwitchToolsBlockerState(toolsBlockerState: ToolsBlockerState): void;
     switchNavigationBlocked(navigationBlocked: boolean): void;
@@ -857,7 +857,7 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
     private async constructFromPoints(): Promise<void> {
         const { convertMasksToPolygons } = this.state;
         const {
-            frame, labels, curZOrder, jobInstance, activeLabelID, createAnnotations,
+            frame, labels, curZOrder, activeLabelID, createAnnotations,
         } = this.props;
 
         if (convertMasksToPolygons) {
@@ -872,7 +872,7 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
                 zOrder: curZOrder,
             });
 
-            createAnnotations(jobInstance, frame, [object]);
+            createAnnotations([object]);
         } else {
             const object = new core.classes.ObjectState({
                 frame,
@@ -885,7 +885,7 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
                 zOrder: curZOrder,
             });
 
-            createAnnotations(jobInstance, frame, [object]);
+            createAnnotations([object]);
         }
     }
 
@@ -1100,6 +1100,7 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
                     </Col>
                     <Col span={2} className='cvat-interactors-tips-icon-container'>
                         <Dropdown
+                            destroyPopupOnHide
                             overlay={(
                                 <ToolsTooltips
                                     name={activeInteractor?.name}
@@ -1329,7 +1330,7 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
                             },
                         ).filter((state: any) => state);
 
-                        createAnnotations(jobInstance, frame, states.filter((state: ObjectState | null) => !!state));
+                        createAnnotations(states.filter((state: ObjectState | null) => !!state));
                         const { onSwitchToolsBlockerState } = this.props;
                         onSwitchToolsBlockerState({ buttonVisible: false });
                     } catch (error: any) {

@@ -16,6 +16,227 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 <!-- scriv-insert-here -->
 
+<a id='changelog-2.11.2'></a>
+## \[2.11.2\] - 2024-03-11
+
+### Changed
+
+- Sped up resource updates when there are no matching webhooks
+  (<https://github.com/opencv/cvat/pull/7553>)
+
+### Fixed
+
+- Job and task `updated_date` are no longer bumped twice when updating
+  annotations
+  (<https://github.com/opencv/cvat/pull/7556>)
+
+- Sending `PATCH /jobs/{id}/data/meta` on each job save even if nothing changed in meta data
+  (<https://github.com/opencv/cvat/pull/7560>)
+- Sending `GET /jobs/{id}/data/meta` twice on each job load
+  (<https://github.com/opencv/cvat/pull/7560>)
+
+- Made analytics report update job scheduling more efficient
+  (<https://github.com/opencv/cvat/pull/7576>)
+
+- Fixed being unable to connect to in-mem Redis
+  when the password includes URL-unsafe characters
+  (<https://github.com/opencv/cvat/pull/7577>)
+
+- Segment anything decoder is loaded anytime when CVAT is opened, but might be not required
+  (<https://github.com/opencv/cvat/pull/7564>)
+
+<a id='changelog-2.11.1'></a>
+## \[2.11.1\] - 2024-03-05
+
+### Added
+
+- Single shape annotation mode allowing to easily annotate scenarious where a user
+only needs to draw one object on one image (<https://github.com/opencv/cvat/pull/7486>)
+
+### Fixed
+
+- Fixed a problem with Korean/Chinese characters in attribute annotation mode
+  (<https://github.com/opencv/cvat/pull/7380>)
+
+- Fixed incorrect working time calculation in the case where an event
+  occurred during another event
+  (<https://github.com/opencv/cvat/pull/7511>)
+
+- Fixed working time not being calculated for the first event in each batch
+  sent from the UI
+  (<https://github.com/opencv/cvat/pull/7511>)
+
+- Submit button is enabled while creating a ground truth job
+  (<https://github.com/opencv/cvat/pull/7540>)
+
+<a id='changelog-2.11.0'></a>
+## \[2.11.0\] - 2024-02-23
+
+### Added
+
+- Added `dataset:export` and `dataset:import` events that are logged when
+  the user initiates an export or import of a project, task or job
+  (<https://github.com/opencv/cvat/pull/7476>)
+
+### Changed
+
+- Now menus in the web interface are triggered by click, not by hover as before
+  (<https://github.com/opencv/cvat/pull/7431>)
+
+### Removed
+
+- Removed support for the TFRecord dataset format
+  (<https://github.com/opencv/cvat/pull/7416>)
+
+### Fixed
+
+- On quality page for a task, only the first page with jobs has quality report metrics
+  (<https://github.com/opencv/cvat/pull/7441>)
+
+- Side effects of data changes, such as the sending of webhooks,
+  are no longer triggered until after the changes have been committed
+  to the database
+  (<https://github.com/opencv/cvat/pull/7460>,
+  <https://github.com/opencv/cvat/pull/7477>)
+
+<a id='changelog-2.10.3'></a>
+## \[2.10.3\] - 2024-02-09
+
+### Changed
+
+- The "message" field of the payload of send:exception events
+  no longer includes a trailing linebreak
+  (<https://github.com/opencv/cvat/pull/7407>)
+
+- Annotation guide is opened automatically if not seen yet when the job is "new annotation"
+  (<https://github.com/opencv/cvat/pull/7410>)
+- Annotation guide will be opened automatically if this is specified in a link `/tasks/<id>/jobs/<id>?openGuide`
+  (<https://github.com/opencv/cvat/pull/7410>)
+
+- Reduced number of server requests, made by clients
+  (<https://github.com/opencv/cvat/pull/7446>)
+
+- Server exception rest_framework.exceptions.NotAuthenticated is not logged by analytics anymore
+  (<https://github.com/opencv/cvat/pull/7457>)
+
+### Fixed
+
+- Prevented zombie processes from accumulating in the Kvrocks container
+  (<https://github.com/opencv/cvat/pull/7412>)
+
+- Fix Redis exceptions crashing the `/api/server/health/` endpoint
+  (<https://github.com/opencv/cvat/pull/7417>)
+
+- Unhandled exception "Cannot read properties of null (reading 'plot')"
+  (<https://github.com/opencv/cvat/pull/7422>)
+
+- Unhandled exception "Cannot read properties of undefined (reading 'toLowerCase')"
+  (<https://github.com/opencv/cvat/pull/7421>)
+
+<a id='changelog-2.10.2'></a>
+## \[2.10.2\] - 2024-01-26
+
+### Changed
+
+- Enhanced errors messaging for better perception by users
+  (<https://github.com/opencv/cvat/pull/7331>)
+
+### Fixed
+
+- Empty masks might be created with `polygon-minus` tool (<https://github.com/opencv/cvat/pull/7295>)
+- Empty masks might be created as a result of removing underlying pixels (<https://github.com/opencv/cvat/pull/7295>)
+
+- Fixed excessive memory usage
+  when exporting a project with multiple video tasks
+  (<https://github.com/opencv/cvat/pull/7374>)
+
+- OpenCV tracker MIL works one frame behind
+  (<https://github.com/opencv/cvat/pull/7399>)
+
+<a id='changelog-2.10.1'></a>
+## \[2.10.1\] - 2024-01-18
+
+### Changed
+
+- KeyDB used as data cache replaced by Kvrocks
+  (<https://github.com/opencv/cvat/pull/7339>)
+
+### Fixed
+
+- 504 Timeout error when exporting resources to cloud storage
+  (<https://github.com/opencv/cvat/pull/7317>)
+- Enqueuing deferred jobs when their dependencies have been started -> cancelled -> restarted -> finished
+  (<https://github.com/opencv/cvat/pull/7317>)
+
+- UI failed when open context menu for a skeleton element on a frame with a conflict
+  (<https://github.com/opencv/cvat/pull/7362>)
+- Issue can not be created for a skeleton element in review mode
+  (<https://github.com/opencv/cvat/pull/7362>)
+
+<a id='changelog-2.10.0'></a>
+## \[2.10.0\] - 2024-01-10
+
+### Changed
+
+- When the `ORG_INVITATION_CONFIRM` setting is enabled, organization invitations for existing users are no
+longer accepted automatically. Instead, the invitee can now review the invitation and choose to accept or decline it.
+  (<https://github.com/opencv/cvat/pull/7138>)
+
+- \[Compose, Helm\] Updated Clickhouse to version 23.11.*
+  (<https://github.com/opencv/cvat/pull/7268>)
+
+- Job queues are now stored in a dedicated Redis instance
+  (<https://github.com/opencv/cvat/pull/7245>)
+
+### Removed
+
+- PermissionDenied error thrown before OPA call in case if user is not a member of organization
+  (<https://github.com/opencv/cvat/pull/7259>)
+
+### Fixed
+
+- Can not input Chinese correctly in text attributes on objects sidebar
+  (<https://github.com/opencv/cvat/pull/6916>)
+
+- Restored Compose file compatibility with Docker Compose 2.17.0 and earlier
+  (<https://github.com/opencv/cvat/pull/7170>)
+
+- Attaching GCS and AWS S3 buckets with dots in name
+  (<https://github.com/opencv/cvat/pull/7227>)
+
+- Annotation actions are applied to the objects from a ground truth job
+  (<https://github.com/opencv/cvat/pull/7281>)
+- Ground truth objects removed together with annotation objects when press "Remove annotations" in menu
+  (<https://github.com/opencv/cvat/pull/7281>)
+- Frame search by a filter is affected by ground truth annotations
+  (<https://github.com/opencv/cvat/pull/7281>)
+
+- Creating duplicating annotations when nginx throws 504 timeout status (workaround)
+  (<https://github.com/opencv/cvat/pull/7286>)
+
+- `TIFF` images are saved as `JPEG` images with `.tif` extension in original chunks
+  (<https://github.com/opencv/cvat/pull/7100>)
+- EXIF rotated TIFF images are handled incorrectly
+  (<https://github.com/opencv/cvat/pull/7100>)
+
+- RQ Scheduler launch, broken in PR 7245
+  (<https://github.com/opencv/cvat/pull/7293>)
+
+- UI crashes if user highligts conflict related to annotations hidden by a filter
+  (<https://github.com/opencv/cvat/pull/7299>)
+- Annotations conflicts are not highligted properly on the first frame of a job
+  (<https://github.com/opencv/cvat/pull/7299>)
+
+- Error message `Edge's nodeFrom ${dataNodeFrom} or nodeTo ${dataNodeTo} do not to refer to any node`
+ when upload a file with some abscent skeleton nodes (<https://github.com/opencv/cvat/pull/7302>)
+- Wrong context menu position in skeleton configurator (Firefox only)
+ (<https://github.com/opencv/cvat/pull/7302>)
+- Fixed console error `(Error: <rect> attribute width: A negative value is not valid`
+ appearing when skeleton with all outside elements is created (<https://github.com/opencv/cvat/pull/7302>)
+
+- Updating cloud storage attached to CVAT using Azure connection string
+  (<https://github.com/opencv/cvat/pull/7336>)
+
 <a id='changelog-2.9.2'></a>
 ## \[2.9.2\] - 2023-12-11
 

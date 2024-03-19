@@ -1,5 +1,5 @@
 // Copyright (C) 2021-2022 Intel Corporation
-// Copyright (C) 2022 CVAT.ai Corporation
+// Copyright (C) 2022-2024 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -13,12 +13,12 @@ import Paragraph from 'antd/lib/typography/Paragraph';
 import Text from 'antd/lib/typography/Text';
 import Button from 'antd/lib/button';
 import Dropdown from 'antd/lib/dropdown';
-import Menu from 'antd/lib/menu';
 import Modal from 'antd/lib/modal';
 import moment from 'moment';
 
 import { CloudStorage, CombinedState } from 'reducers';
 import { deleteCloudStorageAsync } from 'actions/cloud-storage-actions';
+import Menu from 'components/dropdown-menu';
 import CVATTooltip from 'components/common/cvat-tooltip';
 import Preview from 'components/common/preview';
 import Status from './cloud-storage-status';
@@ -95,7 +95,7 @@ export default function CloudStorageItemComponent(props: Props): JSX.Element {
         >
             <Meta
                 title={(
-                    <Paragraph>
+                    <Paragraph ellipsis={{ tooltip: displayName }}>
                         <Text strong>{`#${id}: `}</Text>
                         <Text>{displayName}</Text>
                     </Paragraph>
@@ -118,6 +118,8 @@ export default function CloudStorageItemComponent(props: Props): JSX.Element {
                         </Paragraph>
                         <Status cloudStorage={cloudStorage} />
                         <Dropdown
+                            trigger={['click']}
+                            destroyPopupOnHide
                             overlay={(
                                 <Menu className='cvat-project-actions-menu'>
                                     <Menu.Item onClick={onUpdate}>Update</Menu.Item>

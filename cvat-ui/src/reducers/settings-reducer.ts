@@ -438,8 +438,7 @@ export default (state = defaultState, action: AnyAction): SettingsState => {
                 imageFilters: [],
             };
         }
-        case AnnotationActionTypes.UPLOAD_JOB_ANNOTATIONS_SUCCESS:
-        case AnnotationActionTypes.CREATE_ANNOTATIONS_SUCCESS:
+        case AnnotationActionTypes.FETCH_ANNOTATIONS_SUCCESS:
         case AnnotationActionTypes.CHANGE_FRAME_SUCCESS: {
             const { states } = action.payload;
             const { shapes } = state;
@@ -466,9 +465,6 @@ export default (state = defaultState, action: AnyAction): SettingsState => {
 
             return {
                 ...state,
-                player: {
-                    ...state.player,
-                },
                 shapes: {
                     ...defaultState.shapes,
                     opacity: clampedOpacity,

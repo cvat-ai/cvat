@@ -1,14 +1,15 @@
 // Copyright (C) 2019-2022 Intel Corporation
-// Copyright (C) 2022-2023 CVAT.ai Corporation
+// Copyright (C) 2022-2024 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
 import {
     shapeFactory, trackFactory, Track, Shape, Tag,
     MaskShape, BasicInjection,
-    SkeletonShape, SkeletonTrack, PolygonShape,
+    SkeletonShape, SkeletonTrack, PolygonShape, CuboidShape,
+    RectangleShape, PolylineShape, PointsShape, EllipseShape,
 } from './annotations-objects';
-import { SerializedCollection, SerializedTrack } from './server-response-types';
+import { SerializedCollection, SerializedShape, SerializedTrack } from './server-response-types';
 import AnnotationsFilter from './annotations-filter';
 import { checkObjectType } from './common';
 import Statistics from './statistics';
@@ -18,9 +19,10 @@ import ObjectState from './object-state';
 import { cropMask } from './object-utils';
 import config from './config';
 import {
-    HistoryActions, ShapeType, ObjectType, colors, Source,
+    HistoryActions, ShapeType, ObjectType, colors, Source, DimensionType, JobType,
 } from './enums';
 import AnnotationHistory from './annotations-history';
+import { Job } from './session';
 
 interface ImportedCollection {
     tags: Tag[],
@@ -52,10 +54,14 @@ const labelAttributesAsDict = (label: Label): Record<number, Attribute> => (
     }, {})
 );
 
+export type FrameMeta = Record<number, Awaited<ReturnType<Job['frames']['get']>>> & {
+    deleted_frames: Record<number, boolean>
+};
+
 export default class Collection {
     public flush: boolean;
     private stopFrame: number;
-    private frameMeta: any;
+    private frameMeta: FrameMeta;
     private labels: Record<number, Label>;
     private annotationsFilter: AnnotationsFilter;
     private history: AnnotationHistory;
@@ -63,11 +69,17 @@ export default class Collection {
     private tags: Record<number, Tag[]>;
     private tracks: Track[];
     private objects: Record<number, Shape | Tag | Track>;
-    private count: number;
     private groups: { max: number };
     private injection: BasicInjection;
 
-    constructor(data) {
+    constructor(data: {
+        labels: Label[];
+        history: AnnotationHistory;
+        stopFrame: number;
+        dimension: DimensionType;
+        frameMeta: Collection['frameMeta'];
+        jobType: JobType;
+    }) {
         this.stopFrame = data.stopFrame;
         this.frameMeta = data.frameMeta;
 
@@ -86,7 +98,6 @@ export default class Collection {
         this.tags = {}; // key is a frame
         this.tracks = [];
         this.objects = {}; // key is a client id
-        this.count = 0;
         this.flush = false;
         this.groups = {
             max: 0,
@@ -97,14 +108,15 @@ export default class Collection {
             frameMeta: this.frameMeta,
             history: this.history,
             dimension: data.dimension,
-            nextClientID: () => ++this.count,
+            jobType: data.jobType,
+            nextClientID: () => ++config.globalObjectsCounter,
             groupColors: {},
             getMasksOnFrame: (frame: number) => (this.shapes[frame] as MaskShape[])
                 .filter((object) => object instanceof MaskShape),
         };
     }
 
-    import(data: SerializedCollection): ImportedCollection {
+    import(data: Omit<SerializedCollection, 'version'>): ImportedCollection {
         const result = {
             tags: [],
             shapes: [],
@@ -112,7 +124,7 @@ export default class Collection {
         };
 
         for (const tag of data.tags) {
-            const clientID = ++this.count;
+            const clientID = this.injection.nextClientID();
             const color = colors[clientID % colors.length];
             const tagModel = new Tag(tag, clientID, color, this.injection);
             this.tags[tagModel.frame] = this.tags[tagModel.frame] || [];
@@ -123,7 +135,7 @@ export default class Collection {
         }
 
         for (const shape of data.shapes) {
-            const clientID = ++this.count;
+            const clientID = this.injection.nextClientID();
             const shapeModel = shapeFactory(shape, clientID, this.injection);
             this.shapes[shapeModel.frame] = this.shapes[shapeModel.frame] || [];
             this.shapes[shapeModel.frame].push(shapeModel);
@@ -133,7 +145,7 @@ export default class Collection {
         }
 
         for (const track of data.tracks) {
-            const clientID = ++this.count;
+            const clientID = this.injection.nextClientID();
             const trackModel = trackFactory(track, clientID, this.injection);
             // The function can return null if track doesn't have any shapes.
             // In this case a corresponded message will be sent to the console
@@ -147,16 +159,16 @@ export default class Collection {
         return result;
     }
 
-    export(): SerializedCollection {
+    export(): Omit<SerializedCollection, 'version'> {
         const data = {
-            tracks: this.tracks.filter((track) => !track.removed).map((track) => track.toJSON()),
+            tracks: this.tracks.filter((track) => !track.removed).map((track) => track.toJSON() as SerializedTrack),
             shapes: Object.values(this.shapes)
                 .reduce((accumulator, frameShapes) => {
                     accumulator.push(...frameShapes);
                     return accumulator;
                 }, [])
                 .filter((shape) => !shape.removed)
-                .map((shape) => shape.toJSON()),
+                .map((shape) => shape.toJSON() as SerializedShape),
             tags: Object.values(this.tags)
                 .reduce((accumulator, frameTags) => {
                     accumulator.push(...frameTags);
@@ -319,7 +331,7 @@ export default class Collection {
             }
 
             if (object.shapeType === ShapeType.SKELETON) {
-                for (const element of (object as SkeletonShape | SkeletonTrack).elements) {
+                for (const element of (object as unknown as SkeletonShape | SkeletonTrack).elements) {
                     // for each track/shape element get its first objectState and keep it
                     elements[element.label.id] = [
                         ...(elements[element.label.id] || []), element,
@@ -797,7 +809,6 @@ export default class Collection {
             this.tags = {};
             this.tracks = [];
             this.objects = {};
-            this.count = 0;
 
             this.flush = true;
         } else {
@@ -807,7 +818,7 @@ export default class Collection {
         }
     }
 
-    statistics(filter): Statistics {
+    statistics(): Statistics {
         const labels = {};
         const shapes = ['rectangle', 'polygon', 'polyline', 'points', 'ellipse', 'cuboid', 'skeleton'];
         const body = {
@@ -895,10 +906,6 @@ export default class Collection {
 
         for (const object of Object.values(this.objects)) {
             if (object.removed) {
-                continue;
-            }
-
-            if ((object.jobID && filter?.jobID) && object.jobID !== filter.jobID) {
                 continue;
             }
 
@@ -999,6 +1006,10 @@ export default class Collection {
                     );
                 }
 
+                if (state.shapeType === 'mask' && state.points.length < 6) {
+                    throw new ArgumentError('Could not create empty mask');
+                }
+
                 if (state.objectType === 'shape') {
                     constructed.shapes.push({
                         attributes,
@@ -1088,12 +1099,27 @@ export default class Collection {
         // eslint-disable-next-line no-unsanitized/method
         const imported = this.import(constructed);
         const importedArray = imported.tags.concat(imported.tracks).concat(imported.shapes);
+        const additionalUndo = [];
+        const additionalRedo = [];
+        const additionalClientIDs = [];
+        let globalEmptyMaskOccurred = false;
         for (const object of importedArray) {
-            if (object.shapeType === ShapeType.MASK && config.removeUnderlyingMaskPixels) {
-                (object as MaskShape).removeUnderlyingPixels(object.frame);
+            if (object.shapeType === ShapeType.MASK && config.removeUnderlyingMaskPixels.enabled) {
+                const {
+                    clientIDs,
+                    emptyMaskOccurred,
+                    undo: undoWithUnderlyingPixels,
+                    redo: redoWithUnderlyingPixels,
+                } = (object as MaskShape).removeUnderlyingPixels(object.frame);
+                additionalUndo.push(undoWithUnderlyingPixels);
+                additionalRedo.push(redoWithUnderlyingPixels);
+                additionalClientIDs.push(clientIDs);
+                globalEmptyMaskOccurred = emptyMaskOccurred || globalEmptyMaskOccurred;
             }
         }
-
+        if (config.removeUnderlyingMaskPixels.enabled && globalEmptyMaskOccurred) {
+            config.removeUnderlyingMaskPixels?.onEmptyMaskOccurrence();
+        }
         if (objectStates.length) {
             this.history.do(
                 HistoryActions.CREATED_OBJECTS,
@@ -1101,14 +1127,21 @@ export default class Collection {
                     importedArray.forEach((object) => {
                         object.removed = true;
                     });
+                    additionalUndo.forEach((undo) => {
+                        undo();
+                    });
                 },
                 () => {
                     importedArray.forEach((object) => {
                         object.removed = false;
                         object.serverID = undefined;
                     });
+
+                    additionalRedo.forEach((redo) => {
+                        redo();
+                    });
                 },
-                importedArray.map((object) => object.clientID),
+                [...importedArray.map((object) => object.clientID), ...additionalClientIDs.flat()],
                 objectStates[0].frame,
             );
         }
@@ -1132,11 +1165,37 @@ export default class Collection {
                 continue;
             }
 
-            const object = this.objects[state.clientID];
-            if (typeof object === 'undefined') {
-                throw new ArgumentError('The object has not been saved yet. Call annotations.put([state]) before');
+            let distanceMetric: typeof RectangleShape['distance'] | null = null;
+            switch (state.shapeType) {
+                case ShapeType.CUBOID:
+                    distanceMetric = CuboidShape.distance;
+                    break;
+                case ShapeType.ELLIPSE:
+                    distanceMetric = EllipseShape.distance;
+                    break;
+                case ShapeType.MASK:
+                    distanceMetric = MaskShape.distance;
+                    break;
+                case ShapeType.POINTS:
+                    distanceMetric = PointsShape.distance;
+                    break;
+                case ShapeType.POLYGON:
+                    distanceMetric = PolygonShape.distance;
+                    break;
+                case ShapeType.POLYLINE:
+                    distanceMetric = PolylineShape.distance;
+                    break;
+                case ShapeType.RECTANGLE:
+                    distanceMetric = RectangleShape.distance;
+                    break;
+                case ShapeType.SKELETON:
+                    distanceMetric = SkeletonShape.distance;
+                    break;
+                default:
+                    throw new ArgumentError(`Unknown shape type "${state.shapeType}"`);
             }
-            const distance = object.constructor.distance(state.points, x, y, state.rotation);
+
+            const distance = distanceMetric(state.points, x, y, state.rotation);
             if (distance !== null && (minimumDistance === null || distance < minimumDistance)) {
                 minimumDistance = distance;
                 minimumState = state;
@@ -1149,17 +1208,30 @@ export default class Collection {
         };
     }
 
-    searchEmpty(frameFrom: number, frameTo: number): number | null {
+    _searchEmpty(
+        frameFrom: number,
+        frameTo: number,
+        searchParameters: {
+            allowDeletedFrames: boolean;
+        },
+    ): number | null {
+        const { allowDeletedFrames } = searchParameters;
         const sign = Math.sign(frameTo - frameFrom);
         const predicate = sign > 0 ? (frame) => frame <= frameTo : (frame) => frame >= frameTo;
         const update = sign > 0 ? (frame) => frame + 1 : (frame) => frame - 1;
         for (let frame = frameFrom; predicate(frame); frame = update(frame)) {
+            if (!allowDeletedFrames && this.frameMeta[frame].deleted) {
+                continue;
+            }
+
             if (frame in this.shapes && this.shapes[frame].some((shape) => !shape.removed)) {
                 continue;
             }
+
             if (frame in this.tags && this.tags[frame].some((tag) => !tag.removed)) {
                 continue;
             }
+
             const filteredTracks = this.tracks.filter((track) => !track.removed);
             let found = false;
             for (const track of filteredTracks) {
@@ -1182,14 +1254,58 @@ export default class Collection {
         return null;
     }
 
-    search(filters: string[], frameFrom: number, frameTo: number): number | null {
-        const sign = Math.sign(frameTo - frameFrom);
-        const filtersStr = JSON.stringify(filters);
-        const linearSearch = filtersStr.match(/"var":"width"/) || filtersStr.match(/"var":"height"/);
+    search(
+        frameFrom: number,
+        frameTo: number,
+        searchParameters: {
+            allowDeletedFrames: boolean;
+            annotationsFilters?: object[];
+            generalFilters?: {
+                isEmptyFrame?: boolean;
+            };
+        },
+    ): number | null {
+        const { allowDeletedFrames } = searchParameters;
+        let { annotationsFilters } = searchParameters;
 
+        if ('generalFilters' in searchParameters) {
+            // if we are looking for en empty frame, run a dedicated algorithm
+            if (searchParameters.generalFilters.isEmptyFrame) {
+                return this._searchEmpty(frameFrom, frameTo, { allowDeletedFrames });
+            }
+
+            // not empty frames corresponds to default behaviour of the function with empty annotation filters
+            annotationsFilters = [];
+        }
+
+        const sign = Math.sign(frameTo - frameFrom);
         const predicate = sign > 0 ? (frame) => frame <= frameTo : (frame) => frame >= frameTo;
         const update = sign > 0 ? (frame) => frame + 1 : (frame) => frame - 1;
+
+        // if not looking for an emty frame nor frame with annotations, return the next frame
+        // check if deleted frames are allowed additionally
+        if (!annotationsFilters) {
+            let frame = frameFrom;
+            while (predicate(frame)) {
+                if (!allowDeletedFrames && this.frameMeta[frame].deleted) {
+                    frame = update(frame);
+                    continue;
+                }
+
+                return frame;
+            }
+
+            return null;
+        }
+
+        const filtersStr = JSON.stringify(annotationsFilters);
+        const linearSearch = filtersStr.match(/"var":"width"/) || filtersStr.match(/"var":"height"/);
+
         for (let frame = frameFrom; predicate(frame); frame = update(frame)) {
+            if (!allowDeletedFrames && this.frameMeta[frame].deleted) {
+                continue;
+            }
+
             // First prepare all data for the frame
             // Consider all shapes, tags, and not outside tracks that have keyframe here
             // In particular consider first and last frame as keyframes for all tracks
@@ -1208,13 +1324,8 @@ export default class Collection {
                 .filter((track) => !track.removed);
             statesData.push(...tracks.map((track) => track.get(frame)).filter((state) => !state.outside));
 
-            // Nothing to filtering, go to the next iteration
-            if (!statesData.length) {
-                continue;
-            }
-
             // Filtering
-            const filtered = this.annotationsFilter.filter(statesData, filters);
+            const filtered = this.annotationsFilter.filter(statesData, annotationsFilters);
             if (filtered.length) {
                 return frame;
             }

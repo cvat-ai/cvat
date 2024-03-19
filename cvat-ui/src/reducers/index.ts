@@ -1,13 +1,13 @@
 // Copyright (C) 2020-2022 Intel Corporation
-// Copyright (C) 2022-2023 CVAT.ai Corporation
+// Copyright (C) 2022-2024 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
 import { Canvas3d } from 'cvat-canvas3d/src/typescript/canvas3d';
 import { Canvas, RectDrawingMethod, CuboidDrawingMethod } from 'cvat-canvas-wrapper';
 import {
-    Webhook, MLModel, Organization, Job, Label,
-    QualityReport, QualityConflict, QualitySettings, FramesMetaData, RQStatus, EventLogger, Invitation,
+    Webhook, MLModel, Organization, Job, Label, User,
+    QualityConflict, FramesMetaData, RQStatus, Event, Invitation, SerializedAPISchema,
 } from 'cvat-core-wrapper';
 import { IntelligentScissors } from 'utils/opencv-wrapper/intelligent-scissors';
 import { KeyMap } from 'utils/mousetrap-react';
@@ -17,12 +17,8 @@ import { ImageFilter } from 'utils/image-processing';
 export interface AuthState {
     initialized: boolean;
     fetching: boolean;
-    user: any;
-    authActionsFetching: boolean;
-    authActionsInitialized: boolean;
+    user: User | null;
     showChangePasswordDialog: boolean;
-    allowChangePassword: boolean;
-    allowResetPassword: boolean;
     hasEmailVerificationBeenSent: boolean;
 }
 
@@ -345,6 +341,18 @@ export interface AboutState {
     initialized: boolean;
 }
 
+export interface ServerAPIState {
+    schema: SerializedAPISchema | null;
+    fetching: boolean;
+    initialized: boolean;
+    configuration: {
+        isRegistrationEnabled: boolean;
+        isBasicLoginEnabled: boolean;
+        isPasswordResetEnabled: boolean;
+        isPasswordChangeEnabled: boolean;
+    };
+}
+
 export interface UserAgreement {
     name: string;
     urlDisplayText: string;
@@ -434,7 +442,9 @@ export interface NotificationsState {
             changePassword: null | ErrorState;
             requestPasswordReset: null | ErrorState;
             resetPassword: null | ErrorState;
-            loadAuthActions: null | ErrorState;
+        };
+        serverAPI: {
+            fetching: null | ErrorState;
         };
         projects: {
             fetching: null | ErrorState;
@@ -502,7 +512,6 @@ export interface NotificationsState {
             undo: null | ErrorState;
             redo: null | ErrorState;
             search: null | ErrorState;
-            searchEmptyFrame: null | ErrorState;
             deleteFrame: null | ErrorState;
             restoreFrame: null | ErrorState;
             savingLogs: null | ErrorState;
@@ -663,6 +672,12 @@ export enum Rotation {
     CLOCKWISE90,
 }
 
+export enum NavigationType {
+    REGULAR = 'regular',
+    FILTERED = 'filtered',
+    EMPTY = 'empty',
+}
+
 export interface AnnotationState {
     activities: {
         loads: {
@@ -693,9 +708,14 @@ export interface AnnotationState {
         openTime: null | number;
         labels: Label[];
         requestedId: number | null;
-        groundTruthJobId: number | null;
-        groundTruthJobFramesMeta: FramesMetaData | null;
         instance: Job | null | undefined;
+        queryParameters: {
+            initialOpenGuide: boolean;
+            defaultLabel: string | null;
+            defaultPointsCount: number | null;
+        };
+        groundTruthJobFramesMeta: FramesMetaData | null;
+        groundTruthInstance: Job | null;
         attributes: Record<number, any[]>;
         fetching: boolean;
         saving: boolean;
@@ -709,8 +729,9 @@ export interface AnnotationState {
             fetching: boolean;
             delay: number;
             changeTime: number | null;
-            changeFrameLog: EventLogger | null;
+            changeFrameEvent: Event | null;
         };
+        navigationType: NavigationType;
         ranges: string;
         navigationBlocked: boolean;
         playing: boolean;
@@ -733,9 +754,8 @@ export interface AnnotationState {
         highlightedConflict: QualityConflict | null;
         collapsed: Record<number, boolean>;
         collapsedAll: boolean;
-        statesSources: number[];
         states: any[];
-        filters: any[];
+        filters: object[];
         resetGroupFlag: boolean;
         history: {
             undo: [string, number][];
@@ -773,9 +793,10 @@ export interface AnnotationState {
 export enum Workspace {
     STANDARD3D = 'Standard 3D',
     STANDARD = 'Standard',
-    ATTRIBUTE_ANNOTATION = 'Attribute annotation',
-    TAG_ANNOTATION = 'Tag annotation',
-    REVIEW_WORKSPACE = 'Review',
+    ATTRIBUTES = 'Attribute annotation',
+    SINGLE_SHAPE = 'Single shape',
+    TAGS = 'Tag annotation',
+    REVIEW = 'Review',
 }
 
 export enum GridColor {
@@ -913,26 +934,6 @@ export interface WebhooksState {
     query: WebhooksQuery;
 }
 
-export interface QualityQuery {
-    taskId: number | null;
-    jobId: number | null;
-    parentId: number | null;
-}
-
-export interface AnalyticsState {
-    fetching: boolean;
-    quality: {
-        tasksReports: QualityReport[];
-        jobsReports: QualityReport[];
-        query: QualityQuery;
-        settings: {
-            modalVisible: boolean;
-            current: QualitySettings | null;
-            fetching: boolean;
-        }
-    }
-}
-
 export interface InvitationsQuery {
     page: number;
 }
@@ -966,7 +967,7 @@ export interface CombinedState {
     organizations: OrganizationState;
     invitations: InvitationsState;
     webhooks: WebhooksState;
-    analytics: AnalyticsState;
+    serverAPI: ServerAPIState;
 }
 
 export interface Indexable {

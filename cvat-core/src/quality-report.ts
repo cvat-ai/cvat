@@ -2,35 +2,7 @@
 //
 // SPDX-License-Identifier: MIT
 
-export interface SerializedQualityReportData {
-    id?: number;
-    parent_id?: number;
-    task_id?: number;
-    job_id?: number;
-    target: string;
-    created_date?: string;
-    gt_last_updated?: string;
-    summary?: {
-        frame_count: number,
-        frame_share: number,
-        conflict_count: number,
-        valid_count: number,
-        ds_count: number,
-        gt_count: number,
-        error_count: number,
-        warning_count: number,
-        conflicts_by_type: {
-            extra_annotation: number,
-            missing_annotation: number,
-            mismatching_label: number,
-            low_overlap: number,
-            mismatching_direction: number,
-            mismatching_attributes: number,
-            mismatching_groups: number,
-            covered_annotation: number,
-        }
-    };
-}
+import { SerializedQualityReportData } from './server-response-types';
 
 export interface QualitySummary {
     frameCount: number;
@@ -58,9 +30,9 @@ export interface QualitySummary {
 
 export default class QualityReport {
     #id: number;
-    #parentId: number;
-    #taskId: number;
-    #jobId: number;
+    #parentID: number;
+    #taskID: number;
+    #jobID: number;
     #target: string;
     #createdDate: string;
     #gtLastUpdated: string;
@@ -68,9 +40,9 @@ export default class QualityReport {
 
     constructor(initialData: SerializedQualityReportData) {
         this.#id = initialData.id;
-        this.#parentId = initialData.parent_id;
-        this.#taskId = initialData.task_id;
-        this.#jobId = initialData.job_id;
+        this.#parentID = initialData.parent_id;
+        this.#taskID = initialData.task_id;
+        this.#jobID = initialData.job_id;
         this.#target = initialData.target;
         this.#gtLastUpdated = initialData.gt_last_updated;
         this.#createdDate = initialData.created_date;
@@ -81,16 +53,16 @@ export default class QualityReport {
         return this.#id;
     }
 
-    get parentId(): number {
-        return this.#parentId;
+    get parentID(): number {
+        return this.#parentID;
     }
 
-    get taskId(): number {
-        return this.#taskId;
+    get taskID(): number {
+        return this.#taskID;
     }
 
-    get jobId(): number {
-        return this.#jobId;
+    get jobID(): number {
+        return this.#jobID;
     }
 
     get target(): string {

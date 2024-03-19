@@ -54,13 +54,14 @@ Example file structure for 2D and 3D tasks:
 {{< /tab >}}
 {{< tab header="3D option 1" >}}
  root_directory
-    image_1_to_be_annotated.pcd
-    image_2_to_be_annotated.pcd
-     related_images/
-        image_1_to_be_annotated_pcd/
-           context_image_for_image_1.jpg
-        image_2_to_be_annotated_pcd/
-           context_image_for_image_2.jpg
+    pointcloud/
+      image_1_to_be_annotated.pcd
+      image_2_to_be_annotated.pcd
+    related_images/
+      image_1_to_be_annotated_pcd/
+        context_image_for_image_1.jpg
+      image_2_to_be_annotated_pcd/
+        context_image_for_image_2.jpg
 {{< /tab >}}
 {{< tab header="3D option 2" >}}
  /any_directory

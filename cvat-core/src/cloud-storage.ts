@@ -10,7 +10,7 @@ import { ArgumentError } from './exceptions';
 import { CloudStorageCredentialsType, CloudStorageProviderType, CloudStorageStatus } from './enums';
 import User from './user';
 import { decodePreview } from './frames';
-import { SerializedRemoteFile } from './server-response-types';
+import { SerializedRemoteFile, SerializedCloudStorage } from './server-response-types';
 
 function validateNotEmptyString(value: string): void {
     if (typeof value !== 'string') {
@@ -18,27 +18,6 @@ function validateNotEmptyString(value: string): void {
     } else if (!value.trim().length) {
         throw new ArgumentError('Value mustn\'t be empty string');
     }
-}
-
-interface RawCloudStorageData {
-    id?: number;
-    display_name?: string;
-    description?: string,
-    credentials_type?: CloudStorageCredentialsType,
-    provider_type?: CloudStorageProviderType,
-    resource?: string,
-    account_name?: string,
-    key?: string,
-    secret_key?: string,
-    session_token?: string,
-    key_file?: File,
-    connection_string?: string,
-    specific_attributes?: string,
-    owner?: any,
-    created_date?: string,
-    updated_date?: string,
-    manifest_path?: string,
-    manifests?: string[],
 }
 
 export default class CloudStorage {
@@ -62,8 +41,8 @@ export default class CloudStorage {
     public readonly updatedDate: string;
     public readonly prefix: string | null;
 
-    constructor(initialData: RawCloudStorageData) {
-        const data: RawCloudStorageData = {
+    constructor(initialData: SerializedCloudStorage) {
+        const data: SerializedCloudStorage = {
             id: undefined,
             display_name: undefined,
             description: undefined,
@@ -274,8 +253,8 @@ Object.defineProperties(CloudStorage.prototype.save, {
         writable: false,
         enumerable: false,
         value: async function implementation(): Promise<CloudStorage> {
-            function prepareOptionalFields(cloudStorageInstance: CloudStorage): RawCloudStorageData {
-                const data: RawCloudStorageData = {};
+            function prepareOptionalFields(cloudStorageInstance: CloudStorage): SerializedCloudStorage {
+                const data: SerializedCloudStorage = {};
                 if (cloudStorageInstance.description !== undefined) {
                     data.description = cloudStorageInstance.description;
                 }
@@ -313,7 +292,7 @@ Object.defineProperties(CloudStorage.prototype.save, {
             if (typeof this.id !== 'undefined') {
                 // provider_type and recource should not change;
                 // send to the server only the values that have changed
-                const initialData: RawCloudStorageData = {};
+                const initialData: SerializedCloudStorage = {};
                 if (this.displayName) {
                     initialData.display_name = this.displayName;
                 }
@@ -335,7 +314,7 @@ Object.defineProperties(CloudStorage.prototype.save, {
             }
 
             // create
-            const initialData: RawCloudStorageData = {
+            const initialData: SerializedCloudStorage = {
                 display_name: this.displayName,
                 credentials_type: this.credentialsType,
                 provider_type: this.providerType,

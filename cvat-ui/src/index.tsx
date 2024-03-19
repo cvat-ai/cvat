@@ -1,5 +1,5 @@
 // Copyright (C) 2020-2022 Intel Corporation
-// Copyright (C) 2023 CVAT.ai Corporation
+// Copyright (C) 2023-2024 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -9,7 +9,7 @@ import { connect, Provider } from 'react-redux';
 import { BrowserRouter } from 'react-router-dom';
 
 import { getAboutAsync } from 'actions/about-actions';
-import { authorizedAsync, loadAuthActionsAsync } from 'actions/auth-actions';
+import { authorizedAsync } from 'actions/auth-actions';
 import { getFormatsAsync } from 'actions/formats-actions';
 import { getModelsAsync } from 'actions/models-actions';
 import { getPluginsAsync } from 'actions/plugins-actions';
@@ -17,12 +17,13 @@ import { getUserAgreementsAsync } from 'actions/useragreements-actions';
 import CVATApplication from 'components/cvat-app';
 import PluginsEntrypoint from 'components/plugins-entrypoint';
 import LayoutGrid from 'components/layout-grid/layout-grid';
-import logger, { LogType } from 'cvat-logger';
+import logger, { EventScope } from 'cvat-logger';
 import createCVATStore, { getCVATStore } from 'cvat-store';
 import createRootReducer from 'reducers/root-reducer';
 import { activateOrganizationAsync } from 'actions/organization-actions';
 import { resetErrors, resetMessages } from 'actions/notification-actions';
 import { getInvitationsAsync } from 'actions/invitations-actions';
+import { getServerAPISchemaAsync } from 'actions/server-actions';
 import { CombinedState, NotificationsState, PluginsState } from './reducers';
 
 createCVATStore(createRootReducer);
@@ -44,16 +45,16 @@ interface StateToProps {
     formatsFetching: boolean;
     userAgreementsInitialized: boolean;
     userAgreementsFetching: boolean;
-    authActionsFetching: boolean;
-    authActionsInitialized: boolean;
-    allowChangePassword: boolean;
-    allowResetPassword: boolean;
     notifications: NotificationsState;
     user: any;
     isModelPluginActive: boolean;
     pluginComponents: PluginsState['components'];
     invitationsFetching: boolean;
     invitationsInitialized: boolean;
+    serverAPISchemaFetching: boolean;
+    serverAPISchemaInitialized: boolean;
+    isPasswordResetEnabled: boolean;
+    isRegistrationEnabled: boolean;
 }
 
 interface DispatchToProps {
@@ -65,20 +66,15 @@ interface DispatchToProps {
     resetErrors: () => void;
     resetMessages: () => void;
     loadUserAgreements: () => void;
-    loadAuthActions: () => void;
     loadOrganization: () => void;
     initInvitations: () => void;
+    loadServerAPISchema: () => void;
 }
 
 function mapStateToProps(state: CombinedState): StateToProps {
-    const { plugins } = state;
-    const { auth } = state;
-    const { formats } = state;
-    const { about } = state;
-    const { userAgreements } = state;
-    const { models } = state;
-    const { organizations } = state;
-    const { invitations } = state;
+    const {
+        plugins, auth, formats, about, userAgreements, models, organizations, invitations, serverAPI,
+    } = state;
 
     return {
         userInitialized: auth.initialized,
@@ -95,16 +91,16 @@ function mapStateToProps(state: CombinedState): StateToProps {
         formatsFetching: formats.fetching,
         userAgreementsInitialized: userAgreements.initialized,
         userAgreementsFetching: userAgreements.fetching,
-        authActionsFetching: auth.authActionsFetching,
-        authActionsInitialized: auth.authActionsInitialized,
-        allowChangePassword: auth.allowChangePassword,
-        allowResetPassword: auth.allowResetPassword,
         notifications: state.notifications,
         user: auth.user,
         pluginComponents: plugins.components,
         isModelPluginActive: plugins.list.MODELS,
         invitationsFetching: invitations.fetching,
         invitationsInitialized: invitations.initialized,
+        serverAPISchemaFetching: serverAPI.fetching,
+        serverAPISchemaInitialized: serverAPI.initialized,
+        isPasswordResetEnabled: serverAPI.configuration.isPasswordResetEnabled,
+        isRegistrationEnabled: serverAPI.configuration.isRegistrationEnabled,
     };
 }
 
@@ -118,9 +114,9 @@ function mapDispatchToProps(dispatch: any): DispatchToProps {
         loadAbout: (): void => dispatch(getAboutAsync()),
         resetErrors: (): void => dispatch(resetErrors()),
         resetMessages: (): void => dispatch(resetMessages()),
-        loadAuthActions: (): void => dispatch(loadAuthActionsAsync()),
         loadOrganization: (): void => dispatch(activateOrganizationAsync()),
         initInvitations: (): void => dispatch(getInvitationsAsync({ page: 1 }, true)),
+        loadServerAPISchema: (): void => dispatch(getServerAPISchemaAsync()),
     };
 }
 
@@ -137,13 +133,23 @@ ReactDOM.render(
     document.getElementById('root'),
 );
 
-window.addEventListener('error', (errorEvent: ErrorEvent) => {
+window.addEventListener('error', (errorEvent: ErrorEvent): boolean => {
+    const {
+        filename, lineno, colno, error,
+    } = errorEvent;
+
     if (
-        errorEvent.filename &&
-        typeof errorEvent.lineno === 'number' &&
-        typeof errorEvent.colno === 'number' &&
-        errorEvent.error
+        filename && typeof lineno === 'number' &&
+        typeof colno === 'number' && error
     ) {
+        // weird react behaviour
+        // it also gets event only in development environment, caught and handled in componentDidCatch
+        // discussion is here https://github.com/facebook/react/issues/10474
+        // and workaround is:
+        if (error.stack && error.stack.indexOf('invokeGuardedCallbackDev') >= 0) {
+            return true;
+        }
+
         const logPayload = {
             filename: errorEvent.filename,
             line: errorEvent.lineno,
@@ -158,9 +164,11 @@ window.addEventListener('error', (errorEvent: ErrorEvent) => {
         const re = /\/tasks\/[0-9]+\/jobs\/[0-9]+$/;
         const { instance: job } = state.annotation.job;
         if (re.test(pathname) && job) {
-            job.logger.log(LogType.exception, logPayload);
+            job.logger.log(EventScope.exception, logPayload);
         } else {
-            logger.log(LogType.exception, logPayload);
+            logger.log(EventScope.exception, logPayload);
         }
     }
+
+    return false;
 });

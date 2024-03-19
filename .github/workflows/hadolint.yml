@@ -4,9 +4,9 @@ jobs:
   Linter:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - id: files
-        uses: tj-actions/changed-files@v35.9.2
+        uses: tj-actions/changed-files@v41.0.0
         with:
           files: |
               **/Dockerfile*

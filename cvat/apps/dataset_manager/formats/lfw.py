@@ -1,5 +1,5 @@
 # Copyright (C) 2021-2022 Intel Corporation
-# Copyright (C) 2023 CVAT.ai Corporation
+# Copyright (C) 2023-2024 CVAT.ai Corporation
 #
 # SPDX-License-Identifier: MIT
 
@@ -24,8 +24,8 @@ def _import(src_file, temp_dir, instance_data, load_data_callback=None, **kwargs
 
 @exporter(name='LFW', ext='ZIP', version='1.0')
 def _exporter(dst_file, temp_dir, instance_data, save_images=False):
-    dataset = Dataset.from_extractors(GetCVATDataExtractor(instance_data,
-        include_images=save_images), env=dm_env)
+    with GetCVATDataExtractor(instance_data, include_images=save_images) as extractor:
+        dataset = Dataset.from_extractors(extractor, env=dm_env)
+        dataset.export(temp_dir, format='lfw', save_images=save_images)
 
-    dataset.export(temp_dir, format='lfw', save_images=save_images)
     make_zip_archive(temp_dir, dst_file)

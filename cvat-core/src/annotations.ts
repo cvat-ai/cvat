@@ -5,7 +5,7 @@
 
 import { Storage } from './storage';
 import serverProxy from './server-proxy';
-import AnnotationsCollection from './annotations-collection';
+import AnnotationsCollection, { FrameMeta } from './annotations-collection';
 import AnnotationsSaver from './annotations-saver';
 import AnnotationsHistory from './annotations-history';
 import { checkObjectType } from './common';
@@ -13,6 +13,7 @@ import Project from './project';
 import { Task, Job } from './session';
 import { ScriptingError, ArgumentError } from './exceptions';
 import { getDeletedFrames } from './frames';
+import { JobType } from './enums';
 
 type WeakMapItem = { collection: AnnotationsCollection, saver: AnnotationsSaver, history: AnnotationsHistory };
 const jobCache = new WeakMap<Task | Job, WeakMapItem>();
@@ -57,53 +58,17 @@ export function getHistory(session): AnnotationsHistory {
     return getSession(session).history;
 }
 
-function processGroundTruthAnnotations(rawAnnotations, groundTruthAnnotations) {
-    const annotations = [].concat(
-        groundTruthAnnotations.shapes,
-        groundTruthAnnotations.tracks,
-        groundTruthAnnotations.tags,
-    );
-    annotations.forEach((annotation) => { annotation.is_gt = true; });
-    const result = {
-        shapes: rawAnnotations.shapes.slice(0).concat(groundTruthAnnotations.shapes.slice(0)),
-        tracks: rawAnnotations.tracks.slice(0).concat(groundTruthAnnotations.tracks.slice(0)),
-        tags: rawAnnotations.tags.slice(0).concat(groundTruthAnnotations.tags.slice(0)),
-    };
-    return result;
-}
-
-function addJobId(rawAnnotations, jobID) {
-    const annotations = [].concat(
-        rawAnnotations.shapes,
-        rawAnnotations.tracks,
-        rawAnnotations.tags,
-    );
-    annotations.forEach((annotation) => { annotation.job_id = jobID; });
-    const result = {
-        shapes: rawAnnotations.shapes.slice(0),
-        tracks: rawAnnotations.tracks.slice(0),
-        tags: rawAnnotations.tags.slice(0),
-    };
-    return result;
-}
-
-async function getAnnotationsFromServer(session, groundTruthJobId): Promise<void> {
+async function getAnnotationsFromServer(session: Job | Task): Promise<void> {
     const sessionType = session instanceof Task ? 'task' : 'job';
     const cache = getCache(sessionType);
 
     if (!cache.has(session)) {
-        let rawAnnotations = await serverProxy.annotations.getAnnotations(sessionType, session.id);
-        rawAnnotations = addJobId(rawAnnotations, session.id);
-        if (groundTruthJobId) {
-            let gtAnnotations = await serverProxy.annotations.getAnnotations(sessionType, groundTruthJobId);
-            gtAnnotations = addJobId(gtAnnotations, groundTruthJobId);
-            rawAnnotations = processGroundTruthAnnotations(rawAnnotations, gtAnnotations);
-        }
+        const serializedAnnotations = await serverProxy.annotations.getAnnotations(sessionType, session.id);
 
         // Get meta information about frames
-        const startFrame = sessionType === 'job' ? session.startFrame : 0;
-        const stopFrame = sessionType === 'job' ? session.stopFrame : session.size - 1;
-        const frameMeta = {};
+        const startFrame = session instanceof Job ? session.startFrame : 0;
+        const stopFrame = session instanceof Job ? session.stopFrame : session.size - 1;
+        const frameMeta: Partial<FrameMeta> = {};
         for (let i = startFrame; i <= stopFrame; i++) {
             frameMeta[i] = await session.frames.get(i);
         }
@@ -111,16 +76,17 @@ async function getAnnotationsFromServer(session, groundTruthJobId): Promise<void
 
         const history = new AnnotationsHistory();
         const collection = new AnnotationsCollection({
-            labels: session.labels || session.task.labels,
+            labels: session.labels,
             history,
             stopFrame,
-            frameMeta,
+            frameMeta: frameMeta as FrameMeta,
+            jobType: session instanceof Job ? session.type : JobType.ANNOTATION,
             dimension: session.dimension,
         });
 
         // eslint-disable-next-line no-unsanitized/method
-        collection.import(rawAnnotations);
-        const saver = new AnnotationsSaver(rawAnnotations.version, collection, session);
+        collection.import(serializedAnnotations);
+        const saver = new AnnotationsSaver(serializedAnnotations.version, collection, session);
         cache.set(session, { collection, saver, history });
     }
 }
@@ -134,12 +100,12 @@ export function clearCache(session): void {
     }
 }
 
-export async function getAnnotations(session, frame, allTracks, filters, groundTruthJobId): Promise<ReturnType<AnnotationsCollection['get']>> {
+export async function getAnnotations(session, frame, allTracks, filters): Promise<ReturnType<AnnotationsCollection['get']>> {
     try {
         return getCollection(session).get(frame, allTracks, filters);
     } catch (error) {
         if (error instanceof InstanceNotInitializedError) {
-            await getAnnotationsFromServer(session, groundTruthJobId);
+            await getAnnotationsFromServer(session);
             return getCollection(session).get(frame, allTracks, filters);
         }
 

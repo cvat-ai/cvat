@@ -1,19 +1,22 @@
-// Copyright (C) 2023 CVAT.ai Corporation
+// Copyright (C) 2023-2024 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
+import {
+    AnalyticsReportFilter, QualityConflictsFilter, QualityReportsFilter, QualitySettingsFilter,
+} from './server-response-types';
 import PluginRegistry from './plugins';
 import serverProxy from './server-proxy';
 import lambdaManager from './lambda-manager';
 import { AnnotationFormats } from './annotation-formats';
-import loggerStorage from './logger-storage';
+import logger from './logger';
 import * as enums from './enums';
 import config from './config';
 import { mask2Rle, rle2Mask } from './object-utils';
 import User from './user';
 import Project from './project';
 import { Job, Task } from './session';
-import { EventLogger } from './log';
+import { Event } from './event';
 import { Attribute, Label } from './labels';
 import Statistics from './statistics';
 import ObjectState from './object-state';
@@ -24,11 +27,16 @@ import { FrameData } from './frames';
 import CloudStorage from './cloud-storage';
 import Organization, { Invitation } from './organization';
 import Webhook from './webhook';
+import QualityReport from './quality-report';
+import QualityConflict from './quality-conflict';
+import QualitySettings from './quality-settings';
+import AnalyticsReport from './analytics-report';
 import AnnotationGuide from './guide';
 import BaseSingleFrameAction, { listActions, registerAction, runActions } from './annotations-actions';
 import {
     ArgumentError, DataError, Exception, ScriptingError, ServerError,
 } from './exceptions';
+import { PaginatedResource } from './core-types';
 
 export default interface CVATCore {
     plugins: {
@@ -64,6 +72,7 @@ export default interface CVATCore {
         setAuthData: any;
         removeAuthData: any;
         installedApps: any;
+        apiSchema: typeof serverProxy.server.apiSchema;
     };
     assets: {
         create: any;
@@ -72,13 +81,37 @@ export default interface CVATCore {
         get: any;
     };
     jobs: {
-        get: any;
+        get: (filter: {
+            page?: number;
+            filter?: string;
+            sort?: string;
+            search?: string;
+            jobID?: number;
+            taskID?: number;
+            type?: string;
+        }) => Promise<PaginatedResource<Job>>;
     };
     tasks: {
-        get: any;
+        get: (filter: {
+            page?: number;
+            projectId?: number;
+            id?: number;
+            sort?: string;
+            search?: string;
+            filter?: string;
+            ordering?: string;
+        }) => Promise<PaginatedResource<Task>>;
     }
     projects: {
-        get: any;
+        get: (
+            filter: {
+                id: number;
+                page: number;
+                search: string;
+                sort: string;
+                filter: string;
+            }
+        ) => Promise<PaginatedResource<Project>>;
         searchNames: any;
     };
     cloudStorages: {
@@ -100,12 +133,14 @@ export default interface CVATCore {
     };
     analytics: {
         quality: {
-            reports: any;
-            conflicts: any;
-            settings: any;
+            reports: (filter: QualityReportsFilter) => Promise<PaginatedResource<QualityReport>>;
+            conflicts: (filter: QualityConflictsFilter) => Promise<QualityConflict[]>;
+            settings: {
+                get: (filter: QualitySettingsFilter) => Promise<QualitySettings>;
+            };
         };
         performance: {
-            reports: any;
+            reports: (filter: AnalyticsReportFilter) => Promise<AnalyticsReport>;
         };
     };
     frames: {
@@ -116,13 +151,17 @@ export default interface CVATCore {
         register: typeof registerAction;
         run: typeof runActions;
     };
-    logger: typeof loggerStorage;
+    logger: typeof logger;
     config: {
         backendAPI: typeof config.backendAPI;
         origin: typeof config.origin;
         uploadChunkSize: typeof config.uploadChunkSize;
-        removeUnderlyingMaskPixels: typeof config.removeUnderlyingMaskPixels;
+        removeUnderlyingMaskPixels: {
+            enabled: boolean;
+            onEmptyMaskOccurrence: () => void | null;
+        };
         onOrganizationChange: typeof config.onOrganizationChange;
+        globalObjectsCounter: typeof config.globalObjectsCounter;
     },
     client: {
         version: string;
@@ -140,7 +179,7 @@ export default interface CVATCore {
         Project: typeof Project;
         Task: typeof Task;
         Job: typeof Job;
-        EventLogger: typeof EventLogger;
+        Event: typeof Event;
         Attribute: typeof Attribute;
         Label: typeof Label;
         Statistics: typeof Statistics;

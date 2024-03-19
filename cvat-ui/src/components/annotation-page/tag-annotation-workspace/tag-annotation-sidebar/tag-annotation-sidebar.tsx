@@ -1,5 +1,5 @@
 // Copyright (C) 2020-2022 Intel Corporation
-// Copyright (C) 2022-2023 CVAT.ai Corporation
+// Copyright (C) 2022-2024 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -45,7 +45,7 @@ interface StateToProps {
 
 interface DispatchToProps {
     removeObject(objectState: any): void;
-    createAnnotations(jobInstance: any, frame: number, objectStates: any[]): void;
+    createAnnotations(objectStates: any[]): void;
     changeFrame(frame: number, fillBuffer?: boolean, frameStep?: number): void;
     onRememberObject(labelID: number): void;
 }
@@ -82,8 +82,8 @@ function mapDispatchToProps(dispatch: ThunkDispatch<CombinedState, {}, Action>):
         changeFrame(frame: number, fillBuffer?: boolean, frameStep?: number): void {
             dispatch(changeFrameAsync(frame, fillBuffer, frameStep));
         },
-        createAnnotations(jobInstance: any, frame: number, objectStates: any[]): void {
-            dispatch(createAnnotationsAsync(jobInstance, frame, objectStates));
+        createAnnotations(objectStates: any[]): void {
+            dispatch(createAnnotationsAsync(objectStates));
         },
         removeObject(objectState: any): void {
             dispatch(removeObjectAction(objectState, false));
@@ -200,7 +200,7 @@ function TagAnnotationSidebar(props: StateToProps & DispatchToProps): JSX.Elemen
                 label: labels.filter((label: any) => label.id === labelID)[0],
                 frame: frameNumber,
             });
-            createAnnotations(jobInstance, frameNumber, [objectState]);
+            createAnnotations([objectState]);
 
             if (skipFrame) onChangeFrame();
         }
@@ -240,7 +240,7 @@ function TagAnnotationSidebar(props: StateToProps & DispatchToProps): JSX.Elemen
             >
                 {sidebarCollapsed ? <MenuFoldOutlined title='Show' /> : <MenuUnfoldOutlined title='Hide' />}
             </span>
-            <Row justify='center' className='labels-tag-annotation-sidebar-not-found-wrapper'>
+            <Row justify='center' className='cvat-tag-annotation-sidebar-empty'>
                 <Col>
                     <Text strong>Can&apos;t place tag on this frame.</Text>
                 </Col>

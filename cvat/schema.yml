@@ -1,7 +1,7 @@
 openapi: 3.0.3
 info:
   title: CVAT REST API
-  version: 2.10.0
+  version: 2.12.0
   description: REST API for Computer Vision Annotation Tool (CVAT)
   termsOfService: https://www.google.com/policies/terms/
   contact:
@@ -176,32 +176,6 @@ paths:
       responses:
         '204':
           description: The asset has been deleted
-  /api/assets/{uuid}/public:
-    get:
-      operationId: assets_retrieve_public
-      parameters:
-      - in: path
-        name: uuid
-        schema:
-          type: string
-          format: uuid
-        description: A UUID string identifying this asset.
-        required: true
-      tags:
-      - assets
-      security:
-      - sessionAuth: []
-        csrfAuth: []
-        tokenAuth: []
-      - signatureAuth: []
-      - basicAuth: []
-      responses:
-        '200':
-          content:
-            application/vnd.cvat+json:
-              schema:
-                $ref: '#/components/schemas/AssetRead'
-          description: ''
   /api/auth/login:
     post:
       operationId: auth_create_login
@@ -2047,8 +2021,8 @@ paths:
           type: string
           enum:
           - download
-        description: Used to start downloading process after annotation file had been
-          created
+        description: Used to start downloading process locally after annotation file
+          has been created
       - in: query
         name: cloud_storage_id
         schema:
@@ -2438,8 +2412,8 @@ paths:
           type: string
           enum:
           - download
-        description: Used to start downloading process after annotation file had been
-          created
+        description: Used to start downloading process locally after annotation file
+          has been created
       - in: query
         name: cloud_storage_id
         schema:
@@ -3486,8 +3460,8 @@ paths:
           type: string
           enum:
           - download
-        description: Used to start downloading process after annotation file had been
-          created
+        description: Used to start downloading process locally after annotation file
+          has been created
       - in: query
         name: cloud_storage_id
         schema:
@@ -3628,8 +3602,8 @@ paths:
           enum:
           - download
           - import_status
-        description: Used to start downloading process after annotation file had been
-          created
+        description: Used to start downloading process locally after annotation file
+          has been created
       - in: query
         name: cloud_storage_id
         schema:
@@ -4813,8 +4787,8 @@ paths:
           type: string
           enum:
           - download
-        description: Used to start downloading process after annotation file had been
-          created
+        description: Used to start downloading process locally after annotation file
+          has been created
       - in: query
         name: cloud_storage_id
         schema:
@@ -5337,8 +5311,8 @@ paths:
           type: string
           enum:
           - download
-        description: Used to start downloading process after annotation file had been
-          created
+        description: Used to start downloading process locally after annotation file
+          has been created
       - in: query
         name: cloud_storage_id
         schema:
@@ -6513,6 +6487,11 @@ components:
           items:
             $ref: '#/components/schemas/EventRequest'
           default: []
+        previous_event:
+          allOf:
+          - $ref: '#/components/schemas/EventRequest'
+          writeOnly: true
+          nullable: true
         timestamp:
           type: string
           format: date-time
@@ -6547,14 +6526,6 @@ components:
             type: string
             maxLength: 1024
           default: []
-        provider_type:
-          $ref: '#/components/schemas/ProviderTypeEnum'
-        resource:
-          type: string
-          maxLength: 222
-        display_name:
-          type: string
-          maxLength: 63
         created_date:
           type: string
           format: date-time
@@ -6563,6 +6534,14 @@ components:
           type: string
           format: date-time
           readOnly: true
+        provider_type:
+          $ref: '#/components/schemas/ProviderTypeEnum'
+        resource:
+          type: string
+          maxLength: 222
+        display_name:
+          type: string
+          maxLength: 63
         credentials_type:
           $ref: '#/components/schemas/CredentialsTypeEnum'
         specific_attributes:
@@ -6610,7 +6589,7 @@ components:
           maxLength: 64
         connection_string:
           type: string
-          maxLength: 440
+          maxLength: 1024
         key_file:
           type: string
           format: binary
@@ -8596,7 +8575,7 @@ components:
           maxLength: 64
         connection_string:
           type: string
-          maxLength: 440
+          maxLength: 1024
         key_file:
           type: string
           format: binary

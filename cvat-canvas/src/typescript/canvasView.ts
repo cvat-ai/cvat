@@ -1,5 +1,5 @@
 // Copyright (C) 2019-2022 Intel Corporation
-// Copyright (C) 2022-2023 CVAT.ai Corporation
+// Copyright (C) 2022-2024 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -232,6 +232,16 @@ export class CanvasViewImpl implements CanvasView, Listener {
         }
     }
 
+    private dispatchCanceledEvent(): void {
+        this.mode = Mode.IDLE;
+        const event: CustomEvent = new CustomEvent('canvas.canceled', {
+            bubbles: false,
+            cancelable: true,
+        });
+
+        this.canvas.dispatchEvent(event);
+    }
+
     private onInteraction = (
         shapes: InteractionResult[] | null,
         shapesUpdated = true,
@@ -256,16 +266,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
         }
 
         if (shapes === null || isDone) {
-            const event: CustomEvent = new CustomEvent('canvas.canceled', {
-                bubbles: false,
-                cancelable: true,
-            });
-
-            this.canvas.dispatchEvent(event);
-            this.mode = Mode.IDLE;
-            this.controller.interact({
-                enabled: false,
-            });
+            this.dispatchCanceledEvent();
         }
     };
 
@@ -290,13 +291,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
                 const [state] = this.controller.objects
                     .filter((_state: any): boolean => _state.clientID === clientID);
                 this.onEditDone(state, points);
-
-                const event: CustomEvent = new CustomEvent('canvas.canceled', {
-                    bubbles: false,
-                    cancelable: true,
-                });
-
-                this.canvas.dispatchEvent(event);
+                this.dispatchCanceledEvent();
                 return;
             }
 
@@ -317,10 +312,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
 
             this.canvas.dispatchEvent(event);
         } else if (!continueDraw) {
-            this.canvas.dispatchEvent(new CustomEvent('canvas.canceled', {
-                bubbles: false,
-                cancelable: true,
-            }));
+            this.dispatchCanceledEvent();
         }
 
         if (continueDraw) {
@@ -335,7 +327,8 @@ export class CanvasViewImpl implements CanvasView, Listener {
             );
         } else {
             // when draw stops from inside canvas (for example if use predefined number of points)
-            this.controller.draw({ enabled: false });
+            this.mode = Mode.IDLE;
+            this.canvas.style.cursor = '';
         }
     };
 
@@ -361,6 +354,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
 
     private onEditDone = (state: any, points: number[], rotation?: number): void => {
         this.canvas.style.cursor = '';
+        this.mode = Mode.IDLE;
         if (state && points) {
             const event: CustomEvent = new CustomEvent('canvas.edited', {
                 bubbles: false,
@@ -374,18 +368,12 @@ export class CanvasViewImpl implements CanvasView, Listener {
 
             this.canvas.dispatchEvent(event);
         } else {
-            const event: CustomEvent = new CustomEvent('canvas.canceled', {
-                bubbles: false,
-                cancelable: true,
-            });
-
-            this.canvas.dispatchEvent(event);
+            this.dispatchCanceledEvent();
         }
 
         for (const clientID of Object.keys(this.innerObjectsFlags.editHidden)) {
             this.setupInnerFlags(+clientID, 'editHidden', false);
         }
-        this.mode = Mode.IDLE;
     };
 
     private onMergeDone = (objects: any[] | null, duration?: number): void => {
@@ -399,18 +387,11 @@ export class CanvasViewImpl implements CanvasView, Listener {
                 },
             });
 
+            this.mode = Mode.IDLE;
             this.canvas.dispatchEvent(event);
         } else {
-            const event: CustomEvent = new CustomEvent('canvas.canceled', {
-                bubbles: false,
-                cancelable: true,
-            });
-
-            this.canvas.dispatchEvent(event);
+            this.dispatchCanceledEvent();
         }
-
-        this.controller.merge({ enabled: false });
-        this.mode = Mode.IDLE;
     };
 
     private onSplitDone = (object?: any, duration?: number): void => {
@@ -425,23 +406,23 @@ export class CanvasViewImpl implements CanvasView, Listener {
                 },
             });
 
+            this.canvas.style.cursor = '';
+            this.mode = Mode.IDLE;
+            this.splitHandler.split({ enabled: false });
             this.canvas.dispatchEvent(event);
         } else {
-            const event: CustomEvent = new CustomEvent('canvas.canceled', {
-                bubbles: false,
-                cancelable: true,
-            });
-
-            this.canvas.dispatchEvent(event);
+            this.dispatchCanceledEvent();
         }
-
-        this.controller.split({ enabled: false });
-        this.mode = Mode.IDLE;
     };
 
     private onSelectDone = (objects?: any[], duration?: number): void => {
+        if (this.mode === Mode.JOIN) {
+            this.onMessage(null, 'join');
+        }
+
         if (objects && typeof duration !== 'undefined') {
             if (this.mode === Mode.GROUP && objects.length > 1) {
+                this.mode = Mode.IDLE;
                 this.canvas.dispatchEvent(new CustomEvent('canvas.groupped', {
                     bubbles: false,
                     cancelable: true,
@@ -451,6 +432,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
                     },
                 }));
             } else if (this.mode === Mode.JOIN && objects.length > 1) {
+                this.mode = Mode.IDLE;
                 let [left, top, right, bottom] = objects[0].points.slice(-4);
                 objects.forEach((state) => {
                     const [curLeft, curTop, curRight, curBottom] = state.points.slice(-4);
@@ -487,26 +469,14 @@ export class CanvasViewImpl implements CanvasView, Listener {
                 }).catch(this.onError);
             }
         } else {
-            const event: CustomEvent = new CustomEvent('canvas.canceled', {
-                bubbles: false,
-                cancelable: true,
-            });
-
-            this.canvas.dispatchEvent(event);
+            this.dispatchCanceledEvent();
         }
-
-        if (this.mode === Mode.GROUP) {
-            this.controller.group({ enabled: false });
-        } else if (this.mode === Mode.JOIN) {
-            this.controller.join({ enabled: false });
-            this.onMessage(null, 'join');
-        }
-
-        this.mode = Mode.IDLE;
     };
 
     private onSliceDone = (state?: any, results?: number[][], duration?: number): void => {
         if (state && results && typeof duration !== 'undefined') {
+            this.mode = Mode.IDLE;
+            this.sliceHandler.slice({ enabled: false });
             this.canvas.dispatchEvent(new CustomEvent('canvas.sliced', {
                 bubbles: false,
                 cancelable: true,
@@ -517,40 +487,22 @@ export class CanvasViewImpl implements CanvasView, Listener {
                 },
             }));
         } else {
-            const event: CustomEvent = new CustomEvent('canvas.canceled', {
-                bubbles: false,
-                cancelable: true,
-            });
-
-            this.canvas.dispatchEvent(event);
+            this.dispatchCanceledEvent();
         }
-
-        this.controller.slice({ enabled: false });
-        this.mode = Mode.IDLE;
     };
 
     private onRegionSelected = (points?: number[]): void => {
         if (points) {
-            const event: CustomEvent = new CustomEvent('canvas.regionselected', {
+            this.canvas.dispatchEvent(new CustomEvent('canvas.regionselected', {
                 bubbles: false,
                 cancelable: true,
                 detail: {
                     points,
                 },
-            });
-
-            this.canvas.dispatchEvent(event);
+            }));
         } else {
-            const event: CustomEvent = new CustomEvent('canvas.canceled', {
-                bubbles: false,
-                cancelable: true,
-            });
-
-            this.canvas.dispatchEvent(event);
+            this.dispatchCanceledEvent();
         }
-
-        this.controller.selectRegion(false);
-        this.mode = Mode.IDLE;
     };
 
     private onFindObject = (e: MouseEvent): void => {
@@ -1107,7 +1059,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
     }
 
     private onShiftKeyDown = (e: KeyboardEvent): void => {
-        if (!e.repeat && e.code.toLowerCase().includes('shift')) {
+        if (!e.repeat && (e.code || '').toLowerCase().includes('shift')) {
             this.snapToAngleResize = consts.SNAP_TO_ANGLE_RESIZE_SHIFT;
             if (this.activeElement) {
                 const shape = this.svgShapes[this.activeElement.clientID];
@@ -1126,7 +1078,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
     };
 
     private onShiftKeyUp = (e: KeyboardEvent): void => {
-        if (e.code.toLowerCase().includes('shift') && this.activeElement) {
+        if ((e.code || '').toLowerCase().includes('shift') && this.activeElement) {
             this.snapToAngleResize = consts.SNAP_TO_ANGLE_RESIZE_DEFAULT;
             if (this.activeElement) {
                 const shape = this.svgShapes[this.activeElement.clientID];
@@ -1711,8 +1663,6 @@ export class CanvasViewImpl implements CanvasView, Listener {
             if (data.enabled) {
                 this.canvas.style.cursor = 'copy';
                 this.mode = Mode.MERGE;
-            } else {
-                this.canvas.style.cursor = '';
             }
             this.mergeHandler.merge(data);
         } else if (reason === UpdateReasons.SPLIT) {
@@ -1720,10 +1670,8 @@ export class CanvasViewImpl implements CanvasView, Listener {
             if (data.enabled) {
                 this.canvas.style.cursor = 'copy';
                 this.mode = Mode.SPLIT;
-            } else {
-                this.canvas.style.cursor = '';
+                this.splitHandler.split(data);
             }
-            this.splitHandler.split(data);
         } else if ([UpdateReasons.JOIN, UpdateReasons.GROUP].includes(reason)) {
             let data: GroupData | JoinData = null;
             if (reason === UpdateReasons.GROUP) {
@@ -1745,18 +1693,12 @@ export class CanvasViewImpl implements CanvasView, Listener {
                     objectType: ['shape'],
                 });
             }
-
-            if (data.enabled) {
-                this.canvas.style.cursor = 'copy';
-            } else {
-                this.canvas.style.cursor = '';
-            }
         } else if (reason === UpdateReasons.SLICE) {
             const data = this.controller.sliceData;
             if (data.enabled && this.mode === Mode.IDLE) {
                 this.mode = Mode.SLICE;
+                this.sliceHandler.slice(data);
             }
-            this.sliceHandler.slice(data);
         } else if (reason === UpdateReasons.SELECT) {
             this.objectSelector.push(this.controller.selected);
             if (this.mode === Mode.MERGE) {
@@ -1805,8 +1747,8 @@ export class CanvasViewImpl implements CanvasView, Listener {
                     }),
                 );
             }
-            this.mode = Mode.IDLE;
             this.canvas.style.cursor = '';
+            this.dispatchCanceledEvent();
         } else if (reason === UpdateReasons.DATA_FAILED) {
             this.onError(model.exception, 'data fetching');
         } else if (reason === UpdateReasons.DESTROY) {
@@ -2851,7 +2793,9 @@ export class CanvasViewImpl implements CanvasView, Listener {
 
         return this.adoptedText
             .text((block): void => {
-                block.tspan(`${withLabel ? label.name : ''} ${withID ? clientID : ''} ${withSource ? `(${source})` : ''}`).style({
+                block.tspan(`${withLabel ? label.name : ''} ` +
+                `${withID ? clientID : ''} ` +
+                `${withSource ? `(${source})` : ''}`).style({
                     'text-transform': 'uppercase',
                 });
                 if (withDescriptions) {
@@ -3068,11 +3012,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
 
         const SVGElement = makeSVGFromTemplate(state.label.structure.svg);
 
-        let xtl = Number.MAX_SAFE_INTEGER;
-        let ytl = Number.MAX_SAFE_INTEGER;
-        let xbr = Number.MIN_SAFE_INTEGER;
-        let ybr = Number.MIN_SAFE_INTEGER;
-
+        let [xtl, ytl, xbr, ybr] = [null, null, null, null];
         const svgElements: Record<number, SVG.Element> = {};
         const templateElements = Array.from(SVGElement.children()).filter((el: SVG.Element) => el.type === 'circle');
         for (let i = 0; i < state.elements.length; i++) {
@@ -3082,10 +3022,10 @@ export class CanvasViewImpl implements CanvasView, Listener {
                 const [cx, cy] = this.translateToCanvas(points);
 
                 if (!element.outside) {
-                    xtl = Math.min(xtl, cx);
-                    ytl = Math.min(ytl, cy);
-                    xbr = Math.max(xbr, cx);
-                    ybr = Math.max(ybr, cy);
+                    xtl = xtl === null ? cx : Math.min(xtl, cx);
+                    ytl = ytl === null ? cy : Math.min(ytl, cy);
+                    xbr = xbr === null ? cx : Math.max(xbr, cx);
+                    ybr = ybr === null ? cy : Math.max(ybr, cy);
                 }
 
                 const templateElement = templateElements.find((el: SVG.Circle) => el.attr('data-label-id') === element.label.id);
@@ -3180,6 +3120,13 @@ export class CanvasViewImpl implements CanvasView, Listener {
             }
         }
 
+        // if all elements were outside, set coordinates to zeros
+        xtl = xtl || 0;
+        ytl = ytl || 0;
+        xbr = xbr || 0;
+        ybr = ybr || 0;
+
+        // apply bounding box margin
         xtl -= consts.SKELETON_RECT_MARGIN;
         ytl -= consts.SKELETON_RECT_MARGIN;
         xbr += consts.SKELETON_RECT_MARGIN;

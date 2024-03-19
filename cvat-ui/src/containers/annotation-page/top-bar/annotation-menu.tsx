@@ -36,7 +36,7 @@ interface DispatchToProps {
     showImportModal: (jobInstance: Job) => void;
     removeAnnotations(startnumber: number, endnumber: number, delTrackKeyframesOnly: boolean): void;
     setForceExitAnnotationFlag(forceExit: boolean): void;
-    saveAnnotations(jobInstance: Job, afterSave?: () => void): void;
+    saveAnnotations(afterSave?: () => void): void;
     updateJob(jobInstance: Job): Promise<boolean>;
 }
 
@@ -70,8 +70,8 @@ function mapDispatchToProps(dispatch: any): DispatchToProps {
         setForceExitAnnotationFlag(forceExit: boolean): void {
             dispatch(setForceExitAnnotationFlagAction(forceExit));
         },
-        saveAnnotations(jobInstance: Job, afterSave?: () => void): void {
-            dispatch(saveAnnotationsAsync(jobInstance, afterSave));
+        saveAnnotations(afterSave?: () => void): void {
+            dispatch(saveAnnotationsAsync(afterSave));
         },
         updateJob(jobInstance: Job): Promise<boolean> {
             return dispatch(updateJobAsync(jobInstance));

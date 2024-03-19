@@ -1,12 +1,12 @@
 // Copyright (C) 2019-2022 Intel Corporation
-// Copyright (C) 2023 CVAT.ai Corporation
+// Copyright (C) 2023-2024 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
 import {
-    AttrInputType, LabelType, SerializedAttribute, SerializedLabel,
+    AttrInputType, SerializedAttribute, SerializedLabel,
 } from './server-response-types';
-import { ShapeType, AttributeType } from './enums';
+import { ShapeType, AttributeType, LabelType } from './enums';
 import { ArgumentError } from './exceptions';
 
 export class Attribute {
@@ -99,7 +99,7 @@ export class Label {
     public patched: boolean;
     public readonly hasParent?: boolean;
 
-    constructor(initialData: SerializedLabel) {
+    constructor(initialData: Readonly<SerializedLabel>) {
         const data = {
             id: undefined,
             name: undefined,

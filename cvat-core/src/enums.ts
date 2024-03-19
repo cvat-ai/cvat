@@ -87,9 +87,10 @@ export enum Source {
     SEMI_AUTO = 'semi-auto',
     AUTO = 'auto',
     FILE = 'file',
+    GT = 'Ground truth',
 }
 
-export enum LogType {
+export enum EventScope {
     loadTool = 'load:cvat',
 
     loadJob = 'load:job',
@@ -126,6 +127,7 @@ export enum LogType {
     pressShortcut = 'press:shortcut',
     debugInfo = 'send:debug_info',
 
+    annotationsAction = 'run:annotations_action',
     clickElement = 'click:element',
 }
 
