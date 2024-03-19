@@ -568,6 +568,7 @@ class TestGetJobs:
         else:
             self._test_get_job_403(user["username"], job["id"])
 
+
 @pytest.mark.usefixtures(
     # if the db is restored per test, there are conflicts with the server data cache
     # if we don't clean the db, the gt jobs created will be reused, and their
