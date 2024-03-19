@@ -569,16 +569,18 @@ class TestGetJobs:
             self._test_get_job_403(user["username"], job["id"])
 
 
-@pytest.mark.usefixtures(
-    # if the db is restored per test, there are conflicts with the server data cache
-    # if we don't clean the db, the gt jobs created will be reused, and their
-    # ids won't conflict
-    "restore_db_per_class"
-)
 class TestGetGtJobData:
-    @pytest.mark.usefixtures("restore_db_per_function")
+
+    def delete_gt_job(self, user, gt_job_id):
+        with make_api_client(user) as api_client:
+            (_, gt_job_del_response) = api_client.jobs_api.destroy(gt_job_id)
+            assert (
+                gt_job_del_response.status == HTTPStatus.NO_CONTENT
+            ), "newly created gt_job couldn't be deleted"
+
+    # @pytest.fixture
     @pytest.mark.parametrize("task_mode", ["annotation", "interpolation"])
-    def test_can_get_gt_job_meta(self, admin_user, tasks, jobs, task_mode):
+    def test_can_get_gt_job_meta(self, admin_user, tasks, jobs, task_mode, request):
         user = admin_user
         job_frame_count = 4
         task = next(
@@ -603,6 +605,8 @@ class TestGetGtJobData:
         with make_api_client(user) as api_client:
             (gt_job_meta, _) = api_client.jobs_api.retrieve_data_meta(gt_job.id)
 
+        request.addfinalizer(lambda: self.delete_gt_job(user, gt_job.id))
+
         # These values are relative to the resulting task frames, unlike meta values
         assert 0 == gt_job.start_frame
         assert task_meta.size - 1 == gt_job.stop_frame
@@ -625,8 +629,7 @@ class TestGetGtJobData:
         else:
             assert False
 
-    @pytest.mark.usefixtures("restore_db_per_function")
-    def test_can_get_gt_job_meta_with_complex_frame_setup(self, admin_user):
+    def test_can_get_gt_job_meta_with_complex_frame_setup(self, admin_user, request):
         image_count = 50
         start_frame = 3
         stop_frame = image_count - 4
@@ -657,6 +660,8 @@ class TestGetGtJobData:
         with make_api_client(admin_user) as api_client:
             (gt_job_meta, _) = api_client.jobs_api.retrieve_data_meta(gt_job.id)
 
+        request.addfinalizer(lambda: self.delete_gt_job(admin_user, gt_job.id))
+
         # These values are relative to the resulting task frames, unlike meta values
         assert 0 == gt_job.start_frame
         assert len(task_frame_ids) - 1 == gt_job.stop_frame
@@ -677,7 +682,7 @@ class TestGetGtJobData:
 
     @pytest.mark.parametrize("task_mode", ["annotation", "interpolation"])
     @pytest.mark.parametrize("quality", ["compressed", "original"])
-    def test_can_get_gt_job_chunk(self, admin_user, tasks, jobs, task_mode, quality):
+    def test_can_get_gt_job_chunk(self, admin_user, tasks, jobs, task_mode, quality, request):
         user = admin_user
         job_frame_count = 4
         task = next(
@@ -704,10 +709,8 @@ class TestGetGtJobData:
                 gt_job.id, number=0, quality=quality, type="chunk"
             )
             assert response.status == HTTPStatus.OK
-            (_, gt_job_del_response) = api_client.jobs_api.destroy(gt_job.id)
-            assert (
-                gt_job_del_response.status == HTTPStatus.NO_CONTENT
-            ), "newly created gt_job couldn't be deleted"
+
+        request.addfinalizer(lambda: self.delete_gt_job(admin_user, gt_job.id))
 
         frame_range = range(
             task_meta.start_frame, min(task_meta.stop_frame + 1, task_meta.chunk_size), frame_step
@@ -750,10 +753,9 @@ class TestGetGtJobData:
 
         return gt_job
 
-    @pytest.mark.usefixtures("restore_db_per_function")
     @pytest.mark.parametrize("task_mode", ["annotation", "interpolation"])
     @pytest.mark.parametrize("quality", ["compressed", "original"])
-    def test_can_get_gt_job_frame(self, admin_user, tasks, jobs, task_mode, quality):
+    def test_can_get_gt_job_frame(self, admin_user, tasks, jobs, task_mode, quality, request):
         user = admin_user
         job_frame_count = 4
         task = next(
@@ -797,6 +799,8 @@ class TestGetGtJobData:
                 gt_job.id, number=included_frames[0], quality=quality, type="frame"
             )
             assert response.status == HTTPStatus.OK
+
+        request.addfinalizer(lambda: self.delete_gt_job(admin_user, gt_job.id))
 
 
 @pytest.mark.usefixtures("restore_db_per_class")
