@@ -265,6 +265,14 @@ class ComparisonReportAnnotationsSummary(_Serializable):
     def recall(self) -> float:
         return self.valid_count / (self.gt_count or 1)
 
+    @property
+    def macro_average_precision(self) -> float:
+        return np.average(self.confusion_matrix.precision[: DatasetComparator._UNMATCHED_IDX])
+
+    @property
+    def macro_average_recall(self) -> float:
+        return np.average(self.confusion_matrix.recall[: DatasetComparator._UNMATCHED_IDX])
+
     def accumulate(self, other: ComparisonReportAnnotationsSummary):
         for field in [
             "valid_count",
@@ -278,7 +286,14 @@ class ComparisonReportAnnotationsSummary(_Serializable):
 
     def _fields_dict(self, *, include_properties: Optional[List[str]] = None) -> dict:
         return super()._fields_dict(
-            include_properties=include_properties or ["accuracy", "precision", "recall"]
+            include_properties=include_properties
+            or [
+                "accuracy",
+                "precision",
+                "recall",
+                "macro_average_precision",
+                "macro_average_recall",
+            ]
         )
 
     @classmethod
