@@ -1,5 +1,5 @@
 // Copyright (C) 2020-2022 Intel Corporation
-// Copyright (C) 2022-2023 CVAT.ai Corporation
+// Copyright (C) 2022-2024 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -240,7 +240,7 @@ function TagAnnotationSidebar(props: StateToProps & DispatchToProps): JSX.Elemen
             >
                 {sidebarCollapsed ? <MenuFoldOutlined title='Show' /> : <MenuUnfoldOutlined title='Hide' />}
             </span>
-            <Row justify='center' className='labels-tag-annotation-sidebar-not-found-wrapper'>
+            <Row justify='center' className='cvat-tag-annotation-sidebar-empty'>
                 <Col>
                     <Text strong>Can&apos;t place tag on this frame.</Text>
                 </Col>

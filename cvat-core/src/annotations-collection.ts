@@ -1208,17 +1208,30 @@ export default class Collection {
         };
     }
 
-    searchEmpty(frameFrom: number, frameTo: number): number | null {
+    _searchEmpty(
+        frameFrom: number,
+        frameTo: number,
+        searchParameters: {
+            allowDeletedFrames: boolean;
+        },
+    ): number | null {
+        const { allowDeletedFrames } = searchParameters;
         const sign = Math.sign(frameTo - frameFrom);
         const predicate = sign > 0 ? (frame) => frame <= frameTo : (frame) => frame >= frameTo;
         const update = sign > 0 ? (frame) => frame + 1 : (frame) => frame - 1;
         for (let frame = frameFrom; predicate(frame); frame = update(frame)) {
+            if (!allowDeletedFrames && this.frameMeta[frame].deleted) {
+                continue;
+            }
+
             if (frame in this.shapes && this.shapes[frame].some((shape) => !shape.removed)) {
                 continue;
             }
+
             if (frame in this.tags && this.tags[frame].some((tag) => !tag.removed)) {
                 continue;
             }
+
             const filteredTracks = this.tracks.filter((track) => !track.removed);
             let found = false;
             for (const track of filteredTracks) {
@@ -1241,14 +1254,58 @@ export default class Collection {
         return null;
     }
 
-    search(filters: string[], frameFrom: number, frameTo: number): number | null {
-        const sign = Math.sign(frameTo - frameFrom);
-        const filtersStr = JSON.stringify(filters);
-        const linearSearch = filtersStr.match(/"var":"width"/) || filtersStr.match(/"var":"height"/);
+    search(
+        frameFrom: number,
+        frameTo: number,
+        searchParameters: {
+            allowDeletedFrames: boolean;
+            annotationsFilters?: object[];
+            generalFilters?: {
+                isEmptyFrame?: boolean;
+            };
+        },
+    ): number | null {
+        const { allowDeletedFrames } = searchParameters;
+        let { annotationsFilters } = searchParameters;
 
+        if ('generalFilters' in searchParameters) {
+            // if we are looking for en empty frame, run a dedicated algorithm
+            if (searchParameters.generalFilters.isEmptyFrame) {
+                return this._searchEmpty(frameFrom, frameTo, { allowDeletedFrames });
+            }
+
+            // not empty frames corresponds to default behaviour of the function with empty annotation filters
+            annotationsFilters = [];
+        }
+
+        const sign = Math.sign(frameTo - frameFrom);
         const predicate = sign > 0 ? (frame) => frame <= frameTo : (frame) => frame >= frameTo;
         const update = sign > 0 ? (frame) => frame + 1 : (frame) => frame - 1;
+
+        // if not looking for an emty frame nor frame with annotations, return the next frame
+        // check if deleted frames are allowed additionally
+        if (!annotationsFilters) {
+            let frame = frameFrom;
+            while (predicate(frame)) {
+                if (!allowDeletedFrames && this.frameMeta[frame].deleted) {
+                    frame = update(frame);
+                    continue;
+                }
+
+                return frame;
+            }
+
+            return null;
+        }
+
+        const filtersStr = JSON.stringify(annotationsFilters);
+        const linearSearch = filtersStr.match(/"var":"width"/) || filtersStr.match(/"var":"height"/);
+
         for (let frame = frameFrom; predicate(frame); frame = update(frame)) {
+            if (!allowDeletedFrames && this.frameMeta[frame].deleted) {
+                continue;
+            }
+
             // First prepare all data for the frame
             // Consider all shapes, tags, and not outside tracks that have keyframe here
             // In particular consider first and last frame as keyframes for all tracks
@@ -1267,13 +1324,8 @@ export default class Collection {
                 .filter((track) => !track.removed);
             statesData.push(...tracks.map((track) => track.get(frame)).filter((state) => !state.outside));
 
-            // Nothing to filtering, go to the next iteration
-            if (!statesData.length) {
-                continue;
-            }
-
             // Filtering
-            const filtered = this.annotationsFilter.filter(statesData, filters);
+            const filtered = this.annotationsFilter.filter(statesData, annotationsFilters);
             if (filtered.length) {
                 return frame;
             }

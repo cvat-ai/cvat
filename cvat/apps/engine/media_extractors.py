@@ -22,6 +22,7 @@ from PIL import Image, ImageFile, ImageOps
 from random import shuffle
 from cvat.apps.engine.utils import rotate_image
 from cvat.apps.engine.models import DimensionType, SortingMethod
+from rest_framework.exceptions import ValidationError
 
 # fixes: "OSError:broken data stream" when executing line 72 while loading images downloaded from the web
 # see: https://stackoverflow.com/questions/42462431/oserror-broken-data-stream-when-reading-image-file
@@ -722,6 +723,7 @@ class ZipCompressedChunkWriter(ZipChunkWriter):
 
 class Mpeg4ChunkWriter(IChunkWriter):
     FORMAT = 'mp4'
+    MAX_MBS_PER_FRAME = 36864
 
     def __init__(self, quality=67):
         # translate inversed range [1:100] to [0:51]
@@ -751,6 +753,12 @@ class Mpeg4ChunkWriter(IChunkWriter):
             h += 1
         if w % 2:
             w += 1
+
+        # libopenh264 has 4K limitations, https://github.com/opencv/cvat/issues/7425
+        if h * w > (self.MAX_MBS_PER_FRAME << 8):
+            raise ValidationError(
+                'The video codec being used does not support such high video resolution, refer https://github.com/opencv/cvat/issues/7425'
+            )
 
         video_stream = container.add_stream(self._codec_name, rate=rate)
         video_stream.pix_fmt = "yuv420p"

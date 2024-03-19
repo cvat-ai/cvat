@@ -1,7 +1,7 @@
 openapi: 3.0.3
 info:
   title: CVAT REST API
-  version: 2.11.0
+  version: 2.12.0
   description: REST API for Computer Vision Annotation Tool (CVAT)
   termsOfService: https://www.google.com/policies/terms/
   contact:
@@ -6487,6 +6487,11 @@ components:
           items:
             $ref: '#/components/schemas/EventRequest'
           default: []
+        previous_event:
+          allOf:
+          - $ref: '#/components/schemas/EventRequest'
+          writeOnly: true
+          nullable: true
         timestamp:
           type: string
           format: date-time
@@ -6521,14 +6526,6 @@ components:
             type: string
             maxLength: 1024
           default: []
-        provider_type:
-          $ref: '#/components/schemas/ProviderTypeEnum'
-        resource:
-          type: string
-          maxLength: 222
-        display_name:
-          type: string
-          maxLength: 63
         created_date:
           type: string
           format: date-time
@@ -6537,6 +6534,14 @@ components:
           type: string
           format: date-time
           readOnly: true
+        provider_type:
+          $ref: '#/components/schemas/ProviderTypeEnum'
+        resource:
+          type: string
+          maxLength: 222
+        display_name:
+          type: string
+          maxLength: 63
         credentials_type:
           $ref: '#/components/schemas/CredentialsTypeEnum'
         specific_attributes:

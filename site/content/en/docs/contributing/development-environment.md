@@ -42,8 +42,8 @@ description: 'Installing a development environment for different operating syste
   ```
 
   ```bash
-  # CVAT supports only Python 3.9, so install it if you don’t have it:
-  pikaur -S python39
+  # CVAT supports only Python 3.10, so install it if you don’t have it:
+  pikaur -S python310
   ```
 
   ```bash
@@ -66,7 +66,7 @@ description: 'Installing a development environment for different operating syste
   - [Trailing Spaces](https://marketplace.visualstudio.com/items?itemName=shardulm94.trailing-spaces)
   - [Code Spell Checker](https://marketplace.visualstudio.com/items?itemName=streetsidesoftware.code-spell-checker)
 
-- Make sure to use Python 3.9.0 or higher
+- Make sure to use Python 3.10.0 or higher
 
   ```
   python3 --version
@@ -138,11 +138,6 @@ description: 'Installing a development environment for different operating syste
   > ```
   > sudo ln -s /opt/homebrew/lib/libgeos_c.dylib /usr/local/lib
   > ```
-  >
-  > On Mac with Apple Silicon (M1) in order to install TensorFlow you will have
-  > to edit `cvat/requirements/base.txt`.
-  > Change `tensorflow` to `tensorflow-macos`
-  > May need to downgrade version Python to 3.9.\* or upgrade version `tensorflow-macos`
 
   > Note for Arch Linux users:
   >

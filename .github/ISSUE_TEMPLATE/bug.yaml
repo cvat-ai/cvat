@@ -8,7 +8,7 @@ body:
     options:
     - label: I searched the existing issues and did not find anything similar.
       required: true
-    - label: I read/searched [the docs](https://github.com/cvat-ai/cvat/tree/master#documentation)
+    - label: I read/searched [the docs](https://opencv.github.io/cvat/docs/)
       required: true
 
 - type: textarea

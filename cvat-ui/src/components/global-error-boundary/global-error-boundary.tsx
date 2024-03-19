@@ -17,7 +17,7 @@ import ErrorStackParser from 'error-stack-parser';
 import { ThunkDispatch } from 'utils/redux';
 import { resetAfterErrorAsync } from 'actions/boundaries-actions';
 import { CombinedState } from 'reducers';
-import logger, { LogType } from 'cvat-logger';
+import logger, { EventScope } from 'cvat-logger';
 import CVATTooltip from 'components/common/cvat-tooltip';
 import config from 'config';
 import { saveLogsAsync } from 'actions/annotation-actions';
@@ -103,9 +103,9 @@ class GlobalErrorBoundary extends React.PureComponent<Props, State> {
         };
 
         if (job) {
-            job.logger.log(LogType.exception, logPayload).then(saveLogs);
+            job.logger.log(EventScope.exception, logPayload).then(saveLogs);
         } else {
-            logger.log(LogType.exception, logPayload).then(saveLogs);
+            logger.log(EventScope.exception, logPayload).then(saveLogs);
         }
     }
 

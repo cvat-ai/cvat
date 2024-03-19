@@ -14,7 +14,6 @@ import Dropdown from 'antd/lib/dropdown';
 import Progress from 'antd/lib/progress';
 import Badge from 'antd/lib/badge';
 import moment from 'moment';
-
 import { Task, RQStatus } from 'cvat-core-wrapper';
 import ActionsMenuContainer from 'containers/actions-menu/actions-menu';
 import Preview from 'components/common/preview';
@@ -116,14 +115,13 @@ class TaskItemComponent extends React.PureComponent<TaskItemProps & RouteCompone
         const updated = moment(taskInstance.updatedDate).fromNow();
         const created = moment(taskInstance.createdDate).format('MMMM Do YYYY');
 
-        // Get and truncate a task name
-        const name = `${taskInstance.name.substring(0, 70)}${taskInstance.name.length > 70 ? '...' : ''}`;
-
         return (
             <Col span={10} className='cvat-task-item-description'>
-                <Text strong type='secondary' className='cvat-item-task-id'>{`#${id}: `}</Text>
-                <Text strong className='cvat-item-task-name'>
-                    {name}
+                <Text ellipsis={{ tooltip: taskInstance.name }}>
+                    <Text strong type='secondary' className='cvat-item-task-id'>{`#${id}: `}</Text>
+                    <Text strong className='cvat-item-task-name'>
+                        {taskInstance.name}
+                    </Text>
                 </Text>
                 <br />
                 {owner && (
