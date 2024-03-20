@@ -745,27 +745,21 @@ class TestGetGtJobData:
     def _create_gt_job(self, user, task_id, frames):
         with make_api_client(user) as api_client:
             (task_jobs, _) = api_client.jobs_api.list(task_id=task_id, type="ground_truth")
-            if task_jobs.results:
-                raise RuntimeError(f"gt_job already exist for task {task_id}")
-            else:
-                job_spec = {
-                    "task_id": task_id,
-                    "type": "ground_truth",
-                    "frame_selection_method": "manual",
-                    "frames": frames,
-                }
+            job_spec = {
+                "task_id": task_id,
+                "type": "ground_truth",
+                "frame_selection_method": "manual",
+                "frames": frames,
+            }
 
-                (gt_job, _) = api_client.jobs_api.create(job_spec)
+            (gt_job, _) = api_client.jobs_api.create(job_spec)
 
         return gt_job
 
-    def _get_gt_job(self, user, task_id, frames):
+    def _get_gt_job(self, user, task_id):
         with make_api_client(user) as api_client:
             (task_jobs, _) = api_client.jobs_api.list(task_id=task_id, type="ground_truth")
-            if task_jobs.results:
-                gt_job = task_jobs.results[0]
-            else:
-                raise RuntimeError(f"gt_job doesn't exist for task {task_id}")
+            gt_job = task_jobs.results[0]
 
         return gt_job
 
