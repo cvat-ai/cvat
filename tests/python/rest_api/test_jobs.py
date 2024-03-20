@@ -584,7 +584,6 @@ class TestGetGtJobData:
                 gt_job_del_response.status == HTTPStatus.NO_CONTENT
             ), "newly created gt_job couldn't be deleted"
 
-
     @pytest.mark.parametrize("task_mode", ["annotation", "interpolation"])
     def test_can_get_gt_job_meta(self, admin_user, tasks, jobs, task_mode, request):
         user = admin_user
@@ -606,7 +605,7 @@ class TestGetGtJobData:
         job_frame_ids = list(range(task_meta.start_frame, task_meta.stop_frame, frame_step))[
             :job_frame_count
         ]
-        gt_job = self._get_or_create_gt_job(admin_user, task_id, job_frame_ids)
+        gt_job = self._create_gt_job(admin_user, task_id, job_frame_ids)
 
         with make_api_client(user) as api_client:
             (gt_job_meta, _) = api_client.jobs_api.retrieve_data_meta(gt_job.id)
@@ -661,7 +660,7 @@ class TestGetGtJobData:
 
         task_frame_ids = range(start_frame, stop_frame, frame_step)
         job_frame_ids = list(task_frame_ids[::3])
-        gt_job = self._get_or_create_gt_job(admin_user, task_id, job_frame_ids)
+        gt_job = self._create_gt_job(admin_user, task_id, job_frame_ids)
 
         with make_api_client(admin_user) as api_client:
             (gt_job_meta, _) = api_client.jobs_api.retrieve_data_meta(gt_job.id)
@@ -708,7 +707,7 @@ class TestGetGtJobData:
         job_frame_ids = list(range(task_meta.start_frame, task_meta.stop_frame, frame_step))[
             :job_frame_count
         ]
-        gt_job = self._get_or_create_gt_job(admin_user, task_id, job_frame_ids)
+        gt_job = self._create_gt_job(admin_user, task_id, job_frame_ids)
 
         with make_api_client(admin_user) as api_client:
             (chunk_file, response) = api_client.jobs_api.retrieve_data(
@@ -743,12 +742,11 @@ class TestGetGtJobData:
                     assert image.size > (1, 1)
                     assert np.any(image_data != 0)
 
-    def _get_or_create_gt_job(self, user, task_id, frames):
+    def _create_gt_job(self, user, task_id, frames):
         with make_api_client(user) as api_client:
             (task_jobs, _) = api_client.jobs_api.list(task_id=task_id, type="ground_truth")
             if task_jobs.results:
-                assert not frames, "specific frames requested but gt_job exists"
-                gt_job = task_jobs.results[0]
+                raise RuntimeError(f"gt_job already exist for task {task_id}")
             else:
                 job_spec = {
                     "task_id": task_id,
@@ -758,6 +756,16 @@ class TestGetGtJobData:
                 }
 
                 (gt_job, _) = api_client.jobs_api.create(job_spec)
+
+        return gt_job
+
+    def _get_gt_job(self, user, task_id, frames):
+        with make_api_client(user) as api_client:
+            (task_jobs, _) = api_client.jobs_api.list(task_id=task_id, type="ground_truth")
+            if task_jobs.results:
+                gt_job = task_jobs.results[0]
+            else:
+                raise RuntimeError(f"gt_job doesn't exist for task {task_id}")
 
         return gt_job
 
@@ -783,7 +791,7 @@ class TestGetGtJobData:
         job_frame_ids = list(range(task_meta.start_frame, task_meta.stop_frame, frame_step))[
             :job_frame_count
         ]
-        gt_job = self._get_or_create_gt_job(admin_user, task_id, job_frame_ids)
+        gt_job = self._create_gt_job(admin_user, task_id, job_frame_ids)
 
         frame_range = range(
             task_meta.start_frame, min(task_meta.stop_frame + 1, task_meta.chunk_size), frame_step
