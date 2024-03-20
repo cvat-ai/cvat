@@ -113,11 +113,8 @@ class AnnotationIR:
             if scoped_shapes:
                 if not scoped_shapes[0]['keyframe']:
                     segment_shapes.insert(0, scoped_shapes[0])
-                if not scoped_shapes[-1]['keyframe']:
-                    segment_shapes.append(scoped_shapes[-1])
 
-                if scoped_shapes[-1]['keyframe'] and \
-                        scoped_shapes[-1]['outside']:
+                if scoped_shapes[-1]['keyframe']:
                     segment_shapes.append(scoped_shapes[-1])
                 elif stop + 1 < len(interpolated_shapes) and \
                         interpolated_shapes[stop + 1]['outside']:
@@ -905,11 +902,13 @@ class TrackManager(ObjectManager):
                 for shape in sorted(interpolated, key=lambda shape: shape["frame"]):
                     if shape["frame"] < end_frame:
                         shapes.append(shape)
-                    else:
+                    if shape["frame"] == end_frame:
+                        shape["keyframe"] = True
+                        shapes.append(shape)
+                    if shape["frame"] == end_frame + 1:
                         break
 
                 # Update the last added shape
-                shape["keyframe"] = True
                 prev_shape = shape
 
                 break # The track finishes here
@@ -940,7 +939,7 @@ class TrackManager(ObjectManager):
             # After interpolation there can be a finishing frame
             # outside of the task boundaries. Filter it out to avoid errors.
             # https://github.com/openvinotoolkit/cvat/issues/2827
-            if track["frame"]  <= shape["frame"] < end_frame
+            if track["frame"]  <= shape["frame"] <= end_frame
 
             # Exclude outside shapes.
             # Keyframes should be included regardless the outside value
