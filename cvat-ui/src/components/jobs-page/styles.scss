@@ -1,5 +1,5 @@
 // Copyright (C) 2022 Intel Corporation
-// Copyright (C) 2022 CVAT.ai Corporation
+// Copyright (C) 2022-2024 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -12,23 +12,40 @@
     width: 100%;
     overflow: auto;
 
-    > div:nth-child(1) {
-        div > {
-            .cvat-title {
-                color: $text-color;
+    .cvat-jobs-page-top-bar {
+        > div {
+            display: flex;
+            justify-content: space-between;
+
+            > div {
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                width: 100%;
+
+                .cvat-jobs-page-search-bar {
+                    width: $grid-unit-size * 32;
+                    padding-left: $grid-unit-size * 0.5;
+                }
+
+                > div {
+                    > *:not(:last-child) {
+                        margin-right: $grid-unit-size;
+                    }
+
+                    display: flex;
+                }
             }
         }
     }
 
-    > div:nth-child(2) {
-        &.ant-empty {
+    .cvat-empty-jobs-list {
+        .ant-empty {
             position: absolute;
-            top: 40%;
+            top: 50%;
             left: 50%;
+            transform: translate(-50%, -50%);
         }
-
-        padding-bottom: $grid-unit-size;
-        padding-top: $grid-unit-size;
     }
 
     .cvat-job-page-list-item {
@@ -129,6 +146,8 @@
     .cvat-jobs-page-list {
         display: flex;
         flex-wrap: wrap;
+        padding-top: $grid-unit-size;
+        padding-bottom: $grid-unit-size;
     }
 
     .cvat-job-card-more-button {
@@ -136,32 +155,5 @@
         bottom: $grid-unit-size * 2;
         right: $grid-unit-size;
         font-size: 16px;
-    }
-}
-
-.cvat-jobs-page-top-bar {
-    > div {
-        display: flex;
-        justify-content: space-between;
-
-        > div {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            width: 100%;
-
-            .cvat-jobs-page-search-bar {
-                width: $grid-unit-size * 32;
-                padding-left: $grid-unit-size * 0.5;
-            }
-
-            > div {
-                > *:not(:last-child) {
-                    margin-right: $grid-unit-size;
-                }
-
-                display: flex;
-            }
-        }
     }
 }
