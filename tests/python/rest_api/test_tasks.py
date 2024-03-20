@@ -5,6 +5,7 @@
 
 import io
 import json
+import math
 import os
 import os.path as osp
 import zipfile
@@ -553,8 +554,7 @@ class TestPatchTaskAnnotations:
                             "frame": 0,
                             "shapes": [
                                 {"type": "points", "frame": 0, "points": [1.0, 2.0]},
-                                {"type": "points", "frame": 2, "points": [1.0, 2.0]},
-                                {"type": "points", "frame": 7, "points": [1.0, 2.0]},
+                                {"type": "points", "frame": 7, "points": [2.0, 4.0]},
                             ],
                         },
                     ],
@@ -583,8 +583,30 @@ class TestPatchTaskAnnotations:
             track = job_annotations["tracks"][0]
             assert track.get("elements", []), "Expected to see track with elements"
 
+            def interpolate(frame):
+                # simple interpolate from ([1, 2], 1) to ([2, 4], 7)
+                return [(2.0 - 1.0) / 7 * (frame - 0) + 1.0, (4.0 - 2.0) / 7 * (frame - 0) + 2.0]
+
+            def compare_float_lists(list1, list2):
+                if len(list1) != len(list2):
+                    return False
+
+                for num1, num2 in zip(list1, list2):
+                    if not math.isclose(num1,num2):
+                        return False
+
+                return True
+
             for element in track["elements"]:
                 element_frames = set(shape["frame"] for shape in element["shapes"])
+                assert all(
+                    [
+                        compare_float_lists(interpolate(shape["frame"]), shape["points"])
+                        for shape in element["shapes"]
+                        if shape["frame"] >= 0 and shape["frame"] <= 7
+                    ]
+                )
+                assert(len(element["shapes"]) == 2)
                 assert element_frames <= job_frame_range, "Track shapes get out of job frame range"
 
 
