@@ -24,6 +24,8 @@ from cvat.apps.iam.utils import get_dummy_user
 class RegisterSerializerEx(RegisterSerializer):
     first_name = serializers.CharField(required=False)
     last_name = serializers.CharField(required=False)
+    email_verification_required = serializers.BooleanField(read_only=True, default=True)
+    key = serializers.CharField(read_only=True, default=None, allow_null=True)
 
     def get_cleaned_data(self):
         data = super().get_cleaned_data()
