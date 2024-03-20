@@ -138,7 +138,7 @@ class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentP
         const { history, location } = this.props;
         const {
             HEALTH_CHECK_RETRIES, HEALTH_CHECK_PERIOD, HEALTH_CHECK_REQUEST_TIMEOUT, SERVER_UNAVAILABLE_COMPONENT,
-            RESET_NOTIFICATIONS_PATHS,
+            RESET_NOTIFICATIONS_PATHS, REDIRECT_TO_LOGIN_PAGE_TIMEOUT,
         } = appConfig;
 
         // Logger configuration
@@ -168,7 +168,7 @@ class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentP
 
         core.config.onAuthenticationFailed = () => {
             if (!history.location.pathname.includes('auth')) {
-                setTimeout(() => history.push('/auth/login'), 1000);
+                setTimeout(() => history.push('/auth/login'), REDIRECT_TO_LOGIN_PAGE_TIMEOUT);
             }
         };
 
