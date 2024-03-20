@@ -744,7 +744,6 @@ class TestGetGtJobData:
 
     def _create_gt_job(self, user, task_id, frames):
         with make_api_client(user) as api_client:
-            (task_jobs, _) = api_client.jobs_api.list(task_id=task_id, type="ground_truth")
             job_spec = {
                 "task_id": task_id,
                 "type": "ground_truth",
