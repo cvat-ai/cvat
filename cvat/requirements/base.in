@@ -11,7 +11,7 @@ dj-pagination==2.5.0
 # Despite direct indication allauth in requirements we should keep 'with_social' for dj-rest-auth
 # to avoid possible further versions conflicts (we use registration functionality)
 # https://dj-rest-auth.readthedocs.io/en/latest/installation.html#registration-optional
-dj-rest-auth[with_social]==5.0.2
+dj-rest-auth[with_social]~=5.0.2
 
 django-auth-ldap==2.2.0
 django-compressor==4.3.1
