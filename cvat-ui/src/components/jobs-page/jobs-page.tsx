@@ -1,5 +1,5 @@
 // Copyright (C) 2022 Intel Corporation
-// Copyright (C) 2023 CVAT.ai Corporation
+// Copyright (C) 2023-2024 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -76,7 +76,18 @@ function JobsPageComponent(): JSX.Element {
                 </Col>
             </Row>
         </>
-    ) : <Empty description={<Text>No results matched your search...</Text>} />;
+    ) : (
+        <div className='cvat-empty-jobs-list'>
+            <Empty description={(
+                <Row justify='center' align='middle'>
+                    <Col>
+                        <Text>No results matched your search...</Text>
+                    </Col>
+                </Row>
+            )}
+            />
+        </div>
+    );
 
     return (
         <div className='cvat-jobs-page'>
@@ -110,9 +121,7 @@ function JobsPageComponent(): JSX.Element {
                     );
                 }}
             />
-            { fetching ? (
-                <Spin size='large' className='cvat-spinner' />
-            ) : content }
+            {fetching ? <Spin size='large' className='cvat-spinner' /> : content}
         </div>
     );
 }
