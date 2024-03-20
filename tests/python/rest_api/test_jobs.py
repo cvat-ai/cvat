@@ -571,14 +571,14 @@ class TestGetJobs:
 
 class TestGetGtJobData:
 
-    def delete_gt_job(self, user, gt_job_id):
+    def _delete_gt_job(self, user, gt_job_id):
         with make_api_client(user) as api_client:
             (_, gt_job_del_response) = api_client.jobs_api.destroy(gt_job_id)
             assert (
                 gt_job_del_response.status == HTTPStatus.NO_CONTENT
             ), "newly created gt_job couldn't be deleted"
 
-    # @pytest.fixture
+
     @pytest.mark.parametrize("task_mode", ["annotation", "interpolation"])
     def test_can_get_gt_job_meta(self, admin_user, tasks, jobs, task_mode, request):
         user = admin_user
@@ -721,6 +721,8 @@ class TestGetGtJobData:
         # with placeholders in the frames outside the job.
         # This is required by the UI implementation
         with zipfile.ZipFile(chunk_file) as chunk:
+            print(set(chunk.namelist()))
+            print(set("{:06d}.jpeg".format(i) for i in frame_range))
             assert set(chunk.namelist()) == set("{:06d}.jpeg".format(i) for i in frame_range)
 
             for file_info in chunk.filelist:
