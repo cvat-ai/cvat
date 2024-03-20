@@ -610,7 +610,7 @@ class TestGetGtJobData:
         with make_api_client(user) as api_client:
             (gt_job_meta, _) = api_client.jobs_api.retrieve_data_meta(gt_job.id)
 
-        request.addfinalizer(lambda: self.delete_gt_job(user, gt_job.id))
+        request.addfinalizer(lambda: self._delete_gt_job(user, gt_job.id))
 
         # These values are relative to the resulting task frames, unlike meta values
         assert 0 == gt_job.start_frame
@@ -665,7 +665,7 @@ class TestGetGtJobData:
         with make_api_client(admin_user) as api_client:
             (gt_job_meta, _) = api_client.jobs_api.retrieve_data_meta(gt_job.id)
 
-        request.addfinalizer(lambda: self.delete_gt_job(admin_user, gt_job.id))
+        request.addfinalizer(lambda: self._delete_gt_job(admin_user, gt_job.id))
 
         # These values are relative to the resulting task frames, unlike meta values
         assert 0 == gt_job.start_frame
@@ -715,7 +715,7 @@ class TestGetGtJobData:
             )
             assert response.status == HTTPStatus.OK
 
-        request.addfinalizer(lambda: self.delete_gt_job(admin_user, gt_job.id))
+        request.addfinalizer(lambda: self._delete_gt_job(admin_user, gt_job.id))
 
         frame_range = range(
             task_meta.start_frame, min(task_meta.stop_frame + 1, task_meta.chunk_size), frame_step
@@ -816,7 +816,7 @@ class TestGetGtJobData:
             )
             assert response.status == HTTPStatus.OK
 
-        request.addfinalizer(lambda: self.delete_gt_job(admin_user, gt_job.id))
+        request.addfinalizer(lambda: self._delete_gt_job(admin_user, gt_job.id))
 
 
 @pytest.mark.usefixtures("restore_db_per_class")
