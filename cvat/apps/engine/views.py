@@ -14,6 +14,7 @@ from copy import copy
 from datetime import datetime
 from tempfile import NamedTemporaryFile
 from textwrap import dedent
+from email.header import decode_header
 
 import django_rq
 from attr.converters import to_bool
@@ -933,6 +934,11 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
 
     def _maybe_append_upload_info_entry(self, filename: str):
         task_data = cast(Data, self._object.data)
+
+        raw, encoding = decode_header(filename)[0]
+
+        if encoding is not None:
+            filename = raw.decode(encoding)
 
         filename = self._prepare_upload_info_entry(filename)
         task_data.client_files.get_or_create(file=filename)
