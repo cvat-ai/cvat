@@ -1204,6 +1204,17 @@ class TestQualityReportMetrics(_PermissionTestBase):
         new_report = self.create_quality_report(admin_user, task_id)
         assert new_report["summary"]["conflict_count"] != old_report["summary"]["conflict_count"]
 
+    def test_old_report_can_be_loaded(self, admin_user, quality_reports):
+        report = min((r for r in quality_reports if r["task_id"]), key=lambda r: r["id"])
+        assert report["created_date"] < "2024"
+
+        with make_api_client(admin_user) as api_client:
+            (report_data, _) = api_client.quality_api.retrieve_report_data(report["id"])
+
+        # This report should have been created before the Jaccard index was included.
+        for d in [report_data["comparison_summary"], *report_data["frame_results"].values()]:
+            assert d["annotations"]["confusion_matrix"]["jaccard_index"] is None
+
     @pytest.mark.usefixtures("restore_db_per_class")
     def test_accumulation_annotation_conflicts_multiple_jobs(self, admin_user):
         report = self.create_quality_report(admin_user, self.demo_task_id_multiple_jobs)
