@@ -1215,7 +1215,6 @@ class TestQualityReportMetrics(_PermissionTestBase):
         for d in [report_data["comparison_summary"], *report_data["frame_results"].values()]:
             assert d["annotations"]["confusion_matrix"]["jaccard_index"] is None
 
-    @pytest.mark.usefixtures("restore_db_per_class")
     def test_accumulation_annotation_conflicts_multiple_jobs(self, admin_user):
         report = self.create_quality_report(admin_user, self.demo_task_id_multiple_jobs)
         with make_api_client(admin_user) as api_client:
