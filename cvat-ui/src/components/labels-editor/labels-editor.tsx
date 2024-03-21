@@ -6,6 +6,7 @@
 import './styles.scss';
 import React from 'react';
 import Tabs from 'antd/lib/tabs';
+import notification from 'antd/lib/notification';
 import Text from 'antd/lib/typography/Text';
 import ModalConfirm from 'antd/lib/modal/confirm';
 import {
@@ -198,7 +199,10 @@ export default class LabelsEditor extends React.PureComponent<LabelsEditorProps,
                 transformed.sublabels = (label.sublabels || [])
                     .map((internalLabel: LabelOptColor) => transformLabel(internalLabel));
             }
-
+            notification.success({
+                message: 'The label has been created!',
+                className: 'cvat-notification-create-label-success',
+            });
             return transformed;
         }
 
