@@ -394,7 +394,7 @@
   "pk": 18,
   "fields": {
     "password": "md5$rKclttm53lRHC0rITF48uu$7ac59be88ed2a5de4b513edbef629258",
-    "last_login": "2022-03-05T09:37:01.636Z",
+    "last_login": "2024-03-21T20:49:58.088Z",
     "is_superuser": true,
     "username": "admin2",
     "first_name": "Admin",
@@ -3684,13 +3684,13 @@
   "model": "engine.task",
   "pk": 23,
   "fields": {
-    "created_date": "2024-03-16T18:08:26.068Z",
-    "updated_date": "2024-03-16T18:10:55.855Z",
+    "created_date": "2024-03-21T20:50:05.694Z",
+    "updated_date": "2024-03-21T20:50:05.947Z",
     "project": null,
     "name": "task with several jobs and ground truth job",
     "mode": "annotation",
     "owner": [
-      "admin1"
+      "admin2"
     ],
     "assignee": null,
     "bug_tracker": "",
@@ -3701,8 +3701,8 @@
     "dimension": "2d",
     "subset": "",
     "organization": null,
-    "source_storage": 35,
-    "target_storage": 36
+    "source_storage": null,
+    "target_storage": null
   }
 },
 {
@@ -4594,94 +4594,6 @@
   }
 },
 {
-  "model": "engine.clientfile",
-  "pk": 459,
-  "fields": {
-    "data": 22,
-    "file": "/home/django/data/data/22/raw/0.png"
-  }
-},
-{
-  "model": "engine.clientfile",
-  "pk": 460,
-  "fields": {
-    "data": 22,
-    "file": "/home/django/data/data/22/raw/1.png"
-  }
-},
-{
-  "model": "engine.clientfile",
-  "pk": 461,
-  "fields": {
-    "data": 22,
-    "file": "/home/django/data/data/22/raw/2.png"
-  }
-},
-{
-  "model": "engine.clientfile",
-  "pk": 462,
-  "fields": {
-    "data": 22,
-    "file": "/home/django/data/data/22/raw/3.png"
-  }
-},
-{
-  "model": "engine.clientfile",
-  "pk": 463,
-  "fields": {
-    "data": 22,
-    "file": "/home/django/data/data/22/raw/4.png"
-  }
-},
-{
-  "model": "engine.clientfile",
-  "pk": 464,
-  "fields": {
-    "data": 22,
-    "file": "/home/django/data/data/22/raw/5.png"
-  }
-},
-{
-  "model": "engine.clientfile",
-  "pk": 465,
-  "fields": {
-    "data": 22,
-    "file": "/home/django/data/data/22/raw/6.png"
-  }
-},
-{
-  "model": "engine.clientfile",
-  "pk": 466,
-  "fields": {
-    "data": 22,
-    "file": "/home/django/data/data/22/raw/7.png"
-  }
-},
-{
-  "model": "engine.clientfile",
-  "pk": 467,
-  "fields": {
-    "data": 22,
-    "file": "/home/django/data/data/22/raw/8.png"
-  }
-},
-{
-  "model": "engine.clientfile",
-  "pk": 468,
-  "fields": {
-    "data": 22,
-    "file": "/home/django/data/data/22/raw/9.png"
-  }
-},
-{
-  "model": "engine.clientfile",
-  "pk": 469,
-  "fields": {
-    "data": 22,
-    "file": "/home/django/data/data/22/raw/10.png"
-  }
-},
-{
   "model": "engine.relatedfile",
   "pk": 1,
   "fields": {
@@ -5273,8 +5185,8 @@
   "model": "engine.job",
   "pk": 29,
   "fields": {
-    "created_date": "2024-03-16T18:08:26.668Z",
-    "updated_date": "2024-03-16T18:10:55.839Z",
+    "created_date": "2024-03-21T20:50:05.805Z",
+    "updated_date": "2024-03-21T20:50:39.585Z",
     "segment": 29,
     "assignee": null,
     "status": "completed",
@@ -5287,8 +5199,8 @@
   "model": "engine.job",
   "pk": 30,
   "fields": {
-    "created_date": "2024-03-16T18:08:26.683Z",
-    "updated_date": "2024-03-16T18:10:10.168Z",
+    "created_date": "2024-03-21T20:50:05.811Z",
+    "updated_date": "2024-03-21T20:50:33.610Z",
     "segment": 30,
     "assignee": null,
     "status": "completed",
@@ -5301,8 +5213,8 @@
   "model": "engine.job",
   "pk": 31,
   "fields": {
-    "created_date": "2024-03-16T18:08:26.688Z",
-    "updated_date": "2024-03-16T18:10:29.351Z",
+    "created_date": "2024-03-21T20:50:05.815Z",
+    "updated_date": "2024-03-21T20:50:27.594Z",
     "segment": 31,
     "assignee": null,
     "status": "completed",
@@ -5315,8 +5227,8 @@
   "model": "engine.job",
   "pk": 32,
   "fields": {
-    "created_date": "2024-03-16T18:08:49.787Z",
-    "updated_date": "2024-03-16T18:09:26.850Z",
+    "created_date": "2024-03-21T20:50:05.838Z",
+    "updated_date": "2024-03-21T20:50:20.020Z",
     "segment": 32,
     "assignee": null,
     "status": "completed",
@@ -8697,240 +8609,6 @@
   "model": "engine.labeledshape",
   "pk": 151,
   "fields": {
-    "job": 32,
-    "label": 73,
-    "frame": 4,
-    "group": 0,
-    "source": "Ground truth",
-    "type": "rectangle",
-    "occluded": false,
-    "outside": false,
-    "z_order": 0,
-    "points": "[24.722413063049316, 37.791320228576296, 270.78543078899384, 610.5770170927044]",
-    "rotation": 0.0,
-    "parent": null
-  }
-},
-{
-  "model": "engine.labeledshape",
-  "pk": 152,
-  "fields": {
-    "job": 32,
-    "label": 73,
-    "frame": 5,
-    "group": 0,
-    "source": "Ground truth",
-    "type": "rectangle",
-    "occluded": false,
-    "outside": false,
-    "z_order": 0,
-    "points": "[87.86122530400826, 22.648517262936366, 277.2987968593843, 128.69934738874508]",
-    "rotation": 0.0,
-    "parent": null
-  }
-},
-{
-  "model": "engine.labeledshape",
-  "pk": 153,
-  "fields": {
-    "job": 32,
-    "label": 73,
-    "frame": 6,
-    "group": 0,
-    "source": "Ground truth",
-    "type": "rectangle",
-    "occluded": false,
-    "outside": false,
-    "z_order": 0,
-    "points": "[8.219268488885064, 76.40050053596497, 46.97136907577624, 76.9621251821518]",
-    "rotation": 0.0,
-    "parent": null
-  }
-},
-{
-  "model": "engine.labeledshape",
-  "pk": 154,
-  "fields": {
-    "job": 32,
-    "label": 73,
-    "frame": 7,
-    "group": 0,
-    "source": "Ground truth",
-    "type": "rectangle",
-    "occluded": false,
-    "outside": false,
-    "z_order": 0,
-    "points": "[40.372303777934576, 55.821463263035184, 232.15283377170636, 366.6659974813465]",
-    "rotation": 0.0,
-    "parent": null
-  }
-},
-{
-  "model": "engine.labeledshape",
-  "pk": 155,
-  "fields": {
-    "job": 32,
-    "label": 73,
-    "frame": 8,
-    "group": 0,
-    "source": "Ground truth",
-    "type": "rectangle",
-    "occluded": false,
-    "outside": false,
-    "z_order": 0,
-    "points": "[114.91701781749725, 49.88939428329468, 426.5192240476608, 201.82309412956238]",
-    "rotation": 0.0,
-    "parent": null
-  }
-},
-{
-  "model": "engine.labeledshape",
-  "pk": 156,
-  "fields": {
-    "job": 32,
-    "label": 73,
-    "frame": 9,
-    "group": 0,
-    "source": "Ground truth",
-    "type": "rectangle",
-    "occluded": false,
-    "outside": false,
-    "z_order": 0,
-    "points": "[69.46096818744991, 42.89721039235519, 143.9282634973515, 85.61091347932779]",
-    "rotation": 0.0,
-    "parent": null
-  }
-},
-{
-  "model": "engine.labeledshape",
-  "pk": 157,
-  "fields": {
-    "job": 32,
-    "label": 73,
-    "frame": 10,
-    "group": 0,
-    "source": "Ground truth",
-    "type": "rectangle",
-    "occluded": false,
-    "outside": false,
-    "z_order": 0,
-    "points": "[35.64345116019285, 190.86810638308634, 41.340930348635084, 213.02496989369502]",
-    "rotation": 0.0,
-    "parent": null
-  }
-},
-{
-  "model": "engine.labeledshape",
-  "pk": 158,
-  "fields": {
-    "job": 30,
-    "label": 73,
-    "frame": 5,
-    "group": 0,
-    "source": "manual",
-    "type": "rectangle",
-    "occluded": false,
-    "outside": false,
-    "z_order": 0,
-    "points": "[55.147965204716456, 27.993821200729144, 354.91261003613545, 129.34078386128022]",
-    "rotation": 0.0,
-    "parent": null
-  }
-},
-{
-  "model": "engine.labeledshape",
-  "pk": 159,
-  "fields": {
-    "job": 30,
-    "label": 73,
-    "frame": 6,
-    "group": 0,
-    "source": "manual",
-    "type": "rectangle",
-    "occluded": false,
-    "outside": false,
-    "z_order": 0,
-    "points": "[55.67655109167208, 27.202181529999507, 314.5855129838001, 333.9054008126259]",
-    "rotation": 0.0,
-    "parent": null
-  }
-},
-{
-  "model": "engine.labeledshape",
-  "pk": 160,
-  "fields": {
-    "job": 30,
-    "label": 73,
-    "frame": 7,
-    "group": 0,
-    "source": "manual",
-    "type": "rectangle",
-    "occluded": false,
-    "outside": false,
-    "z_order": 0,
-    "points": "[30.75535711050179, 51.1681019723419, 245.49246947169377, 374.42159963250197]",
-    "rotation": 0.0,
-    "parent": null
-  }
-},
-{
-  "model": "engine.labeledshape",
-  "pk": 161,
-  "fields": {
-    "job": 30,
-    "label": 73,
-    "frame": 8,
-    "group": 0,
-    "source": "manual",
-    "type": "rectangle",
-    "occluded": false,
-    "outside": false,
-    "z_order": 0,
-    "points": "[78.72917294502258, 28.6186763048172, 456.07723474502563, 214.25403320789337]",
-    "rotation": 0.0,
-    "parent": null
-  }
-},
-{
-  "model": "engine.labeledshape",
-  "pk": 162,
-  "fields": {
-    "job": 30,
-    "label": 73,
-    "frame": 9,
-    "group": 0,
-    "source": "manual",
-    "type": "rectangle",
-    "occluded": false,
-    "outside": false,
-    "z_order": 0,
-    "points": "[40.30229317843805, 20.90870136916601, 277.9420801371325, 141.0943407505747]",
-    "rotation": 0.0,
-    "parent": null
-  }
-},
-{
-  "model": "engine.labeledshape",
-  "pk": 163,
-  "fields": {
-    "job": 31,
-    "label": 73,
-    "frame": 10,
-    "group": 0,
-    "source": "manual",
-    "type": "rectangle",
-    "occluded": false,
-    "outside": false,
-    "z_order": 0,
-    "points": "[37.5426108896736, 44.316280591488976, 109.0776273667816, 115.21824382543673]",
-    "rotation": 0.0,
-    "parent": null
-  }
-},
-{
-  "model": "engine.labeledshape",
-  "pk": 164,
-  "fields": {
     "job": 29,
     "label": 73,
     "frame": 0,
@@ -8947,7 +8625,7 @@
 },
 {
   "model": "engine.labeledshape",
-  "pk": 165,
+  "pk": 152,
   "fields": {
     "job": 29,
     "label": 73,
@@ -8965,7 +8643,7 @@
 },
 {
   "model": "engine.labeledshape",
-  "pk": 166,
+  "pk": 153,
   "fields": {
     "job": 29,
     "label": 73,
@@ -8983,7 +8661,7 @@
 },
 {
   "model": "engine.labeledshape",
-  "pk": 167,
+  "pk": 154,
   "fields": {
     "job": 29,
     "label": 73,
@@ -9001,7 +8679,7 @@
 },
 {
   "model": "engine.labeledshape",
-  "pk": 168,
+  "pk": 155,
   "fields": {
     "job": 29,
     "label": 73,
@@ -9013,6 +8691,240 @@
     "outside": false,
     "z_order": 0,
     "points": "[19.106867015361786, 71.99510070085489, 200.8463572859764, 196.5581221222874]",
+    "rotation": 0.0,
+    "parent": null
+  }
+},
+{
+  "model": "engine.labeledshape",
+  "pk": 156,
+  "fields": {
+    "job": 30,
+    "label": 73,
+    "frame": 5,
+    "group": 0,
+    "source": "manual",
+    "type": "rectangle",
+    "occluded": false,
+    "outside": false,
+    "z_order": 0,
+    "points": "[55.147965204716456, 27.993821200729144, 354.91261003613545, 129.34078386128022]",
+    "rotation": 0.0,
+    "parent": null
+  }
+},
+{
+  "model": "engine.labeledshape",
+  "pk": 157,
+  "fields": {
+    "job": 30,
+    "label": 73,
+    "frame": 6,
+    "group": 0,
+    "source": "manual",
+    "type": "rectangle",
+    "occluded": false,
+    "outside": false,
+    "z_order": 0,
+    "points": "[55.67655109167208, 27.202181529999507, 314.5855129838001, 333.9054008126259]",
+    "rotation": 0.0,
+    "parent": null
+  }
+},
+{
+  "model": "engine.labeledshape",
+  "pk": 158,
+  "fields": {
+    "job": 30,
+    "label": 73,
+    "frame": 7,
+    "group": 0,
+    "source": "manual",
+    "type": "rectangle",
+    "occluded": false,
+    "outside": false,
+    "z_order": 0,
+    "points": "[30.75535711050179, 51.1681019723419, 245.49246947169377, 374.42159963250197]",
+    "rotation": 0.0,
+    "parent": null
+  }
+},
+{
+  "model": "engine.labeledshape",
+  "pk": 159,
+  "fields": {
+    "job": 30,
+    "label": 73,
+    "frame": 8,
+    "group": 0,
+    "source": "manual",
+    "type": "rectangle",
+    "occluded": false,
+    "outside": false,
+    "z_order": 0,
+    "points": "[78.72917294502258, 28.6186763048172, 456.07723474502563, 214.25403320789337]",
+    "rotation": 0.0,
+    "parent": null
+  }
+},
+{
+  "model": "engine.labeledshape",
+  "pk": 160,
+  "fields": {
+    "job": 30,
+    "label": 73,
+    "frame": 9,
+    "group": 0,
+    "source": "manual",
+    "type": "rectangle",
+    "occluded": false,
+    "outside": false,
+    "z_order": 0,
+    "points": "[40.30229317843805, 20.90870136916601, 277.9420801371325, 141.0943407505747]",
+    "rotation": 0.0,
+    "parent": null
+  }
+},
+{
+  "model": "engine.labeledshape",
+  "pk": 161,
+  "fields": {
+    "job": 31,
+    "label": 73,
+    "frame": 10,
+    "group": 0,
+    "source": "manual",
+    "type": "rectangle",
+    "occluded": false,
+    "outside": false,
+    "z_order": 0,
+    "points": "[37.5426108896736, 44.316280591488976, 109.0776273667816, 115.21824382543673]",
+    "rotation": 0.0,
+    "parent": null
+  }
+},
+{
+  "model": "engine.labeledshape",
+  "pk": 162,
+  "fields": {
+    "job": 32,
+    "label": 73,
+    "frame": 4,
+    "group": 0,
+    "source": "Ground truth",
+    "type": "rectangle",
+    "occluded": false,
+    "outside": false,
+    "z_order": 0,
+    "points": "[24.722413063049316, 37.791320228576296, 270.78543078899384, 610.5770170927044]",
+    "rotation": 0.0,
+    "parent": null
+  }
+},
+{
+  "model": "engine.labeledshape",
+  "pk": 163,
+  "fields": {
+    "job": 32,
+    "label": 73,
+    "frame": 5,
+    "group": 0,
+    "source": "Ground truth",
+    "type": "rectangle",
+    "occluded": false,
+    "outside": false,
+    "z_order": 0,
+    "points": "[87.86122530400826, 22.648517262936366, 277.2987968593843, 128.69934738874508]",
+    "rotation": 0.0,
+    "parent": null
+  }
+},
+{
+  "model": "engine.labeledshape",
+  "pk": 164,
+  "fields": {
+    "job": 32,
+    "label": 73,
+    "frame": 6,
+    "group": 0,
+    "source": "Ground truth",
+    "type": "rectangle",
+    "occluded": false,
+    "outside": false,
+    "z_order": 0,
+    "points": "[8.219268488885064, 76.40050053596497, 46.97136907577624, 76.9621251821518]",
+    "rotation": 0.0,
+    "parent": null
+  }
+},
+{
+  "model": "engine.labeledshape",
+  "pk": 165,
+  "fields": {
+    "job": 32,
+    "label": 73,
+    "frame": 7,
+    "group": 0,
+    "source": "Ground truth",
+    "type": "rectangle",
+    "occluded": false,
+    "outside": false,
+    "z_order": 0,
+    "points": "[40.372303777934576, 55.821463263035184, 232.15283377170636, 366.6659974813465]",
+    "rotation": 0.0,
+    "parent": null
+  }
+},
+{
+  "model": "engine.labeledshape",
+  "pk": 166,
+  "fields": {
+    "job": 32,
+    "label": 73,
+    "frame": 8,
+    "group": 0,
+    "source": "Ground truth",
+    "type": "rectangle",
+    "occluded": false,
+    "outside": false,
+    "z_order": 0,
+    "points": "[114.91701781749725, 49.88939428329468, 426.5192240476608, 201.82309412956238]",
+    "rotation": 0.0,
+    "parent": null
+  }
+},
+{
+  "model": "engine.labeledshape",
+  "pk": 167,
+  "fields": {
+    "job": 32,
+    "label": 73,
+    "frame": 9,
+    "group": 0,
+    "source": "Ground truth",
+    "type": "rectangle",
+    "occluded": false,
+    "outside": false,
+    "z_order": 0,
+    "points": "[69.46096818744991, 42.89721039235519, 143.9282634973515, 85.61091347932779]",
+    "rotation": 0.0,
+    "parent": null
+  }
+},
+{
+  "model": "engine.labeledshape",
+  "pk": 168,
+  "fields": {
+    "job": 32,
+    "label": 73,
+    "frame": 10,
+    "group": 0,
+    "source": "Ground truth",
+    "type": "rectangle",
+    "occluded": false,
+    "outside": false,
+    "z_order": 0,
+    "points": "[35.64345116019285, 190.86810638308634, 41.340930348635084, 213.02496989369502]",
     "rotation": 0.0,
     "parent": null
   }
@@ -11362,22 +11274,6 @@
   }
 },
 {
-  "model": "engine.storage",
-  "pk": 35,
-  "fields": {
-    "location": "local",
-    "cloud_storage": null
-  }
-},
-{
-  "model": "engine.storage",
-  "pk": 36,
-  "fields": {
-    "location": "local",
-    "cloud_storage": null
-  }
-},
-{
   "model": "webhooks.webhook",
   "pk": 1,
   "fields": {
@@ -11696,38 +11592,38 @@
   "pk": 5,
   "fields": {
     "job": null,
-    "task": 23,
+    "task": 22,
     "parent": null,
-    "created_date": "2024-03-18T20:12:08.758Z",
-    "target_last_updated": "2024-03-16T18:10:55.855Z",
-    "gt_last_updated": "2024-03-16T18:09:26.850Z",
-    "data": "{\"parameters\":{\"included_annotation_types\":[\"bbox\",\"points\",\"mask\",\"polygon\",\"polyline\",\"skeleton\"],\"compare_attributes\":true,\"ignored_attributes\":[],\"iou_threshold\":0.4,\"low_overlap_threshold\":0.8,\"oks_sigma\":0.09,\"line_thickness\":0.01,\"compare_line_orientation\":true,\"line_orientation_threshold\":0.1,\"compare_groups\":true,\"group_match_threshold\":0.5,\"check_covered_annotations\":true,\"object_visibility_threshold\":0.05,\"panoptic_comparison\":true},\"comparison_summary\":{\"frame_share\":0.2727272727272727,\"frames\":[4,5,7],\"conflict_count\":3,\"warning_count\":1,\"error_count\":2,\"conflicts_by_type\":{\"missing_annotation\":1,\"extra_annotation\":1,\"low_overlap\":1},\"annotations\":{\"valid_count\":2,\"missing_count\":1,\"extra_count\":1,\"total_count\":4,\"ds_count\":3,\"gt_count\":3,\"confusion_matrix\":{\"labels\":[\"cat\",\"dog\",\"unmatched\"],\"rows\":[[2,0,1],[0,0,0],[1,0,0]],\"precision\":[0.0,0.0,0.0],\"recall\":[0.0,0.0,0.0],\"accuracy\":[0.0,0.0,0.0],\"axes\":{\"cols\":\"gt\",\"rows\":\"ds\"}},\"accuracy\":0.5,\"precision\":0.6666666666666666,\"recall\":0.6666666666666666},\"annotation_components\":{\"shape\":{\"valid_count\":2,\"missing_count\":1,\"extra_count\":1,\"total_count\":4,\"ds_count\":3,\"gt_count\":3,\"mean_iou\":0.1548852356623416,\"accuracy\":0.5},\"label\":{\"valid_count\":2,\"invalid_count\":0,\"total_count\":2,\"accuracy\":1.0}},\"frame_count\":3,\"mean_conflict_count\":1.0},\"frame_results\":{\"4\":{\"conflicts\":[{\"frame_id\":4,\"type\":\"missing_annotation\",\"annotation_ids\":[{\"obj_id\":151,\"job_id\":32,\"type\":\"shape\",\"shape_type\":\"rectangle\"}],\"severity\":\"error\"},{\"frame_id\":4,\"type\":\"extra_annotation\",\"annotation_ids\":[{\"obj_id\":168,\"job_id\":29,\"type\":\"shape\",\"shape_type\":\"rectangle\"}],\"severity\":\"error\"}],\"annotations\":{\"valid_count\":0,\"missing_count\":1,\"extra_count\":1,\"total_count\":2,\"ds_count\":1,\"gt_count\":1,\"confusion_matrix\":{\"labels\":[\"cat\",\"dog\",\"unmatched\"],\"rows\":[[0,0,1],[0,0,0],[1,0,0]],\"precision\":[0.0,0.0,0.0],\"recall\":[0.0,0.0,0.0],\"accuracy\":[0.0,0.0,0.0],\"axes\":{\"cols\":\"gt\",\"rows\":\"ds\"}},\"accuracy\":0.0,\"precision\":0.0,\"recall\":0.0},\"annotation_components\":{\"shape\":{\"valid_count\":0,\"missing_count\":1,\"extra_count\":1,\"total_count\":2,\"ds_count\":1,\"gt_count\":1,\"mean_iou\":0.1548852356623416,\"accuracy\":0.0},\"label\":{\"valid_count\":0,\"invalid_count\":0,\"total_count\":0,\"accuracy\":0.0}},\"conflict_count\":2,\"warning_count\":0,\"error_count\":2,\"conflicts_by_type\":{\"missing_annotation\":1,\"extra_annotation\":1}},\"5\":{\"conflicts\":[{\"frame_id\":5,\"type\":\"low_overlap\",\"annotation_ids\":[{\"obj_id\":158,\"job_id\":30,\"type\":\"shape\",\"shape_type\":\"rectangle\"},{\"obj_id\":152,\"job_id\":32,\"type\":\"shape\",\"shape_type\":\"rectangle\"}],\"severity\":\"warning\"}],\"annotations\":{\"valid_count\":1,\"missing_count\":0,\"extra_count\":0,\"total_count\":1,\"ds_count\":1,\"gt_count\":1,\"confusion_matrix\":{\"labels\":[\"cat\",\"dog\",\"unmatched\"],\"rows\":[[1,0,0],[0,0,0],[0,0,0]],\"precision\":[1.0,0.0,0.0],\"recall\":[1.0,0.0,0.0],\"accuracy\":[1.0,0.0,0.0],\"axes\":{\"cols\":\"gt\",\"rows\":\"ds\"}},\"accuracy\":1.0,\"precision\":1.0,\"recall\":1.0},\"annotation_components\":{\"shape\":{\"valid_count\":1,\"missing_count\":0,\"extra_count\":0,\"total_count\":1,\"ds_count\":1,\"gt_count\":1,\"mean_iou\":0.6077449295377204,\"accuracy\":1.0},\"label\":{\"valid_count\":1,\"invalid_count\":0,\"total_count\":1,\"accuracy\":1.0}},\"conflict_count\":1,\"warning_count\":1,\"error_count\":0,\"conflicts_by_type\":{\"low_overlap\":1}},\"7\":{\"conflicts\":[],\"annotations\":{\"valid_count\":1,\"missing_count\":0,\"extra_count\":0,\"total_count\":1,\"ds_count\":1,\"gt_count\":1,\"confusion_matrix\":{\"labels\":[\"cat\",\"dog\",\"unmatched\"],\"rows\":[[1,0,0],[0,0,0],[0,0,0]],\"precision\":[1.0,0.0,0.0],\"recall\":[1.0,0.0,0.0],\"accuracy\":[1.0,0.0,0.0],\"axes\":{\"cols\":\"gt\",\"rows\":\"ds\"}},\"accuracy\":1.0,\"precision\":1.0,\"recall\":1.0},\"annotation_components\":{\"shape\":{\"valid_count\":1,\"missing_count\":0,\"extra_count\":0,\"total_count\":1,\"ds_count\":1,\"gt_count\":1,\"mean_iou\":0.8588610910105674,\"accuracy\":1.0},\"label\":{\"valid_count\":1,\"invalid_count\":0,\"total_count\":1,\"accuracy\":1.0}},\"conflict_count\":0,\"warning_count\":0,\"error_count\":0,\"conflicts_by_type\":{}}}}"
+    "created_date": "2024-03-21T11:16:21.845Z",
+    "target_last_updated": "2023-11-24T15:23:30.045Z",
+    "gt_last_updated": "2023-11-24T15:18:55.216Z",
+    "data": "{\"parameters\":{\"included_annotation_types\":[\"bbox\",\"points\",\"mask\",\"polygon\",\"polyline\",\"skeleton\"],\"compare_attributes\":true,\"ignored_attributes\":[],\"iou_threshold\":0.4,\"low_overlap_threshold\":0.8,\"oks_sigma\":0.09,\"line_thickness\":0.01,\"compare_line_orientation\":true,\"line_orientation_threshold\":0.1,\"compare_groups\":true,\"group_match_threshold\":0.5,\"check_covered_annotations\":true,\"object_visibility_threshold\":0.05,\"panoptic_comparison\":true},\"comparison_summary\":{\"frame_share\":0.2727272727272727,\"frames\":[0,1,2],\"conflict_count\":40,\"warning_count\":16,\"error_count\":24,\"conflicts_by_type\":{\"low_overlap\":7,\"missing_annotation\":10,\"extra_annotation\":11,\"mismatching_label\":3,\"mismatching_direction\":1,\"covered_annotation\":1,\"mismatching_attributes\":1,\"mismatching_groups\":6},\"annotations\":{\"valid_count\":22,\"missing_count\":10,\"extra_count\":11,\"total_count\":46,\"ds_count\":36,\"gt_count\":35,\"confusion_matrix\":{\"labels\":[\"dog\",\"cat\",\"skele\",\"unmatched\"],\"rows\":[[0,2,0,3],[1,21,0,7],[0,0,1,1],[1,8,1,0]],\"precision\":[0.0,0.7241379310344828,0.5,0.0],\"recall\":[0.0,0.6774193548387096,0.5,0.0],\"accuracy\":[0.8478260869565217,0.6086956521739131,0.9565217391304348,0.5434782608695652],\"jaccard_index\":[0.0,0.5384615384615384,0.3333333333333333,0.0],\"axes\":{\"cols\":\"gt\",\"rows\":\"ds\"}},\"accuracy\":0.4782608695652174,\"precision\":0.6111111111111112,\"recall\":0.6285714285714286},\"annotation_components\":{\"shape\":{\"valid_count\":25,\"missing_count\":10,\"extra_count\":11,\"total_count\":46,\"ds_count\":36,\"gt_count\":35,\"mean_iou\":0.18567508032031,\"accuracy\":0.5434782608695652},\"label\":{\"valid_count\":22,\"invalid_count\":3,\"total_count\":25,\"accuracy\":0.88}},\"frame_count\":3,\"mean_conflict_count\":13.333333333333334},\"frame_results\":{\"0\":{\"conflicts\":[{\"frame_id\":0,\"type\":\"low_overlap\",\"annotation_ids\":[{\"obj_id\":65,\"job_id\":27,\"type\":\"shape\",\"shape_type\":\"rectangle\"},{\"obj_id\":101,\"job_id\":28,\"type\":\"shape\",\"shape_type\":\"rectangle\"}],\"severity\":\"warning\"},{\"frame_id\":0,\"type\":\"low_overlap\",\"annotation_ids\":[{\"obj_id\":91,\"job_id\":27,\"type\":\"shape\",\"shape_type\":\"rectangle\"},{\"obj_id\":118,\"job_id\":28,\"type\":\"shape\",\"shape_type\":\"rectangle\"}],\"severity\":\"warning\"},{\"frame_id\":0,\"type\":\"low_overlap\",\"annotation_ids\":[{\"obj_id\":88,\"job_id\":27,\"type\":\"shape\",\"shape_type\":\"points\"},{\"obj_id\":102,\"job_id\":28,\"type\":\"shape\",\"shape_type\":\"points\"}],\"severity\":\"warning\"},{\"frame_id\":0,\"type\":\"low_overlap\",\"annotation_ids\":[{\"obj_id\":68,\"job_id\":27,\"type\":\"shape\",\"shape_type\":\"polygon\"},{\"obj_id\":98,\"job_id\":28,\"type\":\"shape\",\"shape_type\":\"polygon\"}],\"severity\":\"warning\"},{\"frame_id\":0,\"type\":\"low_overlap\",\"annotation_ids\":[{\"obj_id\":67,\"job_id\":27,\"type\":\"shape\",\"shape_type\":\"polyline\"},{\"obj_id\":99,\"job_id\":28,\"type\":\"shape\",\"shape_type\":\"polyline\"}],\"severity\":\"warning\"},{\"frame_id\":0,\"type\":\"low_overlap\",\"annotation_ids\":[{\"obj_id\":141,\"job_id\":27,\"type\":\"shape\",\"shape_type\":\"skeleton\"},{\"obj_id\":132,\"job_id\":28,\"type\":\"shape\",\"shape_type\":\"skeleton\"}],\"severity\":\"warning\"},{\"frame_id\":0,\"type\":\"low_overlap\",\"annotation_ids\":[{\"obj_id\":92,\"job_id\":27,\"type\":\"shape\",\"shape_type\":\"points\"},{\"obj_id\":119,\"job_id\":28,\"type\":\"shape\",\"shape_type\":\"points\"}],\"severity\":\"warning\"},{\"frame_id\":0,\"type\":\"missing_annotation\",\"annotation_ids\":[{\"obj_id\":107,\"job_id\":28,\"type\":\"shape\",\"shape_type\":\"rectangle\"}],\"severity\":\"error\"},{\"frame_id\":0,\"type\":\"missing_annotation\",\"annotation_ids\":[{\"obj_id\":121,\"job_id\":28,\"type\":\"shape\",\"shape_type\":\"points\"}],\"severity\":\"error\"},{\"frame_id\":0,\"type\":\"missing_annotation\",\"annotation_ids\":[{\"obj_id\":122,\"job_id\":28,\"type\":\"shape\",\"shape_type\":\"points\"}],\"severity\":\"error\"},{\"frame_id\":0,\"type\":\"missing_annotation\",\"annotation_ids\":[{\"obj_id\":131,\"job_id\":28,\"type\":\"shape\",\"shape_type\":\"skeleton\"}],\"severity\":\"error\"},{\"frame_id\":0,\"type\":\"extra_annotation\",\"annotation_ids\":[{\"obj_id\":70,\"job_id\":27,\"type\":\"shape\",\"shape_type\":\"rectangle\"}],\"severity\":\"error\"},{\"frame_id\":0,\"type\":\"extra_annotation\",\"annotation_ids\":[{\"obj_id\":76,\"job_id\":27,\"type\":\"shape\",\"shape_type\":\"rectangle\"}],\"severity\":\"error\"},{\"frame_id\":0,\"type\":\"extra_annotation\",\"annotation_ids\":[{\"obj_id\":93,\"job_id\":27,\"type\":\"shape\",\"shape_type\":\"points\"}],\"severity\":\"error\"},{\"frame_id\":0,\"type\":\"extra_annotation\",\"annotation_ids\":[{\"obj_id\":74,\"job_id\":27,\"type\":\"shape\",\"shape_type\":\"polygon\"}],\"severity\":\"error\"},{\"frame_id\":0,\"type\":\"extra_annotation\",\"annotation_ids\":[{\"obj_id\":95,\"job_id\":27,\"type\":\"shape\",\"shape_type\":\"polygon\"}],\"severity\":\"error\"},{\"frame_id\":0,\"type\":\"extra_annotation\",\"annotation_ids\":[{\"obj_id\":73,\"job_id\":27,\"type\":\"shape\",\"shape_type\":\"polygon\"}],\"severity\":\"error\"},{\"frame_id\":0,\"type\":\"extra_annotation\",\"annotation_ids\":[{\"obj_id\":96,\"job_id\":27,\"type\":\"shape\",\"shape_type\":\"ellipse\"}],\"severity\":\"error\"},{\"frame_id\":0,\"type\":\"extra_annotation\",\"annotation_ids\":[{\"obj_id\":64,\"job_id\":27,\"type\":\"shape\",\"shape_type\":\"polyline\"}],\"severity\":\"error\"},{\"frame_id\":0,\"type\":\"extra_annotation\",\"annotation_ids\":[{\"obj_id\":66,\"job_id\":27,\"type\":\"shape\",\"shape_type\":\"polyline\"}],\"severity\":\"error\"},{\"frame_id\":0,\"type\":\"extra_annotation\",\"annotation_ids\":[{\"obj_id\":94,\"job_id\":27,\"type\":\"shape\",\"shape_type\":\"polyline\"}],\"severity\":\"error\"},{\"frame_id\":0,\"type\":\"extra_annotation\",\"annotation_ids\":[{\"obj_id\":142,\"job_id\":27,\"type\":\"shape\",\"shape_type\":\"skeleton\"}],\"severity\":\"error\"},{\"frame_id\":0,\"type\":\"mismatching_label\",\"annotation_ids\":[{\"obj_id\":92,\"job_id\":27,\"type\":\"shape\",\"shape_type\":\"points\"},{\"obj_id\":119,\"job_id\":28,\"type\":\"shape\",\"shape_type\":\"points\"}],\"severity\":\"error\"},{\"frame_id\":0,\"type\":\"mismatching_label\",\"annotation_ids\":[{\"obj_id\":89,\"job_id\":27,\"type\":\"shape\",\"shape_type\":\"points\"},{\"obj_id\":123,\"job_id\":28,\"type\":\"shape\",\"shape_type\":\"points\"}],\"severity\":\"error\"},{\"frame_id\":0,\"type\":\"mismatching_label\",\"annotation_ids\":[{\"obj_id\":69,\"job_id\":27,\"type\":\"shape\",\"shape_type\":\"mask\"},{\"obj_id\":97,\"job_id\":28,\"type\":\"shape\",\"shape_type\":\"polygon\"}],\"severity\":\"error\"},{\"frame_id\":0,\"type\":\"mismatching_direction\",\"annotation_ids\":[{\"obj_id\":67,\"job_id\":27,\"type\":\"shape\",\"shape_type\":\"polyline\"},{\"obj_id\":99,\"job_id\":28,\"type\":\"shape\",\"shape_type\":\"polyline\"}],\"severity\":\"warning\"},{\"frame_id\":0,\"type\":\"covered_annotation\",\"annotation_ids\":[{\"obj_id\":69,\"job_id\":27,\"type\":\"shape\",\"shape_type\":\"mask\"}],\"severity\":\"warning\"},{\"frame_id\":0,\"type\":\"mismatching_attributes\",\"annotation_ids\":[{\"obj_id\":65,\"job_id\":27,\"type\":\"shape\",\"shape_type\":\"rectangle\"},{\"obj_id\":101,\"job_id\":28,\"type\":\"shape\",\"shape_type\":\"rectangle\"}],\"severity\":\"warning\"},{\"frame_id\":0,\"type\":\"mismatching_groups\",\"annotation_ids\":[{\"obj_id\":82,\"job_id\":27,\"type\":\"shape\",\"shape_type\":\"rectangle\"},{\"obj_id\":103,\"job_id\":28,\"type\":\"shape\",\"shape_type\":\"rectangle\"}],\"severity\":\"warning\"},{\"frame_id\":0,\"type\":\"mismatching_groups\",\"annotation_ids\":[{\"obj_id\":81,\"job_id\":27,\"type\":\"shape\",\"shape_type\":\"rectangle\"},{\"obj_id\":104,\"job_id\":28,\"type\":\"shape\",\"shape_type\":\"rectangle\"}],\"severity\":\"warning\"},{\"frame_id\":0,\"type\":\"mismatching_groups\",\"annotation_ids\":[{\"obj_id\":83,\"job_id\":27,\"type\":\"shape\",\"shape_type\":\"rectangle\"},{\"obj_id\":105,\"job_id\":28,\"type\":\"shape\",\"shape_type\":\"rectangle\"}],\"severity\":\"warning\"},{\"frame_id\":0,\"type\":\"mismatching_groups\",\"annotation_ids\":[{\"obj_id\":87,\"job_id\":27,\"type\":\"shape\",\"shape_type\":\"rectangle\"},{\"obj_id\":106,\"job_id\":28,\"type\":\"shape\",\"shape_type\":\"rectangle\"}],\"severity\":\"warning\"},{\"frame_id\":0,\"type\":\"mismatching_groups\",\"annotation_ids\":[{\"obj_id\":80,\"job_id\":27,\"type\":\"shape\",\"shape_type\":\"rectangle\"},{\"obj_id\":111,\"job_id\":28,\"type\":\"shape\",\"shape_type\":\"rectangle\"}],\"severity\":\"warning\"},{\"frame_id\":0,\"type\":\"mismatching_groups\",\"annotation_ids\":[{\"obj_id\":77,\"job_id\":27,\"type\":\"shape\",\"shape_type\":\"rectangle\"},{\"obj_id\":114,\"job_id\":28,\"type\":\"shape\",\"shape_type\":\"rectangle\"}],\"severity\":\"warning\"}],\"annotations\":{\"valid_count\":22,\"missing_count\":4,\"extra_count\":11,\"total_count\":40,\"ds_count\":36,\"gt_count\":29,\"confusion_matrix\":{\"labels\":[\"dog\",\"cat\",\"skele\",\"unmatched\"],\"rows\":[[0,2,0,3],[1,21,0,7],[0,0,1,1],[1,2,1,0]],\"precision\":[0.0,0.7241379310344828,0.5,0.0],\"recall\":[0.0,0.84,0.5,0.0],\"accuracy\":[0.825,0.7,0.95,0.625],\"jaccard_index\":[0.0,0.6363636363636364,0.3333333333333333,0.0],\"axes\":{\"cols\":\"gt\",\"rows\":\"ds\"}},\"accuracy\":0.55,\"precision\":0.6111111111111112,\"recall\":0.7586206896551724},\"annotation_components\":{\"shape\":{\"valid_count\":25,\"missing_count\":4,\"extra_count\":11,\"total_count\":40,\"ds_count\":36,\"gt_count\":29,\"mean_iou\":0.55702524096093,\"accuracy\":0.625},\"label\":{\"valid_count\":22,\"invalid_count\":3,\"total_count\":25,\"accuracy\":0.88}},\"conflict_count\":34,\"warning_count\":16,\"error_count\":18,\"conflicts_by_type\":{\"low_overlap\":7,\"missing_annotation\":4,\"extra_annotation\":11,\"mismatching_label\":3,\"mismatching_direction\":1,\"covered_annotation\":1,\"mismatching_attributes\":1,\"mismatching_groups\":6}},\"1\":{\"conflicts\":[{\"frame_id\":1,\"type\":\"missing_annotation\",\"annotation_ids\":[{\"obj_id\":130,\"job_id\":28,\"type\":\"shape\",\"shape_type\":\"rectangle\"}],\"severity\":\"error\"},{\"frame_id\":1,\"type\":\"missing_annotation\",\"annotation_ids\":[{\"obj_id\":128,\"job_id\":28,\"type\":\"shape\",\"shape_type\":\"points\"}],\"severity\":\"error\"},{\"frame_id\":1,\"type\":\"missing_annotation\",\"annotation_ids\":[{\"obj_id\":124,\"job_id\":28,\"type\":\"shape\",\"shape_type\":\"polygon\"}],\"severity\":\"error\"},{\"frame_id\":1,\"type\":\"missing_annotation\",\"annotation_ids\":[{\"obj_id\":125,\"job_id\":28,\"type\":\"shape\",\"shape_type\":\"ellipse\"}],\"severity\":\"error\"},{\"frame_id\":1,\"type\":\"missing_annotation\",\"annotation_ids\":[{\"obj_id\":127,\"job_id\":28,\"type\":\"shape\",\"shape_type\":\"mask\"}],\"severity\":\"error\"},{\"frame_id\":1,\"type\":\"missing_annotation\",\"annotation_ids\":[{\"obj_id\":129,\"job_id\":28,\"type\":\"shape\",\"shape_type\":\"polyline\"}],\"severity\":\"error\"}],\"annotations\":{\"valid_count\":0,\"missing_count\":6,\"extra_count\":0,\"total_count\":6,\"ds_count\":0,\"gt_count\":6,\"confusion_matrix\":{\"labels\":[\"dog\",\"cat\",\"skele\",\"unmatched\"],\"rows\":[[0,0,0,0],[0,0,0,0],[0,0,0,0],[0,6,0,0]],\"precision\":[0.0,0.0,0.0,0.0],\"recall\":[0.0,0.0,0.0,0.0],\"accuracy\":[1.0,0.0,1.0,0.0],\"jaccard_index\":[0.0,0.0,0.0,0.0],\"axes\":{\"cols\":\"gt\",\"rows\":\"ds\"}},\"accuracy\":0.0,\"precision\":0.0,\"recall\":0.0},\"annotation_components\":{\"shape\":{\"valid_count\":0,\"missing_count\":6,\"extra_count\":0,\"total_count\":6,\"ds_count\":0,\"gt_count\":6,\"mean_iou\":0.0,\"accuracy\":0.0},\"label\":{\"valid_count\":0,\"invalid_count\":0,\"total_count\":0,\"accuracy\":0.0}},\"conflict_count\":6,\"warning_count\":0,\"error_count\":6,\"conflicts_by_type\":{\"missing_annotation\":6}},\"2\":{\"conflicts\":[],\"annotations\":{\"valid_count\":0,\"missing_count\":0,\"extra_count\":0,\"total_count\":0,\"ds_count\":0,\"gt_count\":0,\"confusion_matrix\":{\"labels\":[\"dog\",\"cat\",\"skele\",\"unmatched\"],\"rows\":[[0,0,0,0],[0,0,0,0],[0,0,0,0],[0,0,0,0]],\"precision\":[0.0,0.0,0.0,0.0],\"recall\":[0.0,0.0,0.0,0.0],\"accuracy\":[0.0,0.0,0.0,0.0],\"jaccard_index\":[0.0,0.0,0.0,0.0],\"axes\":{\"cols\":\"gt\",\"rows\":\"ds\"}},\"accuracy\":0.0,\"precision\":0.0,\"recall\":0.0},\"annotation_components\":{\"shape\":{\"valid_count\":0,\"missing_count\":0,\"extra_count\":0,\"total_count\":0,\"ds_count\":0,\"gt_count\":0,\"mean_iou\":0,\"accuracy\":0.0},\"label\":{\"valid_count\":0,\"invalid_count\":0,\"total_count\":0,\"accuracy\":0.0}},\"conflict_count\":0,\"warning_count\":0,\"error_count\":0,\"conflicts_by_type\":{}}}}"
   }
 },
 {
   "model": "quality_control.qualityreport",
   "pk": 6,
   "fields": {
-    "job": 29,
+    "job": 27,
     "task": null,
     "parent": 5,
-    "created_date": "2024-03-18T20:12:08.769Z",
-    "target_last_updated": "2024-03-16T18:10:55.839Z",
-    "gt_last_updated": "2024-03-16T18:09:26.850Z",
-    "data": "{\"parameters\":{\"included_annotation_types\":[\"bbox\",\"points\",\"mask\",\"polygon\",\"polyline\",\"skeleton\"],\"compare_attributes\":true,\"ignored_attributes\":[],\"iou_threshold\":0.4,\"low_overlap_threshold\":0.8,\"oks_sigma\":0.09,\"line_thickness\":0.01,\"compare_line_orientation\":true,\"line_orientation_threshold\":0.1,\"compare_groups\":true,\"group_match_threshold\":0.5,\"check_covered_annotations\":true,\"object_visibility_threshold\":0.05,\"panoptic_comparison\":true},\"comparison_summary\":{\"frame_share\":0.2,\"frames\":[4],\"conflict_count\":2,\"warning_count\":0,\"error_count\":2,\"conflicts_by_type\":{\"missing_annotation\":1,\"extra_annotation\":1},\"annotations\":{\"valid_count\":0,\"missing_count\":1,\"extra_count\":1,\"total_count\":2,\"ds_count\":1,\"gt_count\":1,\"confusion_matrix\":{\"labels\":[\"cat\",\"dog\",\"unmatched\"],\"rows\":[[0,0,1],[0,0,0],[1,0,0]],\"precision\":[0.0,0.0,0.0],\"recall\":[0.0,0.0,0.0],\"accuracy\":[0.0,0.0,0.0],\"axes\":{\"cols\":\"gt\",\"rows\":\"ds\"}},\"accuracy\":0.0,\"precision\":0.0,\"recall\":0.0},\"annotation_components\":{\"shape\":{\"valid_count\":0,\"missing_count\":1,\"extra_count\":1,\"total_count\":2,\"ds_count\":1,\"gt_count\":1,\"mean_iou\":0.1548852356623416,\"accuracy\":0.0},\"label\":{\"valid_count\":0,\"invalid_count\":0,\"total_count\":0,\"accuracy\":0.0}},\"frame_count\":1,\"mean_conflict_count\":2.0},\"frame_results\":{\"4\":{\"conflicts\":[{\"frame_id\":4,\"type\":\"missing_annotation\",\"annotation_ids\":[{\"obj_id\":151,\"job_id\":32,\"type\":\"shape\",\"shape_type\":\"rectangle\"}],\"severity\":\"error\"},{\"frame_id\":4,\"type\":\"extra_annotation\",\"annotation_ids\":[{\"obj_id\":168,\"job_id\":29,\"type\":\"shape\",\"shape_type\":\"rectangle\"}],\"severity\":\"error\"}],\"annotations\":{\"valid_count\":0,\"missing_count\":1,\"extra_count\":1,\"total_count\":2,\"ds_count\":1,\"gt_count\":1,\"confusion_matrix\":{\"labels\":[\"cat\",\"dog\",\"unmatched\"],\"rows\":[[0,0,1],[0,0,0],[1,0,0]],\"precision\":[0.0,0.0,0.0],\"recall\":[0.0,0.0,0.0],\"accuracy\":[0.0,0.0,0.0],\"axes\":{\"cols\":\"gt\",\"rows\":\"ds\"}},\"accuracy\":0.0,\"precision\":0.0,\"recall\":0.0},\"annotation_components\":{\"shape\":{\"valid_count\":0,\"missing_count\":1,\"extra_count\":1,\"total_count\":2,\"ds_count\":1,\"gt_count\":1,\"mean_iou\":0.1548852356623416,\"accuracy\":0.0},\"label\":{\"valid_count\":0,\"invalid_count\":0,\"total_count\":0,\"accuracy\":0.0}},\"conflict_count\":2,\"warning_count\":0,\"error_count\":2,\"conflicts_by_type\":{\"missing_annotation\":1,\"extra_annotation\":1}}}}"
+    "created_date": "2024-03-21T11:16:21.847Z",
+    "target_last_updated": "2023-11-24T15:23:30.269Z",
+    "gt_last_updated": "2023-11-24T15:18:55.216Z",
+    "data": "{\"parameters\":{\"included_annotation_types\":[\"bbox\",\"points\",\"mask\",\"polygon\",\"polyline\",\"skeleton\"],\"compare_attributes\":true,\"ignored_attributes\":[],\"iou_threshold\":0.4,\"low_overlap_threshold\":0.8,\"oks_sigma\":0.09,\"line_thickness\":0.01,\"compare_line_orientation\":true,\"line_orientation_threshold\":0.1,\"compare_groups\":true,\"group_match_threshold\":0.5,\"check_covered_annotations\":true,\"object_visibility_threshold\":0.05,\"panoptic_comparison\":true},\"comparison_summary\":{\"frame_share\":0.2727272727272727,\"frames\":[0,1,2],\"conflict_count\":40,\"warning_count\":16,\"error_count\":24,\"conflicts_by_type\":{\"low_overlap\":7,\"missing_annotation\":10,\"extra_annotation\":11,\"mismatching_label\":3,\"mismatching_direction\":1,\"covered_annotation\":1,\"mismatching_attributes\":1,\"mismatching_groups\":6},\"annotations\":{\"valid_count\":22,\"missing_count\":10,\"extra_count\":11,\"total_count\":46,\"ds_count\":36,\"gt_count\":35,\"confusion_matrix\":{\"labels\":[\"dog\",\"cat\",\"skele\",\"unmatched\"],\"rows\":[[0,2,0,3],[1,21,0,7],[0,0,1,1],[1,8,1,0]],\"precision\":[0.0,0.7241379310344828,0.5,0.0],\"recall\":[0.0,0.6774193548387096,0.5,0.0],\"accuracy\":[0.8478260869565217,0.6086956521739131,0.9565217391304348,0.5434782608695652],\"jaccard_index\":[0.0,0.5384615384615384,0.3333333333333333,0.0],\"axes\":{\"cols\":\"gt\",\"rows\":\"ds\"}},\"accuracy\":0.4782608695652174,\"precision\":0.6111111111111112,\"recall\":0.6285714285714286},\"annotation_components\":{\"shape\":{\"valid_count\":25,\"missing_count\":10,\"extra_count\":11,\"total_count\":46,\"ds_count\":36,\"gt_count\":35,\"mean_iou\":0.18567508032031,\"accuracy\":0.5434782608695652},\"label\":{\"valid_count\":22,\"invalid_count\":3,\"total_count\":25,\"accuracy\":0.88}},\"frame_count\":3,\"mean_conflict_count\":13.333333333333334},\"frame_results\":{\"0\":{\"conflicts\":[{\"frame_id\":0,\"type\":\"low_overlap\",\"annotation_ids\":[{\"obj_id\":65,\"job_id\":27,\"type\":\"shape\",\"shape_type\":\"rectangle\"},{\"obj_id\":101,\"job_id\":28,\"type\":\"shape\",\"shape_type\":\"rectangle\"}],\"severity\":\"warning\"},{\"frame_id\":0,\"type\":\"low_overlap\",\"annotation_ids\":[{\"obj_id\":91,\"job_id\":27,\"type\":\"shape\",\"shape_type\":\"rectangle\"},{\"obj_id\":118,\"job_id\":28,\"type\":\"shape\",\"shape_type\":\"rectangle\"}],\"severity\":\"warning\"},{\"frame_id\":0,\"type\":\"low_overlap\",\"annotation_ids\":[{\"obj_id\":88,\"job_id\":27,\"type\":\"shape\",\"shape_type\":\"points\"},{\"obj_id\":102,\"job_id\":28,\"type\":\"shape\",\"shape_type\":\"points\"}],\"severity\":\"warning\"},{\"frame_id\":0,\"type\":\"low_overlap\",\"annotation_ids\":[{\"obj_id\":68,\"job_id\":27,\"type\":\"shape\",\"shape_type\":\"polygon\"},{\"obj_id\":98,\"job_id\":28,\"type\":\"shape\",\"shape_type\":\"polygon\"}],\"severity\":\"warning\"},{\"frame_id\":0,\"type\":\"low_overlap\",\"annotation_ids\":[{\"obj_id\":67,\"job_id\":27,\"type\":\"shape\",\"shape_type\":\"polyline\"},{\"obj_id\":99,\"job_id\":28,\"type\":\"shape\",\"shape_type\":\"polyline\"}],\"severity\":\"warning\"},{\"frame_id\":0,\"type\":\"low_overlap\",\"annotation_ids\":[{\"obj_id\":141,\"job_id\":27,\"type\":\"shape\",\"shape_type\":\"skeleton\"},{\"obj_id\":132,\"job_id\":28,\"type\":\"shape\",\"shape_type\":\"skeleton\"}],\"severity\":\"warning\"},{\"frame_id\":0,\"type\":\"low_overlap\",\"annotation_ids\":[{\"obj_id\":92,\"job_id\":27,\"type\":\"shape\",\"shape_type\":\"points\"},{\"obj_id\":119,\"job_id\":28,\"type\":\"shape\",\"shape_type\":\"points\"}],\"severity\":\"warning\"},{\"frame_id\":0,\"type\":\"missing_annotation\",\"annotation_ids\":[{\"obj_id\":107,\"job_id\":28,\"type\":\"shape\",\"shape_type\":\"rectangle\"}],\"severity\":\"error\"},{\"frame_id\":0,\"type\":\"missing_annotation\",\"annotation_ids\":[{\"obj_id\":121,\"job_id\":28,\"type\":\"shape\",\"shape_type\":\"points\"}],\"severity\":\"error\"},{\"frame_id\":0,\"type\":\"missing_annotation\",\"annotation_ids\":[{\"obj_id\":122,\"job_id\":28,\"type\":\"shape\",\"shape_type\":\"points\"}],\"severity\":\"error\"},{\"frame_id\":0,\"type\":\"missing_annotation\",\"annotation_ids\":[{\"obj_id\":131,\"job_id\":28,\"type\":\"shape\",\"shape_type\":\"skeleton\"}],\"severity\":\"error\"},{\"frame_id\":0,\"type\":\"extra_annotation\",\"annotation_ids\":[{\"obj_id\":70,\"job_id\":27,\"type\":\"shape\",\"shape_type\":\"rectangle\"}],\"severity\":\"error\"},{\"frame_id\":0,\"type\":\"extra_annotation\",\"annotation_ids\":[{\"obj_id\":76,\"job_id\":27,\"type\":\"shape\",\"shape_type\":\"rectangle\"}],\"severity\":\"error\"},{\"frame_id\":0,\"type\":\"extra_annotation\",\"annotation_ids\":[{\"obj_id\":93,\"job_id\":27,\"type\":\"shape\",\"shape_type\":\"points\"}],\"severity\":\"error\"},{\"frame_id\":0,\"type\":\"extra_annotation\",\"annotation_ids\":[{\"obj_id\":74,\"job_id\":27,\"type\":\"shape\",\"shape_type\":\"polygon\"}],\"severity\":\"error\"},{\"frame_id\":0,\"type\":\"extra_annotation\",\"annotation_ids\":[{\"obj_id\":95,\"job_id\":27,\"type\":\"shape\",\"shape_type\":\"polygon\"}],\"severity\":\"error\"},{\"frame_id\":0,\"type\":\"extra_annotation\",\"annotation_ids\":[{\"obj_id\":73,\"job_id\":27,\"type\":\"shape\",\"shape_type\":\"polygon\"}],\"severity\":\"error\"},{\"frame_id\":0,\"type\":\"extra_annotation\",\"annotation_ids\":[{\"obj_id\":96,\"job_id\":27,\"type\":\"shape\",\"shape_type\":\"ellipse\"}],\"severity\":\"error\"},{\"frame_id\":0,\"type\":\"extra_annotation\",\"annotation_ids\":[{\"obj_id\":64,\"job_id\":27,\"type\":\"shape\",\"shape_type\":\"polyline\"}],\"severity\":\"error\"},{\"frame_id\":0,\"type\":\"extra_annotation\",\"annotation_ids\":[{\"obj_id\":66,\"job_id\":27,\"type\":\"shape\",\"shape_type\":\"polyline\"}],\"severity\":\"error\"},{\"frame_id\":0,\"type\":\"extra_annotation\",\"annotation_ids\":[{\"obj_id\":94,\"job_id\":27,\"type\":\"shape\",\"shape_type\":\"polyline\"}],\"severity\":\"error\"},{\"frame_id\":0,\"type\":\"extra_annotation\",\"annotation_ids\":[{\"obj_id\":142,\"job_id\":27,\"type\":\"shape\",\"shape_type\":\"skeleton\"}],\"severity\":\"error\"},{\"frame_id\":0,\"type\":\"mismatching_label\",\"annotation_ids\":[{\"obj_id\":92,\"job_id\":27,\"type\":\"shape\",\"shape_type\":\"points\"},{\"obj_id\":119,\"job_id\":28,\"type\":\"shape\",\"shape_type\":\"points\"}],\"severity\":\"error\"},{\"frame_id\":0,\"type\":\"mismatching_label\",\"annotation_ids\":[{\"obj_id\":89,\"job_id\":27,\"type\":\"shape\",\"shape_type\":\"points\"},{\"obj_id\":123,\"job_id\":28,\"type\":\"shape\",\"shape_type\":\"points\"}],\"severity\":\"error\"},{\"frame_id\":0,\"type\":\"mismatching_label\",\"annotation_ids\":[{\"obj_id\":69,\"job_id\":27,\"type\":\"shape\",\"shape_type\":\"mask\"},{\"obj_id\":97,\"job_id\":28,\"type\":\"shape\",\"shape_type\":\"polygon\"}],\"severity\":\"error\"},{\"frame_id\":0,\"type\":\"mismatching_direction\",\"annotation_ids\":[{\"obj_id\":67,\"job_id\":27,\"type\":\"shape\",\"shape_type\":\"polyline\"},{\"obj_id\":99,\"job_id\":28,\"type\":\"shape\",\"shape_type\":\"polyline\"}],\"severity\":\"warning\"},{\"frame_id\":0,\"type\":\"covered_annotation\",\"annotation_ids\":[{\"obj_id\":69,\"job_id\":27,\"type\":\"shape\",\"shape_type\":\"mask\"}],\"severity\":\"warning\"},{\"frame_id\":0,\"type\":\"mismatching_attributes\",\"annotation_ids\":[{\"obj_id\":65,\"job_id\":27,\"type\":\"shape\",\"shape_type\":\"rectangle\"},{\"obj_id\":101,\"job_id\":28,\"type\":\"shape\",\"shape_type\":\"rectangle\"}],\"severity\":\"warning\"},{\"frame_id\":0,\"type\":\"mismatching_groups\",\"annotation_ids\":[{\"obj_id\":82,\"job_id\":27,\"type\":\"shape\",\"shape_type\":\"rectangle\"},{\"obj_id\":103,\"job_id\":28,\"type\":\"shape\",\"shape_type\":\"rectangle\"}],\"severity\":\"warning\"},{\"frame_id\":0,\"type\":\"mismatching_groups\",\"annotation_ids\":[{\"obj_id\":81,\"job_id\":27,\"type\":\"shape\",\"shape_type\":\"rectangle\"},{\"obj_id\":104,\"job_id\":28,\"type\":\"shape\",\"shape_type\":\"rectangle\"}],\"severity\":\"warning\"},{\"frame_id\":0,\"type\":\"mismatching_groups\",\"annotation_ids\":[{\"obj_id\":83,\"job_id\":27,\"type\":\"shape\",\"shape_type\":\"rectangle\"},{\"obj_id\":105,\"job_id\":28,\"type\":\"shape\",\"shape_type\":\"rectangle\"}],\"severity\":\"warning\"},{\"frame_id\":0,\"type\":\"mismatching_groups\",\"annotation_ids\":[{\"obj_id\":87,\"job_id\":27,\"type\":\"shape\",\"shape_type\":\"rectangle\"},{\"obj_id\":106,\"job_id\":28,\"type\":\"shape\",\"shape_type\":\"rectangle\"}],\"severity\":\"warning\"},{\"frame_id\":0,\"type\":\"mismatching_groups\",\"annotation_ids\":[{\"obj_id\":80,\"job_id\":27,\"type\":\"shape\",\"shape_type\":\"rectangle\"},{\"obj_id\":111,\"job_id\":28,\"type\":\"shape\",\"shape_type\":\"rectangle\"}],\"severity\":\"warning\"},{\"frame_id\":0,\"type\":\"mismatching_groups\",\"annotation_ids\":[{\"obj_id\":77,\"job_id\":27,\"type\":\"shape\",\"shape_type\":\"rectangle\"},{\"obj_id\":114,\"job_id\":28,\"type\":\"shape\",\"shape_type\":\"rectangle\"}],\"severity\":\"warning\"}],\"annotations\":{\"valid_count\":22,\"missing_count\":4,\"extra_count\":11,\"total_count\":40,\"ds_count\":36,\"gt_count\":29,\"confusion_matrix\":{\"labels\":[\"dog\",\"cat\",\"skele\",\"unmatched\"],\"rows\":[[0,2,0,3],[1,21,0,7],[0,0,1,1],[1,2,1,0]],\"precision\":[0.0,0.7241379310344828,0.5,0.0],\"recall\":[0.0,0.84,0.5,0.0],\"accuracy\":[0.825,0.7,0.95,0.625],\"jaccard_index\":[0.0,0.6363636363636364,0.3333333333333333,0.0],\"axes\":{\"cols\":\"gt\",\"rows\":\"ds\"}},\"accuracy\":0.55,\"precision\":0.6111111111111112,\"recall\":0.7586206896551724},\"annotation_components\":{\"shape\":{\"valid_count\":25,\"missing_count\":4,\"extra_count\":11,\"total_count\":40,\"ds_count\":36,\"gt_count\":29,\"mean_iou\":0.55702524096093,\"accuracy\":0.625},\"label\":{\"valid_count\":22,\"invalid_count\":3,\"total_count\":25,\"accuracy\":0.88}},\"conflict_count\":34,\"warning_count\":16,\"error_count\":18,\"conflicts_by_type\":{\"low_overlap\":7,\"missing_annotation\":4,\"extra_annotation\":11,\"mismatching_label\":3,\"mismatching_direction\":1,\"covered_annotation\":1,\"mismatching_attributes\":1,\"mismatching_groups\":6}},\"1\":{\"conflicts\":[{\"frame_id\":1,\"type\":\"missing_annotation\",\"annotation_ids\":[{\"obj_id\":130,\"job_id\":28,\"type\":\"shape\",\"shape_type\":\"rectangle\"}],\"severity\":\"error\"},{\"frame_id\":1,\"type\":\"missing_annotation\",\"annotation_ids\":[{\"obj_id\":128,\"job_id\":28,\"type\":\"shape\",\"shape_type\":\"points\"}],\"severity\":\"error\"},{\"frame_id\":1,\"type\":\"missing_annotation\",\"annotation_ids\":[{\"obj_id\":124,\"job_id\":28,\"type\":\"shape\",\"shape_type\":\"polygon\"}],\"severity\":\"error\"},{\"frame_id\":1,\"type\":\"missing_annotation\",\"annotation_ids\":[{\"obj_id\":125,\"job_id\":28,\"type\":\"shape\",\"shape_type\":\"ellipse\"}],\"severity\":\"error\"},{\"frame_id\":1,\"type\":\"missing_annotation\",\"annotation_ids\":[{\"obj_id\":127,\"job_id\":28,\"type\":\"shape\",\"shape_type\":\"mask\"}],\"severity\":\"error\"},{\"frame_id\":1,\"type\":\"missing_annotation\",\"annotation_ids\":[{\"obj_id\":129,\"job_id\":28,\"type\":\"shape\",\"shape_type\":\"polyline\"}],\"severity\":\"error\"}],\"annotations\":{\"valid_count\":0,\"missing_count\":6,\"extra_count\":0,\"total_count\":6,\"ds_count\":0,\"gt_count\":6,\"confusion_matrix\":{\"labels\":[\"dog\",\"cat\",\"skele\",\"unmatched\"],\"rows\":[[0,0,0,0],[0,0,0,0],[0,0,0,0],[0,6,0,0]],\"precision\":[0.0,0.0,0.0,0.0],\"recall\":[0.0,0.0,0.0,0.0],\"accuracy\":[1.0,0.0,1.0,0.0],\"jaccard_index\":[0.0,0.0,0.0,0.0],\"axes\":{\"cols\":\"gt\",\"rows\":\"ds\"}},\"accuracy\":0.0,\"precision\":0.0,\"recall\":0.0},\"annotation_components\":{\"shape\":{\"valid_count\":0,\"missing_count\":6,\"extra_count\":0,\"total_count\":6,\"ds_count\":0,\"gt_count\":6,\"mean_iou\":0.0,\"accuracy\":0.0},\"label\":{\"valid_count\":0,\"invalid_count\":0,\"total_count\":0,\"accuracy\":0.0}},\"conflict_count\":6,\"warning_count\":0,\"error_count\":6,\"conflicts_by_type\":{\"missing_annotation\":6}},\"2\":{\"conflicts\":[],\"annotations\":{\"valid_count\":0,\"missing_count\":0,\"extra_count\":0,\"total_count\":0,\"ds_count\":0,\"gt_count\":0,\"confusion_matrix\":{\"labels\":[\"dog\",\"cat\",\"skele\",\"unmatched\"],\"rows\":[[0,0,0,0],[0,0,0,0],[0,0,0,0],[0,0,0,0]],\"precision\":[0.0,0.0,0.0,0.0],\"recall\":[0.0,0.0,0.0,0.0],\"accuracy\":[0.0,0.0,0.0,0.0],\"jaccard_index\":[0.0,0.0,0.0,0.0],\"axes\":{\"cols\":\"gt\",\"rows\":\"ds\"}},\"accuracy\":0.0,\"precision\":0.0,\"recall\":0.0},\"annotation_components\":{\"shape\":{\"valid_count\":0,\"missing_count\":0,\"extra_count\":0,\"total_count\":0,\"ds_count\":0,\"gt_count\":0,\"mean_iou\":0,\"accuracy\":0.0},\"label\":{\"valid_count\":0,\"invalid_count\":0,\"total_count\":0,\"accuracy\":0.0}},\"conflict_count\":0,\"warning_count\":0,\"error_count\":0,\"conflicts_by_type\":{}}}}"
   }
 },
 {
   "model": "quality_control.qualityreport",
   "pk": 7,
   "fields": {
-    "job": 30,
-    "task": null,
-    "parent": 5,
-    "created_date": "2024-03-18T20:12:08.769Z",
-    "target_last_updated": "2024-03-16T18:10:10.168Z",
-    "gt_last_updated": "2024-03-16T18:09:26.850Z",
-    "data": "{\"parameters\":{\"included_annotation_types\":[\"bbox\",\"points\",\"mask\",\"polygon\",\"polyline\",\"skeleton\"],\"compare_attributes\":true,\"ignored_attributes\":[],\"iou_threshold\":0.4,\"low_overlap_threshold\":0.8,\"oks_sigma\":0.09,\"line_thickness\":0.01,\"compare_line_orientation\":true,\"line_orientation_threshold\":0.1,\"compare_groups\":true,\"group_match_threshold\":0.5,\"check_covered_annotations\":true,\"object_visibility_threshold\":0.05,\"panoptic_comparison\":true},\"comparison_summary\":{\"frame_share\":0.4,\"frames\":[5,7],\"conflict_count\":1,\"warning_count\":1,\"error_count\":0,\"conflicts_by_type\":{\"low_overlap\":1},\"annotations\":{\"valid_count\":2,\"missing_count\":0,\"extra_count\":0,\"total_count\":2,\"ds_count\":2,\"gt_count\":2,\"confusion_matrix\":{\"labels\":[\"cat\",\"dog\",\"unmatched\"],\"rows\":[[2,0,0],[0,0,0],[0,0,0]],\"precision\":[1.0,0.0,0.0],\"recall\":[1.0,0.0,0.0],\"accuracy\":[1.0,0.0,0.0],\"axes\":{\"cols\":\"gt\",\"rows\":\"ds\"}},\"accuracy\":1.0,\"precision\":1.0,\"recall\":1.0},\"annotation_components\":{\"shape\":{\"valid_count\":2,\"missing_count\":0,\"extra_count\":0,\"total_count\":2,\"ds_count\":2,\"gt_count\":2,\"mean_iou\":0.7333030102741439,\"accuracy\":1.0},\"label\":{\"valid_count\":2,\"invalid_count\":0,\"total_count\":2,\"accuracy\":1.0}},\"frame_count\":2,\"mean_conflict_count\":0.5},\"frame_results\":{\"5\":{\"conflicts\":[{\"frame_id\":5,\"type\":\"low_overlap\",\"annotation_ids\":[{\"obj_id\":158,\"job_id\":30,\"type\":\"shape\",\"shape_type\":\"rectangle\"},{\"obj_id\":152,\"job_id\":32,\"type\":\"shape\",\"shape_type\":\"rectangle\"}],\"severity\":\"warning\"}],\"annotations\":{\"valid_count\":1,\"missing_count\":0,\"extra_count\":0,\"total_count\":1,\"ds_count\":1,\"gt_count\":1,\"confusion_matrix\":{\"labels\":[\"cat\",\"dog\",\"unmatched\"],\"rows\":[[1,0,0],[0,0,0],[0,0,0]],\"precision\":[1.0,0.0,0.0],\"recall\":[1.0,0.0,0.0],\"accuracy\":[1.0,0.0,0.0],\"axes\":{\"cols\":\"gt\",\"rows\":\"ds\"}},\"accuracy\":1.0,\"precision\":1.0,\"recall\":1.0},\"annotation_components\":{\"shape\":{\"valid_count\":1,\"missing_count\":0,\"extra_count\":0,\"total_count\":1,\"ds_count\":1,\"gt_count\":1,\"mean_iou\":0.6077449295377204,\"accuracy\":1.0},\"label\":{\"valid_count\":1,\"invalid_count\":0,\"total_count\":1,\"accuracy\":1.0}},\"conflict_count\":1,\"warning_count\":1,\"error_count\":0,\"conflicts_by_type\":{\"low_overlap\":1}},\"7\":{\"conflicts\":[],\"annotations\":{\"valid_count\":1,\"missing_count\":0,\"extra_count\":0,\"total_count\":1,\"ds_count\":1,\"gt_count\":1,\"confusion_matrix\":{\"labels\":[\"cat\",\"dog\",\"unmatched\"],\"rows\":[[1,0,0],[0,0,0],[0,0,0]],\"precision\":[1.0,0.0,0.0],\"recall\":[1.0,0.0,0.0],\"accuracy\":[1.0,0.0,0.0],\"axes\":{\"cols\":\"gt\",\"rows\":\"ds\"}},\"accuracy\":1.0,\"precision\":1.0,\"recall\":1.0},\"annotation_components\":{\"shape\":{\"valid_count\":1,\"missing_count\":0,\"extra_count\":0,\"total_count\":1,\"ds_count\":1,\"gt_count\":1,\"mean_iou\":0.8588610910105674,\"accuracy\":1.0},\"label\":{\"valid_count\":1,\"invalid_count\":0,\"total_count\":1,\"accuracy\":1.0}},\"conflict_count\":0,\"warning_count\":0,\"error_count\":0,\"conflicts_by_type\":{}}}}"
+    "job": null,
+    "task": 23,
+    "parent": null,
+    "created_date": "2024-03-21T20:52:03.542Z",
+    "target_last_updated": "2024-03-21T20:50:05.947Z",
+    "gt_last_updated": "2024-03-21T20:50:20.020Z",
+    "data": "{\"parameters\":{\"included_annotation_types\":[\"bbox\",\"points\",\"mask\",\"polygon\",\"polyline\",\"skeleton\"],\"compare_attributes\":true,\"ignored_attributes\":[],\"iou_threshold\":0.4,\"low_overlap_threshold\":0.8,\"oks_sigma\":0.09,\"line_thickness\":0.01,\"compare_line_orientation\":true,\"line_orientation_threshold\":0.1,\"compare_groups\":true,\"group_match_threshold\":0.5,\"check_covered_annotations\":true,\"object_visibility_threshold\":0.05,\"panoptic_comparison\":true},\"comparison_summary\":{\"frame_share\":0.2727272727272727,\"frames\":[4,5,7],\"conflict_count\":3,\"warning_count\":1,\"error_count\":2,\"conflicts_by_type\":{\"low_overlap\":1,\"missing_annotation\":1,\"extra_annotation\":1},\"annotations\":{\"valid_count\":2,\"missing_count\":1,\"extra_count\":1,\"total_count\":4,\"ds_count\":3,\"gt_count\":3,\"confusion_matrix\":{\"labels\":[\"cat\",\"dog\",\"unmatched\"],\"rows\":[[2,0,1],[0,0,0],[1,0,0]],\"precision\":[0.0,0.0,0.0],\"recall\":[0.0,0.0,0.0],\"accuracy\":[0.0,0.0,0.0],\"axes\":{\"cols\":\"gt\",\"rows\":\"ds\"}},\"accuracy\":0.5,\"precision\":0.6666666666666666,\"recall\":0.6666666666666666},\"annotation_components\":{\"shape\":{\"valid_count\":2,\"missing_count\":1,\"extra_count\":1,\"total_count\":4,\"ds_count\":3,\"gt_count\":3,\"mean_iou\":null,\"accuracy\":0.5},\"label\":{\"valid_count\":2,\"invalid_count\":0,\"total_count\":2,\"accuracy\":1.0}},\"frame_count\":3,\"mean_conflict_count\":1.0},\"frame_results\":{\"5\":{\"conflicts\":[{\"frame_id\":5,\"type\":\"low_overlap\",\"annotation_ids\":[{\"obj_id\":156,\"job_id\":30,\"type\":\"shape\",\"shape_type\":\"rectangle\"},{\"obj_id\":163,\"job_id\":32,\"type\":\"shape\",\"shape_type\":\"rectangle\"}],\"severity\":\"warning\"}],\"annotations\":{\"valid_count\":1,\"missing_count\":0,\"extra_count\":0,\"total_count\":1,\"ds_count\":1,\"gt_count\":1,\"confusion_matrix\":{\"labels\":[\"cat\",\"dog\",\"unmatched\"],\"rows\":[[1,0,0],[0,0,0],[0,0,0]],\"precision\":[1.0,0.0,0.0],\"recall\":[1.0,0.0,0.0],\"accuracy\":[1.0,0.0,0.0],\"axes\":{\"cols\":\"gt\",\"rows\":\"ds\"}},\"accuracy\":1.0,\"precision\":1.0,\"recall\":1.0},\"annotation_components\":{\"shape\":{\"valid_count\":1,\"missing_count\":0,\"extra_count\":0,\"total_count\":1,\"ds_count\":1,\"gt_count\":1,\"mean_iou\":0.6077449295377204,\"accuracy\":1.0},\"label\":{\"valid_count\":1,\"invalid_count\":0,\"total_count\":1,\"accuracy\":1.0}},\"conflict_count\":1,\"warning_count\":1,\"error_count\":0,\"conflicts_by_type\":{\"low_overlap\":1}},\"7\":{\"conflicts\":[],\"annotations\":{\"valid_count\":1,\"missing_count\":0,\"extra_count\":0,\"total_count\":1,\"ds_count\":1,\"gt_count\":1,\"confusion_matrix\":{\"labels\":[\"cat\",\"dog\",\"unmatched\"],\"rows\":[[1,0,0],[0,0,0],[0,0,0]],\"precision\":[1.0,0.0,0.0],\"recall\":[1.0,0.0,0.0],\"accuracy\":[1.0,0.0,0.0],\"axes\":{\"cols\":\"gt\",\"rows\":\"ds\"}},\"accuracy\":1.0,\"precision\":1.0,\"recall\":1.0},\"annotation_components\":{\"shape\":{\"valid_count\":1,\"missing_count\":0,\"extra_count\":0,\"total_count\":1,\"ds_count\":1,\"gt_count\":1,\"mean_iou\":0.8588610910105674,\"accuracy\":1.0},\"label\":{\"valid_count\":1,\"invalid_count\":0,\"total_count\":1,\"accuracy\":1.0}},\"conflict_count\":0,\"warning_count\":0,\"error_count\":0,\"conflicts_by_type\":{}},\"4\":{\"conflicts\":[{\"frame_id\":4,\"type\":\"missing_annotation\",\"annotation_ids\":[{\"obj_id\":162,\"job_id\":32,\"type\":\"shape\",\"shape_type\":\"rectangle\"}],\"severity\":\"error\"},{\"frame_id\":4,\"type\":\"extra_annotation\",\"annotation_ids\":[{\"obj_id\":155,\"job_id\":29,\"type\":\"shape\",\"shape_type\":\"rectangle\"}],\"severity\":\"error\"}],\"annotations\":{\"valid_count\":0,\"missing_count\":1,\"extra_count\":1,\"total_count\":2,\"ds_count\":1,\"gt_count\":1,\"confusion_matrix\":{\"labels\":[\"cat\",\"dog\",\"unmatched\"],\"rows\":[[0,0,1],[0,0,0],[1,0,0]],\"precision\":[0.0,0.0,0.0],\"recall\":[0.0,0.0,0.0],\"accuracy\":[0.0,0.0,0.0],\"axes\":{\"cols\":\"gt\",\"rows\":\"ds\"}},\"accuracy\":0.0,\"precision\":0.0,\"recall\":0.0},\"annotation_components\":{\"shape\":{\"valid_count\":0,\"missing_count\":1,\"extra_count\":1,\"total_count\":2,\"ds_count\":1,\"gt_count\":1,\"mean_iou\":0.1548852356623416,\"accuracy\":0.0},\"label\":{\"valid_count\":0,\"invalid_count\":0,\"total_count\":0,\"accuracy\":0.0}},\"conflict_count\":2,\"warning_count\":0,\"error_count\":2,\"conflicts_by_type\":{\"missing_annotation\":1,\"extra_annotation\":1}}}}"
   }
 },
 {
@@ -11736,11 +11632,37 @@
   "fields": {
     "job": 31,
     "task": null,
-    "parent": 5,
-    "created_date": "2024-03-18T20:12:08.769Z",
-    "target_last_updated": "2024-03-16T18:10:29.351Z",
-    "gt_last_updated": "2024-03-16T18:09:26.850Z",
+    "parent": 7,
+    "created_date": "2024-03-21T20:52:03.552Z",
+    "target_last_updated": "2024-03-21T20:50:27.594Z",
+    "gt_last_updated": "2024-03-21T20:50:20.020Z",
     "data": "{\"parameters\":{\"included_annotation_types\":[\"bbox\",\"points\",\"mask\",\"polygon\",\"polyline\",\"skeleton\"],\"compare_attributes\":true,\"ignored_attributes\":[],\"iou_threshold\":0.4,\"low_overlap_threshold\":0.8,\"oks_sigma\":0.09,\"line_thickness\":0.01,\"compare_line_orientation\":true,\"line_orientation_threshold\":0.1,\"compare_groups\":true,\"group_match_threshold\":0.5,\"check_covered_annotations\":true,\"object_visibility_threshold\":0.05,\"panoptic_comparison\":true},\"comparison_summary\":{\"frame_share\":0.0,\"frames\":[],\"conflict_count\":0,\"warning_count\":0,\"error_count\":0,\"conflicts_by_type\":{},\"annotations\":{\"valid_count\":0,\"missing_count\":0,\"extra_count\":0,\"total_count\":0,\"ds_count\":0,\"gt_count\":0,\"confusion_matrix\":{\"labels\":[\"cat\",\"dog\",\"unmatched\"],\"rows\":[[0,0,0],[0,0,0],[0,0,0]],\"precision\":[0.0,0.0,0.0],\"recall\":[0.0,0.0,0.0],\"accuracy\":[0.0,0.0,0.0],\"axes\":{\"cols\":\"gt\",\"rows\":\"ds\"}},\"accuracy\":0.0,\"precision\":0.0,\"recall\":0.0},\"annotation_components\":{\"shape\":{\"valid_count\":0,\"missing_count\":0,\"extra_count\":0,\"total_count\":0,\"ds_count\":0,\"gt_count\":0,\"mean_iou\":null,\"accuracy\":0.0},\"label\":{\"valid_count\":0,\"invalid_count\":0,\"total_count\":0,\"accuracy\":0.0}},\"frame_count\":0,\"mean_conflict_count\":0.0},\"frame_results\":{}}"
+  }
+},
+{
+  "model": "quality_control.qualityreport",
+  "pk": 9,
+  "fields": {
+    "job": 30,
+    "task": null,
+    "parent": 7,
+    "created_date": "2024-03-21T20:52:03.552Z",
+    "target_last_updated": "2024-03-21T20:50:33.610Z",
+    "gt_last_updated": "2024-03-21T20:50:20.020Z",
+    "data": "{\"parameters\":{\"included_annotation_types\":[\"bbox\",\"points\",\"mask\",\"polygon\",\"polyline\",\"skeleton\"],\"compare_attributes\":true,\"ignored_attributes\":[],\"iou_threshold\":0.4,\"low_overlap_threshold\":0.8,\"oks_sigma\":0.09,\"line_thickness\":0.01,\"compare_line_orientation\":true,\"line_orientation_threshold\":0.1,\"compare_groups\":true,\"group_match_threshold\":0.5,\"check_covered_annotations\":true,\"object_visibility_threshold\":0.05,\"panoptic_comparison\":true},\"comparison_summary\":{\"frame_share\":0.4,\"frames\":[5,7],\"conflict_count\":1,\"warning_count\":1,\"error_count\":0,\"conflicts_by_type\":{\"low_overlap\":1},\"annotations\":{\"valid_count\":2,\"missing_count\":0,\"extra_count\":0,\"total_count\":2,\"ds_count\":2,\"gt_count\":2,\"confusion_matrix\":{\"labels\":[\"cat\",\"dog\",\"unmatched\"],\"rows\":[[2,0,0],[0,0,0],[0,0,0]],\"precision\":[1.0,0.0,0.0],\"recall\":[1.0,0.0,0.0],\"accuracy\":[1.0,0.0,0.0],\"axes\":{\"cols\":\"gt\",\"rows\":\"ds\"}},\"accuracy\":1.0,\"precision\":1.0,\"recall\":1.0},\"annotation_components\":{\"shape\":{\"valid_count\":2,\"missing_count\":0,\"extra_count\":0,\"total_count\":2,\"ds_count\":2,\"gt_count\":2,\"mean_iou\":0.7333030102741439,\"accuracy\":1.0},\"label\":{\"valid_count\":2,\"invalid_count\":0,\"total_count\":2,\"accuracy\":1.0}},\"frame_count\":2,\"mean_conflict_count\":0.5},\"frame_results\":{\"5\":{\"conflicts\":[{\"frame_id\":5,\"type\":\"low_overlap\",\"annotation_ids\":[{\"obj_id\":156,\"job_id\":30,\"type\":\"shape\",\"shape_type\":\"rectangle\"},{\"obj_id\":163,\"job_id\":32,\"type\":\"shape\",\"shape_type\":\"rectangle\"}],\"severity\":\"warning\"}],\"annotations\":{\"valid_count\":1,\"missing_count\":0,\"extra_count\":0,\"total_count\":1,\"ds_count\":1,\"gt_count\":1,\"confusion_matrix\":{\"labels\":[\"cat\",\"dog\",\"unmatched\"],\"rows\":[[1,0,0],[0,0,0],[0,0,0]],\"precision\":[1.0,0.0,0.0],\"recall\":[1.0,0.0,0.0],\"accuracy\":[1.0,0.0,0.0],\"axes\":{\"cols\":\"gt\",\"rows\":\"ds\"}},\"accuracy\":1.0,\"precision\":1.0,\"recall\":1.0},\"annotation_components\":{\"shape\":{\"valid_count\":1,\"missing_count\":0,\"extra_count\":0,\"total_count\":1,\"ds_count\":1,\"gt_count\":1,\"mean_iou\":0.6077449295377204,\"accuracy\":1.0},\"label\":{\"valid_count\":1,\"invalid_count\":0,\"total_count\":1,\"accuracy\":1.0}},\"conflict_count\":1,\"warning_count\":1,\"error_count\":0,\"conflicts_by_type\":{\"low_overlap\":1}},\"7\":{\"conflicts\":[],\"annotations\":{\"valid_count\":1,\"missing_count\":0,\"extra_count\":0,\"total_count\":1,\"ds_count\":1,\"gt_count\":1,\"confusion_matrix\":{\"labels\":[\"cat\",\"dog\",\"unmatched\"],\"rows\":[[1,0,0],[0,0,0],[0,0,0]],\"precision\":[1.0,0.0,0.0],\"recall\":[1.0,0.0,0.0],\"accuracy\":[1.0,0.0,0.0],\"axes\":{\"cols\":\"gt\",\"rows\":\"ds\"}},\"accuracy\":1.0,\"precision\":1.0,\"recall\":1.0},\"annotation_components\":{\"shape\":{\"valid_count\":1,\"missing_count\":0,\"extra_count\":0,\"total_count\":1,\"ds_count\":1,\"gt_count\":1,\"mean_iou\":0.8588610910105674,\"accuracy\":1.0},\"label\":{\"valid_count\":1,\"invalid_count\":0,\"total_count\":1,\"accuracy\":1.0}},\"conflict_count\":0,\"warning_count\":0,\"error_count\":0,\"conflicts_by_type\":{}}}}"
+  }
+},
+{
+  "model": "quality_control.qualityreport",
+  "pk": 10,
+  "fields": {
+    "job": 29,
+    "task": null,
+    "parent": 7,
+    "created_date": "2024-03-21T20:52:03.552Z",
+    "target_last_updated": "2024-03-21T20:50:39.585Z",
+    "gt_last_updated": "2024-03-21T20:50:20.020Z",
+    "data": "{\"parameters\":{\"included_annotation_types\":[\"bbox\",\"points\",\"mask\",\"polygon\",\"polyline\",\"skeleton\"],\"compare_attributes\":true,\"ignored_attributes\":[],\"iou_threshold\":0.4,\"low_overlap_threshold\":0.8,\"oks_sigma\":0.09,\"line_thickness\":0.01,\"compare_line_orientation\":true,\"line_orientation_threshold\":0.1,\"compare_groups\":true,\"group_match_threshold\":0.5,\"check_covered_annotations\":true,\"object_visibility_threshold\":0.05,\"panoptic_comparison\":true},\"comparison_summary\":{\"frame_share\":0.2,\"frames\":[4],\"conflict_count\":2,\"warning_count\":0,\"error_count\":2,\"conflicts_by_type\":{\"missing_annotation\":1,\"extra_annotation\":1},\"annotations\":{\"valid_count\":0,\"missing_count\":1,\"extra_count\":1,\"total_count\":2,\"ds_count\":1,\"gt_count\":1,\"confusion_matrix\":{\"labels\":[\"cat\",\"dog\",\"unmatched\"],\"rows\":[[0,0,1],[0,0,0],[1,0,0]],\"precision\":[0.0,0.0,0.0],\"recall\":[0.0,0.0,0.0],\"accuracy\":[0.0,0.0,0.0],\"axes\":{\"cols\":\"gt\",\"rows\":\"ds\"}},\"accuracy\":0.0,\"precision\":0.0,\"recall\":0.0},\"annotation_components\":{\"shape\":{\"valid_count\":0,\"missing_count\":1,\"extra_count\":1,\"total_count\":2,\"ds_count\":1,\"gt_count\":1,\"mean_iou\":0.1548852356623416,\"accuracy\":0.0},\"label\":{\"valid_count\":0,\"invalid_count\":0,\"total_count\":0,\"accuracy\":0.0}},\"frame_count\":1,\"mean_conflict_count\":2.0},\"frame_results\":{\"4\":{\"conflicts\":[{\"frame_id\":4,\"type\":\"missing_annotation\",\"annotation_ids\":[{\"obj_id\":162,\"job_id\":32,\"type\":\"shape\",\"shape_type\":\"rectangle\"}],\"severity\":\"error\"},{\"frame_id\":4,\"type\":\"extra_annotation\",\"annotation_ids\":[{\"obj_id\":155,\"job_id\":29,\"type\":\"shape\",\"shape_type\":\"rectangle\"}],\"severity\":\"error\"}],\"annotations\":{\"valid_count\":0,\"missing_count\":1,\"extra_count\":1,\"total_count\":2,\"ds_count\":1,\"gt_count\":1,\"confusion_matrix\":{\"labels\":[\"cat\",\"dog\",\"unmatched\"],\"rows\":[[0,0,1],[0,0,0],[1,0,0]],\"precision\":[0.0,0.0,0.0],\"recall\":[0.0,0.0,0.0],\"accuracy\":[0.0,0.0,0.0],\"axes\":{\"cols\":\"gt\",\"rows\":\"ds\"}},\"accuracy\":0.0,\"precision\":0.0,\"recall\":0.0},\"annotation_components\":{\"shape\":{\"valid_count\":0,\"missing_count\":1,\"extra_count\":1,\"total_count\":2,\"ds_count\":1,\"gt_count\":1,\"mean_iou\":0.1548852356623416,\"accuracy\":0.0},\"label\":{\"valid_count\":0,\"invalid_count\":0,\"total_count\":0,\"accuracy\":0.0}},\"conflict_count\":2,\"warning_count\":0,\"error_count\":2,\"conflicts_by_type\":{\"missing_annotation\":1,\"extra_annotation\":1}}}}"
   }
 },
 {
@@ -12518,9 +12440,9 @@
   "pk": 78,
   "fields": {
     "report": 6,
-    "frame": 4,
-    "type": "missing_annotation",
-    "severity": "error"
+    "frame": 0,
+    "type": "low_overlap",
+    "severity": "warning"
   }
 },
 {
@@ -12528,19 +12450,419 @@
   "pk": 79,
   "fields": {
     "report": 6,
-    "frame": 4,
-    "type": "extra_annotation",
-    "severity": "error"
+    "frame": 0,
+    "type": "low_overlap",
+    "severity": "warning"
   }
 },
 {
   "model": "quality_control.annotationconflict",
   "pk": 80,
   "fields": {
-    "report": 7,
+    "report": 6,
+    "frame": 0,
+    "type": "low_overlap",
+    "severity": "warning"
+  }
+},
+{
+  "model": "quality_control.annotationconflict",
+  "pk": 81,
+  "fields": {
+    "report": 6,
+    "frame": 0,
+    "type": "low_overlap",
+    "severity": "warning"
+  }
+},
+{
+  "model": "quality_control.annotationconflict",
+  "pk": 82,
+  "fields": {
+    "report": 6,
+    "frame": 0,
+    "type": "low_overlap",
+    "severity": "warning"
+  }
+},
+{
+  "model": "quality_control.annotationconflict",
+  "pk": 83,
+  "fields": {
+    "report": 6,
+    "frame": 0,
+    "type": "low_overlap",
+    "severity": "warning"
+  }
+},
+{
+  "model": "quality_control.annotationconflict",
+  "pk": 84,
+  "fields": {
+    "report": 6,
+    "frame": 0,
+    "type": "low_overlap",
+    "severity": "warning"
+  }
+},
+{
+  "model": "quality_control.annotationconflict",
+  "pk": 85,
+  "fields": {
+    "report": 6,
+    "frame": 0,
+    "type": "missing_annotation",
+    "severity": "error"
+  }
+},
+{
+  "model": "quality_control.annotationconflict",
+  "pk": 86,
+  "fields": {
+    "report": 6,
+    "frame": 0,
+    "type": "missing_annotation",
+    "severity": "error"
+  }
+},
+{
+  "model": "quality_control.annotationconflict",
+  "pk": 87,
+  "fields": {
+    "report": 6,
+    "frame": 0,
+    "type": "missing_annotation",
+    "severity": "error"
+  }
+},
+{
+  "model": "quality_control.annotationconflict",
+  "pk": 88,
+  "fields": {
+    "report": 6,
+    "frame": 0,
+    "type": "missing_annotation",
+    "severity": "error"
+  }
+},
+{
+  "model": "quality_control.annotationconflict",
+  "pk": 89,
+  "fields": {
+    "report": 6,
+    "frame": 0,
+    "type": "extra_annotation",
+    "severity": "error"
+  }
+},
+{
+  "model": "quality_control.annotationconflict",
+  "pk": 90,
+  "fields": {
+    "report": 6,
+    "frame": 0,
+    "type": "extra_annotation",
+    "severity": "error"
+  }
+},
+{
+  "model": "quality_control.annotationconflict",
+  "pk": 91,
+  "fields": {
+    "report": 6,
+    "frame": 0,
+    "type": "extra_annotation",
+    "severity": "error"
+  }
+},
+{
+  "model": "quality_control.annotationconflict",
+  "pk": 92,
+  "fields": {
+    "report": 6,
+    "frame": 0,
+    "type": "extra_annotation",
+    "severity": "error"
+  }
+},
+{
+  "model": "quality_control.annotationconflict",
+  "pk": 93,
+  "fields": {
+    "report": 6,
+    "frame": 0,
+    "type": "extra_annotation",
+    "severity": "error"
+  }
+},
+{
+  "model": "quality_control.annotationconflict",
+  "pk": 94,
+  "fields": {
+    "report": 6,
+    "frame": 0,
+    "type": "extra_annotation",
+    "severity": "error"
+  }
+},
+{
+  "model": "quality_control.annotationconflict",
+  "pk": 95,
+  "fields": {
+    "report": 6,
+    "frame": 0,
+    "type": "extra_annotation",
+    "severity": "error"
+  }
+},
+{
+  "model": "quality_control.annotationconflict",
+  "pk": 96,
+  "fields": {
+    "report": 6,
+    "frame": 0,
+    "type": "extra_annotation",
+    "severity": "error"
+  }
+},
+{
+  "model": "quality_control.annotationconflict",
+  "pk": 97,
+  "fields": {
+    "report": 6,
+    "frame": 0,
+    "type": "extra_annotation",
+    "severity": "error"
+  }
+},
+{
+  "model": "quality_control.annotationconflict",
+  "pk": 98,
+  "fields": {
+    "report": 6,
+    "frame": 0,
+    "type": "extra_annotation",
+    "severity": "error"
+  }
+},
+{
+  "model": "quality_control.annotationconflict",
+  "pk": 99,
+  "fields": {
+    "report": 6,
+    "frame": 0,
+    "type": "extra_annotation",
+    "severity": "error"
+  }
+},
+{
+  "model": "quality_control.annotationconflict",
+  "pk": 100,
+  "fields": {
+    "report": 6,
+    "frame": 0,
+    "type": "mismatching_label",
+    "severity": "error"
+  }
+},
+{
+  "model": "quality_control.annotationconflict",
+  "pk": 101,
+  "fields": {
+    "report": 6,
+    "frame": 0,
+    "type": "mismatching_label",
+    "severity": "error"
+  }
+},
+{
+  "model": "quality_control.annotationconflict",
+  "pk": 102,
+  "fields": {
+    "report": 6,
+    "frame": 0,
+    "type": "mismatching_label",
+    "severity": "error"
+  }
+},
+{
+  "model": "quality_control.annotationconflict",
+  "pk": 103,
+  "fields": {
+    "report": 6,
+    "frame": 0,
+    "type": "mismatching_direction",
+    "severity": "warning"
+  }
+},
+{
+  "model": "quality_control.annotationconflict",
+  "pk": 104,
+  "fields": {
+    "report": 6,
+    "frame": 0,
+    "type": "covered_annotation",
+    "severity": "warning"
+  }
+},
+{
+  "model": "quality_control.annotationconflict",
+  "pk": 105,
+  "fields": {
+    "report": 6,
+    "frame": 0,
+    "type": "mismatching_attributes",
+    "severity": "warning"
+  }
+},
+{
+  "model": "quality_control.annotationconflict",
+  "pk": 106,
+  "fields": {
+    "report": 6,
+    "frame": 0,
+    "type": "mismatching_groups",
+    "severity": "warning"
+  }
+},
+{
+  "model": "quality_control.annotationconflict",
+  "pk": 107,
+  "fields": {
+    "report": 6,
+    "frame": 0,
+    "type": "mismatching_groups",
+    "severity": "warning"
+  }
+},
+{
+  "model": "quality_control.annotationconflict",
+  "pk": 108,
+  "fields": {
+    "report": 6,
+    "frame": 0,
+    "type": "mismatching_groups",
+    "severity": "warning"
+  }
+},
+{
+  "model": "quality_control.annotationconflict",
+  "pk": 109,
+  "fields": {
+    "report": 6,
+    "frame": 0,
+    "type": "mismatching_groups",
+    "severity": "warning"
+  }
+},
+{
+  "model": "quality_control.annotationconflict",
+  "pk": 110,
+  "fields": {
+    "report": 6,
+    "frame": 0,
+    "type": "mismatching_groups",
+    "severity": "warning"
+  }
+},
+{
+  "model": "quality_control.annotationconflict",
+  "pk": 111,
+  "fields": {
+    "report": 6,
+    "frame": 0,
+    "type": "mismatching_groups",
+    "severity": "warning"
+  }
+},
+{
+  "model": "quality_control.annotationconflict",
+  "pk": 112,
+  "fields": {
+    "report": 6,
+    "frame": 1,
+    "type": "missing_annotation",
+    "severity": "error"
+  }
+},
+{
+  "model": "quality_control.annotationconflict",
+  "pk": 113,
+  "fields": {
+    "report": 6,
+    "frame": 1,
+    "type": "missing_annotation",
+    "severity": "error"
+  }
+},
+{
+  "model": "quality_control.annotationconflict",
+  "pk": 114,
+  "fields": {
+    "report": 6,
+    "frame": 1,
+    "type": "missing_annotation",
+    "severity": "error"
+  }
+},
+{
+  "model": "quality_control.annotationconflict",
+  "pk": 115,
+  "fields": {
+    "report": 6,
+    "frame": 1,
+    "type": "missing_annotation",
+    "severity": "error"
+  }
+},
+{
+  "model": "quality_control.annotationconflict",
+  "pk": 116,
+  "fields": {
+    "report": 6,
+    "frame": 1,
+    "type": "missing_annotation",
+    "severity": "error"
+  }
+},
+{
+  "model": "quality_control.annotationconflict",
+  "pk": 117,
+  "fields": {
+    "report": 6,
+    "frame": 1,
+    "type": "missing_annotation",
+    "severity": "error"
+  }
+},
+{
+  "model": "quality_control.annotationconflict",
+  "pk": 118,
+  "fields": {
+    "report": 9,
     "frame": 5,
     "type": "low_overlap",
     "severity": "warning"
+  }
+},
+{
+  "model": "quality_control.annotationconflict",
+  "pk": 119,
+  "fields": {
+    "report": 10,
+    "frame": 4,
+    "type": "missing_annotation",
+    "severity": "error"
+  }
+},
+{
+  "model": "quality_control.annotationconflict",
+  "pk": 120,
+  "fields": {
+    "report": 10,
+    "frame": 4,
+    "type": "extra_annotation",
+    "severity": "error"
   }
 },
 {
@@ -13780,8 +14102,8 @@
   "pk": 113,
   "fields": {
     "conflict": 78,
-    "obj_id": 151,
-    "job_id": 32,
+    "obj_id": 65,
+    "job_id": 27,
     "type": "shape",
     "shape_type": "rectangle"
   }
@@ -13790,9 +14112,9 @@
   "model": "quality_control.annotationid",
   "pk": 114,
   "fields": {
-    "conflict": 79,
-    "obj_id": 168,
-    "job_id": 29,
+    "conflict": 78,
+    "obj_id": 101,
+    "job_id": 28,
     "type": "shape",
     "shape_type": "rectangle"
   }
@@ -13801,9 +14123,9 @@
   "model": "quality_control.annotationid",
   "pk": 115,
   "fields": {
-    "conflict": 80,
-    "obj_id": 158,
-    "job_id": 30,
+    "conflict": 79,
+    "obj_id": 91,
+    "job_id": 27,
     "type": "shape",
     "shape_type": "rectangle"
   }
@@ -13812,9 +14134,647 @@
   "model": "quality_control.annotationid",
   "pk": 116,
   "fields": {
+    "conflict": 79,
+    "obj_id": 118,
+    "job_id": 28,
+    "type": "shape",
+    "shape_type": "rectangle"
+  }
+},
+{
+  "model": "quality_control.annotationid",
+  "pk": 117,
+  "fields": {
     "conflict": 80,
-    "obj_id": 152,
+    "obj_id": 88,
+    "job_id": 27,
+    "type": "shape",
+    "shape_type": "points"
+  }
+},
+{
+  "model": "quality_control.annotationid",
+  "pk": 118,
+  "fields": {
+    "conflict": 80,
+    "obj_id": 102,
+    "job_id": 28,
+    "type": "shape",
+    "shape_type": "points"
+  }
+},
+{
+  "model": "quality_control.annotationid",
+  "pk": 119,
+  "fields": {
+    "conflict": 81,
+    "obj_id": 68,
+    "job_id": 27,
+    "type": "shape",
+    "shape_type": "polygon"
+  }
+},
+{
+  "model": "quality_control.annotationid",
+  "pk": 120,
+  "fields": {
+    "conflict": 81,
+    "obj_id": 98,
+    "job_id": 28,
+    "type": "shape",
+    "shape_type": "polygon"
+  }
+},
+{
+  "model": "quality_control.annotationid",
+  "pk": 121,
+  "fields": {
+    "conflict": 82,
+    "obj_id": 67,
+    "job_id": 27,
+    "type": "shape",
+    "shape_type": "polyline"
+  }
+},
+{
+  "model": "quality_control.annotationid",
+  "pk": 122,
+  "fields": {
+    "conflict": 82,
+    "obj_id": 99,
+    "job_id": 28,
+    "type": "shape",
+    "shape_type": "polyline"
+  }
+},
+{
+  "model": "quality_control.annotationid",
+  "pk": 123,
+  "fields": {
+    "conflict": 83,
+    "obj_id": 141,
+    "job_id": 27,
+    "type": "shape",
+    "shape_type": "skeleton"
+  }
+},
+{
+  "model": "quality_control.annotationid",
+  "pk": 124,
+  "fields": {
+    "conflict": 83,
+    "obj_id": 132,
+    "job_id": 28,
+    "type": "shape",
+    "shape_type": "skeleton"
+  }
+},
+{
+  "model": "quality_control.annotationid",
+  "pk": 125,
+  "fields": {
+    "conflict": 84,
+    "obj_id": 92,
+    "job_id": 27,
+    "type": "shape",
+    "shape_type": "points"
+  }
+},
+{
+  "model": "quality_control.annotationid",
+  "pk": 126,
+  "fields": {
+    "conflict": 84,
+    "obj_id": 119,
+    "job_id": 28,
+    "type": "shape",
+    "shape_type": "points"
+  }
+},
+{
+  "model": "quality_control.annotationid",
+  "pk": 127,
+  "fields": {
+    "conflict": 85,
+    "obj_id": 107,
+    "job_id": 28,
+    "type": "shape",
+    "shape_type": "rectangle"
+  }
+},
+{
+  "model": "quality_control.annotationid",
+  "pk": 128,
+  "fields": {
+    "conflict": 86,
+    "obj_id": 121,
+    "job_id": 28,
+    "type": "shape",
+    "shape_type": "points"
+  }
+},
+{
+  "model": "quality_control.annotationid",
+  "pk": 129,
+  "fields": {
+    "conflict": 87,
+    "obj_id": 122,
+    "job_id": 28,
+    "type": "shape",
+    "shape_type": "points"
+  }
+},
+{
+  "model": "quality_control.annotationid",
+  "pk": 130,
+  "fields": {
+    "conflict": 88,
+    "obj_id": 131,
+    "job_id": 28,
+    "type": "shape",
+    "shape_type": "skeleton"
+  }
+},
+{
+  "model": "quality_control.annotationid",
+  "pk": 131,
+  "fields": {
+    "conflict": 89,
+    "obj_id": 70,
+    "job_id": 27,
+    "type": "shape",
+    "shape_type": "rectangle"
+  }
+},
+{
+  "model": "quality_control.annotationid",
+  "pk": 132,
+  "fields": {
+    "conflict": 90,
+    "obj_id": 76,
+    "job_id": 27,
+    "type": "shape",
+    "shape_type": "rectangle"
+  }
+},
+{
+  "model": "quality_control.annotationid",
+  "pk": 133,
+  "fields": {
+    "conflict": 91,
+    "obj_id": 93,
+    "job_id": 27,
+    "type": "shape",
+    "shape_type": "points"
+  }
+},
+{
+  "model": "quality_control.annotationid",
+  "pk": 134,
+  "fields": {
+    "conflict": 92,
+    "obj_id": 74,
+    "job_id": 27,
+    "type": "shape",
+    "shape_type": "polygon"
+  }
+},
+{
+  "model": "quality_control.annotationid",
+  "pk": 135,
+  "fields": {
+    "conflict": 93,
+    "obj_id": 95,
+    "job_id": 27,
+    "type": "shape",
+    "shape_type": "polygon"
+  }
+},
+{
+  "model": "quality_control.annotationid",
+  "pk": 136,
+  "fields": {
+    "conflict": 94,
+    "obj_id": 73,
+    "job_id": 27,
+    "type": "shape",
+    "shape_type": "polygon"
+  }
+},
+{
+  "model": "quality_control.annotationid",
+  "pk": 137,
+  "fields": {
+    "conflict": 95,
+    "obj_id": 96,
+    "job_id": 27,
+    "type": "shape",
+    "shape_type": "ellipse"
+  }
+},
+{
+  "model": "quality_control.annotationid",
+  "pk": 138,
+  "fields": {
+    "conflict": 96,
+    "obj_id": 64,
+    "job_id": 27,
+    "type": "shape",
+    "shape_type": "polyline"
+  }
+},
+{
+  "model": "quality_control.annotationid",
+  "pk": 139,
+  "fields": {
+    "conflict": 97,
+    "obj_id": 66,
+    "job_id": 27,
+    "type": "shape",
+    "shape_type": "polyline"
+  }
+},
+{
+  "model": "quality_control.annotationid",
+  "pk": 140,
+  "fields": {
+    "conflict": 98,
+    "obj_id": 94,
+    "job_id": 27,
+    "type": "shape",
+    "shape_type": "polyline"
+  }
+},
+{
+  "model": "quality_control.annotationid",
+  "pk": 141,
+  "fields": {
+    "conflict": 99,
+    "obj_id": 142,
+    "job_id": 27,
+    "type": "shape",
+    "shape_type": "skeleton"
+  }
+},
+{
+  "model": "quality_control.annotationid",
+  "pk": 142,
+  "fields": {
+    "conflict": 100,
+    "obj_id": 92,
+    "job_id": 27,
+    "type": "shape",
+    "shape_type": "points"
+  }
+},
+{
+  "model": "quality_control.annotationid",
+  "pk": 143,
+  "fields": {
+    "conflict": 100,
+    "obj_id": 119,
+    "job_id": 28,
+    "type": "shape",
+    "shape_type": "points"
+  }
+},
+{
+  "model": "quality_control.annotationid",
+  "pk": 144,
+  "fields": {
+    "conflict": 101,
+    "obj_id": 89,
+    "job_id": 27,
+    "type": "shape",
+    "shape_type": "points"
+  }
+},
+{
+  "model": "quality_control.annotationid",
+  "pk": 145,
+  "fields": {
+    "conflict": 101,
+    "obj_id": 123,
+    "job_id": 28,
+    "type": "shape",
+    "shape_type": "points"
+  }
+},
+{
+  "model": "quality_control.annotationid",
+  "pk": 146,
+  "fields": {
+    "conflict": 102,
+    "obj_id": 69,
+    "job_id": 27,
+    "type": "shape",
+    "shape_type": "mask"
+  }
+},
+{
+  "model": "quality_control.annotationid",
+  "pk": 147,
+  "fields": {
+    "conflict": 102,
+    "obj_id": 97,
+    "job_id": 28,
+    "type": "shape",
+    "shape_type": "polygon"
+  }
+},
+{
+  "model": "quality_control.annotationid",
+  "pk": 148,
+  "fields": {
+    "conflict": 103,
+    "obj_id": 67,
+    "job_id": 27,
+    "type": "shape",
+    "shape_type": "polyline"
+  }
+},
+{
+  "model": "quality_control.annotationid",
+  "pk": 149,
+  "fields": {
+    "conflict": 103,
+    "obj_id": 99,
+    "job_id": 28,
+    "type": "shape",
+    "shape_type": "polyline"
+  }
+},
+{
+  "model": "quality_control.annotationid",
+  "pk": 150,
+  "fields": {
+    "conflict": 104,
+    "obj_id": 69,
+    "job_id": 27,
+    "type": "shape",
+    "shape_type": "mask"
+  }
+},
+{
+  "model": "quality_control.annotationid",
+  "pk": 151,
+  "fields": {
+    "conflict": 105,
+    "obj_id": 65,
+    "job_id": 27,
+    "type": "shape",
+    "shape_type": "rectangle"
+  }
+},
+{
+  "model": "quality_control.annotationid",
+  "pk": 152,
+  "fields": {
+    "conflict": 105,
+    "obj_id": 101,
+    "job_id": 28,
+    "type": "shape",
+    "shape_type": "rectangle"
+  }
+},
+{
+  "model": "quality_control.annotationid",
+  "pk": 153,
+  "fields": {
+    "conflict": 106,
+    "obj_id": 82,
+    "job_id": 27,
+    "type": "shape",
+    "shape_type": "rectangle"
+  }
+},
+{
+  "model": "quality_control.annotationid",
+  "pk": 154,
+  "fields": {
+    "conflict": 106,
+    "obj_id": 103,
+    "job_id": 28,
+    "type": "shape",
+    "shape_type": "rectangle"
+  }
+},
+{
+  "model": "quality_control.annotationid",
+  "pk": 155,
+  "fields": {
+    "conflict": 107,
+    "obj_id": 81,
+    "job_id": 27,
+    "type": "shape",
+    "shape_type": "rectangle"
+  }
+},
+{
+  "model": "quality_control.annotationid",
+  "pk": 156,
+  "fields": {
+    "conflict": 107,
+    "obj_id": 104,
+    "job_id": 28,
+    "type": "shape",
+    "shape_type": "rectangle"
+  }
+},
+{
+  "model": "quality_control.annotationid",
+  "pk": 157,
+  "fields": {
+    "conflict": 108,
+    "obj_id": 83,
+    "job_id": 27,
+    "type": "shape",
+    "shape_type": "rectangle"
+  }
+},
+{
+  "model": "quality_control.annotationid",
+  "pk": 158,
+  "fields": {
+    "conflict": 108,
+    "obj_id": 105,
+    "job_id": 28,
+    "type": "shape",
+    "shape_type": "rectangle"
+  }
+},
+{
+  "model": "quality_control.annotationid",
+  "pk": 159,
+  "fields": {
+    "conflict": 109,
+    "obj_id": 87,
+    "job_id": 27,
+    "type": "shape",
+    "shape_type": "rectangle"
+  }
+},
+{
+  "model": "quality_control.annotationid",
+  "pk": 160,
+  "fields": {
+    "conflict": 109,
+    "obj_id": 106,
+    "job_id": 28,
+    "type": "shape",
+    "shape_type": "rectangle"
+  }
+},
+{
+  "model": "quality_control.annotationid",
+  "pk": 161,
+  "fields": {
+    "conflict": 110,
+    "obj_id": 80,
+    "job_id": 27,
+    "type": "shape",
+    "shape_type": "rectangle"
+  }
+},
+{
+  "model": "quality_control.annotationid",
+  "pk": 162,
+  "fields": {
+    "conflict": 110,
+    "obj_id": 111,
+    "job_id": 28,
+    "type": "shape",
+    "shape_type": "rectangle"
+  }
+},
+{
+  "model": "quality_control.annotationid",
+  "pk": 163,
+  "fields": {
+    "conflict": 111,
+    "obj_id": 77,
+    "job_id": 27,
+    "type": "shape",
+    "shape_type": "rectangle"
+  }
+},
+{
+  "model": "quality_control.annotationid",
+  "pk": 164,
+  "fields": {
+    "conflict": 111,
+    "obj_id": 114,
+    "job_id": 28,
+    "type": "shape",
+    "shape_type": "rectangle"
+  }
+},
+{
+  "model": "quality_control.annotationid",
+  "pk": 165,
+  "fields": {
+    "conflict": 112,
+    "obj_id": 130,
+    "job_id": 28,
+    "type": "shape",
+    "shape_type": "rectangle"
+  }
+},
+{
+  "model": "quality_control.annotationid",
+  "pk": 166,
+  "fields": {
+    "conflict": 113,
+    "obj_id": 128,
+    "job_id": 28,
+    "type": "shape",
+    "shape_type": "points"
+  }
+},
+{
+  "model": "quality_control.annotationid",
+  "pk": 167,
+  "fields": {
+    "conflict": 114,
+    "obj_id": 124,
+    "job_id": 28,
+    "type": "shape",
+    "shape_type": "polygon"
+  }
+},
+{
+  "model": "quality_control.annotationid",
+  "pk": 168,
+  "fields": {
+    "conflict": 115,
+    "obj_id": 125,
+    "job_id": 28,
+    "type": "shape",
+    "shape_type": "ellipse"
+  }
+},
+{
+  "model": "quality_control.annotationid",
+  "pk": 169,
+  "fields": {
+    "conflict": 116,
+    "obj_id": 127,
+    "job_id": 28,
+    "type": "shape",
+    "shape_type": "mask"
+  }
+},
+{
+  "model": "quality_control.annotationid",
+  "pk": 170,
+  "fields": {
+    "conflict": 117,
+    "obj_id": 129,
+    "job_id": 28,
+    "type": "shape",
+    "shape_type": "polyline"
+  }
+},
+{
+  "model": "quality_control.annotationid",
+  "pk": 171,
+  "fields": {
+    "conflict": 118,
+    "obj_id": 156,
+    "job_id": 30,
+    "type": "shape",
+    "shape_type": "rectangle"
+  }
+},
+{
+  "model": "quality_control.annotationid",
+  "pk": 172,
+  "fields": {
+    "conflict": 118,
+    "obj_id": 163,
     "job_id": 32,
+    "type": "shape",
+    "shape_type": "rectangle"
+  }
+},
+{
+  "model": "quality_control.annotationid",
+  "pk": 173,
+  "fields": {
+    "conflict": 119,
+    "obj_id": 162,
+    "job_id": 32,
+    "type": "shape",
+    "shape_type": "rectangle"
+  }
+},
+{
+  "model": "quality_control.annotationid",
+  "pk": 174,
+  "fields": {
+    "conflict": 120,
+    "obj_id": 155,
+    "job_id": 29,
     "type": "shape",
     "shape_type": "rectangle"
   }
@@ -14159,551 +15119,6 @@
     "object_visibility_threshold": 0.05,
     "panoptic_comparison": true,
     "compare_attributes": true
-  }
-},
-{
-  "model": "analytics_report.analyticsreport",
-  "pk": 1,
-  "fields": {
-    "job": null,
-    "task": 23,
-    "project": null,
-    "created_date": "2024-03-18T20:11:35.363Z",
-    "statistics": [
-      {
-        "name": "objects",
-        "title": "Objects",
-        "data_series": {
-          "created": [],
-          "deleted": [],
-          "updated": []
-        },
-        "description": "Metric shows number of added/changed/deleted objects for the Task.",
-        "granularity": "day",
-        "default_view": "histogram",
-        "transformations": [],
-        "is_filterable_by_date": true
-      },
-      {
-        "name": "annotation_speed",
-        "title": "Annotation speed (objects per hour)",
-        "data_series": {
-          "object_count": [
-            {
-              "value": 18,
-              "datetime": "2024-03-18T00:00:00Z"
-            }
-          ],
-          "working_time": [
-            {
-              "value": 0.0,
-              "datetime": "2024-03-18T00:00:00Z"
-            }
-          ]
-        },
-        "description": "Metric shows the annotation speed in objects per hour for the Task.",
-        "granularity": "day",
-        "default_view": "histogram",
-        "transformations": [
-          {
-            "name": "annotation_speed",
-            "binary": {
-              "left": "object_count",
-              "right": "working_time",
-              "operator": "/"
-            }
-          }
-        ],
-        "is_filterable_by_date": false
-      },
-      {
-        "name": "annotation_time",
-        "title": "Annotation time (hours)",
-        "data_series": {
-          "total_annotating_time": [
-            {
-              "value": 0,
-              "datetime": "2024-03-18T20:08:50Z"
-            }
-          ]
-        },
-        "description": "Metric shows how long the Task is in progress state.",
-        "granularity": null,
-        "default_view": "numeric",
-        "transformations": [],
-        "is_filterable_by_date": false
-      },
-      {
-        "name": "total_object_count",
-        "title": "Total Object Count",
-        "data_series": {
-          "total_object_count": [
-            {
-              "value": 18,
-              "datetime": "2024-03-18T20:08:50Z"
-            }
-          ]
-        },
-        "description": "Metric shows total object count in the Task.",
-        "granularity": null,
-        "default_view": "numeric",
-        "transformations": [],
-        "is_filterable_by_date": false
-      },
-      {
-        "name": "total_annotation_speed",
-        "title": "Total Annotation Speed (objects per hour)",
-        "data_series": {
-          "total_annotation_speed": [
-            {
-              "value": 0,
-              "datetime": "2024-03-18T20:08:50Z"
-            }
-          ]
-        },
-        "description": "Metric shows total annotation speed in the Task.",
-        "granularity": null,
-        "default_view": "numeric",
-        "transformations": [],
-        "is_filterable_by_date": false
-      }
-    ]
-  }
-},
-{
-  "model": "analytics_report.analyticsreport",
-  "pk": 2,
-  "fields": {
-    "job": 29,
-    "task": null,
-    "project": null,
-    "created_date": "2024-03-18T20:11:35.374Z",
-    "statistics": [
-      {
-        "name": "objects",
-        "title": "Objects",
-        "data_series": {
-          "created": [],
-          "deleted": [],
-          "updated": []
-        },
-        "description": "Metric shows number of added/changed/deleted objects for the Job.",
-        "granularity": "day",
-        "default_view": "histogram",
-        "transformations": [],
-        "is_filterable_by_date": true
-      },
-      {
-        "name": "annotation_speed",
-        "title": "Annotation speed (objects per hour)",
-        "data_series": {
-          "object_count": [
-            {
-              "value": 5,
-              "datetime": "2024-03-18T20:08:50Z"
-            }
-          ],
-          "working_time": [
-            {
-              "value": 0.0,
-              "datetime": "2024-03-18T20:08:50Z"
-            }
-          ]
-        },
-        "description": "Metric shows the annotation speed in objects per hour.",
-        "granularity": "day",
-        "default_view": "histogram",
-        "transformations": [
-          {
-            "name": "annotation_speed",
-            "binary": {
-              "left": "object_count",
-              "right": "working_time",
-              "operator": "/"
-            }
-          }
-        ],
-        "is_filterable_by_date": false
-      },
-      {
-        "name": "annotation_time",
-        "title": "Annotation time (hours)",
-        "data_series": {
-          "total_annotating_time": [
-            {
-              "value": 0.0,
-              "datetime": "2024-03-18T20:08:50Z"
-            }
-          ]
-        },
-        "description": "Metric shows how long the Job is in progress state.",
-        "granularity": null,
-        "default_view": "numeric",
-        "transformations": [],
-        "is_filterable_by_date": false
-      },
-      {
-        "name": "total_object_count",
-        "title": "Total Object Count",
-        "data_series": {
-          "total_object_count": [
-            {
-              "value": 5,
-              "datetime": "2024-03-18T20:08:50Z"
-            }
-          ]
-        },
-        "description": "Metric shows total object count in the Job.",
-        "granularity": null,
-        "default_view": "numeric",
-        "transformations": [],
-        "is_filterable_by_date": false
-      },
-      {
-        "name": "total_annotation_speed",
-        "title": "Total Annotation Speed (objects per hour)",
-        "data_series": {
-          "total_annotation_speed": [
-            {
-              "value": 0,
-              "datetime": "2024-03-18T20:08:50Z"
-            }
-          ]
-        },
-        "description": "Metric shows total annotation speed in the Job.",
-        "granularity": null,
-        "default_view": "numeric",
-        "transformations": [],
-        "is_filterable_by_date": false
-      }
-    ]
-  }
-},
-{
-  "model": "analytics_report.analyticsreport",
-  "pk": 3,
-  "fields": {
-    "job": 30,
-    "task": null,
-    "project": null,
-    "created_date": "2024-03-18T20:11:35.374Z",
-    "statistics": [
-      {
-        "name": "objects",
-        "title": "Objects",
-        "data_series": {
-          "created": [],
-          "deleted": [],
-          "updated": []
-        },
-        "description": "Metric shows number of added/changed/deleted objects for the Job.",
-        "granularity": "day",
-        "default_view": "histogram",
-        "transformations": [],
-        "is_filterable_by_date": true
-      },
-      {
-        "name": "annotation_speed",
-        "title": "Annotation speed (objects per hour)",
-        "data_series": {
-          "object_count": [
-            {
-              "value": 5,
-              "datetime": "2024-03-18T20:08:50Z"
-            }
-          ],
-          "working_time": [
-            {
-              "value": 0.0,
-              "datetime": "2024-03-18T20:08:50Z"
-            }
-          ]
-        },
-        "description": "Metric shows the annotation speed in objects per hour.",
-        "granularity": "day",
-        "default_view": "histogram",
-        "transformations": [
-          {
-            "name": "annotation_speed",
-            "binary": {
-              "left": "object_count",
-              "right": "working_time",
-              "operator": "/"
-            }
-          }
-        ],
-        "is_filterable_by_date": false
-      },
-      {
-        "name": "annotation_time",
-        "title": "Annotation time (hours)",
-        "data_series": {
-          "total_annotating_time": [
-            {
-              "value": 0.0,
-              "datetime": "2024-03-18T20:08:50Z"
-            }
-          ]
-        },
-        "description": "Metric shows how long the Job is in progress state.",
-        "granularity": null,
-        "default_view": "numeric",
-        "transformations": [],
-        "is_filterable_by_date": false
-      },
-      {
-        "name": "total_object_count",
-        "title": "Total Object Count",
-        "data_series": {
-          "total_object_count": [
-            {
-              "value": 5,
-              "datetime": "2024-03-18T20:08:50Z"
-            }
-          ]
-        },
-        "description": "Metric shows total object count in the Job.",
-        "granularity": null,
-        "default_view": "numeric",
-        "transformations": [],
-        "is_filterable_by_date": false
-      },
-      {
-        "name": "total_annotation_speed",
-        "title": "Total Annotation Speed (objects per hour)",
-        "data_series": {
-          "total_annotation_speed": [
-            {
-              "value": 0,
-              "datetime": "2024-03-18T20:08:50Z"
-            }
-          ]
-        },
-        "description": "Metric shows total annotation speed in the Job.",
-        "granularity": null,
-        "default_view": "numeric",
-        "transformations": [],
-        "is_filterable_by_date": false
-      }
-    ]
-  }
-},
-{
-  "model": "analytics_report.analyticsreport",
-  "pk": 4,
-  "fields": {
-    "job": 31,
-    "task": null,
-    "project": null,
-    "created_date": "2024-03-18T20:11:35.375Z",
-    "statistics": [
-      {
-        "name": "objects",
-        "title": "Objects",
-        "data_series": {
-          "created": [],
-          "deleted": [],
-          "updated": []
-        },
-        "description": "Metric shows number of added/changed/deleted objects for the Job.",
-        "granularity": "day",
-        "default_view": "histogram",
-        "transformations": [],
-        "is_filterable_by_date": true
-      },
-      {
-        "name": "annotation_speed",
-        "title": "Annotation speed (objects per hour)",
-        "data_series": {
-          "object_count": [
-            {
-              "value": 1,
-              "datetime": "2024-03-18T20:08:50Z"
-            }
-          ],
-          "working_time": [
-            {
-              "value": 0.0,
-              "datetime": "2024-03-18T20:08:50Z"
-            }
-          ]
-        },
-        "description": "Metric shows the annotation speed in objects per hour.",
-        "granularity": "day",
-        "default_view": "histogram",
-        "transformations": [
-          {
-            "name": "annotation_speed",
-            "binary": {
-              "left": "object_count",
-              "right": "working_time",
-              "operator": "/"
-            }
-          }
-        ],
-        "is_filterable_by_date": false
-      },
-      {
-        "name": "annotation_time",
-        "title": "Annotation time (hours)",
-        "data_series": {
-          "total_annotating_time": [
-            {
-              "value": 0.0,
-              "datetime": "2024-03-18T20:08:50Z"
-            }
-          ]
-        },
-        "description": "Metric shows how long the Job is in progress state.",
-        "granularity": null,
-        "default_view": "numeric",
-        "transformations": [],
-        "is_filterable_by_date": false
-      },
-      {
-        "name": "total_object_count",
-        "title": "Total Object Count",
-        "data_series": {
-          "total_object_count": [
-            {
-              "value": 1,
-              "datetime": "2024-03-18T20:08:50Z"
-            }
-          ]
-        },
-        "description": "Metric shows total object count in the Job.",
-        "granularity": null,
-        "default_view": "numeric",
-        "transformations": [],
-        "is_filterable_by_date": false
-      },
-      {
-        "name": "total_annotation_speed",
-        "title": "Total Annotation Speed (objects per hour)",
-        "data_series": {
-          "total_annotation_speed": [
-            {
-              "value": 0,
-              "datetime": "2024-03-18T20:08:50Z"
-            }
-          ]
-        },
-        "description": "Metric shows total annotation speed in the Job.",
-        "granularity": null,
-        "default_view": "numeric",
-        "transformations": [],
-        "is_filterable_by_date": false
-      }
-    ]
-  }
-},
-{
-  "model": "analytics_report.analyticsreport",
-  "pk": 5,
-  "fields": {
-    "job": 32,
-    "task": null,
-    "project": null,
-    "created_date": "2024-03-18T20:11:35.375Z",
-    "statistics": [
-      {
-        "name": "objects",
-        "title": "Objects",
-        "data_series": {
-          "created": [],
-          "deleted": [],
-          "updated": []
-        },
-        "description": "Metric shows number of added/changed/deleted objects for the Job.",
-        "granularity": "day",
-        "default_view": "histogram",
-        "transformations": [],
-        "is_filterable_by_date": true
-      },
-      {
-        "name": "annotation_speed",
-        "title": "Annotation speed (objects per hour)",
-        "data_series": {
-          "object_count": [
-            {
-              "value": 7,
-              "datetime": "2024-03-18T20:08:50Z"
-            }
-          ],
-          "working_time": [
-            {
-              "value": 0.0,
-              "datetime": "2024-03-18T20:08:50Z"
-            }
-          ]
-        },
-        "description": "Metric shows the annotation speed in objects per hour.",
-        "granularity": "day",
-        "default_view": "histogram",
-        "transformations": [
-          {
-            "name": "annotation_speed",
-            "binary": {
-              "left": "object_count",
-              "right": "working_time",
-              "operator": "/"
-            }
-          }
-        ],
-        "is_filterable_by_date": false
-      },
-      {
-        "name": "annotation_time",
-        "title": "Annotation time (hours)",
-        "data_series": {
-          "total_annotating_time": [
-            {
-              "value": 0.0,
-              "datetime": "2024-03-18T20:08:50Z"
-            }
-          ]
-        },
-        "description": "Metric shows how long the Job is in progress state.",
-        "granularity": null,
-        "default_view": "numeric",
-        "transformations": [],
-        "is_filterable_by_date": false
-      },
-      {
-        "name": "total_object_count",
-        "title": "Total Object Count",
-        "data_series": {
-          "total_object_count": [
-            {
-              "value": 7,
-              "datetime": "2024-03-18T20:08:50Z"
-            }
-          ]
-        },
-        "description": "Metric shows total object count in the Job.",
-        "granularity": null,
-        "default_view": "numeric",
-        "transformations": [],
-        "is_filterable_by_date": false
-      },
-      {
-        "name": "total_annotation_speed",
-        "title": "Total Annotation Speed (objects per hour)",
-        "data_series": {
-          "total_annotation_speed": [
-            {
-              "value": 0,
-              "datetime": "2024-03-18T20:08:50Z"
-            }
-          ]
-        },
-        "description": "Metric shows total annotation speed in the Job.",
-        "granularity": null,
-        "default_view": "numeric",
-        "transformations": [],
-        "is_filterable_by_date": false
-      }
-    ]
   }
 },
 {

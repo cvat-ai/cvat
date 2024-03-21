@@ -6,7 +6,7 @@
     {
       "assignee": null,
       "bug_tracker": "",
-      "created_date": "2024-03-16T18:08:26.068000Z",
+      "created_date": "2024-03-21T20:50:05.694622Z",
       "data": 22,
       "data_chunk_size": 72,
       "data_compressed_chunk_type": "imageset",
@@ -30,27 +30,19 @@
       "overlap": 0,
       "owner": {
         "first_name": "Admin",
-        "id": 1,
-        "last_name": "First",
-        "url": "http://localhost:8080/api/users/1",
-        "username": "admin1"
+        "id": 18,
+        "last_name": "Second",
+        "url": "http://localhost:8080/api/users/18",
+        "username": "admin2"
       },
       "project_id": null,
       "segment_size": 5,
       "size": 11,
-      "source_storage": {
-        "cloud_storage_id": null,
-        "id": 35,
-        "location": "local"
-      },
+      "source_storage": null,
       "status": "completed",
       "subset": "",
-      "target_storage": {
-        "cloud_storage_id": null,
-        "id": 36,
-        "location": "local"
-      },
-      "updated_date": "2024-03-16T18:10:55.855000Z",
+      "target_storage": null,
+      "updated_date": "2024-03-21T20:50:05.947239Z",
       "url": "http://localhost:8080/api/tasks/23"
     },
     {
