@@ -553,6 +553,12 @@ class TestPatchTaskAnnotations:
                             "label_id": 59,
                             "frame": 0,
                             "shapes": [
+                                # https://github.com/opencv/cvat/issues/7498
+                                # https://github.com/opencv/cvat/pull/7615
+
+                                # This shape covers frame 0 to 7,
+                                # We need to check if frame 5 is generated correctly for job#1
+
                                 {"type": "points", "frame": 0, "points": [1.0, 2.0]},
                                 {"type": "points", "frame": 7, "points": [2.0, 4.0]},
                             ],
@@ -587,21 +593,11 @@ class TestPatchTaskAnnotations:
                 # simple interpolate from ([1, 2], 1) to ([2, 4], 7)
                 return [(2.0 - 1.0) / 7 * (frame - 0) + 1.0, (4.0 - 2.0) / 7 * (frame - 0) + 2.0]
 
-            def compare_float_lists(list1, list2):
-                if len(list1) != len(list2):
-                    return False
-
-                for num1, num2 in zip(list1, list2):
-                    if not math.isclose(num1,num2):
-                        return False
-
-                return True
-
             for element in track["elements"]:
                 element_frames = set(shape["frame"] for shape in element["shapes"])
                 assert all(
                     [
-                        compare_float_lists(interpolate(shape["frame"]), shape["points"])
+                        not DeepDiff(interpolate(shape["frame"]), shape["points"], significant_digits=2)
                         for shape in element["shapes"]
                         if shape["frame"] >= 0 and shape["frame"] <= 7
                     ]
