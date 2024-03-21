@@ -1886,37 +1886,9 @@ class DatasetComparator:
             gt_label_idx = gt_ann.label if gt_ann else self._UNMATCHED_IDX
             confusion_matrix[ds_label_idx, gt_label_idx] += 1
 
-        matched_ann_counts = np.diag(confusion_matrix)
-        ds_ann_counts = np.sum(confusion_matrix, axis=1)
-        gt_ann_counts = np.sum(confusion_matrix, axis=0)
-        label_accuracies = _arr_div(
-            matched_ann_counts, ds_ann_counts + gt_ann_counts - matched_ann_counts
-        )
-        label_precisions = _arr_div(matched_ann_counts, ds_ann_counts)
-        label_recalls = _arr_div(matched_ann_counts, gt_ann_counts)
-
-        valid_annotations_count = np.sum(matched_ann_counts)
-        missing_annotations_count = np.sum(confusion_matrix[self._UNMATCHED_IDX, :])
-        extra_annotations_count = np.sum(confusion_matrix[:, self._UNMATCHED_IDX])
-        total_annotations_count = np.sum(confusion_matrix)
-        ds_annotations_count = np.sum(ds_ann_counts[: self._UNMATCHED_IDX])
-        gt_annotations_count = np.sum(gt_ann_counts[: self._UNMATCHED_IDX])
-
         self._frame_results[frame_id] = ComparisonReportFrameSummary(
-            annotations=ComparisonReportAnnotationsSummary(
-                valid_count=valid_annotations_count,
-                missing_count=missing_annotations_count,
-                extra_count=extra_annotations_count,
-                total_count=total_annotations_count,
-                ds_count=ds_annotations_count,
-                gt_count=gt_annotations_count,
-                confusion_matrix=ConfusionMatrix(
-                    labels=confusion_matrix_labels,
-                    rows=confusion_matrix,
-                    precision=label_precisions,
-                    recall=label_recalls,
-                    accuracy=label_accuracies,
-                ),
+            annotations=self._generate_annotations_summary(
+                confusion_matrix, confusion_matrix_labels
             ),
             annotation_components=ComparisonReportAnnotationComponentsSummary(
                 shape=ComparisonReportAnnotationShapeSummary(
@@ -1955,21 +1927,49 @@ class DatasetComparator:
 
         return label_names, confusion_matrix
 
+    @classmethod
+    def _generate_annotations_summary(
+        cls, confusion_matrix: np.ndarray, confusion_matrix_labels: List[str]
+    ) -> ComparisonReportAnnotationsSummary:
+        matched_ann_counts = np.diag(confusion_matrix)
+        ds_ann_counts = np.sum(confusion_matrix, axis=1)
+        gt_ann_counts = np.sum(confusion_matrix, axis=0)
+
+        label_accuracies = _arr_div(
+            matched_ann_counts, ds_ann_counts + gt_ann_counts - matched_ann_counts
+        )
+        label_precisions = _arr_div(matched_ann_counts, ds_ann_counts)
+        label_recalls = _arr_div(matched_ann_counts, gt_ann_counts)
+
+        valid_annotations_count = np.sum(matched_ann_counts)
+        missing_annotations_count = np.sum(confusion_matrix[cls._UNMATCHED_IDX, :])
+        extra_annotations_count = np.sum(confusion_matrix[:, cls._UNMATCHED_IDX])
+        total_annotations_count = np.sum(confusion_matrix)
+        ds_annotations_count = np.sum(ds_ann_counts[: cls._UNMATCHED_IDX])
+        gt_annotations_count = np.sum(gt_ann_counts[: cls._UNMATCHED_IDX])
+
+        return ComparisonReportAnnotationsSummary(
+            valid_count=valid_annotations_count,
+            missing_count=missing_annotations_count,
+            extra_count=extra_annotations_count,
+            total_count=total_annotations_count,
+            ds_count=ds_annotations_count,
+            gt_count=gt_annotations_count,
+            confusion_matrix=ConfusionMatrix(
+                labels=confusion_matrix_labels,
+                rows=confusion_matrix,
+                precision=label_precisions,
+                recall=label_recalls,
+                accuracy=label_accuracies,
+            ),
+        )
+
     def generate_report(self) -> ComparisonReport:
         self._find_gt_conflicts()
 
         # accumulate stats
         intersection_frames = []
         conflicts = []
-        annotations = ComparisonReportAnnotationsSummary(
-            valid_count=0,
-            missing_count=0,
-            extra_count=0,
-            total_count=0,
-            ds_count=0,
-            gt_count=0,
-            confusion_matrix=None,
-        )
         annotation_components = ComparisonReportAnnotationComponentsSummary(
             shape=ComparisonReportAnnotationShapeSummary(
                 valid_count=0,
@@ -1992,11 +1992,6 @@ class DatasetComparator:
         for frame_id, frame_result in self._frame_results.items():
             intersection_frames.append(frame_id)
             conflicts += frame_result.conflicts
-
-            if annotations is None:
-                annotations = deepcopy(frame_result.annotations)
-            else:
-                annotations.accumulate(frame_result.annotations)
             confusion_matrix += frame_result.annotations.confusion_matrix.rows
 
             if annotation_components is None:
@@ -2004,22 +1999,6 @@ class DatasetComparator:
             else:
                 annotation_components.accumulate(frame_result.annotation_components)
             mean_ious.append(frame_result.annotation_components.shape.mean_iou)
-
-        matched_ann_counts = np.diag(confusion_matrix)
-        ds_ann_counts = np.sum(confusion_matrix, axis=1)
-        gt_ann_counts = np.sum(confusion_matrix, axis=0)
-        label_accuracies = _arr_div(
-            matched_ann_counts, ds_ann_counts + gt_ann_counts - matched_ann_counts
-        )
-        label_precisions = _arr_div(matched_ann_counts, ds_ann_counts)
-        label_recalls = _arr_div(matched_ann_counts, gt_ann_counts)
-
-        valid_annotations_count = np.sum(matched_ann_counts)
-        missing_annotations_count = np.sum(confusion_matrix[self._UNMATCHED_IDX, :])
-        extra_annotations_count = np.sum(confusion_matrix[:, self._UNMATCHED_IDX])
-        total_annotations_count = np.sum(confusion_matrix)
-        ds_annotations_count = np.sum(ds_ann_counts[: self._UNMATCHED_IDX])
-        gt_annotations_count = np.sum(gt_ann_counts[: self._UNMATCHED_IDX])
 
         return ComparisonReport(
             parameters=self.settings,
@@ -2036,20 +2015,8 @@ class DatasetComparator:
                     [c for c in conflicts if c.severity == AnnotationConflictSeverity.ERROR]
                 ),
                 conflicts_by_type=Counter(c.type for c in conflicts),
-                annotations=ComparisonReportAnnotationsSummary(
-                    valid_count=valid_annotations_count,
-                    missing_count=missing_annotations_count,
-                    extra_count=extra_annotations_count,
-                    total_count=total_annotations_count,
-                    ds_count=ds_annotations_count,
-                    gt_count=gt_annotations_count,
-                    confusion_matrix=ConfusionMatrix(
-                        labels=confusion_matrix_labels,
-                        rows=confusion_matrix,
-                        precision=label_precisions,
-                        recall=label_recalls,
-                        accuracy=label_accuracies,
-                    ),
+                annotations=self._generate_annotations_summary(
+                    confusion_matrix, confusion_matrix_labels
                 ),
                 annotation_components=ComparisonReportAnnotationComponentsSummary(
                     shape=ComparisonReportAnnotationShapeSummary(
