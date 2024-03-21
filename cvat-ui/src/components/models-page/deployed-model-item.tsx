@@ -166,9 +166,9 @@ export default function DeployedModelItem(props: Props): JSX.Element {
             >
                 <Meta
                     title={(
-                        <span onClick={onOpenModel} className='cvat-models-item-title' aria-hidden>
+                        <Text ellipsis={{ tooltip: model.name }} onClick={onOpenModel} className='cvat-models-item-title' aria-hidden>
                             {model.name}
-                        </span>
+                        </Text>
                     )}
                     description={(
                         <div className='cvat-models-item-description'>

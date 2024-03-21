@@ -754,7 +754,7 @@ class ProjectPermission(OpenPolicyAgentPermission):
             ('append_dataset_chunk', 'HEAD'): Scopes.IMPORT_DATASET,
             ('append_dataset_chunk', 'PATCH'): Scopes.IMPORT_DATASET,
             ('annotations', 'GET'): Scopes.EXPORT_ANNOTATIONS,
-            ('dataset', 'GET'): Scopes.EXPORT_DATASET,
+            ('dataset', 'GET'): Scopes.IMPORT_DATASET if request.query_params.get('action') == 'import_status' else Scopes.EXPORT_DATASET,
             ('export_backup', 'GET'): Scopes.EXPORT_BACKUP,
             ('import_backup', 'POST'): Scopes.IMPORT_BACKUP,
             ('append_backup_chunk', 'PATCH'): Scopes.IMPORT_BACKUP,
