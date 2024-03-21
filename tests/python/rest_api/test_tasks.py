@@ -5,7 +5,6 @@
 
 import io
 import json
-import math
 import os
 import os.path as osp
 import zipfile
@@ -597,12 +596,14 @@ class TestPatchTaskAnnotations:
                 element_frames = set(shape["frame"] for shape in element["shapes"])
                 assert all(
                     [
-                        not DeepDiff(interpolate(shape["frame"]), shape["points"], significant_digits=2)
+                        not DeepDiff(
+                            interpolate(shape["frame"]), shape["points"], significant_digits=2
+                        )
                         for shape in element["shapes"]
                         if shape["frame"] >= 0 and shape["frame"] <= 7
                     ]
                 )
-                assert(len(element["shapes"]) == 2)
+                assert len(element["shapes"]) == 2
                 assert element_frames <= job_frame_range, "Track shapes get out of job frame range"
 
 
