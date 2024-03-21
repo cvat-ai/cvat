@@ -79,6 +79,13 @@ function ObjectListComponent(props: Props): JSX.Element {
                 showAllStates={showAllStates}
                 changeShowGroundTruth={changeShowGroundTruth}
             />
+            <Text
+                strong
+                style={{ fontSize: 13 }}
+                className='cvat-annotations-count'
+            >
+                {`No. of Annotations:   ${objectStates.length}`}
+            </Text>
             <div className='cvat-objects-sidebar-states-list'>
                 {sortedStatesID.map(
                     (id: number): JSX.Element => {

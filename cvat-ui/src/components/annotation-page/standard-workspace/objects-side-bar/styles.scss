@@ -104,8 +104,7 @@
 .cvat-objects-sidebar-issues-list {
     background-color: $background-color-2;
     height: calc(100% - 32px);
-    overflow-y: auto;
-    overflow-x: hidden;
+    overflow: hidden auto;
 }
 
 .cvat-objects-sidebar-issue-item {
@@ -191,6 +190,10 @@
     .cvat-objects-sidebar-show-ground-truth {
         margin-right: $grid-unit-size;
     }
+}
+
+.cvat-annotations-count {
+    padding: 0.5rem
 }
 
 .cvat-objects-sidebar-states-list {
