@@ -1129,7 +1129,9 @@ class TestQualityReportMetrics(_PermissionTestBase):
     def test_modified_task_produces_different_metrics(
         self, admin_user, quality_reports, jobs, labels
     ):
-        gt_job = next(j for j in jobs if j["type"] == "ground_truth" and j["task_id"] == self.demo_task_id)
+        gt_job = next(
+            j for j in jobs if j["type"] == "ground_truth" and j["task_id"] == self.demo_task_id
+        )
         task_id = gt_job["task_id"]
         old_report = max(
             (r for r in quality_reports if r["task_id"] == task_id), key=lambda r: r["id"]
@@ -1183,7 +1185,9 @@ class TestQualityReportMetrics(_PermissionTestBase):
     def test_settings_affect_metrics(
         self, admin_user, quality_reports, quality_settings, task_id, parameter
     ):
-        old_report = max((r for r in quality_reports if r["task_id"] == task_id), key=lambda r: r["id"])
+        old_report = max(
+            (r for r in quality_reports if r["task_id"] == task_id), key=lambda r: r["id"]
+        )
         task_id = old_report["task_id"]
 
         settings = deepcopy(next(s for s in quality_settings if s["task_id"] == task_id))
