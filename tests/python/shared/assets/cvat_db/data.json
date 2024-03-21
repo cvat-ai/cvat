@@ -10975,6 +10975,32 @@
   }
 },
 {
+  "model": "quality_control.qualityreport",
+  "pk": 5,
+  "fields": {
+    "job": null,
+    "task": 22,
+    "parent": null,
+    "created_date": "2024-03-21T11:16:21.845Z",
+    "target_last_updated": "2023-11-24T15:23:30.045Z",
+    "gt_last_updated": "2023-11-24T15:18:55.216Z",
+    "data": "{\"parameters\":{\"included_annotation_types\":[\"bbox\",\"points\",\"mask\",\"polygon\",\"polyline\",\"skeleton\"],\"compare_attributes\":true,\"ignored_attributes\":[],\"iou_threshold\":0.4,\"low_overlap_threshold\":0.8,\"oks_sigma\":0.09,\"line_thickness\":0.01,\"compare_line_orientation\":true,\"line_orientation_threshold\":0.1,\"compare_groups\":true,\"group_match_threshold\":0.5,\"check_covered_annotations\":true,\"object_visibility_threshold\":0.05,\"panoptic_comparison\":true},\"comparison_summary\":{\"frame_share\":0.2727272727272727,\"frames\":[0,1,2],\"conflict_count\":40,\"warning_count\":16,\"error_count\":24,\"conflicts_by_type\":{\"low_overlap\":7,\"missing_annotation\":10,\"extra_annotation\":11,\"mismatching_label\":3,\"mismatching_direction\":1,\"covered_annotation\":1,\"mismatching_attributes\":1,\"mismatching_groups\":6},\"annotations\":{\"valid_count\":22,\"missing_count\":10,\"extra_count\":11,\"total_count\":46,\"ds_count\":36,\"gt_count\":35,\"confusion_matrix\":{\"labels\":[\"dog\",\"cat\",\"skele\",\"unmatched\"],\"rows\":[[0,2,0,3],[1,21,0,7],[0,0,1,1],[1,8,1,0]],\"precision\":[0.0,0.7241379310344828,0.5,0.0],\"recall\":[0.0,0.6774193548387096,0.5,0.0],\"accuracy\":[0.8478260869565217,0.6086956521739131,0.9565217391304348,0.5434782608695652],\"jaccard_index\":[0.0,0.5384615384615384,0.3333333333333333,0.0],\"axes\":{\"cols\":\"gt\",\"rows\":\"ds\"}},\"accuracy\":0.4782608695652174,\"precision\":0.6111111111111112,\"recall\":0.6285714285714286},\"annotation_components\":{\"shape\":{\"valid_count\":25,\"missing_count\":10,\"extra_count\":11,\"total_count\":46,\"ds_count\":36,\"gt_count\":35,\"mean_iou\":0.18567508032031,\"accuracy\":0.5434782608695652},\"label\":{\"valid_count\":22,\"invalid_count\":3,\"total_count\":25,\"accuracy\":0.88}},\"frame_count\":3,\"mean_conflict_count\":13.333333333333334},\"frame_results\":{\"0\":{\"conflicts\":[{\"frame_id\":0,\"type\":\"low_overlap\",\"annotation_ids\":[{\"obj_id\":65,\"job_id\":27,\"type\":\"shape\",\"shape_type\":\"rectangle\"},{\"obj_id\":101,\"job_id\":28,\"type\":\"shape\",\"shape_type\":\"rectangle\"}],\"severity\":\"warning\"},{\"frame_id\":0,\"type\":\"low_overlap\",\"annotation_ids\":[{\"obj_id\":91,\"job_id\":27,\"type\":\"shape\",\"shape_type\":\"rectangle\"},{\"obj_id\":118,\"job_id\":28,\"type\":\"shape\",\"shape_type\":\"rectangle\"}],\"severity\":\"warning\"},{\"frame_id\":0,\"type\":\"low_overlap\",\"annotation_ids\":[{\"obj_id\":88,\"job_id\":27,\"type\":\"shape\",\"shape_type\":\"points\"},{\"obj_id\":102,\"job_id\":28,\"type\":\"shape\",\"shape_type\":\"points\"}],\"severity\":\"warning\"},{\"frame_id\":0,\"type\":\"low_overlap\",\"annotation_ids\":[{\"obj_id\":68,\"job_id\":27,\"type\":\"shape\",\"shape_type\":\"polygon\"},{\"obj_id\":98,\"job_id\":28,\"type\":\"shape\",\"shape_type\":\"polygon\"}],\"severity\":\"warning\"},{\"frame_id\":0,\"type\":\"low_overlap\",\"annotation_ids\":[{\"obj_id\":67,\"job_id\":27,\"type\":\"shape\",\"shape_type\":\"polyline\"},{\"obj_id\":99,\"job_id\":28,\"type\":\"shape\",\"shape_type\":\"polyline\"}],\"severity\":\"warning\"},{\"frame_id\":0,\"type\":\"low_overlap\",\"annotation_ids\":[{\"obj_id\":141,\"job_id\":27,\"type\":\"shape\",\"shape_type\":\"skeleton\"},{\"obj_id\":132,\"job_id\":28,\"type\":\"shape\",\"shape_type\":\"skeleton\"}],\"severity\":\"warning\"},{\"frame_id\":0,\"type\":\"low_overlap\",\"annotation_ids\":[{\"obj_id\":92,\"job_id\":27,\"type\":\"shape\",\"shape_type\":\"points\"},{\"obj_id\":119,\"job_id\":28,\"type\":\"shape\",\"shape_type\":\"points\"}],\"severity\":\"warning\"},{\"frame_id\":0,\"type\":\"missing_annotation\",\"annotation_ids\":[{\"obj_id\":107,\"job_id\":28,\"type\":\"shape\",\"shape_type\":\"rectangle\"}],\"severity\":\"error\"},{\"frame_id\":0,\"type\":\"missing_annotation\",\"annotation_ids\":[{\"obj_id\":121,\"job_id\":28,\"type\":\"shape\",\"shape_type\":\"points\"}],\"severity\":\"error\"},{\"frame_id\":0,\"type\":\"missing_annotation\",\"annotation_ids\":[{\"obj_id\":122,\"job_id\":28,\"type\":\"shape\",\"shape_type\":\"points\"}],\"severity\":\"error\"},{\"frame_id\":0,\"type\":\"missing_annotation\",\"annotation_ids\":[{\"obj_id\":131,\"job_id\":28,\"type\":\"shape\",\"shape_type\":\"skeleton\"}],\"severity\":\"error\"},{\"frame_id\":0,\"type\":\"extra_annotation\",\"annotation_ids\":[{\"obj_id\":70,\"job_id\":27,\"type\":\"shape\",\"shape_type\":\"rectangle\"}],\"severity\":\"error\"},{\"frame_id\":0,\"type\":\"extra_annotation\",\"annotation_ids\":[{\"obj_id\":76,\"job_id\":27,\"type\":\"shape\",\"shape_type\":\"rectangle\"}],\"severity\":\"error\"},{\"frame_id\":0,\"type\":\"extra_annotation\",\"annotation_ids\":[{\"obj_id\":93,\"job_id\":27,\"type\":\"shape\",\"shape_type\":\"points\"}],\"severity\":\"error\"},{\"frame_id\":0,\"type\":\"extra_annotation\",\"annotation_ids\":[{\"obj_id\":74,\"job_id\":27,\"type\":\"shape\",\"shape_type\":\"polygon\"}],\"severity\":\"error\"},{\"frame_id\":0,\"type\":\"extra_annotation\",\"annotation_ids\":[{\"obj_id\":95,\"job_id\":27,\"type\":\"shape\",\"shape_type\":\"polygon\"}],\"severity\":\"error\"},{\"frame_id\":0,\"type\":\"extra_annotation\",\"annotation_ids\":[{\"obj_id\":73,\"job_id\":27,\"type\":\"shape\",\"shape_type\":\"polygon\"}],\"severity\":\"error\"},{\"frame_id\":0,\"type\":\"extra_annotation\",\"annotation_ids\":[{\"obj_id\":96,\"job_id\":27,\"type\":\"shape\",\"shape_type\":\"ellipse\"}],\"severity\":\"error\"},{\"frame_id\":0,\"type\":\"extra_annotation\",\"annotation_ids\":[{\"obj_id\":64,\"job_id\":27,\"type\":\"shape\",\"shape_type\":\"polyline\"}],\"severity\":\"error\"},{\"frame_id\":0,\"type\":\"extra_annotation\",\"annotation_ids\":[{\"obj_id\":66,\"job_id\":27,\"type\":\"shape\",\"shape_type\":\"polyline\"}],\"severity\":\"error\"},{\"frame_id\":0,\"type\":\"extra_annotation\",\"annotation_ids\":[{\"obj_id\":94,\"job_id\":27,\"type\":\"shape\",\"shape_type\":\"polyline\"}],\"severity\":\"error\"},{\"frame_id\":0,\"type\":\"extra_annotation\",\"annotation_ids\":[{\"obj_id\":142,\"job_id\":27,\"type\":\"shape\",\"shape_type\":\"skeleton\"}],\"severity\":\"error\"},{\"frame_id\":0,\"type\":\"mismatching_label\",\"annotation_ids\":[{\"obj_id\":92,\"job_id\":27,\"type\":\"shape\",\"shape_type\":\"points\"},{\"obj_id\":119,\"job_id\":28,\"type\":\"shape\",\"shape_type\":\"points\"}],\"severity\":\"error\"},{\"frame_id\":0,\"type\":\"mismatching_label\",\"annotation_ids\":[{\"obj_id\":89,\"job_id\":27,\"type\":\"shape\",\"shape_type\":\"points\"},{\"obj_id\":123,\"job_id\":28,\"type\":\"shape\",\"shape_type\":\"points\"}],\"severity\":\"error\"},{\"frame_id\":0,\"type\":\"mismatching_label\",\"annotation_ids\":[{\"obj_id\":69,\"job_id\":27,\"type\":\"shape\",\"shape_type\":\"mask\"},{\"obj_id\":97,\"job_id\":28,\"type\":\"shape\",\"shape_type\":\"polygon\"}],\"severity\":\"error\"},{\"frame_id\":0,\"type\":\"mismatching_direction\",\"annotation_ids\":[{\"obj_id\":67,\"job_id\":27,\"type\":\"shape\",\"shape_type\":\"polyline\"},{\"obj_id\":99,\"job_id\":28,\"type\":\"shape\",\"shape_type\":\"polyline\"}],\"severity\":\"warning\"},{\"frame_id\":0,\"type\":\"covered_annotation\",\"annotation_ids\":[{\"obj_id\":69,\"job_id\":27,\"type\":\"shape\",\"shape_type\":\"mask\"}],\"severity\":\"warning\"},{\"frame_id\":0,\"type\":\"mismatching_attributes\",\"annotation_ids\":[{\"obj_id\":65,\"job_id\":27,\"type\":\"shape\",\"shape_type\":\"rectangle\"},{\"obj_id\":101,\"job_id\":28,\"type\":\"shape\",\"shape_type\":\"rectangle\"}],\"severity\":\"warning\"},{\"frame_id\":0,\"type\":\"mismatching_groups\",\"annotation_ids\":[{\"obj_id\":82,\"job_id\":27,\"type\":\"shape\",\"shape_type\":\"rectangle\"},{\"obj_id\":103,\"job_id\":28,\"type\":\"shape\",\"shape_type\":\"rectangle\"}],\"severity\":\"warning\"},{\"frame_id\":0,\"type\":\"mismatching_groups\",\"annotation_ids\":[{\"obj_id\":81,\"job_id\":27,\"type\":\"shape\",\"shape_type\":\"rectangle\"},{\"obj_id\":104,\"job_id\":28,\"type\":\"shape\",\"shape_type\":\"rectangle\"}],\"severity\":\"warning\"},{\"frame_id\":0,\"type\":\"mismatching_groups\",\"annotation_ids\":[{\"obj_id\":83,\"job_id\":27,\"type\":\"shape\",\"shape_type\":\"rectangle\"},{\"obj_id\":105,\"job_id\":28,\"type\":\"shape\",\"shape_type\":\"rectangle\"}],\"severity\":\"warning\"},{\"frame_id\":0,\"type\":\"mismatching_groups\",\"annotation_ids\":[{\"obj_id\":87,\"job_id\":27,\"type\":\"shape\",\"shape_type\":\"rectangle\"},{\"obj_id\":106,\"job_id\":28,\"type\":\"shape\",\"shape_type\":\"rectangle\"}],\"severity\":\"warning\"},{\"frame_id\":0,\"type\":\"mismatching_groups\",\"annotation_ids\":[{\"obj_id\":80,\"job_id\":27,\"type\":\"shape\",\"shape_type\":\"rectangle\"},{\"obj_id\":111,\"job_id\":28,\"type\":\"shape\",\"shape_type\":\"rectangle\"}],\"severity\":\"warning\"},{\"frame_id\":0,\"type\":\"mismatching_groups\",\"annotation_ids\":[{\"obj_id\":77,\"job_id\":27,\"type\":\"shape\",\"shape_type\":\"rectangle\"},{\"obj_id\":114,\"job_id\":28,\"type\":\"shape\",\"shape_type\":\"rectangle\"}],\"severity\":\"warning\"}],\"annotations\":{\"valid_count\":22,\"missing_count\":4,\"extra_count\":11,\"total_count\":40,\"ds_count\":36,\"gt_count\":29,\"confusion_matrix\":{\"labels\":[\"dog\",\"cat\",\"skele\",\"unmatched\"],\"rows\":[[0,2,0,3],[1,21,0,7],[0,0,1,1],[1,2,1,0]],\"precision\":[0.0,0.7241379310344828,0.5,0.0],\"recall\":[0.0,0.84,0.5,0.0],\"accuracy\":[0.825,0.7,0.95,0.625],\"jaccard_index\":[0.0,0.6363636363636364,0.3333333333333333,0.0],\"axes\":{\"cols\":\"gt\",\"rows\":\"ds\"}},\"accuracy\":0.55,\"precision\":0.6111111111111112,\"recall\":0.7586206896551724},\"annotation_components\":{\"shape\":{\"valid_count\":25,\"missing_count\":4,\"extra_count\":11,\"total_count\":40,\"ds_count\":36,\"gt_count\":29,\"mean_iou\":0.55702524096093,\"accuracy\":0.625},\"label\":{\"valid_count\":22,\"invalid_count\":3,\"total_count\":25,\"accuracy\":0.88}},\"conflict_count\":34,\"warning_count\":16,\"error_count\":18,\"conflicts_by_type\":{\"low_overlap\":7,\"missing_annotation\":4,\"extra_annotation\":11,\"mismatching_label\":3,\"mismatching_direction\":1,\"covered_annotation\":1,\"mismatching_attributes\":1,\"mismatching_groups\":6}},\"1\":{\"conflicts\":[{\"frame_id\":1,\"type\":\"missing_annotation\",\"annotation_ids\":[{\"obj_id\":130,\"job_id\":28,\"type\":\"shape\",\"shape_type\":\"rectangle\"}],\"severity\":\"error\"},{\"frame_id\":1,\"type\":\"missing_annotation\",\"annotation_ids\":[{\"obj_id\":128,\"job_id\":28,\"type\":\"shape\",\"shape_type\":\"points\"}],\"severity\":\"error\"},{\"frame_id\":1,\"type\":\"missing_annotation\",\"annotation_ids\":[{\"obj_id\":124,\"job_id\":28,\"type\":\"shape\",\"shape_type\":\"polygon\"}],\"severity\":\"error\"},{\"frame_id\":1,\"type\":\"missing_annotation\",\"annotation_ids\":[{\"obj_id\":125,\"job_id\":28,\"type\":\"shape\",\"shape_type\":\"ellipse\"}],\"severity\":\"error\"},{\"frame_id\":1,\"type\":\"missing_annotation\",\"annotation_ids\":[{\"obj_id\":127,\"job_id\":28,\"type\":\"shape\",\"shape_type\":\"mask\"}],\"severity\":\"error\"},{\"frame_id\":1,\"type\":\"missing_annotation\",\"annotation_ids\":[{\"obj_id\":129,\"job_id\":28,\"type\":\"shape\",\"shape_type\":\"polyline\"}],\"severity\":\"error\"}],\"annotations\":{\"valid_count\":0,\"missing_count\":6,\"extra_count\":0,\"total_count\":6,\"ds_count\":0,\"gt_count\":6,\"confusion_matrix\":{\"labels\":[\"dog\",\"cat\",\"skele\",\"unmatched\"],\"rows\":[[0,0,0,0],[0,0,0,0],[0,0,0,0],[0,6,0,0]],\"precision\":[0.0,0.0,0.0,0.0],\"recall\":[0.0,0.0,0.0,0.0],\"accuracy\":[1.0,0.0,1.0,0.0],\"jaccard_index\":[0.0,0.0,0.0,0.0],\"axes\":{\"cols\":\"gt\",\"rows\":\"ds\"}},\"accuracy\":0.0,\"precision\":0.0,\"recall\":0.0},\"annotation_components\":{\"shape\":{\"valid_count\":0,\"missing_count\":6,\"extra_count\":0,\"total_count\":6,\"ds_count\":0,\"gt_count\":6,\"mean_iou\":0.0,\"accuracy\":0.0},\"label\":{\"valid_count\":0,\"invalid_count\":0,\"total_count\":0,\"accuracy\":0.0}},\"conflict_count\":6,\"warning_count\":0,\"error_count\":6,\"conflicts_by_type\":{\"missing_annotation\":6}},\"2\":{\"conflicts\":[],\"annotations\":{\"valid_count\":0,\"missing_count\":0,\"extra_count\":0,\"total_count\":0,\"ds_count\":0,\"gt_count\":0,\"confusion_matrix\":{\"labels\":[\"dog\",\"cat\",\"skele\",\"unmatched\"],\"rows\":[[0,0,0,0],[0,0,0,0],[0,0,0,0],[0,0,0,0]],\"precision\":[0.0,0.0,0.0,0.0],\"recall\":[0.0,0.0,0.0,0.0],\"accuracy\":[0.0,0.0,0.0,0.0],\"jaccard_index\":[0.0,0.0,0.0,0.0],\"axes\":{\"cols\":\"gt\",\"rows\":\"ds\"}},\"accuracy\":0.0,\"precision\":0.0,\"recall\":0.0},\"annotation_components\":{\"shape\":{\"valid_count\":0,\"missing_count\":0,\"extra_count\":0,\"total_count\":0,\"ds_count\":0,\"gt_count\":0,\"mean_iou\":0,\"accuracy\":0.0},\"label\":{\"valid_count\":0,\"invalid_count\":0,\"total_count\":0,\"accuracy\":0.0}},\"conflict_count\":0,\"warning_count\":0,\"error_count\":0,\"conflicts_by_type\":{}}}}"
+  }
+},
+{
+  "model": "quality_control.qualityreport",
+  "pk": 6,
+  "fields": {
+    "job": 27,
+    "task": null,
+    "parent": 5,
+    "created_date": "2024-03-21T11:16:21.847Z",
+    "target_last_updated": "2023-11-24T15:23:30.269Z",
+    "gt_last_updated": "2023-11-24T15:18:55.216Z",
+    "data": "{\"parameters\":{\"included_annotation_types\":[\"bbox\",\"points\",\"mask\",\"polygon\",\"polyline\",\"skeleton\"],\"compare_attributes\":true,\"ignored_attributes\":[],\"iou_threshold\":0.4,\"low_overlap_threshold\":0.8,\"oks_sigma\":0.09,\"line_thickness\":0.01,\"compare_line_orientation\":true,\"line_orientation_threshold\":0.1,\"compare_groups\":true,\"group_match_threshold\":0.5,\"check_covered_annotations\":true,\"object_visibility_threshold\":0.05,\"panoptic_comparison\":true},\"comparison_summary\":{\"frame_share\":0.2727272727272727,\"frames\":[0,1,2],\"conflict_count\":40,\"warning_count\":16,\"error_count\":24,\"conflicts_by_type\":{\"low_overlap\":7,\"missing_annotation\":10,\"extra_annotation\":11,\"mismatching_label\":3,\"mismatching_direction\":1,\"covered_annotation\":1,\"mismatching_attributes\":1,\"mismatching_groups\":6},\"annotations\":{\"valid_count\":22,\"missing_count\":10,\"extra_count\":11,\"total_count\":46,\"ds_count\":36,\"gt_count\":35,\"confusion_matrix\":{\"labels\":[\"dog\",\"cat\",\"skele\",\"unmatched\"],\"rows\":[[0,2,0,3],[1,21,0,7],[0,0,1,1],[1,8,1,0]],\"precision\":[0.0,0.7241379310344828,0.5,0.0],\"recall\":[0.0,0.6774193548387096,0.5,0.0],\"accuracy\":[0.8478260869565217,0.6086956521739131,0.9565217391304348,0.5434782608695652],\"jaccard_index\":[0.0,0.5384615384615384,0.3333333333333333,0.0],\"axes\":{\"cols\":\"gt\",\"rows\":\"ds\"}},\"accuracy\":0.4782608695652174,\"precision\":0.6111111111111112,\"recall\":0.6285714285714286},\"annotation_components\":{\"shape\":{\"valid_count\":25,\"missing_count\":10,\"extra_count\":11,\"total_count\":46,\"ds_count\":36,\"gt_count\":35,\"mean_iou\":0.18567508032031,\"accuracy\":0.5434782608695652},\"label\":{\"valid_count\":22,\"invalid_count\":3,\"total_count\":25,\"accuracy\":0.88}},\"frame_count\":3,\"mean_conflict_count\":13.333333333333334},\"frame_results\":{\"0\":{\"conflicts\":[{\"frame_id\":0,\"type\":\"low_overlap\",\"annotation_ids\":[{\"obj_id\":65,\"job_id\":27,\"type\":\"shape\",\"shape_type\":\"rectangle\"},{\"obj_id\":101,\"job_id\":28,\"type\":\"shape\",\"shape_type\":\"rectangle\"}],\"severity\":\"warning\"},{\"frame_id\":0,\"type\":\"low_overlap\",\"annotation_ids\":[{\"obj_id\":91,\"job_id\":27,\"type\":\"shape\",\"shape_type\":\"rectangle\"},{\"obj_id\":118,\"job_id\":28,\"type\":\"shape\",\"shape_type\":\"rectangle\"}],\"severity\":\"warning\"},{\"frame_id\":0,\"type\":\"low_overlap\",\"annotation_ids\":[{\"obj_id\":88,\"job_id\":27,\"type\":\"shape\",\"shape_type\":\"points\"},{\"obj_id\":102,\"job_id\":28,\"type\":\"shape\",\"shape_type\":\"points\"}],\"severity\":\"warning\"},{\"frame_id\":0,\"type\":\"low_overlap\",\"annotation_ids\":[{\"obj_id\":68,\"job_id\":27,\"type\":\"shape\",\"shape_type\":\"polygon\"},{\"obj_id\":98,\"job_id\":28,\"type\":\"shape\",\"shape_type\":\"polygon\"}],\"severity\":\"warning\"},{\"frame_id\":0,\"type\":\"low_overlap\",\"annotation_ids\":[{\"obj_id\":67,\"job_id\":27,\"type\":\"shape\",\"shape_type\":\"polyline\"},{\"obj_id\":99,\"job_id\":28,\"type\":\"shape\",\"shape_type\":\"polyline\"}],\"severity\":\"warning\"},{\"frame_id\":0,\"type\":\"low_overlap\",\"annotation_ids\":[{\"obj_id\":141,\"job_id\":27,\"type\":\"shape\",\"shape_type\":\"skeleton\"},{\"obj_id\":132,\"job_id\":28,\"type\":\"shape\",\"shape_type\":\"skeleton\"}],\"severity\":\"warning\"},{\"frame_id\":0,\"type\":\"low_overlap\",\"annotation_ids\":[{\"obj_id\":92,\"job_id\":27,\"type\":\"shape\",\"shape_type\":\"points\"},{\"obj_id\":119,\"job_id\":28,\"type\":\"shape\",\"shape_type\":\"points\"}],\"severity\":\"warning\"},{\"frame_id\":0,\"type\":\"missing_annotation\",\"annotation_ids\":[{\"obj_id\":107,\"job_id\":28,\"type\":\"shape\",\"shape_type\":\"rectangle\"}],\"severity\":\"error\"},{\"frame_id\":0,\"type\":\"missing_annotation\",\"annotation_ids\":[{\"obj_id\":121,\"job_id\":28,\"type\":\"shape\",\"shape_type\":\"points\"}],\"severity\":\"error\"},{\"frame_id\":0,\"type\":\"missing_annotation\",\"annotation_ids\":[{\"obj_id\":122,\"job_id\":28,\"type\":\"shape\",\"shape_type\":\"points\"}],\"severity\":\"error\"},{\"frame_id\":0,\"type\":\"missing_annotation\",\"annotation_ids\":[{\"obj_id\":131,\"job_id\":28,\"type\":\"shape\",\"shape_type\":\"skeleton\"}],\"severity\":\"error\"},{\"frame_id\":0,\"type\":\"extra_annotation\",\"annotation_ids\":[{\"obj_id\":70,\"job_id\":27,\"type\":\"shape\",\"shape_type\":\"rectangle\"}],\"severity\":\"error\"},{\"frame_id\":0,\"type\":\"extra_annotation\",\"annotation_ids\":[{\"obj_id\":76,\"job_id\":27,\"type\":\"shape\",\"shape_type\":\"rectangle\"}],\"severity\":\"error\"},{\"frame_id\":0,\"type\":\"extra_annotation\",\"annotation_ids\":[{\"obj_id\":93,\"job_id\":27,\"type\":\"shape\",\"shape_type\":\"points\"}],\"severity\":\"error\"},{\"frame_id\":0,\"type\":\"extra_annotation\",\"annotation_ids\":[{\"obj_id\":74,\"job_id\":27,\"type\":\"shape\",\"shape_type\":\"polygon\"}],\"severity\":\"error\"},{\"frame_id\":0,\"type\":\"extra_annotation\",\"annotation_ids\":[{\"obj_id\":95,\"job_id\":27,\"type\":\"shape\",\"shape_type\":\"polygon\"}],\"severity\":\"error\"},{\"frame_id\":0,\"type\":\"extra_annotation\",\"annotation_ids\":[{\"obj_id\":73,\"job_id\":27,\"type\":\"shape\",\"shape_type\":\"polygon\"}],\"severity\":\"error\"},{\"frame_id\":0,\"type\":\"extra_annotation\",\"annotation_ids\":[{\"obj_id\":96,\"job_id\":27,\"type\":\"shape\",\"shape_type\":\"ellipse\"}],\"severity\":\"error\"},{\"frame_id\":0,\"type\":\"extra_annotation\",\"annotation_ids\":[{\"obj_id\":64,\"job_id\":27,\"type\":\"shape\",\"shape_type\":\"polyline\"}],\"severity\":\"error\"},{\"frame_id\":0,\"type\":\"extra_annotation\",\"annotation_ids\":[{\"obj_id\":66,\"job_id\":27,\"type\":\"shape\",\"shape_type\":\"polyline\"}],\"severity\":\"error\"},{\"frame_id\":0,\"type\":\"extra_annotation\",\"annotation_ids\":[{\"obj_id\":94,\"job_id\":27,\"type\":\"shape\",\"shape_type\":\"polyline\"}],\"severity\":\"error\"},{\"frame_id\":0,\"type\":\"extra_annotation\",\"annotation_ids\":[{\"obj_id\":142,\"job_id\":27,\"type\":\"shape\",\"shape_type\":\"skeleton\"}],\"severity\":\"error\"},{\"frame_id\":0,\"type\":\"mismatching_label\",\"annotation_ids\":[{\"obj_id\":92,\"job_id\":27,\"type\":\"shape\",\"shape_type\":\"points\"},{\"obj_id\":119,\"job_id\":28,\"type\":\"shape\",\"shape_type\":\"points\"}],\"severity\":\"error\"},{\"frame_id\":0,\"type\":\"mismatching_label\",\"annotation_ids\":[{\"obj_id\":89,\"job_id\":27,\"type\":\"shape\",\"shape_type\":\"points\"},{\"obj_id\":123,\"job_id\":28,\"type\":\"shape\",\"shape_type\":\"points\"}],\"severity\":\"error\"},{\"frame_id\":0,\"type\":\"mismatching_label\",\"annotation_ids\":[{\"obj_id\":69,\"job_id\":27,\"type\":\"shape\",\"shape_type\":\"mask\"},{\"obj_id\":97,\"job_id\":28,\"type\":\"shape\",\"shape_type\":\"polygon\"}],\"severity\":\"error\"},{\"frame_id\":0,\"type\":\"mismatching_direction\",\"annotation_ids\":[{\"obj_id\":67,\"job_id\":27,\"type\":\"shape\",\"shape_type\":\"polyline\"},{\"obj_id\":99,\"job_id\":28,\"type\":\"shape\",\"shape_type\":\"polyline\"}],\"severity\":\"warning\"},{\"frame_id\":0,\"type\":\"covered_annotation\",\"annotation_ids\":[{\"obj_id\":69,\"job_id\":27,\"type\":\"shape\",\"shape_type\":\"mask\"}],\"severity\":\"warning\"},{\"frame_id\":0,\"type\":\"mismatching_attributes\",\"annotation_ids\":[{\"obj_id\":65,\"job_id\":27,\"type\":\"shape\",\"shape_type\":\"rectangle\"},{\"obj_id\":101,\"job_id\":28,\"type\":\"shape\",\"shape_type\":\"rectangle\"}],\"severity\":\"warning\"},{\"frame_id\":0,\"type\":\"mismatching_groups\",\"annotation_ids\":[{\"obj_id\":82,\"job_id\":27,\"type\":\"shape\",\"shape_type\":\"rectangle\"},{\"obj_id\":103,\"job_id\":28,\"type\":\"shape\",\"shape_type\":\"rectangle\"}],\"severity\":\"warning\"},{\"frame_id\":0,\"type\":\"mismatching_groups\",\"annotation_ids\":[{\"obj_id\":81,\"job_id\":27,\"type\":\"shape\",\"shape_type\":\"rectangle\"},{\"obj_id\":104,\"job_id\":28,\"type\":\"shape\",\"shape_type\":\"rectangle\"}],\"severity\":\"warning\"},{\"frame_id\":0,\"type\":\"mismatching_groups\",\"annotation_ids\":[{\"obj_id\":83,\"job_id\":27,\"type\":\"shape\",\"shape_type\":\"rectangle\"},{\"obj_id\":105,\"job_id\":28,\"type\":\"shape\",\"shape_type\":\"rectangle\"}],\"severity\":\"warning\"},{\"frame_id\":0,\"type\":\"mismatching_groups\",\"annotation_ids\":[{\"obj_id\":87,\"job_id\":27,\"type\":\"shape\",\"shape_type\":\"rectangle\"},{\"obj_id\":106,\"job_id\":28,\"type\":\"shape\",\"shape_type\":\"rectangle\"}],\"severity\":\"warning\"},{\"frame_id\":0,\"type\":\"mismatching_groups\",\"annotation_ids\":[{\"obj_id\":80,\"job_id\":27,\"type\":\"shape\",\"shape_type\":\"rectangle\"},{\"obj_id\":111,\"job_id\":28,\"type\":\"shape\",\"shape_type\":\"rectangle\"}],\"severity\":\"warning\"},{\"frame_id\":0,\"type\":\"mismatching_groups\",\"annotation_ids\":[{\"obj_id\":77,\"job_id\":27,\"type\":\"shape\",\"shape_type\":\"rectangle\"},{\"obj_id\":114,\"job_id\":28,\"type\":\"shape\",\"shape_type\":\"rectangle\"}],\"severity\":\"warning\"}],\"annotations\":{\"valid_count\":22,\"missing_count\":4,\"extra_count\":11,\"total_count\":40,\"ds_count\":36,\"gt_count\":29,\"confusion_matrix\":{\"labels\":[\"dog\",\"cat\",\"skele\",\"unmatched\"],\"rows\":[[0,2,0,3],[1,21,0,7],[0,0,1,1],[1,2,1,0]],\"precision\":[0.0,0.7241379310344828,0.5,0.0],\"recall\":[0.0,0.84,0.5,0.0],\"accuracy\":[0.825,0.7,0.95,0.625],\"jaccard_index\":[0.0,0.6363636363636364,0.3333333333333333,0.0],\"axes\":{\"cols\":\"gt\",\"rows\":\"ds\"}},\"accuracy\":0.55,\"precision\":0.6111111111111112,\"recall\":0.7586206896551724},\"annotation_components\":{\"shape\":{\"valid_count\":25,\"missing_count\":4,\"extra_count\":11,\"total_count\":40,\"ds_count\":36,\"gt_count\":29,\"mean_iou\":0.55702524096093,\"accuracy\":0.625},\"label\":{\"valid_count\":22,\"invalid_count\":3,\"total_count\":25,\"accuracy\":0.88}},\"conflict_count\":34,\"warning_count\":16,\"error_count\":18,\"conflicts_by_type\":{\"low_overlap\":7,\"missing_annotation\":4,\"extra_annotation\":11,\"mismatching_label\":3,\"mismatching_direction\":1,\"covered_annotation\":1,\"mismatching_attributes\":1,\"mismatching_groups\":6}},\"1\":{\"conflicts\":[{\"frame_id\":1,\"type\":\"missing_annotation\",\"annotation_ids\":[{\"obj_id\":130,\"job_id\":28,\"type\":\"shape\",\"shape_type\":\"rectangle\"}],\"severity\":\"error\"},{\"frame_id\":1,\"type\":\"missing_annotation\",\"annotation_ids\":[{\"obj_id\":128,\"job_id\":28,\"type\":\"shape\",\"shape_type\":\"points\"}],\"severity\":\"error\"},{\"frame_id\":1,\"type\":\"missing_annotation\",\"annotation_ids\":[{\"obj_id\":124,\"job_id\":28,\"type\":\"shape\",\"shape_type\":\"polygon\"}],\"severity\":\"error\"},{\"frame_id\":1,\"type\":\"missing_annotation\",\"annotation_ids\":[{\"obj_id\":125,\"job_id\":28,\"type\":\"shape\",\"shape_type\":\"ellipse\"}],\"severity\":\"error\"},{\"frame_id\":1,\"type\":\"missing_annotation\",\"annotation_ids\":[{\"obj_id\":127,\"job_id\":28,\"type\":\"shape\",\"shape_type\":\"mask\"}],\"severity\":\"error\"},{\"frame_id\":1,\"type\":\"missing_annotation\",\"annotation_ids\":[{\"obj_id\":129,\"job_id\":28,\"type\":\"shape\",\"shape_type\":\"polyline\"}],\"severity\":\"error\"}],\"annotations\":{\"valid_count\":0,\"missing_count\":6,\"extra_count\":0,\"total_count\":6,\"ds_count\":0,\"gt_count\":6,\"confusion_matrix\":{\"labels\":[\"dog\",\"cat\",\"skele\",\"unmatched\"],\"rows\":[[0,0,0,0],[0,0,0,0],[0,0,0,0],[0,6,0,0]],\"precision\":[0.0,0.0,0.0,0.0],\"recall\":[0.0,0.0,0.0,0.0],\"accuracy\":[1.0,0.0,1.0,0.0],\"jaccard_index\":[0.0,0.0,0.0,0.0],\"axes\":{\"cols\":\"gt\",\"rows\":\"ds\"}},\"accuracy\":0.0,\"precision\":0.0,\"recall\":0.0},\"annotation_components\":{\"shape\":{\"valid_count\":0,\"missing_count\":6,\"extra_count\":0,\"total_count\":6,\"ds_count\":0,\"gt_count\":6,\"mean_iou\":0.0,\"accuracy\":0.0},\"label\":{\"valid_count\":0,\"invalid_count\":0,\"total_count\":0,\"accuracy\":0.0}},\"conflict_count\":6,\"warning_count\":0,\"error_count\":6,\"conflicts_by_type\":{\"missing_annotation\":6}},\"2\":{\"conflicts\":[],\"annotations\":{\"valid_count\":0,\"missing_count\":0,\"extra_count\":0,\"total_count\":0,\"ds_count\":0,\"gt_count\":0,\"confusion_matrix\":{\"labels\":[\"dog\",\"cat\",\"skele\",\"unmatched\"],\"rows\":[[0,0,0,0],[0,0,0,0],[0,0,0,0],[0,0,0,0]],\"precision\":[0.0,0.0,0.0,0.0],\"recall\":[0.0,0.0,0.0,0.0],\"accuracy\":[0.0,0.0,0.0,0.0],\"jaccard_index\":[0.0,0.0,0.0,0.0],\"axes\":{\"cols\":\"gt\",\"rows\":\"ds\"}},\"accuracy\":0.0,\"precision\":0.0,\"recall\":0.0},\"annotation_components\":{\"shape\":{\"valid_count\":0,\"missing_count\":0,\"extra_count\":0,\"total_count\":0,\"ds_count\":0,\"gt_count\":0,\"mean_iou\":0,\"accuracy\":0.0},\"label\":{\"valid_count\":0,\"invalid_count\":0,\"total_count\":0,\"accuracy\":0.0}},\"conflict_count\":0,\"warning_count\":0,\"error_count\":0,\"conflicts_by_type\":{}}}}"
+  }
+},
+{
   "model": "quality_control.annotationconflict",
   "pk": 1,
   "fields": {
@@ -11739,6 +11765,406 @@
   "pk": 77,
   "fields": {
     "report": 4,
+    "frame": 1,
+    "type": "missing_annotation",
+    "severity": "error"
+  }
+},
+{
+  "model": "quality_control.annotationconflict",
+  "pk": 78,
+  "fields": {
+    "report": 6,
+    "frame": 0,
+    "type": "low_overlap",
+    "severity": "warning"
+  }
+},
+{
+  "model": "quality_control.annotationconflict",
+  "pk": 79,
+  "fields": {
+    "report": 6,
+    "frame": 0,
+    "type": "low_overlap",
+    "severity": "warning"
+  }
+},
+{
+  "model": "quality_control.annotationconflict",
+  "pk": 80,
+  "fields": {
+    "report": 6,
+    "frame": 0,
+    "type": "low_overlap",
+    "severity": "warning"
+  }
+},
+{
+  "model": "quality_control.annotationconflict",
+  "pk": 81,
+  "fields": {
+    "report": 6,
+    "frame": 0,
+    "type": "low_overlap",
+    "severity": "warning"
+  }
+},
+{
+  "model": "quality_control.annotationconflict",
+  "pk": 82,
+  "fields": {
+    "report": 6,
+    "frame": 0,
+    "type": "low_overlap",
+    "severity": "warning"
+  }
+},
+{
+  "model": "quality_control.annotationconflict",
+  "pk": 83,
+  "fields": {
+    "report": 6,
+    "frame": 0,
+    "type": "low_overlap",
+    "severity": "warning"
+  }
+},
+{
+  "model": "quality_control.annotationconflict",
+  "pk": 84,
+  "fields": {
+    "report": 6,
+    "frame": 0,
+    "type": "low_overlap",
+    "severity": "warning"
+  }
+},
+{
+  "model": "quality_control.annotationconflict",
+  "pk": 85,
+  "fields": {
+    "report": 6,
+    "frame": 0,
+    "type": "missing_annotation",
+    "severity": "error"
+  }
+},
+{
+  "model": "quality_control.annotationconflict",
+  "pk": 86,
+  "fields": {
+    "report": 6,
+    "frame": 0,
+    "type": "missing_annotation",
+    "severity": "error"
+  }
+},
+{
+  "model": "quality_control.annotationconflict",
+  "pk": 87,
+  "fields": {
+    "report": 6,
+    "frame": 0,
+    "type": "missing_annotation",
+    "severity": "error"
+  }
+},
+{
+  "model": "quality_control.annotationconflict",
+  "pk": 88,
+  "fields": {
+    "report": 6,
+    "frame": 0,
+    "type": "missing_annotation",
+    "severity": "error"
+  }
+},
+{
+  "model": "quality_control.annotationconflict",
+  "pk": 89,
+  "fields": {
+    "report": 6,
+    "frame": 0,
+    "type": "extra_annotation",
+    "severity": "error"
+  }
+},
+{
+  "model": "quality_control.annotationconflict",
+  "pk": 90,
+  "fields": {
+    "report": 6,
+    "frame": 0,
+    "type": "extra_annotation",
+    "severity": "error"
+  }
+},
+{
+  "model": "quality_control.annotationconflict",
+  "pk": 91,
+  "fields": {
+    "report": 6,
+    "frame": 0,
+    "type": "extra_annotation",
+    "severity": "error"
+  }
+},
+{
+  "model": "quality_control.annotationconflict",
+  "pk": 92,
+  "fields": {
+    "report": 6,
+    "frame": 0,
+    "type": "extra_annotation",
+    "severity": "error"
+  }
+},
+{
+  "model": "quality_control.annotationconflict",
+  "pk": 93,
+  "fields": {
+    "report": 6,
+    "frame": 0,
+    "type": "extra_annotation",
+    "severity": "error"
+  }
+},
+{
+  "model": "quality_control.annotationconflict",
+  "pk": 94,
+  "fields": {
+    "report": 6,
+    "frame": 0,
+    "type": "extra_annotation",
+    "severity": "error"
+  }
+},
+{
+  "model": "quality_control.annotationconflict",
+  "pk": 95,
+  "fields": {
+    "report": 6,
+    "frame": 0,
+    "type": "extra_annotation",
+    "severity": "error"
+  }
+},
+{
+  "model": "quality_control.annotationconflict",
+  "pk": 96,
+  "fields": {
+    "report": 6,
+    "frame": 0,
+    "type": "extra_annotation",
+    "severity": "error"
+  }
+},
+{
+  "model": "quality_control.annotationconflict",
+  "pk": 97,
+  "fields": {
+    "report": 6,
+    "frame": 0,
+    "type": "extra_annotation",
+    "severity": "error"
+  }
+},
+{
+  "model": "quality_control.annotationconflict",
+  "pk": 98,
+  "fields": {
+    "report": 6,
+    "frame": 0,
+    "type": "extra_annotation",
+    "severity": "error"
+  }
+},
+{
+  "model": "quality_control.annotationconflict",
+  "pk": 99,
+  "fields": {
+    "report": 6,
+    "frame": 0,
+    "type": "extra_annotation",
+    "severity": "error"
+  }
+},
+{
+  "model": "quality_control.annotationconflict",
+  "pk": 100,
+  "fields": {
+    "report": 6,
+    "frame": 0,
+    "type": "mismatching_label",
+    "severity": "error"
+  }
+},
+{
+  "model": "quality_control.annotationconflict",
+  "pk": 101,
+  "fields": {
+    "report": 6,
+    "frame": 0,
+    "type": "mismatching_label",
+    "severity": "error"
+  }
+},
+{
+  "model": "quality_control.annotationconflict",
+  "pk": 102,
+  "fields": {
+    "report": 6,
+    "frame": 0,
+    "type": "mismatching_label",
+    "severity": "error"
+  }
+},
+{
+  "model": "quality_control.annotationconflict",
+  "pk": 103,
+  "fields": {
+    "report": 6,
+    "frame": 0,
+    "type": "mismatching_direction",
+    "severity": "warning"
+  }
+},
+{
+  "model": "quality_control.annotationconflict",
+  "pk": 104,
+  "fields": {
+    "report": 6,
+    "frame": 0,
+    "type": "covered_annotation",
+    "severity": "warning"
+  }
+},
+{
+  "model": "quality_control.annotationconflict",
+  "pk": 105,
+  "fields": {
+    "report": 6,
+    "frame": 0,
+    "type": "mismatching_attributes",
+    "severity": "warning"
+  }
+},
+{
+  "model": "quality_control.annotationconflict",
+  "pk": 106,
+  "fields": {
+    "report": 6,
+    "frame": 0,
+    "type": "mismatching_groups",
+    "severity": "warning"
+  }
+},
+{
+  "model": "quality_control.annotationconflict",
+  "pk": 107,
+  "fields": {
+    "report": 6,
+    "frame": 0,
+    "type": "mismatching_groups",
+    "severity": "warning"
+  }
+},
+{
+  "model": "quality_control.annotationconflict",
+  "pk": 108,
+  "fields": {
+    "report": 6,
+    "frame": 0,
+    "type": "mismatching_groups",
+    "severity": "warning"
+  }
+},
+{
+  "model": "quality_control.annotationconflict",
+  "pk": 109,
+  "fields": {
+    "report": 6,
+    "frame": 0,
+    "type": "mismatching_groups",
+    "severity": "warning"
+  }
+},
+{
+  "model": "quality_control.annotationconflict",
+  "pk": 110,
+  "fields": {
+    "report": 6,
+    "frame": 0,
+    "type": "mismatching_groups",
+    "severity": "warning"
+  }
+},
+{
+  "model": "quality_control.annotationconflict",
+  "pk": 111,
+  "fields": {
+    "report": 6,
+    "frame": 0,
+    "type": "mismatching_groups",
+    "severity": "warning"
+  }
+},
+{
+  "model": "quality_control.annotationconflict",
+  "pk": 112,
+  "fields": {
+    "report": 6,
+    "frame": 1,
+    "type": "missing_annotation",
+    "severity": "error"
+  }
+},
+{
+  "model": "quality_control.annotationconflict",
+  "pk": 113,
+  "fields": {
+    "report": 6,
+    "frame": 1,
+    "type": "missing_annotation",
+    "severity": "error"
+  }
+},
+{
+  "model": "quality_control.annotationconflict",
+  "pk": 114,
+  "fields": {
+    "report": 6,
+    "frame": 1,
+    "type": "missing_annotation",
+    "severity": "error"
+  }
+},
+{
+  "model": "quality_control.annotationconflict",
+  "pk": 115,
+  "fields": {
+    "report": 6,
+    "frame": 1,
+    "type": "missing_annotation",
+    "severity": "error"
+  }
+},
+{
+  "model": "quality_control.annotationconflict",
+  "pk": 116,
+  "fields": {
+    "report": 6,
+    "frame": 1,
+    "type": "missing_annotation",
+    "severity": "error"
+  }
+},
+{
+  "model": "quality_control.annotationconflict",
+  "pk": 117,
+  "fields": {
+    "report": 6,
     "frame": 1,
     "type": "missing_annotation",
     "severity": "error"
@@ -12970,6 +13396,644 @@
   "pk": 112,
   "fields": {
     "conflict": 77,
+    "obj_id": 129,
+    "job_id": 28,
+    "type": "shape",
+    "shape_type": "polyline"
+  }
+},
+{
+  "model": "quality_control.annotationid",
+  "pk": 113,
+  "fields": {
+    "conflict": 78,
+    "obj_id": 65,
+    "job_id": 27,
+    "type": "shape",
+    "shape_type": "rectangle"
+  }
+},
+{
+  "model": "quality_control.annotationid",
+  "pk": 114,
+  "fields": {
+    "conflict": 78,
+    "obj_id": 101,
+    "job_id": 28,
+    "type": "shape",
+    "shape_type": "rectangle"
+  }
+},
+{
+  "model": "quality_control.annotationid",
+  "pk": 115,
+  "fields": {
+    "conflict": 79,
+    "obj_id": 91,
+    "job_id": 27,
+    "type": "shape",
+    "shape_type": "rectangle"
+  }
+},
+{
+  "model": "quality_control.annotationid",
+  "pk": 116,
+  "fields": {
+    "conflict": 79,
+    "obj_id": 118,
+    "job_id": 28,
+    "type": "shape",
+    "shape_type": "rectangle"
+  }
+},
+{
+  "model": "quality_control.annotationid",
+  "pk": 117,
+  "fields": {
+    "conflict": 80,
+    "obj_id": 88,
+    "job_id": 27,
+    "type": "shape",
+    "shape_type": "points"
+  }
+},
+{
+  "model": "quality_control.annotationid",
+  "pk": 118,
+  "fields": {
+    "conflict": 80,
+    "obj_id": 102,
+    "job_id": 28,
+    "type": "shape",
+    "shape_type": "points"
+  }
+},
+{
+  "model": "quality_control.annotationid",
+  "pk": 119,
+  "fields": {
+    "conflict": 81,
+    "obj_id": 68,
+    "job_id": 27,
+    "type": "shape",
+    "shape_type": "polygon"
+  }
+},
+{
+  "model": "quality_control.annotationid",
+  "pk": 120,
+  "fields": {
+    "conflict": 81,
+    "obj_id": 98,
+    "job_id": 28,
+    "type": "shape",
+    "shape_type": "polygon"
+  }
+},
+{
+  "model": "quality_control.annotationid",
+  "pk": 121,
+  "fields": {
+    "conflict": 82,
+    "obj_id": 67,
+    "job_id": 27,
+    "type": "shape",
+    "shape_type": "polyline"
+  }
+},
+{
+  "model": "quality_control.annotationid",
+  "pk": 122,
+  "fields": {
+    "conflict": 82,
+    "obj_id": 99,
+    "job_id": 28,
+    "type": "shape",
+    "shape_type": "polyline"
+  }
+},
+{
+  "model": "quality_control.annotationid",
+  "pk": 123,
+  "fields": {
+    "conflict": 83,
+    "obj_id": 141,
+    "job_id": 27,
+    "type": "shape",
+    "shape_type": "skeleton"
+  }
+},
+{
+  "model": "quality_control.annotationid",
+  "pk": 124,
+  "fields": {
+    "conflict": 83,
+    "obj_id": 132,
+    "job_id": 28,
+    "type": "shape",
+    "shape_type": "skeleton"
+  }
+},
+{
+  "model": "quality_control.annotationid",
+  "pk": 125,
+  "fields": {
+    "conflict": 84,
+    "obj_id": 92,
+    "job_id": 27,
+    "type": "shape",
+    "shape_type": "points"
+  }
+},
+{
+  "model": "quality_control.annotationid",
+  "pk": 126,
+  "fields": {
+    "conflict": 84,
+    "obj_id": 119,
+    "job_id": 28,
+    "type": "shape",
+    "shape_type": "points"
+  }
+},
+{
+  "model": "quality_control.annotationid",
+  "pk": 127,
+  "fields": {
+    "conflict": 85,
+    "obj_id": 107,
+    "job_id": 28,
+    "type": "shape",
+    "shape_type": "rectangle"
+  }
+},
+{
+  "model": "quality_control.annotationid",
+  "pk": 128,
+  "fields": {
+    "conflict": 86,
+    "obj_id": 121,
+    "job_id": 28,
+    "type": "shape",
+    "shape_type": "points"
+  }
+},
+{
+  "model": "quality_control.annotationid",
+  "pk": 129,
+  "fields": {
+    "conflict": 87,
+    "obj_id": 122,
+    "job_id": 28,
+    "type": "shape",
+    "shape_type": "points"
+  }
+},
+{
+  "model": "quality_control.annotationid",
+  "pk": 130,
+  "fields": {
+    "conflict": 88,
+    "obj_id": 131,
+    "job_id": 28,
+    "type": "shape",
+    "shape_type": "skeleton"
+  }
+},
+{
+  "model": "quality_control.annotationid",
+  "pk": 131,
+  "fields": {
+    "conflict": 89,
+    "obj_id": 70,
+    "job_id": 27,
+    "type": "shape",
+    "shape_type": "rectangle"
+  }
+},
+{
+  "model": "quality_control.annotationid",
+  "pk": 132,
+  "fields": {
+    "conflict": 90,
+    "obj_id": 76,
+    "job_id": 27,
+    "type": "shape",
+    "shape_type": "rectangle"
+  }
+},
+{
+  "model": "quality_control.annotationid",
+  "pk": 133,
+  "fields": {
+    "conflict": 91,
+    "obj_id": 93,
+    "job_id": 27,
+    "type": "shape",
+    "shape_type": "points"
+  }
+},
+{
+  "model": "quality_control.annotationid",
+  "pk": 134,
+  "fields": {
+    "conflict": 92,
+    "obj_id": 74,
+    "job_id": 27,
+    "type": "shape",
+    "shape_type": "polygon"
+  }
+},
+{
+  "model": "quality_control.annotationid",
+  "pk": 135,
+  "fields": {
+    "conflict": 93,
+    "obj_id": 95,
+    "job_id": 27,
+    "type": "shape",
+    "shape_type": "polygon"
+  }
+},
+{
+  "model": "quality_control.annotationid",
+  "pk": 136,
+  "fields": {
+    "conflict": 94,
+    "obj_id": 73,
+    "job_id": 27,
+    "type": "shape",
+    "shape_type": "polygon"
+  }
+},
+{
+  "model": "quality_control.annotationid",
+  "pk": 137,
+  "fields": {
+    "conflict": 95,
+    "obj_id": 96,
+    "job_id": 27,
+    "type": "shape",
+    "shape_type": "ellipse"
+  }
+},
+{
+  "model": "quality_control.annotationid",
+  "pk": 138,
+  "fields": {
+    "conflict": 96,
+    "obj_id": 64,
+    "job_id": 27,
+    "type": "shape",
+    "shape_type": "polyline"
+  }
+},
+{
+  "model": "quality_control.annotationid",
+  "pk": 139,
+  "fields": {
+    "conflict": 97,
+    "obj_id": 66,
+    "job_id": 27,
+    "type": "shape",
+    "shape_type": "polyline"
+  }
+},
+{
+  "model": "quality_control.annotationid",
+  "pk": 140,
+  "fields": {
+    "conflict": 98,
+    "obj_id": 94,
+    "job_id": 27,
+    "type": "shape",
+    "shape_type": "polyline"
+  }
+},
+{
+  "model": "quality_control.annotationid",
+  "pk": 141,
+  "fields": {
+    "conflict": 99,
+    "obj_id": 142,
+    "job_id": 27,
+    "type": "shape",
+    "shape_type": "skeleton"
+  }
+},
+{
+  "model": "quality_control.annotationid",
+  "pk": 142,
+  "fields": {
+    "conflict": 100,
+    "obj_id": 92,
+    "job_id": 27,
+    "type": "shape",
+    "shape_type": "points"
+  }
+},
+{
+  "model": "quality_control.annotationid",
+  "pk": 143,
+  "fields": {
+    "conflict": 100,
+    "obj_id": 119,
+    "job_id": 28,
+    "type": "shape",
+    "shape_type": "points"
+  }
+},
+{
+  "model": "quality_control.annotationid",
+  "pk": 144,
+  "fields": {
+    "conflict": 101,
+    "obj_id": 89,
+    "job_id": 27,
+    "type": "shape",
+    "shape_type": "points"
+  }
+},
+{
+  "model": "quality_control.annotationid",
+  "pk": 145,
+  "fields": {
+    "conflict": 101,
+    "obj_id": 123,
+    "job_id": 28,
+    "type": "shape",
+    "shape_type": "points"
+  }
+},
+{
+  "model": "quality_control.annotationid",
+  "pk": 146,
+  "fields": {
+    "conflict": 102,
+    "obj_id": 69,
+    "job_id": 27,
+    "type": "shape",
+    "shape_type": "mask"
+  }
+},
+{
+  "model": "quality_control.annotationid",
+  "pk": 147,
+  "fields": {
+    "conflict": 102,
+    "obj_id": 97,
+    "job_id": 28,
+    "type": "shape",
+    "shape_type": "polygon"
+  }
+},
+{
+  "model": "quality_control.annotationid",
+  "pk": 148,
+  "fields": {
+    "conflict": 103,
+    "obj_id": 67,
+    "job_id": 27,
+    "type": "shape",
+    "shape_type": "polyline"
+  }
+},
+{
+  "model": "quality_control.annotationid",
+  "pk": 149,
+  "fields": {
+    "conflict": 103,
+    "obj_id": 99,
+    "job_id": 28,
+    "type": "shape",
+    "shape_type": "polyline"
+  }
+},
+{
+  "model": "quality_control.annotationid",
+  "pk": 150,
+  "fields": {
+    "conflict": 104,
+    "obj_id": 69,
+    "job_id": 27,
+    "type": "shape",
+    "shape_type": "mask"
+  }
+},
+{
+  "model": "quality_control.annotationid",
+  "pk": 151,
+  "fields": {
+    "conflict": 105,
+    "obj_id": 65,
+    "job_id": 27,
+    "type": "shape",
+    "shape_type": "rectangle"
+  }
+},
+{
+  "model": "quality_control.annotationid",
+  "pk": 152,
+  "fields": {
+    "conflict": 105,
+    "obj_id": 101,
+    "job_id": 28,
+    "type": "shape",
+    "shape_type": "rectangle"
+  }
+},
+{
+  "model": "quality_control.annotationid",
+  "pk": 153,
+  "fields": {
+    "conflict": 106,
+    "obj_id": 82,
+    "job_id": 27,
+    "type": "shape",
+    "shape_type": "rectangle"
+  }
+},
+{
+  "model": "quality_control.annotationid",
+  "pk": 154,
+  "fields": {
+    "conflict": 106,
+    "obj_id": 103,
+    "job_id": 28,
+    "type": "shape",
+    "shape_type": "rectangle"
+  }
+},
+{
+  "model": "quality_control.annotationid",
+  "pk": 155,
+  "fields": {
+    "conflict": 107,
+    "obj_id": 81,
+    "job_id": 27,
+    "type": "shape",
+    "shape_type": "rectangle"
+  }
+},
+{
+  "model": "quality_control.annotationid",
+  "pk": 156,
+  "fields": {
+    "conflict": 107,
+    "obj_id": 104,
+    "job_id": 28,
+    "type": "shape",
+    "shape_type": "rectangle"
+  }
+},
+{
+  "model": "quality_control.annotationid",
+  "pk": 157,
+  "fields": {
+    "conflict": 108,
+    "obj_id": 83,
+    "job_id": 27,
+    "type": "shape",
+    "shape_type": "rectangle"
+  }
+},
+{
+  "model": "quality_control.annotationid",
+  "pk": 158,
+  "fields": {
+    "conflict": 108,
+    "obj_id": 105,
+    "job_id": 28,
+    "type": "shape",
+    "shape_type": "rectangle"
+  }
+},
+{
+  "model": "quality_control.annotationid",
+  "pk": 159,
+  "fields": {
+    "conflict": 109,
+    "obj_id": 87,
+    "job_id": 27,
+    "type": "shape",
+    "shape_type": "rectangle"
+  }
+},
+{
+  "model": "quality_control.annotationid",
+  "pk": 160,
+  "fields": {
+    "conflict": 109,
+    "obj_id": 106,
+    "job_id": 28,
+    "type": "shape",
+    "shape_type": "rectangle"
+  }
+},
+{
+  "model": "quality_control.annotationid",
+  "pk": 161,
+  "fields": {
+    "conflict": 110,
+    "obj_id": 80,
+    "job_id": 27,
+    "type": "shape",
+    "shape_type": "rectangle"
+  }
+},
+{
+  "model": "quality_control.annotationid",
+  "pk": 162,
+  "fields": {
+    "conflict": 110,
+    "obj_id": 111,
+    "job_id": 28,
+    "type": "shape",
+    "shape_type": "rectangle"
+  }
+},
+{
+  "model": "quality_control.annotationid",
+  "pk": 163,
+  "fields": {
+    "conflict": 111,
+    "obj_id": 77,
+    "job_id": 27,
+    "type": "shape",
+    "shape_type": "rectangle"
+  }
+},
+{
+  "model": "quality_control.annotationid",
+  "pk": 164,
+  "fields": {
+    "conflict": 111,
+    "obj_id": 114,
+    "job_id": 28,
+    "type": "shape",
+    "shape_type": "rectangle"
+  }
+},
+{
+  "model": "quality_control.annotationid",
+  "pk": 165,
+  "fields": {
+    "conflict": 112,
+    "obj_id": 130,
+    "job_id": 28,
+    "type": "shape",
+    "shape_type": "rectangle"
+  }
+},
+{
+  "model": "quality_control.annotationid",
+  "pk": 166,
+  "fields": {
+    "conflict": 113,
+    "obj_id": 128,
+    "job_id": 28,
+    "type": "shape",
+    "shape_type": "points"
+  }
+},
+{
+  "model": "quality_control.annotationid",
+  "pk": 167,
+  "fields": {
+    "conflict": 114,
+    "obj_id": 124,
+    "job_id": 28,
+    "type": "shape",
+    "shape_type": "polygon"
+  }
+},
+{
+  "model": "quality_control.annotationid",
+  "pk": 168,
+  "fields": {
+    "conflict": 115,
+    "obj_id": 125,
+    "job_id": 28,
+    "type": "shape",
+    "shape_type": "ellipse"
+  }
+},
+{
+  "model": "quality_control.annotationid",
+  "pk": 169,
+  "fields": {
+    "conflict": 116,
+    "obj_id": 127,
+    "job_id": 28,
+    "type": "shape",
+    "shape_type": "mask"
+  }
+},
+{
+  "model": "quality_control.annotationid",
+  "pk": 170,
+  "fields": {
+    "conflict": 117,
     "obj_id": 129,
     "job_id": 28,
     "type": "shape",
