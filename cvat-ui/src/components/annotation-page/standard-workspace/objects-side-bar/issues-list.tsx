@@ -136,9 +136,12 @@ export default function LabelsListComponent(): JSX.Element {
             </div>
             <div className='cvat-objects-sidebar-issues-list'>
                 {frameIssues.map(
-                    (frameIssue: Issue): JSX.Element => {
+                    (frameIssue: Issue): JSX.Element | null => {
                         const firstComment = frameIssue.comments[0];
                         const lastComment = frameIssue.comments.slice(-1)[0];
+                        if (frameIssue.resolved && issuesResolvedHidden) {
+                            return null; // Skip rendering this issue
+                        }
                         return (
                             <div
                                 key={frameIssue.id}
