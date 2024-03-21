@@ -184,8 +184,8 @@
       "task_id": null
     },
     {
-      "created_date": "2024-03-21T20:52:03.542921Z",
-      "gt_last_updated": "2024-03-21T20:50:20.020419Z",
+      "created_date": "2024-03-21T20:52:03.542000Z",
+      "gt_last_updated": "2024-03-21T20:50:20.020000Z",
       "id": 7,
       "job_id": null,
       "parent_id": null,
@@ -205,12 +205,12 @@
         "warning_count": 1
       },
       "target": "task",
-      "target_last_updated": "2024-03-21T20:50:05.947239Z",
+      "target_last_updated": "2024-03-21T20:50:05.947000Z",
       "task_id": 23
     },
     {
-      "created_date": "2024-03-21T20:52:03.552760Z",
-      "gt_last_updated": "2024-03-21T20:50:20.020419Z",
+      "created_date": "2024-03-21T20:52:03.552000Z",
+      "gt_last_updated": "2024-03-21T20:50:20.020000Z",
       "id": 8,
       "job_id": 31,
       "parent_id": 7,
@@ -226,12 +226,12 @@
         "warning_count": 0
       },
       "target": "job",
-      "target_last_updated": "2024-03-21T20:50:27.594939Z",
+      "target_last_updated": "2024-03-21T20:50:27.594000Z",
       "task_id": null
     },
     {
-      "created_date": "2024-03-21T20:52:03.552790Z",
-      "gt_last_updated": "2024-03-21T20:50:20.020419Z",
+      "created_date": "2024-03-21T20:52:03.552000Z",
+      "gt_last_updated": "2024-03-21T20:50:20.020000Z",
       "id": 9,
       "job_id": 30,
       "parent_id": 7,
@@ -249,12 +249,12 @@
         "warning_count": 1
       },
       "target": "job",
-      "target_last_updated": "2024-03-21T20:50:33.610560Z",
+      "target_last_updated": "2024-03-21T20:50:33.610000Z",
       "task_id": null
     },
     {
-      "created_date": "2024-03-21T20:52:03.552805Z",
-      "gt_last_updated": "2024-03-21T20:50:20.020419Z",
+      "created_date": "2024-03-21T20:52:03.552000Z",
+      "gt_last_updated": "2024-03-21T20:50:20.020000Z",
       "id": 10,
       "job_id": 29,
       "parent_id": 7,
@@ -273,7 +273,7 @@
         "warning_count": 0
       },
       "target": "job",
-      "target_last_updated": "2024-03-21T20:50:39.585331Z",
+      "target_last_updated": "2024-03-21T20:50:39.585000Z",
       "task_id": null
     }
   ]

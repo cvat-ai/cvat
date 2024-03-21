@@ -6,7 +6,7 @@
     {
       "assignee": null,
       "bug_tracker": "",
-      "created_date": "2024-03-21T20:50:05.694622Z",
+      "created_date": "2024-03-21T20:50:05.694000Z",
       "data": 22,
       "data_chunk_size": 72,
       "data_compressed_chunk_type": "imageset",
@@ -42,7 +42,7 @@
       "status": "completed",
       "subset": "",
       "target_storage": null,
-      "updated_date": "2024-03-21T20:50:05.947239Z",
+      "updated_date": "2024-03-21T20:50:05.947000Z",
       "url": "http://localhost:8080/api/tasks/23"
     },
     {

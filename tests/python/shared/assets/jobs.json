@@ -6,7 +6,7 @@
     {
       "assignee": null,
       "bug_tracker": null,
-      "created_date": "2024-03-21T20:50:05.838192Z",
+      "created_date": "2024-03-21T20:50:05.838000Z",
       "data_chunk_size": 72,
       "data_compressed_chunk_type": "imageset",
       "dimension": "2d",
@@ -32,13 +32,13 @@
       "target_storage": null,
       "task_id": 23,
       "type": "ground_truth",
-      "updated_date": "2024-03-21T20:50:20.020419Z",
+      "updated_date": "2024-03-21T20:50:20.020000Z",
       "url": "http://localhost:8080/api/jobs/32"
     },
     {
       "assignee": null,
       "bug_tracker": null,
-      "created_date": "2024-03-21T20:50:05.815021Z",
+      "created_date": "2024-03-21T20:50:05.815000Z",
       "data_chunk_size": 72,
       "data_compressed_chunk_type": "imageset",
       "dimension": "2d",
@@ -64,13 +64,13 @@
       "target_storage": null,
       "task_id": 23,
       "type": "annotation",
-      "updated_date": "2024-03-21T20:50:27.594939Z",
+      "updated_date": "2024-03-21T20:50:27.594000Z",
       "url": "http://localhost:8080/api/jobs/31"
     },
     {
       "assignee": null,
       "bug_tracker": null,
-      "created_date": "2024-03-21T20:50:05.811175Z",
+      "created_date": "2024-03-21T20:50:05.811000Z",
       "data_chunk_size": 72,
       "data_compressed_chunk_type": "imageset",
       "dimension": "2d",
@@ -96,13 +96,13 @@
       "target_storage": null,
       "task_id": 23,
       "type": "annotation",
-      "updated_date": "2024-03-21T20:50:33.610560Z",
+      "updated_date": "2024-03-21T20:50:33.610000Z",
       "url": "http://localhost:8080/api/jobs/30"
     },
     {
       "assignee": null,
       "bug_tracker": null,
-      "created_date": "2024-03-21T20:50:05.805692Z",
+      "created_date": "2024-03-21T20:50:05.805000Z",
       "data_chunk_size": 72,
       "data_compressed_chunk_type": "imageset",
       "dimension": "2d",
@@ -128,7 +128,7 @@
       "target_storage": null,
       "task_id": 23,
       "type": "annotation",
-      "updated_date": "2024-03-21T20:50:39.585331Z",
+      "updated_date": "2024-03-21T20:50:39.585000Z",
       "url": "http://localhost:8080/api/jobs/29"
     },
     {
