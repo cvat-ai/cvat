@@ -199,10 +199,6 @@ export default class LabelsEditor extends React.PureComponent<LabelsEditorProps,
                 transformed.sublabels = (label.sublabels || [])
                     .map((internalLabel: LabelOptColor) => transformLabel(internalLabel));
             }
-            notification.success({
-                message: 'The label has been created!',
-                className: 'cvat-notification-create-label-success',
-            });
             return transformed;
         }
 
@@ -211,6 +207,11 @@ export default class LabelsEditor extends React.PureComponent<LabelsEditorProps,
             .map((label: LabelOptColor): LabelOptColor => transformLabel(label));
 
         onSubmit(output);
+        this.setState({ constructorMode: ConstructorMode.SHOW });
+        notification.success({
+            message: 'The label has been created!',
+            className: 'cvat-notification-create-label-success',
+        });
     }
 
     public render(): JSX.Element {
