@@ -40,7 +40,7 @@ export default function LabelsListComponent(): JSX.Element {
     const activeControl = useSelector((state: CombinedState) => state.annotation.canvas.activeControl);
 
     let frames = issues
-        .filter((issue: Issue) => !issue.resolved || !issuesResolvedHidden)
+        .filter((issue: Issue) => !issuesResolvedHidden || !issue.resolved)
         .map((issue: Issue) => issue.frame)
         .sort((a: number, b: number) => +a - +b);
 
