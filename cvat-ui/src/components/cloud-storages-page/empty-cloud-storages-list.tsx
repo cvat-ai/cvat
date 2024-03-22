@@ -17,35 +17,32 @@ interface Props {
 export default function EmptyStoragesListComponent(props: Props): JSX.Element {
     const { notFound } = props;
 
-    const description = notFound ? (
-        <Row justify='center' align='middle'>
-            <Col>
-                <Text strong>No results matched your search found...</Text>
-            </Col>
-        </Row>
-    ) : (
-        <>
-            <Row justify='center' align='middle'>
-                <Col>
-                    <Text strong>No cloud storages attached yet ...</Text>
-                </Col>
-            </Row>
-            <Row justify='center' align='middle'>
-                <Col>
-                    <Text type='secondary'>To get started with your cloud storage</Text>
-                </Col>
-            </Row>
-            <Row justify='center' align='middle'>
-                <Col>
-                    <Link to='/cloudstorages/create'>attach a new one</Link>
-                </Col>
-            </Row>
-        </>
-    );
-
     return (
         <div className='cvat-empty-cloud-storages-list'>
-            <Empty description={description} image={<CloudOutlined className='cvat-empty-cloud-storages-list-icon' />} />
+            <Empty
+                description={notFound ? (
+                    <Text strong>No results matched your search...</Text>
+                ) : (
+                    <>
+                        <Row justify='center' align='middle'>
+                            <Col>
+                                <Text strong>No cloud storages attached yet ...</Text>
+                            </Col>
+                        </Row>
+                        <Row justify='center' align='middle'>
+                            <Col>
+                                <Text type='secondary'>To get started with your cloud storage</Text>
+                            </Col>
+                        </Row>
+                        <Row justify='center' align='middle'>
+                            <Col>
+                                <Link to='/cloudstorages/create'>attach a new one</Link>
+                            </Col>
+                        </Row>
+                    </>
+                )}
+                image={<CloudOutlined className='cvat-empty-cloud-storages-list-icon' />}
+            />
         </div>
     );
 }

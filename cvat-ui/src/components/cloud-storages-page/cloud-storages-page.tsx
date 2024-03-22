@@ -6,7 +6,7 @@ import './styles.scss';
 import React, { useCallback, useEffect, useState } from 'react';
 import { useHistory } from 'react-router';
 import { useDispatch, useSelector } from 'react-redux';
-import { Row, Col } from 'antd/lib/grid';
+import { Row } from 'antd/lib/grid';
 import Spin from 'antd/lib/spin';
 
 import { CombinedState, Indexable } from 'reducers';
@@ -57,13 +57,6 @@ export default function StoragesPageComponent(): JSX.Element {
         [query],
     );
 
-    const dimensions = {
-        md: 22,
-        lg: 18,
-        xl: 16,
-        xxl: 16,
-    };
-
     const anySearch = Object.keys(query)
         .some((value: string) => value !== 'page' && (query as any)[value] !== null);
     const content = current.length ? (
@@ -78,44 +71,42 @@ export default function StoragesPageComponent(): JSX.Element {
     );
 
     return (
-        <Row className='cvat-cloud-storages-page' justify='center' align='top'>
-            <Col {...dimensions}>
-                <TopBarComponent
-                    onApplySearch={(_search: string | null) => {
-                        dispatch(
-                            getCloudStoragesAsync({
-                                ...query,
-                                search: _search,
-                                page: 1,
-                            }),
-                        );
-                    }}
-                    onApplyFilter={(filter: string | null) => {
-                        dispatch(
-                            getCloudStoragesAsync({
-                                ...query,
-                                filter,
-                                page: 1,
-                            }),
-                        );
-                    }}
-                    onApplySorting={(sorting: string | null) => {
-                        dispatch(
-                            getCloudStoragesAsync({
-                                ...query,
-                                sort: sorting,
-                                page: 1,
-                            }),
-                        );
-                    }}
-                    query={updatedQuery}
-                />
-                { fetching ? (
-                    <Row className='cvat-cloud-storages-page' justify='center' align='middle'>
-                        <Spin size='large' />
-                    </Row>
-                ) : content }
-            </Col>
-        </Row>
+        <div className='cvat-cloud-storages-page'>
+            <TopBarComponent
+                onApplySearch={(_search: string | null) => {
+                    dispatch(
+                        getCloudStoragesAsync({
+                            ...query,
+                            search: _search,
+                            page: 1,
+                        }),
+                    );
+                }}
+                onApplyFilter={(filter: string | null) => {
+                    dispatch(
+                        getCloudStoragesAsync({
+                            ...query,
+                            filter,
+                            page: 1,
+                        }),
+                    );
+                }}
+                onApplySorting={(sorting: string | null) => {
+                    dispatch(
+                        getCloudStoragesAsync({
+                            ...query,
+                            sort: sorting,
+                            page: 1,
+                        }),
+                    );
+                }}
+                query={updatedQuery}
+            />
+            { fetching ? (
+                <Row className='cvat-cloud-storages-page' justify='center' align='middle'>
+                    <Spin size='large' />
+                </Row>
+            ) : content }
+        </div>
     );
 }

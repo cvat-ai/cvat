@@ -3,11 +3,13 @@
 //
 // SPDX-License-Identifier: MIT
 
-@import '../../base.scss';
+@import '../../base';
 
 .cvat-cloud-storages-page {
-    padding: $grid-unit-size * 2;
+    padding-top: $grid-unit-size * 2;
+    padding-bottom: $grid-unit-size;
     height: 100%;
+    width: 100%;
     overflow: auto;
 
     .ant-spin {
@@ -54,9 +56,13 @@
     }
 }
 
-.cvat-cloud-storages-list,
 .cvat-empty-cloud-storages-list {
-    margin-top: $grid-unit-size * 2;
+    .ant-empty {
+        top: 50%;
+        left: 50%;
+        position: absolute;
+        transform: translate(-50%, -50%);
+    }
 }
 
 .cvat-cloud-storage-item {

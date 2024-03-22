@@ -12,6 +12,8 @@ import { CloudStoragesQuery } from 'reducers';
 import Input from 'antd/lib/input';
 import { SortingComponent, ResourceFilterHOC, defaultVisibility } from 'components/resource-sorting-filtering';
 
+import dimensions from 'components/projects-page/dimensions';
+
 import {
     localStorageRecentKeyword, localStorageRecentCapacity,
     predefinedFilterValues, config,
@@ -36,8 +38,8 @@ export default function StoragesTopBar(props: Props): JSX.Element {
     const [visibility, setVisibility] = useState(defaultVisibility);
 
     return (
-        <Row justify='space-between' align='middle' className='cvat-cloud-storages-list-top-bar'>
-            <Col span={24}>
+        <Row justify='center' align='middle' className='cvat-cloud-storages-list-top-bar'>
+            <Col {...dimensions}>
                 <div className='cvat-cloudstorages-page-filters-wrapper'>
                     <Input.Search
                         enterButton
