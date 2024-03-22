@@ -19,27 +19,28 @@ function EmptyListComponent(props: Props): JSX.Element {
 
     return (
         <div className='cvat-empty-tasks-list'>
-            <Empty description={!query.filter && !query.search && !query.page ? (
-                <>
-                    <Row justify='center' align='middle'>
-                        <Col>
-                            <Text strong>No tasks created yet ...</Text>
-                        </Col>
-                    </Row>
-                    <Row justify='center' align='middle'>
-                        <Col>
-                            <Text type='secondary'>To get started with your annotation project</Text>
-                        </Col>
-                    </Row>
-                    <Row justify='center' align='middle'>
-                        <Col>
-                            <Link to='/tasks/create'>create a new task</Link>
-                            <Text type='secondary'> or try to </Text>
-                            <Link to='/projects/create'>create a new project</Link>
-                        </Col>
-                    </Row>
-                </>
-            ) : (<Text>No results matched your search</Text>)}
+            <Empty description={!query.filter && !query.search && !query.page ?
+                (<Text>No results matched your search</Text>) : (
+                    <>
+                        <Row justify='center' align='middle'>
+                            <Col>
+                                <Text strong>No tasks created yet ...</Text>
+                            </Col>
+                        </Row>
+                        <Row justify='center' align='middle'>
+                            <Col>
+                                <Text type='secondary'>To get started with your annotation project</Text>
+                            </Col>
+                        </Row>
+                        <Row justify='center' align='middle'>
+                            <Col>
+                                <Link to='/tasks/create'>create a new task</Link>
+                                <Text type='secondary'> or try to </Text>
+                                <Link to='/projects/create'>create a new project</Link>
+                            </Col>
+                        </Row>
+                    </>
+                )}
             />
         </div>
     );
