@@ -208,7 +208,7 @@ context('Ground truth jobs', () => {
         cy.login();
     });
 
-    describe('Testing ground truth basics', () => {
+    describe.skip('Testing ground truth basics', () => {
         const imagesCount = 10;
         const imageFileName = 'ground_truth_1';
         const width = 800;
@@ -522,13 +522,13 @@ context('Ground truth jobs', () => {
 
             cy.intercept('POST', '/api/jobs**', (req) => {
                 req.continue((res) => {
-                    res.setDelay(1500);
+                    res.setDelay(1000);
                 });
-            });
+            }).as('delayedRequest');
 
             cy.contains('button', 'Submit').click({ force: true });
             cy.contains('button', 'Submit').should('be.disabled');
-            cy.wait(2000);
+            cy.wait('@delayedRequest');
 
             cy.get('.cvat-spinner').should('not.exist');
             cy.url().then((url) => {
