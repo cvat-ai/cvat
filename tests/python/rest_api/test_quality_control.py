@@ -1099,7 +1099,9 @@ class TestQualityReportMetrics(_PermissionTestBase):
         assert summary["frame_share"] == summary["frame_count"] / task["size"]
 
     def test_unmodified_task_produces_the_same_metrics(self, admin_user, quality_reports):
-        old_report = max((r for r in quality_reports if r["task_id"]), key=lambda r: r["id"])
+        old_report = max(
+            (r for r in quality_reports if r["task_id"] == self.demo_task_id), key=lambda r: r["id"]
+        )
         task_id = old_report["task_id"]
 
         new_report = self.create_quality_report(admin_user, task_id)
