@@ -9,7 +9,7 @@ description: 'Installing a development environment for different operating syste
 
 - Install necessary dependencies:
 
-  Ubuntu 18.04
+  Ubuntu 22.04/20.04
 
   ```bash
   sudo apt-get update && sudo apt-get --no-install-recommends install -y build-essential curl git redis-server python3-dev python3-pip python3-venv python3-tk libldap2-dev libsasl2-dev
