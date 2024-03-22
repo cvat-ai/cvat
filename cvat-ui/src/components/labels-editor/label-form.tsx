@@ -567,7 +567,7 @@ export default class LabelForm extends React.Component<Props> {
     private renderSaveButton(): JSX.Element {
         const { label } = this.props;
         const tooltipTitle = label ? 'Save the label and return' : 'Save the label and create one more';
-        const buttonText = label ? 'Done' : 'Create';
+        const buttonText = label ? 'Done' : 'Continue';
 
         return (
             <CVATTooltip title={tooltipTitle}>
