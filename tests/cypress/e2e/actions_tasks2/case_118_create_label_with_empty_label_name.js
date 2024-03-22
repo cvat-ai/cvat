@@ -6,7 +6,7 @@
 
 import { taskName } from '../../support/const';
 
-context('Creating a label with an empty label name.', () => {
+context('Creating a label with an empty name.', () => {
     const caseId = '118';
 
     before(() => {
