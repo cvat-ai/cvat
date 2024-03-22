@@ -685,7 +685,8 @@ class TestSimpleQualityConflictsFilters(CollectionSimpleFilterTestBase):
             return job_id, job_conflicts
         elif field == "task_id":
             # This field is not included in the response
-            task_reports = [r for r in self.report_samples if r["task_id"]]
+            task_id = self._find_valid_field_value(self.report_samples, field_path=["task_id"])
+            task_reports = [r for r in self.report_samples if r["task_id"] == task_id]
             task_report_ids = {r["id"] for r in task_reports}
             task_report_ids |= {
                 r["id"] for r in self.report_samples if r["parent_id"] in task_report_ids
@@ -1098,7 +1099,7 @@ class TestQualityReportMetrics(_PermissionTestBase):
         assert summary["frame_share"] == summary["frame_count"] / task["size"]
 
     def test_unmodified_task_produces_the_same_metrics(self, admin_user, quality_reports):
-        old_report = next(r for r in quality_reports if r["task_id"] == self.demo_task_id)
+        old_report = max((r for r in quality_reports if r["task_id"]), key=lambda r: r["id"])
         task_id = old_report["task_id"]
 
         new_report = self.create_quality_report(admin_user, task_id)
