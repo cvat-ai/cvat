@@ -29,7 +29,7 @@
             "database": "${workspaceFolder:cvat}/db.sqlite3"
         }
     ],
-    "python.defaultInterpreterPath": "${workspaceFolder}/.env/",
+    // "python.defaultInterpreterPath": "${workspaceFolder}/.env/",
     "python.testing.pytestArgs": [
         "--rootdir","${workspaceFolder}/tests/"
     ],
