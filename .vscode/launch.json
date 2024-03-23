@@ -524,7 +524,84 @@
             "console": "integratedTerminal",
             "internalConsoleOptions": "neverOpen",
             "disableOptimisticBPs": true,
-        }
+        },
+        {
+            "name": "server: django-devcontainer",
+            "type": "debugpy",
+            "request": "launch",
+            "stopOnEntry": false,
+            "justMyCode": false,
+            "python": "${command:python.interpreterPath}",
+            "program": "${workspaceRoot}/manage.py",
+            "env": {
+                "CVAT_SERVERLESS": "1",
+                "ALLOWED_HOSTS": "*",
+                "IAM_OPA_BUNDLE": "1",
+                "DJANGO_LOG_SERVER_HOST": "",
+                "DJANGO_LOG_SERVER_PORT": "8282"
+            },
+            "args": [
+                "runserver",
+                "--insecure",
+                "0.0.0.0:7000"
+            ],
+            "django": true,
+            "cwd": "${workspaceFolder}",
+            "console": "internalConsole"
+        },
+        {
+            "name": "server: django-opa-devcontainer",
+            "type": "debugpy",
+            "request": "launch",
+            "stopOnEntry": false,
+            "justMyCode": false,
+            "python": "${command:python.interpreterPath}",
+            "program": "${workspaceFolder}/manage.py",
+            "env": {
+                "CVAT_SERVERLESS": "1",
+                "ALLOWED_HOSTS": "*",
+                "IAM_OPA_BUNDLE": "1",
+                "DJANGO_LOG_SERVER_HOST": "",
+                "DJANGO_LOG_SERVER_PORT": "8282"
+            },
+            "args": [
+                "runserver",
+                "--insecure",
+                "0.0.0.0:8080"
+            ],
+            "django": true,
+            "cwd": "${workspaceFolder}",
+            "console": "internalConsole"
+        },
+        {
+            "name": "server: rq-worker-devcontainer",
+            "type": "debugpy",
+            "request": "launch",
+            "stopOnEntry": false,
+            "justMyCode": false,
+            "python": "${command:python.interpreterPath}",
+            "program": "${workspaceFolder}/manage.py",
+            "args": [
+                "rqworker",
+                "import",
+                "export",
+                "quality_reports",
+                "analytics_reports",
+                // "scheduler",
+                "annotation",
+                "webhooks",
+                "cleaning",
+                "--worker-class",
+                "cvat.rqworker.SimpleWorker"
+            ],
+            "django": true,
+            "cwd": "${workspaceFolder}",
+            "env": {
+                "DJANGO_LOG_SERVER_HOST": "",
+                "DJANGO_LOG_SERVER_PORT": "8282"
+            },
+            "console": "internalConsole"
+        },
     ],
     "compounds": [
         {
@@ -539,6 +616,13 @@
                 "server: RQ - quality reports",
                 "server: RQ - analytics reports",
                 "server: RQ - cleaning"
+            ]
+        },
+        {
+            "name": "server: devcontainer",
+            "configurations": [
+                "server: django-devcontainer",
+                "server: rq-worker-devcontainer"
             ]
         }
     ]
