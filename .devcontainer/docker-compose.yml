@@ -2,7 +2,7 @@ version: '3.8'
 
 services:
   cvat_server:
-    image: cvat/server:dev
+    image: cvat/server:devcontainer
     build:
       dockerfile: .devcontainer/Dockerfile
       context: .
@@ -20,9 +20,11 @@ services:
       DJANGO_SUPERUSER_PASSWORD: ${DJANGO_SUPERUSER_PASSWORD}
       DJANGO_SUPERUSER_EMAIL: ${DJANGO_SUPERUSER_EMAIL}
     volumes:
-      - cvat_data:/home/${CONTAINER_USER}/workspace}/data:rw
-      - cvat_keys:/home/${CONTAINER_USER}/workspace}/keys:rw
-      - cvat_logs:/home/${CONTAINER_USER}/workspace}/logs:rw
+      - cvat_data:/home/${CONTAINER_USER}/workspace/data
+      - cvat_keys:/home/${CONTAINER_USER}/workspace/keys
+      - cvat_logs:/home/${CONTAINER_USER}/workspace/logs
+      # For improving write performance on non-linux machines
+      - cvat_node_modules:/home/${CONTAINER_USER}/workspace/node_modules
 
   cvat_db:
     restart: no
@@ -38,6 +40,7 @@ services:
 
 
 volumes:
+  cvat_node_modules:
   cvat_db:
     name: cvat_db_${GIT_BRANCH}
   cvat_data:

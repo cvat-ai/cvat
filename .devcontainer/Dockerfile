@@ -19,11 +19,9 @@ RUN sed -i '/^-r base.txt/d' /tmp/requirements.txt && \
     python -m pip install --no-cache-dir -r /tmp/requirements.txt
 
 USER ${CONTAINER_USER}
-# ENV USER ${CONTAINER_USER}
-# ENV HOME /home/${CONTAINER_USER}
-WORKDIR ${HOME}/workspace
+WORKDIR /home/${CONTAINER_USER}/workspace
 
-RUN mkdir -p data share keys logs static
+RUN mkdir -p data keys logs static node_modules
 
 
 
