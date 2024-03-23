@@ -33,6 +33,21 @@
                   "endsPattern": "Compiled"
                 }
             }
+        },
+        {
+          "type": "shell",
+          "command": "${workspaceFolder}/.devcontainer/cvat_server.sh",
+          "detail": "Initialize the cvat server and run an instance for the opa client",
+          "isBackground": true,
+          "label": "cvat server opa",
+          "runOptions": {
+            "runOn": "folderOpen",
+            "instanceLimit": 1,
+          },
+          "presentation": {
+            "reveal": "never",
+            "panel": "dedicated"
+          }
         }
     ]
 }
