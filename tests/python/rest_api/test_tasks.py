@@ -554,10 +554,8 @@ class TestPatchTaskAnnotations:
                             "shapes": [
                                 # https://github.com/opencv/cvat/issues/7498
                                 # https://github.com/opencv/cvat/pull/7615
-
                                 # This shape covers frame 0 to 7,
                                 # We need to check if frame 5 is generated correctly for job#1
-
                                 {"type": "points", "frame": 0, "points": [1.0, 2.0]},
                                 {"type": "points", "frame": 7, "points": [2.0, 4.0]},
                             ],
