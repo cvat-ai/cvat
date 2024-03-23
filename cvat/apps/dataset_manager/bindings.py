@@ -1757,9 +1757,9 @@ class CvatToDmAnnotationConverter:
         if shape.type == ShapeType.RECTANGLE:
             dm_attr['rotation'] = shape.rotation
 
-        if hasattr(shape, 'track_id'):
-            dm_attr['track_id'] = shape.track_id
-            dm_attr['keyframe'] = shape.keyframe
+        # if hasattr(shape, 'track_id'):
+        #     dm_attr['track_id'] = shape.track_id
+        #     dm_attr['keyframe'] = shape.keyframe
 
         dm_points = shape.points
 
