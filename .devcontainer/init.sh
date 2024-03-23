@@ -20,11 +20,15 @@ function update_env_var {
 git_branch=$(git branch --show-current)
 host_user_id=$(id -u)
 
+echo "done export env vars"
+
 update_env_var GIT_BRANCH "${git_branch}"
 update_env_var HOST_USER_UID "${host_user_id}"
 
 docker compose -f "${workspace_dir}"/docker-compose.yml \
                -f "${workspace_dir}"/docker-compose.dev.yml \
                -f "${devcontainer_dir}/docker-compose.yml" down
+
+echo "done docker compose down"
 
 exit 0
