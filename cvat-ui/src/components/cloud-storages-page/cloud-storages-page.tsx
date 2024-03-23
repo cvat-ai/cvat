@@ -13,7 +13,7 @@ import { CombinedState, Indexable } from 'reducers';
 import { getCloudStoragesAsync } from 'actions/cloud-storage-actions';
 import { updateHistoryFromQuery } from 'components/resource-sorting-filtering';
 import CloudStoragesListComponent from './cloud-storages-list';
-import EmptyCloudStorageListComponent from './empty-cloud-storages-list';
+import EmptyListComponent from './empty-list';
 import TopBarComponent from './top-bar';
 
 export default function StoragesPageComponent(): JSX.Element {
@@ -57,8 +57,8 @@ export default function StoragesPageComponent(): JSX.Element {
         [query],
     );
 
-    const anySearch = Object.keys(query)
-        .some((value: string) => value !== 'page' && (query as any)[value] !== null);
+    const anySearch = Object.keys(query).some((value: string) => value !== 'page' && (query as any)[value] !== null);
+
     const content = current.length ? (
         <CloudStoragesListComponent
             totalCount={totalCount}
@@ -67,7 +67,7 @@ export default function StoragesPageComponent(): JSX.Element {
             onChangePage={onChangePage}
         />
     ) : (
-        <EmptyCloudStorageListComponent notFound={anySearch} />
+        <EmptyListComponent notFound={anySearch} />
     );
 
     return (

@@ -10,8 +10,8 @@ import { useDispatch, useSelector } from 'react-redux';
 import Spin from 'antd/lib/spin';
 import { Col, Row } from 'antd/lib/grid';
 import Pagination from 'antd/lib/pagination';
-import Empty from 'antd/lib/empty';
-import Text from 'antd/lib/typography/Text';
+// import Empty from 'antd/lib/empty';
+// import Text from 'antd/lib/typography/Text';
 
 import { Job } from 'cvat-core-wrapper';
 import { updateHistoryFromQuery } from 'components/resource-sorting-filtering';
@@ -20,6 +20,7 @@ import { getJobsAsync, updateJobAsync } from 'actions/jobs-actions';
 
 import TopBarComponent from './top-bar';
 import JobsContentComponent from './jobs-content';
+import EmptyListComponent from './empty-list';
 
 function JobsPageComponent(): JSX.Element {
     const dispatch = useDispatch();
@@ -54,6 +55,8 @@ function JobsPageComponent(): JSX.Element {
         }
     }, [query]);
 
+    const anySearch = Object.keys(query).some((value: string) => value !== 'page' && (query as any)[value] !== null);
+
     const content = count ? (
         <>
             <JobsContentComponent onJobUpdate={onJobUpdate} />
@@ -77,16 +80,7 @@ function JobsPageComponent(): JSX.Element {
             </Row>
         </>
     ) : (
-        <div className='cvat-empty-jobs-list'>
-            <Empty description={(
-                <Row justify='center' align='middle'>
-                    <Col>
-                        <Text>No results matched your search...</Text>
-                    </Col>
-                </Row>
-            )}
-            />
-        </div>
+        <EmptyListComponent notFound={anySearch} />
     );
 
     return (

@@ -14,7 +14,7 @@ interface Props {
     notFound: boolean;
 }
 
-export default function EmptyStoragesListComponent(props: Props): JSX.Element {
+export default function EmptyListComponent(props: Props): JSX.Element {
     const { notFound } = props;
 
     return (
@@ -26,7 +26,7 @@ export default function EmptyStoragesListComponent(props: Props): JSX.Element {
                     <>
                         <Row justify='center' align='middle'>
                             <Col>
-                                <Text strong>No cloud storages attached yet ...</Text>
+                                <Text strong>No cloud storages attached yet...</Text>
                             </Col>
                         </Row>
                         <Row justify='center' align='middle'>
@@ -41,7 +41,7 @@ export default function EmptyStoragesListComponent(props: Props): JSX.Element {
                         </Row>
                     </>
                 )}
-                image={<CloudOutlined className='cvat-empty-cloud-storages-list-icon' />}
+                image={notFound ? Empty.PRESENTED_IMAGE_DEFAULT : <CloudOutlined className='cvat-empty-cloud-storages-list-icon' />}
             />
         </div>
     );

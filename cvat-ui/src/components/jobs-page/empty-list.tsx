@@ -17,13 +17,13 @@ function EmptyListComponent(props: Props): JSX.Element {
     const { notFound } = props;
 
     return (
-        <div className='cvat-empty-tasks-list'>
+        <div className='cvat-empty-jobs-list'>
             <Empty description={notFound ?
                 (<Text strong>No results matched your search...</Text>) : (
                     <>
                         <Row justify='center' align='middle'>
                             <Col>
-                                <Text strong>No tasks created yet...</Text>
+                                <Text strong>No jobs created yet...</Text>
                             </Col>
                         </Row>
                         <Row justify='center' align='middle'>

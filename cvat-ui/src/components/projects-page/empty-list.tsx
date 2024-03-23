@@ -14,6 +14,7 @@ interface Props {
 
 export default function EmptyListComponent(props: Props): JSX.Element {
     const { notFound } = props;
+
     return (
         <div className='cvat-empty-projects-list'>
             <Empty description={notFound ? (
@@ -22,7 +23,7 @@ export default function EmptyListComponent(props: Props): JSX.Element {
                 <>
                     <Row justify='center' align='middle'>
                         <Col>
-                            <Text strong>No projects created yet ...</Text>
+                            <Text strong>No projects created yet...</Text>
                         </Col>
                     </Row>
                     <Row justify='center' align='middle'>

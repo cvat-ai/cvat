@@ -57,6 +57,8 @@ function TasksPageComponent(props: Props): JSX.Element {
         }
     }, [query]);
 
+    const anySearch = Object.keys(query).some((value: string) => value !== 'page' && (query as any)[value] !== null);
+
     const content = count ? (
         <>
             <TaskListContainer />
@@ -80,7 +82,7 @@ function TasksPageComponent(props: Props): JSX.Element {
             </Row>
         </>
     ) : (
-        <EmptyListComponent query={query} />
+        <EmptyListComponent notFound={anySearch} />
     );
 
     return (
