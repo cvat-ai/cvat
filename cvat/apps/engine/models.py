@@ -432,9 +432,6 @@ class Task(TimestampedModel):
     def get_dirname(self):
         return os.path.join(settings.TASKS_ROOT, str(self.id))
 
-    def get_task_artifacts_dirname(self):
-        return os.path.join(self.get_dirname(), 'artifacts')
-
     def get_tmp_dirname(self):
         return os.path.join(self.get_dirname(), "tmp")
 
