@@ -329,7 +329,8 @@ class LabelSerializer(SublabelSerializer):
         sublabels: Iterable[Dict[str, Any]],
         *,
         parent_instance: Union[models.Project, models.Task],
-        parent_label: Optional[models.Label] = None
+        parent_label: Optional[models.Label] = None,
+        initial_data: any = None
     ) -> Optional[models.Label]:
         parent_info, logger = cls._get_parent_info(parent_instance)
 
@@ -372,7 +373,7 @@ class LabelSerializer(SublabelSerializer):
                 raise exceptions.ValidationError(str(exc)) from exc
             logger.info("New {} label was created".format(db_label.name))
 
-            cls.update_labels(sublabels, parent_instance=parent_instance, parent_label=db_label)
+            cls.update_labels(sublabels, parent_instance=parent_instance, parent_label=db_label, initial_data=initial_data)
 
             if db_label.type == str(models.LabelType.SKELETON):
                 for db_sublabel in list(db_label.sublabels.all()):
@@ -404,10 +405,21 @@ class LabelSerializer(SublabelSerializer):
         except models.InvalidLabel as exc:
             raise exceptions.ValidationError(str(exc)) from exc
 
+        mapped_data = {}
+        for label_data in initial_data.get('labels'):
+            for attr_data in label_data.get('attributes', []):
+                mapped_data[attr_data.get('name', None)] = attr_data.get('id', None)
+
         for attr in attributes:
-            (db_attr, created) = models.AttributeSpec.objects.get_or_create(
-                label=db_label, name=attr['name'], defaults=attr
-            )
+            attr_id = mapped_data.get(attr['name'], None)
+            if attr_id is not None:
+                (db_attr, created) = models.AttributeSpec.objects.get_or_create(
+                    label=db_label, id=attr_id, defaults=attr
+                )
+            else:
+                (db_attr, created) = models.AttributeSpec.objects.get_or_create(
+                    label=db_label, name=attr['name'], defaults=attr
+                )
             if created:
                 logger.info("New {} attribute for {} label was created"
                     .format(db_attr.name, db_label.name))
@@ -416,6 +428,7 @@ class LabelSerializer(SublabelSerializer):
                     .format(db_attr.name, db_label.name))
 
                 # FIXME: need to update only "safe" fields
+                db_attr.name = attr.get('name', db_attr.name)
                 db_attr.default_value = attr.get('default_value', db_attr.default_value)
                 db_attr.mutable = attr.get('mutable', db_attr.mutable)
                 db_attr.input_type = attr.get('input_type', db_attr.input_type)
@@ -479,15 +492,15 @@ class LabelSerializer(SublabelSerializer):
         labels: Iterable[Dict[str, Any]],
         *,
         parent_instance: Union[models.Project, models.Task],
-        parent_label: Optional[models.Label] = None
+        parent_label: Optional[models.Label] = None,
+        initial_data: any = None
     ):
         _, logger = cls._get_parent_info(parent_instance)
-
         for label in labels:
             sublabels = label.pop('sublabels', [])
             svg = label.pop('svg', '')
             db_label = cls.update_label(label, svg, sublabels,
-                parent_instance=parent_instance, parent_label=parent_label
+                parent_instance=parent_instance, parent_label=parent_label, initial_data=initial_data
             )
             if db_label:
                 logger.info(
@@ -514,7 +527,7 @@ class LabelSerializer(SublabelSerializer):
 
         return parent_info, logger
 
-    def update(self, instance, validated_data):
+    def update(self, instance, validated_data, *args, **kwargs):
         if not self._local:
             return super().update(instance, validated_data)
 
@@ -1143,7 +1156,7 @@ class TaskWriteSerializer(WriteOnceMixin, serializers.ModelSerializer):
         if os.path.isdir(task_path):
             shutil.rmtree(task_path)
 
-        os.makedirs(task_path)
+        os.makedirs(db_task.get_task_artifacts_dirname())
 
         LabelSerializer.create_labels(labels, parent_instance=db_task)
 
@@ -1363,7 +1376,8 @@ class ProjectWriteSerializer(serializers.ModelSerializer):
         instance.bug_tracker = validated_data.get('bug_tracker', instance.bug_tracker)
         labels = validated_data.get('label_set', [])
 
-        LabelSerializer.update_labels(labels, parent_instance=instance)
+
+        LabelSerializer.update_labels(labels, parent_instance=instance, initial_data=self.root.initial_data)
 
         # update source and target storages
         _update_related_storages(instance, validated_data)
