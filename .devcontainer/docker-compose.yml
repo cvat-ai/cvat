@@ -1,6 +1,6 @@
 version: '3.8'
 
-name: cvat_devcontainer
+name: devcontainer
 
 services:
   cvat_server:
@@ -10,7 +10,6 @@ services:
       context: .
       args:
         - pull
-        - CONTAINER_USER=${CONTAINER_USER}
         - HOST_USER_UID=${HOST_USER_UID}
     restart: no
     entrypoint: ["/bin/bash", "-c"]
@@ -22,11 +21,11 @@ services:
       DJANGO_SUPERUSER_PASSWORD: ${DJANGO_SUPERUSER_PASSWORD}
       DJANGO_SUPERUSER_EMAIL: ${DJANGO_SUPERUSER_EMAIL}
     volumes:
-      - cvat_data:/home/${CONTAINER_USER}/workspace/data
-      - cvat_keys:/home/${CONTAINER_USER}/workspace/keys
-      - cvat_logs:/home/${CONTAINER_USER}/workspace/logs
+      - cvat_data:/home/devcontainer/workspace/data
+      - cvat_keys:/home/devcontainer/workspace/keys
+      - cvat_logs:/home/devcontainer/workspace/logs
       # For improving write performance on non-linux machines
-      - cvat_node_modules:/home/${CONTAINER_USER}/workspace/node_modules
+      - cvat_node_modules:/home/devcontainer/workspace/node_modules
 
   cvat_db:
     restart: no

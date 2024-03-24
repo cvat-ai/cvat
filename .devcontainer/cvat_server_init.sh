@@ -4,6 +4,7 @@ set -e
 
 workspacefolder="$(dirname "$(dirname "$(realpath "$0")")")"
 
+# Wait for postgres and redis containers to be running and available
 "${workspacefolder}"/wait-for-it.sh "${CVAT_POSTGRES_HOST}:${CVAT_POSTGRES_PORT:-5432}" -t 0
 "${workspacefolder}"/wait-for-it.sh "${CVAT_REDIS_INMEM_HOST}:${CVAT_REDIS_INMEM_PORT}" -t 0
 "${workspacefolder}"/wait-for-it.sh "${CVAT_REDIS_ONDISK_HOST}:${CVAT_REDIS_ONDISK_PORT}" -t 0
