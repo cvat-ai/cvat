@@ -1,6 +1,7 @@
 {
     "name": "cvat",
     "initializeCommand": "${localWorkspaceFolder}/.devcontainer/init.sh",
+    "postStartCommand": "git config --add safe.directory ${containerWorkspaceFolder}",
     "dockerComposeFile": [
         "${localWorkspaceFolder}/docker-compose.yml",
         "${localWorkspaceFolder}/docker-compose.dev.yml",
