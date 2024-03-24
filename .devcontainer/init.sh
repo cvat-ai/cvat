@@ -46,11 +46,16 @@ echo "INFO: done export env vars"
 # The volumes get created automatically, however they do not automatically get mounted upon the container restart
 # The containers need to be removed and created again with the new volume mount
 # Tracking this issue at https://github.com/docker/compose/issues/11642
+# Stop and remove each container separately instead of docker compsoe down as we need to preseve the orginal network
+# to be reused
 if [ "${git_branch_isolation}" == true ]; then
-    docker compose -f "${workspace_dir}"/docker-compose.yml \
-                -f "${workspace_dir}"/docker-compose.dev.yml \
-                -f "${devcontainer_dir}"/docker-compose.yml down cvat_db cvat_opa cvat_redis_inmem cvat_redis_ondisk
-    echo "INFO: removed containers for enabling git branch isolation"
+    echo "INFO: stop and remove backing services for new volume mount"
+    services=("cvat_db" "cvat_opa" "cvat_redis_inmem" "cvat_redis_ondisk")
+    for service in "${services[@]}"; do
+        docker container stop "${service}" 2>&1 >/dev/null && docker container rm "${service}" 2>&1 >/dev/null
+        echo "INFO: done stop and remove ${service}"
+    done
+    echo "INFO: done removed containers"
 fi
 
 exit 0
