@@ -1,5 +1,7 @@
 version: '3.8'
 
+name: cvat_devcontainer
+
 services:
   cvat_server:
     image: cvat/server:devcontainer

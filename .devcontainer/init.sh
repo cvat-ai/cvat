@@ -13,22 +13,40 @@ function update_env_var {
     if grep -q "${key}=" "${env_file}"; then
         sed -i "s/^${key}=.*/${key}=${value}/g" "${env_file}"
     else :
-        echo "${key}=${value}" >> "${env_file}"
+        sed -i "/^## init.sh END$/i ${key}=${value}" "${env_file}"
     fi
 }
+
+if [ ! -f "${env_file}" ]; then
+    echo "ERROR: .env file not present in the workspace directory. Use dist.env file as a template for your.env file."
+    exit 1
+else :
+    if ! grep -q "^## init.sh BEGIN$" "${env_file}" || ! grep -q "^## init.sh END$" "${env_file}"; then
+        echo "ERROR: .env file is not managed by init.sh. Please use dist.env file as a template for your.env file."
+    exit 1
+    fi
+fi
 
 git_branch=$(git branch --show-current)
 host_user_id=$(id -u)
 
-echo "done export env vars"
+git_branch_isolation=$(grep -oP "^GIT_BRANCH_ISOLATION=\K\S+" "${env_file}") || git_branch_isolation=false
 
-update_env_var GIT_BRANCH "${git_branch}"
+if [ "${git_branch_isolation}" == true ]; then
+    update_env_var GIT_BRANCH "${git_branch}"
+    echo "INFO: GIT_BRANCH_ISOLATION is set to true. set GIT_BRANCH=${git_branch}"
+fi
+
 update_env_var HOST_USER_UID "${host_user_id}"
+echo "INFO: set HOST_USER_UID=${host_user_id}"
 
-docker compose -f "${workspace_dir}"/docker-compose.yml \
-               -f "${workspace_dir}"/docker-compose.dev.yml \
-               -f "${devcontainer_dir}/docker-compose.yml" down
+echo "INFO: done export env vars"
 
-echo "done docker compose down"
+if [ "${git_branch_isolation}" == true ]; then
+    docker compose -f "${workspace_dir}"/docker-compose.yml \
+                -f "${workspace_dir}"/docker-compose.dev.yml \
+                -f "${devcontainer_dir}/docker-compose.yml" down
+    echo "INFO: removed containers for enabling git branch isolation "
+fi
 
 exit 0
