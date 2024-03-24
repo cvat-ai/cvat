@@ -61,7 +61,9 @@
                 "esbenp.prettier-vscode",
                 "ymotongpoo.licenser",
                 "shardulm94.trailing-spaces",
-                "streetsidesoftware.code-spell-checker"
+                "streetsidesoftware.code-spell-checker",
+                "mtxr.sqltools",
+                "mtxr.sqltools-driver-pg"
             ],
             "settings": {
                 "python.defaultInterpreterPath": "/opt/venv/bin/python",

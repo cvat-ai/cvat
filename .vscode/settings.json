@@ -27,6 +27,16 @@
             "driver": "SQLite",
             "name": "cvat",
             "database": "${workspaceFolder:cvat}/db.sqlite3"
+        },
+        {
+            "previewLimit": 50,
+            "server": "cvat_db",
+            "port": 5432,
+            "driver": "PostgreSQL",
+            "name": "cvat-db",
+            "database": "cvat",
+            "username": "root",
+            "password": ""
         }
     ],
     // "python.defaultInterpreterPath": "${workspaceFolder}/.env/",
