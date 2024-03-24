@@ -61,8 +61,8 @@
             ],
             "background": {
               "activeOnStart": true,
-              "beginsPattern": "^Done migrate$",
-              "endsPattern": "^Done createsuperuser$"
+              "beginsPattern": "^INFO: Done migrate$",
+              "endsPattern": "^INFO: Done createsuperuser$"
             }
         }
         },

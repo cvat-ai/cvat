@@ -12,7 +12,7 @@ workspacefolder="$(dirname "$(dirname "$(realpath "$0")")")"
 python manage.py collectstatic --noinput
 python manage.py migrate
 
-printf "\nDone migrate\n\n"
+printf "\nINFO: Done migrate\n\n"
 
 while ! python manage.py migrate --check; do
     echo "Waiting for migrations to finish"
@@ -21,7 +21,7 @@ done
 
 python manage.py createsuperuser --no-input || true
 
-printf "\nDone createsuperuser\n\n"
+printf "\nINFO: Done createsuperuser\n\n"
 
 python manage.py runserver 0.0.0.0:"${CVAT_PORT:-8080}"
 
