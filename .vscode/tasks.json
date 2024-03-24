@@ -29,24 +29,86 @@
                 ],
                 "background": {
                   "activeOnStart": true,
-                  "beginsPattern": "webpack-dev-server",
-                  "endsPattern": "Compiled"
+                  "beginsPattern": ".*webpack-dev-server.*",
+                  "endsPattern": ".*compiled successfully.*"
                 }
             }
         },
         {
+          "label": "devcontainer: server init",
           "type": "shell",
-          "command": "${workspaceFolder}/.devcontainer/cvat_server.sh",
+          "command": "${workspaceFolder}/.devcontainer/cvat_server_init.sh",
           "detail": "Initialize the cvat server and run an instance for the opa client",
           "isBackground": true,
-          "label": "cvat server opa",
           "runOptions": {
-            "runOn": "folderOpen",
-            "instanceLimit": 1,
+            "instanceLimit": 1
           },
-          "presentation": {
-            "reveal": "never",
-            "panel": "dedicated"
+          "problemMatcher": {
+            "owner": "django",
+            "severity": "error",
+            "fileLocation": "absolute",
+            "pattern": [
+              {
+                "regexp": "ERROR in (.*)",
+                "file": 1
+              },
+              {
+                "regexp": "\\((\\d+),(\\d+)\\):(.*)",
+                "line": 1,
+                "column": 2,
+                "message": 3
+              }
+            ],
+            "background": {
+              "activeOnStart": true,
+              "beginsPattern": "^Done migrate$",
+              "endsPattern": "^Done createsuperuser$"
+            }
+        }
+        },
+        {
+          "label": "devcontainer: ui yarn install",
+          "detail": "install or update node dependencies and configure pre-commit git hooks",
+          "type": "shell",
+          "command": "yarn --frozen-lock-file",
+          "options": {
+            "cwd": "${workspaceFolder}"
+          }
+        },
+        {
+          "label": "devcontainer: ui yarn run",
+          "type": "shell",
+          "dependsOn": ["devcontainer: ui yarn install"],
+          "detail": "",
+          "isBackground": true,
+          "command": "yarn run start:cvat-ui",
+          "options": {
+            "cwd": "${workspaceFolder}",
+            "env": {
+              "CVAT_UI_HOST": "0.0.0.0",
+            }
+          },
+          "problemMatcher": {
+            "owner": "webpack",
+            "severity": "error",
+            "fileLocation": "absolute",
+            "pattern": [
+              {
+                "regexp": "ERROR in (.*)",
+                "file": 1
+              },
+              {
+                "regexp": "\\((\\d+),(\\d+)\\):(.*)",
+                "line": 1,
+                "column": 2,
+                "message": 3
+              }
+            ],
+            "background": {
+              "activeOnStart": true,
+              "beginsPattern": ".*webpack-dev-server.*",
+              "endsPattern": ".*compiled successfully.*"
+            }
           }
         }
     ]

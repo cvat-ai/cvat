@@ -526,7 +526,7 @@
             "disableOptimisticBPs": true,
         },
         {
-            "name": "server: django-devcontainer",
+            "name": "devcontainer: django server",
             "type": "debugpy",
             "request": "launch",
             "stopOnEntry": false,
@@ -547,10 +547,13 @@
             ],
             "django": true,
             "cwd": "${workspaceFolder}",
-            "console": "internalConsole"
+            "console": "internalConsole",
+            "presentation": {
+                "hidden": true,
+            }
         },
         {
-            "name": "server: rq-worker-devcontainer",
+            "name": "devcontainer: rq worker",
             "type": "debugpy",
             "request": "launch",
             "stopOnEntry": false,
@@ -576,8 +579,32 @@
                 "DJANGO_LOG_SERVER_HOST": "",
                 "DJANGO_LOG_SERVER_PORT": "8282"
             },
-            "console": "internalConsole"
+            "console": "internalConsole",
+            "presentation": {
+                "hidden": true
+            }
         },
+        {
+            "name": "devcontainer: ui",
+            "type": "chrome",
+            "request": "launch",
+            "preLaunchTask": "devcontainer: ui yarn run",
+            "url": "http://localhost:3000",
+            "webRoot": "${workspaceFolder}/cvat-ui",
+            "sourceMaps": true,
+            "sourceMapPathOverrides": {
+                "webpack://cvat/./*": "${workspaceFolder}/cvat-core/*",
+                "webpack:///./*": "${webRoot}/*",
+                "webpack:///src/*": "${webRoot}/*",
+                "webpack:///*": "*",
+                "webpack:///./~/*": "${webRoot}/node_modules/*"
+            },
+            "smartStep": true,
+            "presentation": {
+                "group": "devcontainer",
+                "order": 2
+            }
+        }
     ],
     "compounds": [
         {
@@ -595,11 +622,17 @@
             ]
         },
         {
-            "name": "server: devcontainer",
+            "name": "devcontainer: server",
+            "preLaunchTask": "devcontainer: server init",
             "configurations": [
-                "server: django-devcontainer",
-                "server: rq-worker-devcontainer"
-            ]
+                "devcontainer: django server",
+                "devcontainer: rq worker"
+            ],
+            "stopAll": true,
+            "presentation": {
+                "group": "devcontainer",
+                "order": 1
+            }
         }
     ]
 }
