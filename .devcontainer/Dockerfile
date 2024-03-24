@@ -9,6 +9,8 @@ ARG HOST_USER_UID
 ENV DJANGO_CONFIGURATION="development"
 ENV DJANGO_SETTINGS_MODULE cvat.settings.${DJANGO_CONFIGURATION}
 
+# It is needed that the host user uid matches with the container user uid, else permission error occur on the bind volume mounts
+# So original django user is replaced by devcontainer with host uid value
 USER root
 RUN userdel -r django && \
     useradd --uid ${HOST_USER_UID} --create-home --shell /bin/zsh --comment "" "devcontainer" 2>/dev/null

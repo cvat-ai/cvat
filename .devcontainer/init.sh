@@ -42,6 +42,10 @@ echo "INFO: set HOST_USER_UID=${host_user_id}"
 
 echo "INFO: done export env vars"
 
+# The container volumes are parameterized with git branch values in .devcontainer/docker-compose-yml.
+# The volumes get created automatically, however they do not automatically get mounted upon the container restart
+# The containers need to be removed and created again with the new volume mount
+# Tracking this issue at https://github.com/docker/compose/issues/11642
 if [ "${git_branch_isolation}" == true ]; then
     docker compose -f "${workspace_dir}"/docker-compose.yml \
                 -f "${workspace_dir}"/docker-compose.dev.yml \

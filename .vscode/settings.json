@@ -39,6 +39,7 @@
             "password": ""
         }
     ],
+    // To prevet override of values. This setting is managed in .devcontainer/devcontainer.json file.
     // "python.defaultInterpreterPath": "${workspaceFolder}/.env/",
     "python.testing.pytestArgs": [
         "--rootdir","${workspaceFolder}/tests/"
