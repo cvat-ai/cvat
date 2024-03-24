@@ -49,8 +49,8 @@ echo "INFO: done export env vars"
 if [ "${git_branch_isolation}" == true ]; then
     docker compose -f "${workspace_dir}"/docker-compose.yml \
                 -f "${workspace_dir}"/docker-compose.dev.yml \
-                -f "${devcontainer_dir}/docker-compose.yml" down
-    echo "INFO: removed containers for enabling git branch isolation "
+                -f "${devcontainer_dir}"/docker-compose.yml down cvat_db cvat_opa cvat_redis_inmem cvat_redis_ondisk
+    echo "INFO: removed containers for enabling git branch isolation"
 fi
 
 exit 0
