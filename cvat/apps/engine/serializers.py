@@ -527,7 +527,7 @@ class LabelSerializer(SublabelSerializer):
 
         return parent_info, logger
 
-    def update(self, instance, validated_data, *args, **kwargs):
+    def update(self, instance, validated_data):
         if not self._local:
             return super().update(instance, validated_data)
 
