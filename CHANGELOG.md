@@ -16,6 +16,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 <!-- scriv-insert-here -->
 
+<a id='unreleased'></a>
+## \[Unreleased\]
+
+### Fixed
+
+- Accumulation of confusion matrix across all jobs in a task when creating a quality report
+  (https://github.com/opencv/cvat/pull/7604)
+
 <a id='changelog-2.11.2'></a>
 ## \[2.11.2\] - 2024-03-11
 
