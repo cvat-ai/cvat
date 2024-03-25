@@ -35,81 +35,81 @@
             }
         },
         {
-          "label": "devcontainer: server init",
-          "type": "shell",
-          "command": "${workspaceFolder}/.devcontainer/cvat_server_init.sh",
-          "detail": "Initialize the cvat server and run an instance for the opa client",
-          "isBackground": true,
-          "runOptions": {
-            "instanceLimit": 1
-          },
-          "problemMatcher": {
-            "owner": "django",
-            "severity": "error",
-            "fileLocation": "absolute",
-            "pattern": [
-              {
-                "regexp": "ERROR in (.*)",
-                "file": 1
-              },
-              {
-                "regexp": "\\((\\d+),(\\d+)\\):(.*)",
-                "line": 1,
-                "column": 2,
-                "message": 3
+            "label": "devcontainer: server init",
+            "type": "shell",
+            "command": "${workspaceFolder}/.devcontainer/cvat_server_init.sh",
+            "detail": "Initialize the cvat server and run an instance for the opa client",
+            "isBackground": true,
+            "runOptions": {
+              "instanceLimit": 1
+            },
+            "problemMatcher": {
+              "owner": "django",
+              "severity": "error",
+              "fileLocation": "absolute",
+              "pattern": [
+                {
+                  "regexp": "ERROR in (.*)",
+                  "file": 1
+                },
+                {
+                  "regexp": "\\((\\d+),(\\d+)\\):(.*)",
+                  "line": 1,
+                  "column": 2,
+                  "message": 3
+                }
+              ],
+              "background": {
+                "activeOnStart": true,
+                "beginsPattern": "^INFO: Done migrate$",
+                "endsPattern": "^INFO: Done createsuperuser$"
               }
-            ],
-            "background": {
-              "activeOnStart": true,
-              "beginsPattern": "^INFO: Done migrate$",
-              "endsPattern": "^INFO: Done createsuperuser$"
             }
-        }
         },
         {
-          "label": "devcontainer: ui yarn install",
-          "detail": "install or update node dependencies and configure pre-commit git hooks",
-          "type": "shell",
-          "command": "yarn --frozen-lock-file",
-          "options": {
-            "cwd": "${workspaceFolder}"
-          }
+            "label": "devcontainer: ui yarn install",
+            "detail": "install or update node dependencies and configure pre-commit git hooks",
+            "type": "shell",
+            "command": "yarn --frozen-lock-file",
+            "options": {
+              "cwd": "${workspaceFolder}"
+            }
         },
         {
-          "label": "devcontainer: ui yarn run",
-          "type": "shell",
-          "dependsOn": ["devcontainer: ui yarn install"],
-          "detail": "",
-          "isBackground": true,
-          "command": "yarn run start:cvat-ui",
-          "options": {
-            "cwd": "${workspaceFolder}",
-            "env": {
-              "CVAT_UI_HOST": "0.0.0.0",
-            }
-          },
-          "problemMatcher": {
-            "owner": "webpack",
-            "severity": "error",
-            "fileLocation": "absolute",
-            "pattern": [
-              {
-                "regexp": "ERROR in (.*)",
-                "file": 1
-              },
-              {
-                "regexp": "\\((\\d+),(\\d+)\\):(.*)",
-                "line": 1,
-                "column": 2,
-                "message": 3
+            "label": "devcontainer: ui yarn run",
+            "type": "shell",
+            "dependsOn": ["devcontainer: ui yarn install"],
+            "detail": "",
+            "isBackground": true,
+            "command": "yarn run start:cvat-ui",
+            "options": {
+              "cwd": "${workspaceFolder}",
+              "env": {
+                "CVAT_UI_HOST": "0.0.0.0",
               }
-            ],
-            "background": {
-              "activeOnStart": true,
-              "beginsPattern": ".*webpack-dev-server.*",
-              "endsPattern": ".*compiled successfully.*"
+            },
+            "problemMatcher": {
+              "owner": "webpack",
+              "severity": "error",
+              "fileLocation": "absolute",
+              "pattern": [
+                {
+                  "regexp": "ERROR in (.*)",
+                  "file": 1
+                },
+                {
+                  "regexp": "\\((\\d+),(\\d+)\\):(.*)",
+                  "line": 1,
+                  "column": 2,
+                  "message": 3
+                }
+              ],
+              "background": {
+                "activeOnStart": true,
+                "beginsPattern": ".*webpack-dev-server.*",
+                "endsPattern": ".*compiled successfully.*"
+              }
             }
-          }
         }
     ]
 }
