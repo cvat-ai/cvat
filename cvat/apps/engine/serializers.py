@@ -1158,7 +1158,7 @@ class TaskWriteSerializer(WriteOnceMixin, serializers.ModelSerializer):
 
         os.makedirs(db_task.get_task_artifacts_dirname())
 
-        LabelSerializer.create_labels(labels, parent_instance=db_task)
+        LabelSerializer.create_labels(labels, parent_instance=db_task, initial_data=)
 
         db_task.save()
         return db_task
@@ -1175,7 +1175,7 @@ class TaskWriteSerializer(WriteOnceMixin, serializers.ModelSerializer):
         labels = validated_data.get('label_set', [])
 
         if instance.project_id is None:
-            LabelSerializer.update_labels(labels, parent_instance=instance)
+            LabelSerializer.update_labels(labels, parent_instance=instance, initial_data=self.root.initial_data)
 
         validated_project_id = validated_data.get('project_id')
         if validated_project_id is not None and validated_project_id != instance.project_id:
@@ -1375,7 +1375,6 @@ class ProjectWriteSerializer(serializers.ModelSerializer):
         instance.assignee_id = validated_data.get('assignee_id', instance.assignee_id)
         instance.bug_tracker = validated_data.get('bug_tracker', instance.bug_tracker)
         labels = validated_data.get('label_set', [])
-
 
         LabelSerializer.update_labels(labels, parent_instance=instance, initial_data=self.root.initial_data)
 
