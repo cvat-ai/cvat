@@ -31,6 +31,48 @@ context('Incorrect cloud storage filename used in subsequent import.', () => {
         endpointUrl: `http://${serverHost}:9000`,
     };
 
+    function uploadToTask({
+        useDefaultLocation = true,
+        annotationsArchiveName,
+        CloudStorageId,
+    }) {
+        cy.clickInTaskMenu('Upload annotations', true);
+        cy.get('.cvat-modal-import-dataset').find('.cvat-modal-import-select').click();
+        cy.contains('.cvat-modal-import-dataset-option-item', 'CVAT 1.1').click();
+        cy.get('.cvat-modal-import-select').should('contain.text', 'CVAT 1.1');
+        if (!useDefaultLocation) {
+            cy.get('.cvat-modal-import-dataset')
+                .find('.cvat-modal-import-switch-use-default-storage')
+                .click();
+            cy.get('.cvat-select-source-storage').within(() => {
+                cy.get('.ant-select-selection-item').click();
+            });
+            cy.contains('.cvat-select-source-storage-location', 'Cloud storage')
+                .should('be.visible')
+                .click();
+            if (CloudStorageId) {
+                cy.get('.cvat-search-source-storage-cloud-storage-field').click();
+                cy.get('.cvat-cloud-storage-select-provider').click();
+            }
+            cy.get('.cvat-modal-import-dataset')
+                .find('.cvat-modal-import-filename-input')
+                .type(annotationsArchiveName);
+        } else {
+            cy.get('input[type="file"]').attachFile(annotationsArchiveName, { subjectType: 'drag-n-drop' });
+            cy.get(`[title="${annotationsArchiveName}"]`).should('be.visible');
+        }
+        cy.contains('button', 'OK').click();
+        cy.get('.cvat-modal-content-load-task-annotation')
+            .should('be.visible')
+            .within(() => {
+                cy.contains('button', 'Update').click();
+            });
+        cy.get('.cvat-notification-notice-import-annotation-start').should('be.visible');
+        cy.closeNotification('.cvat-notification-notice-import-annotation-start');
+        cy.verifyNotification();
+        cy.get('.cvat-notification-notice-upload-annotations-fail').should('not.exist');
+    }
+
     before(() => {
         createdCloudStorageId = cy.attachS3Bucket(cloudStorageData);
         cy.goToTaskList();
@@ -49,88 +91,44 @@ context('Incorrect cloud storage filename used in subsequent import.', () => {
 
     describe(`Testing issue "${issueId}"`, () => {
         it('Export Annotation to the local storage', () => {
-            cy.clickInTaskMenu('Export task dataset', true, taskName);
-            cy.get('.cvat-modal-export-task').should('be.visible').find('.cvat-modal-export-select').click();
-            cy.contains('.cvat-modal-export-option-item', exportFormat).should('be.visible').click();
-            cy.get('.cvat-modal-export-task').find('.cvat-modal-export-select').should('contain.text', exportFormat);
-            cy.get('.cvat-modal-export-task').find('.cvat-modal-export-filename-input').type(annotationsArchiveNameLocal);
-            cy.contains('button', 'OK').click();
-            cy.get('.cvat-notification-notice-export-task-start').should('be.visible');
-            cy.closeNotification('.cvat-notification-notice-export-task-start');
+            const exportParams = {
+                type: 'annotations',
+                format: exportFormat,
+                archiveCustomName: annotationsArchiveNameLocal,
+            };
+            cy.exportTask(exportParams);
             cy.waitForDownload();
         });
 
         it('Export Annotation to the cloud storage', () => {
-            cy.clickInTaskMenu('Export task dataset', true, taskName);
-            cy.get('.cvat-modal-export-task').should('be.visible').find('.cvat-modal-export-select').click();
-            cy.contains('.cvat-modal-export-option-item', exportFormat).should('be.visible').click();
-            cy.get('.cvat-modal-export-task').find('.cvat-modal-export-select').should('contain.text', exportFormat);
-            cy.get('.cvat-modal-export-task').find('.cvat-modal-export-filename-input').type(annotationsArchiveNameCloud);
-            cy.get('.cvat-modal-export-task').find('.cvat-settings-switch').click();
-            cy.get('.cvat-select-target-storage').within(() => {
-                cy.get('.ant-select-selection-item').click();
-            });
-            cy.contains('.cvat-select-target-storage-location', 'Cloud storage').should('be.visible').click();
-
-            if (createdCloudStorageId) {
-                cy.get('.cvat-search-target-storage-cloud-storage-field').click();
-                cy.get('.cvat-cloud-storage-select-provider').click();
-            }
-            cy.contains('button', 'OK').click();
-            cy.get('.cvat-notification-notice-export-task-start').should('be.visible');
-            cy.closeNotification('.cvat-notification-notice-export-task-start');
+            const exportParams = {
+                type: 'annotations',
+                format: exportFormat,
+                archiveCustomName: annotationsArchiveNameCloud,
+                targetStorage: {
+                    location: 'Cloud storage',
+                    cloudStorageId: createdCloudStorageId,
+                },
+                useDefaultLocation: false,
+            };
+            cy.exportTask(exportParams);
             cy.waitForFileUploadToCloudStorage();
         });
 
         it('Import Annotation from the local storage', () => {
-            cy.clickInTaskMenu('Upload annotations', true, taskName);
-            cy.get('.cvat-modal-import-dataset').find('.cvat-modal-import-select').click();
-            cy.contains('.cvat-modal-import-dataset-option-item', 'CVAT 1.1').click();
-            cy.get('.cvat-modal-import-select').should('contain.text', 'CVAT 1.1');
-            cy.get('input[type="file"]').attachFile('foobar.zip', { subjectType: 'drag-n-drop' });
-            cy.get('[title="foobar.zip"]').should('be.visible');
-            cy.contains('button', 'OK').click();
-            cy.get('.cvat-modal-content-load-task-annotation')
-                .should('be.visible')
-                .within(() => {
-                    cy.contains('button', 'Update').click();
-                });
-            cy.get('.cvat-notification-notice-import-annotation-start').should('be.visible');
-            cy.closeNotification('.cvat-notification-notice-import-annotation-start');
-            cy.verifyNotification();
-            cy.get('.cvat-notification-notice-upload-annotations-fail').should('not.exist');
+            const importParams = {
+                useDefaultLocation: true,
+                annotationsArchiveName: `${annotationsArchiveNameLocal}.zip`,
+            };
+            uploadToTask(importParams);
         });
         it('Import Annotation from the cloud storage', () => {
-            cy.clickInTaskMenu('Upload annotations', true, taskName);
-            cy.get('.cvat-modal-import-dataset').find('.cvat-modal-import-select').click();
-            cy.contains('.cvat-modal-import-dataset-option-item', 'CVAT 1.1').click();
-            cy.get('.cvat-modal-import-select').should('contain.text', 'CVAT 1.1');
-            cy.get('.cvat-modal-import-dataset')
-                .find('.cvat-modal-import-switch-use-default-storage')
-                .click();
-            cy.get('.cvat-select-source-storage').within(() => {
-                cy.get('.ant-select-selection-item').click();
-            });
-            cy.contains('.cvat-select-source-storage-location', 'Cloud storage')
-                .should('be.visible')
-                .click();
-            if (createdCloudStorageId) {
-                cy.get('.cvat-search-source-storage-cloud-storage-field').click();
-                cy.get('.cvat-cloud-storage-select-provider').click();
-            }
-            cy.get('.cvat-modal-import-dataset')
-                .find('.cvat-modal-import-filename-input')
-                .type('bazquux.zip');
-            cy.contains('button', 'OK').click();
-            cy.get('.cvat-modal-content-load-task-annotation')
-                .should('be.visible')
-                .within(() => {
-                    cy.contains('button', 'Update').click();
-                });
-            cy.get('.cvat-notification-notice-import-annotation-start').should('be.visible');
-            cy.closeNotification('.cvat-notification-notice-import-annotation-start');
-            cy.verifyNotification();
-            cy.get('.cvat-notification-notice-upload-annotations-fail').should('not.exist');
+            const importParams = {
+                useDefaultLocation: false,
+                annotationsArchiveName: `${annotationsArchiveNameCloud}.zip`,
+                CloudStorageId: createdCloudStorageId,
+            };
+            uploadToTask(importParams);
         });
     });
 });
