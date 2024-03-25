@@ -14,10 +14,10 @@ services:
     command: ["sleep infinity"]
     environment:
       IAM_OPA_HOST: http://opa:8181
-      DJANGO_LOG_SERVER_HOST: ${DJANGO_LOG_SERVER_HOST}
-      DJANGO_SUPERUSER_USERNAME: ${DJANGO_SUPERUSER_USERNAME}
-      DJANGO_SUPERUSER_PASSWORD: ${DJANGO_SUPERUSER_PASSWORD}
-      DJANGO_SUPERUSER_EMAIL: ${DJANGO_SUPERUSER_EMAIL}
+      DJANGO_LOG_SERVER_HOST: ${DJANGO_LOG_SERVER_HOST:-''}
+      DJANGO_SUPERUSER_USERNAME: ${DJANGO_SUPERUSER_USERNAME:-admin}
+      DJANGO_SUPERUSER_PASSWORD: ${DJANGO_SUPERUSER_PASSWORD:-admin}
+      DJANGO_SUPERUSER_EMAIL: ${DJANGO_SUPERUSER_EMAIL:-admin@admin.com}
     volumes:
       - cvat_data:/home/devcontainer/workspace/data
       - cvat_keys:/home/devcontainer/workspace/keys
