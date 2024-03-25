@@ -56,7 +56,10 @@
     }
 }
 
+.cvat-cloud-storages-list,
 .cvat-empty-cloud-storages-list {
+    margin-top: $grid-unit-size;
+
     .ant-empty {
         top: 50%;
         left: 50%;
