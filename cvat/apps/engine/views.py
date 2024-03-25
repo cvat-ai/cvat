@@ -935,10 +935,16 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
     def _maybe_append_upload_info_entry(self, filename: str):
         task_data = cast(Data, self._object.data)
 
-        raw, encoding = decode_header(filename)[0]
+        # Note: the filename comes from a HTTP response header,
+        # in which values with non-latin characters are MIME encoded.
+        # As such, we may need to decode the filename back into UTF-8
+        try:
+            raw, encoding = decode_header(filename)[0]
 
-        if encoding is not None:
-            filename = raw.decode(encoding)
+            if encoding is not None:
+                filename = raw.decode(encoding)
+        except:
+            raise ValueError("Unable to decode filename: {}".format(filename))
 
         filename = self._prepare_upload_info_entry(filename)
         task_data.client_files.get_or_create(file=filename)
