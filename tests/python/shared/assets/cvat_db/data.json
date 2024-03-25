@@ -394,7 +394,7 @@
   "pk": 18,
   "fields": {
     "password": "md5$rKclttm53lRHC0rITF48uu$7ac59be88ed2a5de4b513edbef629258",
-    "last_login": "2024-03-21T20:49:58.088Z",
+    "last_login": "2022-03-05T09:37:01.636Z",
     "is_superuser": true,
     "username": "admin2",
     "first_name": "Admin",
@@ -791,11 +791,11 @@
   "model": "organizations.organization",
   "pk": 1,
   "fields": {
-        "slug": "org1",
+    "created_date": "2021-12-14T18:45:40.172Z",
+    "updated_date": "2021-12-14T18:45:40.172Z",
+    "slug": "org1",
     "name": "organization #1",
     "description": "",
-"created_date": "2021-12-14T18:45:40.172Z",
-      "updated_date": "2021-12-14T18:45:40.172Z",
     "contact": {
       "email": "org1@cvat.org"
     },
