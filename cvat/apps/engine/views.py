@@ -14,7 +14,7 @@ from copy import copy
 from datetime import datetime
 from tempfile import NamedTemporaryFile
 from textwrap import dedent
-from email.header import decode_header
+from email.header import Header, decode_header, make_header
 
 import django_rq
 from attr.converters import to_bool
@@ -939,10 +939,8 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
         # in which values with non-latin characters are MIME encoded.
         # As such, we may need to decode the filename back into UTF-8
         try:
-            raw, encoding = decode_header(filename)[0]
-
-            if encoding is not None:
-                filename = raw.decode(encoding)
+            header = make_header(decode_header(filename))
+            filename = str(header)
         except:
             raise ValueError("Unable to decode filename: {}".format(filename))
 
