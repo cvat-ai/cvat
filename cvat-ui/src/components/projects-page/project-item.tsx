@@ -86,9 +86,14 @@ export default function ProjectItemComponent(props: Props): JSX.Element {
             >
                 <Meta
                     title={(
-                        <span onClick={onOpenProject} className='cvat-projects-project-item-title' aria-hidden>
+                        <Text
+                            ellipsis={{ tooltip: instance.name }}
+                            onClick={onOpenProject}
+                            className='cvat-projects-project-item-title'
+                            aria-hidden
+                        >
                             {instance.name}
-                        </span>
+                        </Text>
                     )}
                     description={(
                         <div className='cvat-projects-project-item-description'>

@@ -1143,7 +1143,7 @@ class TaskWriteSerializer(WriteOnceMixin, serializers.ModelSerializer):
         if os.path.isdir(task_path):
             shutil.rmtree(task_path)
 
-        os.makedirs(db_task.get_task_artifacts_dirname())
+        os.makedirs(task_path)
 
         LabelSerializer.create_labels(labels, parent_instance=db_task)
 

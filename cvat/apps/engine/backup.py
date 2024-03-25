@@ -663,7 +663,7 @@ class TaskImporter(_ImporterBase, _TaskBackupBase):
         if os.path.isdir(task_path):
             shutil.rmtree(task_path)
 
-        os.makedirs(self._db_task.get_task_artifacts_dirname())
+        os.makedirs(task_path)
 
         if not self._labels_mapping:
             self._labels_mapping = self._create_labels(db_task=self._db_task, labels=labels)
