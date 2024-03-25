@@ -9140,6 +9140,8 @@ components:
           type: integer
         gt_count:
           type: integer
+        total_count:
+          type: integer
       required:
       - conflict_count
       - conflicts_by_type
@@ -9148,6 +9150,7 @@ components:
       - frame_count
       - frame_share
       - gt_count
+      - total_count
       - valid_count
       - warning_count
     QualityReportTarget:

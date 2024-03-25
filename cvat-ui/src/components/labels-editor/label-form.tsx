@@ -493,7 +493,7 @@ export default class LabelForm extends React.Component<Props> {
                 name='name'
                 rules={[
                     {
-                        required: !!label,
+                        required: true,
                         message: 'Please specify a name',
                     },
                     {
@@ -503,7 +503,7 @@ export default class LabelForm extends React.Component<Props> {
                     {
                         validator: (_rule: any, labelName: string) => {
                             if (labelNames.includes(labelName) && label?.name !== labelName) {
-                                return Promise.reject(new Error('Label name must be unique for the task'));
+                                return Promise.reject(new Error('Label name must be unique'));
                             }
                             return Promise.resolve();
                         },
