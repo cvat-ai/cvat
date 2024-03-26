@@ -99,12 +99,8 @@ class LoginViewEx(LoginView):
 
 class RegisterViewEx(RegisterView):
     def get_response_data(self, user):
-        data = self.get_serializer(user).data
-        if allauth_settings.EMAIL_VERIFICATION != \
-            allauth_settings.EmailVerificationMethod.MANDATORY:
-            data['email_verification_required'] = False
-            data['key'] = user.auth_token.key
-        return data
+        serializer = self.get_serializer(user)
+        return serializer.data
 
     # NOTE: we should reimplement this method to fix the following issue:
     # In the previous used version of dj-rest-auth 2.2.7, if the REST_SESSION_LOGIN setting was not defined in the settings file,
