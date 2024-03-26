@@ -9248,11 +9248,10 @@ components:
         email_verification_required:
           type: boolean
           readOnly: true
-          default: true
         key:
           type: string
-          readOnly: true
           nullable: true
+          readOnly: true
       required:
       - username
     RegisterSerializerExRequest:
