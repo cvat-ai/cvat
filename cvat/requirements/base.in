@@ -12,7 +12,7 @@ dj-pagination==2.5.0
 # to avoid possible further versions conflicts (we use registration functionality)
 # https://dj-rest-auth.readthedocs.io/en/latest/installation.html#registration-optional
 dj-rest-auth[with_social]>=5.0.2,<6
-# The same djang-allauth version range as dj-rest-auth requirements
+# The same django-allauth version range as dj-rest-auth requirements
 django-allauth>=0.56.0,<0.58.0
 
 django-auth-ldap==2.2.0
