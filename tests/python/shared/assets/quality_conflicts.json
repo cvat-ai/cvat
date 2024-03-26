@@ -1,8 +1,59 @@
 {
-  "count": 117,
+  "count": 120,
   "next": null,
   "previous": null,
   "results": [
+    {
+      "annotation_ids": [
+        {
+          "job_id": 29,
+          "obj_id": 155,
+          "shape_type": "rectangle",
+          "type": "shape"
+        }
+      ],
+      "frame": 4,
+      "id": 120,
+      "report_id": 10,
+      "severity": "error",
+      "type": "extra_annotation"
+    },
+    {
+      "annotation_ids": [
+        {
+          "job_id": 32,
+          "obj_id": 162,
+          "shape_type": "rectangle",
+          "type": "shape"
+        }
+      ],
+      "frame": 4,
+      "id": 119,
+      "report_id": 10,
+      "severity": "error",
+      "type": "missing_annotation"
+    },
+    {
+      "annotation_ids": [
+        {
+          "job_id": 30,
+          "obj_id": 156,
+          "shape_type": "rectangle",
+          "type": "shape"
+        },
+        {
+          "job_id": 32,
+          "obj_id": 163,
+          "shape_type": "rectangle",
+          "type": "shape"
+        }
+      ],
+      "frame": 5,
+      "id": 118,
+      "report_id": 9,
+      "severity": "warning",
+      "type": "low_overlap"
+    },
     {
       "annotation_ids": [
         {

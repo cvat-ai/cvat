@@ -2333,6 +2333,7 @@ class QualityReportUpdateManager:
         task_mean_shape_ious = []
         task_frame_results = {}
         task_frame_results_counts = {}
+        confusion_matrix = None
         for r in job_reports.values():
             task_intersection_frames.update(r.comparison_summary.frames)
             task_conflicts.extend(r.conflicts)
@@ -2341,6 +2342,12 @@ class QualityReportUpdateManager:
                 task_annotations_summary.accumulate(r.comparison_summary.annotations)
             else:
                 task_annotations_summary = deepcopy(r.comparison_summary.annotations)
+
+            if confusion_matrix is None:
+                num_labels = len(r.comparison_summary.annotations.confusion_matrix.labels)
+                confusion_matrix = np.zeros((num_labels, num_labels), dtype=int)
+
+            confusion_matrix += r.comparison_summary.annotations.confusion_matrix.rows
 
             if task_ann_components_summary:
                 task_ann_components_summary.accumulate(r.comparison_summary.annotation_components)
@@ -2371,6 +2378,8 @@ class QualityReportUpdateManager:
 
                 task_frame_results_counts[frame_id] = 1 + frame_results_count
                 task_frame_results[frame_id] = task_frame_result
+
+        task_annotations_summary.confusion_matrix.rows = confusion_matrix
 
         task_ann_components_summary.shape.mean_iou = np.mean(task_mean_shape_ious)
 
