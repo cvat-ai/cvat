@@ -27,8 +27,8 @@ appVersion: latest
 
 dependencies:
   - name: common
+    version: "2.19.*"
     repository: oci://registry-1.docker.io/bitnamicharts
-    version: 2.x.x
 
   - name: postgresql
     version: "12.1.*"
