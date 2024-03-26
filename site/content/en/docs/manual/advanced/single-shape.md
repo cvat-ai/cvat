@@ -1,5 +1,5 @@
 ---
-title: 'Single Shape '
+title: 'Single Shape'
 linkTitle: 'Single Shape Mode'
 weight: 8
 description: 'Guide to annotating tasks using Single Shape mode'
