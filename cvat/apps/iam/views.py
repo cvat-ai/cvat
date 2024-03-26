@@ -114,6 +114,7 @@ class RegisterViewEx(RegisterView):
     # cannot be used alongside token authentication (https://dj-rest-auth.readthedocs.io/en/latest/configuration.html),
     # and given the login implementation (https://github.com/iMerica/dj-rest-auth/blob/c6b6530eb0bfa5b10fd7b9e955a39301156e49d2/dj_rest_auth/views.py#L69-L75),
     # this situation appears to be a bug.
+    # Link to the issue: https://github.com/iMerica/dj-rest-auth/issues/604
     def perform_create(self, serializer):
         user = serializer.save(self.request)
         if allauth_settings.EMAIL_VERIFICATION != \
