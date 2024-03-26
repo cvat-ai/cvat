@@ -8,7 +8,7 @@ description: 'Guide to annotating tasks using Single Shape mode'
 The CVAT Single Shape annotation mode accelerates the annotation process and enhances
 workflow efficiency for specific scenarios.
 
-By using this mode you can label shapes with a chosen annotation shape when an image
+By using this mode you can label objects with a chosen annotation shape and label when an image
 contains only a single object. By eliminating the necessity to select tools from the sidebar
 and facilitating quicker navigation between images without
 the reliance on hotkeys, this feature makes the annotation process significantly faster.
