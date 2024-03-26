@@ -40,7 +40,12 @@ from shared.utils.config import (
     patch_method,
     post_method,
 )
-from shared.utils.helpers import generate_image_file, generate_image_files, generate_manifest
+from shared.utils.helpers import (
+    generate_image_file,
+    generate_image_files,
+    generate_manifest,
+    generate_video_file,
+)
 
 from .utils import (
     CollectionSimpleFilterTestBase,
@@ -800,6 +805,68 @@ class TestPostTaskData:
         with make_api_client(self._USERNAME) as api_client:
             (task, _) = api_client.tasks_api.retrieve(task_id)
             assert task.size == 4
+
+    def test_default_overlap_for_small_segment_size(self):
+        task_spec = {
+            "name": f"test {self._USERNAME} with default overlap and small segment_size",
+            "labels": [{"name": "car"}],
+            "segment_size": 5,
+        }
+
+        task_data = {
+            "image_quality": 75,
+            "client_files": [generate_video_file(8)],
+        }
+
+        task_id, _ = create_task(self._USERNAME, task_spec, task_data)
+
+        # check task size
+        with make_api_client(self._USERNAME) as api_client:
+            paginated_job_list, _ = api_client.jobs_api.list(task_id=task_id)
+
+            jobs = paginated_job_list.results
+            jobs.sort(key=lambda job: job.start_frame)
+
+            assert len(jobs) == 2
+            # overlap should be 2 frames (frames 3 & 4)
+            assert jobs[0].start_frame == 0
+            assert jobs[0].stop_frame == 4
+            assert jobs[1].start_frame == 3
+            assert jobs[1].stop_frame == 7
+
+    @pytest.mark.parametrize(
+        "size,expected_segments",
+        [
+            (2, [(0, 1)]),
+            (3, [(0, 2)]),
+            (4, [(0, 2), (2, 3)]),
+            (5, [(0, 2), (2, 4)]),
+            (6, [(0, 2), (2, 4), (4, 5)]),
+        ],
+    )
+    def test_task_segmentation(self, size, expected_segments):
+        task_spec = {
+            "name": f"test {self._USERNAME} to check segmentation into jobs",
+            "labels": [{"name": "car"}],
+            "segment_size": 3,
+            "overlap": 1,
+        }
+
+        task_data = {
+            "image_quality": 75,
+            "client_files": generate_image_files(size),
+        }
+
+        task_id, _ = create_task(self._USERNAME, task_spec, task_data)
+
+        # check task size
+        with make_api_client(self._USERNAME) as api_client:
+            paginated_job_list, _ = api_client.jobs_api.list(task_id=task_id)
+
+            jobs = paginated_job_list.results
+            jobs.sort(key=lambda job: job.start_frame)
+
+            assert [(j.start_frame, j.stop_frame) for j in jobs] == expected_segments
 
     def test_can_create_task_with_exif_rotated_images(self):
         task_spec = {
