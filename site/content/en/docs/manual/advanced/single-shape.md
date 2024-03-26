@@ -1,7 +1,7 @@
 ---
 title: 'Single Shape'
 linkTitle: 'Single Shape Mode'
-weight: 8
+weight: 3
 description: 'Guide to annotating tasks using Single Shape mode'
 ---
 
@@ -24,8 +24,10 @@ See:
 
 A set of controls in the interface of the **Single Shape** annotation mode may vary depends on different settings.
 
-The image below displays the complete interface, featuring all available fields;
-as mentioned above, certain fields may be absent depending on the scenario. For instance, when annotating
+Images below displays the complete interface, featuring all available fields;
+as mentioned above, certain fields may be absent depending on the scenario.
+
+For instance, when annotating
 with rectangles, the **Number of points** field will not appear, and if annotating a single class,
 the **Labels selector** will be omitted.
 
@@ -34,19 +36,23 @@ top right corner, and from the drop-down menu, select **Single Shape**.
 
 ![Single Shape Annotation Mode Interface](/images/single-shape-interface.png)
 
-The Single Shape annotation mode has the following fields:
+The interface will be different if the shape type was set to **Any** in the label **Constructor**:
+
+![Single Shape Annotation Mode Interface](/images/single-shape-label-any.jpg)
+
+The **Single Shape** annotation mode has the following fields:
 
 <!--lint disable maximum-line-length-->
 
-| Feature                                | Explanation                                                                                                                                                                                                                                                                                                                                                  |
-| -------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| **Prompt for Shape and Label**         | Displays the selected shape and label for the annotation task, such as using rectangles to annotate cats.                                                                                                                                                                                                                                                    |
-| **Skip Button**                        | Enables moving to the next frame without annotating the current one, particularly useful when the frame requires no annotation.                                                                                                                                                                                                                              |
-| **List of Hints**                      | Offers guidance on using the interface effectively, including: <br> - Click **Skip** for frames without required annotations. <br> - Hold the **Alt** button to avoid unintentional drawing (e.g. when you want only move the image). <br> - Use the **Ctrl+Z** combination to undo the last annotation if needed. <br> - Use the **Esc** button to completely reset the current drawing progress. |
-| **Drop-Down List for Label Selection** | Allows for the selection of different labels for annotation within the interface.                                                                                                                                                                                                                                                                            |
-| **Options to Enable or Disable**       | Provides configurable options to streamline the annotation process, such as: <br> - Automatically advancing to the next frame after drawing an object. <br> - Auto-saving upon completion of annotations on all frames. <br> - Navigating only through frames that haven't been annotated yet.                                                               |
-| **Predefined Number of Points**        | Specific to polyshape annotations, enabling this option auto-completes a shape once a predefined number of points is reached. Otherwise, pressing **N** is required to finalize the shape.                                                                                                                                                                   |
-| **Number of Points**                   | Applicable for polyshape annotations, indicating the number of points to utilize for image annotation.                                                                                                                                                                                                                                                       |
+| Feature                          | Explanation                                                                                                                                                                                                                                                                                                                                                                                                                                       |
+| -------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Prompt for Shape and Label**   | Displays the selected shape and label for the annotation task, for example: "Annotate **cat** on the image using **rectangle**".                                                                                                                                                                                                                                                                                                                  |
+| **Skip Button**                  | Enables moving to the next frame without annotating the current one, particularly useful when the frame does not have anything to be annotated.                                                                                                                                                                                                                                                                                                   |
+| **List of Hints**                | Offers guidance on using the interface effectively, including: <br> - Click **Skip** for frames without required annotations. <br> - Hold the **Alt** button to avoid unintentional drawing (e.g. when you want only move the image). <br> - Use the **Ctrl+Z** combination to undo the last annotation if needed. <br> - Use the **Esc** button to completely reset the current drawing progress.                                                |
+| **Label selector**               | Allows for the selection of different labels (`cat`, or `dog` in our example) for annotation within the interface.                                                                                                                                                                                                                                                                                                                                |
+| **Label type selector**          | A drop-down list to select type of the label (rectangle, ellipce, etc). Only visible when the type of the shape is **Any**.                                                                                                                                                                                                                                                                                                                       |
+| **Options to Enable or Disable** | Provides configurable options to streamline the annotation process, such as: <br> - **Automatically go to the next frame**. <br> - **Automatically save when finish**. <br> - **Navigate only empty frames**. <br> - **Predefined number of points** - Specific to polyshape annotations, enabling this option auto-completes a shape once a predefined number of points is reached. Otherwise, pressing **N** is required to finalize the shape. |
+| **Number of Points**             | Applicable for polyshape annotations, indicating the number of points to use for image annotation.                                                                                                                                                                                                                                                                                                                                                |
 
 <!--lint enable maximum-line-length-->
 
