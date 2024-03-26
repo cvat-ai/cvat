@@ -71,5 +71,5 @@ def custom_started_job_registry_cleanup(self, timestamp: Optional[float] = None)
 
 def update_started_job_registry_cleanup() -> None:
     # don't forget to check if the issue https://github.com/rq/rq/issues/2006 has been resolved in upstream
-    assert VERSION == '1.15.1'
+    assert VERSION == '1.16.0'
     rq.registry.StartedJobRegistry.cleanup = custom_started_job_registry_cleanup
