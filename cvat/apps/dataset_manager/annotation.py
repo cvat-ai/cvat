@@ -110,12 +110,11 @@ class AnnotationIR:
                 track, start, stop + 1, dimension)
             scoped_shapes = filter_track_shapes(interpolated_shapes)
 
-            last_key = sorted(track['shapes'], key=lambda s: s['frame'])[-1]['frame']
-
             if scoped_shapes:
+                last_key = sorted(track['shapes'], key=lambda s: s['frame'])[-1]['frame']
                 if not scoped_shapes[0]['keyframe']:
                     segment_shapes.insert(0, scoped_shapes[0])
-                if last_key > stop:
+                if last_key >= stop and scoped_shapes[-1]['points'] != segment_shapes[-1]['points']:
                     segment_shapes.append(scoped_shapes[-1])
                 elif scoped_shapes[-1]['keyframe'] and \
                         scoped_shapes[-1]['outside']:
