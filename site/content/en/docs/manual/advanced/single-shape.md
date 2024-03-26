@@ -76,7 +76,7 @@ the job link, to initialize the annotation process and automate workflow:
 
 <!--lint enable maximum-line-length-->
 
-You can combine these parameters to customize the annotation environment further, for example:
+You can combine these parameters to customize the workspace for an annotator, for example:
 
 ```
 /tasks/<tid>/jobs/<jid>?defaultWorkspace=single_shape&defaultLabel=dog&defaultPointsCount=10
