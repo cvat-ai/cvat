@@ -22,8 +22,7 @@ See:
 
 ## Single Shape mode annotation interface
 
-The interface of the **Single Shape** annotation mode varies based on the selected annotation
-type and the dataset type.
+A set of controls in the interface of the **Single Shape** annotation mode may vary depends on different settings.
 
 The image below displays the complete interface, featuring all available fields;
 however, certain fields may be absent depending on the scenario. For instance, when annotating
