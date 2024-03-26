@@ -213,14 +213,13 @@ export class FrameDecoder {
         const source = new Uint32Array(imageBuffer);
 
         const bufferSize = width * height * 4;
-        const buffer = new ArrayBuffer(bufferSize);
-        const rgbaInt32 = new Uint32Array(buffer);
-        const rgbaInt8Clamped = new Uint8ClampedArray(buffer);
-
         if (imageWidth === width) {
             return new ImageData(new Uint8ClampedArray(imageBuffer, 0, bufferSize), width, height);
         }
 
+        const buffer = new ArrayBuffer(bufferSize);
+        const rgbaInt32 = new Uint32Array(buffer);
+        const rgbaInt8Clamped = new Uint8ClampedArray(buffer);
         let writeIdx = 0;
         for (let row = 0; row < height; row++) {
             const start = row * imageWidth;
