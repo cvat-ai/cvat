@@ -42,7 +42,7 @@ from rest_framework.settings import api_settings
 
 import cvat.apps.dataset_manager as dm
 import cvat.apps.dataset_manager.views  # pylint: disable=unused-import
-from cvat.apps.engine.cloud_provider import db_storage_to_storage_instance, download_file_from_bucket, export_resource_to_cloud_storage
+from cvat.apps.engine.cloud_provider import db_storage_to_storage_instance, import_resource_from_cloud_storage, export_resource_to_cloud_storage
 from cvat.apps.events.handlers import handle_dataset_export, handle_dataset_import
 from cvat.apps.dataset_manager.bindings import CvatImportError
 from cvat.apps.dataset_manager.serializers import DatasetFormatsSerializer
@@ -70,7 +70,7 @@ from cvat.apps.engine.view_utils import get_cloud_storage_for_import_or_export
 
 from utils.dataset_manifest import ImageManifestManager
 from cvat.apps.engine.utils import (
-    av_scan_paths, process_failed_job, configure_dependent_job_to_download_from_cs,
+    av_scan_paths, process_failed_job,
     parse_exception_message, get_rq_job_meta, get_import_rq_id,
     import_resource_with_clean_up_after, sendfile, define_dependent_job, get_rq_lock_by_user,
     build_annotations_file_name,
@@ -518,14 +518,11 @@ class ProjectViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
                 if rq_job is None:
                     return Response(status=status.HTTP_404_NOT_FOUND)
                 elif rq_job.is_finished:
-                    if rq_job.dependency:
-                        rq_job.dependency.delete()
                     # rq_job.delete()
                     print(rq_job)
                     print(rq_job.meta.get("user", {}).get("id"))
                     return Response(status=status.HTTP_201_CREATED)
-                elif rq_job.is_failed or \
-                        rq_job.is_deferred and rq_job.dependency and rq_job.dependency.is_failed:
+                elif rq_job.is_failed:
                     exc_info = process_failed_job(rq_job)
 
                     return Response(
@@ -2980,9 +2977,7 @@ def _import_annotations(request, rq_id_template, rq_func, db_obj, format_name,
         # If filename is specified we consider that file was uploaded via TUS, so it exists in filesystem
         # Then we dont need to create temporary file
         # Or filename specify key in cloud storage so we need to download file
-        dependent_job = None
         location = location_conf.get('location') if location_conf else Location.LOCAL
-
         db_storage = None
 
         if not filename or location == Location.CLOUD_STORAGE:
@@ -3017,27 +3012,22 @@ def _import_annotations(request, rq_id_template, rq_func, db_obj, format_name,
                     delete=False) as tf:
                     filename = tf.name
 
-                dependent_job = configure_dependent_job_to_download_from_cs(
-                    queue=queue,
-                    rq_id=rq_id,
-                    rq_func=download_file_from_bucket,
-                    db_storage=db_storage,
-                    filename=filename,
-                    key=key,
-                    request=request,
-                    result_ttl=settings.IMPORT_CACHE_SUCCESS_TTL.total_seconds(),
-                    failure_ttl=settings.IMPORT_CACHE_FAILED_TTL.total_seconds()
-                )
+        func = import_resource_with_clean_up_after
+        func_args = (rq_func, filename, db_obj.pk, format_name, conv_mask_to_poly)
+
+        if location == Location.CLOUD_STORAGE:
+            func_args = (db_storage, key, func) + func_args
+            func = import_resource_from_cloud_storage
 
         av_scan_paths(filename)
         user_id = request.user.id
 
-        with get_rq_lock_by_user(queue, user_id, additional_condition=not dependent_job):
+        with get_rq_lock_by_user(queue, user_id):
             rq_job = queue.enqueue_call(
-                func=import_resource_with_clean_up_after,
-                args=(rq_func, filename, db_obj.pk, format_name, conv_mask_to_poly),
+                func=func,
+                args=func_args,
                 job_id=rq_id,
-                depends_on=dependent_job or define_dependent_job(queue, user_id, rq_id=rq_id),
+                depends_on=define_dependent_job(queue, user_id, rq_id=rq_id),
                 meta={
                     'tmp_file': filename,
                     **get_rq_job_meta(request=request, db_obj=db_obj),
@@ -3054,12 +3044,9 @@ def _import_annotations(request, rq_id_template, rq_func, db_obj, format_name,
         return Response(serializer.data, status=status.HTTP_202_ACCEPTED)
     else:
         if rq_job.is_finished:
-            if rq_job.dependency:
-                rq_job.dependency.delete()
             rq_job.delete()
             return Response(status=status.HTTP_201_CREATED)
-        elif rq_job.is_failed or \
-                rq_job.is_deferred and rq_job.dependency and rq_job.dependency.is_failed:
+        elif rq_job.is_failed:
             exc_info = process_failed_job(rq_job)
 
             import_error_prefix = f'{CvatImportError.__module__}.{CvatImportError.__name__}:'
@@ -3240,7 +3227,7 @@ def _import_project_dataset(request, rq_id_template, rq_func, db_obj, format_nam
             # (e.g the user closed the browser tab when job has been created
             # but no one requests for checking status were not made)
             rq_job.delete()
-        dependent_job = None
+
         location = location_conf.get('location') if location_conf else None
         db_storage = None
 
@@ -3275,30 +3262,25 @@ def _import_project_dataset(request, rq_id_template, rq_func, db_obj, format_nam
                 delete=False) as tf:
                 filename = tf.name
 
-            dependent_job = configure_dependent_job_to_download_from_cs(
-                queue=queue,
-                rq_id=rq_id,
-                rq_func=download_file_from_bucket,
-                db_storage=db_storage,
-                filename=filename,
-                key=key,
-                request=request,
-                result_ttl=settings.IMPORT_CACHE_SUCCESS_TTL.total_seconds(),
-                failure_ttl=settings.IMPORT_CACHE_FAILED_TTL.total_seconds()
-            )
+        func = import_resource_with_clean_up_after
+        func_args = (rq_func, filename, db_obj.pk, format_name, conv_mask_to_poly)
+
+        if location == Location.CLOUD_STORAGE:
+            func_args = (db_storage, key, func) + func_args
+            func = import_resource_from_cloud_storage
 
         user_id = request.user.id
 
-        with get_rq_lock_by_user(queue, user_id, additional_condition=not dependent_job):
+        with get_rq_lock_by_user(queue, user_id):
             rq_job = queue.enqueue_call(
-                func=import_resource_with_clean_up_after,
-                args=(rq_func, filename, db_obj.pk, format_name, conv_mask_to_poly),
+                func=func,
+                args=func_args,
                 job_id=rq_id,
                 meta={
                     'tmp_file': filename,
                     **get_rq_job_meta(request=request, db_obj=db_obj),
                 },
-                depends_on=dependent_job or define_dependent_job(queue, user_id, rq_id=rq_id),
+                depends_on=define_dependent_job(queue, user_id, rq_id=rq_id),
                 result_ttl=settings.IMPORT_CACHE_SUCCESS_TTL.total_seconds(),
                 failure_ttl=settings.IMPORT_CACHE_FAILED_TTL.total_seconds()
             )
