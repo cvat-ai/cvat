@@ -25,7 +25,7 @@ See:
 A set of controls in the interface of the **Single Shape** annotation mode may vary depends on different settings.
 
 The image below displays the complete interface, featuring all available fields;
-however, certain fields may be absent depending on the scenario. For instance, when annotating
+as mentioned above, certain fields may be absent depending on the scenario. For instance, when annotating
 with rectangles, the **Number of points** field will not appear, and if annotating a single class,
 the **Labels selector** will be omitted.
 
