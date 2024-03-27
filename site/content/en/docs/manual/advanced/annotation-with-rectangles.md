@@ -5,10 +5,10 @@ weight: 7
 ---
 
 To learn more about annotation using a rectangle, see the sections:
-- [Shape mode (basics)](/docs/manual/basics/shape-mode-basics/)
-- [Track mode (basics)](/docs/manual/basics/track-mode-basics/)
-- [Shape mode (advanced)](/docs/manual/advanced/shape-mode-advanced/)
-- [Track mode (advanced)](/docs/manual/advanced/track-mode-advanced/)
+- [Shape mode (basics)]({{< relref "/docs/manual/basics/shape-mode-basics" >}})
+- [Track mode (basics)]({{< relref "/docs/manual/basics/track-mode-basics" >}})
+- [Shape mode (advanced)]({{< relref "/docs/manual/advanced/shape-mode-advanced" >}})
+- [Track mode (advanced)]({{< relref "/docs/manual/advanced/track-mode-advanced" >}})
 
 ## Rotation rectangle
 

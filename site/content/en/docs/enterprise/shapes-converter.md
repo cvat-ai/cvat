@@ -64,7 +64,7 @@ To convert shapes, do the following:
 
    ![](/images/shapes-converter-annotated-dataset.jpg)
 
-2. Set up [filters](/docs/manual/advanced/filter/).
+2. Set up [filters]({{< relref "/docs/manual/advanced/filter" >}}).
 
    ![](/images/shapes-converter-setup-filter.png)
 

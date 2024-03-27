@@ -54,7 +54,7 @@ Can be used to reduce the annotation file and to facilitate editing polygons.
 
 ## Trackable
 Trackable object will be tracked automatically if the previous frame was
-a latest keyframe for the object. More details in the section [trackers](/docs/manual/advanced/ai-tools/#trackers).
+a latest keyframe for the object. More details in the section [trackers]({{< relref "/docs/manual/advanced/ai-tools#trackers" >}}).
 
 ![](/images/tracker_indication_detrac.jpg)
 
@@ -67,46 +67,46 @@ Mode for video annotation, which uses [`track`](#track) objects.
 Only objects on keyframes are manually annotation, and intermediate frames are linearly interpolated.
 
 Related sections:
-- [Track mode](/docs/manual/basics/track-mode-basics/)
+- [Track mode]({{< relref "/docs/manual/basics/track-mode-basics" >}})
 
 ### Annotation
 Mode for images annotation, which uses `shape` objects.
 
 Related sections:
-- [Shape mode](/docs/manual/basics/shape-mode-basics/)
+- [Shape mode]({{< relref "/docs/manual/basics/shape-mode-basics" >}})
 
 ---
 
 ## Dimension
 
-Depends on the task data type that is defined when the [task is created](/docs/manual/basics/creating_an_annotation_task/).
+Depends on the task data type that is defined when the [task is created]({{< relref "/docs/manual/basics/creating_an_annotation_task" >}}).
 
 ### 2D
 
 The data format of 2d tasks are images and videos.
 Related sections:
-- [Creating an annotation task](/docs/manual/basics/creating_an_annotation_task/)
+- [Creating an annotation task]({{< relref "/docs/manual/basics/creating_an_annotation_task" >}})
 
 ### 3D
 
 The data format of 3d tasks is a cloud of points.
-[Data formats for a 3D task](/docs/manual/basics/creating_an_annotation_task/#data-formats-for-a-3d-task)
+[Data formats for a 3D task]({{< relref "/docs/manual/basics/creating_an_annotation_task#data-formats-for-a-3d-task" >}})
 
 Related sections:
-- [3D task workspace](/docs/manual/basics/3d-task-workspace/)
-- [Standard 3D mode](/docs/manual/basics/standard-3d-mode-basics/)
-- [3D Object annotation](/docs/manual/basics/3d-object-annotation-basics/)
+- [3D task workspace]({{< relref "/docs/manual/basics/3d-task-workspace" >}})
+- [Standard 3D mode]({{< relref "/docs/manual/basics/standard-3d-mode-basics" >}})
+- [3D Object annotation]({{< relref "/docs/manual/basics/3d-object-annotation-basics" >}})
 
 ---
 
 ## State
-State of the job. The state can be changed by an assigned user in [the menu inside the job](/docs/manual/basics/top-panel/).
+State of the job. The state can be changed by an assigned user in [the menu inside the job]({{< relref "/docs/manual/basics/top-panel" >}}).
 There are several possible states: `new`, `in progress`, `rejected`, `completed`.
 
 ---
 
 ## Stage
-Stage of the job. The stage is specified with the drop-down list on the [task page](/docs/manual/basics/tasks-page/).
+Stage of the job. The stage is specified with the drop-down list on the [task page]({{< relref "/docs/manual/basics/tasks-page" >}}).
 There are three stages: `annotation`, `validation` or `acceptance`. This value affects the task progress bar.
 
 ---
@@ -119,11 +119,11 @@ It could be `test`, `train`, `validation` or custom subset.
 
 ## Credentials
 Under `credentials` is understood `Key & secret key`, `Account name and token`, `Anonymous access`, `Key file`.
-Used to [attach cloud storage](/docs/manual/basics/attach-cloud-storage/#attach-new-cloud-storage).
+Used to [attach cloud storage]({{< relref "/docs/manual/basics/attach-cloud-storage#attach-new-cloud-storage" >}}).
 
 ---
 
 ## Resource
 
 Under `resource` is understood `bucket name` or `container name`.
-Used to [attach cloud storage](/docs/manual/basics/attach-cloud-storage/#attach-new-cloud-storage).
+Used to [attach cloud storage]({{< relref "/docs/manual/basics/attach-cloud-storage#attach-new-cloud-storage" >}}).

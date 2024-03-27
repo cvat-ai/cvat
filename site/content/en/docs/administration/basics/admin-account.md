@@ -16,7 +16,7 @@ to assign groups (roles) to other users.
 ### Prerequisites
 
 Before you register an admin account (superuser), you need to install CVAT locally,
-see [Installation Guide](/docs/administration/basics/installation/).
+see [Installation Guide]({{< relref "/docs/administration/basics/installation" >}}).
 
 Steps of installation are partly different, depending on the type of operation system (OS).
 

@@ -15,13 +15,13 @@ upgrading PostgreSQL base image major version. See details [here](#how-to-upgrad
 To upgrade CVAT, follow these steps:
 
 - It is highly recommended backup all CVAT data before updating, follow the
-  [backup guide](/docs/administration/advanced/backup_guide/) and backup all CVAT volumes.
+  [backup guide]({{< relref "/docs/administration/advanced/backup_guide" >}}) and backup all CVAT volumes.
 
 - Go to the previously cloned CVAT directory and stop all CVAT containers with:
   ```shell
   docker compose down
   ```
-  If you have included [additional components](/docs/administration/basics/installation/#additional-components),
+  If you have included [additional components]({{< relref "/docs/administration/basics/installation#additional-components" >}}),
   include all compose configuration files that are used, e.g.:
   ```shell
   docker compose -f docker-compose.yml -f components/serverless/docker-compose.serverless.yml down
@@ -30,16 +30,16 @@ To upgrade CVAT, follow these steps:
 - Update CVAT source code by any preferable way: clone with git or download zip file from GitHub.
   Note that you need to download the entire source code, not just the Docker Compose configuration file.
   Check the
-  [installation guide](/docs/administration/basics/installation/#how-to-get-cvat-source-code) for details.
+  [installation guide]({{< relref "/docs/administration/basics/installation#how-to-get-cvat-source-code" >}}) for details.
 
 - Verify settings:
   The installation process is changed/modified from version to version and
   you may need to export some environment variables, for example
-  [CVAT_HOST](/docs/administration/basics/installation/#use-your-own-domain).
+  [CVAT_HOST]({{< relref "/docs/administration/basics/installation#use-your-own-domain" >}}).
 
 - Update local CVAT images.
   Pull or build new CVAT images, see
-  [How to pull/build/update CVAT images section](/docs/administration/basics/installation/#how-to-pullbuildupdate-cvat-images)
+  [How to pull/build/update CVAT images section]({{< relref "/docs/administration/basics/installation#how-to-pullbuildupdate-cvat-images" >}})
   for details.
 
 - Start CVAT with:
@@ -101,7 +101,7 @@ docker compose up -d
 ## How to upgrade PostgreSQL database base image
 
 1. It is highly recommended backup all CVAT data before updating, follow the
-   [backup guide](/docs/administration/advanced/backup_guide/) and backup CVAT database volume.
+   [backup guide]({{< relref "/docs/administration/advanced/backup_guide" >}}) and backup CVAT database volume.
 
 1. Run previously used CVAT version as usual
 
@@ -122,7 +122,7 @@ docker compose up -d
 
 1. Update CVAT source code by any preferable way: clone with git or download zip file from GitHub.
    Check the
-   [installation guide](/docs/administration/basics/installation/#how-to-get-cvat-source-code) for details.
+   [installation guide]({{< relref "/docs/administration/basics/installation#how-to-get-cvat-source-code" >}}) for details.
 
 1. Start database container only:
    ```shell

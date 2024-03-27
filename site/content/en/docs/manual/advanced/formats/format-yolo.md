@@ -106,7 +106,7 @@ and annotation file name. There are 2 options:
 
    Select images. zip as data. Most likely you should use `share`
    functionality because size of images. zip is more than 500Mb.
-   See [Creating an annotation task](/docs/manual/basics/creating_an_annotation_task/)
+   See [Creating an annotation task]({{< relref "/docs/manual/basics/creating_an_annotation_task" >}})
    guide for details.
 
 1. Create `obj.names` with the following content:

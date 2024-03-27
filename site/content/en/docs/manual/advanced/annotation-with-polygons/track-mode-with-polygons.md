@@ -5,13 +5,13 @@ weight: 5
 ---
 
 Polygons in the track mode allow you to mark moving objects more accurately other than using a rectangle
-([Tracking mode (basic)](/docs/manual/basics/track-mode-basics/); [Tracking mode (advanced)](/docs/manual/advanced/track-mode-advanced/)).
+([Tracking mode (basic)]({{< relref "/docs/manual/basics/track-mode-basics" >}}); [Tracking mode (advanced)]({{< relref "/docs/manual/advanced/track-mode-advanced" >}})).
 
 1. To create a polygon in the track mode, click the `Track` button.
 
    ![](/images/image184.jpg)
 
-1. Create a polygon the same way as in the case of [Annotation with polygons](/docs/manual/advanced/annotation-with-polygons/).
+1. Create a polygon the same way as in the case of [Annotation with polygons]({{< relref "/docs/manual/advanced/annotation-with-polygons" >}}).
    Press `N` or click the `Done` button on the top panel to complete the polygon.
 
 1. Pay attention to the fact that the created polygon has a starting point and a direction,

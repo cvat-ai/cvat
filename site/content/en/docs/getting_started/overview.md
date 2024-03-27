@@ -21,7 +21,7 @@ CVAT offers three versions:
   **available for free**. You can also choose a [**subscription**](https://www.cvat.ai/pricing/cloud)
   for **unlimited data**, **collaboration**, **auto-annotations**, and [**more**](https://www.cvat.ai/post/cvat-ai-pricing-plans-choosing-the-right-plan-for-your-needs).
 
-- **Self-hosted CVAT Community Edition**: Follow the [**Self-hosted Installation Guide**](/docs/administration/basics/installation/)
+- **Self-hosted CVAT Community Edition**: Follow the [**Self-hosted Installation Guide**]({{< relref "/docs/administration/basics/installation" >}})
   for setup.
 
 - **Self-hosted CVAT Enterprise Edition**: We provide [**Enterprise-level support**](https://www.cvat.ai/pricing/on-prem)
@@ -61,7 +61,7 @@ CVAT's supports the following formats:
 - **For video**: all formats, supported by ffmpeg, including `MP4`, `AVI`, and `MOV`.
 
 For annotation export and import formats, see
-[**Export annotations and data from CVAT**](/docs/manual/advanced/formats/)
+[**Export annotations and data from CVAT**]({{< relref "/docs/manual/advanced/formats" >}})
 
 ### Annotation tools
 
@@ -72,16 +72,16 @@ image and video labeling:
 
 | Annotation Tool                                                                            | Use Cases                                                                                                      |
 | ------------------------------------------------------------------------------------------ | -------------------------------------------------------------------------------------------------------------- |
-| [**3D Object Annotation**](/docs/manual/advanced/3d-object-annotation-advanced/)           | Ideal for projects that require depth perception and volume estimation, like autonomous vehicle training.      |
-| [**Attribute Annotation Mode**](/docs/manual/advanced/attribute-annotation-mode-advanced/) | Useful for adding detailed information to objects, like color, size, or other specific characteristics.        |
-| [**Annotation with Rectangles**](/docs/manual/advanced/annotation-with-rectangles/)        | Best for simple object detection where objects have a box-like shape, such as detecting windows in a building. |
-| [**Annotation with Polygons**](/docs/manual/advanced/annotation-with-polygons/)            | Suited for complex shapes in images, like outlining geographical features in maps or detailed product shapes.  |
-| [**Annotation with Polylines**](/docs/manual/advanced/annotation-with-polylines/)          | Great for annotating linear objects like roads, pathways, or limbs in pose estimation.                         |
-| [**Annotation with Ellipses**](/docs/manual/advanced/annotation-with-ellipses/)            | Ideal for objects like plates, balls, or eyes, where a circular or oval annotation is needed.                  |
-| [**Annotation with Cuboids**](/docs/manual/advanced/annotation-with-cuboids/)              | Useful for 3D objects in 2D images, like boxes or furniture in room layouts.                                   |
-| [**Annotation with Skeletons**](/docs/manual/advanced/skeletons/)                          | Ideal for human pose estimation, animation, and movement analysis in sports or medical fields.                 |
-| [**Annotation with Brush Tool**](/docs/manual/advanced/annotation-with-brush-tool/)        | Perfect for intricate and detailed annotations where precision is key, such as in medical imaging.             |
-| [**Annotation with Tags**](/docs/manual/advanced/annotation-with-tags/)                    | Useful for image and video classification tasks, like identifying scenes or themes in a dataset.               |
+| [**3D Object Annotation**]({{< relref "/docs/manual/advanced/3d-object-annotation-advanced" >}})           | Ideal for projects that require depth perception and volume estimation, like autonomous vehicle training.      |
+| [**Attribute Annotation Mode**]({{< relref "/docs/manual/advanced/attribute-annotation-mode-advanced" >}}) | Useful for adding detailed information to objects, like color, size, or other specific characteristics.        |
+| [**Annotation with Rectangles**]({{< relref "/docs/manual/advanced/annotation-with-rectangles" >}})        | Best for simple object detection where objects have a box-like shape, such as detecting windows in a building. |
+| [**Annotation with Polygons**]({{< relref "/docs/manual/advanced/annotation-with-polygons" >}})            | Suited for complex shapes in images, like outlining geographical features in maps or detailed product shapes.  |
+| [**Annotation with Polylines**]({{< relref "/docs/manual/advanced/annotation-with-polylines" >}})          | Great for annotating linear objects like roads, pathways, or limbs in pose estimation.                         |
+| [**Annotation with Ellipses**]({{< relref "/docs/manual/advanced/annotation-with-ellipses" >}})            | Ideal for objects like plates, balls, or eyes, where a circular or oval annotation is needed.                  |
+| [**Annotation with Cuboids**]({{< relref "/docs/manual/advanced/annotation-with-cuboids" >}})              | Useful for 3D objects in 2D images, like boxes or furniture in room layouts.                                   |
+| [**Annotation with Skeletons**]({{< relref "/docs/manual/advanced/skeletons" >}})                          | Ideal for human pose estimation, animation, and movement analysis in sports or medical fields.                 |
+| [**Annotation with Brush Tool**]({{< relref "/docs/manual/advanced/annotation-with-brush-tool" >}})        | Perfect for intricate and detailed annotations where precision is key, such as in medical imaging.             |
+| [**Annotation with Tags**]({{< relref "/docs/manual/advanced/annotation-with-tags" >}})                    | Useful for image and video classification tasks, like identifying scenes or themes in a dataset.               |
 
 <!--lint enable maximum-line-length-->
 
@@ -96,7 +96,7 @@ potentially speeding it up by up to 10 times.
 
 > **Note:**
 > For more information,
-> see [**OpenCV and AI Tools**](/docs/manual/advanced/ai-tools/)
+> see [**OpenCV and AI Tools**]({{< relref "/docs/manual/advanced/ai-tools" >}})
 
 Below is a detailed table of the supported algorithms and the platforms they operate on:
 
@@ -135,23 +135,23 @@ Start here if you're unsure where to begin with CVAT.
 
 | Name                                                                                      | Description                                                                                                                                                                                                                                                         |
 | ----------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| [**User Manual**](/docs/manual/)                                                          | This comprehensive guide covers all CVAT tools available for work. It includes descriptions of all available tools, quality control methods, and procedures for importing and exporting data. This manual is relevant for both CVAT Cloud and Self-Hosted versions. |
-| [**CVAT Complete Workflow Guide for Organizations**](/docs/getting_started/workflow-org/) | This guide provides a comprehensive overview of using CVAT for collaboration in organizations.                                                                                                                                                                      |
-| [**Subscription Management**](/docs/enterprise/subscription-managment/)                   | Learn how to [**choose a plan**](https://www.cvat.ai/post/cvat-ai-pricing-plans-choosing-the-right-plan-for-your-needs), subscribe, and manage your subscription effectively.                                                                                       |
-| [**XML Annotation Format**](/docs/manual/advanced/xml_format/)                            | Detailed documentation on the XML format used for annotations in CVAT essential for understanding data structure and compatibility.                                                                                                                                 |
+| [**User Manual**]({{< relref "/docs/manual" >}})                                                          | This comprehensive guide covers all CVAT tools available for work. It includes descriptions of all available tools, quality control methods, and procedures for importing and exporting data. This manual is relevant for both CVAT Cloud and Self-Hosted versions. |
+| [**CVAT Complete Workflow Guide for Organizations**]({{< relref "/docs/getting_started/workflow-org" >}}) | This guide provides a comprehensive overview of using CVAT for collaboration in organizations.                                                                                                                                                                      |
+| [**Subscription Management**]({{< relref "/docs/enterprise/subscription-managment" >}})                   | Learn how to [**choose a plan**](https://www.cvat.ai/post/cvat-ai-pricing-plans-choosing-the-right-plan-for-your-needs), subscribe, and manage your subscription effectively.                                                                                       |
+| [**XML Annotation Format**]({{< relref "/docs/manual/advanced/xml_format" >}})                            | Detailed documentation on the XML format used for annotations in CVAT essential for understanding data structure and compatibility.                                                                                                                                 |
 
 ### Self-Hosted
 
 | Name                                                                                           | Description                                                                                                                                                                                                                |
 | ---------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| [**Self-hosted Installation Guide**](/docs/administration/basics/installation/)                | Start here to install self-hosted solution on your premises.                                                                                                                                                               |
+| [**Self-hosted Installation Guide**]({{< relref "/docs/administration/basics/installation" >}})                | Start here to install self-hosted solution on your premises.                                                                                                                                                               |
 | [**Dataset Management Framework**](https://github.com/cvat-ai/datumaro/blob/develop/README.md) | Specifically for the Self-Hosted version, this framework and CLI tool are essential for building, transforming, and analyzing datasets.                                                                                    |
-| [**Server API**](/docs/api_sdk/api/)                                                           | The CVAT server offers a HTTP REST API for interactions. This section explains how client applications, whether they are command line tools, browsers, or scripts, interact with CVAT through HTTP requests and responses. |
-| [**Python SDK**](/docs/api_sdk/sdk/)                                                           | The CVAT SDK is a Python library providing access to server interactions and additional functionalities like data validation and serialization.                                                                            |
-| [**Command Line Tool**](/docs/api_sdk/cli/)                                                    | This tool offers a straightforward command line interface for managing CVAT tasks. Currently featuring basic functionalities, it has the potential to develop into a more advanced administration tool for CVAT.           |
-| [**XML Annotation Format**](/docs/manual/advanced/xml_format/)                                 | Detailed documentation on the XML format used for annotations in CVAT essential for understanding data structure and compatibility.                                                                                        |
-| [**AWS Deployment Guide**](/docs/administration/basics/aws-deployment-guide/)                  | A step-by-step guide for deploying CVAT on Amazon Web Services, covering all necessary procedures and tips.                                                                                                                |
-| [**Frequently Asked Questions**](/docs/faq/)                                                   | This section addresses common queries and provides helpful answers and insights about using CVAT.                                                                                                                          |
+| [**Server API**]({{< relref "/docs/api_sdk/api" >}})                                                           | The CVAT server offers a HTTP REST API for interactions. This section explains how client applications, whether they are command line tools, browsers, or scripts, interact with CVAT through HTTP requests and responses. |
+| [**Python SDK**]({{< relref "/docs/api_sdk/sdk" >}})                                                           | The CVAT SDK is a Python library providing access to server interactions and additional functionalities like data validation and serialization.                                                                            |
+| [**Command Line Tool**]({{< relref "/docs/api_sdk/cli" >}})                                                    | This tool offers a straightforward command line interface for managing CVAT tasks. Currently featuring basic functionalities, it has the potential to develop into a more advanced administration tool for CVAT.           |
+| [**XML Annotation Format**]({{< relref "/docs/manual/advanced/xml_format" >}})                                 | Detailed documentation on the XML format used for annotations in CVAT essential for understanding data structure and compatibility.                                                                                        |
+| [**AWS Deployment Guide**]({{< relref "/docs/administration/basics/aws-deployment-guide" >}})                  | A step-by-step guide for deploying CVAT on Amazon Web Services, covering all necessary procedures and tips.                                                                                                                |
+| [**Frequently Asked Questions**]({{< relref "/docs/faq" >}})                                                   | This section addresses common queries and provides helpful answers and insights about using CVAT.                                                                                                                          |
 
 <!--lint enable maximum-line-length-->
 

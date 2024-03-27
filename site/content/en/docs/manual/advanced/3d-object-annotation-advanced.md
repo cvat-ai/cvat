@@ -6,7 +6,7 @@ description: 'Overview of advanced operations available when annotating 3D objec
 ---
 
 As well as 2D-task objects, 3D-task objects support the ability to change appearance, attributes,
-properties and have an action menu. Read more in [objects sidebar](/docs/manual/basics/objects-sidebar/) section.
+properties and have an action menu. Read more in [objects sidebar]({{< relref "/docs/manual/basics/objects-sidebar" >}}) section.
 
 ## Moving an object
 

@@ -47,7 +47,7 @@ See:
 
 To create a webhook for **Project**, do the following:
 
-1. [Create a Project](/docs/manual/advanced/projects/).
+1. [Create a Project]({{< relref "/docs/manual/advanced/projects" >}}).
 2. Go to the **Projects** and click on the project's widget.
 3. In the top right corner, click **Actions** > **Setup Webhooks**.
 4. In the top right corner click **+**
@@ -60,7 +60,7 @@ To create a webhook for **Project**, do the following:
 
 To create a webhook for **Organization**, do the following:
 
-1. [Create Organization](/docs/manual/advanced/organization/)
+1. [Create Organization]({{< relref "/docs/manual/advanced/organization" >}})
 2. Go to the **Organization** > **Settings** > **Actions** > **Setup Webhooks**.
 3. In the top right corner click **+**
 

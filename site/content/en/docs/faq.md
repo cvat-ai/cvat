@@ -9,12 +9,12 @@ description: 'Answers to frequently asked questions'
 
 ## How to migrate data from CVAT.org to CVAT.ai
 
-Please follow the [export tasks and projects guide](/docs/manual/advanced/backup/#backup) to
+Please follow the [export tasks and projects guide]({{< relref "/docs/manual/advanced/backup#backup" >}}) to
 download an archive with data which corresponds to your task or project. The backup for a
 project will have all tasks which are inside the project. Thus you don't need to export
 them separately.
 
-Please follow the [import tasks and projects guide](/docs/manual/advanced/backup/#create-from-backup)
+Please follow the [import tasks and projects guide]({{< relref "/docs/manual/advanced/backup#create-from-backup" >}})
 to upload your backup with a task or project to a CVAT instance.
 
 See a quick demo below. It is really a simple process. If your data is huge, it may take some time.
@@ -26,10 +26,10 @@ Please be patient.
 
 ## How to upgrade CVAT
 
-Before upgrading, please follow the [backup guide](/docs/administration/advanced/backup_guide/)
+Before upgrading, please follow the [backup guide]({{< relref "/docs/administration/advanced/backup_guide" >}})
 and backup all CVAT volumes.
 
-Follow the [upgrade guide](/docs/administration/advanced/upgrade_guide/).
+Follow the [upgrade guide]({{< relref "/docs/administration/advanced/upgrade_guide" >}}).
 
 ## How to change default CVAT hostname or port
 
@@ -113,14 +113,14 @@ volumes:
 
 ## How to mark job/task as completed
 
-The status is set by the user in the [Info window](/docs/manual/basics/top-panel/#info)
+The status is set by the user in the [Info window]({{< relref "/docs/manual/basics/top-panel#info" >}})
 of the job annotation view.
 There are three types of status: annotation, validation or completed.
 The status of the job changes the progress bar of the task.
 
 ## How to install CVAT on Windows 10 Home
 
-Follow this [guide](/docs/administration/basics/installation/#windows-10).
+Follow this [guide]({{< relref "/docs/administration/basics/installation#windows-10" >}}).
 
 ## I do not have the Analytics tab on the header section. How can I add analytics
 
@@ -151,16 +151,16 @@ To do this, you will need to edit `traefik.http.<router>.cvat.rule` docker label
 ## How to create a task with multiple jobs
 
 Set the segment size when you create a new task, this option is available in the
-[Advanced configuration](/docs/manual/basics/creating_an_annotation_task/#advanced-configuration)
+[Advanced configuration]({{< relref "/docs/manual/basics/creating_an_annotation_task#advanced-configuration" >}})
 section.
 
 ## How to transfer CVAT to another machine
 
-Follow the [backup/restore guide](/docs/administration/advanced/backup_guide/#how-to-backup-all-cvat-data).
+Follow the [backup/restore guide]({{< relref "/docs/administration/advanced/backup_guide#how-to-backup-all-cvat-data" >}}).
 
 ## How to load your own DL model into CVAT
 
-See the information here in the [Serverless tutorial](/docs/manual/advanced/serverless-tutorial/#adding-your-own-dl-models).
+See the information here in the [Serverless tutorial]({{< relref "/docs/manual/advanced/serverless-tutorial#adding-your-own-dl-models" >}}).
 
 ## My server uses a custom SSL certificate and I don't want to check it.
 

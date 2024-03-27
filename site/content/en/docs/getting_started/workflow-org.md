@@ -29,28 +29,28 @@ The workflow diagram presents an overview of the general process at a high level
 
 To use CVAT within your organization, please follow these steps:
 
-1. [Create an account in CVAT](/docs/manual/basics/registration/).
-2. [Create **Organization**](/docs/manual/advanced/organization/).
+1. [Create an account in CVAT]({{< relref "/docs/manual/basics/registration" >}}).
+2. [Create **Organization**]({{< relref "/docs/manual/advanced/organization" >}}).
 3. Switch to the **Organization** that you've
-   created and [subscribe to the **Team plan**](/docs/enterprise/subscription-managment/#team-plan).
-4. [Invite members to **Organization**](/docs/manual/advanced/organization/#invite-members-into-organization) and
-   assign [User roles](/docs/manual/advanced/iam_user_roles/) to invited members.
-5. [Create **Project**](/docs/manual/advanced/projects/).
-6. (Optional) Attach [**Cloud storages**](/docs/manual/basics/attach-cloud-storage/) to the **Project**.
-7. Create [**Task**](/docs/manual/basics/create_an_annotation_task/) or [
+   created and [subscribe to the **Team plan**]({{< relref "/docs/enterprise/subscription-managment#team-plan" >}}).
+4. [Invite members to **Organization**]({{< relref "/docs/manual/advanced/organization#invite-members-into-organization" >}}) and
+   assign [User roles]({{< relref "/docs/manual/advanced/iam_user_roles" >}}) to invited members.
+5. [Create **Project**]({{< relref "/docs/manual/advanced/projects" >}}).
+6. (Optional) Attach [**Cloud storages**]({{< relref "/docs/manual/basics/attach-cloud-storage" >}}) to the **Project**.
+7. Create [**Task**]({{< relref "/docs/manual/basics/create_an_annotation_task" >}}) or [
    **Multitask**](/docs/manual/basics/create-multi-tasks/).
    <br>At this step the CVAT platform will automatically create
    jobs.
-8. (Optional) Create [**Ground truth job**](/docs/manual/advanced/analytics-and-monitoring/auto-qa/).
+8. (Optional) Create [**Ground truth job**]({{< relref "/docs/manual/advanced/analytics-and-monitoring/auto-qa" >}}).
    <br>This step can be skipped if you're employing a manual QA approach.
-9. (Optional) Add [**Instructions for annotators**](/docs/manual/advanced/specification/).
-10. (Optional) Configure [**Webhooks**](/docs/administration/advanced/webhooks/).
+9. (Optional) Add [**Instructions for annotators**]({{< relref "/docs/manual/advanced/specification" >}}).
+10. (Optional) Configure [**Webhooks**]({{< relref "/docs/administration/advanced/webhooks" >}}).
 11. Assign jobs to annotators by adding the annotator name to **Assignee** and
     changing the [**Job stage**](https://opencv.github.io/cvat/docs/manual/advanced/iam_user_roles/#job-stage)
     to **Annotation**.
 12. Annotator will see assigned jobs and annotate them.
 13. (Optional) In case you've created
-    a [**Ground truth job**](/docs/manual/advanced/analytics-and-monitoring/auto-qa/)
+    a [**Ground truth job**]({{< relref "/docs/manual/advanced/analytics-and-monitoring/auto-qa" >}})
     give the CVAT platform some time to accumulate the data and
     check the accuracy of the annotation.
 14. If you are using the manual validation,
@@ -59,11 +59,11 @@ To use CVAT within your organization, please follow these steps:
     to **Validation**.
 15. Validator will see assigned jobs and report issues.
     <br>Note, that validators can correct issues,
-    see [**Manual QA and Review**](/docs/manual/advanced/analytics-and-monitoring/manual-qa/)
+    see [**Manual QA and Review**]({{< relref "/docs/manual/advanced/analytics-and-monitoring/manual-qa" >}})
 16. Check issues and if there is a need for additional improvement, reassign jobs to
     either the Validator or Annotator.
-17. (Optional) Check [**Analytics**](/docs/manual/advanced/analytics-and-monitoring/analytics-in-cloud/).
-18. [**Export Data**](/docs/manual/advanced/formats/).
+17. (Optional) Check [**Analytics**]({{< relref "/docs/manual/advanced/analytics-and-monitoring/analytics-in-cloud" >}}).
+18. [**Export Data**]({{< relref "/docs/manual/advanced/formats" >}}).
 
 ## Complete Workflow Guide video tutorial
 

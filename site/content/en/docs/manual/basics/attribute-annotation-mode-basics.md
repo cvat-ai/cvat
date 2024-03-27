@@ -27,4 +27,4 @@ description: 'Usage examples and basic operations available in attribute annotat
 - Use `Right Arrow`/`Left Arrow` keys to move to the previous/next image with annotation.
 
 To see all the hot keys available in the attribute annotation mode, press `F2`.
-Read more in the section [attribute annotation mode (advanced)](/docs/manual/advanced/attribute-annotation-mode-advanced/).
+Read more in the section [attribute annotation mode (advanced)]({{< relref "/docs/manual/advanced/attribute-annotation-mode-advanced" >}}).
