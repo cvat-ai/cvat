@@ -43,7 +43,7 @@ class LambdaManager {
         return { models, count: lambdaFunctions.length };
     }
 
-    async run(taskID: number, model: MLModel, args: any) {
+    async run(taskID: number, model: MLModel, args: any): Promise<any> {
         if (!Number.isInteger(taskID) || taskID < 0) {
             throw new ArgumentError(`Argument taskID must be a positive integer. Got "${taskID}"`);
         }
@@ -68,7 +68,7 @@ class LambdaManager {
         return result.id;
     }
 
-    async call(taskID, model, args) {
+    async call(taskID, model, args): Promise<any> {
         if (!Number.isInteger(taskID) || taskID < 0) {
             throw new ArgumentError(`Argument taskID must be a positive integer. Got "${taskID}"`);
         }
@@ -81,7 +81,7 @@ class LambdaManager {
         return result;
     }
 
-    async requests() {
+    async requests(): Promise<any> {
         const lambdaRequests = await serverProxy.lambda.requests();
         return lambdaRequests
             .filter((request) => [RQStatus.QUEUED, RQStatus.STARTED].includes(request.status));
