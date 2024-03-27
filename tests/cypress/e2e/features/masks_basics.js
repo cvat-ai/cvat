@@ -189,6 +189,11 @@ context('Manipulations with masks', { scrollBehavior: false }, () => {
                 cy.wrap($canvas).trigger('mousemove', { clientX: 550, clientY: 350 });
                 cy.get('#cvat_canvas_shape_1').should('have.class', 'cvat_canvas_shape_activated');
             });
+
+            cy.startMaskDrawing();
+            cy.get('.cvat-brush-tools-underlying-pixels').click();
+            cy.get('.cvat-brush-tools-underlying-pixels').should('have.class', 'cvat-brush-tools-active-tool');
+            cy.finishMaskDrawing();
         });
     });
 
@@ -281,11 +286,7 @@ context('Manipulations with masks', { scrollBehavior: false }, () => {
             }]];
 
             cy.startMaskDrawing();
-            cy.get('.cvat-brush-tools-underlying-pixels').then(($el) => {
-                if (!$el.hasClass('cvat-brush-tools-active-tool')) {
-                    cy.wrap($el).click();
-                }
-            });
+            cy.get('.cvat-brush-tools-underlying-pixels').click();
             cy.get('.cvat-brush-tools-underlying-pixels').should('have.class', 'cvat-brush-tools-active-tool');
             cy.finishMaskDrawing();
 
