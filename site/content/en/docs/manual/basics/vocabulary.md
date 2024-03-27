@@ -79,23 +79,23 @@ Related sections:
 
 ## Dimension
 
-Depends on the task data type that is defined when the [task is created]({{< relref "/docs/manual/basics/creating_an_annotation_task" >}}).
+Depends on the task data type that is defined when the [task is created]({{< relref "/docs/manual/basics/create_an_annotation_task" >}}).
 
 ### 2D
 
 The data format of 2d tasks are images and videos.
 Related sections:
-- [Creating an annotation task]({{< relref "/docs/manual/basics/creating_an_annotation_task" >}})
+- [Creating an annotation task]({{< relref "/docs/manual/basics/create_an_annotation_task" >}})
 
 ### 3D
 
 The data format of 3d tasks is a cloud of points.
-[Data formats for a 3D task]({{< relref "/docs/manual/basics/creating_an_annotation_task#data-formats-for-a-3d-task" >}})
+[Data formats for a 3D task]({{< relref "/docs/manual/basics/create_an_annotation_task#data-formats-for-a-3d-task" >}})
 
 Related sections:
 - [3D task workspace]({{< relref "/docs/manual/basics/3d-task-workspace" >}})
 - [Standard 3D mode]({{< relref "/docs/manual/basics/standard-3d-mode-basics" >}})
-- [3D Object annotation]({{< relref "/docs/manual/basics/3d-object-annotation-basics" >}})
+- [3D Object annotation]({{< relref "/docs/manual/basics/3d-object-annotation" >}})
 
 ---
 

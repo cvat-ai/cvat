@@ -83,10 +83,10 @@ optional arguments:
 ### Create
 
 Description of the options you can find in
-[Creating an annotation task]({{< relref "/docs/manual/basics/creating_an_annotation_task" >}}) section.
+[Creating an annotation task]({{< relref "/docs/manual/basics/create_an_annotation_task" >}}) section.
 
 For create a task you need file contain labels in the `json` format, you can create a JSON label specification
-by using the [label constructor]({{< relref "/docs/manual/basics/creating_an_annotation_task#labels" >}}).
+by using the [label constructor]({{< relref "/docs/manual/basics/create_an_annotation_task#labels" >}}).
 <details>
 <summary>Example JSON labels file</summary>
 

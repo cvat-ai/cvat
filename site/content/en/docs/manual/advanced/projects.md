@@ -51,7 +51,7 @@ or create a new project by clicking on the `+` button and select `Create New Pro
 You can change: the name of the project, the list of labels
 (which will be used for tasks created as parts of this project) and a skeleton if it's necessary.
 In advanced configuration also you can specify: a link to the issue, source and target storages.
-Learn more about [creating a label list]({{< relref "/docs/manual/basics/creating_an_annotation_task#labels" >}}),
+Learn more about [creating a label list]({{< relref "/docs/manual/basics/create_an_annotation_task#labels" >}}),
 [creating the skeleton]({{< relref "/docs/manual/advanced/skeletons" >}}) and [attach cloud storage]({{< relref "/docs/manual/basics/attach-cloud-storage" >}}).
 
 To save and open project click on `Submit & Open` button. Also you
@@ -68,7 +68,7 @@ Here you can do the following:
 1. Change the project's title.
 1. Open the `Actions` menu. Each button is responsible for a specific function in the `Actions` menu:
    - `Export dataset`/`Import dataset` - download/upload annotations or annotations and images in a specific format.
-     More information is available in the [export/import datasets]({{< relref "/docs/manual/advanced/export-import-datasets" >}})
+     More information is available in the [export/import datasets]({{< relref "/docs/manual/advanced/import-datasets" >}})
      section.
    - `Backup project` - make a backup of the project read more in the [backup]({{< relref "/docs/manual/advanced/backup" >}}) section.
    - `Delete` - remove the project and all related tasks.

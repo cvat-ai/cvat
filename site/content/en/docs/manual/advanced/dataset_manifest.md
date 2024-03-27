@@ -31,7 +31,7 @@ Manifest files can be used in the following cases:
 - A video file or a set of images is used as the data source and
   the caching mode is enabled. [Read more]({{< relref "/docs/manual/advanced/data_on_fly" >}})
 - The data is located in a cloud storage. [Read more]({{< relref "/docs/manual/basics/cloud-storages" >}})
-- The `predefined` file sorting method is specified. [Read more]({{< relref "/docs/manual/basics/creating_an_annotation_task#sorting-method" >}})
+- The `predefined` file sorting method is specified. [Read more]({{< relref "/docs/manual/basics/create_an_annotation_task#sorting-method" >}})
 
 ### The predefined sorting method
 

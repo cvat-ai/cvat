@@ -34,7 +34,7 @@ and the details of the task (specified when the task was created) and the jobs s
   - Assignee is the user who is working on the job.
     You can start typing an assignee’s name and/or choose the right person out of the dropdown list.
   - Reviewer – a user assigned to carry out the review,
-    read more in the [review]({{< relref "/docs/manual/advanced/review" >}}) section.
+    read more in the [review]({{< relref "/docs/manual/advanced/analytics-and-monitoring/manual-qa" >}}) section.
   - `Copy`. By clicking `Copy` you will copy the job list to the clipboard.
     The job list contains direct links to jobs.
 

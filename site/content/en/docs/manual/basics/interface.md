@@ -39,7 +39,7 @@ Informational messages inform about the end of the auto-annotation process.
 #### Open a task
 
 After creating a task, you can immediately open it by clicking `Open task`.
-[Learn more about creating a task]({{< relref "/docs/manual/basics/creating_an_annotation_task" >}}).
+[Learn more about creating a task]({{< relref "/docs/manual/basics/create_an_annotation_task" >}}).
 
 #### Continue to the frame on which the work on the job is finished
 

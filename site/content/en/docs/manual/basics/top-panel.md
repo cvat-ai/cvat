@@ -62,7 +62,7 @@ Used to complete the creation of the object. This button appears only when the o
 ![](/images/image226.jpg)
 
 Used to pause automatic line creation when drawing a polygon with
-[OpenCV Intelligent scissors]({{< relref "/docs/manual/advanced/opencv-tools#intelligent-scissors" >}}).
+[OpenCV Intelligent scissors]({{< relref "/docs/manual/advanced/ai-tools#opencv-intelligent-scissors" >}}).
 Also used to postpone server requests when creating an object using [AI Tools]({{< relref "/docs/manual/advanced/ai-tools" >}}).
 When blocking is activated, the button turns blue.
 
@@ -126,7 +126,7 @@ _Overview_:
 
 - `Assignee` - the one to whom the job is assigned.
 - `Reviewer` – a user assigned to carry out the review,
-  read more in the [review]({{< relref "/docs/manual/advanced/review" >}}) section.
+  read more in the [review]({{< relref "/docs/manual/advanced/analytics-and-monitoring/manual-qa" >}}) section.
 - `Start Frame` - the number of the first frame in this job.
 - `End Frame` - the number of the last frame in this job.
 - `Frames` - the total number of all frames in the job.

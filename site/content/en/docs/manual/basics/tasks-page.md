@@ -12,10 +12,10 @@ Each element contains: task name, preview, progress bar, button `Open`, and menu
 Each button is responsible for a in menu `Actions` specific function:
 
 - `Export task dataset` — download annotations or annotations and images in a specific format.
-  More information is available in the [export/import datasets]({{< relref "/docs/manual/advanced/export-import-datasets" >}})
+  More information is available in the [export/import datasets]({{< relref "/docs/manual/advanced/import-datasets" >}})
   section.
 - `Upload annotation` upload annotations in a specific format.
-  More information is available in the [export/import datasets]({{< relref "/docs/manual/advanced/export-import-datasets" >}})
+  More information is available in the [export/import datasets]({{< relref "/docs/manual/advanced/import-datasets" >}})
   section.
 - `Automatic Annotation` — automatic annotation with OpenVINO toolkit.
   Presence depends on how you build the CVAT instance.
@@ -45,9 +45,9 @@ For clear all filters press `Clear filters`.
 
 | Properties     | Supported values                             | Description                                 |
 | -------------- | -------------------------------------------- | ------------------------------------------- |
-| `Dimension`    | `2D` or `3D`                                 | Depends on the data format <br>(read more in [creating an annotation task]({{< relref "/docs/manual/basics/creating_an_annotation_task" >}})) |
+| `Dimension`    | `2D` or `3D`                                 | Depends on the data format <br>(read more in [creating an annotation task]({{< relref "/docs/manual/basics/create_an_annotation_task" >}})) |
 | `Status`       | `annotation`, `validation` or `completed`    |                                             |
-| `Data`         | `video`, `images`                            | Depends on the data format <br>(read more in [creating an annotation task]({{< relref "/docs/manual/basics/creating_an_annotation_task" >}})) |
+| `Data`         | `video`, `images`                            | Depends on the data format <br>(read more in [creating an annotation task]({{< relref "/docs/manual/basics/create_an_annotation_task" >}})) |
 | `Subset`       | `test`, `train`, `validation` or custom subset | [read more] [subset]                      |
 | `Assignee`     | username                                     | Assignee is the user who is working on the project, task or job. <br>(is specified on task page) |
 | `Owner`        | username                                     | The user who owns the project, task, or job |

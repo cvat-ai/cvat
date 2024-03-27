@@ -54,7 +54,7 @@ For clear all filters press `Clear filters`.
 
 [state]: /docs/manual/basics/vocabulary/#state
 [stage]: /docs/manual/basics/vocabulary/#stage
-[create-task]: /docs/manual/basics/creating_an_annotation_task
+[create-task]: /docs/manual/basics/create_an_annotation_task
 [create-filter]: /docs/manual/advanced/filter/#create-a-filter
 [operators]: /docs/manual/advanced/filter/#supported-operators-for-properties
 [groups]: /docs/manual/advanced/filter/#groups

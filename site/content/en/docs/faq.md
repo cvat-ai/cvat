@@ -151,7 +151,7 @@ To do this, you will need to edit `traefik.http.<router>.cvat.rule` docker label
 ## How to create a task with multiple jobs
 
 Set the segment size when you create a new task, this option is available in the
-[Advanced configuration]({{< relref "/docs/manual/basics/creating_an_annotation_task#advanced-configuration" >}})
+[Advanced configuration]({{< relref "/docs/manual/basics/create_an_annotation_task#advanced-configuration" >}})
 section.
 
 ## How to transfer CVAT to another machine
