@@ -192,7 +192,7 @@ context('Manipulations with masks', { scrollBehavior: false }, () => {
 
             cy.startMaskDrawing();
             cy.get('.cvat-brush-tools-underlying-pixels').click();
-            cy.get('.cvat-brush-tools-underlying-pixels').should('have.class', 'cvat-brush-tools-active-tool');
+            cy.get('.cvat-brush-tools-underlying-pixels').should('not.have.class', 'cvat-brush-tools-active-tool');
             cy.finishMaskDrawing();
         });
     });
