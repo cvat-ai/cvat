@@ -3,6 +3,7 @@
 //
 // SPDX-License-Identifier: MIT
 
+import { omit } from 'lodash';
 import { BoundariesActions, BoundariesActionTypes } from 'actions/boundaries-actions';
 import { ModelsActionTypes, ModelsActions } from 'actions/models-actions';
 import { AuthActionTypes, AuthActions } from 'actions/auth-actions';
@@ -104,14 +105,13 @@ export default function (state = defaultState, action: ModelsActions | AuthActio
             const { inferences, requestedInferenceIDs } = state;
 
             if (action.payload.activeInference.status === 'finished') {
-                delete requestedInferenceIDs[action.payload.activeInference.id];
+                const { taskID, activeInference } = action.payload;
+                const { id: inferenceID } = activeInference;
 
                 return {
                     ...state,
-                    inferences: Object.fromEntries(
-                        Object.entries(inferences).filter(([key]): boolean => +key !== action.payload.taskID),
-                    ),
-                    requestedInferenceIDs: { ...requestedInferenceIDs },
+                    inferences: omit(inferences, taskID),
+                    requestedInferenceIDs: omit(requestedInferenceIDs, inferenceID),
                 };
             }
 
@@ -139,13 +139,13 @@ export default function (state = defaultState, action: ModelsActions | AuthActio
         }
         case ModelsActionTypes.CANCEL_INFERENCE_SUCCESS: {
             const { inferences, requestedInferenceIDs } = state;
-            delete inferences[action.payload.taskID];
-            delete requestedInferenceIDs[action.payload.activeInference.id];
+            const { taskID, activeInference } = action.payload;
+            const { id: inferenceID } = activeInference;
 
             return {
                 ...state,
-                inferences: { ...inferences },
-                requestedInferenceIDs: { ...requestedInferenceIDs },
+                inferences: omit(inferences, taskID),
+                requestedInferenceIDs: omit(requestedInferenceIDs, inferenceID),
             };
         }
         case ModelsActionTypes.GET_MODEL_PREVIEW: {
