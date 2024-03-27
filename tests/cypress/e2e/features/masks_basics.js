@@ -183,13 +183,12 @@ context('Manipulations with masks', { scrollBehavior: false }, () => {
             });
 
             cy.get('.cvat-canvas-container').then(([$canvas]) => {
-                cy.wrap($canvas).trigger('mousemove', { clientX: 450, clientY: 250, bubbles: true });
+                cy.wrap($canvas).trigger('mousemove', { clientX: 450, clientY: 250 });
                 cy.get('#cvat_canvas_shape_1').should('not.have.class', 'cvat_canvas_shape_activated');
 
-                cy.wrap($canvas).trigger('mousemove', { clientX: 550, clientY: 350, bubbles: true });
+                cy.wrap($canvas).trigger('mousemove', { clientX: 550, clientY: 350 });
                 cy.get('#cvat_canvas_shape_1').should('have.class', 'cvat_canvas_shape_activated');
             });
-            cy.removeAnnotations();
         });
     });
 
