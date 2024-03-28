@@ -218,6 +218,7 @@ class ConfusionMatrix(_Serializable):
     precision: np.array
     recall: np.array
     accuracy: np.array
+    jaccard_index: Optional[np.array]
 
     @property
     def axes(self):
@@ -240,6 +241,9 @@ class ConfusionMatrix(_Serializable):
             precision=np.asarray(d["precision"]),
             recall=np.asarray(d["recall"]),
             accuracy=np.asarray(d["accuracy"]),
+            # This field didn't exist at first, so it might not be present
+            # in old serialized instances.
+            jaccard_index=np.asarray(d["jaccard_index"]) if "jaccard_index" in d else None,
         )
 
 
@@ -1934,17 +1938,23 @@ class DatasetComparator:
         matched_ann_counts = np.diag(confusion_matrix)
         ds_ann_counts = np.sum(confusion_matrix, axis=1)
         gt_ann_counts = np.sum(confusion_matrix, axis=0)
+        total_annotations_count = np.sum(confusion_matrix)
 
-        label_accuracies = _arr_div(
+        label_jaccard_indices = _arr_div(
             matched_ann_counts, ds_ann_counts + gt_ann_counts - matched_ann_counts
         )
         label_precisions = _arr_div(matched_ann_counts, ds_ann_counts)
         label_recalls = _arr_div(matched_ann_counts, gt_ann_counts)
+        label_accuracies = (
+            total_annotations_count  # TP + TN + FP + FN
+            - (ds_ann_counts - matched_ann_counts)  # - FP
+            - (gt_ann_counts - matched_ann_counts)  # - FN
+            # ... = TP + TN
+        ) / (total_annotations_count or 1)
 
         valid_annotations_count = np.sum(matched_ann_counts)
         missing_annotations_count = np.sum(confusion_matrix[cls._UNMATCHED_IDX, :])
         extra_annotations_count = np.sum(confusion_matrix[:, cls._UNMATCHED_IDX])
-        total_annotations_count = np.sum(confusion_matrix)
         ds_annotations_count = np.sum(ds_ann_counts[: cls._UNMATCHED_IDX])
         gt_annotations_count = np.sum(gt_ann_counts[: cls._UNMATCHED_IDX])
 
@@ -1961,6 +1971,7 @@ class DatasetComparator:
                 precision=label_precisions,
                 recall=label_recalls,
                 accuracy=label_accuracies,
+                jaccard_index=label_jaccard_indices,
             ),
         )
 
@@ -2322,6 +2333,7 @@ class QualityReportUpdateManager:
         task_mean_shape_ious = []
         task_frame_results = {}
         task_frame_results_counts = {}
+        confusion_matrix = None
         for r in job_reports.values():
             task_intersection_frames.update(r.comparison_summary.frames)
             task_conflicts.extend(r.conflicts)
@@ -2330,6 +2342,12 @@ class QualityReportUpdateManager:
                 task_annotations_summary.accumulate(r.comparison_summary.annotations)
             else:
                 task_annotations_summary = deepcopy(r.comparison_summary.annotations)
+
+            if confusion_matrix is None:
+                num_labels = len(r.comparison_summary.annotations.confusion_matrix.labels)
+                confusion_matrix = np.zeros((num_labels, num_labels), dtype=int)
+
+            confusion_matrix += r.comparison_summary.annotations.confusion_matrix.rows
 
             if task_ann_components_summary:
                 task_ann_components_summary.accumulate(r.comparison_summary.annotation_components)
@@ -2360,6 +2378,8 @@ class QualityReportUpdateManager:
 
                 task_frame_results_counts[frame_id] = 1 + frame_results_count
                 task_frame_results[frame_id] = task_frame_result
+
+        task_annotations_summary.confusion_matrix.rows = confusion_matrix
 
         task_ann_components_summary.shape.mean_iou = np.mean(task_mean_shape_ious)
 
