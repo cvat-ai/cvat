@@ -106,7 +106,7 @@ class LambdaManager {
 
     async listen(
         requestID: string,
-        functionID: string,
+        functionID: string | number,
         callback: (status: RQStatus, progress: number, message?: string) => void,
     ): Promise<void> {
         const model = this.cachedList.find((_model) => _model.id === functionID);
