@@ -53,17 +53,17 @@ class EventRecorder {
     public initSave(): void {
         if (this.#savingTimeout) return;
         this.#savingTimeout = window.setTimeout(() => {
-            const save = (): void => {
+            const scheduleSave = (): void => {
                 this.#savingTimeout = null;
                 this.initSave();
             };
             core.logger.save()
-                .then(save)
+                .then(scheduleSave)
                 .catch((error) => {
                     if (error?.code === 401) {
                         this.cancelSave();
                     } else {
-                        save();
+                        scheduleSave();
                     }
                 });
         }, CONTROLS_LOGS_INTERVAL);
