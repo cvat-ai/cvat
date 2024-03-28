@@ -1022,8 +1022,7 @@ Cypress.Commands.add('addNewSkeletonLabel', ({ name, points }) => {
 
         cy.contains('Continue').scrollIntoView();
         cy.contains('Continue').click();
-        cy.contains('Continue').scrollIntoView();
-        cy.contains('Continue').click();
+        cy.contains('Cancel').click();
     });
 });
 
