@@ -135,7 +135,7 @@ class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentP
 
     public componentDidMount(): void {
         const core = getCore();
-        const { history, location } = this.props;
+        const { history, location, user } = this.props;
         const {
             HEALTH_CHECK_RETRIES, HEALTH_CHECK_PERIOD, HEALTH_CHECK_REQUEST_TIMEOUT, SERVER_UNAVAILABLE_COMPONENT,
             RESET_NOTIFICATIONS_PATHS,
@@ -149,6 +149,9 @@ class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentP
         });
 
         core.logger.configure(() => window.document.hasFocus, userActivityCallback);
+        if (user) {
+            EventRecorder.initSave();
+        }
 
         core.config.onOrganizationChange = (newOrgId: number | null) => {
             if (newOrgId === null) {
@@ -302,9 +305,11 @@ class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentP
         }
 
         if (user !== prevProps.user) {
-            EventRecorder.configure({
-                savingEnabled: !!user,
-            });
+            if (user) {
+                EventRecorder.initSave();
+            } else {
+                EventRecorder.cancelSave();
+            }
         }
 
         if (!userAgreementsInitialized && !userAgreementsFetching) {
