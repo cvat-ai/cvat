@@ -14,7 +14,6 @@ from copy import copy
 from datetime import datetime
 from tempfile import NamedTemporaryFile
 from textwrap import dedent
-from email.header import Header, decode_header, make_header
 
 import django_rq
 from attr.converters import to_bool
