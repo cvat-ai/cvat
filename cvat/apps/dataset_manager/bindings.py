@@ -1534,9 +1534,12 @@ class CvatTaskOrJobDataExtractor(dm.SourceExtractor, CVATDataExtractorMixin):
                         attributes["labels"].append({"label_id": idx, "name": label["name"], "color": label["color"], "type": label["type"]})
                         attributes["track_id"] = -1
 
+                extra_images_paths = dm_image[1]
+                extra_images_objects = [dm.Image(path=image_path) for image_path in extra_images_paths]
+
                 dm_item = dm.DatasetItem(
                     id=osp.splitext(osp.split(frame_data.name)[-1])[0],
-                    annotations=dm_anno, media=PointCloud(dm_image[0]), related_images=dm_image[1],
+                    annotations=dm_anno, media=PointCloud(dm_image[0], extra_images=extra_images_objects), related_images=dm_image[1],
                     attributes=attributes
                 )
 
@@ -1624,9 +1627,12 @@ class CVATProjectDataExtractor(dm.Extractor, CVATDataExtractorMixin):
                         attributes["labels"].append({"label_id": idx, "name": label["name"], "color": label["color"], "type": label["type"]})
                         attributes["track_id"] = -1
 
+                extra_images_paths = dm_image[1]
+                extra_images_objects = [dm.Image(path=image_path) for image_path in extra_images_paths]
+
                 dm_item = dm.DatasetItem(
                     id=osp.splitext(osp.split(frame_data.name)[-1])[0],
-                    annotations=dm_anno, media=PointCloud(dm_image[0]), related_images=dm_image[1],
+                    annotations=dm_anno, media=PointCloud(dm_image[0], extra_images=extra_images_objects), related_images=dm_image[1],
                     attributes=attributes, subset=frame_data.subset
                 )
             dm_items.append(dm_item)
