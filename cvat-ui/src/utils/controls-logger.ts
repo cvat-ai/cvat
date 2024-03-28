@@ -67,7 +67,6 @@ class EventRecorder {
                     }
                 });
         }, CONTROLS_LOGS_INTERVAL);
-        console.log(this.#savingTimeout);
     }
 
     public cancelSave(): void {
@@ -75,7 +74,6 @@ class EventRecorder {
             window.clearTimeout(this.#savingTimeout);
             this.#savingTimeout = null;
         }
-        console.log(this.#savingTimeout);
     }
 
     private filterClassName(cls: string): string {
