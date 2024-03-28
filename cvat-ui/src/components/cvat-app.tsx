@@ -71,7 +71,7 @@ import showPlatformNotification, {
 } from 'utils/platform-checker';
 import '../styles.scss';
 import appConfig from 'config';
-import EventRecorder from 'utils/controls-logger';
+import EventRecorder from 'utils/event-recorder';
 import { authQuery } from 'utils/auth-query';
 import EmailConfirmationPage from './email-confirmation-pages/email-confirmed';
 import EmailVerificationSentPage from './email-confirmation-pages/email-verification-sent';
