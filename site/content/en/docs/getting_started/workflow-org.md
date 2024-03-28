@@ -46,7 +46,7 @@ To use CVAT within your organization, please follow these steps:
 9. (Optional) Add [**Instructions for annotators**]({{< relref "/docs/manual/advanced/specification" >}}).
 10. (Optional) Configure [**Webhooks**]({{< relref "/docs/administration/advanced/webhooks" >}}).
 11. Assign jobs to annotators by adding the annotator name to **Assignee** and
-    changing the [**Job stage**](https://opencv.github.io/cvat/docs/manual/advanced/iam_user_roles/#job-stage)
+    changing the [**Job stage**]({{< relref "/docs/manual/advanced/iam_user_roles#job-stage" >}})
     to **Annotation**.
 12. Annotator will see assigned jobs and annotate them.
 13. (Optional) In case you've created
@@ -55,7 +55,7 @@ To use CVAT within your organization, please follow these steps:
     check the accuracy of the annotation.
 14. If you are using the manual validation,
     assign jobs to validators by adding the validator name to **Assignee** and
-    changing the [**Job stage**](https://opencv.github.io/cvat/docs/manual/advanced/iam_user_roles/#job-stage)
+    changing the [**Job stage**]({{< relref "/docs/manual/advanced/iam_user_roles#job-stage" >}})
     to **Validation**.
 15. Validator will see assigned jobs and report issues.
     <br>Note, that validators can correct issues,
