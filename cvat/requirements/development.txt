@@ -8,9 +8,9 @@
 -r base.txt
 astroid==2.11.7
     # via pylint
-autopep8==2.0.4
+autopep8==2.1.0
     # via django-silk
-black==24.2.0
+black==24.3.0
     # via -r cvat/requirements/development.in
 dill==0.3.8
     # via pylint
@@ -62,5 +62,5 @@ tornado==6.4
     # via snakeviz
 
 # The following packages are considered to be unsafe in a requirements file:
-setuptools==69.1.1
+setuptools==69.2.0
     # via astroid
