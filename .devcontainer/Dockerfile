@@ -3,7 +3,6 @@
 # SPDX-License-Identifier: MIT
 FROM cvat/server:dev
 
-ARG CONTAINER_USER
 ARG HOST_USER_UID
 
 ENV DJANGO_CONFIGURATION="development"
