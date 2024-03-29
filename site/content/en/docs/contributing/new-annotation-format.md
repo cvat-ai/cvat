@@ -142,17 +142,17 @@ task_data.add_shape(shape)
 
 ## Format specifications
 
-- [CVAT]({{< relref "/docs/manual/advanced/formats/format-cvat" >}})
-- [Datumaro]({{< relref "/docs/manual/advanced/formats/format-datumaro" >}})
-- [LabelMe]({{< relref "/docs/manual/advanced/formats/format-labelme" >}})
-- [MOT]({{< relref "/docs/manual/advanced/formats/format-mot" >}})
-- [MOTS]({{< relref "/docs/manual/advanced/formats/format-mots" >}})
-- [COCO]({{< relref "/docs/manual/advanced/formats/format-coco" >}})
-- [PASCAL VOC and mask]({{< relref "/docs/manual/advanced/formats/format-voc" >}})
-- [YOLO]({{< relref "/docs/manual/advanced/formats/format-yolo" >}})
-- [ImageNet]({{< relref "/docs/manual/advanced/formats/format-imagenet" >}})
-- [CamVid]({{< relref "/docs/manual/advanced/formats/format-camvid" >}})
-- [WIDER Face]({{< relref "/docs/manual/advanced/formats/format-widerface" >}})
-- [VGGFace2]({{< relref "/docs/manual/advanced/formats/format-vggface2" >}})
-- [Market-1501]({{< relref "/docs/manual/advanced/formats/format-market1501" >}})
-- [ICDAR13/15]({{< relref "/docs/manual/advanced/formats/format-icdar" >}})
+- {{< ilink "/docs/manual/advanced/formats/format-cvat" "CVAT" >}}
+- {{< ilink "/docs/manual/advanced/formats/format-datumaro" "Datumaro" >}}
+- {{< ilink "/docs/manual/advanced/formats/format-labelme" "LabelMe" >}}
+- {{< ilink "/docs/manual/advanced/formats/format-mot" "MOT" >}}
+- {{< ilink "/docs/manual/advanced/formats/format-mots" "MOTS" >}}
+- {{< ilink "/docs/manual/advanced/formats/format-coco" "COCO" >}}
+- {{< ilink "/docs/manual/advanced/formats/format-voc" "PASCAL VOC and mask" >}}
+- {{< ilink "/docs/manual/advanced/formats/format-yolo" "YOLO" >}}
+- {{< ilink "/docs/manual/advanced/formats/format-imagenet" "ImageNet" >}}
+- {{< ilink "/docs/manual/advanced/formats/format-camvid" "CamVid" >}}
+- {{< ilink "/docs/manual/advanced/formats/format-widerface" "WIDER Face" >}}
+- {{< ilink "/docs/manual/advanced/formats/format-vggface2" "VGGFace2" >}}
+- {{< ilink "/docs/manual/advanced/formats/format-market1501" "Market-1501" >}}
+- {{< ilink "/docs/manual/advanced/formats/format-icdar" "ICDAR13/15" >}}

@@ -49,8 +49,8 @@ For clear all filters press `Clear filters`.
 | `ID`           | number or range of job ID                    |                                             |
 | `Task ID`      | number or range of task ID                   |                                             |
 | `Project ID`   | number or range of project ID                |                                             |
-| `Task name`    | task name                                    | Set when creating a task, <br>can be changed on the ([task page]({{< relref "/docs/manual/basics/task-details" >}})) |
-| `Project name` | project name                                 | Specified when creating a project, <br>can be changed on the ([project section]({{< relref "/docs/manual/advanced/projects" >}})) |
+| `Task name`    | task name                                    | Set when creating a task, <br>can be changed on the ({{< ilink "/docs/manual/basics/task-details" "task page" >}}) |
+| `Project name` | project name                                 | Specified when creating a project, <br>can be changed on the ({{< ilink "/docs/manual/advanced/projects" "project section" >}}) |
 
 [state]: /docs/manual/basics/vocabulary/#state
 [stage]: /docs/manual/basics/vocabulary/#stage
