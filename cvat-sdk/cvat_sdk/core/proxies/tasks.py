@@ -221,12 +221,12 @@ class Task(
         frame_ids: Sequence[int],
         image_extension: str,
         *,
-        outdir: str = ".",
+        outdir: StrPath = ".",
         quality: str = "original",
         filename_pattern: str = "frame_{frame_id:06d}{frame_ext}",
     ) -> Optional[List[Image.Image]]:
         """
-        Download the requested frame numbers for a job and save images as outdir/filename_pattern
+        Download the requested frame numbers for a task and save images as outdir/filename_pattern
         """
 
         outdir = Path(outdir)
