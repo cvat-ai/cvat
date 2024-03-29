@@ -18,11 +18,14 @@ function update_env_var {
 }
 
 if [ ! -f "${env_file}" ]; then
-    echo "ERROR: .env file not present in the workspace directory. Use dist.env file as a template for your.env file."
+    echo "ERROR: .env file not present in the workspace directory. \
+    Use dist.env file as a template for your.env file."
     exit 1
 else :
-    if ! grep -q "^## init.sh BEGIN$" "${env_file}" || ! grep -q "^## init.sh END$" "${env_file}"; then
-        echo "ERROR: .env file is not managed by init.sh. Please use dist.env file as a template for your.env file."
+    if ! grep -q "^## init.sh BEGIN$" "${env_file}" || \
+    ! grep -q "^## init.sh END$" "${env_file}"; then
+        echo "ERROR: .env file is not managed by init.sh. \
+        Please use dist.env file as a template for your.env file."
     exit 1
     fi
 fi
@@ -30,7 +33,8 @@ fi
 git_branch=$(git branch --show-current)
 host_user_id=$(id -u)
 
-git_branch_isolation=$(grep -oP "^GIT_BRANCH_ISOLATION=\K\S+" "${env_file}") || git_branch_isolation=false
+git_branch_isolation=$(grep -oP "^GIT_BRANCH_ISOLATION=\K\S+" "${env_file}") || \
+                     git_branch_isolation=false
 
 if [ "${git_branch_isolation}" == true ]; then
     update_env_var GIT_BRANCH "${git_branch}"
@@ -42,20 +46,32 @@ echo "INFO: set HOST_USER_UID=${host_user_id}"
 
 echo "INFO: done export env vars"
 
-# The container volumes are parameterized with git branch values in .devcontainer/docker-compose-yml.
-# The volumes get created automatically, however they do not automatically get mounted upon the container restart
+# The container volumes are parameterized with git branch values in
+# .devcontainer/docker-compose-yml. The volumes get created automatically,
+# however they do not automatically get mounted upon the container restart
 # The containers need to be removed and created again with the new volume mount
 # Tracking this issue at https://github.com/docker/compose/issues/11642
-# Stop and remove each container separately instead of docker compsoe down as we need to preseve the orginal network
-# to be reused
+# Stop and remove each container separately instead of docker compsoe down
+# as we need to preseve the orginal network to be reused
 if [ "${git_branch_isolation}" == true ]; then
     echo "INFO: stop and remove backing services for new volume mount"
     services=("cvat_db" "cvat_opa" "cvat_redis_inmem" "cvat_redis_ondisk")
     for service in "${services[@]}"; do
-        docker container stop "${service}" 2>&1 >/dev/null && docker container rm "${service}" 2>&1 >/dev/null
+        docker container stop "${service}" 2>&1 >/dev/null && \
+        docker container rm "${service}" 2>&1 >/dev/null
         echo "INFO: done stop and remove ${service}"
     done
     echo "INFO: done removed containers"
 fi
+
+# VS Code Remote does not yet support merge tags for docker compose files,
+# namely reset and replace tags, therefore the files need to merged and parsed manually
+# Tracking this issue here https://github.com/microsoft/vscode-remote-release/issues/8734
+docker compose -f ${workspace_dir}/docker-compose.yml \
+               -f ${workspace_dir}/docker-compose.dev.yml \
+               -f ${devcontainer_dir}/docker-compose.yml config \
+               > ${devcontainer_dir}/docker-compose.rendered.yml
+
+echo "INFO: done merge docker compose files"
 
 exit 0

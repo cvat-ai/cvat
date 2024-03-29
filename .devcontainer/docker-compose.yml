@@ -18,7 +18,7 @@ services:
       DJANGO_SUPERUSER_USERNAME: ${DJANGO_SUPERUSER_USERNAME:-admin}
       DJANGO_SUPERUSER_PASSWORD: ${DJANGO_SUPERUSER_PASSWORD:-admin}
       DJANGO_SUPERUSER_EMAIL: ${DJANGO_SUPERUSER_EMAIL:-admin@admin.com}
-    volumes:
+    volumes: !override
       - cvat_data:/home/devcontainer/workspace/data
       - cvat_keys:/home/devcontainer/workspace/keys
       - cvat_logs:/home/devcontainer/workspace/logs

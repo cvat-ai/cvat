@@ -4,9 +4,7 @@
     // Mark all directories as safe as os like windows using WSL adds incorrect path when adding specific path
     "postStartCommand": "git config --global --add safe.directory '*'",
     "dockerComposeFile": [
-        "${localWorkspaceFolder}/docker-compose.yml",
-        "${localWorkspaceFolder}/docker-compose.dev.yml",
-        "${localWorkspaceFolder}/.devcontainer/docker-compose.yml"
+        "${localWorkspaceFolder}/.devcontainer/docker-compose.rendered.yml"
     ],
     "service": "cvat_server",
     "overrideCommand": false,

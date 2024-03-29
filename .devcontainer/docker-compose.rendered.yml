@@ -1,0 +1,759 @@
+name: cvat
+services:
+  cvat_clickhouse:
+    container_name: cvat_clickhouse
+    environment:
+      CLICKHOUSE_DB: cvat
+      CLICKHOUSE_PASSWORD: user
+      CLICKHOUSE_USER: user
+    image: clickhouse/clickhouse-server:23.11-alpine
+    networks:
+      cvat:
+        aliases:
+          - clickhouse
+    ports:
+      - mode: ingress
+        target: 8123
+        published: "8123"
+        protocol: tcp
+    restart: always
+    volumes:
+      - type: bind
+        source: /mnt/ssd/work/cvat/components/analytics/clickhouse/init.sh
+        target: /docker-entrypoint-initdb.d/init.sh
+        read_only: true
+        bind:
+          create_host_path: true
+      - type: volume
+        source: cvat_events_db
+        target: /var/lib/clickhouse
+        volume: {}
+  cvat_db:
+    container_name: cvat_db
+    environment:
+      POSTGRES_DB: cvat
+      POSTGRES_HOST_AUTH_METHOD: trust
+      POSTGRES_USER: root
+    image: postgres:15-alpine
+    networks:
+      cvat: null
+    ports:
+      - mode: ingress
+        target: 5432
+        published: "5432"
+        protocol: tcp
+    restart: "no"
+    volumes:
+      - type: volume
+        source: cvat_db
+        target: /var/lib/postgresql/data
+        volume: {}
+  cvat_grafana:
+    container_name: cvat_grafana
+    entrypoint:
+      - sh
+      - -euc
+      - |
+        mkdir -p /etc/grafana/provisioning/datasources
+        cat <<EOF > /etc/grafana/provisioning/datasources/ds.yaml
+        apiVersion: 1
+        datasources:
+          - name: 'ClickHouse'
+            type: 'grafana-clickhouse-datasource'
+            isDefault: true
+            jsonData:
+              defaultDatabase: cvat
+              port: 9000
+              server: clickhouse
+              username: user
+              tlsSkipVerify: false
+            secureJsonData:
+              password: user
+            editable: true
+        EOF
+        mkdir -p /etc/grafana/provisioning/dashboards
+        cat <<EOF > /etc/grafana/provisioning/dashboards/dashboard.yaml
+        apiVersion: 1
+        providers:
+          - name: cvat-logs
+            type: file
+            updateIntervalSeconds: 30
+            options:
+              path:  /var/lib/grafana/dashboards
+              foldersFromFilesStructure: true
+        EOF
+        exec /run.sh
+    environment:
+      GF_AUTH_ANONYMOUS_ENABLED: "true"
+      GF_AUTH_ANONYMOUS_ORG_ROLE: Admin
+      GF_AUTH_BASIC_ENABLED: "false"
+      GF_AUTH_DISABLE_LOGIN_FORM: "true"
+      GF_DASHBOARDS_DEFAULT_HOME_DASHBOARD_PATH: /var/lib/grafana/dashboards/all_events.json
+      GF_INSTALL_PLUGINS: https://github.com/grafana/clickhouse-datasource/releases/download/v2.0.7/grafana-clickhouse-datasource-2.0.7.linux_amd64.zip;grafana-clickhouse-datasource
+      GF_PATHS_PROVISIONING: /etc/grafana/provisioning
+      GF_PLUGINS_ALLOW_LOADING_UNSIGNED_PLUGINS: grafana-clickhouse-datasource
+      GF_SERVER_ROOT_URL: http://localhost/analytics
+    image: grafana/grafana-oss:10.1.2
+    networks:
+      cvat:
+        aliases:
+          - grafana
+    volumes:
+      - type: bind
+        source: /mnt/ssd/work/cvat/components/analytics/grafana/dashboards
+        target: /var/lib/grafana/dashboards
+        read_only: true
+        bind:
+          create_host_path: true
+  cvat_opa:
+    command:
+      - run
+      - --server
+      - --log-level=error
+      - --set=services.cvat.url=http://cvat-server:8080
+      - --set=bundles.cvat.service=cvat
+      - --set=bundles.cvat.resource=/api/auth/rules
+      - --set=bundles.cvat.polling.min_delay_seconds=5
+      - --set=bundles.cvat.polling.max_delay_seconds=15
+    container_name: cvat_opa
+    image: openpolicyagent/opa:0.45.0-rootless
+    networks:
+      cvat:
+        aliases:
+          - opa
+    ports:
+      - mode: ingress
+        target: 8181
+        published: "8181"
+        protocol: tcp
+    restart: "no"
+  cvat_redis_inmem:
+    command:
+      - redis-server
+      - --save
+      - "60"
+      - "100"
+      - --appendonly
+      - "yes"
+    container_name: cvat_redis_inmem
+    image: redis:7.2.3-alpine
+    networks:
+      cvat: null
+    ports:
+      - mode: ingress
+        target: 6379
+        published: "6379"
+        protocol: tcp
+    restart: "no"
+    volumes:
+      - type: volume
+        source: cvat_inmem_db
+        target: /data
+        volume: {}
+  cvat_redis_ondisk:
+    command:
+      - --dir
+      - /var/lib/kvrocks/data
+    container_name: cvat_redis_ondisk
+    image: apache/kvrocks:2.7.0
+    init: true
+    networks:
+      cvat: null
+    ports:
+      - mode: ingress
+        target: 6666
+        published: "6666"
+        protocol: tcp
+    restart: "no"
+    volumes:
+      - type: volume
+        source: cvat_cache_db
+        target: /var/lib/kvrocks/data
+        volume: {}
+  cvat_server:
+    build:
+      context: /mnt/ssd/work/cvat
+      dockerfile: .devcontainer/Dockerfile
+      args:
+        CLAM_AV: null
+        COVERAGE_PROCESS_START: null
+        CVAT_DEBUG_ENABLED: null
+        HOST_USER_UID: "1000"
+        http_proxy: null
+        https_proxy: null
+        pull: null
+        socks_proxy: null
+    command:
+      - sleep infinity
+    container_name: cvat_server
+    depends_on:
+      cvat_db:
+        condition: service_started
+        required: true
+      cvat_opa:
+        condition: service_started
+        required: true
+      cvat_redis_inmem:
+        condition: service_started
+        required: true
+      cvat_redis_ondisk:
+        condition: service_started
+        required: true
+    entrypoint:
+      - /bin/bash
+      - -c
+    environment:
+      ADAPTIVE_AUTO_ANNOTATION: "false"
+      ALLOWED_HOSTS: '*'
+      CLICKHOUSE_HOST: clickhouse
+      COVERAGE_PROCESS_START: null
+      CVAT_ANALYTICS: "1"
+      CVAT_BASE_URL: null
+      CVAT_DEBUG_ENABLED: "no"
+      CVAT_DEBUG_PORT: "9090"
+      CVAT_DEBUG_WAIT: "no"
+      CVAT_POSTGRES_HOST: cvat_db
+      CVAT_REDIS_INMEM_HOST: cvat_redis_inmem
+      CVAT_REDIS_INMEM_PORT: "6379"
+      CVAT_REDIS_ONDISK_HOST: cvat_redis_ondisk
+      CVAT_REDIS_ONDISK_PORT: "6666"
+      DJANGO_LOG_SERVER_HOST: ""
+      DJANGO_LOG_SERVER_PORT: "80"
+      DJANGO_MODWSGI_EXTRA_ARGS: ""
+      DJANGO_SUPERUSER_EMAIL: admin@admin.com
+      DJANGO_SUPERUSER_PASSWORD: admin
+      DJANGO_SUPERUSER_USERNAME: admin
+      IAM_OPA_BUNDLE: "1"
+      IAM_OPA_HOST: http://opa:8181
+      NUMPROCS: "2"
+      ONE_RUNNING_JOB_IN_QUEUE_PER_USER: null
+      SMOKESCREEN_OPTS: ""
+      no_proxy: clickhouse,grafana,vector,nuclio,opa,
+    image: cvat/server:devcontainer
+    labels:
+      traefik.enable: "true"
+      traefik.http.routers.cvat.entrypoints: web
+      traefik.http.routers.cvat.rule: Host(`localhost`) && PathPrefix(`/api/`, `/static/`, `/admin`, `/documentation/`, `/django-rq`)
+      traefik.http.services.cvat.loadbalancer.server.port: "8080"
+    networks:
+      cvat:
+        aliases:
+          - cvat-server
+    ports:
+      - mode: ingress
+        target: 9090
+        published: "9090"
+        protocol: tcp
+    restart: "no"
+    volumes:
+      - type: volume
+        source: cvat_data
+        target: /home/devcontainer/workspace/data
+        volume: {}
+      - type: volume
+        source: cvat_keys
+        target: /home/devcontainer/workspace/keys
+        volume: {}
+      - type: volume
+        source: cvat_logs
+        target: /home/devcontainer/workspace/logs
+        volume: {}
+      - type: volume
+        source: cvat_node_modules
+        target: /home/devcontainer/workspace/node_modules
+        volume: {}
+      - type: volume
+        source: cvat_server_static
+        target: /home/devcontainer/workspace/static
+        volume: {}
+      - type: volume
+        source: container_user_data
+        target: /home/devcontainer/.zsh_history
+        volume: {}
+  cvat_ui:
+    build:
+      context: /mnt/ssd/work/cvat
+      dockerfile: Dockerfile.ui
+      args:
+        http_proxy: null
+        https_proxy: null
+        no_proxy: null
+        socks_proxy: null
+    container_name: cvat_ui
+    depends_on:
+      cvat_server:
+        condition: service_started
+        required: true
+    image: cvat/ui:dev
+    labels:
+      traefik.enable: "true"
+      traefik.http.routers.cvat-ui.entrypoints: web
+      traefik.http.routers.cvat-ui.rule: Host(`localhost`)
+      traefik.http.services.cvat-ui.loadbalancer.server.port: "80"
+    networks:
+      cvat: null
+    restart: always
+  cvat_utils:
+    command:
+      - run
+      - utils
+    container_name: cvat_utils
+    depends_on:
+      cvat_db:
+        condition: service_started
+        required: true
+      cvat_redis_inmem:
+        condition: service_started
+        required: true
+      cvat_redis_ondisk:
+        condition: service_started
+        required: true
+    environment:
+      CLICKHOUSE_HOST: clickhouse
+      CVAT_POSTGRES_HOST: cvat_db
+      CVAT_REDIS_INMEM_HOST: cvat_redis_inmem
+      CVAT_REDIS_INMEM_PASSWORD: ""
+      CVAT_REDIS_INMEM_PORT: "6379"
+      CVAT_REDIS_ONDISK_HOST: cvat_redis_ondisk
+      CVAT_REDIS_ONDISK_PORT: "6666"
+      DJANGO_LOG_SERVER_HOST: vector
+      DJANGO_LOG_SERVER_PORT: "80"
+      NUMPROCS: "1"
+      SMOKESCREEN_OPTS: ""
+      no_proxy: clickhouse,grafana,vector,nuclio,opa,
+    image: cvat/server:dev
+    networks:
+      cvat: null
+    restart: always
+    volumes:
+      - type: volume
+        source: cvat_data
+        target: /home/django/data
+        volume: {}
+      - type: volume
+        source: cvat_keys
+        target: /home/django/keys
+        volume: {}
+      - type: volume
+        source: cvat_logs
+        target: /home/django/logs
+        volume: {}
+  cvat_vector:
+    container_name: cvat_vector
+    depends_on:
+      cvat_clickhouse:
+        condition: service_started
+        required: true
+    environment:
+      CLICKHOUSE_DB: cvat
+      CLICKHOUSE_HOST: clickhouse
+      CLICKHOUSE_PASSWORD: user
+      CLICKHOUSE_USER: user
+    image: timberio/vector:0.26.0-alpine
+    networks:
+      cvat:
+        aliases:
+          - vector
+    ports:
+      - mode: ingress
+        target: 80
+        published: "8282"
+        protocol: tcp
+    restart: always
+    volumes:
+      - type: bind
+        source: /mnt/ssd/work/cvat/components/analytics/vector/vector.toml
+        target: /etc/vector/vector.toml
+        read_only: true
+        bind:
+          create_host_path: true
+  cvat_worker_analytics_reports:
+    command:
+      - run
+      - worker.analytics_reports
+    container_name: cvat_worker_analytics_reports
+    depends_on:
+      cvat_db:
+        condition: service_started
+        required: true
+      cvat_redis_inmem:
+        condition: service_started
+        required: true
+      cvat_redis_ondisk:
+        condition: service_started
+        required: true
+    environment:
+      CLICKHOUSE_HOST: clickhouse
+      COVERAGE_PROCESS_START: null
+      CVAT_ANALYTICS_CHECK_JOB_DELAY: "5"
+      CVAT_DEBUG_ENABLED: "no"
+      CVAT_DEBUG_PORT: "9095"
+      CVAT_POSTGRES_HOST: cvat_db
+      CVAT_REDIS_INMEM_HOST: cvat_redis_inmem
+      CVAT_REDIS_INMEM_PORT: "6379"
+      CVAT_REDIS_ONDISK_HOST: cvat_redis_ondisk
+      CVAT_REDIS_ONDISK_PORT: "6666"
+      DJANGO_LOG_SERVER_HOST: vector
+      DJANGO_LOG_SERVER_PORT: "80"
+      NUMPROCS: "1"
+      SMOKESCREEN_OPTS: ""
+      no_proxy: clickhouse,grafana,vector,nuclio,opa,
+    image: cvat/server:dev
+    networks:
+      cvat: null
+    ports:
+      - mode: ingress
+        target: 9095
+        published: "9095"
+        protocol: tcp
+    restart: always
+    volumes:
+      - type: volume
+        source: cvat_data
+        target: /home/django/data
+        volume: {}
+      - type: volume
+        source: cvat_keys
+        target: /home/django/keys
+        volume: {}
+      - type: volume
+        source: cvat_logs
+        target: /home/django/logs
+        volume: {}
+  cvat_worker_annotation:
+    command:
+      - run
+      - worker.annotation
+    container_name: cvat_worker_annotation
+    depends_on:
+      cvat_db:
+        condition: service_started
+        required: true
+      cvat_redis_inmem:
+        condition: service_started
+        required: true
+      cvat_redis_ondisk:
+        condition: service_started
+        required: true
+    environment:
+      CLICKHOUSE_HOST: clickhouse
+      COVERAGE_PROCESS_START: null
+      CVAT_DEBUG_ENABLED: "no"
+      CVAT_DEBUG_PORT: "9091"
+      CVAT_POSTGRES_HOST: cvat_db
+      CVAT_REDIS_INMEM_HOST: cvat_redis_inmem
+      CVAT_REDIS_INMEM_PORT: "6379"
+      CVAT_REDIS_ONDISK_HOST: cvat_redis_ondisk
+      CVAT_REDIS_ONDISK_PORT: "6666"
+      DJANGO_LOG_SERVER_HOST: vector
+      DJANGO_LOG_SERVER_PORT: "80"
+      NUMPROCS: "1"
+      SMOKESCREEN_OPTS: ""
+      no_proxy: clickhouse,grafana,vector,nuclio,opa,
+    image: cvat/server:dev
+    networks:
+      cvat: null
+    ports:
+      - mode: ingress
+        target: 9091
+        published: "9091"
+        protocol: tcp
+    restart: always
+    volumes:
+      - type: volume
+        source: cvat_data
+        target: /home/django/data
+        volume: {}
+      - type: volume
+        source: cvat_keys
+        target: /home/django/keys
+        volume: {}
+      - type: volume
+        source: cvat_logs
+        target: /home/django/logs
+        volume: {}
+  cvat_worker_export:
+    command:
+      - run
+      - worker.export
+    container_name: cvat_worker_export
+    depends_on:
+      cvat_db:
+        condition: service_started
+        required: true
+      cvat_redis_inmem:
+        condition: service_started
+        required: true
+      cvat_redis_ondisk:
+        condition: service_started
+        required: true
+    environment:
+      CLICKHOUSE_HOST: clickhouse
+      COVERAGE_PROCESS_START: null
+      CVAT_DEBUG_ENABLED: "no"
+      CVAT_DEBUG_PORT: "9092"
+      CVAT_POSTGRES_HOST: cvat_db
+      CVAT_REDIS_INMEM_HOST: cvat_redis_inmem
+      CVAT_REDIS_INMEM_PORT: "6379"
+      CVAT_REDIS_ONDISK_HOST: cvat_redis_ondisk
+      CVAT_REDIS_ONDISK_PORT: "6666"
+      DJANGO_LOG_SERVER_HOST: vector
+      DJANGO_LOG_SERVER_PORT: "80"
+      NUMPROCS: "2"
+      SMOKESCREEN_OPTS: ""
+      no_proxy: clickhouse,grafana,vector,nuclio,opa,
+    image: cvat/server:dev
+    networks:
+      cvat: null
+    ports:
+      - mode: ingress
+        target: 9092
+        published: "9092"
+        protocol: tcp
+    restart: always
+    volumes:
+      - type: volume
+        source: cvat_data
+        target: /home/django/data
+        volume: {}
+      - type: volume
+        source: cvat_keys
+        target: /home/django/keys
+        volume: {}
+      - type: volume
+        source: cvat_logs
+        target: /home/django/logs
+        volume: {}
+  cvat_worker_import:
+    command:
+      - run
+      - worker.import
+    container_name: cvat_worker_import
+    depends_on:
+      cvat_db:
+        condition: service_started
+        required: true
+      cvat_redis_inmem:
+        condition: service_started
+        required: true
+      cvat_redis_ondisk:
+        condition: service_started
+        required: true
+    environment:
+      CLICKHOUSE_HOST: clickhouse
+      COVERAGE_PROCESS_START: null
+      CVAT_DEBUG_ENABLED: "no"
+      CVAT_DEBUG_PORT: "9093"
+      CVAT_POSTGRES_HOST: cvat_db
+      CVAT_REDIS_INMEM_HOST: cvat_redis_inmem
+      CVAT_REDIS_INMEM_PORT: "6379"
+      CVAT_REDIS_ONDISK_HOST: cvat_redis_ondisk
+      CVAT_REDIS_ONDISK_PORT: "6666"
+      DJANGO_LOG_SERVER_HOST: vector
+      DJANGO_LOG_SERVER_PORT: "80"
+      NUMPROCS: "2"
+      SMOKESCREEN_OPTS: ""
+      no_proxy: clickhouse,grafana,vector,nuclio,opa,
+    image: cvat/server:dev
+    networks:
+      cvat: null
+    ports:
+      - mode: ingress
+        target: 9093
+        published: "9093"
+        protocol: tcp
+    restart: always
+    volumes:
+      - type: volume
+        source: cvat_data
+        target: /home/django/data
+        volume: {}
+      - type: volume
+        source: cvat_keys
+        target: /home/django/keys
+        volume: {}
+      - type: volume
+        source: cvat_logs
+        target: /home/django/logs
+        volume: {}
+  cvat_worker_quality_reports:
+    command:
+      - run
+      - worker.quality_reports
+    container_name: cvat_worker_quality_reports
+    depends_on:
+      cvat_db:
+        condition: service_started
+        required: true
+      cvat_redis_inmem:
+        condition: service_started
+        required: true
+      cvat_redis_ondisk:
+        condition: service_started
+        required: true
+    environment:
+      CLICKHOUSE_HOST: clickhouse
+      COVERAGE_PROCESS_START: null
+      CVAT_DEBUG_ENABLED: "no"
+      CVAT_DEBUG_PORT: "9094"
+      CVAT_POSTGRES_HOST: cvat_db
+      CVAT_REDIS_INMEM_HOST: cvat_redis_inmem
+      CVAT_REDIS_INMEM_PORT: "6379"
+      CVAT_REDIS_ONDISK_HOST: cvat_redis_ondisk
+      CVAT_REDIS_ONDISK_PORT: "6666"
+      DJANGO_LOG_SERVER_HOST: vector
+      DJANGO_LOG_SERVER_PORT: "80"
+      NUMPROCS: "1"
+      SMOKESCREEN_OPTS: ""
+      no_proxy: clickhouse,grafana,vector,nuclio,opa,
+    image: cvat/server:dev
+    networks:
+      cvat: null
+    ports:
+      - mode: ingress
+        target: 9094
+        published: "9094"
+        protocol: tcp
+    restart: always
+    volumes:
+      - type: volume
+        source: cvat_data
+        target: /home/django/data
+        volume: {}
+      - type: volume
+        source: cvat_keys
+        target: /home/django/keys
+        volume: {}
+      - type: volume
+        source: cvat_logs
+        target: /home/django/logs
+        volume: {}
+  cvat_worker_webhooks:
+    command:
+      - run
+      - worker.webhooks
+    container_name: cvat_worker_webhooks
+    depends_on:
+      cvat_db:
+        condition: service_started
+        required: true
+      cvat_redis_inmem:
+        condition: service_started
+        required: true
+      cvat_redis_ondisk:
+        condition: service_started
+        required: true
+    environment:
+      CLICKHOUSE_HOST: clickhouse
+      CVAT_POSTGRES_HOST: cvat_db
+      CVAT_REDIS_INMEM_HOST: cvat_redis_inmem
+      CVAT_REDIS_INMEM_PORT: "6379"
+      CVAT_REDIS_ONDISK_HOST: cvat_redis_ondisk
+      CVAT_REDIS_ONDISK_PORT: "6666"
+      DJANGO_LOG_SERVER_HOST: vector
+      DJANGO_LOG_SERVER_PORT: "80"
+      NUMPROCS: "1"
+      SMOKESCREEN_OPTS: ""
+      no_proxy: clickhouse,grafana,vector,nuclio,opa,
+    image: cvat/server:dev
+    networks:
+      cvat: null
+    restart: always
+    volumes:
+      - type: volume
+        source: cvat_data
+        target: /home/django/data
+        volume: {}
+      - type: volume
+        source: cvat_keys
+        target: /home/django/keys
+        volume: {}
+      - type: volume
+        source: cvat_logs
+        target: /home/django/logs
+        volume: {}
+  traefik:
+    container_name: traefik
+    environment:
+      CVAT_HOST: localhost
+      DJANGO_LOG_VIEWER_HOST: grafana
+      DJANGO_LOG_VIEWER_PORT: "3000"
+      TRAEFIK_ACCESSLOG_FORMAT: json
+      TRAEFIK_ENTRYPOINTS_web_ADDRESS: :8080
+      TRAEFIK_LOG_FORMAT: json
+      TRAEFIK_PROVIDERS_DOCKER_EXPOSEDBYDEFAULT: "false"
+      TRAEFIK_PROVIDERS_DOCKER_NETWORK: cvat
+      TRAEFIK_PROVIDERS_FILE_DIRECTORY: /etc/traefik/rules
+    image: traefik:v2.10
+    logging:
+      driver: json-file
+      options:
+        max-file: "10"
+        max-size: 100m
+    networks:
+      cvat: null
+    ports:
+      - mode: ingress
+        target: 8080
+        published: "8080"
+        protocol: tcp
+      - mode: ingress
+        target: 8090
+        published: "8090"
+        protocol: tcp
+    restart: always
+    volumes:
+      - type: bind
+        source: /var/run/docker.sock
+        target: /var/run/docker.sock
+        read_only: true
+        bind:
+          create_host_path: true
+      - type: bind
+        source: /mnt/ssd/work/cvat/components/analytics/grafana_conf.yml
+        target: /etc/traefik/rules/grafana_conf.yml
+        read_only: true
+        bind:
+          create_host_path: true
+networks:
+  cvat:
+    name: cvat_cvat
+volumes:
+  container_user_data:
+    name: cvat_container_user_data
+  cvat_cache_db:
+    name: cvat_cache_db_devcontainer-for-development-environment
+  cvat_data:
+    name: cvat_data_devcontainer-for-development-environment
+  cvat_db:
+    name: cvat_db_devcontainer-for-development-environment
+  cvat_events_db:
+    name: cvat_cvat_events_db
+  cvat_inmem_db:
+    name: cvat_inmem_db_devcontainer-for-development-environment
+  cvat_keys:
+    name: cvat_keys_devcontainer-for-development-environment
+  cvat_logs:
+    name: cvat_logs_devcontainer-for-development-environment
+  cvat_node_modules:
+    name: cvat_cvat_node_modules
+  cvat_server_static:
+    name: cvat_cvat_server_static
+x-backend-deps:
+  cvat_db:
+    condition: service_started
+  cvat_redis_inmem:
+    condition: service_started
+  cvat_redis_ondisk:
+    condition: service_started
+x-backend-env:
+  CLICKHOUSE_HOST: clickhouse
+  CVAT_POSTGRES_HOST: cvat_db
+  CVAT_REDIS_INMEM_HOST: cvat_redis_inmem
+  CVAT_REDIS_INMEM_PORT: 6379
+  CVAT_REDIS_ONDISK_HOST: cvat_redis_ondisk
+  CVAT_REDIS_ONDISK_PORT: 6666
+  DJANGO_LOG_SERVER_HOST: vector
+  DJANGO_LOG_SERVER_PORT: 80
+  SMOKESCREEN_OPTS: ""
+  no_proxy: clickhouse,grafana,vector,nuclio,opa,
