@@ -48,6 +48,6 @@ pyunpack==0.2.1
 redis==4.5.4
 requests~=2.26
 rq-scheduler==0.13.1
-rq==1.15.1
+rq==1.16.0
 rules>=3.3
 Shapely==1.7.1

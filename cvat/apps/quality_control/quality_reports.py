@@ -50,6 +50,7 @@ from cvat.apps.quality_control.models import (
     AnnotationConflictType,
     AnnotationType,
 )
+from cvat.utils.background_jobs import schedule_job_with_throttling
 
 
 class _Serializable:
@@ -218,6 +219,7 @@ class ConfusionMatrix(_Serializable):
     precision: np.array
     recall: np.array
     accuracy: np.array
+    jaccard_index: Optional[np.array]
 
     @property
     def axes(self):
@@ -240,6 +242,9 @@ class ConfusionMatrix(_Serializable):
             precision=np.asarray(d["precision"]),
             recall=np.asarray(d["recall"]),
             accuracy=np.asarray(d["accuracy"]),
+            # This field didn't exist at first, so it might not be present
+            # in old serialized instances.
+            jaccard_index=np.asarray(d["jaccard_index"]) if "jaccard_index" in d else None,
         )
 
 
@@ -1886,37 +1891,9 @@ class DatasetComparator:
             gt_label_idx = gt_ann.label if gt_ann else self._UNMATCHED_IDX
             confusion_matrix[ds_label_idx, gt_label_idx] += 1
 
-        matched_ann_counts = np.diag(confusion_matrix)
-        ds_ann_counts = np.sum(confusion_matrix, axis=1)
-        gt_ann_counts = np.sum(confusion_matrix, axis=0)
-        label_accuracies = _arr_div(
-            matched_ann_counts, ds_ann_counts + gt_ann_counts - matched_ann_counts
-        )
-        label_precisions = _arr_div(matched_ann_counts, ds_ann_counts)
-        label_recalls = _arr_div(matched_ann_counts, gt_ann_counts)
-
-        valid_annotations_count = np.sum(matched_ann_counts)
-        missing_annotations_count = np.sum(confusion_matrix[self._UNMATCHED_IDX, :])
-        extra_annotations_count = np.sum(confusion_matrix[:, self._UNMATCHED_IDX])
-        total_annotations_count = np.sum(confusion_matrix)
-        ds_annotations_count = np.sum(ds_ann_counts[: self._UNMATCHED_IDX])
-        gt_annotations_count = np.sum(gt_ann_counts[: self._UNMATCHED_IDX])
-
         self._frame_results[frame_id] = ComparisonReportFrameSummary(
-            annotations=ComparisonReportAnnotationsSummary(
-                valid_count=valid_annotations_count,
-                missing_count=missing_annotations_count,
-                extra_count=extra_annotations_count,
-                total_count=total_annotations_count,
-                ds_count=ds_annotations_count,
-                gt_count=gt_annotations_count,
-                confusion_matrix=ConfusionMatrix(
-                    labels=confusion_matrix_labels,
-                    rows=confusion_matrix,
-                    precision=label_precisions,
-                    recall=label_recalls,
-                    accuracy=label_accuracies,
-                ),
+            annotations=self._generate_annotations_summary(
+                confusion_matrix, confusion_matrix_labels
             ),
             annotation_components=ComparisonReportAnnotationComponentsSummary(
                 shape=ComparisonReportAnnotationShapeSummary(
@@ -1955,21 +1932,56 @@ class DatasetComparator:
 
         return label_names, confusion_matrix
 
+    @classmethod
+    def _generate_annotations_summary(
+        cls, confusion_matrix: np.ndarray, confusion_matrix_labels: List[str]
+    ) -> ComparisonReportAnnotationsSummary:
+        matched_ann_counts = np.diag(confusion_matrix)
+        ds_ann_counts = np.sum(confusion_matrix, axis=1)
+        gt_ann_counts = np.sum(confusion_matrix, axis=0)
+        total_annotations_count = np.sum(confusion_matrix)
+
+        label_jaccard_indices = _arr_div(
+            matched_ann_counts, ds_ann_counts + gt_ann_counts - matched_ann_counts
+        )
+        label_precisions = _arr_div(matched_ann_counts, ds_ann_counts)
+        label_recalls = _arr_div(matched_ann_counts, gt_ann_counts)
+        label_accuracies = (
+            total_annotations_count  # TP + TN + FP + FN
+            - (ds_ann_counts - matched_ann_counts)  # - FP
+            - (gt_ann_counts - matched_ann_counts)  # - FN
+            # ... = TP + TN
+        ) / (total_annotations_count or 1)
+
+        valid_annotations_count = np.sum(matched_ann_counts)
+        missing_annotations_count = np.sum(confusion_matrix[cls._UNMATCHED_IDX, :])
+        extra_annotations_count = np.sum(confusion_matrix[:, cls._UNMATCHED_IDX])
+        ds_annotations_count = np.sum(ds_ann_counts[: cls._UNMATCHED_IDX])
+        gt_annotations_count = np.sum(gt_ann_counts[: cls._UNMATCHED_IDX])
+
+        return ComparisonReportAnnotationsSummary(
+            valid_count=valid_annotations_count,
+            missing_count=missing_annotations_count,
+            extra_count=extra_annotations_count,
+            total_count=total_annotations_count,
+            ds_count=ds_annotations_count,
+            gt_count=gt_annotations_count,
+            confusion_matrix=ConfusionMatrix(
+                labels=confusion_matrix_labels,
+                rows=confusion_matrix,
+                precision=label_precisions,
+                recall=label_recalls,
+                accuracy=label_accuracies,
+                jaccard_index=label_jaccard_indices,
+            ),
+        )
+
     def generate_report(self) -> ComparisonReport:
         self._find_gt_conflicts()
 
         # accumulate stats
         intersection_frames = []
         conflicts = []
-        annotations = ComparisonReportAnnotationsSummary(
-            valid_count=0,
-            missing_count=0,
-            extra_count=0,
-            total_count=0,
-            ds_count=0,
-            gt_count=0,
-            confusion_matrix=None,
-        )
         annotation_components = ComparisonReportAnnotationComponentsSummary(
             shape=ComparisonReportAnnotationShapeSummary(
                 valid_count=0,
@@ -1992,11 +2004,6 @@ class DatasetComparator:
         for frame_id, frame_result in self._frame_results.items():
             intersection_frames.append(frame_id)
             conflicts += frame_result.conflicts
-
-            if annotations is None:
-                annotations = deepcopy(frame_result.annotations)
-            else:
-                annotations.accumulate(frame_result.annotations)
             confusion_matrix += frame_result.annotations.confusion_matrix.rows
 
             if annotation_components is None:
@@ -2004,22 +2011,6 @@ class DatasetComparator:
             else:
                 annotation_components.accumulate(frame_result.annotation_components)
             mean_ious.append(frame_result.annotation_components.shape.mean_iou)
-
-        matched_ann_counts = np.diag(confusion_matrix)
-        ds_ann_counts = np.sum(confusion_matrix, axis=1)
-        gt_ann_counts = np.sum(confusion_matrix, axis=0)
-        label_accuracies = _arr_div(
-            matched_ann_counts, ds_ann_counts + gt_ann_counts - matched_ann_counts
-        )
-        label_precisions = _arr_div(matched_ann_counts, ds_ann_counts)
-        label_recalls = _arr_div(matched_ann_counts, gt_ann_counts)
-
-        valid_annotations_count = np.sum(matched_ann_counts)
-        missing_annotations_count = np.sum(confusion_matrix[self._UNMATCHED_IDX, :])
-        extra_annotations_count = np.sum(confusion_matrix[:, self._UNMATCHED_IDX])
-        total_annotations_count = np.sum(confusion_matrix)
-        ds_annotations_count = np.sum(ds_ann_counts[: self._UNMATCHED_IDX])
-        gt_annotations_count = np.sum(gt_ann_counts[: self._UNMATCHED_IDX])
 
         return ComparisonReport(
             parameters=self.settings,
@@ -2036,20 +2027,8 @@ class DatasetComparator:
                     [c for c in conflicts if c.severity == AnnotationConflictSeverity.ERROR]
                 ),
                 conflicts_by_type=Counter(c.type for c in conflicts),
-                annotations=ComparisonReportAnnotationsSummary(
-                    valid_count=valid_annotations_count,
-                    missing_count=missing_annotations_count,
-                    extra_count=extra_annotations_count,
-                    total_count=total_annotations_count,
-                    ds_count=ds_annotations_count,
-                    gt_count=gt_annotations_count,
-                    confusion_matrix=ConfusionMatrix(
-                        labels=confusion_matrix_labels,
-                        rows=confusion_matrix,
-                        precision=label_precisions,
-                        recall=label_recalls,
-                        accuracy=label_accuracies,
-                    ),
+                annotations=self._generate_annotations_summary(
+                    confusion_matrix, confusion_matrix_labels
                 ),
                 annotation_components=ComparisonReportAnnotationComponentsSummary(
                     shape=ComparisonReportAnnotationShapeSummary(
@@ -2087,17 +2066,11 @@ class QualityReportUpdateManager:
     def _get_queue(self):
         return django_rq.get_queue(settings.CVAT_QUEUES.QUALITY_REPORTS.value)
 
-    def _make_queue_job_prefix(self, task: Task) -> str:
-        return f"{self._QUEUE_JOB_PREFIX}{task.id}-"
+    def _make_queue_job_id_base(self, task: Task) -> str:
+        return f"{self._QUEUE_JOB_PREFIX}{task.id}"
 
     def _make_custom_quality_check_job_id(self) -> str:
         return uuid4().hex
-
-    def _make_initial_queue_job_id(self, task: Task) -> str:
-        return f"{self._make_queue_job_prefix(task)}initial"
-
-    def _make_regular_queue_job_id(self, task: Task, start_time: timezone.datetime) -> str:
-        return f"{self._make_queue_job_prefix(task)}{start_time.timestamp()}"
 
     @classmethod
     def _get_last_report_time(cls, task: Task) -> Optional[timezone.datetime]:
@@ -2105,41 +2078,6 @@ class QualityReportUpdateManager:
         if report:
             return report.created_date
         return None
-
-    def _find_next_job_id(
-        self, existing_job_ids: Sequence[str], task: Task, *, now: timezone.datetime
-    ) -> str:
-        job_id_prefix = self._make_queue_job_prefix(task)
-
-        def _get_timestamp(job_id: str) -> timezone.datetime:
-            job_timestamp = job_id.split(job_id_prefix, maxsplit=1)[-1]
-            if job_timestamp == "initial":
-                return timezone.datetime.min.replace(tzinfo=timezone.utc)
-            else:
-                return timezone.datetime.fromtimestamp(float(job_timestamp), tz=timezone.utc)
-
-        max_job_id = max(
-            (j for j in existing_job_ids if j.startswith(job_id_prefix)),
-            key=_get_timestamp,
-            default=None,
-        )
-        max_timestamp = _get_timestamp(max_job_id) if max_job_id else None
-
-        last_update_time = self._get_last_report_time(task)
-        if last_update_time is None:
-            # Report has never been computed, is queued, or is being computed
-            queue_job_id = self._make_initial_queue_job_id(task)
-        elif max_timestamp is not None and now < max_timestamp:
-            # Reuse the existing next job
-            queue_job_id = max_job_id
-        else:
-            # Add an updating job in the queue in the next time frame
-            delay = self._get_quality_check_job_delay()
-            intervals = max(1, 1 + (now - last_update_time) // delay)
-            next_update_time = last_update_time + delay * intervals
-            queue_job_id = self._make_regular_queue_job_id(task, next_update_time)
-
-        return queue_job_id
 
     class QualityReportsNotAvailable(Exception):
         pass
@@ -2170,11 +2108,6 @@ class QualityReportUpdateManager:
         This function schedules a quality report autoupdate job
         """
 
-        # The algorithm is lock-free. It should keep the following properties:
-        # - job names are stable between potential writers
-        # - if multiple simultaneous writes can happen, the objects written must be the same
-        # - once a job is created, it can only be updated by the scheduler and the handling worker
-
         if not self._should_update(task):
             return
 
@@ -2182,17 +2115,13 @@ class QualityReportUpdateManager:
         delay = self._get_quality_check_job_delay()
         next_job_time = now.utcnow() + delay
 
-        scheduler = self._get_scheduler()
-        existing_job_ids = set(j.id for j in scheduler.get_jobs(until=next_job_time))
-
-        queue_job_id = self._find_next_job_id(existing_job_ids, task, now=now)
-        if queue_job_id not in existing_job_ids:
-            scheduler.enqueue_at(
-                next_job_time,
-                self._check_task_quality,
-                task_id=task.id,
-                job_id=queue_job_id,
-            )
+        schedule_job_with_throttling(
+            settings.CVAT_QUEUES.QUALITY_REPORTS.value,
+            self._make_queue_job_id_base(task),
+            next_job_time,
+            self._check_task_quality,
+            task_id=task.id,
+        )
 
     def schedule_quality_check_job(self, task: Task, *, user_id: int) -> str:
         """
@@ -2355,6 +2284,7 @@ class QualityReportUpdateManager:
         task_mean_shape_ious = []
         task_frame_results = {}
         task_frame_results_counts = {}
+        confusion_matrix = None
         for r in job_reports.values():
             task_intersection_frames.update(r.comparison_summary.frames)
             task_conflicts.extend(r.conflicts)
@@ -2363,6 +2293,12 @@ class QualityReportUpdateManager:
                 task_annotations_summary.accumulate(r.comparison_summary.annotations)
             else:
                 task_annotations_summary = deepcopy(r.comparison_summary.annotations)
+
+            if confusion_matrix is None:
+                num_labels = len(r.comparison_summary.annotations.confusion_matrix.labels)
+                confusion_matrix = np.zeros((num_labels, num_labels), dtype=int)
+
+            confusion_matrix += r.comparison_summary.annotations.confusion_matrix.rows
 
             if task_ann_components_summary:
                 task_ann_components_summary.accumulate(r.comparison_summary.annotation_components)
@@ -2393,6 +2329,8 @@ class QualityReportUpdateManager:
 
                 task_frame_results_counts[frame_id] = 1 + frame_results_count
                 task_frame_results[frame_id] = task_frame_result
+
+        task_annotations_summary.confusion_matrix.rows = confusion_matrix
 
         task_ann_components_summary.shape.mean_iou = np.mean(task_mean_shape_ious)
 
