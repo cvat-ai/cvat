@@ -552,7 +552,8 @@
                 "hidden": true,
             }
         },
-        // For local development, run a single worker for all queues for easy debugging and memory efficiency
+        // For local development, run a single worker for all queues for easy debugging
+        // and memory efficiency
         {
             "name": "devcontainer: rq worker",
             "type": "debugpy",

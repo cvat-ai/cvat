@@ -22,7 +22,8 @@ services:
       - cvat_data:/home/devcontainer/workspace/data
       - cvat_keys:/home/devcontainer/workspace/keys
       - cvat_logs:/home/devcontainer/workspace/logs
-      # For improving write performance on non-linux machines, static files should be mounted to named volumes
+      # For improving write performance on non-linux machines, static files should be
+      # mounted to named volumes
       - cvat_node_modules:/home/devcontainer/workspace/node_modules
       - cvat_server_static:/home/devcontainer/workspace/static
       # Preserve important user data between rebuilds
