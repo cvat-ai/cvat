@@ -9,6 +9,7 @@ services:
       args:
         - pull # To fetch upstream base image (cvat/server:dev) changes on container rebuild
         - HOST_USER_UID=${HOST_USER_UID}
+        - HOST_USER_GID=${HOST_USER_GID}
     restart: no
     entrypoint: ["/bin/bash", "-c"]
     command: ["sleep infinity"]
