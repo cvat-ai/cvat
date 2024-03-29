@@ -226,7 +226,7 @@ Object.defineProperties(Logger.prototype.save, {
                 // that is why we add this.collection
                 this.collection = [...collectionToSend, ...this.collection];
 
-                await Promise.reject(error);
+                throw error;
             } finally {
                 this.saving = false;
             }
