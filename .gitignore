@@ -63,3 +63,7 @@ cvat-core/reports
 # produced by prepare in the root package.json script
 .husky
 
+# produced by .devcontainer/init.sh
+.devcontainer/docker-compose.rendered.yml
+
+.devcontainer/.env
