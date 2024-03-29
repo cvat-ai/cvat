@@ -52,7 +52,8 @@ You can change: the name of the project, the list of labels
 (which will be used for tasks created as parts of this project) and a skeleton if it's necessary.
 In advanced configuration also you can specify: a link to the issue, source and target storages.
 Learn more about {{< ilink "/docs/manual/basics/create_an_annotation_task#labels" "creating a label list" >}},
-{{< ilink "/docs/manual/advanced/skeletons" "creating the skeleton" >}} and {{< ilink "/docs/manual/basics/attach-cloud-storage" "attach cloud storage" >}}.
+{{< ilink "/docs/manual/advanced/skeletons" "creating the skeleton" >}} and
+{{< ilink "/docs/manual/basics/attach-cloud-storage" "attach cloud storage" >}}.
 
 To save and open project click on `Submit & Open` button. Also you
 can click on `Submit & Continue` button for creating several projects in sequence
@@ -70,7 +71,8 @@ Here you can do the following:
    - `Export dataset`/`Import dataset` - download/upload annotations or annotations and images in a specific format.
      More information is available in the {{< ilink "/docs/manual/advanced/import-datasets" "export/import datasets" >}}
      section.
-   - `Backup project` - make a backup of the project read more in the {{< ilink "/docs/manual/advanced/backup" "backup" >}} section.
+   - `Backup project` - make a backup of the project read more in the
+     {{< ilink "/docs/manual/advanced/backup" "backup" >}} section.
    - `Delete` - remove the project and all related tasks.
 1. Change issue tracker or open issue tracker if it is specified.
 1. Change labels and skeleton.
@@ -83,7 +85,8 @@ Here you can do the following:
 1. `Tasks` — is a list of all tasks for a particular project, with the ability to search,
    sort and filter for tasks in the project.
    {{< ilink "/docs/manual/advanced/search" "Read more about search" >}}.
-   {{< ilink "/docs/manual/advanced/filter#sort-and-filter-projects-tasks-and-jobs" "Read more about sorting and filter" >}}
+   {{< ilink "/docs/manual/advanced/filter#sort-and-filter-projects-tasks-and-jobs"
+     "Read more about sorting and filter" >}}
 It is possible to choose a subset for tasks in the project. You can use the available options
 (`Train`, `Test`, `Validation`) or set your own.
 

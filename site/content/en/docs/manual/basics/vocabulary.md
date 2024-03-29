@@ -54,7 +54,8 @@ Can be used to reduce the annotation file and to facilitate editing polygons.
 
 ## Trackable
 Trackable object will be tracked automatically if the previous frame was
-a latest keyframe for the object. More details in the section {{< ilink "/docs/manual/advanced/ai-tools#trackers" "trackers" >}}.
+a latest keyframe for the object. More details in the section
+{{< ilink "/docs/manual/advanced/ai-tools#trackers" "trackers" >}}.
 
 ![](/images/tracker_indication_detrac.jpg)
 
@@ -79,7 +80,8 @@ Related sections:
 
 ## Dimension
 
-Depends on the task data type that is defined when the {{< ilink "/docs/manual/basics/create_an_annotation_task" "task is created" >}}.
+Depends on the task data type that is defined when the
+{{< ilink "/docs/manual/basics/create_an_annotation_task" "task is created" >}}.
 
 ### 2D
 
@@ -100,13 +102,15 @@ Related sections:
 ---
 
 ## State
-State of the job. The state can be changed by an assigned user in {{< ilink "/docs/manual/basics/top-panel" "the menu inside the job" >}}.
+State of the job. The state can be changed by an assigned user in
+{{< ilink "/docs/manual/basics/top-panel" "the menu inside the job" >}}.
 There are several possible states: `new`, `in progress`, `rejected`, `completed`.
 
 ---
 
 ## Stage
-Stage of the job. The stage is specified with the drop-down list on the {{< ilink "/docs/manual/basics/tasks-page" "task page" >}}.
+Stage of the job. The stage is specified with the drop-down list on the
+{{< ilink "/docs/manual/basics/tasks-page" "task page" >}}.
 There are three stages: `annotation`, `validation` or `acceptance`. This value affects the task progress bar.
 
 ---

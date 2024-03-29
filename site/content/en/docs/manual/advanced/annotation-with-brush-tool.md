@@ -62,7 +62,8 @@ To annotate with brush, do the following:
 5. Added object will appear on the {{< ilink "/docs/manual/basics/objects-sidebar" "objects sidebar" >}}.
 
 To add the next object, repeat steps 1 to 5.
-All added objects will be visible on the image and the  {{< ilink "/docs/manual/basics/objects-sidebar" "objects sidebar" >}}.
+All added objects will be visible on the image and the
+{{< ilink "/docs/manual/basics/objects-sidebar" "objects sidebar" >}}.
 
 To save the job with all added objects, on the top menu click **Save** ![Save](/images/brushing_tools_save.png).
 
@@ -88,7 +89,8 @@ To annotate with polygon-to-mask, do the following:
 
 To add the next object, repeat steps 1 to 5.
 
-All added objects will be visible on the image and the  {{< ilink "/docs/manual/basics/objects-sidebar" "objects sidebar" >}}.
+All added objects will be visible on the image and the
+{{< ilink "/docs/manual/basics/objects-sidebar" "objects sidebar" >}}.
 
 To save the job with all added objects, on the top menu click **Save** ![Save](/images/brushing_tools_save.png).
 

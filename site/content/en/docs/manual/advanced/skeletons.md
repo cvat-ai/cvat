@@ -122,7 +122,8 @@ To add points from the model, and annotate do the following:
 5. (Optional) If you want to adjust labels, within the
    label, click the **Update** attributes icon.
    <br>The {{< ilink "/docs/manual/advanced/skeletons#skeleton-configurator" "**Skeleton configurator**" >}}
-   will open, where you can {{< ilink "/docs/manual/advanced/skeletons#configuring-skeleton-points" "**configure the skeleton**" >}}.
+   will open, where you can
+   {{< ilink "/docs/manual/advanced/skeletons#configuring-skeleton-points" "**configure the skeleton**" >}}.
    <br>**Note**: Labels cannot be adjusted after the task/project is created.
 6. Click **Done**. The labels, that you selected,
    will appear in the labels window.

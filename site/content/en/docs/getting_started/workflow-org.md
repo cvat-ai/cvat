@@ -33,7 +33,8 @@ To use CVAT within your organization, please follow these steps:
 2. {{< ilink "/docs/manual/advanced/organization" "Create **Organization**" >}}.
 3. Switch to the **Organization** that you've
    created and {{< ilink "/docs/enterprise/subscription-managment#team-plan" "subscribe to the **Team plan**" >}}.
-4. {{< ilink "/docs/manual/advanced/organization#invite-members-into-organization" "Invite members to **Organization**" >}} and
+4. {{< ilink "/docs/manual/advanced/organization#invite-members-into-organization"
+     "Invite members to **Organization**" >}} and
    assign {{< ilink "/docs/manual/advanced/iam_user_roles" "User roles" >}} to invited members.
 5. {{< ilink "/docs/manual/advanced/projects" "Create **Project**" >}}.
 6. (Optional) Attach {{< ilink "/docs/manual/basics/attach-cloud-storage" "**Cloud storages**" >}} to the **Project**.

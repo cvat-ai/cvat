@@ -156,11 +156,13 @@ section.
 
 ## How to transfer CVAT to another machine
 
-Follow the {{< ilink "/docs/administration/advanced/backup_guide#how-to-backup-all-cvat-data" "backup/restore guide" >}}.
+Follow the
+{{< ilink "/docs/administration/advanced/backup_guide#how-to-backup-all-cvat-data" "backup/restore guide" >}}.
 
 ## How to load your own DL model into CVAT
 
-See the information here in the {{< ilink "/docs/manual/advanced/serverless-tutorial#adding-your-own-dl-models" "Serverless tutorial" >}}.
+See the information here in the
+{{< ilink "/docs/manual/advanced/serverless-tutorial#adding-your-own-dl-models" "Serverless tutorial" >}}.
 
 ## My server uses a custom SSL certificate and I don't want to check it.
 

@@ -10,11 +10,13 @@ The tool consists of:
 
 - `Header` - pinned header used to navigate CVAT sections and account settings;
 
-- {{< ilink "/docs/manual/basics/top-panel" "`Top panel`" >}} — contains navigation buttons, main functions and menu access;
+- {{< ilink "/docs/manual/basics/top-panel" "`Top panel`" >}}
+  — contains navigation buttons, main functions and menu access;
 
 - {{< ilink "/docs/manual/basics/workspace" "`Workspace`" >}} — space where images are shown;
 
-- {{< ilink "/docs/manual/basics/controls-sidebar" "`Controls sidebar`" >}} — contains tools for navigating the image, zoom,
+- {{< ilink "/docs/manual/basics/controls-sidebar" "`Controls sidebar`" >}}
+  — contains tools for navigating the image, zoom,
   creating shapes and editing tracks (merge, split, group);
 
 - {{< ilink "/docs/manual/basics/objects-sidebar" "`Objects sidebar`" >}} — contains label filter, two lists:

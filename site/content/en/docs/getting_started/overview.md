@@ -21,7 +21,8 @@ CVAT offers three versions:
   **available for free**. You can also choose a [**subscription**](https://www.cvat.ai/pricing/cloud)
   for **unlimited data**, **collaboration**, **auto-annotations**, and [**more**](https://www.cvat.ai/post/cvat-ai-pricing-plans-choosing-the-right-plan-for-your-needs).
 
-- **Self-hosted CVAT Community Edition**: Follow the {{< ilink "/docs/administration/basics/installation" "**Self-hosted Installation Guide**" >}}
+- **Self-hosted CVAT Community Edition**: Follow the
+  {{< ilink "/docs/administration/basics/installation" "**Self-hosted Installation Guide**" >}}
   for setup.
 
 - **Self-hosted CVAT Enterprise Edition**: We provide [**Enterprise-level support**](https://www.cvat.ai/pricing/on-prem)

@@ -55,7 +55,8 @@ CVAT has implemented three Global roles, categorized as user Groups. These roles
 
 ## Organization roles in CVAT.ai
 
-Organization Roles are available only within the {{< ilink "/docs/manual/advanced/organization" "**CVAT Organization**" >}}.
+Organization Roles are available only within the
+{{< ilink "/docs/manual/advanced/organization" "**CVAT Organization**" >}}.
 
 ![Organization Roles](/images/user-roles.png)
 

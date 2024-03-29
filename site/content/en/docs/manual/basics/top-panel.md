@@ -18,7 +18,8 @@ It is the main menu of the annotation tool. It can be used to download, upload a
 Button assignment:
 
 - **Upload Annotations** — uploads annotations into a task.
-- **Export as a dataset** — download a data set from a task in one of the {{< ilink "/docs/manual/advanced/formats" "supported formats" >}}.
+- **Export as a dataset** — download a data set from a task in one of the
+  {{< ilink "/docs/manual/advanced/formats" "supported formats" >}}.
   You can also enter a **Custom name** and enable the **Save images**
   checkbox if you want the dataset to contain images.
 - **Remove Annotations** — calls the confirmation window if you click **Delete**, the annotation of the current job
@@ -63,7 +64,8 @@ Used to complete the creation of the object. This button appears only when the o
 
 Used to pause automatic line creation when drawing a polygon with
 {{< ilink "/docs/manual/advanced/ai-tools#opencv-intelligent-scissors" "OpenCV Intelligent scissors" >}}.
-Also used to postpone server requests when creating an object using {{< ilink "/docs/manual/advanced/ai-tools" "AI Tools" >}}.
+Also used to postpone server requests when creating an object using
+{{< ilink "/docs/manual/advanced/ai-tools" "AI Tools" >}}.
 When blocking is activated, the button turns blue.
 
 ---

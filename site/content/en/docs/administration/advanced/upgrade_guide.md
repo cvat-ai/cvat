@@ -21,7 +21,8 @@ To upgrade CVAT, follow these steps:
   ```shell
   docker compose down
   ```
-  If you have included {{< ilink "/docs/administration/basics/installation#additional-components" "additional components" >}},
+  If you have included
+  {{< ilink "/docs/administration/basics/installation#additional-components" "additional components" >}},
   include all compose configuration files that are used, e.g.:
   ```shell
   docker compose -f docker-compose.yml -f components/serverless/docker-compose.serverless.yml down
@@ -39,7 +40,8 @@ To upgrade CVAT, follow these steps:
 
 - Update local CVAT images.
   Pull or build new CVAT images, see
-  {{< ilink "/docs/administration/basics/installation#how-to-pullbuildupdate-cvat-images" "How to pull/build/update CVAT images section" >}}
+  {{< ilink "/docs/administration/basics/installation#how-to-pullbuildupdate-cvat-images"
+    "How to pull/build/update CVAT images section" >}}
   for details.
 
 - Start CVAT with:
@@ -122,7 +124,8 @@ docker compose up -d
 
 1. Update CVAT source code by any preferable way: clone with git or download zip file from GitHub.
    Check the
-   {{< ilink "/docs/administration/basics/installation#how-to-get-cvat-source-code" "installation guide" >}} for details.
+   {{< ilink "/docs/administration/basics/installation#how-to-get-cvat-source-code" "installation guide" >}}
+   for details.
 
 1. Start database container only:
    ```shell

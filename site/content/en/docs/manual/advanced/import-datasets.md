@@ -29,7 +29,8 @@ You can export a dataset to a project, task or job.
        choose if a task is created in annotation mode.
 
        <br>
-   - And also in formats from the {{< ilink "/docs/manual/advanced/formats" "list of annotation formats supported by CVAT" >}}.
+   - And also in formats from the
+     {{< ilink "/docs/manual/advanced/formats" "list of annotation formats supported by CVAT" >}}.
 
    - For 3D tasks, the following formats are available:
      - [Kitti Raw Format 1.0](http://www.cvlibs.net/datasets/kitti/raw_data.php)

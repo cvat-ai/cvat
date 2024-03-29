@@ -47,7 +47,8 @@ And specify the following parameters:
 3. On the **Constructor** tab, click **Add label**.
 4. In the **Label name** field, enter the name of the label.
 5. (Optional) Select the color for the label.
-6. (Optional) Click {{< ilink "/docs/manual/basics/create_an_annotation_task#add-an-attribute" "**Add an attribute**" >}}
+6. (Optional) Click
+   {{< ilink "/docs/manual/basics/create_an_annotation_task#add-an-attribute" "**Add an attribute**" >}}
    and set up its properties.
 7. Click {{< ilink "/docs/manual/basics/create_an_annotation_task#select-files" "**Select files**" >}}
    to upload files for annotation.

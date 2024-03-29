@@ -28,7 +28,8 @@ Usage examples:
 
      ![](/images/image011_detrac.jpg)
 
-   - To learn more about creating a rectangle {{< ilink "/docs/manual/advanced/annotation-with-rectangles" "read here" >}}.
+   - To learn more about creating a rectangle
+     {{< ilink "/docs/manual/advanced/annotation-with-rectangles" "read here" >}}.
 
    - It is possible to adjust boundaries and location of the rectangle using a mouse.
      Rectangle's size is shown in the top right corner , you can check it by clicking on any point of the shape.
