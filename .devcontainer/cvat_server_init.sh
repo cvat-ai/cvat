@@ -20,7 +20,7 @@ while ! python manage.py migrate --check; do
 done
 
 python manage.py createsuperuser --no-input || true
-
+workspace_dir
 printf "\nINFO: Done createsuperuser\n\n"
 
 python manage.py runserver 0.0.0.0:"${CVAT_PORT:-8080}"

@@ -4,47 +4,40 @@ set -e
 
 devcontainer_dir=$(dirname "$(realpath "${0}")")
 workspace_dir=$(dirname "${devcontainer_dir}")
-env_file="${workspace_dir}/.env"
+env_file="${devcontainer_dir}/.env"
 
-# Update env vars in .env file in .devcontainer directory
-function update_env_var {
+if ! [ -f "${env_file}" ]; then
+    touch "${env_file}"
+fi
+
+# Get or update env var in the .env file in .devcontainer directory
+function get_or_update_env_var {
     local key="${1}"
-    local value="${2}"
-    if grep -q "${key}=" "${env_file}"; then
-        sed -i "s/^${key}=.*/${key}=${value}/g" "${env_file}"
+    local default_value="${2}"
+
+    if ! grep -q "${key}=" "${env_file}"; then
+        echo "${key}=${default_value}" >> "${env_file}"
+        echo "${default_value}"
     else :
-        sed -i "/^## init.sh END$/i ${key}=${value}" "${env_file}"
+        current_value="$(grep -oP "^${key}=\K\S+" "${env_file}")"
+        if [ -z "${current_value}" ]; then
+            sed -i "s/^${key}=.*/${key}=${default_value}/g" "${env_file}"
+            echo "${default_value}"
+        else :
+            echo "${current_value}"
+        fi
     fi
 }
 
-if [ ! -f "${env_file}" ]; then
-    echo "ERROR: .env file not present in the workspace directory. \
-    Use dist.env file as a template for your.env file."
-    exit 1
-else :
-    if ! grep -q "^## init.sh BEGIN$" "${env_file}" || \
-    ! grep -q "^## init.sh END$" "${env_file}"; then
-        echo "ERROR: .env file is not managed by init.sh. \
-        Please use dist.env file as a template for your.env file."
-    exit 1
+git_branch_isolation="$(get_or_update_env_var GIT_BRANCH_ISOLATION true)"
+
+# Echo current git branch value if git branch isolation is true
+function get_git_branch {
+    if [ "${git_branch_isolation}" == true ]; then
+        git_branch=$(git branch --show-current)
+        echo "${git_branch}"
     fi
-fi
-
-git_branch=$(git branch --show-current)
-host_user_id=$(id -u)
-
-git_branch_isolation=$(grep -oP "^GIT_BRANCH_ISOLATION=\K\S+" "${env_file}") || \
-                     git_branch_isolation=false
-
-if [ "${git_branch_isolation}" == true ]; then
-    update_env_var GIT_BRANCH "${git_branch}"
-    echo "INFO: GIT_BRANCH_ISOLATION is set to true. set GIT_BRANCH=${git_branch}"
-fi
-
-update_env_var HOST_USER_UID "${host_user_id}"
-echo "INFO: set HOST_USER_UID=${host_user_id}"
-
-echo "INFO: done export env vars"
+}
 
 # The container volumes are parameterized with git branch values in
 # .devcontainer/docker-compose-yml. The volumes get created automatically,
@@ -57,8 +50,8 @@ if [ "${git_branch_isolation}" == true ]; then
     echo "INFO: stop and remove backing services for new volume mount"
     services=("cvat_db" "cvat_opa" "cvat_redis_inmem" "cvat_redis_ondisk")
     for service in "${services[@]}"; do
-        docker container stop "${service}" 2>&1 >/dev/null && \
-        docker container rm "${service}" 2>&1 >/dev/null
+        docker container stop "${service}" >/dev/null && \
+        docker container rm "${service}" >/dev/null
         echo "INFO: done stop and remove ${service}"
     done
     echo "INFO: done removed containers"
@@ -67,10 +60,13 @@ fi
 # VS Code Remote does not yet support merge tags for docker compose files,
 # namely reset and replace tags, therefore the files need to merged and parsed manually
 # Tracking this issue here https://github.com/microsoft/vscode-remote-release/issues/8734
-docker compose -f ${workspace_dir}/docker-compose.yml \
-               -f ${workspace_dir}/docker-compose.dev.yml \
-               -f ${devcontainer_dir}/docker-compose.yml config \
-               > ${devcontainer_dir}/docker-compose.rendered.yml
+HOST_USER_UID="$(id -u)" \
+HOST_USER_GID="$(id -g)" \
+GIT_BRANCH="$(get_git_branch)" \
+docker compose -f "${workspace_dir}"/docker-compose.yml \
+               -f "${workspace_dir}"/docker-compose.dev.yml \
+               -f "${devcontainer_dir}"/docker-compose.yml config \
+               > "${devcontainer_dir}"/docker-compose.rendered.yml
 
 echo "INFO: done merge docker compose files"
 
