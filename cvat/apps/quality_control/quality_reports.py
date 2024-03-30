@@ -161,6 +161,9 @@ class ComparisonParameters(_Serializable):
         dm.AnnotationType.label,
     ]
 
+    non_groupable_ann_type = dm.AnnotationType.label
+    "Annotation type that can't be grouped"
+
     compare_attributes: bool = True
     "Enables or disables attribute checks"
 
@@ -1519,6 +1522,7 @@ class _Comparator:
             "outside",  # handled by other means
         }
         self.included_ann_types = settings.included_annotation_types
+        self.non_groupable_ann_type = settings.non_groupable_ann_type
         self._annotation_comparator = _DistanceComparator(
             categories,
             included_ann_types=set(self.included_ann_types)
@@ -1565,7 +1569,11 @@ class _Comparator:
         self, item: dm.DatasetItem
     ) -> Tuple[Dict[int, List[dm.Annotation]], Dict[int, int]]:
         ann_groups = dm.ops.find_instances(
-            [ann for ann in item.annotations if ann.type in self.included_ann_types]
+            [
+                ann
+                for ann in item.annotations
+                if ann.type in self.included_ann_types and not self.non_groupable_ann_type
+            ]
         )
 
         groups = {}
@@ -1883,6 +1891,8 @@ class DatasetComparator:
             ds_to_gt_groups = self.comparator.match_groups(gt_groups, ds_groups, matched_objects)
 
             for gt_ann, ds_ann in matched_objects:
+                if gt_ann.type == self.settings.non_groupable_ann_type:
+                    continue
                 gt_group = gt_groups.get(gt_group_map[id(gt_ann)], [gt_ann])
                 ds_group = ds_groups.get(ds_group_map[id(ds_ann)], [ds_ann])
                 ds_gt_group = ds_to_gt_groups.get(ds_group_map[id(ds_ann)], None)
