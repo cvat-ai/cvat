@@ -27,8 +27,7 @@ services:
       # mounted to named volumes
       - cvat_node_modules:/home/devcontainer/workspace/node_modules
       - cvat_server_static:/home/devcontainer/workspace/static
-      # Preserve important user data between rebuilds
-      - container_user_data:/home/devcontainer/.zsh_history
+      # TODO: Preserve important user data between rebuilds
     labels:
       - com.devcontainer.git_branch=${GIT_BRANCH:-}
 
@@ -59,7 +58,6 @@ services:
 volumes:
   cvat_node_modules:
   cvat_server_static:
-  container_user_data:
   cvat_db:
     name: cvat_db_${GIT_BRANCH:-}
   cvat_data:
