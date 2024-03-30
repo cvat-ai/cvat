@@ -295,6 +295,21 @@ async function fetchAnnotations(frameNumber?: number): Promise<{
     };
 }
 
+function navigationInterruptionDetected(callback: (interrupted: boolean) => void): void {
+    let currentPath = window.location.pathname;
+
+    // Listen for popstate events (back/forward navigation)
+    window.addEventListener('popstate', () => {
+        const newPath = window.location.pathname;
+        if (newPath !== currentPath) {
+            console.log('Navigation interruption detected.');
+            currentPath = newPath;
+
+            // Notify the callback that navigation interruption occurred
+            callback(true);
+        }
+    });
+}
 export function fetchAnnotationsAsync(): ThunkAction {
     return async (dispatch: ActionCreator<Dispatch>): Promise<void> => {
         try {
@@ -302,21 +317,37 @@ export function fetchAnnotationsAsync(): ThunkAction {
                 states, history, minZ, maxZ,
             } = await fetchAnnotations();
 
-            dispatch({
-                type: AnnotationActionTypes.FETCH_ANNOTATIONS_SUCCESS,
-                payload: {
-                    states,
-                    history,
-                    minZ,
-                    maxZ,
-                },
+            // Check if navigation interruption occurred
+            navigationInterruptionDetected((interrupted: boolean) => {
+                if (!interrupted) {
+                    dispatch({
+                        type: AnnotationActionTypes.FETCH_ANNOTATIONS_SUCCESS,
+                        payload: {
+                            states,
+                            history,
+                            minZ,
+                            maxZ,
+                        },
+                    });
+                } else {
+                    // Handle navigation interruption gracefully
+                    console.log('Annotations fetching interrupted due to navigation.');
+                }
             });
         } catch (error) {
-            dispatch({
-                type: AnnotationActionTypes.FETCH_ANNOTATIONS_FAILED,
-                payload: {
-                    error,
-                },
+            // Dispatch FETCH_ANNOTATIONS_FAILED only if not due to navigation interruption
+            navigationInterruptionDetected((interrupted: boolean) => {
+                if (!interrupted) {
+                    dispatch({
+                        type: AnnotationActionTypes.FETCH_ANNOTATIONS_FAILED,
+                        payload: {
+                            error,
+                        },
+                    });
+                } else {
+                    // Handle navigation interruption gracefully
+                    console.log('Annotations fetching interrupted due to navigation.');
+                }
             });
         }
     };
