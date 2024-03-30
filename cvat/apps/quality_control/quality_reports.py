@@ -628,26 +628,6 @@ class _MemoizingAnnotationConverter(CvatToDmAnnotationConverter):
         for dm_ann in converted:
             dm_ann.id = tag.id
 
-        new_annotations = []
-        for ann in converted:
-            if isinstance(ann, Label):
-                new_annotations.append(
-                    Bbox(
-                        0,
-                        0,
-                        1,
-                        1,
-                        id=ann.id,
-                        label=ann.label,
-                        group=ann.group,
-                        z_order=0,
-                        attributes={"occluded": False, "rotation": 0.0},
-                    )
-                )
-            else:
-                new_annotations.append(ann)
-        converted = new_annotations
-
         self._factory.remember_conversion(tag, converted)
         return converted
 
