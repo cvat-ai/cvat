@@ -2,7 +2,7 @@
 
 set -e
 
-PYTHON="${PYTHON:-python3}"
+PYTHON="${PYTHON:-python}"
 BLACK="${PYTHON} -m black"
 ISORT="${PYTHON} -m isort"
 
