@@ -106,3 +106,14 @@ jobs:
       with:
         name: rest_api_container_logs
         path: "${{ github.workspace }}/rest_api_testing"
+
+    - name: Upgrade CVAT without Analytics
+      run: |
+        helm upgrade -n default release-${{ github.run_id }}-${{ github.run_attempt }} -i --create-namespace helm-chart --set analytics.enabled=false -f helm-chart/values.yaml -f helm-chart/cvat.values.yaml -f helm-chart/test.values.yaml
+        pods=$(kubectl get pods -o=jsonpath='{range .items[*]}{.metadata.name}{"\t"}{.status.phase}{"\n"}{end}' | grep 'vector\|clickhouse\|grafana')
+        if [ -z "$pods" ]; then
+          echo "Analytics pods are not running."
+        else
+          echo "Analytics pods are running."
+          exit 1
+        fi
