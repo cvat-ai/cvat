@@ -2,8 +2,8 @@
 
 set -e
 
-devcontainer_dir=$(dirname "$(realpath "${0}")")
-workspace_dir=$(dirname "${devcontainer_dir}")
+devcontainer_dir="$(dirname "$(realpath "${0}")")"
+workspace_dir="$(dirname "$(dirname "${devcontainer_dir}")")"
 env_file="${devcontainer_dir}/.env"
 
 if ! [ -f "${env_file}" ]; then

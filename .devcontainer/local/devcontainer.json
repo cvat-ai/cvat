@@ -1,10 +1,10 @@
 {
     "name": "cvat",
-    "initializeCommand": "${localWorkspaceFolder}/.devcontainer/init.sh",
+    "initializeCommand": "${localWorkspaceFolder}/.devcontainer/local/init.sh",
     // Mark all directories as safe as os like windows using WSL adds incorrect path when adding specific path
     "postStartCommand": "git config --global --add safe.directory '*'",
     "dockerComposeFile": [
-        "${localWorkspaceFolder}/.devcontainer/docker-compose.rendered.yml"
+        "${localWorkspaceFolder}/.devcontainer/local/docker-compose.rendered.yml"
     ],
     "service": "cvat_server",
     "overrideCommand": false,
