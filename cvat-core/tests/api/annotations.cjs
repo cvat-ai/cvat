@@ -87,6 +87,22 @@ describe('Feature: get annotations', () => {
         }
 
         expect(annotations[0].shapeType).toBe('skeleton');
+    });
+
+    test('handle page interrupt during annotation retrieval', async () => {
+        const job = (await cvat.jobs.get({ jobID: 101 }))[0];
+
+        // Mocking the behavior of job.annotations.get() to simulate a page interrupt
+        const mockAnnotationsGet = jest.spyOn(job.annotations, 'get');
+
+        // Reject the promise with an error to simulate a page interrupt
+        mockAnnotationsGet.mockRejectedValueOnce(new Error("Cannot read properties of null (reading 'annotations')"));
+
+        // Expectation: Retrieving annotations should throw an error
+        await expect(job.annotations.get(0)).rejects.toThrow("Cannot read properties of null (reading 'annotations')");
+
+        // Ensuring that job.annotations.get() was called with the correct arguments
+        expect(mockAnnotationsGet).toHaveBeenCalledWith(0);
     })
 });
 
