@@ -1022,6 +1022,21 @@ class _DistanceComparator(dm.ops.DistanceComparator):
         else:
             return None
 
+    def match_labels(self, item_a, item_b):
+        a_labels = self._get_ann_type(dm.AnnotationType.label, item_a)
+        b_labels = self._get_ann_type(dm.AnnotationType.label, item_b)
+
+        returned_values = _match_segments(
+            a_labels,
+            b_labels,
+            distance=lambda a, b: 1 - float(a is None or b is None),
+            label_matcher=lambda a, b: a.label == b.label,
+        )
+        if self.return_distances:
+            returned_values = returned_values + ({},)
+
+        return returned_values
+
     def _match_segments(
         self,
         t,
