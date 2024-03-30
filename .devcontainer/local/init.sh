@@ -50,11 +50,11 @@ if [ "${git_branch_isolation}" == true ]; then
     echo "INFO: stop and remove backing services for new volume mount"
     services=("cvat_db" "cvat_opa" "cvat_redis_inmem" "cvat_redis_ondisk")
     for service in "${services[@]}"; do
-        docker container stop "${service}" >/dev/null && \
-        docker container rm "${service}" >/dev/null
+        docker container stop "${service}" >/dev/null 2>&1 && \
+        docker container rm "${service}" >/dev/null 2>&1
         echo "INFO: done stop and remove ${service}"
     done
-    echo "INFO: done removed containers"
+    echo "INFO: done remove containers"
 fi
 
 # VS Code Remote does not yet support merge tags for docker compose files,

@@ -19,7 +19,7 @@ while ! python manage.py migrate --check; do
     sleep 10
 done
 
-python manage.py createsuperuser --no-input || true
+python manage.py createsuperuser --no-input >/dev/null 2>&1 || true
 
 printf "\nINFO: Done createsuperuser\n\n"
 

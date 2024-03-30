@@ -13,7 +13,7 @@ USER root
 
 # RUN apt-get update && \
 #     DEBIAN_FRONTEND=noninteractive apt-get --no-install-recommends install -qy \
-#         # <package>=<version> format
+#         # <package>=<version> \
 #     && rm -rf /var/lib/apt/lists/*
 
 COPY cvat/requirements/${DJANGO_CONFIGURATION}.txt /tmp/requirements.txt

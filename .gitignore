@@ -63,7 +63,7 @@ cvat-core/reports
 # produced by prepare in the root package.json script
 .husky
 
-# produced by .devcontainer/init.sh
+# produced by devcontainer
 .devcontainer/local/docker-compose.rendered.yml
-
 .devcontainer/local/.env
+cvat-db.session.sql
