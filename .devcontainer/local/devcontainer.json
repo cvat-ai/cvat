@@ -1,5 +1,5 @@
 {
-    "name": "cvat",
+    "name": "cvat-local",
     "initializeCommand": "${localWorkspaceFolder}/.devcontainer/local/init.sh",
     // Mark all directories as safe as os like windows using WSL adds incorrect path when adding specific path
     "postStartCommand": "git config --global --add safe.directory '*'",

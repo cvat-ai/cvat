@@ -1,5 +1,5 @@
 {
-    "name": "cvat",
+    "name": "cvat-codespaces",
     "dockerComposeFile": [
         "${localWorkspaceFolder}/docker-compose.yml",
         "${localWorkspaceFolder}/docker-compose.dev.yml",
