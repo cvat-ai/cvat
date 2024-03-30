@@ -5,6 +5,69 @@ weight: 2
 description: 'Installing a development environment for different operating systems.'
 ---
 
+## Remote development guide
+### Dependencies
+- Install chrome
+- Install [VS Code](https://code.visualstudio.com/docs/setup/setup-overview)
+  - Install [Devcontainer](https://marketplace.visualstudio.com/items?itemName=ms-vscode-remote.remote-containers) extension
+  - Install [GitHub Codespaces](https://marketplace.visualstudio.com/items?itemName=GitHub.codespaces) extension
+- Install [git](https://git-scm.com/downloads)
+  - For windows users following guides may be helpful
+    - [Get started using Git on Windows Subsystem for Linux](https://learn.microsoft.com/en-us/windows/wsl/tutorials/wsl-git)
+- Connect to github using SSH. ([guide](https://docs.github.com/en/authentication/connecting-to-github-with-ssh))
+- The system should have `bash` for running initial bash scripts
+
+### Local Dev-Container guide
+- (Optional) In the root directory of the repository create a `.env` file with the variables mentioned in `dist.env` file
+  - If not created, default values are taken from the docker-compose file inside the `.devcontainer/local/docker-compose.yml`
+- (Optional) In `.devcontainer/local` directory create a `.env` file with variables mentioned in `dist.env` file
+  - `GIT_BRANCH_ISOLATION` environment variable is used at build time of devcontainer. It enables to persist container data between builds by using docker volumes namespaced by git branch name. It is set to true by default. More about this later section.
+- Upon opening the repository in VS Code, click on the green color `Open Remote Window` button icon at the bottom left corner of the window and choose `reopen in container`. Select `cvat-local` when asked to choose the configuration.
+- Initially it shall take some time to setup as it will build the dev container image and pull all the required docker images. Subsequent builds shall be fast and use cache to build and run the container.
+- The container data is persisted between builds with the help of named volumes and each volume is namespaced by git branch name. Therefore one can create separate dev container environment specific to the current working git branch.
+This can be helpful for reviewing pull requests and making quick bug fixes.
+
+### GitHub Codespaces guide
+- (Optional) In the root directory of the repository create a `.env` file with the variables mentioned in `dist.env` file
+- Sign into GitHub from VS Code account panel or using GitHub Codespace extension
+- Click on the green color `Open Remote Window` button at the bottom left corner of the window and select `create new codespace`
+- Choose your forked CVAT repository and the branch name
+- Choose the `cvat-codespaces` configuration and the machine type.
+- Again from the `Open Remote Window` menu, select `connect to codespace` and choose the codespace you created in the previous step amd the container shall start building.
+- Like that of local dev container, one can create separate codespace for each branch using codespace by repeating above steps with the new chosen git branch.
+- The codespace shall automatically stop after 30 minutes of inactivity. One can manually stop and delete it using the VS code command panel.
+
+### Run and debug guide
+Steps are common for both local and codespaces remote development
+- Open the `Run and Debug` panel in VS Code and launch the following configurations:
+  - **devcontainer: server**\
+      It shall do the following operations:
+    - Check availability of dependent docker containers
+    - Migrate the migrations to the postgres database
+    - Create a superuser as per the environment variables specified in `.env` file or use the default values
+    - Run a background django server at port `8080` for serving the `opa` container
+    - Start debug process for django server at port `7000`
+    - Start debug process for a rq-worker process listening on all the queues
+  - **devcontainer: ui**\
+      It shall do the following operations:
+    - Install the node dependencies and compile them and keep the webpack-dev-server running in the background
+    - Launch chrome window in debug mode and open the CVAT web application running on port `3000`
+- One can debug the django code, rq-worker code and javascript code from the `devcontainer: django` and `devcontainer: rq worker`, `devcontainer: ui` panels in the debug console respectively.
+
+### Dev-Container Features
+  - The devcontainer image is based on the official CVAT docker image at `cvat/server:dev` Upon every rebuild, the devcontainer shall try to pull the latest base image at and therefore it will always have the latest upstream changes without any user intervention.
+  - The devcontainer pre-installs all the extensions specified in `devcontainer.json` file
+  - The default shell is `zsh`
+  - User profile and things like shell history are not synced between the host and the container as of now. But this is planned in near future.
+  - The container user is `devcontainer` and it a non-root user, however, one can access the root user via sudo without any password to perform root operations like installing development specific applications
+  - To permanently include a ubuntu package in the devcontainer such that all other users can access them, it is needed to uncomment apt package installation section in `.devcontainer/local/Dockerfile`, add required packages and rebuild the container.
+  - Additional python packages can be installed into the virtual environment by command `sudo pip install`. They shall not persist between container builds, therefore it is just useful for testing new packages. They can be made to persist by adding them to development requirements file and rebuilding the image
+  - Git configurations on the host machine are mounted into the container. So things like `user.name` and `user.email` are already configured inside the container.
+  - SSH keys on the host machine are mounted into the container. So one should be able to use your github ssh keys to access github.
+  - Host docker engine is accessible from inside the container. It can be used to view service container's logs and `exec` into them. Alternatively, the preinstalled `Docker` extension can be used to follow logs on the terminal, `exec` into it, or inspect it for details. For example one can right-click on the `cvat_db` container and select `View logs` and follow the database logs in the integrated terminal or select `Attach shell` to `exec` an interactive terminal  into the container.
+  - `SQLTool` extension is pre-configured for the `cvat-db` database.
+
+## Native development guide
 ### Setup the dependencies:
 
 - Install necessary dependencies:
