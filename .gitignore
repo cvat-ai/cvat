@@ -64,6 +64,6 @@ cvat-core/reports
 .husky
 
 # produced by .devcontainer/init.sh
-.devcontainer/docker-compose.rendered.yml
+.devcontainer/local/docker-compose.rendered.yml
 
-.devcontainer/.env
+.devcontainer/local/.env
