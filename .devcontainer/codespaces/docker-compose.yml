@@ -1,0 +1,51 @@
+version: '3.8'
+
+services:
+  cvat_server:
+    image: cvat/server:devcontainer
+    build:
+      dockerfile: .devcontainer/codespaces/Dockerfile
+      context: .
+      args:
+        - pull # To fetch upstream base image (cvat/server:dev) changes on container rebuild
+    restart: no
+    entrypoint: ["/bin/bash", "-c"]
+    command: ["sleep infinity"]
+    environment:
+      IAM_OPA_HOST: http://opa:8181
+      DJANGO_LOG_SERVER_HOST: ${DJANGO_LOG_SERVER_HOST:-}
+      DJANGO_SUPERUSER_USERNAME: ${DJANGO_SUPERUSER_USERNAME:-admin}
+      DJANGO_SUPERUSER_PASSWORD: ${DJANGO_SUPERUSER_PASSWORD:-admin}
+      DJANGO_SUPERUSER_EMAIL: ${DJANGO_SUPERUSER_EMAIL:-admin@admin.com}
+    volumes: !override
+      - cvat_data:/home/root/workspaces/data
+      - cvat_keys:/home/root/workspaces/keys
+      - cvat_logs:/home/root/workspaces/logs
+      # For improving write performance on non-linux machines, static files should be
+      # mounted to named volumes
+      - cvat_node_modules:/home/root/workspaces/node_modules
+      - cvat_server_static:/home/root/workspaces/static
+      # Preserve important user data between rebuilds
+      - container_user_data:/home/root/.zsh_history
+
+  cvat_db:
+    restart: no
+
+  cvat_redis_inmem:
+    restart: no
+
+  cvat_redis_ondisk:
+    restart: no
+
+  cvat_opa:
+    restart: no
+
+# VS code shuts down containers upon closing the window. If in any case if it to shut down the containers
+# they should not restart upon system restart. This shall save unncessary memory usage of the system when not
+# developing
+
+volumes:
+  cvat_node_modules:
+  cvat_server_static:
+  container_user_data:
+

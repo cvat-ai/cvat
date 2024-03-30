@@ -1,0 +1,72 @@
+{
+    "name": "cvat",
+    "dockerComposeFile": [
+        "${localWorkspaceFolder}/docker-compose.yml",
+        "${localWorkspaceFolder}/docker-compose.dev.yml",
+        "${localWorkspaceFolder}/.devcontainer/codespaces/docker-compose.yml"
+    ],
+    "service": "cvat_server",
+    "overrideCommand": false,
+    "runServices": [
+        "cvat_db",
+        "cvat_opa",
+        "cvat_redis_inmem",
+        "cvat_redis_ondisk"
+    ],
+    "remoteUser": "root",
+    "containerUser": "root",
+    "remoteEnv": {"HOME": "/home/root", "USER": "root"},
+    "containerEnv": {"HOME": "/home/root", "USER": "root"},
+    "shutdownAction": "stopCompose",
+    "mounts": [
+        {
+            "source": "${localWorkspaceFolder}",
+            "target": "${containerWorkspaceFolder}",
+            "type": "bind"
+        },
+        {
+            "source": "${localEnv:HOME}/.ssh",
+            "target": "/home/root/.ssh",
+            "type": "bind"
+        }
+    ],
+    "features": {
+        "ghcr.io/devcontainers/features/common-utils:2": {
+            "installZsh": true,
+            "configureZshAsDefaultShell": true,
+            "installOhMyZsh": true,
+            "installOhMyZshConfig": true,
+            "upgradePackages": true,
+            "username": "root",
+            "userUid": "automatic",
+            "userGid": "automatic"
+        },
+        "ghcr.io/devcontainers/features/node:1": {
+            "nodeGypDependencies": true,
+            "version": "lts",
+            "nvmVersion": "latest"
+        },
+        "ghcr.io/devcontainers/features/docker-outside-of-docker:1": {}
+    },
+    "customizations": {
+        "vscode": {
+            "extensions": [
+                "ms-vscode.js-debug-nightly",
+                "ms-python.python",
+                "ms-python.debugpy",
+                "dbaeumer.vscode-eslint",
+                "stylelint.vscode-stylelint",
+                "esbenp.prettier-vscode",
+                "ymotongpoo.licenser",
+                "shardulm94.trailing-spaces",
+                "streetsidesoftware.code-spell-checker",
+                "mtxr.sqltools",
+                "mtxr.sqltools-driver-pg"
+            ],
+            "settings": {
+                "python.defaultInterpreterPath": "/opt/venv/bin/python",
+                "terminal.integrated.defaultProfile.linux": "zsh (2)"
+            }
+        }
+    }
+}
