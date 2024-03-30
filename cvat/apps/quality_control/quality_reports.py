@@ -1967,6 +1967,10 @@ class DatasetComparator:
         gt_ann_counts = np.sum(confusion_matrix, axis=0)
         total_annotations_count = np.sum(confusion_matrix)
 
+        # [https://en.wikipedia.org/wiki/Jaccard_index] The Jaccard index is a statistic used for gauging the \
+        # similarity and diversity of sample sets. However, they are identical in generally taking the ratio of \
+        # Intersection over Union.
+        # Equation: https://scikit-learn.org/stable/modules/model_evaluation.html#jaccard-similarity-coefficient-score
         label_jaccard_indices = _arr_div(
             matched_ann_counts, ds_ann_counts + gt_ann_counts - matched_ann_counts
         )
