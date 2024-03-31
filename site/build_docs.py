@@ -146,7 +146,8 @@ def generate_docs(repo: git.Repo, output_dir: os.PathLike, tags):
 
             run_hugo(
                 output_dir / tag.name,
-                # Docsy doesn't forward the current version url to templates
+                # This variable is no longer needed by the current version,
+                # but it was required in v2.11.2 and older.
                 extra_env_vars={VERSION_URL_ENV_VAR: f"/cvat/{tag.name}/docs"},
                 executable=hugo,
             )
