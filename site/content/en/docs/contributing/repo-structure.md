@@ -11,7 +11,7 @@ An explanation of CVAT components is available [here](https://youtu.be/CGOBR5ZmI
 Here is the list of the main directories and files in the repository:
 
 - `./` - Various common files for the repository
-- `.github/` - GutHub configuration files
+- `.github/` - GitHub configuration files
 - `.vscode/` - VS Code configuration files
 - `components/` - optional server services
 - `cvat/` - server source code

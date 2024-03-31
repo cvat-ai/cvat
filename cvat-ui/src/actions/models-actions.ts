@@ -1,5 +1,5 @@
 // Copyright (C) 2020-2022 Intel Corporation
-// Copyright (C) 2022-2023 CVAT.ai Corporation
+// Copyright (C) 2022-2024 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -20,6 +20,7 @@ export enum ModelsActionTypes {
     DELETE_MODEL = 'DELETE_MODEL',
     DELETE_MODEL_SUCCESS = 'DELETE_MODEL_SUCCESS',
     DELETE_MODEL_FAILED = 'DELETE_MODEL_FAILED',
+    GET_INFERENCES_SUCCESS = 'GET_INFERENCES_SUCCESS',
     START_INFERENCE_FAILED = 'START_INFERENCE_FAILED',
     GET_INFERENCE_STATUS_SUCCESS = 'GET_INFERENCE_STATUS_SUCCESS',
     GET_INFERENCE_STATUS_FAILED = 'GET_INFERENCE_STATUS_FAILED',
@@ -45,6 +46,9 @@ export const modelsActions = {
         error,
     }),
     fetchMetaFailed: (error: any) => createAction(ModelsActionTypes.FETCH_META_FAILED, { error }),
+    getInferencesSuccess: (requestedInferenceIDs: Record<string, boolean>) => (
+        createAction(ModelsActionTypes.GET_INFERENCES_SUCCESS, { requestedInferenceIDs })
+    ),
     getInferenceStatusSuccess: (taskID: number, activeInference: ActiveInference) => (
         createAction(ModelsActionTypes.GET_INFERENCE_STATUS_SUCCESS, {
             taskID,
@@ -64,9 +68,10 @@ export const modelsActions = {
             error,
         })
     ),
-    cancelInferenceSuccess: (taskID: number) => (
+    cancelInferenceSuccess: (taskID: number, activeInference: ActiveInference) => (
         createAction(ModelsActionTypes.CANCEL_INFERENCE_SUCCESS, {
             taskID,
+            activeInference,
         })
     ),
     cancelInferenceFailed: (taskID: number, error: any) => (
@@ -119,8 +124,9 @@ interface InferenceMeta {
 
 function listen(inferenceMeta: InferenceMeta, dispatch: (action: ModelsActions) => void): void {
     const { taskID, requestID, functionID } = inferenceMeta;
+
     core.lambda
-        .listen(requestID, functionID, (status: RQStatus, progress: number, message: string) => {
+        .listen(requestID, functionID, (status: RQStatus, progress: number, message?: string) => {
             if (status === RQStatus.FAILED || status === RQStatus.UNKNOWN) {
                 dispatch(
                     modelsActions.getInferenceStatusFailed(
@@ -129,7 +135,7 @@ function listen(inferenceMeta: InferenceMeta, dispatch: (action: ModelsActions) 
                             status,
                             progress,
                             functionID,
-                            error: message,
+                            error: message as string,
                             id: requestID,
                         },
                         new Error(`Inference status for the task ${taskID} is ${status}. ${message}`),
@@ -144,7 +150,7 @@ function listen(inferenceMeta: InferenceMeta, dispatch: (action: ModelsActions) 
                     status,
                     progress,
                     functionID,
-                    error: message,
+                    error: message as string,
                     id: requestID,
                 }),
             );
@@ -163,13 +169,16 @@ function listen(inferenceMeta: InferenceMeta, dispatch: (action: ModelsActions) 
 }
 
 export function getInferenceStatusAsync(): ThunkAction {
-    return async (dispatch): Promise<void> => {
+    return async (dispatch, getState): Promise<void> => {
         const dispatchCallback = (action: ModelsActions): void => {
             dispatch(action);
         };
 
+        const { requestedInferenceIDs } = getState().models;
+
         try {
             const requests = await core.lambda.requests();
+            const newListenedIDs: Record<string, boolean> = {};
             requests
                 .map((request: any): object => ({
                     taskID: +request.function.task,
@@ -177,8 +186,12 @@ export function getInferenceStatusAsync(): ThunkAction {
                     functionID: request.function.id,
                 }))
                 .forEach((inferenceMeta: InferenceMeta): void => {
-                    listen(inferenceMeta, dispatchCallback);
+                    if (!(inferenceMeta.requestID in requestedInferenceIDs)) {
+                        listen(inferenceMeta, dispatchCallback);
+                        newListenedIDs[inferenceMeta.requestID] = true;
+                    }
                 });
+            dispatch(modelsActions.getInferencesSuccess(newListenedIDs));
         } catch (error) {
             dispatch(modelsActions.fetchMetaFailed(error));
         }
@@ -201,6 +214,7 @@ export function startInferenceAsync(taskId: number, model: MLModel, body: object
                 },
                 dispatchCallback,
             );
+            dispatch(modelsActions.getInferencesSuccess({ [requestID]: true }));
         } catch (error) {
             dispatch(modelsActions.startInferenceFailed(taskId, error));
         }
@@ -212,7 +226,7 @@ export function cancelInferenceAsync(taskID: number): ThunkAction {
         try {
             const inference = getState().models.inferences[taskID];
             await core.lambda.cancel(inference.id, inference.functionID);
-            dispatch(modelsActions.cancelInferenceSuccess(taskID));
+            dispatch(modelsActions.cancelInferenceSuccess(taskID, inference));
         } catch (error) {
             dispatch(modelsActions.cancelInferenceFailed(taskID, error));
         }
