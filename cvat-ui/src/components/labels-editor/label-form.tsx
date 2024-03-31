@@ -6,7 +6,7 @@
 import React, { RefObject } from 'react';
 import { Row, Col } from 'antd/lib/grid';
 import Icon, {
-    DeleteOutlined, DownOutlined, PlusCircleOutlined, UpOutlined,
+    DeleteOutlined, HolderOutlined, PlusCircleOutlined,
 } from '@ant-design/icons';
 import Input from 'antd/lib/input';
 import Button from 'antd/lib/button';
@@ -17,7 +17,7 @@ import Form, { FormInstance } from 'antd/lib/form';
 import Badge from 'antd/lib/badge';
 import Modal from 'antd/lib/modal';
 import { Store } from 'antd/lib/form/interface';
-
+import RGL, { WidthProvider } from 'react-grid-layout';
 import { SerializedAttribute, LabelType } from 'cvat-core-wrapper';
 import CVATTooltip from 'components/common/cvat-tooltip';
 import ColorPicker from 'components/annotation-page/standard-workspace/objects-side-bar/color-picker';
@@ -27,6 +27,8 @@ import config from 'config';
 import {
     equalArrayHead, idGenerator, LabelOptColor, SkeletonConfiguration,
 } from './common';
+
+const ReactGridLayout = WidthProvider(RGL);
 
 export enum AttributeType {
     SELECT = 'SELECT',
@@ -65,6 +67,15 @@ export default class LabelForm extends React.Component<Props> {
         const {
             label, onSubmit, onSkeletonSubmit, onCancel, resetSkeleton,
         } = this.props;
+        const arr: SerializedAttribute[] = []; // to store the updated attributes
+        const updatedLayout = this.formRef.current?.getFieldValue('layout');
+        if (updatedLayout) {
+            const attr = values.attributes;
+            updatedLayout.forEach((obj: any, index: number) => {
+                arr[obj.y] = attr[index];
+            });
+        }
+        values.attributes = arr;
 
         if (!values.name) {
             onCancel();
@@ -117,16 +128,6 @@ export default class LabelForm extends React.Component<Props> {
             if (!label) {
                 this.focus();
             }
-        }
-    };
-
-    private swapId = (index1: number, index2: number): void => {
-        if (this.formRef.current) {
-            const attributes = this.formRef.current.getFieldValue('attributes');
-            const temp = { ...attributes[index1] };
-            attributes[index1] = { ...attributes[index2] };
-            attributes[index2] = temp;
-            this.formRef.current?.setFieldsValue({ attributes });
         }
     };
 
@@ -455,81 +456,48 @@ export default class LabelForm extends React.Component<Props> {
         );
     }
 
-    private renderUpIcon(fieldInstance: any): JSX.Element {
-        const { key } = fieldInstance;
-        return (
-            <CVATTooltip title='move up'>
-                <Button
-                    className='cvat-up-arrow-icon'
-                    onClick={() => {
-                        if (key > 0) return this.swapId(key, key - 1);
-                        return null;
-                    }}
-                    shape='circle'
-                    icon={<UpOutlined />}
-                />
-            </CVATTooltip>
-        );
-    }
-
-    private renderDownIcon(fieldInstance: any): JSX.Element {
-        const { key } = fieldInstance;
-        const length = this.formRef.current?.getFieldValue('attributes').length;
-        return (
-            <CVATTooltip title='move down'>
-                <Button
-                    className='cvat-down-arrow-icon'
-                    onClick={() => {
-                        if (key < length - 1) return this.swapId(key, key + 1);
-                        return null;
-                    }}
-                    icon={<DownOutlined />}
-                    shape='circle'
-                />
-            </CVATTooltip>
-        );
-    }
-
     private renderAttribute = (fieldInstance: any): JSX.Element | null => {
         const { key } = fieldInstance;
         const attr = this.formRef.current?.getFieldValue('attributes')[key];
 
         return attr ? (
-            <Form.Item noStyle key={key} shouldUpdate>
-                {() => (
-                    <Row
-                        justify='space-between'
-                        align='top'
-                        cvat-attribute-id={attr.id}
-                        className='cvat-attribute-inputs-wrapper'
-                    >
-                        <Col span={1}>{this.renderUpIcon(fieldInstance)}</Col>
-                        <Col span={1}>{this.renderDownIcon(fieldInstance)}</Col>
-                        <Col span={5}>{this.renderAttributeNameInput(fieldInstance, attr)}</Col>
-                        <Col span={4}>{this.renderAttributeTypeInput(fieldInstance, attr)}</Col>
-                        <Col span={6}>
-                            {((): JSX.Element => {
-                                const currentFieldValue = this.formRef.current?.getFieldValue('attributes')[key];
-                                const type = currentFieldValue.type || AttributeType.SELECT;
-                                let element = null;
-                                if ([AttributeType.SELECT, AttributeType.RADIO].includes(type)) {
-                                    element = this.renderAttributeValuesInput(fieldInstance, attr);
-                                } else if (type === AttributeType.CHECKBOX) {
-                                    element = this.renderBooleanValueInput(fieldInstance);
-                                } else if (type === AttributeType.NUMBER) {
-                                    element = this.renderNumberRangeInput(fieldInstance, attr);
-                                } else {
-                                    element = this.renderDefaultValueInput(fieldInstance);
-                                }
+            <div key={key}>
+                <Form.Item noStyle key={key} shouldUpdate>
+                    {() => (
+                        <Row
+                            justify='space-between'
+                            align='top'
+                            cvat-attribute-id={attr.id}
+                            className='cvat-attribute-inputs-wrapper'
+                        >
+                            <Col span={1} className='cvat-drag-drop react-grid-dragHandleExample'><HolderOutlined /></Col>
+                            <Col span={5}>{this.renderAttributeNameInput(fieldInstance, attr)}</Col>
+                            <Col span={4}>{this.renderAttributeTypeInput(fieldInstance, attr)}</Col>
+                            <Col span={6}>
+                                {((): JSX.Element => {
+                                    const currentFieldValue = this.formRef.current?.getFieldValue('attributes')[key];
+                                    const type = currentFieldValue.type || AttributeType.SELECT;
+                                    let element = null;
+                                    if ([AttributeType.SELECT, AttributeType.RADIO].includes(type)) {
+                                        element = this.renderAttributeValuesInput(fieldInstance, attr);
+                                    } else if (type === AttributeType.CHECKBOX) {
+                                        element = this.renderBooleanValueInput(fieldInstance);
+                                    } else if (type === AttributeType.NUMBER) {
+                                        element = this.renderNumberRangeInput(fieldInstance, attr);
+                                    } else {
+                                        element = this.renderDefaultValueInput(fieldInstance);
+                                    }
 
-                                return element;
-                            })()}
-                        </Col>
-                        <Col span={5}>{this.renderMutableAttributeInput(fieldInstance, attr)}</Col>
-                        <Col span={2}>{this.renderDeleteAttributeButton(fieldInstance, attr)}</Col>
-                    </Row>
-                )}
-            </Form.Item>
+                                    return element;
+                                })()}
+                            </Col>
+                            <Col span={5}>{this.renderMutableAttributeInput(fieldInstance, attr)}</Col>
+                            <Col span={2}>{this.renderDeleteAttributeButton(fieldInstance, attr)}</Col>
+                        </Row>
+                    )}
+                </Form.Item>
+            </div>
+
         ) : null;
     };
 
@@ -674,10 +642,6 @@ export default class LabelForm extends React.Component<Props> {
         );
     }
 
-    private renderAttributes() {
-        return (fieldInstances: any[]): (JSX.Element | null)[] => fieldInstances.map(this.renderAttribute);
-    }
-
     // eslint-disable-next-line react/sort-comp
     public componentDidMount(): void {
         const { label } = this.props;
@@ -736,7 +700,32 @@ export default class LabelForm extends React.Component<Props> {
                 </Row>
                 <Row justify='start' align='top'>
                     <Col span={24}>
-                        <Form.List name='attributes'>{this.renderAttributes()}</Form.List>
+                        <Form.List
+                            name='attributes'
+                        >
+                            {(fieldInstances) => {
+                                const layout = fieldInstances.map((field, index) => ({
+                                    i: field.key.toString(),
+                                    x: 0,
+                                    y: index,
+                                    h: 1,
+                                    w: 1,
+                                }));
+                                return (
+                                    <ReactGridLayout
+                                        layout={layout}
+                                        rowHeight={30}
+                                        cols={1}
+                                        width={600}
+                                        onLayoutChange={(updatedLayout) => {
+                                            this.formRef.current?.setFieldsValue({ layout: updatedLayout });
+                                        }}
+                                    >
+                                        {fieldInstances.map(this.renderAttribute)}
+                                    </ReactGridLayout>
+                                );
+                            }}
+                        </Form.List>
                     </Col>
                 </Row>
                 <Row justify='start' align='middle'>
