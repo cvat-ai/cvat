@@ -1551,7 +1551,7 @@ class _Comparator:
             [
                 ann
                 for ann in item.annotations
-                if ann.type in self.included_ann_types and not self.non_groupable_ann_type
+                if ann.type in self.included_ann_types and ann.type != self.non_groupable_ann_type
             ]
         )
 
