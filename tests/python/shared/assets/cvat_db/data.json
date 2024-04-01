@@ -1477,6 +1477,25 @@
   }
 },
 {
+  "model": "engine.data",
+  "pk": 22,
+  "fields": {
+    "chunk_size": 72,
+    "size": 11,
+    "image_quality": 70,
+    "start_frame": 0,
+    "stop_frame": 10,
+    "frame_filter": "",
+    "compressed_chunk_type": "imageset",
+    "original_chunk_type": "imageset",
+    "storage_method": "cache",
+    "storage": "local",
+    "cloud_storage": null,
+    "sorting_method": "lexicographical",
+    "deleted_frames": "[]"
+  }
+},
+{
   "model": "engine.video",
   "pk": 1,
   "fields": {
@@ -2872,6 +2891,127 @@
   }
 },
 {
+  "model": "engine.image",
+  "pk": 478,
+  "fields": {
+    "data": 22,
+    "path": "0.png",
+    "frame": 0,
+    "width": 549,
+    "height": 360
+  }
+},
+{
+  "model": "engine.image",
+  "pk": 479,
+  "fields": {
+    "data": 22,
+    "path": "1.png",
+    "frame": 1,
+    "width": 172,
+    "height": 230
+  }
+},
+{
+  "model": "engine.image",
+  "pk": 480,
+  "fields": {
+    "data": 22,
+    "path": "10.png",
+    "frame": 2,
+    "width": 936,
+    "height": 820
+  }
+},
+{
+  "model": "engine.image",
+  "pk": 481,
+  "fields": {
+    "data": 22,
+    "path": "2.png",
+    "frame": 3,
+    "width": 145,
+    "height": 735
+  }
+},
+{
+  "model": "engine.image",
+  "pk": 482,
+  "fields": {
+    "data": 22,
+    "path": "3.png",
+    "frame": 4,
+    "width": 318,
+    "height": 729
+  }
+},
+{
+  "model": "engine.image",
+  "pk": 483,
+  "fields": {
+    "data": 22,
+    "path": "4.png",
+    "frame": 5,
+    "width": 387,
+    "height": 168
+  }
+},
+{
+  "model": "engine.image",
+  "pk": 484,
+  "fields": {
+    "data": 22,
+    "path": "5.png",
+    "frame": 6,
+    "width": 395,
+    "height": 401
+  }
+},
+{
+  "model": "engine.image",
+  "pk": 485,
+  "fields": {
+    "data": 22,
+    "path": "6.png",
+    "frame": 7,
+    "width": 293,
+    "height": 443
+  }
+},
+{
+  "model": "engine.image",
+  "pk": 486,
+  "fields": {
+    "data": 22,
+    "path": "7.png",
+    "frame": 8,
+    "width": 500,
+    "height": 276
+  }
+},
+{
+  "model": "engine.image",
+  "pk": 487,
+  "fields": {
+    "data": 22,
+    "path": "8.png",
+    "frame": 9,
+    "width": 309,
+    "height": 162
+  }
+},
+{
+  "model": "engine.image",
+  "pk": 488,
+  "fields": {
+    "data": 22,
+    "path": "9.png",
+    "frame": 10,
+    "width": 134,
+    "height": 452
+  }
+},
+{
   "model": "engine.project",
   "pk": 1,
   "fields": {
@@ -3536,6 +3676,31 @@
     "dimension": "2d",
     "subset": "Train",
     "organization": 2,
+    "source_storage": null,
+    "target_storage": null
+  }
+},
+{
+  "model": "engine.task",
+  "pk": 23,
+  "fields": {
+    "created_date": "2024-03-21T20:50:05.694Z",
+    "updated_date": "2024-03-21T20:50:05.947Z",
+    "project": null,
+    "name": "task with several jobs and ground truth job",
+    "mode": "annotation",
+    "owner": [
+      "admin2"
+    ],
+    "assignee": null,
+    "bug_tracker": "",
+    "overlap": 0,
+    "segment_size": 5,
+    "status": "completed",
+    "data": 22,
+    "dimension": "2d",
+    "subset": "",
+    "organization": null,
     "source_storage": null,
     "target_storage": null
   }
@@ -4669,6 +4834,50 @@
   }
 },
 {
+  "model": "engine.segment",
+  "pk": 29,
+  "fields": {
+    "task": 23,
+    "start_frame": 0,
+    "stop_frame": 4,
+    "type": "range",
+    "frames": "[]"
+  }
+},
+{
+  "model": "engine.segment",
+  "pk": 30,
+  "fields": {
+    "task": 23,
+    "start_frame": 5,
+    "stop_frame": 9,
+    "type": "range",
+    "frames": "[]"
+  }
+},
+{
+  "model": "engine.segment",
+  "pk": 31,
+  "fields": {
+    "task": 23,
+    "start_frame": 10,
+    "stop_frame": 10,
+    "type": "range",
+    "frames": "[]"
+  }
+},
+{
+  "model": "engine.segment",
+  "pk": 32,
+  "fields": {
+    "task": 23,
+    "start_frame": 0,
+    "stop_frame": 10,
+    "type": "specific_frames",
+    "frames": "[4, 5, 7]"
+  }
+},
+{
   "model": "engine.job",
   "pk": 2,
   "fields": {
@@ -4967,6 +5176,62 @@
     "segment": 28,
     "assignee": null,
     "status": "validation",
+    "stage": "acceptance",
+    "state": "completed",
+    "type": "ground_truth"
+  }
+},
+{
+  "model": "engine.job",
+  "pk": 29,
+  "fields": {
+    "created_date": "2024-03-21T20:50:05.805Z",
+    "updated_date": "2024-03-21T20:50:39.585Z",
+    "segment": 29,
+    "assignee": null,
+    "status": "completed",
+    "stage": "acceptance",
+    "state": "completed",
+    "type": "annotation"
+  }
+},
+{
+  "model": "engine.job",
+  "pk": 30,
+  "fields": {
+    "created_date": "2024-03-21T20:50:05.811Z",
+    "updated_date": "2024-03-21T20:50:33.610Z",
+    "segment": 30,
+    "assignee": null,
+    "status": "completed",
+    "stage": "acceptance",
+    "state": "completed",
+    "type": "annotation"
+  }
+},
+{
+  "model": "engine.job",
+  "pk": 31,
+  "fields": {
+    "created_date": "2024-03-21T20:50:05.815Z",
+    "updated_date": "2024-03-21T20:50:27.594Z",
+    "segment": 31,
+    "assignee": null,
+    "status": "completed",
+    "stage": "acceptance",
+    "state": "completed",
+    "type": "annotation"
+  }
+},
+{
+  "model": "engine.job",
+  "pk": 32,
+  "fields": {
+    "created_date": "2024-03-21T20:50:05.838Z",
+    "updated_date": "2024-03-21T20:50:20.020Z",
+    "segment": 32,
+    "assignee": null,
+    "status": "completed",
     "stage": "acceptance",
     "state": "completed",
     "type": "ground_truth"
@@ -5750,6 +6015,30 @@
     "color": "#4a649f",
     "type": "points",
     "parent": 68
+  }
+},
+{
+  "model": "engine.label",
+  "pk": 73,
+  "fields": {
+    "task": 23,
+    "project": null,
+    "name": "cat",
+    "color": "#6080c0",
+    "type": "any",
+    "parent": null
+  }
+},
+{
+  "model": "engine.label",
+  "pk": 74,
+  "fields": {
+    "task": 23,
+    "project": null,
+    "name": "dog",
+    "color": "#406040",
+    "type": "any",
+    "parent": null
   }
 },
 {
@@ -8314,6 +8603,330 @@
     "points": "[700.7550293506938, 134.04215851499248]",
     "rotation": 0.0,
     "parent": 142
+  }
+},
+{
+  "model": "engine.labeledshape",
+  "pk": 151,
+  "fields": {
+    "job": 29,
+    "label": 73,
+    "frame": 0,
+    "group": 0,
+    "source": "manual",
+    "type": "rectangle",
+    "occluded": false,
+    "outside": false,
+    "z_order": 0,
+    "points": "[44.898003339767456, 63.52153968811035, 426.46817803382874, 271.5955777168274]",
+    "rotation": 0.0,
+    "parent": null
+  }
+},
+{
+  "model": "engine.labeledshape",
+  "pk": 152,
+  "fields": {
+    "job": 29,
+    "label": 73,
+    "frame": 1,
+    "group": 0,
+    "source": "manual",
+    "type": "rectangle",
+    "occluded": false,
+    "outside": false,
+    "z_order": 0,
+    "points": "[43.79357561469078, 28.97564932703972, 136.88880816102028, 164.59188774228096]",
+    "rotation": 0.0,
+    "parent": null
+  }
+},
+{
+  "model": "engine.labeledshape",
+  "pk": 153,
+  "fields": {
+    "job": 29,
+    "label": 73,
+    "frame": 2,
+    "group": 0,
+    "source": "manual",
+    "type": "rectangle",
+    "occluded": false,
+    "outside": false,
+    "z_order": 0,
+    "points": "[108.50460643768383, 165.35334844589306, 795.2833482742317, 679.8631751060493]",
+    "rotation": 0.0,
+    "parent": null
+  }
+},
+{
+  "model": "engine.labeledshape",
+  "pk": 154,
+  "fields": {
+    "job": 29,
+    "label": 73,
+    "frame": 3,
+    "group": 0,
+    "source": "manual",
+    "type": "rectangle",
+    "occluded": false,
+    "outside": false,
+    "z_order": 0,
+    "points": "[40.11789474487341, 128.13260302543677, 104.97083768844641, 182.6914280414585]",
+    "rotation": 0.0,
+    "parent": null
+  }
+},
+{
+  "model": "engine.labeledshape",
+  "pk": 155,
+  "fields": {
+    "job": 29,
+    "label": 73,
+    "frame": 4,
+    "group": 0,
+    "source": "manual",
+    "type": "rectangle",
+    "occluded": false,
+    "outside": false,
+    "z_order": 0,
+    "points": "[19.106867015361786, 71.99510070085489, 200.8463572859764, 196.5581221222874]",
+    "rotation": 0.0,
+    "parent": null
+  }
+},
+{
+  "model": "engine.labeledshape",
+  "pk": 156,
+  "fields": {
+    "job": 30,
+    "label": 73,
+    "frame": 5,
+    "group": 0,
+    "source": "manual",
+    "type": "rectangle",
+    "occluded": false,
+    "outside": false,
+    "z_order": 0,
+    "points": "[55.147965204716456, 27.993821200729144, 354.91261003613545, 129.34078386128022]",
+    "rotation": 0.0,
+    "parent": null
+  }
+},
+{
+  "model": "engine.labeledshape",
+  "pk": 157,
+  "fields": {
+    "job": 30,
+    "label": 73,
+    "frame": 6,
+    "group": 0,
+    "source": "manual",
+    "type": "rectangle",
+    "occluded": false,
+    "outside": false,
+    "z_order": 0,
+    "points": "[55.67655109167208, 27.202181529999507, 314.5855129838001, 333.9054008126259]",
+    "rotation": 0.0,
+    "parent": null
+  }
+},
+{
+  "model": "engine.labeledshape",
+  "pk": 158,
+  "fields": {
+    "job": 30,
+    "label": 73,
+    "frame": 7,
+    "group": 0,
+    "source": "manual",
+    "type": "rectangle",
+    "occluded": false,
+    "outside": false,
+    "z_order": 0,
+    "points": "[30.75535711050179, 51.1681019723419, 245.49246947169377, 374.42159963250197]",
+    "rotation": 0.0,
+    "parent": null
+  }
+},
+{
+  "model": "engine.labeledshape",
+  "pk": 159,
+  "fields": {
+    "job": 30,
+    "label": 73,
+    "frame": 8,
+    "group": 0,
+    "source": "manual",
+    "type": "rectangle",
+    "occluded": false,
+    "outside": false,
+    "z_order": 0,
+    "points": "[78.72917294502258, 28.6186763048172, 456.07723474502563, 214.25403320789337]",
+    "rotation": 0.0,
+    "parent": null
+  }
+},
+{
+  "model": "engine.labeledshape",
+  "pk": 160,
+  "fields": {
+    "job": 30,
+    "label": 73,
+    "frame": 9,
+    "group": 0,
+    "source": "manual",
+    "type": "rectangle",
+    "occluded": false,
+    "outside": false,
+    "z_order": 0,
+    "points": "[40.30229317843805, 20.90870136916601, 277.9420801371325, 141.0943407505747]",
+    "rotation": 0.0,
+    "parent": null
+  }
+},
+{
+  "model": "engine.labeledshape",
+  "pk": 161,
+  "fields": {
+    "job": 31,
+    "label": 73,
+    "frame": 10,
+    "group": 0,
+    "source": "manual",
+    "type": "rectangle",
+    "occluded": false,
+    "outside": false,
+    "z_order": 0,
+    "points": "[37.5426108896736, 44.316280591488976, 109.0776273667816, 115.21824382543673]",
+    "rotation": 0.0,
+    "parent": null
+  }
+},
+{
+  "model": "engine.labeledshape",
+  "pk": 162,
+  "fields": {
+    "job": 32,
+    "label": 73,
+    "frame": 4,
+    "group": 0,
+    "source": "Ground truth",
+    "type": "rectangle",
+    "occluded": false,
+    "outside": false,
+    "z_order": 0,
+    "points": "[24.722413063049316, 37.791320228576296, 270.78543078899384, 610.5770170927044]",
+    "rotation": 0.0,
+    "parent": null
+  }
+},
+{
+  "model": "engine.labeledshape",
+  "pk": 163,
+  "fields": {
+    "job": 32,
+    "label": 73,
+    "frame": 5,
+    "group": 0,
+    "source": "Ground truth",
+    "type": "rectangle",
+    "occluded": false,
+    "outside": false,
+    "z_order": 0,
+    "points": "[87.86122530400826, 22.648517262936366, 277.2987968593843, 128.69934738874508]",
+    "rotation": 0.0,
+    "parent": null
+  }
+},
+{
+  "model": "engine.labeledshape",
+  "pk": 164,
+  "fields": {
+    "job": 32,
+    "label": 73,
+    "frame": 6,
+    "group": 0,
+    "source": "Ground truth",
+    "type": "rectangle",
+    "occluded": false,
+    "outside": false,
+    "z_order": 0,
+    "points": "[8.219268488885064, 76.40050053596497, 46.97136907577624, 76.9621251821518]",
+    "rotation": 0.0,
+    "parent": null
+  }
+},
+{
+  "model": "engine.labeledshape",
+  "pk": 165,
+  "fields": {
+    "job": 32,
+    "label": 73,
+    "frame": 7,
+    "group": 0,
+    "source": "Ground truth",
+    "type": "rectangle",
+    "occluded": false,
+    "outside": false,
+    "z_order": 0,
+    "points": "[40.372303777934576, 55.821463263035184, 232.15283377170636, 366.6659974813465]",
+    "rotation": 0.0,
+    "parent": null
+  }
+},
+{
+  "model": "engine.labeledshape",
+  "pk": 166,
+  "fields": {
+    "job": 32,
+    "label": 73,
+    "frame": 8,
+    "group": 0,
+    "source": "Ground truth",
+    "type": "rectangle",
+    "occluded": false,
+    "outside": false,
+    "z_order": 0,
+    "points": "[114.91701781749725, 49.88939428329468, 426.5192240476608, 201.82309412956238]",
+    "rotation": 0.0,
+    "parent": null
+  }
+},
+{
+  "model": "engine.labeledshape",
+  "pk": 167,
+  "fields": {
+    "job": 32,
+    "label": 73,
+    "frame": 9,
+    "group": 0,
+    "source": "Ground truth",
+    "type": "rectangle",
+    "occluded": false,
+    "outside": false,
+    "z_order": 0,
+    "points": "[69.46096818744991, 42.89721039235519, 143.9282634973515, 85.61091347932779]",
+    "rotation": 0.0,
+    "parent": null
+  }
+},
+{
+  "model": "engine.labeledshape",
+  "pk": 168,
+  "fields": {
+    "job": 32,
+    "label": 73,
+    "frame": 10,
+    "group": 0,
+    "source": "Ground truth",
+    "type": "rectangle",
+    "occluded": false,
+    "outside": false,
+    "z_order": 0,
+    "points": "[35.64345116019285, 190.86810638308634, 41.340930348635084, 213.02496989369502]",
+    "rotation": 0.0,
+    "parent": null
   }
 },
 {
@@ -11001,6 +11614,58 @@
   }
 },
 {
+  "model": "quality_control.qualityreport",
+  "pk": 7,
+  "fields": {
+    "job": null,
+    "task": 23,
+    "parent": null,
+    "created_date": "2024-03-21T20:52:03.542Z",
+    "target_last_updated": "2024-03-21T20:50:05.947Z",
+    "gt_last_updated": "2024-03-21T20:50:20.020Z",
+    "data": "{\"parameters\":{\"included_annotation_types\":[\"bbox\",\"points\",\"mask\",\"polygon\",\"polyline\",\"skeleton\"],\"compare_attributes\":true,\"ignored_attributes\":[],\"iou_threshold\":0.4,\"low_overlap_threshold\":0.8,\"oks_sigma\":0.09,\"line_thickness\":0.01,\"compare_line_orientation\":true,\"line_orientation_threshold\":0.1,\"compare_groups\":true,\"group_match_threshold\":0.5,\"check_covered_annotations\":true,\"object_visibility_threshold\":0.05,\"panoptic_comparison\":true},\"comparison_summary\":{\"frame_share\":0.2727272727272727,\"frames\":[4,5,7],\"conflict_count\":3,\"warning_count\":1,\"error_count\":2,\"conflicts_by_type\":{\"low_overlap\":1,\"missing_annotation\":1,\"extra_annotation\":1},\"annotations\":{\"valid_count\":2,\"missing_count\":1,\"extra_count\":1,\"total_count\":4,\"ds_count\":3,\"gt_count\":3,\"confusion_matrix\":{\"labels\":[\"cat\",\"dog\",\"unmatched\"],\"rows\":[[2,0,1],[0,0,0],[1,0,0]],\"precision\":[0.0,0.0,0.0],\"recall\":[0.0,0.0,0.0],\"accuracy\":[0.0,0.0,0.0],\"axes\":{\"cols\":\"gt\",\"rows\":\"ds\"}},\"accuracy\":0.5,\"precision\":0.6666666666666666,\"recall\":0.6666666666666666},\"annotation_components\":{\"shape\":{\"valid_count\":2,\"missing_count\":1,\"extra_count\":1,\"total_count\":4,\"ds_count\":3,\"gt_count\":3,\"mean_iou\":null,\"accuracy\":0.5},\"label\":{\"valid_count\":2,\"invalid_count\":0,\"total_count\":2,\"accuracy\":1.0}},\"frame_count\":3,\"mean_conflict_count\":1.0},\"frame_results\":{\"5\":{\"conflicts\":[{\"frame_id\":5,\"type\":\"low_overlap\",\"annotation_ids\":[{\"obj_id\":156,\"job_id\":30,\"type\":\"shape\",\"shape_type\":\"rectangle\"},{\"obj_id\":163,\"job_id\":32,\"type\":\"shape\",\"shape_type\":\"rectangle\"}],\"severity\":\"warning\"}],\"annotations\":{\"valid_count\":1,\"missing_count\":0,\"extra_count\":0,\"total_count\":1,\"ds_count\":1,\"gt_count\":1,\"confusion_matrix\":{\"labels\":[\"cat\",\"dog\",\"unmatched\"],\"rows\":[[1,0,0],[0,0,0],[0,0,0]],\"precision\":[1.0,0.0,0.0],\"recall\":[1.0,0.0,0.0],\"accuracy\":[1.0,0.0,0.0],\"axes\":{\"cols\":\"gt\",\"rows\":\"ds\"}},\"accuracy\":1.0,\"precision\":1.0,\"recall\":1.0},\"annotation_components\":{\"shape\":{\"valid_count\":1,\"missing_count\":0,\"extra_count\":0,\"total_count\":1,\"ds_count\":1,\"gt_count\":1,\"mean_iou\":0.6077449295377204,\"accuracy\":1.0},\"label\":{\"valid_count\":1,\"invalid_count\":0,\"total_count\":1,\"accuracy\":1.0}},\"conflict_count\":1,\"warning_count\":1,\"error_count\":0,\"conflicts_by_type\":{\"low_overlap\":1}},\"7\":{\"conflicts\":[],\"annotations\":{\"valid_count\":1,\"missing_count\":0,\"extra_count\":0,\"total_count\":1,\"ds_count\":1,\"gt_count\":1,\"confusion_matrix\":{\"labels\":[\"cat\",\"dog\",\"unmatched\"],\"rows\":[[1,0,0],[0,0,0],[0,0,0]],\"precision\":[1.0,0.0,0.0],\"recall\":[1.0,0.0,0.0],\"accuracy\":[1.0,0.0,0.0],\"axes\":{\"cols\":\"gt\",\"rows\":\"ds\"}},\"accuracy\":1.0,\"precision\":1.0,\"recall\":1.0},\"annotation_components\":{\"shape\":{\"valid_count\":1,\"missing_count\":0,\"extra_count\":0,\"total_count\":1,\"ds_count\":1,\"gt_count\":1,\"mean_iou\":0.8588610910105674,\"accuracy\":1.0},\"label\":{\"valid_count\":1,\"invalid_count\":0,\"total_count\":1,\"accuracy\":1.0}},\"conflict_count\":0,\"warning_count\":0,\"error_count\":0,\"conflicts_by_type\":{}},\"4\":{\"conflicts\":[{\"frame_id\":4,\"type\":\"missing_annotation\",\"annotation_ids\":[{\"obj_id\":162,\"job_id\":32,\"type\":\"shape\",\"shape_type\":\"rectangle\"}],\"severity\":\"error\"},{\"frame_id\":4,\"type\":\"extra_annotation\",\"annotation_ids\":[{\"obj_id\":155,\"job_id\":29,\"type\":\"shape\",\"shape_type\":\"rectangle\"}],\"severity\":\"error\"}],\"annotations\":{\"valid_count\":0,\"missing_count\":1,\"extra_count\":1,\"total_count\":2,\"ds_count\":1,\"gt_count\":1,\"confusion_matrix\":{\"labels\":[\"cat\",\"dog\",\"unmatched\"],\"rows\":[[0,0,1],[0,0,0],[1,0,0]],\"precision\":[0.0,0.0,0.0],\"recall\":[0.0,0.0,0.0],\"accuracy\":[0.0,0.0,0.0],\"axes\":{\"cols\":\"gt\",\"rows\":\"ds\"}},\"accuracy\":0.0,\"precision\":0.0,\"recall\":0.0},\"annotation_components\":{\"shape\":{\"valid_count\":0,\"missing_count\":1,\"extra_count\":1,\"total_count\":2,\"ds_count\":1,\"gt_count\":1,\"mean_iou\":0.1548852356623416,\"accuracy\":0.0},\"label\":{\"valid_count\":0,\"invalid_count\":0,\"total_count\":0,\"accuracy\":0.0}},\"conflict_count\":2,\"warning_count\":0,\"error_count\":2,\"conflicts_by_type\":{\"missing_annotation\":1,\"extra_annotation\":1}}}}"
+  }
+},
+{
+  "model": "quality_control.qualityreport",
+  "pk": 8,
+  "fields": {
+    "job": 31,
+    "task": null,
+    "parent": 7,
+    "created_date": "2024-03-21T20:52:03.552Z",
+    "target_last_updated": "2024-03-21T20:50:27.594Z",
+    "gt_last_updated": "2024-03-21T20:50:20.020Z",
+    "data": "{\"parameters\":{\"included_annotation_types\":[\"bbox\",\"points\",\"mask\",\"polygon\",\"polyline\",\"skeleton\"],\"compare_attributes\":true,\"ignored_attributes\":[],\"iou_threshold\":0.4,\"low_overlap_threshold\":0.8,\"oks_sigma\":0.09,\"line_thickness\":0.01,\"compare_line_orientation\":true,\"line_orientation_threshold\":0.1,\"compare_groups\":true,\"group_match_threshold\":0.5,\"check_covered_annotations\":true,\"object_visibility_threshold\":0.05,\"panoptic_comparison\":true},\"comparison_summary\":{\"frame_share\":0.0,\"frames\":[],\"conflict_count\":0,\"warning_count\":0,\"error_count\":0,\"conflicts_by_type\":{},\"annotations\":{\"valid_count\":0,\"missing_count\":0,\"extra_count\":0,\"total_count\":0,\"ds_count\":0,\"gt_count\":0,\"confusion_matrix\":{\"labels\":[\"cat\",\"dog\",\"unmatched\"],\"rows\":[[0,0,0],[0,0,0],[0,0,0]],\"precision\":[0.0,0.0,0.0],\"recall\":[0.0,0.0,0.0],\"accuracy\":[0.0,0.0,0.0],\"axes\":{\"cols\":\"gt\",\"rows\":\"ds\"}},\"accuracy\":0.0,\"precision\":0.0,\"recall\":0.0},\"annotation_components\":{\"shape\":{\"valid_count\":0,\"missing_count\":0,\"extra_count\":0,\"total_count\":0,\"ds_count\":0,\"gt_count\":0,\"mean_iou\":null,\"accuracy\":0.0},\"label\":{\"valid_count\":0,\"invalid_count\":0,\"total_count\":0,\"accuracy\":0.0}},\"frame_count\":0,\"mean_conflict_count\":0.0},\"frame_results\":{}}"
+  }
+},
+{
+  "model": "quality_control.qualityreport",
+  "pk": 9,
+  "fields": {
+    "job": 30,
+    "task": null,
+    "parent": 7,
+    "created_date": "2024-03-21T20:52:03.552Z",
+    "target_last_updated": "2024-03-21T20:50:33.610Z",
+    "gt_last_updated": "2024-03-21T20:50:20.020Z",
+    "data": "{\"parameters\":{\"included_annotation_types\":[\"bbox\",\"points\",\"mask\",\"polygon\",\"polyline\",\"skeleton\"],\"compare_attributes\":true,\"ignored_attributes\":[],\"iou_threshold\":0.4,\"low_overlap_threshold\":0.8,\"oks_sigma\":0.09,\"line_thickness\":0.01,\"compare_line_orientation\":true,\"line_orientation_threshold\":0.1,\"compare_groups\":true,\"group_match_threshold\":0.5,\"check_covered_annotations\":true,\"object_visibility_threshold\":0.05,\"panoptic_comparison\":true},\"comparison_summary\":{\"frame_share\":0.4,\"frames\":[5,7],\"conflict_count\":1,\"warning_count\":1,\"error_count\":0,\"conflicts_by_type\":{\"low_overlap\":1},\"annotations\":{\"valid_count\":2,\"missing_count\":0,\"extra_count\":0,\"total_count\":2,\"ds_count\":2,\"gt_count\":2,\"confusion_matrix\":{\"labels\":[\"cat\",\"dog\",\"unmatched\"],\"rows\":[[2,0,0],[0,0,0],[0,0,0]],\"precision\":[1.0,0.0,0.0],\"recall\":[1.0,0.0,0.0],\"accuracy\":[1.0,0.0,0.0],\"axes\":{\"cols\":\"gt\",\"rows\":\"ds\"}},\"accuracy\":1.0,\"precision\":1.0,\"recall\":1.0},\"annotation_components\":{\"shape\":{\"valid_count\":2,\"missing_count\":0,\"extra_count\":0,\"total_count\":2,\"ds_count\":2,\"gt_count\":2,\"mean_iou\":0.7333030102741439,\"accuracy\":1.0},\"label\":{\"valid_count\":2,\"invalid_count\":0,\"total_count\":2,\"accuracy\":1.0}},\"frame_count\":2,\"mean_conflict_count\":0.5},\"frame_results\":{\"5\":{\"conflicts\":[{\"frame_id\":5,\"type\":\"low_overlap\",\"annotation_ids\":[{\"obj_id\":156,\"job_id\":30,\"type\":\"shape\",\"shape_type\":\"rectangle\"},{\"obj_id\":163,\"job_id\":32,\"type\":\"shape\",\"shape_type\":\"rectangle\"}],\"severity\":\"warning\"}],\"annotations\":{\"valid_count\":1,\"missing_count\":0,\"extra_count\":0,\"total_count\":1,\"ds_count\":1,\"gt_count\":1,\"confusion_matrix\":{\"labels\":[\"cat\",\"dog\",\"unmatched\"],\"rows\":[[1,0,0],[0,0,0],[0,0,0]],\"precision\":[1.0,0.0,0.0],\"recall\":[1.0,0.0,0.0],\"accuracy\":[1.0,0.0,0.0],\"axes\":{\"cols\":\"gt\",\"rows\":\"ds\"}},\"accuracy\":1.0,\"precision\":1.0,\"recall\":1.0},\"annotation_components\":{\"shape\":{\"valid_count\":1,\"missing_count\":0,\"extra_count\":0,\"total_count\":1,\"ds_count\":1,\"gt_count\":1,\"mean_iou\":0.6077449295377204,\"accuracy\":1.0},\"label\":{\"valid_count\":1,\"invalid_count\":0,\"total_count\":1,\"accuracy\":1.0}},\"conflict_count\":1,\"warning_count\":1,\"error_count\":0,\"conflicts_by_type\":{\"low_overlap\":1}},\"7\":{\"conflicts\":[],\"annotations\":{\"valid_count\":1,\"missing_count\":0,\"extra_count\":0,\"total_count\":1,\"ds_count\":1,\"gt_count\":1,\"confusion_matrix\":{\"labels\":[\"cat\",\"dog\",\"unmatched\"],\"rows\":[[1,0,0],[0,0,0],[0,0,0]],\"precision\":[1.0,0.0,0.0],\"recall\":[1.0,0.0,0.0],\"accuracy\":[1.0,0.0,0.0],\"axes\":{\"cols\":\"gt\",\"rows\":\"ds\"}},\"accuracy\":1.0,\"precision\":1.0,\"recall\":1.0},\"annotation_components\":{\"shape\":{\"valid_count\":1,\"missing_count\":0,\"extra_count\":0,\"total_count\":1,\"ds_count\":1,\"gt_count\":1,\"mean_iou\":0.8588610910105674,\"accuracy\":1.0},\"label\":{\"valid_count\":1,\"invalid_count\":0,\"total_count\":1,\"accuracy\":1.0}},\"conflict_count\":0,\"warning_count\":0,\"error_count\":0,\"conflicts_by_type\":{}}}}"
+  }
+},
+{
+  "model": "quality_control.qualityreport",
+  "pk": 10,
+  "fields": {
+    "job": 29,
+    "task": null,
+    "parent": 7,
+    "created_date": "2024-03-21T20:52:03.552Z",
+    "target_last_updated": "2024-03-21T20:50:39.585Z",
+    "gt_last_updated": "2024-03-21T20:50:20.020Z",
+    "data": "{\"parameters\":{\"included_annotation_types\":[\"bbox\",\"points\",\"mask\",\"polygon\",\"polyline\",\"skeleton\"],\"compare_attributes\":true,\"ignored_attributes\":[],\"iou_threshold\":0.4,\"low_overlap_threshold\":0.8,\"oks_sigma\":0.09,\"line_thickness\":0.01,\"compare_line_orientation\":true,\"line_orientation_threshold\":0.1,\"compare_groups\":true,\"group_match_threshold\":0.5,\"check_covered_annotations\":true,\"object_visibility_threshold\":0.05,\"panoptic_comparison\":true},\"comparison_summary\":{\"frame_share\":0.2,\"frames\":[4],\"conflict_count\":2,\"warning_count\":0,\"error_count\":2,\"conflicts_by_type\":{\"missing_annotation\":1,\"extra_annotation\":1},\"annotations\":{\"valid_count\":0,\"missing_count\":1,\"extra_count\":1,\"total_count\":2,\"ds_count\":1,\"gt_count\":1,\"confusion_matrix\":{\"labels\":[\"cat\",\"dog\",\"unmatched\"],\"rows\":[[0,0,1],[0,0,0],[1,0,0]],\"precision\":[0.0,0.0,0.0],\"recall\":[0.0,0.0,0.0],\"accuracy\":[0.0,0.0,0.0],\"axes\":{\"cols\":\"gt\",\"rows\":\"ds\"}},\"accuracy\":0.0,\"precision\":0.0,\"recall\":0.0},\"annotation_components\":{\"shape\":{\"valid_count\":0,\"missing_count\":1,\"extra_count\":1,\"total_count\":2,\"ds_count\":1,\"gt_count\":1,\"mean_iou\":0.1548852356623416,\"accuracy\":0.0},\"label\":{\"valid_count\":0,\"invalid_count\":0,\"total_count\":0,\"accuracy\":0.0}},\"frame_count\":1,\"mean_conflict_count\":2.0},\"frame_results\":{\"4\":{\"conflicts\":[{\"frame_id\":4,\"type\":\"missing_annotation\",\"annotation_ids\":[{\"obj_id\":162,\"job_id\":32,\"type\":\"shape\",\"shape_type\":\"rectangle\"}],\"severity\":\"error\"},{\"frame_id\":4,\"type\":\"extra_annotation\",\"annotation_ids\":[{\"obj_id\":155,\"job_id\":29,\"type\":\"shape\",\"shape_type\":\"rectangle\"}],\"severity\":\"error\"}],\"annotations\":{\"valid_count\":0,\"missing_count\":1,\"extra_count\":1,\"total_count\":2,\"ds_count\":1,\"gt_count\":1,\"confusion_matrix\":{\"labels\":[\"cat\",\"dog\",\"unmatched\"],\"rows\":[[0,0,1],[0,0,0],[1,0,0]],\"precision\":[0.0,0.0,0.0],\"recall\":[0.0,0.0,0.0],\"accuracy\":[0.0,0.0,0.0],\"axes\":{\"cols\":\"gt\",\"rows\":\"ds\"}},\"accuracy\":0.0,\"precision\":0.0,\"recall\":0.0},\"annotation_components\":{\"shape\":{\"valid_count\":0,\"missing_count\":1,\"extra_count\":1,\"total_count\":2,\"ds_count\":1,\"gt_count\":1,\"mean_iou\":0.1548852356623416,\"accuracy\":0.0},\"label\":{\"valid_count\":0,\"invalid_count\":0,\"total_count\":0,\"accuracy\":0.0}},\"conflict_count\":2,\"warning_count\":0,\"error_count\":2,\"conflicts_by_type\":{\"missing_annotation\":1,\"extra_annotation\":1}}}}"
+  }
+},
+{
   "model": "quality_control.annotationconflict",
   "pk": 1,
   "fields": {
@@ -12167,6 +12832,36 @@
     "report": 6,
     "frame": 1,
     "type": "missing_annotation",
+    "severity": "error"
+  }
+},
+{
+  "model": "quality_control.annotationconflict",
+  "pk": 118,
+  "fields": {
+    "report": 9,
+    "frame": 5,
+    "type": "low_overlap",
+    "severity": "warning"
+  }
+},
+{
+  "model": "quality_control.annotationconflict",
+  "pk": 119,
+  "fields": {
+    "report": 10,
+    "frame": 4,
+    "type": "missing_annotation",
+    "severity": "error"
+  }
+},
+{
+  "model": "quality_control.annotationconflict",
+  "pk": 120,
+  "fields": {
+    "report": 10,
+    "frame": 4,
+    "type": "extra_annotation",
     "severity": "error"
   }
 },
@@ -14041,6 +14736,50 @@
   }
 },
 {
+  "model": "quality_control.annotationid",
+  "pk": 171,
+  "fields": {
+    "conflict": 118,
+    "obj_id": 156,
+    "job_id": 30,
+    "type": "shape",
+    "shape_type": "rectangle"
+  }
+},
+{
+  "model": "quality_control.annotationid",
+  "pk": 172,
+  "fields": {
+    "conflict": 118,
+    "obj_id": 163,
+    "job_id": 32,
+    "type": "shape",
+    "shape_type": "rectangle"
+  }
+},
+{
+  "model": "quality_control.annotationid",
+  "pk": 173,
+  "fields": {
+    "conflict": 119,
+    "obj_id": 162,
+    "job_id": 32,
+    "type": "shape",
+    "shape_type": "rectangle"
+  }
+},
+{
+  "model": "quality_control.annotationid",
+  "pk": 174,
+  "fields": {
+    "conflict": 120,
+    "obj_id": 155,
+    "job_id": 29,
+    "type": "shape",
+    "shape_type": "rectangle"
+  }
+},
+{
   "model": "quality_control.qualitysettings",
   "pk": 1,
   "fields": {
@@ -14349,6 +15088,25 @@
   "pk": 17,
   "fields": {
     "task": 22,
+    "iou_threshold": 0.4,
+    "oks_sigma": 0.09,
+    "line_thickness": 0.01,
+    "low_overlap_threshold": 0.8,
+    "compare_line_orientation": true,
+    "line_orientation_threshold": 0.1,
+    "compare_groups": true,
+    "group_match_threshold": 0.5,
+    "check_covered_annotations": true,
+    "object_visibility_threshold": 0.05,
+    "panoptic_comparison": true,
+    "compare_attributes": true
+  }
+},
+{
+  "model": "quality_control.qualitysettings",
+  "pk": 18,
+  "fields": {
+    "task": 23,
     "iou_threshold": 0.4,
     "oks_sigma": 0.09,
     "line_thickness": 0.01,
