@@ -340,3 +340,4 @@ zipp==3.18.1
     # via importlib-metadata
 zstandard==0.22.0
     # via clickhouse-connect
+pillow>=10.3.0 # not directly required, pinned by Snyk to avoid a vulnerability
