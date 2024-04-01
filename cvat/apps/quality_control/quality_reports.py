@@ -1621,6 +1621,7 @@ class _Comparator:
         per_type_results = self._annotation_comparator.match_annotations(item_a, item_b)
 
         merged_results = [[], [], [], [], {}]
+        shape_merged_results = [[], [], [], [], {}]
         for shape_type in self.included_ann_types:
             shape_type_results = per_type_results.get(shape_type, None)
             if shape_type_results is None:
@@ -1629,9 +1630,14 @@ class _Comparator:
             for merged_field, field in zip(merged_results, shape_type_results[:-1]):
                 merged_field.extend(field)
 
+            if shape_type != dm.AnnotationType.label:
+                for merged_field, field in zip(shape_merged_results, shape_type_results[:-1]):
+                    merged_field.extend(field)
+                shape_merged_results[-1].update(per_type_results[shape_type][-1])
+
             merged_results[-1].update(per_type_results[shape_type][-1])
 
-        return merged_results
+        return {"all_ann_types": merged_results, "all_shape_ann_types": shape_merged_results}
 
     def get_distance(
         self, pairwise_distances, gt_ann: dm.Annotation, ds_ann: dm.Annotation
@@ -1705,13 +1711,24 @@ class DatasetComparator:
     ) -> List[AnnotationConflict]:
         conflicts = []
 
-        matches, mismatches, gt_unmatched, ds_unmatched, pairwise_distances = frame_results
+        matches, mismatches, gt_unmatched, ds_unmatched, pairwise_distances = frame_results[
+            "all_ann_types"
+        ]
+        (
+            shape_matches,
+            shape_mismatches,
+            shape_gt_unmatched,
+            shape_ds_unmatched,
+            shape_pairwise_distances,
+        ) = frame_results["all_shape_ann_types"]
 
         def _get_similarity(gt_ann: dm.Annotation, ds_ann: dm.Annotation) -> Optional[float]:
             return self.comparator.get_distance(pairwise_distances, gt_ann, ds_ann)
 
         _matched_shapes = set(
-            id(shape) for shape_pair in itertools.chain(matches, mismatches) for shape in shape_pair
+            id(shape)
+            for shape_pair in itertools.chain(shape_matches, shape_mismatches)
+            for shape in shape_pair
         )
 
         def _find_closest_unmatched_shape(shape: dm.Annotation):
@@ -1746,21 +1763,21 @@ class DatasetComparator:
                     )
                 )
 
-        for unmatched_ann in gt_unmatched:
+        for shape_unmatched_ann in gt_unmatched:
             conflicts.append(
                 AnnotationConflict(
                     frame_id=frame_id,
                     type=AnnotationConflictType.MISSING_ANNOTATION,
-                    annotation_ids=[self._dm_ann_to_ann_id(unmatched_ann, self._gt_dataset)],
+                    annotation_ids=[self._dm_ann_to_ann_id(shape_unmatched_ann, self._gt_dataset)],
                 )
             )
 
-        for unmatched_ann in ds_unmatched:
+        for shape_unmatched_ann in ds_unmatched:
             conflicts.append(
                 AnnotationConflict(
                     frame_id=frame_id,
                     type=AnnotationConflictType.EXTRA_ANNOTATION,
-                    annotation_ids=[self._dm_ann_to_ann_id(unmatched_ann, self._ds_dataset)],
+                    annotation_ids=[self._dm_ann_to_ann_id(shape_unmatched_ann, self._ds_dataset)],
                 )
             )
 
@@ -1777,14 +1794,14 @@ class DatasetComparator:
             )
 
         resulting_distances = [
-            _get_similarity(gt_ann, ds_ann)
-            for gt_ann, ds_ann in itertools.chain(matches, mismatches)
+            _get_similarity(shape_gt_ann, shape_ds_ann)
+            for shape_gt_ann, shape_ds_ann in itertools.chain(shape_matches, shape_mismatches)
         ]
 
-        for unmatched_ann in itertools.chain(gt_unmatched, ds_unmatched):
-            matched_ann_id, similarity = _find_closest_unmatched_shape(unmatched_ann)
-            if matched_ann_id is not None:
-                _matched_shapes.add(matched_ann_id)
+        for shape_unmatched_ann in itertools.chain(shape_gt_unmatched, shape_ds_unmatched):
+            shape_matched_ann_id, similarity = _find_closest_unmatched_shape(shape_unmatched_ann)
+            if shape_matched_ann_id is not None:
+                _matched_shapes.add(shape_matched_ann_id)
             resulting_distances.append(similarity)
 
         resulting_distances = [
@@ -1860,12 +1877,12 @@ class DatasetComparator:
         if self.settings.compare_groups:
             gt_groups, gt_group_map = self.comparator.find_groups(gt_item)
             ds_groups, ds_group_map = self.comparator.find_groups(ds_item)
-            matched_objects = matches + mismatches
-            ds_to_gt_groups = self.comparator.match_groups(gt_groups, ds_groups, matched_objects)
+            shape_matched_objects = shape_matches + shape_mismatches
+            ds_to_gt_groups = self.comparator.match_groups(
+                gt_groups, ds_groups, shape_matched_objects
+            )
 
-            for gt_ann, ds_ann in matched_objects:
-                if gt_ann.type == self.settings.non_groupable_ann_type:
-                    continue
+            for gt_ann, ds_ann in shape_matched_objects:
                 gt_group = gt_groups.get(gt_group_map[id(gt_ann)], [gt_ann])
                 ds_group = ds_groups.get(ds_group_map[id(ds_ann)], [ds_ann])
                 ds_gt_group = ds_to_gt_groups.get(ds_group_map[id(ds_ann)], None)
@@ -1888,12 +1905,17 @@ class DatasetComparator:
                         )
                     )
 
-        valid_shapes_count = len(matches) + len(mismatches)
-        missing_shapes_count = len(gt_unmatched)
-        extra_shapes_count = len(ds_unmatched)
-        total_shapes_count = len(matches) + len(mismatches) + len(gt_unmatched) + len(ds_unmatched)
-        ds_shapes_count = len(matches) + len(mismatches) + len(ds_unmatched)
-        gt_shapes_count = len(matches) + len(mismatches) + len(gt_unmatched)
+        valid_shapes_count = len(shape_matches) + len(shape_mismatches)
+        missing_shapes_count = len(shape_gt_unmatched)
+        extra_shapes_count = len(shape_ds_unmatched)
+        total_shapes_count = (
+            len(shape_matches)
+            + len(shape_mismatches)
+            + len(shape_gt_unmatched)
+            + len(shape_ds_unmatched)
+        )
+        ds_shapes_count = len(shape_matches) + len(shape_mismatches) + len(shape_ds_unmatched)
+        gt_shapes_count = len(shape_matches) + len(shape_mismatches) + len(shape_gt_unmatched)
 
         valid_labels_count = len(matches)
         invalid_labels_count = len(mismatches)
@@ -1961,10 +1983,6 @@ class DatasetComparator:
         gt_ann_counts = np.sum(confusion_matrix, axis=0)
         total_annotations_count = np.sum(confusion_matrix)
 
-        # [https://en.wikipedia.org/wiki/Jaccard_index] The Jaccard index is a statistic used for gauging the \
-        # similarity and diversity of sample sets. However, they are identical in generally taking the ratio of \
-        # Intersection over Union.
-        # Equation: https://scikit-learn.org/stable/modules/model_evaluation.html#jaccard-similarity-coefficient-score
         label_jaccard_indices = _arr_div(
             matched_ann_counts, ds_ann_counts + gt_ann_counts - matched_ann_counts
         )
