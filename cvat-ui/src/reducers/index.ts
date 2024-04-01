@@ -414,6 +414,9 @@ export interface ModelsState {
     reid: MLModel[];
     classifiers: MLModel[];
     totalCount: number;
+    requestedInferenceIDs: {
+        [index: string]: boolean;
+    };
     inferences: {
         [index: number]: ActiveInference;
     };

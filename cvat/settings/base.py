@@ -105,7 +105,6 @@ INSTALLED_APPS = [
     'health_check',
     'health_check.cache',
     'health_check.db',
-    'health_check.contrib.migrations',
     'health_check.contrib.psutil',
     'cvat.apps.iam',
     'cvat.apps.dataset_manager',
@@ -287,7 +286,7 @@ shared_queue_settings = {
     'HOST': redis_inmem_host,
     'PORT': redis_inmem_port,
     'DB': 0,
-    'PASSWORD': urllib.parse.quote(redis_inmem_password),
+    'PASSWORD': redis_inmem_password,
 }
 
 RQ_QUEUES = {

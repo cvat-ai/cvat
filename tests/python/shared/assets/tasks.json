@@ -1,8 +1,50 @@
 {
-  "count": 17,
+  "count": 18,
   "next": null,
   "previous": null,
   "results": [
+    {
+      "assignee": null,
+      "bug_tracker": "",
+      "created_date": "2024-03-21T20:50:05.694000Z",
+      "data": 22,
+      "data_chunk_size": 72,
+      "data_compressed_chunk_type": "imageset",
+      "data_original_chunk_type": "imageset",
+      "dimension": "2d",
+      "guide_id": null,
+      "id": 23,
+      "image_quality": 70,
+      "jobs": {
+        "completed": 4,
+        "count": 4,
+        "url": "http://localhost:8080/api/jobs?task_id=23",
+        "validation": 0
+      },
+      "labels": {
+        "url": "http://localhost:8080/api/labels?task_id=23"
+      },
+      "mode": "annotation",
+      "name": "task with several jobs and ground truth job",
+      "organization": null,
+      "overlap": 0,
+      "owner": {
+        "first_name": "Admin",
+        "id": 18,
+        "last_name": "Second",
+        "url": "http://localhost:8080/api/users/18",
+        "username": "admin2"
+      },
+      "project_id": null,
+      "segment_size": 5,
+      "size": 11,
+      "source_storage": null,
+      "status": "completed",
+      "subset": "",
+      "target_storage": null,
+      "updated_date": "2024-03-21T20:50:05.947000Z",
+      "url": "http://localhost:8080/api/tasks/23"
+    },
     {
       "assignee": null,
       "bug_tracker": "",
