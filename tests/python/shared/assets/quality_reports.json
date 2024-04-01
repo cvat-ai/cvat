@@ -1,5 +1,5 @@
 {
-  "count": 4,
+  "count": 10,
   "next": null,
   "previous": null,
   "results": [
@@ -26,6 +26,7 @@
         "frame_count": 3,
         "frame_share": 0.2727272727272727,
         "gt_count": 33,
+        "total_count": 43,
         "valid_count": 21,
         "warning_count": 15
       },
@@ -56,6 +57,7 @@
         "frame_count": 3,
         "frame_share": 0.2727272727272727,
         "gt_count": 33,
+        "total_count": 43,
         "valid_count": 21,
         "warning_count": 15
       },
@@ -86,6 +88,7 @@
         "frame_count": 3,
         "frame_share": 0.2727272727272727,
         "gt_count": 35,
+        "total_count": 46,
         "valid_count": 22,
         "warning_count": 16
       },
@@ -116,11 +119,171 @@
         "frame_count": 3,
         "frame_share": 0.2727272727272727,
         "gt_count": 35,
+        "total_count": 46,
         "valid_count": 22,
         "warning_count": 16
       },
       "target": "job",
       "target_last_updated": "2023-11-24T15:23:30.269000Z",
+      "task_id": null
+    },
+    {
+      "created_date": "2024-03-21T11:16:21.845000Z",
+      "gt_last_updated": "2023-11-24T15:18:55.216000Z",
+      "id": 5,
+      "job_id": null,
+      "parent_id": null,
+      "summary": {
+        "conflict_count": 40,
+        "conflicts_by_type": {
+          "covered_annotation": 1,
+          "extra_annotation": 11,
+          "low_overlap": 7,
+          "mismatching_attributes": 1,
+          "mismatching_direction": 1,
+          "mismatching_groups": 6,
+          "mismatching_label": 3,
+          "missing_annotation": 10
+        },
+        "ds_count": 36,
+        "error_count": 24,
+        "frame_count": 3,
+        "frame_share": 0.2727272727272727,
+        "gt_count": 35,
+        "total_count": 46,
+        "valid_count": 22,
+        "warning_count": 16
+      },
+      "target": "task",
+      "target_last_updated": "2023-11-24T15:23:30.045000Z",
+      "task_id": 22
+    },
+    {
+      "created_date": "2024-03-21T11:16:21.847000Z",
+      "gt_last_updated": "2023-11-24T15:18:55.216000Z",
+      "id": 6,
+      "job_id": 27,
+      "parent_id": 5,
+      "summary": {
+        "conflict_count": 40,
+        "conflicts_by_type": {
+          "covered_annotation": 1,
+          "extra_annotation": 11,
+          "low_overlap": 7,
+          "mismatching_attributes": 1,
+          "mismatching_direction": 1,
+          "mismatching_groups": 6,
+          "mismatching_label": 3,
+          "missing_annotation": 10
+        },
+        "ds_count": 36,
+        "error_count": 24,
+        "frame_count": 3,
+        "frame_share": 0.2727272727272727,
+        "gt_count": 35,
+        "total_count": 46,
+        "valid_count": 22,
+        "warning_count": 16
+      },
+      "target": "job",
+      "target_last_updated": "2023-11-24T15:23:30.269000Z",
+      "task_id": null
+    },
+    {
+      "created_date": "2024-03-21T20:52:03.542000Z",
+      "gt_last_updated": "2024-03-21T20:50:20.020000Z",
+      "id": 7,
+      "job_id": null,
+      "parent_id": null,
+      "summary": {
+        "conflict_count": 3,
+        "conflicts_by_type": {
+          "extra_annotation": 1,
+          "low_overlap": 1,
+          "missing_annotation": 1
+        },
+        "ds_count": 3,
+        "error_count": 2,
+        "frame_count": 3,
+        "frame_share": 0.2727272727272727,
+        "gt_count": 3,
+        "total_count": 4,
+        "valid_count": 2,
+        "warning_count": 1
+      },
+      "target": "task",
+      "target_last_updated": "2024-03-21T20:50:05.947000Z",
+      "task_id": 23
+    },
+    {
+      "created_date": "2024-03-21T20:52:03.552000Z",
+      "gt_last_updated": "2024-03-21T20:50:20.020000Z",
+      "id": 8,
+      "job_id": 31,
+      "parent_id": 7,
+      "summary": {
+        "conflict_count": 0,
+        "conflicts_by_type": {},
+        "ds_count": 0,
+        "error_count": 0,
+        "frame_count": 0,
+        "frame_share": 0.0,
+        "gt_count": 0,
+        "total_count": 0,
+        "valid_count": 0,
+        "warning_count": 0
+      },
+      "target": "job",
+      "target_last_updated": "2024-03-21T20:50:27.594000Z",
+      "task_id": null
+    },
+    {
+      "created_date": "2024-03-21T20:52:03.552000Z",
+      "gt_last_updated": "2024-03-21T20:50:20.020000Z",
+      "id": 9,
+      "job_id": 30,
+      "parent_id": 7,
+      "summary": {
+        "conflict_count": 1,
+        "conflicts_by_type": {
+          "low_overlap": 1
+        },
+        "ds_count": 2,
+        "error_count": 0,
+        "frame_count": 2,
+        "frame_share": 0.4,
+        "gt_count": 2,
+        "total_count": 2,
+        "valid_count": 2,
+        "warning_count": 1
+      },
+      "target": "job",
+      "target_last_updated": "2024-03-21T20:50:33.610000Z",
+      "task_id": null
+    },
+    {
+      "created_date": "2024-03-21T20:52:03.552000Z",
+      "gt_last_updated": "2024-03-21T20:50:20.020000Z",
+      "id": 10,
+      "job_id": 29,
+      "parent_id": 7,
+      "summary": {
+        "conflict_count": 2,
+        "conflicts_by_type": {
+          "extra_annotation": 1,
+          "missing_annotation": 1
+        },
+        "ds_count": 1,
+        "error_count": 2,
+        "frame_count": 1,
+        "frame_share": 0.2,
+        "gt_count": 1,
+        "total_count": 2,
+        "valid_count": 0,
+        "warning_count": 0
+      },
+      "target": "job",
+      "target_last_updated": "2024-03-21T20:50:39.585000Z",
       "task_id": null
     }
   ]

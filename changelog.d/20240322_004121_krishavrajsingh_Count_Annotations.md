@@ -1,4 +1,4 @@
-### Added <!-- pick one -->
+### Added
 
-- Added a featire to view all Annaotations at once
-  (<https://github.com/opencv/cvat/pull/XXXX>)
+- Number of objects on the frame is shown on the right sidebar
+  (<https://github.com/opencv/cvat/pull/7654>)

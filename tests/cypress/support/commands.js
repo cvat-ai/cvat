@@ -1022,8 +1022,7 @@ Cypress.Commands.add('addNewSkeletonLabel', ({ name, points }) => {
 
         cy.contains('Continue').scrollIntoView();
         cy.contains('Continue').click();
-        cy.contains('Continue').scrollIntoView();
-        cy.contains('Continue').click();
+        cy.contains('Cancel').click();
     });
 });
 
@@ -1169,8 +1168,9 @@ Cypress.Commands.add('closeModalUnsupportedPlatform', () => {
 
 Cypress.Commands.add('exportTask', ({
     type, format, archiveCustomName,
+    targetStorage = null, useDefaultLocation = true,
 }) => {
-    cy.interactMenu('Export task dataset');
+    cy.clickInTaskMenu('Export task dataset', true);
     cy.get('.cvat-modal-export-task').should('be.visible').find('.cvat-modal-export-select').click();
     cy.contains('.cvat-modal-export-option-item', format).should('be.visible').click();
     cy.get('.cvat-modal-export-task').find('.cvat-modal-export-select').should('contain.text', format);
@@ -1179,6 +1179,18 @@ Cypress.Commands.add('exportTask', ({
     }
     if (archiveCustomName) {
         cy.get('.cvat-modal-export-task').find('.cvat-modal-export-filename-input').type(archiveCustomName);
+    }
+    if (!useDefaultLocation) {
+        cy.get('.cvat-modal-export-task').find('.cvat-settings-switch').click();
+        cy.get('.cvat-select-target-storage').within(() => {
+            cy.get('.ant-select-selection-item').click();
+        });
+        cy.contains('.cvat-select-target-storage-location', targetStorage.location).should('be.visible').click();
+
+        if (targetStorage.cloudStorageId) {
+            cy.get('.cvat-search-target-storage-cloud-storage-field').click();
+            cy.get('.cvat-cloud-storage-select-provider').click();
+        }
     }
     cy.contains('button', 'OK').click();
     cy.get('.cvat-notification-notice-export-task-start').should('be.visible');
