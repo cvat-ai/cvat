@@ -81,10 +81,9 @@ function ObjectListComponent(props: Props): JSX.Element {
             />
             <Text
                 strong
-                style={{ fontSize: 13 }}
                 className='cvat-annotations-count'
             >
-                {`No. of Annotations:   ${objectStates.length}`}
+                {`Total Count:   ${objectStates.length}`}
             </Text>
             <div className='cvat-objects-sidebar-states-list'>
                 {sortedStatesID.map(

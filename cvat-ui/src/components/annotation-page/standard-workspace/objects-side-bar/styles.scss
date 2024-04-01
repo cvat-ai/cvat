@@ -193,7 +193,10 @@
 }
 
 .cvat-annotations-count {
-    padding: 0.5rem
+    padding: $grid-unit-size;;
+    background: $header-color;
+    display: flex;
+    font-size: 15px;
 }
 
 .cvat-objects-sidebar-states-list {

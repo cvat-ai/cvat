@@ -12,6 +12,7 @@ import { CombinedState, ObjectType } from 'reducers';
 import { rememberObject, updateAnnotationsAsync } from 'actions/annotation-actions';
 import LabelItemContainer from 'containers/annotation-page/standard-workspace/objects-side-bar/label-item';
 import GlobalHotKeys from 'utils/mousetrap-react';
+import Text from 'antd/lib/typography/Text';
 
 function LabelsListComponent(): JSX.Element {
     const dispatch = useDispatch();
@@ -100,6 +101,12 @@ function LabelsListComponent(): JSX.Element {
     return (
         <div className='cvat-objects-sidebar-labels-list'>
             <GlobalHotKeys keyMap={subKeyMap} handlers={handlers} />
+            <Text
+                strong
+                className='cvat-annotations-count'
+            >
+                {`Total Count:   ${labels.length}`}
+            </Text>
             {labelIDs.map(
                 (labelID: number): JSX.Element => (
                     <LabelItemContainer

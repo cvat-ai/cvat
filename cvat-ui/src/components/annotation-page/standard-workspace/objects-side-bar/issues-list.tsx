@@ -134,6 +134,12 @@ export default function LabelsListComponent(): JSX.Element {
                     }
                 </Row>
             </div>
+            <Text
+                strong
+                className='cvat-annotations-count'
+            >
+                {`Total Count:   ${issues.length}`}
+            </Text>
             <div className='cvat-objects-sidebar-issues-list'>
                 {frameIssues.map(
                     (frameIssue: Issue): JSX.Element => {
