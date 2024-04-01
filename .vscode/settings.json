@@ -46,6 +46,6 @@
     ],
     "python.testing.unittestEnabled": false,
     "python.testing.pytestEnabled": true,
-    "python.testing.pytestPath": "${workspaceFolder}/.env/bin/pytest",
+    "python.testing.pytestPath": "/opt/venv-test/bin/pytest",
     "python.testing.cwd": "${workspaceFolder}/tests"
 }
