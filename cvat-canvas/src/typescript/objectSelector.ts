@@ -138,7 +138,7 @@ export class ObjectSelectorImpl implements ObjectSelector {
         }
     };
 
-    private onMouseMove = (event: MouseEvent): void => {
+    private onMouseMove = (event: MouseEvent) => {
         if (this.selectionRect) {
             const box = this.getSelectionBox(event);
             this.selectionRect.attr({
