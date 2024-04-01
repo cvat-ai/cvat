@@ -1711,9 +1711,7 @@ class DatasetComparator:
     ) -> List[AnnotationConflict]:
         conflicts = []
 
-        matches, mismatches, gt_unmatched, ds_unmatched, pairwise_distances = frame_results[
-            "all_ann_types"
-        ]
+        matches, mismatches, gt_unmatched, ds_unmatched, _ = frame_results["all_ann_types"]
         (
             shape_matches,
             shape_mismatches,
@@ -1723,7 +1721,7 @@ class DatasetComparator:
         ) = frame_results["all_shape_ann_types"]
 
         def _get_similarity(gt_ann: dm.Annotation, ds_ann: dm.Annotation) -> Optional[float]:
-            return self.comparator.get_distance(pairwise_distances, gt_ann, ds_ann)
+            return self.comparator.get_distance(shape_pairwise_distances, gt_ann, ds_ann)
 
         _matched_shapes = set(
             id(shape)
@@ -1736,7 +1734,7 @@ class DatasetComparator:
 
             this_shape_distances = []
 
-            for (gt_shape_id, ds_shape_id), dist in pairwise_distances.items():
+            for (gt_shape_id, ds_shape_id), dist in shape_pairwise_distances.items():
                 if gt_shape_id == this_shape_id:
                     other_shape_id = ds_shape_id
                 elif ds_shape_id == this_shape_id:
