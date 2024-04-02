@@ -10,14 +10,16 @@ The tool consists of:
 
 - `Header` - pinned header used to navigate CVAT sections and account settings;
 
-- [`Top panel`](/docs/manual/basics/top-panel/) — contains navigation buttons, main functions and menu access;
+- {{< ilink "/docs/manual/basics/top-panel" "`Top panel`" >}}
+  — contains navigation buttons, main functions and menu access;
 
-- [`Workspace`](/docs/manual/basics/workspace/) — space where images are shown;
+- {{< ilink "/docs/manual/basics/workspace" "`Workspace`" >}} — space where images are shown;
 
-- [`Controls sidebar`](/docs/manual/basics/controls-sidebar/) — contains tools for navigating the image, zoom,
+- {{< ilink "/docs/manual/basics/controls-sidebar" "`Controls sidebar`" >}}
+  — contains tools for navigating the image, zoom,
   creating shapes and editing tracks (merge, split, group);
 
-- [`Objects sidebar`](/docs/manual/basics/objects-sidebar/) — contains label filter, two lists:
+- {{< ilink "/docs/manual/basics/objects-sidebar" "`Objects sidebar`" >}} — contains label filter, two lists:
   objects (on the frame) and labels (of objects on the frame) and appearance settings.
 
 ![](/images/image034_detrac.jpg)
@@ -32,14 +34,14 @@ Pop-up messages can contain useful information, links, or error messages.
 ### Information message
 
 Informational messages inform about the end of the auto-annotation process.
-[Learn more about auto-annotation](/docs/manual/advanced/automatic-annotation/).
+{{< ilink "/docs/manual/advanced/automatic-annotation" "Learn more about auto-annotation" >}}.
 
 ### Jump Suggestion Messages
 
 #### Open a task
 
 After creating a task, you can immediately open it by clicking `Open task`.
-[Learn more about creating a task](/docs/manual/basics/creating_an_annotation_task/).
+{{< ilink "/docs/manual/basics/create_an_annotation_task" "Learn more about creating a task" >}}.
 
 #### Continue to the frame on which the work on the job is finished
 
