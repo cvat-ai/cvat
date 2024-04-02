@@ -158,7 +158,8 @@ Secret Access Key: <your Secret Access Key>
 aws s3 cp <s3://bucket-name> <yourfolder> --recursive
 ```
 
-4. After copying the files, you can create a manifest file as described in [preapair manifest file section](/docs/manual/advanced/dataset_manifest/):
+4. After copying the files, you can create a manifest file as described in
+   {{< ilink "/docs/manual/advanced/dataset_manifest" "preapair manifest file section" >}}:
 
 ```bash
 python <cvat repository>/utils/dataset_manifest/create.py --output-dir <yourfolder> <yourfolder>
@@ -451,7 +452,8 @@ For example, the dataset is [The Oxford-IIIT Pet Dataset](https://www.robots.ox.
 
 1. Download the [archive with images](https://www.robots.ox.ac.uk/~vgg/data/pets/data/images.tar.gz).
 2. Unpack the archive into the prepared folder.
-3. Create a manifest. For more information, see [**Dataset manifest**](/docs/manual/advanced/dataset_manifest/):
+3. Create a manifest. For more information, see
+   {{< ilink "/docs/manual/advanced/dataset_manifest" "**Dataset manifest**" >}}:
 
 ```bash
 python <cvat repository>/utils/dataset_manifest/create.py --output-dir <your_folder> <your_folder>

@@ -17,7 +17,7 @@ visibility of different resources for example, tasks or jobs.
 
 **Limits**: Limits are applicable to all users of the CVAT.ai Cloud Platform
 using the [**Free plan**](https://www.cvat.ai/pricing/cloud) and can be lifted upon
-[**choosing a subscription**](/docs/enterprise/subscription-managment/).
+{{< ilink "/docs/enterprise/subscription-managment" "**choosing a subscription**" >}}.
 
 All roles are predefined and cannot be modified through the user interface.
 However, within the _self-hosted solution_, roles can be adjusted using `.rego`
@@ -55,7 +55,8 @@ CVAT has implemented three Global roles, categorized as user Groups. These roles
 
 ## Organization roles in CVAT.ai
 
-Organization Roles are available only within the [**CVAT Organization**](/docs/manual/advanced/organization/).
+Organization Roles are available only within the
+{{< ilink "/docs/manual/advanced/organization" "**CVAT Organization**" >}}.
 
 ![Organization Roles](/images/user-roles.png)
 

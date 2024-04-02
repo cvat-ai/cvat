@@ -32,10 +32,11 @@ Unfortunately, this method has several drawbacks:
 
 #### How to use
 
-To enable or disable this feature for a new task, use the [`Use Cache`](/docs/manual/basics/creating_an_annotation_task/#use-cache)
+To enable or disable this feature for a new task, use the
+{{< ilink "/docs/manual/basics/create_an_annotation_task#use-cache" "`Use Cache`" >}}
 toggle in the task configuration.
 
 #### Uploading a manifest with data
 
 When creating a task, you can upload a `manifest.jsonl` file along with the video or dataset with images.
-You can see how to prepare it [here](/docs/manual/advanced/dataset_manifest/).
+You can see how to prepare it {{< ilink "/docs/manual/advanced/dataset_manifest" "here" >}}.

@@ -59,7 +59,7 @@ we need more samples to estimate quality reliably.
 
 To create a **Ground truth** job, do the following:
 
-1. Create a [task](/docs/manual/basics/create_an_annotation_task/), and open the task page.
+1. Create a {{< ilink "/docs/manual/basics/create_an_annotation_task" "task" >}}, and open the task page.
 2. Click **+**.
 
    ![Create job](/images/honeypot01.jpg)
@@ -156,7 +156,7 @@ The Analytics page has the following fields:
 | ----------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Mean annotation quality | Displays the average quality of annotations, which includes: the count of accurate annotations, total task annotations, ground truth annotations, accuracy rate, precision rate, and recall rate. |
 | GT Conflicts            | Conflicts identified during quality assessment, including extra or missing annotations. Mouse over the **?** icon for a detailed conflict report on your dataset.                                 |
-| Issues                  | Number of [opened issues](/docs/manual/advanced/review/). If no issues were reported, will show 0.                                                                                                |
+| Issues                  | Number of {{< ilink "/docs/manual/advanced/analytics-and-monitoring/manual-qa" "opened issues" >}}. If no issues were reported, will show 0.                                                                                                |
 | Quality report          | Quality report in JSON format.                                                                                                                                                                    |
 | Ground truth job data   | "Information about ground truth job, including date, time, and number of issues.                                                                                                                  |
 | List of jobs            | List of all the jobs in the task                                                                                                                                                                  |
