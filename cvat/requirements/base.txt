@@ -187,7 +187,7 @@ oauthlib==3.2.2
     # via requests-oauthlib
 orderedmultidict==1.0.1
     # via furl
-orjson==3.9.15
+orjson==3.10.0
     # via datumaro
 packaging==24.0
     # via
@@ -213,12 +213,12 @@ psutil==5.9.4
     # via -r cvat/requirements/base.in
 psycopg2-binary==2.9.5
     # via -r cvat/requirements/base.in
-pyasn1==0.5.1
+pyasn1==0.6.0
     # via
     #   pyasn1-modules
     #   python-ldap
     #   rsa
-pyasn1-modules==0.3.0
+pyasn1-modules==0.4.0
     # via
     #   google-auth
     #   python-ldap
