@@ -36,14 +36,14 @@ from cvat.apps.engine.serializers import (AttributeSerializer, DataSerializer,
     LabeledDataSerializer, SegmentSerializer, SimpleJobSerializer, TaskReadSerializer,
     ProjectReadSerializer, ProjectFileSerializer, TaskFileSerializer, RqIdSerializer)
 from cvat.apps.engine.utils import (
-    av_scan_paths, process_failed_job, configure_dependent_job_to_download_from_cs,
+    av_scan_paths, process_failed_job,
     get_rq_job_meta, get_import_rq_id, import_resource_with_clean_up_after,
     sendfile, define_dependent_job, get_rq_lock_by_user, build_backup_file_name,
 )
 from cvat.apps.engine.models import (
     StorageChoice, StorageMethodChoice, DataChoice, Task, Project, Location)
 from cvat.apps.engine.task import JobFileMapping, _create_thread
-from cvat.apps.engine.cloud_provider import download_file_from_bucket, export_resource_to_cloud_storage
+from cvat.apps.engine.cloud_provider import import_resource_from_cloud_storage, export_resource_to_cloud_storage
 from cvat.apps.engine.location import StorageType, get_location_configuration
 from cvat.apps.engine.view_utils import get_cloud_storage_for_import_or_export
 from cvat.apps.dataset_manager.views import TASK_CACHE_TTL, PROJECT_CACHE_TTL, get_export_cache_dir, clear_export_cache, log_exception
@@ -431,7 +431,7 @@ class TaskExporter(_ExporterBase, _TaskBackupBase):
         def serialize_data():
             data_serializer = DataSerializer(self._db_data)
             data = data_serializer.data
-            data['chunk_type'] = data.pop('compressed_chunk_type')
+            data['chunk_type'] = self._db_data.compressed_chunk_type
 
             # There are no deleted frames in DataSerializer so we need to pick it
             data['deleted_frames'] = self._db_data.deleted_frames
@@ -663,7 +663,7 @@ class TaskImporter(_ImporterBase, _TaskBackupBase):
         if os.path.isdir(task_path):
             shutil.rmtree(task_path)
 
-        os.makedirs(self._db_task.get_task_artifacts_dirname())
+        os.makedirs(task_path)
 
         if not self._labels_mapping:
             self._labels_mapping = self._create_labels(db_task=self._db_task, labels=labels)
@@ -1051,9 +1051,8 @@ def _import(importer, request, queue, rq_id, Serializer, file_field_name, locati
 
     if not rq_job:
         org_id = getattr(request.iam_context['organization'], 'id', None)
-        dependent_job = None
-
         location = location_conf.get('location')
+
         if location == Location.LOCAL:
             if not filename:
                 serializer = Serializer(data=request.data)
@@ -1084,42 +1083,34 @@ def _import(importer, request, queue, rq_id, Serializer, file_field_name, locati
             with NamedTemporaryFile(prefix='cvat_', dir=settings.TMP_FILES_ROOT, delete=False) as tf:
                 filename = tf.name
 
-            dependent_job = configure_dependent_job_to_download_from_cs(
-                queue=queue,
-                rq_id=rq_id,
-                rq_func=download_file_from_bucket,
-                db_storage=db_storage,
-                filename=filename,
-                key=key,
-                request=request,
-                result_ttl=settings.IMPORT_CACHE_SUCCESS_TTL.total_seconds(),
-                failure_ttl=settings.IMPORT_CACHE_FAILED_TTL.total_seconds()
-            )
+        func = import_resource_with_clean_up_after
+        func_args = (importer, filename, request.user.id, org_id)
+
+        if location == Location.CLOUD_STORAGE:
+            func_args = (db_storage, key, func) + func_args
+            func = import_resource_from_cloud_storage
 
         user_id = request.user.id
 
         with get_rq_lock_by_user(queue, user_id):
             rq_job = queue.enqueue_call(
-                func=import_resource_with_clean_up_after,
-                args=(importer, filename, request.user.id, org_id),
+                func=func,
+                args=func_args,
                 job_id=rq_id,
                 meta={
                     'tmp_file': filename,
                     **get_rq_job_meta(request=request, db_obj=None)
                 },
-                depends_on=dependent_job or define_dependent_job(queue, user_id),
+                depends_on=define_dependent_job(queue, user_id),
                 result_ttl=settings.IMPORT_CACHE_SUCCESS_TTL.total_seconds(),
                 failure_ttl=settings.IMPORT_CACHE_FAILED_TTL.total_seconds()
             )
     else:
         if rq_job.is_finished:
-            if rq_job.dependency:
-                rq_job.dependency.delete()
             project_id = rq_job.return_value()
             rq_job.delete()
             return Response({'id': project_id}, status=status.HTTP_201_CREATED)
-        elif rq_job.is_failed or \
-                rq_job.is_deferred and rq_job.dependency and rq_job.dependency.is_failed:
+        elif rq_job.is_failed:
             exc_info = process_failed_job(rq_job)
             # RQ adds a prefix with exception class name
             import_error_prefix = '{}.{}'.format(

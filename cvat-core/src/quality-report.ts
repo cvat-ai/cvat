@@ -85,8 +85,7 @@ export default class QualityReport {
             validCount: this.#summary.valid_count,
             dsCount: this.#summary.ds_count,
             gtCount: this.#summary.gt_count,
-            accuracy: (this.#summary.valid_count /
-                (this.#summary.ds_count + this.#summary.gt_count - this.#summary.valid_count)) * 100,
+            accuracy: (this.#summary.valid_count / this.#summary.total_count) * 100,
             precision: (this.#summary.valid_count / this.#summary.gt_count) * 100,
             recall: (this.#summary.valid_count / this.#summary.ds_count) * 100,
             conflictsByType: {

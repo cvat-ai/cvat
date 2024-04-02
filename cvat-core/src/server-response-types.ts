@@ -303,6 +303,7 @@ export interface SerializedQualityReportData {
         valid_count: number;
         ds_count: number;
         gt_count: number;
+        total_count: number;
         error_count: number;
         warning_count: number;
         conflicts_by_type: {

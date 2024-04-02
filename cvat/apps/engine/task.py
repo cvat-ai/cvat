@@ -6,7 +6,6 @@
 import itertools
 import fnmatch
 import os
-import sys
 from typing import Any, Dict, Iterator, List, NamedTuple, Optional, Union, Iterable
 from rest_framework.serializers import ValidationError
 import rq
@@ -132,23 +131,18 @@ def _get_task_segment_data(
             data_size = db_task.data.size
 
         segment_size = db_task.segment_size
-        segment_step = segment_size
         if segment_size == 0 or segment_size > data_size:
             segment_size = data_size
 
-            # Segment step must be more than segment_size + overlap in single-segment tasks
-            # Otherwise a task contains an extra segment
-            segment_step = sys.maxsize
-
-        overlap = 5 if db_task.mode == 'interpolation' else 0
-        if db_task.overlap is not None:
-            overlap = min(db_task.overlap, segment_size  // 2)
-
-        segment_step -= overlap
+        overlap = min(
+            db_task.overlap if db_task.overlap is not None
+                else 5 if db_task.mode == 'interpolation' else 0,
+            segment_size // 2,
+        )
 
         segments = (
             SegmentParams(start_frame, min(start_frame + segment_size - 1, data_size - 1))
-            for start_frame in range(0, data_size, segment_step)
+            for start_frame in range(0, data_size - overlap, segment_size - overlap)
         )
 
     return SegmentsParams(segments, segment_size, overlap)
