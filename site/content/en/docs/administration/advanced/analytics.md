@@ -49,7 +49,7 @@ The CVAT analytics is based on Vector, ClickHouse, and Grafana.
 CVAT and its analytics module can be set up locally, for
 self-hosted solution analytics are enabled by default.
 
-> For detailed instructions for CVAT installation, see
+> For detailed CVAT installation instructions, see
 > {{< ilink "/docs/administration/basics/installation" "Installation Guide" >}}
 > or refer to the [CVAT Course](https://www.youtube.com/playlist?list=PL0to7Ng4PuuYQT4eXlHb_oIlq_RPeuasN)
 > for installation videos.
