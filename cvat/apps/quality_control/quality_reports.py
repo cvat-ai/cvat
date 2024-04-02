@@ -50,6 +50,7 @@ from cvat.apps.quality_control.models import (
     AnnotationConflictType,
     AnnotationType,
 )
+from cvat.utils.background_jobs import schedule_job_with_throttling
 
 
 class _Serializable:
@@ -2065,17 +2066,11 @@ class QualityReportUpdateManager:
     def _get_queue(self):
         return django_rq.get_queue(settings.CVAT_QUEUES.QUALITY_REPORTS.value)
 
-    def _make_queue_job_prefix(self, task: Task) -> str:
-        return f"{self._QUEUE_JOB_PREFIX}{task.id}-"
+    def _make_queue_job_id_base(self, task: Task) -> str:
+        return f"{self._QUEUE_JOB_PREFIX}{task.id}"
 
     def _make_custom_quality_check_job_id(self) -> str:
         return uuid4().hex
-
-    def _make_initial_queue_job_id(self, task: Task) -> str:
-        return f"{self._make_queue_job_prefix(task)}initial"
-
-    def _make_regular_queue_job_id(self, task: Task, start_time: timezone.datetime) -> str:
-        return f"{self._make_queue_job_prefix(task)}{start_time.timestamp()}"
 
     @classmethod
     def _get_last_report_time(cls, task: Task) -> Optional[timezone.datetime]:
@@ -2083,41 +2078,6 @@ class QualityReportUpdateManager:
         if report:
             return report.created_date
         return None
-
-    def _find_next_job_id(
-        self, existing_job_ids: Sequence[str], task: Task, *, now: timezone.datetime
-    ) -> str:
-        job_id_prefix = self._make_queue_job_prefix(task)
-
-        def _get_timestamp(job_id: str) -> timezone.datetime:
-            job_timestamp = job_id.split(job_id_prefix, maxsplit=1)[-1]
-            if job_timestamp == "initial":
-                return timezone.datetime.min.replace(tzinfo=timezone.utc)
-            else:
-                return timezone.datetime.fromtimestamp(float(job_timestamp), tz=timezone.utc)
-
-        max_job_id = max(
-            (j for j in existing_job_ids if j.startswith(job_id_prefix)),
-            key=_get_timestamp,
-            default=None,
-        )
-        max_timestamp = _get_timestamp(max_job_id) if max_job_id else None
-
-        last_update_time = self._get_last_report_time(task)
-        if last_update_time is None:
-            # Report has never been computed, is queued, or is being computed
-            queue_job_id = self._make_initial_queue_job_id(task)
-        elif max_timestamp is not None and now < max_timestamp:
-            # Reuse the existing next job
-            queue_job_id = max_job_id
-        else:
-            # Add an updating job in the queue in the next time frame
-            delay = self._get_quality_check_job_delay()
-            intervals = max(1, 1 + (now - last_update_time) // delay)
-            next_update_time = last_update_time + delay * intervals
-            queue_job_id = self._make_regular_queue_job_id(task, next_update_time)
-
-        return queue_job_id
 
     class QualityReportsNotAvailable(Exception):
         pass
@@ -2148,11 +2108,6 @@ class QualityReportUpdateManager:
         This function schedules a quality report autoupdate job
         """
 
-        # The algorithm is lock-free. It should keep the following properties:
-        # - job names are stable between potential writers
-        # - if multiple simultaneous writes can happen, the objects written must be the same
-        # - once a job is created, it can only be updated by the scheduler and the handling worker
-
         if not self._should_update(task):
             return
 
@@ -2160,17 +2115,13 @@ class QualityReportUpdateManager:
         delay = self._get_quality_check_job_delay()
         next_job_time = now.utcnow() + delay
 
-        scheduler = self._get_scheduler()
-        existing_job_ids = set(j.id for j in scheduler.get_jobs(until=next_job_time))
-
-        queue_job_id = self._find_next_job_id(existing_job_ids, task, now=now)
-        if queue_job_id not in existing_job_ids:
-            scheduler.enqueue_at(
-                next_job_time,
-                self._check_task_quality,
-                task_id=task.id,
-                job_id=queue_job_id,
-            )
+        schedule_job_with_throttling(
+            settings.CVAT_QUEUES.QUALITY_REPORTS.value,
+            self._make_queue_job_id_base(task),
+            next_job_time,
+            self._check_task_quality,
+            task_id=task.id,
+        )
 
     def schedule_quality_check_job(self, task: Task, *, user_id: int) -> str:
         """
@@ -2333,6 +2284,7 @@ class QualityReportUpdateManager:
         task_mean_shape_ious = []
         task_frame_results = {}
         task_frame_results_counts = {}
+        confusion_matrix = None
         for r in job_reports.values():
             task_intersection_frames.update(r.comparison_summary.frames)
             task_conflicts.extend(r.conflicts)
@@ -2341,6 +2293,12 @@ class QualityReportUpdateManager:
                 task_annotations_summary.accumulate(r.comparison_summary.annotations)
             else:
                 task_annotations_summary = deepcopy(r.comparison_summary.annotations)
+
+            if confusion_matrix is None:
+                num_labels = len(r.comparison_summary.annotations.confusion_matrix.labels)
+                confusion_matrix = np.zeros((num_labels, num_labels), dtype=int)
+
+            confusion_matrix += r.comparison_summary.annotations.confusion_matrix.rows
 
             if task_ann_components_summary:
                 task_ann_components_summary.accumulate(r.comparison_summary.annotation_components)
@@ -2371,6 +2329,8 @@ class QualityReportUpdateManager:
 
                 task_frame_results_counts[frame_id] = 1 + frame_results_count
                 task_frame_results[frame_id] = task_frame_result
+
+        task_annotations_summary.confusion_matrix.rows = confusion_matrix
 
         task_ann_components_summary.shape.mean_iou = np.mean(task_mean_shape_ious)
 
