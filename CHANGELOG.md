@@ -43,7 +43,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   (<https://github.com/opencv/cvat/pull/7599>)
 
 - Using single shape annotation mode with multiple labels
-  (<https://github.com/opencv/cvat/pull/XXXX>)
+  (<https://github.com/opencv/cvat/pull/7606>)
 
 - Part of sidebar not visible in attribute annotation mode when there are a lot of attribute values
   (<https://github.com/opencv/cvat/pull/7610>)
