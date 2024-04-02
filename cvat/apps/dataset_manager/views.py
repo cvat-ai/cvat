@@ -46,7 +46,7 @@ TASK_CACHE_TTL = DEFAULT_CACHE_TTL
 PROJECT_CACHE_TTL = DEFAULT_CACHE_TTL / 3
 JOB_CACHE_TTL = DEFAULT_CACHE_TTL
 
-def export(dst_format, project_id=None, task_id=None, job_id=None, server_url=None, save_images=False):
+def export(dst_format, project_id=None, task_id=None, job_id=None, server_url=None, save_images=False, export_for="audio"):
     try:
         if task_id is not None:
             logger = slogger.task[task_id]
@@ -61,16 +61,26 @@ def export(dst_format, project_id=None, task_id=None, job_id=None, server_url=No
         else:
             logger = slogger.job[job_id]
             cache_ttl = JOB_CACHE_TTL
-            export_fn = task.export_job
+            export_fn = task.export_audino_job if export_for == "audio" else task.export_job
             db_instance = Job.objects.get(pk=job_id)
 
         cache_dir = get_export_cache_dir(db_instance)
 
-        exporter = EXPORT_FORMATS[dst_format]
-        output_base = '%s_%s' % ('dataset' if save_images else 'annotations',
-            make_file_name(to_snake_case(dst_format)))
-        output_path = '%s.%s' % (output_base, exporter.EXT)
-        output_path = osp.join(cache_dir, output_path)
+        if export_for == "audio":
+            output_base = '%s_%s' % ('dataset' if save_images else 'annotations',
+                make_file_name(to_snake_case(dst_format)))
+            output_path = '%s.%s' % (output_base, "zip")
+            output_path = osp.join(cache_dir, output_path)
+        else:
+            exporter = EXPORT_FORMATS[dst_format]
+            output_base = '%s_%s' % ('dataset' if save_images else 'annotations',
+                make_file_name(to_snake_case(dst_format)))
+            output_path = '%s.%s' % (output_base, exporter.EXT)
+            output_path = osp.join(cache_dir, output_path)
+
+        logger.info("OUTPUT PATH OF EXPORT")
+        logger.info(output_path)
+        logger.info("JOB DATA")
 
         instance_time = timezone.localtime(db_instance.updated_date).timestamp()
         if isinstance(db_instance, Project):
@@ -82,8 +92,17 @@ def export(dst_format, project_id=None, task_id=None, job_id=None, server_url=No
             os.makedirs(cache_dir, exist_ok=True)
             with tempfile.TemporaryDirectory(dir=cache_dir) as temp_dir:
                 temp_file = osp.join(temp_dir, 'result')
+                logger.info("CALLING EXPORT FUNCTION")
+                logger.info(str(db_instance.id))
+                logger.info(str(temp_file))
+                logger.info(str(dst_format))
+                logger.info(server_url)
+                logger.info(str(save_images))
                 export_fn(db_instance.id, temp_file, dst_format,
                     server_url=server_url, save_images=save_images)
+                logger.info("INSIDE EXPORT FUNC")
+                logger.info(temp_file)
+                logger.info(output_path)
                 os.replace(temp_file, output_path)
 
             archive_ctime = osp.getctime(output_path)
@@ -93,6 +112,7 @@ def export(dst_format, project_id=None, task_id=None, job_id=None, server_url=No
                 file_path=output_path,
                 file_ctime=archive_ctime,
                 logger=logger)
+            logger.info("PRINT DTATEMENT")
             logger.info(
                 "The {} '{}' is exported as '{}' at '{}' "
                 "and available for downloading for the next {}. "
@@ -108,8 +128,8 @@ def export(dst_format, project_id=None, task_id=None, job_id=None, server_url=No
         log_exception(logger)
         raise
 
-def export_job_annotations(job_id, dst_format=None, server_url=None):
-    return export(dst_format,job_id=job_id, server_url=server_url, save_images=False)
+def export_job_annotations(job_id, dst_format=None, server_url=None, export_for="audio"):
+    return export(dst_format,job_id=job_id, server_url=server_url, save_images=False, export_for=export_for)
 
 def export_job_as_dataset(job_id, dst_format=None, server_url=None):
     return export(dst_format, job_id=job_id, server_url=server_url, save_images=True)

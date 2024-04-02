@@ -2,14 +2,24 @@
 # Copyright (C) 2022-2023 CVAT.ai Corporation
 #
 # SPDX-License-Identifier: MIT
-
+import math
+import wave
+import soundfile
+import shutil
+import pandas as pd
+import uuid
 import os
+import json
+import zipfile
+from scipy.io import wavfile
+import numpy as np
 from collections import OrderedDict
 from copy import deepcopy
 from enum import Enum
 from tempfile import TemporaryDirectory
 from datumaro.components.errors import DatasetError, DatasetImportError, DatasetNotFoundError
 
+from django.conf import settings
 from django.db import transaction
 from django.db.models.query import Prefetch
 from django.utils import timezone
@@ -19,12 +29,12 @@ from cvat.apps.engine import models, serializers
 from cvat.apps.engine.plugins import plugin_decorator
 from cvat.apps.events.handlers import handle_annotations_change
 from cvat.apps.profiler import silk_profile
-
+from cvat.apps.engine.cache import MediaCache
+from cvat.apps.engine.frame_provider import FrameProvider
 from cvat.apps.dataset_manager.annotation import AnnotationIR, AnnotationManager
 from cvat.apps.dataset_manager.bindings import TaskData, JobData, CvatImportError
 from cvat.apps.dataset_manager.formats.registry import make_exporter, make_importer
 from cvat.apps.dataset_manager.util import add_prefetch_fields, bulk_create, get_cached
-
 
 from cvat.apps.engine.log import ServerLogManager
 slogger = ServerLogManager(__name__)
@@ -858,6 +868,177 @@ def export_job(job_id, dst_file, format_name, server_url=None, save_images=False
     exporter = make_exporter(format_name)
     with open(dst_file, 'wb') as f:
         job.export(f, exporter, host=server_url, save_images=save_images)
+
+def jobChunkPathGetter(db_data, start, stop, task_dimension, data_quality, data_num, job):
+    # db_data = Task Data
+    frame_provider = FrameProvider(db_data, task_dimension)
+
+    start_chunk = frame_provider.get_chunk_number(start)
+    stop_chunk = frame_provider.get_chunk_number(stop)
+
+    # self.type = data_type
+    number = int(data_num) if data_num is not None else None
+
+    quality = FrameProvider.Quality.COMPRESSED \
+            if data_quality == 'compressed' else FrameProvider.Quality.ORIGINAL
+
+    path = os.path.realpath(frame_provider.get_chunk(number, quality))
+    # pylint: disable=superfluous-parens
+
+    # return {"start_chunk" : start_chunk, "stop_chunk" : stop_chunk}
+
+    return path
+
+def chunk_annotation_audio(audio_file, output_folder, annotations):
+    # Load audio
+    # y, sr = librosa.load(audio_file, sr=None)
+    sr, y = wavfile.read(audio_file)
+
+    data = []
+    # Loop over shapes
+    for i, shape in enumerate(annotations, 1):
+        # Extract transcript and time points
+        transcript = shape['transcript']
+        start_time = min(shape['points'][:2])
+        end_time = max(shape['points'][2:])
+
+        # Convert time points to sample indices
+        start_sample = int(start_time * sr)
+        end_sample = int(end_time * sr)
+
+        # Chunk the audio
+        chunk = y[start_sample:end_sample]
+
+        clip_uuid = str(uuid.uuid4())
+        # Save the chunk with transcript as filename
+        output_file = os.path.join(output_folder, f"{clip_uuid}.wav")
+        soundfile.write(output_file, chunk, sr)
+
+        data.append(output_file)
+
+        # logger.info(f"Annotation {str(i)} Chunk saved: {output_file}")
+
+    return data
+
+def create_annotation_clips_zip(audio_file_paths, meta_data_file_path, output_folder, dst_file):
+    data_folder = os.path.join(output_folder, 'data')
+    clips_folder = os.path.join(data_folder, 'clips')
+    os.makedirs(clips_folder, exist_ok=True)
+
+    # Copy audio files to clips folder
+    for audio_file_path in audio_file_paths:
+        clip_filename = os.path.basename(audio_file_path)
+        shutil.copy(audio_file_path, os.path.join(clips_folder, clip_filename))
+
+    # Copy meta data file
+    shutil.copy(meta_data_file_path, os.path.join(data_folder, "data.tsv"))
+
+    # Create zip file
+    zip_filename = os.path.join(output_folder, 'common_voice.zip')
+    with zipfile.ZipFile(zip_filename, 'w') as zipf:
+        for root, dirs, files in os.walk(data_folder):
+            for file in files:
+                file_path = os.path.join(root, file)
+                zipf.write(file_path, arcname=os.path.relpath(file_path, data_folder))
+
+    # Clean up temporary clips folder
+    shutil.rmtree(data_folder)
+
+    # Move the zip to the dst_file location
+    shutil.move(zip_filename, dst_file)
+
+def export_audino_job(job_id, dst_file, format_name, server_url=None, save_images=False):
+
+    logger = slogger.job[job_id]
+    logger.info("EXPORT AUDINO JOB FN")
+    logger.info(dst_file)
+    # For big tasks dump function may run for a long time and
+    # we dont need to acquire lock after the task has been initialized from DB.
+    # But there is the bug with corrupted dump file in case 2 or
+    # more dump request received at the same time:
+    # https://github.com/opencv/cvat/issues/217
+    with transaction.atomic():
+        job = JobAnnotation(job_id)
+        job.init_from_db()
+
+    job_data_chunk_size = job.db_job.segment.task.data.chunk_size
+    task_dimension = job.db_job.segment.task.dimension
+    storage_method = job.db_job.segment.task.data.storage_method
+
+    logger.info(task_dimension)
+    logger.info(storage_method)
+
+    start = job.start_frame/job_data_chunk_size
+    stop = job.stop_frame/job_data_chunk_size
+
+    audio_array_buffer = []
+    for i in range(math.trunc(start), math.trunc(stop)+1):
+        logger.info(f"CHUNK {str(i)}")
+        db_job = job.db_job
+        data_type = "chunk"
+        data_num = i
+        data_quality = 'compressed'
+
+        chunk_path = jobChunkPathGetter(job.db_job.segment.task.data, job.start_frame, job.stop_frame, task_dimension, data_quality, data_num, db_job)
+
+        sample_rate, audio_data = wavfile.read(chunk_path)
+
+        # Convert the audio data to a NumPy array with dtype np.int16
+        audio_data_int16 = np.array(audio_data, dtype=np.int16)
+
+        audio_array_buffer.append(audio_data_int16)
+
+    concat_array = np.concatenate(audio_array_buffer, axis=0)
+
+    logger.info(json.dumps(concat_array.shape))
+
+    # Get Temporary directory of the job
+    temp_dir_base = job.db_job.get_tmp_dirname()
+
+    os.makedirs(temp_dir_base, exist_ok=True)
+
+    logger.info(temp_dir_base)
+
+    # All Annotations
+    annotations = job.data["shapes"]
+    logger.info(json.dumps(annotations))
+
+    final_data = []
+    with TemporaryDirectory(dir=temp_dir_base) as temp_dir:
+        audio_file_path = os.path.join(temp_dir, str(job_id) + ".wav")
+        with wave.open(audio_file_path, 'wb') as wave_file:
+            wave_file.setnchannels(1)
+            wave_file.setsampwidth(4)
+            wave_file.setframerate(44100)
+            wave_file.writeframes(concat_array)
+
+        logger.info(f"{audio_file_path} file made")
+
+        annotation_audio_chunk_file_paths = chunk_annotation_audio(audio_file_path, temp_dir, annotations)
+
+        for i in range(0, len(annotation_audio_chunk_file_paths)):
+            final_data.append({"path" : os.path.basename(annotation_audio_chunk_file_paths[i]), "sentence" : annotations[i]["transcript"]})
+
+        df = pd.DataFrame(final_data)
+
+        # Saving the metadata file
+        meta_data_file_path = os.path.join(temp_dir, str(job_id) + ".tsv")
+        df.to_csv(meta_data_file_path, sep='\t', index=False)
+
+        logger.info(json.dumps(final_data))
+        create_annotation_clips_zip(annotation_audio_chunk_file_paths, meta_data_file_path, temp_dir_base, dst_file)
+
+    # # Fetch all job chunks and save it in a temporary location
+    # job_instance = models.Job.objects.get(id=job_id)
+
+    # job_serializer = serializers.JobReadSerializer(job_instance)
+
+    # job_data = job_serializer.data
+
+    # logger.info(json.dumps(job_data))
+
+    # with open(dst_file, 'wb') as f:
+    #     job.export(f, exporter, host=server_url, save_images=save_images)
 
 @silk_profile(name="GET task data")
 @transaction.atomic

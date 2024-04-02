@@ -1449,6 +1449,10 @@ class AIAudioAnnotationSerializer(serializers.ModelSerializer):
         model = AIAudioAnnotation
         fields = '__all__'
 
+class ExportAudioAnnotationSerializer(serializers.Serializer):
+    jobId = serializers.IntegerField()
+    format = serializers.CharField()
+
 class LabeledImageSerializer(AnnotationSerializer):
     attributes = AttributeValSerializer(many=True,
         source="labeledimageattributeval_set", default=[])

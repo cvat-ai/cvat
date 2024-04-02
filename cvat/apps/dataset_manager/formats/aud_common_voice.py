@@ -1,3 +1,7 @@
+# Copyright (C) 2024 CVAT.ai Corporation
+#
+# SPDX-License-Identifier: MIT
+
 # Copyright (C) 2019-2022 Intel Corporation
 # Copyright (C) 2023 CVAT.ai Corporation
 #
@@ -22,7 +26,8 @@ slogger = ServerLogManager(__name__)
 
 @exporter(name='YOLO', ext='ZIP', version='1.1')
 def _export(dst_file, temp_dir, instance_data, save_images=False):
-    slogger.glob.info("HEYLO YOLO EXPORTER")
+    slogger.glob.info("HEYLO YOLO EXPORTER AUDINO")
+    # slogger.glob.debug()
     dataset = Dataset.from_extractors(GetCVATDataExtractor(
         instance_data, include_images=save_images), env=dm_env)
 

@@ -64,7 +64,7 @@ from cvat.apps.engine.serializers import (
     LabeledDataSerializer,
     ProjectReadSerializer, ProjectWriteSerializer,
     RqStatusSerializer, TaskReadSerializer, TaskWriteSerializer,
-    UserSerializer, PluginsSerializer, IssueReadSerializer, AIAudioAnnotationSerializer,
+    UserSerializer, PluginsSerializer, IssueReadSerializer, AIAudioAnnotationSerializer, ExportAudioAnnotationSerializer,
     AnnotationGuideReadSerializer, AnnotationGuideWriteSerializer,
     AssetReadSerializer, AssetWriteSerializer,
     IssueWriteSerializer, CommentReadSerializer, CommentWriteSerializer, CloudStorageWriteSerializer,
@@ -649,6 +649,7 @@ class DataChunkGetter:
 
         try:
             if self.type == 'chunk':
+                slogger.glob.debug("JOB UUUU")
                 start_chunk = frame_provider.get_chunk_number(start)
                 stop_chunk = frame_provider.get_chunk_number(stop)
                 # pylint: disable=superfluous-parens
@@ -659,11 +660,13 @@ class DataChunkGetter:
                 # TODO: av.FFmpegError processing
                 if settings.USE_CACHE and db_data.storage_method == StorageMethodChoice.CACHE:
                     buff, mime_type = frame_provider.get_chunk(self.number, self.quality)
+                    slogger.glob.debug(buff)
                     return HttpResponse(buff.getvalue(), content_type=mime_type)
 
                 # Follow symbol links if the chunk is a link on a real image otherwise
                 # mimetype detection inside sendfile will work incorrectly.
                 path = os.path.realpath(frame_provider.get_chunk(self.number, self.quality))
+
                 return sendfile(request, path)
             elif self.type == 'frame' or self.type == 'preview':
                 self._check_frame_range(self.number)
@@ -717,6 +720,7 @@ class JobDataGetter(DataChunkGetter):
             cache = MediaCache()
 
             if settings.USE_CACHE and db_data.storage_method == StorageMethodChoice.CACHE:
+
                 buf, mime = cache.get_selective_job_chunk_data_with_mime(
                     chunk_number=self.number, quality=self.quality, job=self.job
                 )
@@ -1836,7 +1840,6 @@ class JobViewSet(viewsets.GenericViewSet, mixins.ListModelMixin, mixins.CreateMo
                     return Response(data=str(e), status=status.HTTP_400_BAD_REQUEST)
                 return Response(data)
 
-
     @tus_chunk_action(detail=True, suffix_base="annotations")
     def append_annotations_chunk(self, request, pk, file_id):
         self._object = self.get_object()
@@ -2057,6 +2060,70 @@ class AIAudioAnnotationViewSet(viewsets.ModelViewSet):
 
             # Find labels of a particular job
             job = Job.objects.get(id=job_id)
+
+            # Validate data
+            if not job:
+                return Response({'error': 'Invalid job'}, status=status.HTTP_400_BAD_REQUEST)
+
+            # Iterate over segments and save to the model
+            r = requests.post("http://35.208.178.37:8000/transcript", json={ "jobId" : job_id, "authToken" : authHeader})
+
+            return Response({'success': True}, status=status.HTTP_200_OK)
+
+        except Exception as e:
+            return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+class ExportAudioAnnotationViewSet(viewsets.ModelViewSet):
+    queryset = AIAudioAnnotation.objects.order_by("-id").all()
+    serializer_class = ExportAudioAnnotationSerializer
+    search_fields = ('text')
+    permission_classes = [AllowAny]
+    filter_fields = []
+    filter_backends = []
+
+    @action(detail=False, methods=['post'], url_path='save')
+    def save_segments(self, request):
+        try:
+            job_id = request.data.get('jobId')
+
+            # Find labels of a particular job
+            job = Job.objects.get(id=job_id)
+            labels_queryset = job.get_labels()
+            labels_list = list(labels_queryset.values())
+
+            segments = request.data.get('segments')
+
+            # Validate data
+            if not job_id or not segments:
+                return Response({'error': 'Invalid data format'}, status=status.HTTP_400_BAD_REQUEST)
+
+            # Iterate over segments and save to the model
+            saved_segments = []
+            for segment in segments:
+                segment['job'] = job_id  # Assign job_id to each segment
+                serializer = AIAudioAnnotationSerializer(data=segment)
+                if serializer.is_valid():
+                    serializer.save()
+                    saved_segments.append(serializer.data)
+                else:
+                    return Response({'error': serializer.errors}, status=status.HTTP_400_BAD_REQUEST)
+
+            return Response({'success': True, 'segments': saved_segments}, status=status.HTTP_201_CREATED)
+
+        except Exception as e:
+            return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+    @action(detail=False, methods=['post'], url_path='export')
+    def request_ai_annotation(self, request):
+        try:
+            job_id = request.data.get('jobId')
+            format = request.data.get('format')
+            authHeader = request.headers.get('Authorization')
+
+            # Find labels of a particular job
+            job = Job.objects.get(id=job_id)
+
+            return Response({ "labels" : job.get_labels(), "dirname" : job.get_dirname(), "tmp_dirname" : job.get_tmp_dirname() })
 
             # Validate data
             if not job:
@@ -3062,14 +3129,33 @@ def _export_annotations(db_instance, rq_id, request, format_name, action, callba
         raise serializers.ValidationError(
             "Unexpected action specified for the request")
 
-    format_desc = {f.DISPLAY_NAME: f
-        for f in dm.views.get_export_formats()}.get(format_name)
+    EXPORT_FOR = "audio"
+
+    if EXPORT_FOR == "audio":
+        AUDIO_FORMATS = ["Common Voice"]
+
+        format_desc = { "ENABLED" : True }
+
+        if format_name not in AUDIO_FORMATS:
+            format_desc = None
+
+    else:
+        format_desc = {f.DISPLAY_NAME: f
+            for f in dm.views.get_export_formats()}.get(format_name)
+
+    slogger.glob.debug("format_desc")
+    slogger.glob.debug(format_desc)
+
     if format_desc is None:
         raise serializers.ValidationError(
             "Unknown format specified for the request")
-    elif not format_desc.ENABLED:
+
+    elif (EXPORT_FOR == "audio" and not format_desc["ENABLED"]) or (EXPORT_FOR != "audio" and not format_desc.ENABLED):
         return Response(status=status.HTTP_405_METHOD_NOT_ALLOWED)
 
+    slogger.glob.debug("export data")
+    slogger.glob.debug(settings.CVAT_QUEUES.EXPORT_DATA.value)
+    slogger.glob.debug(rq_id)
     queue = django_rq.get_queue(settings.CVAT_QUEUES.EXPORT_DATA.value)
     rq_job = queue.fetch_job(rq_id)
 
@@ -3086,6 +3172,11 @@ def _export_annotations(db_instance, rq_id, request, format_name, action, callba
         else:
             if rq_job.is_finished:
                 file_path = rq_job.return_value()
+                slogger.glob.debug("file_path")
+                slogger.glob.debug(file_path)
+
+                slogger.glob.debug("action")
+                slogger.glob.debug(action)
                 if action == "download" and osp.exists(file_path):
                     rq_job.delete()
 
@@ -3153,7 +3244,7 @@ def _export_annotations(db_instance, rq_id, request, format_name, action, callba
     with get_rq_lock_by_user(queue, user_id):
         queue.enqueue_call(
             func=callback,
-            args=(db_instance.id, format_name, server_address),
+            args=(db_instance.id, format_name, server_address, EXPORT_FOR),
             job_id=rq_id,
             meta=get_rq_job_meta(request=request, db_obj=db_instance),
             depends_on=define_dependent_job(queue, user_id),
