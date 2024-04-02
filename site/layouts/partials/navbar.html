@@ -7,7 +7,7 @@
 <nav class="td-navbar navbar-dark js-navbar-scroll
             {{- if $cover }} td-navbar-cover {{- end }}">
 <div class="container-fluid flex-column flex-md-row">
-  <a class="navbar-brand" href="{{ .Site.Home.RelPermalink }}about/">
+  <a class="navbar-brand" href="{{ relref . "/about" }}">
     {{- /**/ -}}
     <span class="navbar-brand__logo navbar-logo">
       {{- if ne .Site.Params.ui.navbar_logo false -}}
