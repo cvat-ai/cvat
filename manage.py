@@ -10,7 +10,7 @@ import sys
 def create_default_superuser():
     from django.contrib.auth.models import User
 
-    if User.objects.count() == 0:
+    if User.objects.filter(is_superuser=True).count() == 0:
         User.objects.create_superuser('admin', 'admin@example.com', '')
 
 if __name__ == "__main__":
