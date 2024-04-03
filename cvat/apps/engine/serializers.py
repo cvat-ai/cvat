@@ -942,8 +942,7 @@ class DataSerializer(serializers.ModelSerializer):
     class Meta:
         model = models.Data
         fields = (
-            'chunk_size', 'size', 'image_quality', 'start_frame', 'stop_frame', 'frame_filter',
-            'compressed_chunk_type', 'original_chunk_type',
+            'chunk_size', 'image_quality', 'start_frame', 'stop_frame', 'frame_filter',
             'client_files', 'server_files', 'remote_files',
             'use_zip_chunks', 'server_files_exclude',
             'cloud_storage_id', 'use_cache', 'copy_data', 'storage_method',
@@ -952,7 +951,6 @@ class DataSerializer(serializers.ModelSerializer):
         )
         extra_kwargs = {
             'chunk_size': { 'help_text': "Maximum number of frames per chunk" },
-            'size': { 'help_text': "The number of frames" },
             'start_frame': { 'help_text': "First frame index" },
             'stop_frame': { 'help_text': "Last frame index" },
             'frame_filter': { 'help_text': "Frame filter. The only supported syntax is: 'step=N'" },
