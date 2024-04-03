@@ -470,7 +470,7 @@ export default class LabelForm extends React.Component<Props> {
                             cvat-attribute-id={attr.id}
                             className='cvat-attribute-inputs-wrapper'
                         >
-                            <Col span={1} className='cvat-drag-drop react-grid-dragHandleExample'><HolderOutlined /></Col>
+                            <Col span={1} className='cvat-drag-drop'><HolderOutlined /></Col>
                             <Col span={5}>{this.renderAttributeNameInput(fieldInstance, attr)}</Col>
                             <Col span={4}>{this.renderAttributeTypeInput(fieldInstance, attr)}</Col>
                             <Col span={6}>
@@ -720,6 +720,7 @@ export default class LabelForm extends React.Component<Props> {
                                         onLayoutChange={(updatedLayout) => {
                                             this.formRef.current?.setFieldsValue({ layout: updatedLayout });
                                         }}
+                                        draggableHandle='.cvat-drag-drop'
                                     >
                                         {fieldInstances.map(this.renderAttribute)}
                                     </ReactGridLayout>
