@@ -32,15 +32,9 @@
         display: flex;
         flex-direction: column;
 
-        .cvat-objects-sidebar-padding {
-            height: $grid-unit-size * 2;
-            background: $objects-bar-tabs-color;
-            width: 100%;
-        }
-
         > .cvat-objects-sidebar-tabs {
-            height: calc(100% - $grid-unit-size);
             flex-grow: 10;
+            padding-top: $grid-unit-size;
 
             > div {
                 display: flex;

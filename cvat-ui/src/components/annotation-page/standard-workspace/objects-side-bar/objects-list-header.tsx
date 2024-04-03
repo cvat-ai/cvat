@@ -121,7 +121,7 @@ function ObjectListHeader(props: Props): JSX.Element {
                     />
                 </Col>
                 <Col span={24}>
-                    <Row align='middle'>
+                    <Row justify='space-around' align='middle'>
                         {!readonly && <LockAllSwitcher {...props} />}
                         <HideAllSwitcher {...props} />
                         { workspace === Workspace.REVIEW && (

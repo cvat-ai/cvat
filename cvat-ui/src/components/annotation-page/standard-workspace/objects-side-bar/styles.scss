@@ -58,7 +58,6 @@
             content: none;
         }
 
-        background-image: linear-gradient(180deg, $objects-bar-tabs-color, $background-color-2);
         border: none;
         margin-bottom: 0;
 
@@ -67,13 +66,11 @@
         }
 
         .ant-tabs-tab {
-            background: $transparent-color;
+            background: linear-gradient(180deg, $objects-bar-tabs-color, $background-color-2);
+            padding: $grid-unit-size $grid-unit-size * 2 0 $grid-unit-size * 2;
             border: none;
-            opacity: 0.5;
-
-            &:nth-child(1) {
-                margin-left: 5px;
-            }
+            user-select: none;
+            opacity: 0.65;
         }
     }
 }
@@ -110,7 +107,7 @@
 
 .cvat-objects-sidebar-issues-list {
     background-color: $background-color-2;
-    height: calc(100% - 32px);
+    height: calc(100% - $grid-unit-size * 5);
     overflow: hidden auto;
 }
 
@@ -188,6 +185,7 @@
 
         > div:nth-child(2) {
             width: 100%;
+            margin-top: $grid-unit-size;
 
             span[role='img'] {
                 &:not(:first-child) {
@@ -206,7 +204,7 @@
 
 .cvat-objects-sidebar-states-list {
     background-color: $background-color-2;
-    height: calc(100% - $grid-unit-size * 8);
+    height: calc(100% - $grid-unit-size * 9);
     overflow-y: auto;
 }
 
