@@ -167,7 +167,7 @@
 
 .cvat-objects-sidebar-states-header {
     background: $background-color-2;
-    padding: $grid-unit-size;
+    padding: $grid-unit-size $grid-unit-size * 2 $grid-unit-size $grid-unit-size * 2;
     line-height: $grid-unit-size * 3;
     border-bottom: 1px solid $border-color-1;
 
