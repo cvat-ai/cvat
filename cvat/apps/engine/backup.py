@@ -431,7 +431,7 @@ class TaskExporter(_ExporterBase, _TaskBackupBase):
         def serialize_data():
             data_serializer = DataSerializer(self._db_data)
             data = data_serializer.data
-            data['chunk_type'] = data.pop('compressed_chunk_type')
+            data['chunk_type'] = self._db_data.compressed_chunk_type
 
             # There are no deleted frames in DataSerializer so we need to pick it
             data['deleted_frames'] = self._db_data.deleted_frames

@@ -60,8 +60,7 @@ def git_checkout(ref: str, temp_repo: git.Repo, temp_dir: Path):
     # We need to checkout with submodules, recursively
 
     subdirs = [
-        "site/content/en/docs",
-        "site/content/en/images",
+        "site/content",
         "site/assets",
         "site/layouts/partials",
         "site/layouts/shortcodes",
