@@ -77,7 +77,7 @@ Uplod format: a single unpacked `*.json` or a zip archive with the structure des
    ```
 
 3. Select `val2017.zip` as data
-   (See [Creating an annotation task](/docs/manual/basics/creating_an_annotation_task/)
+   (See {{< ilink "/docs/manual/basics/create_an_annotation_task" "Creating an annotation task" >}}
    guide for details)
 
 4. Unpack `annotations_trainval2017.zip`

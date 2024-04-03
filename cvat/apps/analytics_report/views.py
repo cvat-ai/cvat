@@ -29,7 +29,7 @@ class AnalyticsReportViewSet(viewsets.ViewSet):
 
     @extend_schema(
         operation_id="analytics_create_report",
-        summary="Creates a analytics report asynchronously and allows to check request status",
+        summary="Create an analytics report",
         parameters=[
             OpenApiParameter(
                 "rq_id",
@@ -144,7 +144,7 @@ class AnalyticsReportViewSet(viewsets.ViewSet):
                 return Response(serializer.data, status=status.HTTP_201_CREATED)
 
     @extend_schema(
-        summary="Method returns analytics report",
+        summary="Get an analytics report",
         methods=["GET"],
         operation_id="analytics_get_reports",
         description="Receive analytics report",

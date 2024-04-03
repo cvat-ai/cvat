@@ -90,7 +90,6 @@ def create_db_task(data):
     db_task = Task.objects.create(**data)
     shutil.rmtree(db_task.get_dirname(), ignore_errors=True)
     os.makedirs(db_task.get_dirname())
-    os.makedirs(db_task.get_task_artifacts_dirname())
     db_task.data = db_data
     db_task.save()
 

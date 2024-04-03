@@ -33,6 +33,7 @@ from cvat.apps.analytics_report.report.primary_metrics import (
     JobObjects,
 )
 from cvat.apps.engine.models import Job, Project, Task
+from cvat.utils.background_jobs import schedule_job_with_throttling
 
 
 def get_empty_report():
@@ -75,12 +76,6 @@ class AnalyticsReportUpdateManager:
     def _make_custom_analytics_check_job_id(self) -> str:
         return uuid4().hex
 
-    def _make_queue_job_id(self, obj, start_time: timezone.datetime) -> str:
-        return f"{self._make_queue_job_id_base(obj)}-{start_time.timestamp()}"
-
-    def _make_autoupdate_blocker_key(self, obj) -> str:
-        return f"cvat:analytics:autoupdate-blocker:{self._make_queue_job_id_base(obj)}"
-
     @classmethod
     def _get_last_report_time(cls, obj):
         try:
@@ -121,27 +116,14 @@ class AnalyticsReportUpdateManager:
             target_obj = project
             cvat_project_id = project.id
 
-        with django_rq.get_connection(settings.CVAT_QUEUES.ANALYTICS_REPORTS.value) as connection:
-            # The blocker key is used to avoid scheduling a report update job
-            # for every single change. The first time this method is called
-            # for a given object, we schedule the job and create a blocker
-            # that expires at the same time as the job is supposed to start.
-            # Until the blocker expires, we don't schedule any more jobs.
-            blocker_key = self._make_autoupdate_blocker_key(target_obj)
-            if connection.exists(blocker_key):
-                return
-
-            queue_job_id = self._make_queue_job_id(target_obj, next_job_time)
-
-            self._get_scheduler().enqueue_at(
-                next_job_time,
-                self._check_analytics_report,
-                cvat_task_id=cvat_task_id,
-                cvat_project_id=cvat_project_id,
-                job_id=queue_job_id,
-            )
-
-            connection.set(blocker_key, queue_job_id, exat=next_job_time)
+        schedule_job_with_throttling(
+            settings.CVAT_QUEUES.ANALYTICS_REPORTS.value,
+            self._make_queue_job_id_base(target_obj),
+            next_job_time,
+            self._check_analytics_report,
+            cvat_task_id=cvat_task_id,
+            cvat_project_id=cvat_project_id,
+        )
 
     def schedule_analytics_check_job(self, *, job=None, task=None, project=None, user_id):
         rq_id = self._make_custom_analytics_check_job_id()
