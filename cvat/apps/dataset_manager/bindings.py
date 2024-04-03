@@ -1757,9 +1757,9 @@ class CvatToDmAnnotationConverter:
         if shape.type == ShapeType.RECTANGLE:
             dm_attr['rotation'] = shape.rotation
 
-        # if hasattr(shape, 'track_id'):
-        #     dm_attr['track_id'] = shape.track_id
-        #     dm_attr['keyframe'] = shape.keyframe
+        if hasattr(shape, 'track_id'):
+            dm_attr['track_id'] = shape.track_id
+            dm_attr['keyframe'] = shape.keyframe
 
         dm_points = shape.points
 
@@ -2080,7 +2080,7 @@ def import_dm_annotations(dm_dataset: dm.Dataset, instance_data: Union[ProjectDa
                         ))
                         continue
 
-                    if keyframe or outside:
+                    if track_id is not None:
                         if track_id not in tracks:
                             tracks[track_id] = {
                                 'label': label_cat.items[ann.label].name,
@@ -2150,6 +2150,26 @@ def import_dm_annotations(dm_dataset: dm.Dataset, instance_data: Union[ProjectDa
             except Exception as e:
                 raise CvatImportError("Image {}: can't import annotation "
                     "#{} ({}): {}".format(item.id, idx, ann.type.name, e)) from e
+
+    for track in tracks.values():
+        track['shapes'].sort(key=lambda t: t.frame)
+        prev_shape_idx = 0
+        prev_shape = track['shapes'][0]
+        for shape in track['shapes'][1:]:
+            has_skip = instance_data.frame_step < shape.frame - prev_shape.frame
+            if has_skip and not prev_shape.outside:
+                prev_shape = prev_shape._replace(outside=True,
+                        frame=prev_shape.frame + instance_data.frame_step)
+                prev_shape_idx += 1
+                track['shapes'].insert(prev_shape_idx, prev_shape)
+            prev_shape = shape
+            prev_shape_idx += 1
+
+        # if the last shape 'outside' is False, we need to add to stop the tracking
+        if not prev_shape.outside and prev_shape.frame+instance_data.frame_step <= frame_number:
+            prev_shape = prev_shape._replace(outside=True,
+                    frame=prev_shape.frame + instance_data.frame_step)
+            track['shapes'].append(prev_shape)
 
     for track in tracks.values():
         track['elements'] = list(track['elements'].values())
