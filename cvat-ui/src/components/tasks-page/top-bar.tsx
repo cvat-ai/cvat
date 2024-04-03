@@ -22,7 +22,7 @@ import {
     localStorageRecentKeyword, localStorageRecentCapacity, predefinedFilterValues, config,
 } from './tasks-filter-configuration';
 
-import dimensions from '../projects-page/dimensions';
+import dimensions from '../../utils/dimensions';
 
 const FilteringComponent = ResourceFilterHOC(
     config, localStorageRecentKeyword, localStorageRecentCapacity, predefinedFilterValues,

@@ -1,4 +1,5 @@
 // Copyright (C) 2021-2022 Intel Corporation
+// Copyright (C) 2022-2024 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -12,7 +13,7 @@ import { CloudStoragesQuery } from 'reducers';
 import Input from 'antd/lib/input';
 import { SortingComponent, ResourceFilterHOC, defaultVisibility } from 'components/resource-sorting-filtering';
 
-import dimensions from 'components/projects-page/dimensions';
+import dimensions from 'utils/dimensions';
 
 import {
     localStorageRecentKeyword, localStorageRecentCapacity,

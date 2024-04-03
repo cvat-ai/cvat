@@ -1,4 +1,5 @@
 // Copyright (C) 2021-2022 Intel Corporation
+// Copyright (C) 2022-2024 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -7,7 +8,7 @@ import Pagination from 'antd/lib/pagination';
 import { Row, Col } from 'antd/lib/grid';
 
 import { CloudStorage } from 'reducers';
-import dimensions from 'components/projects-page/dimensions';
+import dimensions from 'utils/dimensions';
 import CloudStorageItemComponent from './cloud-storage-item';
 
 interface Props {

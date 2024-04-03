@@ -1,5 +1,5 @@
-// Copyright (C) 2022 Intel Corporation
-// Copyright (C) 2023-2024 CVAT.ai Corporation
+// Copyright (C) 2020-2022 Intel Corporation
+// Copyright (C) 2022-2024 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -10,8 +10,6 @@ import { useDispatch, useSelector } from 'react-redux';
 import Spin from 'antd/lib/spin';
 import { Col, Row } from 'antd/lib/grid';
 import Pagination from 'antd/lib/pagination';
-// import Empty from 'antd/lib/empty';
-// import Text from 'antd/lib/typography/Text';
 
 import { Job } from 'cvat-core-wrapper';
 import { updateHistoryFromQuery } from 'components/resource-sorting-filtering';

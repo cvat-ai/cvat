@@ -12,7 +12,7 @@ import { Invitation } from 'cvat-core/src/organization';
 import { acceptInvitationAsync, getInvitationsAsync, declineInvitationAsync } from 'actions/invitations-actions';
 import InvitationItem from './invitation-item';
 
-import dimensions from '../projects-page/dimensions';
+import dimensions from '../../utils/dimensions';
 
 interface Props {
     query: InvitationsQuery;
