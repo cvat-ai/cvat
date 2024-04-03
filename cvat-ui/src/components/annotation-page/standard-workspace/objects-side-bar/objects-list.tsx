@@ -1,5 +1,5 @@
 // Copyright (C) 2020-2022 Intel Corporation
-// Copyright (C) 2022 CVAT.ai Corporation
+// Copyright (C) 2022-2024 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -70,6 +70,7 @@ function ObjectListComponent(props: Props): JSX.Element {
                 switchLockAllShortcut={switchLockAllShortcut}
                 switchHiddenAllShortcut={switchHiddenAllShortcut}
                 showGroundTruth={showGroundTruth}
+                count={objectStates.length}
                 changeStatesOrdering={changeStatesOrdering}
                 lockAllStates={lockAllStates}
                 unlockAllStates={unlockAllStates}
@@ -79,12 +80,6 @@ function ObjectListComponent(props: Props): JSX.Element {
                 showAllStates={showAllStates}
                 changeShowGroundTruth={changeShowGroundTruth}
             />
-            <Text
-                strong
-                className='cvat-annotations-count'
-            >
-                {`Total Count:   ${objectStates.length}`}
-            </Text>
             <div className='cvat-objects-sidebar-states-list'>
                 {sortedStatesID.map(
                     (id: number): JSX.Element => {

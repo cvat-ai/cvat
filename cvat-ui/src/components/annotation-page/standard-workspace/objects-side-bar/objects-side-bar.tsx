@@ -1,5 +1,5 @@
 // Copyright (C) 2020-2022 Intel Corporation
-// Copyright (C) 2023 CVAT.ai Corporation
+// Copyright (C) 2023-2024 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -97,6 +97,7 @@ function ObjectsSideBar(props: StateToProps & DispatchToProps & OwnProps): JSX.E
                 {sidebarCollapsed ? <MenuFoldOutlined title='Show' /> : <MenuUnfoldOutlined title='Hide' />}
             </span>
 
+            <div className='cvat-objects-sidebar-padding' />
             <Tabs type='card' defaultActiveKey='objects' className='cvat-objects-sidebar-tabs'>
                 <Tabs.TabPane tab={<Text strong>Objects</Text>} key='objects'>
                     {objectsList}
