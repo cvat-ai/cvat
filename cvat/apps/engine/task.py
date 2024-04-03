@@ -426,7 +426,7 @@ def _restore_file_order_from_manifest(
     """
     Restores file ordering for the "predefined" file sorting method of the task creation.
     Checks for extra files in the input.
-    Read more: https://github.com/opencv/cvat/issues/5061
+    Read more: https://github.com/cvat-ai/cvat/issues/5061
     """
 
     input_files = {os.path.relpath(p, upload_dir): p for p in extractor.absolute_source_paths}

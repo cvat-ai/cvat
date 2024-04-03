@@ -7,11 +7,11 @@ import React from 'react';
 
 const NO_BREAK_SPACE = '\u00a0';
 const UNDEFINED_ATTRIBUTE_VALUE = '__undefined__';
-const CHANGELOG_URL = 'https://github.com/opencv/cvat/blob/develop/CHANGELOG.md';
-const LICENSE_URL = 'https://github.com/opencv/cvat/blob/develop/LICENSE';
+const CHANGELOG_URL = 'https://github.com/cvat-ai/cvat/blob/develop/CHANGELOG.md';
+const LICENSE_URL = 'https://github.com/cvat-ai/cvat/blob/develop/LICENSE';
 const DISCORD_URL = 'https://discord.gg/fNR3eXfk6C';
-const GITHUB_URL = 'https://github.com/opencv/cvat';
-const GITHUB_IMAGE_URL = 'https://github.com/opencv/cvat/raw/develop/site/content/en/images/cvat.jpg';
+const GITHUB_URL = 'https://github.com/cvat-ai/cvat';
+const GITHUB_IMAGE_URL = 'https://github.com/cvat-ai/cvat/raw/develop/site/content/en/images/cvat.jpg';
 const GUIDE_URL = 'https://docs.cvat.ai/docs';
 const UPGRADE_GUIDE_URL = 'https://docs.cvat.ai/docs/administration/advanced/upgrade_guide';
 const SHARE_MOUNT_GUIDE_URL =
