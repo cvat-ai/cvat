@@ -101,7 +101,7 @@ function LabelsListComponent(): JSX.Element {
         <div className='cvat-objects-sidebar-labels-list'>
             <GlobalHotKeys keyMap={subKeyMap} handlers={handlers} />
             <div className='cvat-objects-sidebar-labels-list-header'>
-                <Text type='secondary'>{`Items: ${labels.length}`}</Text>
+                <Text>{`Items: ${labels.length}`}</Text>
             </div>
             {labelIDs.map(
                 (labelID: number): JSX.Element => (

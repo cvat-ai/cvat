@@ -20,7 +20,7 @@ function StatesOrderingSelectorComponent(props: StatesOrderingSelectorComponentP
 
     return (
         <Col>
-            <Text type='secondary'>Sort by</Text>
+            <Text>Sort by</Text>
             <Select
                 size='small'
                 className='cvat-objects-sidebar-ordering-selector'
