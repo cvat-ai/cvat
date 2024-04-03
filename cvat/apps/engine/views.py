@@ -1154,7 +1154,7 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
             For archives (e.g. '.zip'), a manifest file ('*.jsonl') is required when using
             the 'predefined' file ordering. Such file must be provided next to the archive
             in the list of files. Read more about manifest files here:
-            https://opencv.github.io/cvat/docs/manual/advanced/dataset_manifest/
+            https://docs.cvat.ai/docs/manual/advanced/dataset_manifest/
 
             After all data is sent, the operation status can be retrieved via
             the /status endpoint.

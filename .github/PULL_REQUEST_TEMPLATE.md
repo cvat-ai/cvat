@@ -1,7 +1,7 @@
 <!-- Raise an issue to propose your change (https://github.com/opencv/cvat/issues).
 It helps to avoid duplication of efforts from multiple independent contributors.
 Discuss your ideas with maintainers to be sure that changes will be approved and merged.
-Read the [Contribution guide](https://opencv.github.io/cvat/docs/contributing/). -->
+Read the [Contribution guide](https://docs.cvat.ai/docs/contributing/). -->
 
 <!-- Provide a general summary of your changes in the Title above -->
 
