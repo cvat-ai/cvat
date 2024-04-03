@@ -282,9 +282,9 @@ context('Review pipeline feature', () => {
             cy.get('.cvat-issues-sidebar-previous-frame')
                 .should('have.attr', 'style')
                 .and('contain', 'opacity: 0.5;'); // the element is not active
-            cy.get('.cvat-issues-sidebar-next-frame').should('be.visible').click({ force: true });
+            cy.get('.cvat-issues-sidebar-next-frame').should('be.visible').click();
             cy.checkFrameNum(1);
-            cy.get('.cvat-issues-sidebar-next-frame').should('be.visible').click({ force: true });
+            cy.get('.cvat-issues-sidebar-next-frame').should('be.visible').click();
             cy.checkFrameNum(2);
             cy.get('.cvat-issues-sidebar-next-frame').should('have.attr', 'style')
                 .and('contain', 'opacity: 0.5;'); // the element is not active
