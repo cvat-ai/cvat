@@ -1,0 +1,27 @@
+{{- /*
+ilink - create an internal link
+
+Usage:
+    ilink "/path/to/page#optional-fragment" "link text"
+
+The link text is optional and will default to the link title of the page.
+*/ -}}
+
+{{- $url := urls.Parse (.Get 0) -}}
+{{- if or $url.Scheme $url.Host -}}
+    {{- errorf "%q: absolute URLs not supported at %s" .Name .Position -}}
+{{- end -}}
+{{- if $url.RawQuery -}}
+    {{- errorf "%q: query strings not supported at %s" .Name .Position -}}
+{{- end -}}
+
+{{- $page := .Page.GetPage $url.Path -}}
+{{- if not $page -}}
+    {{- errorf "%q: page %q not found at %s" .Name $url.Path .Position -}}
+{{- end -}}
+
+<a href="{{ $page.RelPermalink }}{{ with $url.EscapedFragment }}#{{ . }}{{ end }}">
+    {{- with .Get 1 }}{{ markdownify . }}{{ else }}{{ $page.LinkTitle }}{{ end -}}
+</a>
+
+{{- /* strip trailing whitespace */ -}}

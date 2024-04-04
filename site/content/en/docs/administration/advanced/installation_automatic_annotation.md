@@ -77,7 +77,7 @@ description: 'Information about the installation of components needed for semi-a
   - The number of GPU deployed functions will be limited to your GPU memory.
   - See [deploy_gpu.sh](https://github.com/cvat-ai/cvat/blob/develop/serverless/deploy_gpu.sh)
     script for more examples.
-  - For some models (namely [SiamMask](/docs/manual/advanced/ai-tools#trackers)) you need an [Nvidia driver](https://www.nvidia.com/en-us/drivers/unix/)
+  - For some models (namely {{< ilink "/docs/manual/advanced/ai-tools#trackers" "SiamMask" >}}) you need an [Nvidia driver](https://www.nvidia.com/en-us/drivers/unix/)
     version greater than or equal to 450.80.02.
 
   **Note for Windows users:**
