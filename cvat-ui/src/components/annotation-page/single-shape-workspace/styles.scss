@@ -11,6 +11,7 @@
 .cvat-single-shape-annotation-sidebar {
     padding: $grid-unit-size;
     overflow: auto;
+    background: $background-color-2;
 
     .cvat-single-shape-annotation-sidebar-label-select,
     .cvat-single-shape-annotation-sidebar-label-type-selector {
