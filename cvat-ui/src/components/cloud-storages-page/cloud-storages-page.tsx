@@ -10,9 +10,10 @@ import { useDispatch, useSelector } from 'react-redux';
 import { Row } from 'antd/lib/grid';
 import Spin from 'antd/lib/spin';
 
-import { CombinedState, Indexable } from 'reducers';
+import { CloudStoragesQuery, CombinedState, Indexable } from 'reducers';
 import { getCloudStoragesAsync } from 'actions/cloud-storage-actions';
 import { updateHistoryFromQuery } from 'components/resource-sorting-filtering';
+import { anySearch } from 'utils/any-search';
 import CloudStoragesListComponent from './cloud-storages-list';
 import EmptyListComponent from './empty-list';
 import TopBarComponent from './top-bar';
@@ -58,7 +59,7 @@ export default function StoragesPageComponent(): JSX.Element {
         [query],
     );
 
-    const anySearch = Object.keys(query).some((value: string) => value !== 'page' && (query as any)[value] !== null);
+    const isAnySearch = anySearch<CloudStoragesQuery>(query);
 
     const content = current.length ? (
         <CloudStoragesListComponent
@@ -68,7 +69,7 @@ export default function StoragesPageComponent(): JSX.Element {
             onChangePage={onChangePage}
         />
     ) : (
-        <EmptyListComponent notFound={anySearch} />
+        <EmptyListComponent notFound={isAnySearch} />
     );
 
     return (

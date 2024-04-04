@@ -15,6 +15,7 @@ import { TasksQuery, Indexable } from 'reducers';
 import { updateHistoryFromQuery } from 'components/resource-sorting-filtering';
 import TaskListContainer from 'containers/tasks-page/tasks-list';
 import { getTasksAsync } from 'actions/tasks-actions';
+import { anySearch } from 'utils/any-search';
 
 import TopBar from './top-bar';
 import EmptyListComponent from './empty-list';
@@ -57,7 +58,7 @@ function TasksPageComponent(props: Props): JSX.Element {
         }
     }, [query]);
 
-    const anySearch = Object.keys(query).some((value: string) => value !== 'page' && (query as any)[value] !== null);
+    const isAnySearch = anySearch<TasksQuery>(query);
 
     const content = count ? (
         <>
@@ -82,7 +83,7 @@ function TasksPageComponent(props: Props): JSX.Element {
             </Row>
         </>
     ) : (
-        <EmptyListComponent notFound={anySearch} />
+        <EmptyListComponent notFound={isAnySearch} />
     );
 
     return (

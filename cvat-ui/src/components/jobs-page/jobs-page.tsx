@@ -13,8 +13,9 @@ import Pagination from 'antd/lib/pagination';
 
 import { Job } from 'cvat-core-wrapper';
 import { updateHistoryFromQuery } from 'components/resource-sorting-filtering';
-import { CombinedState, Indexable } from 'reducers';
+import { CombinedState, Indexable, JobsQuery } from 'reducers';
 import { getJobsAsync, updateJobAsync } from 'actions/jobs-actions';
+import { anySearch } from 'utils/any-search';
 
 import TopBarComponent from './top-bar';
 import JobsContentComponent from './jobs-content';
@@ -53,7 +54,7 @@ function JobsPageComponent(): JSX.Element {
         }
     }, [query]);
 
-    const anySearch = Object.keys(query).some((value: string) => value !== 'page' && (query as any)[value] !== null);
+    const isAnySearch = anySearch<JobsQuery>(query);
 
     const content = count ? (
         <>
@@ -78,7 +79,7 @@ function JobsPageComponent(): JSX.Element {
             </Row>
         </>
     ) : (
-        <EmptyListComponent notFound={anySearch} />
+        <EmptyListComponent notFound={isAnySearch} />
     );
 
     return (
