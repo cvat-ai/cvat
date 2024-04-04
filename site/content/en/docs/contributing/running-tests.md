@@ -9,7 +9,7 @@ description: 'Instructions on how to run all existence tests.'
 
 **Initial steps**:
 1. Run CVAT instance:
-   ```
+   ```shell
    docker compose \
              -f docker-compose.yml \
              -f docker-compose.dev.yml \
@@ -18,7 +18,7 @@ description: 'Instructions on how to run all existence tests.'
              -f tests/docker-compose.file_share.yml up -d
    ```
 1. Add test user in CVAT:
-   ```
+   ```shell
    docker exec -i cvat_server \
              /bin/bash -c \
              "echo \"from django.contrib.auth.models import User; User.objects.create_superuser('admin', 'admin@localhost.company', '12qwaszx')\" | python3 ~/manage.py shell"
@@ -46,7 +46,7 @@ yarn run cypress:run:chrome:canvas3d
 
 **Initial steps**
 
-1. Follow [this guide](/docs/api_sdk/sdk/developer-guide/) to prepare
+1. Follow {{< ilink "/docs/api_sdk/sdk/developer-guide" "this guide" >}} to prepare
    `cvat-sdk` and `cvat-cli` source code
 1. Install all necessary requirements before running REST API tests:
    ```
