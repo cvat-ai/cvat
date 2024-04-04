@@ -6738,11 +6738,6 @@ components:
           minimum: 0
           nullable: true
           description: Maximum number of frames per chunk
-        size:
-          type: integer
-          maximum: 2147483647
-          minimum: 0
-          description: The number of frames
         image_quality:
           type: integer
           maximum: 100
@@ -6762,10 +6757,6 @@ components:
           type: string
           description: 'Frame filter. The only supported syntax is: ''step=N'''
           maxLength: 256
-        compressed_chunk_type:
-          $ref: '#/components/schemas/ChunkType'
-        original_chunk_type:
-          $ref: '#/components/schemas/ChunkType'
         client_files:
           type: array
           items:

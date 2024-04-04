@@ -18,7 +18,7 @@ frame. The following figure is an example of how the list might look like:
 
 ![](/images/image059.jpg)
 
-The way how to use filters is described in the advanced guide [here](/docs/manual/advanced/filter/).
+The way how to use filters is described in the advanced guide {{< ilink "/docs/manual/advanced/filter" "here" >}}.
 
 **List of objects**
 
@@ -87,7 +87,7 @@ You can change the way an object is displayed on a frame (show or hide).
 
 ![](/images/image052.jpg)
 
-**Tracker switcher **- enable/disable [tracking](/docs/manual/advanced/ai-tools#trackers) for the object.
+**Tracker switcher **- enable/disable {{< ilink "/docs/manual/advanced/ai-tools#trackers" "tracking" >}} for the object.
 
 ![](/images/tracker_switcher.jpg)
 
