@@ -22,7 +22,7 @@ jobs:
 
   build:
     needs: search_cache
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-latest-big
     steps:
       - uses: actions/checkout@v4
         with:
@@ -94,7 +94,7 @@ jobs:
 
   rest_api_testing:
     needs: build
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-latest-big
     steps:
       - uses: actions/checkout@v4
         with:
@@ -187,7 +187,7 @@ jobs:
 
   unit_testing:
     needs: build
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-latest-big
     steps:
       - uses: actions/checkout@v4
         with:
@@ -247,7 +247,7 @@ jobs:
 
   e2e_testing:
     needs: build
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-latest-big
     strategy:
       fail-fast: false
       matrix:

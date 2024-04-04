@@ -16,6 +16,75 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 <!-- scriv-insert-here -->
 
+<a id='changelog-2.11.3'></a>
+## \[2.11.3\] - 2024-04-02
+
+### Added
+
+- Tooltips for long names on cards (projects, tasks, cloud storages, and models)
+  (<https://github.com/opencv/cvat/pull/7550>)
+
+### Removed
+
+- The `POST /api/tasks/{id}/data` endpoint no longer accepts several
+  parameters that didn't have any useful function: `size`,
+  `compressed_chunk_type`, `original_chunk_type`
+  (<https://github.com/opencv/cvat/pull/7663>)
+
+### Fixed
+
+- Duplicated notifications for automatic annotation
+  (<https://github.com/opencv/cvat/pull/7595>)
+
+- Made quality report update job scheduling more efficient
+  (<https://github.com/opencv/cvat/pull/7596>)
+
+- Incorrect file name usage when importing annotations from a cloud storage
+  (<https://github.com/opencv/cvat/pull/7599>)
+
+- Using single shape annotation mode with multiple labels
+  (<https://github.com/opencv/cvat/pull/7606>)
+
+- Part of sidebar not visible in attribute annotation mode when there are a lot of attribute values
+  (<https://github.com/opencv/cvat/pull/7610>)
+
+- Changed interpolation behavior in `annotation.py`, now correctly keep the last frame
+- Insert last frame if it is key to the track, fixes data corruption when tracks crossing more than 1 jobs
+  (<https://github.com/opencv/cvat/pull/7615>)
+
+- Label constructor validation of empty label names
+  (<https://github.com/opencv/cvat/pull/7627>)
+
+- Incorrect alignment of empty job list component
+  (<https://github.com/opencv/cvat/pull/7621>)
+
+- Remove underlying pixels feature is not applied immediately
+  (<https://github.com/opencv/cvat/pull/7637>)
+
+- Corrected the formula for per-class accuracy in quality reports;
+  the old formula is now exposed as the `jaccard_index` key
+  (<https://github.com/opencv/cvat/pull/7640>)
+
+- Sending `/events` request from logged-out user  (<https://github.com/opencv/cvat/pull/7608>)
+
+- Fixed accuracy being displayed incorrectly on the task analytics page
+  (<https://github.com/opencv/cvat/pull/7652>)
+
+- Fixed an invalid default overlap size being selected for video tasks
+  with small segments
+  (<https://github.com/opencv/cvat/pull/7681>)
+
+- Fixed redundant jobs being created for tasks with non-zero overlap
+  in certain cases
+  (<https://github.com/opencv/cvat/pull/7681>)
+
+- Accumulation of confusion matrix across all jobs in a task when creating a quality report
+  (<https://github.com/opencv/cvat/pull/7604>)
+
+- 90 deg-rotated video was added with "Prefer Zip Chunks" disabled
+was warped, fixed using the static cropImage function.
+  (<https://github.com/opencv/cvat/pull/7583>)
+
 <a id='changelog-2.11.2'></a>
 ## \[2.11.2\] - 2024-03-11
 

@@ -60,8 +60,7 @@ def git_checkout(ref: str, temp_repo: git.Repo, temp_dir: Path):
     # We need to checkout with submodules, recursively
 
     subdirs = [
-        "site/content/en/docs",
-        "site/content/en/images",
+        "site/content",
         "site/assets",
         "site/layouts/partials",
         "site/layouts/shortcodes",
@@ -148,7 +147,7 @@ def generate_docs(repo: git.Repo, output_dir: os.PathLike, tags):
                 output_dir / tag.name,
                 # This variable is no longer needed by the current version,
                 # but it was required in v2.11.2 and older.
-                extra_env_vars={VERSION_URL_ENV_VAR: f"/cvat/{tag.name}/docs"},
+                extra_env_vars={VERSION_URL_ENV_VAR: f"/{tag.name}/docs"},
                 executable=hugo,
             )
 

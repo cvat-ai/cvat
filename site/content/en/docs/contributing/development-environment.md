@@ -282,7 +282,7 @@ Steps are common for both local and codespaces remote development
 
 
 You have done! Now it is possible to insert breakpoints and debug server and client of the tool.
-Instructions for running tests locally are available [here](/docs/contributing/running-tests/).
+Instructions for running tests locally are available {{< ilink "/docs/contributing/running-tests" "here" >}}.
 
 ## Note for Windows users
 
