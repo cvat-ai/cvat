@@ -106,4 +106,4 @@ To track with cuboids, do the following:
 
 7. Repeat to the last frame with the presence of the object you are tracking.
 
-For more information about tracking, see [Track mode](/docs/manual/basics/track-mode-basics/)
+For more information about tracking, see {{< ilink "/docs/manual/basics/track-mode-basics" "Track mode" >}}

@@ -23,7 +23,8 @@ Docker volumes are used to store all CVAT data:
 - `cvat_logs`: used to store logs of CVAT backend processes managed by supevisord.
   Mounted into `cvat` container by `/home/django/logs` path.
 
-- `cvat_events`: this is an optional volume that is used only when [Analytics component](/docs/administration/advanced/analytics/)
+- `cvat_events`: this is an optional volume that is used only when
+  {{< ilink "/docs/administration/advanced/analytics" "Analytics component" >}}
   is enabled and is used to store Elasticsearch database files.
   Mounted into `cvat_elasticsearch` container by `/usr/share/elasticsearch/data` path.
 
@@ -62,7 +63,8 @@ it will not work because between CVAT releases the layout of DB can be
 changed. You always can upgrade CVAT later. It will take care to migrate
 your data properly internally.**
 
-Note: CVAT containers must exist (if no, please follow the [installation guide](/docs/administration/basics/installation/#quick-installation-guide)).
+Note: CVAT containers must exist (if no, please follow the
+{{< ilink "/docs/administration/basics/installation#quick-installation-guide" "installation guide" >}}).
 Stop all CVAT containers:
 
 ```shell
