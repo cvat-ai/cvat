@@ -1,4 +1,4 @@
 ### Fixed
 
-- Align empty-list components to be consistent
+- Standardize the alignment of empty-list components
   (<https://github.com/opencv/cvat/pull/7659>)
