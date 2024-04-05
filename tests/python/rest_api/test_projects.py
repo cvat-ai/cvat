@@ -11,7 +11,6 @@ from copy import deepcopy
 from http import HTTPStatus
 from io import BytesIO
 from itertools import product
-from tempfile import TemporaryDirectory
 from time import sleep
 from typing import Dict, List, Optional
 
