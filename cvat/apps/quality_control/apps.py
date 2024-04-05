@@ -17,8 +17,9 @@ class QualityControlConfig(AppConfig):
             if key.isupper() and not hasattr(settings, key):
                 setattr(settings, key, getattr(default_settings, key))
 
+        from cvat.apps.iam.permissions import load_app_permissions
+
+        load_app_permissions(self)
+
         # Required to define signals in the application
         from . import signals  # pylint: disable=unused-import
-
-        from cvat.apps.iam.permissions import load_app_permissions
-        load_app_permissions(self)

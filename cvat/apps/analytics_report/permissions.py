@@ -1,34 +1,34 @@
 from django.conf import settings
-
 from rest_framework.exceptions import ValidationError
 
-from cvat.apps.engine.models import Job, Task, Project
-from cvat.apps.engine.permissions import JobPermission, TaskPermission, ProjectPermission
+from cvat.apps.engine.models import Job, Project, Task
+from cvat.apps.engine.permissions import JobPermission, ProjectPermission, TaskPermission
 from cvat.apps.iam.permissions import OpenPolicyAgentPermission, StrEnum, get_iam_context
+
 
 class AnalyticsReportPermission(OpenPolicyAgentPermission):
     class Scopes(StrEnum):
-        LIST = 'list'
-        CREATE = 'create'
+        LIST = "list"
+        CREATE = "create"
 
     @classmethod
     def create(cls, request, view, obj, iam_context):
         Scopes = __class__.Scopes
         permissions = []
-        if view.basename == 'analytics_reports':
+        if view.basename == "analytics_reports":
             scopes = cls.get_scopes(request, view, obj)
             for scope in scopes:
                 self = cls.create_base_perm(request, view, scope, iam_context, obj)
                 permissions.append(self)
 
             if view.action == Scopes.LIST:
-                job_id = request.query_params.get('job_id', None)
-                task_id = request.query_params.get('task_id', None)
-                project_id = request.query_params.get('project_id', None)
+                job_id = request.query_params.get("job_id", None)
+                task_id = request.query_params.get("task_id", None)
+                project_id = request.query_params.get("project_id", None)
             else:
-                job_id = request.data.get('job_id', None)
-                task_id = request.data.get('task_id', None)
-                project_id = request.data.get('project_id', None)
+                job_id = request.data.get("job_id", None)
+                task_id = request.data.get("task_id", None)
+                project_id = request.data.get("project_id", None)
 
             if job_id:
                 try:
@@ -64,15 +64,17 @@ class AnalyticsReportPermission(OpenPolicyAgentPermission):
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
-        self.url = settings.IAM_OPA_DATA_URL + '/analytics_reports/allow'
+        self.url = settings.IAM_OPA_DATA_URL + "/analytics_reports/allow"
 
     @staticmethod
     def get_scopes(request, view, obj):
         Scopes = __class__.Scopes
-        return [{
-            'list': Scopes.LIST,
-            'create': Scopes.CREATE,
-        }.get(view.action, None)]
+        return [
+            {
+                "list": Scopes.LIST,
+                "create": Scopes.CREATE,
+            }.get(view.action, None)
+        ]
 
     def get_resource(self):
         return None
