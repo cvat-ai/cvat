@@ -152,7 +152,8 @@ To invite members to **Organization** do the following:
    ![](/images/invitation_to_org.jpg)
 
 5. Person must click the link and:
-   1. If the invitee does not have the CVAT account, then [**set up an account**](/docs/manual/basics/registration/#user-registration).
+   1. If the invitee does not have the CVAT account, then
+      {{< ilink "/docs/manual/basics/registration#user-registration" "**set up an account**" >}}.
    2. If the invitee has a CVAT account, then log in to the account.
 
 ### Invitations list

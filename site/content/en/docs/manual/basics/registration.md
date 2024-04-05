@@ -23,7 +23,7 @@ To create account or log in, go to the [CVAT.ai Cloud](https://app.cvat.ai/) log
 > **Note:** By default authentication and registration with
 > Google and GitHub work only for [CVAT.ai Cloud](https://app.cvat.ai/).
 > <br>If you want to use Google and GitHub authentication on a local installation,
-> see [Social auth configuration](/docs/administration/basics/social-accounts-configuration/).
+> see {{< ilink "/docs/enterprise/social-accounts-configuration" "Social auth configuration" >}}.
 
 ## User registration
 
