@@ -9235,6 +9235,13 @@ components:
           type: string
         last_name:
           type: string
+        email_verification_required:
+          type: boolean
+          readOnly: true
+        key:
+          type: string
+          nullable: true
+          readOnly: true
       required:
       - username
     RegisterSerializerExRequest:

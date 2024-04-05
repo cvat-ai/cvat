@@ -983,7 +983,7 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
         response = super().init_tus_upload(request)
 
         if self._is_data_uploading() and response.status_code == status.HTTP_201_CREATED:
-            self._maybe_append_upload_info_entry(response['Upload-Filename'])
+            self._maybe_append_upload_info_entry(self._get_metadata(request)['filename'])
 
         return response
 
