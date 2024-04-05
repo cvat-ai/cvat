@@ -135,7 +135,7 @@ context('Review pipeline feature', () => {
             cy.saveJob();
 
             // Annotator updates job state, both times update is successfull, logout
-            // check: https://github.com/opencv/cvat/pull/7158
+            // check: https://github.com/cvat-ai/cvat/pull/7158
             cy.intercept('PATCH', `/api/jobs/${jobIDs[0]}`).as('updateJobState');
             cy.setJobState('completed');
             cy.wait('@updateJobState').its('response.statusCode').should('equal', 200);
@@ -344,7 +344,7 @@ context('Review pipeline feature', () => {
                 });
             }
 
-            // check: https://github.com/opencv/cvat/issues/7206
+            // check: https://github.com/cvat-ai/cvat/issues/7206
             cy.interactMenu('Finish the job');
             cy.get('.cvat-modal-content-finish-job').within(() => {
                 cy.contains('button', 'Continue').click();

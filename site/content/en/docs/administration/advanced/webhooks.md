@@ -490,7 +490,7 @@ To create webhook via an API call,
 see [Swagger documentation](https://app.cvat.ai/api/docs).
 
 For examples,
-see [REST API tests](https://github.com/opencv/cvat/blob/develop/tests/python/rest_api/test_webhooks.py).
+see [REST API tests](https://github.com/cvat-ai/cvat/blob/develop/tests/python/rest_api/test_webhooks.py).
 
 ## Example of setup and use
 

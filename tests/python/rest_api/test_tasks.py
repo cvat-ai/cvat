@@ -536,7 +536,7 @@ class TestPatchTaskAnnotations:
         assert response.status_code == HTTPStatus.OK
 
     def test_can_split_skeleton_tracks_on_jobs(self, jobs):
-        # https://github.com/opencv/cvat/pull/6968
+        # https://github.com/cvat-ai/cvat/pull/6968
         task_id = 21
 
         task_jobs = [job for job in jobs if job["task_id"] == task_id]
@@ -557,8 +557,8 @@ class TestPatchTaskAnnotations:
                             "label_id": 59,
                             "frame": 0,
                             "shapes": [
-                                # https://github.com/opencv/cvat/issues/7498
-                                # https://github.com/opencv/cvat/pull/7615
+                                # https://github.com/cvat-ai/cvat/issues/7498
+                                # https://github.com/cvat-ai/cvat/pull/7615
                                 # This shape covers frame 0 to 7,
                                 # We need to check if frame 5 is generated correctly for job#1
                                 {"type": "points", "frame": 0, "points": [1.0, 2.0]},
@@ -925,7 +925,7 @@ class TestPostTaskData:
 
     def test_can_create_task_with_big_images(self):
         # Checks for regressions about the issue
-        # https://github.com/opencv/cvat/issues/6878
+        # https://github.com/cvat-ai/cvat/issues/6878
         # In the case of big files (>2.5 MB by default),
         # uploaded files could be write-appended twice,
         # leading to bigger raw file sizes than expected.
@@ -2062,7 +2062,7 @@ class TestTaskBackups:
     @pytest.mark.parametrize("mode", ["annotation", "interpolation"])
     def test_can_import_backup_for_task_in_nondefault_state(self, tasks, mode):
         # Reproduces the problem with empty 'mode' in a restored task,
-        # described in the reproduction steps https://github.com/opencv/cvat/issues/5668
+        # described in the reproduction steps https://github.com/cvat-ai/cvat/issues/5668
 
         task_json = next(t for t in tasks if t["mode"] == mode and t["jobs"]["count"])
 
@@ -2500,7 +2500,7 @@ class TestPatchTask:
 
 @pytest.mark.usefixtures("restore_db_per_function")
 def test_can_report_correct_completed_jobs_count(tasks_wlc, jobs_wlc, admin_user):
-    # Reproduces https://github.com/opencv/cvat/issues/6098
+    # Reproduces https://github.com/cvat-ai/cvat/issues/6098
     task = next(
         t
         for t in tasks_wlc
@@ -2677,7 +2677,7 @@ class TestImportWithComplexFilenames:
         autouse=True,
         scope="class",
         # classmethod way may not work in some versions
-        # https://github.com/opencv/cvat/actions/runs/5336023573/jobs/9670573955?pr=6350
+        # https://github.com/cvat-ai/cvat/actions/runs/5336023573/jobs/9670573955?pr=6350
         name="TestImportWithComplexFilenames.setup_class",
     )
     @classmethod
@@ -2796,7 +2796,7 @@ class TestImportWithComplexFilenames:
         ],
     )
     def test_import_annotations(self, task_kind, annotation_kind, expect_success):
-        # Tests for regressions about https://github.com/opencv/cvat/issues/6319
+        # Tests for regressions about https://github.com/cvat-ai/cvat/issues/6319
         #
         # X annotations must be importable to X prefixed cases
         # with and without dots in filenames.
