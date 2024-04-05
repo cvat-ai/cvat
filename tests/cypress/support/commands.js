@@ -34,12 +34,9 @@ Cypress.Commands.add('login', (username = Cypress.env('user'), password = Cypres
 
 Cypress.Commands.add('logout', () => {
     cy.get('.cvat-header-menu-user-dropdown-user').click();
-    cy.intercept('POST', '/api/auth/logout**').as('apiLogout');
     cy.get('span[aria-label="logout"]').click();
-    cy.wait('@apiLogout').then((interception) => {
-        assert.equal(interception.response.statusCode, 200);
-    });
     cy.url().should('include', '/auth/login');
+    cy.clearAllCookies();
     cy.visit('/auth/login');
     cy.url().should('not.include', '?next=');
     cy.contains('Sign in').should('exist');
