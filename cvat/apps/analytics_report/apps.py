@@ -18,3 +18,6 @@ class EventsConfig(AppConfig):
                 setattr(settings, key, getattr(default_settings, key))
 
         from . import signals  # pylint: disable=unused-import
+
+        from cvat.apps.iam.permissions import load_app_permissions
+        load_app_permissions(self)

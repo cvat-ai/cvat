@@ -5,12 +5,14 @@
 
 from __future__ import annotations
 
+import importlib
 import operator
 from abc import ABCMeta, abstractmethod
 from enum import Enum
 from typing import Any, Dict, List, Optional, Sequence, TypeVar
 
 from attrs import define, field
+from django.apps import AppConfig
 from django.conf import settings
 from django.db.models import Q, Model
 from rest_framework.permissions import BasePermission
@@ -242,3 +244,17 @@ class IsAuthenticatedOrReadPublicResource(BasePermission):
             request.user and request.user.is_authenticated or
             request.method == 'GET' and is_public_obj(obj)
         )
+
+def load_app_permissions(config: AppConfig) -> None:
+    """
+    Ensures that permissions from the given app are loaded.
+
+    This function should be called from the AppConfig.ready() method of every
+    app that defines a permissions module.
+    """
+    permissions_module = importlib.import_module(config.name + ".permissions")
+
+    assert any(
+        isinstance(attr, type) and issubclass(attr, OpenPolicyAgentPermission)
+        for attr in vars(permissions_module).values()
+    )
