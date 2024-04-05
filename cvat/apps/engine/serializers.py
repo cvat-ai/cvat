@@ -1443,6 +1443,9 @@ class AnnotationSerializer(serializers.Serializer):
     group = serializers.IntegerField(min_value=0, allow_null=True, default=None)
     source = serializers.CharField(default='manual')
     transcript = serializers.CharField(max_length=4096, allow_blank=True, allow_null=True, default="")
+    gender = serializers.CharField(max_length=4096, allow_blank=True, allow_null=True, default="")
+    age = serializers.CharField(max_length=4096, allow_blank=True, allow_null=True, default="")
+    locale = serializers.CharField(max_length=4096, allow_blank=True, allow_null=True, default="")
 
 class AIAudioAnnotationSerializer(serializers.ModelSerializer):
     class Meta:
@@ -1498,6 +1501,8 @@ class LabeledShapeSerializer(SubLabeledShapeSerializer):
     elements = SubLabeledShapeSerializer(many=True, required=False)
 
 def _convert_annotation(obj, keys):
+    slogger.glob.debug("KEYS")
+    slogger.glob.debug(keys)
     return OrderedDict([(key, obj[key]) for key in keys])
 
 def _convert_attributes(attr_set):
@@ -1523,7 +1528,7 @@ class LabeledShapeSerializerFromDB(serializers.BaseSerializer):
     def to_representation(self, instance):
         def convert_shape(shape):
             result = _convert_annotation(shape, [
-                'id', 'label_id', 'type', 'frame', 'group', 'source', 'transcript',
+                'id', 'label_id', 'type', 'frame', 'group', 'source', 'transcript', 'gender', 'age', 'locale',
                 'occluded', 'outside', 'z_order', 'rotation', 'points',
             ])
             result['attributes'] = _convert_attributes(shape['labeledshapeattributeval_set'])

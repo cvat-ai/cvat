@@ -904,6 +904,9 @@ class Annotation(models.Model):
     source = models.CharField(max_length=16, choices=SourceType.choices(),
         default=str(SourceType.MANUAL), null=True)
     transcript = models.TextField(default="")
+    gender = models.TextField(default="")
+    age = models.TextField(default="")
+    locale = models.TextField(default="en")
 
     class Meta:
         abstract = True
@@ -928,6 +931,9 @@ class Shape(models.Model):
     points = FloatArrayField(default=[])
     rotation = FloatField(default=0)
     transcript = models.TextField(default="")
+    gender = models.TextField(default="")
+    age = models.TextField(default="")
+    locale = models.TextField(default="")
 
     class Meta:
         abstract = True

@@ -544,6 +544,9 @@ class JobAnnotation:
             'points',
             'parent',
             'transcript',
+            'gender',
+            'age',
+            'locale',
             'labeledshapeattributeval__spec_id',
             'labeledshapeattributeval__value',
             'labeledshapeattributeval__id',
@@ -898,7 +901,6 @@ def chunk_annotation_audio(audio_file, output_folder, annotations):
     # Loop over shapes
     for i, shape in enumerate(annotations, 1):
         # Extract transcript and time points
-        transcript = shape['transcript']
         start_time = min(shape['points'][:2])
         end_time = max(shape['points'][2:])
 
@@ -1017,7 +1019,7 @@ def export_audino_job(job_id, dst_file, format_name, server_url=None, save_image
         annotation_audio_chunk_file_paths = chunk_annotation_audio(audio_file_path, temp_dir, annotations)
 
         for i in range(0, len(annotation_audio_chunk_file_paths)):
-            final_data.append({"path" : os.path.basename(annotation_audio_chunk_file_paths[i]), "sentence" : annotations[i]["transcript"]})
+            final_data.append({"path" : os.path.basename(annotation_audio_chunk_file_paths[i]), "sentence" : annotations[i]["transcript"], "gender" : annotations[i]["gender"], "locale" : annotations[i]["locale"], "age" : annotations[i]["age"] })
 
         df = pd.DataFrame(final_data)
 
