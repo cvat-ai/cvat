@@ -1,8 +1,10 @@
 # Copyright (C) 2019-2022 Intel Corporation
+# Copyright (C) 2024 CVAT.ai Corporation
 #
 # SPDX-License-Identifier: MIT
 
 import os
+import sys
 import tempfile
 import shutil
 import zipfile
@@ -266,7 +268,8 @@ class ArchiveReader(DirectoryReader):
 
         self._archive_source = source_path[0]
         tmp_dir = extract_dir if extract_dir else os.path.dirname(source_path[0])
-        Archive(self._archive_source).extractall(tmp_dir)
+        patool_path = os.path.join(sys.exec_prefix, 'bin', 'patool')
+        Archive(self._archive_source).extractall(tmp_dir, False, patool_path)
         if not extract_dir:
             os.remove(self._archive_source)
         super().__init__(
