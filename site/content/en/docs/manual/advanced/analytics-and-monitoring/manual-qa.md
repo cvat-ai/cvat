@@ -48,7 +48,8 @@ To assign a reviewer to the job, do the following:
 1. Log in to the Owner or Maintainer account.
 2. (Optional) If the person you wish to assign as a reviewer
    is not a member of **Organization**, you
-   need to [Invite this person to the **Organization**](/docs/manual/advanced/organization/#invite-members-into-organization).
+   need to {{< ilink "/docs/manual/advanced/organization#invite-members-into-organization"
+     "Invite this person to the **Organization**" >}}.
 3. Click on the **Assignee** field and select the reviewer.
 4. From the **Stage** drop-down list, select **Validation**.
 
@@ -96,7 +97,8 @@ To assign a corrector to the job, do the following:
 1. Log in to the Owner or Maintainer account.
 2. (Optional) If the person you wish to assign as a corrector
    is not a member of **Organization**, you
-   need to [Invite this person to the **Organization**](/docs/manual/advanced/organization/#invite-members-into-organization).
+   need to {{< ilink "/docs/manual/advanced/organization#invite-members-into-organization"
+     "Invite this person to the **Organization**" >}}.
 3. Click on the **Assignee** field and select the reviewer.
 4. From the **Stage** drop-down list, select **Annotation**.
 

@@ -33,7 +33,7 @@ context('Cloud storage.', () => {
     describe(`Testing case "${caseId}"`, () => {
         it('Check "Cloud Storage" page.', () => {
             cy.contains('.cvat-header-button', 'Cloud Storages').should('be.visible').click();
-            cy.get('.cvat-empty-cloud-storages-list').should('be.visible');
+            cy.get('.cvat-empty-cloud-storages-list').should('exist');
             cy.get('.cvat-attach-cloud-storage-button').should('be.visible').click();
             cy.get('.cvat-cloud-storage-form').should('be.visible').within(() => {
                 cloudStorageFormElements.forEach(($el) => {

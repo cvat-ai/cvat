@@ -19,7 +19,8 @@ and the details of the task (specified when the task was created) and the jobs s
      By clicking `Copy` you will copy the labels to the clipboard.
   1. Assigned to — is used to assign a task to a person. Start typing an assignee’s name and/or
      choose the right person out of the dropdown list.
-     In the list of users, you will only see the users of the [organization](/docs/manual/advanced/organization/)
+     In the list of users, you will only see the users of the
+     {{< ilink "/docs/manual/advanced/organization" "organization" >}}
      where the task is created.
 
 - **Jobs** — is a list of all jobs for a particular task. Here you can find the next data:
@@ -34,7 +35,7 @@ and the details of the task (specified when the task was created) and the jobs s
   - Assignee is the user who is working on the job.
     You can start typing an assignee’s name and/or choose the right person out of the dropdown list.
   - Reviewer – a user assigned to carry out the review,
-    read more in the [review](/docs/manual/advanced/review/) section.
+    read more in the {{< ilink "/docs/manual/advanced/analytics-and-monitoring/manual-qa" "review" >}} section.
   - `Copy`. By clicking `Copy` you will copy the job list to the clipboard.
     The job list contains direct links to jobs.
 

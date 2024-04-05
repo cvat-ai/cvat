@@ -219,7 +219,7 @@ description: 'Installing a development environment for different operating syste
 
 
 You have done! Now it is possible to insert breakpoints and debug server and client of the tool.
-Instructions for running tests locally are available [here](/docs/contributing/running-tests/).
+Instructions for running tests locally are available {{< ilink "/docs/contributing/running-tests" "here" >}}.
 
 ## Note for Windows users
 
@@ -268,7 +268,7 @@ cvat_vector:
 ```
 
 In addition, you can completely disable analytics if you don't need it by deleting the following data from
-[launch.json](https://github.com/opencv/cvat/blob/develop/.vscode/launch.json):
+[launch.json](https://github.com/cvat-ai/cvat/blob/develop/.vscode/launch.json):
 
 ```json
   "DJANGO_LOG_SERVER_HOST": "localhost",
@@ -276,5 +276,5 @@ In addition, you can completely disable analytics if you don't need it by deleti
 ```
 
 Analytics on GitHub:
-[Analytics Components](https://github.com/opencv/cvat/tree/develop/components/analytics)
+[Analytics Components](https://github.com/cvat-ai/cvat/tree/develop/components/analytics)
 
