@@ -829,7 +829,7 @@ class TestImportExportDatasetProject:
         with zipfile.ZipFile(io.BytesIO(response.data)) as zip_file:
             annotations = zip_file.read("annotations/default.json")
 
-        with make_api_client(admin_user) as api_client, TemporaryDirectory() as tempdir:
+        with make_api_client(admin_user) as api_client:
             project, _ = api_client.projects_api.create(
                 project_write_request=models.ProjectWriteRequest(name="test_json_import_as_project")
             )
