@@ -14,11 +14,13 @@ from django.conf import settings
 from django.http import HttpResponse
 from django.views.decorators.http import etag as django_etag
 from rest_framework.response import Response
+from dj_rest_auth.app_settings import api_settings as dj_rest_auth_settings
 from dj_rest_auth.registration.views import RegisterView
+from dj_rest_auth.utils import jwt_encode
 from dj_rest_auth.views import LoginView
 from allauth.account import app_settings as allauth_settings
 from allauth.account.views import ConfirmEmailView
-from allauth.account.utils import has_verified_email, send_email_confirmation
+from allauth.account.utils import complete_signup, has_verified_email, send_email_confirmation
 
 from furl import furl
 
@@ -97,14 +99,37 @@ class LoginViewEx(LoginView):
 
 class RegisterViewEx(RegisterView):
     def get_response_data(self, user):
-        data = self.get_serializer(user).data
-        data['email_verification_required'] = True
-        data['key'] = None
+        serializer = self.get_serializer(user)
+        return serializer.data
+
+    # NOTE: we should reimplement this method to fix the following issue:
+    # In the previous used version of dj-rest-auth 2.2.7, if the REST_SESSION_LOGIN setting was not defined in the settings file,
+    # the default value specified in the documentation (https://dj-rest-auth.readthedocs.io/en/2.2.7/configuration.html)
+    # was not applied for some unknown reason, and an authentication token was added to a user.
+    # With the dj-rest-auth version 5.0.2, there have been changes to how settings are handled,
+    # and now the default value is properly taken into account.
+    # However, even with the updated code, it still does not handle the scenario
+    # of handling two authentication flows simultaneously during registration process.
+    # Since there is no mention in the dj-rest-auth documentation that session authentication
+    # cannot be used alongside token authentication (https://dj-rest-auth.readthedocs.io/en/latest/configuration.html),
+    # and given the login implementation (https://github.com/iMerica/dj-rest-auth/blob/c6b6530eb0bfa5b10fd7b9e955a39301156e49d2/dj_rest_auth/views.py#L69-L75),
+    # this situation appears to be a bug.
+    # Link to the issue: https://github.com/iMerica/dj-rest-auth/issues/604
+    def perform_create(self, serializer):
+        user = serializer.save(self.request)
         if allauth_settings.EMAIL_VERIFICATION != \
-            allauth_settings.EmailVerificationMethod.MANDATORY:
-            data['email_verification_required'] = False
-            data['key'] = user.auth_token.key
-        return data
+                allauth_settings.EmailVerificationMethod.MANDATORY:
+            if dj_rest_auth_settings.USE_JWT:
+                self.access_token, self.refresh_token = jwt_encode(user)
+            elif self.token_model:
+                dj_rest_auth_settings.TOKEN_CREATOR(self.token_model, user, serializer)
+
+        complete_signup(
+            self.request._request, user,
+            allauth_settings.EMAIL_VERIFICATION,
+            None,
+        )
+        return user
 
 def _etag(etag_func):
     """
