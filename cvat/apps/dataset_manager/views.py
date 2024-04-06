@@ -51,7 +51,7 @@ def export(dst_format, project_id=None, task_id=None, job_id=None, server_url=No
         if task_id is not None:
             logger = slogger.task[task_id]
             cache_ttl = TASK_CACHE_TTL
-            export_fn = task.export_task
+            export_fn = task.export_audino_task if export_for == "audio" else task.export_task
             db_instance = Task.objects.get(pk=task_id)
         elif project_id is not None:
             logger = slogger.project[project_id]
@@ -92,17 +92,8 @@ def export(dst_format, project_id=None, task_id=None, job_id=None, server_url=No
             os.makedirs(cache_dir, exist_ok=True)
             with tempfile.TemporaryDirectory(dir=cache_dir) as temp_dir:
                 temp_file = osp.join(temp_dir, 'result')
-                logger.info("CALLING EXPORT FUNCTION")
-                logger.info(str(db_instance.id))
-                logger.info(str(temp_file))
-                logger.info(str(dst_format))
-                logger.info(server_url)
-                logger.info(str(save_images))
                 export_fn(db_instance.id, temp_file, dst_format,
                     server_url=server_url, save_images=save_images)
-                logger.info("INSIDE EXPORT FUNC")
-                logger.info(temp_file)
-                logger.info(output_path)
                 os.replace(temp_file, output_path)
 
             archive_ctime = osp.getctime(output_path)
@@ -112,7 +103,7 @@ def export(dst_format, project_id=None, task_id=None, job_id=None, server_url=No
                 file_path=output_path,
                 file_ctime=archive_ctime,
                 logger=logger)
-            logger.info("PRINT DTATEMENT")
+
             logger.info(
                 "The {} '{}' is exported as '{}' at '{}' "
                 "and available for downloading for the next {}. "
@@ -137,8 +128,8 @@ def export_job_as_dataset(job_id, dst_format=None, server_url=None):
 def export_task_as_dataset(task_id, dst_format=None, server_url=None):
     return export(dst_format, task_id=task_id, server_url=server_url, save_images=True)
 
-def export_task_annotations(task_id, dst_format=None, server_url=None):
-    return export(dst_format,task_id=task_id, server_url=server_url, save_images=False)
+def export_task_annotations(task_id, dst_format=None, server_url=None, export_for="audio"):
+    return export(dst_format,task_id=task_id, server_url=server_url, save_images=False, export_for=export_for)
 
 def export_project_as_dataset(project_id, dst_format=None, server_url=None):
     return export(dst_format, project_id=project_id, server_url=server_url, save_images=True)
