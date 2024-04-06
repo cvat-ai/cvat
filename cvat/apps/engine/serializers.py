@@ -225,10 +225,7 @@ class UserSerializer(serializers.ModelSerializer):
 
 class DelimitedStringListField(serializers.ListField):
     def to_representation(self, value):
-        if isinstance(value, str):
-            value = value.split('\n')
-
-        return super().to_representation(value)
+        return super().to_representation(value.split('\n'))
 
     def to_internal_value(self, data):
         return '\n'.join(super().to_internal_value(data))
