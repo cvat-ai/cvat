@@ -907,6 +907,8 @@ class Annotation(models.Model):
     gender = models.TextField(default="")
     age = models.TextField(default="")
     locale = models.TextField(default="en")
+    accent = models.TextField(default="")
+    emotion = models.TextField(default="")
 
     class Meta:
         abstract = True
@@ -934,6 +936,8 @@ class Shape(models.Model):
     gender = models.TextField(default="")
     age = models.TextField(default="")
     locale = models.TextField(default="")
+    accent = models.TextField(default="")
+    emotion = models.TextField(default="")
 
     class Meta:
         abstract = True
