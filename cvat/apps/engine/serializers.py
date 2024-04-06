@@ -673,7 +673,7 @@ class JobWriteSerializer(WriteOnceMixin, serializers.ModelSerializer):
 
                 if seed is not None and frame_count < size:
                     # Reproduce the old (a little bit incorrect) behavior that existed before
-                    # https://github.com/opencv/cvat/pull/7126
+                    # https://github.com/cvat-ai/cvat/pull/7126
                     # to make the old seed-based sequences reproducible
                     valid_frame_ids = [v for v in valid_frame_ids if v != task.data.stop_frame]
 
@@ -855,7 +855,7 @@ class JobFileMapping(serializers.ListField):
 class DataSerializer(serializers.ModelSerializer):
     """
     Read more about parameters here:
-    https://opencv.github.io/cvat/docs/manual/basics/create_an_annotation_task/#advanced-configuration
+    https://docs.cvat.ai/docs/manual/basics/create_an_annotation_task/#advanced-configuration
     """
 
     image_quality = serializers.IntegerField(min_value=0, max_value=100,
@@ -900,7 +900,7 @@ class DataSerializer(serializers.ModelSerializer):
     use_cache = serializers.BooleanField(default=False,
         help_text=textwrap.dedent("""\
             Enable or disable task data chunk caching for the task.
-            Read more: https://opencv.github.io/cvat/docs/manual/advanced/data_on_fly/
+            Read more: https://docs.cvat.ai/docs/manual/advanced/data_on_fly/
         """))
     copy_data = serializers.BooleanField(default=False, help_text=textwrap.dedent("""\
             Copy data from the server file share to CVAT during the task creation.
@@ -942,8 +942,7 @@ class DataSerializer(serializers.ModelSerializer):
     class Meta:
         model = models.Data
         fields = (
-            'chunk_size', 'size', 'image_quality', 'start_frame', 'stop_frame', 'frame_filter',
-            'compressed_chunk_type', 'original_chunk_type',
+            'chunk_size', 'image_quality', 'start_frame', 'stop_frame', 'frame_filter',
             'client_files', 'server_files', 'remote_files',
             'use_zip_chunks', 'server_files_exclude',
             'cloud_storage_id', 'use_cache', 'copy_data', 'storage_method',
@@ -952,7 +951,6 @@ class DataSerializer(serializers.ModelSerializer):
         )
         extra_kwargs = {
             'chunk_size': { 'help_text': "Maximum number of frames per chunk" },
-            'size': { 'help_text': "The number of frames" },
             'start_frame': { 'help_text': "First frame index" },
             'stop_frame': { 'help_text': "Last frame index" },
             'frame_filter': { 'help_text': "Frame filter. The only supported syntax is: 'step=N'" },

@@ -49,12 +49,12 @@ For clear all filters press `Clear filters`.
 | `ID`           | number or range of job ID                    |                                             |
 | `Task ID`      | number or range of task ID                   |                                             |
 | `Project ID`   | number or range of project ID                |                                             |
-| `Task name`    | task name                                    | Set when creating a task, <br>can be changed on the ([task page](/docs/manual/basics/task-details/)) |
-| `Project name` | project name                                 | Specified when creating a project, <br>can be changed on the ([project section](/docs/manual/advanced/projects/)) |
+| `Task name`    | task name                                    | Set when creating a task, <br>can be changed on the ({{< ilink "/docs/manual/basics/task-details" "task page" >}}) |
+| `Project name` | project name                                 | Specified when creating a project, <br>can be changed on the ({{< ilink "/docs/manual/advanced/projects" "project section" >}}) |
 
 [state]: /docs/manual/basics/vocabulary/#state
 [stage]: /docs/manual/basics/vocabulary/#stage
-[create-task]: /docs/manual/basics/creating_an_annotation_task
+[create-task]: /docs/manual/basics/create_an_annotation_task
 [create-filter]: /docs/manual/advanced/filter/#create-a-filter
 [operators]: /docs/manual/advanced/filter/#supported-operators-for-properties
 [groups]: /docs/manual/advanced/filter/#groups

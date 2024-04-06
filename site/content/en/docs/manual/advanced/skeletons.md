@@ -16,9 +16,9 @@ A **Skeleton** is composed of numerous points (also referred to as elements),
 which may be connected by edges. Each point functions as an individual object,
 possessing unique attributes and properties like color, occlusion, and visibility.
 
-**Skeletons** can be [**exported**](/docs/manual/advanced/formats/)
-in two formats: [**CVAT for image**](/docs/manual/advanced/formats/format-cvat/#cvat-for-videos-export)
-and [**COCO Keypoints**](/docs/manual/advanced/formats/coco-keypoints/).
+**Skeletons** can be {{< ilink "/docs/manual/advanced/formats" "**exported**" >}}
+in two formats: {{< ilink "/docs/manual/advanced/formats/format-cvat#cvat-for-videos-export" "**CVAT for image**" >}}
+and {{< ilink "/docs/manual/advanced/formats/coco-keypoints" "**COCO Keypoints**" >}}.
 
 > **Note**: that skeletons' labels cannot be imported in a label-less project by importing a dataset.
 > You need to define the labels manually before the import.
@@ -40,9 +40,9 @@ See:
 To start annotating using skeletons, you need to set up a **Skeleton** task
 in **Configurator**:
 
-To open **Configurator**, when [creating a task](/docs/manual/basics/create_an_annotation_task/),
+To open **Configurator**, when {{< ilink "/docs/manual/basics/create_an_annotation_task" "creating a task" >}},
 click on the **Setup skeleton** button if you want to set up the skeleton manually,
-or [**From model**](/docs/manual/advanced/skeletons/#adding-skeleton-labels-from-the-model)
+or {{< ilink "/docs/manual/advanced/skeletons#adding-skeleton-labels-from-the-model" "**From model**" >}}
 if you want to add skeleton labels from a model.
 
 ![](/images/image-setup-skeleton-1.jpg)
@@ -96,7 +96,7 @@ To create the **Skeleton** task, do the following:
 1. Open **Configurator**.
 2. (Optional) Upload background image.
 3. In the Label name field, enter the name of the label.
-4. (Optional) [**Add attribute**](/docs/manual/basics/create_an_annotation_task/#add-an-attribute)
+4. (Optional) {{< ilink "/docs/manual/basics/create_an_annotation_task#add-an-attribute" "**Add attribute**" >}}
    <br>**Note**: you can add attributes exclusively to each point,
    for more information, see [**Configuring Skeleton points**](#configuring-skeleton-points)
 5. Use **Add point** to add points to the **Drawing area**.
@@ -121,8 +121,9 @@ To add points from the model, and annotate do the following:
 
 5. (Optional) If you want to adjust labels, within the
    label, click the **Update** attributes icon.
-   <br>The [**Skeleton configurator**](/docs/manual/advanced/skeletons/#skeleton-configurator)
-   will open, where you can [**configure the skeleton**](/docs/manual/advanced/skeletons/#configuring-skeleton-points).
+   <br>The {{< ilink "/docs/manual/advanced/skeletons#skeleton-configurator" "**Skeleton configurator**" >}}
+   will open, where you can
+   {{< ilink "/docs/manual/advanced/skeletons#configuring-skeleton-points" "**configure the skeleton**" >}}.
    <br>**Note**: Labels cannot be adjusted after the task/project is created.
 6. Click **Done**. The labels, that you selected,
    will appear in the labels window.

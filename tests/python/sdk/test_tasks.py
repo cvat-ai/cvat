@@ -167,7 +167,7 @@ class TestTaskUsecases:
             resource_type=ResourceType.SHARE,
             resources=["images/image_1.jpg", "images/image_2.jpg"],
             # make sure string fields are transferred correctly;
-            # see https://github.com/opencv/cvat/issues/4962
+            # see https://github.com/cvat-ai/cvat/issues/4962
             data_params={"sorting_method": "lexicographical"},
         )
 
