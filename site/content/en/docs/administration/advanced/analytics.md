@@ -69,7 +69,7 @@ see {{< ilink "/docs/contributing/development-environment#cvat-analytics-ports" 
 
 ### Events log structure
 
-[Relational database](https://github.com/opencv/cvat/blob/develop/components/analytics/clickhouse/init.sh)
+[Relational database](https://github.com/cvat-ai/cvat/blob/develop/components/analytics/clickhouse/init.sh)
 schema with the following fields:
 
 <!--lint disable maximum-line-length-->

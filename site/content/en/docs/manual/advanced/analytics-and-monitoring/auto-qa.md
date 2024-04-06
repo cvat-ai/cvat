@@ -78,7 +78,7 @@ To create a **Ground truth** job, do the following:
      It can be any integer number, the same value will yield the same random selection (given that the
      frame number is unchanged). <br> **Note** that if you want to use a
      custom frame sequence, you can do this using the server API instead,
-     see [Jobs API #create](https://opencv.github.io/cvat/docs/api_sdk/sdk/reference/apis/jobs-api/#create).
+     see [Jobs API #create](https://docs.cvat.ai/docs/api_sdk/sdk/reference/apis/jobs-api/#create).
 
 4. Click **Submit**.
 5. Annotate frames, save your work.
