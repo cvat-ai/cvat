@@ -19,14 +19,11 @@ RUN userdel -r django 2>/dev/null \
     && useradd --uid ${HOST_USER_UID} --gid ${HOST_USER_GID} \
     --create-home --shell /bin/zsh --comment "" "devcontainer"
 
-# Uncomment the following lines to add ubuntu packages required specifically for
-# development
-
-# RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
-#     --mount=type=cache,target=/var/lib/apt,sharing=locked \
-#     apt-get update \
-#     && DEBIAN_FRONTEND=noninteractive apt-get --no-install-recommends install -qy \
-#         # <package>=<version>
+RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
+    --mount=type=cache,target=/var/lib/apt,sharing=locked \
+    apt-get update \
+    && DEBIAN_FRONTEND=noninteractive apt-get --no-install-recommends install -qy \
+        parallel=20210822+ds-2
 
 COPY cvat/requirements /tmp/requirements
 # Install packages specific to development and testing and ignore already installed

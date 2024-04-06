@@ -45,24 +45,22 @@
             },
             "problemMatcher": {
               "owner": "django",
+              "fileLocation": "autoDetect",
               "severity": "error",
-              "fileLocation": "absolute",
-              "pattern": [
+              "pattern":[
                 {
-                  "regexp": "ERROR in (.*)",
-                  "file": 1
+                  "regexp": "^(ERROR): (.*): Error occurred on line (\\d+): (.+) \\(exit code: (\\d+)\\)",
+                  "severity": 1,
+                  "file": 2,
+                  "line": 3,
+                  "column": 4,
+                  "message": 5
                 },
-                {
-                  "regexp": "\\((\\d+),(\\d+)\\):(.*)",
-                  "line": 1,
-                  "column": 2,
-                  "message": 3
-                }
               ],
               "background": {
                 "activeOnStart": true,
-                "beginsPattern": "^INFO: Done migrate$",
-                "endsPattern": "^INFO: Done createsuperuser$"
+                "beginsPattern": "^INFO: Start operations$",
+                "endsPattern": "^INFO: Done operations$"
               }
             }
         },

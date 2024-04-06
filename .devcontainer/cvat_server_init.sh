@@ -1,28 +1,62 @@
 #!/usr/bin/env bash
 
-set -e
+set -eu
 
+echo_bold() {
+    bold=$(tput bold)
+    normal=$(tput sgr0)
+    text="${1}"
+    echo "${bold}${text}${normal}"
+}
+
+error_handler() {
+    local error_code=${?}
+    local error_command="${BASH_COMMAND}"
+    local error_line="${BASH_LINENO}"
+
+    echo_bold "ERROR: ${0}: Error occurred on line ${error_line}: ${error_command} (exit code: ${error_code})" >&2
+    exit 1
+}
+
+db_operations() {
+    # Wait for postgres and redis containers to be running and available
+    ./wait-for-it.sh "${CVAT_POSTGRES_HOST}:${CVAT_POSTGRES_PORT:-5432}" -t 0
+    ./wait-for-it.sh "${CVAT_REDIS_INMEM_HOST}:${CVAT_REDIS_INMEM_PORT}" -t 0
+    ./wait-for-it.sh "${CVAT_REDIS_ONDISK_HOST}:${CVAT_REDIS_ONDISK_PORT}" -t 0
+
+    python manage.py migrate
+    while ! python manage.py migrate --check; do
+        echo_bold "Waiting for migrations to finish"
+        sleep 10
+    done
+    python manage.py createsuperuser --no-input >/dev/null 2>&1
+    echo_bold "INFO: Done database migrate and create superuser"
+}
+
+collect_static() {
+    python manage.py collectstatic --noinput
+    echo_bold "INFO: Done collect static files"
+}
+
+update_venv() {
+    mkdir -p /home/devcontainer/tmp
+    cp cvat/requirements/development.txt /home/devcontainer/tmp/development.txt
+    cp cvat/requirements/testing.txt /home/devcontainer/tmp/testing.txt
+    sed -i '/^-r base.txt$/d' /home/devcontainer/tmp/development.txt
+    sed -i '/^-r development.txt$/d' /home/devcontainer/tmp/testing.txt
+    pip install -r /home/devcontainer/tmp/development.txt -r /home/devcontainer/tmp/testing.txt
+    rm -rf /home/devcontainer/tmp
+    echo_bold "INFO: Done update virtual environment packages"
+}
+
+trap error_handler ERR
 workspacefolder="$(dirname "$(dirname "$(realpath "$0")")")"
-
-# Wait for postgres and redis containers to be running and available
-"${workspacefolder}"/wait-for-it.sh "${CVAT_POSTGRES_HOST}:${CVAT_POSTGRES_PORT:-5432}" -t 0
-"${workspacefolder}"/wait-for-it.sh "${CVAT_REDIS_INMEM_HOST}:${CVAT_REDIS_INMEM_PORT}" -t 0
-"${workspacefolder}"/wait-for-it.sh "${CVAT_REDIS_ONDISK_HOST}:${CVAT_REDIS_ONDISK_PORT}" -t 0
-
-python manage.py collectstatic --noinput
-python manage.py migrate
-
-printf "\nINFO: Done migrate\n\n"
-
-while ! python manage.py migrate --check; do
-    echo "Waiting for migrations to finish"
-    sleep 10
-done
-
-python manage.py createsuperuser --no-input >/dev/null 2>&1 || true
-
-printf "\nINFO: Done createsuperuser\n\n"
-
+cd "${workspacefolder}"
+source /opt/venv/bin/activate
+echo_bold "INFO: Start operations"
+export -f echo_bold && export -f db_operations && export -f collect_static && export -f update_venv
+parallel --jobs 3 --ungroup --halt now,fail=1 ::: db_operations collect_static update_venv
+echo_bold "INFO: Done operations"
+echo_bold "INFO: Run django server to serve the OPA client"
 python manage.py runserver 0.0.0.0:"${CVAT_PORT:-8080}"
-
 exit 0

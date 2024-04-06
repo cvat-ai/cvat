@@ -531,7 +531,7 @@
             "request": "launch",
             "stopOnEntry": false,
             "justMyCode": false,
-            "python": "${command:python.interpreterPath}",
+            "python": "/opt/venv/bin/python",
             "program": "${workspaceFolder}/manage.py",
             "env": {
                 "CVAT_SERVERLESS": "1",
@@ -560,7 +560,7 @@
             "request": "launch",
             "stopOnEntry": false,
             "justMyCode": false,
-            "python": "${command:python.interpreterPath}",
+            "python": "/opt/venv/bin/python",
             "program": "${workspaceFolder}/manage.py",
             "args": [
                 "rqworker",
@@ -634,7 +634,7 @@
             "presentation": {
                 "group": "devcontainer",
                 "order": 1
-            }
+            },
         }
     ]
 }
