@@ -225,15 +225,25 @@ class UserSerializer(serializers.ModelSerializer):
 
 class DelimitedStringListField(serializers.ListField):
     def to_representation(self, value):
-        return super().to_representation(value.split('\n'))
+        if isinstance(value, str):
+            value = value.split('\n')
+
+        return super().to_representation(value)
 
     def to_internal_value(self, data):
         return '\n'.join(super().to_internal_value(data))
 
 class AttributeSerializer(serializers.ModelSerializer):
     values = DelimitedStringListField(allow_empty=True,
-        child=serializers.CharField(allow_blank=True, max_length=200),
-    )
+                                      child=serializers.CharField(allow_blank=True, max_length=200))
+    def to_representation(self, instance):
+        representation = super().to_representation(instance)
+
+        # modify attribute display for text input type
+        if instance.input_type == models.AttributeType.TEXT and 'values' in representation:
+            representation['values'] = ["\n".join(representation['values'])]
+
+        return representation
 
     class Meta:
         model = models.AttributeSpec
@@ -286,7 +296,9 @@ class LabelSerializer(SublabelSerializer):
         }
 
     def to_representation(self, instance):
+
         label = super().to_representation(instance)
+
         if label['type'] == str(models.LabelType.SKELETON):
             label['svg'] = instance.skeleton.svg
 
