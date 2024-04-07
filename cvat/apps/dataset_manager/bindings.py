@@ -1953,7 +1953,8 @@ def import_dm_annotations(dm_dataset: dm.Dataset, instance_data: Union[ProjectDa
         'sly_pointcloud',
         'coco',
         'coco_instances',
-        'coco_person_keypoints'
+        'coco_person_keypoints',
+        'voc'
     ]
 
     label_cat = dm_dataset.categories()[dm.AnnotationType.label]
@@ -2080,7 +2081,7 @@ def import_dm_annotations(dm_dataset: dm.Dataset, instance_data: Union[ProjectDa
                         ))
                         continue
 
-                    if track_id is not None:
+                    if keyframe or outside:
                         if track_id not in tracks:
                             tracks[track_id] = {
                                 'label': label_cat.items[ann.label].name,
@@ -2169,7 +2170,8 @@ def import_dm_annotations(dm_dataset: dm.Dataset, instance_data: Union[ProjectDa
         if not prev_shape.outside and prev_shape.frame+instance_data.frame_step <= frame_number:
             prev_shape = prev_shape._replace(outside=True,
                     frame=prev_shape.frame + instance_data.frame_step)
-            track['shapes'].append(prev_shape)
+            prev_shape_idx += 1
+            track['shapes'].insert(prev_shape_idx, prev_shape)
 
     for track in tracks.values():
         track['elements'] = list(track['elements'].values())

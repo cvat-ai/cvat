@@ -2858,3 +2858,99 @@ class TestImportWithComplexFilenames:
                 for tes in te.shapes
             ]
         )
+
+    @pytest.mark.parametrize("format_name", ["Datumaro 1.0", "COCO 1.0", "PASCAL VOC 1.1"])
+    def test_export_and_import_tracked_format_with_outside_true(self, format_name):
+        imageFileNames = [
+            "1.jpg",
+            "2.jpg",
+            "3.jpg",
+            "4.jpg",
+            "5.jpg",
+        ]
+        images = generate_image_files(len(imageFileNames), filenames=imageFileNames)
+
+        source_archive_path = self.tmp_dir / "source_data.zip"
+        with zipfile.ZipFile(source_archive_path, "w") as zip_file:
+            for image in images:
+                zip_file.writestr(image.name, image.getvalue())
+
+        task = self.client.tasks.create_from_data(
+            {
+                "name": "test_tracked_format_with_outside_true_{format_name}",
+                "labels": [{"name": "cat"}],
+            },
+            resources=[source_archive_path],
+        )
+
+        labels = task.get_labels()
+        task.set_annotations(
+            models.LabeledDataRequest(
+                shapes=[
+                    models.LabeledShapeRequest(
+                        frame=0,
+                        label_id=labels[0].id,
+                        type="rectangle",
+                        points=[1, 1, 2, 2],
+                    )
+                ],
+                tracks=[
+                    models.LabeledTrackRequest(
+                        frame=0,
+                        label_id=labels[0].id,
+                        shapes=[
+                            models.TrackedShapeRequest(
+                                frame=0, type="rectangle", points=[3, 2, 2, 3]
+                            ),
+                            models.TrackedShapeRequest(
+                                frame=1, type="rectangle", points=[3, 2, 2, 3]
+                            ),
+                            models.TrackedShapeRequest(
+                                frame=2, type="rectangle", points=[3, 2, 2, 3], outside=True
+                            ),
+                        ],
+                    )
+                ],
+            )
+        )
+
+        dataset_file = self.tmp_dir / (format_name + "some_file.zip")
+        task.export_dataset(format_name, dataset_file, include_images=False)
+
+        original_annotations = task.get_annotations()
+        task.remove_annotations()
+        task.import_annotations(format_name, dataset_file)
+
+        imported_annotations = task.get_annotations()
+
+        # Number of shapes and tracks hasn't changed
+        assert len(original_annotations.shapes) == len(imported_annotations.shapes)
+        assert len(original_annotations.tracks) == len(imported_annotations.tracks)
+
+        for i in range(len(original_annotations.tracks)):
+            assert len(original_annotations.tracks[i].shapes) == len(
+                imported_annotations.tracks[i].shapes
+            )
+
+        # Frames of shapes, tracks and track elements hasn't changed
+        assert set([s.frame for s in original_annotations.shapes]) == set(
+            [s.frame for s in imported_annotations.shapes]
+        )
+        assert set([t.frame for t in original_annotations.tracks]) == set(
+            [t.frame for t in imported_annotations.tracks]
+        )
+        assert set(
+            [
+                tes.frame
+                for t in original_annotations.tracks
+                for te in t.elements
+                for tes in te.shapes
+            ]
+        ) == set(
+            [
+                tes.frame
+                for t in imported_annotations.tracks
+                for te in t.elements
+                for tes in te.shapes
+            ]
+        )
