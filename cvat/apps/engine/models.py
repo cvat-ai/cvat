@@ -851,7 +851,6 @@ class AttributeType(str, Enum):
         return self.value
 
 class AttributeSpec(models.Model):
-    id = models.BigAutoField(primary_key=True)
     label = models.ForeignKey(Label, on_delete=models.CASCADE)
     name = models.CharField(max_length=64)
     mutable = models.BooleanField()

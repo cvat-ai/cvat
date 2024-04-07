@@ -586,7 +586,12 @@ class TestPatchLabels(_TestLabelsPermissionsBase):
     def _get_patch_data(
         self, original_data: Dict[str, Any], **overrides
     ) -> Tuple[Dict[str, Any], Dict[str, Any]]:
-        result = deepcopy(original_data)
+
+        filtered_data = original_data.copy()
+        if filtered_data.get("attributes"):
+            filtered_data["attributes"] = [attr for attr in filtered_data["attributes"] if "id" in attr]
+
+        result = deepcopy(filtered_data)
         result.update(overrides)
 
         ignore_fields = self.ignore_fields.copy()
@@ -594,9 +599,20 @@ class TestPatchLabels(_TestLabelsPermissionsBase):
             payload = deepcopy(overrides)
 
             if overrides.get("attributes"):
-                payload["attributes"] = (original_data.get("attributes") or []) + overrides[
-                    "attributes"
-                ]
+                original_attributes = filtered_data.get("attributes") or []
+                updates_list = overrides["attributes"]
+
+                updates_dict = {update['id']: update for update in updates_list if 'id' in update}
+
+                for sub_array in original_attributes:
+                    if sub_array.get('id') in updates_dict:
+                        sub_array.update(updates_dict[sub_array['id']])
+
+                for sub_array in updates_list:
+                    if sub_array.get('id') is None:
+                        original_attributes.append(sub_array)
+
+                payload["attributes"] = original_attributes
                 result["attributes"] = deepcopy(payload["attributes"])
                 ignore_fields.append("attributes.id")
 
@@ -644,7 +660,19 @@ class TestPatchLabels(_TestLabelsPermissionsBase):
                     ],
                 }.items()
             )
-        ),
+        ) +
+        [
+            ("attributes", [
+                {
+                    "id":1,
+                    "default_value": "mazda_new",
+                    "input_type": "select",
+                    "mutable": True,
+                    "name": "model_new",
+                    "values": ["mazda_new", "bmw"],
+                }
+            ])
+        ]
     )
     @parametrize("source", _TestLabelsPermissionsBase.source_types)
     def test_can_patch_label_field(self, source, admin_user, param, newvalue):
