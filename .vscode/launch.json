@@ -606,7 +606,35 @@
                 "group": "devcontainer",
                 "order": 2
             }
-        }
+        },
+        {
+            "name": "devcontainer: server: unit tests",
+            "type": "debugpy",
+            "request": "launch",
+            "justMyCode": false,
+            "stopOnEntry": false,
+            "python": "/opt/venv/bin/python",
+            "program": "${workspaceFolder}/manage.py",
+            "preLaunchTask": "devcontainer: server init",
+            "args": [
+                "test",
+                "--settings",
+                "cvat.settings.testing",
+                "cvat/apps",
+                "cvat-cli/"
+            ],
+            "django": true,
+            "cwd": "${workspaceFolder}",
+            "env": {
+                "IAM_OPA_HOST": "http://opa:8181"
+            },
+            "console": "internalConsole",
+            "presentation": {
+                "hidden": false,
+                "group": "devcontainer",
+                "order": 3
+            }
+        },
     ],
     "compounds": [
         {
