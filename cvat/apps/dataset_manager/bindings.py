@@ -2081,7 +2081,7 @@ def import_dm_annotations(dm_dataset: dm.Dataset, instance_data: Union[ProjectDa
                         ))
                         continue
 
-                    if keyframe or outside:
+                    if keyframe or not outside:
                         if track_id not in tracks:
                             tracks[track_id] = {
                                 'label': label_cat.items[ann.label].name,
@@ -2106,7 +2106,7 @@ def import_dm_annotations(dm_dataset: dm.Dataset, instance_data: Union[ProjectDa
 
                         tracks[track_id]['shapes'].append(track)
 
-                        if ann.type == dm.AnnotationType.skeleton:
+                        if ann.type == dm.AnnotationType.skeleton and (keyframe or outside):
                             for element in ann.elements:
                                 element_keyframe = dm.util.cast(element.attributes.get('keyframe', None), bool, True)
                                 element_occluded = element.visibility[0] == dm.Points.Visibility.hidden
