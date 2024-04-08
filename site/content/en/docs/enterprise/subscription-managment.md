@@ -93,7 +93,7 @@ enter your VAT and other organizational details.
 Here’s how you can do it:
 
 1. Sign up for a CVAT.ai account and log in.
-2. Create an [organuzation](/docs/manual/advanced/organization/) and switch to an **Organization** account.
+2. Create an [organization](/docs/manual/advanced/organization/) and switch to an **Organization** account.
 3. Navigate to the top right corner, next to the **Organization** name,
    click on the arrow >**Upgrade to Team Plan**> **Get Started**.
    This action will redirect you to the Stripe payment page.
