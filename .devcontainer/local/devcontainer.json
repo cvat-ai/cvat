@@ -45,7 +45,7 @@
         },
         "ghcr.io/devcontainers/features/node:1": {
             "nodeGypDependencies": true,
-            "version": "lts",
+            "version": "16.20.2",
             "nvmVersion": "latest"
         },
         "ghcr.io/devcontainers/features/docker-in-docker:2": {}
