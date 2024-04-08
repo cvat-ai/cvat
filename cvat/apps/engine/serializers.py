@@ -239,6 +239,13 @@ class AttributeSerializer(serializers.ModelSerializer):
         model = models.AttributeSpec
         fields = ('id', 'name', 'mutable', 'input_type', 'default_value', 'values')
 
+    def to_representation(self, instance):
+        attribute = super().to_representation(instance)
+        if attribute.get('input_type') == models.AttributeType.TEXT:
+            attribute['values'] = ["\n".join(attribute['values'])]
+
+        return attribute
+
 class SublabelSerializer(serializers.ModelSerializer):
     id = serializers.IntegerField(required=False)
     attributes = AttributeSerializer(many=True, source='attributespec_set', default=[],
