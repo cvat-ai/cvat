@@ -79,7 +79,8 @@ limitations of the payment processing platform used, which in the case of CVAT.a
 
 Stripe's policy dictates that revisions to an invoice can only be made before payment.
 For more comprehensive information on this policy, please refer to Stripe's official documentation
-on [invoice edits](https://docs.stripe.com/invoicing/invoice-edits#:~:text=Stripe%20lets%20you%20revise%20a,Edit%20the%20invoice%20description.) at their website.
+on [invoice edits](https://docs.stripe.com/invoicing/invoice-edits#:~:text=Stripe%20lets%20you%20revise%20a,Edit%20the%20invoice%20description.)
+at their website.
 
 ### How to add VAT/tax and other information to the CVAT.ai invoice before the first payment?
 
@@ -91,34 +92,34 @@ enter your VAT and other organizational details.
 
 Here’s how you can do it:
 
-1.  Sign up for a CVAT.ai account and log in.
-2.  Create an [organuzation](/docs/manual/advanced/organization/) and switch to an **Organization** account.
-3.  Navigate to the top right corner, next to the **Organization** name, click on the arrow >**Upgrade to Team Plan**> **Get Started**.
-    This action will redirect you to the Stripe payment page.
+1. Sign up for a CVAT.ai account and log in.
+2. Create an [organuzation](/docs/manual/advanced/organization/) and switch to an **Organization** account.
+3. Navigate to the top right corner, next to the **Organization** name, click on the arrow >**Upgrade to Team Plan**> **Get Started**.
+   This action will redirect you to the Stripe payment page.
 
-    > **Important:** Do not proceed with the payment at this stage.
+   > **Important:** Do not proceed with the payment at this stage.
 
-    ![Stripe Payment Page](/images/sm-payment-page.png)
+   ![Stripe Payment Page](/images/sm-payment-page.png)
 
-4.  Go to the [Stripe billing](https://billing.stripe.com/p/login/fZe2aO3J2eDA3W8eUU) page and log
-    in with your CVAT.ai email address. You will receive an email containing a link:
+4. Go to the [Stripe billing](https://billing.stripe.com/p/login/fZe2aO3J2eDA3W8eUU) page and log
+   in with your CVAT.ai email address. You will receive an email containing a link:
 
-    ![Stripe Link](/images/sm-stripe-link.png)
+   ![Stripe Link](/images/sm-stripe-link.png)
 
-    > **Note:** If you did not receive this email, it may indicate that the address you used is not
-    > registered with CVAT.ai, or you may have skipped **Step 3**.
-    > <br>Additionally, remember to check your spam folder.
+   > **Note:** If you did not receive this email, it may indicate that the address you used is not
+   > registered with CVAT.ai, or you may have skipped **Step 3**.
+   > <br>Additionally, remember to check your spam folder.
 
-5.  Click on the link in the email, you will see the following page:
+5. Click on the link in the email, you will see the following page:
 
-    ![Stripe Billing Page](/images/sm-stipe-billing-page.png)
+   ![Stripe Billing Page](/images/sm-stipe-billing-page.png)
 
-6.  In the **Billing Information** section, click **Update information** and add all the needed information
-    about your company. For details, see [How to Subscribe, Change, or Renew Your Subscription](https://www.youtube.com/watch?v=AMPtbmqZKNY).
-7.  Once you have added all the necessary information, return to **Step 3**,
-    and pay for the [Team plan](https://opencv.github.io/cvat/docs/enterprise/subscription-managment/#team-plan).
-    Once the payment has been processed, you will receive a confirmation e-mai.
-8.  All the information you’ve added in **Step 6** will be visible in your account and in the invoice.
+6. In the **Billing Information** section, click **Update information** and add all the needed information
+   about your company. For details, see [How to Subscribe, Change, or Renew Your Subscription](https://www.youtube.com/watch?v=AMPtbmqZKNY).
+7. Once you have added all the necessary information, return to **Step 3**,
+   and pay for the [Team plan](/docs/enterprise/subscription-managment/#team-plan).
+   Once the payment has been processed, you will receive a confirmation e-mai.
+8. All the information you’ve added in **Step 6** will be visible in your account and in the invoice.
 
 ![Stripe Payment Info](/images/sm-profile-inf.png)
 
@@ -140,20 +141,20 @@ If you require a quote from CVAT for payment via bank transfer, certain criteria
 - The **total subscription cost must be $396 and up**.
 - Quotes are available exclusively **for annual subscriptions**.
 
-Should you meet these requirements, please write to support@cvat.ai
+Should you meet these requirements, please write to [support@cvat.ai](mailto:support@cvat.ai)
 
 ## Can you sign an agreement before I subscribe?
 
 Sign of specific agreements and approvals are available if you meet specific criteria
-(the **total subscription cost must be $10,000 and up**), for more details contact support@cvat.ai
+(the **total subscription cost must be $10,000 and up**), for more details contact [support@cvat.ai](mailto:support@cvat.ai)
 
 ## Can you handle a bank transfer with 30-day payment terms?
 
-Yes, it is available if you fit the quota criteria, for details contact support@cvat.ai.
+Yes, it is available if you fit the quota criteria, for details contact [support@cvat.ai](mailto:support@cvat.ai).
 
 ## Where can I find my invoices?
 
-In the top right corner, near the **Organization** name, click on the arrow > **Manage Team Plan** >** Manage.**
+In the top right corner, near the **Organization** name, click on the arrow > **Manage Team Plan** >**Manage**
 
 You will see the Stripe page.
 At the bottom of the page, you will see the **Invoice History** section with all invoices.
@@ -175,7 +176,7 @@ To consider your request for a discount, we'd need a few details from you:
   on a joint marketing statement highlighting your use of CVAT.ai, and how it can benefit your project.
 - We'd also appreciate a positive LinkedIn post about your experience using CVAT, making sure to tag @CVAT.ai.
 
-All these details must be sent to support@cvat.ai. Once we have this
+All these details must be sent to [support@cvat.ai](mailto:support@cvat.ai). Once we have this
 information, we'll gladly offer you a 50% discount for one year.
 
 ## Payment methods
@@ -240,7 +241,7 @@ The procedure is the same for both **Solo** and **Team** plans.
 If for some reason you want to change your plan, you need to:
 
 1. Unsubscribe from the previous plan.
-2. If you need a refund, contact us at [accounting@cvat.ai](mailto:accounting@cvat.ai).
+2. If you need a refund, contact us at [support@cvat.ai](mailto:support@cvat.ai).
 3. Subscribe to a new plan.
 
 ## Can I subscribe to several plans?
