@@ -343,7 +343,7 @@ response data can't be parsed automatically due to the incorrect schema. In this
 simplest workaround is to disable response parsing using the `_parse_response=False`
 method argument.
 
-You can find many examples of API client usage in REST API tests [here](https://github.com/opencv/cvat/tree/develop/tests/python).
+You can find many examples of API client usage in REST API tests [here](https://github.com/cvat-ai/cvat/tree/develop/tests/python).
 
 ### Organizations
 
