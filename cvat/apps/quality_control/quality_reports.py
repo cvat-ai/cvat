@@ -1016,6 +1016,7 @@ class _DistanceComparator(dm.ops.DistanceComparator):
             item_b,
             distance=label_distance,
             label_matcher=lambda a, b: a.label == b.label,
+            dist_thresh=0.5,
         )
 
     def _match_segments(
@@ -1028,6 +1029,7 @@ class _DistanceComparator(dm.ops.DistanceComparator):
         label_matcher: Callable = None,
         a_objs: Optional[Sequence[dm.Annotation]] = None,
         b_objs: Optional[Sequence[dm.Annotation]] = None,
+        dist_thresh=None,
     ):
         if a_objs is None:
             a_objs = self._get_ann_type(t, item_a)
@@ -1046,7 +1048,11 @@ class _DistanceComparator(dm.ops.DistanceComparator):
                 extra_args["label_matcher"] = label_matcher
 
             returned_values = _match_segments(
-                a_objs, b_objs, distance=distance, dist_thresh=self.iou_threshold, **extra_args
+                a_objs,
+                b_objs,
+                distance=distance,
+                dist_thresh=dist_thresh or self.iou_threshold,
+                **extra_args,
             )
 
         if self.return_distances:
