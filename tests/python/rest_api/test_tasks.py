@@ -2927,10 +2927,8 @@ class TestImportWithComplexFilenames:
         assert len(original_annotations.shapes) == len(imported_annotations.shapes)
         assert len(original_annotations.tracks) == len(imported_annotations.tracks)
 
-        for i in range(len(original_annotations.tracks)):
-            assert len(original_annotations.tracks[i].shapes) == len(
-                imported_annotations.tracks[i].shapes
-            )
+        for i, original_track in enumerate(original_annotations.tracks):
+            assert len(original_track.shapes) == len(imported_annotations.tracks[i].shapes)
 
         # Frames of shapes, tracks and track elements hasn't changed
         assert set([s.frame for s in original_annotations.shapes]) == set(
