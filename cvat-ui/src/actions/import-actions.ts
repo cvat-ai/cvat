@@ -8,7 +8,7 @@ import { CombinedState } from 'reducers';
 import { getCore, Storage } from 'cvat-core-wrapper';
 import { EventScope } from 'cvat-logger';
 import { getProjectsAsync } from './projects-actions';
-import { AnnotationActionTypes, fetchAnnotationsAsync } from './annotation-actions';
+import { AnnotationActionTypes, fetchAnnotationsAsync, setFlag } from './annotation-actions';
 
 const core = getCore();
 
@@ -125,6 +125,7 @@ export const importDatasetAsync = (
                     },
                 });
 
+                setFlag(true);
                 setTimeout(() => {
                     dispatch(fetchAnnotationsAsync());
                 });
