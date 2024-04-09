@@ -23,13 +23,14 @@ You can export a dataset to a project, task or job.
 
 1. Choose the format for exporting the dataset. Exporting and importing is available in:
    - Standard CVAT formats:
-     - [CVAT for video](/docs/manual/advanced/xml_format/#interpolation)
+     - {{< ilink "/docs/manual/advanced/xml_format#interpolation" "CVAT for video" >}}
        choose if the task is created in interpolation mode.
-     - [CVAT for images](/docs/manual/advanced/xml_format/#annotation)
+     - {{< ilink "/docs/manual/advanced/xml_format#annotation" "CVAT for images" >}}
        choose if a task is created in annotation mode.
 
        <br>
-   - And also in formats from the [list of annotation formats supported by CVAT](/docs/manual/advanced/formats/).
+   - And also in formats from the
+     {{< ilink "/docs/manual/advanced/formats" "list of annotation formats supported by CVAT" >}}.
 
    - For 3D tasks, the following formats are available:
      - [Kitti Raw Format 1.0](http://www.cvlibs.net/datasets/kitti/raw_data.php)
@@ -43,7 +44,7 @@ You can export a dataset to a project, task or job.
    (for example, if you specified a local storage when you created the project,
    then by default, you will be prompted to export the dataset to your PC).
    You can find out the default value by hovering the mouse over the `?`.
-   Learn more about [attach cloud storage](/docs/manual/basics/attach-cloud-storage/).
+   Learn more about {{< ilink "/docs/manual/basics/attach-cloud-storage" "attach cloud storage" >}}.
 
 ## Import dataset
 

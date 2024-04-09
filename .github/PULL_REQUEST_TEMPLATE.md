@@ -1,7 +1,7 @@
-<!-- Raise an issue to propose your change (https://github.com/opencv/cvat/issues).
+<!-- Raise an issue to propose your change (https://github.com/cvat-ai/cvat/issues).
 It helps to avoid duplication of efforts from multiple independent contributors.
 Discuss your ideas with maintainers to be sure that changes will be approved and merged.
-Read the [Contribution guide](https://opencv.github.io/cvat/docs/contributing/). -->
+Read the [Contribution guide](https://docs.cvat.ai/docs/contributing/). -->
 
 <!-- Provide a general summary of your changes in the Title above -->
 
@@ -27,13 +27,13 @@ If you're unsure about any of these, don't hesitate to ask. We're here to help! 
 - [ ] I have linked related issues (see [GitHub docs](
   https://help.github.com/en/github/managing-your-work-on-github/linking-a-pull-request-to-an-issue#linking-a-pull-request-to-an-issue-using-a-keyword))
 - [ ] I have increased versions of npm packages if it is necessary
-  ([cvat-canvas](https://github.com/opencv/cvat/tree/develop/cvat-canvas#versioning),
-  [cvat-core](https://github.com/opencv/cvat/tree/develop/cvat-core#versioning),
-  [cvat-data](https://github.com/opencv/cvat/tree/develop/cvat-data#versioning) and
-  [cvat-ui](https://github.com/opencv/cvat/tree/develop/cvat-ui#versioning))
+  ([cvat-canvas](https://github.com/cvat-ai/cvat/tree/develop/cvat-canvas#versioning),
+  [cvat-core](https://github.com/cvat-ai/cvat/tree/develop/cvat-core#versioning),
+  [cvat-data](https://github.com/cvat-ai/cvat/tree/develop/cvat-data#versioning) and
+  [cvat-ui](https://github.com/cvat-ai/cvat/tree/develop/cvat-ui#versioning))
 
 ### License
 
 - [ ] I submit _my code changes_ under the same [MIT License](
-  https://github.com/opencv/cvat/blob/develop/LICENSE) that covers the project.
+  https://github.com/cvat-ai/cvat/blob/develop/LICENSE) that covers the project.
   Feel free to contact the maintainers if that's a concern.

@@ -32,7 +32,7 @@ There are several formats in CVAT that can be used to export masks:
 - `CamVid`
 - `MOTS`
 - `ICDAR`
-- `COCO` (RLE-encoded instance masks, [guide](/docs/manual/advanced/formats/format-coco))
+- `COCO` (RLE-encoded instance masks, {{< ilink "/docs/manual/advanced/formats/format-coco" "guide" >}})
 - `Datumaro`
 
 An example of exported masks (in the `Segmentation Mask` format):

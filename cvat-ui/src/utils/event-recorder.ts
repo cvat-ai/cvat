@@ -1,4 +1,4 @@
-// Copyright (C) 2023 CVAT.ai Corporation
+// Copyright (C) 2023-2024 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -15,6 +15,7 @@ const parentClassFilter = ['ant-btn'];
 
 class EventRecorder {
     #savingTimeout: number | null;
+
     public constructor() {
         this.#savingTimeout = null;
         core.logger.log(EventScope.loadTool, {
@@ -52,11 +53,27 @@ class EventRecorder {
     public initSave(): void {
         if (this.#savingTimeout) return;
         this.#savingTimeout = window.setTimeout(() => {
-            core.logger.save().finally(() => {
+            const scheduleSave = (): void => {
                 this.#savingTimeout = null;
                 this.initSave();
-            });
+            };
+            core.logger.save()
+                .then(scheduleSave)
+                .catch((error) => {
+                    if (error?.code === 401) {
+                        this.cancelSave();
+                    } else {
+                        scheduleSave();
+                    }
+                });
         }, CONTROLS_LOGS_INTERVAL);
+    }
+
+    public cancelSave(): void {
+        if (this.#savingTimeout) {
+            window.clearTimeout(this.#savingTimeout);
+            this.#savingTimeout = null;
+        }
     }
 
     private filterClassName(cls: string): string {
