@@ -1772,21 +1772,21 @@ class DatasetComparator:
                     )
                 )
 
-        for shape_unmatched_ann in gt_unmatched:
+        for unmatched_ann in gt_unmatched:
             conflicts.append(
                 AnnotationConflict(
                     frame_id=frame_id,
                     type=AnnotationConflictType.MISSING_ANNOTATION,
-                    annotation_ids=[self._dm_ann_to_ann_id(shape_unmatched_ann, self._gt_dataset)],
+                    annotation_ids=[self._dm_ann_to_ann_id(unmatched_ann, self._gt_dataset)],
                 )
             )
 
-        for shape_unmatched_ann in ds_unmatched:
+        for unmatched_ann in ds_unmatched:
             conflicts.append(
                 AnnotationConflict(
                     frame_id=frame_id,
                     type=AnnotationConflictType.EXTRA_ANNOTATION,
-                    annotation_ids=[self._dm_ann_to_ann_id(shape_unmatched_ann, self._ds_dataset)],
+                    annotation_ids=[self._dm_ann_to_ann_id(unmatched_ann, self._ds_dataset)],
                 )
             )
 
