@@ -83,10 +83,10 @@ optional arguments:
 ### Create
 
 Description of the options you can find in
-[Creating an annotation task](/docs/manual/basics/creating_an_annotation_task/) section.
+{{< ilink "/docs/manual/basics/create_an_annotation_task" "Creating an annotation task" >}} section.
 
 For create a task you need file contain labels in the `json` format, you can create a JSON label specification
-by using the [label constructor](/docs/manual/basics/creating_an_annotation_task/#labels).
+by using the {{< ilink "/docs/manual/basics/create_an_annotation_task#labels" "label constructor" >}}.
 <details>
 <summary>Example JSON labels file</summary>
 
@@ -227,7 +227,7 @@ by using the [label constructor](/docs/manual/basics/creating_an_annotation_task
 ### Auto-annotate
 
 This command provides a command-line interface
-to the [auto-annotation API](/docs/api_sdk/sdk/auto-annotation).
+to the {{< ilink "/docs/api_sdk/sdk/auto-annotation" "auto-annotation API" >}}.
 
 It can auto-annotate using AA functions implemented in one of the following ways:
 
