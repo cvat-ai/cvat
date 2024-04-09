@@ -848,7 +848,7 @@ def _is_archive(path):
     encoding = mime[1]
     supportedArchives = ['application/x-rar-compressed',
         'application/x-tar', 'application/x-7z-compressed', 'application/x-cpio',
-        'gzip', 'bzip2']
+        'application/gzip', 'application/x-bzip']
     return mime_type in supportedArchives or encoding in supportedArchives
 
 def _is_video(path):

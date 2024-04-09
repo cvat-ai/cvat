@@ -3450,8 +3450,6 @@ class TaskDataAPITestCase(ApiTestBase):
                 state = response.data['state']
                 sleep(0.1)
                 max_number_of_attempt -= 1
-            # if data["server_files[0]"] == 'test_rar.rar':
-            #     print(response.content)
             self.assertEqual(state, expected_task_creation_status_state)
             if expected_task_creation_status_state == 'Failed':
                 self.assertIn(expected_task_creation_status_reason, response.data['message'])
@@ -4631,7 +4629,7 @@ class TaskDataAPITestCase(ApiTestBase):
 
     def _test_api_v2_tasks_id_data_create_can_use_local_rar(self, user):
         task_spec = {
-            "name": 'task rar in the shared folder #33',
+            "name": 'task rar client files #33',
             "overlap": 0,
             "segment_size": 0,
             "labels": [
