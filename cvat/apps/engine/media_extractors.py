@@ -4,7 +4,7 @@
 # SPDX-License-Identifier: MIT
 
 import os
-import sys
+import sysconfig
 import tempfile
 import shutil
 import zipfile
@@ -268,7 +268,7 @@ class ArchiveReader(DirectoryReader):
 
         self._archive_source = source_path[0]
         tmp_dir = extract_dir if extract_dir else os.path.dirname(source_path[0])
-        patool_path = os.path.join(sys.exec_prefix, 'bin', 'patool')
+        patool_path = os.path.join(sysconfig.get_path('scripts'), 'patool')
         Archive(self._archive_source).extractall(tmp_dir, False, patool_path)
         if not extract_dir:
             os.remove(self._archive_source)

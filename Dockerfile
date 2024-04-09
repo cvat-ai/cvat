@@ -110,7 +110,6 @@ ENV DJANGO_SETTINGS_MODULE="cvat.settings.${CVAT_CONFIGURATION}"
 RUN apt-get update && \
     DEBIAN_FRONTEND=noninteractive apt-get --no-install-recommends install -yq \
         bzip2 \
-        unrar \
         ca-certificates \
         curl \
         git \
@@ -127,6 +126,7 @@ RUN apt-get update && \
         python3-venv \
         supervisor \
         tzdata \
+        unrar \
     && ln -fs /usr/share/zoneinfo/${TZ} /etc/localtime && \
     dpkg-reconfigure -f noninteractive tzdata && \
     rm -rf /var/lib/apt/lists/* && \

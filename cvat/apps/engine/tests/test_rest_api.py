@@ -9,7 +9,9 @@ from itertools import product
 import os
 import random
 import shutil
+import sysconfig
 import tempfile
+from uuid import uuid4
 import xml.etree.ElementTree as ET
 import zipfile
 from collections import defaultdict
@@ -25,6 +27,7 @@ import json
 import av
 import numpy as np
 from pdf2image import convert_from_bytes
+from pyunpack import Archive
 from django.conf import settings
 from django.contrib.auth.models import Group, User
 from django.http import HttpResponse
@@ -3126,6 +3129,7 @@ class TaskDataAPITestCase(ApiTestBase):
 
         cls._share_image_sizes = {}
         cls._share_files = []
+        cls._unpack_dirs = []
 
         for filename in [
             "test_1.jpg", "test_2.jpg", "test_3.jpg", "test_10.jpg", "test_qwe.jpg",
@@ -3185,6 +3189,18 @@ class TaskDataAPITestCase(ApiTestBase):
                     data = ValidateDimension.get_pcd_properties(file)
                     image_sizes.append((int(data["WIDTH"]), int(data["HEIGHT"])))
         cls._share_image_sizes[filename] = image_sizes
+
+        filename = "test_rar.rar"
+        source_path = os.path.join(os.path.dirname(__file__), 'assets', filename)
+        path = os.path.join(settings.SHARE_ROOT, filename)
+        shutil.copyfile(source_path, path)
+        archive_dir, images = cls._extract_rar_archive(open(source_path, 'rb'))
+        for [f, image] in images:
+            width,height = image.size
+            image_sizes.append((width, height))
+        cls._share_image_sizes[filename] = image_sizes
+        cls._share_files.append(filename)
+        cls._unpack_dirs.append(archive_dir)
 
         filename = "test_velodyne_points.zip"
         path = os.path.join(os.path.dirname(__file__), 'assets', filename)
@@ -3298,6 +3314,9 @@ class TaskDataAPITestCase(ApiTestBase):
             dirs.add(os.path.dirname(filename))
             os.remove(os.path.join(settings.SHARE_ROOT, filename))
 
+        for unpack_dir in cls._unpack_dirs:
+            shutil.rmtree(unpack_dir)
+
         for dirname in sorted(dirs, reverse=True):
             path = os.path.join(settings.SHARE_ROOT, dirname)
             if not os.listdir(path):
@@ -3364,6 +3383,25 @@ class TaskDataAPITestCase(ApiTestBase):
             for f in sorted(chunk.namelist())
         ]
 
+    @staticmethod
+    def _extract_rar_archive(archive):
+        rand_name = uuid4().hex
+        archive_dir = os.path.join(settings.TMP_FILES_ROOT, rand_name)
+        os.makedirs(archive_dir)
+
+        arch_file = os.path.join(archive_dir, f"{rand_name}.rar")
+        with open(arch_file, 'wb') as tmp_file:
+            tmp_file.write(archive.read())
+
+        unpack_dir = os.path.join(settings.TMP_FILES_ROOT, rand_name, "unpack")
+        os.makedirs(unpack_dir)
+
+        patool_path = os.path.join(sysconfig.get_path('scripts'), 'patool')
+        Archive(arch_file).extractall_patool(unpack_dir, patool_path)
+        return archive_dir, [(image, Image.open(os.path.join(unpack_dir, image)))
+                for image in os.listdir(unpack_dir)
+        ]
+
     @classmethod
     def _extract_zip_chunk(cls, chunk_buffer, dimension=DimensionType.DIM_2D):
         return [f[1] for f in cls._extract_zip_archive(chunk_buffer, dimension=dimension)]
@@ -3412,6 +3450,8 @@ class TaskDataAPITestCase(ApiTestBase):
                 state = response.data['state']
                 sleep(0.1)
                 max_number_of_attempt -= 1
+            # if data["server_files[0]"] == 'test_rar.rar':
+            #     print(response.content)
             self.assertEqual(state, expected_task_creation_status_state)
             if expected_task_creation_status_state == 'Failed':
                 self.assertIn(expected_task_creation_status_reason, response.data['message'])
@@ -3518,6 +3558,11 @@ class TaskDataAPITestCase(ApiTestBase):
                 for f in source_files:
                     if zipfile.is_zipfile(f):
                         for frame_name, frame in self._extract_zip_archive(f, dimension=dimension):
+                            source_images[frame_name] = frame
+                    elif isinstance(f, str) and f.endswith('.rar'):
+                        archive_dir, images = self._extract_rar_archive(f)
+                        self._unpack_dirs.append(archive_dir)
+                        for frame_name, frame in images:
                             source_images[frame_name] = frame
                     elif isinstance(f, str) and f.endswith('.pdf'):
                         with open(f, 'rb') as pdf_file:
@@ -4561,6 +4606,47 @@ class TaskDataAPITestCase(ApiTestBase):
                     self.ChunkType.IMAGESET, self.ChunkType.IMAGESET,
                     image_sizes, StorageMethodChoice.FILE_SYSTEM, StorageChoice.LOCAL,
                     send_data_callback=_send_data_and_fail)
+
+    def _test_api_v2_tasks_id_data_create_can_use_server_rar(self, user):
+        task_spec = {
+            "name": 'task rar in the shared folder #32',
+            "overlap": 0,
+            "segment_size": 0,
+            "labels": [
+                {"name": "car"},
+                {"name": "person"},
+            ]
+        }
+
+        task_data = {
+            "server_files[0]": "test_rar.rar",
+            "image_quality": 75,
+            "copy_data": False,
+            "use_cache": True,
+        }
+        image_sizes = self._share_image_sizes[task_data["server_files[0]"]]
+
+        self._test_api_v2_tasks_id_data_spec(user, task_spec, task_data, self.ChunkType.IMAGESET, self.ChunkType.IMAGESET,
+            image_sizes, StorageMethodChoice.CACHE, StorageChoice.LOCAL)
+
+    def _test_api_v2_tasks_id_data_create_can_use_local_rar(self, user):
+        task_spec = {
+            "name": 'task rar in the shared folder #33',
+            "overlap": 0,
+            "segment_size": 0,
+            "labels": [
+                {"name": "car"},
+                {"name": "person"},
+            ]
+        }
+
+        task_data = {
+            "client_files[0]": open(os.path.join(os.path.dirname(__file__), 'assets', 'test_rar.rar'), 'rb'),
+            "image_quality": 75,
+        }
+        image_sizes = self._share_image_sizes["test_rar.rar"]
+        self._test_api_v2_tasks_id_data_spec(user, task_spec, task_data,
+            self.ChunkType.IMAGESET, self.ChunkType.IMAGESET, image_sizes)
 
     def _test_api_v2_tasks_id_data_create(self, user):
         method_list = {
