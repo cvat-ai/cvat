@@ -302,6 +302,7 @@ context('Review pipeline feature', () => {
                     });
                 }
             }
+            cy.get('cvat-issues-sidebar-hidden-resolved-status').click();
             cy.goCheckFrameNumber(0);
             cy.get('.cvat-issues-sidebar-next-frame').should('be.visible').click();
             cy.checkFrameNum(2);
