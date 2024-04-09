@@ -291,6 +291,21 @@ context('Review pipeline feature', () => {
             cy.get('.cvat-issues-sidebar-previous-frame').should('be.visible').click();
             cy.checkFrameNum(1);
 
+            const framesWithIssues = [[0, 1, 'Demo 1'], [1, 0, customIssueDescription], [2, 1, customIssueDescription]];
+            for (const [frame] of framesWithIssues) {
+                cy.goCheckFrameNumber(frame);
+                if (frame === 1) {
+                    cy.collectIssueLabel().then((issueLabelList) => {
+                        for (let label = 0; label < issueLabelList.length; label++) {
+                            cy.resolveIssue(issueLabelList[label], 'Resolved issue');
+                        }
+                    });
+                }
+            }
+            cy.goCheckFrameNumber(0);
+            cy.get('.cvat-issues-sidebar-next-frame').should('be.visible').click();
+            cy.checkFrameNum(2);
+
             // Hide all issues. All issues are hidden on all frames
             cy.get('.cvat-issues-sidebar-shown-issues').click();
             for (const [frame, issues] of countIssuesByFrame) {
