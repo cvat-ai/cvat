@@ -1051,7 +1051,7 @@ class _DistanceComparator(dm.ops.DistanceComparator):
                 a_objs,
                 b_objs,
                 distance=distance,
-                dist_thresh=dist_thresh or self.iou_threshold,
+                dist_thresh=dist_thresh if dist_thresh is not None else self.iou_threshold,
                 **extra_args,
             )
 
