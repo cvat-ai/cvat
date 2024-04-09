@@ -673,7 +673,7 @@ class JobWriteSerializer(WriteOnceMixin, serializers.ModelSerializer):
 
                 if seed is not None and frame_count < size:
                     # Reproduce the old (a little bit incorrect) behavior that existed before
-                    # https://github.com/opencv/cvat/pull/7126
+                    # https://github.com/cvat-ai/cvat/pull/7126
                     # to make the old seed-based sequences reproducible
                     valid_frame_ids = [v for v in valid_frame_ids if v != task.data.stop_frame]
 
@@ -855,7 +855,7 @@ class JobFileMapping(serializers.ListField):
 class DataSerializer(serializers.ModelSerializer):
     """
     Read more about parameters here:
-    https://opencv.github.io/cvat/docs/manual/basics/create_an_annotation_task/#advanced-configuration
+    https://docs.cvat.ai/docs/manual/basics/create_an_annotation_task/#advanced-configuration
     """
 
     image_quality = serializers.IntegerField(min_value=0, max_value=100,
@@ -900,7 +900,7 @@ class DataSerializer(serializers.ModelSerializer):
     use_cache = serializers.BooleanField(default=False,
         help_text=textwrap.dedent("""\
             Enable or disable task data chunk caching for the task.
-            Read more: https://opencv.github.io/cvat/docs/manual/advanced/data_on_fly/
+            Read more: https://docs.cvat.ai/docs/manual/advanced/data_on_fly/
         """))
     copy_data = serializers.BooleanField(default=False, help_text=textwrap.dedent("""\
             Copy data from the server file share to CVAT during the task creation.

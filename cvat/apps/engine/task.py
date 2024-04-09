@@ -426,7 +426,7 @@ def _restore_file_order_from_manifest(
     """
     Restores file ordering for the "predefined" file sorting method of the task creation.
     Checks for extra files in the input.
-    Read more: https://github.com/opencv/cvat/issues/5061
+    Read more: https://github.com/cvat-ai/cvat/issues/5061
     """
 
     input_files = {os.path.relpath(p, upload_dir): p for p in extractor.absolute_source_paths}
@@ -444,7 +444,7 @@ def _restore_file_order_from_manifest(
             "Uploaded files do no match the upload manifest file contents. "
             "Please check the upload manifest file contents and the list of uploaded files. "
             "Mismatching files: {}{}. "
-            "Read more: https://opencv.github.io/cvat/docs/manual/advanced/dataset_manifest/"
+            "Read more: https://docs.cvat.ai/docs/manual/advanced/dataset_manifest/"
             .format(
                 ", ".join(mismatching_display),
                 f" (and {remaining_count} more). " if 0 < remaining_count else ""
@@ -843,7 +843,7 @@ def _create_thread(
                         "Can't find upload manifest file '{}' "
                         "in the uploaded files. When the 'predefined' sorting method is used, "
                         "this file is required in the input files. "
-                        "Read more: https://opencv.github.io/cvat/docs/manual/advanced/dataset_manifest/"
+                        "Read more: https://docs.cvat.ai/docs/manual/advanced/dataset_manifest/"
                         .format(manifest_file or os.path.basename(db_data.get_manifest_path()))
                     )
 

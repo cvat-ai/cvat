@@ -68,7 +68,7 @@ docker volume rm cvat_cvat_db
 export CVAT_VERSION="v2.3.0"
 cd ..
 mv cvat cvat_220
-wget https://github.com/opencv/cvat/archive/refs/tags/${CVAT_VERSION}.zip
+wget https://github.com/cvat-ai/cvat/archive/refs/tags/${CVAT_VERSION}.zip
 unzip ${CVAT_VERSION}.zip && mv cvat-${CVAT_VERSION:1} cvat
 unset CVAT_VERSION
 cd cvat
@@ -90,7 +90,7 @@ cd cvat
 docker compose down
 cd ..
 mv cvat cvat_170
-wget https://github.com/opencv/cvat/archive/refs/tags/${CVAT_VERSION}.zip
+wget https://github.com/cvat-ai/cvat/archive/refs/tags/${CVAT_VERSION}.zip
 unzip ${CVAT_VERSION}.zip && mv cvat-${CVAT_VERSION:1} cvat
 cd cvat
 docker pull cvat/server:${CVAT_VERSION}
