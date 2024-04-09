@@ -59,8 +59,6 @@ spec:
             value: {{ $localValues.envs.ALLOWED_HOSTS | squote}}
           - name: DJANGO_MODWSGI_EXTRA_ARGS
             value: {{ $localValues.envs.DJANGO_MODWSGI_EXTRA_ARGS}}
-          - name: IAM_OPA_BUNDLE
-            value: "1"
           {{ include "cvat.sharedBackendEnv" . | indent 10 }}
           {{- with concat .Values.cvat.backend.additionalEnv $localValues.additionalEnv }}
           {{- toYaml . | nindent 10 }}
