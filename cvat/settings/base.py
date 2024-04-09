@@ -236,7 +236,6 @@ IAM_ADMIN_ROLE = 'admin'
 IAM_ROLES = [IAM_ADMIN_ROLE, 'business', 'user', 'worker']
 IAM_OPA_HOST = 'http://opa:8181'
 IAM_OPA_DATA_URL = f'{IAM_OPA_HOST}/v1/data'
-IAM_OPA_RULES_PATH = 'cvat/apps/iam/rules:'
 LOGIN_URL = 'rest_login'
 LOGIN_REDIRECT_URL = '/'
 
