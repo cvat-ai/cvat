@@ -951,7 +951,7 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
         """
         Applies file ordering for the "predefined" file sorting method of the task creation.
 
-        Read more: https://github.com/opencv/cvat/issues/5061
+        Read more: https://github.com/cvat-ai/cvat/issues/5061
         """
 
         expected_files = ordering
@@ -1154,7 +1154,7 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
             For archives (e.g. '.zip'), a manifest file ('*.jsonl') is required when using
             the 'predefined' file ordering. Such file must be provided next to the archive
             in the list of files. Read more about manifest files here:
-            https://opencv.github.io/cvat/docs/manual/advanced/dataset_manifest/
+            https://docs.cvat.ai/docs/manual/advanced/dataset_manifest/
 
             After all data is sent, the operation status can be retrieved via
             the /status endpoint.
@@ -1429,7 +1429,7 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
             # FIXME: It seems that in some cases exc_info can be None.
             # It's not really clear how it is possible, but it can
             # lead to an error in serializing the response
-            # https://github.com/opencv/cvat/issues/5215
+            # https://github.com/cvat-ai/cvat/issues/5215
             response = { "state": "Failed", "message": parse_exception_message(job.exc_info or "Unknown error") }
         else:
             response = { "state": "Started" }
