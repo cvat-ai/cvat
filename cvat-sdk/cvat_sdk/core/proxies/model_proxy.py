@@ -39,7 +39,8 @@ class ModelProxy(ABC, Generic[ModelType, ApiType]):
     _client: Client
 
     @property
-    def _api_member_name(self) -> str: ...
+    def _api_member_name(self) -> str:
+        ...
 
     def __init__(self, client: Client) -> None:
         self.__dict__["_client"] = client
@@ -141,10 +142,12 @@ class ModelRetrieveMixin(Generic[_EntityT]):
 
 class ModelListMixin(Generic[_EntityT]):
     @overload
-    def list(self: Repo, *, return_json: Literal[False] = False) -> List[_EntityT]: ...
+    def list(self: Repo, *, return_json: Literal[False] = False) -> List[_EntityT]:
+        ...
 
     @overload
-    def list(self: Repo, *, return_json: Literal[True] = False) -> List[Any]: ...
+    def list(self: Repo, *, return_json: Literal[True] = False) -> List[Any]:
+        ...
 
     def list(self: Repo, *, return_json: bool = False) -> List[Union[_EntityT, Any]]:
         """
@@ -163,7 +166,8 @@ class ModelListMixin(Generic[_EntityT]):
 
 class ModelUpdateMixin(ABC, Generic[IModel]):
     @property
-    def _model_partial_update_arg(self: Entity) -> str: ...
+    def _model_partial_update_arg(self: Entity) -> str:
+        ...
 
     def _export_update_fields(
         self: Entity, overrides: Optional[Union[Dict[str, Any], IModel]] = None

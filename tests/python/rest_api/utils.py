@@ -56,7 +56,8 @@ class CollectionSimpleFilterTestBase(metaclass=ABCMeta):
     cmp_ignore_keys: List[str] = ["updated_date"]
 
     @abstractmethod
-    def _get_endpoint(self, api_client: ApiClient) -> Endpoint: ...
+    def _get_endpoint(self, api_client: ApiClient) -> Endpoint:
+        ...
 
     def _retrieve_collection(self, **kwargs) -> List:
         kwargs["return_json"] = True

@@ -20,7 +20,8 @@ class AnnotationCrudMixin(ABC):
     # TODO: refactor
 
     @property
-    def _put_annotations_data_param(self) -> str: ...
+    def _put_annotations_data_param(self) -> str:
+        ...
 
     def get_annotations(self: _EntityT) -> models.ILabeledData:
         (annotations, _) = self.api.retrieve_annotations(getattr(self, self._model_id_field))

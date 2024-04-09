@@ -326,7 +326,7 @@ class TestTaskUsecases:
     def test_can_download_frames(self, fxt_new_task: Task, quality: str, image_extension: str):
         fxt_new_task.download_frames(
             [0],
-            image_extension = image_extension,
+            image_extension=image_extension,
             quality=quality,
             outdir=self.tmp_path,
             filename_pattern="frame-{frame_id}{frame_ext}",
