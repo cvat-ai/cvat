@@ -291,7 +291,7 @@ context('Review pipeline feature', () => {
             cy.get('.cvat-issues-sidebar-previous-frame').should('be.visible').click();
             cy.checkFrameNum(1);
 
-            const framesWithIssues = [[0, 1, 'Demo 1'], [1, 0, customIssueDescription], [2, 1, customIssueDescription]];
+            const framesWithIssues = [[0, 1, 'Demo 1'], [1, 1, customIssueDescription], [2, 1, customIssueDescription]];
             for (const [frame] of framesWithIssues) {
                 cy.goCheckFrameNumber(frame);
                 if (frame === 1) {
