@@ -58,7 +58,7 @@ function ItemAttributeComponent(props: Props): JSX.Element {
     useEffect(() => {
         // wrap to internal use effect to avoid issues
         // with chinese keyboard
-        // https://github.com/opencv/cvat/pull/6916
+        // https://github.com/cvat-ai/cvat/pull/6916
         if (localAttrValue !== attrValue) {
             changeAttribute(attrID, localAttrValue);
         }

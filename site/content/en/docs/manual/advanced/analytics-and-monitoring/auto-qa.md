@@ -59,7 +59,7 @@ we need more samples to estimate quality reliably.
 
 To create a **Ground truth** job, do the following:
 
-1. Create a [task](/docs/manual/basics/create_an_annotation_task/), and open the task page.
+1. Create a {{< ilink "/docs/manual/basics/create_an_annotation_task" "task" >}}, and open the task page.
 2. Click **+**.
 
    ![Create job](/images/honeypot01.jpg)
@@ -78,7 +78,7 @@ To create a **Ground truth** job, do the following:
      It can be any integer number, the same value will yield the same random selection (given that the
      frame number is unchanged). <br> **Note** that if you want to use a
      custom frame sequence, you can do this using the server API instead,
-     see [Jobs API #create](https://opencv.github.io/cvat/docs/api_sdk/sdk/reference/apis/jobs-api/#create).
+     see [Jobs API #create](https://docs.cvat.ai/docs/api_sdk/sdk/reference/apis/jobs-api/#create).
 
 4. Click **Submit**.
 5. Annotate frames, save your work.
@@ -156,7 +156,7 @@ The Analytics page has the following fields:
 | ----------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Mean annotation quality | Displays the average quality of annotations, which includes: the count of accurate annotations, total task annotations, ground truth annotations, accuracy rate, precision rate, and recall rate. |
 | GT Conflicts            | Conflicts identified during quality assessment, including extra or missing annotations. Mouse over the **?** icon for a detailed conflict report on your dataset.                                 |
-| Issues                  | Number of [opened issues](/docs/manual/advanced/review/). If no issues were reported, will show 0.                                                                                                |
+| Issues                  | Number of {{< ilink "/docs/manual/advanced/analytics-and-monitoring/manual-qa" "opened issues" >}}. If no issues were reported, will show 0.                                                                                                |
 | Quality report          | Quality report in JSON format.                                                                                                                                                                    |
 | Ground truth job data   | "Information about ground truth job, including date, time, and number of issues.                                                                                                                  |
 | List of jobs            | List of all the jobs in the task                                                                                                                                                                  |

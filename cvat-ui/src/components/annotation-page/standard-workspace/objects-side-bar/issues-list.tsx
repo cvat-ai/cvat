@@ -74,6 +74,9 @@ export default function LabelsListComponent(): JSX.Element {
             <div className='cvat-objects-sidebar-issues-list-header'>
                 <Row justify='start' align='middle'>
                     <Col>
+                        <Text>{`Items: ${frameIssues.length}`}</Text>
+                    </Col>
+                    <Col offset={1}>
                         <CVATTooltip title='Find the previous frame with issues'>
                             <LeftOutlined className='cvat-issues-sidebar-previous-frame' {...dynamicLeftProps} />
                         </CVATTooltip>
