@@ -136,7 +136,7 @@ context('Basic markdown pipeline', () => {
         });
 
         it('Plain text with 3rdparty picture', () => {
-            const url = 'https://github.com/opencv/cvat/raw/develop/site/content/en/images/cvat_poster_with_name.png';
+            const url = 'https://github.com/cvat-ai/cvat/raw/develop/site/content/en/images/cvat_poster_with_name.png';
             const value = `Plain text with 3rdparty picture\n![image](${url})`;
             cy.intercept('GET', url).as('getPicture');
             setupGuide(value);

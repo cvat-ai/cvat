@@ -10,9 +10,8 @@ import Pagination from 'antd/lib/pagination';
 import { CombinedState, InvitationsQuery } from 'reducers';
 import { Invitation } from 'cvat-core/src/organization';
 import { acceptInvitationAsync, getInvitationsAsync, declineInvitationAsync } from 'actions/invitations-actions';
+import dimensions from 'utils/dimensions';
 import InvitationItem from './invitation-item';
-
-import dimensions from '../projects-page/dimensions';
 
 interface Props {
     query: InvitationsQuery;

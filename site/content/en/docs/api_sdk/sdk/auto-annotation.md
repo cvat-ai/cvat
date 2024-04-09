@@ -35,7 +35,7 @@ The layer can be divided into several parts:
 
 The `auto-annotate` CLI command provides a way to use an AA function from the command line
 rather than from a Python program.
-See [the CLI documentation](/docs/api_sdk/cli/) for details.
+See {{< ilink "/docs/api_sdk/cli" "the CLI documentation" >}} for details.
 
 ## Example
 
