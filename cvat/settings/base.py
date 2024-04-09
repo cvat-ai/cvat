@@ -717,7 +717,15 @@ EXTRA_RULES_PATHS = []
 # By default, email backend is django.core.mail.backends.smtp.EmailBackend
 # But it won't work without additional configuration, so we set it to None
 # to check configuration and throw ImproperlyConfigured if thats a case
-EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
+EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+
+# EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+EMAIL_USE_TLS = True
+EMAIL_HOST = 'email-smtp.ap-south-1.amazonaws.com'  # Replace <region> with your AWS SES region (e.g., us-west-2)
+EMAIL_PORT = 587  # Default SMTP port for AWS SES
+EMAIL_HOST_USER = 'AKIA2UC3C3VMJ2ZG755K'  # Your SMTP username
+EMAIL_HOST_PASSWORD = 'BC+aUdCZGi/dEyW+lQwyTNIT/I+nbkI+4yqElBH55U+z'  # Your SMTP password
+
 
 ONE_RUNNING_JOB_IN_QUEUE_PER_USER = strtobool(os.getenv('ONE_RUNNING_JOB_IN_QUEUE_PER_USER', 'false'))
 

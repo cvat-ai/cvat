@@ -3067,7 +3067,7 @@ def _export_annotations(db_instance, rq_id, request, format_name, action, callba
     EXPORT_FOR = "audio"
 
     if EXPORT_FOR == "audio":
-        AUDIO_FORMATS = ["Common Voice"]
+        AUDIO_FORMATS = ["Common Voice", "Librispeech", "VoxPopuli", "Ted-Lium"]
 
         format_desc = { "ENABLED" : True }
 

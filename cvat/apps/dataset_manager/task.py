@@ -1007,6 +1007,18 @@ def get_audio_job_export_data(job_id, dst_file, job, temp_dir_base, temp_dir):
 
     return final_data, annotation_audio_chunk_file_paths
 
+def convert_annotation_data_format(data, format_name):
+    if format_name == "Common Voice":
+        return data
+    elif format_name == "Librispeech":
+        data = list(map(lambda x: {"chapter_id" : "", "file" : x["path"], "id" : str(uuid.uuid4()), "speaker_id" : "", "text" : x["sentence"]}, data))
+    elif format_name == "VoxPopuli":
+        language_id_mapping = {"en" : 0}
+        data = list(map(lambda x: {"audio_id" : str(uuid.uuid4()), "language" : language_id_mapping[x["locale"]] if language_id_mapping.get(x["locale"]) else None, "audio_path" : x["path"], "raw_text" : x["sentence"], "normalized_text" : x["sentence"], "gender" : x["gender"], "speaker_id" : "", "is_gold_transcript" : False, "accent" : x["accent"]}, data))
+    elif format_name == "Ted-Lium":
+        data = list(map(lambda x: {"file" : x["path"], "text" : x["sentence"], "gender" : x["gender"], "id" : str(uuid.uuid4()), "speaker_id" : ""}, data))
+
+    return data
 def export_audino_job(job_id, dst_file, format_name, server_url=None, save_images=False):
 
     # For big tasks dump function may run for a long time and
@@ -1026,6 +1038,9 @@ def export_audino_job(job_id, dst_file, format_name, server_url=None, save_image
     with TemporaryDirectory(dir=temp_dir_base) as temp_dir:
 
         final_data, annotation_audio_chunk_file_paths = get_audio_job_export_data(job_id, dst_file, job, temp_dir_base, temp_dir)
+
+        # Convert the data into a format
+        final_data = convert_annotation_data_format(final_data, format_name)
 
         df = pd.DataFrame(final_data)
 
