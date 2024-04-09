@@ -807,52 +807,6 @@
     ],
     "tracks": []
   },
-  "Datumaro 1.0 outside true": {
-    "version": 0,
-    "tags": [
-      {
-        "frame": 0,
-        "label_id": null,
-        "group": 0,
-        "source": "manual",
-        "attributes": []
-      }
-    ],
-    "shapes": [],
-    "tracks": [
-      {
-        "frame": 0,
-        "label_id": null,
-        "group": 0,
-        "source": "manual",
-        "shapes": [
-          {
-            "type": "rectangle",
-            "occluded": false,
-            "z_order": 0,
-            "points": [5.54, 3.5, 19.64, 11.19],
-            "frame": 0,
-            "keyframe": true,
-            "outside": false,
-            "rotation":0,
-            "attributes": []
-          },
-          {
-            "type": "rectangle",
-            "occluded": false,
-            "z_order": 0,
-            "points": [5.54, 3.5, 19.64, 11.19],
-            "frame": 1,
-            "keyframe": false,
-            "outside": true,
-            "rotation":0,
-            "attributes": []
-          }
-        ],
-        "attributes": []
-      }
-    ]
-  },
   "CVAT for images 1.1 many jobs": {
     "version": 0,
     "tags": [

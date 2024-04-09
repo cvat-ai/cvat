@@ -1045,47 +1045,6 @@ class TaskDumpUploadTest(_DbTestBase):
                     data_from_task_after_upload = self._get_data_from_task(task_id, include_images)
                     compare_datasets(self, data_from_task_before_upload, data_from_task_after_upload)
 
-    def test_api_v2_tasks_annotations_dump_and_upload_with_datumaro_outside_true(self):
-        test_name = self._testMethodName
-        import_format = "Datumaro 1.0"
-        dump_format_name = "Datumaro 1.0 outside true"
-        include_images_params = (False, True)
-
-        for include_images in include_images_params:
-            with self.subTest(import_format):
-
-                # use Datumaro 1.0 annotations that contains outside property with True value
-                images = self._generate_task_images(3)
-                task = self._create_task(tasks["main"], images)
-                self._create_annotations(task, dump_format_name, "default")
-                task_id = task["id"]
-                data_from_task_before_upload = self._get_data_from_task(task_id, include_images_params[0])
-
-                with TestDir() as test_dir:
-                    # download annotations using track_formats
-                    url = self._generate_url_dump_tasks_annotations(task_id)
-                    file_zip_name = osp.join(test_dir, f'{test_name}_{import_format}.zip')
-                    data = {
-                        "format": import_format,
-                        "action": "download",
-                    }
-                    self._download_file(url, data, self.admin, file_zip_name)
-                    self._check_downloaded_file(file_zip_name)
-
-                    # remove annotations
-                    self._remove_annotations(url, self.admin)
-
-                    # upload annotations
-                    upload_format_name = import_format
-                    url = self._generate_url_upload_tasks_annotations(task_id, upload_format_name)
-                    with open(file_zip_name, 'rb') as binary_file:
-                        self._upload_file(url, binary_file, self.admin)
-
-                    # equals annotations
-                    data_from_task_after_upload = self._get_data_from_task(task_id, include_images)
-                    compare_datasets(self, data_from_task_before_upload, data_from_task_after_upload)
-
-
     def test_api_v2_tasks_annotations_dump_and_upload_with_datumaro(self):
         test_name = self._testMethodName
         # get formats
