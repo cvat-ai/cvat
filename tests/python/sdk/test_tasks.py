@@ -322,6 +322,7 @@ class TestTaskUsecases:
         assert self.stdout.getvalue() == ""
 
     @pytest.mark.parametrize("quality", ("compressed", "original"))
+    @pytest.mark.parametrize("image_extension", (None, "bmp"))
     def test_can_download_frames(self, fxt_new_task: Task, quality: str, image_extension: str):
         fxt_new_task.download_frames(
             [0],
