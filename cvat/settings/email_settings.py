@@ -13,10 +13,4 @@ ACCOUNT_EMAIL_REQUIRED = True
 ACCOUNT_EMAIL_VERIFICATION = 'mandatory'
 
 # Email backend settings for Django
-# EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
-EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
-EMAIL_USE_TLS = True
-EMAIL_HOST = 'email-smtp.ap-south-1.amazonaws.com'  # Replace <region> with your AWS SES region (e.g., us-west-2)
-EMAIL_PORT = 587  # Default SMTP port for AWS SES
-EMAIL_HOST_USER = 'AKIA2UC3C3VMJ2ZG755K'  # Your SMTP username
-EMAIL_HOST_PASSWORD = 'BC+aUdCZGi/dEyW+lQwyTNIT/I+nbkI+4yqElBH55U+z'  # Your SMTP password
+EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
