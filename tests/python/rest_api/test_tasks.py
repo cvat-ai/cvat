@@ -2861,201 +2861,177 @@ class TestImportWithComplexFilenames:
 
     @pytest.mark.parametrize("format_name", ["Datumaro 1.0", "COCO 1.0", "PASCAL VOC 1.1"])
     def test_export_and_import_tracked_format_with_outside_true(self, format_name):
-        imageFileNames = [
-            "1.jpg",
-            "2.jpg",
-            "3.jpg",
-            "4.jpg",
-            "5.jpg",
-        ]
-        images = generate_image_files(len(imageFileNames), filenames=imageFileNames)
+        task_id = 21
+        task = self.client.tasks.retrieve(task_id)
 
-        source_archive_path = self.tmp_dir / "source_data.zip"
-        with zipfile.ZipFile(source_archive_path, "w") as zip_file:
-            for image in images:
-                zip_file.writestr(image.name, image.getvalue())
+        # delete all annotations
+        response = delete_method("admin1", f"tasks/{task_id}/annotations")
+        assert response.status_code == 204, f"Cannot delete task's annotations: {response.content}"
 
-        task = self.client.tasks.create_from_data(
-            {
-                "name": "test_tracked_format_with_outside_true_{format_name}",
-                "labels": [{"name": "cat"}],
-            },
-            resources=[source_archive_path],
+        annotations = {
+            "tracks": [
+                {
+                    "frame": 0,
+                    "label_id": 58,
+                    "shapes": [
+                        {"type": "rectangle", "frame": 0, "points": [3.0, 2.0, 2.0, 3.0]},
+                        {"type": "rectangle", "frame": 1, "points": [3.0, 2.0, 2.0, 3.0]},
+                        {
+                            "type": "rectangle",
+                            "frame": 2,
+                            "points": [3.0, 2.0, 2.0, 3.0],
+                            "outside": True,
+                        },
+                    ],
+                }
+            ]
+        }
+
+        # create annotations with outside true
+        response = patch_method(
+            "admin1", f"tasks/{task_id}/annotations", annotations, action="create"
         )
+        assert response.status_code == 200, f"Cannot update task's annotations: {response.content}"
 
-        labels = task.get_labels()
-        task.set_annotations(
-            models.LabeledDataRequest(
-                shapes=[
-                    models.LabeledShapeRequest(
-                        frame=0,
-                        label_id=labels[0].id,
-                        type="rectangle",
-                        points=[1, 1, 2, 2],
-                    )
-                ],
-                tracks=[
-                    models.LabeledTrackRequest(
-                        frame=0,
-                        label_id=labels[0].id,
-                        shapes=[
-                            models.TrackedShapeRequest(
-                                frame=0, type="rectangle", points=[3, 2, 2, 3]
-                            ),
-                            models.TrackedShapeRequest(
-                                frame=1, type="rectangle", points=[3, 2, 2, 3]
-                            ),
-                            models.TrackedShapeRequest(
-                                frame=2, type="rectangle", points=[3, 2, 2, 3], outside=True
-                            ),
-                        ],
-                    )
-                ],
-            )
-        )
-
-        dataset_file = self.tmp_dir / (format_name + "some_file.zip")
+        dataset_file = self.tmp_dir / (format_name + "source_data.zip")
         task.export_dataset(format_name, dataset_file, include_images=False)
 
-        original_annotations = task.get_annotations()
-        task.remove_annotations()
+        # get the original annotations
+        response = get_method("admin1", f"tasks/{task.id}/annotations")
+        assert response.status_code == 200, f"Cannot get task's annotations: {response.content}"
+        original_annotations = response.json()
+
+        # delete all annotations
+        response = delete_method("admin1", f"tasks/{task_id}/annotations")
+        assert response.status_code == 204, f"Cannot delete task's annotations: {response.content}"
+
+        # import the annotations
         task.import_annotations(format_name, dataset_file)
 
-        imported_annotations = task.get_annotations()
+        response = get_method("admin1", f"tasks/{task.id}/annotations")
+        assert response.status_code == 200, f"Cannot get task's annotations: {response.content}"
+        imported_annotations = response.json()
 
         # Number of shapes and tracks hasn't changed
-        assert len(original_annotations.shapes) == len(imported_annotations.shapes)
-        assert len(original_annotations.tracks) == len(imported_annotations.tracks)
+        assert len(original_annotations["shapes"]) == len(imported_annotations["shapes"])
+        assert len(original_annotations["tracks"]) == len(imported_annotations["tracks"])
 
-        for i, original_track in enumerate(original_annotations.tracks):
-            assert len(original_track.shapes) == len(imported_annotations.tracks[i].shapes)
+        for i, original_track in enumerate(original_annotations["tracks"]):
+            assert len(original_track["shapes"]) == len(imported_annotations["tracks"][i]["shapes"])
 
         # Frames of shapes, tracks and track elements hasn't changed
-        assert set([s.frame for s in original_annotations.shapes]) == set(
-            [s.frame for s in imported_annotations.shapes]
+        assert set([s["frame"] for s in original_annotations["shapes"]]) == set(
+            [s["frame"] for s in imported_annotations["shapes"]]
         )
-        assert set([t.frame for t in original_annotations.tracks]) == set(
-            [t.frame for t in imported_annotations.tracks]
+        assert set([t["frame"] for t in original_annotations["tracks"]]) == set(
+            [t["frame"] for t in imported_annotations["tracks"]]
         )
         assert set(
             [
-                tes.frame
-                for t in original_annotations.tracks
-                for te in t.elements
-                for tes in te.shapes
+                tes["frame"]
+                for t in original_annotations["tracks"]
+                for te in t["elements"]
+                for tes in te["shapes"]
             ]
         ) == set(
             [
-                tes.frame
-                for t in imported_annotations.tracks
-                for te in t.elements
-                for tes in te.shapes
+                tes["frame"]
+                for t in imported_annotations["tracks"]
+                for te in t["elements"]
+                for tes in te["shapes"]
             ]
         )
 
-    def test_export_and_import_coco_keypoints_with_outside_true(self):
+    def test_export_and_import_coco_keypoints_with_outside_true(self, jobs):
+        task_id = 21
         format_name = "COCO Keypoints 1.0"
-        imageFileNames = [
-            "1.jpg",
-            "2.jpg",
-            "3.jpg",
-            "4.jpg",
-            "5.jpg",
-        ]
-        images = generate_image_files(len(imageFileNames), filenames=imageFileNames)
+        task = self.client.tasks.retrieve(task_id)
 
-        source_archive_path = self.tmp_dir / "source_data.zip"
-        with zipfile.ZipFile(source_archive_path, "w") as zip_file:
-            for image in images:
-                zip_file.writestr(image.name, image.getvalue())
+        # delete all annotations in task 21
+        response = delete_method("admin1", f"tasks/{task_id}/annotations")
+        assert response.status_code == 204, f"Cannot delete task's annotations: {response.content}"
 
-        task = self.client.tasks.create_from_data(
-            {
-                "name": "test_tracked_format_with_outside_true_{format_name}",
-                "labels": [{"name": "cat",
-                            "sublabels": [{"name": "body"}]}],
-            },
-            resources=[source_archive_path],
+        annotations = {
+            "tracks": [
+                {
+                    "frame": 0,
+                    "label_id": 58,
+                    "shapes": [
+                        {"type": "skeleton", "frame": 0, "points": []},
+                        {"type": "skeleton", "frame": 1, "points": []},
+                        {"type": "skeleton", "frame": 2, "points": [], "outside": True},
+                    ],
+                    "elements": [
+                        {
+                            "label_id": 59,
+                            "frame": 0,
+                            "shapes": [
+                                {"type": "points", "frame": 0, "points": [1.0, 2.0]},
+                                {"type": "points", "frame": 1, "points": [2.0, 4.0]},
+                                {
+                                    "type": "points",
+                                    "frame": 2,
+                                    "points": [3.0, 6.0],
+                                    "outside": True,
+                                },
+                            ],
+                        },
+                    ],
+                }
+            ]
+        }
+
+        # create annotations of coco keypoints with outside true
+        response = patch_method(
+            "admin1", f"tasks/{task_id}/annotations", annotations, action="create"
         )
+        assert response.status_code == 200, f"Cannot update task's annotations: {response.content}"
 
-        labels = task.get_labels()
-        sublabels = labels[0].sublabels
-
-        task.set_annotations(
-            models.LabeledDataRequest(
-                tracks=[
-                    models.LabeledTrackRequest(
-                        frame=0,
-                        label_id=labels[0].id,
-                        shapes=[
-                            models.TrackedShapeRequest(
-                                frame=0, type="skeleton",outside=False
-                            ),
-                            models.TrackedShapeRequest(
-                                frame=1, type="skeleton",outside=False
-                            ),
-                            models.TrackedShapeRequest(
-                                frame=2, type="skeleton",outside=True
-                            ),
-                        ],
-                        elements=[
-                            models.SubLabeledTrackRequest(
-                                frame=0,
-                                label_id=sublabels[0].id,
-                                shapes=[
-                                    models.TrackedShapeRequest(
-                                        frame=0, type="points", points=[1, 1], outside=False
-                                    ),
-                                    models.TrackedShapeRequest(
-                                        frame=1, type="points", points=[1, 1], outside=False
-                                    ),
-                                    models.TrackedShapeRequest(
-                                        frame=2, type="points", points=[1, 1], outside=True
-                                    ),
-                                ]
-                            )
-                        ]
-                    )
-                ],
-            )
-        )
-
-
-        dataset_file = self.tmp_dir / (format_name + "some_file.zip")
+        dataset_file = self.tmp_dir / (format_name + "source_data.zip")
         task.export_dataset(format_name, dataset_file, include_images=False)
 
-        original_annotations = task.get_annotations()
-        task.remove_annotations()
+        # get the original annotations
+        response = get_method("admin1", f"tasks/{task.id}/annotations")
+        assert response.status_code == 200, f"Cannot get task's annotations: {response.content}"
+        original_annotations = response.json()
+
+        # delete all annotations
+        response = delete_method("admin1", f"tasks/{task_id}/annotations")
+        assert response.status_code == 204, f"Cannot delete task's annotations: {response.content}"
+
+        # import the annotations
         task.import_annotations(format_name, dataset_file)
 
-        imported_annotations = task.get_annotations()
+        response = get_method("admin1", f"tasks/{task.id}/annotations")
+        assert response.status_code == 200, f"Cannot get task's annotations: {response.content}"
+        imported_annotations = response.json()
 
         # Number of shapes and tracks hasn't changed
-        assert len(original_annotations.shapes) == len(imported_annotations.shapes)
-        assert len(original_annotations.tracks) == len(imported_annotations.tracks)
+        assert len(original_annotations["shapes"]) == len(imported_annotations["shapes"])
+        assert len(original_annotations["tracks"]) == len(imported_annotations["tracks"])
 
-        for i, original_track in enumerate(original_annotations.tracks):
-            assert len(original_track.shapes) == len(imported_annotations.tracks[i].shapes)
+        for i, original_track in enumerate(original_annotations["tracks"]):
+            assert len(original_track["shapes"]) == len(imported_annotations["tracks"][i]["shapes"])
 
         # Frames of shapes, tracks and track elements hasn't changed
-        assert set([s.frame for s in original_annotations.shapes]) == set(
-            [s.frame for s in imported_annotations.shapes]
+        assert set([s["frame"] for s in original_annotations["shapes"]]) == set(
+            [s["frame"] for s in imported_annotations["shapes"]]
         )
-        assert set([t.frame for t in original_annotations.tracks]) == set(
-            [t.frame for t in imported_annotations.tracks]
+        assert set([t["frame"] for t in original_annotations["tracks"]]) == set(
+            [t["frame"] for t in imported_annotations["tracks"]]
         )
         assert set(
             [
-                tes.frame
-                for t in original_annotations.tracks
-                for te in t.elements
-                for tes in te.shapes
+                tes["frame"]
+                for t in original_annotations["tracks"]
+                for te in t["elements"]
+                for tes in te["shapes"]
             ]
         ) == set(
             [
-                tes.frame
-                for t in imported_annotations.tracks
-                for te in t.elements
-                for tes in te.shapes
+                tes["frame"]
+                for t in imported_annotations["tracks"]
+                for te in t["elements"]
+                for tes in te["shapes"]
             ]
         )
