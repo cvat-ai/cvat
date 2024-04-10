@@ -51,12 +51,10 @@ class PrimaryMetricBase(metaclass=ABCMeta):
         return cls._is_filterable_by_date
 
     @abstractmethod
-    def calculate(self):
-        ...
+    def calculate(self): ...
 
     @abstractmethod
-    def get_empty(self):
-        ...
+    def get_empty(self): ...
 
     def _make_clickhouse_query(self, parameters):
         return make_clickhouse_query(query=self._query, parameters=parameters)
