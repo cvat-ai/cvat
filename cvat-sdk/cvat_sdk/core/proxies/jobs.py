@@ -140,11 +140,11 @@ class Job(
                 mime_type = im.get_format_mimetype() or "image/jpg"
                 im_ext = mimetypes.guess_extension(mime_type)
 
-            # FIXME It is better to use meta information from the server
-            # to determine the extension
-            # replace '.jpe' or '.jpeg' with a more used '.jpg'
-            if im_ext in (".jpe", ".jpeg", None):
-                im_ext = ".jpg"
+                # FIXME It is better to use meta information from the server
+                # to determine the extension
+                # replace '.jpe' or '.jpeg' with a more used '.jpg'
+                if im_ext in (".jpe", ".jpeg", None):
+                    im_ext = ".jpg"
             else:
                 im_ext = f".{image_extension.strip('.')}"
 
