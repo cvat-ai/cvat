@@ -39,6 +39,7 @@ interface Props {
     hiddenDisabled: boolean;
     keyframeDisabled: boolean;
     switchOccludedShortcut: string;
+    switchPinnedShortcut: string;
     switchOutsideShortcut: string;
     switchLockShortcut: string;
     switchHiddenShortcut: string;
@@ -167,9 +168,11 @@ function SwitchOccluded(props: Props): JSX.Element {
 }
 
 function SwitchPinned(props: Props): JSX.Element {
-    const { pinned, pin, unpin } = props;
+    const {
+        switchPinnedShortcut, pinned, pin, unpin,
+    } = props;
     return (
-        <CVATTooltip title='Switch pinned property'>
+        <CVATTooltip title={`Switch pinned property ${switchPinnedShortcut}`}>
             {pinned ? (
                 <PushpinFilled {...classes.pinned.enabled} onClick={unpin} />
             ) : (
