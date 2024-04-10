@@ -496,7 +496,7 @@ class JobAnnotation:
             'labeledimageattributeval__spec_id',
             'labeledimageattributeval__value',
             'labeledimageattributeval__id',
-        ).order_by('frame')
+        ).order_by('frame').iterator()
 
         db_tags = _merge_table_rows(
             rows=db_tags,
@@ -537,7 +537,7 @@ class JobAnnotation:
             'labeledshapeattributeval__spec_id',
             'labeledshapeattributeval__value',
             'labeledshapeattributeval__id',
-            ).order_by('frame')
+            ).order_by('frame').iterator()
 
         db_shapes = _merge_table_rows(
             rows=db_shapes,
@@ -597,7 +597,7 @@ class JobAnnotation:
             "trackedshape__trackedshapeattributeval__spec_id",
             "trackedshape__trackedshapeattributeval__value",
             "trackedshape__trackedshapeattributeval__id",
-        ).order_by('id', 'trackedshape__frame')
+        ).order_by('id', 'trackedshape__frame').iterator()
 
         db_tracks = _merge_table_rows(
             rows=db_tracks,
