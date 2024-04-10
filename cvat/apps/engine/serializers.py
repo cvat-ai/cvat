@@ -408,9 +408,9 @@ class LabelSerializer(SublabelSerializer):
             attr_id = attr.get('id', None)
             if attr_id is not None:
                 try:
-                    db_attr = models.AttributeSpec.objects.get(id=attr_id)
+                    db_attr = models.AttributeSpec.objects.get(id=attr_id, label=db_label)
                 except models.AttributeSpec.DoesNotExist as ex:
-                    raise serializers.ValidationError(
+                    raise exceptions.NotFound(
                         f'Attribute with id #{attr_id} does not exist'
                     ) from ex
                 created = False
