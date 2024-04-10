@@ -330,9 +330,10 @@ class LabelSerializer(SublabelSerializer):
         sublabels: Iterable[Dict[str, Any]],
         *,
         parent_instance: Union[models.Project, models.Task],
-        parent_label: Optional[models.Label] = None,
+        parent_label: Optional[models.Label] = None
     ) -> Optional[models.Label]:
         parent_info, logger = cls._get_parent_info(parent_instance)
+
         attributes = validated_data.pop('attributespec_set', [])
 
         if validated_data.get('id') is not None:
@@ -490,9 +491,10 @@ class LabelSerializer(SublabelSerializer):
         labels: Iterable[Dict[str, Any]],
         *,
         parent_instance: Union[models.Project, models.Task],
-        parent_label: Optional[models.Label] = None,
+        parent_label: Optional[models.Label] = None
     ):
         _, logger = cls._get_parent_info(parent_instance)
+        
         for label in labels:
             sublabels = label.pop('sublabels', [])
             svg = label.pop('svg', '')
