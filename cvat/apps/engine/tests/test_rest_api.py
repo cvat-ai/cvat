@@ -3194,6 +3194,7 @@ class TaskDataAPITestCase(ApiTestBase):
         source_path = os.path.join(os.path.dirname(__file__), 'assets', filename)
         path = os.path.join(settings.SHARE_ROOT, filename)
         shutil.copyfile(source_path, path)
+        image_sizes = []
         archive_dir, images = cls._extract_rar_archive(open(source_path, 'rb'))
         for [f, image] in images:
             width,height = image.size
@@ -3390,6 +3391,7 @@ class TaskDataAPITestCase(ApiTestBase):
         os.makedirs(archive_dir)
 
         arch_file = os.path.join(archive_dir, f"{rand_name}.rar")
+        archive.seek(0)
         with open(arch_file, 'wb') as tmp_file:
             tmp_file.write(archive.read())
 
@@ -3399,7 +3401,7 @@ class TaskDataAPITestCase(ApiTestBase):
         patool_path = os.path.join(sysconfig.get_path('scripts'), 'patool')
         Archive(arch_file).extractall_patool(unpack_dir, patool_path)
         return archive_dir, [(image, Image.open(os.path.join(unpack_dir, image)))
-                for image in os.listdir(unpack_dir)
+            for image in os.listdir(unpack_dir)
         ]
 
     @classmethod
@@ -3550,7 +3552,6 @@ class TaskDataAPITestCase(ApiTestBase):
                 manifest = next((v for v in source_files if _name_key(v).endswith('.jsonl')), None)
                 source_files = [_add_prefix(f)
                     for f in source_files if not _name_key(f).endswith('jsonl')]
-
                 # Load images
                 source_images = {}
                 for f in source_files:
@@ -3558,10 +3559,16 @@ class TaskDataAPITestCase(ApiTestBase):
                         for frame_name, frame in self._extract_zip_archive(f, dimension=dimension):
                             source_images[frame_name] = frame
                     elif isinstance(f, str) and f.endswith('.rar'):
-                        archive_dir, images = self._extract_rar_archive(f)
+                        with open(f, 'rb') as rar_file:
+                            archive_dir, arhive_frames = self._extract_rar_archive(rar_file)
+                            self._unpack_dirs.append(archive_dir)
+                            for fn, frame in arhive_frames:
+                                source_images[fn] = frame
+                    elif isinstance(f, IOBase) and getattr(f, 'name', '').endswith('.rar'):
+                        archive_dir, arhive_frames = self._extract_rar_archive(f)
                         self._unpack_dirs.append(archive_dir)
-                        for frame_name, frame in images:
-                            source_images[frame_name] = frame
+                        for fn, frame in arhive_frames:
+                            source_images[fn] = frame
                     elif isinstance(f, str) and f.endswith('.pdf'):
                         with open(f, 'rb') as pdf_file:
                             for i, frame in enumerate(convert_from_bytes(pdf_file.read(), fmt='png')):
