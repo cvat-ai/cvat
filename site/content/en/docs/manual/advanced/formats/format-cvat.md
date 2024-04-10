@@ -11,7 +11,7 @@ It is ideal for creating data backups.
 
 For more information, see:
 
-- [Format specification](/docs/manual/advanced/xml_format/)
+- {{< ilink "/docs/manual/advanced/xml_format" "Format specification" >}}
 - [Dataset examples](https://github.com/cvat-ai/datumaro/tree/v0.3/tests/assets/cvat_dataset)
 
 ## CVAT for image export

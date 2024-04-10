@@ -15,7 +15,8 @@ To backup a task or project, open the action menu and select `Backup Task` or `B
 
 ![](/images/image219.jpg)
 
-You can backup a project or a task locally on your PC or using an [attached cloud storage](/docs/manual/basics/attach-cloud-storage/).
+You can backup a project or a task locally on your PC or using an
+{{< ilink "/docs/manual/basics/attach-cloud-storage" "attached cloud storage" >}}.
 
 (Optional) Specify the name in the `Custom name` text field for backup, otherwise the file of backup name
 will be given by the mask `project_<project_name>_backup_<date>_<time>.zip` for the projects
@@ -23,7 +24,8 @@ and `task_<task_name>_backup_<date>_<time>.zip` for the tasks.
 
 ![](/images/image253.jpg)
 
-If you want to save a backup to a specific [attached cloud storage](/docs/manual/basics/attach-cloud-storage/),
+If you want to save a backup to a specific
+{{< ilink "/docs/manual/basics/attach-cloud-storage" "attached cloud storage" >}},
 you should additionally turn off the switch `Use default settings`, select the `Cloud storage` value
 in the `Target storage` and select this storage in the list of the attached cloud storages.
 

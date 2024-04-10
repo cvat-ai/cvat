@@ -103,12 +103,7 @@ context('Lock/hide features.', () => {
     });
 
     beforeEach(() => {
-        cy.document().then((doc) => {
-            const tooltips = Array.from(doc.querySelectorAll('.ant-tooltip'));
-            if (tooltips.length > 0) {
-                cy.get('.ant-tooltip').invoke('hide');
-            }
-        });
+        cy.hideTooltips();
     });
 
     describe(`Testing case "${caseId}"`, () => {

@@ -200,6 +200,36 @@ export class FrameDecoder {
         return null;
     }
 
+    static cropImage(
+        imageBuffer: ArrayBuffer,
+        imageWidth: number,
+        imageHeight: number,
+        width: number,
+        height: number,
+    ): ImageData {
+        if (width === imageWidth && height === imageHeight) {
+            return new ImageData(new Uint8ClampedArray(imageBuffer), width, height);
+        }
+        const source = new Uint32Array(imageBuffer);
+
+        const bufferSize = width * height * 4;
+        if (imageWidth === width) {
+            return new ImageData(new Uint8ClampedArray(imageBuffer, 0, bufferSize), width, height);
+        }
+
+        const buffer = new ArrayBuffer(bufferSize);
+        const rgbaInt32 = new Uint32Array(buffer);
+        const rgbaInt8Clamped = new Uint8ClampedArray(buffer);
+        let writeIdx = 0;
+        for (let row = 0; row < height; row++) {
+            const start = row * imageWidth;
+            rgbaInt32.set(source.subarray(start, start + width), writeIdx);
+            writeIdx += width;
+        }
+
+        return new ImageData(rgbaInt8Clamped, width, height);
+    }
+
     async startDecode(): Promise<void> {
         const blockToDecode = { ...this.requestedChunkToDecode };
         const release = await this.mutex.acquire();
@@ -239,8 +269,13 @@ export class FrameDecoder {
                     const height = Math.round(this.renderHeight / scaleFactor);
                     const width = Math.round(this.renderWidth / scaleFactor);
 
-                    const array = new Uint8ClampedArray(e.data.buf.slice(0, width * height * 4));
-                    createImageBitmap(new ImageData(array, width)).then((bitmap) => {
+                    createImageBitmap(FrameDecoder.cropImage(
+                        e.data.buf,
+                        e.data.width,
+                        e.data.height,
+                        width,
+                        height,
+                    )).then((bitmap) => {
                         decodedFrames[keptIndex] = bitmap;
                         this.chunkIsBeingDecoded.onDecode(keptIndex, decodedFrames[keptIndex]);
 
