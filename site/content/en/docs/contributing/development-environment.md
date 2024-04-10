@@ -210,8 +210,16 @@ description: 'Installing a development environment for different operating syste
 - If you choose to run CVAT in localhost: Select `server: chrome` configuration and run it (F5) to open CVAT in Chrome
 - Alternative: If you changed CVAT_UI_HOST just enter `<YOUR_HOST_IP>:3000` in your browser.
 
+> Note for Mac users
+>
+> You may have a permission denied problem starting the server because **AirPlay Receiver** running on port 5000/7000.
+>
+> Turn off AirPlay Receiver:
+> _Go to System Settings_ → _General_ → _AirDrop & Handoff_ → _Untick Airplay Receiver_.
+
+
 You have done! Now it is possible to insert breakpoints and debug server and client of the tool.
-Instructions for running tests locally are available [here](/docs/contributing/running-tests/).
+Instructions for running tests locally are available {{< ilink "/docs/contributing/running-tests" "here" >}}.
 
 ## Note for Windows users
 
@@ -260,7 +268,7 @@ cvat_vector:
 ```
 
 In addition, you can completely disable analytics if you don't need it by deleting the following data from
-[launch.json](https://github.com/opencv/cvat/blob/develop/.vscode/launch.json):
+[launch.json](https://github.com/cvat-ai/cvat/blob/develop/.vscode/launch.json):
 
 ```json
   "DJANGO_LOG_SERVER_HOST": "localhost",
@@ -268,5 +276,5 @@ In addition, you can completely disable analytics if you don't need it by deleti
 ```
 
 Analytics on GitHub:
-[Analytics Components](https://github.com/opencv/cvat/tree/develop/components/analytics)
+[Analytics Components](https://github.com/cvat-ai/cvat/tree/develop/components/analytics)
 

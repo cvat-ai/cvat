@@ -67,4 +67,4 @@ Usage examples:
 
      ![](/images/gif003_detrac.gif)
 
-     Read more in the section [track mode (advanced)](/docs/manual/advanced/track-mode-advanced/).
+     Read more in the section {{< ilink "/docs/manual/advanced/track-mode-advanced" "track mode (advanced)" >}}.

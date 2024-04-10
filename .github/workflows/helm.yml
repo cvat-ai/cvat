@@ -21,7 +21,7 @@ jobs:
       github.event.pull_request.draft == false &&
       !startsWith(github.event.pull_request.title, '[WIP]') &&
       !startsWith(github.event.pull_request.title, '[Dependent]')
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-latest-big
     steps:
     - uses: actions/checkout@v4
 
