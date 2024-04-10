@@ -263,13 +263,35 @@ class _DbTestBase(APITestCase):
                 jsons = glob(osp.join(tmp_dir, '**', '*.json'), recursive=True)
                 self.assertTrue(jsons)
                 self.assertTrue(set(checking_files).issubset(set(jsons)))
+        elif format_name == "Datumaro 3D 1.0":
+            with tempfile.TemporaryDirectory() as tmp_dir:
+                zipfile.ZipFile(content).extractall(tmp_dir)
+                extracted_files = set(
+                    os.path.relpath(os.path.join(root, file), tmp_dir)
+                    for root, dirs, files in os.walk(tmp_dir)
+                    for file in files
+                )
+                expected_files = set([
+                    'point_clouds/default/000001.pcd',
+                    'point_clouds/default/000002.pcd',
+                    'point_clouds/default/000003.pcd',
+                    'annotations/default.json'
+                ])
+                if related_files:
+                    expected_files.update([
+                        'related_images/default/000001/image_0.png',
+                        'related_images/default/000002/image_0.png',
+                        'related_images/default/000003/image_0.png'
+                    ])
+                self.assertEqual(extracted_files, expected_files)
+
 
 
 class Task3DTest(_DbTestBase):
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
-        cls.format_names = ["Sly Point Cloud Format 1.0", "Kitti Raw Format 1.0"]
+        cls.format_names = ["Sly Point Cloud Format 1.0", "Kitti Raw Format 1.0", "Datumaro 3D 1.0"]
         cls._image_sizes = {}
         cls.pointcloud_pcd_filename = "test_canvas3d.zip"
         cls.pointcloud_pcd_path = osp.join(os.path.dirname(__file__), 'assets', cls.pointcloud_pcd_filename)
@@ -761,5 +783,5 @@ class Task3DTest(_DbTestBase):
                             with open(file_name, "wb") as f:
                                 f.write(content.getvalue())
                         self.assertEqual(osp.exists(file_name), edata['file_exists'])
-                        self._check_dump_content(content, task_ann_prev.data, format_name,related_files=False)
+                        self._check_dump_content(content, task_ann_prev.data, format_name,related_files=True)
 
