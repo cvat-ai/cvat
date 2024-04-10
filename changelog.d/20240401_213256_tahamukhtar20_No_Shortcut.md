@@ -1,4 +1,4 @@
 ### Added
 
-- Added support for pin shortcut (p)
+- Shortcut to switch "pinned" property [P]
   (<https://github.com/opencv/cvat/pull/7709>)
