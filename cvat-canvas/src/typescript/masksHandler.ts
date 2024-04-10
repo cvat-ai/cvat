@@ -90,6 +90,8 @@ export class MasksHandlerImpl implements MasksHandler {
                 opacity: 0.75,
                 left: this.latestMousePos.x - this.tool.size / 2,
                 top: this.latestMousePos.y - this.tool.size / 2,
+                strokeWidth: 1,
+                stroke: 'white',
             };
             this.brushMarker = this.tool.form === 'circle' ? new fabric.Circle({
                 ...common,
