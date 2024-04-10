@@ -494,7 +494,7 @@ class LabelSerializer(SublabelSerializer):
         parent_label: Optional[models.Label] = None
     ):
         _, logger = cls._get_parent_info(parent_instance)
-        
+
         for label in labels:
             sublabels = label.pop('sublabels', [])
             svg = label.pop('svg', '')
