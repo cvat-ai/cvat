@@ -3129,7 +3129,6 @@ class TaskDataAPITestCase(ApiTestBase):
 
         cls._share_image_sizes = {}
         cls._share_files = []
-        cls._unpack_dirs = []
 
         for filename in [
             "test_1.jpg", "test_2.jpg", "test_3.jpg", "test_10.jpg", "test_qwe.jpg",
@@ -3314,9 +3313,6 @@ class TaskDataAPITestCase(ApiTestBase):
             dirs.add(os.path.dirname(filename))
             os.remove(os.path.join(settings.SHARE_ROOT, filename))
 
-        for unpack_dir in cls._unpack_dirs:
-            shutil.rmtree(unpack_dir)
-
         for dirname in sorted(dirs, reverse=True):
             path = os.path.join(settings.SHARE_ROOT, dirname)
             if not os.listdir(path):
@@ -3385,18 +3381,14 @@ class TaskDataAPITestCase(ApiTestBase):
 
     @staticmethod
     def _extract_rar_archive(archive):
-        rand_name = uuid4().hex
-        archive_dir = os.path.join(settings.TMP_FILES_ROOT, rand_name)
-        os.makedirs(archive_dir)
+        with tempfile.TemporaryDirectory(dir=settings.TMP_FILES_ROOT) as archive_dir:
+            patool_path = os.path.join(sysconfig.get_path('scripts'), 'patool')
+            Archive(archive).extractall_patool(archive_dir, patool_path)
 
-        patool_path = os.path.join(sysconfig.get_path('scripts'), 'patool')
-        Archive(archive).extractall_patool(archive_dir, patool_path)
-
-        images = [(image, Image.open(os.path.join(archive_dir, image)))
-            for image in os.listdir(archive_dir)
-        ]
-        shutil.rmtree(archive_dir)
-        return images
+            images = [(image, Image.open(os.path.join(archive_dir, image)))
+                for image in os.listdir(archive_dir)
+            ]
+            return images
 
     @classmethod
     def _extract_zip_chunk(cls, chunk_buffer, dimension=DimensionType.DIM_2D):
@@ -3546,6 +3538,7 @@ class TaskDataAPITestCase(ApiTestBase):
                 manifest = next((v for v in source_files if _name_key(v).endswith('.jsonl')), None)
                 source_files = [_add_prefix(f)
                     for f in source_files if not _name_key(f).endswith('jsonl')]
+
                 # Load images
                 source_images = {}
                 for f in source_files:
