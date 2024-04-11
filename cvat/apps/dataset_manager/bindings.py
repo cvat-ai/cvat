@@ -2122,7 +2122,7 @@ def import_dm_annotations(dm_dataset: dm.Dataset, instance_data: Union[ProjectDa
 
                         if ann.type == dm.AnnotationType.skeleton:
                             for element in ann.elements:
-                                element_keyframe = dm.util.cast(to_boolean(element.attributes.get('keyframe', None)), bool, True)
+                                element_keyframe = dm.util.cast(element.attributes.get('keyframe', None), to_boolean, True)
                                 element_occluded = element.visibility[0] == dm.Points.Visibility.hidden
                                 element_outside = element.visibility[0] == dm.Points.Visibility.absent
 
