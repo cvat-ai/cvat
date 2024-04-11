@@ -141,18 +141,23 @@ class TestJobUsecases:
         assert self.stdout.getvalue() == ""
 
     @pytest.mark.parametrize("quality", ("compressed", "original"))
-    def test_can_download_frames(self, fxt_new_task: Task, quality: str):
+    @pytest.mark.parametrize("image_extension", (None, "bmp"))
+    def test_can_download_frames(self, fxt_new_task: Task, quality: str, image_extension: str):
         fxt_new_task.get_jobs()[0].download_frames(
             [0],
+            image_extension=image_extension,
             quality=quality,
             outdir=self.tmp_path,
             filename_pattern="frame-{frame_id}{frame_ext}",
         )
 
-        if quality == "original":
-            expected_frame_ext = "png"
+        if image_extension is not None:
+            expected_frame_ext = image_extension
         else:
-            expected_frame_ext = "jpg"
+            if quality == "original":
+                expected_frame_ext = "png"
+            else:
+                expected_frame_ext = "jpg"
 
         assert (self.tmp_path / f"frame-0.{expected_frame_ext}").is_file()
         assert self.stdout.getvalue() == ""
