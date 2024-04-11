@@ -1539,7 +1539,7 @@ class CvatTaskOrJobDataExtractor(dm.SourceExtractor, CVATDataExtractorMixin):
 
                 dm_item = dm.DatasetItem(
                     id=osp.splitext(osp.split(frame_data.name)[-1])[0],
-                    annotations=dm_anno, 
+                    annotations=dm_anno,
                     media=PointCloud(dm_image[0], extra_images=extra_images_objects),
                     attributes=attributes
                 )
@@ -1633,7 +1633,7 @@ class CVATProjectDataExtractor(dm.Extractor, CVATDataExtractorMixin):
 
                 dm_item = dm.DatasetItem(
                     id=osp.splitext(osp.split(frame_data.name)[-1])[0],
-                    annotations=dm_anno, 
+                    annotations=dm_anno,
                     media=PointCloud(dm_image[0], extra_images=extra_images_objects),
                     attributes=attributes, subset=frame_data.subset
                 )
