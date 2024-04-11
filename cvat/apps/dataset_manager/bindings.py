@@ -2034,10 +2034,10 @@ def import_dm_annotations(dm_dataset: dm.Dataset, instance_data: Union[ProjectDa
                     # because in some formats return type can be different
                     # from bool / None
                     # https://github.com/openvinotoolkit/datumaro/issues/719
-                    occluded = dm.util.cast(to_boolean(ann.attributes.pop('occluded', None)), bool) is True
+                    occluded = dm.util.cast(ann.attributes.pop('occluded', None), to_boolean) is True
 
-                    keyframe = dm.util.cast(to_boolean(ann.attributes.get('keyframe', None)), bool) is True
-                    outside = dm.util.cast(to_boolean(ann.attributes.pop('outside', None)), bool) is True
+                    keyframe = dm.util.cast(ann.attributes.get('keyframe', None), to_boolean) is True
+                    outside = dm.util.cast(ann.attributes.pop('outside', None), to_boolean) is True
 
                     track_id = ann.attributes.pop('track_id', None)
                     source = ann.attributes.pop('source').lower() \
