@@ -15,6 +15,7 @@ from types import SimpleNamespace
 from typing import (Any, Callable, DefaultDict, Dict, Iterable, List, Literal, Mapping,
                     NamedTuple, Optional, OrderedDict, Sequence, Set, Tuple, Union)
 
+from attrs.converters import to_bool
 import datumaro as dm
 import defusedxml.ElementTree as ET
 import numpy as np
@@ -24,7 +25,6 @@ from datumaro.components.media import PointCloud
 from django.db.models import QuerySet
 from django.utils import timezone
 
-from cvat.apps.dataset_manager.util import to_boolean
 from cvat.apps.dataset_manager.formats.utils import get_label_color
 from cvat.apps.dataset_manager.util import add_prefetch_fields
 from cvat.apps.engine.frame_provider import FrameProvider
@@ -2034,10 +2034,9 @@ def import_dm_annotations(dm_dataset: dm.Dataset, instance_data: Union[ProjectDa
                     # because in some formats return type can be different
                     # from bool / None
                     # https://github.com/openvinotoolkit/datumaro/issues/719
-                    occluded = dm.util.cast(ann.attributes.pop('occluded', None), to_boolean) is True
-
-                    keyframe = dm.util.cast(ann.attributes.get('keyframe', None), to_boolean) is True
-                    outside = dm.util.cast(ann.attributes.pop('outside', None), to_boolean) is True
+                    occluded = dm.util.cast(ann.attributes.pop('occluded', None), to_bool) is True
+                    keyframe = dm.util.cast(ann.attributes.get('keyframe', None), to_bool) is True
+                    outside = dm.util.cast(ann.attributes.pop('outside', None), to_bool) is True
 
                     track_id = ann.attributes.pop('track_id', None)
                     source = ann.attributes.pop('source').lower() \
@@ -2122,7 +2121,7 @@ def import_dm_annotations(dm_dataset: dm.Dataset, instance_data: Union[ProjectDa
 
                         if ann.type == dm.AnnotationType.skeleton:
                             for element in ann.elements:
-                                element_keyframe = dm.util.cast(element.attributes.get('keyframe', None), to_boolean, True)
+                                element_keyframe = dm.util.cast(element.attributes.get('keyframe', None), to_bool, True)
                                 element_occluded = element.visibility[0] == dm.Points.Visibility.hidden
                                 element_outside = element.visibility[0] == dm.Points.Visibility.absent
 
