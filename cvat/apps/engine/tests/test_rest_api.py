@@ -11,7 +11,6 @@ import random
 import shutil
 import sysconfig
 import tempfile
-from uuid import uuid4
 import xml.etree.ElementTree as ET
 import zipfile
 from collections import defaultdict
