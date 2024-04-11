@@ -323,12 +323,14 @@ context('Review pipeline feature', () => {
 
             // Comment issues and resolve them
             for (const [frame] of countIssuesByFrame) {
-                cy.goCheckFrameNumber(frame);
-                cy.collectIssueLabel().then((issueLabelList) => {
-                    for (let label = 0; label < issueLabelList.length; label++) {
-                        cy.resolveIssue(issueLabelList[label], 'Resolved issue');
-                    }
-                });
+                if (frame !== 1) {
+                    cy.goCheckFrameNumber(frame);
+                    cy.collectIssueLabel().then((issueLabelList) => {
+                        for (let label = 0; label < issueLabelList.length; label++) {
+                            cy.resolveIssue(issueLabelList[label], 'Resolved issue');
+                        }
+                    });
+                }
             }
 
             cy.setJobState('completed');
