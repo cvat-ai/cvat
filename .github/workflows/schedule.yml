@@ -153,7 +153,7 @@ jobs:
 
       - name: OPA tests
         run: |
-          curl -L -o opa https://openpolicyagent.org/downloads/v0.45.0/opa_linux_amd64_static
+          curl -L -o opa https://openpolicyagent.org/downloads/v0.63.0/opa_linux_amd64_static
           chmod +x ./opa
           ./opa test cvat/apps/iam/rules
 
