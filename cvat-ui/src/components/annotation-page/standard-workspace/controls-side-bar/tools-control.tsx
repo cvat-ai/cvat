@@ -50,6 +50,7 @@ import ApproximationAccuracy, {
 } from 'components/annotation-page/standard-workspace/controls-side-bar/approximation-accuracy';
 import { switchToolsBlockerState } from 'actions/settings-actions';
 import { ReactMarkdown } from 'react-markdown/lib/react-markdown';
+import { InteractorResults, TrackerResults, SerializedShape } from 'cvat-core/src/lambda-manager';
 import withVisibilityHandling from './handle-popover-visibility';
 import ToolsTooltips from './interactor-tooltips';
 
@@ -378,17 +379,17 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
                     jobInstance.taskId,
                     interactor,
                     { ...data, job: jobInstance.id },
-                );
+                ) as InteractorResults;
 
                 // if only mask presented, let's receive points
                 if (response.mask && !response.points) {
                     const left = response.bounds ? response.bounds[0] : 0;
                     const top = response.bounds ? response.bounds[1] : 0;
-                    response.points = await this.receivePointsFromMask(response.mask, left, top);
+                    response.points = await this.receivePointsFromMask(response.mask, left, top) as number[];
                 }
 
                 // approximation with cv.approxPolyDP
-                const approximated = await this.approximateResponsePoints(response.points);
+                const approximated = await this.approximateResponsePoints(response.points as number[][]);
                 const rle = core.utils.mask2Rle(response.mask.flat());
                 if (response.bounds) {
                     rle.push(...response.bounds);
@@ -398,8 +399,6 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
                     rle.push(0, 0, width - 1, height - 1);
                 }
 
-                response.mask = rle;
-
                 if (this.interaction.id !== interactionId || this.interaction.isAborted) {
                     // new interaction session or the session is aborted
                     return;
@@ -407,7 +406,7 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
 
                 this.interaction.latestResponse = {
                     bounds: response.bounds,
-                    points: response.points,
+                    points: response.points as number[][],
                     rle,
                 };
                 this.interaction.lastestApproximatedPoints = approximated;
@@ -767,7 +766,7 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
                             frame: frame - 1,
                             shapes: trackableObjects.shapes,
                             job: jobInstance.id,
-                        });
+                        }) as TrackerResults;
 
                         const { states: serverlessStates } = response;
                         const statefullContainer = trackingData.statefull[trackerID] || {
@@ -816,7 +815,7 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
                             shapes: trackableObjects.shapes,
                             states: trackableObjects.states,
                             job: jobInstance.id,
-                        });
+                        }) as TrackerResults;
 
                         response.shapes = response.shapes.map(trackedRectangleMapper);
                         for (let i = 0; i < trackableObjects.clientIDs.length; i++) {
@@ -1228,18 +1227,7 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
                         this.setState({ mode: 'detection', fetching: true });
                         const result = await core.lambda.call(jobInstance.taskId, model, {
                             ...body, frame, job: jobInstance.id,
-                        });
-
-                        type SerializedShape = {
-                            type: ShapeType;
-                            rotation?: number;
-                            attributes: { name: string; value: string }[];
-                            label: string;
-                            outside?: boolean;
-                            points?: number[];
-                            mask?: number[];
-                            elements: SerializedShape[];
-                        };
+                        }) as SerializedShape[];
 
                         const states = result.map(
                             (data: SerializedShape): ObjectState | null => {
