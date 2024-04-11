@@ -301,7 +301,7 @@ context('Review pipeline feature', () => {
             cy.get('.cvat-issues-sidebar-hidden-resolved-status').click();
             cy.get('.cvat-issues-sidebar-next-frame').should('be.visible').click();
             cy.checkFrameNum(2);
-            cy.get('.cvat-issue-sidebar-hidden-resolved-status').click();
+            cy.get('.cvat-issues-sidebar-hidden-resolved-status').click();
 
             // Hide all issues. All issues are hidden on all frames
             cy.get('.cvat-issues-sidebar-shown-issues').click();
