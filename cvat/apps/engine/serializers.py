@@ -231,6 +231,7 @@ class DelimitedStringListField(serializers.ListField):
         return '\n'.join(super().to_internal_value(data))
 
 class AttributeSerializer(serializers.ModelSerializer):
+    id = serializers.IntegerField(required=False)
     values = DelimitedStringListField(allow_empty=True,
         child=serializers.CharField(allow_blank=True, max_length=200),
     )
@@ -405,9 +406,19 @@ class LabelSerializer(SublabelSerializer):
             raise exceptions.ValidationError(str(exc)) from exc
 
         for attr in attributes:
-            (db_attr, created) = models.AttributeSpec.objects.get_or_create(
-                label=db_label, name=attr['name'], defaults=attr
-            )
+            attr_id = attr.get('id', None)
+            if attr_id is not None:
+                try:
+                    db_attr = models.AttributeSpec.objects.get(id=attr_id, label=db_label)
+                except models.AttributeSpec.DoesNotExist as ex:
+                    raise exceptions.NotFound(
+                        f'Attribute with id #{attr_id} does not exist'
+                    ) from ex
+                created = False
+            else:
+                (db_attr, created) = models.AttributeSpec.objects.get_or_create(
+                    label=db_label, name=attr['name'], defaults=attr
+                )
             if created:
                 logger.info("New {} attribute for {} label was created"
                     .format(db_attr.name, db_label.name))
@@ -416,6 +427,7 @@ class LabelSerializer(SublabelSerializer):
                     .format(db_attr.name, db_label.name))
 
                 # FIXME: need to update only "safe" fields
+                db_attr.name = attr.get('name', db_attr.name)
                 db_attr.default_value = attr.get('default_value', db_attr.default_value)
                 db_attr.mutable = attr.get('mutable', db_attr.mutable)
                 db_attr.input_type = attr.get('input_type', db_attr.input_type)
