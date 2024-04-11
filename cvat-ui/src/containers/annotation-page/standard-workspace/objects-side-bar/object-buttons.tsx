@@ -250,6 +250,7 @@ class ItemButtonsWrapper extends React.PureComponent<StateToProps & DispatchToPr
                 hidden={objectState.hidden}
                 keyframe={objectState.keyframe}
                 switchOccludedShortcut={normalizedKeyMap.SWITCH_OCCLUDED}
+                switchPinnedShortcut={normalizedKeyMap.SWITCH_PINNED}
                 switchOutsideShortcut={normalizedKeyMap.SWITCH_OUTSIDE}
                 switchLockShortcut={normalizedKeyMap.SWITCH_LOCK}
                 switchHiddenShortcut={normalizedKeyMap.SWITCH_HIDDEN}

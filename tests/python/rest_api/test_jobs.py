@@ -576,7 +576,6 @@ class TestGetJobs:
     "restore_db_per_class"
 )
 class TestGetGtJobData:
-
     def _delete_gt_job(self, user, gt_job_id):
         with make_api_client(user) as api_client:
             api_client.jobs_api.destroy(gt_job_id)
