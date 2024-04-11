@@ -6315,7 +6315,6 @@ components:
       properties:
         id:
           type: integer
-          readOnly: true
         name:
           type: string
           maxLength: 64
@@ -6339,6 +6338,8 @@ components:
     AttributeRequest:
       type: object
       properties:
+        id:
+          type: integer
         name:
           type: string
           minLength: 1
