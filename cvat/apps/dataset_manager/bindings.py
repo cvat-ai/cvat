@@ -1963,7 +1963,6 @@ def import_dm_annotations(dm_dataset: dm.Dataset, instance_data: Union[ProjectDa
     root_hint = find_dataset_root(dm_dataset, instance_data)
 
     tracks = {}
-    ending_tracks = {}
 
     for item in dm_dataset:
         frame_number = instance_data.abs_frame_id(
@@ -2092,13 +2091,6 @@ def import_dm_annotations(dm_dataset: dm.Dataset, instance_data: Union[ProjectDa
                                 'shapes': [],
                                 'elements':{},
                             }
-                            ending_tracks[track_id] = {
-                                'label': label_cat.items[ann.label].name,
-                                'group': group_map.get(ann.group, 0),
-                                'source': source,
-                                'shapes': [],
-                                'elements':{},
-                            }
 
                         track = instance_data.TrackedShape(
                             type=shapes[ann.type],
@@ -2113,11 +2105,7 @@ def import_dm_annotations(dm_dataset: dm.Dataset, instance_data: Union[ProjectDa
                             attributes=attributes,
                         )
 
-                        if keyframe or outside:
-                            tracks[track_id]['shapes'].append(track)
-                            ending_tracks[track_id]['shapes'] = []
-                        else:
-                            ending_tracks[track_id]['shapes'].append(track)
+                        tracks[track_id]['shapes'].append(track)
 
                         if ann.type == dm.AnnotationType.skeleton:
                             for element in ann.elements:
@@ -2127,12 +2115,6 @@ def import_dm_annotations(dm_dataset: dm.Dataset, instance_data: Union[ProjectDa
 
                                 if element.label not in tracks[track_id]['elements']:
                                     tracks[track_id]['elements'][element.label] = instance_data.Track(
-                                        label=label_cat.items[element.label].name,
-                                        group=0,
-                                        source=source,
-                                        shapes=[],
-                                    )
-                                    ending_tracks[track_id]['elements'][element.label] = instance_data.Track(
                                         label=label_cat.items[element.label].name,
                                         group=0,
                                         source=source,
@@ -2157,11 +2139,8 @@ def import_dm_annotations(dm_dataset: dm.Dataset, instance_data: Union[ProjectDa
                                     source=element_source,
                                     attributes=element_attributes,
                                 )
-                                if (element_keyframe or element_outside) and (keyframe or outside):
-                                    tracks[track_id]['elements'][element.label].shapes.append(new_element_shape)
-                                    ending_tracks[track_id]['elements'][element.label].shapes.clear()
-                                else:
-                                    ending_tracks[track_id]['elements'][element.label].shapes.append(new_element_shape)
+
+                                tracks[track_id]['elements'][element.label].shapes.append(new_element_shape)
 
                 elif ann.type == dm.AnnotationType.label:
                     instance_data.add_tag(instance_data.Tag(
@@ -2175,43 +2154,64 @@ def import_dm_annotations(dm_dataset: dm.Dataset, instance_data: Union[ProjectDa
                 raise CvatImportError("Image {}: can't import annotation "
                     "#{} ({}): {}".format(item.id, idx, ann.type.name, e)) from e
 
+    finalize_tracks = {}
+    stop_frame = int(instance_data.meta[instance_data.META_FIELD]['stop_frame'])
     for track_id, track in tracks.items():
-        # to handle annotation without keyframe
-        if len(track['shapes']) == 0:
-            if len(ending_tracks[track_id]['shapes']) != 0:
-                track['shapes'].append(ending_tracks[track_id]['shapes'][0]._replace(outside=False, frame=frame_number))
+        finalize_tracks[track_id] = {
+            'label': track['label'],
+            'group': track['group'],
+            'source': track['source'],
+            'shapes': [],
+            'elements':{},
+        }
         track['shapes'].sort(key=lambda t: t.frame)
-        stop_frame = int(instance_data.meta[instance_data.META_FIELD]['stop_frame'])
-        if not track['shapes'][-1].outside:
-            if len(ending_tracks[track_id]['shapes']) == 0:
-                continue
-            if len(ending_tracks[track_id]['shapes']) == 0:
-                next_frame = track['shapes'][-1].frame + instance_data.frame_step
-                if next_frame < stop_frame:
-                    track['shapes'].append(track['shapes'][-1]._replace(outside=True, frame=next_frame))
+        prev_shape = track['shapes'][0]
+
+        for shape in track['shapes'][1:]:
+            if prev_shape.keyframe or prev_shape.outside:
+                finalize_tracks[track_id]['shapes'].append(prev_shape)
             else:
-                ending_tracks[track_id]['shapes'].sort(key=lambda t: t.frame)
-                next_frame = ending_tracks[track_id]['shapes'][-1].frame + instance_data.frame_step
-                if next_frame < stop_frame:
-                    track['shapes'].append(ending_tracks[track_id]['shapes'][-1]._replace(outside=True, frame=next_frame))
+                has_skip = instance_data.frame_step < shape.frame - prev_shape.frame
+                if has_skip and not prev_shape.outside:
+                    prev_shape = prev_shape._replace(outside=True, keyframe=True,
+                            frame=prev_shape.frame + instance_data.frame_step)
+                    finalize_tracks[track_id]['shapes'].append(prev_shape)
+            prev_shape = shape
+
+        if not prev_shape.outside and prev_shape.frame+instance_data.frame_step <= stop_frame:
+            prev_shape = prev_shape._replace(outside=True, keyframe=True,
+                    frame=prev_shape.frame + instance_data.frame_step)
+            finalize_tracks[track_id]['shapes'].append(prev_shape)
 
         if ann.type == dm.AnnotationType.skeleton:
-            ending_elements = ending_tracks[track_id]['elements']
-            for element_id, element in track['elements'].items():
-                if len(element.shapes) == 0:
-                    continue
-                if not element.shapes[-1].outside:
-                    if len(ending_elements.get(element_id).shapes) == 0:
-                        next_frame = element.shapes[-1].frame + instance_data.frame_step
-                        if next_frame < stop_frame:
-                            element.shapes.append(element.shapes[-1]._replace(outside=True, frame=next_frame))
-                    else:
-                        ending_elements.get(element_id).shapes.sort(key=lambda t: t.frame)
-                        next_frame = ending_elements.get(element_id).shapes[-1].frame + instance_data.frame_step
-                        if next_frame < stop_frame:
-                            element.shapes.append(ending_elements.get(element_id).shapes[-1]._replace(outside=True, frame=next_frame))
+            for element in track['elements'].values():
+                finalize_tracks[track_id]['elements'][element.label] = instance_data.Track(
+                                                                    label=element.label,
+                                                                    group=element.group,
+                                                                    source=element.source,
+                                                                    shapes=[],
+                                                                )
+                current_shapes = finalize_tracks[track_id]['elements'][element.label].shapes
+                element.shapes.sort(key=lambda t: t.frame)
+                prev_shape = element.shapes[0]
 
-    for track in tracks.values():
+                for shape in element.shapes[1:]:
+                    if prev_shape.keyframe or prev_shape.outside:
+                        current_shapes.append(prev_shape)
+                    else:
+                        has_skip = instance_data.frame_step < shape.frame - prev_shape.frame
+                        if has_skip and not prev_shape.outside:
+                            prev_shape = prev_shape._replace(outside=True, keyframe=True,
+                                    frame=prev_shape.frame + instance_data.frame_step)
+                            current_shapes.append(prev_shape)
+                    prev_shape = shape
+
+                if not prev_shape.outside and prev_shape.frame+instance_data.frame_step <= stop_frame:
+                    prev_shape = prev_shape._replace(outside=True, keyframe=True,
+                            frame=prev_shape.frame + instance_data.frame_step)
+                    current_shapes.append(prev_shape)
+
+    for track in finalize_tracks.values():
         track['elements'] = list(track['elements'].values())
         instance_data.add_track(instance_data.Track(**track))
 
