@@ -220,6 +220,7 @@ class Task(
         self,
         frame_ids: Sequence[int],
         *,
+        image_extension: Optional[str] = None,
         outdir: StrPath = ".",
         quality: str = "original",
         filename_pattern: str = "frame_{frame_id:06d}{frame_ext}",
@@ -227,23 +228,25 @@ class Task(
         """
         Download the requested frame numbers for a task and save images as outdir/filename_pattern
         """
-        # TODO: add arg descriptions in schema
 
         outdir = Path(outdir)
-        outdir.mkdir(exist_ok=True)
+        outdir.mkdir(parents=True, exist_ok=True)
 
         for frame_id in frame_ids:
             frame_bytes = self.get_frame(frame_id, quality=quality)
 
             im = Image.open(frame_bytes)
-            mime_type = im.get_format_mimetype() or "image/jpg"
-            im_ext = mimetypes.guess_extension(mime_type)
+            if image_extension is None:
+                mime_type = im.get_format_mimetype() or "image/jpg"
+                im_ext = mimetypes.guess_extension(mime_type)
 
-            # FIXME It is better to use meta information from the server
-            # to determine the extension
-            # replace '.jpe' or '.jpeg' with a more used '.jpg'
-            if im_ext in (".jpe", ".jpeg", None):
-                im_ext = ".jpg"
+                # FIXME It is better to use meta information from the server
+                # to determine the extension
+                # replace '.jpe' or '.jpeg' with a more used '.jpg'
+                if im_ext in (".jpe", ".jpeg", None):
+                    im_ext = ".jpg"
+            else:
+                im_ext = f".{image_extension.strip('.')}"
 
             outfile = filename_pattern.format(frame_id=frame_id, frame_ext=im_ext)
             im.save(outdir / outfile)
