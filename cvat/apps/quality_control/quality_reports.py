@@ -1029,7 +1029,7 @@ class _DistanceComparator(dm.ops.DistanceComparator):
         label_matcher: Callable = None,
         a_objs: Optional[Sequence[dm.Annotation]] = None,
         b_objs: Optional[Sequence[dm.Annotation]] = None,
-        dist_thresh=None,
+        dist_thresh: Optional[float] = None,
     ):
         if a_objs is None:
             a_objs = self._get_ann_type(t, item_a)
