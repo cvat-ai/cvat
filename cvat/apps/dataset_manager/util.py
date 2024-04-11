@@ -80,3 +80,19 @@ def deepcopy_simple(v):
         return v
     else:
         return deepcopy(v)
+
+def to_boolean(value):
+    """
+    Converts an input to a boolean. Strings that case-insensitively match 'true' or 'false' are converted accordingly.
+    Returns None if the input is None, allowing distinction from False. Other types are converted to boolean using standard truthiness rules.
+
+    :param value: The input value to convert.
+    :return: True, False, or None based on the input.
+    """
+    if value is None:
+        return None
+    elif isinstance(value, str):
+        return value.lower() == 'true'
+    else:
+        return bool(value)
+

@@ -2819,81 +2819,34 @@ class TestImportWithComplexFilenames:
 
             assert b"Could not match item id" in capture.value.body
 
-    def test_can_export_and_import_skeleton_tracks_in_coco_format(self):
-        task = self.client.tasks.retrieve(14)
-        dataset_file = self.tmp_dir / "some_file.zip"
-        format_name = "COCO Keypoints 1.0"
-
-        original_annotations = task.get_annotations()
-
-        task.export_dataset(format_name, dataset_file, include_images=False)
-        task.remove_annotations()
-        task.import_annotations(format_name, dataset_file)
-
-        imported_annotations = task.get_annotations()
-
-        # Number of shapes and tracks hasn't changed
-        assert len(original_annotations.shapes) == len(imported_annotations.shapes)
-        assert len(original_annotations.tracks) == len(imported_annotations.tracks)
-
-        # Frames of shapes, tracks and track elements hasn't changed
-        assert set([s.frame for s in original_annotations.shapes]) == set(
-            [s.frame for s in imported_annotations.shapes]
-        )
-        assert set([t.frame for t in original_annotations.tracks]) == set(
-            [t.frame for t in imported_annotations.tracks]
-        )
-        assert set(
-            [
-                tes.frame
-                for t in original_annotations.tracks
-                for te in t.elements
-                for tes in te.shapes
-            ]
-        ) == set(
-            [
-                tes.frame
-                for t in imported_annotations.tracks
-                for te in t.elements
-                for tes in te.shapes
-            ]
-        )
-
-    @pytest.mark.parametrize("format_name", ["Datumaro 1.0", "COCO 1.0", "PASCAL VOC 1.1"])
-    def test_export_and_import_tracked_format_with_outside_true(self, format_name):
-        task_id = 21
+    def delete_annotation_and_import_annotations(
+        self, task_id, annotations, format_name, dataset_file
+    ):
         task = self.client.tasks.retrieve(task_id)
+        labels = task.get_labels()
+        sublabels = labels[0].sublabels
 
         # delete all annotations
         response = delete_method("admin1", f"tasks/{task_id}/annotations")
         assert response.status_code == 204, f"Cannot delete task's annotations: {response.content}"
 
-        annotations = {
-            "tracks": [
-                {
-                    "frame": 0,
-                    "label_id": 58,
-                    "shapes": [
-                        {"type": "rectangle", "frame": 0, "points": [3.0, 2.0, 2.0, 3.0]},
-                        {"type": "rectangle", "frame": 1, "points": [3.0, 2.0, 2.0, 3.0]},
-                        {
-                            "type": "rectangle",
-                            "frame": 2,
-                            "points": [3.0, 2.0, 2.0, 3.0],
-                            "outside": True,
-                        },
-                    ],
-                }
-            ]
-        }
+        # if the annotations shapes label_id does not exist, the put it in the task
+        for shape in annotations["shapes"]:
+            if "label_id" not in shape:
+                shape["label_id"] = labels[0].id
 
-        # create annotations with outside true
+        for track in annotations["tracks"]:
+            if "label_id" not in track:
+                track["label_id"] = labels[0].id
+            for element_idx, element in enumerate(track["elements"]):
+                if "label_id" not in element:
+                    element["label_id"] = sublabels[element_idx].id
+
         response = patch_method(
             "admin1", f"tasks/{task_id}/annotations", annotations, action="create"
         )
         assert response.status_code == 200, f"Cannot update task's annotations: {response.content}"
 
-        dataset_file = self.tmp_dir / (format_name + "source_data.zip")
         task.export_dataset(format_name, dataset_file, include_images=False)
 
         # get the original annotations
@@ -2912,6 +2865,9 @@ class TestImportWithComplexFilenames:
         assert response.status_code == 200, f"Cannot get task's annotations: {response.content}"
         imported_annotations = response.json()
 
+        return original_annotations, imported_annotations
+
+    def compare_original_and_import_annotations(self, original_annotations, imported_annotations):
         # Number of shapes and tracks hasn't changed
         assert len(original_annotations["shapes"]) == len(imported_annotations["shapes"])
         assert len(original_annotations["tracks"]) == len(imported_annotations["tracks"])
@@ -2942,96 +2898,128 @@ class TestImportWithComplexFilenames:
             ]
         )
 
-    def test_export_and_import_coco_keypoints_with_outside_true(self, jobs):
-        task_id = 21
+    def test_can_export_and_import_skeleton_tracks_in_coco_format(self):
+        task_id = 14
         format_name = "COCO Keypoints 1.0"
-        task = self.client.tasks.retrieve(task_id)
-
-        # delete all annotations in task 21
-        response = delete_method("admin1", f"tasks/{task_id}/annotations")
-        assert response.status_code == 204, f"Cannot delete task's annotations: {response.content}"
-
+        dataset_file = self.tmp_dir / (format_name + "source_data.zip")
         annotations = {
+            "shapes": [],
             "tracks": [
                 {
                     "frame": 0,
-                    "label_id": 58,
                     "shapes": [
-                        {"type": "skeleton", "frame": 0, "points": []},
-                        {"type": "skeleton", "frame": 1, "points": []},
-                        {"type": "skeleton", "frame": 2, "points": [], "outside": True},
+                        {"type": "skeleton", "frame": 0, "points": [], "keyframe": True},
+                        {"type": "skeleton", "frame": 3, "points": [], "keyframe": True},
                     ],
                     "elements": [
                         {
-                            "label_id": 59,
                             "frame": 0,
                             "shapes": [
-                                {"type": "points", "frame": 0, "points": [1.0, 2.0]},
-                                {"type": "points", "frame": 1, "points": [2.0, 4.0]},
                                 {
                                     "type": "points",
-                                    "frame": 2,
-                                    "points": [3.0, 6.0],
+                                    "frame": 0,
+                                    "points": [1.0, 2.0],
+                                    "keyframe": True,
+                                },
+                                {
+                                    "type": "points",
+                                    "frame": 3,
+                                    "points": [1.0, 2.0],
+                                    "keyframe": True,
+                                },
+                            ],
+                        },
+                    ],
+                }
+            ],
+        }
+
+        original_annotations, imported_annotations = self.delete_annotation_and_import_annotations(
+            task_id, annotations, format_name, dataset_file
+        )
+
+        self.compare_original_and_import_annotations(original_annotations, imported_annotations)
+
+    @pytest.mark.parametrize("format_name", ["Datumaro 1.0", "COCO 1.0", "PASCAL VOC 1.1"])
+    def test_export_and_import_tracked_format_with_outside_true(self, format_name):
+        task_id = 14
+        dataset_file = self.tmp_dir / (format_name + "outside_true_source_data.zip")
+        annotations = {
+            "shapes": [],
+            "tracks": [
+                {
+                    "frame": 0,
+                    "shapes": [
+                        {
+                            "type": "rectangle",
+                            "frame": 0,
+                            "points": [1.0, 2.0, 3.0, 2.0],
+                            "keyframe": True,
+                        },
+                        {
+                            "type": "rectangle",
+                            "frame": 3,
+                            "points": [1.0, 2.0, 3.0, 2.0],
+                            "keyframe": True,
+                            "outside": True,
+                        },
+                    ],
+                    "elements": [],
+                }
+            ],
+        }
+
+        original_annotations, imported_annotations = self.delete_annotation_and_import_annotations(
+            task_id, annotations, format_name, dataset_file
+        )
+
+        self.compare_original_and_import_annotations(original_annotations, imported_annotations)
+
+    def test_export_and_import_coco_keypoints_with_outside_true(self):
+        task_id = 14
+        format_name = "COCO Keypoints 1.0"
+        dataset_file = self.tmp_dir / (format_name + "outside_true_source_data.zip")
+        annotations = {
+            "shapes": [],
+            "tracks": [
+                {
+                    "frame": 0,
+                    "shapes": [
+                        {"type": "skeleton", "frame": 0, "points": [], "keyframe": True},
+                        {
+                            "type": "skeleton",
+                            "frame": 3,
+                            "points": [],
+                            "keyframe": True,
+                            "outside": True,
+                        },
+                    ],
+                    "elements": [
+                        {
+                            "frame": 0,
+                            "shapes": [
+                                {
+                                    "type": "points",
+                                    "frame": 0,
+                                    "points": [1.0, 2.0],
+                                    "keyframe": True,
+                                },
+                                {
+                                    "type": "points",
+                                    "frame": 3,
+                                    "points": [1.0, 2.0],
+                                    "keyframe": True,
                                     "outside": True,
                                 },
                             ],
                         },
                     ],
                 }
-            ]
+            ],
         }
 
-        # create annotations of coco keypoints with outside true
-        response = patch_method(
-            "admin1", f"tasks/{task_id}/annotations", annotations, action="create"
+        original_annotations, imported_annotations = self.delete_annotation_and_import_annotations(
+            task_id, annotations, format_name, dataset_file
         )
-        assert response.status_code == 200, f"Cannot update task's annotations: {response.content}"
 
-        dataset_file = self.tmp_dir / (format_name + "source_data.zip")
-        task.export_dataset(format_name, dataset_file, include_images=False)
-
-        # get the original annotations
-        response = get_method("admin1", f"tasks/{task.id}/annotations")
-        assert response.status_code == 200, f"Cannot get task's annotations: {response.content}"
-        original_annotations = response.json()
-
-        # delete all annotations
-        response = delete_method("admin1", f"tasks/{task_id}/annotations")
-        assert response.status_code == 204, f"Cannot delete task's annotations: {response.content}"
-
-        # import the annotations
-        task.import_annotations(format_name, dataset_file)
-
-        response = get_method("admin1", f"tasks/{task.id}/annotations")
-        assert response.status_code == 200, f"Cannot get task's annotations: {response.content}"
-        imported_annotations = response.json()
-
-        # Number of shapes and tracks hasn't changed
-        assert len(original_annotations["shapes"]) == len(imported_annotations["shapes"])
-        assert len(original_annotations["tracks"]) == len(imported_annotations["tracks"])
-
-        for i, original_track in enumerate(original_annotations["tracks"]):
-            assert len(original_track["shapes"]) == len(imported_annotations["tracks"][i]["shapes"])
-
-        # Frames of shapes, tracks and track elements hasn't changed
-        assert set([s["frame"] for s in original_annotations["shapes"]]) == set(
-            [s["frame"] for s in imported_annotations["shapes"]]
-        )
-        assert set([t["frame"] for t in original_annotations["tracks"]]) == set(
-            [t["frame"] for t in imported_annotations["tracks"]]
-        )
-        assert set(
-            [
-                tes["frame"]
-                for t in original_annotations["tracks"]
-                for te in t["elements"]
-                for tes in te["shapes"]
-            ]
-        ) == set(
-            [
-                tes["frame"]
-                for t in imported_annotations["tracks"]
-                for te in t["elements"]
-                for tes in te["shapes"]
-            ]
-        )
+        self.compare_original_and_import_annotations(original_annotations, imported_annotations)

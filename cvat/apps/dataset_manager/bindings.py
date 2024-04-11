@@ -24,6 +24,7 @@ from datumaro.components.media import PointCloud
 from django.db.models import QuerySet
 from django.utils import timezone
 
+from cvat.apps.dataset_manager.util import to_boolean
 from cvat.apps.dataset_manager.formats.utils import get_label_color
 from cvat.apps.dataset_manager.util import add_prefetch_fields
 from cvat.apps.engine.frame_provider import FrameProvider
@@ -1962,6 +1963,7 @@ def import_dm_annotations(dm_dataset: dm.Dataset, instance_data: Union[ProjectDa
     root_hint = find_dataset_root(dm_dataset, instance_data)
 
     tracks = {}
+    ending_tracks = {}
 
     for item in dm_dataset:
         frame_number = instance_data.abs_frame_id(
@@ -2032,9 +2034,10 @@ def import_dm_annotations(dm_dataset: dm.Dataset, instance_data: Union[ProjectDa
                     # because in some formats return type can be different
                     # from bool / None
                     # https://github.com/openvinotoolkit/datumaro/issues/719
-                    occluded = dm.util.cast(ann.attributes.pop('occluded', None), bool) is True
-                    keyframe = dm.util.cast(ann.attributes.get('keyframe', None), bool) is True
-                    outside = dm.util.cast(ann.attributes.pop('outside', None), bool) is True
+                    occluded = dm.util.cast(to_boolean(ann.attributes.pop('occluded', None)), bool) is True
+
+                    keyframe = dm.util.cast(to_boolean(ann.attributes.get('keyframe', None)), bool) is True
+                    outside = dm.util.cast(to_boolean(ann.attributes.pop('outside', None)), bool) is True
 
                     track_id = ann.attributes.pop('track_id', None)
                     source = ann.attributes.pop('source').lower() \
@@ -2090,6 +2093,13 @@ def import_dm_annotations(dm_dataset: dm.Dataset, instance_data: Union[ProjectDa
                                 'shapes': [],
                                 'elements':{},
                             }
+                            ending_tracks[track_id] = {
+                                'label': label_cat.items[ann.label].name,
+                                'group': group_map.get(ann.group, 0),
+                                'source': source,
+                                'shapes': [],
+                                'elements':{},
+                            }
 
                         track = instance_data.TrackedShape(
                             type=shapes[ann.type],
@@ -2104,15 +2114,17 @@ def import_dm_annotations(dm_dataset: dm.Dataset, instance_data: Union[ProjectDa
                             attributes=attributes,
                         )
 
-                        tracks[track_id]['shapes'].append(track)
+                        if keyframe or outside:
+                            tracks[track_id]['shapes'].append(track)
+                            ending_tracks[track_id]['shapes'] = []
+                        else:
+                            ending_tracks[track_id]['shapes'].append(track)
 
                         if ann.type == dm.AnnotationType.skeleton:
                             for element in ann.elements:
-                                element_keyframe = dm.util.cast(element.attributes.get('keyframe', None), bool, True)
+                                element_keyframe = dm.util.cast(to_boolean(element.attributes.get('keyframe', None)), bool, True)
                                 element_occluded = element.visibility[0] == dm.Points.Visibility.hidden
                                 element_outside = element.visibility[0] == dm.Points.Visibility.absent
-                                if not element_keyframe and not element_outside:
-                                    continue
 
                                 if element.label not in tracks[track_id]['elements']:
                                     tracks[track_id]['elements'][element.label] = instance_data.Track(
@@ -2121,6 +2133,13 @@ def import_dm_annotations(dm_dataset: dm.Dataset, instance_data: Union[ProjectDa
                                         source=source,
                                         shapes=[],
                                     )
+                                    ending_tracks[track_id]['elements'][element.label] = instance_data.Track(
+                                        label=label_cat.items[element.label].name,
+                                        group=0,
+                                        source=source,
+                                        shapes=[],
+                                    )
+
                                 element_attributes = [
                                     instance_data.Attribute(name=n, value=str(v))
                                     for n, v in element.attributes.items()
@@ -2128,7 +2147,7 @@ def import_dm_annotations(dm_dataset: dm.Dataset, instance_data: Union[ProjectDa
                                 element_source = element.attributes.pop('source').lower() \
                                     if element.attributes.get('source', '').lower() in {'auto', 'semi-auto', 'manual', 'file'} else 'manual'
 
-                                tracks[track_id]['elements'][element.label].shapes.append(instance_data.TrackedShape(
+                                new_element_shape = instance_data.TrackedShape(
                                     type=shapes[element.type],
                                     frame=frame_number,
                                     occluded=element_occluded,
@@ -2138,7 +2157,12 @@ def import_dm_annotations(dm_dataset: dm.Dataset, instance_data: Union[ProjectDa
                                     z_order=element.z_order,
                                     source=element_source,
                                     attributes=element_attributes,
-                                ))
+                                )
+                                if (element_keyframe or element_outside) and (keyframe or outside):
+                                    tracks[track_id]['elements'][element.label].shapes.append(new_element_shape)
+                                    ending_tracks[track_id]['elements'][element.label].shapes.clear()
+                                else:
+                                    ending_tracks[track_id]['elements'][element.label].shapes.append(new_element_shape)
 
                 elif ann.type == dm.AnnotationType.label:
                     instance_data.add_tag(instance_data.Tag(
@@ -2152,54 +2176,41 @@ def import_dm_annotations(dm_dataset: dm.Dataset, instance_data: Union[ProjectDa
                 raise CvatImportError("Image {}: can't import annotation "
                     "#{} ({}): {}".format(item.id, idx, ann.type.name, e)) from e
 
-    for track in tracks.values():
+    for track_id, track in tracks.items():
+        # to handle annotation without keyframe
+        if len(track['shapes']) == 0:
+            if len(ending_tracks[track_id]['shapes']) != 0:
+                track['shapes'].append(ending_tracks[track_id]['shapes'][0]._replace(outside=False, frame=frame_number))
         track['shapes'].sort(key=lambda t: t.frame)
-        prev_shape_idx = 0
-        prev_shape = track['shapes'][0]
-        for shape in track['shapes'][1:]:
-            has_skip = instance_data.frame_step < shape.frame - prev_shape.frame
-            if has_skip and not prev_shape.outside:
-                prev_shape = prev_shape._replace(outside=True,
-                        frame=prev_shape.frame + instance_data.frame_step)
-                prev_shape_idx += 1
-                track['shapes'].insert(prev_shape_idx, prev_shape)
-                if ann.type == dm.AnnotationType.skeleton:
-                    for element in prev_shape.elements:
-                        element = element._replace(outside=True,
-                                frame=element.frame + instance_data.frame_step)
-                        track['elements'][element.label].shapes.append(element)
-            prev_shape = shape
-            prev_shape_idx += 1
-
-        # if the last shape 'outside' is False, we need to add to stop the tracking
-        last_shape = track['shapes'][-1]
-        if last_shape.frame + instance_data.frame_step <= \
-                int(instance_data.meta[instance_data.META_FIELD]['stop_frame']):
-            track['shapes'].append(last_shape._replace(outside=True,
-                frame=last_shape.frame + instance_data.frame_step)
-            )
+        stop_frame = int(instance_data.meta[instance_data.META_FIELD]['stop_frame'])
+        if not track['shapes'][-1].outside:
+            if len(ending_tracks[track_id]['shapes']) == 0:
+                continue
+            if len(ending_tracks[track_id]['shapes']) == 0:
+                next_frame = track['shapes'][-1].frame + instance_data.frame_step
+                if next_frame < stop_frame:
+                    track['shapes'].append(track['shapes'][-1]._replace(outside=True, frame=next_frame))
+            else:
+                ending_tracks[track_id]['shapes'].sort(key=lambda t: t.frame)
+                next_frame = ending_tracks[track_id]['shapes'][-1].frame + instance_data.frame_step
+                if next_frame < stop_frame:
+                    track['shapes'].append(ending_tracks[track_id]['shapes'][-1]._replace(outside=True, frame=next_frame))
 
         if ann.type == dm.AnnotationType.skeleton:
-            for element in track['elements'].values():
-                element.shapes.sort(key=lambda t: t.frame)
-                prev_element_shape_idx = 0
-                prev_element_shape = element.shapes[0]
-                for shape in element.shapes[1:]:
-                    has_skip = instance_data.frame_step < shape.frame - prev_element_shape.frame
-                    if has_skip and not prev_element_shape.outside:
-                        prev_element_shape = prev_element_shape._replace(outside=True,
-                                frame=prev_element_shape.frame + instance_data.frame_step)
-                        prev_element_shape_idx += 1
-                        element.shapes.insert(prev_element_shape_idx, prev_element_shape)
-                    prev_element_shape = shape
-                    prev_element_shape_idx += 1
-
-                last_shape = element.shapes[-1]
-                if last_shape.frame + instance_data.frame_step <= \
-                        int(instance_data.meta[instance_data.META_FIELD]['stop_frame']):
-                    element.shapes.append(last_shape._replace(outside=True,
-                        frame=last_shape.frame + instance_data.frame_step)
-                    )
+            ending_elements = ending_tracks[track_id]['elements']
+            for element_id, element in track['elements'].items():
+                if len(element.shapes) == 0:
+                    continue
+                if not element.shapes[-1].outside:
+                    if len(ending_elements.get(element_id).shapes) == 0:
+                        next_frame = element.shapes[-1].frame + instance_data.frame_step
+                        if next_frame < stop_frame:
+                            element.shapes.append(element.shapes[-1]._replace(outside=True, frame=next_frame))
+                    else:
+                        ending_elements.get(element_id).shapes.sort(key=lambda t: t.frame)
+                        next_frame = ending_elements.get(element_id).shapes[-1].frame + instance_data.frame_step
+                        if next_frame < stop_frame:
+                            element.shapes.append(ending_elements.get(element_id).shapes[-1]._replace(outside=True, frame=next_frame))
 
     for track in tracks.values():
         track['elements'] = list(track['elements'].values())
