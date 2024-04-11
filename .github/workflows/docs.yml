@@ -1,0 +1,67 @@
+name: Docs
+on:
+  push:
+    branches:
+      - 'master'
+      - 'develop'
+  pull_request:
+    types: [ready_for_review, opened, synchronize, reopened]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  generate_github_pages:
+    permissions:
+      contents: write
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+          fetch-depth: 0
+
+      - name: Generate CVAT SDK
+        run: |
+          pip3 install --user -r cvat-sdk/gen/requirements.txt
+          ./cvat-sdk/gen/generate.sh
+
+      - name: Setup Hugo
+        run: |
+          wget https://github.com/gohugoio/hugo/releases/download/v0.110.0/hugo_extended_0.110.0_Linux-64bit.tar.gz
+          (mkdir hugo_extended_0.110.0_Linux-64bit && tar -xf hugo_extended_0.110.0_Linux-64bit.tar.gz -C hugo_extended_0.110.0_Linux-64bit)
+
+          wget https://github.com/gohugoio/hugo/releases/download/v0.83.0/hugo_extended_0.83.0_Linux-64bit.tar.gz
+          (mkdir hugo_extended_0.83.0_Linux-64bit && tar -xf hugo_extended_0.83.0_Linux-64bit.tar.gz -C hugo_extended_0.83.0_Linux-64bit)
+
+          mkdir hugo
+          cp hugo_extended_0.110.0_Linux-64bit/hugo hugo/hugo-0.110
+          cp hugo_extended_0.83.0_Linux-64bit/hugo hugo/hugo-0.83
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18.x'
+
+      - name: Install npm packages
+        working-directory: ./site
+        run: |
+          npm ci
+
+      - name: Build docs
+        run: |
+          pip install -r site/requirements.txt
+          python site/process_sdk_docs.py
+          PATH="$PWD/hugo:$PATH" python site/build_docs.py
+        env:
+          HUGO_ENV: production
+
+      - name: Deploy
+        if: github.ref == 'refs/heads/develop'
+        uses: peaceiris/actions-gh-pages@v3
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./public
+          force_orphan: true
+          cname: docs.cvat.ai

@@ -10,7 +10,7 @@ import Pagination from 'antd/lib/pagination';
 
 import { getProjectsAsync } from 'actions/projects-actions';
 import { CombinedState, Project } from 'reducers';
-import dimensions from './dimensions';
+import dimensions from 'utils/dimensions';
 import ProjectItem from './project-item';
 
 export default function ProjectListComponent(): JSX.Element {

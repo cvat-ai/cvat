@@ -5,7 +5,8 @@ weight: 3
 description: 'Advanced operations available during annotation in shape mode.'
 ---
 
-Basic operations in the mode were described in section [shape mode (basics)](/docs/manual/basics/shape-mode-basics/).
+Basic operations in the mode were described in section
+{{< ilink "/docs/manual/basics/shape-mode-basics" "shape mode (basics)" >}}.
 
 **Occluded**
 Occlusion is an attribute used if an object is occluded by another object or

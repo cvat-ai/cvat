@@ -83,7 +83,6 @@ function BrushTools(): React.ReactPortal | null {
 
     useEffect(() => {
         const label = labels.find((_label: any) => _label.id === defaultLabelID);
-        getCore().config.removeUnderlyingMaskPixels.enabled = removeUnderlyingPixels;
         if (visible && label && canvasInstance instanceof Canvas) {
             const onUpdateConfiguration = ({ brushTool }: any): void => {
                 if (brushTool?.size) {
@@ -121,6 +120,10 @@ function BrushTools(): React.ReactPortal | null {
             }
         }
     }, [currentTool, brushSize, brushForm, visible, defaultLabelID, editableState]);
+
+    useEffect(() => {
+        getCore().config.removeUnderlyingMaskPixels.enabled = removeUnderlyingPixels;
+    }, [removeUnderlyingPixels]);
 
     useEffect(() => {
         setApplicableLabels(filterApplicableForType(LabelType.MASK, labels));
