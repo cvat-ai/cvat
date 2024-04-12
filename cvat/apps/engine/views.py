@@ -2393,7 +2393,7 @@ class UserViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
     @action(detail=False, methods=['GET'])
     def self(self, request):
         """
-        Method returns an instance of a user who is currently authorized
+        Method returns an instance of a user who is currently authenticated
         """
         serializer_class = self.get_serializer_class()
         serializer = serializer_class(request.user, context={ "request": request })
