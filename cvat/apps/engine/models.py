@@ -857,7 +857,7 @@ class AttributeSpec(models.Model):
     input_type = models.CharField(max_length=16,
         choices=AttributeType.choices())
     default_value = models.CharField(blank=True, max_length=128)
-    values = models.CharField(blank=True, max_length=4096)
+    values = models.CharField(blank=True, max_length=8192)
 
     class Meta:
         default_permissions = ()
