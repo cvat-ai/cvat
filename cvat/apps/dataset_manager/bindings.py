@@ -2128,7 +2128,7 @@ def import_dm_annotations(dm_dataset: dm.Dataset, instance_data: Union[ProjectDa
                                 element_source = element.attributes.pop('source').lower() \
                                     if element.attributes.get('source', '').lower() in {'auto', 'semi-auto', 'manual', 'file'} else 'manual'
 
-                                new_element_shape = instance_data.TrackedShape(
+                                tracks[track_id]['elements'][element.label].shapes.append(instance_data.TrackedShape(
                                     type=shapes[element.type],
                                     frame=frame_number,
                                     occluded=element_occluded,
@@ -2138,9 +2138,7 @@ def import_dm_annotations(dm_dataset: dm.Dataset, instance_data: Union[ProjectDa
                                     z_order=element.z_order,
                                     source=element_source,
                                     attributes=element_attributes,
-                                )
-
-                                tracks[track_id]['elements'][element.label].shapes.append(new_element_shape)
+                                ))
 
                 elif ann.type == dm.AnnotationType.label:
                     instance_data.add_tag(instance_data.Tag(
@@ -2154,64 +2152,79 @@ def import_dm_annotations(dm_dataset: dm.Dataset, instance_data: Union[ProjectDa
                 raise CvatImportError("Image {}: can't import annotation "
                     "#{} ({}): {}".format(item.id, idx, ann.type.name, e)) from e
 
-    finalize_tracks = {}
     stop_frame = int(instance_data.meta[instance_data.META_FIELD]['stop_frame'])
     for track_id, track in tracks.items():
-        finalize_tracks[track_id] = {
-            'label': track['label'],
-            'group': track['group'],
-            'source': track['source'],
-            'shapes': [],
-            'elements':{},
-        }
+        # skip tracks with no shapes and elements
+        if len(track['shapes']) == 0 and len(track['elements']) == 0:
+            continue
+
         track['shapes'].sort(key=lambda t: t.frame)
         prev_shape = track['shapes'][0]
+        # add keyframe to the first shape
+        prev_shape = prev_shape._replace(keyframe=True)
+        new_shapes = []
 
-        for shape in track['shapes'][1:]:
+        # avoid skipping the first frame
+        if len(track['shapes']) > 1:
+            for shape in track['shapes'][1:]:
+                if prev_shape.keyframe or prev_shape.outside:
+                    prev_shape = prev_shape._replace(keyframe=True)
+                    new_shapes.append(prev_shape)
+                else:
+                    has_skip = instance_data.frame_step < shape.frame - prev_shape.frame
+                    if has_skip and not prev_shape.outside:
+                        prev_shape = prev_shape._replace(outside=True, keyframe=True,
+                                frame=prev_shape.frame + instance_data.frame_step)
+                        new_shapes.append(prev_shape)
+                prev_shape = shape
+        else:
             if prev_shape.keyframe or prev_shape.outside:
-                finalize_tracks[track_id]['shapes'].append(prev_shape)
-            else:
-                has_skip = instance_data.frame_step < shape.frame - prev_shape.frame
-                if has_skip and not prev_shape.outside:
-                    prev_shape = prev_shape._replace(outside=True, keyframe=True,
-                            frame=prev_shape.frame + instance_data.frame_step)
-                    finalize_tracks[track_id]['shapes'].append(prev_shape)
-            prev_shape = shape
+                new_shapes.append(prev_shape)
 
-        if not prev_shape.outside and prev_shape.frame+instance_data.frame_step <= stop_frame:
+        if not prev_shape.outside and prev_shape.frame + instance_data.frame_step <= stop_frame:
             prev_shape = prev_shape._replace(outside=True, keyframe=True,
                     frame=prev_shape.frame + instance_data.frame_step)
-            finalize_tracks[track_id]['shapes'].append(prev_shape)
+            new_shapes.append(prev_shape)
+
+        track['shapes'] = new_shapes
 
         if ann.type == dm.AnnotationType.skeleton:
-            for element in track['elements'].values():
-                finalize_tracks[track_id]['elements'][element.label] = instance_data.Track(
-                                                                    label=element.label,
-                                                                    group=element.group,
-                                                                    source=element.source,
-                                                                    shapes=[],
-                                                                )
-                current_shapes = finalize_tracks[track_id]['elements'][element.label].shapes
+            new_elements = {}
+            for element_id, element in track['elements'].items():
                 element.shapes.sort(key=lambda t: t.frame)
                 prev_shape = element.shapes[0]
+                new_elements[element_id] = instance_data.Track(
+                                label=element.label,
+                                group=element.group,
+                                source=element.source,
+                                shapes=[],
+                            )
+                new_element_shapes = new_elements[element_id].shapes
 
-                for shape in element.shapes[1:]:
+                # avoid skipping the first frame
+                if len(element.shapes) > 1:
+                    for shape in element.shapes[1:]:
+                        if prev_shape.keyframe or prev_shape.outside:
+                            prev_shape = prev_shape._replace(keyframe=True)
+                            new_element_shapes.append(prev_shape)
+                        else:
+                            has_skip = instance_data.frame_step < shape.frame - prev_shape.frame
+                            if has_skip and not prev_shape.outside:
+                                prev_shape = prev_shape._replace(outside=True, keyframe=True,
+                                        frame=prev_shape.frame + instance_data.frame_step)
+                                new_element_shapes.append(prev_shape)
+                        prev_shape = shape
+                else:
                     if prev_shape.keyframe or prev_shape.outside:
-                        current_shapes.append(prev_shape)
-                    else:
-                        has_skip = instance_data.frame_step < shape.frame - prev_shape.frame
-                        if has_skip and not prev_shape.outside:
-                            prev_shape = prev_shape._replace(outside=True, keyframe=True,
-                                    frame=prev_shape.frame + instance_data.frame_step)
-                            current_shapes.append(prev_shape)
-                    prev_shape = shape
+                        new_element_shapes.append(prev_shape)
 
-                if not prev_shape.outside and prev_shape.frame+instance_data.frame_step <= stop_frame:
+                if not prev_shape.outside and prev_shape.frame + instance_data.frame_step <= stop_frame:
                     prev_shape = prev_shape._replace(outside=True, keyframe=True,
                             frame=prev_shape.frame + instance_data.frame_step)
-                    current_shapes.append(prev_shape)
+                    new_element_shapes.append(prev_shape)
 
-    for track in finalize_tracks.values():
+            track['elements'] = new_elements
+
         track['elements'] = list(track['elements'].values())
         instance_data.add_track(instance_data.Track(**track))
 

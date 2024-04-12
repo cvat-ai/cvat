@@ -39,6 +39,7 @@ from shared.utils.config import (
     make_api_client,
     patch_method,
     post_method,
+    put_method,
 )
 from shared.utils.helpers import (
     generate_image_file,
@@ -2826,10 +2827,6 @@ class TestImportWithComplexFilenames:
         labels = task.get_labels()
         sublabels = labels[0].sublabels
 
-        # delete all annotations
-        response = delete_method("admin1", f"tasks/{task_id}/annotations")
-        assert response.status_code == 204, f"Cannot delete task's annotations: {response.content}"
-
         # if the annotations shapes label_id does not exist, the put it in the task
         for shape in annotations["shapes"]:
             if "label_id" not in shape:
@@ -2842,7 +2839,7 @@ class TestImportWithComplexFilenames:
                 if "label_id" not in element:
                     element["label_id"] = sublabels[element_idx].id
 
-        response = patch_method(
+        response = put_method(
             "admin1", f"tasks/{task_id}/annotations", annotations, action="create"
         )
         assert response.status_code == 200, f"Cannot update task's annotations: {response.content}"
