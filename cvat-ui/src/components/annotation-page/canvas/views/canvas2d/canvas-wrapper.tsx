@@ -45,6 +45,7 @@ import {
     fetchAnnotationsAsync,
     getDataFailed,
     canvasErrorOccurred,
+    updateCanvasReady,
 } from 'actions/annotation-actions';
 import {
     switchGrid,
@@ -144,6 +145,7 @@ interface DispatchToProps {
     onGetDataFailed(error: Error): void;
     onCanvasErrorOccurred(error: Error): void;
     onStartIssue(position: number[]): void;
+    UpdateCanvasReadyStatus(status: boolean): void;
 }
 
 function mapStateToProps(state: CombinedState): StateToProps {
@@ -334,6 +336,9 @@ function mapDispatchToProps(dispatch: any): DispatchToProps {
         },
         onStartIssue(position: number[]): void {
             dispatch(reviewActions.startIssue(position));
+        },
+        UpdateCanvasReadyStatus(status: boolean): void {
+            dispatch(updateCanvasReady(status));
         },
     };
 }
@@ -564,6 +569,9 @@ class CanvasWrapperComponent extends React.PureComponent<Props> {
 
     public componentWillUnmount(): void {
         const { canvasInstance } = this.props as { canvasInstance: Canvas };
+
+        const { UpdateCanvasReadyStatus } = this.props;
+        UpdateCanvasReadyStatus(false);
 
         canvasInstance.html().removeEventListener('mousedown', this.onCanvasMouseDown);
         canvasInstance.html().removeEventListener('click', this.onCanvasClicked);

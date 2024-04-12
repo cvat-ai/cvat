@@ -128,7 +128,7 @@ export enum AnnotationActionTypes {
     SAVE_ANNOTATIONS_FAILED = 'SAVE_ANNOTATIONS_FAILED',
     SWITCH_PLAY = 'SWITCH_PLAY',
     CONFIRM_CANVAS_READY = 'CONFIRM_CANVAS_READY',
-
+    UPDATE_CANVAS_READY = 'UPDATE_CANVAS_READY',
     UPDATE_ACTIVE_CONTROL = 'UPDATE_ACTIVE_CONTROL',
 
     COPY_SHAPE = 'COPY_SHAPE',
@@ -649,6 +649,15 @@ export function confirmCanvasReadyAsync(): ThunkAction {
             // even if error happens here, do not need to notify the users
             dispatch(confirmCanvasReady());
         }
+    };
+}
+
+export function updateCanvasReady(ready: boolean): AnyAction {
+    return {
+        type: AnnotationActionTypes.UPDATE_CANVAS_READY,
+        payload: {
+            ready,
+        },
     };
 }
 

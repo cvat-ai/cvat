@@ -447,6 +447,15 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                 },
             };
         }
+        case AnnotationActionTypes.UPDATE_CANVAS_READY: {
+            return {
+                ...state,
+                canvas: {
+                    ...state.canvas,
+                    ready: action.payload.ready,
+                },
+            };
+        }
         case AnnotationActionTypes.REMEMBER_OBJECT: {
             const { payload } = action;
 
