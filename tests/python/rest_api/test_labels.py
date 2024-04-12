@@ -560,9 +560,6 @@ class TestPatchLabels(_TestLabelsPermissionsBase):
                 lid, patched_label_request=models.PatchedLabelRequest(**deepcopy(data)), **kwargs
             )
             assert response.status == HTTPStatus.OK
-            print("data", data)
-            print("expected_data", expected_data)
-            print('response.data', response.data)
             assert (
                 DeepDiff(
                     expected_data if expected_data is not None else data,
@@ -590,8 +587,6 @@ class TestPatchLabels(_TestLabelsPermissionsBase):
         self, original_data: Dict[str, Any], **overrides
     ) -> Tuple[Dict[str, Any], Dict[str, Any]]:
 
-        print("original_data", original_data)
-        print("overrides", overrides)
         filtered_data = original_data.copy()
         if filtered_data.get("attributes"):
             filtered_data["attributes"] = [attr for attr in filtered_data["attributes"] if "id" in attr]
@@ -665,7 +660,7 @@ class TestPatchLabels(_TestLabelsPermissionsBase):
                     ],
                 }.items()
             )
-        )
+        ),
     )
     @parametrize("source", _TestLabelsPermissionsBase.source_types)
     def test_can_patch_label_field(self, source, admin_user, param, newvalue):
