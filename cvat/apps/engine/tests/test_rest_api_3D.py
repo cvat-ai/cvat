@@ -250,16 +250,26 @@ class _DbTestBase(APITestCase):
                     self.assertEqual(len(items), len(task_data["shapes"]))
         elif format_name == "Sly Point Cloud Format 1.0":
             with tempfile.TemporaryDirectory() as tmp_dir:
-                checking_files = [osp.join(tmp_dir, "key_id_map.json"),
-                                  osp.join(tmp_dir, "meta.json"),
-                                  osp.join(tmp_dir, "ds0", "ann", "000001.pcd.json"),
-                                  osp.join(tmp_dir, "ds0", "ann", "000002.pcd.json"),
-                                  osp.join(tmp_dir, "ds0", "ann","000003.pcd.json")]
-                # if related_files:
-                #     checking_files.extend([osp.join(tmp_dir, "ds0", "related_images", "000001.pcd_pcd", "000001.png.json"),
-                #                   osp.join(tmp_dir, "ds0", "related_images", "000002.pcd_pcd", "000002.png.json"),
-                #                   osp.join(tmp_dir, "ds0", "related_images", "000003.pcd_pcd", "000003.png.json")])
                 zipfile.ZipFile(content).extractall(tmp_dir)
+                checking_files = [
+                    osp.join(tmp_dir, "key_id_map.json"),
+                    osp.join(tmp_dir, "meta.json"),
+                    osp.join(tmp_dir, "ds0", "ann", "000001.pcd.json"),
+                    osp.join(tmp_dir, "ds0", "ann", "000002.pcd.json"),
+                    osp.join(tmp_dir, "ds0", "ann", "000003.pcd.json")
+                ]
+                point_cloud_files = [
+                    osp.join(tmp_dir, "pointcloud", "ds0", "000001.pcd"),
+                    osp.join(tmp_dir, "pointcloud",  "ds0", "000002.pcd"),
+                    osp.join(tmp_dir, "pointcloud", "ds0", "000003.pcd")
+                ]
+                point_cloud_files_present = any(osp.exists(f) for f in point_cloud_files)
+                if related_files and point_cloud_files_present:
+                    checking_files.extend([
+                        osp.join(tmp_dir, "ds0", "related_images", "000001_pcd", "000001.png.json"),
+                        osp.join(tmp_dir, "ds0", "related_images", "000002_pcd", "000002.png.json"),
+                        osp.join(tmp_dir, "ds0", "related_images", "000003_pcd", "000003.png.json")
+                    ])
                 jsons = glob(osp.join(tmp_dir, '**', '*.json'), recursive=True)
                 self.assertTrue(jsons)
                 self.assertTrue(set(checking_files).issubset(set(jsons)))
@@ -283,7 +293,6 @@ class _DbTestBase(APITestCase):
                             'related_images/default/000003/image_0.png'
                         ])
                 self.assertEqual(extracted_files, expected_files)
-
 
 
 class Task3DTest(_DbTestBase):
