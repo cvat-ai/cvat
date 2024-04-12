@@ -560,6 +560,9 @@ class TestPatchLabels(_TestLabelsPermissionsBase):
                 lid, patched_label_request=models.PatchedLabelRequest(**deepcopy(data)), **kwargs
             )
             assert response.status == HTTPStatus.OK
+            print("data", data)
+            print("expected_data", expected_data)
+            print('response.data', response.data)
             assert (
                 DeepDiff(
                     expected_data if expected_data is not None else data,
@@ -587,6 +590,8 @@ class TestPatchLabels(_TestLabelsPermissionsBase):
         self, original_data: Dict[str, Any], **overrides
     ) -> Tuple[Dict[str, Any], Dict[str, Any]]:
 
+        print("original_data", original_data)
+        print("overrides", overrides)
         filtered_data = original_data.copy()
         if filtered_data.get("attributes"):
             filtered_data["attributes"] = [attr for attr in filtered_data["attributes"] if "id" in attr]
@@ -660,19 +665,7 @@ class TestPatchLabels(_TestLabelsPermissionsBase):
                     ],
                 }.items()
             )
-        ) +
-        [
-            ("attributes", [
-                {
-                    "id":1,
-                    "default_value": "mazda_new",
-                    "input_type": "select",
-                    "mutable": True,
-                    "name": "model_new",
-                    "values": ["mazda_new", "bmw"],
-                }
-            ])
-        ]
+        )
     )
     @parametrize("source", _TestLabelsPermissionsBase.source_types)
     def test_can_patch_label_field(self, source, admin_user, param, newvalue):
@@ -690,6 +683,37 @@ class TestPatchLabels(_TestLabelsPermissionsBase):
         self._test_update_ok(
             user, label["id"], patch_data, expected_data=expected_data, ignore_fields=ignore_fields
         )
+
+    @parametrize("source", _TestLabelsPermissionsBase.source_types)
+    def test_can_patch_attribute_name(self, source, admin_user):
+        user = admin_user
+        label = next(
+            iter(
+                self._labels_by_source(
+                    self.labels, source_key=self._get_source_info(source).label_source_key
+                ).values()
+            )
+        )[0]
+
+        if label.get("attributes"):
+            param = "attributes"
+            newvalue = label.get("attributes")
+
+            for value in newvalue:
+                if value.get("id"):
+                    value.update({"name": value["name"] + "_updated"})
+                else:
+                    value.delete()
+
+            expected_data, patch_data, ignore_fields = self._get_patch_data(label, **{param: newvalue})
+
+            if "attributes.id" in ignore_fields:
+                ignore_fields.remove("attributes.id")
+
+            self._test_update_ok(
+                user, label["id"], patch_data, expected_data=expected_data, ignore_fields=ignore_fields
+            )
+
 
     @parametrize("source", _TestLabelsPermissionsBase.source_types)
     def test_cannot_patch_sublabel_directly(self, admin_user, source):
