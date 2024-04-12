@@ -213,13 +213,13 @@ python cvat/apps/iam/rules/tests/generate_tests.py \
 - In a Docker container
 ```bash
 docker run --rm -v ${PWD}/cvat/apps/iam/rules:/rules \
-   openpolicyagent/opa:0.45.0-rootless \
+   openpolicyagent/opa:0.63.0 \
    test /rules -v
 ```
 
 - or execute OPA directly
 ```bash
-curl -L -o opa https://openpolicyagent.org/downloads/v0.45.0/opa_linux_amd64_static
+curl -L -o opa https://openpolicyagent.org/downloads/v0.63.0/opa_linux_amd64_static
 chmod +x ./opa
 ./opa test cvat/apps/iam/rules
 ```
