@@ -2211,7 +2211,6 @@ def import_dm_annotations(dm_dataset: dm.Dataset, instance_data: Union[ProjectDa
                             frame=prev_shape.frame + instance_data.frame_step)
                     current_shapes.append(prev_shape)
 
-    for track in finalize_tracks.values():
         track['elements'] = list(track['elements'].values())
         instance_data.add_track(instance_data.Track(**track))
 
