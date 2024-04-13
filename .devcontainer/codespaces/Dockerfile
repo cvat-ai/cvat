@@ -8,18 +8,30 @@ ENV DJANGO_SETTINGS_MODULE cvat.settings.${DJANGO_CONFIGURATION}
 
 USER root
 
-# Uncomment the following lines to add ubuntu packages required specifically for
-# development
+RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
+    --mount=type=cache,target=/var/lib/apt,sharing=locked \
+    apt-get update \
+    && DEBIAN_FRONTEND=noninteractive apt-get --no-install-recommends install -qy \
+        parallel=20210822+ds-2
 
-# RUN apt-get update && \
-#     DEBIAN_FRONTEND=noninteractive apt-get --no-install-recommends install -qy \
-#         # <package>=<version> \
-#     && rm -rf /var/lib/apt/lists/*
+COPY cvat/requirements /tmp/requirements
+# Install packages specific to development and testing and ignore already installed
+# base packages
+RUN sed -i '/^-r base.txt/d' /tmp/requirements/development.txt \
+    && sed -i '/^-r development.txt/d' /tmp/requirements/testing.txt
 
-COPY cvat/requirements/${DJANGO_CONFIGURATION}.txt /tmp/requirements.txt
-# Install packages specific to development and ignore already installed base packages
-RUN sed -i '/^-r base.txt/d' /tmp/requirements.txt && \
-    python -m pip install --no-cache-dir -r /tmp/requirements.txt
+RUN --mount=type=cache,target=/root/.cache/pip/http \
+    python -m pip install \
+        -r /tmp/requirements/development.txt \
+        -r /tmp/requirements/testing.txt \
+    && rm -rf /tmp/requirements
+
+COPY tests/python/requirements.txt /tmp
+RUN /usr/bin/python3 -m venv /opt/venv-test
+RUN --mount=type=cache,target=/root/.cache/pip/http \
+    /opt/venv-test/bin/python -m pip install \
+        -r /tmp/requirements.txt \
+    && rm /tmp/requirements.txt
 
 WORKDIR /home/root/workspaces
 

@@ -51,7 +51,7 @@ RUN chown -R devcontainer /opt/venv /opt/venv-test
 # inaccessible by the container user. Therefore, create these directories as the
 # container user during build
 USER devcontainer
-WORKDIR /home/devcontainer/workspace
+WORKDIR /home/devcontainer/workspaces
 
 RUN mkdir -p data keys logs static node_modules
 

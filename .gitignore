@@ -65,5 +65,7 @@ cvat-core/reports
 
 # produced by devcontainer
 .devcontainer/local/docker-compose.rendered.yml
+.devcontainer/codespaces/docker-compose.rendered.yml
 .devcontainer/local/.env
+.devcontainer/codespaces/.env
 cvat-db.session.sql

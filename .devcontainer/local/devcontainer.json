@@ -14,7 +14,7 @@
         "cvat_redis_inmem",
         "cvat_redis_ondisk"
     ],
-    "workspaceFolder": "/home/devcontainer/workspace",
+    "workspaceFolder": "/home/devcontainer/workspaces",
     "remoteUser": "devcontainer",
     "containerUser": "devcontainer",
     "remoteEnv": {"HOME": "/home/devcontainer", "USER": "devcontainer"},

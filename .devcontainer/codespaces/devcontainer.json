@@ -1,9 +1,10 @@
 {
     "name": "cvat-codespaces",
+    "initializeCommand": "${localWorkspaceFolder}/.devcontainer/codespaces/init.sh",
+    // Mark all directories as safe as os like windows using WSL adds incorrect path when adding specific path
+    "postStartCommand": "git config --global --add safe.directory '*'",
     "dockerComposeFile": [
-        "${localWorkspaceFolder}/docker-compose.yml",
-        "${localWorkspaceFolder}/docker-compose.dev.yml",
-        "${localWorkspaceFolder}/.devcontainer/codespaces/docker-compose.yml"
+        "${localWorkspaceFolder}/.devcontainer/codespaces/docker-compose.rendered.yml"
     ],
     "service": "cvat_server",
     "overrideCommand": false,
@@ -43,15 +44,15 @@
         },
         "ghcr.io/devcontainers/features/node:1": {
             "nodeGypDependencies": true,
-            "version": "lts",
+            "version": "16.20.2",
             "nvmVersion": "latest"
         },
-        "ghcr.io/devcontainers/features/docker-outside-of-docker:1": {}
+        "ghcr.io/devcontainers/features/docker-in-docker:2": {}
     },
     "customizations": {
         "vscode": {
             "extensions": [
-                "ms-vscode.js-debug-nightly",
+                "ms-vscode.js-debug",
                 "ms-python.python",
                 "ms-python.debugpy",
                 "dbaeumer.vscode-eslint",

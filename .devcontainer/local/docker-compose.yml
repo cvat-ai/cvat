@@ -18,13 +18,13 @@ services:
       DJANGO_SUPERUSER_PASSWORD: ${DJANGO_SUPERUSER_PASSWORD:-admin}
       DJANGO_SUPERUSER_EMAIL: ${DJANGO_SUPERUSER_EMAIL:-admin@admin.com}
     volumes: !override
-      - cvat_data:/home/devcontainer/workspace/data
-      - cvat_keys:/home/devcontainer/workspace/keys
-      - cvat_logs:/home/devcontainer/workspace/logs
+      - cvat_data:/home/devcontainer/workspaces/data
+      - cvat_keys:/home/devcontainer/workspaces/keys
+      - cvat_logs:/home/devcontainer/workspaces/logs
       # For improving write performance on non-linux machines, static files should be
       # mounted to named volumes
-      - cvat_node_modules:/home/devcontainer/workspace/node_modules
-      - cvat_server_static:/home/devcontainer/workspace/static
+      - cvat_node_modules:/home/devcontainer/workspaces/node_modules
+      - cvat_server_static:/home/devcontainer/workspaces/static
       # TODO: Preserve important user data between rebuilds
     labels:
       - com.devcontainer.git_branch=${GIT_BRANCH:-}

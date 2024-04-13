@@ -9,8 +9,8 @@ description: 'Installing a development environment for different operating syste
 ### Dependencies
 - Install chrome
 - Install [VS Code](https://code.visualstudio.com/docs/setup/setup-overview)
-  - Install [Devcontainer](https://marketplace.visualstudio.com/items?itemName=ms-vscode-remote.remote-containers) extension
-  - Install [GitHub Codespaces](https://marketplace.visualstudio.com/items?itemName=GitHub.codespaces) extension
+  - Install [Devcontainer](https://marketplace.visualstudio.com/items?itemName=ms-vscode-remote.remote-containers) extension for local devcontainer
+  - Install [GitHub Codespaces](https://marketplace.visualstudio.com/items?itemName=GitHub.codespaces) extension for codespaces
 - Install [git](https://git-scm.com/downloads)
   - For windows users following guides may be helpful
     - [Get started using Git on Windows Subsystem for Linux](https://learn.microsoft.com/en-us/windows/wsl/tutorials/wsl-git)

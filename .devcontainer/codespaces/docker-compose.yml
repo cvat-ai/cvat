@@ -1,5 +1,3 @@
-version: '3.8'
-
 services:
   cvat_server:
     image: cvat/server:devcontainer
@@ -25,27 +23,47 @@ services:
       # mounted to named volumes
       - cvat_node_modules:/home/root/workspaces/node_modules
       - cvat_server_static:/home/root/workspaces/static
-      # Preserve important user data between rebuilds
-      - container_user_data:/home/root/.zsh_history
+    labels:
+      - com.devcontainer.git_branch=${GIT_BRANCH:-}
 
   cvat_db:
     restart: no
+    labels:
+      - com.devcontainer.git_branch=${GIT_BRANCH:-}
 
   cvat_redis_inmem:
     restart: no
+    labels:
+      - com.devcontainer.git_branch=${GIT_BRANCH:-}
 
   cvat_redis_ondisk:
     restart: no
+    labels:
+      - com.devcontainer.git_branch=${GIT_BRANCH:-}
 
   cvat_opa:
     restart: no
+    labels:
+      - com.devcontainer.git_branch=${GIT_BRANCH:-}
 
-# VS code shuts down containers upon closing the window. If in any case if it to shut down the containers
-# they should not restart upon system restart. This shall save unncessary memory usage of the system when not
-# developing
+# VS code shuts down containers upon closing the window. If in any case if it to shut
+# down the containers they should not restart upon system restart. This shall save
+# unncessary memory usage of the system when not developing
 
 volumes:
   cvat_node_modules:
   cvat_server_static:
-  container_user_data:
+  cvat_db:
+    name: cvat_db_${GIT_BRANCH:-}
+  cvat_data:
+    name: cvat_data_${GIT_BRANCH:-}
+  cvat_keys:
+    name: cvat_keys_${GIT_BRANCH:-}
+  cvat_logs:
+    name: cvat_logs_${GIT_BRANCH:-}
+  cvat_inmem_db:
+    name: cvat_inmem_db_${GIT_BRANCH:-}
+  cvat_cache_db:
+    name: cvat_cache_db_${GIT_BRANCH:-}
 
+# Volumes are parameterized with the current git branch values to isolate development environment based on git branches
