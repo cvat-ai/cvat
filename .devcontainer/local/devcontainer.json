@@ -53,7 +53,7 @@
     "customizations": {
         "vscode": {
             "extensions": [
-                "ms-vscode.js-debug-nightly",
+                "ms-vscode.js-debug",
                 "ms-python.python",
                 "ms-python.debugpy",
                 "dbaeumer.vscode-eslint",
