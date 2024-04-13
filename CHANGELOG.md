@@ -24,6 +24,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Tooltips for long names on cards (projects, tasks, cloud storages, and models)
   (<https://github.com/opencv/cvat/pull/7550>)
 
+- Add devcontainer configuration for local system as well as for GitHub Codespaces
+  (<https://github.com/cvat-ai/cvat/pull/7763>)
+
 ### Removed
 
 - The `POST /api/tasks/{id}/data` endpoint no longer accepts several
