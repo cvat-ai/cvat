@@ -568,7 +568,7 @@
                 "export",
                 "quality_reports",
                 "analytics_reports",
-                // "scheduler",
+                "notifications",
                 "annotation",
                 "webhooks",
                 "cleaning",
