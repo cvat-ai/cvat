@@ -20,6 +20,7 @@ __pycache__
 ._*
 .coverage
 .husky/
+.python-version
 
 # Ignore npm logs file
 npm-debug.log*
