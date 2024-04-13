@@ -2159,8 +2159,9 @@ def import_dm_annotations(dm_dataset: dm.Dataset, instance_data: Union[ProjectDa
 
         track['shapes'].sort(key=lambda t: t.frame)
         prev_shape = track['shapes'][0]
-        # add keyframe to the first shape
-        prev_shape = prev_shape._replace(keyframe=True)
+        # add keyframe to the first non-outside shape
+        if not prev_shape.outside:
+            prev_shape = prev_shape._replace(keyframe=True)
         new_shapes = []
 
         # avoid skipping the first frame
