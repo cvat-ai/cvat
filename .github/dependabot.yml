@@ -1,0 +1,10 @@
+version: 2
+updates:
+  - package-ecosystem: "devcontainers"
+    directory: "/.devcontainer/local"
+    schedule:
+      interval: weekly
+  - package-ecosystem: "devcontainers"
+    directory: "/.devcontainer/codespaces"
+    schedule:
+      interval: weekly
