@@ -9,6 +9,7 @@ import base64
 import json
 import os
 import textwrap
+from attr.converters import to_bool
 from copy import deepcopy
 from datetime import timedelta
 from enum import Enum
@@ -115,7 +116,7 @@ class LambdaGateway:
     def _invoke_directly(self, func, payload):
         # host.docker.internal for Linux will work only with Docker 20.10+
         NUCLIO_TIMEOUT = settings.NUCLIO['DEFAULT_TIMEOUT']
-        if os.path.exists('/.dockerenv'): # inside a docker container
+        if os.path.exists('/.dockerenv') and not to_bool(os.environ.get("DEVCONTAINER", False)): # inside a docker container which is not a devcontainer
             url = f'http://host.docker.internal:{func.port}'
         else:
             url = f'http://localhost:{func.port}'

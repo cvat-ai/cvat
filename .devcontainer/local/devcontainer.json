@@ -1,8 +1,7 @@
 {
     "name": "cvat-local",
     "initializeCommand": "${localWorkspaceFolder}/.devcontainer/local/init.sh",
-    // Mark all directories as safe as os like windows using WSL adds incorrect path when adding specific path
-    "postStartCommand": "git config --global --add safe.directory '*'",
+    "postStartCommand": "${containerWorkspaceFolder}/.devcontainer/local/poststart.sh",
     "dockerComposeFile": [
         "${localWorkspaceFolder}/.devcontainer/local/docker-compose.rendered.yml"
     ],
@@ -20,6 +19,9 @@
     "remoteEnv": {"HOME": "/home/devcontainer", "USER": "devcontainer"},
     "containerEnv": {"HOME": "/home/devcontainer", "USER": "devcontainer"},
     "shutdownAction": "stopCompose",
+    "forwardPorts": [
+        8070
+    ],
     "mounts": [
         {
             "source": "${localWorkspaceFolder}",

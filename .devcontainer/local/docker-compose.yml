@@ -8,10 +8,13 @@ services:
         - pull # To fetch upstream base image (cvat/server:dev) changes on container rebuild
         - HOST_USER_UID=${HOST_USER_UID}
         - HOST_USER_GID=${HOST_USER_GID}
+        - NUCLIO_VERSION=1.13.0
     restart: no
     entrypoint: ["/bin/bash", "-c"]
     command: ["sleep infinity"]
     environment:
+      DEVCONTAINER: 1
+      CVAT_SERVERLESS: 1
       IAM_OPA_HOST: http://opa:8181
       DJANGO_LOG_SERVER_HOST: ${DJANGO_LOG_SERVER_HOST:-}
       DJANGO_SUPERUSER_USERNAME: ${DJANGO_SUPERUSER_USERNAME:-admin}
@@ -27,7 +30,7 @@ services:
       - cvat_server_static:/home/devcontainer/workspaces/static
       # TODO: Preserve important user data between rebuilds
     labels:
-      - com.devcontainer.git_branch=${GIT_BRANCH:-}
+      - com.devcontainer.git_branch_${GIT_BRANCH:-}
 
   cvat_db:
     restart: no

@@ -6,10 +6,13 @@ services:
       context: .
       args:
         - pull # To fetch upstream base image (cvat/server:dev) changes on container rebuild
+        - NUCLIO_VERSION=1.13.0
     restart: no
     entrypoint: ["/bin/bash", "-c"]
     command: ["sleep infinity"]
     environment:
+      DEVCONTAINER: 1
+      CVAT_SERVERLESS: 1
       IAM_OPA_HOST: http://opa:8181
       DJANGO_LOG_SERVER_HOST: ${DJANGO_LOG_SERVER_HOST:-}
       DJANGO_SUPERUSER_USERNAME: ${DJANGO_SUPERUSER_USERNAME:-admin}

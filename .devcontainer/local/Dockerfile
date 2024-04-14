@@ -5,6 +5,7 @@ FROM cvat/server:dev
 
 ARG HOST_USER_UID
 ARG HOST_USER_GID
+ARG NUCLIO_VERSION
 
 ENV DJANGO_CONFIGURATION="development"
 ENV DJANGO_SETTINGS_MODULE cvat.settings.${DJANGO_CONFIGURATION}
@@ -23,7 +24,14 @@ RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
     --mount=type=cache,target=/var/lib/apt,sharing=locked \
     apt-get update \
     && DEBIAN_FRONTEND=noninteractive apt-get --no-install-recommends install -qy \
-        parallel=20210822+ds-2
+        parallel=20210822+ds-2 \
+        wget=1.21.2-2ubuntu1
+
+RUN curl -s https://api.github.com/repos/nuclio/nuclio/releases/tags/${NUCLIO_VERSION} \
+        | grep -i "browser_download_url.*nuctl.*linux" \
+        | cut -d : -f 2,3 \
+        | tr -d \" \
+        | wget -O /usr/local/bin/nuctl -qi - && chmod +x /usr/local/bin/nuctl
 
 COPY cvat/requirements /tmp/requirements
 # Install packages specific to development and testing and ignore already installed
