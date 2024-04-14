@@ -634,10 +634,17 @@ export class CanvasViewImpl implements CanvasView, Listener {
         // Transform all drawn shapes and text
         for (const key of Object.keys(this.svgShapes)) {
             const clientID = +key;
+            const state = this.drawnStates[clientID];
             const object = this.svgShapes[clientID];
-            object.attr({
-                'stroke-width': consts.BASE_STROKE_WIDTH / this.geometry.scale,
-            });
+            if (object.hasClass('cvat_canvas_shape_activated') && !state.pinned && state.shapeType === 'polyline' && state.points.length === 4) {
+                object.attr({
+                    'stroke-width': (consts.BASE_STROKE_WIDTH * 4) / this.geometry.scale,
+                });
+            } else {
+                object.attr({
+                    'stroke-width': consts.BASE_STROKE_WIDTH / this.geometry.scale,
+                });
+            }
             if (object.type === 'circle') {
                 object.attr('r', `${this.configuration.controlPointsSize / this.geometry.scale}`);
             }
@@ -2265,6 +2272,12 @@ export class CanvasViewImpl implements CanvasView, Listener {
                 (shape as any).off('dragstart');
                 (shape as any).off('dragend');
                 (shape as any).draggable(false);
+
+                if (drawnState.shapeType === 'polyline' && drawnState.points.length === 4) {
+                    shape.attr({
+                        'stroke-width': consts.BASE_STROKE_WIDTH / this.geometry.scale,
+                    });
+                }
             }
 
             if (drawnState.shapeType !== 'points') {
@@ -2389,6 +2402,12 @@ export class CanvasViewImpl implements CanvasView, Listener {
                     ...(state.shapeType === 'mask' ? { snapToGrid: 1 } : {}),
                 })
                 .on('dragstart', (): void => {
+                    if (state.shapeType === 'polyline' && state.points.length === 4) {
+                        shape.attr({
+                            'stroke-width': consts.BASE_STROKE_WIDTH / this.geometry.scale,
+                        });
+                    }
+
                     this.mode = Mode.DRAG;
                     hideText();
                     (shape as any).on('remove.drag', (): void => {
@@ -2450,7 +2469,19 @@ export class CanvasViewImpl implements CanvasView, Listener {
                             }),
                         );
                     }
+
+                    if (state.shapeType === 'polyline' && state.points.length === 4) {
+                        shape.attr({
+                            'stroke-width': (consts.BASE_STROKE_WIDTH * 4) / this.geometry.scale,
+                        });
+                    }
                 });
+
+            if (state.shapeType === 'polyline' && state.points.length === 4) {
+                shape.attr({
+                    'stroke-width': (consts.BASE_STROKE_WIDTH * 4) / this.geometry.scale,
+                });
+            }
         }
 
         if (state.shapeType !== 'points') {
@@ -2489,6 +2520,12 @@ export class CanvasViewImpl implements CanvasView, Listener {
                     snapToAngle: this.snapToAngleResize,
                 })
                 .on('resizestart', (): void => {
+                    if (state.shapeType === 'polyline' && state.points.length === 4) {
+                        shape.attr({
+                            'stroke-width': consts.BASE_STROKE_WIDTH / this.geometry.scale,
+                        });
+                    }
+
                     this.mode = Mode.RESIZE;
                     resized = false;
                     hideDirection();
@@ -2541,6 +2578,12 @@ export class CanvasViewImpl implements CanvasView, Listener {
                                 },
                             }),
                         );
+                    }
+
+                    if (!state.pinned && state.shapeType === 'polyline' && state.points.length === 4) {
+                        shape.attr({
+                            'stroke-width': (consts.BASE_STROKE_WIDTH * 4) / this.geometry.scale,
+                        });
                     }
                 });
         } else {
