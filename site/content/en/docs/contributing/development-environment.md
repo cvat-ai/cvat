@@ -62,18 +62,22 @@ Steps are common for both local and codespaces remote development
       This launch config is used to run and debug python unit tests for the django apps and `cvat-cli`.
 
 ### Dev-Container Features
-  - The devcontainer image is based on the official CVAT docker image at `cvat/server:dev` Upon every rebuild, the devcontainer shall try to pull the latest base image at and therefore it will always have the latest upstream changes without any user intervention.
+  - The devcontainer image is based on the official CVAT docker image at `cvat/server:dev` Upon every rebuild, the devcontainer shall try to pull the latest base image at and therefore it will always have the latest upstream changes without any user intervention
   - The devcontainer pre-installs all the extensions specified in `devcontainer.json` file
   - The default shell is `zsh`
-  - User profile and things like shell history are not synced between the host and the container as of now. But this is planned in near future.
   - The container user is `devcontainer` and it a non-root user, however, one can access the root user via sudo without any password to perform root operations like installing development specific applications
-  - To permanently include a ubuntu package in the devcontainer such that all other users can access them, one can add it to apt package installation section in `.devcontainer/local/Dockerfile`, and rebuild the container.
+  - To permanently include a ubuntu package in the devcontainer such that all other users can access them, one can add it to apt package installation section in `.devcontainer/<env_type>/Dockerfile`, and rebuild the container
   - Additional python packages can be installed into the virtual environment by command `pip install`. They shall not persist between container builds, therefore it is just useful for testing new packages. They can be made to persist by adding them to development requirements file and rebuilding the image
-  - Git configurations on the host machine are mounted into the container. So things like `user.name` and `user.email` are already configured inside the container.
-  - SSH keys on the host machine are mounted into the container. So one should be able to use your github ssh keys to access github.
-  - Host docker engine is accessible from inside the container. It can be used to view service container's logs and `exec` into them. Alternatively, the preinstalled `Docker` extension can be used to follow logs on the terminal, or inspect it for details. For example one can right-click on the `cvat_db` container and select `View logs` and follow the database logs in the integrated terminal.
-  - `SQLTool` extension is pre-configured for the `cvat-db` database.
-  - Local terminal can be accessed from the devcontainer window by selecting `Terminal: Create New Integrated Terminal (Local)` from the command pallette. It can be used to run command on the host machine. It can be useful for accessing `docker` running on the host machine.
+  - Git configurations on the host machine are mounted into the container. So things like `user.name` and `user.email` are already configured inside the container
+  - SSH keys on the host machine are mounted into the container. So one should be able to use your github ssh keys to access github
+  - `SQLTool` extension is pre-configured for the `cvat-db` database
+  - Local terminal can be accessed from the devcontainer window by selecting `Terminal: Create New Integrated Terminal (Local)` from the command pallette. It can be used to run command on the host machine. It can be useful for accessing `docker` running on the host machine
+  - Supports docker in docker to start and stop docker containers for REST API tests and debug it without disturbing the main development containers, thereby removing the need for backup and restore of main development environment data
+  - Serverless components can be deployed from within the devcontainer as per the documentation
+
+## Limitations
+  - Cypress testing with browser is not supported in devcontainer. It has to be run externally.
+  - User profile and things like shell history are not synced between the host and the container as of now. But this is planned in near future.
 
 ## Native development guide
 ### Setup the dependencies:
