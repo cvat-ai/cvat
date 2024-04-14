@@ -8,7 +8,7 @@ description: 'Installing a development environment for different operating syste
 ## Remote development guide
 ### Dependencies
 - Install chrome
-- Install [VS Code](https://code.visualstudio.com/docs/setup/setup-overview)
+- Install [VS Code](https://code.visualstudio.com/docs/setup/setup-overview) or [VS Code Insiders] (https://code.visualstudio.com/insiders/) in case when extensions are not installed after start of the devcontainer
   - Install [Devcontainer](https://marketplace.visualstudio.com/items?itemName=ms-vscode-remote.remote-containers) extension for local devcontainer
   - Install [GitHub Codespaces](https://marketplace.visualstudio.com/items?itemName=GitHub.codespaces) extension for codespaces
 - Install [git](https://git-scm.com/downloads)
