@@ -56,7 +56,7 @@ function ModelsPageComponent(): JSX.Element {
     return (
         <div className='cvat-models-page'>
             <TopBar
-                disabled
+                disabled={!((totalCount && !pageOutOfBounds))}
                 query={updatedQuery}
                 onApplySearch={(search: string | null) => {
                     dispatch(
