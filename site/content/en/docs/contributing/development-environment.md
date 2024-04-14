@@ -72,7 +72,7 @@ Steps are common for both local and codespaces remote development
   - SSH keys on the host machine are mounted into the container. So one should be able to use your github ssh keys to access github
   - `SQLTool` extension is pre-configured for the `cvat-db` database
   - Local terminal can be accessed from the devcontainer window by selecting `Terminal: Create New Integrated Terminal (Local)` from the command pallette. It can be used to run command on the host machine. It can be useful for accessing `docker` running on the host machine
-  - Supports docker in docker to start and stop docker containers for REST API tests and debug it without disturbing the main development containers, thereby removing the need for backup and restore of main development environment data
+  - Supports docker in docker to start and stop docker containers for REST API tests and debug it without disturbing the main development containers and its ports.
   - Serverless components can be deployed from within the devcontainer as per the documentation
 
 ## Limitations
