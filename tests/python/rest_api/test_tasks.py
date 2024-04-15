@@ -2861,12 +2861,20 @@ class TestImportWithComplexFilenames:
         return original_annotations, imported_annotations
 
     def compare_original_and_import_annotations(self, original_annotations, imported_annotations):
-        assert DeepDiff(original_annotations, imported_annotations, ignore_order=True, exclude_regex_paths=[
-                        r"root(\['\w+'\]\[\d+\])+\['id'\]",
-                        r"root(\['\w+'\]\[\d+\])+\['label_id'\]",
-                        r"root(\['\w+'\]\[\d+\])+\['attributes'\]\[\d+\]\['spec_id'\]",
-                        r"root(\['\w+'\]\[\d+\])+\['group'\]",
-                    ],) == {}
+        assert (
+            DeepDiff(
+                original_annotations,
+                imported_annotations,
+                ignore_order=True,
+                exclude_regex_paths=[
+                    r"root(\['\w+'\]\[\d+\])+\['id'\]",
+                    r"root(\['\w+'\]\[\d+\])+\['label_id'\]",
+                    r"root(\['\w+'\]\[\d+\])+\['attributes'\]\[\d+\]\['spec_id'\]",
+                    r"root(\['\w+'\]\[\d+\])+\['group'\]",
+                ],
+            )
+            == {}
+        )
 
     @pytest.mark.parametrize("format_name", ["Datumaro 1.0", "COCO 1.0", "PASCAL VOC 1.1"])
     def test_can_export_and_import_tracked_format(self, format_name):
