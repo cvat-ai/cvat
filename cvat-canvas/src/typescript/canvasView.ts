@@ -2244,45 +2244,47 @@ export class CanvasViewImpl implements CanvasView, Listener {
         if (this.activeElement.clientID) {
             const { displayAllText } = this.configuration;
             const { clientID } = this.activeElement;
-            const drawnState = this.drawnStates[clientID];
-            const shape = this.svgShapes[clientID];
+            const drawnState = (clientID in this.drawnStates) ? this.drawnStates[clientID] : null;
+            const shape = clientID in this.svgShapes ? this.svgShapes[clientID] : null;
 
-            if (drawnState.shapeType === 'points') {
-                this.svgShapes[clientID]
-                    .remember('_selectHandler').nested
-                    .removeClass('cvat_canvas_shape_activated');
-            } else {
-                shape.removeClass('cvat_canvas_shape_activated');
-            }
-            shape.removeClass('cvat_canvas_shape_draggable');
-            if (drawnState.shapeType === 'mask') {
-                shape.attr('opacity', `${this.configuration.shapeOpacity}`);
-            } else {
-                shape.attr('fill-opacity', `${this.configuration.shapeOpacity}`);
-            }
+            if (shape !== null) {
+                if (drawnState !== null && drawnState.shapeType === 'points') {
+                    this.svgShapes[clientID]
+                        .remember('_selectHandler').nested
+                        .removeClass('cvat_canvas_shape_activated');
+                } else {
+                    shape.removeClass('cvat_canvas_shape_activated');
+                }
+                shape.removeClass('cvat_canvas_shape_draggable');
+                if (drawnState !== null && drawnState.shapeType === 'mask') {
+                    shape.attr('opacity', `${this.configuration.shapeOpacity}`);
+                } else {
+                    shape.attr('fill-opacity', `${this.configuration.shapeOpacity}`);
+                }
 
-            if (!drawnState.pinned) {
-                (shape as any).off('dragstart');
-                (shape as any).off('dragend');
-                (shape as any).draggable(false);
-            }
+                if (drawnState !== null && !drawnState.pinned) {
+                    (shape as any).off('dragstart');
+                    (shape as any).off('dragend');
+                    (shape as any).draggable(false);
+                }
 
-            if (drawnState.shapeType !== 'points') {
-                this.selectize(false, shape);
-            }
+                if (drawnState !== null && drawnState.shapeType !== 'points') {
+                    this.selectize(false, shape);
+                }
 
-            if (drawnState.shapeType === 'cuboid') {
-                (shape as any).attr('projections', false);
-            }
+                if (drawnState !== null && drawnState.shapeType === 'cuboid') {
+                    (shape as any).attr('projections', false);
+                }
 
-            if (drawnState.shapeType === 'mask') {
-                (shape as any).off('mousedown');
-            }
+                if (drawnState !== null && drawnState.shapeType === 'mask') {
+                    (shape as any).off('mousedown');
+                }
 
-            (shape as any).off('resizestart');
-            (shape as any).off('resizing');
-            (shape as any).off('resizedone');
-            (shape as any).resize('stop');
+                (shape as any).off('resizestart');
+                (shape as any).off('resizing');
+                (shape as any).off('resizedone');
+                (shape as any).resize('stop');
+            }
 
             // TODO: Hide text only if it is hidden by settings
             const text = this.svgTexts[clientID];
