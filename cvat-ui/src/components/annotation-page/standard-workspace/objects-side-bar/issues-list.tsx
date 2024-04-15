@@ -39,7 +39,11 @@ export default function LabelsListComponent(): JSX.Element {
     const ready = useSelector((state: CombinedState) => state.annotation.canvas.ready);
     const activeControl = useSelector((state: CombinedState) => state.annotation.canvas.activeControl);
 
-    let frames = issues.map((issue: Issue): number => issue.frame).sort((a: number, b: number) => +a - +b);
+    let frames = issues
+        .filter((issue: Issue) => !issuesResolvedHidden || !issue.resolved)
+        .map((issue: Issue) => issue.frame)
+        .sort((a: number, b: number) => +a - +b);
+
     if (showGroundTruth) {
         const conflictFrames = conflicts
             .map((conflict): number => conflict.frame).sort((a: number, b: number) => +a - +b);
