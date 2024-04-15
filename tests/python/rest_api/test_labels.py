@@ -79,7 +79,6 @@ class _TestLabelsPermissionsBase:
 
         return labels_with_attributes
 
-
     def _get_source_info(self, source: str, *, org_id: Optional[int] = None):
         if source == "task":
             sources = self.tasks_by_org
@@ -606,7 +605,6 @@ class TestPatchLabels(_TestLabelsPermissionsBase):
     def _get_patch_data(
         self, original_data: Dict[str, Any], **overrides
     ) -> Tuple[Dict[str, Any], Dict[str, Any]]:
-
         result = deepcopy(original_data)
         result.update(overrides)
 
@@ -720,7 +718,6 @@ class TestPatchLabels(_TestLabelsPermissionsBase):
         self._test_update_ok(
             user, label["id"], patch_data, expected_data=expected_data, ignore_fields=ignore_fields
         )
-
 
     @parametrize("source", _TestLabelsPermissionsBase.source_types)
     def test_cannot_patch_sublabel_directly(self, admin_user, source):
