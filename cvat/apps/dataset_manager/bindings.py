@@ -2191,13 +2191,13 @@ def import_dm_annotations(dm_dataset: dm.Dataset, instance_data: Union[ProjectDa
     stop_frame = int(instance_data.meta[instance_data.META_FIELD]['stop_frame'])
     for track_id, track in tracks.items():
         track['shapes'].sort(key=lambda t: t.frame)
-        track['shapes'] = append_necessary_outside_attribute(track['shapes'])
+        track['shapes'] = _validate_track_shapes(track['shapes'])
 
         if ann.type == dm.AnnotationType.skeleton:
             new_elements = {}
             for element_id, element in track['elements'].items():
                 element.shapes.sort(key=lambda t: t.frame)
-                new_element_shapes = append_necessary_outside_attribute(element.shapes)
+                new_element_shapes = _validate_track_shapes(element.shapes)
                 new_elements[element_id] = instance_data.Track(
                                 label=element.label,
                                 group=element.group,
@@ -2206,7 +2206,7 @@ def import_dm_annotations(dm_dataset: dm.Dataset, instance_data: Union[ProjectDa
                             )
             track['elements'] = new_elements
 
-        if track['shapes']) or track['elements']:
+        if track['shapes'] or track['elements']:
             track['elements'] = list(track['elements'].values())
             instance_data.add_track(instance_data.Track(**track))
 
