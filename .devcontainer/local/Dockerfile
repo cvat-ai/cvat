@@ -6,6 +6,7 @@ FROM cvat/server:dev
 ARG HOST_USER_UID
 ARG HOST_USER_GID
 ARG NUCLIO_VERSION
+ARG OPA_VERSION
 
 ENV DJANGO_CONFIGURATION="development"
 ENV DJANGO_SETTINGS_MODULE cvat.settings.${DJANGO_CONFIGURATION}
@@ -27,11 +28,15 @@ RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
         parallel=20210822+ds-2 \
         wget=1.21.2-2ubuntu1
 
-RUN curl -s https://api.github.com/repos/nuclio/nuclio/releases/tags/${NUCLIO_VERSION} \
-        | grep -i "browser_download_url.*nuctl.*linux" \
-        | cut -d : -f 2,3 \
-        | tr -d \" \
-        | wget -O /usr/local/bin/nuctl -qi - && chmod +x /usr/local/bin/nuctl
+RUN curl --silent "https://api.github.com/repos/nuclio/nuclio/releases/tags/${NUCLIO_VERSION}" \
+        | sed --silent 's/"browser_download_url": "\(.*nuctl.*linux.*amd64\)"/\1/Ip' \
+        | wget --tries 3 --output-document /usr/local/bin/nuctl --quiet --input-file - \
+    && chmod +x /usr/local/bin/nuctl
+
+RUN curl --silent "https://api.github.com/repos/open-policy-agent/opa/releases/tags/v${OPA_VERSION}" \
+        | sed --silent 's/"browser_download_url": "\(.*opa.*linux.*amd64.*static\)"/\1/Ip' \
+        | wget --tries 3 --output-document /usr/local/bin/opa --quiet --input-file - \
+    && chmod +x /usr/local/bin/opa
 
 COPY cvat/requirements /tmp/requirements
 # Install packages specific to development and testing and ignore already installed
