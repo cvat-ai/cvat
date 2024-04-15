@@ -51,6 +51,7 @@ const initialValues: FormValues = {
 interface UploadParams {
     resource: 'annotation' | 'dataset' | null;
     convMaskToPoly: boolean;
+    keepOldAnnotations: boolean;
     useDefaultSettings: boolean;
     sourceStorage: Storage;
     selectedFormat: string | null;
@@ -83,6 +84,7 @@ enum ReducerActionType {
     SET_FILE_NAME = 'SET_FILE_NAME',
     SET_SELECTED_FORMAT = 'SET_SELECTED_FORMAT',
     SET_CONV_MASK_TO_POLY = 'SET_CONV_MASK_TO_POLY',
+    SET_KEEP_OLD_ANNOTATIONS = 'SET_KEEP_OLD_ANNOTATIONS',
     SET_SOURCE_STORAGE = 'SET_SOURCE_STORAGE',
     SET_RESOURCE = 'SET_RESOURCE',
 }
@@ -120,6 +122,9 @@ export const reducerActions = {
     ),
     setConvMaskToPoly: (convMaskToPoly: boolean) => (
         createAction(ReducerActionType.SET_CONV_MASK_TO_POLY, { convMaskToPoly })
+    ),
+    setKeepOldAnnotations: (keepOldAnnotations: boolean) => (
+        createAction(ReducerActionType.SET_KEEP_OLD_ANNOTATIONS, { keepOldAnnotations })
     ),
     setSourceStorage: (sourceStorage: Storage) => (
         createAction(ReducerActionType.SET_SOURCE_STORAGE, { sourceStorage })
@@ -246,6 +251,16 @@ const reducer = (state: State, action: ActionUnion<typeof reducerActions>): Stat
         };
     }
 
+    if (action.type === ReducerActionType.SET_KEEP_OLD_ANNOTATIONS) {
+        return {
+            ...state,
+            uploadParams: {
+                ...state.uploadParams,
+                keepOldAnnotations: action.payload.keepOldAnnotations,
+            },
+        };
+    }
+
     if (action.type === ReducerActionType.SET_SOURCE_STORAGE) {
         return {
             ...state,
@@ -292,6 +307,7 @@ function ImportDatasetModal(props: StateToProps): JSX.Element {
         uploadParams: {
             resource: null,
             convMaskToPoly: true,
+            keepOldAnnotations: true,
             useDefaultSettings: true,
             sourceStorage: new Storage({
                 location: StorageLocation.LOCAL,
@@ -460,6 +476,7 @@ function ImportDatasetModal(props: StateToProps): JSX.Element {
                     uploadParams.sourceStorage,
                     uploadParams.file || uploadParams.fileName as string,
                     uploadParams.convMaskToPoly,
+                    uploadParams.keepOldAnnotations,
                 ));
             const resToPrint = uploadParams.resource.charAt(0).toUpperCase() + uploadParams.resource.slice(1);
             Notification.info({
@@ -488,7 +505,7 @@ function ImportDatasetModal(props: StateToProps): JSX.Element {
 
     const handleImport = useCallback(
         (): void => {
-            if (isAnnotation()) {
+            if (isAnnotation() && !uploadParams.keepOldAnnotations) {
                 confirmUpload();
             } else {
                 onUpload();
@@ -538,6 +555,7 @@ function ImportDatasetModal(props: StateToProps): JSX.Element {
                     initialValues={{
                         ...initialValues,
                         convMaskToPoly: uploadParams.convMaskToPoly,
+                        keepOldAnnotations: uploadParams.keepOldAnnotations,
                     }}
                     onFinish={handleImport}
                     layout='vertical'
@@ -588,6 +606,20 @@ function ImportDatasetModal(props: StateToProps): JSX.Element {
                                 )}
                         </Select>
                     </Form.Item>
+                    <Space className='cvat-modal-import-switch-keep-old-annotations-container'>
+                        <Form.Item
+                            name='keepOldAnnotations'
+                            valuePropName='checked'
+                            className='cvat-modal-import-switch-keep-old-annotations'
+                        >
+                            <Switch
+                                onChange={(value: boolean) => {
+                                    dispatch(reducerActions.setKeepOldAnnotations(value));
+                                }}
+                            />
+                        </Form.Item>
+                        <Text strong>Keep Current Annotations</Text>
+                    </Space>
                     <Space className='cvat-modal-import-switch-conv-mask-to-poly-container'>
                         <Form.Item
                             name='convMaskToPoly'

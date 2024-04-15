@@ -696,7 +696,10 @@ class JobAnnotation:
             db_job=self.db_job,
             create_callback=self.create,
         )
-        self.delete()
+
+        keep_old_annotations = options.get('keep_old_annotations', True)
+        if not keep_old_annotations:
+            self.delete()
 
         temp_dir_base = self.db_job.get_tmp_dirname()
         os.makedirs(temp_dir_base, exist_ok=True)
@@ -796,7 +799,9 @@ class TaskAnnotation:
             db_task=self.db_task,
             create_callback=self.create,
         )
-        self.delete()
+        keep_old_annotations = options.get('keep_old_annotations', True)
+        if not keep_old_annotations:
+            self.delete()
 
         temp_dir_base = self.db_task.get_tmp_dirname()
         os.makedirs(temp_dir_base, exist_ok=True)
@@ -910,25 +915,25 @@ def export_task(task_id, dst_file, format_name, server_url=None, save_images=Fal
         task.export(f, exporter, host=server_url, save_images=save_images)
 
 @transaction.atomic
-def import_task_annotations(src_file, task_id, format_name, conv_mask_to_poly):
+def import_task_annotations(src_file, task_id, format_name, conv_mask_to_poly, keep_old_annotations):
     task = TaskAnnotation(task_id)
     task.init_from_db()
 
     importer = make_importer(format_name)
     with open(src_file, 'rb') as f:
         try:
-            task.import_annotations(f, importer, conv_mask_to_poly=conv_mask_to_poly)
+            task.import_annotations(f, importer, conv_mask_to_poly=conv_mask_to_poly, keep_old_annotations=keep_old_annotations)
         except (DatasetError, DatasetImportError, DatasetNotFoundError) as ex:
             raise CvatImportError(str(ex))
 
 @transaction.atomic
-def import_job_annotations(src_file, job_id, format_name, conv_mask_to_poly):
+def import_job_annotations(src_file, job_id, format_name, conv_mask_to_poly, keep_old_annotations):
     job = JobAnnotation(job_id)
     job.init_from_db()
 
     importer = make_importer(format_name)
     with open(src_file, 'rb') as f:
         try:
-            job.import_annotations(f, importer, conv_mask_to_poly=conv_mask_to_poly)
+            job.import_annotations(f, importer, conv_mask_to_poly=conv_mask_to_poly, keep_old_annotations=keep_old_annotations)
         except (DatasetError, DatasetImportError, DatasetNotFoundError) as ex:
             raise CvatImportError(str(ex))

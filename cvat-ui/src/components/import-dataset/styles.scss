@@ -36,8 +36,14 @@
 .cvat-modal-import-switch-conv-mask-to-poly {
     display: table-cell;
 }
+.cvat-modal-import-switch-keep-old-annotations {
+    display: table-cell;
+}
 
 .cvat-modal-import-switch-use-default-storage-container,
 .cvat-modal-import-switch-conv-mask-to-poly-container {
+    width: 100%;
+}
+.cvat-modal-import-switch-keep-old-annotations-container {
     width: 100%;
 }

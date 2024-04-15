@@ -71,6 +71,7 @@ export const importDatasetAsync = (
     sourceStorage: Storage,
     file: File | string,
     convMaskToPoly: boolean,
+    keepOldAnnotations: boolean,
 ): ThunkAction => (
     async (dispatch, getState) => {
         const resource = instance instanceof core.classes.Project ? 'dataset' : 'annotation';
@@ -86,6 +87,7 @@ export const importDatasetAsync = (
                 await instance.annotations
                     .importDataset(format, useDefaultSettings, sourceStorage, file, {
                         convMaskToPoly,
+                        keepOldAnnotations,
                         updateStatusCallback: (message: string, progress: number) => (
                             dispatch(importActions.importDatasetUpdateStatus(
                                 instance, Math.floor(progress * 100), message,
@@ -97,7 +99,10 @@ export const importDatasetAsync = (
                     throw Error('Only one importing of annotation/dataset allowed at the same time');
                 }
                 dispatch(importActions.importDataset(instance, format));
-                await instance.annotations.upload(format, useDefaultSettings, sourceStorage, file, { convMaskToPoly });
+                await instance.annotations.upload(format, useDefaultSettings, sourceStorage, file, {
+                    convMaskToPoly,
+                    keepOldAnnotations,
+                });
             } else { // job
                 if (state.import.tasks.dataset.current?.[instance.taskId]) {
                     throw Error('Annotations is being uploaded for the task');
@@ -108,7 +113,10 @@ export const importDatasetAsync = (
 
                 dispatch(importActions.importDataset(instance, format));
 
-                await instance.annotations.upload(format, useDefaultSettings, sourceStorage, file, { convMaskToPoly });
+                await instance.annotations.upload(format, useDefaultSettings, sourceStorage, file, {
+                    convMaskToPoly,
+                    keepOldAnnotations,
+                });
                 await instance.logger.log(EventScope.uploadAnnotations);
                 await instance.annotations.clear(true);
                 await instance.actions.clear();
