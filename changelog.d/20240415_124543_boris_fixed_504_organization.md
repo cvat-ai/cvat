@@ -1,4 +1,0 @@
-### Fixed
-
-- Inefficient resources fetching in admin panel inside the `organizations` app
-  (<https://github.com/cvat-ai/cvat/pull/7768>)
