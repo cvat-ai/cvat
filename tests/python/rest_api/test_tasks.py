@@ -2861,35 +2861,12 @@ class TestImportWithComplexFilenames:
         return original_annotations, imported_annotations
 
     def compare_original_and_import_annotations(self, original_annotations, imported_annotations):
-        # Number of shapes and tracks hasn't changed
-        assert len(original_annotations["shapes"]) == len(imported_annotations["shapes"])
-        assert len(original_annotations["tracks"]) == len(imported_annotations["tracks"])
-
-        for i, original_track in enumerate(original_annotations["tracks"]):
-            assert len(original_track["shapes"]) == len(imported_annotations["tracks"][i]["shapes"])
-
-        # Frames of shapes, tracks and track elements hasn't changed
-        assert set([s["frame"] for s in original_annotations["shapes"]]) == set(
-            [s["frame"] for s in imported_annotations["shapes"]]
-        )
-        assert set([t["frame"] for t in original_annotations["tracks"]]) == set(
-            [t["frame"] for t in imported_annotations["tracks"]]
-        )
-        assert set(
-            [
-                tes["frame"]
-                for t in original_annotations["tracks"]
-                for te in t["elements"]
-                for tes in te["shapes"]
-            ]
-        ) == set(
-            [
-                tes["frame"]
-                for t in imported_annotations["tracks"]
-                for te in t["elements"]
-                for tes in te["shapes"]
-            ]
-        )
+        assert DeepDiff(original_annotations, imported_annotations, ignore_order=True, exclude_regex_paths=[
+                        r"root(\['\w+'\]\[\d+\])+\['id'\]",
+                        r"root(\['\w+'\]\[\d+\])+\['label_id'\]",
+                        r"root(\['\w+'\]\[\d+\])+\['attributes'\]\[\d+\]\['spec_id'\]",
+                        r"root(\['\w+'\]\[\d+\])+\['group'\]",
+                    ],) == {}
 
     @pytest.mark.parametrize("format_name", ["Datumaro 1.0", "COCO 1.0", "PASCAL VOC 1.1"])
     def test_can_export_and_import_tracked_format(self, format_name):
