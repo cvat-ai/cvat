@@ -69,6 +69,17 @@ class _TestLabelsPermissionsBase:
 
         return labels_by_source
 
+    @staticmethod
+    def _labels_with_attributes(labels: List[Dict], *,source_key: str) -> Dict[int, Dict]:
+        labels_with_attributes = {}
+        for label in labels:
+            label_source = label.get(source_key)
+            if label_source and label.get("attributes"):
+                labels_with_attributes.setdefault(label_source, []).append(label)
+
+        return labels_with_attributes
+
+
     def _get_source_info(self, source: str, *, org_id: Optional[int] = None):
         if source == "task":
             sources = self.tasks_by_org
@@ -545,6 +556,15 @@ class TestGetLabels(_TestLabelsPermissionsBase):
 
 
 class TestPatchLabels(_TestLabelsPermissionsBase):
+    @staticmethod
+    def _attributes_with_id(attributes: List[Dict]) -> List[Dict]:
+        attributes_with_id = []
+        for attribute in attributes:
+            if attribute.get("id"):
+                attributes_with_id.append(attribute)
+
+        return attributes_with_id
+
     @pytest.fixture(autouse=True)
     def setup(self, restore_db_per_function, _base_setup):  # pylint: disable=arguments-differ
         self.ignore_fields = ["updated_date"]
@@ -587,11 +607,7 @@ class TestPatchLabels(_TestLabelsPermissionsBase):
         self, original_data: Dict[str, Any], **overrides
     ) -> Tuple[Dict[str, Any], Dict[str, Any]]:
 
-        filtered_data = original_data.copy()
-        if filtered_data.get("attributes"):
-            filtered_data["attributes"] = [attr for attr in filtered_data["attributes"] if "id" in attr]
-
-        result = deepcopy(filtered_data)
+        result = deepcopy(original_data)
         result.update(overrides)
 
         ignore_fields = self.ignore_fields.copy()
@@ -599,22 +615,24 @@ class TestPatchLabels(_TestLabelsPermissionsBase):
             payload = deepcopy(overrides)
 
             if overrides.get("attributes"):
-                original_attributes = filtered_data.get("attributes") or []
-                updates_list = overrides["attributes"]
+                filtered_attributes = self._attributes_with_id(deepcopy(original_data.get("attributes", [])))
 
+                if overrides.get("attributes")[0].get("id") is None:
+                    ignore_fields.append("attributes.id")
+
+                updates_list = deepcopy(overrides["attributes"])
                 updates_dict = {update['id']: update for update in updates_list if 'id' in update}
 
-                for sub_array in original_attributes:
+                for sub_array in filtered_attributes:
                     if sub_array.get('id') in updates_dict:
                         sub_array.update(updates_dict[sub_array['id']])
 
                 for sub_array in updates_list:
                     if sub_array.get('id') is None:
-                        original_attributes.append(sub_array)
+                        filtered_attributes.append(sub_array)
 
-                payload["attributes"] = original_attributes
+                payload["attributes"] = filtered_attributes
                 result["attributes"] = deepcopy(payload["attributes"])
-                ignore_fields.append("attributes.id")
 
             # Changing skeletons is not supported
             if overrides.get("type") == "skeleton":
@@ -672,7 +690,7 @@ class TestPatchLabels(_TestLabelsPermissionsBase):
                 ).values()
             )
         )[0]
-
+        print('label', label)
         expected_data, patch_data, ignore_fields = self._get_patch_data(label, **{param: newvalue})
 
         self._test_update_ok(
@@ -684,30 +702,24 @@ class TestPatchLabels(_TestLabelsPermissionsBase):
         user = admin_user
         label = next(
             iter(
-                self._labels_by_source(
-                    self.labels, source_key=self._get_source_info(source).label_source_key
+                self._labels_with_attributes(
+                    self.labels,
+                    source_key=self._get_source_info(source).label_source_key
                 ).values()
             )
         )[0]
 
-        if label.get("attributes"):
-            param = "attributes"
-            newvalue = label.get("attributes")
+        param = "attributes"
+        newvalue = label.get("attributes")
 
-            for value in newvalue:
-                if value.get("id"):
-                    value.update({"name": value["name"] + "_updated"})
-                else:
-                    value.delete()
+        for value in newvalue:
+            value.update({"name": value["name"] + "_updated"})
 
-            expected_data, patch_data, ignore_fields = self._get_patch_data(label, **{param: newvalue})
+        expected_data, patch_data, ignore_fields = self._get_patch_data(label, **{param: newvalue})
 
-            if "attributes.id" in ignore_fields:
-                ignore_fields.remove("attributes.id")
-
-            self._test_update_ok(
-                user, label["id"], patch_data, expected_data=expected_data, ignore_fields=ignore_fields
-            )
+        self._test_update_ok(
+            user, label["id"], patch_data, expected_data=expected_data, ignore_fields=ignore_fields
+        )
 
 
     @parametrize("source", _TestLabelsPermissionsBase.source_types)
