@@ -2151,7 +2151,7 @@ def import_dm_annotations(dm_dataset: dm.Dataset, instance_data: Union[ProjectDa
                 raise CvatImportError("Image {}: can't import annotation "
                     "#{} ({}): {}".format(item.id, idx, ann.type.name, e)) from e
 
-    def append_necessary_outside_attribute(shapes):
+    def _validate_track_shapes(shapes):
         new_shapes = []
         prev_shape = None
         # infer the keyframe shapes and keep only them
