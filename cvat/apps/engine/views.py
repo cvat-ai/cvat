@@ -2058,6 +2058,8 @@ class AIAudioAnnotationViewSet(viewsets.ModelViewSet):
             else:
                 job.ai_audio_annotation_status = "completed"
 
+            job.save()
+
             return Response({'success': True, 'segments': saved_segments}, status=status.HTTP_201_CREATED)
 
         except Exception as e:
