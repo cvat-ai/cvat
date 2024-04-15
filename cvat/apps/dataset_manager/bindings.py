@@ -2177,14 +2177,17 @@ def import_dm_annotations(dm_dataset: dm.Dataset, instance_data: Union[ProjectDa
                                 frame=prev_shape.frame + instance_data.frame_step)
                         new_shapes.append(prev_shape)
                 prev_shape = shape
+
+            if prev_shape.outside or prev_shape.keyframe:
+                new_shapes.append(prev_shape)
+            elif not prev_shape.outside and prev_shape.frame + instance_data.frame_step <= stop_frame:
+                prev_shape = prev_shape._replace(outside=True, keyframe=True,
+                        frame=prev_shape.frame + instance_data.frame_step)
+                new_shapes.append(prev_shape)
+
         else:
             if prev_shape.keyframe or prev_shape.outside:
                 new_shapes.append(prev_shape)
-
-        if not prev_shape.outside and prev_shape.frame + instance_data.frame_step <= stop_frame:
-            prev_shape = prev_shape._replace(outside=True, keyframe=True,
-                    frame=prev_shape.frame + instance_data.frame_step)
-            new_shapes.append(prev_shape)
 
         track['shapes'] = new_shapes
 
@@ -2214,14 +2217,17 @@ def import_dm_annotations(dm_dataset: dm.Dataset, instance_data: Union[ProjectDa
                                         frame=prev_shape.frame + instance_data.frame_step)
                                 new_element_shapes.append(prev_shape)
                         prev_shape = shape
+
+                    if prev_shape.outside or prev_shape.keyframe:
+                        new_element_shapes.append(prev_shape)
+                    elif not prev_shape.outside and prev_shape.frame + instance_data.frame_step <= stop_frame:
+                        prev_shape = prev_shape._replace(outside=True, keyframe=True,
+                                frame=prev_shape.frame + instance_data.frame_step)
+                        new_element_shapes.append(prev_shape)
+
                 else:
                     if prev_shape.keyframe or prev_shape.outside:
                         new_element_shapes.append(prev_shape)
-
-                if not prev_shape.outside and prev_shape.frame + instance_data.frame_step <= stop_frame:
-                    prev_shape = prev_shape._replace(outside=True, keyframe=True,
-                            frame=prev_shape.frame + instance_data.frame_step)
-                    new_element_shapes.append(prev_shape)
 
             track['elements'] = new_elements
 
