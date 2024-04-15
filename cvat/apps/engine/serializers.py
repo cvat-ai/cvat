@@ -565,7 +565,7 @@ class JobReadSerializer(serializers.ModelSerializer):
         fields = ('url', 'id', 'task_id', 'project_id', 'assignee', 'guide_id',
             'dimension', 'bug_tracker', 'status', 'stage', 'state', 'mode', 'frame_count',
             'start_frame', 'stop_frame', 'data_chunk_size', 'data_compressed_chunk_type',
-            'created_date', 'updated_date', 'issues', 'labels', 'type', 'organization')
+            'created_date', 'updated_date', 'issues', 'labels', 'type', 'organization', 'ai_audio_annotation_status', 'ai_audio_annotation_task_id', 'ai_audio_annotation_error_msg')
         read_only_fields = fields
 
     def to_representation(self, instance):
@@ -723,7 +723,7 @@ class SimpleJobSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = models.Job
-        fields = ('url', 'id', 'assignee', 'status', 'stage', 'state', 'type')
+        fields = ('url', 'id', 'assignee', 'status', 'stage', 'state', 'type', 'ai_audio_annotation_status', 'ai_audio_annotation_task_id', 'ai_audio_annotation_error_msg')
         read_only_fields = fields
 
 class SegmentSerializer(serializers.ModelSerializer):

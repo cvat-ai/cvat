@@ -99,6 +99,19 @@ class StageChoice(str, Enum):
     def __str__(self):
         return self.value
 
+class AI_AUDIO_ANNOTATION_CHOICES(str, Enum):
+    NOT_STARTED = 'not started'
+    IN_PROGRESS = 'in progress'
+    COMPLETED = 'completed'
+    FAILED = 'failed'
+
+    @classmethod
+    def choices(cls):
+        return tuple((x.value, x.name) for x in cls)
+
+    def __str__(self):
+        return self.value
+
 class StateChoice(str, Enum):
     NEW = 'new'
     IN_PROGRESS = 'in progress'
@@ -672,6 +685,9 @@ class Job(models.Model):
 
     type = models.CharField(max_length=32, choices=JobType.choices(),
         default=JobType.ANNOTATION)
+    ai_audio_annotation_status = models.CharField(max_length=32, choices=AI_AUDIO_ANNOTATION_CHOICES.choices(), default=AI_AUDIO_ANNOTATION_CHOICES.NOT_STARTED)
+    ai_audio_annotation_task_id = models.CharField(max_length=100, default="", null=True, blank=True)
+    ai_audio_annotation_error_msg = models.CharField(max_length=4096, default="", null=True, blank=True)
 
     def get_dirname(self):
         return os.path.join(settings.JOBS_ROOT, str(self.id))

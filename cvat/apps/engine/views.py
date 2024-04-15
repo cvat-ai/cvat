@@ -6,6 +6,7 @@
 import io
 import os
 import os.path as osp
+import uuid
 from PIL import Image
 from types import SimpleNamespace
 from typing import Optional, Any, Dict, List, cast
@@ -2047,6 +2048,16 @@ class AIAudioAnnotationViewSet(viewsets.ModelViewSet):
                 else:
                     return Response({'error': serializer.errors}, status=status.HTTP_400_BAD_REQUEST)
 
+            # Save the status to completed
+
+            error_msg = request.data.get("error_msg")
+
+            if error_msg is not None and len(error_msg) > 0:
+                job.ai_audio_annotation_status = "failed"
+                job.ai_audio_annotation_error_msg = error_msg
+            else:
+                job.ai_audio_annotation_status = "completed"
+
             return Response({'success': True, 'segments': saved_segments}, status=status.HTTP_201_CREATED)
 
         except Exception as e:
@@ -2065,8 +2076,15 @@ class AIAudioAnnotationViewSet(viewsets.ModelViewSet):
             if not job:
                 return Response({'error': 'Invalid job'}, status=status.HTTP_400_BAD_REQUEST)
 
+            background_task_id = str(uuid.uuid4())
+
+            job.ai_audio_annotation_status = "in progress"
+            job.ai_audio_annotation_task_id = background_task_id
+
+            job.save()
+
             # Iterate over segments and save to the model
-            r = requests.post("http://35.208.178.37:8000/transcript", json={ "jobId" : job_id, "authToken" : authHeader})
+            r = requests.post("http://35.208.178.37:8000/transcript", json={ "jobId" : job_id, "authToken" : authHeader, "background_task_id" : background_task_id})
 
             return Response({'success': True}, status=status.HTTP_200_OK)
 
