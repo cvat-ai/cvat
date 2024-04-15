@@ -124,10 +124,19 @@ context('Ground truth jobs', () => {
             });
     }
 
-    function checkRectangle(rectangle) {
-        cy.get(`#cvat_canvas_shape_${rectangle.id}`)
-            .should('be.visible')
-            .should('have.class', 'cvat_canvas_ground_truth');
+    function checkRectangle(rectangle, isGroundTruthJob = false) {
+        if (isGroundTruthJob) {
+            cy.get(`#cvat_canvas_shape_${rectangle.id}`)
+                .should('be.visible')
+                .should('not.have.class', 'cvat_canvas_ground_truth')
+                .should('not.have.css', 'stroke-dasharray', '1px');
+        } else {
+            cy.get(`#cvat_canvas_shape_${rectangle.id}`)
+                .should('be.visible')
+                .should('have.class', 'cvat_canvas_ground_truth')
+                .should('have.css', 'stroke-dasharray', '1px');
+        }
+
         cy.get(`#cvat-objects-sidebar-state-item-${rectangle.id}`)
             .should('be.visible');
     }
@@ -295,7 +304,7 @@ context('Ground truth jobs', () => {
             });
         });
 
-        it('Check ground truth annotations in regular job', () => {
+        it('Check ground truth annotations in GT job and in regular job', () => {
             cy.interactMenu('Open the task');
             cy.get('.cvat-job-item').contains('a', `Job #${groundTruthJobID}`).click();
 
@@ -303,6 +312,13 @@ context('Ground truth jobs', () => {
                 cy.goCheckFrameNumber(frame);
                 cy.createRectangle(groundTruthRectangles[index]);
             });
+
+            cy.changeWorkspace('Review');
+            groundTruthFrames.forEach((frame, index) => {
+                cy.goCheckFrameNumber(frame);
+                checkRectangle(groundTruthRectangles[index], true);
+            });
+
             cy.saveJob();
             cy.interactMenu('Finish the job');
             cy.get('.cvat-modal-content-finish-job').within(() => {
