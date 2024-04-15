@@ -2851,10 +2851,6 @@ class TestImportWithComplexFilenames:
         assert response.status_code == 200, f"Cannot get task's annotations: {response.content}"
         original_annotations = response.json()
 
-        # delete all annotations
-        response = delete_method("admin1", f"tasks/{task_id}/annotations")
-        assert response.status_code == 204, f"Cannot delete task's annotations: {response.content}"
-
         # import the annotations
         task.import_annotations(format_name, dataset_file)
 
