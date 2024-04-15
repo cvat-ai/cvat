@@ -2158,35 +2158,34 @@ def import_dm_annotations(dm_dataset: dm.Dataset, instance_data: Union[ProjectDa
             continue
 
         track['shapes'].sort(key=lambda t: t.frame)
-        prev_shape = track['shapes'][0]
-        # add keyframe to the first non-outside shape
-        if not prev_shape.outside:
-            prev_shape = prev_shape._replace(keyframe=True)
         new_shapes = []
+        prev_shape = None
+        # infer the keyframe shapes and keep only them
+        for shape in track['shapes']:
+            cur_is_visible = shape and not shape.outside
+            if not cur_is_visible:
+                continue
 
-        # avoid skipping the first frame
-        if len(track['shapes']) > 1:
-            for shape in track['shapes'][1:]:
-                if prev_shape.keyframe:
+            prev_is_visible = prev_shape and not prev_shape.outside
+            if not prev_is_visible or (
+                has_gap := prev_shape.frame + instance_data.frame_step < shape.frame
+            ):
+                if has_gap:
+                    prev_shape = prev_shape._replace(outside=True, keyframe=True,
+                        frame=prev_shape.frame + instance_data.frame_step)
                     new_shapes.append(prev_shape)
-                else:
-                    has_skip = instance_data.frame_step < shape.frame - prev_shape.frame
-                    if has_skip and not prev_shape.outside:
-                        prev_shape = prev_shape._replace(outside=True, keyframe=True,
-                                frame=prev_shape.frame + instance_data.frame_step)
-                        new_shapes.append(prev_shape)
+
+                shape = shape._replace(keyframe=True)
+                new_shapes.append(shape)
                 prev_shape = shape
 
-            if prev_shape.outside or prev_shape.keyframe:
-                new_shapes.append(prev_shape)
-            elif not prev_shape.outside and prev_shape.frame + instance_data.frame_step <= stop_frame:
-                prev_shape = prev_shape._replace(outside=True, keyframe=True,
-                        frame=prev_shape.frame + instance_data.frame_step)
-                new_shapes.append(prev_shape)
-
-        else:
-            if prev_shape.keyframe:
-                new_shapes.append(prev_shape)
+        if prev_shape and not prev_shape.outside and (
+            prev_shape.frame + instance_data.frame_step <= stop_frame
+            # has a gap before the current instance segment end
+        ):
+            prev_shape = prev_shape._replace(outside=True, keyframe=True,
+                frame=prev_shape.frame + instance_data.frame_step)
+            new_shapes.append(prev_shape)
 
         track['shapes'] = new_shapes
 
