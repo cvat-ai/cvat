@@ -2167,8 +2167,7 @@ def import_dm_annotations(dm_dataset: dm.Dataset, instance_data: Union[ProjectDa
         # avoid skipping the first frame
         if len(track['shapes']) > 1:
             for shape in track['shapes'][1:]:
-                if prev_shape.keyframe or prev_shape.outside:
-                    prev_shape = prev_shape._replace(keyframe=True)
+                if prev_shape.keyframe:
                     new_shapes.append(prev_shape)
                 else:
                     has_skip = instance_data.frame_step < shape.frame - prev_shape.frame
@@ -2207,8 +2206,7 @@ def import_dm_annotations(dm_dataset: dm.Dataset, instance_data: Union[ProjectDa
                 # avoid skipping the first frame
                 if len(element.shapes) > 1:
                     for shape in element.shapes[1:]:
-                        if prev_shape.keyframe or prev_shape.outside:
-                            prev_shape = prev_shape._replace(keyframe=True)
+                        if prev_shape.keyframe:
                             new_element_shapes.append(prev_shape)
                         else:
                             has_skip = instance_data.frame_step < shape.frame - prev_shape.frame
