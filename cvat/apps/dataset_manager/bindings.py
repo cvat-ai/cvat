@@ -2206,7 +2206,7 @@ def import_dm_annotations(dm_dataset: dm.Dataset, instance_data: Union[ProjectDa
                             )
             track['elements'] = new_elements
 
-        if not(len(track['shapes']) == 0 and len(track['elements']) == 0):
+        if not(len(track['shapes']) == 0 or len(track['elements']) == 0):
             track['elements'] = list(track['elements'].values())
             instance_data.add_track(instance_data.Track(**track))
 
