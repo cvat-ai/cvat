@@ -2186,7 +2186,7 @@ def import_dm_annotations(dm_dataset: dm.Dataset, instance_data: Union[ProjectDa
                 new_shapes.append(prev_shape)
 
         else:
-            if prev_shape.keyframe or prev_shape.outside:
+            if prev_shape.keyframe:
                 new_shapes.append(prev_shape)
 
         track['shapes'] = new_shapes
@@ -2226,7 +2226,7 @@ def import_dm_annotations(dm_dataset: dm.Dataset, instance_data: Union[ProjectDa
                         new_element_shapes.append(prev_shape)
 
                 else:
-                    if prev_shape.keyframe or prev_shape.outside:
+                    if prev_shape.keyframe:
                         new_element_shapes.append(prev_shape)
 
             track['elements'] = new_elements
