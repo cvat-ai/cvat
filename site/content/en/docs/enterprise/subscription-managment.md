@@ -87,7 +87,7 @@ Here’s how you can do it:
    first create an [organization](/docs/manual/advanced/organization/) and
    switch to an **Organization** account.
 3. Navigate to the top right corner, next to the nickname,
-   click on the arrow > Uprate to the Plan.
+   click on the arrow > uprate to the plan.
 4. Switch on the **I would like the invoice to include additional
    data (address, phone number, VAT information)** toggle and click **Get Started**.
 
