@@ -17,18 +17,18 @@ See:
 - [Billing](#billing)
   - [Solo plan](#solo-plan)
   - [Team plan](#team-plan)
-  - [Can a paid invoice be modified?](#can-a-paid-invoice-be-modified)
   - [How to add VAT/tax and other information to the CVAT.ai invoice before the first payment?](#how-to-add-vattax-and-other-information-to-the-cvatai-invoice-before-the-first-payment)
   - [How to add/ change VAT/tax and other information to the CVAT.ai invoice after the first payment?](#how-to-add-change-vattax-and-other-information-to-the-cvatai-invoice-after-the-first-payment)
-- [How can I get a quote before I subscribe? How to add a PO number to my invoices?](#how-can-i-get-a-quote-before-i-subscribe-how-to-add-a-po-number-to-my-invoices)
-- [Can you sign an agreement before I subscribe?](#can-you-sign-an-agreement-before-i-subscribe)
-- [Can you handle a bank transfer with 30-day payment terms?](#can-you-handle-a-bank-transfer-with-30-day-payment-terms)
-- [Where can I find my invoices?](#where-can-i-find-my-invoices)
-- [I am a student, can I have a discount or free access?](#i-am-a-student-can-i-have-a-discount-or-free-access)
+  - [Can a paid invoice be modified?](#can-a-paid-invoice-be-modified)
+  - [How can I get a quote before I subscribe? How to add a PO number to my invoices?](#how-can-i-get-a-quote-before-i-subscribe-how-to-add-a-po-number-to-my-invoices)
+  - [Can you sign an agreement before I subscribe?](#can-you-sign-an-agreement-before-i-subscribe)
+  - [Can you handle a bank transfer with 30-day payment terms?](#can-you-handle-a-bank-transfer-with-30-day-payment-terms)
+  - [Where can I find my invoices?](#where-can-i-find-my-invoices)
+  - [I am a student, can I have a discount or free access?](#i-am-a-student-can-i-have-a-discount-or-free-access)
 - [Payment methods](#payment-methods)
   - [Paying with bank transfer](#paying-with-bank-transfer)
-  - [Change payment method on Solo plan](#change-payment-method-on-solo-plan)
-  - [Change payment method on Team plan](#change-payment-method-on-team-plan)
+  - [Change payment method on the Solo plan](#change-payment-method-on-the-solo-plan)
+  - [Change the payment method on the Team plan](#change-the-payment-method-on-the-team-plan)
 - [Adding and removing team members](#adding-and-removing-team-members)
   - [Solo plan](#solo-plan-1)
   - [Team plan](#team-plan-1)
@@ -48,13 +48,16 @@ See:
 This section describes the billing model and gives short a
 description of limitations for each plan.
 
+There are two types of subscriptions available for both the Solo
+and Team plans: monthly and annual.
+
 For more information,
 see: [Pricing Plans](https://www.cvat.ai/post/new-pricing-plans)
 
 ### Solo plan
 
-**Account/Month**: The **Solo** plan has a fixed price and is
-designed **for personal use only**. It doesn't allow collaboration with team members,
+The **Solo** plan has a fixed price and is
+designed **for personal use only**. It doesn't allow collaboration with team members
 but removes all the other limits of the **Free** plan.
 
 > **Note**: Although it allows the creation of an organization and
@@ -63,7 +66,7 @@ but removes all the other limits of the **Free** plan.
 
 ### Team plan
 
-**Member/ month**: The **Team** plan allows you to create
+The **Team** plan allows you to create
 an organization and add team members who can collaborate on projects.
 The **monthly payment for the plan depends on the number of team members you've added**.
 All limits of the **Free** plan will be removed.
@@ -71,6 +74,52 @@ All limits of the **Free** plan will be removed.
 > **Note**: The organization owner is also part of the team.
 > So, if you have three annotators working, you'll need to pay
 > for 4 seats (3 annotators + 1 organization owner).
+
+### How to add VAT/tax and other information to the CVAT.ai invoice before the first payment?
+
+To ensure VAT (tax) information and other relevant details are included on your CVAT.ai invoices,
+it's important to add this information before making the first payment.
+
+Here’s how you can do it:
+
+1. Sign up for a CVAT.ai account and log in.
+2. (Optional) If you add the VAT/tax number to the organization,
+   first create an [organization](/docs/manual/advanced/organization/) and
+   switch to an **Organization** account.
+3. Navigate to the top right corner, next to the nickname,
+   click on the arrow > Uprate to the Plan.
+4. Switch on the **I would like the invoice to include additional
+   data (address, phone number, VAT information)** toggle and click **Get Started**.
+
+   ![Stripe Link](/images/add-invoice.jpg)
+
+5. You will see the billing page:
+
+   ![Stripe Link](/images/add-vat.jpg)
+
+   - **Billing Address**: Enter the billing address you want to appear on the invoice
+     in the address field **(1)**.
+   - **VAT Information** and **Business Name**: Select the checkbox **I am purchasing as a business** and enter
+     your VAT and business name information **(2)**.
+
+6. Select checkbox **I agree to refund policy** **(3)**.
+
+7. Click **Pay & Subscribe**.
+
+All information you've added will appear on the billing page and in the invoice.
+
+![Stripe Payment Info](/images/sm-profile-upd-inf.png)
+
+By following these steps, you can seamlessly add VAT and other crucial information to your
+invoices, making your financial transactions with CVAT.ai transparent and compliant.
+
+### How to add/ change VAT/tax and other information to the CVAT.ai invoice after the first payment?
+
+In the top right corner, near the nickname, click on the arrow > manage plan.
+
+You will see the Stripe page. Go to the **Billing Information** > **Update Information**.
+
+![Stripe Payment Info](/images/sm-profile-upd-inf-2.png)
 
 ### Can a paid invoice be modified?
 
@@ -82,60 +131,7 @@ For more comprehensive information on this policy, please refer to Stripe's offi
 on [invoice edits](https://docs.stripe.com/invoicing/invoice-edits#:~:text=Stripe%20lets%20you%20revise%20a,Edit%20the%20invoice%20description.)
 at their website.
 
-### How to add VAT/tax and other information to the CVAT.ai invoice before the first payment?
-
-To ensure VAT (tax) information and other relevant details are included on your CVAT.ai invoices,
-it's important to add this information before making the first payment.
-
-This process involves using the Stripe subscription management panel, where you'll need to
-enter your VAT and other organizational details.
-
-Here’s how you can do it:
-
-1. Sign up for a CVAT.ai account and log in.
-2. Create an [organization](/docs/manual/advanced/organization/) and switch to an **Organization** account.
-3. Navigate to the top right corner, next to the **Organization** name,
-   click on the arrow >**Upgrade to Team Plan**> **Get Started**.
-   This action will redirect you to the Stripe payment page.
-
-   > **Important:** Do not proceed with the payment at this stage.
-
-   ![Stripe Payment Page](/images/sm-payment-page.png)
-
-4. Go to the [Stripe billing](https://billing.stripe.com/p/login/fZe2aO3J2eDA3W8eUU) page and log
-   in with your CVAT.ai email address. You will receive an email containing a link:
-
-   ![Stripe Link](/images/sm-stripe-link.png)
-
-   > **Note:** If you did not receive this email, it may indicate that the address you used is not
-   > registered with CVAT.ai, or you may have skipped **Step 3**.
-   > <br>Additionally, remember to check your spam folder.
-
-5. Click on the link in the email, you will see the following page:
-
-   ![Stripe Billing Page](/images/sm-stipe-billing-page.png)
-
-6. In the **Billing Information** section, click **Update information** and add all the needed information
-   about your company. For details, see [How to Subscribe, Change, or Renew Your Subscription](https://www.youtube.com/watch?v=AMPtbmqZKNY).
-7. Once you have added all the necessary information, return to **Step 3**,
-   and pay for the [Team plan](/docs/enterprise/subscription-managment/#team-plan).
-   Once the payment has been processed, you will receive a confirmation e-mai.
-8. All the information you’ve added in **Step 6** will be visible in your account and in the invoice.
-
-![Stripe Payment Info](/images/sm-profile-inf.png)
-
-By following these steps, you can seamlessly add VAT and other crucial information to your
-invoices, making your financial transactions with CVAT.ai transparent and compliant.
-
-### How to add/ change VAT/tax and other information to the CVAT.ai invoice after the first payment?
-
-In the top right corner, near the **Organization** name, click on the arrow >**Manage Team Plan** > **Manage**.
-
-You will see the Stripe page. Go to the **Billing Information** > **Update Information**.
-
-![Stripe Payment Info](/images/sm-profile-upd-inf.png)
-
-## How can I get a quote before I subscribe? How to add a PO number to my invoices?
+### How can I get a quote before I subscribe? How to add a PO number to my invoices?
 
 If you require a quote from CVAT for payment via bank transfer, certain criteria must be met:
 
@@ -144,29 +140,29 @@ If you require a quote from CVAT for payment via bank transfer, certain criteria
 
 Should you meet these requirements, please write to [support@cvat.ai](mailto:support@cvat.ai)
 
-## Can you sign an agreement before I subscribe?
+### Can you sign an agreement before I subscribe?
 
 Sign of specific agreements and approvals are available if you meet specific criteria
 (the **total subscription cost must be $10,000 and up**), for more details contact [support@cvat.ai](mailto:support@cvat.ai)
 
-## Can you handle a bank transfer with 30-day payment terms?
+### Can you handle a bank transfer with 30-day payment terms?
 
 Yes, it is available if you fit the quota criteria, for details contact [support@cvat.ai](mailto:support@cvat.ai).
 
-## Where can I find my invoices?
+### Where can I find my invoices?
 
-In the top right corner, near the **Organization** name, click on the arrow > **Manage Team Plan** >**Manage**
+In the top right corner, near the nickname, click on the arrow > manage plan.
 
 You will see the Stripe page.
 At the bottom of the page, you will see the **Invoice History** section with all invoices.
 
-Invoices are automatically sent to the account owner address used for the registration.
+Invoices are automatically sent to the account owner's address used for the registration.
 
-To see the invoice click on the **Show Invoice Icon** ![Stripe Invoice Icon](/images/invoice-icon.png) icon.
+To see the invoice click on the **Show Invoice Icon**![Stripe Invoice Icon](/images/invoice-icon.png) icon.
 
 ![Show Invoice](/images/show-invoice.png)
 
-## I am a student, can I have a discount or free access?
+### I am a student, can I have a discount or free access?
 
 To consider your request for a discount, we'd need a few details from you:
 
@@ -186,28 +182,29 @@ This section describes how to change or add payment methods.
 
 ### Paying with bank transfer
 
-> **Note** at the moment this method of payment
-> work only with US banks.
+> **Note** At the moment this method of payment
+> works only with US banks.
 
-To pay with bank transfer:
+To pay with a bank transfer:
 
 1. Go to the **Upgrade to Solo**/**Team plan**> **Get started**.
 2. Click **US Bank Transfer**.
-3. Upon successful completion of the payment, the you will receive a receipt via email.
+3. Upon successful completion of the payment, you will receive a receipt via email.
 
 > **Note** that the completion of the payment process may take up to three banking days.
 
 ![Bank Transfer Payment](/images/bank_transfer_payment.jpg)
 
-### Change payment method on Solo plan
+### Change payment method on the Solo plan
 
-Access Manage **Solo plan** > **Manage** and click **+Add Payment Method**
+In the top right corner, near the nickname, click on the arrow > **Manage Solo Plan** > **+Add Payment Method**
 
 ![Payment pro](/images/update_payment_solo.png)
 
-### Change payment method on Team plan
+### Change the payment method on the Team plan
 
-Access **Manage Team Plan** > **Manage** and click **+Add Payment Method**.
+Switch to the Organization and in the top right corner, near the nickname,
+click on the arrow > **Manage Team Plan** > **+Add Payment Method**
 
 ![Payment team](/images/update_payment_team.png)
 
@@ -222,7 +219,7 @@ Not available.
 
 ### Team plan
 
-Go to the **Manage Team plan** > **Manage** > **Update quantity**.
+Go to the **Manage Team plan** > **Update quantity**.
 
 ![Add members](/images/change_members_number_team.gif)
 
@@ -255,7 +252,7 @@ plans for different organizations.
 ## Cancel plan
 
 This section describes how to cancel your CVAT subscription
-and what will happen to your data.
+and what will happen to your data?
 
 ### What will happen to my data?
 
@@ -274,25 +271,23 @@ excess data or it will be deleted automatically.
 
 ### Solo plan
 
-To cancel **Solo** plan, do the following:
-
-1. In the top right corner click on your nickname, then **Organization** > **Personal workspace**.
-2. Click again on the nickname, then follow to **Manage Solo plan** > **Manage** > **Cancel plan**
+To cancel the **Solo** plan, in the top right corner, near the nickname,
+click on the arrow **Manage Solo plan** > **Cancel plan**
 
 Please, fill out the feedback form, to help us improve our platform.
 
-![Cancel pro](/images/cancel_solo.gif)
+![Cancel pro](/images/cancel-solo.png)
 
 ### Team plan
 
-To cancel **Team** plan, do the following:
+To cancel the **Team** plan, do the following:
 
 1. In the top right corner click on your nickname, then **Organization** > Organization name.
-2. Click again on the nickname, then follow to **Manage Team plan** > **Manage** > **Cancel plan**
+2. Click again on the nickname, then follow to **Manage Team plan** > **Cancel plan**
 
 Please, fill out the feedback form, to help us improve our platform.
 
-![Cancel team](/images/cancel_team.gif)
+![Cancel team](/images/cancel-team.png)
 
 ## Plan renewal
 
@@ -301,11 +296,11 @@ CVAT subscription
 
 ### Solo plan
 
-Access **Manage Solo plan** > **Manage** > **Renew plan**
+Access **Manage Solo plan** > **Renew plan**
 
 ### Team plan
 
-Access **Manage Team Plan** > **Manage** > **Renew plan**
+Access **Manage Team Plan** > **Renew plan**
 
 ## Subscription management video tutorial
 
