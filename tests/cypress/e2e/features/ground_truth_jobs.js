@@ -317,6 +317,9 @@ context('Ground truth jobs', () => {
             groundTruthFrames.forEach((frame, index) => {
                 cy.goCheckFrameNumber(frame);
                 checkRectangle(groundTruthRectangles[index], true);
+                cy.get(`#cvat-objects-sidebar-state-item-${groundTruthRectangles[index].id}`)
+                    .find('.ant-dropdown-trigger').click();
+                cy.get('.cvat-object-item-menu').should('exist');
             });
 
             cy.saveJob();
@@ -332,6 +335,8 @@ context('Ground truth jobs', () => {
             groundTruthFrames.forEach((frame, index) => {
                 cy.goCheckFrameNumber(frame);
                 checkRectangle(groundTruthRectangles[index]);
+                cy.get(`#cvat-objects-sidebar-state-item-${groundTruthRectangles[index].id}`)
+                    .find('.ant-dropdown-trigger').should('not.exist');
             });
         });
 
