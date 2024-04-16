@@ -1089,9 +1089,8 @@ def _create_thread(
                 video_size = img_meta[0][2]
                 video_path = img_meta[0][0]
 
-            if MEDIA_TYPE is not "audio":
-                progress = extractor.get_progress(img_meta[-1][1])
-                update_progress(progress)
+            progress = extractor.get_progress(img_meta[-1][1])
+            update_progress(progress)
 
         futures = queue.Queue(maxsize=settings.CVAT_CONCURRENT_CHUNK_PROCESSING)
         with concurrent.futures.ThreadPoolExecutor(max_workers=2*settings.CVAT_CONCURRENT_CHUNK_PROCESSING) as executor:
