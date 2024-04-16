@@ -5,6 +5,7 @@
 
 import os
 import os.path as osp
+import functools
 from PIL import Image
 from types import SimpleNamespace
 from typing import Optional, Any, Dict, List, cast, Callable
@@ -12,6 +13,7 @@ import traceback
 import textwrap
 from copy import copy
 from datetime import datetime
+from redis.exceptions import ConnectionError as RedisConnectionError
 from tempfile import NamedTemporaryFile
 from textwrap import dedent
 
@@ -3195,10 +3197,23 @@ def _import_project_dataset(request, rq_id_template, rq_func, db_obj, format_nam
 @extend_schema(tags=['background-processes'])
 @extend_schema_view(
     list=extend_schema(
-        summary='List with rq jobs',
+        summary='List with RQ jobs',
         responses={
             '200': RQJobDetailsSerializer(many=True),
-        }),
+        }
+    ),
+    retrieve=extend_schema(
+        summary='Get RQ job details',
+        responses={
+            '200': RQJobDetailsSerializer,
+        }
+    ),
+    destroy=extend_schema(
+        summary='Delete RQ job',
+        responses={
+            '204': OpenApiResponse(description='RQ job has been deleted'),
+        }
+    ),
 )
 class BackgroundProcessViewSet(viewsets.GenericViewSet):
     SUPPORTED_QUEUES = (
@@ -3270,18 +3285,26 @@ class BackgroundProcessViewSet(viewsets.GenericViewSet):
         if rq_job.meta.get("user", {}).get("id") != user_id:
             raise PermissionDenied('You don\'t have permission to perform this action')
 
+    def _handle_redis_exceptions(func):
+        @functools.wraps(func)
+        def wrapper(*args, **kwarggs):
+            try:
+                return func(*args, **kwarggs)
+            except RedisConnectionError as ex:
+                msg = 'Redis service is not available'
+                slogger.glob.exception(f'{msg}: {str(ex)}')
+                return Response(msg, status=status.HTTP_503_SERVICE_UNAVAILABLE)
+        return wrapper
+
     @method_decorator(never_cache)
-    @action(detail=False, methods=['GET'], url_path='status')
-    def status(self, request):
+    def retrieve(self, request, pk: str):
         # TODO: add support for retrieving rq job details based on task id, action
         # TODO: add support for specifying that only status (or shorter version) should be returned
-        rq_id = request.query_params.get('rq_id')
-
         user_id = request.user.id
-        job = self._get_rq_job_by_id(rq_id)
+        job = self._get_rq_job_by_id(pk)
 
         if not job:
-            return HttpResponseNotFound(f"There is no RQ job with specified rq_id: {rq_id}")
+            return HttpResponseNotFound(f"There is no RQ job with specified rq_id: {pk}")
 
         try:
             self._check_permissions(job, user_id)
@@ -3292,6 +3315,7 @@ class BackgroundProcessViewSet(viewsets.GenericViewSet):
         return Response(data=serializer.data, status=status.HTTP_200_OK)
 
     @method_decorator(never_cache)
+    @_handle_redis_exceptions
     def list(self, request):
         # TODO: support filtering
         user_id = request.user.id
@@ -3306,14 +3330,21 @@ class BackgroundProcessViewSet(viewsets.GenericViewSet):
         serializer = self.get_serializer(filtered_jobs, many=True, context={'request': request})
         return Response(data=serializer.data, status=status.HTTP_200_OK)
 
+    @extend_schema(
+        summary='Cancel RQ job',
+        responses={
+            status.HTTP_200_OK: OpenApiResponse(description='RQ job has been cancelled'),
+        },
+    )
     @method_decorator(never_cache)
     @action(detail=True, methods=['POST'], url_path='cancel')
-    def cancel(self, request, rq_id: str):
+    @_handle_redis_exceptions
+    def cancel(self, request, pk: str):
         # TODO: add permission check
-        rq_job = self._get_rq_job_by_id(rq_id)
+        rq_job = self._get_rq_job_by_id(pk)
 
         if not rq_job:
-            return HttpResponseNotFound(f"There is no RQ job with specified rq_id: {rq_id!r}")
+            return HttpResponseNotFound(f"There is no RQ job with specified rq_id: {pk!r}")
 
         user_id = request.user.id
         try:
@@ -3321,18 +3352,18 @@ class BackgroundProcessViewSet(viewsets.GenericViewSet):
         except PermissionDenied as ex:
             return HttpResponse(str(ex), status=status.HTTP_403_FORBIDDEN)
 
-        # TODO: add handling redis exceptions
         rq_job.cancel()
 
         return Response(status=status.HTTP_200_OK)
 
     @method_decorator(never_cache)
-    def destroy(self, request, rq_id: str):
+    @_handle_redis_exceptions
+    def destroy(self, request, pk: str):
         # TODO: add permission check
-        rq_job = self._get_rq_job_by_id(rq_id)
+        rq_job = self._get_rq_job_by_id(pk)
 
         if not rq_job:
-            return HttpResponseNotFound(f"There is no RQ job with specified rq_id: {rq_id!r}")
+            return HttpResponseNotFound(f"There is no RQ job with specified rq_id: {pk!r}")
 
         user_id = request.user.id
         try:
@@ -3343,7 +3374,6 @@ class BackgroundProcessViewSet(viewsets.GenericViewSet):
         if not any([rq_job.is_canceled, rq_job.is_finished, rq_job.is_failed]):
             return HttpResponseBadRequest(f"Only canceled/finished/failed RQ jobs can be deleted")
 
-        # TODO: add handling redis exceptions
         rq_job.delete()
 
         return Response(status=status.HTTP_204_NO_CONTENT)
