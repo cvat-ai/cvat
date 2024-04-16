@@ -2870,45 +2870,10 @@ class TestImportWithComplexFilenames:
                     r"root(\['\w+'\]\[\d+\])+\['id'\]",
                     r"root(\['\w+'\]\[\d+\])+\['label_id'\]",
                     r"root(\['\w+'\]\[\d+\])+\['attributes'\]\[\d+\]\['spec_id'\]",
-                    r"root(\['\w+'\]\[\d+\])+\['group'\]",
                 ],
             )
             == {}
         )
-
-    @pytest.mark.parametrize("format_name", ["Datumaro 1.0", "COCO 1.0", "PASCAL VOC 1.1"])
-    def test_can_export_and_import_tracked_format(self, format_name):
-        task_id = 14
-        dataset_file = self.tmp_dir / (format_name + "tracked_format_source_data.zip")
-        annotations = {
-            "shapes": [],
-            "tracks": [
-                {
-                    "frame": 0,
-                    "shapes": [
-                        {
-                            "type": "rectangle",
-                            "frame": 0,
-                            "points": [1.0, 2.0, 3.0, 2.0],
-                            "keyframe": True,
-                        },
-                        {
-                            "type": "rectangle",
-                            "frame": 3,
-                            "points": [1.0, 2.0, 3.0, 2.0],
-                            "keyframe": True,
-                        },
-                    ],
-                    "elements": [],
-                }
-            ],
-        }
-
-        original_annotations, imported_annotations = self.delete_annotation_and_import_annotations(
-            task_id, annotations, format_name, dataset_file
-        )
-
-        self.compare_original_and_import_annotations(original_annotations, imported_annotations)
 
     @pytest.mark.parametrize("format_name", ["Datumaro 1.0", "COCO 1.0", "PASCAL VOC 1.1"])
     def test_export_and_import_tracked_format_with_outside_true(self, format_name):
@@ -2919,6 +2884,7 @@ class TestImportWithComplexFilenames:
             "tracks": [
                 {
                     "frame": 0,
+                    "group": 0,
                     "shapes": [
                         {
                             "type": "rectangle",
@@ -2954,6 +2920,7 @@ class TestImportWithComplexFilenames:
             "tracks": [
                 {
                     "frame": 0,
+                    "group": 0,
                     "shapes": [
                         {
                             "type": "rectangle",
@@ -2978,6 +2945,9 @@ class TestImportWithComplexFilenames:
         )
 
         self.compare_original_and_import_annotations(original_annotations, imported_annotations)
+
+        # check that all the keyframe is imported correctly
+        assert len(imported_annotations["tracks"][0]["shapes"]) == 2
 
     @pytest.mark.parametrize("format_name", ["Datumaro 1.0", "COCO 1.0", "PASCAL VOC 1.1"])
     def test_export_and_import_tracked_format_with_outside_without_keyframe(self, format_name):
@@ -2988,6 +2958,7 @@ class TestImportWithComplexFilenames:
             "tracks": [
                 {
                     "frame": 0,
+                    "group": 0,
                     "shapes": [
                         {
                             "type": "rectangle",
@@ -3013,6 +2984,9 @@ class TestImportWithComplexFilenames:
 
         self.compare_original_and_import_annotations(original_annotations, imported_annotations)
 
+        # check that all the keyframe is imported correctly
+        assert len(imported_annotations["tracks"][0]["shapes"]) == 2
+
     @pytest.mark.parametrize("format_name", ["Datumaro 1.0", "COCO 1.0", "PASCAL VOC 1.1"])
     def test_export_and_import_tracked_format_with_no_keyframe(self, format_name):
         task_id = 14
@@ -3022,6 +2996,7 @@ class TestImportWithComplexFilenames:
             "tracks": [
                 {
                     "frame": 0,
+                    "group": 0,
                     "shapes": [
                         {
                             "type": "rectangle",
@@ -3040,6 +3015,9 @@ class TestImportWithComplexFilenames:
 
         self.compare_original_and_import_annotations(original_annotations, imported_annotations)
 
+        # check if first frame is imported correctly with keyframe = True
+        assert len(imported_annotations["tracks"][0]["shapes"]) == 1
+
     @pytest.mark.parametrize("format_name", ["Datumaro 1.0", "COCO 1.0", "PASCAL VOC 1.1"])
     def test_export_and_import_tracked_format_with_one_outside(self, format_name):
         task_id = 14
@@ -3049,6 +3027,7 @@ class TestImportWithComplexFilenames:
             "tracks": [
                 {
                     "frame": 0,
+                    "group": 0,
                     "shapes": [
                         {
                             "type": "rectangle",
@@ -3068,47 +3047,8 @@ class TestImportWithComplexFilenames:
 
         self.compare_original_and_import_annotations(original_annotations, imported_annotations)
 
-    def test_can_export_and_import_skeleton_tracks_in_coco_format(self):
-        task_id = 14
-        format_name = "COCO Keypoints 1.0"
-        dataset_file = self.tmp_dir / (format_name + "source_data.zip")
-        annotations = {
-            "shapes": [],
-            "tracks": [
-                {
-                    "frame": 0,
-                    "shapes": [
-                        {"type": "skeleton", "frame": 0, "points": [], "keyframe": True},
-                        {"type": "skeleton", "frame": 3, "points": [], "keyframe": True},
-                    ],
-                    "elements": [
-                        {
-                            "frame": 0,
-                            "shapes": [
-                                {
-                                    "type": "points",
-                                    "frame": 0,
-                                    "points": [1.0, 2.0],
-                                    "keyframe": True,
-                                },
-                                {
-                                    "type": "points",
-                                    "frame": 3,
-                                    "points": [1.0, 2.0],
-                                    "keyframe": True,
-                                },
-                            ],
-                        },
-                    ],
-                }
-            ],
-        }
-
-        original_annotations, imported_annotations = self.delete_annotation_and_import_annotations(
-            task_id, annotations, format_name, dataset_file
-        )
-
-        self.compare_original_and_import_annotations(original_annotations, imported_annotations)
+        # only outside=True shape is imported, means there is no visible shape
+        assert len(imported_annotations["tracks"]) == 0
 
     def test_export_and_import_coco_keypoints_with_outside_true(self):
         task_id = 14
@@ -3119,6 +3059,7 @@ class TestImportWithComplexFilenames:
             "tracks": [
                 {
                     "frame": 0,
+                    "group": 0,
                     "shapes": [
                         {"type": "skeleton", "frame": 0, "points": [], "keyframe": True},
                         {
@@ -3132,6 +3073,7 @@ class TestImportWithComplexFilenames:
                     "elements": [
                         {
                             "frame": 0,
+                            "group": 0,
                             "shapes": [
                                 {
                                     "type": "points",
@@ -3168,6 +3110,7 @@ class TestImportWithComplexFilenames:
             "tracks": [
                 {
                     "frame": 0,
+                    "group": 0,
                     "shapes": [
                         {"type": "skeleton", "frame": 0, "points": [], "keyframe": True},
                         {
@@ -3180,6 +3123,7 @@ class TestImportWithComplexFilenames:
                     "elements": [
                         {
                             "frame": 0,
+                            "group": 0,
                             "shapes": [
                                 {
                                     "type": "points",
@@ -3206,6 +3150,9 @@ class TestImportWithComplexFilenames:
 
         self.compare_original_and_import_annotations(original_annotations, imported_annotations)
 
+        # check that all the keyframe is imported correctly
+        assert len(imported_annotations["tracks"][0]["shapes"]) == 2
+
     def test_export_and_import_coco_keypoints_with_outside_without_keyframe(self):
         task_id = 14
         format_name = "COCO Keypoints 1.0"
@@ -3215,6 +3162,7 @@ class TestImportWithComplexFilenames:
             "tracks": [
                 {
                     "frame": 0,
+                    "group": 0,
                     "shapes": [
                         {"type": "skeleton", "frame": 0, "points": [], "keyframe": True},
                         {
@@ -3227,6 +3175,7 @@ class TestImportWithComplexFilenames:
                     "elements": [
                         {
                             "frame": 0,
+                            "group": 0,
                             "shapes": [
                                 {
                                     "type": "points",
@@ -3253,6 +3202,48 @@ class TestImportWithComplexFilenames:
 
         self.compare_original_and_import_annotations(original_annotations, imported_annotations)
 
+        # check that all the keyframe is imported correctly
+        assert len(imported_annotations["tracks"][0]["shapes"]) == 2
+
+    def test_export_and_import_coco_keypoints_with_no_keyframe(self):
+        task_id = 14
+        format_name = "COCO Keypoints 1.0"
+        dataset_file = self.tmp_dir / (format_name + "with_no_keyframe_source_data.zip")
+        annotations = {
+            "shapes": [],
+            "tracks": [
+                {
+                    "frame": 0,
+                    "group": 0,
+                    "shapes": [
+                        {"type": "skeleton", "frame": 0, "points": []},
+                    ],
+                    "elements": [
+                        {
+                            "frame": 0,
+                            "group": 0,
+                            "shapes": [
+                                {
+                                    "type": "points",
+                                    "frame": 0,
+                                    "points": [1.0, 2.0],
+                                },
+                            ],
+                        },
+                    ],
+                }
+            ],
+        }
+
+        original_annotations, imported_annotations = self.delete_annotation_and_import_annotations(
+            task_id, annotations, format_name, dataset_file
+        )
+
+        self.compare_original_and_import_annotations(original_annotations, imported_annotations)
+
+        # check if first frame is imported correctly with keyframe = True
+        assert len(imported_annotations["tracks"][0]["shapes"]) == 1
+
     def test_export_and_import_coco_keypoints_with_one_outside(self):
         task_id = 14
         format_name = "COCO Keypoints 1.0"
@@ -3262,12 +3253,14 @@ class TestImportWithComplexFilenames:
             "tracks": [
                 {
                     "frame": 0,
+                    "group": 0,
                     "shapes": [
                         {"type": "skeleton", "frame": 3, "points": [], "outside": True},
                     ],
                     "elements": [
                         {
                             "frame": 0,
+                            "group": 0,
                             "shapes": [
                                 {
                                     "type": "points",
@@ -3288,36 +3281,5 @@ class TestImportWithComplexFilenames:
 
         self.compare_original_and_import_annotations(original_annotations, imported_annotations)
 
-    def test_export_and_import_coco_keypoints_with_no_keyframe(self):
-        task_id = 14
-        format_name = "COCO Keypoints 1.0"
-        dataset_file = self.tmp_dir / (format_name + "with_no_keyframe_source_data.zip")
-        annotations = {
-            "shapes": [],
-            "tracks": [
-                {
-                    "frame": 0,
-                    "shapes": [
-                        {"type": "skeleton", "frame": 0, "points": []},
-                    ],
-                    "elements": [
-                        {
-                            "frame": 0,
-                            "shapes": [
-                                {
-                                    "type": "points",
-                                    "frame": 0,
-                                    "points": [1.0, 2.0],
-                                },
-                            ],
-                        },
-                    ],
-                }
-            ],
-        }
-
-        original_annotations, imported_annotations = self.delete_annotation_and_import_annotations(
-            task_id, annotations, format_name, dataset_file
-        )
-
-        self.compare_original_and_import_annotations(original_annotations, imported_annotations)
+        # only outside=True shape is imported, means there is no visible shape
+        assert len(imported_annotations["tracks"]) == 0
