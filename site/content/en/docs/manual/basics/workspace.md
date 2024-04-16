@@ -15,8 +15,8 @@ The workspace includes the following elements:
 
 | Element | Description                                                                                         |
 | ------- | --------------------------------------------------------------------------------------------------- |
-| 1       | [Top Panel](/docs/manual/basics/top-panel/) and [basic navigation](/docs/manual/basics/top-panel/). |
-| 2       | [Controls sidebar](/docs/manual/basics/controls-sidebar/)                                           |
+| 1       | {{< ilink "/docs/manual/basics/top-panel" "Top Panel" >}} and {{< ilink "/docs/manual/basics/top-panel" "basic navigation" >}}. |
+| 2       | {{< ilink "/docs/manual/basics/controls-sidebar" "Controls sidebar" >}}                                           |
 | 3       | [Objects sidebar](docs/manual/basics/objects-sidebar/)                                              |
 | 4       | Image annotation area, described in this article.                                                   |
 

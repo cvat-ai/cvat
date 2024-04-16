@@ -637,9 +637,9 @@ class TestImportExportDatasetProject:
 
     @pytest.mark.parametrize("format_name", ("Datumaro 1.0", "ImageNet 1.0", "PASCAL VOC 1.1"))
     def test_can_import_export_dataset_with_some_format(self, format_name):
-        # https://github.com/opencv/cvat/issues/4410
-        # https://github.com/opencv/cvat/issues/4850
-        # https://github.com/opencv/cvat/issues/4621
+        # https://github.com/cvat-ai/cvat/issues/4410
+        # https://github.com/cvat-ai/cvat/issues/4850
+        # https://github.com/cvat-ai/cvat/issues/4621
         username = "admin1"
         project_id = 4
 
@@ -700,7 +700,7 @@ class TestImportExportDatasetProject:
         check_func(content, values_to_be_checked)
 
     def test_can_import_export_annotations_with_rotation(self):
-        # https://github.com/opencv/cvat/issues/4378
+        # https://github.com/cvat-ai/cvat/issues/4378
         username = "admin1"
         project_id = 4
 
@@ -727,8 +727,8 @@ class TestImportExportDatasetProject:
         assert task1_rotation == task2_rotation
 
     def test_can_export_dataset_with_skeleton_labels_with_spaces(self):
-        # https://github.com/opencv/cvat/issues/5257
-        # https://github.com/opencv/cvat/issues/5600
+        # https://github.com/cvat-ai/cvat/issues/5257
+        # https://github.com/cvat-ai/cvat/issues/5600
         username = "admin1"
         project_id = 11
 
