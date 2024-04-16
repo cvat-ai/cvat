@@ -162,8 +162,8 @@ class ProjectAnnotationAndData:
                 if settings.LOG_IMPORT_ERRORS:
                     dlogger.log_import_error(
                         entity="project",
-                        id=self.db_project.id,
-                        format=importer.DISPLAY_NAME,
+                        entity_id=self.db_project.id,
+                        format_name=importer.DISPLAY_NAME,
                         base_error=str(not_found),
                         dir_path=temp_dir,
                     )

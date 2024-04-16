@@ -37,8 +37,8 @@ class DatasetLogManager:
     def __init__(self) -> None:
         self.glob = logging.getLogger("dataset_logger")
 
-    def log_import_error(self, entity, id, format, base_error, dir_path) -> None:
-        base_info = f"[{entity}.id={id} format.name={format} exc={base_error}]"
+    def log_import_error(self, entity, entity_id, format_name, base_error, dir_path) -> None:
+        base_info = f"[{entity}.id={entity_id} format.name={format_name} exc={base_error}]"
         dir_tree = display_tree(
             dir_path=dir_path,
             string_rep=True,

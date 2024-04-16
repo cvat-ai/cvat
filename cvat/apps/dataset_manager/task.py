@@ -711,8 +711,8 @@ class JobAnnotation:
                 if settings.LOG_IMPORT_ERRORS:
                     dlogger.log_import_error(
                         entity="job",
-                        id=self.db_job.id,
-                        format=importer.DISPLAY_NAME,
+                        entity_id=self.db_job.id,
+                        format_name=importer.DISPLAY_NAME,
                         base_error=str(not_found),
                         dir_path=temp_dir,
                     )
@@ -823,8 +823,8 @@ class TaskAnnotation:
                 if settings.LOG_IMPORT_ERRORS:
                     dlogger.log_import_error(
                         entity="task",
-                        id=self.db_task.id,
-                        format=importer.DISPLAY_NAME,
+                        entity_id=self.db_task.id,
+                        format_name=importer.DISPLAY_NAME,
                         base_error=str(not_found),
                         dir_path=temp_dir,
                     )
