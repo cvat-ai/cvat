@@ -2990,6 +2990,9 @@ class TestImportWithComplexFilenames:
         # check that all the keyframe is imported correctly
         assert len(imported_annotations["tracks"][0]["shapes"]) == 2
 
+        # check that frame 3 is imported correctly with outside = True
+        assert imported_annotations["tracks"][0]["shapes"][1]["outside"]
+
     @pytest.mark.parametrize("format_name", ["Datumaro 1.0", "COCO 1.0", "PASCAL VOC 1.1"])
     def test_export_and_import_tracked_format_with_no_keyframe(self, format_name):
         task_id = 14
@@ -3210,6 +3213,9 @@ class TestImportWithComplexFilenames:
 
         # check that all the keyframe is imported correctly
         assert len(imported_annotations["tracks"][0]["shapes"]) == 2
+
+        # check that frame 3 is imported correctly with outside = True
+        assert imported_annotations["tracks"][0]["shapes"][1]["outside"]
 
     def test_export_and_import_coco_keypoints_with_no_keyframe(self):
         task_id = 14
