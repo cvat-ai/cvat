@@ -2034,7 +2034,7 @@ class AIAudioAnnotationViewSet(viewsets.ModelViewSet):
             segments = request.data.get('segments')
 
             # Validate data
-            if not job_id or not segments:
+            if not job_id:
                 return Response({'error': 'Invalid data format'}, status=status.HTTP_400_BAD_REQUEST)
 
             # Iterate over segments and save to the model

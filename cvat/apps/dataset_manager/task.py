@@ -1003,7 +1003,7 @@ def get_audio_job_export_data(job_id, dst_file, job, temp_dir_base, temp_dir):
     annotation_audio_chunk_file_paths = chunk_annotation_audio(audio_file_path, temp_dir, annotations)
 
     for i in range(0, len(annotation_audio_chunk_file_paths)):
-        final_data.append({"path" : os.path.basename(annotation_audio_chunk_file_paths[i]), "sentence" : annotations[i]["transcript"], "gender" : annotations[i]["gender"], "locale" : annotations[i]["locale"], "age" : annotations[i]["age"], "accent" : annotations[i]["accent"], "emotion" : annotations[i]["emotion"] })
+        final_data.append({"path" : os.path.basename(annotation_audio_chunk_file_paths[i]), "sentence" : annotations[i]["transcript"], "age" : annotations[i]["age"], "gender" : annotations[i]["gender"], "accents" : annotations[i]["accent"], "locale" : annotations[i]["locale"], "emotion" : annotations[i]["emotion"] })
 
     return final_data, annotation_audio_chunk_file_paths
 
