@@ -3056,6 +3056,67 @@ class TestImportWithComplexFilenames:
         # only outside=True shape is imported, means there is no visible shape
         assert len(imported_annotations["tracks"]) == 0
 
+    @pytest.mark.parametrize("format_name", ["Datumaro 1.0", "COCO 1.0", "PASCAL VOC 1.1"])
+    def test_export_and_import_tracked_format_with_gap(self, format_name):
+        task_id = 14
+        dataset_file = self.tmp_dir / (format_name + "with_gap_source_data.zip")
+        annotations = {
+            "shapes": [],
+            "tracks": [
+                {
+                    "frame": 0,
+                    "group": 0,
+                    "shapes": [
+                        {
+                            "type": "rectangle",
+                            "frame": 0,
+                            "points": [1.0, 2.0, 3.0, 2.0],
+                            "keyframe": True,
+                        },
+                        {
+                            "type": "rectangle",
+                            "frame": 2,
+                            "points": [1.0, 2.0, 3.0, 2.0],
+                            "outside": True,
+                        },
+                        {
+                            "type": "rectangle",
+                            "frame": 4,
+                            "points": [1.0, 2.0, 3.0, 2.0],
+                            "keyframe": True,
+                        },
+                        {
+                            "type": "rectangle",
+                            "frame": 5,
+                            "points": [1.0, 2.0, 3.0, 2.0],
+                            "outside": True,
+                        },
+                        {
+                            "type": "rectangle",
+                            "frame": 6,
+                            "points": [1.0, 2.0, 3.0, 2.0],
+                            "keyframe": True,
+                        },
+                    ],
+                    "elements": [],
+                }
+            ],
+        }
+
+        original_annotations, imported_annotations = self.delete_annotation_and_import_annotations(
+            task_id, annotations, format_name, dataset_file
+        )
+
+        self.compare_original_and_import_annotations(original_annotations, imported_annotations)
+
+        # check that all the keyframe is imported correctly
+        assert len(imported_annotations["tracks"][0]["shapes"]) == 5
+
+        outside_count = sum(
+            1 for shape in imported_annotations["tracks"][0]["shapes"] if shape["outside"]
+        )
+        assert outside_count == 2, "Outside shapes are not imported correctly"
+
     def test_export_and_import_coco_keypoints_with_outside_true(self):
         task_id = 14
         format_name = "COCO Keypoints 1.0"
@@ -3295,3 +3356,76 @@ class TestImportWithComplexFilenames:
 
         # only outside=True shape is imported, means there is no visible shape
         assert len(imported_annotations["tracks"]) == 0
+
+    def test_export_and_import_coco_keypoints_with_gap(self):
+        task_id = 14
+        format_name = "COCO Keypoints 1.0"
+        dataset_file = self.tmp_dir / (format_name + "with_gap_source_data.zip")
+        annotations = {
+            "shapes": [],
+            "tracks": [
+                {
+                    "frame": 0,
+                    "group": 0,
+                    "shapes": [
+                        {"type": "skeleton", "frame": 0, "points": [], "keyframe": True},
+                        {"type": "skeleton", "frame": 2, "points": [], "outside": True},
+                        {"type": "skeleton", "frame": 4, "points": [], "keyframe": True},
+                        {"type": "skeleton", "frame": 5, "points": [], "outside": True},
+                        {"type": "skeleton", "frame": 6, "points": [], "keyframe": True},
+                    ],
+                    "elements": [
+                        {
+                            "frame": 0,
+                            "group": 0,
+                            "shapes": [
+                                {
+                                    "type": "points",
+                                    "frame": 0,
+                                    "points": [1.0, 2.0],
+                                    "keyframe": True,
+                                },
+                                {
+                                    "type": "points",
+                                    "frame": 2,
+                                    "points": [1.0, 2.0],
+                                    "outside": True,
+                                },
+                                {
+                                    "type": "points",
+                                    "frame": 4,
+                                    "points": [1.0, 2.0],
+                                    "keyframe": True,
+                                },
+                                {
+                                    "type": "points",
+                                    "frame": 5,
+                                    "points": [1.0, 2.0],
+                                    "outside": True,
+                                },
+                                {
+                                    "type": "points",
+                                    "frame": 6,
+                                    "points": [1.0, 2.0],
+                                    "keyframe": True,
+                                },
+                            ],
+                        },
+                    ],
+                }
+            ],
+        }
+
+        original_annotations, imported_annotations = self.delete_annotation_and_import_annotations(
+            task_id, annotations, format_name, dataset_file
+        )
+
+        self.compare_original_and_import_annotations(original_annotations, imported_annotations)
+
+        # check if all the keyframes are imported correctly
+        assert len(imported_annotations["tracks"][0]["shapes"]) == 5
+
+        outside_count = sum(
+            1 for shape in imported_annotations["tracks"][0]["shapes"] if shape["outside"]
+        )
+        assert outside_count == 2, "Outside shapes are not imported correctly"
