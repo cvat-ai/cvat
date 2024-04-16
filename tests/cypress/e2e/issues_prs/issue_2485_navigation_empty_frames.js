@@ -38,7 +38,6 @@ context('Navigation to empty frames', () => {
     });
 
     beforeEach(() => {
-        cy.wait(500); // wait while tooltips are opened
         cy.hideTooltips();
     });
 

@@ -13,7 +13,7 @@ import {
     RectDrawingMethod, CuboidDrawingMethod, Canvas, CanvasMode as Canvas2DMode,
 } from 'cvat-canvas-wrapper';
 import {
-    getCore, MLModel, JobType, Job, QualityConflict,
+    getCore, MLModel, JobType, Job, QualityConflict, ObjectState,
 } from 'cvat-core-wrapper';
 import logger, { EventScope } from 'cvat-logger';
 import { getCVATStore } from 'cvat-store';
@@ -34,7 +34,7 @@ import { updateJobAsync } from './jobs-actions';
 import { switchToolsBlockerState } from './settings-actions';
 
 interface AnnotationsParameters {
-    filters: string[];
+    filters: object[];
     frame: number;
     showAllInterpolationTracks: boolean;
     showGroundTruth: boolean;
@@ -266,7 +266,7 @@ export function highlightConflict(conflict: QualityConflict | null): AnyAction {
     };
 }
 
-async function fetchAnnotations(frameNumber?: number): Promise<{
+async function fetchAnnotations(predefinedFrame?: number): Promise<{
     states: CombinedState['annotation']['annotations']['states'];
     history: CombinedState['annotation']['annotations']['history'];
     minZ: number;
@@ -277,10 +277,22 @@ async function fetchAnnotations(frameNumber?: number): Promise<{
         jobInstance, showGroundTruth, groundTruthInstance,
     } = receiveAnnotationsParameters();
 
-    const fetchFrame = typeof frameNumber === 'undefined' ? frame : frameNumber;
-    const states = await jobInstance.annotations.get(fetchFrame, showAllInterpolationTracks, filters);
+    const fetchFrame = typeof predefinedFrame === 'undefined' ? frame : predefinedFrame;
+    let states = await jobInstance.annotations.get(fetchFrame, showAllInterpolationTracks, filters);
     const [minZ, maxZ] = computeZRange(states);
-    if (showGroundTruth && groundTruthInstance) {
+    if (jobInstance.type === JobType.GROUND_TRUTH) {
+        states = states.map((state: ObjectState) => new Proxy(state, {
+            get(_state, prop) {
+                if (prop === 'isGroundTruth') {
+                    // ground truth objects are not considered as gt objects, relatively to a gt jobs
+                    // to avoid extra css styles, or restrictions applied
+                    return false;
+                }
+
+                return Reflect.get(_state, prop);
+            },
+        }));
+    } else if (showGroundTruth && groundTruthInstance) {
         const gtStates = await groundTruthInstance.annotations.get(fetchFrame, showAllInterpolationTracks, filters);
         states.push(...gtStates);
     }
@@ -934,9 +946,9 @@ export function getJobAsync({
                 )) || job.startFrame;
 
             const frameData = await job.frames.get(frameNumber);
-            // call first getting of frame data before rendering interface
-            // to load and decode first chunk
             try {
+                // call first getting of frame data before rendering interface
+                // to load and decode first chunk
                 await frameData.data();
             } catch (error) {
                 // do nothing, user will be notified when data request is done
@@ -944,7 +956,6 @@ export function getJobAsync({
 
             const states = await job.annotations.get(frameNumber, showAllInterpolationTracks, filters);
             const issues = await job.issues();
-            const [minZ, maxZ] = computeZRange(states);
             const colors = [...cvat.enums.colors];
 
             let groundTruthJobFramesMeta = null;
@@ -981,11 +992,10 @@ export function getJobAsync({
                     frameData,
                     colors,
                     filters,
-                    minZ,
-                    maxZ,
                 },
             });
 
+            dispatch(fetchAnnotationsAsync());
             dispatch(changeFrameAsync(frameNumber, false));
         } catch (error) {
             dispatch({

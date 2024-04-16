@@ -11,7 +11,7 @@ env:
 
 jobs:
   check_updates:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-latest-big
     env:
       REPO: ${{ github.repository }}
       GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -44,7 +44,7 @@ jobs:
 
   build:
     needs: search_cache
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-latest-big
     steps:
       - uses: actions/checkout@v4
 
@@ -107,7 +107,7 @@ jobs:
 
   unit_testing:
     needs: build
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-latest-big
     steps:
       - uses: actions/checkout@v4
 
@@ -153,9 +153,11 @@ jobs:
 
       - name: OPA tests
         run: |
-          curl -L -o opa https://openpolicyagent.org/downloads/v0.45.0/opa_linux_amd64_static
-          chmod +x ./opa
-          ./opa test cvat/apps/iam/rules
+          python cvat/apps/iam/rules/tests/generate_tests.py \
+            --output-dir cvat/apps/iam/rules/
+
+          docker compose run --rm -v "$PWD/cvat/apps/iam/rules/:/mnt/rules" \
+            cvat_opa test /mnt/rules
 
       - name: REST API and SDK tests
         run: |
@@ -188,7 +190,7 @@ jobs:
 
   e2e_testing:
     needs: build
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-latest-big
     strategy:
       fail-fast: false
       matrix:
