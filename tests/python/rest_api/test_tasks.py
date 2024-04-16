@@ -2911,6 +2911,9 @@ class TestImportWithComplexFilenames:
 
         self.compare_original_and_import_annotations(original_annotations, imported_annotations)
 
+        # check if frame 3 is imported correctly with outside = True
+        assert imported_annotations["tracks"][0]["shapes"][1]["outside"]
+
     @pytest.mark.parametrize("format_name", ["Datumaro 1.0", "COCO 1.0", "PASCAL VOC 1.1"])
     def test_export_and_import_tracked_format_with_intermediate_keyframe(self, format_name):
         task_id = 14
@@ -3100,6 +3103,9 @@ class TestImportWithComplexFilenames:
         )
 
         self.compare_original_and_import_annotations(original_annotations, imported_annotations)
+
+        # check if frame 3 is imported correctly with outside = True
+        assert imported_annotations["tracks"][0]["shapes"][1]["outside"]
 
     def test_export_and_import_coco_keypoints_with_intermediate_keyframe(self):
         task_id = 14
