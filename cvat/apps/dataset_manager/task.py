@@ -1,5 +1,5 @@
 # Copyright (C) 2019-2022 Intel Corporation
-# Copyright (C) 2022-2023 CVAT.ai Corporation
+# Copyright (C) 2022-2024 CVAT.ai Corporation
 #
 # SPDX-License-Identifier: MIT
 
@@ -12,10 +12,12 @@ from datumaro.components.errors import DatasetError, DatasetImportError, Dataset
 
 from django.db import transaction
 from django.db.models.query import Prefetch
+from django.conf import settings
 from rest_framework.exceptions import ValidationError
 
 from cvat.apps.engine import models, serializers
 from cvat.apps.engine.plugins import plugin_decorator
+from cvat.apps.engine.log import DatasetLogManager
 from cvat.apps.events.handlers import handle_annotations_change
 from cvat.apps.profiler import silk_profile
 
@@ -23,6 +25,8 @@ from cvat.apps.dataset_manager.annotation import AnnotationIR, AnnotationManager
 from cvat.apps.dataset_manager.bindings import TaskData, JobData, CvatImportError
 from cvat.apps.dataset_manager.formats.registry import make_exporter, make_importer
 from cvat.apps.dataset_manager.util import add_prefetch_fields, bulk_create, get_cached
+
+dlogger = DatasetLogManager()
 
 class dotdict(OrderedDict):
     """dot.notation access to dictionary attributes"""
@@ -701,7 +705,19 @@ class JobAnnotation:
         temp_dir_base = self.db_job.get_tmp_dirname()
         os.makedirs(temp_dir_base, exist_ok=True)
         with TemporaryDirectory(dir=temp_dir_base) as temp_dir:
-            importer(src_file, temp_dir, job_data, **options)
+            try:
+                importer(src_file, temp_dir, job_data, **options)
+            except DatasetNotFoundError as not_found:
+                if settings.LOG_IMPORT_ERRORS:
+                    dlogger.log_import_error(
+                        entity="job",
+                        id=self.db_job.id,
+                        format=importer.DISPLAY_NAME,
+                        base_error=str(not_found),
+                        dir_path=temp_dir,
+                    )
+
+                raise not_found
 
         self.create(job_data.data.slice(self.start_frame, self.stop_frame).serialize())
 
@@ -801,7 +817,19 @@ class TaskAnnotation:
         temp_dir_base = self.db_task.get_tmp_dirname()
         os.makedirs(temp_dir_base, exist_ok=True)
         with TemporaryDirectory(dir=temp_dir_base) as temp_dir:
-            importer(src_file, temp_dir, task_data, **options)
+            try:
+                importer(src_file, temp_dir, task_data, **options)
+            except DatasetNotFoundError as not_found:
+                if settings.LOG_IMPORT_ERRORS:
+                    dlogger.log_import_error(
+                        entity="task",
+                        id=self.db_task.id,
+                        format=importer.DISPLAY_NAME,
+                        base_error=str(not_found),
+                        dir_path=temp_dir,
+                    )
+
+                raise not_found
 
         self.create(task_data.data.serialize())
 

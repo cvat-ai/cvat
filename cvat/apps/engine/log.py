@@ -1,4 +1,5 @@
 # Copyright (C) 2018-2022 Intel Corporation
+# Copyright (C) 2024 CVAT.ai Corporation
 #
 # SPDX-License-Identifier: MIT
 
@@ -6,6 +7,7 @@ import logging
 import sys
 import os.path as osp
 from contextlib import contextmanager
+from directory_tree import display_tree
 
 from django.conf import settings
 
@@ -30,6 +32,20 @@ class ServerLogManager:
         self.task = _LoggerAdapterMapping(self.glob, "Task")
         self.job = _LoggerAdapterMapping(self.glob, "Job")
         self.cloud_storage = _LoggerAdapterMapping(self.glob, "CloudStorage")
+
+class DatasetLogManager:
+    def __init__(self) -> None:
+        self.glob = logging.getLogger("dataset_logger")
+
+    def log_import_error(self, entity, id, format, base_error, dir_path) -> None:
+        base_info = f"[{entity}.id={id} format.name={format} exc={base_error}]"
+        dir_tree = display_tree(
+            dir_path=dir_path,
+            string_rep=True,
+            max_depth=4,
+        )
+        log_error = f"{base_info} \nDirectory tree:\n {dir_tree}"
+        self.glob.error(log_error)
 
 def get_logger(logger_name, log_file):
     logger = logging.getLogger(name=logger_name)

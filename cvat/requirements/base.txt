@@ -64,6 +64,8 @@ defusedxml==0.7.1
     #   python3-openid
 deprecated==1.2.14
     # via limits
+directory-tree==0.0.4
+    # via -r cvat/requirements/base.in
 dj-pagination==2.5.0
     # via -r cvat/requirements/base.in
 dj-rest-auth[with_social]==5.0.2
