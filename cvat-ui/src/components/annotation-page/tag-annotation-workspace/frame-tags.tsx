@@ -62,6 +62,23 @@ function FrameTags(props: StateToProps & DispatchToProps): JSX.Element {
         <>
             <div>
                 {frameTags
+                    .filter((tag: any) => tag.source !== 'Ground truth')
+                    .map((tag: any) => (
+                        <Tag
+                            className='cvat-frame-tag'
+                            color={tag.label.color}
+                            onClose={() => {
+                                onRemoveState(tag);
+                            }}
+                            key={tag.clientID}
+                            closable
+                        >
+                            {tag.label.name}
+                        </Tag>
+                    ))}
+            </div>
+            <div>
+                {frameTags
                     .filter((tag: any) => tag.source === 'Ground truth')
                     .map((tag: any) => (
                         <Tag
@@ -75,24 +92,7 @@ function FrameTags(props: StateToProps & DispatchToProps): JSX.Element {
                         >
                             {tag.label.name}
                             {' '}
-(GT)
-                        </Tag>
-                    ))}
-            </div>
-            <div>
-                {frameTags
-                    .filter((tag: any) => tag.source !== 'Ground truth')
-                    .map((tag: any) => (
-                        <Tag
-                            className='cvat-frame-tag'
-                            color={tag.label.color}
-                            onClose={() => {
-                                onRemoveState(tag);
-                            }}
-                            key={tag.clientID}
-                            closable
-                        >
-                            {tag.label.name}
+                            (GT)
                         </Tag>
                     ))}
             </div>
