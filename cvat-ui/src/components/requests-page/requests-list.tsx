@@ -10,7 +10,7 @@ import { CombinedState } from 'reducers';
 import Pagination from 'antd/lib/pagination';
 import { getRequestsAsync } from 'actions/requests-actions';
 import moment from 'moment';
-import dimensions from '../projects-page/dimensions';
+import dimensions from '../../utils/dimensions';
 import RequestCard from './request-card';
 
 export const PAGE_SIZE = 7;

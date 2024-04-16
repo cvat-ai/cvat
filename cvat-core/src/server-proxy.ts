@@ -2296,7 +2296,7 @@ async function getRequestsList(): Promise<any> {
     const { backendAPI } = config;
 
     try {
-        const response = await Axios.get(`${backendAPI}/requests`);
+        const response = await Axios.get(`${backendAPI}/background-processes`);
 
         return response.data;
     } catch (errorData) {
@@ -2309,11 +2309,7 @@ async function getImportRequestStatus(rqID): Promise<any> {
 
     try {
         // TODO: change url to /requests/{id} with correct server implementation
-        const response = await Axios.get(`${backendAPI}/requests/status`, {
-            params: {
-                rq_id: rqID,
-            },
-        });
+        const response = await Axios.get(`${backendAPI}/background-processes/${rqID}/status`);
 
         return response.data;
     } catch (errorData) {

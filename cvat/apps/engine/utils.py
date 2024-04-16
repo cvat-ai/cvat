@@ -11,6 +11,7 @@ import sys
 import traceback
 from contextlib import suppress, nullcontext
 from typing import Any, Dict, Optional, Callable, Union, Iterable
+from uuid import UUID
 import subprocess
 import os
 import urllib.parse
@@ -207,7 +208,12 @@ def get_rq_lock_by_user(queue: DjangoRQ, user_id: int) -> Union[Lock, nullcontex
         return queue.connection.lock(f'{queue.name}-lock-{user_id}', timeout=30)
     return nullcontext()
 
-def get_rq_job_meta(request, db_obj):
+def get_rq_job_meta(
+    request: HttpRequest,
+    db_obj: Any,
+    *,
+    include_result_url: bool = False,
+):
     # to prevent circular import
     from cvat.apps.webhooks.signals import project_id, organization_id
     from cvat.apps.events.handlers import task_id, job_id, organization_slug
@@ -233,6 +239,7 @@ def get_rq_job_meta(request, db_obj):
         'project_id': pid,
         'task_id': tid,
         'job_id': jid,
+        **({'result_url': request.build_absolute_uri() + '&action=download'} if include_result_url else {}),
     }
 
 def reverse(viewname, *, args=None, kwargs=None,
@@ -271,15 +278,6 @@ def get_list_view_name(model):
     return '%(model_name)s-list' % {
         'model_name': model._meta.object_name.lower()
     }
-
-def get_import_rq_id(
-    resource_type: str,
-    resource_id: int,
-    subresource_type: str,
-    user: str,
-) -> str:
-    # import:<task|project|job>-<id|uuid>-<annotations|dataset|backup>-by-<user>
-    return f"import:{resource_type}-{resource_id}-{subresource_type}-by-{user}"
 
 def import_resource_with_clean_up_after(
     func: Union[Callable[[str, int, int], int], Callable[[str, int, str, bool], None]],
@@ -395,3 +393,66 @@ def build_annotations_file_name(
         class_name, identifier, 'annotations' if is_annotation_file else 'dataset',
         timestamp, format_name, extension,
     ).lower()
+
+class RQIdManager:
+    # import:<task|project|job>-<id|uuid>-<annotations|dataset|backup>-by-<user>
+    # create:task-<tid>
+    # export:<project|task|job>-<id>-<annotations|dataset>-in-<format>-format
+    # TODO: probably change to export:<project|task>-<id>-backup-by-<user>
+    # export:<project|task>-<id>-by-<user>
+
+    @staticmethod
+    def build_rq_id(
+        action: str,
+        resource: str,
+        identifier: Union[int, UUID],
+        *,
+        subresource: Optional[str] = None,
+        user: Optional[str] = None,
+        format: Optional[str] = None,
+    ) -> str:
+        match action:
+            case 'import':
+                return f"{action}:{resource}-{identifier}-{subresource}-by-{user}"
+            case 'export':
+                if subresource is None:
+                    return f"{action}:{resource}-{identifier}-by-{user}"
+                return f"{action}:{resource}-{identifier}-{subresource}-in-{format}-format"
+            case 'create':
+                assert 'task' == resource
+                return f"{action}:{resource}-{identifier}"
+            case _:
+                raise ValueError(f'Unsupported action {action!r} was found')
+
+    @staticmethod
+    def parse_rq_id(rq_id: str) -> Dict[str, Any]:
+        action = resource = identifier = subresource = user = format = None
+        parsed_data = dict()
+        action_and_resource, unparsed = rq_id.split('-', maxsplit=1)
+
+        action, resource = action_and_resource.split(':')
+
+        if 'create' == action:
+            identifier = unparsed
+        elif 'import' == action:
+            identifier, subresource, _, user = unparsed.split('-')
+        else: # export
+            if unparsed.endswith('format'):
+                identifier, subresource, unparsed = unparsed.split('-', maxsplit=2)
+                # remove prefix(in-), suffix(-format) and replace underscores with spaces to original format names
+                format = unparsed[3:-7].replace('_', ' ')
+            else:
+                identifier, _, user = unparsed.split('-')
+
+        for key, value in {
+            'action': action,
+            'resource': resource,
+            'identifier': identifier,
+            'subresource': subresource,
+            'user': user,
+            'format': format,
+        }.items():
+            if value is not None:
+                parsed_data[key] = value
+
+        return parsed_data

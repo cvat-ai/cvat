@@ -24,6 +24,8 @@ from django.db.models import Count
 from django.db.models.query import Prefetch
 from django.http import HttpResponse, HttpRequest, HttpResponseNotFound, HttpResponseBadRequest
 from django.utils import timezone
+from django.utils.decorators import method_decorator
+from django.views.decorators.cache import never_cache
 
 from drf_spectacular.types import OpenApiTypes
 from drf_spectacular.utils import (
@@ -71,9 +73,9 @@ from cvat.apps.engine.view_utils import get_cloud_storage_for_import_or_export
 from utils.dataset_manifest import ImageManifestManager
 from cvat.apps.engine.utils import (
     av_scan_paths, process_failed_job,
-    parse_exception_message, get_rq_job_meta, get_import_rq_id,
+    parse_exception_message, get_rq_job_meta,
     import_resource_with_clean_up_after, sendfile, define_dependent_job, get_rq_lock_by_user,
-    build_annotations_file_name,
+    build_annotations_file_name, RQIdManager
 )
 from cvat.apps.engine import backup
 from cvat.apps.engine.mixins import PartialUpdateModelMixin, UploadMixin, AnnotationMixin, SerializeMixin
@@ -88,151 +90,19 @@ from cvat.apps.iam.filters import ORGANIZATION_OPEN_API_PARAMETERS
 from cvat.apps.engine.cache import MediaCache
 from cvat.apps.engine.view_utils import tus_chunk_action
 
+
+from rq.queue import Queue as RQQueue
+from rq.job import Job as RQJob
+from typing import Iterator
+from rq.job import JobStatus as RQJobStatus
+from datetime import timedelta
+from cvat.apps.engine.serializers import RQJobDetailsSerializer
+
 slogger = ServerLogManager(__name__)
 
 _UPLOAD_PARSER_CLASSES = api_settings.DEFAULT_PARSER_CLASSES + [MultiPartParser]
 
 rq_percent = 0
-
-
-
-def get_job_info(job):
-    status = job.meta.get('status', 'In progress')
-    state = job.get_status()
-    t = job.id.split(':')[0]
-    if 'annotations' in job.id:
-        t = t+':annotations'
-    elif 'dataset' in job.id:
-        t = t+':dataset'
-    elif 'backup' in job.id:
-        t = t+':backup'
-    else:
-        if 'create' not in job.id:
-            t = t+':backup'
-        else:
-            t = t.split('.')[0]
-    target = 'job'
-    if 'project' in job.id:
-        target = 'project'
-    if 'task' in job.id:
-        target = 'task'
-    return {
-                "status": state,
-                "message": job.meta.get('formatted_exception', 'In progress') if state == 'failed' else status,
-                "id": job.id,
-                "operation": {
-                            "type": t,
-                            "target": target,
-                            "project_id": job.meta['project_id'],
-                            "task_id": job.meta['task_id'],
-                            "job_id": job.meta['job_id'],
-                            "format": "CVAT for images 1.1",
-                            "name": job.id,
-                },
-                "percent": job.meta.get('task_progress', 0)*100,
-                "enqueue_date": "2023-03-31T10:37:31.708000Z",
-                "start_date": "2023-03-30T09:37:31.708000Z",
-                "finish_date": "2023-03-30T10:37:31.708000Z",
-                "expire_date": "",
-                "owner": {
-                            "id": 1,
-                            "username": "kirill",
-                },
-                "result_url": "http://localhost:3000/api/projects/53/dataset?org=TestOrg&use_default_location=true&filename=ex.zip&format=CVAT+for+images+1.1&action=download" if "export:" in t else "",
-            }
-
-def get_job_info_status(job):
-    status = job.meta.get('status', 'In progress')
-    state = job.get_status()
-    t = job.id.split(':')[0]
-    if 'annotations' in job.id:
-        t = t+':annotations'
-    elif 'dataset' in job.id:
-        t = t+':dataset'
-    elif 'backup' in job.id:
-        t = t+':backup'
-    else:
-        if 'create' not in job.id:
-            t = t+':backup'
-        else:
-            t = t.split('.')[0]
-
-    target = 'job'
-    if 'project' in job.id:
-        target = 'project'
-    if 'task' in job.id:
-        target = 'task'
-    return {
-                "status": state,
-                "message": job.meta.get('formatted_exception', 'In progress') if state == 'failed' else status,
-                "id": job.id,
-                "operation": {
-                            "type": t,
-                            "target": target,
-                            "project_id": job.meta['project_id'],
-                            "task_id": job.meta['task_id'],
-                            "job_id": job.meta['job_id'],
-                            "format": "CVAT for images 1.1",
-                            "name": job.id,
-                },
-                "percent": job.meta.get('task_progress', 0) * 100,
-                "enqueue_date": "2023-03-31T10:37:31.708000Z",
-                "start_date": "2023-03-30T09:37:31.708000Z",
-                "finish_date": "2023-03-30T10:37:31.708000Z",
-                "expire_date": "",
-                "owner": {
-                    "id": 1,
-                    "username": "kirill",
-                },
-                "result_url": "http://localhost:3000/api/projects/53/dataset?org=TestOrg&use_default_location=true&filename=ex.zip&format=CVAT+for+images+1.1&action=download" if "export:" in t else "",
-            }
-
-def get_all_jobs_from_queue(queue, request):
-    user_id = request.user.id
-    started_user_jobs = [
-                job
-                for job in queue.job_class.fetch_many(
-                    queue.started_job_registry.get_job_ids(), queue.connection
-                )
-                if job and job.meta.get("user", {}).get("id") == user_id
-        ]
-    finished_user_jobs = [
-                job
-                for job in queue.job_class.fetch_many(
-                    queue.finished_job_registry.get_job_ids(), queue.connection
-                )
-                if job and job.meta.get("user", {}).get("id") == user_id
-        ]
-    failed_user_jobs = [
-                job
-                for job in queue.job_class.fetch_many(
-                    queue.failed_job_registry.get_job_ids(), queue.connection
-                )
-                if job and job.meta.get("user", {}).get("id") == user_id
-        ]
-    deferred_user_jobs = [
-            job
-            for job in queue.job_class.fetch_many(
-                queue.deferred_job_registry.get_job_ids(), queue.connection
-            )
-            # Since there is no cleanup implementation in DeferredJobRegistry,
-            # this registry can contain "outdated" jobs that weren't deleted from it
-            # but were added to another registry. Probably such situations can occur
-            # if there are active or deferred jobs when restarting the worker container.
-            if job and job.meta.get("user", {}).get("id") == user_id and job.is_deferred
-        ]
-    all_user_jobs = started_user_jobs + deferred_user_jobs + finished_user_jobs + failed_user_jobs
-    jobs = sorted(all_user_jobs, key=lambda job: job.created_at)
-    return jobs
-
-def get_all_jobs(request):
-    import_queue = django_rq.get_queue(settings.CVAT_QUEUES.IMPORT_DATA.value)
-    import_jobs = get_all_jobs_from_queue(import_queue, request)
-
-    export_queue = django_rq.get_queue(settings.CVAT_QUEUES.EXPORT_DATA.value)
-    export_jobs = get_all_jobs_from_queue(export_queue, request)
-
-    return import_jobs + export_jobs
 
 @extend_schema(tags=['server'])
 class ServerViewSet(viewsets.ViewSet):
@@ -395,7 +265,9 @@ class ProjectViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
     ordering = "-id"
     lookup_fields = {'owner': 'owner__username', 'assignee': 'assignee__username'}
     iam_organization_field = 'organization'
-    IMPORT_RQ_ID_TEMPLATE = get_import_rq_id('project', {}, 'dataset', {})
+    IMPORT_RQ_ID_TEMPLATE = RQIdManager.build_rq_id(
+        'import', 'project', {}, subresource='dataset', user={},
+    )
 
     def get_serializer_class(self):
         if self.request.method in SAFE_METHODS:
@@ -939,7 +811,9 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
     ordering_fields = list(filter_fields)
     ordering = "-id"
     iam_organization_field = 'organization'
-    IMPORT_RQ_ID_TEMPLATE = get_import_rq_id('task', {}, 'annotations', {})
+    IMPORT_RQ_ID_TEMPLATE = RQIdManager.build_rq_id(
+        'import', 'task', {}, subresource='annotations', user={},
+    )
 
     def get_serializer_class(self):
         if self.request.method in SAFE_METHODS:
@@ -1475,6 +1349,8 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
     @action(detail=True, methods=['GET', 'DELETE', 'PUT', 'PATCH', 'POST', 'OPTIONS'], url_path=r'annotations/?$',
         serializer_class=None, parser_classes=_UPLOAD_PARSER_CLASSES)
     def annotations(self, request, pk):
+        # TODO: mark as deprecated using this endpoint for checking status of import process
+
         self._object = self.get_object() # force call of check_object_permissions()
         if request.method == 'GET':
             if self._object.data:
@@ -1547,7 +1423,11 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
         summary='Get the creation status of a task',
         responses={
             '200': RqStatusSerializer,
-        })
+        },
+        deprecated=True,
+        description="This method is deprecated and will be removed in version 2.14.0. "
+                    "To check status of a task creation, use new common API for managing background operations: /requests/id/status/",
+    )
     @action(detail=True, methods=['GET'], serializer_class=RqStatusSerializer)
     def status(self, request, pk):
         self.get_object() # force call of check_object_permissions()
@@ -1558,7 +1438,7 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
         serializer = RqStatusSerializer(data=response)
 
         serializer.is_valid(raise_exception=True)
-        return Response(serializer.data)
+        return Response(serializer.data,  headers={'Deprecation': 'true'})
 
     @staticmethod
     def _get_rq_response(queue, job_id):
@@ -1751,7 +1631,9 @@ class JobViewSet(viewsets.GenericViewSet, mixins.ListModelMixin, mixins.CreateMo
         'project_name': 'segment__task__project__name',
         'assignee': 'assignee__username'
     }
-    IMPORT_RQ_ID_TEMPLATE = get_import_rq_id('job', {}, 'annotations', {})
+    IMPORT_RQ_ID_TEMPLATE = RQIdManager.build_rq_id(
+        'import', 'job', {}, subresource='annotations', user={},
+    )
 
     def get_queryset(self):
         queryset = super().get_queryset()
@@ -3056,6 +2938,7 @@ def _import_annotations(request, rq_id_template, rq_func, db_obj, format_name,
 
         return Response(serializer.data, status=status.HTTP_202_ACCEPTED)
     else:
+        # TODO:
         if rq_job.is_finished:
             rq_job.delete()
             return Response(status=status.HTTP_201_CREATED)
@@ -3178,6 +3061,7 @@ def _export_annotations(
 
     func = callback if location == Location.LOCAL else export_resource_to_cloud_storage
     func_args = (db_instance.id, format_name, server_address)
+    save_result_url = True
 
     if location == Location.CLOUD_STORAGE:
         try:
@@ -3198,6 +3082,7 @@ def _export_annotations(
             is_annotation_file=is_annotation_file,
         )
         func_args = (db_storage, filename, filename_pattern, callback) + func_args
+        save_result_url = False
     else:
         db_storage = None
 
@@ -3206,7 +3091,7 @@ def _export_annotations(
             func=func,
             args=func_args,
             job_id=rq_id,
-            meta=get_rq_job_meta(request=request, db_obj=db_instance),
+            meta=get_rq_job_meta(request=request, db_obj=db_instance, include_result_url=save_result_url),
             depends_on=define_dependent_job(queue, user_id, rq_id=rq_id),
             result_ttl=ttl,
             failure_ttl=ttl,
@@ -3307,261 +3192,158 @@ def _import_project_dataset(request, rq_id_template, rq_func, db_obj, format_nam
 
     return Response(serializer.data, status=status.HTTP_202_ACCEPTED)
 
-class DataProcessing(viewsets.GenericViewSet):
-    @extend_schema(
-        tags=['requests'],
+@extend_schema(tags=['background-processes'])
+@extend_schema_view(
+    list=extend_schema(
+        summary='List with rq jobs',
+        responses={
+            '200': RQJobDetailsSerializer(many=True),
+        }),
+)
+class BackgroundProcessViewSet(viewsets.GenericViewSet):
+    SUPPORTED_QUEUES = (
+        settings.CVAT_QUEUES.IMPORT_DATA.value,
+        settings.CVAT_QUEUES.EXPORT_DATA.value,
     )
+
+    serializer_class = RQJobDetailsSerializer
+    iam_organization_field = None
+
+    @property
+    def queues(self):
+        return (django_rq.get_queue(queue_name) for queue_name in self.SUPPORTED_QUEUES)
+
+    @staticmethod
+    def _get_rq_jobs_from_queue(queue: RQQueue, user_id: int) -> List[RQJob]:
+        job_ids = set(queue.get_job_ids() +
+            queue.started_job_registry.get_job_ids() +
+            queue.finished_job_registry.get_job_ids() +
+            queue.failed_job_registry.get_job_ids() +
+            queue.deferred_job_registry.get_job_ids()
+        )
+        all_user_jobs = sorted([
+            job for job in queue.job_class.fetch_many(job_ids, queue.connection)
+            if job and job.meta.get("user", {}).get("id") == user_id
+        ], key=lambda job: job.created_at)
+
+        return all_user_jobs
+
+    def _get_rq_jobs(self, user_id: int) -> List[RQJob]:
+        """
+        Get all RQ jobs for a specific user and return them as a list of RQJob objects.
+
+        Parameters:
+            user_id (int): The ID of the user for whom to retrieve jobs.
+
+        Returns:
+            List[RQJob]: A list of RQJob objects representing all jobs for the specified user.
+        """
+        all_jobs = []
+        for queue in self.queues:
+            jobs = self._get_rq_jobs_from_queue(queue, user_id)
+            all_jobs.extend(jobs)
+
+        return all_jobs
+
+    def _get_rq_job_by_id(self, rq_id: str) -> Optional[RQJob]:
+        """
+        Get a RQJob by its ID from the queues.
+
+        Args:
+            rq_id (str): The ID of the RQJob to retrieve.
+
+        Returns:
+            Optional[RQJob]: The retrieved RQJob, or None if not found.
+        """
+        job: Optional[RQJob] = None
+
+        for queue in self.queues:
+            job = queue.fetch_job(rq_id)
+            if job:
+                break
+
+        return job
+
+    # TODO: move to OPA permissions
+    @staticmethod
+    def _check_permissions(rq_job: RQJob, user_id: str) -> None:
+        if rq_job.meta.get("user", {}).get("id") != user_id:
+            raise PermissionDenied('You don\'t have permission to perform this action')
+
+    @method_decorator(never_cache)
     @action(detail=False, methods=['GET'], url_path='status')
     def status(self, request):
+        # TODO: add support for retrieving rq job details based on task id, action
+        # TODO: add support for specifying that only status (or shorter version) should be returned
         rq_id = request.query_params.get('rq_id')
-        all_user_jobs = get_all_jobs(request)
-        actual_job = None
-        for job in all_user_jobs:
-            if job.id == rq_id:
-                actual_job = job
-        if actual_job:
-            return Response(
-                data= get_job_info_status(actual_job),
-                status=status.HTTP_200_OK
-            )
 
-        if rq_id == 'rq1':
-            return Response(
-                data= {
-                        "status": "Failed",
-                        "message": "cvat.apps.dataset_manager.bindings.CvatImportError: Failed to find dataset at '/home/django/data/tasks/499394/tmp/tmpkr0hn_m9'",
-                        "percent": 0,
-                        "id": "rq1",
-                        "operation": {
-                            "type": "export:dataset",
-                            "format": "CVAT for images 1.1",
-                            "project_id": 1,
-                            "target": "project",
-                            "name": "Project with failed export",
-                        },
-                        "enqueue_date": "2023-03-31T10:37:31.708000Z",
-                        "start_date": "2023-03-31T10:37:31.708000Z",
-                        "finish_date": "",
-                        "expire_date": "",
-                        "owner": {
-                            "id": 1,
-                            "username": "kirill",
-                        },
-                        },
-                status=status.HTTP_200_OK
-            )
-        elif rq_id == 'rq2':
-            return Response(
-                data=                     {
-                        "status": "Queued",
-                        "message": "In queue",
-                        "percent": 0,
-                        "id": "rq2",
-                        "operation": {
-                            "type": "import:annotations",
-                            "format": "CVAT for images 1.1",
-                            "task_id": 2,
-                            "target": "task",
-                            "name": "Task H1 part 2",
-                        },
-                        "enqueue_date": "2023-03-31T10:37:31.708000Z",
-                        "start_date": "",
-                        "finish_date": "",
-                        "expire_date": "",
-                        "owner": {
-                            "id": 1,
-                            "username": "kirill",
-                        },
-                    },
-                status=status.HTTP_200_OK
-            )
-        elif rq_id == 'rq3':
-            global rq_percent
-            if rq_percent == 10:
-                rq_percent = 0
-            rq_percent += 1
-            return Response(
-                data={
-                        "status": "Started",
-                        "message": "In progress",
-                        "percent": rq_percent * 10,
-                        "id": "rq3",
-                        "operation": {
-                            "target": "project",
-                            "type": "import:dataset",
-                            "format": "CVAT for images 1.1",
-                            "name": "Personal project",
-                            "project_id": 3,
-                        },
-                        "enqueue_date": "2023-03-31T10:37:31.708000Z",
-                        "start_date": "2023-03-30T09:37:31.708000Z",
-                        "finish_date": "",
-                        "expire_date": "",
-                        "owner": {
-                            "id": 1,
-                            "username": "kirill",
-                        },
-                    },
-                status=status.HTTP_200_OK
-            )
-        elif rq_id == 'rq4':
-            return Response(
-                data= {
-                        "status": "Finished",
-                        "message": "Done",
-                        "percent": 100,
-                        "id": "rq4",
-                        "operation": {
-                                "type": "export:dataset",
-                                "target": "project",
-                                "project_id": 4,
-                                "name": "Project for export number 4",
-                        },
-                        "enqueue_date": "2023-03-31T10:37:31.708000Z",
-                        "start_date": "2023-03-30T09:37:31.708000Z",
-                        "finish_date": "2023-03-30T10:37:31.708000Z",
-                        "expire_date": "2023-03-31T10:37:31.708000Z",
-                        "owner": {
-                            "id": 1,
-                            "username": "kirill"
-                        },
-                        "result_url": "http://localhost:3000/api/projects/53/dataset?org=TestOrg&use_default_location=true&filename=ex.zip&format=CVAT+for+images+1.1"
-                    },
-                status=status.HTTP_200_OK
-            )
-        return Response(
-                data= {
-                        "percent": 0,
-                        "status": "Queued",
-                        "message": "In queue",
-                        "id": rq_id,
-                        "operation": {
-                                "type": "export:dataset",
-                                "target": "project",
-                                "project_id": 4,
-                                "name": "Project for export number 4",
-                        },
-                        "enqueue_date": "2023-03-31T10:37:31.708000Z",
-                        "start_date": "",
-                        "finish_date": "",
-                        "expire_date": "",
-                        "owner": {
-                            "id": 1,
-                            "username": "kirill"
-                        },
-                        "result_url": "",
-                    },
-                status=status.HTTP_200_OK
-            )
+        user_id = request.user.id
+        job = self._get_rq_job_by_id(rq_id)
 
-    @extend_schema(
-        tags=['requests'],
-        parameters=[],
-    )
-    def list(self,request):
-        all_user_jobs = get_all_jobs(request)
-        data = []
-        print(all_user_jobs)
-        for job in all_user_jobs:
-            data.append(get_job_info(job))
-        return Response(
-                data=[
-                    {
-                        "status": "Failed",
-                        "message": "cvat.apps.dataset_manager.bindings.CvatImportError: Failed to find dataset at '/home/django/data/tasks/499394/tmp/tmpkr0hn_m9'",
-                        "percent": 0,
-                        "id": "rq1",
-                        "operation": {
-                            "type": "export:dataset",
-                            "format": "CVAT for images 1.1",
-                            "project_id": 1,
-                            "target": "project",
-                            "name": "Project with failed export",
-                        },
-                        "enqueue_date": "2023-03-31T10:37:31.708000Z",
-                        "start_date": "2023-03-31T10:37:31.708000Z",
-                        "finish_date": "",
-                        "expire_date": "",
-                        "owner": {
-                            "id": 1,
-                            "username": "kirill",
-                        },
-                    },
-                    {
-                        "status": "Queued",
-                        "message": "In queue",
-                        "percent": 0,
-                        "id": "rq2",
-                        "operation": {
-                            "type": "import:annotations",
-                            "format": "CVAT for images 1.1",
-                            "task_id": 2,
-                            "target": "task",
-                            "name": "Task H1 part 2",
-                        },
-                        "enqueue_date": "2023-03-31T10:37:31.708000Z",
-                        "start_date": "",
-                        "finish_date": "",
-                        "expire_date": "",
-                        "owner": {
-                            "id": 1,
-                            "username": "kirill",
-                        },
-                    },
-                    {
-                        "status": "Started",
-                        "message": "In progress",
-                        "percent": 20,
-                        "id": "rq3",
-                        "operation": {
-                            "target": "project",
-                            "type": "import:dataset",
-                            "format": "CVAT for images 1.1",
-                            "name": "Personal project",
-                            "project_id": 3,
-                        },
-                        "enqueue_date": "2023-03-31T10:37:31.708000Z",
-                        "start_date": "2023-03-30T09:37:31.708000Z",
-                        "finish_date": "",
-                        "expire_date": "",
-                        "owner": {
-                            "id": 1,
-                            "username": "kirill",
-                        },
-                    },
-                    {
-                        "status": "Finished",
-                        "message": "Done",
-                        "percent": 100,
-                        "id": "rq4",
-                        "operation": {
-                                "type": "export:dataset",
-                                "target": "project",
-                                "project_id": 4,
-                                "name": "Project for export number 4",
-                        },
-                        "enqueue_date": "2023-03-31T10:37:31.708000Z",
-                        "start_date": "2023-03-30T09:37:31.708000Z",
-                        "finish_date": "2023-03-30T10:37:31.708000Z",
-                        "expire_date": "2023-03-31T10:37:31.708000Z",
-                        "owner": {
-                            "id": 1,
-                            "username": "kirill"
-                        },
-                        "result_url": "http://localhost:3000/api/projects/53/dataset?org=TestOrg&use_default_location=true&filename=ex.zip&format=CVAT+for+images+1.1"
-                    },
-                ] + data,
-                status=status.HTTP_200_OK
-            )
+        if not job:
+            return HttpResponseNotFound(f"There is no RQ job with specified rq_id: {rq_id}")
 
-    @extend_schema(
-        tags=['requests'],
-    )
-    @action(detail=False, methods=['GET'])
-    def clear(self,request):
-        all_user_jobs = get_all_jobs(request)
-        for job in all_user_jobs:
-            job.delete()
-        return Response(
-                status=status.HTTP_200_OK
-            )
+        try:
+            self._check_permissions(job, user_id)
+        except PermissionDenied as ex:
+            return HttpResponse(str(ex), status=status.HTTP_403_FORBIDDEN)
+
+        serializer = self.get_serializer(job, context={'request': request})
+        return Response(data=serializer.data, status=status.HTTP_200_OK)
+
+    @method_decorator(never_cache)
+    def list(self, request):
+        # TODO: support filtering
+        user_id = request.user.id
+        filtered_jobs = self._get_rq_jobs(user_id)
+
+        # TODO: uncomment when pagination will be supported on UI
+        # page = self.paginate_queryset(filtered_jobs)
+        # if page is not None:
+        #     serializer = self.get_serializer(page, many=True, context={'request': request})
+        #     return self.get_paginated_response(serializer.data)
+
+        serializer = self.get_serializer(filtered_jobs, many=True, context={'request': request})
+        return Response(data=serializer.data, status=status.HTTP_200_OK)
+
+    @method_decorator(never_cache)
+    @action(detail=True, methods=['POST'], url_path='cancel')
+    def cancel(self, request, rq_id: str):
+        # TODO: add permission check
+        rq_job = self._get_rq_job_by_id(rq_id)
+
+        if not rq_job:
+            return HttpResponseNotFound(f"There is no RQ job with specified rq_id: {rq_id!r}")
+
+        user_id = request.user.id
+        try:
+            self._check_permissions(rq_job, user_id)
+        except PermissionDenied as ex:
+            return HttpResponse(str(ex), status=status.HTTP_403_FORBIDDEN)
+
+        # TODO: add handling redis exceptions
+        rq_job.cancel()
+
+        return Response(status=status.HTTP_200_OK)
+
+    @method_decorator(never_cache)
+    def destroy(self, request, rq_id: str):
+        # TODO: add permission check
+        rq_job = self._get_rq_job_by_id(rq_id)
+
+        if not rq_job:
+            return HttpResponseNotFound(f"There is no RQ job with specified rq_id: {rq_id!r}")
+
+        user_id = request.user.id
+        try:
+            self._check_permissions(rq_job, user_id)
+        except PermissionDenied as ex:
+            return HttpResponse(str(ex), status=status.HTTP_403_FORBIDDEN)
+
+        if not any([rq_job.is_canceled, rq_job.is_finished, rq_job.is_failed]):
+            return HttpResponseBadRequest(f"Only canceled/finished/failed RQ jobs can be deleted")
+
+        # TODO: add handling redis exceptions
+        rq_job.delete()
+
+        return Response(status=status.HTTP_204_NO_CONTENT)
