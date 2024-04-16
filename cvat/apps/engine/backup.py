@@ -1015,6 +1015,7 @@ def export(db_instance, request, queue_name):
 
     func = _create_backup if location == Location.LOCAL else export_resource_to_cloud_storage
     func_args = (db_instance, Exporter, '{}_backup.zip'.format(obj_type), logger, cache_ttl)
+    save_result_url = True
 
     if location == Location.CLOUD_STORAGE:
         try:
@@ -1033,13 +1034,14 @@ def export(db_instance, request, queue_name):
             timestamp=timestamp,
         )
         func_args = (db_storage, filename, filename_pattern, _create_backup) + func_args
+        save_result_url = False
 
     with get_rq_lock_by_user(queue, user_id):
         queue.enqueue_call(
             func=func,
             args=func_args,
             job_id=rq_id,
-            meta=get_rq_job_meta(request=request, db_obj=db_instance),
+            meta=get_rq_job_meta(request=request, db_obj=db_instance, include_result_url=save_result_url),
             depends_on=define_dependent_job(queue, user_id, rq_id=rq_id),
             result_ttl=ttl,
             failure_ttl=ttl,
