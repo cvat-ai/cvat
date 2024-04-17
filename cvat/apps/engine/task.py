@@ -895,7 +895,7 @@ def _create_thread(
         if not progress:
             status_message = '{} {}'.format(status_message, progress_animation[update_progress.call_counter])
         job.meta['status'] = status_message
-        job.meta['progress'] = progress or 0.
+        job.meta['task_progress'] = progress or 0.
         job.save_meta()
         update_progress.call_counter = (update_progress.call_counter + 1) % len(progress_animation)
 

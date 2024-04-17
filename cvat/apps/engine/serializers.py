@@ -2249,7 +2249,9 @@ class RQJobDetailsSerializer(serializers.Serializer):
         )
     )
     def get_percent(self, rq_job: RQJob) -> Decimal:
-        return Decimal(rq_job.meta.get("progress", 0)) * 100
+        # progress of task creation is stored in "task_progress" field
+        # progress of project import is stored in "progress" field
+        return Decimal(rq_job.meta.get("progress") or rq_job.meta.get("task_progress") or 0.) * 100
 
     @extend_schema_field(serializers.DateTimeField(required=False, allow_null=True))
     def get_expire_date(self, rq_job: RQJob) -> Optional[str]:

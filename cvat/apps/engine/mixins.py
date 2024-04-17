@@ -264,7 +264,7 @@ class UploadMixin:
             if file_exists:
                 # check whether the rq_job is in progress or has been finished/failed
                 object_class_name = self._object.__class__.__name__.lower()
-                template = RQIdManager.build_rq_id('import', object_class_name, self._object.pk, subresource=import_type, user=str(request.user))
+                template = RQIdManager.build_rq_id('import', object_class_name, self._object.pk, subresource=import_type, user_id=request.user.id)
                 queue = django_rq.get_queue(settings.CVAT_QUEUES.IMPORT_DATA.value)
                 finished_job_ids = queue.finished_job_registry.get_job_ids()
                 failed_job_ids = queue.failed_job_registry.get_job_ids()
@@ -411,7 +411,7 @@ class AnnotationMixin:
         rq_id = RQIdManager.build_rq_id(
             'export', object_name, self._object.pk,
             subresource=request.path.strip('/').split('/')[-1],
-            format=format_name.replace(' ', '_')
+            format=format_name
         )
 
         if format_name:

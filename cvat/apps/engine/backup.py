@@ -954,7 +954,7 @@ def export(db_instance, request, queue_name):
     )
 
     queue = django_rq.get_queue(queue_name)
-    rq_id = RQIdManager.build_rq_id('export', obj_type, db_instance.pk, user=str(request.user))
+    rq_id = RQIdManager.build_rq_id('export', obj_type, db_instance.pk, user_id=request.user.id)
     rq_job = queue.fetch_job(rq_id)
 
     last_instance_update_time = timezone.localtime(db_instance.updated_date)
@@ -1005,10 +1005,7 @@ def export(db_instance, request, queue_name):
                 return Response(exc_info,
                     status=status.HTTP_500_INTERNAL_SERVER_ERROR)
             else:
-                serializer = RqIdSerializer(data={'rq_id': rq_id})
-                serializer.is_valid(raise_exception=True)
-
-                return Response(serializer.data, status=status.HTTP_202_ACCEPTED)
+                return Response(status=status.HTTP_202_ACCEPTED)
 
     ttl = dm.views.PROJECT_CACHE_TTL.total_seconds()
     user_id = request.user.id
@@ -1144,7 +1141,7 @@ def import_project(request, queue_name, filename=None):
     if 'rq_id' in request.data:
         rq_id = request.data['rq_id']
     else:
-        rq_id = RQIdManager.build_rq_id('import', 'project', uuid.uuid4(), subresource='backup', user=str(request.user))
+        rq_id = RQIdManager.build_rq_id('import', 'project', uuid.uuid4(), subresource='backup', user_id=request.user.id)
     Serializer = ProjectFileSerializer
     file_field_name = 'project_file'
 
@@ -1167,7 +1164,7 @@ def import_project(request, queue_name, filename=None):
     )
 
 def import_task(request, queue_name, filename=None):
-    rq_id = RQIdManager.build_rq_id('import', 'task', uuid.uuid4(), subresource='backup', user=str(request.user))
+    rq_id = RQIdManager.build_rq_id('import', 'task', uuid.uuid4(), subresource='backup', user_id=request.user.id)
     Serializer = TaskFileSerializer
     file_field_name = 'task_file'
 

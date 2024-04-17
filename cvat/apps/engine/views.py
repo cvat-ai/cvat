@@ -104,8 +104,6 @@ slogger = ServerLogManager(__name__)
 
 _UPLOAD_PARSER_CLASSES = api_settings.DEFAULT_PARSER_CLASSES + [MultiPartParser]
 
-rq_percent = 0
-
 @extend_schema(tags=['server'])
 class ServerViewSet(viewsets.ViewSet):
     serializer_class = None
@@ -268,7 +266,7 @@ class ProjectViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
     lookup_fields = {'owner': 'owner__username', 'assignee': 'assignee__username'}
     iam_organization_field = 'organization'
     IMPORT_RQ_ID_TEMPLATE = RQIdManager.build_rq_id(
-        'import', 'project', {}, subresource='dataset', user={},
+        'import', 'project', {}, subresource='dataset', user_id={},
     )
 
     def get_serializer_class(self):
@@ -385,16 +383,14 @@ class ProjectViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
                 # check that the user has access to the current rq_job
                 # We should not return any status of job including "404 not found" for user that has no access for this rq_job
 
-                if self.IMPORT_RQ_ID_TEMPLATE.format(pk, request.user) != rq_id:
+                if self.IMPORT_RQ_ID_TEMPLATE.format(pk, request.user.id) != rq_id:
                     return Response(status=status.HTTP_403_FORBIDDEN)
 
                 rq_job = queue.fetch_job(rq_id)
                 if rq_job is None:
                     return Response(status=status.HTTP_404_NOT_FOUND)
                 elif rq_job.is_finished:
-                    # rq_job.delete()
-                    print(rq_job)
-                    print(rq_job.meta.get("user", {}).get("id"))
+                    rq_job.delete()
                     return Response(status=status.HTTP_201_CREATED)
                 elif rq_job.is_failed:
                     exc_info = process_failed_job(rq_job)
@@ -814,7 +810,7 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
     ordering = "-id"
     iam_organization_field = 'organization'
     IMPORT_RQ_ID_TEMPLATE = RQIdManager.build_rq_id(
-        'import', 'task', {}, subresource='annotations', user={},
+        'import', 'task', {}, subresource='annotations', user_id={},
     )
 
     def get_serializer_class(self):
@@ -1634,7 +1630,7 @@ class JobViewSet(viewsets.GenericViewSet, mixins.ListModelMixin, mixins.CreateMo
         'assignee': 'assignee__username'
     }
     IMPORT_RQ_ID_TEMPLATE = RQIdManager.build_rq_id(
-        'import', 'job', {}, subresource='annotations', user={},
+        'import', 'job', {}, subresource='annotations', user_id={},
     )
 
     def get_queryset(self):
@@ -2854,12 +2850,12 @@ def _import_annotations(request, rq_id_template, rq_func, db_obj, format_name,
     rq_id = request.query_params.get('rq_id')
     rq_id_should_be_checked = bool(rq_id)
     if not rq_id:
-        rq_id = rq_id_template.format(db_obj.pk, request.user)
+        rq_id = rq_id_template.format(db_obj.pk, request.user.id)
 
     queue = django_rq.get_queue(settings.CVAT_QUEUES.IMPORT_DATA.value)
     rq_job = queue.fetch_job(rq_id)
 
-    if rq_id_should_be_checked and rq_id_template.format(db_obj.pk, request.user) != rq_id:
+    if rq_id_should_be_checked and rq_id_template.format(db_obj.pk, request.user.id) != rq_id:
         return Response(status=status.HTTP_403_FORBIDDEN)
 
     if rq_job and request.method == 'POST':
@@ -3007,7 +3003,7 @@ def _export_annotations(
         else:
             if rq_job.is_finished:
                 if location == Location.CLOUD_STORAGE:
-                    # rq_job.delete()
+                    rq_job.delete()
                     return Response(status=status.HTTP_200_OK)
 
                 elif location == Location.LOCAL:
@@ -3029,12 +3025,8 @@ def _export_annotations(
                                 extension=osp.splitext(file_path)[1]
                             )
 
-                        # rq_job.delete()
+                        rq_job.delete()
                         return sendfile(request, file_path, attachment=True, attachment_filename=filename)
-                    serializer = RqIdSerializer(data={'rq_id': rq_id})
-                    serializer.is_valid(raise_exception=True)
-
-                    return Response(serializer.data, status=status.HTTP_201_CREATED)
                     return Response(status=status.HTTP_201_CREATED)
                 else:
                     raise NotImplementedError(f"Export to {location} location is not implemented yet")
@@ -3116,7 +3108,7 @@ def _import_project_dataset(request, rq_id_template, rq_func, db_obj, format_nam
     elif not format_desc.ENABLED:
         return Response(status=status.HTTP_405_METHOD_NOT_ALLOWED)
 
-    rq_id = rq_id_template.format(db_obj.pk, request.user)
+    rq_id = rq_id_template.format(db_obj.pk, request.user.id)
 
     queue = django_rq.get_queue(settings.CVAT_QUEUES.IMPORT_DATA.value)
     rq_job = queue.fetch_job(rq_id)
@@ -3223,6 +3215,10 @@ class BackgroundProcessViewSet(viewsets.GenericViewSet):
 
     serializer_class = RQJobDetailsSerializer
     iam_organization_field = None
+    filter_backends = []
+
+    def get_queryset(self):
+        return None
 
     @property
     def queues(self):
@@ -3332,8 +3328,9 @@ class BackgroundProcessViewSet(viewsets.GenericViewSet):
 
     @extend_schema(
         summary='Cancel RQ job',
+        request=None,
         responses={
-            status.HTTP_200_OK: OpenApiResponse(description='RQ job has been cancelled'),
+            '200': OpenApiResponse(description='RQ job has been cancelled'),
         },
     )
     @method_decorator(never_cache)
@@ -3351,6 +3348,9 @@ class BackgroundProcessViewSet(viewsets.GenericViewSet):
             self._check_permissions(rq_job, user_id)
         except PermissionDenied as ex:
             return HttpResponse(str(ex), status=status.HTTP_403_FORBIDDEN)
+
+        if not any([rq_job.is_deferred, rq_job.is_queued, rq_job.is_started]):
+            return HttpResponseBadRequest(f"Only queued or started RQ jobs can be cancelled")
 
         rq_job.cancel()
 
