@@ -14,7 +14,7 @@ metadata:
 
 spec:
   description: f-BRS interactive segmentation
-  runtime: 'python:3.6'
+  runtime: 'python:3.9'
   handler: main:handler
   eventTimeout: 30s
   env:
