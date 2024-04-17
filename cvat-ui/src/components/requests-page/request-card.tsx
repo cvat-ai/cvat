@@ -2,10 +2,10 @@
 //
 // SPDX-License-Identifier: MIT
 
-import React from 'react';
+import React, { useState } from 'react';
 import { Row, Col } from 'antd/lib/grid';
 
-import { RQStatus, Request } from 'cvat-core-wrapper';
+import { RQStatus, Request, getCore } from 'cvat-core-wrapper';
 
 import Card from 'antd/lib/card';
 import Text from 'antd/lib/typography/Text';
@@ -15,8 +15,11 @@ import { Link } from 'react-router-dom';
 import Dropdown from 'antd/lib/dropdown';
 import Button from 'antd/lib/button';
 import Menu from 'antd/lib/menu';
+import notification from 'antd/lib/notification';
 
 import moment from 'moment';
+
+const core = getCore();
 
 export interface Props {
     request: Request;
@@ -40,10 +43,10 @@ function constructLink(operation: typeof Request['operation']): string | null {
 }
 
 function constructTimestamps(request: Request): JSX.Element {
-    const started = moment(request.startDate).format('MMM Do YY, h:mm');
-    const finished = moment(request.finishDate).format('MMM Do YY, h:mm');
-    const enqueued = moment(request.enqueueDate).format('MMM Do YY, h:mm');
-    const expired = moment(request.expireDate).format('MMM Do YY, h:mm');
+    const started = moment(request.startDate).format('MMM Do YY, H:mm');
+    const finished = moment(request.finishDate).format('MMM Do YY, H:mm');
+    const enqueued = moment(request.enqueueDate).format('MMM Do YY, H:mm');
+    const expired = moment(request.expireDate).format('MMM Do YY, H:mm');
 
     switch (request.status) {
         case RQStatus.QUEUED: {
@@ -118,6 +121,7 @@ export default function RequestCard(props: Props): JSX.Element {
     const { request } = props;
     const { operation } = request;
     const { type } = operation;
+    const [isActive, setIsActive] = useState(true);
 
     let textType: 'success' | 'danger' = 'success';
     if ([RQStatus.FAILED, RQStatus.UNKNOWN].includes(request.status)) {
@@ -132,10 +136,16 @@ export default function RequestCard(props: Props): JSX.Element {
     const progress = request.status === RQStatus.FINISHED ? 100 : request.progress;
     const percentSymbol = (request.status === RQStatus.FAILED || !progress) ? '' : '%';
 
+    const style: React.CSSProperties = {};
+    if (!isActive) {
+        style.pointerEvents = 'none';
+        style.opacity = 0.5;
+    }
+
     return (
         <Row justify='center' align='middle'>
             <Col span={24}>
-                <Card className='cvat-requests-card'>
+                <Card className='cvat-requests-card' style={style}>
                     <Row justify='space-between'>
                         <Col span={12}>
                             <Row style={{ paddingBottom: [RQStatus.FAILED].includes(request.status) ? '10px' : '0' }}>
@@ -224,30 +234,68 @@ export default function RequestCard(props: Props): JSX.Element {
                                         ) : null
                                     }
                                 </Col>
-                                {
-                                    request.url ? (
-                                        <Col span={3} style={{ display: 'flex', justifyContent: 'end' }}>
-                                            <Dropdown
-                                                destroyPopupOnHide
-                                                trigger={['click']}
-                                                overlay={() => (
-                                                    <Menu selectable={false} className='cvat-actions-menu cvat-request-actions-menu'>
-                                                        <Menu.Item onClick={() => {
-                                                            const downloadAnchor = window.document.getElementById('downloadAnchor') as HTMLAnchorElement;
-                                                            downloadAnchor.href = request.url;
-                                                            downloadAnchor.click();
-                                                        }}
+
+                                <Col span={3} style={{ display: 'flex', justifyContent: 'end' }}>
+                                    <Dropdown
+                                        destroyPopupOnHide
+                                        trigger={['click']}
+                                        overlay={() => (
+                                            <Menu selectable={false} className='cvat-actions-menu cvat-request-actions-menu'>
+                                                {
+                                                    request.url ? (
+                                                        <Menu.Item
+                                                            key='download'
+                                                            onClick={() => {
+                                                                const downloadAnchor = window.document.getElementById('downloadAnchor') as HTMLAnchorElement;
+                                                                downloadAnchor.href = request.url;
+                                                                downloadAnchor.click();
+                                                            }}
                                                         >
-                                                            Download
+                                                                Download
                                                         </Menu.Item>
-                                                    </Menu>
-                                                )}
-                                            >
-                                                <Button type='link' size='middle' className='cvat-requests-page-actions-button' icon={<MoreOutlined className='cvat-menu-icon' />} />
-                                            </Dropdown>
-                                        </Col>
-                                    ) : null
-                                }
+                                                    ) : null
+                                                }
+                                                <Menu.Item
+                                                    key='delete'
+                                                    onClick={() => {
+                                                        core.server.request(`/api/background-processes/${request.id}`, {
+                                                            method: 'DELETE',
+                                                        }).then(() => {
+                                                            setIsActive(false);
+                                                        }).catch((error: Error) => {
+                                                            notification.error({
+                                                                message: 'Failed to delete RQ job',
+                                                                description: error.toString(),
+                                                            });
+                                                        });
+                                                    }}
+                                                >
+                                                        Delete
+                                                </Menu.Item>
+                                                <Menu.Item
+                                                    key='cancel'
+                                                    onClick={() => {
+                                                        core.server.request(
+                                                            `/api/background-processes/${request.id}/cancel`, {
+                                                                method: 'POST',
+                                                            }).then(() => {
+                                                            setIsActive(false);
+                                                        }).catch((error: Error) => {
+                                                            notification.error({
+                                                                message: 'Failed to cancel RQ job',
+                                                                description: error.toString(),
+                                                            });
+                                                        });
+                                                    }}
+                                                >
+                                                        Cancel
+                                                </Menu.Item>
+                                            </Menu>
+                                        )}
+                                    >
+                                        <Button type='link' size='middle' className='cvat-requests-page-actions-button' icon={<MoreOutlined className='cvat-menu-icon' />} />
+                                    </Dropdown>
+                                </Col>
                             </Row>
                         </Col>
                     </Row>
