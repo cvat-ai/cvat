@@ -16,8 +16,8 @@ export interface ModelProvider {
 
 export interface InteractorResults {
     mask: number[][];
-    points: number[][] | number[];
-    bounds: [number, number, number, number]
+    points?: [number, number][];
+    bounds?: [number, number, number, number]
 }
 
 export interface SerializedShape {
