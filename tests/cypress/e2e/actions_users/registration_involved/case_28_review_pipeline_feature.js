@@ -291,6 +291,18 @@ context('Review pipeline feature', () => {
             cy.get('.cvat-issues-sidebar-previous-frame').should('be.visible').click();
             cy.checkFrameNum(1);
 
+            cy.goCheckFrameNumber(1);
+            cy.collectIssueLabel().then((issueLabelList) => {
+                for (let label = 0; label < issueLabelList.length; label++) {
+                    cy.resolveIssue(issueLabelList[label], 'Resolved issue');
+                }
+            });
+            cy.goCheckFrameNumber(0);
+            cy.get('.cvat-issues-sidebar-hidden-resolved-status').click();
+            cy.get('.cvat-issues-sidebar-next-frame').should('be.visible').click();
+            cy.checkFrameNum(2);
+            cy.get('.cvat-issues-sidebar-hidden-resolved-status').click();
+
             // Hide all issues. All issues are hidden on all frames
             cy.get('.cvat-issues-sidebar-shown-issues').click();
             for (const [frame, issues] of countIssuesByFrame) {
@@ -311,12 +323,14 @@ context('Review pipeline feature', () => {
 
             // Comment issues and resolve them
             for (const [frame] of countIssuesByFrame) {
-                cy.goCheckFrameNumber(frame);
-                cy.collectIssueLabel().then((issueLabelList) => {
-                    for (let label = 0; label < issueLabelList.length; label++) {
-                        cy.resolveIssue(issueLabelList[label], 'Resolved issue');
-                    }
-                });
+                if (frame !== 1) {
+                    cy.goCheckFrameNumber(frame);
+                    cy.collectIssueLabel().then((issueLabelList) => {
+                        for (let label = 0; label < issueLabelList.length; label++) {
+                            cy.resolveIssue(issueLabelList[label], 'Resolved issue');
+                        }
+                    });
+                }
             }
 
             cy.setJobState('completed');

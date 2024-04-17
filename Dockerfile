@@ -126,6 +126,7 @@ RUN apt-get update && \
         python3-venv \
         supervisor \
         tzdata \
+        unrar \
     && ln -fs /usr/share/zoneinfo/${TZ} /etc/localtime && \
     dpkg-reconfigure -f noninteractive tzdata && \
     rm -rf /var/lib/apt/lists/* && \
