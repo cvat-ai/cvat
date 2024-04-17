@@ -481,13 +481,47 @@ class CanvasWrapperComponent extends React.PureComponent<Props> {
         }
 
         if (prevProps.highlightedConflict !== highlightedConflict) {
+            const { onUpdateAnnotations } = this.props;
             const severity: HighlightSeverity | undefined = highlightedConflict
                 ?.severity as unknown as HighlightSeverity;
             const highlightedClientIDs = (highlightedConflict?.annotationConflicts || [])
                 .map((conflict: AnnotationConflict) => annotations
-                    .find((state) => state.serverID === conflict.serverID && state.objectType === conflict.type),
+                    .find((state) => conflict.type !== 'tag' && state.serverID === conflict.serverID && state.objectType === conflict.type),
                 ).filter((state: ObjectState | undefined) => !!state)
                 .map((state) => state?.clientID) as number[];
+
+            // if last highlightedConflict was a tag then un-highlight it
+            const prevHighlightedClientIDs = (prevProps.highlightedConflict?.annotationConflicts || [])
+                .map((conflict: AnnotationConflict) => annotations
+                    .find((state) => conflict.type === 'tag' && state.serverID === conflict.serverID && state.objectType === conflict.type),
+                ).filter((state: ObjectState | undefined) => !!state)
+                .map((state) => state?.clientID) as number[];
+            if (prevHighlightedClientIDs.length !== 0) {
+                const states = annotations.filter((state) => prevHighlightedClientIDs.includes(state.clientID || 0));
+                if (states) {
+                    for (const state of states) {
+                        state.label.highlight = false;
+                        onUpdateAnnotations([state]);
+                    }
+                }
+            }
+
+            // if current conflict ids is empty then there might be a conflict in tag annotations
+            if (highlightedClientIDs.length === 0) {
+                const highlightedTagClientIDs = (highlightedConflict?.annotationConflicts || [])
+                    .map((conflict: AnnotationConflict) => annotations
+                        .find((state) => conflict.type === 'tag' && state.serverID === conflict.serverID && state.objectType === conflict.type),
+                    ).filter((state: ObjectState | undefined) => !!state)
+                    .map((state) => state?.clientID) as number[];
+
+                const states = annotations.filter((state) => highlightedTagClientIDs.includes(state.clientID || 0));
+                if (states) {
+                    for (const state of states) {
+                        state.label.highlight = true;
+                        onUpdateAnnotations([state]);
+                    }
+                }
+            }
 
             canvasInstance.highlight(highlightedClientIDs, severity || null);
         }

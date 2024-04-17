@@ -72,6 +72,10 @@ function FrameTags(props: StateToProps & DispatchToProps): JSX.Element {
                             }}
                             key={tag.clientID}
                             closable
+                            style={{
+                                transform: tag.label.highlight ? 'scale(1.1)' : 'scale(1)',
+                                transformOrigin: 'left',
+                            }}
                         >
                             {tag.label.name}
                         </Tag>
@@ -89,6 +93,10 @@ function FrameTags(props: StateToProps & DispatchToProps): JSX.Element {
                             }}
                             key={tag.clientID}
                             closable
+                            style={{
+                                transform: tag.label.highlight ? 'scale(1.1)' : 'scale(1)',
+                                transformOrigin: 'left',
+                            }}
                         >
                             {tag.label.name}
                             {' '}
