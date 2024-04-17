@@ -32,8 +32,8 @@ export interface DetectedShape {
 }
 
 export interface TrackerResults {
-    states: any[]
-    shapes: number[][]
+    states: any[];
+    shapes: number[][];
 }
 
 class LambdaManager {
