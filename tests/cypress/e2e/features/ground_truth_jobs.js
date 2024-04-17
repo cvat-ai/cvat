@@ -124,17 +124,23 @@ context('Ground truth jobs', () => {
             });
     }
 
-    function checkRectangle(rectangle, isGroundTruthJob = false) {
+    function checkRectangleAndObjectMenu(rectangle, isGroundTruthJob = false) {
         if (isGroundTruthJob) {
             cy.get(`#cvat_canvas_shape_${rectangle.id}`)
                 .should('be.visible')
                 .should('not.have.class', 'cvat_canvas_ground_truth')
                 .should('not.have.css', 'stroke-dasharray', '1px');
+
+            cy.get(`#cvat-objects-sidebar-state-item-${rectangle.id}`)
+                .find('cvat-object-item-menu-button').should('be.visible');
         } else {
             cy.get(`#cvat_canvas_shape_${rectangle.id}`)
                 .should('be.visible')
                 .should('have.class', 'cvat_canvas_ground_truth')
                 .should('have.css', 'stroke-dasharray', '1px');
+
+            cy.get(`#cvat-objects-sidebar-state-item-${rectangle.id}`)
+                .find('cvat-object-item-menu-button').should('not.be.visible');
         }
 
         cy.get(`#cvat-objects-sidebar-state-item-${rectangle.id}`)
@@ -316,10 +322,7 @@ context('Ground truth jobs', () => {
             cy.changeWorkspace('Review');
             groundTruthFrames.forEach((frame, index) => {
                 cy.goCheckFrameNumber(frame);
-                checkRectangle(groundTruthRectangles[index], true);
-                cy.get(`#cvat-objects-sidebar-state-item-${groundTruthRectangles[index].id}`)
-                    .find('.ant-dropdown-trigger').click();
-                cy.get('.cvat-object-item-menu').should('exist');
+                checkRectangleAndObjectMenu(groundTruthRectangles[index], true);
             });
 
             cy.saveJob();
@@ -334,9 +337,7 @@ context('Ground truth jobs', () => {
             cy.get('.cvat-objects-sidebar-show-ground-truth').click();
             groundTruthFrames.forEach((frame, index) => {
                 cy.goCheckFrameNumber(frame);
-                checkRectangle(groundTruthRectangles[index]);
-                cy.get(`#cvat-objects-sidebar-state-item-${groundTruthRectangles[index].id}`)
-                    .find('.ant-dropdown-trigger').should('not.exist');
+                checkRectangleAndObjectMenu(groundTruthRectangles[index]);
             });
         });
 
