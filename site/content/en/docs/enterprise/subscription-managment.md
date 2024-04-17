@@ -89,7 +89,7 @@ Here’s how you can do it:
 3. Navigate to the top right corner, next to the nickname,
    click on the arrow > uprate to the plan.
 4. Switch on the **I would like the invoice to include additional
-   data (address, phone number, VAT information)** toggle and click **Get Started**.
+   data (address, phone number, VAT information)** toggle, select the best payment period for you, and click **Get Started**.
 
    ![Stripe Link](/images/add-invoice.jpg)
 
