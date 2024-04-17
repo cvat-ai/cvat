@@ -90,7 +90,7 @@ class LambdaManager {
         return result.id;
     }
 
-    async call(taskID, model, args): Promise<TrackerResults | InteractorResults | SerializedShape[]> {
+    async call(taskID, model, args): Promise<TrackerResults | InteractorResults | DetectedShape[]> {
         if (!Number.isInteger(taskID) || taskID < 0) {
             throw new ArgumentError(`Argument taskID must be a positive integer. Got "${taskID}"`);
         }
