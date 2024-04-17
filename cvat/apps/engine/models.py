@@ -858,7 +858,8 @@ class AttributeSpec(models.Model):
         choices=AttributeType.choices())
     default_value = models.CharField(blank=True, max_length=128)
     values = models.CharField(blank=True, max_length=4096)
-
+    updated_time = models.DateTimeField(auto_now=True)
+    
     class Meta:
         default_permissions = ()
         unique_together = ('label', 'name')
