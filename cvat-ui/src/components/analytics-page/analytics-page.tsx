@@ -13,7 +13,9 @@ import Title from 'antd/lib/typography/Title';
 import notification from 'antd/lib/notification';
 import { useIsMounted } from 'utils/hooks';
 import { Project, Task } from 'reducers';
-import { AnalyticsReport, Job, getCore } from 'cvat-core-wrapper';
+import {
+    AnalyticsReport, Job, RQStatus, getCore,
+} from 'cvat-core-wrapper';
 import moment from 'moment';
 import CVATLoadingSpinner from 'components/common/loading-spinner';
 import GoBackButton from 'components/common/go-back-button';
@@ -84,6 +86,7 @@ function AnalyticsPage(): JSX.Element {
     const [instance, setInstance] = useState<Project | Task | Job | null>(null);
     const [analyticsReport, setAnalyticsReport] = useState<AnalyticsReport | null>(null);
     const [timePeriod, setTimePeriod] = useState<DateIntervals>(DateIntervals.LAST_WEEK);
+    const [reportRefreshingStatus, setReportRefreshingStatus] = useState<string | null>(null);
     const [fetching, setFetching] = useState(true);
     const isMounted = useIsMounted();
 
@@ -168,6 +171,40 @@ function AnalyticsPage(): JSX.Element {
         };
     }, [requestedInstanceType, requestedInstanceID, timePeriod]);
 
+    useEffect(() => {
+        window.addEventListener('hashchange', () => {
+            const hash = getTabFromHash();
+            setTab(hash);
+        });
+    }, []);
+
+    useEffect(() => {
+        window.location.hash = activeTab;
+    }, [activeTab]);
+
+    const onCreateReport = useCallback(() => {
+        const onUpdate = (status: RQStatus, progress: number, message: string): void => {
+            setReportRefreshingStatus(message);
+        };
+
+        const body = {
+            ...(requestedInstanceType === 'project' ? { projectID: requestedInstanceID } : {}),
+            ...(requestedInstanceType === 'task' ? { taskID: requestedInstanceID } : {}),
+            ...(requestedInstanceType === 'job' ? { jobID: requestedInstanceID } : {}),
+        };
+
+        core.analytics.performance.calculate(body, onUpdate).finally(() => {
+            setReportRefreshingStatus(null);
+        }).catch((error: unknown) => {
+            if (isMounted()) {
+                notification.error({
+                    message: 'Error occurred during requesting performance report',
+                    description: error instanceof Error ? error.message : '',
+                });
+            }
+        });
+    }, [requestedInstanceType, requestedInstanceID]);
+
     const onJobUpdate = useCallback((job: Job): void => {
         setFetching(true);
 
@@ -185,20 +222,9 @@ function AnalyticsPage(): JSX.Element {
             });
     }, []);
 
-    useEffect(() => {
-        window.addEventListener('hashchange', () => {
-            const hash = getTabFromHash();
-            setTab(hash);
-        });
-    }, []);
-
-    const onTabKeyChange = (key: string): void => {
+    const onTabKeyChange = useCallback((key: string): void => {
         setTab(key as AnalyticsTabs);
-    };
-
-    useEffect(() => {
-        window.location.hash = activeTab;
-    }, [activeTab]);
+    }, []);
 
     let backNavigation: JSX.Element | null = null;
     let title: JSX.Element | null = null;
@@ -238,7 +264,9 @@ function AnalyticsPage(): JSX.Element {
                     <AnalyticsOverview
                         report={analyticsReport}
                         timePeriod={timePeriod}
+                        reportRefreshingStatus={reportRefreshingStatus}
                         onTimePeriodChange={setTimePeriod}
+                        onCreateReport={onCreateReport}
                     />
                 </Tabs.TabPane>
                 {instanceType === 'task' && (

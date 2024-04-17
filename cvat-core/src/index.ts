@@ -105,11 +105,11 @@ export default interface CVATCore {
     projects: {
         get: (
             filter: {
-                id: number;
-                page: number;
-                search: string;
-                sort: string;
-                filter: string;
+                id?: number;
+                page?: number;
+                search?: string;
+                sort?: string;
+                filter?: string;
             }
         ) => Promise<PaginatedResource<Project>>;
         searchNames: any;
@@ -141,6 +141,10 @@ export default interface CVATCore {
         };
         performance: {
             reports: (filter: AnalyticsReportFilter) => Promise<AnalyticsReport>;
+            calculate: (
+                body: { jobID?: number; taskID?: number; projectID?: number; },
+                onUpdate: (status: enums.RQStatus, progress: number, message: string) => void,
+            ) => Promise<void>;
         };
     };
     frames: {

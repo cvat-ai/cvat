@@ -16,9 +16,17 @@
 }
 
 .cvat-task-quality-page,
+.cvat-analytics-overview,
 .cvat-project-quality-page {
     >.ant-row {
         margin-top: $grid-unit-size;
+    }
+}
+
+.cvat-job-empty-performance-analytics-item {
+    > div > div {
+        display: flex;
+        justify-content: space-between;
     }
 }
 
@@ -33,6 +41,10 @@
     .ant-card-body {
         padding: $grid-unit-size * 2 $grid-unit-size * 3;
     }
+}
+
+.cvat-analytics-refresh-button {
+    margin-right: $grid-unit-size;
 }
 
 .cvat-analytics-card-title {
