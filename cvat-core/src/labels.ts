@@ -98,6 +98,7 @@ export class Label {
     public deleted: boolean;
     public patched: boolean;
     public readonly hasParent?: boolean;
+    public highlight = false;
 
     constructor(initialData: Readonly<SerializedLabel>) {
         const data = {
