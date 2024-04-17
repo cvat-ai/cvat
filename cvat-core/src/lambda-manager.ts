@@ -20,7 +20,7 @@ export interface InteractorResults {
     bounds?: [number, number, number, number]
 }
 
-export interface SerializedShape {
+export interface DetectedShape {
     type: ShapeType;
     rotation?: number;
     attributes: { name: string; value: string }[];
@@ -28,7 +28,7 @@ export interface SerializedShape {
     outside?: boolean;
     points?: number[];
     mask?: number[];
-    elements: SerializedShape[];
+    elements: DetectedShape[];
 }
 
 export interface TrackerResults {
