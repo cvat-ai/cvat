@@ -41,6 +41,7 @@ See:
 - [Plan renewal](#plan-renewal)
   - [Solo plan](#solo-plan-2)
   - [Team plan](#team-plan-2)
+- [Refund policy](#refund-policy)
 - [Subscription management video tutorial](#subscription-management-video-tutorial)
 
 ## Billing
@@ -89,7 +90,8 @@ Here’s how you can do it:
 3. Navigate to the top right corner, next to the nickname,
    click on the arrow > uprate to the plan.
 4. Switch on the **I would like the invoice to include additional
-   data (address, phone number, VAT information)** toggle, select the best payment period for you, and click **Get Started**.
+   data (address, phone number, VAT information)** toggle, select the
+   best payment period for you, and click **Get Started**.
 
    ![Stripe Link](/images/add-invoice.jpg)
 
@@ -102,7 +104,6 @@ Here’s how you can do it:
      in the address field **(2)**.
    - **VAT Information** and **Business Name**: Select the checkbox **I am purchasing as a business** and enter
      your VAT and business name information **(3)**.
-
 
 6. Select checkbox **I agree to refund policy** **(4)**.
 
@@ -303,6 +304,10 @@ Access **Manage Solo plan** > **Renew plan**
 ### Team plan
 
 Access **Manage Team Plan** > **Renew plan**
+
+## Refund policy
+
+For more information, see [Refund policy](https://www.cvat.ai/refund-policy)
 
 ## Subscription management video tutorial
 
