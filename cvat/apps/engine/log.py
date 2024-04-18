@@ -7,8 +7,7 @@ import logging
 import sys
 import os.path as osp
 from contextlib import contextmanager
-from directory_tree import display_tree
-
+from cvat.apps.engine.utils import directory_tree
 from django.conf import settings
 
 class _LoggerAdapter(logging.LoggerAdapter):
@@ -39,12 +38,11 @@ class DatasetLogManager:
 
     def log_import_error(self, entity, entity_id, format_name, base_error, dir_path) -> None:
         base_info = f"[{entity}.id={entity_id} format.name={format_name} exc={base_error}]"
-        dir_tree = display_tree(
-            dir_path=dir_path,
-            string_rep=True,
-            max_depth=4,
+        dir_tree = directory_tree(
+            path=dir_path,
+            max_depth=5,
         )
-        log_error = f"{base_info} \nDirectory tree:\n {dir_tree}"
+        log_error = f"{base_info} \nDirectory tree:\n{dir_tree}"
         self.glob.error(log_error)
 
 def get_logger(logger_name, log_file):
