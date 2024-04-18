@@ -135,7 +135,7 @@ at their website.
 
 If you require a quote from CVAT for payment via bank transfer, certain criteria must be met:
 
-- The **total subscription cost must be $396 and up**.
+- The **total subscription cost must be $396 and up per year**.
 - Quotes are available exclusively **for annual subscriptions**.
 
 Should you meet these requirements, please write to [support@cvat.ai](mailto:support@cvat.ai)
