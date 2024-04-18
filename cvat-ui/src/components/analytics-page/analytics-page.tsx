@@ -193,7 +193,9 @@ function AnalyticsPage(): JSX.Element {
             ...(requestedInstanceType === 'job' ? { jobID: requestedInstanceID } : {}),
         };
 
-        core.analytics.performance.calculate(body, onUpdate).finally(() => {
+        core.analytics.performance.calculate(body, onUpdate).then(() => {
+            receiveReport(timePeriod, requestedInstanceType, requestedInstanceID);
+        }).finally(() => {
             setReportRefreshingStatus(null);
         }).catch((error: unknown) => {
             if (isMounted()) {
@@ -203,7 +205,7 @@ function AnalyticsPage(): JSX.Element {
                 });
             }
         });
-    }, [requestedInstanceType, requestedInstanceID]);
+    }, [requestedInstanceType, requestedInstanceID, timePeriod]);
 
     const onJobUpdate = useCallback((job: Job): void => {
         setFetching(true);
