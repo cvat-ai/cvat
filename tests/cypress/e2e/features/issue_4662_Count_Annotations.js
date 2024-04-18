@@ -20,6 +20,7 @@ context('Count total annotation, issues and labels', () => {
         secondX: 350,
         secondY: 450,
     };
+    const serverFiles = ['images/image_1.jpg'];
 
     before(() => {
         cy.visit('auth/login');
@@ -32,7 +33,7 @@ context('Count total annotation, issues and labels', () => {
             source_storage: { location: 'local' },
             target_storage: { location: 'local' },
         }, {
-            server_files: ['road4.png'],
+            server_files: serverFiles,
             image_quality: 70,
             use_zip_chunks: true,
             use_cache: true,
