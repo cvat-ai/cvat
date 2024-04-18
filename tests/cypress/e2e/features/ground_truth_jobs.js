@@ -131,14 +131,14 @@ context('Ground truth jobs', () => {
                 .should('not.have.class', 'cvat_canvas_ground_truth')
                 .should('not.have.css', 'stroke-dasharray', '1px');
 
-            cy.get('.cvat-object-item-menu-button').should('be.visible');
+            cy.get('.cvat-object-item-menu-button').should('exist');
         } else {
             cy.get(`#cvat_canvas_shape_${rectangle.id}`)
                 .should('be.visible')
                 .should('have.class', 'cvat_canvas_ground_truth')
                 .should('have.css', 'stroke-dasharray', '1px');
 
-            cy.get('.cvat-object-item-menu-button').should('not.be.visible');
+            cy.get('.cvat-object-item-menu-button').should('not.exist');
         }
 
         cy.get(`#cvat-objects-sidebar-state-item-${rectangle.id}`)
