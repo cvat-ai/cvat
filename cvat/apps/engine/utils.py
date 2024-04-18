@@ -399,20 +399,20 @@ def build_annotations_file_name(
 
 
 def directory_tree(path, max_depth=None, current_depth=0) -> str:
-  if not os.path.exists(path):
-    return f"No such file or directory: {path}"
+    if not os.path.exists(path):
+        return f"No such file or directory: {path}"
 
-  output = ""
-  if current_depth > 0:
-    output += "|  " * (current_depth - 1) + "|- "
+    output = ""
+    if current_depth > 0:
+        output += "|  " * (current_depth - 1) + "|- "
 
-  output += os.path.basename(path) + "/\n"
+    output += os.path.basename(path) + "/\n"
 
-  if max_depth is None or current_depth < max_depth:
-      for item in os.listdir(path):
-        full_path = os.path.join(path, item)
-        if os.path.isdir(full_path):
-          output += directory_tree(full_path, max_depth, current_depth + 1)
-        else:
-          output += "|  " * current_depth + "|- " + item + "\n"
-  return output
+    if max_depth is None or current_depth < max_depth:
+        for item in os.listdir(path):
+            full_path = os.path.join(path, item)
+            if os.path.isdir(full_path):
+                output += directory_tree(full_path, max_depth, current_depth + 1)
+            else:
+                output += "|  " * current_depth + "|- " + item + "\n"
+    return output
