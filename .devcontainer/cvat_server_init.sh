@@ -38,24 +38,13 @@ collect_static() {
     echo_bold "INFO: Done collect static files"
 }
 
-update_venv() {
-    mkdir -p /home/devcontainer/tmp
-    cp cvat/requirements/development.txt /home/devcontainer/tmp/development.txt
-    cp cvat/requirements/testing.txt /home/devcontainer/tmp/testing.txt
-    sed -i '/^-r base.txt$/d' /home/devcontainer/tmp/development.txt
-    sed -i '/^-r development.txt$/d' /home/devcontainer/tmp/testing.txt
-    pip install -r /home/devcontainer/tmp/development.txt -r /home/devcontainer/tmp/testing.txt
-    rm -rf /home/devcontainer/tmp
-    echo_bold "INFO: Done update virtual environment packages"
-}
-
 trap error_handler ERR
 workspacefolder="$(dirname "$(dirname "$(realpath "$0")")")"
 cd "${workspacefolder}"
 source /opt/venv/bin/activate
 echo_bold "INFO: Start operations"
-export -f echo_bold && export -f db_operations && export -f collect_static && export -f update_venv
-parallel --jobs 3 --ungroup --halt now,fail=1 ::: db_operations collect_static update_venv
+export -f echo_bold && export -f db_operations && export -f collect_static
+parallel --jobs 2 --ungroup --halt now,fail=1 ::: db_operations collect_static
 echo_bold "INFO: Done operations"
 echo_bold "INFO: Run django server to serve the OPA client"
 python manage.py runserver 0.0.0.0:"${CVAT_PORT:-8080}"

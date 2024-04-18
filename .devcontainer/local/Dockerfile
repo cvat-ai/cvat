@@ -13,6 +13,12 @@ ENV DJANGO_SETTINGS_MODULE cvat.settings.${DJANGO_CONFIGURATION}
 
 USER root
 
+# Save commit hash of datumaro git repository for using it while updating virtal environment in
+# postcreate.sh script
+RUN mkdir -p /cvat/metadata \
+    && sed --quiet 's|^datumaro @ git+https://github.com/cvat-ai/datumaro.git@\([[:alnum:]]\)|\1|p' \
+    /home/django/cvat/requirements/base.txt > /cvat/metadata/datumaro_commit.txt
+
 # It is needed that the host user uid matches with the container user uid, else \
 # permission error occur on the bind volume mounts
 # So original django user is replaced by devcontainer with host uid value
@@ -38,25 +44,7 @@ RUN curl --silent "https://api.github.com/repos/open-policy-agent/opa/releases/t
         | wget --tries 3 --output-document /usr/local/bin/opa --quiet --input-file - \
     && chmod +x /usr/local/bin/opa
 
-COPY cvat/requirements /tmp/requirements
-# Install packages specific to development and testing and ignore already installed
-# base packages
-RUN sed -i '/^-r base.txt/d' /tmp/requirements/development.txt \
-    && sed -i '/^-r development.txt/d' /tmp/requirements/testing.txt
-
-RUN --mount=type=cache,target=/root/.cache/pip/http \
-    python -m pip install \
-        -r /tmp/requirements/development.txt \
-        -r /tmp/requirements/testing.txt \
-    && rm -rf /tmp/requirements
-
-COPY tests/python/requirements.txt /tmp
 RUN /usr/bin/python3 -m venv /opt/venv-test
-RUN --mount=type=cache,target=/root/.cache/pip/http \
-    /opt/venv-test/bin/python -m pip install \
-        -r /tmp/requirements.txt \
-    && rm /tmp/requirements.txt
-
 RUN chown -R devcontainer /opt/venv /opt/venv-test
 
 # If the volume mounted directories does not exist then they shall be created
@@ -66,7 +54,7 @@ RUN chown -R devcontainer /opt/venv /opt/venv-test
 USER devcontainer
 WORKDIR /home/devcontainer/workspaces
 
-RUN mkdir -p data keys logs static node_modules
+RUN mkdir -p data keys logs static node_modules /home/devcontainer/.cache/pip
 
 
 
