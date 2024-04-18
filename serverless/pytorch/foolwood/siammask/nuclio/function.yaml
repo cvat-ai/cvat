@@ -9,7 +9,7 @@ metadata:
 
 spec:
   description: Fast Online Object Tracking and Segmentation
-  runtime: 'python:3.6'
+  runtime: 'python:3.9'
   handler: main:handler
   eventTimeout: 30s
   env:
@@ -35,7 +35,7 @@ spec:
         - kind: WORKDIR
           value: /opt/nuclio
         - kind: RUN
-          value: conda create -y -n siammask python=3.6
+          value: conda create -y -n siammask python=3.7
         - kind: SHELL
           value: '["conda", "run", "-n", "siammask", "/bin/bash", "-c"]'
         - kind: RUN
