@@ -45,6 +45,7 @@ RUN curl --silent "https://api.github.com/repos/open-policy-agent/opa/releases/t
     && chmod +x /usr/local/bin/opa
 
 RUN /usr/bin/python3 -m venv /opt/venv-test
+ENV PATH="/opt/venv-test/bin:${PATH}"
 RUN chown -R devcontainer /opt/venv /opt/venv-test
 
 # If the volume mounted directories does not exist then they shall be created
