@@ -45,7 +45,6 @@
 
     &:hover {
         transform: scale(1.1);
-        transform-origin: 60% center;
     }
 }
 
@@ -243,8 +242,6 @@
         }
 
         > div:nth-child(3) > span {
-            @extend .cvat-object-sidebar-icon;
-
             font-size: 25px;
         }
 
