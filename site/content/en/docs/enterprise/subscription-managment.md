@@ -143,7 +143,7 @@ Should you meet these requirements, please write to [support@cvat.ai](mailto:sup
 ### Can you sign an agreement before I subscribe?
 
 Sign of specific agreements and approvals are available if you meet specific criteria
-(the **total subscription cost must be $10,000 and up**), for more details contact [support@cvat.ai](mailto:support@cvat.ai)
+(the **total subscription cost must be $10,000 and up per year**), for more details contact [support@cvat.ai](mailto:support@cvat.ai)
 
 ### Can you handle a bank transfer with 30-day payment terms?
 
