@@ -3430,10 +3430,10 @@ class TestImportWithComplexFilenames:
         )
         assert outside_count == 2, "Outside shapes are not imported correctly"
 
-    def test_export_and_import_coco_keypoints_with_gap_in_elements(self):
+    def test_export_and_import_complex_coco_keypoints_annotations(self):
         task_id = 14
         format_name = "COCO Keypoints 1.0"
-        dataset_file = self.tmp_dir / (format_name + "with_gap_in_elements_source_data.zip")
+        dataset_file = self.tmp_dir / (format_name + "complex_annotations_source_data.zip")
         annotations = {
             "shapes": [],
             "tracks": [
@@ -3441,11 +3441,11 @@ class TestImportWithComplexFilenames:
                     "frame": 0,
                     "group": 0,
                     "shapes": [
-                        {"type": "skeleton", "outside": False, "points": [], "frame": 0},
-                        {"type": "skeleton", "outside": False, "points": [], "frame": 1},
-                        {"type": "skeleton", "outside": False, "points": [], "frame": 2},
-                        {"type": "skeleton", "outside": False, "points": [], "frame": 4},
-                        {"type": "skeleton", "outside": False, "points": [], "frame": 5},
+                        {"type": "skeleton", "outside": False, "frame": 0},
+                        {"type": "skeleton", "outside": False, "frame": 1},
+                        {"type": "skeleton", "outside": False, "frame": 2},
+                        {"type": "skeleton", "outside": False, "frame": 4},
+                        {"type": "skeleton", "outside": False, "frame": 5},
                     ],
                     "attributes": [],
                     "elements": [
@@ -3484,12 +3484,10 @@ class TestImportWithComplexFilenames:
                                     "frame": 5,
                                 },
                             ],
-                            "attributes": [],
                         },
                         {
                             "frame": 0,
                             "group": 0,
-                            "source": "manual",
                             "shapes": [
                                 {
                                     "type": "points",
@@ -3516,7 +3514,6 @@ class TestImportWithComplexFilenames:
                                     "frame": 4,
                                 },
                             ],
-                            "attributes": [],
                         },
                         {
                             "frame": 0,
@@ -3553,10 +3550,125 @@ class TestImportWithComplexFilenames:
                                     "frame": 5,
                                 },
                             ],
-                            "attributes": [],
                         },
                     ],
-                }
+                },
+                {
+                    "frame": 0,
+                    "group": 0,
+                    "shapes": [
+                        {"type": "skeleton", "outside": False, "frame": 0},
+                        {"type": "skeleton", "outside": True, "frame": 1},
+                        {"type": "skeleton", "outside": False, "frame": 3},
+                        {"type": "skeleton", "outside": False, "frame": 4},
+                        {"type": "skeleton", "outside": False, "frame": 5},
+                    ],
+                    "attributes": [],
+                    "elements": [
+                        {
+                            "frame": 0,
+                            "group": 0,
+                            "shapes": [
+                                {
+                                    "type": "points",
+                                    "outside": False,
+                                    "points": [416.16, 244.31],
+                                    "frame": 0,
+                                },
+                                {
+                                    "type": "points",
+                                    "outside": True,
+                                    "points": [416.16, 244.31],
+                                    "frame": 1,
+                                },
+                                {
+                                    "type": "points",
+                                    "outside": False,
+                                    "points": [416.16, 244.31],
+                                    "frame": 3,
+                                },
+                                {
+                                    "type": "points",
+                                    "outside": False,
+                                    "points": [416.16, 244.31],
+                                    "frame": 4,
+                                },
+                                {
+                                    "type": "points",
+                                    "outside": False,
+                                    "points": [416.16, 244.31],
+                                    "frame": 5,
+                                },
+                            ],
+                        },
+                        {
+                            "frame": 0,
+                            "group": 0,
+                            "shapes": [
+                                {
+                                    "type": "points",
+                                    "outside": False,
+                                    "points": [486.17, 379.65],
+                                    "frame": 0,
+                                },
+                                {
+                                    "type": "points",
+                                    "outside": True,
+                                    "points": [486.17, 379.65],
+                                    "frame": 1,
+                                },
+                                {
+                                    "type": "points",
+                                    "outside": True,
+                                    "points": [486.17, 379.65],
+                                    "frame": 3,
+                                },
+                                {
+                                    "type": "points",
+                                    "outside": False,
+                                    "points": [486.17, 379.65],
+                                    "frame": 4,
+                                },
+                                {
+                                    "type": "points",
+                                    "outside": False,
+                                    "points": [486.17, 379.65],
+                                    "frame": 5,
+                                },
+                            ],
+                        },
+                        {
+                            "frame": 0,
+                            "group": 0,
+                            "shapes": [
+                                {
+                                    "type": "points",
+                                    "outside": False,
+                                    "points": [350.83, 331.88],
+                                    "frame": 0,
+                                },
+                                {
+                                    "type": "points",
+                                    "outside": True,
+                                    "points": [350.83, 331.88],
+                                    "frame": 1,
+                                },
+                                {
+                                    "type": "points",
+                                    "outside": True,
+                                    "points": [350.83, 331.88],
+                                    "frame": 3,
+                                },
+                                {
+                                    "type": "points",
+                                    "outside": False,
+                                    "points": [350.83, 331.88],
+                                    "frame": 5,
+                                },
+                            ],
+                        },
+                    ],
+                },
             ],
         }
 
@@ -3566,34 +3678,22 @@ class TestImportWithComplexFilenames:
 
         self.compare_original_and_import_annotations(original_annotations, imported_annotations)
 
-        track_outside_count = sum(
-            1 for shape in imported_annotations["tracks"][0]["shapes"] if shape["outside"]
-        )
-        assert track_outside_count == 0, "Outside shapes are not imported correctly"
+        def check_element_outside_count(track_idx, element_idx, expected_count):
+            outside_count = sum(
+                1
+                for shape in imported_annotations["tracks"][0]["elements"][element_idx]["shapes"]
+                if shape["outside"]
+            )
+            assert (
+                outside_count == expected_count
+            ), f"Outside shapes for track[{track_idx}]element[{element_idx}] are not imported correctly"
 
-        element_0_outside_count = sum(
-            1
-            for shape in imported_annotations["tracks"][0]["elements"][0]["shapes"]
-            if shape["outside"]
-        )
-        assert (
-            element_0_outside_count == 1
-        ), "Outside shapes for element[0] are not imported correctly"
+        # check track[0] elements outside count
+        check_element_outside_count(0, 0, 1)
+        check_element_outside_count(0, 1, 2)
+        check_element_outside_count(0, 2, 2)
 
-        element_1_outside_count = sum(
-            1
-            for shape in imported_annotations["tracks"][0]["elements"][1]["shapes"]
-            if shape["outside"]
-        )
-        assert (
-            element_1_outside_count == 2
-        ), "Outside shapes for element[1] are not imported correctly"
-
-        element_2_outside_count = sum(
-            1
-            for shape in imported_annotations["tracks"][0]["elements"][2]["shapes"]
-            if shape["outside"]
-        )
-        assert (
-            element_2_outside_count == 2
-        ), "Outside shapes for element[2] are not imported correctly"
+        # check track[1] elements outside count
+        check_element_outside_count(1, 0, 1)
+        check_element_outside_count(1, 1, 2)
+        check_element_outside_count(1, 2, 2)
