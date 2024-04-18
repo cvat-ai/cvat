@@ -15,8 +15,8 @@ you'll learn how to take control of your subscriptions and manage them.
 See:
 
 - [Billing](#billing)
-  - [Solo plan](#solo-plan)
-  - [Team plan](#team-plan)
+  - [Solo plan for personal use](#solo-plan-for-personal-use)
+  - [Team plan for teams and organizations](#team-plan-for-teams-and-organizations)
   - [How to add VAT/tax and other information to the CVAT.ai invoice before the first payment?](#how-to-add-vattax-and-other-information-to-the-cvatai-invoice-before-the-first-payment)
   - [How to add/ change VAT/tax and other information to the CVAT.ai invoice after the first payment?](#how-to-add-change-vattax-and-other-information-to-the-cvatai-invoice-after-the-first-payment)
   - [Can a paid invoice be modified?](#can-a-paid-invoice-be-modified)
@@ -30,17 +30,17 @@ See:
   - [Change payment method on the Solo plan](#change-payment-method-on-the-solo-plan)
   - [Change the payment method on the Team plan](#change-the-payment-method-on-the-team-plan)
 - [Adding and removing team members](#adding-and-removing-team-members)
-  - [Solo plan](#solo-plan-1)
-  - [Team plan](#team-plan-1)
+  - [Solo plan](#solo-plan)
+  - [Team plan](#team-plan)
 - [Change plan](#change-plan)
 - [Can I subscribe to several plans?](#can-i-subscribe-to-several-plans)
 - [Cancel plan](#cancel-plan)
   - [What will happen to my data?](#what-will-happen-to-my-data)
+  - [Solo plan](#solo-plan-1)
+  - [Team plan](#team-plan-1)
+- [Plan renewal](#plan-renewal)
   - [Solo plan](#solo-plan-2)
   - [Team plan](#team-plan-2)
-- [Plan renewal](#plan-renewal)
-  - [Solo plan](#solo-plan-3)
-  - [Team plan](#team-plan-3)
 - [Subscription management video tutorial](#subscription-management-video-tutorial)
 
 ## Billing
@@ -54,7 +54,7 @@ and Team plans: monthly and annual.
 For more information,
 see: [Pricing Plans](https://www.cvat.ai/post/new-pricing-plans)
 
-### Solo plan
+### Solo plan for personal use
 
 The **Solo** plan has a fixed price and is
 designed **for personal use only**. It doesn't allow collaboration with team members
@@ -64,7 +64,7 @@ but removes all the other limits of the **Free** plan.
 > access for up to 3 members -- it is _for trial purposes_ only,
 > organization and members _will have all the limitations of the **Free** plan_.
 
-### Team plan
+### Team plan for teams and organizations
 
 The **Team** plan allows you to create
 an organization and add team members who can collaborate on projects.
@@ -97,12 +97,14 @@ Here’s how you can do it:
 
    ![Stripe Link](/images/add-vat.jpg)
 
+   - Phone number **(1)**.
    - **Billing Address**: Enter the billing address you want to appear on the invoice
-     in the address field **(1)**.
+     in the address field **(2)**.
    - **VAT Information** and **Business Name**: Select the checkbox **I am purchasing as a business** and enter
-     your VAT and business name information **(2)**.
+     your VAT and business name information **(3)**.
 
-6. Select checkbox **I agree to refund policy** **(3)**.
+
+6. Select checkbox **I agree to refund policy** **(4)**.
 
 7. Click **Pay & Subscribe**.
 
