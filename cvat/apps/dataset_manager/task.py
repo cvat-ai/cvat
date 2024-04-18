@@ -484,10 +484,7 @@ class JobAnnotation:
                 ]))
 
     def _init_tags_from_db(self):
-        db_tags = self.db_job.labeledimage_set.prefetch_related(
-            "label",
-            "labeledimageattributeval_set"
-        ).values(
+        db_tags = self.db_job.labeledimage_set.values(
             'id',
             'frame',
             'label_id',
@@ -496,7 +493,7 @@ class JobAnnotation:
             'labeledimageattributeval__spec_id',
             'labeledimageattributeval__value',
             'labeledimageattributeval__id',
-        ).order_by('frame').iterator()
+        ).order_by('frame').iterator(chunk_size=2000)
 
         db_tags = _merge_table_rows(
             rows=db_tags,
@@ -518,10 +515,7 @@ class JobAnnotation:
         self.ir_data.tags = serializer.data
 
     def _init_shapes_from_db(self):
-        db_shapes = self.db_job.labeledshape_set.prefetch_related(
-            "label",
-            "labeledshapeattributeval_set"
-        ).values(
+        db_shapes = self.db_job.labeledshape_set.values(
             'id',
             'label_id',
             'type',
@@ -537,7 +531,7 @@ class JobAnnotation:
             'labeledshapeattributeval__spec_id',
             'labeledshapeattributeval__value',
             'labeledshapeattributeval__id',
-            ).order_by('frame').iterator()
+        ).order_by('frame').iterator(chunk_size=2000)
 
         db_shapes = _merge_table_rows(
             rows=db_shapes,
@@ -572,11 +566,7 @@ class JobAnnotation:
         self.ir_data.shapes = serializer.data
 
     def _init_tracks_from_db(self):
-        db_tracks = self.db_job.labeledtrack_set.prefetch_related(
-            "label",
-            "labeledtrackattributeval_set",
-            "trackedshape_set__trackedshapeattributeval_set"
-        ).values(
+        db_tracks = self.db_job.labeledtrack_set.values(
             "id",
             "frame",
             "label_id",
@@ -597,7 +587,7 @@ class JobAnnotation:
             "trackedshape__trackedshapeattributeval__spec_id",
             "trackedshape__trackedshapeattributeval__value",
             "trackedshape__trackedshapeattributeval__id",
-        ).order_by('id', 'trackedshape__frame').iterator()
+        ).order_by('id', 'trackedshape__frame').iterator(chunk_size=2000)
 
         db_tracks = _merge_table_rows(
             rows=db_tracks,
