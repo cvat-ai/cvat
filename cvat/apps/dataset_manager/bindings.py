@@ -2158,23 +2158,17 @@ def import_dm_annotations(dm_dataset: dm.Dataset, instance_data: Union[ProjectDa
         for shape in shapes:
             prev_is_visible = prev_shape and not prev_shape.outside
             cur_is_visible = shape and not shape.outside
-            if not cur_is_visible:
-                if prev_is_visible:
-                    shape = shape._replace(keyframe=True)
-                    new_shapes.append(shape)
-                prev_shape = shape
-                continue
 
             has_gap = False
             if prev_is_visible:
                 has_gap = prev_shape.frame + instance_data.frame_step < shape.frame
 
-            if not prev_is_visible or has_gap or shape.keyframe:
-                if has_gap:
-                    prev_shape = prev_shape._replace(outside=True, keyframe=True,
-                        frame=prev_shape.frame + instance_data.frame_step)
-                    new_shapes.append(prev_shape)
+            if has_gap:
+                prev_shape = prev_shape._replace(outside=True, keyframe=True,
+                    frame=prev_shape.frame + instance_data.frame_step)
+                new_shapes.append(prev_shape)
 
+            if prev_is_visible != cur_is_visible or cur_is_visible and (has_gap or shape.keyframe):
                 shape = shape._replace(keyframe=True)
                 new_shapes.append(shape)
 
