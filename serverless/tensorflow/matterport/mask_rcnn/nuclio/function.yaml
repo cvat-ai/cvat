@@ -94,7 +94,7 @@ spec:
   description: |
     An implementation of Mask RCNN on Python 3, Keras, and TensorFlow.
 
-  runtime: 'python:3.6'
+  runtime: 'python:3.9'
   handler: main:handler
   eventTimeout: 30s
   env:
@@ -102,7 +102,7 @@ spec:
       value: /opt/nuclio/Mask_RCNN
   build:
     image: cvat.tf.matterport.mask_rcnn
-    baseImage: tensorflow/tensorflow:1.13.1-py3
+    baseImage: tensorflow/tensorflow:2.16.1
     directives:
       postCopy:
         - kind: WORKDIR

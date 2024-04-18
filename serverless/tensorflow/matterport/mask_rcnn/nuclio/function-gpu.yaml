@@ -93,7 +93,7 @@ metadata:
 spec:
   description: Mask RCNN optimized for GPU
 
-  runtime: 'python:3.6'
+  runtime: 'python:3.9'
   handler: main:handler
   eventTimeout: 30s
   env:
@@ -101,7 +101,7 @@ spec:
       value: /opt/nuclio/Mask_RCNN
   build:
     image: cvat.tf.matterport.mask_rcnn:latest-gpu
-    baseImage: tensorflow/tensorflow:1.15.5-gpu-py3
+    baseImage: tensorflow/tensorflow:2.16.1-gpu
     directives:
       postCopy:
         - kind: WORKDIR
