@@ -159,7 +159,7 @@ class ProjectAnnotationAndData:
             try:
                 importer(dataset_file, temp_dir, project_data, self.load_dataset_data, **options)
             except DatasetNotFoundError as not_found:
-                if settings.LOG_IMPORT_ERRORS:
+                if settings.CVAT_LOG_IMPORT_ERRORS:
                     dlogger.log_import_error(
                         entity="project",
                         entity_id=self.db_project.id,

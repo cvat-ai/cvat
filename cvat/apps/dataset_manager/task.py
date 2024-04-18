@@ -708,7 +708,7 @@ class JobAnnotation:
             try:
                 importer(src_file, temp_dir, job_data, **options)
             except DatasetNotFoundError as not_found:
-                if settings.LOG_IMPORT_ERRORS:
+                if settings.CVAT_LOG_IMPORT_ERRORS:
                     dlogger.log_import_error(
                         entity="job",
                         entity_id=self.db_job.id,
@@ -820,7 +820,7 @@ class TaskAnnotation:
             try:
                 importer(src_file, temp_dir, task_data, **options)
             except DatasetNotFoundError as not_found:
-                if settings.LOG_IMPORT_ERRORS:
+                if settings.CVAT_LOG_IMPORT_ERRORS:
                     dlogger.log_import_error(
                         entity="task",
                         entity_id=self.db_task.id,

@@ -85,6 +85,7 @@ services:
       IAM_OPA_BUNDLE: '1'
       NUMPROCS: 2
       CVAT_ANALYTICS: 1
+      CVAT_LOG_IMPORT_ERRORS: 1
       CVAT_BASE_URL:
       ONE_RUNNING_JOB_IN_QUEUE_PER_USER:
     command: init run server
