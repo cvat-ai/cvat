@@ -11,7 +11,7 @@ echo_bold() {
 }
 
 devcontainer_dir="$(dirname "$(realpath "${0}")")"
-workspace_dir="$(dirname "$(dirname "${devcontainer_dir}")")"
+workspace_dir="$(dirname "${devcontainer_dir}")"
 
 mark_git_safe() {
     # Mark all directories as safe as os like windows using WSL adds incorrect path when adding specific path

@@ -56,4 +56,4 @@ USER devcontainer
 WORKDIR /home/devcontainer/workspaces
 
 RUN mkdir -p data keys logs static node_modules /home/devcontainer/.cache/pip \
-    /home/devcontainer/.vscode-server-insiders /home/devcontainer/.vscode-server
+    /home/devcontainer/.vscode-server-insiders /home/devcontainer/.vscode-server /home/devcontainer/.ssh

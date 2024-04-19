@@ -1,10 +1,10 @@
 {
     "name": "cvat-local",
-    "initializeCommand": "${localWorkspaceFolder}/.devcontainer/local/init.sh",
-    "postCreateCommand": "${containerWorkspaceFolder}/.devcontainer/local/postcreate.sh",
-    "postStartCommand": "${containerWorkspaceFolder}/.devcontainer/local/poststart.sh",
+    "initializeCommand": "${localWorkspaceFolder}/.devcontainer/init.sh",
+    "postCreateCommand": "${containerWorkspaceFolder}/.devcontainer/postcreate.sh",
+    "postStartCommand": "${containerWorkspaceFolder}/.devcontainer/poststart.sh",
     "dockerComposeFile": [
-        "${localWorkspaceFolder}/.devcontainer/local/docker-compose.rendered.yml"
+        "${localWorkspaceFolder}/.devcontainer/docker-compose.rendered.yml"
     ],
     "service": "cvat_server",
     "overrideCommand": false,
@@ -22,13 +22,6 @@
     "shutdownAction": "stopCompose",
     "forwardPorts": [
         8070
-    ],
-    "mounts": [
-        {
-            "source": "${localWorkspaceFolder}",
-            "target": "${containerWorkspaceFolder}",
-            "type": "bind"
-        }
     ],
     "features": {
         "ghcr.io/devcontainers/features/common-utils:2": {

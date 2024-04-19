@@ -2,11 +2,14 @@ services:
   cvat_server:
     image: cvat/server:devcontainer
     build:
-      dockerfile: .devcontainer/codespaces/Dockerfile
+      dockerfile: .devcontainer/Dockerfile
       context: .
       args:
         - pull # To fetch upstream base image (cvat/server:dev) changes on container rebuild
+        - HOST_USER_UID=${HOST_USER_UID:-1001}
+        - HOST_USER_GID=${HOST_USER_GID:-1001}
         - NUCLIO_VERSION=1.13.0
+        - OPA_VERSION=0.63.0
     restart: no
     entrypoint: ["/bin/bash", "-c"]
     command: ["sleep infinity"]
@@ -19,15 +22,22 @@ services:
       DJANGO_SUPERUSER_PASSWORD: ${DJANGO_SUPERUSER_PASSWORD:-admin}
       DJANGO_SUPERUSER_EMAIL: ${DJANGO_SUPERUSER_EMAIL:-admin@admin.com}
     volumes: !override
-      - cvat_data:/home/root/workspaces/data
-      - cvat_keys:/home/root/workspaces/keys
-      - cvat_logs:/home/root/workspaces/logs
+      - .:/home/devcontainer/workspaces
+      - cvat_data:/home/devcontainer/workspaces/data
+      - cvat_keys:/home/devcontainer/workspaces/keys
+      - cvat_logs:/home/devcontainer/workspaces/logs
       # For improving write performance on non-linux machines, static files should be
       # mounted to named volumes
-      - cvat_node_modules:/home/root/workspaces/node_modules
-      - cvat_server_static:/home/root/workspaces/static
+      - cvat_node_modules:/home/devcontainer/workspaces/node_modules
+      - cvat_server_static:/home/devcontainer/workspaces/static
+      - cvat_pip_cache:/home/devcontainer/.cache/pip
+      # Preserve important user data between rebuilds
+      - cvat_user_data:/home/devcontainer/
+      # Exclude .vscode-server directories to enable reinstall of extensions upon rebuild
+      - /home/devcontainer/.vscode-server-insiders
+      - /home/devcontainer/.vscode-server
     labels:
-      - com.devcontainer.git_branch=${GIT_BRANCH:-}
+      - com.devcontainer.git_branch_${GIT_BRANCH:-}
 
   cvat_db:
     restart: no
@@ -56,6 +66,8 @@ services:
 volumes:
   cvat_node_modules:
   cvat_server_static:
+  cvat_pip_cache:
+  cvat_user_data:
   cvat_db:
     name: cvat_db_${GIT_BRANCH:-}
   cvat_data:
@@ -70,3 +82,4 @@ volumes:
     name: cvat_cache_db_${GIT_BRANCH:-}
 
 # Volumes are parameterized with the current git branch values to isolate development environment based on git branches
+

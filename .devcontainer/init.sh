@@ -3,7 +3,7 @@
 set -e
 
 devcontainer_dir="$(dirname "$(realpath "${0}")")"
-workspace_dir="$(dirname "$(dirname "${devcontainer_dir}")")"
+workspace_dir="$(dirname "${devcontainer_dir}")"
 env_file="${devcontainer_dir}/.env"
 
 if ! [ -f "${env_file}" ]; then
@@ -82,8 +82,8 @@ fi
 # VS Code Remote does not yet support merge tags for docker compose files,
 # namely reset and replace tags, therefore the files need to merged and parsed manually
 # Tracking this issue here https://github.com/microsoft/vscode-remote-release/issues/8734
-HOST_USER_UID="$(id -u)" \
-HOST_USER_GID="$(id -g)" \
+HOST_USER_UID=$([[ "$(id -u)" -ne 0 ]] && id -u) \
+HOST_USER_GID=$([[ "$(id -g)" -ne 0 ]] && id -g) \
 GIT_BRANCH="$(get_git_branch)" \
 docker compose -f "${workspace_dir}"/docker-compose.yml \
                -f "${workspace_dir}"/docker-compose.dev.yml \
