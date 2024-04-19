@@ -135,6 +135,7 @@ function ItemTopComponent(props: Props): JSX.Element {
                         destroyPopupOnHide
                         placement='bottomLeft'
                         trigger={['click']}
+                        className='cvat-object-item-menu-button'
                         overlay={ItemMenu({
                             jobInstance,
                             readonly,

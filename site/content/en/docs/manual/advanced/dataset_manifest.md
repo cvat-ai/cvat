@@ -22,7 +22,7 @@ reduce the amount of network traffic used and speed up the task creation process
 However, they can also be used in other cases, which will be explained below.
 
 A dataset manifest file is a text file in the JSONL format. These files can be created
-automatically with [the special command-line tool](https://github.com/opencv/cvat/tree/develop/utils/dataset_manifest),
+automatically with [the special command-line tool](https://github.com/cvat-ai/cvat/tree/develop/utils/dataset_manifest),
 or manually, following [the manifest file format specification](#file-format).
 
 ## How and when to use manifest files
@@ -50,7 +50,7 @@ If there are multiple manifest files in the input file list, an error will be ra
 ## How to generate manifest files
 
 CVAT provides a dedicated Python tool to generate manifest files.
-The source code can be found [here](https://github.com/opencv/cvat/tree/develop/utils/dataset_manifest).
+The source code can be found [here](https://github.com/cvat-ai/cvat/tree/develop/utils/dataset_manifest).
 
 Using the tool is the recommended way to create manifest files for you data. The data must be
 available locally to the tool to generate manifest.

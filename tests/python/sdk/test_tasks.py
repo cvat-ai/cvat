@@ -167,7 +167,7 @@ class TestTaskUsecases:
             resource_type=ResourceType.SHARE,
             resources=["images/image_1.jpg", "images/image_2.jpg"],
             # make sure string fields are transferred correctly;
-            # see https://github.com/opencv/cvat/issues/4962
+            # see https://github.com/cvat-ai/cvat/issues/4962
             data_params={"sorting_method": "lexicographical"},
         )
 
@@ -322,18 +322,23 @@ class TestTaskUsecases:
         assert self.stdout.getvalue() == ""
 
     @pytest.mark.parametrize("quality", ("compressed", "original"))
-    def test_can_download_frames(self, fxt_new_task: Task, quality: str):
+    @pytest.mark.parametrize("image_extension", (None, "bmp"))
+    def test_can_download_frames(self, fxt_new_task: Task, quality: str, image_extension: str):
         fxt_new_task.download_frames(
             [0],
+            image_extension=image_extension,
             quality=quality,
             outdir=self.tmp_path,
             filename_pattern="frame-{frame_id}{frame_ext}",
         )
 
-        if quality == "original":
-            expected_frame_ext = "png"
+        if image_extension is not None:
+            expected_frame_ext = image_extension
         else:
-            expected_frame_ext = "jpg"
+            if quality == "original":
+                expected_frame_ext = "png"
+            else:
+                expected_frame_ext = "jpg"
 
         assert (self.tmp_path / f"frame-0.{expected_frame_ext}").is_file()
         assert self.stdout.getvalue() == ""
