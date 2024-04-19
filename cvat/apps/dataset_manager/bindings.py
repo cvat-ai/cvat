@@ -2153,7 +2153,6 @@ def import_dm_annotations(dm_dataset: dm.Dataset, instance_data: Union[ProjectDa
 
     def _validate_track_shapes(shapes):
         shapes = sorted(shapes, key=lambda t: t.frame)
-        
         new_shapes = []
         prev_shape = None
         # infer the keyframe shapes and keep only them
