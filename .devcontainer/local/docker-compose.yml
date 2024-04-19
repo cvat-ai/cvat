@@ -31,6 +31,7 @@ services:
       - cvat_server_static:/home/devcontainer/workspaces/static
       - cvat_pip_cache:/home/devcontainer/.cache/pip
       # TODO: Preserve important user data between rebuilds
+      - cvat_user_data:/home/devcontainer/
     labels:
       - com.devcontainer.git_branch_${GIT_BRANCH:-}
 
@@ -62,6 +63,7 @@ volumes:
   cvat_node_modules:
   cvat_server_static:
   cvat_pip_cache:
+  cvat_user_data:
   cvat_db:
     name: cvat_db_${GIT_BRANCH:-}
   cvat_data:
