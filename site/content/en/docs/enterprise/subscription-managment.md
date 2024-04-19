@@ -58,7 +58,7 @@ see: [Pricing Plans](https://www.cvat.ai/post/new-pricing-plans)
 ### Solo plan for personal use
 
 The **Solo** plan has a fixed price and is
-designed **for personal use only**. It doesn't allow collaboration with team members
+designed **for personal use only**. It doesn't assume collaboration with team members and will not work when working in any organization
 but removes all the other limits of the **Free** plan.
 
 > **Note**: Although it allows the creation of an organization and
