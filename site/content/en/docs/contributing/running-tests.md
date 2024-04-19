@@ -9,7 +9,7 @@ description: 'Instructions on how to run all existence tests.'
 
 **Initial steps**:
 1. Run CVAT instance:
-   ```
+   ```shell
    docker compose \
              -f docker-compose.yml \
              -f docker-compose.dev.yml \
@@ -18,7 +18,7 @@ description: 'Instructions on how to run all existence tests.'
              -f tests/docker-compose.file_share.yml up -d
    ```
 1. Add test user in CVAT:
-   ```
+   ```shell
    docker exec -i cvat_server \
              /bin/bash -c \
              "echo \"from django.contrib.auth.models import User; User.objects.create_superuser('admin', 'admin@localhost.company', '12qwaszx')\" | python3 ~/manage.py shell"
@@ -46,7 +46,7 @@ yarn run cypress:run:chrome:canvas3d
 
 **Initial steps**
 
-1. Follow [this guide](/docs/api_sdk/sdk/developer-guide/) to prepare
+1. Follow {{< ilink "/docs/api_sdk/sdk/developer-guide" "this guide" >}} to prepare
    `cvat-sdk` and `cvat-cli` source code
 1. Install all necessary requirements before running REST API tests:
    ```
@@ -213,13 +213,13 @@ python cvat/apps/iam/rules/tests/generate_tests.py \
 - In a Docker container
 ```bash
 docker run --rm -v ${PWD}/cvat/apps/iam/rules:/rules \
-   openpolicyagent/opa:0.45.0-rootless \
+   openpolicyagent/opa:0.63.0 \
    test /rules -v
 ```
 
 - or execute OPA directly
 ```bash
-curl -L -o opa https://openpolicyagent.org/downloads/v0.45.0/opa_linux_amd64_static
+curl -L -o opa https://openpolicyagent.org/downloads/v0.63.0/opa_linux_amd64_static
 chmod +x ./opa
 ./opa test cvat/apps/iam/rules
 ```

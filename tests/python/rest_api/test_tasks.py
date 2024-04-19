@@ -40,7 +40,12 @@ from shared.utils.config import (
     patch_method,
     post_method,
 )
-from shared.utils.helpers import generate_image_file, generate_image_files, generate_manifest
+from shared.utils.helpers import (
+    generate_image_file,
+    generate_image_files,
+    generate_manifest,
+    generate_video_file,
+)
 
 from .utils import (
     CollectionSimpleFilterTestBase,
@@ -531,7 +536,7 @@ class TestPatchTaskAnnotations:
         assert response.status_code == HTTPStatus.OK
 
     def test_can_split_skeleton_tracks_on_jobs(self, jobs):
-        # https://github.com/opencv/cvat/pull/6968
+        # https://github.com/cvat-ai/cvat/pull/6968
         task_id = 21
 
         task_jobs = [job for job in jobs if job["task_id"] == task_id]
@@ -552,9 +557,12 @@ class TestPatchTaskAnnotations:
                             "label_id": 59,
                             "frame": 0,
                             "shapes": [
+                                # https://github.com/cvat-ai/cvat/issues/7498
+                                # https://github.com/cvat-ai/cvat/pull/7615
+                                # This shape covers frame 0 to 7,
+                                # We need to check if frame 5 is generated correctly for job#1
                                 {"type": "points", "frame": 0, "points": [1.0, 2.0]},
-                                {"type": "points", "frame": 2, "points": [1.0, 2.0]},
-                                {"type": "points", "frame": 7, "points": [1.0, 2.0]},
+                                {"type": "points", "frame": 7, "points": [2.0, 4.0]},
                             ],
                         },
                     ],
@@ -583,8 +591,22 @@ class TestPatchTaskAnnotations:
             track = job_annotations["tracks"][0]
             assert track.get("elements", []), "Expected to see track with elements"
 
+            def interpolate(frame):
+                # simple interpolate from ([1, 2], 1) to ([2, 4], 7)
+                return [(2.0 - 1.0) / 7 * (frame - 0) + 1.0, (4.0 - 2.0) / 7 * (frame - 0) + 2.0]
+
             for element in track["elements"]:
                 element_frames = set(shape["frame"] for shape in element["shapes"])
+                assert all(
+                    [
+                        not DeepDiff(
+                            interpolate(shape["frame"]), shape["points"], significant_digits=2
+                        )
+                        for shape in element["shapes"]
+                        if shape["frame"] >= 0 and shape["frame"] <= 7
+                    ]
+                )
+                assert len(element["shapes"]) == 2
                 assert element_frames <= job_frame_range, "Track shapes get out of job frame range"
 
 
@@ -801,6 +823,68 @@ class TestPostTaskData:
             (task, _) = api_client.tasks_api.retrieve(task_id)
             assert task.size == 4
 
+    def test_default_overlap_for_small_segment_size(self):
+        task_spec = {
+            "name": f"test {self._USERNAME} with default overlap and small segment_size",
+            "labels": [{"name": "car"}],
+            "segment_size": 5,
+        }
+
+        task_data = {
+            "image_quality": 75,
+            "client_files": [generate_video_file(8)],
+        }
+
+        task_id, _ = create_task(self._USERNAME, task_spec, task_data)
+
+        # check task size
+        with make_api_client(self._USERNAME) as api_client:
+            paginated_job_list, _ = api_client.jobs_api.list(task_id=task_id)
+
+            jobs = paginated_job_list.results
+            jobs.sort(key=lambda job: job.start_frame)
+
+            assert len(jobs) == 2
+            # overlap should be 2 frames (frames 3 & 4)
+            assert jobs[0].start_frame == 0
+            assert jobs[0].stop_frame == 4
+            assert jobs[1].start_frame == 3
+            assert jobs[1].stop_frame == 7
+
+    @pytest.mark.parametrize(
+        "size,expected_segments",
+        [
+            (2, [(0, 1)]),
+            (3, [(0, 2)]),
+            (4, [(0, 2), (2, 3)]),
+            (5, [(0, 2), (2, 4)]),
+            (6, [(0, 2), (2, 4), (4, 5)]),
+        ],
+    )
+    def test_task_segmentation(self, size, expected_segments):
+        task_spec = {
+            "name": f"test {self._USERNAME} to check segmentation into jobs",
+            "labels": [{"name": "car"}],
+            "segment_size": 3,
+            "overlap": 1,
+        }
+
+        task_data = {
+            "image_quality": 75,
+            "client_files": generate_image_files(size),
+        }
+
+        task_id, _ = create_task(self._USERNAME, task_spec, task_data)
+
+        # check task size
+        with make_api_client(self._USERNAME) as api_client:
+            paginated_job_list, _ = api_client.jobs_api.list(task_id=task_id)
+
+            jobs = paginated_job_list.results
+            jobs.sort(key=lambda job: job.start_frame)
+
+            assert [(j.start_frame, j.stop_frame) for j in jobs] == expected_segments
+
     def test_can_create_task_with_exif_rotated_images(self):
         task_spec = {
             "name": f"test {self._USERNAME} to create a task with exif rotated images",
@@ -841,7 +925,7 @@ class TestPostTaskData:
 
     def test_can_create_task_with_big_images(self):
         # Checks for regressions about the issue
-        # https://github.com/opencv/cvat/issues/6878
+        # https://github.com/cvat-ai/cvat/issues/6878
         # In the case of big files (>2.5 MB by default),
         # uploaded files could be write-appended twice,
         # leading to bigger raw file sizes than expected.
@@ -1978,7 +2062,7 @@ class TestTaskBackups:
     @pytest.mark.parametrize("mode", ["annotation", "interpolation"])
     def test_can_import_backup_for_task_in_nondefault_state(self, tasks, mode):
         # Reproduces the problem with empty 'mode' in a restored task,
-        # described in the reproduction steps https://github.com/opencv/cvat/issues/5668
+        # described in the reproduction steps https://github.com/cvat-ai/cvat/issues/5668
 
         task_json = next(t for t in tasks if t["mode"] == mode and t["jobs"]["count"])
 
@@ -2416,7 +2500,7 @@ class TestPatchTask:
 
 @pytest.mark.usefixtures("restore_db_per_function")
 def test_can_report_correct_completed_jobs_count(tasks_wlc, jobs_wlc, admin_user):
-    # Reproduces https://github.com/opencv/cvat/issues/6098
+    # Reproduces https://github.com/cvat-ai/cvat/issues/6098
     task = next(
         t
         for t in tasks_wlc
@@ -2593,7 +2677,7 @@ class TestImportWithComplexFilenames:
         autouse=True,
         scope="class",
         # classmethod way may not work in some versions
-        # https://github.com/opencv/cvat/actions/runs/5336023573/jobs/9670573955?pr=6350
+        # https://github.com/cvat-ai/cvat/actions/runs/5336023573/jobs/9670573955?pr=6350
         name="TestImportWithComplexFilenames.setup_class",
     )
     @classmethod
@@ -2712,7 +2796,7 @@ class TestImportWithComplexFilenames:
         ],
     )
     def test_import_annotations(self, task_kind, annotation_kind, expect_success):
-        # Tests for regressions about https://github.com/opencv/cvat/issues/6319
+        # Tests for regressions about https://github.com/cvat-ai/cvat/issues/6319
         #
         # X annotations must be importable to X prefixed cases
         # with and without dots in filenames.

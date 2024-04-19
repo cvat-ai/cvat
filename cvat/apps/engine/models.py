@@ -432,9 +432,6 @@ class Task(TimestampedModel):
     def get_dirname(self):
         return os.path.join(settings.TASKS_ROOT, str(self.id))
 
-    def get_task_artifacts_dirname(self):
-        return os.path.join(self.get_dirname(), 'artifacts')
-
     def get_tmp_dirname(self):
         return os.path.join(self.get_dirname(), "tmp")
 
@@ -499,7 +496,7 @@ class ClientFile(models.Model):
         unique_together = ("data", "file")
 
         # Some DBs can shuffle the rows. Here we restore the insertion order.
-        # https://github.com/opencv/cvat/pull/5083#discussion_r1038032715
+        # https://github.com/cvat-ai/cvat/pull/5083#discussion_r1038032715
         ordering = ('id', )
 
 # For server files on the mounted share
@@ -512,7 +509,7 @@ class ServerFile(models.Model):
         unique_together = ("data", "file")
 
         # Some DBs can shuffle the rows. Here we restore the insertion order.
-        # https://github.com/opencv/cvat/pull/5083#discussion_r1038032715
+        # https://github.com/cvat-ai/cvat/pull/5083#discussion_r1038032715
         ordering = ('id', )
 
 # For URLs
@@ -525,7 +522,7 @@ class RemoteFile(models.Model):
         unique_together = ("data", "file")
 
         # Some DBs can shuffle the rows. Here we restore the insertion order.
-        # https://github.com/opencv/cvat/pull/5083#discussion_r1038032715
+        # https://github.com/cvat-ai/cvat/pull/5083#discussion_r1038032715
         ordering = ('id', )
 
 
@@ -540,7 +537,7 @@ class RelatedFile(models.Model):
         unique_together = ("data", "path")
 
         # Some DBs can shuffle the rows. Here we restore the insertion order.
-        # https://github.com/opencv/cvat/pull/5083#discussion_r1038032715
+        # https://github.com/cvat-ai/cvat/pull/5083#discussion_r1038032715
         ordering = ('id', )
 
 

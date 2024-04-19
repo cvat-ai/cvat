@@ -6,7 +6,6 @@
 import itertools
 import fnmatch
 import os
-import sys
 from typing import Any, Dict, Iterator, List, NamedTuple, Optional, Union, Iterable
 from rest_framework.serializers import ValidationError
 import rq
@@ -132,23 +131,18 @@ def _get_task_segment_data(
             data_size = db_task.data.size
 
         segment_size = db_task.segment_size
-        segment_step = segment_size
         if segment_size == 0 or segment_size > data_size:
             segment_size = data_size
 
-            # Segment step must be more than segment_size + overlap in single-segment tasks
-            # Otherwise a task contains an extra segment
-            segment_step = sys.maxsize
-
-        overlap = 5 if db_task.mode == 'interpolation' else 0
-        if db_task.overlap is not None:
-            overlap = min(db_task.overlap, segment_size  // 2)
-
-        segment_step -= overlap
+        overlap = min(
+            db_task.overlap if db_task.overlap is not None
+                else 5 if db_task.mode == 'interpolation' else 0,
+            segment_size // 2,
+        )
 
         segments = (
             SegmentParams(start_frame, min(start_frame + segment_size - 1, data_size - 1))
-            for start_frame in range(0, data_size, segment_step)
+            for start_frame in range(0, data_size - overlap, segment_size - overlap)
         )
 
     return SegmentsParams(segments, segment_size, overlap)
@@ -432,7 +426,7 @@ def _restore_file_order_from_manifest(
     """
     Restores file ordering for the "predefined" file sorting method of the task creation.
     Checks for extra files in the input.
-    Read more: https://github.com/opencv/cvat/issues/5061
+    Read more: https://github.com/cvat-ai/cvat/issues/5061
     """
 
     input_files = {os.path.relpath(p, upload_dir): p for p in extractor.absolute_source_paths}
@@ -450,7 +444,7 @@ def _restore_file_order_from_manifest(
             "Uploaded files do no match the upload manifest file contents. "
             "Please check the upload manifest file contents and the list of uploaded files. "
             "Mismatching files: {}{}. "
-            "Read more: https://opencv.github.io/cvat/docs/manual/advanced/dataset_manifest/"
+            "Read more: https://docs.cvat.ai/docs/manual/advanced/dataset_manifest/"
             .format(
                 ", ".join(mismatching_display),
                 f" (and {remaining_count} more). " if 0 < remaining_count else ""
@@ -849,7 +843,7 @@ def _create_thread(
                         "Can't find upload manifest file '{}' "
                         "in the uploaded files. When the 'predefined' sorting method is used, "
                         "this file is required in the input files. "
-                        "Read more: https://opencv.github.io/cvat/docs/manual/advanced/dataset_manifest/"
+                        "Read more: https://docs.cvat.ai/docs/manual/advanced/dataset_manifest/"
                         .format(manifest_file or os.path.basename(db_data.get_manifest_path()))
                     )
 

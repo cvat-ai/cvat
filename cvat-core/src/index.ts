@@ -160,7 +160,7 @@ export default interface CVATCore {
             enabled: boolean;
             onEmptyMaskOccurrence: () => void | null;
         };
-        onOrganizationChange: typeof config.onOrganizationChange;
+        onOrganizationChange: (newOrgId: number | null) => void | null;
         globalObjectsCounter: typeof config.globalObjectsCounter;
     },
     client: {

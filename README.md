@@ -1,4 +1,11 @@
-![CVAT logo](site/content/en/images/cvat_poster_with_name.png)
+<p align="center">
+  <img src="/site/content/en/images/cvat-readme-gif.gif" alt="CVAT Platform" width="100%" max-width="800px">
+</p>
+<p align="center">
+  <a href="https://app.cvat.ai/">
+    <img src="/site/content/en/images/cvat-readme-button-tr-bg.png" alt="Start Annotating Now">
+  </a>
+</p>
 
 # Computer Vision Annotation Tool (CVAT)
 
@@ -18,30 +25,27 @@ AI approach.
 
 Start using CVAT online: [cvat.ai](https://cvat.ai). You can use it for free,
 or [subscribe](https://www.cvat.ai/pricing/cloud) to get unlimited data,
-organizations, autoannotations, and [Roboflow and HuggingFace integration](
-  https://www.cvat.ai/post/integrating-hugging-face-and-roboflow-models).
+organizations, autoannotations, and [Roboflow and HuggingFace integration](https://www.cvat.ai/post/integrating-hugging-face-and-roboflow-models).
 
 Or set CVAT up as a self-hosted solution:
-[Self-hosted Installation Guide](https://opencv.github.io/cvat/docs/administration/basics/installation/).
+[Self-hosted Installation Guide](https://docs.cvat.ai/docs/administration/basics/installation/).
 We provide [Enterprise support](https://www.cvat.ai/pricing/on-prem) for
 self-hosted installations with premium features: SSO, LDAP, Roboflow and
 HuggingFace integrations, and advanced analytics (coming soon). We also
 do trainings and a dedicated support with 24 hour SLA.
 
-![CVAT screencast](site/content/en/images/cvat-ai-screencast.gif)
-
 ## Quick start ⚡
 
-- [Installation guide](https://opencv.github.io/cvat/docs/administration/basics/installation/)
-- [Manual](https://opencv.github.io/cvat/docs/manual/)
-- [Contributing](https://opencv.github.io/cvat/docs/contributing/)
+- [Installation guide](https://docs.cvat.ai/docs/administration/basics/installation/)
+- [Manual](https://docs.cvat.ai/docs/manual/)
+- [Contributing](https://docs.cvat.ai/docs/contributing/)
 - [Datumaro dataset framework](https://github.com/cvat-ai/datumaro/blob/develop/README.md)
 - [Server API](#api)
 - [Python SDK](#sdk)
 - [Command line tool](#cli)
-- [XML annotation format](https://opencv.github.io/cvat/docs/manual/advanced/xml_format/)
-- [AWS Deployment Guide](https://opencv.github.io/cvat/docs/administration/basics/aws-deployment-guide/)
-- [Frequently asked questions](https://opencv.github.io/cvat/docs/faq/)
+- [XML annotation format](https://docs.cvat.ai/docs/manual/advanced/xml_format/)
+- [AWS Deployment Guide](https://docs.cvat.ai/docs/administration/basics/aws-deployment-guide/)
+- [Frequently asked questions](https://docs.cvat.ai/docs/faq/)
 - [Where to ask questions](#where-to-ask-questions)
 
 ## Partners ❤️
@@ -76,7 +80,7 @@ This is an online version of CVAT. It's free, efficient, and easy to use.
 to 10 tasks there and upload up to 500Mb of data to annotate. It will only be
 visible to you or the people you assign to it.
 
-For now, it does not have [analytics features](https://opencv.github.io/cvat/docs/administration/advanced/analytics/)
+For now, it does not have [analytics features](https://docs.cvat.ai/docs/administration/advanced/analytics/)
 like management and monitoring the data annotation team. It also does not allow exporting images, just the annotations.
 
 We plan to enhance [cvat.ai](https://cvat.ai) with new powerful features. Stay tuned!
@@ -95,19 +99,20 @@ The images have been downloaded more than 1M times so far.
 Here are some screencasts showing how to use CVAT.
 
 <!--lint disable maximum-line-length-->
+
 [Computer Vision Annotation Course](https://www.youtube.com/playlist?list=PL0to7Ng4PuuYQT4eXlHb_oIlq_RPeuasN):
 we introduce our course series designed to help you annotate data faster and better
 using CVAT. This course is about CVAT deployment and integrations, it includes
 presentations and covers the following topics:
 
 - **Speeding up your data annotation process: introduction to CVAT and Datumaro**.
-What problems do CVAT and Datumaro solve, and how they can speed up your model
-training process. Some resources you can use to learn more about how to use them.
+  What problems do CVAT and Datumaro solve, and how they can speed up your model
+  training process. Some resources you can use to learn more about how to use them.
 - **Deployment and use CVAT**. Use the app online at [app.cvat.ai](app.cvat.ai).
-A local deployment. A containerized local deployment with Docker Compose (for regular use),
-and a local cluster deployment with Kubernetes (for enterprise users). A 2-minute
-tour of the interface, a breakdown of CVAT’s internals, and a demonstration of how
-to deploy CVAT using Docker Compose.
+  A local deployment. A containerized local deployment with Docker Compose (for regular use),
+  and a local cluster deployment with Kubernetes (for enterprise users). A 2-minute
+  tour of the interface, a breakdown of CVAT’s internals, and a demonstration of how
+  to deploy CVAT using Docker Compose.
 
 [Product tour](https://www.youtube.com/playlist?list=PL0to7Ng4Puua37NJVMIShl_pzqJTigFzg): in this course, we show how to use CVAT, and help to get familiar with CVAT functionality and interfaces. This course does not cover integrations and is dedicated solely to CVAT. It covers the following topics:
 
@@ -119,19 +124,19 @@ For feedback, please see [Contact us](#contact-us)
 
 ## API
 
-- [Documentation](https://opencv.github.io/cvat/docs/api_sdk/api/)
+- [Documentation](https://docs.cvat.ai/docs/api_sdk/api/)
 
 ## SDK
 
 - Install with `pip install cvat-sdk`
 - [PyPI package homepage](https://pypi.org/project/cvat-sdk/)
-- [Documentation](https://opencv.github.io/cvat/docs/api_sdk/sdk/)
+- [Documentation](https://docs.cvat.ai/docs/api_sdk/sdk/)
 
 ## CLI
 
 - Install with `pip install cvat-cli`
 - [PyPI package homepage](https://pypi.org/project/cvat-cli/)
-- [Documentation](https://opencv.github.io/cvat/docs/api_sdk/cli/)
+- [Documentation](https://docs.cvat.ai/docs/api_sdk/cli/)
 
 ## Supported annotation formats
 
@@ -141,14 +146,14 @@ after clicking the **Upload annotation** and **Dump annotation** buttons.
 additional dataset transformations with its command line tool and Python library.
 
 For more information about the supported formats, see:
-[Annotation Formats](https://opencv.github.io/cvat/docs/manual/advanced/formats/).
+[Annotation Formats](https://docs.cvat.ai/docs/manual/advanced/formats/).
 
 <!--lint disable maximum-line-length-->
 
 | Annotation format                                                                                | Import | Export |
 | ------------------------------------------------------------------------------------------------ | ------ | ------ |
-| [CVAT for images](https://opencv.github.io/cvat/docs/manual/advanced/xml_format/#annotation)     | ✔️     | ✔️     |
-| [CVAT for a video](https://opencv.github.io/cvat/docs/manual/advanced/xml_format/#interpolation) | ✔️     | ✔️     |
+| [CVAT for images](https://docs.cvat.ai/docs/manual/advanced/xml_format/#annotation)     | ✔️     | ✔️     |
+| [CVAT for a video](https://docs.cvat.ai/docs/manual/advanced/xml_format/#interpolation) | ✔️     | ✔️     |
 | [Datumaro](https://github.com/cvat-ai/datumaro)                                                  | ✔️     | ✔️     |
 | [PASCAL VOC](http://host.robots.ox.ac.uk/pascal/VOC/)                                            | ✔️     | ✔️     |
 | Segmentation masks from [PASCAL VOC](http://host.robots.ox.ac.uk/pascal/VOC/)                    | ✔️     | ✔️     |
@@ -182,7 +187,7 @@ up to 10x. Here is a list of the algorithms we support, and the platforms they c
 
 | Name                                                                                                    | Type       | Framework  | CPU | GPU |
 | ------------------------------------------------------------------------------------------------------- | ---------- | ---------- | --- | --- |
-| [Segment Anything](/serverless/pytorch/facebookresearch/sam/nuclio/)                                    | interactor | PyTorch    | ✔️  | ✔️ |
+| [Segment Anything](/serverless/pytorch/facebookresearch/sam/nuclio/)                                    | interactor | PyTorch    | ✔️  | ✔️  |
 | [Deep Extreme Cut](/serverless/openvino/dextr/nuclio)                                                   | interactor | OpenVINO   | ✔️  |     |
 | [Faster RCNN](/serverless/openvino/omz/public/faster_rcnn_inception_resnet_v2_atrous_coco/nuclio)       | detector   | OpenVINO   | ✔️  |     |
 | [Mask RCNN](/serverless/openvino/omz/public/mask_rcnn_inception_resnet_v2_atrous_coco/nuclio)           | detector   | OpenVINO   | ✔️  |     |
@@ -251,8 +256,8 @@ questions and get our support.
 [docker-server-image-url]: https://hub.docker.com/r/cvat/server
 [docker-ui-pulls-img]: https://img.shields.io/docker/pulls/cvat/ui.svg?style=flat-square&label=UI%20pulls
 [docker-ui-image-url]: https://hub.docker.com/r/cvat/ui
-[ci-img]: https://github.com/opencv/cvat/actions/workflows/main.yml/badge.svg?branch=develop
-[ci-url]: https://github.com/opencv/cvat/actions
+[ci-img]: https://github.com/cvat-ai/cvat/actions/workflows/main.yml/badge.svg?branch=develop
+[ci-url]: https://github.com/cvat-ai/cvat/actions
 [gitter-img]: https://img.shields.io/gitter/room/opencv-cvat/public?style=flat
 [gitter-url]: https://gitter.im/opencv-cvat/public
 [coverage-img]: https://codecov.io/github/opencv/cvat/branch/develop/graph/badge.svg

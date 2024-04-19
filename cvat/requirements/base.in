@@ -6,16 +6,13 @@ azure-storage-blob==12.13.0
 boto3==1.17.61
 clickhouse-connect==0.6.8
 coreapi==2.3.3
-datumaro @ git+https://github.com/cvat-ai/datumaro.git@8a14a99fe17f19d98595a2a4a74ab459051cc23b
+datumaro @ git+https://github.com/cvat-ai/datumaro.git@82982b16b178eb3f39c707795bb68a3306610abf
 dj-pagination==2.5.0
-dj-rest-auth[with_social]==2.2.7
-
-# dj-rest-auth[with_social] includes django-allauth but with version range: >=0.40.0,<0.53.0
-# This does not suit us in the case when one of the previous allauth version was installed.
 # Despite direct indication allauth in requirements we should keep 'with_social' for dj-rest-auth
 # to avoid possible further versions conflicts (we use registration functionality)
 # https://dj-rest-auth.readthedocs.io/en/latest/installation.html#registration-optional
-django-allauth>=0.52.0
+dj-rest-auth[with_social]==5.0.2
+django-allauth==0.57.2
 
 django-auth-ldap==2.2.0
 django-compressor==4.3.1
@@ -25,7 +22,7 @@ django-filter==2.4.0
 django-health-check>=3.18.1,<4
 django-rq==2.8.1
 django-sendfile2==0.7.0
-Django~=4.2.1
+Django~=4.2.7
 djangorestframework~=3.14.0
 drf-spectacular==0.26.2
 furl==2.1.0
@@ -39,7 +36,7 @@ opencv-python-headless~=4.8
 patool==1.12
 
 pdf2image==1.14.0
-Pillow>=10.1.0
+Pillow>=10.3.0
 psutil==5.9.4
 psycopg2-binary==2.9.5
 python-ldap==3.4.3
@@ -48,6 +45,6 @@ pyunpack==0.2.1
 redis==4.5.4
 requests~=2.26
 rq-scheduler==0.13.1
-rq==1.15.1
+rq==1.16.0
 rules>=3.3
 Shapely==1.7.1

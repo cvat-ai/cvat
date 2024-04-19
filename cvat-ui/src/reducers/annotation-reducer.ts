@@ -150,7 +150,6 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
         case AnnotationActionTypes.GET_JOB_SUCCESS: {
             const {
                 job,
-                states,
                 openTime,
                 frameNumber: number,
                 frameFilename: filename,
@@ -158,8 +157,6 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                 colors,
                 filters,
                 frameData: data,
-                minZ,
-                maxZ,
                 queryParameters,
                 groundTruthInstance,
                 groundTruthJobFramesMeta,
@@ -207,13 +204,7 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                 },
                 annotations: {
                     ...state.annotations,
-                    states,
                     filters,
-                    zLayer: {
-                        min: minZ,
-                        max: maxZ,
-                        cur: maxZ,
-                    },
                 },
                 player: {
                     ...state.player,

@@ -105,7 +105,6 @@ INSTALLED_APPS = [
     'health_check',
     'health_check.cache',
     'health_check.db',
-    'health_check.contrib.migrations',
     'health_check.contrib.psutil',
     'cvat.apps.iam',
     'cvat.apps.dataset_manager',
@@ -171,13 +170,11 @@ REST_FRAMEWORK = {
 }
 
 
-REST_AUTH_REGISTER_SERIALIZERS = {
+REST_AUTH = {
     'REGISTER_SERIALIZER': 'cvat.apps.iam.serializers.RegisterSerializerEx',
-}
-
-REST_AUTH_SERIALIZERS = {
     'LOGIN_SERIALIZER': 'cvat.apps.iam.serializers.LoginSerializerEx',
     'PASSWORD_RESET_SERIALIZER': 'cvat.apps.iam.serializers.PasswordResetSerializerEx',
+    'OLD_PASSWORD_FIELD_ENABLED': True,
 }
 
 if to_bool(os.getenv('CVAT_ANALYTICS', False)):
@@ -199,6 +196,7 @@ MIDDLEWARE = [
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     'dj_pagination.middleware.PaginationMiddleware',
     'cvat.apps.iam.middleware.ContextMiddleware',
+    'allauth.account.middleware.AccountMiddleware',
 ]
 
 UI_URL = ''
@@ -264,8 +262,6 @@ ACCOUNT_EMAIL_CONFIRMATION_ANONYMOUS_REDIRECT_URL = '/auth/email-confirmation'
 ACCOUNT_EMAIL_VERIFICATION_SENT_REDIRECT_URL = '/auth/email-verification-sent'
 INCORRECT_EMAIL_CONFIRMATION_URL = '/auth/incorrect-email-confirmation'
 
-OLD_PASSWORD_FIELD_ENABLED = True
-
 # Django-RQ
 # https://github.com/rq/django-rq
 
@@ -287,7 +283,7 @@ shared_queue_settings = {
     'HOST': redis_inmem_host,
     'PORT': redis_inmem_port,
     'DB': 0,
-    'PASSWORD': urllib.parse.quote(redis_inmem_password),
+    'PASSWORD': redis_inmem_password,
 }
 
 RQ_QUEUES = {
@@ -601,7 +597,7 @@ SPECTACULAR_SETTINGS = {
     'TOS': 'https://www.google.com/policies/terms/',
     'EXTERNAL_DOCS': {
         'description': 'CVAT documentation',
-        'url': 'https://opencv.github.io/cvat/docs/',
+        'url': 'https://docs.cvat.ai/docs/',
     },
     # OTHER SETTINGS
     # https://drf-spectacular.readthedocs.io/en/latest/settings.html
@@ -640,7 +636,7 @@ SPECTACULAR_SETTINGS = {
 }
 
 # set similar UI restrictions
-# https://github.com/opencv/cvat/blob/bad1dc2799afbb22222faaecc7336d999f4cc3fe/cvat-ui/src/utils/validation-patterns.ts#L26
+# https://github.com/cvat-ai/cvat/blob/bad1dc2799afbb22222faaecc7336d999f4cc3fe/cvat-ui/src/utils/validation-patterns.ts#L26
 ACCOUNT_USERNAME_MIN_LENGTH = 5
 ACCOUNT_LOGOUT_ON_PASSWORD_CHANGE = True
 

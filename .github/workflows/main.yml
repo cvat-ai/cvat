@@ -28,7 +28,7 @@ jobs:
 
   build:
     needs: search_cache
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-latest-big
     steps:
       - uses: actions/checkout@v4
 
@@ -127,7 +127,7 @@ jobs:
 
   rest_api_testing:
     needs: build
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-latest-big
     steps:
       - uses: actions/checkout@v4
 
@@ -208,7 +208,7 @@ jobs:
 
   unit_testing:
     needs: build
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-latest-big
     steps:
       - uses: actions/checkout@v4
 
@@ -274,7 +274,7 @@ jobs:
 
   e2e_testing:
     needs: build
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-latest-big
     strategy:
       fail-fast: false
       matrix:
@@ -385,63 +385,10 @@ jobs:
           name: cypress_screenshots_${{ matrix.specs }}
           path: ${{ github.workspace }}/tests/cypress/screenshots
 
-  generate_github_pages:
-    needs: [rest_api_testing, unit_testing, e2e_testing]
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          submodules: recursive
-          fetch-depth: 0
-
-      - name: Download CVAT SDK
-        uses: actions/download-artifact@v3
-        with:
-          name: cvat_sdk
-          path: /tmp/cvat_sdk/
-
-      - name: Setup Hugo
-        run: |
-          wget https://github.com/gohugoio/hugo/releases/download/v0.110.0/hugo_extended_0.110.0_Linux-64bit.tar.gz
-          (mkdir hugo_extended_0.110.0_Linux-64bit && tar -xf hugo_extended_0.110.0_Linux-64bit.tar.gz -C hugo_extended_0.110.0_Linux-64bit)
-
-          wget https://github.com/gohugoio/hugo/releases/download/v0.83.0/hugo_extended_0.83.0_Linux-64bit.tar.gz
-          (mkdir hugo_extended_0.83.0_Linux-64bit && tar -xf hugo_extended_0.83.0_Linux-64bit.tar.gz -C hugo_extended_0.83.0_Linux-64bit)
-
-          mkdir hugo
-          cp hugo_extended_0.110.0_Linux-64bit/hugo hugo/hugo-0.110
-          cp hugo_extended_0.83.0_Linux-64bit/hugo hugo/hugo-0.83
-
-      - name: Setup Node
-        uses: actions/setup-node@v4
-        with:
-          node-version: '18.x'
-
-      - name: Install npm packages
-        working-directory: ./site
-        run: |
-          npm ci
-
-      - name: Build docs
-        run: |
-          pip install -r site/requirements.txt
-          python site/process_sdk_docs.py --input-dir /tmp/cvat_sdk/docs/ --site-root site/
-          PATH="$PWD/hugo:$PATH" python site/build_docs.py
-        env:
-          HUGO_ENV: production
-
-      - name: Deploy
-        if: github.ref == 'refs/heads/develop'
-        uses: peaceiris/actions-gh-pages@v3
-        with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_dir: ./public
-          force_orphan: true
-
   publish_dev_images:
     if: github.ref == 'refs/heads/develop'
-    needs: [rest_api_testing, unit_testing, e2e_testing, generate_github_pages]
-    runs-on: ubuntu-latest
+    needs: [rest_api_testing, unit_testing, e2e_testing]
+    runs-on: ubuntu-latest-big
     steps:
       - uses: actions/checkout@v4
 
@@ -480,7 +427,7 @@ jobs:
           docker push "${UI_IMAGE_REPO}:dev"
 
   codecov:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-latest-big
     needs: [unit_testing, e2e_testing, rest_api_testing]
     steps:
       - uses: actions/checkout@v4

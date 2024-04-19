@@ -36,5 +36,5 @@ yarn run build
 yarn run build --mode=development     # without a minification
 ```
 
-Important: You also have to run CVAT REST API server (please read `https://opencv.github.io/cvat/docs/contributing/`)
+Important: You also have to run CVAT REST API server (please read `https://docs.cvat.ai/docs/contributing/`)
 to correct working since UI gets all necessary data (tasks, users, annotations) from there

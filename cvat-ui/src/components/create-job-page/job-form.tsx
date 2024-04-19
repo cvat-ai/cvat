@@ -1,48 +1,47 @@
-// Copyright (C) 2023 CVAT.ai Corporation
+// Copyright (C) 2023-2024 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
 import './styles.scss';
 
-import React, { useCallback } from 'react';
+import React, { useCallback, useState } from 'react';
+import { useHistory } from 'react-router';
+import { useDispatch } from 'react-redux';
 import { Row, Col } from 'antd/lib/grid';
 import Form from 'antd/lib/form';
 import Button from 'antd/lib/button';
 import Select from 'antd/lib/select';
 import InputNumber from 'antd/lib/input-number';
+import Space from 'antd/lib/space';
+import { QuestionCircleOutlined } from '@ant-design/icons';
 import CVATTooltip from 'components/common/cvat-tooltip';
 
-import { CombinedState } from 'reducers';
-import { useDispatch, useSelector } from 'react-redux';
 import { JobType } from 'cvat-core/src/enums';
 import { Task } from 'cvat-core-wrapper';
 import { createJobAsync } from 'actions/jobs-actions';
-import { useHistory } from 'react-router';
-import Space from 'antd/lib/space';
-import { QuestionCircleOutlined } from '@ant-design/icons';
 
 export enum FrameSelectionMethod {
     RANDOM = 'random_uniform',
 }
 
 interface JobDataMutual {
-    task_id: number,
-    frame_selection_method: FrameSelectionMethod,
-    type: JobType,
-    seed?: number,
+    task_id: number;
+    frame_selection_method: FrameSelectionMethod;
+    type: JobType;
+    seed?: number;
 }
 
 export interface JobData extends JobDataMutual {
-    frame_count: number,
+    frame_count: number;
 }
 
 export interface JobFormData extends JobDataMutual {
-    quantity: number,
-    frame_count: number,
+    quantity: number;
+    frame_count: number;
 }
 
 interface Props {
-    task: Task
+    task: Task;
 }
 
 const defaultQuantity = 5;
@@ -53,8 +52,7 @@ function JobForm(props: Props): JSX.Element {
     const [form] = Form.useForm();
     const dispatch = useDispatch();
     const history = useHistory();
-
-    const fetching = useSelector((state: CombinedState) => state.models.fetching);
+    const [fetching, setFetching] = useState(false);
 
     const submit = useCallback(async (): Promise<any> => {
         try {
@@ -66,8 +64,8 @@ function JobForm(props: Props): JSX.Element {
                 frame_count: values.frame_count,
                 task_id: task.id,
             };
-            const createdJob = await dispatch(createJobAsync(data));
 
+            const createdJob = await dispatch(createJobAsync(data));
             return createdJob;
         } catch (e) {
             return false;
@@ -75,9 +73,15 @@ function JobForm(props: Props): JSX.Element {
     }, [task]);
 
     const onSubmit = async (): Promise<void> => {
-        const createdJob = await submit();
-        if (createdJob) {
-            history.push(`/tasks/${task.id}/jobs/${createdJob.id}`);
+        try {
+            setFetching(true);
+
+            const createdJob = await submit();
+            if (createdJob) {
+                history.push(`/tasks/${task.id}/jobs/${createdJob.id}`);
+            }
+        } finally {
+            setFetching(false);
         }
     };
 
@@ -221,6 +225,7 @@ function JobForm(props: Props): JSX.Element {
                             type='primary'
                             onClick={onSubmit}
                             loading={fetching}
+                            disabled={fetching}
                         >
                             Submit
                         </Button>
