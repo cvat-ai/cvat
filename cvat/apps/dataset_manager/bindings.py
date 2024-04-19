@@ -2194,12 +2194,7 @@ def import_dm_annotations(dm_dataset: dm.Dataset, instance_data: Union[ProjectDa
             new_elements = {}
             for element_id, element in track['elements'].items():
                 new_element_shapes = _validate_track_shapes(element.shapes)
-                new_elements[element_id] = instance_data.Track(
-                                label=element.label,
-                                group=element.group,
-                                source=element.source,
-                                shapes=new_element_shapes,
-                            )
+                new_elements[element_id] = element._replace(shapes=new_element_shapes)
             track['elements'] = new_elements
 
         if track['shapes'] or track['elements']:
