@@ -70,6 +70,10 @@
             ],
             "settings": {
                 "python.defaultInterpreterPath": "/opt/venv/bin/python",
+                  // for tasks and debug
+                "terminal.integrated.automationProfile.linux": {
+                    "path": "/bin/bash"
+                },
                 "terminal.integrated.defaultProfile.linux": "zsh (2)"
             }
         }
