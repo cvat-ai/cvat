@@ -2152,6 +2152,8 @@ def import_dm_annotations(dm_dataset: dm.Dataset, instance_data: Union[ProjectDa
                     "#{} ({}): {}".format(item.id, idx, ann.type.name, e)) from e
 
     def _validate_track_shapes(shapes):
+        shapes = sorted(shapes, key=lambda t: t.frame)
+        
         new_shapes = []
         prev_shape = None
         # infer the keyframe shapes and keep only them
@@ -2186,13 +2188,11 @@ def import_dm_annotations(dm_dataset: dm.Dataset, instance_data: Union[ProjectDa
 
     stop_frame = int(instance_data.meta[instance_data.META_FIELD]['stop_frame'])
     for track_id, track in tracks.items():
-        track['shapes'].sort(key=lambda t: t.frame)
         track['shapes'] = _validate_track_shapes(track['shapes'])
 
         if ann.type == dm.AnnotationType.skeleton:
             new_elements = {}
             for element_id, element in track['elements'].items():
-                element.shapes.sort(key=lambda t: t.frame)
                 new_element_shapes = _validate_track_shapes(element.shapes)
                 new_elements[element_id] = instance_data.Track(
                                 label=element.label,
