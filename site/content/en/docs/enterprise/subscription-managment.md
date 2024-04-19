@@ -118,7 +118,7 @@ All information you've added will appear on the billing page and in the invoice.
 By following these steps, you can seamlessly add VAT and other crucial information to your
 invoices, making your financial transactions with CVAT.ai transparent and compliant.
 
-###  How to update VAT/tax information and other details for future invoices on CVAT.ai?
+### How to update VAT/tax information and other details for future invoices on CVAT.ai?
 
 In the top right corner, near the nickname, click on the arrow > manage plan.
 
