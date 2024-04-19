@@ -28,11 +28,6 @@
             "source": "${localWorkspaceFolder}",
             "target": "${containerWorkspaceFolder}",
             "type": "bind"
-        },
-        {
-            "source": "${localEnv:HOME}/.ssh",
-            "target": "/home/devcontainer/.ssh",
-            "type": "bind"
         }
     ],
     "features": {
