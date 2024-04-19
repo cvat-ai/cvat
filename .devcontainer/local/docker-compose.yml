@@ -30,8 +30,11 @@ services:
       - cvat_node_modules:/home/devcontainer/workspaces/node_modules
       - cvat_server_static:/home/devcontainer/workspaces/static
       - cvat_pip_cache:/home/devcontainer/.cache/pip
-      # TODO: Preserve important user data between rebuilds
+      # Preserve important user data between rebuilds
       - cvat_user_data:/home/devcontainer/
+      # Exclude .vscode-server directories to enable reinstall of extensions upon rebuild
+      - /home/devcontainer/.vscode-server-insiders
+      - /home/devcontainer/.vscode-server
     labels:
       - com.devcontainer.git_branch_${GIT_BRANCH:-}
 
