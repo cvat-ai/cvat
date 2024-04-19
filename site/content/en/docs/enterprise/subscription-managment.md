@@ -15,9 +15,7 @@ you'll learn how to take control of your subscriptions and manage them.
 See:
 
 - [Available paid plans](#available-paid-plans)
-  - [Monthly plans](#monthly-plans)
-    - [Solo plan for personal use](#solo-plan-for-personal-use)
-    - [Team plan for teams and organizations](#team-plan-for-teams-and-organizations)
+- [Monthly plans](#monthly-plans)
   - [Annual plans](#annual-plans)
 - [Billing](#billing)
   - [How to add VAT/tax and other information to the CVAT.ai invoice before the first payment?](#how-to-add-vattax-and-other-information-to-the-cvatai-invoice-before-the-first-payment)
@@ -45,32 +43,18 @@ See:
 
 ## Available paid plans
 
-### Monthly plans
+This section outlines the paid plans available on CVAT.ai.
 
-#### Solo plan for personal use
+## Monthly plans
 
-The **Solo** plan has a fixed price and is
-designed **for personal use only**.
+<!--lint disable maximum-line-length-->
 
-It doesn't assume collaboration with team members and
-will not work when working in any organization
-but removes all the other limits of the **Free** plan.
+| Name     | Description                                                                                                                                                                                                                                                                                                                                                                                                                                                                            |
+| -------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Solo** | The **Solo** plan has a fixed price and is designed **for personal use only**. <br><br>It does not assume collaboration with team members and is not suitable for use within organizations, but it removes all other limitations of the **Free** plan. <Br><br> **Note**: Although it allows the creation of an organization and access for up to 3 members -- it is _for trial purposes_ only! <br>Organization and members _will have all the limitations of the **Free** plan_.     |
+| **Team** | The **Team** is **for collaboration**, it removes limitations of the **Free** plan for the whole organization, allowing you to share paid benefits with your colleagues. <br><br>The **monthly payment for the plan depends on the number of team members you've added**. All limits of the **Free** plan will be removed. <Br><br> **Note**: The organization owner is also part of the team. So, if you have three annotators working, you'll need to pay for 4 seats (3 annotators + 1 organization owner). |
 
-> **Note**: Although it allows the creation of an organization and
-> access for up to 3 members -- it is _for trial purposes_ only,
-> organization and members _will have all the limitations of the **Free** plan_.
-
-#### Team plan for teams and organizations
-
-The **Team** plan removes limitations of the **Free** plan for the whole organization,
-allowing you to share paid benefits with your colleagues
-
-The **monthly payment for the plan depends on the number of team members you've added**.
-All limits of the **Free** plan will be removed.
-
-> **Note**: The organization owner is also part of the team.
-> So, if you have three annotators working, you'll need to pay
-> for 4 seats (3 annotators + 1 organization owner).
+<!--lint enable maximum-line-length-->
 
 ### Annual plans
 
