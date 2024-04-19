@@ -15,7 +15,7 @@ you'll learn how to take control of your subscriptions and manage them.
 See:
 
 - [Available paid plans](#available-paid-plans)
-- [Monthly plans](#monthly-plans)
+  - [Monthly plans](#monthly-plans)
   - [Annual plans](#annual-plans)
 - [Billing](#billing)
   - [How to add VAT/tax and other information to the CVAT.ai invoice before the first payment?](#how-to-add-vattax-and-other-information-to-the-cvatai-invoice-before-the-first-payment)
@@ -45,7 +45,7 @@ See:
 
 This section outlines the paid plans available on CVAT.ai.
 
-## Monthly plans
+###  Monthly plans
 
 <!--lint disable maximum-line-length-->
 
