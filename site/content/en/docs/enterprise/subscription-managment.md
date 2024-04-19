@@ -15,33 +15,33 @@ you'll learn how to take control of your subscriptions and manage them.
 See:
 
 - [Billing](#billing)
-  - [Solo plan for personal use](#solo-plan-for-personal-use)
-  - [Team plan for teams and organizations](#team-plan-for-teams-and-organizations)
-  - [How to add VAT/tax and other information to the CVAT.ai invoice before the first payment?](#how-to-add-vattax-and-other-information-to-the-cvatai-invoice-before-the-first-payment)
-  - [How to add/ change VAT/tax and other information to the CVAT.ai invoice after the first payment?](#how-to-add-change-vattax-and-other-information-to-the-cvatai-invoice-after-the-first-payment)
-  - [Can a paid invoice be modified?](#can-a-paid-invoice-be-modified)
-  - [How can I get a quote before I subscribe? How to add a PO number to my invoices?](#how-can-i-get-a-quote-before-i-subscribe-how-to-add-a-po-number-to-my-invoices)
-  - [Can you sign an agreement before I subscribe?](#can-you-sign-an-agreement-before-i-subscribe)
-  - [Can you handle a bank transfer with 30-day payment terms?](#can-you-handle-a-bank-transfer-with-30-day-payment-terms)
-  - [Where can I find my invoices?](#where-can-i-find-my-invoices)
-  - [I am a student, can I have a discount or free access?](#i-am-a-student-can-i-have-a-discount-or-free-access)
+   - [Monthly plans](#monthly-plans)
+    - [Solo plan for personal use](#solo-plan-for-personal-use)
+    - [Team plan for teams and organizations](#team-plan-for-teams-and-organizations)
+   - [Annual plans](#annual-plans)
+   - [How to add VAT/tax and other information to the CVAT.ai invoice before the first payment?](#how-to-add-vattax-and-other-information-to-the-cvatai-invoice-before-the-first-payment)
+   - [How to add/ change VAT/tax and other information to the CVAT.ai invoice after the first payment?](#how-to-add-change-vattax-and-other-information-to-the-cvatai-invoice-after-the-first-payment)
+   - [Can a paid invoice be modified?](#can-a-paid-invoice-be-modified)
+   - [How can I get a quote before I subscribe? How to add a PO number to my invoices?](#how-can-i-get-a-quote-before-i-subscribe-how-to-add-a-po-number-to-my-invoices)
+   - [Can you sign an agreement before I subscribe?](#can-you-sign-an-agreement-before-i-subscribe)
+   - [Can you handle a bank transfer with 30-day payment terms?](#can-you-handle-a-bank-transfer-with-30-day-payment-terms)
+   - [Where can I find my invoices?](#where-can-i-find-my-invoices)
+   - [I am a student, can I have a discount or free access?](#i-am-a-student-can-i-have-a-discount-or-free-access)
 - [Payment methods](#payment-methods)
-  - [Paying with bank transfer](#paying-with-bank-transfer)
-  - [Change payment method on the Solo plan](#change-payment-method-on-the-solo-plan)
-  - [Change the payment method on the Team plan](#change-the-payment-method-on-the-team-plan)
+   - [Paying with bank transfer](#paying-with-bank-transfer)
+   - [How to change payment method?](#how-to-change-payment-method)
 - [Adding and removing team members](#adding-and-removing-team-members)
-  - [Solo plan](#solo-plan)
-  - [Team plan](#team-plan)
+   - [Solo plan](#solo-plan)
+   - [Team plan](#team-plan)
 - [Change plan](#change-plan)
+   - [How to change plan from Solo to Team?](#how-to-change-plan-from-solo-to-team)
+   - [How to switch from monthly subscription to annual?](#how-to-switch-from-monthly-subscription-to-annual)
 - [Can I subscribe to several plans?](#can-i-subscribe-to-several-plans)
 - [Cancel plan](#cancel-plan)
-  - [What will happen to my data?](#what-will-happen-to-my-data)
-  - [Solo plan](#solo-plan-1)
-  - [Team plan](#team-plan-1)
+   - [What will happen to my data?](#what-will-happen-to-my-data)
+   - [How to cancel any plan?](#how-to-cancel-any-plan)
+   - [Can I get a refund?](#can-i-get-a-refund)
 - [Plan renewal](#plan-renewal)
-  - [Solo plan](#solo-plan-2)
-  - [Team plan](#team-plan-2)
-- [Refund policy](#refund-policy)
 - [Subscription management video tutorial](#subscription-management-video-tutorial)
 
 ## Billing
@@ -55,26 +55,43 @@ and Team plans: monthly and annual.
 For more information,
 see: [Pricing Plans](https://www.cvat.ai/post/new-pricing-plans)
 
-### Solo plan for personal use
+### Monthly plans
+
+#### Solo plan for personal use
 
 The **Solo** plan has a fixed price and is
-designed **for personal use only**. It doesn't assume collaboration with team members and will not work when working in any organization
+designed **for personal use only**.
+
+It doesn't assume collaboration with team members and
+will not work when working in any organization
 but removes all the other limits of the **Free** plan.
 
 > **Note**: Although it allows the creation of an organization and
 > access for up to 3 members -- it is _for trial purposes_ only,
 > organization and members _will have all the limitations of the **Free** plan_.
 
-### Team plan for teams and organizations
+#### Team plan for teams and organizations
 
-The **Team** plan allows you to create
-an organization and add team members who can collaborate on projects.
+The **Team** plan removes limitations of the **Free** plan for the whole organization,
+allowing you to share paid benefits with your colleagues
+
 The **monthly payment for the plan depends on the number of team members you've added**.
 All limits of the **Free** plan will be removed.
 
 > **Note**: The organization owner is also part of the team.
 > So, if you have three annotators working, you'll need to pay
 > for 4 seats (3 annotators + 1 organization owner).
+
+### Annual plans
+
+Whether you're a new user, or have a subscription to **Team** or **Solo** plan, [you can
+subscribe to our annual plan](https://www.cvat.ai/post/cvat-annual-plans)
+and save up to 30% on CVAT.ai usage costs.
+
+The annual subscription offers all the benefits of our paid plans but at
+a more affordable monthly rate.
+
+For more information, see [How to switch from monthly subscription to annual?](#how-to-switch-from-monthly-subscription-to-annual)
 
 ### How to add VAT/tax and other information to the CVAT.ai invoice before the first payment?
 
@@ -85,25 +102,25 @@ Here’s how you can do it:
 
 1. Sign up for a CVAT.ai account and log in.
 2. (Optional) If you add the VAT/tax number to the organization,
-   first create an [organization](/docs/manual/advanced/organization/) and
-   switch to an **Organization** account.
+     first create an [organization](/docs/manual/advanced/organization/) and
+     switch to an **Organization** account.
 3. Navigate to the top right corner, next to the nickname,
-   click on the arrow > uprate to the plan.
+     click on the arrow > uprate to the plan.
 4. Switch on the **I would like the invoice to include additional
-   data (address, phone number, VAT information)** toggle, select the
-   best payment period for you, and click **Get Started**.
+     data (address, phone number, VAT information)** toggle, select the
+     best payment period for you, and click **Get Started**.
 
-   ![Stripe Link](/images/add-invoice.jpg)
+![Stripe Link](/images/add-invoice.jpg)
 
 5. You will see the billing page:
 
-   ![Stripe Link](/images/add-vat.jpg)
+![Stripe Link](/images/add-vat.jpg)
 
-   - Phone number **(1)**.
-   - **Billing Address**: Enter the billing address you want to appear on the invoice
-     in the address field **(2)**.
-   - **VAT Information** and **Business Name**: Select the checkbox **I am purchasing as a business** and enter
-     your VAT and business name information **(3)**.
+- Phone number **(1)**.
+  - **Billing Address**: Enter the billing address you want to appear on the invoice
+   in the address field **(2)**.
+  - **VAT Information** and **Business Name**: Select the checkbox **I am purchasing as a business** and enter
+   your VAT and business name information **(3)**.
 
 6. Select checkbox **I agree to refund policy** **(4)**.
 
@@ -173,7 +190,7 @@ To consider your request for a discount, we'd need a few details from you:
 - Your university advisor's contact details.
 - The name and contact information of the dean of your faculty.
 - A brief outline of your project plan. This helps us understand how we might collaborate
-  on a joint marketing statement highlighting your use of CVAT.ai, and how it can benefit your project.
+   on a joint marketing statement highlighting your use of CVAT.ai, and how it can benefit your project.
 - We'd also appreciate a positive LinkedIn post about your experience using CVAT, making sure to tag @CVAT.ai.
 
 All these details must be sent to [support@cvat.ai](mailto:support@cvat.ai). Once we have this
@@ -198,16 +215,9 @@ To pay with a bank transfer:
 
 ![Bank Transfer Payment](/images/bank_transfer_payment.jpg)
 
-### Change payment method on the Solo plan
+### How to change the payment method?
 
-In the top right corner, near the nickname, click on the arrow > **Manage Solo Plan** > **+Add Payment Method**
-
-![Payment pro](/images/update_payment_solo.png)
-
-### Change the payment method on the Team plan
-
-Switch to the Organization and in the top right corner, near the nickname,
-click on the arrow > **Manage Team Plan** > **+Add Payment Method**
+In the top right corner, near the nickname, click on the arrow > manage plan > **+Add Payment Method**
 
 ![Payment team](/images/update_payment_team.png)
 
@@ -237,6 +247,8 @@ but next month you will pay less by the amount of unused funds.
 
 ## Change plan
 
+### How to change the plan from Solo to Team?
+
 The procedure is the same for both **Solo** and **Team** plans.
 
 If for some reason you want to change your plan, you need to:
@@ -244,6 +256,28 @@ If for some reason you want to change your plan, you need to:
 1. Unsubscribe from the previous plan.
 2. If you need a refund, contact us at [support@cvat.ai](mailto:support@cvat.ai).
 3. Subscribe to a new plan.
+
+### How to switch from a monthly subscription to an annual one?
+
+If you have **monthly subscription**, and wish to switch to the
+**Annual plan**, please follow these steps:
+
+1. In the top-right corner, near the nickname, click on the arrow.
+2. Select **Manage Solo**/**Team Plan**.
+3. On the Stripe page that appears, click **Update Plan**.
+
+![Stripe Update Plan](/images/switch-to-annual.png)
+
+4. Choose **Yearly** and then click **Continue**.
+
+![Stripe Yearly Plan](/images/yearly-plan.png)
+
+The price will be adjusted according to the number of members, selected in the
+**Quantity** field (if updated), taking into account the amount of money
+that was not spent in the current period.
+
+Upon payment, your subscription will be renewed and the start
+date will be reset to the day you switch to the new plan.
 
 ## Can I subscribe to several plans?
 
@@ -255,7 +289,7 @@ plans for different organizations.
 ## Cancel plan
 
 This section describes how to cancel your CVAT subscription
-and what will happen to your data?
+and what will happen to your data.
 
 ### What will happen to my data?
 
@@ -272,42 +306,24 @@ Following the one month, you will receive a
 notification requesting you to either remove the
 excess data or it will be deleted automatically.
 
-### Solo plan
+### How to cancel any plan?
 
-To cancel the **Solo** plan, in the top right corner, near the nickname,
-click on the arrow **Manage Solo plan** > **Cancel plan**
+To cancel the plan, in the top right corner, near the nickname,
+click on the arrow> manage plan > **Cancel plan**
 
 Please, fill out the feedback form, to help us improve our platform.
 
 ![Cancel pro](/images/cancel-solo.png)
 
-### Team plan
+### Can I get a refund?
 
-To cancel the **Team** plan, do the following:
-
-1. In the top right corner click on your nickname, then **Organization** > Organization name.
-2. Click again on the nickname, then follow to **Manage Team plan** > **Cancel plan**
-
-Please, fill out the feedback form, to help us improve our platform.
-
-![Cancel team](/images/cancel-team.png)
+To understand if you are eligible for a refund,
+see [Refund policy](https://www.cvat.ai/refund-policy)
 
 ## Plan renewal
 
-This section describes how to renew your
-CVAT subscription
-
-### Solo plan
-
-Access **Manage Solo plan** > **Renew plan**
-
-### Team plan
-
-Access **Manage Team Plan** > **Renew plan**
-
-## Refund policy
-
-For more information, see [Refund policy](https://www.cvat.ai/refund-policy)
+To renew your CVAT.ai subscription, in the top right corner, near the nickname,
+click on the arrow> manage plan > **Renew plan**.
 
 ## Subscription management video tutorial
 
