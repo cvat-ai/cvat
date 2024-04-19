@@ -87,13 +87,13 @@ Here’s how you can do it:
 
 1. Sign up for a CVAT.ai account and log in.
 2. (Optional) If you add the VAT/tax number to the organization,
-     first create an [organization](/docs/manual/advanced/organization/) and
-     switch to an **Organization** account.
+   first create an [organization](/docs/manual/advanced/organization/) and
+   switch to an **Organization** account.
 3. Navigate to the top right corner, next to the nickname,
-     click on the arrow > uprate to the plan.
+   click on the arrow > uprate to the plan.
 4. Switch on the **I would like the invoice to include additional
-     data (address, phone number, VAT information)** toggle, select the
-     best payment period for you, and click **Get Started**.
+   data (address, phone number, VAT information)** toggle, select the
+   best payment period for you, and click **Get Started**.
 
 ![Stripe Link](/images/add-invoice.jpg)
 
@@ -102,9 +102,9 @@ Here’s how you can do it:
 ![Stripe Link](/images/add-vat.jpg)
 
 - Phone number **(1)**.
-    - **Billing Address**: Enter the billing address you want to appear on the invoice
+- **Billing Address**: Enter the billing address you want to appear on the invoice
      in the address field **(2)**.
-    - **VAT Information** and **Business Name**: Select the checkbox **I am purchasing as a business** and enter
+- **VAT Information** and **Business Name**: Select the checkbox **I am purchasing as a business** and enter
      your VAT and business name information **(3)**.
 
 6. Select checkbox **I agree to refund policy** **(4)**.
