@@ -14,46 +14,36 @@ you'll learn how to take control of your subscriptions and manage them.
 
 See:
 
+- [Available paid plans](#available-paid-plans)
+  - [Monthly plans](#monthly-plans)
+    - [Solo plan for personal use](#solo-plan-for-personal-use)
+    - [Team plan for teams and organizations](#team-plan-for-teams-and-organizations)
+  - [Annual plans](#annual-plans)
 - [Billing](#billing)
-   - [Monthly plans](#monthly-plans)
-    - [Solo plan for personal use](#solo-plan-for-personal-use)
-    - [Team plan for teams and organizations](#team-plan-for-teams-and-organizations)
-   - [Annual plans](#annual-plans)
-   - [How to add VAT/tax and other information to the CVAT.ai invoice before the first payment?](#how-to-add-vattax-and-other-information-to-the-cvatai-invoice-before-the-first-payment)
-   - [How to add/ change VAT/tax and other information to the CVAT.ai invoice after the first payment?](#how-to-add-change-vattax-and-other-information-to-the-cvatai-invoice-after-the-first-payment)
-   - [Can a paid invoice be modified?](#can-a-paid-invoice-be-modified)
-   - [How can I get a quote before I subscribe? How to add a PO number to my invoices?](#how-can-i-get-a-quote-before-i-subscribe-how-to-add-a-po-number-to-my-invoices)
-   - [Can you sign an agreement before I subscribe?](#can-you-sign-an-agreement-before-i-subscribe)
-   - [Can you handle a bank transfer with 30-day payment terms?](#can-you-handle-a-bank-transfer-with-30-day-payment-terms)
-   - [Where can I find my invoices?](#where-can-i-find-my-invoices)
-   - [I am a student, can I have a discount or free access?](#i-am-a-student-can-i-have-a-discount-or-free-access)
+  - [How to add VAT/tax and other information to the CVAT.ai invoice before the first payment?](#how-to-add-vattax-and-other-information-to-the-cvatai-invoice-before-the-first-payment)
+  - [How to add/ change VAT/tax and other information to the CVAT.ai invoice after the first payment?](#how-to-add-change-vattax-and-other-information-to-the-cvatai-invoice-after-the-first-payment)
+  - [Can a paid invoice be modified?](#can-a-paid-invoice-be-modified)
+  - [How can I get a quote before I subscribe? How to add a PO number to my invoices?](#how-can-i-get-a-quote-before-i-subscribe-how-to-add-a-po-number-to-my-invoices)
+  - [Can you sign an agreement before I subscribe?](#can-you-sign-an-agreement-before-i-subscribe)
+  - [Can you handle a bank transfer with 30-day payment terms?](#can-you-handle-a-bank-transfer-with-30-day-payment-terms)
+  - [Where can I find my invoices?](#where-can-i-find-my-invoices)
+  - [I am a student, can I have a discount or free access?](#i-am-a-student-can-i-have-a-discount-or-free-access)
 - [Payment methods](#payment-methods)
-   - [Paying with bank transfer](#paying-with-bank-transfer)
-   - [How to change payment method?](#how-to-change-payment-method)
+  - [Paying with bank transfer](#paying-with-bank-transfer)
+  - [How to change the payment method?](#how-to-change-the-payment-method)
 - [Adding and removing team members](#adding-and-removing-team-members)
-   - [Solo plan](#solo-plan)
-   - [Team plan](#team-plan)
 - [Change plan](#change-plan)
-   - [How to change plan from Solo to Team?](#how-to-change-plan-from-solo-to-team)
-   - [How to switch from monthly subscription to annual?](#how-to-switch-from-monthly-subscription-to-annual)
+  - [How to change the plan from Solo to Team?](#how-to-change-the-plan-from-solo-to-team)
+  - [How to switch from a monthly subscription to an annual one?](#how-to-switch-from-a-monthly-subscription-to-an-annual-one)
 - [Can I subscribe to several plans?](#can-i-subscribe-to-several-plans)
 - [Cancel plan](#cancel-plan)
-   - [What will happen to my data?](#what-will-happen-to-my-data)
-   - [How to cancel any plan?](#how-to-cancel-any-plan)
-   - [Can I get a refund?](#can-i-get-a-refund)
+  - [What will happen to my data?](#what-will-happen-to-my-data)
+  - [How to cancel any plan?](#how-to-cancel-any-plan)
+  - [Can I get a refund?](#can-i-get-a-refund)
 - [Plan renewal](#plan-renewal)
 - [Subscription management video tutorial](#subscription-management-video-tutorial)
 
-## Billing
-
-This section describes the billing model and gives short a
-description of limitations for each plan.
-
-There are two types of subscriptions available for both the Solo
-and Team plans: monthly and annual.
-
-For more information,
-see: [Pricing Plans](https://www.cvat.ai/post/new-pricing-plans)
+## Available paid plans
 
 ### Monthly plans
 
@@ -93,6 +83,17 @@ a more affordable monthly rate.
 
 For more information, see [How to switch from monthly subscription to annual?](#how-to-switch-from-monthly-subscription-to-annual)
 
+## Billing
+
+This section describes the billing model and gives short a
+description of limitations for each plan.
+
+There are two types of subscriptions available for both the Solo
+and Team plans: monthly and annual.
+
+For more information,
+see: [Pricing Plans](https://www.cvat.ai/post/new-pricing-plans)
+
 ### How to add VAT/tax and other information to the CVAT.ai invoice before the first payment?
 
 To ensure VAT (tax) information and other relevant details are included on your CVAT.ai invoices,
@@ -117,10 +118,10 @@ Here’s how you can do it:
 ![Stripe Link](/images/add-vat.jpg)
 
 - Phone number **(1)**.
-  - **Billing Address**: Enter the billing address you want to appear on the invoice
-   in the address field **(2)**.
-  - **VAT Information** and **Business Name**: Select the checkbox **I am purchasing as a business** and enter
-   your VAT and business name information **(3)**.
+    - **Billing Address**: Enter the billing address you want to appear on the invoice
+     in the address field **(2)**.
+    - **VAT Information** and **Business Name**: Select the checkbox **I am purchasing as a business** and enter
+     your VAT and business name information **(3)**.
 
 6. Select checkbox **I agree to refund policy** **(4)**.
 
@@ -223,16 +224,10 @@ In the top right corner, near the nickname, click on the arrow > manage plan > *
 
 ## Adding and removing team members
 
-This section describes how to add team members
-to collaborate within one team.
+> **Solo plan** is **for personal use only**, you cannot add or remove team members.
 
-### Solo plan
-
-Not available.
-
-### Team plan
-
-Go to the **Manage Team plan** > **Update quantity**.
+**Team plan** is for collaboration. To add members to your [Organization](/docs/manual/advanced/organization/),
+go to the **Manage Team plan** > **Update quantity**.
 
 ![Add members](/images/change_members_number_team.gif)
 
