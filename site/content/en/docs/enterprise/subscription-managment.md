@@ -19,7 +19,7 @@ See:
   - [Annual plans](#annual-plans)
 - [Billing](#billing)
   - [How to add VAT/tax and other information to the CVAT.ai invoice before the first payment?](#how-to-add-vattax-and-other-information-to-the-cvatai-invoice-before-the-first-payment)
-  - [How can you update your VAT/tax information and other details for upcoming invoices from CVAT.ai?](#how-can-you-update-your-vattax-information-and-other-details-for-upcoming-invoices-from-cvatai)
+  - [How to update VAT/tax information and other details for upcoming invoices from CVAT.ai?](#how-to-update-vattax-information-and-other-details-for-upcoming-invoices-from-cvatai)
   - [Can a paid invoice be modified?](#can-a-paid-invoice-be-modified)
   - [How can I get a quote before I subscribe? How to add a PO number to my invoices?](#how-can-i-get-a-quote-before-i-subscribe-how-to-add-a-po-number-to-my-invoices)
   - [Can you sign an agreement before I subscribe?](#can-you-sign-an-agreement-before-i-subscribe)
@@ -118,7 +118,7 @@ All information you've added will appear on the billing page and in the invoice.
 By following these steps, you can seamlessly add VAT and other crucial information to your
 invoices, making your financial transactions with CVAT.ai transparent and compliant.
 
-### How can you update your VAT/tax information and other details for upcoming invoices from CVAT.ai?
+### How to update VAT/tax information and other details for upcoming invoices from CVAT.ai?
 
 In the top right corner, near the nickname, click on the arrow > manage plan.
 
