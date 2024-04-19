@@ -337,6 +337,7 @@ class ObjectsListContainer extends React.PureComponent<Props, State> {
             SWITCH_ALL_HIDDEN: keyMap.SWITCH_ALL_HIDDEN,
             SWITCH_HIDDEN: keyMap.SWITCH_HIDDEN,
             SWITCH_OCCLUDED: keyMap.SWITCH_OCCLUDED,
+            SWITCH_PINNED: keyMap.SWITCH_PINNED,
             SWITCH_KEYFRAME: keyMap.SWITCH_KEYFRAME,
             SWITCH_OUTSIDE: keyMap.SWITCH_OUTSIDE,
             DELETE_OBJECT: keyMap.DELETE_OBJECT,
@@ -402,6 +403,14 @@ class ObjectsListContainer extends React.PureComponent<Props, State> {
                 const state = activatedState();
                 if (state && !readonly && state.objectType !== ObjectType.TAG) {
                     state.occluded = !state.occluded;
+                    updateAnnotations([state]);
+                }
+            },
+            SWITCH_PINNED: (event: KeyboardEvent | undefined) => {
+                preventDefault(event);
+                const state = activatedState();
+                if (state && !readonly) {
+                    state.pinned = !state.pinned;
                     updateAnnotations([state]);
                 }
             },
