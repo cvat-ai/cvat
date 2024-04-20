@@ -62,9 +62,14 @@ Steps are common for both local and codespaces remote development
 ### Dev-Container Features
   - The devcontainer image is based on the official CVAT docker image at `cvat/server:dev` Upon every rebuild, the devcontainer shall try to pull the latest base image at and therefore it will always have the latest upstream changes without any user intervention
   - The devcontainer pre-installs all the extensions specified in `devcontainer.json` file
+  - The default python virtual environment contains packages installed from `testing.txt` requirements file while inherits `development`, `production` and `dataset_manifest` requirements files.
+  - Contains an additional python virtual environment for testing REST_API, CLI and SDK. It can be activated by selecting `/opt/venv-test/bin/python` in the `Python: Select interpreter` command pallette menu.
+  - All the packages in the virtual environments are updated when the container runs for the first time after rebuilding the container. This is done via the `postCreateCommand` specified in `devcontainer.json` file
+  - Since the base image does not contain installation metadata for the `datumaro`, therefore it clones the git repo every time the packages are updated and takes a long time for the update to finish. To avoid this, its git commit_hash value from the base image is saved and used to check if an update is required.
+  - Pip cache is persisted between rebuilds
   - The default shell is `zsh`
   - The container user is `devcontainer` and it a non-root user, however, one can access the root user via sudo without any password to perform root operations like installing development specific applications
-  - To permanently include a ubuntu package in the devcontainer such that all other users can access them, one can add it to apt package installation section in `.devcontainer/<env_type>/Dockerfile`, and rebuild the container
+  - To permanently include a ubuntu package in the devcontainer such that all other users can access them, one can add it to apt package installation section in `.devcontainer/Dockerfile`, and rebuild the container
   - Additional python packages can be installed into the virtual environment by command `pip install`. They shall not persist between container builds, therefore it is just useful for testing new packages. They can be made to persist by adding them to development requirements file and rebuilding the image
   - Git configurations on the host machine are mounted into the container. So things like `user.name` and `user.email` are already configured inside the container
   - SSH keys on the host machine are mounted into the container. So one should be able to use your github ssh keys to access github
@@ -72,10 +77,11 @@ Steps are common for both local and codespaces remote development
   - Local terminal can be accessed from the devcontainer window by selecting `Terminal: Create New Integrated Terminal (Local)` from the command pallette. It can be used to run command on the host machine. It can be useful for accessing `docker` running on the host machine
   - Supports docker in docker to start and stop docker containers for REST API tests and debug it without disturbing the main development containers and its ports.
   - Serverless components can be deployed from within the devcontainer as per the documentation
+  - User profile data including shell history are synced between the host and the container.
 
 ## Limitations
   - Cypress testing with browser is not supported in devcontainer. It has to be run externally.
-  - User profile and things like shell history are not synced between the host and the container as of now. But this is planned in near future.
+  - In GitHub Codespaces, running recursive `chown` on an existing directory in Dockerfile is very slow. So it shall take a while to build the container for the first time.
 
 ## Native development guide
 ### Setup the dependencies:
