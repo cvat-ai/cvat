@@ -405,6 +405,7 @@ class Task(models.Model):
     project = models.ForeignKey(Project, on_delete=models.CASCADE,
         null=True, blank=True, related_name="tasks",
         related_query_name="task")
+    total_audio_duration = models.IntegerField(null=True, blank=True, default=None)
     name = SafeCharField(max_length=256)
     mode = models.CharField(max_length=32)
     owner = models.ForeignKey(User, null=True, blank=True,
@@ -429,6 +430,7 @@ class Task(models.Model):
         blank=True, on_delete=models.SET_NULL, related_name='+')
     target_storage = models.ForeignKey('Storage', null=True, default=None,
         blank=True, on_delete=models.SET_NULL, related_name='+')
+    segment_duration = models.PositiveIntegerField(null=True, default=None)
 
     # Extend default permission model
     class Meta:

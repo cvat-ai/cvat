@@ -2,7 +2,8 @@
 # Copyright (C) 2022-2023 CVAT.ai Corporation
 #
 # SPDX-License-Identifier: MIT
-
+from pydub import AudioSegment
+import math
 import itertools
 import fnmatch
 import os
@@ -111,8 +112,38 @@ def _get_task_segment_data(
     *,
     data_size: Optional[int] = None,
     job_file_mapping: Optional[JobFileMapping] = None,
+    segment_duration: Optional[int] = None
 ) -> SegmentsParams:
-    if job_file_mapping is not None:
+
+    # segment_duration = 3000
+
+    slogger.glob.debug("Segment Duration")
+    slogger.glob.debug(segment_duration)
+    if segment_duration is not None:
+        # Total audio duration in milliseconds
+        total_audio_duration = (db_task.data.total_audio_duration)
+
+        num_segments = max(1, math.ceil(total_audio_duration / segment_duration))
+
+        slogger.glob.debug("Num segments")
+        slogger.glob.debug(num_segments)
+
+        slogger.glob.debug("Num frames")
+        slogger.glob.debug(db_task.data.size)
+
+        def _segments():
+            start_time = 0
+            for _ in range(num_segments):
+                stop_time = start_time + segment_duration - 1
+                yield SegmentParams(start_time, stop_time)
+                start_time = stop_time + 1
+
+        segments = _segments()
+        segment_size = 0
+        overlap = 0
+
+    elif job_file_mapping is not None:
+
         def _segments():
             # It is assumed here that files are already saved ordered in the task
             # Here we just need to create segments by the job sizes
@@ -134,6 +165,10 @@ def _get_task_segment_data(
 
         segment_size = db_task.segment_size
         segment_step = segment_size
+
+        slogger.glob.debug(data_size)
+        slogger.glob.debug(segment_size)
+        slogger.glob.debug(segment_step)
         if segment_size == 0 or segment_size > data_size:
             segment_size = data_size
 
@@ -1102,6 +1137,39 @@ def _create_thread(
 
             while not futures.empty():
                 process_results(futures.get().result())
+
+    def get_audio_duration(audio_path):
+        audio = AudioSegment.from_file(audio_path)
+        total_duration = len(audio)  # Duration in milliseconds
+        return total_duration
+
+    db_task.data.total_audio_duration = None
+    if MEDIA_TYPE == "audio":
+
+        segment_duration = db_task.segment_duration
+        db_task.data.total_audio_duration = get_audio_duration(details['source_path'][0])
+
+        if segment_duration == 0:
+            db_task.segment_size = 0
+        else:
+            num_segments = max(1, math.ceil(db_task.data.total_audio_duration / segment_duration))
+
+            slogger.glob.debug("Segment Size Before")
+            slogger.glob.debug(db_task.segment_size)
+
+            db_task.segment_size = db_task.data.size // num_segments
+
+            slogger.glob.debug("Segment Size After")
+            slogger.glob.debug(db_task.segment_size)
+
+            slogger.glob.debug("Num segments")
+            slogger.glob.debug(num_segments)
+
+            slogger.glob.debug("Num frames")
+            slogger.glob.debug(db_task.data.size)
+
+            slogger.glob.debug("Audio Duration")
+            slogger.glob.debug(db_task.data.total_audio_duration)
 
     if db_task.mode == 'annotation':
         models.Image.objects.bulk_create(db_images)
