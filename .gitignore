@@ -65,8 +65,6 @@ cvat-core/reports
 .husky
 
 # produced by devcontainer
-.devcontainer/local/docker-compose.rendered.yml
-.devcontainer/codespaces/docker-compose.rendered.yml
-.devcontainer/local/.env
-.devcontainer/codespaces/.env
+.devcontainer/docker-compose.rendered.yml
+.devcontainer/.env
 cvat-db.session.sql
