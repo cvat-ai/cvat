@@ -25,7 +25,7 @@ RUN mkdir -p /cvat/metadata \
 RUN userdel -r django 2>/dev/null \
     && groupadd --gid ${HOST_USER_GID} devcontainer \
     && useradd --uid ${HOST_USER_UID} --gid ${HOST_USER_GID} \
-    --create-home --shell /bin/zsh --comment "" "devcontainer"
+    --create-home --shell /bin/bash --comment "" "devcontainer"
 
 RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
     --mount=type=cache,target=/var/lib/apt,sharing=locked \
