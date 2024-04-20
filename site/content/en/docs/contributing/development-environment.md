@@ -9,7 +9,7 @@ description: 'Installing a development environment for different operating syste
 ### Dependencies
 - Install chrome
 - Install [VS Code](https://code.visualstudio.com/docs/setup/setup-overview) or [VS Code Insiders](https://code.visualstudio.com/insiders/) in case when extensions are not installed after start of the devcontainer
-  - Install [Devcontainer](https://marketplace.visualstudio.com/items?itemName=ms-vscode-remote.remote-containers) extension for local devcontainer
+  - Install [Devcontainer](https://marketplace.visualstudio.com/items?itemName=ms-vscode-remote.remote-containers) extension for local devcontainer with all the system requirements as specified in the documentation.
   - Install [GitHub Codespaces](https://marketplace.visualstudio.com/items?itemName=GitHub.codespaces) extension for codespaces
 - Install [git](https://git-scm.com/downloads)
   - For windows users following guides may be helpful
@@ -21,7 +21,7 @@ description: 'Installing a development environment for different operating syste
 - In the root directory of the repository create a `.env` file with the variables mentioned in `dist.env` file and modify their values
   - If not created, default values are taken from the docker-compose file inside the `.devcontainer/docker-compose.yml`
 - In `.devcontainer` directory create a `.env` file with variables mentioned in `dist.env` file
-  - `GIT_BRANCH_ISOLATION` environment variable is used at build time of devcontainer. It enables to persist container data between builds by using docker volumes namespaced by git branch name. It is set to true by default. More about this later section
+  - `GIT_BRANCH_ISOLATION` environment variable is used at build time of devcontainer. It enables to persist container data between builds by using docker volumes namespaced by git branch name. It is set to true by default. More about this in the later section
 
 ### Local Dev-Container guide
 - Upon opening the repository in VS Code, click on the green color icon at the bottom left corner of the window labeled `Open Remote Window` and select `reopen in container`
