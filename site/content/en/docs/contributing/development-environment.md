@@ -79,6 +79,7 @@ Steps are common for both local and codespaces remote development
   - Serverless components can be deployed from within the devcontainer as per the documentation
   - User profile data including shell history are synced between the host and the container
   - Uses dependabot for creating automatic PRs for bumping devcontainer feature versions
+  - It contains `OPA` and `nuctl` cli applications preinstalled
 
 ## Limitations
   - Cypress testing with browser is not supported in devcontainer and has to be run externally
