@@ -10,13 +10,23 @@ echo_bold() {
     echo "${bold}${text}${normal}"
 }
 
-devcontainer_dir="$(dirname "$(realpath "${0}")")"
-workspace_dir="$(dirname "${devcontainer_dir}")"
+error_handler() {
+    local error_code=${?}
+    local error_command="${BASH_COMMAND}"
+    local error_line="${BASH_LINENO}"
+
+    echo_bold "ERROR: ${0}: Error occurred on line ${error_line}: ${error_command} (exit code: ${error_code})" >&2
+    exit 1
+}
 
 mark_git_safe() {
     # Mark all directories as safe as os like windows using WSL adds incorrect path when adding specific path
     git config --global --add safe.directory '*'
     echo_bold "INFO: Done mark all directories as git safe."
+}
+
+node_dependencies() {
+    cd "${workspace_dir}" && yarn --frozen-lockfile
 }
 
 start_nuclio_dasboard() {
@@ -65,6 +75,12 @@ update_venvs() {
     echo_bold "INFO: Done update virtual environment packages"
 }
 
-update_venvs
-mark_git_safe
-start_nuclio_dasboard
+trap error_handler ERR
+devcontainer_dir="$(dirname "$(realpath "${0}")")"
+workspace_dir="$(dirname "${devcontainer_dir}")"
+export -f echo_bold && export -f update_venvs && export -f start_nuclio_dasboard \
+    && export -f node_dependencies && export -f mark_git_safe \
+    && export -f copy && export -f is_datumro_update && export workspace_dir="${workspace_dir}"
+parallel --jobs 3 --ungroup --halt now,fail=1 ::: \
+    update_venvs start_nuclio_dasboard node_dependencies mark_git_safe
+
