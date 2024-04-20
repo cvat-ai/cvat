@@ -81,6 +81,6 @@ workspace_dir="$(dirname "${devcontainer_dir}")"
 export -f echo_bold && export -f update_venvs && export -f start_nuclio_dasboard \
     && export -f node_dependencies && export -f mark_git_safe \
     && export -f copy && export -f is_datumro_update && export workspace_dir="${workspace_dir}"
-parallel --jobs 3 --ungroup --halt now,fail=1 ::: \
+parallel --jobs 4 --ungroup --halt now,fail=1 ::: \
     update_venvs start_nuclio_dasboard node_dependencies mark_git_safe
 
