@@ -78,6 +78,7 @@ Steps are common for both local and codespaces remote development
   - Supports docker in docker to start and stop docker containers for running `pytest` tests and debug it without disturbing the main development containers and its ports
   - Serverless components can be deployed from within the devcontainer as per the documentation
   - User profile data including shell history are synced between the host and the container
+  - Uses dependabot for creating automatic PRs for bumping devcontainer feature versions
 
 ## Limitations
   - Cypress testing with browser is not supported in devcontainer and has to be run externally
