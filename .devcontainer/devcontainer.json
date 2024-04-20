@@ -58,7 +58,9 @@
             ],
             "settings": {
                 "python.defaultInterpreterPath": "/opt/venv/bin/python",
-                  // for tasks and debug
+                // Ideally venvPath should be an array, tracking this issue here
+                // https://github.com/microsoft/vscode-python/issues/1479
+                "python.venvPath": "/opt/venv-test/bin",
                 "terminal.integrated.automationProfile.linux": {
                     "path": "/bin/bash"
                 },
