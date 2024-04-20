@@ -23,6 +23,7 @@ services:
       DJANGO_SUPERUSER_EMAIL: ${DJANGO_SUPERUSER_EMAIL:-admin@admin.com}
     volumes: !override
       - .:/home/devcontainer/workspaces
+      - ${HOME}/.ssh:/home/devcontainer/.ssh
       - cvat_data:/home/devcontainer/workspaces/data
       - cvat_keys:/home/devcontainer/workspaces/keys
       - cvat_logs:/home/devcontainer/workspaces/logs
