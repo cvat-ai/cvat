@@ -62,7 +62,7 @@ Steps are common for both local and codespaces remote development
 ### Dev-Container Features
   - The devcontainer image is based on the official CVAT docker image at `cvat/server:dev` Upon every rebuild, the devcontainer shall try to pull the latest base image at and therefore it will always have the latest upstream changes without any user intervention
   - The devcontainer pre-installs all the extensions specified in `devcontainer.json` file
-  - The default python virtual environment contains packages installed from `testing.txt` requirements file while inherits `development`, `production` and `dataset_manifest` requirements files
+  - The default python virtual environment contains packages installed from `testing.txt` requirements file which inherits `development`, `production` and `dataset_manifest` requirements files
   - Contains an additional python virtual environment for running `pytest`. It can be activated by selecting `/opt/venv-test/bin/python` in the `Python: Select interpreter` command pallette menu
   - All the python packages in the virtual environments as well node dependencies are updated when the container runs for the first time after rebuilding the container. This is done via the `postCreateCommand` specified in `devcontainer.json` file
   - Since the base image does not contain installation metadata for the `datumaro`, therefore it clones the git repo every time the packages are updated and takes a long time for the update to finish. To avoid this, its git commit_hash value from the base image is saved and used to check if an update is required
