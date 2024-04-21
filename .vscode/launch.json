@@ -590,6 +590,7 @@
             "name": "devcontainer: ui",
             "type": "chrome",
             "request": "launch",
+            "preLaunchTask": "devcontainer: ui yarn run",
             "url": "http://localhost:3000",
             "webRoot": "${workspaceFolder}/cvat-ui",
             "sourceMaps": true,

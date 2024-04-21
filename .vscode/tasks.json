@@ -76,7 +76,6 @@
         {
             "label": "devcontainer: ui yarn run",
             "type": "shell",
-            "dependsOn": ["devcontainer: ui yarn install"],
             "detail": "",
             "isBackground": true,
             "command": "yarn run start:cvat-ui",
