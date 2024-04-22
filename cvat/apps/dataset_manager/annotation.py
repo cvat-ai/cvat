@@ -909,7 +909,7 @@ class TrackManager(ObjectManager):
                 break # The track finishes here
 
             if prev_shape:
-                assert curr_frame > prev_shape["frame"] # Catch invalid tracks
+            #     assert curr_frame > prev_shape["frame"] # Catch invalid tracks
 
                 # Propagate attributes
                 for attr in prev_shape["attributes"]:

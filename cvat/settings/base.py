@@ -583,7 +583,8 @@ LOGGING = {
 if os.getenv('DJANGO_LOG_SERVER_HOST'):
     LOGGING['loggers']['vector']['handlers'] += ['vector']
 
-DATA_UPLOAD_MAX_MEMORY_SIZE = 100 * 1024 * 1024  # 100 MB
+LOCAL_LOAD_MAX_FILES_SIZE = 1024 * 1024 * 1024
+DATA_UPLOAD_MAX_MEMORY_SIZE = 1024 * 1024 * 1024  # 1 GB
 DATA_UPLOAD_MAX_NUMBER_FIELDS = None   # this django check disabled
 DATA_UPLOAD_MAX_NUMBER_FILES = None
 
@@ -714,6 +715,8 @@ ACCOUNT_ADAPTER = 'cvat.apps.iam.adapters.DefaultAccountAdapterEx'
 
 CVAT_HOST = os.getenv('CVAT_HOST', 'localhost')
 CVAT_BASE_URL = os.getenv('CVAT_BASE_URL', f'http://{CVAT_HOST}:8080').rstrip('/')
+
+CSRF_TRUSTED_ORIGINS = ["https://" + CVAT_HOST, "http://" + CVAT_HOST, "https://cvat.fastsense.tech"]
 
 CLICKHOUSE = {
     'events': {

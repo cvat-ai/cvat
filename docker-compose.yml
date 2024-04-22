@@ -34,7 +34,7 @@ services:
 
   cvat_server:
     container_name: cvat_server
-    image: cvat/server:${CVAT_VERSION:-dev}
+    image: cvat/server:${CVAT_VERSION:-v2.7.2}
     restart: always
     depends_on:
       - cvat_redis
@@ -54,6 +54,7 @@ services:
       CLICKHOUSE_HOST: clickhouse
       CVAT_ANALYTICS: 1
       CVAT_BASE_URL:
+      CVAT_HOST: ${CVAT_HOST:-localhost}
       SMOKESCREEN_OPTS: ${SMOKESCREEN_OPTS:-}
     command: init run server
     labels:
@@ -63,6 +64,7 @@ services:
         PathPrefix(`/api/`, `/git/`, `/static/`, `/admin`, `/documentation/`, `/django-rq`)
       - traefik.http.routers.cvat.entrypoints=web
     volumes:
+      - ./cvat:/home/django/cvat
       - cvat_data:/home/django/data
       - cvat_keys:/home/django/keys
       - cvat_logs:/home/django/logs
@@ -73,7 +75,7 @@ services:
 
   cvat_utils:
     container_name: cvat_utils
-    image: cvat/server:${CVAT_VERSION:-dev}
+    image: cvat/server:${CVAT_VERSION:-v2.7.2}
     restart: always
     depends_on:
       - cvat_redis
@@ -98,7 +100,7 @@ services:
 
   cvat_worker_import:
     container_name: cvat_worker_import
-    image: cvat/server:${CVAT_VERSION:-dev}
+    image: cvat/server:${CVAT_VERSION:-v2.7.2}
     restart: always
     depends_on:
       - cvat_redis
@@ -121,7 +123,7 @@ services:
 
   cvat_worker_export:
     container_name: cvat_worker_export
-    image: cvat/server:${CVAT_VERSION:-dev}
+    image: cvat/server:${CVAT_VERSION:-v2.7.2}
     restart: always
     depends_on:
       - cvat_redis
@@ -136,6 +138,7 @@ services:
       NUMPROCS: 2
     command: run worker.export
     volumes:
+      - ./cvat:/home/django/cvat
       - cvat_data:/home/django/data
       - cvat_keys:/home/django/keys
       - cvat_logs:/home/django/logs
@@ -144,7 +147,7 @@ services:
 
   cvat_worker_annotation:
     container_name: cvat_worker_annotation
-    image: cvat/server:${CVAT_VERSION:-dev}
+    image: cvat/server:${CVAT_VERSION:-v2.7.2}
     restart: always
     depends_on:
       - cvat_redis
@@ -167,7 +170,7 @@ services:
 
   cvat_worker_webhooks:
     container_name: cvat_worker_webhooks
-    image: cvat/server:${CVAT_VERSION:-dev}
+    image: cvat/server:${CVAT_VERSION:-v2.7.2}
     restart: always
     depends_on:
       - cvat_redis
@@ -191,7 +194,7 @@ services:
 
   cvat_worker_quality_reports:
     container_name: cvat_worker_quality_reports
-    image: cvat/server:${CVAT_VERSION:-dev}
+    image: cvat/server:${CVAT_VERSION:-v2.7.2}
     restart: always
     depends_on:
       - cvat_redis
@@ -213,7 +216,7 @@ services:
 
   cvat_worker_analytics_reports:
     container_name: cvat_worker_analytics_reports
-    image: cvat/server:${CVAT_VERSION:-dev}
+    image: cvat/server:${CVAT_VERSION:-v2.7.2}
     restart: always
     depends_on:
       - cvat_redis
@@ -236,7 +239,7 @@ services:
 
   cvat_ui:
     container_name: cvat_ui
-    image: cvat/ui:${CVAT_VERSION:-dev}
+    image: cvat/ui:${CVAT_VERSION:-v2.7.2}
     restart: always
     depends_on:
       - cvat_server
