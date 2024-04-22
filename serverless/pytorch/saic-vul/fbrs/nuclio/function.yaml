@@ -34,11 +34,9 @@ spec:
         - kind: WORKDIR
           value: /opt/nuclio/fbrs
         - kind: ENV
-          value: fileid=1Z9dQtpWVTobEdmUBntpUU0pJl-pEXUwR
-        - kind: ENV
           value: filename=resnet101_dh256_sbd.pth
         - kind: RUN
-          value: curl -L "https://drive.google.com/uc?export=download&confirm=t&id=${fileid}" -o ${filename}
+          value: curl -L "https://github.com/saic-vul/fbrs_interactive_segmentation/releases/download/v1.0/resnet101_dh256_sbd.pth" -o ${filename}
         - kind: RUN
           value: apt update && apt install -y libgl1-mesa-glx
         - kind: RUN
