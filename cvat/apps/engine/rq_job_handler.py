@@ -77,7 +77,7 @@ class RQIdManager:
             if "create" == action:
                 identifier = unparsed
             elif "import" == action:
-                identifier, subresource = unparsed.split("-")
+                identifier, subresource = unparsed.rsplit("-", maxsplit=1)
             else:  # export
                 identifier, subresource, unparsed = unparsed.split("-", maxsplit=2)
                 if "backup" == subresource:
@@ -89,7 +89,10 @@ class RQIdManager:
                     format = unparsed[3:-7].replace("_", " ").replace("@", ".")
 
             if identifier is not None:
-                identifier = int(identifier)
+                if identifier.isdigit():
+                    identifier = int(identifier)
+                else:
+                    identifier = UUID(identifier)
 
             if user_id is not None:
                 user_id = int(user_id)
