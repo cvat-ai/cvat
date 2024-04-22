@@ -2186,13 +2186,13 @@ class UserIdentifiersSerializer(BasicUserSerializer):
         )
 
 class RQJobOperationSerializer(serializers.Serializer):
-    type = serializers.CharField()
-    target = serializers.ChoiceField(choices=["project", "task", "job"])
-    project_id = serializers.IntegerField(required=False, allow_null=True)
-    task_id = serializers.IntegerField(required=False, allow_null=True)
-    job_id = serializers.IntegerField(required=False, allow_null=True)
-    format = serializers.CharField(required=False, allow_null=True)
-    name = serializers.CharField(source="id")  # TODO: duplicated field
+    type = serializers.CharField(read_only=True)
+    target = serializers.ChoiceField(choices=["project", "task", "job"], read_only=True)
+    project_id = serializers.IntegerField(required=False, allow_null=True, read_only=True)
+    task_id = serializers.IntegerField(required=False, allow_null=True, read_only=True)
+    job_id = serializers.IntegerField(required=False, allow_null=True, read_only=True)
+    format = serializers.CharField(required=False, allow_null=True, read_only=True)
+    name = serializers.CharField(source="id", read_only=True)  # TODO: duplicated field
 
     def to_representation(self, rq_job: RQJob) -> Dict[str, Any]:
         try:
@@ -2219,7 +2219,7 @@ class RQJobOperationSerializer(serializers.Serializer):
 class RQJobDetailsSerializer(serializers.Serializer):
     status = serializers.SerializerMethodField()
     message = serializers.SerializerMethodField()
-    id = serializers.CharField()
+    id = serializers.CharField(read_only=True)
     operation = RQJobOperationSerializer(source="*")
     percent = serializers.SerializerMethodField()
     enqueue_date = serializers.DateTimeField(source="enqueued_at", read_only=True)
@@ -2231,9 +2231,9 @@ class RQJobDetailsSerializer(serializers.Serializer):
     )
     expire_date = serializers.SerializerMethodField()
     owner = serializers.SerializerMethodField()
-    result_url = serializers.URLField(required=False, allow_null=True)
+    result_url = serializers.URLField(required=False, allow_null=True, read_only=True)
 
-    @extend_schema_field(UserIdentifiersSerializer)
+    @extend_schema_field(UserIdentifiersSerializer(read_only=True))
     def get_owner(self, rq_job: RQJob) -> Dict[str, Any]:
         return UserIdentifiersSerializer(rq_job.meta["user"]).data
 
@@ -2249,7 +2249,8 @@ class RQJobDetailsSerializer(serializers.Serializer):
 
     @extend_schema_field(
         serializers.DecimalField(
-            max_digits=5, decimal_places=2, required=False, allow_null=True
+            max_digits=5, decimal_places=2, required=False, allow_null=True,
+            read_only=True
         )
     )
     def get_percent(self, rq_job: RQJob) -> Decimal:
@@ -2271,7 +2272,7 @@ class RQJobDetailsSerializer(serializers.Serializer):
         return None
 
     @extend_schema_field(
-        serializers.ChoiceField(choices=['queued', 'started', 'failed', 'finished'])
+        serializers.ChoiceField(choices=['queued', 'started', 'failed', 'finished'], read_only=True)
     )
     def get_status(self, rq_job: RQJob) -> str:
         status = rq_job.get_status()
@@ -2281,7 +2282,7 @@ class RQJobDetailsSerializer(serializers.Serializer):
 
         return str(status)
 
-    @extend_schema_field(serializers.CharField(allow_blank=True))
+    @extend_schema_field(serializers.CharField(allow_blank=True, read_only=True))
     def get_message(self, rq_job: RQJob) -> str:
         if rq_job.get_status() != RQJobStatus.FAILED:
             return ""

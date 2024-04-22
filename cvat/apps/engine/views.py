@@ -3190,7 +3190,7 @@ def _import_project_dataset(request, rq_id_template, rq_func, db_obj, format_nam
 @extend_schema(tags=['requests'])
 @extend_schema_view(
     list=extend_schema(
-        summary='List with RQ jobs',
+        summary='List RQ jobs',
         parameters=[
             OpenApiParameter(name='task_id', location=OpenApiParameter.QUERY, type=OpenApiTypes.INT),
             OpenApiParameter(name='action', location=OpenApiParameter.QUERY, type=OpenApiTypes.STR, enum=['create']),
