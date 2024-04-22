@@ -117,15 +117,37 @@ function truncateName(name: string, maxLength: number): string {
     return name;
 }
 
+function statusMessage(request: Request, defaultMessage: string, postfix?: JSX.Element): JSX.Element {
+    if (request.message) {
+        return (
+            <>
+                {request.message}
+                {postfix || null}
+            </>
+        );
+    }
+
+    return (
+        <>
+            {defaultMessage}
+            {postfix || null}
+        </>
+    );
+}
+
 export default function RequestCard(props: Props): JSX.Element {
     const { request } = props;
     const { operation } = request;
     const { type } = operation;
     const [isActive, setIsActive] = useState(true);
 
-    let textType: 'success' | 'danger' = 'success';
+    let textType: 'success' | 'danger' | 'warning' | undefined;
     if ([RQStatus.FAILED, RQStatus.UNKNOWN].includes(request.status)) {
         textType = 'danger';
+    } else if ([RQStatus.QUEUED].includes(request.status)) {
+        textType = 'warning';
+    } else if ([RQStatus.FINISHED].includes(request.status)) {
+        textType = 'success';
     }
     const linkToEntity = constructLink(request.operation);
     const percent = request.status === RQStatus.FINISHED ? 100 : request.progress;
@@ -168,32 +190,31 @@ export default function RequestCard(props: Props): JSX.Element {
                                 <Col span={21}>
                                     <Row>
                                         <Text
-                                            type={request.status === RQStatus.QUEUED ? undefined : textType}
+                                            type={textType}
                                             strong
                                         >
                                             {((): JSX.Element => {
                                                 if (request.status === RQStatus.FINISHED) {
-                                                    return (<>Finished</>);
+                                                    return statusMessage(request, 'Finished');
                                                 }
 
-                                                if ([RQStatus.QUEUED, RQStatus.STARTED].includes(request.status)) {
-                                                    return (
-                                                        <>
-                                                            {request.message}
-                                                            <LoadingOutlined />
-                                                        </>
-                                                    );
+                                                if ([RQStatus.QUEUED].includes(request.status)) {
+                                                    return statusMessage(request, 'Queued', <LoadingOutlined />);
+                                                }
+
+                                                if ([RQStatus.STARTED].includes(request.status)) {
+                                                    return statusMessage(request, 'In progress', <LoadingOutlined />);
                                                 }
 
                                                 if (request.status === RQStatus.FAILED) {
-                                                    return (<>Failed</>);
+                                                    return statusMessage(request, 'Failed');
                                                 }
 
                                                 if (request.status === RQStatus.UNKNOWN) {
-                                                    return (<>Unknown status received</>);
+                                                    return statusMessage(request, 'Unknown status received');
                                                 }
 
-                                                return <Text>{request.message}</Text>;
+                                                return statusMessage(request, 'Unknown status received');
                                             })()}
                                         </Text>
                                         {
