@@ -1171,7 +1171,7 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
             https://docs.cvat.ai/docs/manual/advanced/dataset_manifest/
 
             After all data is sent, the operation status can be retrieved via
-            the /status endpoint.
+            the /api/requests endpoint.
 
             Once data is attached to a task, it cannot be detached or replaced.
         """.format_map(
