@@ -43,7 +43,7 @@ spec:
         - kind: RUN
           value: conda install -y -c conda-forge pycocotools scipy
         - kind: RUN
-          value: pip install opencv-python
+          value: pip install opencv-python gdown
         - kind: RUN
           value: git clone https://github.com/shiyinzhang/Inside-Outside-Guidance.git iog
         - kind: WORKDIR
@@ -53,7 +53,7 @@ spec:
         - kind: ENV
           value: filename=IOG_PASCAL_SBD.pth
         - kind: RUN
-          value: curl -L "https://drive.google.com/uc?export=download&confirm=t&id=${fileid}" -o ${filename}
+          value: gdown https://drive.google.com/uc?id=${fileid} -O ${filename}
         - kind: WORKDIR
           value: /opt/nuclio
         - kind: ENTRYPOINT

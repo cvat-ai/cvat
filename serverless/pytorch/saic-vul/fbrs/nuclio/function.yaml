@@ -33,10 +33,12 @@ spec:
           value: git clone https://github.com/saic-vul/fbrs_interactive_segmentation.git fbrs
         - kind: WORKDIR
           value: /opt/nuclio/fbrs
+        - kind: RUN
+          value: pip3 install gdown
         - kind: ENV
           value: filename=resnet101_dh256_sbd.pth
         - kind: RUN
-          value: curl -L "https://github.com/saic-vul/fbrs_interactive_segmentation/releases/download/v1.0/resnet101_dh256_sbd.pth" -o ${filename}
+          value: gdown "https://drive.google.com/uc?export=download&confirm=t&id=${fileid}" -O ${filename}
         - kind: RUN
           value: apt update && apt install -y libgl1-mesa-glx
         - kind: RUN
