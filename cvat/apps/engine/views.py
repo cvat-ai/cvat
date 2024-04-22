@@ -96,9 +96,6 @@ from cvat.apps.engine.view_utils import tus_chunk_action
 
 from rq.queue import Queue as RQQueue
 from rq.job import Job as RQJob
-from typing import Iterator
-from rq.job import JobStatus as RQJobStatus
-from datetime import timedelta
 from cvat.apps.engine.serializers import RQJobDetailsSerializer
 
 slogger = ServerLogManager(__name__)

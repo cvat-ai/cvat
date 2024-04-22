@@ -411,7 +411,7 @@ class AnnotationMixin:
         rq_id = RQIdManager.build(
             'export', object_name, self._object.pk,
             subresource=request.path.strip('/').split('/')[-1],
-            format=format_name, user_id=request.user.id
+            anno_format=format_name, user_id=request.user.id
         )
 
         if format_name:

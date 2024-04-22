@@ -47,17 +47,17 @@ class RQIdManager:
         *,
         subresource: Optional[str] = None,
         user_id: Optional[int] = None,
-        format: Optional[str] = None,
+        anno_format: Optional[str] = None,
     ) -> str:
         match action:
             case "import":
                 return f"{action}:{resource}-{identifier}-{subresource}"
             case "export":
-                if format is None:
+                if anno_format is None:
                     return (
                         f"{action}:{resource}-{identifier}-{subresource}-by-{user_id}"
                     )
-                format_to_be_used_in_urls = format.replace(" ", "_").replace(".", "@")
+                format_to_be_used_in_urls = anno_format.replace(" ", "_").replace(".", "@")
                 return f"{action}:{resource}-{identifier}-{subresource}-in-{format_to_be_used_in_urls}-format-by-{user_id}"
             case "create":
                 assert "task" == resource
@@ -67,7 +67,7 @@ class RQIdManager:
 
     @staticmethod
     def parse(rq_id: str) -> RQId:
-        action = resource = identifier = subresource = user_id = format = None
+        action = resource = identifier = subresource = user_id = anno_format = None
 
         try:
             action_and_resource, unparsed = rq_id.split("-", maxsplit=1)
@@ -86,7 +86,7 @@ class RQIdManager:
                     unparsed, _, user_id = unparsed.rsplit("-", maxsplit=2)
                     # remove prefix(in-), suffix(-format) and restore original format name
                     # by replacing special symbols: "_" -> " ", "@" -> "."
-                    format = unparsed[3:-7].replace("_", " ").replace("@", ".")
+                    anno_format = unparsed[3:-7].replace("_", " ").replace("@", ".")
 
             if identifier is not None:
                 if identifier.isdigit():
@@ -103,7 +103,7 @@ class RQIdManager:
                 identifier=identifier,
                 subresource=subresource,
                 user_id=user_id,
-                format=format,
+                format=anno_format,
             )
 
         except Exception as ex:
