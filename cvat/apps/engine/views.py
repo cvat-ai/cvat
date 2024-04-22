@@ -3317,11 +3317,10 @@ class BackgroundProcessViewSet(viewsets.GenericViewSet):
         user_id = request.user.id
         filtered_jobs = self._get_rq_jobs(user_id)
 
-        # TODO: uncomment when pagination will be supported on UI
-        # page = self.paginate_queryset(filtered_jobs)
-        # if page is not None:
-        #     serializer = self.get_serializer(page, many=True, context={'request': request})
-        #     return self.get_paginated_response(serializer.data)
+        page = self.paginate_queryset(filtered_jobs)
+        if page is not None:
+            serializer = self.get_serializer(page, many=True, context={'request': request})
+            return self.get_paginated_response(serializer.data)
 
         serializer = self.get_serializer(filtered_jobs, many=True, context={'request': request})
         return Response(data=serializer.data, status=status.HTTP_200_OK)

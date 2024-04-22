@@ -2296,9 +2296,9 @@ async function getRequestsList(): Promise<any> {
     const { backendAPI } = config;
 
     try {
-        const response = await Axios.get(`${backendAPI}/background-processes`);
+        const response = await fetchAll(`${backendAPI}/background-processes`);
 
-        return response.data;
+        return response.results;
     } catch (errorData) {
         throw generateError(errorData);
     }
