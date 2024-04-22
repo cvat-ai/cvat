@@ -1164,7 +1164,7 @@ def import_project(request, queue_name, filename=None):
     )
 
 def import_task(request, queue_name, filename=None):
-    rq_id = RQIdManager.build('import', 'task', uuid.uuid4(), subresource='backup')
+    rq_id = request.data.get('rq_id', RQIdManager.build('import', 'task', uuid.uuid4(), subresource='backup'))
     Serializer = TaskFileSerializer
     file_field_name = 'task_file'
 
