@@ -28,9 +28,9 @@ from cvat.apps.engine.log import ServerLogManager
 from cvat.apps.engine.media_extractors import (MEDIA_TYPES, ImageListReader, Mpeg4ChunkWriter, Mpeg4CompressedChunkWriter,
     ValidateDimension, ZipChunkWriter, ZipCompressedChunkWriter, get_mime, sort)
 from cvat.apps.engine.utils import (
-    av_scan_paths,get_rq_job_meta, define_dependent_job, get_rq_lock_by_user, preload_images,
-    RQIdManager
+    av_scan_paths,get_rq_job_meta, define_dependent_job, get_rq_lock_by_user, preload_images
 )
+from cvat.apps.engine.rq_job_handler import RQIdManager
 from cvat.utils.http import make_requests_session, PROXIES_FOR_UNTRUSTED_URLS
 from utils.dataset_manifest import ImageManifestManager, VideoManifestManager, is_manifest
 from utils.dataset_manifest.core import VideoManifestValidator, is_dataset_manifest
@@ -54,7 +54,7 @@ def create(
         q.enqueue_call(
             func=_create_thread,
             args=(db_task.pk, data),
-            job_id=RQIdManager.build_rq_id('create', 'task', db_task.pk),
+            job_id=RQIdManager.build('create', 'task', db_task.pk),
             meta=get_rq_job_meta(request=request, db_obj=db_task),
             depends_on=define_dependent_job(q, user_id),
             failure_ttl=settings.IMPORT_CACHE_FAILED_TTL.total_seconds(),

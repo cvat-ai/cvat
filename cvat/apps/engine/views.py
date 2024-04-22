@@ -77,8 +77,9 @@ from cvat.apps.engine.utils import (
     av_scan_paths, process_failed_job,
     parse_exception_message, get_rq_job_meta,
     import_resource_with_clean_up_after, sendfile, define_dependent_job, get_rq_lock_by_user,
-    build_annotations_file_name, RQIdManager
+    build_annotations_file_name
 )
+from cvat.apps.engine.rq_job_handler import RQIdManager
 from cvat.apps.engine import backup
 from cvat.apps.engine.mixins import PartialUpdateModelMixin, UploadMixin, AnnotationMixin, SerializeMixin
 from cvat.apps.engine.location import get_location_configuration, StorageType
@@ -265,8 +266,8 @@ class ProjectViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
     ordering = "-id"
     lookup_fields = {'owner': 'owner__username', 'assignee': 'assignee__username'}
     iam_organization_field = 'organization'
-    IMPORT_RQ_ID_TEMPLATE = RQIdManager.build_rq_id(
-        'import', 'project', {}, subresource='dataset', user_id={},
+    IMPORT_RQ_ID_TEMPLATE = RQIdManager.build(
+        'import', 'project', {}, subresource='dataset'
     )
 
     def get_serializer_class(self):
@@ -375,6 +376,7 @@ class ProjectViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
         else:
             action = request.query_params.get("action", "").lower()
             if action in ("import_status",):
+                # TODO
                 queue = django_rq.get_queue(settings.CVAT_QUEUES.IMPORT_DATA.value)
                 rq_id = request.query_params.get('rq_id')
                 if not rq_id:
@@ -809,8 +811,8 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
     ordering_fields = list(filter_fields)
     ordering = "-id"
     iam_organization_field = 'organization'
-    IMPORT_RQ_ID_TEMPLATE = RQIdManager.build_rq_id(
-        'import', 'task', {}, subresource='annotations', user_id={},
+    IMPORT_RQ_ID_TEMPLATE = RQIdManager.build(
+        'import', 'task', {}, subresource='annotations'
     )
 
     def get_serializer_class(self):
@@ -1424,14 +1426,14 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
         },
         deprecated=True,
         description="This method is deprecated and will be removed in version 2.14.0. "
-                    "To check status of a task creation, use new common API for managing background operations: /requests/id/status/",
+                    "To check status of a task creation, use new common API for managing background operations: GET /requests/<rq_id>/",
     )
     @action(detail=True, methods=['GET'], serializer_class=RqStatusSerializer)
     def status(self, request, pk):
         self.get_object() # force call of check_object_permissions()
         response = self._get_rq_response(
             queue=settings.CVAT_QUEUES.IMPORT_DATA.value,
-            job_id=f"create:task.id{pk}"
+            job_id=RQIdManager.build('create', 'task', pk)
         )
         serializer = RqStatusSerializer(data=response)
 
@@ -1629,8 +1631,8 @@ class JobViewSet(viewsets.GenericViewSet, mixins.ListModelMixin, mixins.CreateMo
         'project_name': 'segment__task__project__name',
         'assignee': 'assignee__username'
     }
-    IMPORT_RQ_ID_TEMPLATE = RQIdManager.build_rq_id(
-        'import', 'job', {}, subresource='annotations', user_id={},
+    IMPORT_RQ_ID_TEMPLATE = RQIdManager.build(
+        'import', 'job', {}, subresource='annotations'
     )
 
     def get_queryset(self):
@@ -2936,7 +2938,6 @@ def _import_annotations(request, rq_id_template, rq_func, db_obj, format_name,
 
         return Response(serializer.data, status=status.HTTP_202_ACCEPTED)
     else:
-        # TODO:
         if rq_job.is_finished:
             rq_job.delete()
             return Response(status=status.HTTP_201_CREATED)
@@ -3186,10 +3187,14 @@ def _import_project_dataset(request, rq_id_template, rq_func, db_obj, format_nam
 
     return Response(serializer.data, status=status.HTTP_202_ACCEPTED)
 
-@extend_schema(tags=['background-processes'])
+@extend_schema(tags=['requests'])
 @extend_schema_view(
     list=extend_schema(
         summary='List with RQ jobs',
+        parameters=[
+            OpenApiParameter(name='task_id', location=OpenApiParameter.QUERY, type=OpenApiTypes.INT),
+            OpenApiParameter(name='action', location=OpenApiParameter.QUERY, type=OpenApiTypes.STR, enum=['create']),
+        ],
         responses={
             '200': RQJobDetailsSerializer(many=True),
         }
@@ -3207,7 +3212,8 @@ def _import_project_dataset(request, rq_id_template, rq_func, db_obj, format_nam
         }
     ),
 )
-class BackgroundProcessViewSet(viewsets.GenericViewSet):
+class RequestViewSet(viewsets.GenericViewSet):
+    # TODO: support re-enqueue action
     SUPPORTED_QUEUES = (
         settings.CVAT_QUEUES.IMPORT_DATA.value,
         settings.CVAT_QUEUES.EXPORT_DATA.value,
@@ -3225,7 +3231,10 @@ class BackgroundProcessViewSet(viewsets.GenericViewSet):
         return (django_rq.get_queue(queue_name) for queue_name in self.SUPPORTED_QUEUES)
 
     @staticmethod
-    def _get_rq_jobs_from_queue(queue: RQQueue, user_id: int) -> List[RQJob]:
+    def _is_job_owner(job: RQJob, user_id: int) -> bool:
+        return job.meta.get("user", {}).get("id") == user_id
+
+    def _get_rq_jobs_from_queue(self, queue: RQQueue, user_id: int) -> List[RQJob]:
         job_ids = set(queue.get_job_ids() +
             queue.started_job_registry.get_job_ids() +
             queue.finished_job_registry.get_job_ids() +
@@ -3234,7 +3243,7 @@ class BackgroundProcessViewSet(viewsets.GenericViewSet):
         )
         all_user_jobs = sorted([
             job for job in queue.job_class.fetch_many(job_ids, queue.connection)
-            if job and job.meta.get("user", {}).get("id") == user_id
+            if job and self._is_job_owner(job, user_id) and RQIdManager.can_be_parsed(job.id)
         ], key=lambda job: job.created_at)
 
         return all_user_jobs
@@ -3275,12 +3284,6 @@ class BackgroundProcessViewSet(viewsets.GenericViewSet):
 
         return job
 
-    # TODO: move to OPA permissions
-    @staticmethod
-    def _check_permissions(rq_job: RQJob, user_id: str) -> None:
-        if rq_job.meta.get("user", {}).get("id") != user_id:
-            raise PermissionDenied('You don\'t have permission to perform this action')
-
     def _handle_redis_exceptions(func):
         @functools.wraps(func)
         def wrapper(*args, **kwarggs):
@@ -3294,18 +3297,12 @@ class BackgroundProcessViewSet(viewsets.GenericViewSet):
 
     @method_decorator(never_cache)
     def retrieve(self, request, pk: str):
-        # TODO: add support for retrieving rq job details based on task id, action
-        # TODO: add support for specifying that only status (or shorter version) should be returned
-        user_id = request.user.id
         job = self._get_rq_job_by_id(pk)
 
         if not job:
             return HttpResponseNotFound(f"There is no RQ job with specified rq_id: {pk}")
 
-        try:
-            self._check_permissions(job, user_id)
-        except PermissionDenied as ex:
-            return HttpResponse(str(ex), status=status.HTTP_403_FORBIDDEN)
+        self.check_object_permissions(request, job)
 
         serializer = self.get_serializer(job, context={'request': request})
         return Response(data=serializer.data, status=status.HTTP_200_OK)
@@ -3313,9 +3310,18 @@ class BackgroundProcessViewSet(viewsets.GenericViewSet):
     @method_decorator(never_cache)
     @_handle_redis_exceptions
     def list(self, request):
-        # TODO: support filtering
         user_id = request.user.id
-        filtered_jobs = self._get_rq_jobs(user_id)
+        task_id = request.query_params.get('task_id')
+        action = request.query_params.get('action')
+
+        if task_id and action:
+            assert action == 'create'
+            rq_id = RQIdManager.build(action, 'task', task_id)
+            rq_job = self._get_rq_job_by_id(rq_id)
+
+            filtered_jobs = [] if (not rq_job or rq_job and not self._is_job_owner(rq_job, user_id)) else [rq_job]
+        else:
+            filtered_jobs = self._get_rq_jobs(user_id)
 
         # TODO: uncomment when pagination will be supported on UI
         # page = self.paginate_queryset(filtered_jobs)
@@ -3337,40 +3343,32 @@ class BackgroundProcessViewSet(viewsets.GenericViewSet):
     @action(detail=True, methods=['POST'], url_path='cancel')
     @_handle_redis_exceptions
     def cancel(self, request, pk: str):
-        # TODO: add permission check
         rq_job = self._get_rq_job_by_id(pk)
 
         if not rq_job:
             return HttpResponseNotFound(f"There is no RQ job with specified rq_id: {pk!r}")
 
-        user_id = request.user.id
-        try:
-            self._check_permissions(rq_job, user_id)
-        except PermissionDenied as ex:
-            return HttpResponse(str(ex), status=status.HTTP_403_FORBIDDEN)
+        self.check_object_permissions(request, rq_job)
 
-        if not any([rq_job.is_deferred, rq_job.is_queued, rq_job.is_started]):
-            return HttpResponseBadRequest(f"Only queued or started RQ jobs can be cancelled")
+        if not rq_job.is_started:
+            return HttpResponseBadRequest(f"Only started RQ jobs can be cancelled")
 
-        rq_job.cancel()
+        rq_job.cancel(enqueue_dependents=settings.ONE_RUNNING_JOB_IN_QUEUE_PER_USER)
 
         return Response(status=status.HTTP_200_OK)
 
     @method_decorator(never_cache)
     @_handle_redis_exceptions
     def destroy(self, request, pk: str):
-        # TODO: add permission check
         rq_job = self._get_rq_job_by_id(pk)
 
         if not rq_job:
             return HttpResponseNotFound(f"There is no RQ job with specified rq_id: {pk!r}")
 
-        user_id = request.user.id
-        try:
-            self._check_permissions(rq_job, user_id)
-        except PermissionDenied as ex:
-            return HttpResponse(str(ex), status=status.HTTP_403_FORBIDDEN)
+        self.check_object_permissions(request, rq_job)
 
+        # this restriction was added because
+        # looks like dependent RQ jobs are not enqueued after calling job.delete()
         if not any([rq_job.is_canceled, rq_job.is_finished, rq_job.is_failed]):
             return HttpResponseBadRequest(f"Only canceled/finished/failed RQ jobs can be deleted")
 

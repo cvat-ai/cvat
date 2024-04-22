@@ -2296,7 +2296,7 @@ async function getRequestsList(): Promise<any> {
     const { backendAPI } = config;
 
     try {
-        const response = await Axios.get(`${backendAPI}/background-processes`);
+        const response = await Axios.get(`${backendAPI}/requests`);
 
         return response.data;
     } catch (errorData) {
@@ -2308,7 +2308,7 @@ async function getImportRequestStatus(rqID): Promise<any> {
     const { backendAPI } = config;
 
     try {
-        const response = await Axios.get(`${backendAPI}/background-processes/${rqID}`);
+        const response = await Axios.get(`${backendAPI}/requests/${rqID}`);
 
         return response.data;
     } catch (errorData) {

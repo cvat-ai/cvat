@@ -575,7 +575,7 @@ class LambdaPermission(OpenPolicyAgentPermission):
     @classmethod
     def create(cls, request, view, obj, iam_context):
         permissions = []
-        if view.basename == 'function' or view.basename == 'request':
+        if view.basename == 'function' or view.basename == 'lambda_requests':
             scopes = cls.get_scopes(request, view, obj)
             for scope in scopes:
                 self = cls.create_base_perm(request, view, scope, iam_context, obj)
@@ -2117,6 +2117,87 @@ class AnalyticsReportPermission(OpenPolicyAgentPermission):
             'list': Scopes.LIST,
             'create': Scopes.CREATE,
         }.get(view.action, None)]
+
+    def get_resource(self):
+        return None
+
+
+
+from rq.job import Job as RQJob
+from cvat.apps.engine.rq_job_handler import RQIdManager
+
+class RequestPermission(OpenPolicyAgentPermission):
+    class Scopes(StrEnum):
+        LIST = 'list'
+        VIEW = 'view'
+        DELETE = 'delete'
+        CANCEL = 'cancel'
+
+    @classmethod
+    def create(cls, request, view, obj: Optional[RQJob], iam_context: Dict):
+        permissions = []
+        if view.basename == 'requests':
+            for scope in cls.get_scopes(request, view, obj):
+                if scope in (cls.Scopes.DELETE, cls.Scopes.CANCEL):
+                    try:
+                        parsed_rq_id = RQIdManager.parse(obj.id)
+
+                        permission_class, resource_scope = {
+                            ('import', 'project', 'dataset'): (ProjectPermission, ProjectPermission.Scopes.IMPORT_DATASET),
+                            ('import', 'project', 'backup'): (ProjectPermission, ProjectPermission.Scopes.IMPORT_BACKUP),
+                            ('import', 'task', 'annotations'): (TaskPermission, TaskPermission.Scopes.IMPORT_ANNOTATIONS),
+                            ('import', 'task', 'backup'): (TaskPermission, TaskPermission.Scopes.IMPORT_BACKUP),
+                            ('import', 'job', 'annotations'): (JobPermission, JobPermission.Scopes.IMPORT_ANNOTATIONS),
+                            ('create', 'task', None): (TaskPermission, TaskPermission.Scopes.VIEW),
+                            ('export', 'project', 'annotations'): (ProjectPermission, ProjectPermission.Scopes.EXPORT_ANNOTATIONS),
+                            ('export', 'project', 'dataset'): (ProjectPermission, ProjectPermission.Scopes.EXPORT_DATASET),
+                            ('export', 'project', 'backup'): (ProjectPermission, ProjectPermission.Scopes.EXPORT_BACKUP),
+                            ('export', 'task', 'annotations'): (TaskPermission, TaskPermission.Scopes.EXPORT_ANNOTATIONS),
+                            ('export', 'task', 'dataset'): (TaskPermission, TaskPermission.Scopes.EXPORT_DATASET),
+                            ('export', 'task', 'backup'): (TaskPermission, TaskPermission.Scopes.EXPORT_BACKUP),
+                            ('export', 'job', 'annotations'): (JobPermission, JobPermission.Scopes.EXPORT_ANNOTATIONS),
+                            ('export', 'job', 'dataset'): (JobPermission, JobPermission.Scopes.EXPORT_DATASET),
+                        }[(parsed_rq_id.action, parsed_rq_id.resource, parsed_rq_id.subresource)]
+
+                    except ValueError as ex:
+                        raise ValidationError(str(ex)) from ex
+
+                    resource = None
+                    if (resource_id := parsed_rq_id.identifier):
+                        resource_model = {
+                            'project': Project,
+                            'task': Task,
+                            'job': Job,
+                        }[parsed_rq_id.resource]
+
+                        try:
+                            resource = resource_model.objects.get(id=resource_id)
+                        except resource_model.DoesNotExist as ex:
+                            raise ValidationError(str(ex)) from ex
+
+                    permissions.append(permission_class.create_base_perm(request, view, scope=resource_scope, iam_context=iam_context, obj=resource))
+
+                if scope != cls.Scopes.LIST:
+                    user_id = request.user.id
+                    if not view._is_job_owner(obj, user_id):
+                        raise PermissionDenied('You don\'t have permission to perform this action')
+
+        return permissions
+
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        self.url = settings.IAM_OPA_DATA_URL + '/requests/allow'
+
+    @staticmethod
+    def get_scopes(request, view, obj) -> List[Scopes]:
+        Scopes = __class__.Scopes
+        return [{
+            ('list', 'GET'): Scopes.LIST,
+            ('retrieve', 'GET'): Scopes.VIEW,
+            ('destroy', 'DELETE'): Scopes.DELETE,
+            ('cancel', 'POST'): Scopes.CANCEL,
+        }.get((view.action, request.method))]
+
 
     def get_resource(self):
         return None

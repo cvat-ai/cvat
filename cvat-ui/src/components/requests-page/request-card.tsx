@@ -258,7 +258,7 @@ export default function RequestCard(props: Props): JSX.Element {
                                                 <Menu.Item
                                                     key='delete'
                                                     onClick={() => {
-                                                        core.server.request(`/api/background-processes/${request.id}`, {
+                                                        core.server.request(`/api/requests/${request.id}`, {
                                                             method: 'DELETE',
                                                         }).then(() => {
                                                             setIsActive(false);
@@ -272,24 +272,28 @@ export default function RequestCard(props: Props): JSX.Element {
                                                 >
                                                         Delete
                                                 </Menu.Item>
-                                                <Menu.Item
-                                                    key='cancel'
-                                                    onClick={() => {
-                                                        core.server.request(
-                                                            `/api/background-processes/${request.id}/cancel`, {
-                                                                method: 'POST',
-                                                            }).then(() => {
-                                                            setIsActive(false);
-                                                        }).catch((error: Error) => {
-                                                            notification.error({
-                                                                message: 'Failed to cancel RQ job',
-                                                                description: error.toString(),
-                                                            });
-                                                        });
-                                                    }}
-                                                >
-                                                        Cancel
-                                                </Menu.Item>
+                                                {
+                                                    request.status === RQStatus.STARTED ? (
+                                                        <Menu.Item
+                                                            key='cancel'
+                                                            onClick={() => {
+                                                                core.server.request(
+                                                                    `/api/requests/${request.id}/cancel`, {
+                                                                        method: 'POST',
+                                                                    }).then(() => {
+                                                                    setIsActive(false);
+                                                                }).catch((error: Error) => {
+                                                                    notification.error({
+                                                                        message: 'Failed to cancel RQ job',
+                                                                        description: error.toString(),
+                                                                    });
+                                                                });
+                                                            }}
+                                                        >
+                                                                Cancel
+                                                        </Menu.Item>
+                                                    ) : null
+                                                }
                                             </Menu>
                                         )}
                                     >
