@@ -6,11 +6,11 @@ import './styles.scss';
 import { useDispatch, useSelector } from 'react-redux';
 import React, { useEffect } from 'react';
 import { CombinedState, Indexable } from 'reducers';
-import { getRequestsAsync } from 'actions/requests-actions';
 import { useHistory } from 'react-router';
 
 import Spin from 'antd/lib/spin';
 
+import { getRequestsAsync } from 'actions/requests-actions';
 import { updateHistoryFromQuery } from 'components/resource-sorting-filtering';
 import EmptyListComponent from './empty-list';
 import RequestsList, { PAGE_SIZE } from './requests-list';

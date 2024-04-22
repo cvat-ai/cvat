@@ -3,19 +3,19 @@
 // SPDX-License-Identifier: MIT
 
 import React, { useState } from 'react';
+import { Link } from 'react-router-dom';
+
 import { Row, Col } from 'antd/lib/grid';
-
-import { RQStatus, Request, getCore } from 'cvat-core-wrapper';
-
 import Card from 'antd/lib/card';
 import Text from 'antd/lib/typography/Text';
 import Progress from 'antd/lib/progress';
 import { LoadingOutlined, MoreOutlined } from '@ant-design/icons';
-import { Link } from 'react-router-dom';
 import Dropdown from 'antd/lib/dropdown';
 import Button from 'antd/lib/button';
 import Menu from 'antd/lib/menu';
 import notification from 'antd/lib/notification';
+
+import { RQStatus, Request, getCore } from 'cvat-core-wrapper';
 
 import moment from 'moment';
 

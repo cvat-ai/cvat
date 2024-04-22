@@ -511,7 +511,7 @@ function HeaderComponent(props: Props): JSX.Element {
                     className={getButtonClassName('requests')}
                     type='link'
                     value='requests'
-                    href='/requests'
+                    href='/requests?page=1'
                     onClick={(event: React.MouseEvent): void => {
                         event.preventDefault();
                         history.push('/requests');
