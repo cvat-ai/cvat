@@ -1,0 +1,459 @@
+// Copyright (C) 2020-2022 Intel Corporation
+// Copyright (C) 2022-2023 CVAT.ai Corporation
+//
+// SPDX-License-Identifier: MIT
+
+.cvat_canvas_hidden {
+    display: none;
+}
+
+.cvat_canvas_shape {
+    stroke-opacity: 1;
+}
+
+g.cvat_canvas_shape {
+    > circle {
+        fill-opacity: 1;
+    }
+}
+
+polyline.cvat_canvas_shape {
+    fill-opacity: 0;
+}
+
+.cvat_shape_action_opacity {
+    fill-opacity: 0.5;
+    stroke-opacity: 1;
+}
+
+polyline.cvat_shape_action_opacity {
+    fill-opacity: 0;
+}
+
+.cvat_shape_drawing_opacity {
+    stroke-opacity: 1;
+}
+
+polyline.cvat_shape_drawing_opacity {
+    fill-opacity: 0;
+}
+
+.cvat_shape_action_dasharray {
+    stroke-dasharray: 4 1 2 3;
+}
+
+.cvat_canvas_text {
+    font-weight: bold;
+    fill: white;
+    cursor: default;
+    font-family: Calibri, Candara, Segoe, 'Segoe UI', Optima, Arial, sans-serif;
+    text-shadow: 0 0 4px black;
+    user-select: none;
+    pointer-events: none;
+}
+
+.cvat_canvas_text_description {
+    fill: yellow;
+    font-style: oblique 40deg;
+}
+
+.cvat_canvas_crosshair {
+    stroke: red;
+}
+
+.cvat_canvas_threshold {
+    stroke: red;
+}
+
+.cvat_canvas_shape_grouping {
+    @extend .cvat_shape_action_dasharray;
+    @extend .cvat_shape_action_opacity;
+
+    fill: darkmagenta;
+}
+
+image.cvat_canvas_shape_grouping {
+    visibility: hidden;
+}
+
+.cvat_canvas_shape_region_selection {
+    @extend .cvat_shape_action_dasharray;
+    @extend .cvat_shape_action_opacity;
+
+    fill: white;
+    stroke: white;
+}
+
+.cvat_canvas_issue_region {
+    stroke-width: 0;
+}
+
+circle.cvat_canvas_issue_region {
+    opacity: 1 !important;
+}
+
+polyline.cvat_canvas_shape_grouping {
+    @extend .cvat_shape_action_dasharray;
+    @extend .cvat_shape_action_opacity;
+
+    stroke: darkmagenta;
+}
+
+.cvat_canvas_shape_merging {
+    @extend .cvat_shape_action_dasharray;
+    @extend .cvat_shape_action_opacity;
+
+    fill: blue;
+
+    > circle[data-node-id] {
+        fill: blue;
+    }
+}
+
+polyline.cvat_canvas_shape_merging {
+    @extend .cvat_shape_action_dasharray;
+    @extend .cvat_shape_action_opacity;
+
+    stroke: blue;
+}
+
+polyline.cvat_canvas_shape_splitting {
+    @extend .cvat_shape_action_dasharray;
+    @extend .cvat_shape_action_opacity;
+
+    stroke: dodgerblue;
+}
+
+.cvat_canvas_shape_splitting {
+    @extend .cvat_shape_action_dasharray;
+    @extend .cvat_shape_action_opacity;
+
+    fill: dodgerblue;
+}
+
+.cvat_canvas_shape_drawing {
+    @extend .cvat_shape_drawing_opacity;
+
+    fill: white;
+}
+
+.cvat_canvas_zoom_selection {
+    @extend .cvat_shape_action_dasharray;
+
+    stroke: #096dd9;
+    fill-opacity: 0;
+}
+
+.cvat_canvas_shape_occluded {
+    stroke-dasharray: 5;
+}
+
+.cvat_canvas_ground_truth {
+    stroke-dasharray: 1;
+}
+
+.cvat_canvas_conflicted {
+    stroke: #ff4800;
+    fill: #ff4800;
+
+    rect,
+    ellipse,
+    polygon,
+    polyline,
+    line {
+        fill: #ff4800;
+        stroke: #ff4800;
+    }
+
+    circle {
+        fill: #ff4800;
+    }
+}
+
+.cvat_canvas_warned {
+    stroke: #ff7301;
+    fill: #ff7301;
+
+    rect,
+    ellipse,
+    polygon,
+    polyline,
+    line {
+        fill: #ff7301;
+        stroke: #ff7301;
+    }
+
+    circle {
+        fill: #ff7301;
+    }
+}
+
+.cvat_canvas_shape_occluded_point {
+    stroke-dasharray: 1 !important;
+    stroke: white;
+}
+
+circle.cvat_canvas_shape_occluded {
+    @extend .cvat_canvas_shape_occluded_point;
+}
+
+g.cvat_canvas_shape_occluded {
+    > rect {
+        stroke-dasharray: 5;
+    }
+
+    > circle {
+        @extend .cvat_canvas_shape_occluded_point;
+    }
+}
+
+.svg_select_points_rot {
+    fill: white;
+}
+
+.cvat_canvas_shape .svg_select_points,
+.cvat_canvas_shape .cvat_canvas_cuboid_projections {
+    stroke-dasharray: none;
+}
+
+.cvat_canvas_autoborder_point {
+    opacity: 0.55;
+}
+
+.cvat_canvas_autoborder_point:hover {
+    opacity: 1;
+    fill: red;
+}
+
+.cvat_canvas_autoborder_point:active {
+    opacity: 0.55;
+    fill: red;
+}
+
+.cvat_canvas_autoborder_point_direction {
+    fill: blueviolet;
+}
+
+.cvat_canvas_interact_intermediate_shape {
+    @extend .cvat_canvas_shape;
+}
+
+.cvat_canvas_removable_interaction_point {
+    cursor:
+        url(
+            'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAiIGhlaWdodD0iMjAiIHZpZXdCb3g9IjAgMCAxMCAxMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHBhdGggZD0iTTEgMUw5IDlNMSA5TDkgMSIgc3Ryb2tlPSJibGFjayIvPgo8L3N2Zz4K'
+        ) 10 10,
+        auto;
+}
+
+.cvat_canvas_interact_intermediate_shape_point {
+    pointer-events: none;
+}
+
+.svg_select_boundingRect {
+    opacity: 0;
+    pointer-events: none;
+}
+
+.svg_select_points_lb:hover,
+.svg_select_points_rt:hover {
+    cursor: nesw-resize;
+}
+
+.svg_select_points_lt:hover,
+.svg_select_points_rb:hover {
+    cursor: nwse-resize;
+}
+
+.svg_select_points_l:hover,
+.svg_select_points_r:hover,
+.svg_select_points_ew:hover {
+    cursor: ew-resize;
+}
+
+.svg_select_points_t:hover,
+.svg_select_points_b:hover {
+    cursor: ns-resize;
+}
+
+.cvat_canvas_shape_draggable:hover {
+    cursor: move;
+}
+
+.cvat_canvas_first_poly_point {
+    fill: lightgray;
+}
+
+.cvat_canvas_poly_direction {
+    fill: lightgray;
+    stroke: black;
+
+    &:hover {
+        fill: black;
+        stroke: lightgray;
+    }
+
+    &:active {
+        fill: lightgray;
+        stroke: black;
+    }
+}
+
+.cvat_canvas_skeleton_wrapping_rect {
+    // wrapping rect must not apply transform attribute from selectize.js
+    // otherwise it rotated twice, because we apply the same rotation value to parent element (skeleton itself)
+    transform: none !important;
+}
+
+.cvat_canvas_shape > .cvat_canvas_skeleton_wrapping_rect {
+    visibility: hidden;
+}
+
+.cvat_canvas_shape.cvat_canvas_shape_activated > .cvat_canvas_skeleton_wrapping_rect {
+    visibility: initial;
+}
+
+.cvat_canvas_pixelized {
+    image-rendering: optimizeSpeed;             /* Legal fallback */
+    image-rendering: -moz-crisp-edges;          /* Firefox        */
+    image-rendering: -o-crisp-edges;            /* Opera          */
+    image-rendering: -webkit-optimize-contrast; /* Safari         */
+    image-rendering: optimize-contrast;         /* CSS3 Proposed  */
+    image-rendering: crisp-edges;               /* CSS4 Proposed  */
+    image-rendering: pixelated;                 /* CSS4 Proposed  */
+    -ms-interpolation-mode: nearest-neighbor;   /* IE8+           */
+}
+
+.cvat_canvas_removed_image {
+    filter: saturate(0) brightness(1.2) contrast(0.75) !important;
+}
+
+#cvat_canvas_wrapper {
+    width: calc(100% - 10px);
+    height: calc(100% - 10px);
+    margin: 5px;
+    border-radius: 5px;
+    background-color: inherit;
+    overflow: hidden;
+    position: relative;
+}
+
+.cvat-canvas-highlight-enabled {
+    svg {
+        >rect:not(.cvat_canvas_issue_region,.cvat_canvas_conflicted,.cvat_canvas_warned),
+        >ellipse:not(.cvat_canvas_issue_region,.cvat_canvas_conflicted,.cvat_canvas_warned),
+        >polygon:not(.cvat_canvas_issue_region,.cvat_canvas_conflicted,.cvat_canvas_warned),
+        >polyline:not(.cvat_canvas_issue_region,.cvat_canvas_conflicted,.cvat_canvas_warned),
+        >line:not(.cvat_canvas_issue_region,.cvat_canvas_conflicted,.cvat_canvas_warned) {
+            fill: gray;
+            stroke: gray;
+        }
+
+        >circle:not(.cvat_canvas_issue_region,.cvat_canvas_conflicted,.cvat_canvas_warned) {
+            fill: gray;
+        }
+
+        >g:not(.cvat_canvas_issue_region,.cvat_canvas_conflicted,.cvat_canvas_warned) {
+            rect,
+            ellipse,
+            polygon,
+            polyline,
+            line {
+                fill: gray;
+                stroke: gray;
+            }
+
+            circle {
+                fill: gray;
+            }
+        }
+    }
+}
+
+#cvat_canvas_text_content {
+    text-rendering: optimizeSpeed;
+    position: absolute;
+    z-index: 3;
+    pointer-events: none;
+    width: 100%;
+    height: 100%;
+}
+
+#cvat_canvas_background {
+    position: absolute;
+    z-index: 0;
+    background-repeat: no-repeat;
+    width: 100%;
+    height: 100%;
+    box-shadow: 2px 2px 5px 0 rgba(0, 0, 0, 0.75);
+}
+
+#cvat_canvas_bitmap {
+    @extend .cvat_canvas_pixelized;
+
+    pointer-events: none;
+    position: absolute;
+    z-index: 4;
+    background: black;
+    width: 100%;
+    height: 100%;
+    box-shadow: 2px 2px 5px 0 rgba(0, 0, 0, 0.75);
+}
+
+#cvat_canvas_grid {
+    position: absolute;
+    z-index: 2;
+    pointer-events: none;
+    width: 100%;
+    height: 100%;
+}
+
+#cvat_canvas_grid_pattern {
+    opacity: 1;
+    stroke: white;
+}
+
+#cvat_canvas_content {
+    filter: contrast(120%) saturate(150%);
+    position: absolute;
+    z-index: 2;
+    outline: 10px solid black;
+    width: 100%;
+    height: 100%;
+}
+
+.cvat_masks_canvas_wrapper {
+    z-index: 3;
+    display: none;
+}
+
+#cvat_canvas_attachment_board {
+    position: absolute;
+    z-index: 4;
+    pointer-events: none;
+    width: 100%;
+    height: 100%;
+    user-select: none;
+}
+
+@keyframes loadingAnimation {
+    0% {
+        stroke-dashoffset: 1;
+        stroke: #09c;
+    }
+
+    50% {
+        stroke-dashoffset: 100;
+        stroke: #f44;
+    }
+
+    100% {
+        stroke-dashoffset: 300;
+        stroke: #09c;
+    }
+}
+
+.cvat_canvas_shape_darken {
+    fill: #838383;
+    stroke: #838383;
+}

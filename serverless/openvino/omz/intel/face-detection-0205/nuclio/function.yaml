@@ -1,0 +1,52 @@
+metadata:
+  name: openvino-omz-intel-face-detection-0205
+  namespace: cvat
+  annotations:
+    name: Attributed face detection
+    type: detector
+    framework: openvino
+    spec: |
+      [
+        { "id": 0, "name": "face", "attributes": [
+          {
+            "name": "age",
+            "input_type": "number",
+            "values": ["0", "150", "1"]
+          },
+          {
+            "name": "gender",
+            "input_type": "select",
+            "values": ["female", "male"]
+          },
+          {
+            "name": "emotion",
+            "input_type": "select",
+            "values": ["neutral", "happy", "sad", "surprise", "anger"]
+          }]
+        }
+      ]
+
+spec:
+  description: Detection network finding faces and defining age, gender and emotion attributes
+  runtime: 'python:3.8'
+  handler: main:handler
+  eventTimeout: 30000s
+
+  build:
+    image: cvat.openvino.omz.intel.face-detection-0205
+    baseImage: cvat.openvino.omz.intel.face-detection-0205.base
+
+  triggers:
+    myHttpTrigger:
+      maxWorkers: 2
+      kind: 'http'
+      workerAvailabilityTimeoutMilliseconds: 10000
+      attributes:
+        maxRequestBodySize: 33554432 # 32MB
+
+  platform:
+    attributes:
+      restartPolicy:
+        name: always
+        maximumRetryCount: 3
+      mountMode: volume

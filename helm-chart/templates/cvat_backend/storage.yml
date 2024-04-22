@@ -1,0 +1,24 @@
+{{- if .Values.cvat.backend.defaultStorage.enabled }}
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: {{ .Release.Name }}-backend-data
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "cvat.labels" . | nindent 4 }}
+    app: cvat-app
+    tier: backend
+spec:
+  accessModes:
+    {{- if .Values.cvat.backend.defaultStorage.accessModes }}
+    {{ .Values.cvat.backend.defaultStorage.accessModes | toYaml | nindent 4 }}
+    {{- else }}
+    - ReadWriteMany
+    {{- end }}
+  {{-  if .Values.cvat.backend.defaultStorage.storageClassName }}
+  storageClassName: {{ .Values.cvat.backend.defaultStorage.storageClassName }}
+  {{- end }}
+  resources:
+    requests:
+      storage: {{ .Values.cvat.backend.defaultStorage.size }}
+{{- end }}

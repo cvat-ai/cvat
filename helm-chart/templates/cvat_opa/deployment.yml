@@ -1,0 +1,75 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Release.Name }}-opa
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "cvat.labels" . | nindent 4 }}
+    app: cvat-app
+    tier: opa
+spec:
+  replicas: {{ .Values.cvat.opa.replicas }}
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      {{- include "cvat.labels" . | nindent 6 }}
+      app: cvat-app
+      tier: opa
+  template:
+    metadata:
+      labels:
+        {{- include "cvat.labels" . | nindent 8 }}
+        app: cvat-app
+        tier: opa
+        {{- with .Values.cvat.opa.labels }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+        {{- with .Values.cvat.opa.annotations }}
+      annotations:
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+    spec:
+      containers:
+        - name: cvat-opa-app-container
+          image: {{ .Values.cvat.opa.image }}:{{ .Values.cvat.opa.tag }}
+          imagePullPolicy: {{ .Values.cvat.opa.imagePullPolicy }}
+          args:
+            - run
+            - --server
+            - --set=decision_logs.console=true
+            - --set=services.cvat.url=http://{{ .Release.Name }}-backend-service:8080
+            - --set=bundles.cvat.service=cvat
+            - --set=bundles.cvat.resource=/api/auth/rules
+            - --set=bundles.cvat.polling.min_delay_seconds=10
+            - --set=bundles.cvat.polling.max_delay_seconds=15
+          {{- with .Values.cvat.opa.resources }}
+          resources:
+          {{- toYaml . | nindent 12 }}
+          {{- end }}
+          ports:
+          - containerPort: 8181
+          {{- with .Values.cvat.opa.additionalEnv }}
+          env:
+          {{- toYaml . | nindent 10 }}
+          {{- end }}
+          {{- with .Values.cvat.opa.additionalVolumeMounts }}
+          volumeMounts:
+          {{- toYaml . | nindent 10 }}
+          {{- end }}
+      {{- with .Values.cvat.opa.additionalVolumes }}
+      volumes:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.cvat.opa.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.cvat.opa.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}

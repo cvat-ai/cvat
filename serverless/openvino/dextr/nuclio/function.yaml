@@ -1,0 +1,37 @@
+metadata:
+  name: openvino-dextr
+  namespace: cvat
+  annotations:
+    name: DEXTR
+    version: 2
+    type: interactor
+    spec:
+    framework: openvino
+    min_pos_points: 4
+    animated_gif: https://raw.githubusercontent.com/opencv/cvat/0fbb19ae3846a017853d52e187f0ce149adced7d/site/content/en/images/dextr_example.gif
+    help_message: The interactor allows to get a mask of an object using its extreme points (more or equal than 4). You can add a point left-clicking the image
+
+spec:
+  description: Deep Extreme Cut
+  runtime: 'python:3.8'
+  handler: main:handler
+  eventTimeout: 30s
+
+  build:
+    image: cvat.openvino.dextr
+    baseImage: cvat.openvino.dextr.base
+
+  triggers:
+    myHttpTrigger:
+      maxWorkers: 2
+      kind: 'http'
+      workerAvailabilityTimeoutMilliseconds: 10000
+      attributes:
+        maxRequestBodySize: 33554432 # 32MB
+
+  platform:
+    attributes:
+      restartPolicy:
+        name: always
+        maximumRetryCount: 3
+      mountMode: volume

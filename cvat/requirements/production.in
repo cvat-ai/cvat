@@ -1,0 +1,7 @@
+-r base.in
+
+# To collect the coverage for REST API tests.
+# It will be enabled only if COVERAGE_PROCESS_START env is defined.
+coverage==7.2.3
+
+uvicorn[standard]==0.22.0

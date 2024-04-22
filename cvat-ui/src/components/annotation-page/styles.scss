@@ -1,0 +1,497 @@
+// Copyright (C) 2020-2022 Intel Corporation
+// Copyright (C) 2023 CVAT.ai Corporation
+//
+// SPDX-License-Identifier: MIT
+
+@import '../../base';
+
+.cvat-annotation-page.ant-layout {
+    height: 100%;
+    overflow: hidden;
+}
+
+.cvat-annotation-layout-content {
+    height: 100%;
+    overflow-y: clip;
+}
+
+.ant-layout-header.cvat-annotation-header {
+    background-color: $background-color-2;
+    border-bottom: 1px solid $border-color-1;
+    height: 48px;
+    padding: 0;
+
+    > div:first-child {
+        display: flex;
+        flex: 1;
+        flex-flow: unset;
+    }
+}
+
+.cvat-annotation-header-left-group {
+    display: flex;
+
+    > button:first-child {
+        filter: invert(0.9);
+        background: $background-color-1;
+        border-radius: 0;
+        width: 70px;
+    }
+}
+
+.ant-btn.cvat-annotation-header-button {
+    padding: 0;
+    width: 48px;
+    height: 48px;
+    user-select: none;
+    color: $text-color;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    margin: 0 3px;
+
+    > span:not([role='img']) {
+        margin-left: 0;
+        font-size: 10px;
+    }
+
+    > span[role='img'] {
+        font-size: 20px;
+    }
+
+    &:hover > span[role='img'] {
+        transform: scale(1.1);
+    }
+
+    &:active > span[role='img'] {
+        transform: scale(1.05);
+    }
+
+    &.filters-armed {
+        color: $info-icon-color;
+
+        path {
+            fill: $info-icon-color;
+        }
+    }
+}
+
+.cvat-annotation-disabled-header-button {
+    @extend .cvat-annotation-header-button;
+
+    opacity: 0.5;
+    pointer-events: none;
+}
+
+.cvat-button-active.ant-btn {
+    color: $border-color-hover;
+}
+
+.cvat-annotation-header-player-group > div {
+    height: 48px;
+    line-height: 0;
+    flex-wrap: nowrap;
+}
+
+.cvat-player-buttons {
+    display: flex;
+    align-items: center;
+    position: relative;
+    height: 100%;
+    margin-right: 10px;
+
+    > span {
+        font-size: 20px;
+        margin: 0 4px;
+        color: $player-buttons-color;
+
+        &:hover {
+            transform: scale(1.1);
+        }
+
+        &:active {
+            transform: scale(1);
+        }
+    }
+}
+
+.cvat-player-controls {
+    height: 100%;
+    line-height: 27px;
+    padding-top: 16px;
+
+    > div {
+        height: 25%;
+    }
+}
+
+.cvat-player-slider.ant-slider {
+    width: 350px;
+    margin: 0;
+    margin-top: $grid-unit-size * -0.5;
+
+    > .ant-slider-handle {
+        z-index: 100;
+        margin-top: -3.5px;
+    }
+
+    > .ant-slider-track {
+        background: none;
+    }
+
+    > .ant-slider-rail {
+        height: $grid-unit-size;
+        background-color: $player-slider-color;
+    }
+}
+
+.cvat-player-slider-progress {
+    width: 350px;
+    height: $grid-unit-size;
+    position: absolute;
+    top: 0;
+    pointer-events: none;
+
+    > rect {
+        transition: width 0.5s;
+        fill: #1890ff;
+    }
+}
+
+.cvat-player-filename-wrapper {
+    max-width: $grid-unit-size * 30;
+    max-height: $grid-unit-size * 3;
+    line-height: $grid-unit-size * 3;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    user-select: none;
+    word-break: break-all;
+}
+
+.cvat-player-frame-url-icon,
+.cvat-player-delete-frame,
+.cvat-player-restore-frame {
+    opacity: 0.7;
+    color: $objects-bar-icons-color;
+
+    &:hover {
+        opacity: 1;
+    }
+
+    &:active {
+        opacity: 0.7;
+    }
+}
+
+.cvat-player-delete-frame,
+.cvat-player-restore-frame {
+    margin-left: $grid-unit-size * 2;
+}
+
+.cvat-player-frame-selector {
+    width: 5em;
+    padding-right: 5px;
+    margin-left: 5px;
+}
+
+.cvat-annotation-header-right-group {
+    display: flex;
+    justify-content: flex-end;
+
+    > div {
+        display: flex;
+        height: 48px;
+        align-items: center;
+        justify-content: center;
+        padding-right: 8px;
+    }
+}
+
+.cvat-workspace-selector {
+    width: 150px;
+}
+
+.cvat-job-info-modal-window {
+    > div {
+        margin-top: 10px;
+    }
+
+    > div:nth-child(1) {
+        > div {
+            > span {
+                font-size: 20px;
+            }
+        }
+    }
+
+    > div:nth-child(2) {
+        > div {
+            display: grid;
+        }
+    }
+
+    > .cvat-job-info-bug-tracker {
+        > div {
+            display: grid;
+        }
+    }
+
+    > .cvat-job-info-statistics {
+        > div {
+            > span {
+                font-size: 20px;
+            }
+
+            .ant-table-thead {
+                > tr > th {
+                    padding: $grid-unit-size 0 $grid-unit-size $grid-unit-size * 0.5;
+                }
+            }
+        }
+    }
+}
+
+.ant-menu.cvat-annotation-menu {
+    box-shadow: $box-shadow-base;
+
+    > li:hover {
+        background-color: $hover-menu-color;
+    }
+
+    .ant-menu-submenu-title {
+        margin: 0;
+        width: 15em;
+    }
+}
+
+// TODO: Move canvas from standard workspace and create its own .scss
+.cvat-canvas-context-menu {
+    opacity: 0.6;
+    position: fixed;
+    width: 300px;
+    z-index: 10;
+    max-height: 50%;
+    overflow-y: auto;
+
+    &:hover {
+        opacity: 1;
+    }
+}
+
+.cvat-canvas-point-context-menu {
+    display: grid;
+    opacity: 0.6;
+    position: fixed;
+    z-index: 10;
+    background-color: #fff;
+    border-radius: 4px;
+
+    &:hover {
+        opacity: 1;
+    }
+}
+
+.cvat-canvas-image-setups-trigger {
+    position: absolute;
+    background: $background-color-2;
+    bottom: 0;
+    left: 50%;
+    opacity: 0.5;
+    border-radius: 6px 6px 0 0;
+    border: 1px solid $border-color-1;
+    z-index: 100;
+    padding: 4px 12px;
+
+    &:hover {
+        opacity: 1;
+    }
+
+    &:active {
+        opacity: 0.75;
+    }
+}
+
+.cvat-canvas-image-setups-content {
+    background: $background-color-2;
+    padding: 8px;
+    border-radius: 6px;
+    opacity: 0.9;
+}
+
+.cvat-image-setups-grid {
+    margin-bottom: 25px;
+
+    > div:first-child {
+        margin-bottom: 10px;
+    }
+}
+
+.cvat-image-setups-grid-size,
+.cvat-image-setups-grid-color,
+.cvat-image-setups-opacity {
+    margin-bottom: 25px;
+}
+
+.cvat-image-setups-grid-size,
+.cvat-image-setups-grid-color,
+.cvat-image-setups-grid-opacity {
+    display: flex;
+    justify-items: start;
+}
+
+.cvat-image-setups-grid-size-input {
+    height: fit-content;
+}
+
+.cvat-image-setups-grid-color {
+    > .ant-select {
+        width: 150px;
+    }
+}
+
+.cvat-image-setups-grid-opacity {
+    > .ant-slider {
+        width: 150px;
+    }
+}
+
+.cvat-image-setups-reset-color-settings,
+.cvat-image-setups-brightness,
+.cvat-image-setups-contrast,
+.cvat-image-setups-saturation {
+    width: 100%;
+}
+
+.cvat-canvas-z-axis-wrapper {
+    position: absolute;
+    background: $background-color-2;
+    bottom: 10px;
+    right: 10px;
+    height: 150px;
+    z-index: 100;
+    border-radius: 6px;
+    opacity: 0.5;
+    border: 1px solid $border-color-1;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    padding: 3px;
+
+    &:hover {
+        opacity: 1;
+    }
+
+    > .ant-slider {
+        height: 75%;
+        margin: 5px 3px;
+
+        > .ant-slider-rail {
+            background-color: #979797;
+        }
+
+        > .ant-slider-handle {
+            transform: none !important;
+        }
+    }
+
+    > span[role='img'] {
+        opacity: 0.7;
+        color: $objects-bar-icons-color;
+
+        &:hover {
+            opacity: 1;
+        }
+
+        &:active {
+            opacity: 0.7;
+        }
+    }
+}
+
+.cvat-annotations-filters-input.ant-select {
+    > .ant-select-selector {
+        height: 32px;
+        overflow: auto;
+    }
+
+    > .ant-select-clear {
+        right: 20px;
+    }
+}
+
+.cvat-player-previous-inlined-button,
+.cvat-player-next-inlined-button,
+.cvat-player-previous-filtered-inlined-button,
+.cvat-player-next-filtered-inlined-button,
+.cvat-player-previous-empty-inlined-button,
+.cvat-player-next-empty-inlined-button {
+    color: $player-buttons-color;
+
+    &:not(:first-child) {
+        margin-left: 12px;
+    }
+
+    > svg {
+        transform: scale(1.8);
+    }
+}
+
+.cvat-submit-review-dialog {
+    .ant-modal-body {
+        > div.ant-row:nth-child(2) {
+            > .ant-col {
+                width: 100%;
+
+                > div:nth-child(2) {
+                    margin-top: $grid-unit-size * 2;
+                    margin-bottom: $grid-unit-size * 2;
+                }
+            }
+        }
+    }
+}
+
+.cvat-filters-modal {
+    .ant-modal-body {
+        padding: 1px;
+
+        .recently-used-wrapper {
+            padding-top: $grid-unit-size * 2;
+        }
+
+        .ant-typography {
+            display: block;
+            padding: $grid-unit-size * 2 $grid-unit-size * 3 $grid-unit-size  $grid-unit-size * 2;
+        }
+    }
+}
+
+.cvat-submenu-current-job-state-item {
+    &::after {
+        content: ' \2713';
+        float: right;
+    }
+
+    font-weight: bold;
+}
+
+.cvat-notification-continue-job-button {
+    padding: 0;
+
+    > span {
+        &::before {
+            content: '\00a0';
+        }
+
+        &::after {
+            content: '\00a0';
+        }
+    }
+}
+
+.cvat-saving-job-modal {
+    span.anticon {
+        margin-left: $grid-unit-size * 2;
+    }
+}

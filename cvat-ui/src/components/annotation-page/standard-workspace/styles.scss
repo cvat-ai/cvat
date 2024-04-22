@@ -1,0 +1,317 @@
+// Copyright (C) 2020-2022 Intel Corporation
+// Copyright (C) 2022-2023 CVAT.ai Corporation
+//
+// SPDX-License-Identifier: MIT
+
+@import 'base.scss';
+
+.cvat-standard-workspace.ant-layout {
+    height: 100%;
+
+    > .ant-layout-content {
+        overflow-y: hidden;
+        overflow-x: hidden;
+    }
+}
+
+.cvat-objects-sidebar-sider {
+    top: 0;
+    right: 0;
+    left: auto;
+    background-color: $background-color-2;
+    border-left: 1px solid $border-color-1;
+    border-bottom: 1px solid $border-color-1;
+    border-radius: 4px 0 0 4px;
+    z-index: 2;
+}
+
+.cvat-objects-sidebar {
+    height: 100%;
+    overflow-y: auto;
+    overflow-x: hidden;
+
+    > .ant-layout-sider-children {
+        display: flex;
+        flex-direction: column;
+
+        > .cvat-objects-sidebar-tabs {
+            flex-grow: 10;
+
+            > div {
+                display: flex;
+
+                div[role='tabpanel'] {
+                    height: 100%;
+                }
+            }
+        }
+    }
+
+    &.ant-layout-sider-collapsed {
+        overflow: initial;
+    }
+}
+
+.cvat-rotate-canvas-controls-right > svg {
+    transform: scaleX(-1);
+}
+
+.cvat-canvas-controls-sidebar {
+    background-color: $background-color-2;
+    border-right: 1px solid $border-color-1;
+    overflow: hidden;
+}
+
+.cvat-cursor-control,
+.cvat-move-control,
+.cvat-rotate-canvas-control,
+.cvat-fit-control,
+.cvat-resize-control,
+.cvat-draw-rectangle-control,
+.cvat-draw-polygon-control,
+.cvat-draw-polyline-control,
+.cvat-draw-points-control,
+.cvat-draw-ellipse-control,
+.cvat-draw-mask-control,
+.cvat-draw-cuboid-control,
+.cvat-draw-skeleton-control,
+.cvat-setup-tag-control,
+.cvat-merge-control,
+.cvat-group-control,
+.cvat-split-track-control,
+.cvat-issue-control,
+.cvat-tools-control,
+.cvat-extra-controls-control,
+.cvat-opencv-control {
+    border-radius: 3.3px;
+    transform: scale(0.65);
+    padding: 2px;
+
+    &:hover:not(.cvat-disabled-canvas-control) {
+        background: $header-color;
+        transform: scale(0.75);
+    }
+
+    &:active:not(.cvat-disabled-canvas-control) {
+        transform: scale(0.65);
+    }
+
+    > svg {
+        transform: scale(0.8);
+    }
+}
+
+.cvat-antd-icon-control {
+    > svg {
+        width: 40px;
+        height: 40px;
+    }
+}
+
+.cvat-active-canvas-control {
+    background: $header-color;
+    transform: scale(0.75);
+}
+
+.cvat-disabled-canvas-control > svg {
+    filter: opacity(0.45);
+}
+
+.cvat-rotate-canvas-controls-left,
+.cvat-rotate-canvas-controls-right {
+    transform: scale(0.65);
+    border-radius: 5px;
+
+    &:hover {
+        transform: scale(0.75);
+    }
+
+    &:active {
+        transform: scale(0.65);
+    }
+}
+
+.cvat-rotate-canvas-popover {
+    .ant-popover-inner-content {
+        padding: 0;
+    }
+}
+
+.cvat-draw-shape-popover,
+.cvat-opencv-control-popover,
+.cvat-setup-tag-popover,
+.cvat-tools-control-popover {
+    .ant-popover-inner-content {
+        padding: 0;
+    }
+}
+
+.cvat-tools-track-button,
+.cvat-tools-interact-button {
+    width: 100%;
+    margin-top: $grid-unit-size;
+}
+
+.cvat-interactors-tips-icon-container {
+    text-align: center;
+    font-size: 20px;
+}
+
+.cvat-interactors-setups-container {
+    margin-top: $grid-unit-size;
+    margin-bottom: $grid-unit-size;
+
+    > button {
+        margin-right: $grid-unit-size;
+    }
+}
+
+.cvat-interactor-tip-container {
+    background: $background-color-2;
+    padding: $grid-unit-size;
+    box-shadow: $box-shadow-base;
+    width: $grid-unit-size * 40;
+    text-align: center;
+    border-radius: 4px;
+}
+
+.cvat-interactor-tip-image {
+    width: $grid-unit-size * 37;
+}
+
+.cvat-draw-shape-popover-points-selector {
+    width: 100%;
+}
+
+.cvat-tools-control-popover-content,
+.cvat-opencv-control-popover-content {
+    width: fit-content;
+    padding: $grid-unit-size;
+    border-radius: $grid-unit-size;
+    background: $background-color-2;
+
+    .ant-tabs-tab {
+        width: $grid-unit-size * 14;
+        justify-content: center;
+    }
+
+    .ant-progress {
+        margin-left: $grid-unit-size;
+    }
+}
+
+.cvat-opencv-initialization-button {
+    width: 100%;
+    margin: $grid-unit-size 0;
+}
+
+.cvat-opencv-drawing-tools {
+    margin-top: $grid-unit-size;
+}
+
+.cvat-opencv-drawing-tool {
+    padding: $grid-unit-size;
+    width: $grid-unit-size * 5;
+    height: $grid-unit-size * 5;
+
+    > i {
+        font-size: 16px;
+    }
+}
+
+.cvat-opencv-image-tool {
+    @extend .cvat-opencv-drawing-tool;
+}
+
+.cvat-opencv-image-tool-active {
+    color: #40a9ff;
+    border-color: #40a9ff;
+}
+
+.cvat-opencv-tracker-select {
+    width: 100%;
+}
+
+.cvat-opencv-tracking-label-select {
+    @extend .cvat-opencv-tracker-select;
+}
+
+.cvat-opencv-tracker-content {
+    margin-top: $grid-unit-size;
+}
+
+.cvat-popover-content {
+    padding: $grid-unit-size;
+    border-radius: $grid-unit-size;
+    background: $background-color-2;
+    width: 34 * $grid-unit-size;
+
+    > div {
+        margin-top: $grid-unit-size;
+    }
+}
+
+.cvat-setup-tag-popover-content {
+    @extend .cvat-popover-content;
+
+    .ant-select {
+        width: 27 * $grid-unit-size;
+    }
+
+    > div:last-child {
+        margin-bottom: $grid-unit-size;
+    }
+}
+
+.cvat-draw-shape-popover-content {
+    @extend .cvat-popover-content;
+
+    > div:nth-child(3) > div > div {
+        width: 100%;
+    }
+
+    > div:last-child {
+        span {
+            width: 100%;
+        }
+
+        button {
+            width: 100%;
+
+            &:nth-child(1) {
+                border-radius: 3px 0 0 3px;
+            }
+
+            &:nth-child(2) {
+                border-radius: 0 3px 3px 0;
+            }
+        }
+    }
+}
+
+.cvat-propagate-confirm {
+    > .ant-row {
+        align-items: flex-start;
+        margin-bottom: $grid-unit-size * 2;
+    }
+
+    .ant-input-number {
+        margin-left: $grid-unit-size;
+        margin-right: $grid-unit-size;
+        width: $grid-unit-size * 7;
+    }
+
+    .cvat-propagate-slider-wrapper {
+        height: $grid-unit-size;
+    }
+
+    .cvat-propagate-up-to-wrapper > div:first-child {
+        margin-bottom: $grid-unit-size;
+    }
+}
+
+.cvat-remove-object-confirm-wrapper {
+    display: flex;
+    justify-content: center;
+    margin-top: $grid-unit-size * 2;
+}

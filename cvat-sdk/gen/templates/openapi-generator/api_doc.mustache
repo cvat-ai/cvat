@@ -1,0 +1,75 @@
+# {{classname}}
+
+{{#description}}{{.}}
+{{/description}}
+
+All URIs are relative to _{{basePath}}_
+
+Method | HTTP request | Description
+------------- | ------------- | -------------
+{{#operations}}{{#operation}}[**{{>operation_name}}**]({{classname}}#{{>operation_name}}) | **{{httpMethod}}** {{path}} | {{summary}}
+{{/operation}}{{/operations}}
+
+{{#operations}}
+{{#operation}}
+## **{{>operation_name}}**
+
+> {{>operation_name}}({{#requiredParams}}{{^defaultValue}}
+>    {{paramName}},{{/defaultValue}}{{/requiredParams}}{{#requiredParams}}{{#defaultValue}}
+>    {{paramName}}={{{defaultValue}}},{{/defaultValue}}{{/requiredParams}}{{#optionalParams}}
+>    {{paramName}}=None,{{/optionalParams}}
+>    **kwargs
+> )
+
+{{{summary}}}{{#notes}}
+
+{{{.}}}{{/notes}}
+
+### Example
+{{> api_doc_example }}
+
+### Parameters
+{{^allParams}}This endpoint does not need any parameter.{{/allParams}}{{#allParams}}{{#-last}}
+Name | Type | Description  | Notes
+------------- | ------------- | ------------- | -------------{{/-last}}{{/allParams}}
+{{#requiredParams}}{{^defaultValue}} **{{paramName}}** | {{^baseType}}**{{dataType}}**{{/baseType}}{{#baseType}}[**{{dataType}}**](../models/{{baseType}}){{/baseType}}| {{{description}}} |
+{{/defaultValue}}{{/requiredParams}}{{#requiredParams}}{{#defaultValue}} **{{paramName}}** | {{^baseType}}**{{dataType}}**{{/baseType}}{{#baseType}}[**{{dataType}}**](../models/{{baseType}}){{/baseType}}| {{{description}}} | defaults to {{{.}}}
+{{/defaultValue}}{{/requiredParams}}{{#optionalParams}} **{{paramName}}** | {{^baseType}}**{{dataType}}**{{/baseType}}{{#baseType}}[**{{dataType}}**](../models/{{baseType}}){{/baseType}}| {{{description}}} | [optional]{{#defaultValue}} if omitted the server will use the default value of {{{.}}}{{/defaultValue}}
+{{/optionalParams}}
+
+There are also optional kwargs that control the function invocation behavior.
+[Read more here](https://opencv.github.io/cvat/docs/api_sdk/sdk/lowlevel-api/#sending-requests).
+
+### Returned values
+
+Returned type: `Tuple[{{>return_type}}, urllib3.HTTPResponse]`.
+
+Returns a tuple with 2 values: `({{#returnType}}parsed_response{{/returnType}}{{^returnType}}None{{/returnType}}, raw_response)`.
+
+{{#returnType}}The first value is a model parsed from the response data.{{/returnType}}{{^returnType}}This endpoint does not have any return value, so `None` is always returned as the first value.{{/returnType}}
+The second value is the raw response, which can be useful to get response parameters, such as
+status code, headers, or raw response data. Read more about invocation parameters
+and returned values [here](https://opencv.github.io/cvat/docs/api_sdk/sdk/lowlevel-api/#sending-requests).
+
+### Authorization
+
+{{^authMethods}}No authorization required{{/authMethods}}{{#authMethods}}{{{name}}}{{^-last}}, {{/-last}}{{/authMethods}}
+
+### HTTP request headers
+
+ - **Content-Type**: {{#consumes}}{{{mediaType}}}{{^-last}}, {{/-last}}{{/consumes}}{{^consumes}}Not defined{{/consumes}}
+ - **Accept**: {{#produces}}{{{mediaType}}}{{^-last}}, {{/-last}}{{/produces}}{{^produces}}Not defined{{/produces}}
+
+{{#responses.0}}
+
+### HTTP response details
+
+| Status code | Description | Response headers |
+|-------------|-------------|------------------|
+{{#responses}}
+**{{code}}** | {{message}} | {{#headers}} * {{baseName}} - {{{description}}} <br> {{/headers}}{{^headers.0}} - {{/headers.0}} |
+{{/responses}}
+{{/responses.0}}
+
+{{/operation}}
+{{/operations}}

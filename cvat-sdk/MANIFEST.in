@@ -1,0 +1,3 @@
+include README.md
+include requirements/api_client.txt
+include requirements/base.txt

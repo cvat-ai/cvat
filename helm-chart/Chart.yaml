@@ -1,0 +1,61 @@
+apiVersion: v2
+name: cvat
+description: A Helm chart for Kubernetes
+
+# A chart can be either an 'application' or a 'library' chart.
+#
+# Application charts are a collection of templates that can be packaged into versioned archives
+# to be deployed.
+#
+# Library charts provide useful utilities or functions for the chart developer. They're included as
+# a dependency of application charts to inject those utilities and functions into the rendering
+# pipeline. Library charts do not define any templates and therefore cannot be deployed.
+type: application
+
+# This is the chart version. This version number should be incremented each time you make changes
+# to the chart and its templates, including the app version.
+# Versions are expected to follow Semantic Versioning (https://semver.org/)
+version: 0.10.0
+
+# This is the version number of the application being deployed. This version number should be
+# incremented each time you make changes to the application. Versions are not expected to
+# follow Semantic Versioning. They should reflect the version the application is using.
+# It is recommended to use it with quotes.
+appVersion: latest
+# We dont use it, so you can override it using values.override.yaml
+
+dependencies:
+  - name: postgresql
+    version: "12.1.*"
+    repository: https://charts.bitnami.com/bitnami
+    condition: postgresql.enabled
+
+  - name: nuclio
+    version: 0.12.1
+    repository: https://nuclio.github.io/nuclio/charts
+    condition: nuclio.enabled
+
+  - name: vector
+    version: "0.19.*"
+    repository: https://helm.vector.dev
+    condition: analytics.enabled
+
+  - name: clickhouse
+    version: "3.0.*"
+    repository: https://charts.bitnami.com/bitnami
+    condition: analytics.enabled
+
+  - name: grafana
+    version: "6.51.*"
+    repository: https://grafana.github.io/helm-charts
+    condition: analytics.enabled
+
+  - name: traefik
+    version: 10.24.0
+    repository: https://helm.traefik.io/traefik
+    condition: traefik.enabled
+
+  - name: keydb
+    version: 0.48.0
+    repository: https://enapter.github.io/charts/
+    condition: keydb.enabled

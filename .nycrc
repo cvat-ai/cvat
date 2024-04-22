@@ -1,0 +1,19 @@
+{
+    "all": true,
+    "compact": false,
+    "extension": [
+        ".js",
+        ".jsx",
+        ".ts",
+        ".tsx"
+    ],
+    "exclude": [
+        "**/3rdparty/*",
+        "**/tests/*",
+        "cvat-ui/src/actions/boundaries-actions.ts",
+        "cvat-ui/src/utils/platform-checker.ts"
+    ],
+    "parser-plugins": [
+        "typescript"
+    ]
+}

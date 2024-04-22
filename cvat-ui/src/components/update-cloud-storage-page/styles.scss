@@ -1,0 +1,18 @@
+// Copyright (C) 2021-2022 Intel Corporation
+//
+// SPDX-License-Identifier: MIT
+
+@import '../../base.scss';
+
+.cvat-update-cloud-storage-form-wrapper {
+    text-align: center;
+    padding-top: $grid-unit-size * 5;
+    overflow-y: auto;
+    height: 90%;
+    position: fixed;
+    width: 100%;
+
+    > div > span {
+        font-size: $grid-unit-size * 4;
+    }
+}

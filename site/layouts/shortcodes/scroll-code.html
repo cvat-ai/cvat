@@ -1,0 +1,12 @@
+<div class="scroll-code">
+  {{ $lang := "" }}
+
+  {{ with $.Get "lang" }}
+    {{ $lang = $.Get "lang" }}
+  {{ end }}
+
+  {{ $highlight := "" }}
+  <div style="overflow-y: auto; max-height: 500px;">
+    {{- highlight $.Inner $lang $highlight -}}
+  </div>
+</div>

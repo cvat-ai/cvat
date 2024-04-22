@@ -1,0 +1,56 @@
+metadata:
+  name: openvino-omz-intel-semantic-segmentation-adas-0001
+  namespace: cvat
+  annotations:
+    name: Semantic segmentation for ADAS
+    type: detector
+    framework: openvino
+    spec: |
+      [
+        { "id": 0, "name": "road" },
+        { "id": 1, "name": "sidewalk" },
+        { "id": 2, "name": "building" },
+        { "id": 3, "name": "wall" },
+        { "id": 4, "name": "fence" },
+        { "id": 5, "name": "pole" },
+        { "id": 6, "name": "traffic light" },
+        { "id": 7, "name": "traffic sign" },
+        { "id": 8, "name": "vegetation" },
+        { "id": 9, "name": "terrain" },
+        { "id": 10, "name": "sky" },
+        { "id": 11, "name": "person" },
+        { "id": 12, "name": "rider" },
+        { "id": 13, "name": "car" },
+        { "id": 14, "name": "truck" },
+        { "id": 15, "name": "bus" },
+        { "id": 16, "name": "train" },
+        { "id": 17, "name": "motorcycle" },
+        { "id": 18, "name": "bicycle" },
+        { "id": 19, "name": "ego-vehicle" },
+        { "id": 20, "name": "background" }
+      ]
+
+spec:
+  description: Segmentation network to classify each pixel into typical 20 classes for ADAS
+  runtime: 'python:3.8'
+  handler: main:handler
+  eventTimeout: 30s
+
+  build:
+    image: cvat.openvino.omz.intel.semantic-segmentation-adas-0001
+    baseImage: cvat.openvino.omz.intel.semantic-segmentation-adas-0001.base
+
+  triggers:
+    myHttpTrigger:
+      maxWorkers: 2
+      kind: 'http'
+      workerAvailabilityTimeoutMilliseconds: 10000
+      attributes:
+        maxRequestBodySize: 33554432 # 32MB
+
+  platform:
+    attributes:
+      restartPolicy:
+        name: always
+        maximumRetryCount: 3
+      mountMode: volume

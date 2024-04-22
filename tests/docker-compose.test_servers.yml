@@ -1,0 +1,40 @@
+x-allow-webhook-receiver: &allow-webhook-receiver
+  depends_on:
+    - webhook_receiver
+  volumes:
+    - ./tests/allow_webhooks_receiver.sh:/etc/cvat/init.d/allow_webhooks_receiver.sh:ro
+
+services:
+  cvat_worker_webhooks: *allow-webhook-receiver
+
+  cvat_server: *allow-webhook-receiver
+
+  webhook_receiver:
+    image: python:3.9-slim
+    restart: always
+    command: python3 /tmp/server.py
+    init: true
+    env_file:
+      - ./tests/python/webhook_receiver/.env
+    expose:
+      - ${SERVER_PORT}
+    volumes:
+      - ./tests/python/webhook_receiver:/tmp
+    networks:
+      cvat:
+        aliases:
+          - webhooks
+
+  git_server:
+    image: alpine/git
+    restart: always
+    depends_on:
+      - cvat_server
+    entrypoint: /mnt/scripts/entrypoint.sh
+    volumes:
+      - ./tests/git_server/:/mnt/scripts:ro
+      - cvat_keys:/mnt/keys:ro
+    networks:
+      cvat:
+        aliases:
+          - gitserver

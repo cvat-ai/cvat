@@ -1,0 +1,14 @@
+{
+    "compilerOptions": {
+      "target": "es2020",
+      "allowJs": true,
+      "module": "commonjs",
+      "moduleResolution": "node",
+      "esModuleInterop": true,
+      "isolatedModules": true,
+      "noEmit": true,
+      "baseUrl": "src",
+      "resolveJsonModule": true,
+    },
+    "include": ["src/*.ts"]
+}

@@ -1,0 +1,69 @@
+{{> partial_header }}
+
+from __future__ import annotations
+
+import typing
+
+import re  # noqa: F401
+import sys  # noqa: F401
+
+from {{packageName}}.model_utils import (  # noqa: F401
+    ApiTypeError,
+    IModelData,
+    ModelComposed,
+    ModelNormal,
+    ModelSimple,
+    cached_property,
+    change_keys_js_to_python,
+    convert_js_args_to_python_args,
+    date,
+    datetime,
+    file_type,
+    none_type,
+    validate_get_composed_info,
+    OpenApiModel
+)
+from {{packageName}}.exceptions import ApiAttributeError
+
+from typing import TYPE_CHECKING
+if TYPE_CHECKING:
+    # Enable introspection. Can't work normally due to cyclic imports
+    from {{packageName}}.apis import *
+    from {{packageName}}.models import *
+
+{{#models}}
+{{#model}}
+{{#imports}}
+{{#-first}}
+
+def lazy_import():
+{{/-first}}
+    {{{.}}}
+{{/imports}}
+
+
+{{^interfaces}}
+{{#isArray}}
+{{> model_templates/model_simple }}
+{{/isArray}}
+{{#isEnum}}
+{{> model_templates/model_simple }}
+{{/isEnum}}
+{{#isAlias}}
+{{> model_templates/model_simple }}
+{{/isAlias}}
+{{^isArray}}
+{{^isEnum}}
+{{^isAlias}}
+{{> model_templates/model_normal }}
+{{/isAlias}}
+{{/isEnum}}
+{{/isArray}}
+{{/interfaces}}
+{{#interfaces}}
+{{#-last}}
+{{> model_templates/model_composed }}
+{{/-last}}
+{{/interfaces}}
+{{/model}}
+{{/models}}

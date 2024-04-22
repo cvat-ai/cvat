@@ -1,0 +1,138 @@
+{
+  "count": 4,
+  "next": null,
+  "previous": null,
+  "results": [
+    {
+      "content_type": "application/json",
+      "created_date": "2022-09-29T08:00:48.440000Z",
+      "description": "",
+      "enable_ssl": true,
+      "events": [
+        "create:comment",
+        "create:invitation",
+        "create:issue",
+        "create:project",
+        "create:task",
+        "delete:comment",
+        "delete:invitation",
+        "delete:issue",
+        "delete:membership",
+        "delete:project",
+        "delete:task",
+        "update:comment",
+        "update:issue",
+        "update:job",
+        "update:membership",
+        "update:organization",
+        "update:project",
+        "update:task"
+      ],
+      "id": 6,
+      "is_active": true,
+      "last_delivery_date": "2023-09-15T07:53:53.135000Z",
+      "last_status": 200,
+      "organization": 1,
+      "owner": {
+        "first_name": "Admin",
+        "id": 1,
+        "last_name": "First",
+        "url": "http://localhost:8080/api/users/1",
+        "username": "admin1"
+      },
+      "project_id": null,
+      "target_url": "http://example.com/",
+      "type": "organization",
+      "updated_date": "2022-09-29T08:00:48.441000Z",
+      "url": "http://localhost:8080/api/webhooks/6"
+    },
+    {
+      "content_type": "application/json",
+      "created_date": "2022-09-28T12:19:49.744000Z",
+      "description": "",
+      "enable_ssl": true,
+      "events": [
+        "create:issue",
+        "delete:issue",
+        "update:issue",
+        "update:project"
+      ],
+      "id": 3,
+      "is_active": true,
+      "organization": 2,
+      "owner": {
+        "first_name": "User",
+        "id": 3,
+        "last_name": "Second",
+        "url": "http://localhost:8080/api/users/3",
+        "username": "user2"
+      },
+      "project_id": 3,
+      "target_url": "http://example.com",
+      "type": "project",
+      "updated_date": "2022-09-28T12:19:49.744000Z",
+      "url": "http://localhost:8080/api/webhooks/3"
+    },
+    {
+      "content_type": "application/json",
+      "created_date": "2022-09-28T12:18:12.412000Z",
+      "description": "",
+      "enable_ssl": true,
+      "events": [
+        "create:comment",
+        "create:issue",
+        "create:task",
+        "delete:comment",
+        "delete:issue",
+        "delete:task",
+        "update:comment",
+        "update:issue",
+        "update:job",
+        "update:project",
+        "update:task"
+      ],
+      "id": 2,
+      "is_active": true,
+      "organization": null,
+      "owner": {
+        "first_name": "Business",
+        "id": 10,
+        "last_name": "First",
+        "url": "http://localhost:8080/api/users/10",
+        "username": "business1"
+      },
+      "project_id": 1,
+      "target_url": "http://example.com/",
+      "type": "project",
+      "updated_date": "2022-09-28T12:18:12.412000Z",
+      "url": "http://localhost:8080/api/webhooks/2"
+    },
+    {
+      "content_type": "application/json",
+      "created_date": "2022-09-28T12:16:28.311000Z",
+      "description": "",
+      "enable_ssl": true,
+      "events": [
+        "create:task",
+        "delete:task",
+        "update:job",
+        "update:task"
+      ],
+      "id": 1,
+      "is_active": true,
+      "organization": null,
+      "owner": {
+        "first_name": "User",
+        "id": 2,
+        "last_name": "First",
+        "url": "http://localhost:8080/api/users/2",
+        "username": "user1"
+      },
+      "project_id": 6,
+      "target_url": "http://example.com/",
+      "type": "project",
+      "updated_date": "2022-09-28T12:16:28.311000Z",
+      "url": "http://localhost:8080/api/webhooks/1"
+    }
+  ]
+}

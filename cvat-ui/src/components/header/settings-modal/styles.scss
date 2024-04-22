@@ -1,0 +1,89 @@
+// Copyright (C) 2020-2022 Intel Corporation
+//
+// SPDX-License-Identifier: MIT
+
+@import '../../../base';
+
+.cvat-settings-tabs {
+    height: 100%;
+    overflow-y: auto;
+    padding-bottom: 15px;
+
+    > div:nth-child(1) {
+        margin-top: 10px;
+        margin-bottom: 10px;
+    }
+}
+
+.cvat-workspace-settings,
+.cvat-player-settings,
+.cvat-organizations-settings {
+    width: 100%;
+    height: max-content;
+    background: $background-color-1;
+    padding: 24px;
+}
+
+.cvat-workspace-settings-text-content {
+    width: 100%;
+}
+
+.cvat-workspace-settings-approx-poly-threshold {
+    user-select: none;
+}
+
+.cvat-player-setting {
+    margin-bottom: $grid-unit-size * 3;
+}
+
+.cvat-player-settings-step,
+.cvat-player-settings-speed {
+    > div {
+        display: grid;
+        justify-items: start;
+    }
+}
+
+.cvat-player-settings-step > div > span > span[role='img'] {
+    margin: 0 5px;
+    font-size: 10px;
+}
+
+.cvat-player-settings-speed > div > .ant-select {
+    width: 90px;
+}
+
+.cvat-player-reset-color-settings {
+    > .ant-col {
+        text-align: center;
+    }
+}
+
+.cvat-player-settings-image-preview {
+    width: 100%;
+    max-height: 180px;
+    object-fit: cover;
+}
+
+.canvas-background-color-picker-popover .ant-popover-inner-content {
+    padding: 6px 12px;
+
+    :first-child:first-child {
+        box-shadow: unset !important;
+    }
+}
+
+.cvat-settings-modal .ant-modal-body {
+    padding-top: 0;
+}
+
+.cvat-organizations-settings-list {
+    width: $grid-unit-size * 24;
+    margin-bottom: $grid-unit-size * 3;
+}
+
+.cvat-organizations-settings-list-item {
+    div {
+        width: 100%;
+    }
+}

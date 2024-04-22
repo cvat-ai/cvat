@@ -1,0 +1,30 @@
+#
+# Copyright (C) 2018-2022 Intel Corporation
+#
+# SPDX-License-Identifier: MIT
+#
+
+services:
+  cvat_ci:
+    image: cvat_ci
+    network_mode: host
+    build:
+      context: .
+      dockerfile: Dockerfile.ci
+    depends_on:
+      - cvat_server
+    environment:
+      CONTAINER_COVERAGE_DATA_DIR:
+      GITHUB_ACTIONS:
+      GITHUB_TOKEN:
+      GITHUB_WORKSPACE:
+      GITHUB_REF:
+      GITHUB_HEAD_REF:
+      GITHUB_RUN_ID:
+    volumes:
+      - ${HOST_COVERAGE_DATA_DIR}:${CONTAINER_COVERAGE_DATA_DIR}
+
+  cvat_redis:
+    ports:
+      - 6379:6379
+

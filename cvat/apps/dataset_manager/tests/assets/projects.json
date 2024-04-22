@@ -1,0 +1,58 @@
+{
+  "main": {
+    "name": "Main project",
+    "labels": [
+      {
+        "name": "background",
+        "color": "#5c5eba",
+        "attributes": []
+      },
+      {
+        "name": "car",
+        "color": "#2080c0",
+        "attributes": [
+          {
+            "name": "select_name",
+            "mutable": false,
+            "input_type": "select",
+            "default_value": "bmw",
+            "values": ["bmw", "mazda", "renault"]
+          },
+          {
+            "name": "radio_name",
+            "mutable": false,
+            "input_type": "radio",
+            "default_value": "x1",
+            "values": ["x1", "x2", "x3"]
+          },
+          {
+            "name": "check_name",
+            "mutable": true,
+            "input_type": "checkbox",
+            "default_value": "false",
+            "values": ["false"]
+          },
+          {
+            "name": "text_name",
+            "mutable": false,
+            "input_type": "text",
+            "default_value": "qwerty",
+            "values": ["qwerty"]
+          },
+          {
+            "name": "number_name",
+            "mutable": false,
+            "input_type": "number",
+            "default_value": "-4",
+            "values": ["-4", "4", "1"]
+          }
+        ]
+      },
+      {
+        "name": "person",
+        "color": "#c06060",
+        "attributes": []
+      }
+    ]
+  }
+}

@@ -1,0 +1,10 @@
+.*/
+3rdparty/
+node_modules/
+dist/
+data/
+datumaro/
+keys/
+logs/
+static/
+templates/

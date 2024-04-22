@@ -1,0 +1,153 @@
+{
+  "count": 5,
+  "next": null,
+  "previous": null,
+  "results": [
+    {
+      "assignee": null,
+      "comments": {
+        "count": 1,
+        "url": "http://localhost:8080/api/comments?issue_id=5"
+      },
+      "created_date": "2022-03-16T12:49:29.369000Z",
+      "frame": 0,
+      "id": 5,
+      "job": 11,
+      "owner": {
+        "first_name": "User",
+        "id": 20,
+        "last_name": "Sixth",
+        "url": "http://localhost:8080/api/users/20",
+        "username": "user6"
+      },
+      "position": [
+        65.6189987163034,
+        100.96585365853753,
+        142.12734274711147,
+        362.6243902439037
+      ],
+      "resolved": false,
+      "updated_date": "2022-03-16T12:49:29.369000Z"
+    },
+    {
+      "assignee": {
+        "first_name": "User",
+        "id": 2,
+        "last_name": "First",
+        "url": "http://localhost:8080/api/users/2",
+        "username": "user1"
+      },
+      "comments": {
+        "count": 1,
+        "url": "http://localhost:8080/api/comments?issue_id=4"
+      },
+      "created_date": "2022-03-16T12:40:00.764000Z",
+      "frame": 5,
+      "id": 4,
+      "job": 10,
+      "owner": {
+        "first_name": "User",
+        "id": 2,
+        "last_name": "First",
+        "url": "http://localhost:8080/api/users/2",
+        "username": "user1"
+      },
+      "position": [
+        295.36328125,
+        243.6044921875,
+        932.23046875,
+        561.4921875
+      ],
+      "resolved": false,
+      "updated_date": "2022-03-16T12:40:00.764000Z"
+    },
+    {
+      "assignee": null,
+      "comments": {
+        "count": 1,
+        "url": "http://localhost:8080/api/comments?issue_id=3"
+      },
+      "created_date": "2022-03-16T11:08:18.367000Z",
+      "frame": 5,
+      "id": 3,
+      "job": 16,
+      "owner": {
+        "first_name": "Business",
+        "id": 11,
+        "last_name": "Second",
+        "url": "http://localhost:8080/api/users/11",
+        "username": "business2"
+      },
+      "position": [
+        108.1845703125,
+        235.0,
+        720.0087890625,
+        703.3505859375
+      ],
+      "resolved": false,
+      "updated_date": "2022-03-16T11:08:18.367000Z"
+    },
+    {
+      "assignee": null,
+      "comments": {
+        "count": 1,
+        "url": "http://localhost:8080/api/comments?issue_id=2"
+      },
+      "created_date": "2022-03-16T11:07:22.170000Z",
+      "frame": 0,
+      "id": 2,
+      "job": 9,
+      "owner": {
+        "first_name": "Business",
+        "id": 11,
+        "last_name": "Second",
+        "url": "http://localhost:8080/api/users/11",
+        "username": "business2"
+      },
+      "position": [
+        98.48046875,
+        696.72265625,
+        326.1220703125,
+        841.5859375
+      ],
+      "resolved": false,
+      "updated_date": "2022-03-16T11:07:22.170000Z"
+    },
+    {
+      "assignee": null,
+      "comments": {
+        "count": 2,
+        "url": "http://localhost:8080/api/comments?issue_id=1"
+      },
+      "created_date": "2022-03-16T11:04:39.444000Z",
+      "frame": 0,
+      "id": 1,
+      "job": 7,
+      "owner": {
+        "first_name": "User",
+        "id": 2,
+        "last_name": "First",
+        "url": "http://localhost:8080/api/users/2",
+        "username": "user1"
+      },
+      "position": [
+        244.58581235698148,
+        319.63386727689067,
+        326.9656750572103,
+        192.76887871853796,
+        543.6247139588122,
+        175.4691075514893,
+        835.2494279176244,
+        360.0000000000018,
+        609.5286041189956,
+        586.544622425632,
+        364.0361328125,
+        528.87890625,
+        244.58581235698148,
+        319.63386727689067
+      ],
+      "resolved": true,
+      "updated_date": "2022-03-16T11:04:39.444000Z"
+    }
+  ]
+}

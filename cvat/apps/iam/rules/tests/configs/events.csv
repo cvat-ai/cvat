@@ -1,0 +1,4 @@
+Scope,Resource,Context,Ownership,Method,URL,Privilege,Membership
+send:events,N/A,N/A,N/A,POST,"/events",None,N/A
+dump:events,N/A,Sandbox,N/A,GET,/events,Worker,N/A
+dump:events,N/A,Organization,N/A,GET,/events,Worker,Worker

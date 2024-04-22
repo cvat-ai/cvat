@@ -1,0 +1,201 @@
+// Copyright (C) 2020-2022 Intel Corporation
+// Copyright (C) 2022-2023 CVAT.ai Corporation
+//
+// SPDX-License-Identifier: MIT
+
+@import '../../base';
+@import '../../styles';
+
+.cvat-tasks-page {
+    padding-top: $grid-unit-size * 2;
+    padding-bottom: $grid-unit-size;
+    height: 100%;
+    width: 100%;
+
+    .cvat-tasks-page-top-bar {
+        > div {
+            display: flex;
+            justify-content: space-between;
+
+            > .cvat-tasks-page-filters-wrapper {
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                width: 100%;
+
+                > div {
+                    > *:not(:last-child) {
+                        margin-right: $grid-unit-size;
+                    }
+
+                    display: flex;
+                    margin-right: $grid-unit-size * 4;
+                }
+
+                .cvat-tasks-page-search-bar {
+                    width: $grid-unit-size * 32;
+                    padding-left: $grid-unit-size;
+                }
+            }
+        }
+    }
+
+    > div:nth-child(2) {
+        height: 83%;
+        padding-top: 10px;
+    }
+
+    @media screen and (height >= 900px) {
+        > div:nth-child(2) {
+            height: 88%;
+        }
+    }
+
+    @media screen and (height >= 1200px) {
+        > div:nth-child(2) {
+            height: 93%;
+        }
+    }
+
+    > div:nth-child(3) {
+        padding-top: 10px;
+    }
+}
+
+.cvat-empty-tasks-list {
+    .ant-empty {
+        top: 50%;
+        left: 50%;
+        position: absolute;
+        transform: translate(-50%, -50%);
+    }
+}
+
+.cvat-tasks-pagination {
+    display: flex;
+    justify-content: center;
+}
+
+.cvat-tasks-list {
+    height: 100%;
+    overflow-y: auto;
+
+    .ant-ribbon-wrapper {
+        margin-left: $grid-unit-size;
+    }
+}
+
+.cvat-task-item-ribbon {
+    padding: $grid-unit-size;
+    height: unset;
+
+    > .ant-ribbon-text {
+        > div {
+            display: flex;
+            flex-direction: column;
+            gap: $grid-unit-size * 2;
+        }
+    }
+}
+
+.cvat-tasks-list-item {
+    width: 100%;
+    height: 120px;
+    border: 1px solid $border-color-1;
+    border-radius: 3px;
+    margin-bottom: 15px;
+    padding-top: 20px;
+    background: $background-color-1;
+
+    &:hover {
+        border: 1px solid $border-color-hover;
+    }
+
+    .cvat-task-item-loading-preview,
+    .cvat-task-item-empty-preview {
+        @extend .cvat-base-preview;
+
+        font-size: $grid-unit-size * 6;
+        height: $grid-unit-size * 10;
+    }
+
+    .cvat-task-item-preview-wrapper {
+        display: flex;
+        justify-content: center;
+        overflow: hidden;
+        margin: $grid-unit-size * 3;
+        margin-top: 0;
+
+        > .cvat-task-item-preview {
+            max-width: 140px;
+            max-height: 80px;
+        }
+    }
+}
+
+.cvat-task-item-description {
+    word-break: break-all;
+    max-height: 100%;
+    overflow: hidden;
+}
+
+.cvat-task-progress {
+    width: 100%;
+}
+
+.cvat-task-completed-progress {
+    color: $completed-progress-color;
+}
+
+.cvat-task-completed-progress div.ant-progress-bg {
+    background: $completed-progress-color !important;
+}
+
+.cvat-task-validation-progress {
+    color: $validation-progress-color;
+}
+
+.cvat-task-annotation-progress {
+    color: $annotation-progress-color;
+}
+
+.cvat-task-item-progress-wrapper {
+    > div:first-child {
+        margin-bottom: -$grid-unit-size;
+        margin-right: $grid-unit-size;
+
+        > span {
+            font-size: 12px;
+        }
+
+        span[role="img"] {
+            margin-left: $grid-unit-size;
+        }
+    }
+}
+
+.close-auto-annotation-icon {
+    color: $danger-icon-color;
+    opacity: 0.7;
+
+    &:hover {
+        opacity: 1;
+    }
+}
+
+.cvat-item-open-task-actions {
+    margin-right: $grid-unit-size;
+    margin-top: $grid-unit-size;
+    display: flex;
+    align-items: center;
+    padding: $grid-unit-size;
+    line-height: 14px;
+}
+
+.cvat-item-open-task-button {
+    margin-right: 20px;
+}
+
+.cvat-item-task-name {
+    @extend .cvat-text-color;
+}

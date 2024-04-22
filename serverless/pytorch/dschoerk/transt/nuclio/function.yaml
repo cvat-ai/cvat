@@ -1,0 +1,62 @@
+metadata:
+  name: pth-dschoerk-transt
+  namespace: cvat
+  annotations:
+    name: TransT
+    type: tracker
+    spec:
+    framework: pytorch
+
+spec:
+  description: Fast Online Object Tracking and Segmentation
+  runtime: 'python:3.8'
+  handler: main:handler
+  eventTimeout: 30s
+  env:
+    - name: PYTHONPATH
+      value: /opt/nuclio/trans-t
+
+  build:
+    image: cvat.pth.dschoerk.transt
+    baseImage: ubuntu:20.04
+
+    directives:
+      preCopy:
+        - kind: RUN
+          value: |-
+            apt update \
+              && apt install -y --no-install-recommends \
+                git \
+                ca-certificates \
+                python-is-python3 \
+                python3 \
+                python3-pip \
+              && rm -rf /var/lib/apt/lists/*
+        - kind: WORKDIR
+          value: /opt/nuclio
+        - kind: RUN
+          value: git clone --depth 1 --branch v1.0 https://github.com/dschoerk/TransT trans-t
+        - kind: RUN
+          value: |-
+            pip install \
+              jsonpickle opencv-python-headless \
+              torch==1.7.1+cpu torchvision==0.8.2+cpu \
+              --extra-index-url https://download.pytorch.org/whl/cpu
+        - kind: ADD
+          value: https://drive.google.com/uc?id=1Pq0sK-9jmbLAVtgB9-dPDc2pipCxYdM5 /transt.pth
+
+  triggers:
+    myHttpTrigger:
+      maxWorkers: 1
+      kind: 'http'
+      workerAvailabilityTimeoutMilliseconds: 10000
+      attributes:
+        # Set value from the calculation of tracking of 100 objects at the same time on a 4k image
+        maxRequestBodySize: 268435456 # 256MB
+
+  platform:
+    attributes:
+      restartPolicy:
+        name: always
+        maximumRetryCount: 3
+      mountMode: volume

@@ -1,0 +1,19 @@
+Scope,Resource,Context,Ownership,Limit,Method,URL,Privilege,Membership
+list,Issue,Sandbox,N/A,,GET,"/jobs/{id}/issues, /issues",None,N/A
+list,Issue,Organization,N/A,,GET,"/jobs/{id}/issues, /issues",None,Worker
+create@job,"Issue, Job",Sandbox,N/A,,POST,/issues,Admin,N/A
+create@job,"Issue, Job",Sandbox,"Project:owner, Project:assignee, Task:owner, Task:assignee, Job:assignee",,POST,/issues,Worker,N/A
+create@job,"Issue, Job",Organization,N/A,,POST,/issues,User,Maintainer
+create@job,"Issue, Job",Organization,"Project:owner, Project:assignee, Task:owner, Task:assignee, Job:assignee",,POST,/issues,Worker,Worker
+view,Issue,Sandbox,N/A,,GET,/issues/{id},Admin,N/A
+view,Issue,Sandbox,"Project:owner, Project:assignee, Task:owner, Task:assignee, Job:assignee, Owner, Assignee",,GET,/issues/{id},None,N/A
+view,Issue,Organization,N/A,,GET,/issues/{id},User,Maintainer
+view,Issue,Organization,"Project:owner, Project:assignee, Task:owner, Task:assignee, Job:assignee, Owner, Assignee",,GET,/issues/{id},None,Worker
+update,Issue,Sandbox,N/A,,PATCH,/issues/{id},Admin,N/A
+update,Issue,Sandbox,"Project:owner, Project:assignee, Task:owner, Task:assignee, Job:assignee, Owner, Assignee",,PATCH,/issues/{id},Worker,N/A
+update,Issue,Organization,N/A,,PATCH,/issues/{id},User,Maintainer
+update,Issue,Organization,"Project:owner, Project:assignee, Task:owner, Task:assignee, Job:assignee, Owner, Assignee",,PATCH,/issues/{id},Worker,Worker
+delete,Issue,Sandbox,N/A,,DELETE,/issues/{id},Admin,N/A
+delete,Issue,Sandbox,"Project:owner, Project:assignee, Task:owner, Task:assignee, Owner",,DELETE,/issues/{id},Worker,N/A
+delete,Issue,Organization,N/A,,DELETE,/issues/{id},User,Maintainer
+delete,Issue,Organization,"Project:owner, Project:assignee, Task:owner, Task:assignee, Owner",,DELETE,/issues/{id},Worker,Worker

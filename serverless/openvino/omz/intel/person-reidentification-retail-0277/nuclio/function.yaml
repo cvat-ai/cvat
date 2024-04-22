@@ -1,0 +1,33 @@
+metadata:
+  name: openvino-omz-intel-person-reidentification-retail-0277
+  namespace: cvat
+  annotations:
+    name: Person reidentification
+    type: reid
+    framework: openvino
+    spec:
+
+spec:
+  description: Person reidentification model for a general scenario
+  runtime: 'python:3.8'
+  handler: main:handler
+  eventTimeout: 30s
+
+  build:
+    image: cvat.openvino.omz.intel.person-reidentification-retail-0277
+    baseImage: cvat.openvino.omz.intel.person-reidentification-retail-0277.base
+
+  triggers:
+    myHttpTrigger:
+      maxWorkers: 2
+      kind: 'http'
+      workerAvailabilityTimeoutMilliseconds: 10000
+      attributes:
+        maxRequestBodySize: 33554432 # 32MB
+
+  platform:
+    attributes:
+      restartPolicy:
+        name: always
+        maximumRetryCount: 3
+      mountMode: volume

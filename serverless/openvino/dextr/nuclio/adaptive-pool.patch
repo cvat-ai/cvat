@@ -1,0 +1,27 @@
+This is a hack to work around the the lack of support for AdaptiveAvgPool2d
+in PyTorch's ONNX exporter (<https://github.com/pytorch/pytorch/issues/42653>).
+
+It might become unnecessary in the future, since OpenVINO 2023 is to add support
+for AdaptiveAvgPool2d exported with operator_export_type=ONNX_ATEN_FALLBACK
+(<https://github.com/openvinotoolkit/openvino/pull/14682>).
+
+diff --git a/networks/deeplab_resnet.py b/networks/deeplab_resnet.py
+index ecfa084..e8ff297 100644
+--- a/networks/deeplab_resnet.py
++++ b/networks/deeplab_resnet.py
+@@ -99,7 +99,14 @@ class PSPModule(nn.Module):
+         self.final = nn.Conv2d(out_features, n_classes, kernel_size=1)
+
+     def _make_stage_1(self, in_features, size):
+-        prior = nn.AdaptiveAvgPool2d(output_size=(size, size))
++        kernel_size, stride = {
++            1: (64, 64),
++            2: (32, 32),
++            3: (22, 21),
++            6: (11, 9),
++        }[size]
++
++        prior = nn.AvgPool2d(kernel_size=kernel_size, stride=stride)
+         conv = nn.Conv2d(in_features, in_features//4, kernel_size=1, bias=False)
+         bn = nn.BatchNorm2d(in_features//4, affine=affine_par)
+         relu = nn.ReLU(inplace=True)

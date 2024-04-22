@@ -1,0 +1,664 @@
+{
+  "count": 37,
+  "next": null,
+  "previous": null,
+  "results": [
+    {
+      "annotation_ids": [
+        {
+          "job_id": 28,
+          "obj_id": 129,
+          "shape_type": "polyline",
+          "type": "shape"
+        }
+      ],
+      "frame": 1,
+      "id": 37,
+      "report_id": 2,
+      "severity": "error",
+      "type": "missing_annotation"
+    },
+    {
+      "annotation_ids": [
+        {
+          "job_id": 28,
+          "obj_id": 127,
+          "shape_type": "mask",
+          "type": "shape"
+        }
+      ],
+      "frame": 1,
+      "id": 36,
+      "report_id": 2,
+      "severity": "error",
+      "type": "missing_annotation"
+    },
+    {
+      "annotation_ids": [
+        {
+          "job_id": 28,
+          "obj_id": 125,
+          "shape_type": "ellipse",
+          "type": "shape"
+        }
+      ],
+      "frame": 1,
+      "id": 35,
+      "report_id": 2,
+      "severity": "error",
+      "type": "missing_annotation"
+    },
+    {
+      "annotation_ids": [
+        {
+          "job_id": 28,
+          "obj_id": 124,
+          "shape_type": "polygon",
+          "type": "shape"
+        }
+      ],
+      "frame": 1,
+      "id": 34,
+      "report_id": 2,
+      "severity": "error",
+      "type": "missing_annotation"
+    },
+    {
+      "annotation_ids": [
+        {
+          "job_id": 28,
+          "obj_id": 128,
+          "shape_type": "points",
+          "type": "shape"
+        }
+      ],
+      "frame": 1,
+      "id": 33,
+      "report_id": 2,
+      "severity": "error",
+      "type": "missing_annotation"
+    },
+    {
+      "annotation_ids": [
+        {
+          "job_id": 28,
+          "obj_id": 130,
+          "shape_type": "rectangle",
+          "type": "shape"
+        }
+      ],
+      "frame": 1,
+      "id": 32,
+      "report_id": 2,
+      "severity": "error",
+      "type": "missing_annotation"
+    },
+    {
+      "annotation_ids": [
+        {
+          "job_id": 27,
+          "obj_id": 77,
+          "shape_type": "rectangle",
+          "type": "shape"
+        },
+        {
+          "job_id": 28,
+          "obj_id": 114,
+          "shape_type": "rectangle",
+          "type": "shape"
+        }
+      ],
+      "frame": 0,
+      "id": 31,
+      "report_id": 2,
+      "severity": "warning",
+      "type": "mismatching_groups"
+    },
+    {
+      "annotation_ids": [
+        {
+          "job_id": 27,
+          "obj_id": 80,
+          "shape_type": "rectangle",
+          "type": "shape"
+        },
+        {
+          "job_id": 28,
+          "obj_id": 111,
+          "shape_type": "rectangle",
+          "type": "shape"
+        }
+      ],
+      "frame": 0,
+      "id": 30,
+      "report_id": 2,
+      "severity": "warning",
+      "type": "mismatching_groups"
+    },
+    {
+      "annotation_ids": [
+        {
+          "job_id": 27,
+          "obj_id": 87,
+          "shape_type": "rectangle",
+          "type": "shape"
+        },
+        {
+          "job_id": 28,
+          "obj_id": 106,
+          "shape_type": "rectangle",
+          "type": "shape"
+        }
+      ],
+      "frame": 0,
+      "id": 29,
+      "report_id": 2,
+      "severity": "warning",
+      "type": "mismatching_groups"
+    },
+    {
+      "annotation_ids": [
+        {
+          "job_id": 27,
+          "obj_id": 83,
+          "shape_type": "rectangle",
+          "type": "shape"
+        },
+        {
+          "job_id": 28,
+          "obj_id": 105,
+          "shape_type": "rectangle",
+          "type": "shape"
+        }
+      ],
+      "frame": 0,
+      "id": 28,
+      "report_id": 2,
+      "severity": "warning",
+      "type": "mismatching_groups"
+    },
+    {
+      "annotation_ids": [
+        {
+          "job_id": 27,
+          "obj_id": 81,
+          "shape_type": "rectangle",
+          "type": "shape"
+        },
+        {
+          "job_id": 28,
+          "obj_id": 104,
+          "shape_type": "rectangle",
+          "type": "shape"
+        }
+      ],
+      "frame": 0,
+      "id": 27,
+      "report_id": 2,
+      "severity": "warning",
+      "type": "mismatching_groups"
+    },
+    {
+      "annotation_ids": [
+        {
+          "job_id": 27,
+          "obj_id": 82,
+          "shape_type": "rectangle",
+          "type": "shape"
+        },
+        {
+          "job_id": 28,
+          "obj_id": 103,
+          "shape_type": "rectangle",
+          "type": "shape"
+        }
+      ],
+      "frame": 0,
+      "id": 26,
+      "report_id": 2,
+      "severity": "warning",
+      "type": "mismatching_groups"
+    },
+    {
+      "annotation_ids": [
+        {
+          "job_id": 27,
+          "obj_id": 65,
+          "shape_type": "rectangle",
+          "type": "shape"
+        },
+        {
+          "job_id": 28,
+          "obj_id": 101,
+          "shape_type": "rectangle",
+          "type": "shape"
+        }
+      ],
+      "frame": 0,
+      "id": 25,
+      "report_id": 2,
+      "severity": "warning",
+      "type": "mismatching_attributes"
+    },
+    {
+      "annotation_ids": [
+        {
+          "job_id": 27,
+          "obj_id": 69,
+          "shape_type": "mask",
+          "type": "shape"
+        }
+      ],
+      "frame": 0,
+      "id": 24,
+      "report_id": 2,
+      "severity": "warning",
+      "type": "covered_annotation"
+    },
+    {
+      "annotation_ids": [
+        {
+          "job_id": 27,
+          "obj_id": 67,
+          "shape_type": "polyline",
+          "type": "shape"
+        },
+        {
+          "job_id": 28,
+          "obj_id": 99,
+          "shape_type": "polyline",
+          "type": "shape"
+        }
+      ],
+      "frame": 0,
+      "id": 23,
+      "report_id": 2,
+      "severity": "warning",
+      "type": "mismatching_direction"
+    },
+    {
+      "annotation_ids": [
+        {
+          "job_id": 27,
+          "obj_id": 69,
+          "shape_type": "mask",
+          "type": "shape"
+        },
+        {
+          "job_id": 28,
+          "obj_id": 97,
+          "shape_type": "polygon",
+          "type": "shape"
+        }
+      ],
+      "frame": 0,
+      "id": 22,
+      "report_id": 2,
+      "severity": "error",
+      "type": "mismatching_label"
+    },
+    {
+      "annotation_ids": [
+        {
+          "job_id": 27,
+          "obj_id": 92,
+          "shape_type": "points",
+          "type": "shape"
+        },
+        {
+          "job_id": 28,
+          "obj_id": 119,
+          "shape_type": "points",
+          "type": "shape"
+        }
+      ],
+      "frame": 0,
+      "id": 21,
+      "report_id": 2,
+      "severity": "error",
+      "type": "mismatching_label"
+    },
+    {
+      "annotation_ids": [
+        {
+          "job_id": 27,
+          "obj_id": 89,
+          "shape_type": "points",
+          "type": "shape"
+        },
+        {
+          "job_id": 28,
+          "obj_id": 123,
+          "shape_type": "points",
+          "type": "shape"
+        }
+      ],
+      "frame": 0,
+      "id": 20,
+      "report_id": 2,
+      "severity": "error",
+      "type": "mismatching_label"
+    },
+    {
+      "annotation_ids": [
+        {
+          "job_id": 27,
+          "obj_id": 94,
+          "shape_type": "polyline",
+          "type": "shape"
+        }
+      ],
+      "frame": 0,
+      "id": 19,
+      "report_id": 2,
+      "severity": "error",
+      "type": "extra_annotation"
+    },
+    {
+      "annotation_ids": [
+        {
+          "job_id": 27,
+          "obj_id": 66,
+          "shape_type": "polyline",
+          "type": "shape"
+        }
+      ],
+      "frame": 0,
+      "id": 18,
+      "report_id": 2,
+      "severity": "error",
+      "type": "extra_annotation"
+    },
+    {
+      "annotation_ids": [
+        {
+          "job_id": 27,
+          "obj_id": 64,
+          "shape_type": "polyline",
+          "type": "shape"
+        }
+      ],
+      "frame": 0,
+      "id": 17,
+      "report_id": 2,
+      "severity": "error",
+      "type": "extra_annotation"
+    },
+    {
+      "annotation_ids": [
+        {
+          "job_id": 27,
+          "obj_id": 96,
+          "shape_type": "ellipse",
+          "type": "shape"
+        }
+      ],
+      "frame": 0,
+      "id": 16,
+      "report_id": 2,
+      "severity": "error",
+      "type": "extra_annotation"
+    },
+    {
+      "annotation_ids": [
+        {
+          "job_id": 27,
+          "obj_id": 73,
+          "shape_type": "polygon",
+          "type": "shape"
+        }
+      ],
+      "frame": 0,
+      "id": 15,
+      "report_id": 2,
+      "severity": "error",
+      "type": "extra_annotation"
+    },
+    {
+      "annotation_ids": [
+        {
+          "job_id": 27,
+          "obj_id": 95,
+          "shape_type": "polygon",
+          "type": "shape"
+        }
+      ],
+      "frame": 0,
+      "id": 14,
+      "report_id": 2,
+      "severity": "error",
+      "type": "extra_annotation"
+    },
+    {
+      "annotation_ids": [
+        {
+          "job_id": 27,
+          "obj_id": 74,
+          "shape_type": "polygon",
+          "type": "shape"
+        }
+      ],
+      "frame": 0,
+      "id": 13,
+      "report_id": 2,
+      "severity": "error",
+      "type": "extra_annotation"
+    },
+    {
+      "annotation_ids": [
+        {
+          "job_id": 27,
+          "obj_id": 93,
+          "shape_type": "points",
+          "type": "shape"
+        }
+      ],
+      "frame": 0,
+      "id": 12,
+      "report_id": 2,
+      "severity": "error",
+      "type": "extra_annotation"
+    },
+    {
+      "annotation_ids": [
+        {
+          "job_id": 27,
+          "obj_id": 76,
+          "shape_type": "rectangle",
+          "type": "shape"
+        }
+      ],
+      "frame": 0,
+      "id": 11,
+      "report_id": 2,
+      "severity": "error",
+      "type": "extra_annotation"
+    },
+    {
+      "annotation_ids": [
+        {
+          "job_id": 27,
+          "obj_id": 70,
+          "shape_type": "rectangle",
+          "type": "shape"
+        }
+      ],
+      "frame": 0,
+      "id": 10,
+      "report_id": 2,
+      "severity": "error",
+      "type": "extra_annotation"
+    },
+    {
+      "annotation_ids": [
+        {
+          "job_id": 28,
+          "obj_id": 122,
+          "shape_type": "points",
+          "type": "shape"
+        }
+      ],
+      "frame": 0,
+      "id": 9,
+      "report_id": 2,
+      "severity": "error",
+      "type": "missing_annotation"
+    },
+    {
+      "annotation_ids": [
+        {
+          "job_id": 28,
+          "obj_id": 121,
+          "shape_type": "points",
+          "type": "shape"
+        }
+      ],
+      "frame": 0,
+      "id": 8,
+      "report_id": 2,
+      "severity": "error",
+      "type": "missing_annotation"
+    },
+    {
+      "annotation_ids": [
+        {
+          "job_id": 28,
+          "obj_id": 107,
+          "shape_type": "rectangle",
+          "type": "shape"
+        }
+      ],
+      "frame": 0,
+      "id": 7,
+      "report_id": 2,
+      "severity": "error",
+      "type": "missing_annotation"
+    },
+    {
+      "annotation_ids": [
+        {
+          "job_id": 27,
+          "obj_id": 92,
+          "shape_type": "points",
+          "type": "shape"
+        },
+        {
+          "job_id": 28,
+          "obj_id": 119,
+          "shape_type": "points",
+          "type": "shape"
+        }
+      ],
+      "frame": 0,
+      "id": 6,
+      "report_id": 2,
+      "severity": "warning",
+      "type": "low_overlap"
+    },
+    {
+      "annotation_ids": [
+        {
+          "job_id": 27,
+          "obj_id": 67,
+          "shape_type": "polyline",
+          "type": "shape"
+        },
+        {
+          "job_id": 28,
+          "obj_id": 99,
+          "shape_type": "polyline",
+          "type": "shape"
+        }
+      ],
+      "frame": 0,
+      "id": 5,
+      "report_id": 2,
+      "severity": "warning",
+      "type": "low_overlap"
+    },
+    {
+      "annotation_ids": [
+        {
+          "job_id": 27,
+          "obj_id": 68,
+          "shape_type": "polygon",
+          "type": "shape"
+        },
+        {
+          "job_id": 28,
+          "obj_id": 98,
+          "shape_type": "polygon",
+          "type": "shape"
+        }
+      ],
+      "frame": 0,
+      "id": 4,
+      "report_id": 2,
+      "severity": "warning",
+      "type": "low_overlap"
+    },
+    {
+      "annotation_ids": [
+        {
+          "job_id": 27,
+          "obj_id": 88,
+          "shape_type": "points",
+          "type": "shape"
+        },
+        {
+          "job_id": 28,
+          "obj_id": 102,
+          "shape_type": "points",
+          "type": "shape"
+        }
+      ],
+      "frame": 0,
+      "id": 3,
+      "report_id": 2,
+      "severity": "warning",
+      "type": "low_overlap"
+    },
+    {
+      "annotation_ids": [
+        {
+          "job_id": 27,
+          "obj_id": 91,
+          "shape_type": "rectangle",
+          "type": "shape"
+        },
+        {
+          "job_id": 28,
+          "obj_id": 118,
+          "shape_type": "rectangle",
+          "type": "shape"
+        }
+      ],
+      "frame": 0,
+      "id": 2,
+      "report_id": 2,
+      "severity": "warning",
+      "type": "low_overlap"
+    },
+    {
+      "annotation_ids": [
+        {
+          "job_id": 27,
+          "obj_id": 65,
+          "shape_type": "rectangle",
+          "type": "shape"
+        },
+        {
+          "job_id": 28,
+          "obj_id": 101,
+          "shape_type": "rectangle",
+          "type": "shape"
+        }
+      ],
+      "frame": 0,
+      "id": 1,
+      "report_id": 2,
+      "severity": "warning",
+      "type": "low_overlap"
+    }
+  ]
+}

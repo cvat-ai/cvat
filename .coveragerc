@@ -1,0 +1,38 @@
+[run]
+branch = true
+
+source =
+    cvat/apps/
+    cvat-sdk/
+    cvat-cli/
+    utils/dataset_manifest
+
+omit =
+    cvat/settings/*
+    */tests/*
+    */test_*
+    */_test_*
+    */migrations/*
+
+[report]
+# Regexes for lines to exclude from consideration
+exclude_lines =
+    # Have to re-enable the standard pragma
+    pragma: no cover
+
+    # Don't complain about missing debug-only code:
+    def __repr__
+    if\s+[\w\.()]+\.isEnabledFor\(log\.DEBUG\):
+
+    # Don't complain if tests don't hit defensive assertion code:
+    raise AssertionError
+    raise NotImplementedError
+
+    # Don't complain if non-runnable code isn't run:
+    if 0:
+    if __name__ == .__main__.:
+
+# don't fail on the code that can be found
+ignore_errors = true
+
+skip_empty = true

@@ -1,0 +1,32 @@
+{{#models}}{{#model}}# {{classname}}
+
+{{#description}}{{description}}
+{{/description}}
+
+## Properties
+Name | Type | Description | Notes
+------------ | ------------- | ------------- | -------------
+{{#isEnum}}
+**value** | {{^arrayModelType}}**{{dataType}}**{{/arrayModelType}} | {{{description}}} | {{#defaultValue}}{{#hasRequired}} if omitted the server will use the default value of {{/hasRequired}}{{^hasRequired}}defaults to {{/hasRequired}}{{{.}}}{{/defaultValue}}{{#allowableValues}}{{#defaultValue}}, {{/defaultValue}} must be one of [{{#enumVars}}{{{value}}}, {{/enumVars}}]{{/allowableValues}}
+{{/isEnum}}
+{{#isAlias}}
+**value** | {{^arrayModelType}}**{{dataType}}**{{/arrayModelType}} | {{{description}}} | {{#defaultValue}}{{#hasRequired}} if omitted the server will use the default value of {{/hasRequired}}{{^hasRequired}}defaults to {{/hasRequired}}{{{.}}}{{/defaultValue}}
+{{/isAlias}}
+{{#isArray}}
+**value** | {{^arrayModelType}}**{{dataType}}**{{/arrayModelType}}{{#arrayModelType}}[**{{dataType}}**]({{arrayModelType}}){{/arrayModelType}} | {{{description}}} | {{#defaultValue}}{{#hasRequired}} if omitted the server will use the default value of {{/hasRequired}}{{^hasRequired}}defaults to {{/hasRequired}}{{{.}}}{{/defaultValue}}
+{{/isArray}}
+{{#requiredVars}}
+{{^defaultValue}}
+**{{name}}** | {{^complexType}}**{{dataType}}**{{/complexType}}{{#complexType}}[**{{dataType}}**]({{complexType}}){{/complexType}} | {{{description}}} | {{#isReadOnly}}[readonly] {{/isReadOnly}}
+{{/defaultValue}}
+{{/requiredVars}}
+{{#requiredVars}}
+{{#defaultValue}}
+**{{name}}** | {{^complexType}}**{{dataType}}**{{/complexType}}{{#complexType}}[**{{dataType}}**]({{complexType}}){{/complexType}} | {{{description}}} | {{^required}}[optional] {{/required}}{{#isReadOnly}}[readonly] {{/isReadOnly}}{{#defaultValue}}defaults to {{{.}}}{{/defaultValue}}
+{{/defaultValue}}
+{{/requiredVars}}
+{{#optionalVars}}
+**{{name}}** | {{^complexType}}**{{dataType}}**{{/complexType}}{{#complexType}}[**{{dataType}}**]({{complexType}}){{/complexType}} | {{{description}}} | [optional] {{#isReadOnly}}[readonly] {{/isReadOnly}}{{#defaultValue}} if omitted the server will use the default value of {{{.}}}{{/defaultValue}}
+{{/optionalVars}}
+
+{{/model}}{{/models}}

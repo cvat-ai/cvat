@@ -1,0 +1,104 @@
+// Copyright (C) 2022 Intel Corporation
+// Copyright (C) 2023 CVAT.ai Corporation
+//
+// SPDX-License-Identifier: MIT
+
+@import '../../base';
+
+.cvat-resource-page-filters {
+    display: flex;
+    align-items: center;
+
+    span[aria-label="down"] {
+        margin-right: $grid-unit-size;
+    }
+
+    > button {
+        margin-right: $grid-unit-size;
+
+        &:last-child {
+            margin-right: 0;
+        }
+    }
+}
+
+.cvat-resource-page-recent-filters-list {
+    max-width: $grid-unit-size * 64;
+
+    .ant-menu {
+        border: none;
+
+        .ant-menu-item {
+            padding: $grid-unit-size;
+            margin: 0;
+            line-height: initial;
+            height: auto;
+        }
+    }
+}
+
+.cvat-resource-page-filters-builder {
+    background: white;
+    padding: $grid-unit-size;
+    border-radius: 4px;
+    box-shadow: $box-shadow-base;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+}
+
+.cvat-resource-page-sorting-list,
+.cvat-resource-page-predefined-filters-list,
+.cvat-resource-page-recent-filters-list {
+    background: white;
+    padding: $grid-unit-size;
+    border-radius: 4px;
+    display: flex;
+    flex-direction: column;
+    box-shadow: $box-shadow-base;
+
+    .ant-checkbox-wrapper {
+        margin-bottom: $grid-unit-size;
+        margin-left: 0;
+    }
+}
+
+.cvat-resource-page-sorting-list {
+    width: $grid-unit-size * 24;
+}
+
+.cvat-sorting-field {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: $grid-unit-size;
+
+    .ant-radio-button-wrapper {
+        width: $grid-unit-size * 16;
+        user-select: none;
+        cursor: move;
+    }
+}
+
+.cvat-sorting-anchor {
+    width: 100%;
+    pointer-events: none;
+
+    &:first-child {
+        margin-top: $grid-unit-size * 4;
+    }
+
+    &:last-child {
+        margin-bottom: $grid-unit-size * 4;
+    }
+}
+
+.cvat-sorting-dragged-item {
+    z-index: 10000;
+}
+
+.cvat-resource-page-filters-space {
+    justify-content: right;
+    align-items: center;
+    display: flex;
+}

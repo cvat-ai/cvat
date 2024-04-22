@@ -1,0 +1,63 @@
+services:
+  minio:
+    image: quay.io/minio/minio:RELEASE.2022-09-17T00-09-45Z
+    hostname: minio
+    restart: always
+    command: server /data --console-address ":9001"
+    expose:
+      - "9000"
+      - "9001"
+    ports:
+      - 9000:9000
+      - 9001:9001
+    environment:
+      MINIO_ROOT_USER: "minio_access_key"
+      MINIO_ROOT_PASSWORD: "minio_secret_key"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      interval: 30s
+      timeout: 20s
+      retries: 3
+    networks:
+      cvat:
+        aliases:
+          - minio
+  mc:
+    image: minio/mc:RELEASE.2022-09-16T09-16-47Z
+    depends_on:
+      - minio
+    environment:
+      MC_PATH: "/usr/bin/mc"
+      MINIO_HOST: "http://minio:9000"
+      MINIO_ACCESS_KEY: "minio_access_key"
+      MINIO_SECRET_KEY: "minio_secret_key"
+      MINIO_ALIAS: "local_minio"
+      PRIVATE_BUCKET: "private"
+      PUBLIC_BUCKET: "public"
+      TEST_BUCKET: "test"
+      IMPORT_EXPORT_BUCKET: "importexportbucket"
+    volumes:
+      - ./tests/cypress/e2e/actions_tasks/assets/case_65_manifest/:/storage
+    networks:
+      - cvat
+    entrypoint: >
+      /bin/sh -c "
+      $${MC_PATH} config host add --quiet --api s3v4 $${MINIO_ALIAS} $${MINIO_HOST} $${MINIO_ACCESS_KEY} $${MINIO_SECRET_KEY};
+      $${MC_PATH} mb $${MINIO_ALIAS}/$${PRIVATE_BUCKET} $${MINIO_ALIAS}/$${PUBLIC_BUCKET} $${MINIO_ALIAS}/$${TEST_BUCKET} $${MINIO_ALIAS}/$${IMPORT_EXPORT_BUCKET};
+      for BUCKET in $${MINIO_ALIAS}/$${PRIVATE_BUCKET} $${MINIO_ALIAS}/$${PUBLIC_BUCKET} $${MINIO_ALIAS}/$${TEST_BUCKET} $${MINIO_ALIAS}/$${IMPORT_EXPORT_BUCKET};
+      do
+          if [ $${BUCKET} == $${MINIO_ALIAS}/$${PRIVATE_BUCKET} ]
+          then
+            FULL_PATH=$${BUCKET}/'sub'
+          else
+            FULL_PATH=$${BUCKET}
+          fi
+          $${MC_PATH} cp --recursive /storage/ $${FULL_PATH};
+          for i in 1 2;
+          do
+              $${MC_PATH} cp /storage/manifest.jsonl $${FULL_PATH}/manifest_$${i}.jsonl;
+          done;
+      done;
+      $${MC_PATH} policy set public $${MINIO_ALIAS}/$${PUBLIC_BUCKET};
+      exit 0;
+      "

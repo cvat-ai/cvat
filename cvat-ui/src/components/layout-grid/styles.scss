@@ -1,0 +1,50 @@
+// Copyright (C) 2020-2022 Intel Corporation
+// Copyright (C) 2023 CVAT.ai Corporation
+//
+// SPDX-License-Identifier: MIT
+
+@import './../../base.scss';
+
+.grid {
+    display: grid;
+
+    &::before,
+    &::after {
+        content: '';
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100vw;
+    }
+
+    &.sm {
+        grid-template-rows: repeat(1000, $grid-unit-size);
+        grid-template-columns: repeat(1000, $grid-unit-size);
+
+        &::before,
+        &::after {
+            background: linear-gradient(to right, $layout-sm-grid-color 1px, transparent 1px);
+            background-size: $grid-unit-size;
+        }
+
+        &::after {
+            transform: rotate(90deg);
+        }
+    }
+
+    &.lg {
+        grid-template-rows: repeat(1000, $layout-lg-grid-size);
+        grid-template-columns: repeat(1000, $layout-lg-grid-size);
+
+        &::before,
+        &::after {
+            background: linear-gradient(to right, $layout-lg-grid-color 1px, transparent 1px);
+            background-size: $layout-lg-grid-size;
+        }
+
+        &::after {
+            transform: rotate(90deg);
+        }
+    }
+}

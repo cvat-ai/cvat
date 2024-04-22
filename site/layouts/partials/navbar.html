@@ -1,0 +1,47 @@
+{{ $cover := .HasShortcode "blocks/cover" }}
+{{ $page_rel := .Page.RelPermalink | safeURL }}
+{{ $page_rel_trim := strings.TrimLeft "/" $page_rel | safeURL }}
+<nav class="js-navbar-scroll navbar navbar-expand navbar-dark {{ if $cover}} td-navbar-cover {{ end }}flex-column flex-md-row td-navbar">
+        <a class="navbar-brand" href="{{ .Site.Home.RelPermalink }}about/">
+    <span class="navbar-logo">{{ if .Site.Params.ui.navbar_logo }}{{ with resources.Get "icons/logo.svg" }}{{ ( . | minify).Content | safeHTML }}{{ end }}{{ end }}</span>
+  </a>
+  <div class="td-navbar-nav-scroll ml-md-auto" id="main_navbar">
+    <ul class="navbar-nav mt-2 mt-lg-0">
+      {{ $p := . }}
+      {{ range .Site.Menus.main }}
+      <li class="nav-item mr-4 mb-2 mb-lg-0">
+        {{ $active := or ($p.IsMenuCurrent "main" .) ($p.HasMenuCurrent "main" .) }}
+        {{ with .Page }}
+        {{ $active = or $active ( $.IsDescendant .)  }}
+        {{ end }}
+        {{ $pre := .Pre }}
+        {{ $post := .Post }}
+        {{ $url := urls.Parse .URL }}
+        {{ $baseurl := urls.Parse $.Site.Params.Baseurl }}
+        <a class="nav-link{{if $active }} active{{end}}" href="{{ with .Page }}{{ .RelPermalink }}{{ else }}{{ .URL | relLangURL }}{{ end }}" {{ if ne $url.Host $baseurl.Host }} {{ end }}>{{ with .Pre}}{{ $pre }}{{ end }}<span{{if $active }} class="active"{{end}}>{{ .Name }}</span>{{ with .Post}}{{ $post }}{{ end }}</a>
+      </li>
+      {{ end }}
+      {{ if  .Site.Params.versions }}
+        {{ if eq .Page.Type "docs" }}
+        <li class="nav-item dropdown">
+          <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-target="#dropdown_ver" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+            {{ .Site.Params.version_menu }}
+          </a>
+        </li>
+        {{ end }}
+      {{ end }}
+      {{ if  (gt (len .Site.Home.Translations) 0) }}
+      <li class="nav-item dropdown d-none d-lg-block">
+        {{ partial "navbar-lang-selector.html" . }}
+      </li>
+      {{ end }}
+    </ul>
+  </div>
+  <div class="dropdown-menu" id="dropdown_ver" aria-labelledby="navbarDropdownMenuLink">
+    {{ range .Site.Params.versions }}
+      {{ $ver := .version }}
+        <a class="dropdown-item" href="{{ .url }}{{ if eq $ver "Latest version" }}{{ $page_rel_trim }}{{ else }}{{ $page_rel }}{{ end }}">{{ $ver }}</a>
+    {{ end }}
+  </div>
+  <div class="navbar-nav d-none d-lg-block">{{ partial "search-input.html" . }}</div>
+</nav>

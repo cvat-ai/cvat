@@ -1,0 +1,11 @@
+{
+  "extends": "stylelint-config-standard-scss",
+  "rules": {
+    "scss/comment-no-empty": null,
+    "value-keyword-case": null,
+    "color-function-notation": ["legacy"],
+    "scss/at-extend-no-missing-placeholder": null,
+    "no-descending-specificity": null
+  },
+  "ignoreFiles": ["**/*.js", "**/*.ts", "**/*.py"]
+}

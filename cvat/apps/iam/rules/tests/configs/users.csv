@@ -1,0 +1,9 @@
+Scope,Resource,Context,Ownership,Limit,Method,URL,Privilege,Membership
+list,User,N/A,N/A,,GET,/users,None,N/A
+view,User,Sandbox,None,,GET,/users/{id},Admin,N/A
+view,User,N/A,Self,,GET,/users/{id},None,N/A
+view,User,Organization,None,"resource[""membership""][""role""] != None",GET,/users/{id},None,Worker
+update,User,N/A,None,,PATCH,/users/{id},Admin,N/A
+update,User,N/A,Self,,PATCH,/users/{id},None,N/A
+delete,User,N/A,None,,DELETE,/users/{id},Admin,N/A
+delete,User,N/A,Self,,DELETE,/users/{id},None,N/A

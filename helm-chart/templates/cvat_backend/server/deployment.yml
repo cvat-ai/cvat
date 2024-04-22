@@ -1,0 +1,144 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Release.Name }}-backend-server
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app: cvat-app
+    tier: backend
+    component: server
+    {{- include "cvat.labels" . | nindent 4 }}
+    {{- with .Values.cvat.backend.server.labels }}
+    {{- toYaml . | nindent 4 }}
+    {{- end }}
+  {{- with .Values.cvat.backend.server.annotations }}
+  annotations:
+  {{- toYaml . | nindent 4 }}
+  {{- end }}
+spec:
+  replicas: {{ .Values.cvat.backend.server.replicas }}
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      {{- include "cvat.labels" . | nindent 6 }}
+      {{- with .Values.cvat.backend.server.labels }}
+      {{- toYaml . | nindent 6 }}
+      {{- end }}
+      app: cvat-app
+      tier: backend
+      component: server
+  template:
+    metadata:
+      labels:
+        app: cvat-app
+        tier: backend
+        component: server
+        {{- include "cvat.labels" . | nindent 8 }}
+        {{- with .Values.cvat.backend.server.labels }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+      {{- with .Values.cvat.backend.server.annotations }}
+      annotations:
+      {{- toYaml . | nindent 8 }}
+      {{- end }}
+    spec:
+      containers:
+        - name: cvat-app-backend-server-container
+          image: {{ .Values.cvat.backend.image }}:{{ .Values.cvat.backend.tag }}
+          imagePullPolicy: {{ .Values.cvat.backend.imagePullPolicy }}
+          {{- with .Values.cvat.backend.server.resources }}
+          resources:
+          {{- toYaml . | nindent 12 }}
+          {{- end }}
+          args: ["run", "server"]
+          env:
+          - name: ALLOWED_HOSTS
+            value: {{ .Values.cvat.backend.server.envs.ALLOWED_HOSTS | squote}}
+          - name: DJANGO_MODWSGI_EXTRA_ARGS
+            value: {{ .Values.cvat.backend.server.envs.DJANGO_MODWSGI_EXTRA_ARGS}}
+          - name: IAM_OPA_BUNDLE
+            value: "1"
+          {{ include "cvat.sharedBackendEnv" . | indent 10 }}
+          {{- with .Values.cvat.backend.server.additionalEnv }}
+          {{- toYaml . | nindent 10 }}
+          {{- end }}
+          ports:
+          - containerPort: 8080
+          volumeMounts:
+          {{- if not .Values.cvat.backend.disableDistinctCachePerService }}
+          - mountPath: /home/django/data/cache
+            name: cvat-server-backend-cache
+          {{- end }}
+          - mountPath: /home/django/data
+            name: cvat-backend-data
+            subPath: data
+          - mountPath: /home/django/keys
+            name: cvat-backend-data
+            subPath: keys
+          - mountPath: /home/django/logs
+            name: cvat-backend-data
+            subPath: logs
+          - mountPath: /home/django/models
+            name: cvat-backend-data
+            subPath: models
+          {{- with .Values.cvat.backend.server.additionalVolumeMounts }}
+          {{- toYaml . | nindent 10 }}
+          {{- end }}
+      initContainers:
+        {{- if .Values.cvat.backend.permissionFix.enabled }}
+        - name: user-data-permission-fix
+          image: busybox
+          command: ["/bin/chmod", "-R", "777", "/home/django"]
+          {{- with .Values.cvat.backend.server.resources }}
+          resources:
+          {{- toYaml . | nindent 12 }}
+          {{- end }}
+          volumeMounts:
+          {{- if .Values.cvat.backend.defaultStorage.enabled }}
+          {{- if not .Values.cvat.backend.disableDistinctCachePerService }}
+          - mountPath: /home/django/data/cache
+            name: cvat-server-backend-cache
+          {{- end }}
+          - mountPath: /home/django/data
+            name: cvat-backend-data
+            subPath: data
+          - mountPath: /home/django/keys
+            name: cvat-backend-data
+            subPath: keys
+          - mountPath: /home/django/logs
+            name: cvat-backend-data
+            subPath: logs
+          - mountPath: /home/django/models
+            name: cvat-backend-data
+            subPath: models
+          {{- end }}
+          {{- with .Values.cvat.backend.server.additionalVolumeMounts }}
+          {{- toYaml . | nindent 10 }}
+          {{- end }}
+        {{- end }}
+      {{- with .Values.cvat.backend.server.affinity }}
+      affinity:
+      {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.cvat.backend.server.tolerations }}
+      tolerations:
+      {{- toYaml . | nindent 8 }}
+      {{- end }}
+      volumes:
+        {{- if .Values.cvat.backend.defaultStorage.enabled }}
+        - name: cvat-backend-data
+          persistentVolumeClaim:
+            claimName: "{{ .Release.Name }}-backend-data"
+        {{- if not .Values.cvat.backend.disableDistinctCachePerService }}
+        - name: cvat-server-backend-cache
+          emptyDir: {}
+        {{- end }}
+        {{- end }}
+        {{- with .Values.cvat.backend.server.additionalVolumes }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}

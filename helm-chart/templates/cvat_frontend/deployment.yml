@@ -1,0 +1,66 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Release.Name }}-frontend
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "cvat.labels" . | nindent 4 }}
+    app: cvat-app
+    tier: frontend
+spec:
+  replicas: {{ .Values.cvat.frontend.replicas }}
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      {{- include "cvat.labels" . | nindent 6 }}
+      app: cvat-app
+      tier: frontend
+  template:
+    metadata:
+      labels:
+        {{- include "cvat.labels" . | nindent 8 }}
+        app: cvat-app
+        tier: frontend
+        {{- with .Values.cvat.frontend.labels }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+        {{- with .Values.cvat.frontend.annotations }}
+      annotations:
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+    spec:
+      containers:
+        - name: cvat-frontend-app-container
+          image: {{ .Values.cvat.frontend.image }}:{{ .Values.cvat.frontend.tag }}
+          imagePullPolicy: {{ .Values.cvat.frontend.imagePullPolicy }}
+          {{- with .Values.cvat.frontend.resources }}
+          resources:
+          {{- toYaml . | nindent 12 }}
+          {{- end }}
+          ports:
+          - containerPort: 80
+          {{- with .Values.cvat.frontend.additionalEnv }}
+          env:
+          {{- toYaml . | nindent 10 }}
+          {{- end }}
+          {{- with .Values.cvat.frontend.additionalVolumeMounts }}
+          volumeMounts:
+          {{- toYaml . | nindent 10 }}
+          {{- end }}
+        {{- with .Values.cvat.frontend.additionalVolumes }}
+      volumes:
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+      {{- with .Values.cvat.frontend.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.cvat.frontend.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}

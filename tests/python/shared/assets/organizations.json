@@ -1,0 +1,43 @@
+{
+  "count": 2,
+  "next": null,
+  "previous": null,
+  "results": [
+    {
+      "contact": {
+        "email": "org2@cvat.org"
+      },
+      "created_date": "2021-12-14T19:51:38.667000Z",
+      "description": "",
+      "id": 2,
+      "name": "Organization #2",
+      "owner": {
+        "first_name": "Business",
+        "id": 10,
+        "last_name": "First",
+        "url": "http://localhost:8080/api/users/10",
+        "username": "business1"
+      },
+      "slug": "org2",
+      "updated_date": "2021-12-14T19:51:38.667000Z"
+    },
+    {
+      "contact": {
+        "email": "org1@cvat.org"
+      },
+      "created_date": "2021-12-14T18:45:40.172000Z",
+      "description": "",
+      "id": 1,
+      "name": "organization #1",
+      "owner": {
+        "first_name": "User",
+        "id": 2,
+        "last_name": "First",
+        "url": "http://localhost:8080/api/users/2",
+        "username": "user1"
+      },
+      "slug": "org1",
+      "updated_date": "2021-12-14T18:45:40.172000Z"
+    }
+  ]
+}

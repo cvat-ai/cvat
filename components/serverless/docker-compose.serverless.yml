@@ -1,0 +1,32 @@
+services:
+  nuclio:
+    container_name: nuclio
+    image: quay.io/nuclio/dashboard:1.11.24-amd64
+    restart: always
+    networks:
+      - cvat
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    environment:
+      http_proxy:
+      https_proxy:
+      no_proxy: ${no_proxy:-}
+      NUCLIO_CHECK_FUNCTION_CONTAINERS_HEALTHINESS: 'true'
+      NUCLIO_DASHBOARD_DEFAULT_FUNCTION_MOUNT_MODE: 'volume'
+    ports:
+      - '8070:8070'
+    logging:
+      driver: "json-file"
+      options:
+        max-size: 100m
+        max-file: "3"
+
+  cvat_server:
+    environment:
+      CVAT_SERVERLESS: 1
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+
+  cvat_worker_annotation:
+    extra_hosts:
+      - "host.docker.internal:host-gateway"

@@ -1,0 +1,448 @@
+{
+  "main": {
+    "name": "main task",
+    "overlap": 0,
+    "segment_size": 100,
+    "labels": [
+      {
+        "name": "car",
+        "color": "#2080c0",
+        "attributes": [
+          {
+            "name": "select_name",
+            "mutable": false,
+            "input_type": "select",
+            "default_value": "bmw",
+            "values": ["bmw", "mazda", "renault"]
+          },
+          {
+            "name": "radio_name",
+            "mutable": false,
+            "input_type": "radio",
+            "default_value": "x1",
+            "values": ["x1", "x2", "x3"]
+          },
+          {
+            "name": "check_name",
+            "mutable": true,
+            "input_type": "checkbox",
+            "default_value": "false",
+            "values": ["false"]
+          },
+          {
+            "name": "text_name",
+            "mutable": false,
+            "input_type": "text",
+            "default_value": "qwerty",
+            "values": ["qwerty"]
+          },
+          {
+            "name": "number_name",
+            "mutable": false,
+            "input_type": "number",
+            "default_value": "-4",
+            "values": ["-4", "4", "1"]
+          }
+        ]
+      },
+      {
+        "name": "person",
+        "color": "#c06060",
+        "attributes": []
+      }
+    ]
+  },
+  "ICDAR Localization 1.0": {
+    "name": "icdar localization/recogntion task",
+    "overlap": 0,
+    "segment_size": 100,
+    "labels": [
+      {
+        "name": "icdar",
+        "attributes": [
+          {
+            "name": "text",
+            "mutable": false,
+            "input_type": "text",
+            "values": ["word_1", "word_2", "word_3"]
+          }
+        ]
+      }
+    ]
+  },
+  "ICDAR Recognition 1.0": {
+    "name": "icdar localization/recogntion task",
+    "overlap": 0,
+    "segment_size": 100,
+    "labels": [
+      {
+        "name": "icdar",
+        "attributes": [
+          {
+            "name": "text",
+            "mutable": false,
+            "input_type": "text",
+            "values": ["word_1", "word_2", "word_3"]
+          }
+        ]
+      }
+    ]
+  },
+  "ICDAR Segmentation 1.0": {
+    "name": "icdar segmentation task",
+    "overlap": 0,
+    "segment_size": 100,
+    "labels": [
+      {
+        "name": "icdar",
+        "attributes": [
+          {
+            "name": "text",
+            "mutable": false,
+            "input_type": "text",
+            "values": ["word_1", "word_2", "word_3"]
+          },
+          {
+            "name": "index",
+            "mutable": false,
+            "input_type": "number",
+            "values": ["0", "1", "2"]
+          },
+          {
+            "name": "color",
+            "mutable": false,
+            "input_type": "text",
+            "values": ["100 110 240", "10 15 20", "120 128 64"]
+          },
+          {
+            "name": "center",
+            "mutable": false,
+            "input_type": "text",
+            "values": ["1 2", "2 4", "10 45"]
+          }
+        ]
+      }
+    ]
+  },
+  "Market-1501 1.0": {
+    "name": "market1501 task",
+    "overlap": 0,
+    "segment_size": 100,
+    "labels": [
+      {
+        "name": "market-1501",
+        "attributes": [
+          {
+            "name": "query",
+            "mutable": false,
+            "input_type": "select",
+            "values": ["True", "False"]
+          },
+          {
+            "name": "camera_id",
+            "mutable": false,
+            "input_type": "number",
+            "values": ["1", "5", "2"]
+          },
+          {
+            "name": "person_id",
+            "mutable": false,
+            "input_type": "number",
+            "values": ["1", "6", "1"]
+          }
+        ]
+      }
+    ]
+  },
+  "Cityscapes 1.0": {
+    "name": "cityscapes task",
+    "overlap": 0,
+    "segment_size": 100,
+    "labels": [
+      {
+        "name": "car",
+        "color": "#2080c0",
+        "attributes": [
+          {
+            "name": "is_crowd",
+            "mutable": false,
+            "input_type": "checkbox",
+            "default_value": "false",
+            "values": ["false", "true"]
+          }
+        ]
+      },
+      {
+        "name": "person",
+        "color": "#c06060",
+        "attributes": []
+      },
+      {
+        "name": "background",
+        "color": "#000000",
+        "attributes": []
+      }
+    ]
+  },
+  "KITTI 1.0": {
+    "name": "kitti task",
+    "overlap": 0,
+    "segment_size": 100,
+    "labels": [
+      {
+        "name": "car",
+        "color": "#2080c0",
+        "attributes": [
+          {
+            "name": "is_crowd",
+            "mutable": false,
+            "input_type": "checkbox",
+            "default_value": "false",
+            "values": ["false", "true"]
+          }
+        ]
+      },
+      {
+        "name": "person",
+        "color": "#c06060",
+        "attributes": []
+      },
+      {
+        "name": "background",
+        "color": "#000000",
+        "attributes": []
+      }
+    ]
+  },
+  "MOT 1.1": {
+    "name": "MOT task",
+    "overlap": 0,
+    "segment_size": 100,
+    "labels": [
+      {
+        "name": "car",
+        "color": "#2080c0",
+        "attributes": [
+          {
+            "name": "ignored",
+            "mutable": true,
+            "input_type": "checkbox",
+            "default_value": "false",
+            "values": ["false", "true"]
+          },
+          {
+            "name": "visibility",
+            "mutable": false,
+            "input_type": "number",
+            "default_value": "1",
+            "values": ["0", "1", "1"]
+          }
+        ]
+      },
+      {
+        "name": "person",
+        "color": "#c06060",
+        "attributes": [
+          {
+            "name": "ignored",
+            "mutable": true,
+            "input_type": "checkbox",
+            "default_value": "false",
+            "values": ["false", "true"]
+          },
+          {
+            "name": "visibility",
+            "mutable": false,
+            "input_type": "number",
+            "default_value": "1",
+            "values": ["0", "1", "1"]
+          }
+        ]
+      }
+    ]
+  },
+  "wrong_checkbox_value": {
+    "name": "wrong checkbox value task",
+    "overlap": 0,
+    "segment_size": 100,
+    "labels": [
+      {
+        "name": "car",
+        "color": "#2080c0",
+        "attributes": [
+          {
+            "name": "select_name",
+            "mutable": false,
+            "input_type": "select",
+            "default_value": "bmw",
+            "values": ["bmw", "mazda", "renault"]
+          },
+          {
+            "name": "radio_name",
+            "mutable": false,
+            "input_type": "radio",
+            "default_value": "x1",
+            "values": ["x1", "x2", "x3"]
+          },
+          {
+            "name": "check_name",
+            "mutable": true,
+            "input_type": "checkbox",
+            "default_value": "false",
+            "values": ["false"]
+          },
+          {
+            "name": "text_name",
+            "mutable": false,
+            "input_type": "text",
+            "default_value": "qwerty",
+            "values": ["qwerty"]
+          },
+          {
+            "name": "number_name",
+            "mutable": false,
+            "input_type": "number",
+            "default_value": "-4",
+            "values": ["-4", "4", "1"]
+          }
+        ]
+      },
+      {
+        "name": "person",
+        "color": "#c06060",
+        "attributes": []
+      }
+    ]
+  },
+  "no attributes": {
+    "name": "no attributes",
+    "overlap": 0,
+    "segment_size": 100,
+    "labels": [
+      {
+        "name": "car",
+        "color": "#2080c0",
+        "attributes": []
+      }
+    ]
+  },
+  "many jobs": {
+    "name": "many jobs",
+    "overlap": 0,
+    "segment_size": 5,
+    "labels": [
+      {
+        "name": "car",
+        "color": "#2080c0",
+        "attributes": []
+      }
+    ]
+  },
+  "change overlap and segment size": {
+    "name": "change overlap and segment size",
+    "overlap": 3,
+    "segment_size": 6,
+    "labels": [
+      {
+        "name": "car",
+        "color": "#2080c0",
+        "attributes": []
+      }
+    ]
+  },
+  "widerface with all attributes": {
+    "name": "widerface task",
+    "overlap": 0,
+    "segment_size": 100,
+    "labels": [
+      {
+        "name": "face",
+        "attributes": [
+          {
+            "name": "blur",
+            "mutable": false,
+            "input_type": "select",
+            "values": ["0", "1", "2"]
+          },
+          {
+            "name": "expression",
+            "mutable": false,
+            "input_type": "select",
+            "values": ["0", "1"]
+          },
+          {
+            "name": "illumination",
+            "mutable": false,
+            "input_type": "select",
+            "values": ["0", "1"]
+          },
+          {
+            "name": "pose",
+            "mutable": false,
+            "input_type": "select",
+            "values": ["0", "1"]
+          },
+          {
+            "name": "invalid",
+            "mutable": false,
+            "input_type": "select",
+            "values": ["0", "1"]
+          }
+        ]
+      }
+    ]
+  },
+  "task in project #1": {
+    "name": "First task in project",
+    "project_id": 1,
+    "overlap": 0,
+    "segment_size": 100
+  },
+  "task in project #2": {
+    "name": "Second task in project",
+    "project_id": 1,
+    "overlap": 0,
+    "segment_size": 100
+  },
+  "COCO Keypoints 1.0": {
+    "name": "coco keupoints task",
+    "overlap": 0,
+    "segment_size": 100,
+    "labels": [
+      {
+        "name": "skeleton",
+        "color": "#2080c0",
+        "type": "skeleton",
+        "attributes": [
+          {
+            "name": "attr",
+            "mutable": false,
+            "input_type": "select",
+            "values": ["0", "1", "2"]
+          }
+        ],
+        "sublabels": [
+          {
+            "name": "1",
+            "color": "#d12345",
+            "attributes": [],
+            "type": "points"
+          },
+          {
+            "name": "2",
+            "color": "#350dea",
+            "attributes": [],
+            "type": "points"
+          },
+          {
+            "name": "3",
+            "color": "#479ffe",
+            "attributes": [],
+            "type": "points"
+          }
+        ],
+        "svg": "<line x1=\"38.92810821533203\" y1=\"53.31378173828125\" x2=\"80.23341369628906\" y2=\"18.36313819885254\" stroke=\"black\" data-type=\"edge\" data-node-from=\"2\" stroke-width=\"0.5\" data-node-to=\"3\"></line><line x1=\"30.399484634399414\" y1=\"32.74474334716797\" x2=\"38.92810821533203\" y2=\"53.31378173828125\" stroke=\"black\" data-type=\"edge\" data-node-from=\"1\" stroke-width=\"0.5\" data-node-to=\"2\"></line><circle r=\"1.5\" stroke=\"black\" fill=\"#b3b3b3\" cx=\"30.399484634399414\" cy=\"32.74474334716797\" stroke-width=\"0.1\" data-type=\"element node\" data-element-id=\"1\" data-node-id=\"1\" data-label-name=\"1\"></circle><circle r=\"1.5\" stroke=\"black\" fill=\"#b3b3b3\" cx=\"38.92810821533203\" cy=\"53.31378173828125\" stroke-width=\"0.1\" data-type=\"element node\" data-element-id=\"2\" data-node-id=\"2\" data-label-name=\"2\"></circle><circle r=\"1.5\" stroke=\"black\" fill=\"#b3b3b3\" cx=\"80.23341369628906\" cy=\"18.36313819885254\" stroke-width=\"0.1\" data-type=\"element node\" data-element-id=\"3\" data-node-id=\"3\" data-label-name=\"3\"></circle>"
+      }
+    ]
+  }
+}

@@ -1,0 +1,38 @@
+{
+    // See https://go.microsoft.com/fwlink/?LinkId=733558
+    // for the documentation about the tasks.json format
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "type": "npm",
+            "script": "start",
+            "path": "cvat-ui/",
+            "label": "npm: start - cvat-ui",
+            "detail": "webpack-dev-server --env.API_URL=http://localhost:7000 --config ./webpack.config.js --mode=development",
+            "promptOnClose": true,
+            "isBackground": true,
+            "problemMatcher": {
+                "owner": "webpack",
+                "severity": "error",
+                "fileLocation": "absolute",
+                "pattern": [
+                  {
+                    "regexp": "ERROR in (.*)",
+                    "file": 1
+                  },
+                  {
+                    "regexp": "\\((\\d+),(\\d+)\\):(.*)",
+                    "line": 1,
+                    "column": 2,
+                    "message": 3
+                  }
+                ],
+                "background": {
+                  "activeOnStart": true,
+                  "beginsPattern": "webpack-dev-server",
+                  "endsPattern": "Compiled"
+                }
+            }
+        }
+    ]
+}

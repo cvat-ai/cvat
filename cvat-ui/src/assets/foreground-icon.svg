@@ -1,0 +1,11 @@
+<!--
+    Copyright (C) 2020-2022 Intel Corporation
+    SPDX-License-Identifier: MIT
+-->
+
+<svg stroke="currentColor" height="1em" width="1em" viewBox="0 0 256 256" xmlns="http://www.w3.org/2000/svg">
+    <g>
+        <rect rx="12" height="166" width="167" y="25" x="25" stroke-width="15" fill="none" />
+        <rect rx="12" height="166" width="167" y="70" x="70" stroke-width="15" fill="none" stroke-dasharray="35" />
+    </g>
+</svg>
