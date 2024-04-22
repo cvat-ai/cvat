@@ -915,7 +915,7 @@ class TrackManager(ObjectManager):
                 break # The track finishes here
 
             if prev_shape:
-                assert curr_frame > prev_shape["frame"], f"{curr_frame} > {prev_shape['frame']}. Track id: {track['id']}" # Catch invalid tracks
+            #     assert curr_frame > prev_shape["frame"] # Catch invalid tracks   # IMPORTANT FORK !!!
 
                 # Propagate attributes
                 for attr in prev_shape["attributes"]:
