@@ -17,7 +17,7 @@ export const PAGE_SIZE = 7;
 
 function setUpRequestsList(requests: Request[], newPage: number): Request[] {
     const displayRequests = [...requests];
-    displayRequests.sort((a, b) => moment(a.enqueueDate).valueOf() - moment(b.enqueueDate).valueOf());
+    displayRequests.sort((a, b) => moment(b.enqueueDate).valueOf() - moment(a.enqueueDate).valueOf());
     return displayRequests.slice((newPage - 1) * PAGE_SIZE, newPage * PAGE_SIZE);
 }
 
