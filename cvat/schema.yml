@@ -4281,6 +4281,114 @@ paths:
               schema:
                 $ref: '#/components/schemas/QualitySettings'
           description: ''
+  /api/requests:
+    get:
+      operationId: requests_list
+      summary: List RQ jobs
+      parameters:
+      - in: query
+        name: action
+        schema:
+          type: string
+          enum:
+          - create
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      - name: page_size
+        required: false
+        in: query
+        description: Number of results to return per page.
+        schema:
+          type: integer
+      - in: query
+        name: task_id
+        schema:
+          type: integer
+      tags:
+      - requests
+      security:
+      - sessionAuth: []
+        csrfAuth: []
+        tokenAuth: []
+      - signatureAuth: []
+      - basicAuth: []
+      responses:
+        '200':
+          content:
+            application/vnd.cvat+json:
+              schema:
+                $ref: '#/components/schemas/PaginatedRQJobDetailsList'
+          description: ''
+  /api/requests/{id}:
+    get:
+      operationId: requests_retrieve
+      summary: Get RQ job details
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+      tags:
+      - requests
+      security:
+      - sessionAuth: []
+        csrfAuth: []
+        tokenAuth: []
+      - signatureAuth: []
+      - basicAuth: []
+      responses:
+        '200':
+          content:
+            application/vnd.cvat+json:
+              schema:
+                $ref: '#/components/schemas/RQJobDetails'
+          description: ''
+    delete:
+      operationId: requests_destroy
+      summary: Delete RQ job
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+      tags:
+      - requests
+      security:
+      - sessionAuth: []
+        csrfAuth: []
+        tokenAuth: []
+      - signatureAuth: []
+      - basicAuth: []
+      responses:
+        '204':
+          description: RQ job has been deleted
+  /api/requests/{id}/cancel:
+    post:
+      operationId: requests_create_cancel
+      summary: Cancel RQ job
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+      tags:
+      - requests
+      security:
+      - sessionAuth: []
+        csrfAuth: []
+        tokenAuth: []
+      - signatureAuth: []
+      - basicAuth: []
+      responses:
+        '200':
+          description: RQ job has been cancelled
   /api/schema/:
     get:
       operationId: schema_retrieve
@@ -5403,6 +5511,9 @@ paths:
   /api/tasks/{id}/status:
     get:
       operationId: tasks_retrieve_status
+      description: 'This method is deprecated and will be removed in version 2.14.0.
+        To check status of a task creation, use new common API for managing background
+        operations: GET /requests/<rq_id>/'
       summary: Get the creation status of a task
       parameters:
       - in: path
@@ -5419,6 +5530,7 @@ paths:
         tokenAuth: []
       - signatureAuth: []
       - basicAuth: []
+      deprecated: true
       responses:
         '200':
           content:
@@ -8412,6 +8524,26 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/QualitySettings'
+    PaginatedRQJobDetailsList:
+      type: object
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/RQJobDetails'
     PaginatedTaskReadList:
       type: object
       properties:
@@ -9222,6 +9354,108 @@ components:
         compare_attributes:
           type: boolean
           description: Enables or disables annotation attribute comparison
+    RQJobDetails:
+      type: object
+      properties:
+        status:
+          allOf:
+          - $ref: '#/components/schemas/RQJobDetailsStatusEnum'
+          readOnly: true
+        message:
+          type: string
+          readOnly: true
+        id:
+          type: string
+          readOnly: true
+        operation:
+          $ref: '#/components/schemas/RQJobOperation'
+        percent:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,3}(?:\.\d{0,2})?$
+          readOnly: true
+          nullable: true
+        enqueue_date:
+          type: string
+          format: date-time
+          readOnly: true
+        start_date:
+          type: string
+          format: date-time
+          readOnly: true
+          nullable: true
+        finished_date:
+          type: string
+          format: date-time
+          readOnly: true
+          nullable: true
+        expire_date:
+          type: string
+          format: date-time
+          readOnly: true
+          nullable: true
+        owner:
+          allOf:
+          - $ref: '#/components/schemas/UserIdentifiers'
+          readOnly: true
+        result_url:
+          type: string
+          format: uri
+          readOnly: true
+          nullable: true
+      required:
+      - operation
+    RQJobDetailsStatusEnum:
+      enum:
+      - queued
+      - started
+      - failed
+      - finished
+      type: string
+      description: |-
+        * `queued` - queued
+        * `started` - started
+        * `failed` - failed
+        * `finished` - finished
+    RQJobOperation:
+      type: object
+      properties:
+        type:
+          type: string
+          readOnly: true
+        target:
+          allOf:
+          - $ref: '#/components/schemas/RQJobOperationTargetEnum'
+          readOnly: true
+        project_id:
+          type: integer
+          readOnly: true
+          nullable: true
+        task_id:
+          type: integer
+          readOnly: true
+          nullable: true
+        job_id:
+          type: integer
+          readOnly: true
+          nullable: true
+        format:
+          type: string
+          readOnly: true
+          nullable: true
+        name:
+          type: string
+          readOnly: true
+    RQJobOperationTargetEnum:
+      enum:
+      - project
+      - task
+      - job
+      type: string
+      description: |-
+        * `project` - project
+        * `task` - task
+        * `job` - job
     RegisterSerializerEx:
       type: object
       properties:
@@ -9975,6 +10209,20 @@ components:
           readOnly: true
       required:
       - groups
+      - username
+    UserIdentifiers:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        username:
+          type: string
+          description: Required. 150 characters or fewer. Letters, digits and @/./+/-/_
+            only.
+          pattern: ^[\w.@+-]+$
+          maxLength: 150
+      required:
       - username
     WebhookContentType:
       enum:

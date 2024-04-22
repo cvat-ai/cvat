@@ -240,7 +240,7 @@ IAM_OPA_RULES_PATH = 'cvat/apps/iam/rules:'
 LOGIN_URL = 'rest_login'
 LOGIN_REDIRECT_URL = '/'
 
-OBJECTS_NOT_RELATED_WITH_ORG = ['user', 'function', 'request', 'server',]
+OBJECTS_NOT_RELATED_WITH_ORG = ['user', 'function', 'lambda_requests', 'server', 'requests']
 
 # ORG settings
 ORG_INVITATION_CONFIRM = 'No'

@@ -25,7 +25,7 @@ from cvat.apps.engine.log import ServerLogManager
 from cvat.apps.engine.models import Location
 from cvat.apps.engine.serializers import DataSerializer
 from cvat.apps.engine.handlers import clear_import_cache
-from cvat.apps.engine.utils import RQIdManager
+from cvat.apps.engine.rq_job_handler import RQIdManager
 
 slogger = ServerLogManager(__name__)
 
@@ -264,7 +264,7 @@ class UploadMixin:
             if file_exists:
                 # check whether the rq_job is in progress or has been finished/failed
                 object_class_name = self._object.__class__.__name__.lower()
-                template = RQIdManager.build_rq_id('import', object_class_name, self._object.pk, subresource=import_type, user_id=request.user.id)
+                template = RQIdManager.build('import', object_class_name, self._object.pk, subresource=import_type)
                 queue = django_rq.get_queue(settings.CVAT_QUEUES.IMPORT_DATA.value)
                 finished_job_ids = queue.finished_job_registry.get_job_ids()
                 failed_job_ids = queue.failed_job_registry.get_job_ids()
@@ -408,10 +408,10 @@ class AnnotationMixin:
         )
 
         object_name = self._object.__class__.__name__.lower()
-        rq_id = RQIdManager.build_rq_id(
+        rq_id = RQIdManager.build(
             'export', object_name, self._object.pk,
             subresource=request.path.strip('/').split('/')[-1],
-            format=format_name
+            format=format_name, user_id=request.user.id
         )
 
         if format_name:

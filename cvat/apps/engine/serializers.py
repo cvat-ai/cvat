@@ -24,7 +24,8 @@ from django.contrib.auth.models import User, Group
 from django.db import transaction
 
 from cvat.apps.dataset_manager.formats.utils import get_label_color
-from cvat.apps.engine.utils import parse_exception_message, RQIdManager
+from cvat.apps.engine.utils import parse_exception_message
+from cvat.apps.engine.rq_job_handler import RQIdManager
 from cvat.apps.engine import models
 from cvat.apps.engine.cloud_provider import get_cloud_storage_instance, Credentials, Status
 from cvat.apps.engine.log import ServerLogManager
@@ -2185,51 +2186,54 @@ class UserIdentifiersSerializer(BasicUserSerializer):
         )
 
 class RQJobOperationSerializer(serializers.Serializer):
-    type = serializers.CharField()
-    target = serializers.ChoiceField(choices=["project", "task", "job"])
-    project_id = serializers.IntegerField(required=False, allow_null=True)
-    task_id = serializers.IntegerField(required=False, allow_null=True)
-    job_id = serializers.IntegerField(required=False, allow_null=True)
-    format = serializers.CharField(required=False, allow_null=True)
-    name = serializers.CharField(source="id")  # TODO: duplicated field
+    type = serializers.CharField(read_only=True)
+    target = serializers.ChoiceField(choices=["project", "task", "job"], read_only=True)
+    project_id = serializers.IntegerField(required=False, allow_null=True, read_only=True)
+    task_id = serializers.IntegerField(required=False, allow_null=True, read_only=True)
+    job_id = serializers.IntegerField(required=False, allow_null=True, read_only=True)
+    format = serializers.CharField(required=False, allow_null=True, read_only=True)
+    name = serializers.CharField(source="id", read_only=True)  # TODO: duplicated field
 
     def to_representation(self, rq_job: RQJob) -> Dict[str, Any]:
-        parsed_data = RQIdManager.parse_rq_id(rq_job.id)
+        try:
+            parsed_rq_id = RQIdManager.parse(rq_job.id)
+        except ValueError as ex:
+            raise serializers.ValidationError(f"RQ job ID does not match supported template: {rq_job.id}") from ex
 
         return {
             "type": ":".join(
                 [
-                    parsed_data["action"],
-                    parsed_data.get("subresource") or parsed_data["resource"],
+                    parsed_rq_id.action,
+                    parsed_rq_id.subresource or parsed_rq_id.resource,
                 ]
             ),
-            "target": parsed_data["resource"],
+            "target": parsed_rq_id.resource,
             "project_id": rq_job.meta["project_id"],
             "task_id": rq_job.meta["task_id"],
             "job_id": rq_job.meta["job_id"],
-            "format": parsed_data.get("format"),
+            "format": parsed_rq_id.format,
             "name": rq_job.id,
         }
 
 
 class RQJobDetailsSerializer(serializers.Serializer):
-    status = serializers.SerializerMethodField()  # TODO: exclude deferred option here
+    status = serializers.SerializerMethodField()
     message = serializers.SerializerMethodField()
-    id = serializers.CharField()
+    id = serializers.CharField(read_only=True)
     operation = RQJobOperationSerializer(source="*")
     percent = serializers.SerializerMethodField()
-    enqueue_date = serializers.DateTimeField(source="enqueued_at")
+    enqueue_date = serializers.DateTimeField(source="enqueued_at", read_only=True)
     start_date = serializers.DateTimeField(
-        required=False, allow_null=True, source="started_at"
+        required=False, allow_null=True, source="started_at", read_only=True
     )
     finished_date = serializers.DateTimeField(
-        required=False, allow_null=True, source="ended_at"
+        required=False, allow_null=True, source="ended_at", read_only=True
     )
     expire_date = serializers.SerializerMethodField()
     owner = serializers.SerializerMethodField()
-    result_url = serializers.URLField(required=False, allow_null=True)
+    result_url = serializers.URLField(required=False, allow_null=True, read_only=True)
 
-    @extend_schema_field(UserIdentifiersSerializer)
+    @extend_schema_field(UserIdentifiersSerializer(read_only=True))
     def get_owner(self, rq_job: RQJob) -> Dict[str, Any]:
         return UserIdentifiersSerializer(rq_job.meta["user"]).data
 
@@ -2245,7 +2249,8 @@ class RQJobDetailsSerializer(serializers.Serializer):
 
     @extend_schema_field(
         serializers.DecimalField(
-            max_digits=5, decimal_places=2, required=False, allow_null=True
+            max_digits=5, decimal_places=2, required=False, allow_null=True,
+            read_only=True
         )
     )
     def get_percent(self, rq_job: RQJob) -> Decimal:
@@ -2253,7 +2258,7 @@ class RQJobDetailsSerializer(serializers.Serializer):
         # progress of project import is stored in "progress" field
         return Decimal(rq_job.meta.get("progress") or rq_job.meta.get("task_progress") or 0.) * 100
 
-    @extend_schema_field(serializers.DateTimeField(required=False, allow_null=True))
+    @extend_schema_field(serializers.DateTimeField(required=False, allow_null=True, read_only=True))
     def get_expire_date(self, rq_job: RQJob) -> Optional[str]:
         delta = None
         if rq_job.is_finished:
@@ -2262,12 +2267,12 @@ class RQJobDetailsSerializer(serializers.Serializer):
             delta = rq_job.failure_ttl or rq_defaults.DEFAULT_FAILURE_TTL
 
         if rq_job.ended_at and delta:
-            return str(rq_job.ended_at + timedelta(seconds=delta))
+            return rq_job.ended_at + timedelta(seconds=delta)
 
         return None
 
     @extend_schema_field(
-        serializers.ChoiceField(choices=[x.lower() for x in RQJobStatus.__members__])
+        serializers.ChoiceField(choices=['queued', 'started', 'failed', 'finished'], read_only=True)
     )
     def get_status(self, rq_job: RQJob) -> str:
         status = rq_job.get_status()
@@ -2277,10 +2282,11 @@ class RQJobDetailsSerializer(serializers.Serializer):
 
         return str(status)
 
-    @extend_schema_field(serializers.CharField(allow_blank=True))
+    @extend_schema_field(serializers.CharField(allow_blank=True, read_only=True))
     def get_message(self, rq_job: RQJob) -> str:
         if rq_job.get_status() != RQJobStatus.FAILED:
             return ""
+
         return rq_job.meta.get(
             "formatted_exception",
             parse_exception_message(str(rq_job.exc_info or "Unknown error")),

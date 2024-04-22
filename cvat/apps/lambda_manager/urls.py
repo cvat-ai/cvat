@@ -14,7 +14,7 @@ router = routers.DefaultRouter(trailing_slash=False)
 # own CustomRouter. But it is simpler just patch the router instance here.
 router.routes[2].mapping.update({'post': 'call'})
 router.register('functions', views.FunctionViewSet, basename='function')
-router.register('requests', views.RequestViewSet, basename='request')
+router.register('requests', views.RequestViewSet, basename='lambda_requests')
 
 # GET  /api/lambda/functions - get list of functions
 # GET  /api/lambda/functions/<int:fid> - get information about the function

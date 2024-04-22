@@ -39,8 +39,8 @@ from cvat.apps.engine.utils import (
     av_scan_paths, process_failed_job,
     get_rq_job_meta, import_resource_with_clean_up_after,
     sendfile, define_dependent_job, get_rq_lock_by_user, build_backup_file_name,
-    RQIdManager
 )
+from cvat.apps.engine.rq_job_handler import RQIdManager
 from cvat.apps.engine.models import (
     StorageChoice, StorageMethodChoice, DataChoice, Task, Project, Location)
 from cvat.apps.engine.task import JobFileMapping, _create_thread
@@ -954,7 +954,7 @@ def export(db_instance, request, queue_name):
     )
 
     queue = django_rq.get_queue(queue_name)
-    rq_id = RQIdManager.build_rq_id('export', obj_type, db_instance.pk, user_id=request.user.id)
+    rq_id = RQIdManager.build('export', obj_type, db_instance.pk, subresource='backup', user_id=request.user.id)
     rq_job = queue.fetch_job(rq_id)
 
     last_instance_update_time = timezone.localtime(db_instance.updated_date)
@@ -1141,7 +1141,7 @@ def import_project(request, queue_name, filename=None):
     if 'rq_id' in request.data:
         rq_id = request.data['rq_id']
     else:
-        rq_id = RQIdManager.build_rq_id('import', 'project', uuid.uuid4(), subresource='backup', user_id=request.user.id)
+        rq_id = RQIdManager.build('import', 'project', uuid.uuid4(), subresource='backup')
     Serializer = ProjectFileSerializer
     file_field_name = 'project_file'
 
@@ -1164,7 +1164,7 @@ def import_project(request, queue_name, filename=None):
     )
 
 def import_task(request, queue_name, filename=None):
-    rq_id = RQIdManager.build_rq_id('import', 'task', uuid.uuid4(), subresource='backup', user_id=request.user.id)
+    rq_id = RQIdManager.build('import', 'task', uuid.uuid4(), subresource='backup')
     Serializer = TaskFileSerializer
     file_field_name = 'task_file'
 

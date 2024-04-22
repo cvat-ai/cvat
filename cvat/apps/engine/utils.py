@@ -11,7 +11,6 @@ import sys
 import traceback
 from contextlib import suppress, nullcontext
 from typing import Any, Dict, Optional, Callable, Union, Iterable
-from uuid import UUID
 import subprocess
 import os
 import urllib.parse
@@ -393,67 +392,3 @@ def build_annotations_file_name(
         class_name, identifier, 'annotations' if is_annotation_file else 'dataset',
         timestamp, format_name, extension,
     ).lower()
-
-class RQIdManager:
-    # import:<task|project|job>-<id|uuid>-<annotations|dataset|backup>-by-<user_id>
-    # create:task-<tid>
-    # export:<project|task|job>-<id>-<annotations|dataset>-in-<format>-format
-    # TODO: probably change to export:<project|task>-<id>-backup-by-<user_id>
-    # export:<project|task>-<id>-by-<user_id>
-
-    @staticmethod
-    def build_rq_id(
-        action: str,
-        resource: str,
-        identifier: Union[int, UUID],
-        *,
-        subresource: Optional[str] = None,
-        user_id: Optional[int] = None,
-        format: Optional[str] = None,
-    ) -> str:
-        match action:
-            case 'import':
-                return f"{action}:{resource}-{identifier}-{subresource}-by-{user_id}"
-            case 'export':
-                if subresource is None:
-                    return f"{action}:{resource}-{identifier}-by-{user_id}"
-                format_to_be_used_in_urls = format.replace(' ', '_').replace('.', '@')
-                return f"{action}:{resource}-{identifier}-{subresource}-in-{format_to_be_used_in_urls}-format"
-            case 'create':
-                assert 'task' == resource
-                return f"{action}:{resource}-{identifier}"
-            case _:
-                raise ValueError(f'Unsupported action {action!r} was found')
-
-    @staticmethod
-    def parse_rq_id(rq_id: str) -> Dict[str, Any]:
-        action = resource = identifier = subresource = user_id = format = None
-        parsed_data = dict()
-        action_and_resource, unparsed = rq_id.split('-', maxsplit=1)
-
-        action, resource = action_and_resource.split(':')
-
-        if 'create' == action:
-            identifier = unparsed
-        elif 'import' == action:
-            identifier, subresource, _, user_id = unparsed.split('-')
-        else: # export
-            if unparsed.endswith('format'):
-                identifier, subresource, unparsed = unparsed.split('-', maxsplit=2)
-                # remove prefix(in-), suffix(-format) and restore original format names by replacing special symbols: "_" -> " ", "@" -> "."
-                format = unparsed[3:-7].replace('_', ' ').replace('@', '.')
-            else:
-                identifier, _, user_id = unparsed.split('-')
-
-        for key, value in {
-            'action': action,
-            'resource': resource,
-            'identifier': identifier,
-            'subresource': subresource,
-            'user_id': user_id,
-            'format': format,
-        }.items():
-            if value is not None:
-                parsed_data[key] = value
-
-        return parsed_data
