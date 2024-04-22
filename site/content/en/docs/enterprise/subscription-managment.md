@@ -90,7 +90,7 @@ Here’s how you can do it:
    first create an [organization](/docs/manual/advanced/organization/) and
    switch to an **Organization** account.
 3. Navigate to the top right corner, next to the nickname,
-   click on the arrow > uprate to the plan.
+   click on the arrow > upgrade to the plan.
 4. Switch on the **I would like the invoice to include additional
    data (address, phone number, VAT information)** toggle, select the
    best payment period for you, and click **Get Started**.
@@ -99,15 +99,17 @@ Here’s how you can do it:
 
 5. You will see the billing page:
 
-![Stripe Link](/images/add-vat.jpg)
+![Stripe Link](/images/add-vat.png)
 
 - Phone number **(1)**.
 - **Billing Address**: Enter the billing address you want to appear on the invoice
      in the address field **(2)**.
 - **VAT Information** and **Business Name**: Select the checkbox **I am purchasing as a business** and enter
-     your VAT and business name information **(3)**.
+  your VAT and business name information **(3)**.
 
 6. Select checkbox **I agree to refund policy** **(4)**.
+
+   > **Note:** Please read the **Refund policy** before selecting the checkbox.
 
 7. Click **Pay & Subscribe**.
 
