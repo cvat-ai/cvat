@@ -382,16 +382,15 @@ class ProjectViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
                 if not rq_id:
                     return Response('The rq_id param should be specified in the query parameters', status=status.HTTP_400_BAD_REQUEST)
 
-                # check that the user has access to the current rq_job
-                # We should not return any status of job including "404 not found" for user that has no access for this rq_job
-
-                if self.IMPORT_RQ_ID_TEMPLATE.format(pk, request.user.id) != rq_id:
-                    return Response(status=status.HTTP_403_FORBIDDEN)
-
                 rq_job = queue.fetch_job(rq_id)
+
                 if rq_job is None:
                     return Response(status=status.HTTP_404_NOT_FOUND)
-                elif rq_job.is_finished:
+                # check that the user has access to the current rq_job
+                elif rq_job.meta.get('user', {}).get('id') != request.user.id:
+                    return Response(status=status.HTTP_403_FORBIDDEN)
+
+                if rq_job.is_finished:
                     rq_job.delete()
                     return Response(status=status.HTTP_201_CREATED)
                 elif rq_job.is_failed:
@@ -2852,12 +2851,12 @@ def _import_annotations(request, rq_id_template, rq_func, db_obj, format_name,
     rq_id = request.query_params.get('rq_id')
     rq_id_should_be_checked = bool(rq_id)
     if not rq_id:
-        rq_id = rq_id_template.format(db_obj.pk, request.user.id)
+        rq_id = rq_id_template.format(db_obj.pk)
 
     queue = django_rq.get_queue(settings.CVAT_QUEUES.IMPORT_DATA.value)
     rq_job = queue.fetch_job(rq_id)
 
-    if rq_id_should_be_checked and rq_id_template.format(db_obj.pk, request.user.id) != rq_id:
+    if rq_job and rq_id_should_be_checked and rq_job.meta.get('user', {}).get('id') != request.user.id:
         return Response(status=status.HTTP_403_FORBIDDEN)
 
     if rq_job and request.method == 'POST':
@@ -3109,7 +3108,7 @@ def _import_project_dataset(request, rq_id_template, rq_func, db_obj, format_nam
     elif not format_desc.ENABLED:
         return Response(status=status.HTTP_405_METHOD_NOT_ALLOWED)
 
-    rq_id = rq_id_template.format(db_obj.pk, request.user.id)
+    rq_id = rq_id_template.format(db_obj.pk)
 
     queue = django_rq.get_queue(settings.CVAT_QUEUES.IMPORT_DATA.value)
     rq_job = queue.fetch_job(rq_id)
