@@ -484,6 +484,8 @@ class JobAnnotation:
                 ]))
 
     def _init_tags_from_db(self):
+        # NOTE: do not use .prefetch_related() with .values() since it's useless:
+        # https://github.com/cvat-ai/cvat/pull/7748#issuecomment-2063695007
         db_tags = self.db_job.labeledimage_set.values(
             'id',
             'frame',
@@ -515,6 +517,8 @@ class JobAnnotation:
         self.ir_data.tags = serializer.data
 
     def _init_shapes_from_db(self):
+        # NOTE: do not use .prefetch_related() with .values() since it's useless:
+        # https://github.com/cvat-ai/cvat/pull/7748#issuecomment-2063695007
         db_shapes = self.db_job.labeledshape_set.values(
             'id',
             'label_id',
@@ -566,6 +570,8 @@ class JobAnnotation:
         self.ir_data.shapes = serializer.data
 
     def _init_tracks_from_db(self):
+        # NOTE: do not use .prefetch_related() with .values() since it's useless:
+        # https://github.com/cvat-ai/cvat/pull/7748#issuecomment-2063695007
         db_tracks = self.db_job.labeledtrack_set.values(
             "id",
             "frame",
