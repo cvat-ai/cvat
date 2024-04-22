@@ -1,8 +1,10 @@
 # Copyright (C) 2019-2022 Intel Corporation
+# Copyright (C) 2024 CVAT.ai Corporation
 #
 # SPDX-License-Identifier: MIT
 
 import os
+import sysconfig
 import tempfile
 import shutil
 import zipfile
@@ -266,7 +268,8 @@ class ArchiveReader(DirectoryReader):
 
         self._archive_source = source_path[0]
         tmp_dir = extract_dir if extract_dir else os.path.dirname(source_path[0])
-        Archive(self._archive_source).extractall(tmp_dir)
+        patool_path = os.path.join(sysconfig.get_path('scripts'), 'patool')
+        Archive(self._archive_source).extractall(tmp_dir, False, patool_path)
         if not extract_dir:
             os.remove(self._archive_source)
         super().__init__(
@@ -845,7 +848,7 @@ def _is_archive(path):
     encoding = mime[1]
     supportedArchives = ['application/x-rar-compressed',
         'application/x-tar', 'application/x-7z-compressed', 'application/x-cpio',
-        'gzip', 'bzip2']
+        'application/gzip', 'application/x-bzip']
     return mime_type in supportedArchives or encoding in supportedArchives
 
 def _is_video(path):
