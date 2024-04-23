@@ -95,7 +95,7 @@ Here’s how you can do it:
    data (address, phone number, VAT information)** toggle, select the
    best payment period for you, and click **Get Started**.
 
-![Stripe Link](/images/add-invoice.jpg)
+![Stripe Link](/images/add-invoice.png)
 
 5. You will see the billing page:
 
@@ -200,7 +200,7 @@ To pay with a bank transfer:
 
 > **Note** that the completion of the payment process may take up to three banking days.
 
-![Bank Transfer Payment](/images/bank_transfer_payment.jpg)
+![Bank Transfer Payment](/images/bank_transfer_payment.png)
 
 ### How to change the payment method?
 
@@ -294,7 +294,7 @@ click on the arrow> manage plan > **Cancel plan**
 
 Please, fill out the feedback form, to help us improve our platform.
 
-![Cancel pro](/images/cancel-solo.png)
+![Cancel pro](/images/cancel-plan.png)
 
 ### Can I get a refund?
 
