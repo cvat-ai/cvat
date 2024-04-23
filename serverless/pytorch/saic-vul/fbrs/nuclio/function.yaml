@@ -36,6 +36,8 @@ spec:
         - kind: RUN
           value: pip3 install gdown
         - kind: ENV
+          value: fileid=1Z9dQtpWVTobEdmUBntpUU0pJl-pEXUwR
+        - kind: ENV
           value: filename=resnet101_dh256_sbd.pth
         - kind: RUN
           value: gdown https://drive.google.com/uc?id=${fileid} -O ${filename}
