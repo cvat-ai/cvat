@@ -1613,8 +1613,8 @@ class TestPostTaskData:
                 assert response.status == HTTPStatus.OK
                 assert task.size == task_size
         else:
-            operation = self._test_cannot_create_task(self._USERNAME, task_spec, data_spec)
-            assert "No media data found" in details.message
+            rq_job_details = self._test_cannot_create_task(self._USERNAME, task_spec, data_spec)
+            assert "No media data found" in rq_job_details.message
 
     @pytest.mark.with_external_services
     @pytest.mark.parametrize(
