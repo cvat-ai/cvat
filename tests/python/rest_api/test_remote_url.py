@@ -27,10 +27,10 @@ def _wait_until_task_is_created(username: str, task_id: int) -> Dict[str, Any]:
     for _ in range(100):
         response = get_method(username, url, action="create", task_id=task_id)
         response_json = response.json()
-        rq_jobs = response_json['results']
+        rq_jobs = response_json["results"]
         assert 1 == len(rq_jobs), "The newly created RQ job must be returned by API"
         rq_job_details = rq_jobs[0]
-        if rq_job_details['status'] in ("finished", "failed"):
+        if rq_job_details["status"] in ("finished", "failed"):
             return rq_job_details
         sleep(1)
     raise Exception("Cannot create task")

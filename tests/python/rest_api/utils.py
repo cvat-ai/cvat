@@ -143,8 +143,8 @@ def build_exclude_paths_expr(ignore_fields: Iterator[str]) -> List[str]:
 
 def wait_until_task_is_created(api: apis.RequestsApi, task_id: int) -> models.RQJobDetails:
     for _ in range(100):
-        (requests, _) = api.list(task_id=task_id, action='create')
-        results = requests['results']
+        (requests, _) = api.list(task_id=task_id, action="create")
+        results = requests["results"]
         assert 1 == len(results)
         details = results[0]
 
