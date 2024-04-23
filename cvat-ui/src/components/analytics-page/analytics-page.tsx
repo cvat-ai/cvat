@@ -55,33 +55,35 @@ function handleTimePeriod(interval: DateIntervals): [string, string] {
     }
 }
 
+function readInstanceType(location: ReturnType<typeof useLocation>): InstanceType {
+    if (location.pathname.includes('projects')) {
+        return 'project';
+    }
+    if (location.pathname.includes('jobs')) {
+        return 'job';
+    }
+    return 'task';
+}
+
+function readInstanceId(type: InstanceType): number {
+    if (type === 'project') {
+        return +useParams<{ pid: string }>().pid;
+    }
+    if (type === 'job') {
+        return +useParams<{ jid: string }>().jid;
+    }
+    return +useParams<{ tid: string }>().tid;
+}
+
 type InstanceType = 'project' | 'task' | 'job';
 
 function AnalyticsPage(): JSX.Element {
     const location = useLocation();
 
-    const requestedInstanceType: InstanceType = (() => {
-        if (location.pathname.includes('projects')) {
-            return 'project';
-        }
-        if (location.pathname.includes('jobs')) {
-            return 'job';
-        }
-        return 'task';
-    })();
-
-    const requestedInstanceID: number = (() => {
-        if (requestedInstanceType === 'project') {
-            return +useParams<{ pid: string }>().pid;
-        }
-        if (requestedInstanceType === 'job') {
-            return +useParams<{ jid: string }>().jid;
-        }
-        return +useParams<{ tid: string }>().tid;
-    })();
+    const requestedInstanceType: InstanceType = readInstanceType(location);
+    const requestedInstanceID = readInstanceId(requestedInstanceType);
 
     const [activeTab, setTab] = useState(getTabFromHash());
-
     const [instanceType, setInstanceType] = useState<InstanceType | null>(null);
     const [instance, setInstance] = useState<Project | Task | Job | null>(null);
     const [analyticsReport, setAnalyticsReport] = useState<AnalyticsReport | null>(null);
@@ -113,11 +115,11 @@ function AnalyticsPage(): JSX.Element {
 
             if (isMounted()) {
                 setInstance(receivedInstance);
-                setInstanceType(requestedInstanceType);
+                setInstanceType(type);
             }
         } catch (error: unknown) {
             notification.error({
-                message: `Could not receive requested ${requestedInstanceType}`,
+                message: `Could not receive requested ${type}`,
                 description: `${error instanceof Error ? error.message : ''}`,
             });
         }
@@ -158,8 +160,8 @@ function AnalyticsPage(): JSX.Element {
     };
 
     useEffect(() => {
-        setFetching(true);
         if (Number.isInteger(requestedInstanceID) && ['project', 'task', 'job'].includes(requestedInstanceType)) {
+            setFetching(true);
             Promise.all([
                 receiveInstance(requestedInstanceType, requestedInstanceID),
                 receiveReport(timePeriod, requestedInstanceType, requestedInstanceID),
