@@ -2460,8 +2460,7 @@ async function calculateAnalyticsReport(
                 Axios.post(`${backendAPI}/analytics/reports`, {
                     ...body,
                     ...params,
-                    rq_id: rqID,
-                }).then((response) => {
+                }, { params: { rq_id: rqID } }).then((response) => {
                     // todo: rewrite server logic, now it returns 202, 201 codes instead of RQ statuses
                     if (response.status === 201) {
                         listenerStorage[id].onUpdate.forEach((_onUpdate) => _onUpdate('finished', 0, 'Done'));

@@ -90,72 +90,84 @@ function AnalyticsPage(): JSX.Element {
     const [fetching, setFetching] = useState(true);
     const isMounted = useIsMounted();
 
-    const receiveInstance = (type: InstanceType, id: number): Promise<Task[] | Job[] | Project[]> => {
-        if (type === 'project') {
-            return core.projects.get({ id });
-        }
+    const receiveInstance = async (type: InstanceType, id: number): Promise<void> => {
+        let receivedInstance: Task | Project | Job | null = null;
 
-        if (type === 'task') {
-            return core.tasks.get({ id });
-        }
+        try {
+            switch (type) {
+                case 'project': {
+                    [receivedInstance] = await core.projects.get({ id });
+                    break;
+                }
+                case 'task': {
+                    [receivedInstance] = await core.tasks.get({ id });
+                    break;
+                }
+                case 'job': {
+                    [receivedInstance] = await core.jobs.get({ jobID: id });
+                    break;
+                }
+                default:
+                    return;
+            }
 
-        return core.jobs.get({ jobID: id });
+            if (isMounted()) {
+                setInstance(receivedInstance);
+                setInstanceType(requestedInstanceType);
+            }
+        } catch (error: unknown) {
+            notification.error({
+                message: `Could not receive requested ${requestedInstanceType}`,
+                description: `${error instanceof Error ? error.message : ''}`,
+            });
+        }
     };
 
-    const receiveReport = (timeInterval: DateIntervals, type: InstanceType, id: number): Promise<AnalyticsReport> => {
+    const receiveReport = async (timeInterval: DateIntervals, type: InstanceType, id: number): Promise<void> => {
         const [endDate, startDate] = handleTimePeriod(timeInterval);
-        if (type === 'project') {
-            return core.analytics.performance.reports({
-                projectID: id,
-                endDate,
-                startDate,
+        let report: AnalyticsReport | null = null;
+
+        try {
+            const body = { endDate, startDate };
+            switch (type) {
+                case 'project': {
+                    report = await core.analytics.performance.reports({ ...body, projectID: id });
+                    break;
+                }
+                case 'task': {
+                    report = await core.analytics.performance.reports({ ...body, taskID: id });
+                    break;
+                }
+                case 'job': {
+                    report = await core.analytics.performance.reports({ ...body, jobID: id });
+                    break;
+                }
+                default:
+                    return;
+            }
+
+            if (isMounted()) {
+                setAnalyticsReport(report);
+            }
+        } catch (error: unknown) {
+            notification.error({
+                message: 'Could not receive requested report',
+                description: `${error instanceof Error ? error.message : ''}`,
             });
         }
-
-        if (type === 'task') {
-            return core.analytics.performance.reports({
-                taskID: id,
-                endDate,
-                startDate,
-            });
-        }
-
-        return core.analytics.performance.reports({
-            jobID: id,
-            endDate,
-            startDate,
-        });
     };
 
     useEffect(() => {
         setFetching(true);
-
         if (Number.isInteger(requestedInstanceID) && ['project', 'task', 'job'].includes(requestedInstanceType)) {
             Promise.all([
                 receiveInstance(requestedInstanceType, requestedInstanceID),
                 receiveReport(timePeriod, requestedInstanceType, requestedInstanceID),
-            ])
-                .then(([instanceResponse, report]) => {
-                    const receivedInstance: Task | Project | Job = instanceResponse[0];
-                    if (receivedInstance && isMounted()) {
-                        setInstance(receivedInstance);
-                        setInstanceType(requestedInstanceType);
-                    }
-                    if (report && isMounted()) {
-                        setAnalyticsReport(report);
-                    }
-                })
-                .catch((error: Error) => {
-                    notification.error({
-                        message: 'Could not receive requested resources',
-                        description: `${error.toString()}`,
-                    });
-                })
-                .finally(() => {
-                    if (isMounted()) {
-                        setFetching(false);
-                    }
-                });
+            ]).finally(() => {
+                if (isMounted()) {
+                    setFetching(false);
+                }
+            });
         } else {
             notification.error({
                 message: 'Could not load this page',

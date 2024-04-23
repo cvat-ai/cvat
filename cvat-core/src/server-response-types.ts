@@ -355,7 +355,9 @@ export interface APIAnalyticsReportFilter {
 export type AnalyticsReportFilter = Camelized<APIAnalyticsReportFilter>;
 
 export interface SerializedAnalyticsReport {
-    id?: number;
+    job_id?: number;
+    task_id?: number;
+    project_id?: number;
     target?: string;
     created_date?: string;
     statistics?: SerializedAnalyticsEntry[];
