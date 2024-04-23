@@ -23,7 +23,6 @@ spec:
 
   build:
     image: cvat.pth.saic-vul.fbrs
-    baseImage: python:3.6.11
 
     directives:
       preCopy:
