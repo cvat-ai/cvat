@@ -1,16 +1,15 @@
-// Copyright (C) 2023-2024 CVAT.ai Corporation
+// Copyright (C) 2024 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
 /// <reference types="cypress" />
 
 context('Count total annotation, issues and labels', () => {
-    const taskName = 'Count_Annotations';
+    const taskName = 'Count objects';
 
     let taskID = null;
     let jobID = null;
 
-    const issueId = '4662';
     const createRectangleShape2Points = {
         points: 'By 2 Points',
         type: 'Shape',
@@ -62,8 +61,8 @@ context('Count total annotation, issues and labels', () => {
         });
     });
 
-    describe(`Testing issue ${issueId}`, () => {
-        it('Count Annotations', () => {
+    describe('Number of objects in the sidebar is shown correctly', () => {
+        it('Count annotations', () => {
             for (let i = 0; i < 3; i++) {
                 cy.createRectangle(createRectangleShape2Points);
             }
@@ -75,12 +74,12 @@ context('Count total annotation, issues and labels', () => {
                 .and('have.text', 'Items: 3');
         });
 
-        it('Count Labels', () => {
+        it('Count labels', () => {
             cy.get('[role="tab"]').eq(1).should('exist').and('be.visible').and('have.text', 'Labels').click();
             cy.get('.cvat-objects-sidebar-labels-list-header').should('exist').and('be.visible').and('have.text', 'Items: 1');
         });
 
-        it('Count Issues', () => {
+        it('Count issues', () => {
             cy.get('.cvat-workspace-selector').should('exist').and('be.visible').click();
             cy.get('[title="Review"]').should('exist').and('be.visible').click();
             cy.get('.cvat-issue-control').should('exist').and('be.visible').click();
