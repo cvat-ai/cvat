@@ -5,7 +5,7 @@
 
 from http import HTTPStatus
 from time import sleep
-from typing import Dict, Any
+from typing import Any, Dict
 
 import pytest
 
