@@ -785,10 +785,10 @@ class TestPostTaskData:
             )
             assert response.status == HTTPStatus.ACCEPTED
 
-            status = wait_until_task_is_created(api_client.tasks_api, task.id)
-            assert status.state.value == "Failed"
+            rq_job_details = wait_until_task_is_created(api_client.requests_api, task.id)
+            assert rq_job_details.status == "failed"
 
-        return status
+        return rq_job_details
 
     def test_can_create_task_with_defined_start_and_stop_frames(self):
         task_spec = {
@@ -1613,8 +1613,8 @@ class TestPostTaskData:
                 assert response.status == HTTPStatus.OK
                 assert task.size == task_size
         else:
-            status = self._test_cannot_create_task(self._USERNAME, task_spec, data_spec)
-            assert "No media data found" in status.message
+            operation = self._test_cannot_create_task(self._USERNAME, task_spec, data_spec)
+            assert "No media data found" in details.message
 
     @pytest.mark.with_external_services
     @pytest.mark.parametrize(

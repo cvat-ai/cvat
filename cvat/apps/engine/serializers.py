@@ -2248,10 +2248,13 @@ class RQJobDetailsSerializer(serializers.Serializer):
         return representation
 
     @extend_schema_field(
-        serializers.DecimalField(
-            max_digits=5, decimal_places=2, required=False, allow_null=True,
-            read_only=True
-        )
+        # FUTURE-FIXME: DecimalField(string type with decimal format and correct pattern in api schema)
+        # is converted to string type by openapi generator
+        # serializers.DecimalField(
+        #     max_digits=5, decimal_places=2, required=False, allow_null=True,
+        #     read_only=True
+        # )
+        serializers.FloatField(required=False, allow_null=True, read_only=True)
     )
     def get_percent(self, rq_job: RQJob) -> Decimal:
         # progress of task creation is stored in "task_progress" field
