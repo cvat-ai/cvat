@@ -12,7 +12,7 @@ class JobAnnotationTime(PrimaryMetricBase):
     _default_view = ViewChoice.NUMERIC
     _key = "annotation_time"
     # Raw SQL queries are used to execute ClickHouse queries, as there is no ORM available here
-    _query = "SELECT timestamp, obj_val  FROM cvat.events WHERE scope='update:job' AND job_id={job_id:UInt64} AND obj_name='state' ORDER BY timestamp ASC"
+    _query = "SELECT timestamp, obj_val FROM cvat.events WHERE scope='update:job' AND job_id={job_id:UInt64} AND obj_name='state' ORDER BY timestamp ASC"
     _is_filterable_by_date = False
 
     def calculate(self):
