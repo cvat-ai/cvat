@@ -3292,6 +3292,7 @@ class RequestViewSet(viewsets.GenericViewSet):
         return wrapper
 
     @method_decorator(never_cache)
+    @_handle_redis_exceptions
     def retrieve(self, request, pk: str):
         job = self._get_rq_job_by_id(pk)
 
