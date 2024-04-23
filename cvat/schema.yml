@@ -5304,7 +5304,7 @@ paths:
         https://docs.cvat.ai/docs/manual/advanced/dataset_manifest/
 
         After all data is sent, the operation status can be retrieved via
-        the /status endpoint.
+        the /api/requests endpoint.
 
         Once data is attached to a task, it cannot be detached or replaced.
       summary: Attach data to a task
@@ -9370,9 +9370,8 @@ components:
         operation:
           $ref: '#/components/schemas/RQJobOperation'
         percent:
-          type: string
-          format: decimal
-          pattern: ^-?\d{0,3}(?:\.\d{0,2})?$
+          type: number
+          format: double
           readOnly: true
           nullable: true
         enqueue_date:
