@@ -760,6 +760,7 @@ export interface AnnotationState {
         states: any[];
         filters: object[];
         resetGroupFlag: boolean;
+        initialized: boolean;
         history: {
             undo: [string, number][];
             redo: [string, number][];
