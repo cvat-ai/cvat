@@ -554,6 +554,11 @@ export class CanvasModelImpl extends MasterImpl implements CanvasModel {
         }
 
         this.data.imageID = frameData.number;
+
+        const prevZLayer = this.data.zLayer;
+        const prevObjects = this.data.objects;
+        this.data.zLayer = zLayer;
+        this.data.objects = objectStates;
         frameData
             .data((): void => {
                 this.data.image = null;
@@ -596,8 +601,6 @@ export class CanvasModelImpl extends MasterImpl implements CanvasModel {
                 }
 
                 this.notify(UpdateReasons.IMAGE_CHANGED);
-                this.data.zLayer = zLayer;
-                this.data.objects = objectStates;
                 this.notify(UpdateReasons.OBJECTS_UPDATED);
             })
             .catch((exception: unknown): void => {
@@ -608,6 +611,8 @@ export class CanvasModelImpl extends MasterImpl implements CanvasModel {
                     } else {
                         this.data.exception = new Error('Unknown error occured when fetching image data');
                     }
+                    this.data.objects = prevObjects;
+                    this.data.zLayer = prevZLayer;
                     this.notify(UpdateReasons.DATA_FAILED);
                 }
             });
