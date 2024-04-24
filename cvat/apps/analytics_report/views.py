@@ -82,19 +82,14 @@ class AnalyticsReportViewSet(viewsets.ViewSet):
                 rq_id = None
                 if job_id is not None:
                     params['job'] = Job.objects.get(pk=int(job_id))
-                    rq_id = AnalyticsReportUpdateManager().schedule_analytics_check_job(**params)
                 elif task_id is not None:
                     params['task'] = Task.objects.get(pk=int(task_id))
-                    rq_id = AnalyticsReportUpdateManager().schedule_analytics_check_job(**params)
                 elif project_id is not None:
                     params['project'] = Project.objects.get(pk=int(project_id))
-                    rq_id = AnalyticsReportUpdateManager().schedule_analytics_check_job(**params)
 
-                if rq_id is not None:
-                    serializer = RqIdSerializer({"rq_id": rq_id})
-                    return Response(serializer.data, status=status.HTTP_202_ACCEPTED)
-                else:
-                    return Response(status=status.HTTP_404_NOT_FOUND)
+                rq_id = AnalyticsReportUpdateManager().schedule_analytics_check_job(**params)
+                serializer = RqIdSerializer({"rq_id": rq_id})
+                return Response(serializer.data, status=status.HTTP_202_ACCEPTED)
             except ObjectDoesNotExist as ex:
                 raise NotFound(f"Resource does not exist") from ex
             except AnalyticsReportUpdateManager.AnalyticsReportsNotAvailable as ex:
