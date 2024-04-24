@@ -2,7 +2,6 @@
     "name": "cvat-local",
     "initializeCommand": "${localWorkspaceFolder}/.devcontainer/init.sh",
     "postCreateCommand": "${containerWorkspaceFolder}/.devcontainer/postcreate.sh",
-    "postStartCommand": "${containerWorkspaceFolder}/.devcontainer/poststart.sh",
     "dockerComposeFile": [
         "${localWorkspaceFolder}/.devcontainer/docker-compose.rendered.yml"
     ],
