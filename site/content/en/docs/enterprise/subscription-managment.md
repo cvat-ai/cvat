@@ -37,7 +37,7 @@ See:
 - [Cancel plan](#cancel-plan)
   - [What will happen to my data?](#what-will-happen-to-my-data)
   - [How to cancel any plan?](#how-to-cancel-any-plan)
-  - [Can I get a refund?](#can-i-get-a-refund)
+  - [How can I get a refund?](#how-can-i-get-a-refund)
 - [Plan renewal](#plan-renewal)
 - [Subscription management video tutorial](#subscription-management-video-tutorial)
 
@@ -296,10 +296,21 @@ Please, fill out the feedback form, to help us improve our platform.
 
 ![Cancel pro](/images/cancel-plan.png)
 
-### Can I get a refund?
+### How can I get a refund?
 
 To understand if you are eligible for a refund,
-see [Refund policy](https://www.cvat.ai/refund-policy)
+see [Refund policy](https://www.cvat.ai/refund-policy).
+
+1. Cancel the subscription before asking for a refund.
+2. Contact our support team at [support@cvat.ai](mailto:support@cvat.ai)
+   or use the "Support" option in the app.cvat.ai interface.
+3. Provide your account details and a brief explanation of the reason for the refund:
+   - Send us your last invoice.
+   - Send us the username and e-mail address you’ve used to register in CVAT.ai.
+
+Our team will review your request. We may request additional information if needed.
+Once approved, the refund will be processed to your original
+payment method [within 5-10 business days](https://docs.stripe.com/refunds#tracing-refunds).
 
 ## Plan renewal
 
