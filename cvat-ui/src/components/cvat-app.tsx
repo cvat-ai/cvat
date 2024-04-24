@@ -64,7 +64,9 @@ import RequestsPage from 'components/requests-page/requests-page';
 
 import AnnotationPageContainer from 'containers/annotation-page/annotation-page';
 import { Organization, getCore } from 'cvat-core-wrapper';
-import { ErrorState, NotificationsState, PluginsState } from 'reducers';
+import {
+    ErrorState, NotificationState, NotificationsState, PluginsState,
+} from 'reducers';
 import { customWaViewHit } from 'utils/environment';
 import showPlatformNotification, {
     platformInfo,
@@ -359,12 +361,13 @@ class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentP
     }
 
     private showMessages(): void {
-        function showMessage(title: string): void {
+        function showMessage(notificationState: NotificationState): void {
+            console.log(notificationState);
             notification.info({
                 message: (
-                    <ReactMarkdown>{title}</ReactMarkdown>
+                    <ReactMarkdown>{notificationState.message}</ReactMarkdown>
                 ),
-                duration: null,
+                duration: notificationState.duration || null,
             });
         }
 
@@ -373,10 +376,10 @@ class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentP
         let shown = false;
         for (const where of Object.keys(notifications.messages)) {
             for (const what of Object.keys((notifications as any).messages[where])) {
-                const message = (notifications as any).messages[where][what];
-                shown = shown || !!message;
-                if (message) {
-                    showMessage(message);
+                const notificationState = (notifications as any).messages[where][what] as NotificationState;
+                shown = shown || !!notificationState;
+                if (notificationState) {
+                    showMessage(notificationState);
                 }
             }
         }

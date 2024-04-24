@@ -24,6 +24,7 @@ import { WebhooksActionsTypes } from 'actions/webhooks-actions';
 import { InvitationsActionTypes } from 'actions/invitations-actions';
 import { ServerAPIActionTypes } from 'actions/server-actions';
 import { RequestsActionsTypes } from 'actions/requests-actions';
+import config from 'config';
 
 import { NotificationsState, StorageLocation } from '.';
 
@@ -177,37 +178,37 @@ const defaultState: NotificationsState = {
     },
     messages: {
         tasks: {
-            loadingDone: '',
-            importingDone: '',
-            movingDone: '',
+            loadingDone: null,
+            importingDone: null,
+            movingDone: null,
         },
         models: {
-            inferenceDone: '',
+            inferenceDone: null,
         },
         auth: {
-            changePasswordDone: '',
-            registerDone: '',
-            requestPasswordResetDone: '',
-            resetPasswordDone: '',
+            changePasswordDone: null,
+            registerDone: null,
+            requestPasswordResetDone: null,
+            resetPasswordDone: null,
         },
         projects: {
-            restoringDone: '',
+            restoringDone: null,
         },
         exporting: {
-            dataset: '',
-            annotation: '',
-            backup: '',
+            dataset: null,
+            annotation: null,
+            backup: null,
         },
         importing: {
-            dataset: '',
-            annotation: '',
-            backup: '',
+            dataset: null,
+            annotation: null,
+            backup: null,
         },
         invitations: {
-            newInvitations: '',
-            acceptInvitationDone: '',
-            declineInvitationDone: '',
-            resendingInvitation: '',
+            newInvitations: null,
+            acceptInvitationDone: null,
+            declineInvitationDone: null,
+            resendingInvitation: null,
         },
     },
 };
@@ -287,8 +288,10 @@ export default function (state = defaultState, action: AnyAction): Notifications
                         ...state.messages,
                         auth: {
                             ...state.messages.auth,
-                            registerDone: `To use your account, you need to confirm the email address. \
-                                 We have sent an email with a confirmation link to ${action.payload.user.email}.`,
+                            registerDone: {
+                                message: `To use your account, you need to confirm the email address. \
+                                We have sent an email with a confirmation link to ${action.payload.user.email}.`,
+                            },
                         },
                     },
                 };
@@ -305,7 +308,9 @@ export default function (state = defaultState, action: AnyAction): Notifications
                     ...state.messages,
                     auth: {
                         ...state.messages.auth,
-                        changePasswordDone: 'New password has been saved.',
+                        changePasswordDone: {
+                            message: 'New password has been saved.',
+                        },
                     },
                 },
             };
@@ -334,8 +339,10 @@ export default function (state = defaultState, action: AnyAction): Notifications
                     ...state.messages,
                     auth: {
                         ...state.messages.auth,
-                        requestPasswordResetDone: `Check your email for a link to reset your password.
+                        requestPasswordResetDone: {
+                            message: `Check your email for a link to reset your password.
                             If it doesn’t appear within a few minutes, check your spam folder.`,
+                        },
                     },
                 },
             };
@@ -363,7 +370,9 @@ export default function (state = defaultState, action: AnyAction): Notifications
                     ...state.messages,
                     auth: {
                         ...state.messages.auth,
-                        resetPasswordDone: 'Password has been reset with the new password.',
+                        resetPasswordDone: {
+                            message: 'Password has been reset with the new password.',
+                        },
                     },
                 },
             };
@@ -408,7 +417,9 @@ export default function (state = defaultState, action: AnyAction): Notifications
                         ...state.messages,
                         invitations: {
                             ...state.messages.invitations,
-                            newInvitations: 'You\'ve received an invitation to join an organization! [Click here](/invitations) to get details.',
+                            newInvitations: {
+                                message: 'You\'ve received an invitation to join an organization! [Click here](/invitations) to get details.',
+                            },
                         },
                     },
                 };
@@ -490,7 +501,9 @@ export default function (state = defaultState, action: AnyAction): Notifications
                     ...state.messages,
                     invitations: {
                         ...state.messages.invitations,
-                        resendingInvitation: 'Invitation was sent successfully',
+                        resendingInvitation: {
+                            message: 'Invitation was sent successfully',
+                        },
                     },
                 },
             };
@@ -518,7 +531,10 @@ export default function (state = defaultState, action: AnyAction): Notifications
                         ...state.messages,
                         importing: {
                             ...state.messages.importing,
-                            [resource]: message,
+                            [resource]: {
+                                message,
+                                duration: config.REQUEST_SUCCESS_NOTIFICATION_DURATION,
+                            },
                         },
                     },
                 };
@@ -528,7 +544,7 @@ export default function (state = defaultState, action: AnyAction): Notifications
                     request.meta.storage.location === StorageLocation.LOCAL : StorageLocation.LOCAL;
                 const link = target === 'job' ? `${target} ${instanceID}` : `[${target} ${instanceID}](/${target}s/${instanceID})`;
                 const message = isLocal ?
-                    `Export for the ${link}  is finished, you can [download it here](/requests)` :
+                    `Export for the ${link} is finished, you can [download it here](/requests)` :
                     `Export for the ${link} has been uploaded to cloud storage`;
                 return {
                     ...state,
@@ -536,7 +552,10 @@ export default function (state = defaultState, action: AnyAction): Notifications
                         ...state.messages,
                         exporting: {
                             ...state.messages.exporting,
-                            dataset: message,
+                            dataset: {
+                                message,
+                                duration: config.REQUEST_SUCCESS_NOTIFICATION_DURATION,
+                            },
                         },
                     },
                 };
@@ -553,7 +572,10 @@ export default function (state = defaultState, action: AnyAction): Notifications
                         ...state.messages,
                         exporting: {
                             ...state.messages.exporting,
-                            backup: message,
+                            backup: {
+                                message,
+                                duration: config.REQUEST_SUCCESS_NOTIFICATION_DURATION,
+                            },
                         },
                     },
                 };
@@ -774,8 +796,10 @@ export default function (state = defaultState, action: AnyAction): Notifications
                         ...state.messages,
                         models: {
                             ...state.messages.models,
-                            inferenceDone: 'Automatic annotation accomplished for the ' +
+                            inferenceDone: {
+                                message: 'Automatic annotation accomplished for the ' +
                                 `[task ${taskID}](/tasks/${taskID})`,
+                            },
                         },
                     },
                 };
@@ -1597,7 +1621,7 @@ export default function (state = defaultState, action: AnyAction): Notifications
                     organizations: {
                         ...state.errors.organizations,
                         activation: {
-                            message: `Could not activate organization ${action.payload.slug || ''}`,
+                            message: `Could not activate organization ${action.payload.slug || null}`,
                             reason: action.payload.error,
                             shouldLog: !(action.payload.error instanceof ServerError),
                             className: 'cvat-notification-notice-activate-organization-failed',

@@ -436,6 +436,11 @@ export interface ErrorState {
     className?: string;
 }
 
+export interface NotificationState {
+    message: string;
+    duration?: number;
+}
+
 export interface NotificationsState {
     errors: {
         auth: {
@@ -586,37 +591,37 @@ export interface NotificationsState {
     };
     messages: {
         tasks: {
-            loadingDone: string;
-            importingDone: string;
-            movingDone: string;
+            loadingDone: null | NotificationState;
+            importingDone: null | NotificationState;
+            movingDone: null | NotificationState;
         };
         models: {
-            inferenceDone: string;
+            inferenceDone: null | NotificationState;
         };
         auth: {
-            changePasswordDone: string;
-            registerDone: string;
-            requestPasswordResetDone: string;
-            resetPasswordDone: string;
+            changePasswordDone: null | NotificationState;
+            registerDone: null | NotificationState;
+            requestPasswordResetDone: null | NotificationState;
+            resetPasswordDone: null | NotificationState;
         };
         projects: {
-            restoringDone: string;
+            restoringDone: null | NotificationState;
         };
         exporting: {
-            dataset: string;
-            annotation: string;
-            backup: string;
+            dataset: null | NotificationState;
+            annotation: null | NotificationState;
+            backup: null | NotificationState;
         };
         importing: {
-            dataset: string;
-            annotation: string;
-            backup: string;
+            dataset: null | NotificationState;
+            annotation: null | NotificationState;
+            backup: null | NotificationState;
         };
         invitations: {
-            newInvitations: string;
-            acceptInvitationDone: string;
-            declineInvitationDone: string;
-            resendingInvitation: string;
+            newInvitations: null | NotificationState;
+            acceptInvitationDone: null | NotificationState;
+            declineInvitationDone: null | NotificationState;
+            resendingInvitation: null | NotificationState;
         }
     };
 }
