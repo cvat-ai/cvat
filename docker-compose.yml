@@ -82,7 +82,6 @@ services:
       DJANGO_MODWSGI_EXTRA_ARGS: ''
       ALLOWED_HOSTS: '*'
       ADAPTIVE_AUTO_ANNOTATION: 'false'
-      IAM_OPA_BUNDLE: '1'
       NUMPROCS: 2
       CVAT_ANALYTICS: 1
       CVAT_BASE_URL:

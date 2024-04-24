@@ -1,19 +1,26 @@
 from pathlib import Path
+from typing import Tuple
+import functools
+import hashlib
+import io
 import tarfile
 
 from django.conf import settings
 
-def create_opa_bundle():
-    bundle_path = Path(settings.IAM_OPA_BUNDLE_PATH)
-    if bundle_path.is_file():
-        bundle_path.unlink()
-
+@functools.lru_cache()
+def get_opa_bundle() -> Tuple[bytes, str]:
     rules_paths = [Path(settings.BASE_DIR) / rel_path for rel_path in settings.IAM_OPA_RULES_PATH.strip(':').split(':')]
 
-    with tarfile.open(bundle_path, 'w:gz') as tar:
+    bundle_file = io.BytesIO()
+
+    with tarfile.open(fileobj=bundle_file, mode='w:gz') as tar:
         for p in rules_paths:
             for f in p.glob('*[!.gen].rego'):
                 tar.add(name=f, arcname=f.relative_to(p.parent))
+
+    bundle = bundle_file.getvalue()
+    etag = hashlib.blake2b(bundle).hexdigest()
+    return bundle, etag
 
 def get_dummy_user(email):
     from allauth.account.models import EmailAddress
