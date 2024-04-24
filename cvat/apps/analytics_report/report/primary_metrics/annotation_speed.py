@@ -4,7 +4,6 @@
 
 from dateutil import parser
 
-import cvat.apps.dataset_manager as dm
 from cvat.apps.analytics_report.models import (
     BinaryOperatorType,
     GranularityChoice,
@@ -42,12 +41,6 @@ class JobAnnotationSpeed(PrimaryMetricBase):
     ]
 
     def calculate(self):
-        def get_tags_count(annotations):
-            return sum(1 for t in annotations["tags"] if t["source"] != SourceType.FILE)
-
-        def get_shapes_count(annotations):
-            return sum(1 for s in annotations["shapes"] if s["source"] != SourceType.FILE)
-
         def get_track_count(annotations):
             count = 0
             for track in annotations["tracks"]:
@@ -70,11 +63,10 @@ class JobAnnotationSpeed(PrimaryMetricBase):
             }
 
         # Calculate object count
-        annotations = dm.task.get_job_data(self._db_obj.id)
         object_count = 0
-        object_count += get_tags_count(annotations)
-        object_count += get_shapes_count(annotations)
-        object_count += get_track_count(annotations)
+        object_count += self._db_obj.labeledimage_set.exclude(source=SourceType.FILE).count()
+        object_count += self._db_obj.labeledshape_set.filter(parent=None).exclude(source=SourceType.FILE).count()
+        object_count += self._db_obj.labeledtrack_set.filter(parent=None).exclude(source=SourceType.FILE).count()
 
         timestamp = self._get_utc_now()
         timestamp_str = timestamp.strftime("%Y-%m-%dT%H:%M:%SZ")
