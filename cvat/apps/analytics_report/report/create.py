@@ -276,7 +276,7 @@ class AnalyticsReportUpdateManager:
                 return False
 
             db_report = cls._get_analytics_report(db_project)
-            task_ids = list(db_project.tasks.values('id'))
+            task_ids = [item['id'] for item in db_project.tasks.values('id')]
             primary_metric_extractors = dict((
                 (JobObjects.key(), JobObjectsExtractor(task_ids=task_ids)),
                 (JobAnnotationSpeed.key(), JobAnnotationSpeedExtractor(task_ids=task_ids)),
