@@ -2015,20 +2015,14 @@ class PolicyEnforcer(BasePermission):
         if self.is_metadata_request(request, view) or obj and is_public_obj(obj):
             return True
 
-        permissions: List[OpenPolicyAgentPermission] = []
         iam_context = get_iam_context(request, obj)
+        for perm_class in OpenPolicyAgentPermission.__subclasses__():
+            for perm in perm_class.create(request, view, obj, iam_context):
+                result = perm.check_access()
+                if not result.allow:
+                    return False
 
-        for perm in OpenPolicyAgentPermission.__subclasses__():
-            permissions.extend(perm.create(request, view, obj, iam_context))
-
-        allow = True
-        for perm in permissions:
-            result = perm.check_access()
-            allow &= result.allow
-            if not allow:
-                break
-
-        return allow
+        return True
 
     def has_permission(self, request, view):
         if not view.detail:
