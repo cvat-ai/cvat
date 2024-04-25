@@ -18,6 +18,10 @@ export enum RequestsActionsTypes {
     GET_REQUESTS_STATUS_FAILED = 'GET_REQUESTS_STATUS_FAILED',
     REQUEST_FINISHED = 'REQUEST_FINISHED',
     REQUEST_FAILED = 'REQUEST_FAILED',
+    CANCEL_REQUEST = 'CANCEL_REQUEST',
+    CANCEL_REQUEST_FAILED = 'CANCEL_REQUEST_FAILED',
+    DELETE_REQUEST = 'DELETE_REQUEST',
+    DELETE_REQUEST_FAILED = 'DELETE_REQUEST_FAILED',
 }
 
 export const requestsActions = {
@@ -40,6 +44,14 @@ export const requestsActions = {
             request,
             error,
         })
+    ),
+    cancelRequest: (request: Request) => createAction(RequestsActionsTypes.CANCEL_REQUEST, { request }),
+    cancelRequestFailed: (request: Request, error: any) => createAction(
+        RequestsActionsTypes.CANCEL_REQUEST_FAILED, { request, error },
+    ),
+    deleteRequest: (request: Request) => createAction(RequestsActionsTypes.DELETE_REQUEST, { request }),
+    deleteRequestFailed: (request: Request, error: any) => createAction(
+        RequestsActionsTypes.DELETE_REQUEST_FAILED, { request, error },
     ),
 };
 
@@ -109,6 +121,32 @@ export function getRequestsAsync(query: RequestsQuery, notify = true): ThunkActi
                 });
         } catch (error) {
             dispatch(requestsActions.getRequestsFailed(error));
+        }
+    };
+}
+
+export function cancelRequestAsync(request: Request, onSuccess: () => void): ThunkAction {
+    return async (dispatch): Promise<void> => {
+        dispatch(requestsActions.cancelRequest(request));
+
+        try {
+            await core.requests.cancel(request.id);
+            onSuccess();
+        } catch (error) {
+            dispatch(requestsActions.cancelRequestFailed(request, error));
+        }
+    };
+}
+
+export function deleteRequestAsync(request: Request, onSuccess: () => void): ThunkAction {
+    return async (dispatch): Promise<void> => {
+        dispatch(requestsActions.deleteRequest(request));
+
+        try {
+            await core.requests.delete(request.id);
+            onSuccess();
+        } catch (error) {
+            dispatch(requestsActions.deleteRequestFailed(request, error));
         }
     };
 }

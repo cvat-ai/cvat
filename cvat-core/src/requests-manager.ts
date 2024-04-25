@@ -278,6 +278,24 @@ class RequestsManager {
         };
         return promise;
     }
+
+    async cancel(rqID: string): Promise<void> {
+        await serverProxy.requests.cancel(rqID).then(() => {
+            if (rqID in this.listening) {
+                clearTimeout(this.listening[rqID].timeout);
+                delete this.listening[rqID];
+            }
+        });
+    }
+
+    async delete(rqID: string): Promise<void> {
+        await serverProxy.requests.delete(rqID).then(() => {
+            if (rqID in this.listening) {
+                clearTimeout(this.listening[rqID].timeout);
+                delete this.listening[rqID];
+            }
+        });
+    }
 }
 
 export default new RequestsManager();

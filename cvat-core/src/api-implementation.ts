@@ -61,6 +61,8 @@ export default function implementAPI(cvat: CVATCore): CVATCore {
 
     implementationMixin(cvat.requests.list, requestsManager.list.bind(requestsManager));
     implementationMixin(cvat.requests.listen, requestsManager.listen.bind(requestsManager));
+    implementationMixin(cvat.requests.delete, requestsManager.delete.bind(requestsManager));
+    implementationMixin(cvat.requests.cancel, requestsManager.cancel.bind(requestsManager));
 
     implementationMixin(cvat.server.about, async () => {
         const result = await serverProxy.server.about();

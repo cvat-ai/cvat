@@ -2254,6 +2254,26 @@ async function getImportRequestStatus(rqID: string | null, filter: ApiRequestsFi
     }
 }
 
+async function cancelRequest(requestID): Promise<void> {
+    const { backendAPI } = config;
+
+    try {
+        await Axios.post(`${backendAPI}/requests/${requestID}/cancel`);
+    } catch (errorData) {
+        throw generateError(errorData);
+    }
+}
+
+async function deleteRequest(requestID): Promise<void> {
+    const { backendAPI } = config;
+
+    try {
+        await Axios.delete(`${backendAPI}/requests/${requestID}`);
+    } catch (errorData) {
+        throw generateError(errorData);
+    }
+}
+
 export default Object.freeze({
     server: Object.freeze({
         setAuthData,
@@ -2418,5 +2438,7 @@ export default Object.freeze({
     requests: Object.freeze({
         list: getRequestsList,
         status: getImportRequestStatus,
+        cancel: cancelRequest,
+        delete: deleteRequest,
     }),
 });

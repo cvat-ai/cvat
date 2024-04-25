@@ -1335,7 +1335,38 @@ export default function (state = defaultState, action: AnyAction): Notifications
                 },
             };
         }
-
+        case RequestsActionsTypes.CANCEL_REQUEST_FAILED: {
+            return {
+                ...state,
+                errors: {
+                    ...state.errors,
+                    requests: {
+                        ...state.errors.requests,
+                        fetching: {
+                            message: 'Could not cancel the request',
+                            reason: action.payload.error,
+                            shouldLog: !(action.payload.error instanceof ServerError),
+                        },
+                    },
+                },
+            };
+        }
+        case RequestsActionsTypes.DELETE_REQUEST_FAILED: {
+            return {
+                ...state,
+                errors: {
+                    ...state.errors,
+                    requests: {
+                        ...state.errors.requests,
+                        fetching: {
+                            message: 'Could not delete the request',
+                            reason: action.payload.error,
+                            shouldLog: !(action.payload.error instanceof ServerError),
+                        },
+                    },
+                },
+            };
+        }
         case ReviewActionTypes.COMMENT_ISSUE_FAILED: {
             return {
                 ...state,

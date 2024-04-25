@@ -368,8 +368,19 @@ function build(): CVATCore {
             },
         },
         requests: {
-            async list(): Promise<Request[]> {
+            async list(): Promise<{
+                requests: Request[];
+                count: number;
+            }> {
                 const result = await PluginRegistry.apiWrapper(cvat.requests.list);
+                return result;
+            },
+            async delete(rqID: string): Promise<void> {
+                const result = await PluginRegistry.apiWrapper(cvat.requests.delete, rqID);
+                return result;
+            },
+            async cancel(rqID: string): Promise<void> {
+                const result = await PluginRegistry.apiWrapper(cvat.requests.cancel, rqID);
                 return result;
             },
             async listen(rqID: string, callback: (request: Request) => void): Promise<Request> {

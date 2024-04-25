@@ -6,6 +6,8 @@ import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 
 import { Row, Col } from 'antd/lib/grid';
+import { useDispatch } from 'react-redux';
+
 import Card from 'antd/lib/card';
 import Text from 'antd/lib/typography/Text';
 import Progress from 'antd/lib/progress';
@@ -13,13 +15,11 @@ import { LoadingOutlined, MoreOutlined } from '@ant-design/icons';
 import Dropdown from 'antd/lib/dropdown';
 import Button from 'antd/lib/button';
 import Menu from 'antd/lib/menu';
-import notification from 'antd/lib/notification';
 
-import { RQStatus, Request, getCore } from 'cvat-core-wrapper';
+import { RQStatus, Request } from 'cvat-core-wrapper';
 
 import moment from 'moment';
-
-const core = getCore();
+import { cancelRequestAsync, deleteRequestAsync } from 'actions/requests-actions';
 
 export interface Props {
     request: Request;
@@ -139,6 +139,8 @@ export default function RequestCard(props: Props): JSX.Element {
     const { request } = props;
     const { operation } = request;
     const { type } = operation;
+
+    const dispatch = useDispatch();
     const [isActive, setIsActive] = useState(true);
 
     let textType: 'success' | 'danger' | 'warning' | undefined;
@@ -279,16 +281,9 @@ export default function RequestCard(props: Props): JSX.Element {
                                                 <Menu.Item
                                                     key='delete'
                                                     onClick={() => {
-                                                        core.server.request(`/api/requests/${request.id}`, {
-                                                            method: 'DELETE',
-                                                        }).then(() => {
+                                                        dispatch(deleteRequestAsync(request, () => {
                                                             setIsActive(false);
-                                                        }).catch((error: Error) => {
-                                                            notification.error({
-                                                                message: 'Failed to delete RQ job',
-                                                                description: error.toString(),
-                                                            });
-                                                        });
+                                                        }));
                                                     }}
                                                 >
                                                         Delete
@@ -298,17 +293,9 @@ export default function RequestCard(props: Props): JSX.Element {
                                                         <Menu.Item
                                                             key='cancel'
                                                             onClick={() => {
-                                                                core.server.request(
-                                                                    `/api/requests/${request.id}/cancel`, {
-                                                                        method: 'POST',
-                                                                    }).then(() => {
+                                                                dispatch(cancelRequestAsync(request, () => {
                                                                     setIsActive(false);
-                                                                }).catch((error: Error) => {
-                                                                    notification.error({
-                                                                        message: 'Failed to cancel RQ job',
-                                                                        description: error.toString(),
-                                                                    });
-                                                                });
+                                                                }));
                                                             }}
                                                         >
                                                                 Cancel
