@@ -65,8 +65,8 @@ export const exportActions = {
     exportBackup: (instance: any) => (
         createAction(ExportActionTypes.EXPORT_BACKUP, { instance })
     ),
-    exportBackupSuccess: (instance: any, instanceType: 'task' | 'project') => (
-        createAction(ExportActionTypes.EXPORT_BACKUP_SUCCESS, { instance, instanceType })
+    exportBackupSuccess: (instance: any, instanceType: 'task' | 'project', isLocal: boolean) => (
+        createAction(ExportActionTypes.EXPORT_BACKUP_SUCCESS, { instance, instanceType, isLocal })
     ),
     exportBackupFailed: (instance: any, instanceType: 'task' | 'project', error: any) => (
         createAction(ExportActionTypes.EXPORT_BACKUP_FAILED, { instance, instanceType, error })
@@ -93,15 +93,14 @@ export const exportDatasetAsync = (
     }
 
     try {
-        await instance.annotations
+        const result = await instance.annotations
             .exportDataset(format, saveImages, useDefaultSettings, targetStorage, name, {
                 updateProgressCallback: (request: Request) => {
                     updateRequestProgress(request, dispatch);
                 },
             });
-
         const resource = saveImages ? 'Dataset' : 'Annotations';
-        dispatch(exportActions.exportDatasetSuccess(instance, instanceType, format, true, resource));
+        dispatch(exportActions.exportDatasetSuccess(instance, instanceType, format, !!result.url, resource));
     } catch (error) {
         dispatch(exportActions.exportDatasetFailed(instance, instanceType, format, error));
     }
@@ -117,13 +116,13 @@ export const exportBackupAsync = (
     const instanceType = (instance instanceof core.classes.Project) ? 'project' : 'task';
 
     try {
-        await instance.backup(targetStorage, useDefaultSetting, fileName, {
+        const result = await instance.backup(targetStorage, useDefaultSetting, fileName, {
             updateProgressCallback: (request: Request) => {
                 updateRequestProgress(request, dispatch);
             },
         });
 
-        dispatch(exportActions.exportBackupSuccess(instance, instanceType));
+        dispatch(exportActions.exportBackupSuccess(instance, instanceType, !!result.url));
     } catch (error) {
         dispatch(exportActions.exportBackupFailed(instance, instanceType, error as Error));
     }

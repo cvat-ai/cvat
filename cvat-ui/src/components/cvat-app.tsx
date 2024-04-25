@@ -362,7 +362,6 @@ class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentP
 
     private showMessages(): void {
         function showMessage(notificationState: NotificationState): void {
-            console.log(notificationState);
             notification.info({
                 message: (
                     <ReactMarkdown>{notificationState.message}</ReactMarkdown>

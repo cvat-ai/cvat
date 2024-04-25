@@ -54,27 +54,9 @@ export interface RequestParams {
 }
 
 export function updateRequestProgress(request: Request, dispatch: (action: RequestsActions) => void): void {
-    const { status, message, id } = request;
-    if (status === RQStatus.FAILED || status === RQStatus.UNKNOWN) {
-        dispatch(
-            requestsActions.getRequestStatusFailed(
-                request,
-                new Error(`Request status for the job ${id} is ${status}. ${message}`),
-            ),
-        );
-
-        return;
-    }
-
     dispatch(
         requestsActions.getRequestStatusSuccess(request),
     );
-    if (status === RQStatus.FINISHED) {
-        // status success
-        dispatch(
-            requestsActions.requestFinished(request),
-        );
-    }
 }
 
 export function listen(request: Request, dispatch: (action: RequestsActions) => void): Promise<void | Request> {

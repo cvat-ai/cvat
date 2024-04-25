@@ -24,9 +24,11 @@ import { WebhooksActionsTypes } from 'actions/webhooks-actions';
 import { InvitationsActionTypes } from 'actions/invitations-actions';
 import { ServerAPIActionTypes } from 'actions/server-actions';
 import { RequestsActionsTypes } from 'actions/requests-actions';
-import config from 'config';
+import { ImportActionTypes } from 'actions/import-actions';
+import { ExportActionTypes } from 'actions/export-actions';
 
-import { NotificationsState, StorageLocation } from '.';
+import config from 'config';
+import { NotificationsState } from '.';
 
 const defaultState: NotificationsState = {
     errors: {
@@ -508,149 +510,159 @@ export default function (state = defaultState, action: AnyAction): Notifications
                 },
             };
         }
-        case RequestsActionsTypes.REQUEST_FINISHED: {
-            const { request } = action.payload;
-            const {
-                taskID, projectID, jobID, target, type,
-            } = request.operation;
-            const [process, resource] = type.split(':');
-            let instanceID = jobID;
-            if (target === 'project') {
-                instanceID = projectID;
-            } else if (target === 'task') {
-                instanceID = taskID;
-            }
-            if (process === 'import') {
-                const link = target === 'job' ? `${target} ${instanceID}` : `[${target} ${instanceID}](/${target}s/${instanceID})`;
-                const message = resource === 'annotations' ?
-                    `Annotations have been loaded to the ${link}` :
-                    `Dataset was imported to the ${link}`;
-                return {
-                    ...state,
-                    messages: {
-                        ...state.messages,
-                        importing: {
-                            ...state.messages.importing,
-                            [resource]: {
-                                message,
-                                duration: config.REQUEST_SUCCESS_NOTIFICATION_DURATION,
-                            },
-                        },
-                    },
-                };
-            }
-            if (process === 'export') {
-                const isLocal = request.meta?.storage ?
-                    request.meta.storage.location === StorageLocation.LOCAL : StorageLocation.LOCAL;
-                const link = target === 'job' ? `${target} ${instanceID}` : `[${target} ${instanceID}](/${target}s/${instanceID})`;
-                const message = isLocal ?
-                    `Export for the ${link} is finished, you can [download it here](/requests)` :
-                    `Export for the ${link} has been uploaded to cloud storage`;
-                return {
-                    ...state,
-                    messages: {
-                        ...state.messages,
-                        exporting: {
-                            ...state.messages.exporting,
-                            dataset: {
-                                message,
-                                duration: config.REQUEST_SUCCESS_NOTIFICATION_DURATION,
-                            },
-                        },
-                    },
-                };
-            }
-            if (process === 'backup') {
-                const isLocal = request.meta?.storage ?
-                    request.meta.storage.location === StorageLocation.LOCAL : StorageLocation.LOCAL;
-                const message = isLocal ?
-                    `Backup for the ${target} №${instanceID} is finished, you can [download it here](/requests)` :
-                    `Backup for the ${target} №${instanceID} has been uploaded to cloud storage`;
-                return {
-                    ...state,
-                    messages: {
-                        ...state.messages,
-                        exporting: {
-                            ...state.messages.exporting,
-                            backup: {
-                                message,
-                                duration: config.REQUEST_SUCCESS_NOTIFICATION_DURATION,
-                            },
-                        },
-                    },
-                };
-            }
+        case ExportActionTypes.EXPORT_DATASET_FAILED: {
+            const { instance, instanceType } = action.payload;
             return {
                 ...state,
+                errors: {
+                    ...state.errors,
+                    exporting: {
+                        ...state.errors.exporting,
+                        dataset: {
+                            message:
+                                'Could not export dataset for the ' +
+                                `[${instanceType} ${instance.id}](/${instanceType}s/${instance.id})`,
+                            reason: action.payload.error,
+                            shouldLog: !(action.payload.error instanceof ServerError),
+                        },
+                    },
+                },
             };
         }
-        case RequestsActionsTypes.REQUEST_FAILED: {
-            const { request } = action.payload;
+        case ExportActionTypes.EXPORT_DATASET_SUCCESS: {
             const {
-                taskID, projectID, jobID, target, type,
-            } = request.operation;
-            const [process, resource] = type.split(':');
-            let instanceID = jobID;
-            if (target === 'project') {
-                instanceID = projectID;
-            } else if (target === 'task') {
-                instanceID = taskID;
-            }
-            if (process === 'import') {
-                const link = target === 'job' ? `${target} ${instanceID}` : `[${target} ${instanceID}](/${target}s/${instanceID})`;
-                const message = resource === 'annotations' ?
-                    `Could not import annotations for the ${link}` :
-                    `Could not import dataset for the ${link}`;
-                return {
-                    ...state,
-                    errors: {
-                        ...state.errors,
-                        importing: {
-                            ...state.errors.importing,
-                            dataset: {
-                                message,
-                                reason: new Error(' '),
-                            },
-                        },
-                    },
-                };
-            }
-            if (process === 'export') {
-                const link = target === 'job' ? `${target} ${instanceID}` : `[${target} ${instanceID}](/${target}s/${instanceID})`;
-                const message = `Could not export the ${link}`;
-                return {
-                    ...state,
-                    errors: {
-                        ...state.errors,
-                        exporting: {
-                            ...state.errors.exporting,
-                            dataset: {
-                                message,
-                                reason: new Error(' '),
-                            },
-                        },
-                    },
-                };
-            }
-            if (process === 'backup') {
-                return {
-                    ...state,
-                    errors: {
-                        ...state.errors,
-                        exporting: {
-                            ...state.errors.exporting,
-                            backup: {
-                                message:
-                                        `Could not export the ${target} №${instanceID}`,
-                                reason: action.payload.error,
-                                shouldLog: !(action.payload.error instanceof ServerError),
-                            },
-                        },
-                    },
-                };
-            }
+                instance, instanceType, isLocal, resource,
+            } = action.payload;
+            const message = isLocal ?
+                `Export ${resource} for ${instanceType} ${instance.id} is finished,` +
+                'you can [download it here](/requests)' :
+                `Export ${resource} for ${instanceType} ${instance.id} has been uploaded to cloud storage`;
             return {
                 ...state,
+                messages: {
+                    ...state.messages,
+                    exporting: {
+                        ...state.messages.exporting,
+                        dataset: {
+                            message,
+                            duration: config.REQUEST_SUCCESS_NOTIFICATION_DURATION,
+                        },
+                    },
+                },
+            };
+        }
+        case ExportActionTypes.EXPORT_BACKUP_FAILED: {
+            const { instance, instanceType } = action.payload;
+            return {
+                ...state,
+                errors: {
+                    ...state.errors,
+                    exporting: {
+                        ...state.errors.exporting,
+                        backup: {
+                            message:
+                                `Could not export the ${instanceType} №${instance.id}`,
+                            reason: action.payload.error,
+                            shouldLog: !(action.payload.error instanceof ServerError),
+                        },
+                    },
+                },
+            };
+        }
+        case ExportActionTypes.EXPORT_BACKUP_SUCCESS: {
+            const { instance, instanceType } = action.payload;
+            const message =
+                `Backup for the ${instanceType} №${instance.id} is finished, you can [download it here](/requests)`;
+            return {
+                ...state,
+                messages: {
+                    ...state.messages,
+                    exporting: {
+                        ...state.messages.exporting,
+                        backup: {
+                            message,
+                            duration: config.REQUEST_SUCCESS_NOTIFICATION_DURATION,
+                        },
+                    },
+                },
+            };
+        }
+        case ImportActionTypes.IMPORT_DATASET_SUCCESS: {
+            const { instance, resource } = action.payload;
+            const message = resource === 'annotation' ?
+                'Annotations have been loaded to the ' +
+                `[task ${instance.taskId || instance.id}](/tasks/${instance.taskId || instance.id}) ` :
+                `Dataset was imported to the [project ${instance.id}](/projects/${instance.id})`;
+            return {
+                ...state,
+                messages: {
+                    ...state.messages,
+                    importing: {
+                        ...state.messages.importing,
+                        [resource]: {
+                            message,
+                            duration: config.REQUEST_SUCCESS_NOTIFICATION_DURATION,
+                        },
+                    },
+                },
+            };
+        }
+        case ImportActionTypes.IMPORT_DATASET_FAILED: {
+            const { instance, resource } = action.payload;
+            const message = resource === 'annotation' ?
+                'Could not upload annotation for the ' +
+                `[task ${instance.taskId || instance.id}](/tasks/${instance.taskId || instance.id})` :
+                `Could not import dataset to the [project ${instance.id}](/projects/${instance.id})`;
+            return {
+                ...state,
+                errors: {
+                    ...state.errors,
+                    importing: {
+                        ...state.errors.importing,
+                        dataset: {
+                            message,
+                            reason: action.payload.error,
+                            shouldLog: !(action.payload.error instanceof ServerError),
+                            className: 'cvat-notification-notice-' +
+                                `${resource === 'annotation' ? 'load-annotation' : 'import-dataset'}-failed`,
+                        },
+                    },
+                },
+            };
+        }
+        case ImportActionTypes.IMPORT_BACKUP_SUCCESS: {
+            const { instanceId, instanceType } = action.payload;
+            return {
+                ...state,
+                messages: {
+                    ...state.messages,
+                    importing: {
+                        ...state.messages.importing,
+                        backup: {
+                            message: `The ${instanceType} has been restored successfully.
+                            Click [here](/${instanceType}s/${instanceId}) to open`,
+                            duration: config.REQUEST_SUCCESS_NOTIFICATION_DURATION,
+                        },
+                    },
+                },
+            };
+        }
+        case ImportActionTypes.IMPORT_BACKUP_FAILED: {
+            const { instanceType } = action.payload;
+            return {
+                ...state,
+                errors: {
+                    ...state.errors,
+                    importing: {
+                        ...state.errors.importing,
+                        backup: {
+                            message:
+                                `Could not restore ${instanceType} backup.`,
+                            reason: action.payload.error,
+                            shouldLog: !(action.payload.error instanceof ServerError),
+                        },
+                    },
+                },
             };
         }
         case TasksActionTypes.GET_TASKS_FAILED: {
