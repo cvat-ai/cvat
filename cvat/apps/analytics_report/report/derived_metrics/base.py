@@ -2,7 +2,10 @@
 #
 # SPDX-License-Identifier: MIT
 
-from cvat.apps.analytics_report.report.primary_metrics import PrimaryMetricBase, DataExtractorBase
+from cvat.apps.analytics_report.report.primary_metrics import (
+    DataExtractorBase,
+    PrimaryMetricBase,
+)
 
 
 class DerivedMetricBase(PrimaryMetricBase):

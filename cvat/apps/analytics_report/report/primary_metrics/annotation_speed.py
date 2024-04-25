@@ -9,9 +9,12 @@ from cvat.apps.analytics_report.models import (
     BinaryOperatorType,
     GranularityChoice,
     TransformOperationType,
-    ViewChoice)
+    ViewChoice,
+)
 from cvat.apps.analytics_report.report.primary_metrics.base import (
-    DataExtractorBase, PrimaryMetricBase)
+    DataExtractorBase,
+    PrimaryMetricBase,
+)
 from cvat.apps.engine.models import SourceType
 
 

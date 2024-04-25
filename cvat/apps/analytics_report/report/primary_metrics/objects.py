@@ -4,7 +4,9 @@
 
 from cvat.apps.analytics_report.models import GranularityChoice, ViewChoice
 from cvat.apps.analytics_report.report.primary_metrics.base import (
-    DataExtractorBase, PrimaryMetricBase)
+    DataExtractorBase,
+    PrimaryMetricBase,
+)
 
 
 class JobObjectsExtractor(DataExtractorBase):
