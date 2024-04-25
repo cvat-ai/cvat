@@ -177,163 +177,137 @@ class AnalyticsReportUpdateManager:
     def _check_analytics_report(
         cls, *, cvat_job_id: int = None, cvat_task_id: int = None, cvat_project_id: int = None
     ) -> bool:
-        if cvat_job_id is not None:
-            queryset = Job.objects.select_related("analytics_report")
-            # The Job could have been deleted during scheduling
-            try:
+        try:
+            if cvat_job_id is not None:
+                queryset = Job.objects.select_related("analytics_report")
                 db_job = queryset.get(pk=cvat_job_id)
-            except Job.DoesNotExist:
-                return False
 
-            db_report = cls._get_analytics_report(db_job)
-            primary_metric_extractors = dict(
-                (
-                    (JobObjects.key(), JobObjectsExtractor(cvat_job_id)),
-                    (JobAnnotationSpeed.key(), JobAnnotationSpeedExtractor(cvat_job_id)),
-                    (JobAnnotationTime.key(), JobAnnotationTimeExtractor(cvat_job_id)),
-                )
-            )
-            db_report = cls()._compute_report_for_job(db_job, db_report, primary_metric_extractors)
-
-            with transaction.atomic():
-                # The job could have been deleted during processing
-                try:
-                    actual_job = queryset.get(pk=db_job.id)
-                except Job.DoesNotExist:
-                    return False
-
-                actual_report = getattr(actual_job, "analytics_report", None)
-                actual_created_date = (
-                    getattr(actual_report, "created_date", None)
-                    if actual_report is not None
-                    else None
-                )
-                # The report has been updated during processing
-                if db_report.created_date != actual_created_date:
-                    return False
-
-                db_report.save()
-            return True
-
-        elif cvat_task_id is not None:
-            queryset = Task.objects.select_related("analytics_report").prefetch_related(
-                "segment_set__job_set"
-            )
-            try:
-                db_task = queryset.get(pk=cvat_task_id)
-            except Task.DoesNotExist:
-                return False
-
-            db_report = cls._get_analytics_report(db_task)
-            primary_metric_extractors = dict(
-                (
-                    (JobObjects.key(), JobObjectsExtractor(task_ids=[cvat_task_id])),
+                db_report = cls._get_analytics_report(db_job)
+                primary_metric_extractors = dict(
                     (
-                        JobAnnotationSpeed.key(),
-                        JobAnnotationSpeedExtractor(task_ids=[cvat_task_id]),
-                    ),
-                    (JobAnnotationTime.key(), JobAnnotationTimeExtractor(task_ids=[cvat_task_id])),
+                        (JobObjects.key(), JobObjectsExtractor(cvat_job_id)),
+                        (JobAnnotationSpeed.key(), JobAnnotationSpeedExtractor(cvat_job_id)),
+                        (JobAnnotationTime.key(), JobAnnotationTimeExtractor(cvat_job_id)),
+                    )
                 )
-            )
-            db_report, job_reports = cls()._compute_report_for_task(
-                db_task, db_report, primary_metric_extractors
-            )
+                db_report = cls()._compute_report_for_job(
+                    db_job, db_report, primary_metric_extractors
+                )
 
-            with transaction.atomic():
-                # The task could have been deleted during processing
-                try:
+                with transaction.atomic():
+                    actual_job = queryset.get(pk=db_job.id)
+                    actual_report = getattr(actual_job, "analytics_report", None)
+                    actual_created_date = getattr(actual_report, "created_date", None)
+                    # The report has been updated during processing
+                    if db_report.created_date != actual_created_date:
+                        return False
+                    db_report.save()
+                return True
+            elif cvat_task_id is not None:
+                queryset = Task.objects.select_related("analytics_report").prefetch_related(
+                    "segment_set__job_set"
+                )
+                db_task = queryset.get(pk=cvat_task_id)
+
+                db_report = cls._get_analytics_report(db_task)
+                primary_metric_extractors = dict(
+                    (
+                        (JobObjects.key(), JobObjectsExtractor(task_ids=[cvat_task_id])),
+                        (
+                            JobAnnotationSpeed.key(),
+                            JobAnnotationSpeedExtractor(task_ids=[cvat_task_id]),
+                        ),
+                        (
+                            JobAnnotationTime.key(),
+                            JobAnnotationTimeExtractor(task_ids=[cvat_task_id]),
+                        ),
+                    )
+                )
+                db_report, job_reports = cls()._compute_report_for_task(
+                    db_task, db_report, primary_metric_extractors
+                )
+
+                with transaction.atomic():
                     actual_task = queryset.get(pk=cvat_task_id)
-                except Task.DoesNotExist:
-                    return False
-
-                actual_report = getattr(actual_task, "analytics_report", None)
-                actual_created_date = (
-                    actual_report.created_date if actual_report is not None else None
-                )
-                # The report has been updated during processing
-                if db_report.created_date != actual_created_date:
-                    return False
-
-                actual_job_report_created_dates = {}
-                for db_segment in db_task.segment_set.all():
-                    for db_job in db_segment.job_set.all():
-                        ar = getattr(db_job, "analytics_report", None)
-                        acd = ar.created_date if ar is not None else None
-                        actual_job_report_created_dates[db_job.id] = acd
-
-                for jr in job_reports:
-                    if jr.created_date != actual_job_report_created_dates[jr.job_id]:
+                    actual_report = getattr(actual_task, "analytics_report", None)
+                    actual_created_date = getattr(actual_report, "created_date", None)
+                    # The report has been updated during processing
+                    if db_report.created_date != actual_created_date:
                         return False
 
-                db_report.save()
-                for jr in job_reports:
-                    jr.save()
-            return True
-
-        elif cvat_project_id is not None:
-            queryset = Project.objects.select_related("analytics_report").prefetch_related(
-                "tasks__segment_set__job_set"
-            )
-            try:
-                db_project = queryset.get(pk=cvat_project_id)
-            except Project.DoesNotExist:
-                return False
-
-            db_report = cls._get_analytics_report(db_project)
-            task_ids = [item["id"] for item in db_project.tasks.values("id")]
-            primary_metric_extractors = dict(
-                (
-                    (JobObjects.key(), JobObjectsExtractor(task_ids=task_ids)),
-                    (JobAnnotationSpeed.key(), JobAnnotationSpeedExtractor(task_ids=task_ids)),
-                    (JobAnnotationTime.key(), JobAnnotationTimeExtractor(task_ids=task_ids)),
-                )
-            )
-            db_report, task_reports, job_reports = cls()._compute_report_for_project(
-                db_project, db_report, primary_metric_extractors
-            )
-
-            with transaction.atomic():
-                # The Project could have been deleted during processing
-                try:
-                    actual_project = queryset.get(pk=cvat_project_id)
-                except Project.DoesNotExist:
-                    return False
-
-                actual_report = getattr(actual_project, "analytics_report", None)
-                actual_created_date = (
-                    actual_report.created_date if actual_report is not None else None
-                )
-                # The report has been updated during processing
-                if db_report.created_date != actual_created_date:
-                    return False
-
-                actual_job_report_created_dates = {}
-                actual_tasks_report_created_dates = {}
-                for db_task in db_project.tasks.all():
-                    task_ar = getattr(db_task, "analytics_report", None)
-                    task_ar_created_date = task_ar.created_date if task_ar else None
-                    actual_tasks_report_created_dates[db_task.id] = task_ar_created_date
+                    actual_job_report_created_dates = {}
                     for db_segment in db_task.segment_set.all():
                         for db_job in db_segment.job_set.all():
                             ar = getattr(db_job, "analytics_report", None)
                             acd = ar.created_date if ar is not None else None
                             actual_job_report_created_dates[db_job.id] = acd
 
-                for tr in task_reports:
-                    if tr.created_date != actual_tasks_report_created_dates[tr.task_id]:
+                    for jr in job_reports:
+                        if jr.created_date != actual_job_report_created_dates[jr.job_id]:
+                            return False
+
+                    db_report.save()
+                    for jr in job_reports:
+                        jr.save()
+                return True
+
+            elif cvat_project_id is not None:
+                queryset = Project.objects.select_related("analytics_report").prefetch_related(
+                    "tasks__segment_set__job_set"
+                )
+
+                db_project = queryset.get(pk=cvat_project_id)
+                db_report = cls._get_analytics_report(db_project)
+                task_ids = [item["id"] for item in db_project.tasks.values("id")]
+                primary_metric_extractors = dict(
+                    (
+                        (JobObjects.key(), JobObjectsExtractor(task_ids=task_ids)),
+                        (JobAnnotationSpeed.key(), JobAnnotationSpeedExtractor(task_ids=task_ids)),
+                        (JobAnnotationTime.key(), JobAnnotationTimeExtractor(task_ids=task_ids)),
+                    )
+                )
+                db_report, task_reports, job_reports = cls()._compute_report_for_project(
+                    db_project, db_report, primary_metric_extractors
+                )
+
+                with transaction.atomic():
+                    actual_project = queryset.get(pk=cvat_project_id)
+                    actual_report = getattr(actual_project, "analytics_report", None)
+                    actual_created_date = getattr(actual_report, "created_date", None)
+                    # The report has been updated during processing
+                    if db_report.created_date != actual_created_date:
                         return False
 
-                for jr in job_reports:
-                    if jr.created_date != actual_job_report_created_dates[jr.job_id]:
-                        return False
+                    actual_job_report_created_dates = {}
+                    actual_tasks_report_created_dates = {}
+                    for db_task in db_project.tasks.all():
+                        task_ar = getattr(db_task, "analytics_report", None)
+                        task_ar_created_date = task_ar.created_date if task_ar else None
+                        actual_tasks_report_created_dates[db_task.id] = task_ar_created_date
+                        for db_segment in db_task.segment_set.all():
+                            for db_job in db_segment.job_set.all():
+                                ar = getattr(db_job, "analytics_report", None)
+                                acd = ar.created_date if ar is not None else None
+                                actual_job_report_created_dates[db_job.id] = acd
 
-                db_report.save()
-                for tr in task_reports:
-                    tr.save()
+                    for tr in task_reports:
+                        if tr.created_date != actual_tasks_report_created_dates[tr.task_id]:
+                            return False
 
-                for jr in job_reports:
-                    jr.save()
-            return True
+                    for jr in job_reports:
+                        if jr.created_date != actual_job_report_created_dates[jr.job_id]:
+                            return False
+
+                    db_report.save()
+                    for tr in task_reports:
+                        tr.save()
+
+                    for jr in job_reports:
+                        jr.save()
+                return True
+        except ObjectDoesNotExist:
+            # The resource may have been deleted while rq job was queued
+            return False
 
     @staticmethod
     def _get_statistics_entry_props(statistics_object):
