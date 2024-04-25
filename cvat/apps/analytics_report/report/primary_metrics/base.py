@@ -6,9 +6,7 @@ from abc import ABCMeta, abstractmethod
 from collections import ChainMap
 from datetime import datetime, timezone
 
-from cvat.apps.analytics_report.report.primary_metrics.utils import (
-    make_clickhouse_query,
-)
+from cvat.apps.analytics_report.report.primary_metrics.utils import make_clickhouse_query
 
 
 class DataExtractorBase:

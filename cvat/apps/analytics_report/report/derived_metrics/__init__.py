@@ -11,8 +11,4 @@ from .total_annotation_speed import (
     ProjectTotalAnnotationSpeed,
     TaskTotalAnnotationSpeed,
 )
-from .total_object_count import (
-    JobTotalObjectCount,
-    ProjectTotalObjectCount,
-    TaskTotalObjectCount,
-)
+from .total_object_count import JobTotalObjectCount, ProjectTotalObjectCount, TaskTotalObjectCount
