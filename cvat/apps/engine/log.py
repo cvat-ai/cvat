@@ -33,9 +33,9 @@ class ServerLogManager:
         self.cloud_storage = _LoggerAdapterMapping(self.glob, "CloudStorage")
 
 class DatasetLogManager:
-    def __init__(self) -> None:
+    def __init__(self, directory_depth=5) -> None:
         self.glob = logging.getLogger("dataset_logger")
-        self.directory_depth = 5
+        self.directory_depth = directory_depth
 
     def log_import_error(self, entity, entity_id, format_name, base_error, dir_path) -> None:
         base_info = f"[{entity}.id={entity_id} format.name={format_name} exc={base_error}]"
