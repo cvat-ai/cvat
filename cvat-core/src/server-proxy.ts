@@ -18,6 +18,7 @@ import {
     SerializedInvitationData, SerializedCloudStorage, SerializedFramesMetaData, SerializedCollection,
     SerializedQualitySettingsData, ApiQualitySettingsFilter, SerializedQualityConflictData, ApiQualityConflictsFilter,
     SerializedQualityReportData, ApiQualityReportsFilter, SerializedAnalyticsReport, ApiAnalyticsReportFilter,
+    ApiRequestsFilter,
 } from './server-response-types';
 import { PaginatedResource } from './core-types';
 import { Storage } from './storage';
@@ -1076,87 +1077,11 @@ async function restoreProject(storage: Storage, file: File | string): Promise<st
     return rqId;
 }
 
-const listenToCreateCallbacks: Record<number, {
-    promise: Promise<SerializedTask>;
-    onUpdate: ((state: string, progress: number, message: string) => void)[];
-}> = {};
-
-function listenToCreateTask(
-    id, onUpdate: (state: RQStatus, progress: number, message: string) => void,
-): Promise<SerializedTask> {
-    if (id in listenToCreateCallbacks) {
-        listenToCreateCallbacks[id].onUpdate.push(onUpdate);
-        // to avoid extra status check requests we do not create any more promises
-        return listenToCreateCallbacks[id].promise;
-    }
-
-    const promise = new Promise<SerializedTask>((resolve, reject) => {
-        const { backendAPI } = config;
-        const params = enableOrganization();
-        async function checkStatus(): Promise<void> {
-            try {
-                const response = await Axios.get(`${backendAPI}/tasks/${id}/status`, { params });
-                const state = response.data.state?.toLowerCase();
-                if ([RQStatus.QUEUED, RQStatus.STARTED].includes(state)) {
-                    // notify all the subscribtions when data status changed
-                    listenToCreateCallbacks[id].onUpdate.forEach((callback) => {
-                        callback(
-                            state,
-                            response.data.progress || 0,
-                            state === RQStatus.QUEUED ?
-                                'CVAT queued the task to import' : response.data.message,
-                        );
-                    });
-
-                    setTimeout(checkStatus, state === RQStatus.QUEUED ? 20000 : 5000);
-                } else if (state === RQStatus.FINISHED) {
-                    const [createdTask] = await getTasks({ id, ...params });
-                    resolve(createdTask);
-                } else if (state === RQStatus.FAILED) {
-                    const failMessage = 'Images processing failed';
-                    listenToCreateCallbacks[id].onUpdate.forEach((callback) => {
-                        callback(state, 0, failMessage);
-                    });
-
-                    reject(new ServerError(filterPythonTraceback(response.data.message), 400));
-                } else {
-                    const failMessage = 'Unknown status received';
-                    listenToCreateCallbacks[id].onUpdate.forEach((callback) => {
-                        callback(state || RQStatus.UNKNOWN, 0, failMessage);
-                    });
-                    reject(
-                        new ServerError(
-                            `Could not create task. ${failMessage}: ${state}`,
-                            500,
-                        ),
-                    );
-                }
-            } catch (errorData) {
-                listenToCreateCallbacks[id].onUpdate.forEach((callback) => {
-                    callback('failed', 0, 'Server request failed');
-                });
-                reject(generateError(errorData));
-            }
-        }
-
-        setTimeout(checkStatus, 100);
-    });
-
-    listenToCreateCallbacks[id] = {
-        promise,
-        onUpdate: [onUpdate],
-    };
-    promise.catch(() => {
-        // do nothing, avoid uncaught promise exceptions
-    }).finally(() => delete listenToCreateCallbacks[id]);
-    return promise;
-}
-
 async function createTask(
     taskSpec: Partial<SerializedTask>,
     taskDataSpec: any,
     onUpdate: (state: RQStatus, progress: number, message: string) => void,
-): Promise<SerializedTask> {
+): Promise<number> {
     const { backendAPI, origin } = config;
     // keep current default params to 'freeze" them during this request
     const params = enableOrganization();
@@ -1269,8 +1194,7 @@ async function createTask(
     }
 
     try {
-        const createdTask = await listenToCreateTask(response.data.id, onUpdate);
-        return createdTask;
+        return response.data.id;
     } catch (createException) {
         await deleteTask(response.data.id, params.org || null);
         throw createException;
@@ -2304,13 +2228,27 @@ async function getRequestsList(): Promise<any> {
     }
 }
 
-async function getImportRequestStatus(rqID): Promise<any> {
+async function getImportRequestStatus(rqID: string | null, filter: ApiRequestsFilter): Promise<any> {
     const { backendAPI } = config;
 
     try {
-        const response = await Axios.get(`${backendAPI}/requests/${rqID}`);
+        if (rqID) {
+            const response = await Axios.get(`${backendAPI}/requests/${rqID}`, {
+                params: {
+                    ...filter,
+                },
+            });
 
-        return response.data;
+            return response.data;
+        }
+
+        const response = await Axios.get(`${backendAPI}/requests`, {
+            params: {
+                ...filter,
+            },
+        });
+
+        return response.data.results[0];
     } catch (errorData) {
         throw generateError(errorData);
     }
@@ -2354,7 +2292,6 @@ export default Object.freeze({
         get: getTasks,
         save: saveTask,
         create: createTask,
-        listenToCreate: listenToCreateTask,
         delete: deleteTask,
         exportDataset: exportDataset('tasks'),
         getPreview: getPreview('tasks'),

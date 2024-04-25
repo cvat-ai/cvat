@@ -5,7 +5,7 @@
 
 import { omit } from 'lodash';
 import { ArgumentError } from './exceptions';
-import { HistoryActions, JobType, RQStatus } from './enums';
+import { HistoryActions, JobType } from './enums';
 import { Storage } from './storage';
 import { Task as TaskClass, Job as JobClass } from './session';
 import logger from './logger';
@@ -316,7 +316,7 @@ export function implementJob(Job) {
     ) {
         const { updateProgressCallback } = options;
         const rqID = await importDataset(this, format, useDefaultLocation, sourceStorage, file, options);
-        return requestsManager.listen(rqID, updateProgressCallback);
+        return requestsManager.listen(rqID, { callback: updateProgressCallback });
     };
 
     Job.prototype.annotations.import.implementation = function (data) {
@@ -337,7 +337,7 @@ export function implementJob(Job) {
     ) {
         const { updateProgressCallback } = options;
         const rqID = await exportDataset(this, format, saveImages, useDefaultSettings, targetStorage, customName);
-        return requestsManager.listen(rqID, updateProgressCallback);
+        return requestsManager.listen(rqID, { callback: updateProgressCallback });
     };
 
     Job.prototype.actions.undo.implementation = async function (count) {
@@ -403,7 +403,7 @@ export function implementTask(Task) {
         return this;
     };
 
-    Task.prototype.save.implementation = async function (onUpdate) {
+    Task.prototype.save.implementation = async function (options) {
         if (typeof this.id !== 'undefined') {
             // If the task has been already created, we update it
             const taskData = this._updateTrigger.getUpdated(this, {
@@ -494,8 +494,16 @@ export function implementTask(Task) {
             ...(typeof this.copyData !== 'undefined' ? { copy_data: this.copyData } : {}),
             ...(typeof this.cloudStorageId !== 'undefined' ? { cloud_storage_id: this.cloudStorageId } : {}),
         };
-
-        const task = await serverProxy.tasks.create(taskSpec, taskDataSpec, onUpdate);
+        const { updateStatusCallback, updateProgressCallback } = options;
+        const taskID = await serverProxy.tasks.create(taskSpec, taskDataSpec, updateStatusCallback);
+        const request = await requestsManager.listen(null, {
+            callback: updateProgressCallback,
+            filter: {
+                taskID,
+                action: 'create',
+            },
+        });
+        const [task] = await serverProxy.tasks.get({ id: request.operation.taskID });
         const labels = await serverProxy.labels.get({ task_id: task.id });
         const jobs = await serverProxy.jobs.get({
             filter: JSON.stringify({ and: [{ '==': [{ var: 'task_id' }, task.id] }] }),
@@ -510,10 +518,11 @@ export function implementTask(Task) {
     };
 
     Task.prototype.listenToCreate.implementation = async function (
-        onUpdate: (state: RQStatus, progress: number, message: string) => void = () => {},
+        options,
     ): Promise<TaskClass> {
         if (Number.isInteger(this.id) && this.size === 0) {
-            const serializedTask = await serverProxy.tasks.listenToCreate(this.id, onUpdate);
+            const request = await requestsManager.listen(null, options);
+            const [serializedTask] = await serverProxy.tasks.get({ id: request.operation.taskID });
             return new Task(omit(serializedTask, ['labels', 'jobs']));
         }
 
@@ -538,7 +547,7 @@ export function implementTask(Task) {
     ) {
         const { updateProgressCallback } = options;
         const rqID = await serverProxy.tasks.backup(this.id, targetStorage, useDefaultSettings, fileName);
-        return requestsManager.listen(rqID, updateProgressCallback);
+        return requestsManager.listen(rqID, { callback: updateProgressCallback });
     };
 
     Task.restore.implementation = async function (
@@ -548,7 +557,7 @@ export function implementTask(Task) {
     ) {
         const { updateProgressCallback } = options;
         const rqID = await serverProxy.tasks.restore(storage, file);
-        return requestsManager.listen(rqID, updateProgressCallback);
+        return requestsManager.listen(rqID, { callback: updateProgressCallback });
     };
 
     Task.prototype.frames.get.implementation = async function (frame, isPlaying, step) {
@@ -777,7 +786,7 @@ export function implementTask(Task) {
     ) {
         const { updateProgressCallback } = options;
         const rqID = await importDataset(this, format, useDefaultLocation, sourceStorage, file, options);
-        return requestsManager.listen(rqID, updateProgressCallback);
+        return requestsManager.listen(rqID, { callback: updateProgressCallback });
     };
 
     Task.prototype.annotations.import.implementation = function (data) {
@@ -798,7 +807,7 @@ export function implementTask(Task) {
     ) {
         const { updateProgressCallback } = options;
         const rqID = await exportDataset(this, format, saveImages, useDefaultSettings, targetStorage, customName);
-        return requestsManager.listen(rqID, updateProgressCallback);
+        return requestsManager.listen(rqID, { callback: updateProgressCallback });
     };
 
     Task.prototype.actions.undo.implementation = async function (count) {

@@ -6,11 +6,13 @@ import serverProxy from './server-proxy';
 import { RQStatus } from './enums';
 import User from './user';
 import { StorageData } from './storage';
+import { RequestsFilter } from './server-response-types';
+import { fieldsToSnakeCase } from './common';
 
 export interface SerializedRequest {
-    id: string;
+    id?: string;
     status: string;
-    operation: {
+    operation?: {
         target: string;
         name: string;
         type: string;
@@ -19,19 +21,14 @@ export interface SerializedRequest {
         task_id: number | null;
         project_id: number | null;
     };
-    percent: number;
+    percent?: number;
     message: string;
-    result_url: string;
-    enqueue_date: string;
-    start_date: string;
-    finish_date: string;
-    expire_date: string;
+    result_url?: string;
+    enqueue_date?: string;
+    start_date?: string;
+    finish_date?: string;
+    expire_date?: string;
     owner?: any;
-    meta?: {
-        storage: {
-            location: string;
-        }
-    }
 }
 
 type Operation = {
@@ -73,10 +70,6 @@ export class Request {
 
         if (initialData.owner) {
             this.#owner = new User(initialData.owner);
-        }
-
-        if (initialData.meta) {
-            this.#meta = initialData.meta as { storage: StorageData };
         }
     }
 
@@ -138,10 +131,6 @@ export class Request {
         return this.#owner;
     }
 
-    get meta(): { storage: StorageData } {
-        return this.#meta;
-    }
-
     updateFields(request: Partial<SerializedRequest>): void {
         if (request.id !== undefined) {
             this.#id = request.id;
@@ -180,10 +169,10 @@ export class Request {
 }
 
 class RequestsManager {
-    private listening: Record<number, {
-        onUpdate: ((status: RQStatus, progress: number, message?: string) => void)[];
-        functionID: string;
+    private listening: Record<string, {
+        onUpdate: ((request: Request) => void)[];
         timeout: number | null;
+        promise?: Promise<Request>;
     }>;
 
     constructor() {
@@ -205,27 +194,46 @@ class RequestsManager {
     }
 
     async listen(
-        id: string,
-        callback?: (request: Request) => void,
+        id: string | null,
+        options?: {
+            callback?: (request: Request) => void,
+            filter?: RequestsFilter,
+        },
     ): Promise<Request> {
-        if (id in this.listening) {
-            return this.listening[id].promise;
+        let storedID = null;
+        const params = options?.filter ? fieldsToSnakeCase(options.filter) : {};
+        if (id) {
+            storedID = id;
+        } else if (options?.filter) {
+            storedID = new URLSearchParams(params).toString();
+        }
+
+        if (!storedID) {
+            throw new Error('Neither request id nor filter is provided');
+        }
+        const callback = options?.callback;
+
+        if (storedID in this.listening) {
+            if (callback) {
+                this.listening[storedID].onUpdate.push(callback);
+            }
+            return this.listening[storedID].promise;
         }
         const promise = new Promise<Request>((resolve, reject) => {
             const timeoutCallback = (): void => {
-                serverProxy.requests.status(id).then((response) => {
+                serverProxy.requests.status(id, params).then((response) => {
                     const request = new Request({ ...response });
                     let { status } = response;
                     status = status.toLowerCase();
-                    if (id in this.listening) {
+                    if (storedID in this.listening) {
                         // check it was not cancelled
-                        const { onUpdate } = this.listening[id];
+                        const { onUpdate } = this.listening[storedID];
                         if ([RQStatus.QUEUED, RQStatus.STARTED].includes(status)) {
                             onUpdate.forEach((update) => update(request));
-                            this.listening[id].timeout = window
-                                .setTimeout(timeoutCallback, status === RQStatus.QUEUED ? 8000 : 5000);
+                            this.listening[storedID].timeout = window
+                                .setTimeout(timeoutCallback, status === RQStatus.QUEUED ? 3000 : 3000);
                         } else {
-                            delete this.listening[id];
+                            delete this.listening[storedID];
                             if (status === RQStatus.FINISHED) {
                                 onUpdate
                                     .forEach((update) => update(request));
@@ -240,32 +248,32 @@ class RequestsManager {
                         }
                     }
                 }).catch((error) => {
-                    if (id in this.listening) {
+                    if (storedID in this.listening) {
                         // check it was not cancelled
-                        const { onUpdate } = this.listening[id];
+                        const { onUpdate } = this.listening[storedID];
+
                         onUpdate
-                            .forEach((update) => update(
-                                RQStatus.UNKNOWN,
-                                0,
-                                `Could not get a status of the request ${id}. ${error.toString()}`,
-                            ));
+                            .forEach((update) => update(new Request({
+                                status: RQStatus.FAILED,
+                                message: `Could not get a status of the request ${storedID}. ${error.toString()}`,
+                            })));
                         reject(error);
                     }
                 }).finally(() => {
-                    if (id in this.listening) {
-                        this.listening[id].timeout = null;
+                    if (storedID in this.listening) {
+                        this.listening[storedID].timeout = null;
                     }
                 });
             };
 
-            this.listening[id] = {
+            this.listening[storedID] = {
                 onUpdate: [callback],
                 timeout: window.setTimeout(timeoutCallback),
             };
         });
 
-        this.listening[id] = {
-            ...this.listening[id],
+        this.listening[storedID] = {
+            ...this.listening[storedID],
             promise,
         };
         return promise;

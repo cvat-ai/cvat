@@ -14,7 +14,7 @@ import Dropdown from 'antd/lib/dropdown';
 import Progress from 'antd/lib/progress';
 import Badge from 'antd/lib/badge';
 import moment from 'moment';
-import { Task, RQStatus } from 'cvat-core-wrapper';
+import { Task, RQStatus, Request } from 'cvat-core-wrapper';
 import ActionsMenuContainer from 'containers/actions-menu/actions-menu';
 import Preview from 'components/common/preview';
 import { ActiveInference, PluginComponent } from 'reducers';
@@ -58,17 +58,21 @@ class TaskItemComponent extends React.PureComponent<TaskItemProps & RouteCompone
         const { importingState } = this.state;
 
         if (importingState !== null) {
-            taskInstance.listenToCreate((state: RQStatus, progress: number, message: string) => {
-                if (!this.#isUnmounted) {
-                    this.setState({
-                        importingState: {
-                            message,
-                            progress: Math.floor(progress * 100),
-                            state,
-                        },
-                    });
-                }
-            }).then((createdTask: Task) => {
+            taskInstance.listenToCreate({
+                callback: (request: Request) => {
+                    if (!this.#isUnmounted) {
+                        this.setState({
+                            importingState: {
+                                message: request.message,
+                                progress: Math.floor(request.progress * 100),
+                                state: request.status,
+                            },
+                        });
+                    }
+                },
+                params: { taskID: taskInstance.id, action: 'create' },
+            },
+            ).then((createdTask: Task) => {
                 if (!this.#isUnmounted) {
                     this.setState({ importingState: null });
 

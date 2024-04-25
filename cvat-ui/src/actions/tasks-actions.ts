@@ -11,6 +11,7 @@ import {
 } from 'cvat-core-wrapper';
 import { filterNull } from 'utils/filter-null';
 import { getInferenceStatusAsync } from './models-actions';
+import { updateRequestProgress } from './requests-actions';
 
 const cvat = getCore();
 
@@ -258,16 +259,38 @@ ThunkAction<Promise<void>, {}, {}, AnyAction> {
         taskInstance.remoteFiles = data.files.remote;
 
         try {
-            const savedTask = await taskInstance.save((status: RQStatus, progress: number, message: string): void => {
-                if (status === RQStatus.UNKNOWN) {
-                    onProgress?.(`${message} ${progress ? `${Math.floor(progress * 100)}%` : ''}`);
-                } else if ([RQStatus.QUEUED, RQStatus.STARTED].includes(status)) {
-                    const helperMessage = 'You may close the window.';
+            const savedTask = await taskInstance.save({
+                updateStatusCallback: (status: RQStatus, progress: number, message: string): void => {
+                    if (status === RQStatus.UNKNOWN) {
+                        onProgress?.(`${message} ${progress ? `${Math.floor(progress * 100)}%` : ''}`);
+                    } else if ([RQStatus.QUEUED, RQStatus.STARTED].includes(status)) {
+                        const helperMessage = 'You may close the window.';
+                        onProgress?.(`${message} ${progress ? `${Math.floor(progress * 100)}%` : ''}. ${helperMessage}`);
+                    } else {
+                        onProgress?.(`${status}: ${message}`);
+                    }
+                },
+                updateProgressCallback(request) {
+                    let { message } = request;
+                    let helperMessage = '';
+                    const { status, progress } = request;
+                    if (!message) {
+                        if ([RQStatus.QUEUED, RQStatus.STARTED].includes(status)) {
+                            message = 'CVAT queued the task to import';
+                            helperMessage = 'You may close the window.';
+                        } else if (status === RQStatus.FAILED) {
+                            message = 'Images processing failed';
+                        } else if (status === RQStatus.FINISHED) {
+                            message = 'Task creation finished';
+                        } else {
+                            message = 'Unknown status received';
+                        }
+                    }
                     onProgress?.(`${message} ${progress ? `${Math.floor(progress * 100)}%` : ''}. ${helperMessage}`);
-                } else {
-                    onProgress?.(`${status}: ${message}`);
-                }
+                    updateRequestProgress(request, dispatch);
+                },
             });
+
             dispatch(updateTaskInState(savedTask));
             dispatch(getTaskPreviewAsync(savedTask));
             return savedTask;

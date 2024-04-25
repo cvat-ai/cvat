@@ -493,3 +493,9 @@ export interface SerializedAPISchema {
         url: string;
     };
 }
+
+export interface ApiRequestsFilter extends ApiCommonFilterParams {
+    task_id?: number;
+    action?: string;
+}
+export type RequestsFilter = Camelized<ApiQualityConflictsFilter>;

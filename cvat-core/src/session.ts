@@ -1065,15 +1065,20 @@ export class Task extends Session {
         return result;
     }
 
-    async save(onUpdate = () => {}): Promise<Task> {
-        const result = await PluginRegistry.apiWrapper.call(this, Task.prototype.save, onUpdate);
+    async save(
+        options?: {
+            updateProgressCallback?: (request: Request) => void,
+            updateStatusCallback: (state: RQStatus, progress: number, message: string) => void,
+        },
+    ): Promise<Task> {
+        const result = await PluginRegistry.apiWrapper.call(this, Task.prototype.save, options);
         return result;
     }
 
     async listenToCreate(
-        onUpdate: (state: RQStatus, progress: number, message: string) => void = () => {},
+        options,
     ): Promise<Task> {
-        const result = await PluginRegistry.apiWrapper.call(this, Task.prototype.listenToCreate, onUpdate);
+        const result = await PluginRegistry.apiWrapper.call(this, Task.prototype.listenToCreate, options);
         return result;
     }
 
