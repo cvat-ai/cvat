@@ -25,9 +25,11 @@ class DataExtractorBase:
     def _make_clickhouse_query(self, parameters):
         return make_clickhouse_query(query=self._query, parameters=parameters)
 
-    def extract_for_job(self, job_id: int, extras: dict = {}):
+    def extract_for_job(self, job_id: int, extras: dict = None):
         if not self._initialized:
-            self._rows = self._make_clickhouse_query(ChainMap(self._parameters, extras)).result_rows
+            self._rows = self._make_clickhouse_query(
+                ChainMap(self._parameters, extras or {})
+            ).result_rows
             self._initialized = True
         return map(lambda x: x[1:], filter(lambda x: x[0] == job_id, self._rows))
 
@@ -74,7 +76,7 @@ class PrimaryMetricBase(metaclass=ABCMeta):
         return cls._is_filterable_by_date
 
     @abstractmethod
-    def calculate(self, extractor: DataExtractorBase): ...
+    def calculate(self): ...
 
     @abstractmethod
     def get_empty(self): ...
