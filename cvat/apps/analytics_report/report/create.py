@@ -374,7 +374,7 @@ class AnalyticsReportUpdateManager:
             ]
 
             primary_statistics = {
-                pm.key(): self._get_statistics_entry(pm, ) for pm in primary_metrics
+                pm.key(): self._get_statistics_entry(pm) for pm in primary_metrics
             }
 
             derived_metrics = [
