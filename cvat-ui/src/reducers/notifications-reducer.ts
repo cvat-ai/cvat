@@ -5,7 +5,7 @@
 
 import { AnyAction } from 'redux';
 
-import { ServerError } from 'cvat-core-wrapper';
+import { ServerError, RequestError } from 'cvat-core-wrapper';
 import { AuthActionTypes } from 'actions/auth-actions';
 import { FormatsActionTypes } from 'actions/formats-actions';
 import { ModelsActionTypes } from 'actions/models-actions';
@@ -523,7 +523,8 @@ export default function (state = defaultState, action: AnyAction): Notifications
                                 'Could not export dataset for the ' +
                                 `[${instanceType} ${instance.id}](/${instanceType}s/${instance.id})`,
                             reason: action.payload.error,
-                            shouldLog: !(action.payload.error instanceof ServerError),
+                            shouldLog: !(action.payload.error instanceof ServerError) &&
+                            !(action.payload.error instanceof RequestError),
                         },
                     },
                 },
@@ -563,7 +564,8 @@ export default function (state = defaultState, action: AnyAction): Notifications
                             message:
                                 `Could not export the ${instanceType} №${instance.id}`,
                             reason: action.payload.error,
-                            shouldLog: !(action.payload.error instanceof ServerError),
+                            shouldLog: !(action.payload.error instanceof ServerError) &&
+                            !(action.payload.error instanceof RequestError),
                         },
                     },
                 },
@@ -622,7 +624,8 @@ export default function (state = defaultState, action: AnyAction): Notifications
                         dataset: {
                             message,
                             reason: action.payload.error,
-                            shouldLog: !(action.payload.error instanceof ServerError),
+                            shouldLog: !(action.payload.error instanceof ServerError) &&
+                            !(action.payload.error instanceof RequestError),
                             className: 'cvat-notification-notice-' +
                                 `${resource === 'annotation' ? 'load-annotation' : 'import-dataset'}-failed`,
                         },
@@ -659,7 +662,8 @@ export default function (state = defaultState, action: AnyAction): Notifications
                             message:
                                 `Could not restore ${instanceType} backup.`,
                             reason: action.payload.error,
-                            shouldLog: !(action.payload.error instanceof ServerError),
+                            shouldLog: !(action.payload.error instanceof ServerError) &&
+                            !(action.payload.error instanceof RequestError),
                         },
                     },
                 },

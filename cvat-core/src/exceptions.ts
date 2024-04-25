@@ -99,6 +99,8 @@ export class DataError extends Exception {}
 
 export class ScriptingError extends Exception {}
 
+export class RequestError extends Exception {}
+
 export class ServerError extends Exception {
     public code: number;
     constructor(message, code) {

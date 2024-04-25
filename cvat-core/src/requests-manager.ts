@@ -8,6 +8,7 @@ import User from './user';
 import { StorageData } from './storage';
 import { RequestsFilter } from './server-response-types';
 import { fieldsToSnakeCase } from './common';
+import { RequestError } from './exceptions';
 
 export interface SerializedRequest {
     id?: string;
@@ -243,7 +244,7 @@ class RequestsManager {
                                     .forEach((update) => (
                                         update(request)
                                     ));
-                                reject(request);
+                                reject(new RequestError(request.message));
                             }
                         }
                     }
