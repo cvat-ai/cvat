@@ -13,7 +13,7 @@ fi
 # Get or update env var in the .env file in .devcontainer directory
 get_env_var() {
     key="${1}"
-    value="$(sed -n "s/^${key}=\([^[:space:]]\+\)/\1/p" "${env_file}")"
+    value="$(sed -n "s/^${key}=\([[:alpha:]]\)/\1/p" "${env_file}")"
     echo "${value}"
 }
 
