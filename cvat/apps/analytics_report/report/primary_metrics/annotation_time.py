@@ -18,6 +18,7 @@ class JobAnnotationTimeExtractor(DataExtractorBase):
         elif job_id is not None:
             self._query = "SELECT job_id, timestamp, obj_val FROM events WHERE scope='update:job' AND job_id={job_id:UInt64} AND obj_name='state' ORDER BY timestamp ASC"
 
+
 class JobAnnotationTime(PrimaryMetricBase):
     _key = "annotation_time"
     _title = "Annotation time (hours)"

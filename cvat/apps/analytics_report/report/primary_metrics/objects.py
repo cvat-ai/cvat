@@ -18,6 +18,7 @@ class JobObjectsExtractor(DataExtractorBase):
         elif job_id is not None:
             self._query = "SELECT job_id, toStartOfDay(timestamp) as day, scope, sum(count) FROM events WHERE scope IN ({scopes:Array(String)}) AND job_id = {job_id:UInt64} GROUP BY scope, day, job_id ORDER BY day ASC"
 
+
 class JobObjects(PrimaryMetricBase):
     _key = "objects"
     _title = "Objects"

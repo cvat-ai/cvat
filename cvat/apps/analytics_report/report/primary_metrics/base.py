@@ -33,6 +33,7 @@ class DataExtractorBase:
             self._initialized = True
         return map(lambda x: x[1:], filter(lambda x: x[0] == job_id, self._rows))
 
+
 class PrimaryMetricBase(metaclass=ABCMeta):
     _key = None
     _title = None

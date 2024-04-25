@@ -27,6 +27,7 @@ class JobAnnotationSpeedExtractor(DataExtractorBase):
         elif job_id is not None:
             self._query = "SELECT job_id, sum(JSONExtractUInt(payload, 'working_time')) as wt FROM events WHERE job_id={job_id:UInt64} AND timestamp >= {start_datetime:DateTime64} AND timestamp < {end_datetime:DateTime64} GROUP BY job_id"
 
+
 class JobAnnotationSpeed(PrimaryMetricBase):
     _key = "annotation_speed"
     _title = "Annotation speed (objects per hour)"
