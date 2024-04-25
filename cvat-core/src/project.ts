@@ -226,7 +226,7 @@ export default class Project {
         targetStorage: Storage,
         useDefaultSettings: boolean,
         fileName?: string,
-        options?: { updateProgressCallback?: (request: Request) => void },
+        options?: { requestStatusCallback?: (request: Request) => void },
     ) {
         const result = await PluginRegistry.apiWrapper.call(
             this,
@@ -242,7 +242,7 @@ export default class Project {
     static async restore(
         storage: Storage,
         file: File | string,
-        options?: { updateProgressCallback?: (request: Request) => void },
+        options?: { requestStatusCallback?: (request: Request) => void },
     ) {
         const result = await PluginRegistry.apiWrapper.call(this, Project.restore, storage, file, options);
         return result;
@@ -265,7 +265,7 @@ Object.defineProperties(
                     useDefaultSettings: boolean,
                     targetStorage: Storage,
                     customName?: string,
-                    options?: { updateProgressCallback?: (request: Request) => void },
+                    options?: { requestStatusCallback?: (request: Request) => void },
                 ) {
                     const result = await PluginRegistry.apiWrapper.call(
                         this,
@@ -286,8 +286,8 @@ Object.defineProperties(
                     file: File | string,
                     options?: {
                         convMaskToPoly?: boolean,
-                        updateProgressCallback?: (request: Request) => void,
-                        updateStatusCallback?: (s: string, n: number) => void,
+                        requestStatusCallback?: (request: Request) => void,
+                        uploadStatusCallback?: (s: string, n: number) => void,
                     },
                 ) {
                     const result = await PluginRegistry.apiWrapper.call(

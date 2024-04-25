@@ -94,7 +94,7 @@ export const importDatasetAsync = (
                                 instance, Math.floor(progress * 100), message,
                             ))
                         ),
-                        updateProgressCallback: (request: Request) => {
+                        requestStatusCallback: (request: Request) => {
                             updateRequestProgress(request, dispatch);
                         },
                     });
@@ -107,7 +107,7 @@ export const importDatasetAsync = (
                 await instance.annotations
                     .upload(format, useDefaultSettings, sourceStorage, file, {
                         convMaskToPoly,
-                        updateProgressCallback: (request: Request) => {
+                        requestStatusCallback: (request: Request) => {
                             updateRequestProgress(request, dispatch);
                         },
                     });
@@ -124,7 +124,7 @@ export const importDatasetAsync = (
                 await instance.annotations
                     .upload(format, useDefaultSettings, sourceStorage, file, {
                         convMaskToPoly,
-                        updateProgressCallback: (request: Request) => {
+                        requestStatusCallback: (request: Request) => {
                             updateRequestProgress(request, dispatch);
                         },
                     });
@@ -167,7 +167,7 @@ export const importBackupAsync = (instanceType: 'project' | 'task', storage: Sto
         try {
             const instanceClass = (instanceType === 'task') ? core.classes.Task : core.classes.Project;
             const instance = await instanceClass.restore(storage, file, {
-                updateProgressCallback: (request: Request) => {
+                requestStatusCallback: (request: Request) => {
                     updateRequestProgress(request, dispatch);
                 },
             });

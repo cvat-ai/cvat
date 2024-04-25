@@ -97,11 +97,11 @@ export default function implementProject(projectClass) {
         useDefaultSettings: boolean,
         targetStorage: Storage,
         customName?: string,
-        options?: { updateProgressCallback?: (request: Request) => void },
+        options?: { requestStatusCallback?: (request: Request) => void },
     ) {
-        const { updateProgressCallback } = options;
+        const { requestStatusCallback } = options;
         const rqID = await exportDataset(this, format, saveImages, useDefaultSettings, targetStorage, customName);
-        return requestsManager.listen(rqID, { callback: updateProgressCallback });
+        return requestsManager.listen(rqID, { callback: requestStatusCallback });
     };
     projectClass.prototype.annotations.importDataset.implementation = async function (
         format: string,
@@ -111,33 +111,33 @@ export default function implementProject(projectClass) {
         options?: {
             convMaskToPoly?: boolean,
             uploadStatusCallback?: (s: string, n: number) => void,
-            updateProgressCallback?: (request: Request) => void,
+            requestStatusCallback?: (request: Request) => void,
         },
     ) {
-        const { updateProgressCallback } = options;
+        const { requestStatusCallback } = options;
         const rqID = await importDataset(this, format, useDefaultSettings, sourceStorage, file, options);
-        return requestsManager.listen(rqID, { callback: updateProgressCallback });
+        return requestsManager.listen(rqID, { callback: requestStatusCallback });
     };
 
     projectClass.prototype.backup.implementation = async function (
         targetStorage: Storage,
         useDefaultSettings: boolean,
         fileName?: string,
-        options?: { updateProgressCallback?: (request: Request) => void },
+        options?: { requestStatusCallback?: (request: Request) => void },
     ) {
-        const { updateProgressCallback } = options;
+        const { requestStatusCallback } = options;
         const rqID = await serverProxy.projects.backup(this.id, targetStorage, useDefaultSettings, fileName);
-        return requestsManager.listen(rqID, { callback: updateProgressCallback });
+        return requestsManager.listen(rqID, { callback: requestStatusCallback });
     };
 
     projectClass.restore.implementation = async function (
         storage: Storage,
         file: File | string,
-        options?: { updateProgressCallback?: (request: Request) => void },
+        options?: { requestStatusCallback?: (request: Request) => void },
     ) {
-        const { updateProgressCallback } = options;
+        const { requestStatusCallback } = options;
         const rqID = await serverProxy.projects.restore(storage, file);
-        return requestsManager.listen(rqID, { callback: updateProgressCallback });
+        return requestsManager.listen(rqID, { callback: requestStatusCallback });
     };
 
     projectClass.prototype.guide.implementation = async function guide() {

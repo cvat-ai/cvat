@@ -171,7 +171,7 @@ function buildDuplicatedAPI(prototype) {
                     targetStorage: Storage,
                     customName?: string,
                     options?: {
-                        updateProgressCallback?: (request: Request) => void,
+                        requestStatusCallback?: (request: Request) => void,
                     },
                 ) {
                     const result = await PluginRegistry.apiWrapper.call(
@@ -1067,8 +1067,8 @@ export class Task extends Session {
 
     async save(
         options?: {
-            updateProgressCallback?: (request: Request) => void,
-            updateStatusCallback: (state: RQStatus, progress: number, message: string) => void,
+            requestStatusCallback?: (request: Request) => void,
+            uploadStatusCallback: (state: RQStatus, progress: number, message: string) => void,
         },
     ): Promise<Task> {
         const result = await PluginRegistry.apiWrapper.call(this, Task.prototype.save, options);
@@ -1091,7 +1091,7 @@ export class Task extends Session {
         targetStorage: Storage,
         useDefaultSettings: boolean,
         fileName?: string,
-        options?: { updateProgressCallback?: (request: Request) => void },
+        options?: { requestStatusCallback?: (request: Request) => void },
     ) {
         const result = await PluginRegistry.apiWrapper.call(
             this,
@@ -1112,7 +1112,7 @@ export class Task extends Session {
     static async restore(
         storage: Storage,
         file: File | string,
-        options?: { updateProgressCallback?: (request: Request) => void },
+        options?: { requestStatusCallback?: (request: Request) => void },
     ) {
         const result = await PluginRegistry.apiWrapper.call(this, Task.restore, storage, file, options);
         return result;

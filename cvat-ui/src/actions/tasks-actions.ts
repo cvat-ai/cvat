@@ -260,7 +260,7 @@ ThunkAction<Promise<void>, {}, {}, AnyAction> {
 
         try {
             const savedTask = await taskInstance.save({
-                updateStatusCallback: (status: RQStatus, progress: number, message: string): void => {
+                uploadStatusCallback: (status: RQStatus, progress: number, message: string): void => {
                     if (status === RQStatus.UNKNOWN) {
                         onProgress?.(`${message} ${progress ? `${Math.floor(progress * 100)}%` : ''}`);
                     } else if ([RQStatus.QUEUED, RQStatus.STARTED].includes(status)) {
@@ -270,7 +270,7 @@ ThunkAction<Promise<void>, {}, {}, AnyAction> {
                         onProgress?.(`${status}: ${message}`);
                     }
                 },
-                updateProgressCallback(request) {
+                requestStatusCallback(request) {
                     let { message } = request;
                     let helperMessage = '';
                     const { status, progress } = request;

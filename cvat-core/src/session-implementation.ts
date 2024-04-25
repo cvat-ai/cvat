@@ -312,11 +312,11 @@ export function implementJob(Job) {
         useDefaultLocation: boolean,
         sourceStorage: Storage,
         file: File | string,
-        options?: { convMaskToPoly?: boolean, updateProgressCallback?: (request: Request) => void },
+        options?: { convMaskToPoly?: boolean, requestStatusCallback?: (request: Request) => void },
     ) {
-        const { updateProgressCallback } = options;
+        const { requestStatusCallback } = options;
         const rqID = await importDataset(this, format, useDefaultLocation, sourceStorage, file, options);
-        return requestsManager.listen(rqID, { callback: updateProgressCallback });
+        return requestsManager.listen(rqID, { callback: requestStatusCallback });
     };
 
     Job.prototype.annotations.import.implementation = function (data) {
@@ -333,11 +333,11 @@ export function implementJob(Job) {
         useDefaultSettings: boolean,
         targetStorage: Storage,
         customName?: string,
-        options?: { updateProgressCallback?: (request: Request) => void },
+        options?: { requestStatusCallback?: (request: Request) => void },
     ) {
-        const { updateProgressCallback } = options;
+        const { requestStatusCallback } = options;
         const rqID = await exportDataset(this, format, saveImages, useDefaultSettings, targetStorage, customName);
-        return requestsManager.listen(rqID, { callback: updateProgressCallback });
+        return requestsManager.listen(rqID, { callback: requestStatusCallback });
     };
 
     Job.prototype.actions.undo.implementation = async function (count) {
@@ -494,10 +494,10 @@ export function implementTask(Task) {
             ...(typeof this.copyData !== 'undefined' ? { copy_data: this.copyData } : {}),
             ...(typeof this.cloudStorageId !== 'undefined' ? { cloud_storage_id: this.cloudStorageId } : {}),
         };
-        const { updateStatusCallback, updateProgressCallback } = options;
-        const taskID = await serverProxy.tasks.create(taskSpec, taskDataSpec, updateStatusCallback);
+        const { uploadStatusCallback, requestStatusCallback } = options;
+        const taskID = await serverProxy.tasks.create(taskSpec, taskDataSpec, uploadStatusCallback);
         const request = await requestsManager.listen(null, {
-            callback: updateProgressCallback,
+            callback: requestStatusCallback,
             filter: {
                 taskID,
                 action: 'create',
@@ -543,21 +543,21 @@ export function implementTask(Task) {
         targetStorage: Storage,
         useDefaultSettings: boolean,
         fileName?: string,
-        options?: { updateProgressCallback?: (request: Request) => void },
+        options?: { requestStatusCallback?: (request: Request) => void },
     ) {
-        const { updateProgressCallback } = options;
+        const { requestStatusCallback } = options;
         const rqID = await serverProxy.tasks.backup(this.id, targetStorage, useDefaultSettings, fileName);
-        return requestsManager.listen(rqID, { callback: updateProgressCallback });
+        return requestsManager.listen(rqID, { callback: requestStatusCallback });
     };
 
     Task.restore.implementation = async function (
         storage: Storage,
         file: File | string,
-        options?: { updateProgressCallback?: (request: Request) => void },
+        options?: { requestStatusCallback?: (request: Request) => void },
     ) {
-        const { updateProgressCallback } = options;
+        const { requestStatusCallback } = options;
         const rqID = await serverProxy.tasks.restore(storage, file);
-        return requestsManager.listen(rqID, { callback: updateProgressCallback });
+        return requestsManager.listen(rqID, { callback: requestStatusCallback });
     };
 
     Task.prototype.frames.get.implementation = async function (frame, isPlaying, step) {
@@ -782,11 +782,11 @@ export function implementTask(Task) {
         useDefaultLocation: boolean,
         sourceStorage: Storage,
         file: File | string,
-        options?: { convMaskToPoly?: boolean, updateProgressCallback?: (request: Request) => void },
+        options?: { convMaskToPoly?: boolean, requestStatusCallback?: (request: Request) => void },
     ) {
-        const { updateProgressCallback } = options;
+        const { requestStatusCallback } = options;
         const rqID = await importDataset(this, format, useDefaultLocation, sourceStorage, file, options);
-        return requestsManager.listen(rqID, { callback: updateProgressCallback });
+        return requestsManager.listen(rqID, { callback: requestStatusCallback });
     };
 
     Task.prototype.annotations.import.implementation = function (data) {
@@ -803,11 +803,11 @@ export function implementTask(Task) {
         useDefaultSettings: boolean,
         targetStorage: Storage,
         customName?: string,
-        options?: { updateProgressCallback?: (request: Request) => void },
+        options?: { requestStatusCallback?: (request: Request) => void },
     ) {
-        const { updateProgressCallback } = options;
+        const { requestStatusCallback } = options;
         const rqID = await exportDataset(this, format, saveImages, useDefaultSettings, targetStorage, customName);
-        return requestsManager.listen(rqID, { callback: updateProgressCallback });
+        return requestsManager.listen(rqID, { callback: requestStatusCallback });
     };
 
     Task.prototype.actions.undo.implementation = async function (count) {

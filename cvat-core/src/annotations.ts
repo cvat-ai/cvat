@@ -162,15 +162,15 @@ export function importDataset(
     file: File | string,
     options: {
         convMaskToPoly?: boolean,
-        updateProgressCallback?: (request: Request) => void,
+        requestStatusCallback?: (request: Request) => void,
         uploadStatusCallback?:(s: string, n: number) => void,
     } = {},
 ): Promise<string> {
     const uploadStatusCallback = options.uploadStatusCallback || (() => {});
-    const updateProgressCallback = options.updateProgressCallback || (() => {});
+    const requestStatusCallback = options.requestStatusCallback || (() => {});
     const convMaskToPoly = 'convMaskToPoly' in options ? options.convMaskToPoly : true;
     const adjustedOptions = {
-        updateProgressCallback,
+        requestStatusCallback,
         uploadStatusCallback,
         convMaskToPoly,
     };

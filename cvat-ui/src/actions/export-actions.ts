@@ -95,7 +95,7 @@ export const exportDatasetAsync = (
     try {
         const result = await instance.annotations
             .exportDataset(format, saveImages, useDefaultSettings, targetStorage, name, {
-                updateProgressCallback: (request: Request) => {
+                requestStatusCallback: (request: Request) => {
                     updateRequestProgress(request, dispatch);
                 },
             });
@@ -117,7 +117,7 @@ export const exportBackupAsync = (
 
     try {
         const result = await instance.backup(targetStorage, useDefaultSetting, fileName, {
-            updateProgressCallback: (request: Request) => {
+            requestStatusCallback: (request: Request) => {
                 updateRequestProgress(request, dispatch);
             },
         });

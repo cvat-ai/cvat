@@ -870,7 +870,7 @@ async function importDataset(
     options: {
         convMaskToPoly: boolean,
         uploadStatusCallback: (s: string, n: number) => void,
-        updateProgressCallback,
+        requestStatusCallback,
     },
 ): Promise<string> {
     const { backendAPI, origin } = config;
