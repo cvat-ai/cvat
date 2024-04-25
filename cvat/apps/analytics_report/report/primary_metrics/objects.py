@@ -3,7 +3,10 @@
 # SPDX-License-Identifier: MIT
 
 from cvat.apps.analytics_report.models import GranularityChoice, ViewChoice
-from cvat.apps.analytics_report.report.primary_metrics.base import PrimaryMetricBase, DataExtractorBase
+from cvat.apps.analytics_report.report.primary_metrics.base import (
+    PrimaryMetricBase,
+    DataExtractorBase,
+)
 
 class JobObjectsExtractor(DataExtractorBase):
     def __init__(self, job_id: int = None, task_ids: list[int] = None):
@@ -31,7 +34,7 @@ class JobObjects(PrimaryMetricBase):
             for obj_type in obj_types:
                 statistics[action][obj_type] = {}
 
-        rows = self._data_extractor.extract_for_job(self._db_obj.id, { 'scopes': scopes })
+        rows = self._data_extractor.extract_for_job(self._db_obj.id, {"scopes": scopes})
         for day, scope, count in rows:
             action, obj_type = scope.split(":")
             statistics[action][obj_type][day] = count

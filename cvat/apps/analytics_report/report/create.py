@@ -189,11 +189,13 @@ class AnalyticsReportUpdateManager:
                 return False
 
             db_report = cls._get_analytics_report(db_job)
-            primary_metric_extractors = dict((
-                (JobObjects.key(), JobObjectsExtractor(cvat_job_id)),
-                (JobAnnotationSpeed.key(), JobAnnotationSpeedExtractor(cvat_job_id)),
-                (JobAnnotationTime.key(), JobAnnotationTimeExtractor(cvat_job_id))
-            ))
+            primary_metric_extractors = dict(
+                (
+                    (JobObjects.key(), JobObjectsExtractor(cvat_job_id)),
+                    (JobAnnotationSpeed.key(), JobAnnotationSpeedExtractor(cvat_job_id)),
+                    (JobAnnotationTime.key(), JobAnnotationTimeExtractor(cvat_job_id))
+                )
+            )
             db_report = cls()._compute_report_for_job(db_job, db_report, primary_metric_extractors)
 
             with transaction.atomic():
@@ -226,11 +228,16 @@ class AnalyticsReportUpdateManager:
                 return False
 
             db_report = cls._get_analytics_report(db_task)
-            primary_metric_extractors = dict((
-                (JobObjects.key(), JobObjectsExtractor(task_ids=[cvat_task_id])),
-                (JobAnnotationSpeed.key(), JobAnnotationSpeedExtractor(task_ids=[cvat_task_id])),
-                (JobAnnotationTime.key(), JobAnnotationTimeExtractor(task_ids=[cvat_task_id]))
-            ))
+            primary_metric_extractors = dict(
+                (
+                    (JobObjects.key(), JobObjectsExtractor(task_ids=[cvat_task_id])),
+                    (
+                        JobAnnotationSpeed.key(),
+                        JobAnnotationSpeedExtractor(task_ids=[cvat_task_id])
+                    ),
+                    (JobAnnotationTime.key(), JobAnnotationTimeExtractor(task_ids=[cvat_task_id]))
+                )
+            )
             db_report, job_reports = cls()._compute_report_for_task(
                 db_task, db_report, primary_metric_extractors
             )
@@ -276,12 +283,14 @@ class AnalyticsReportUpdateManager:
                 return False
 
             db_report = cls._get_analytics_report(db_project)
-            task_ids = [item['id'] for item in db_project.tasks.values('id')]
-            primary_metric_extractors = dict((
-                (JobObjects.key(), JobObjectsExtractor(task_ids=task_ids)),
-                (JobAnnotationSpeed.key(), JobAnnotationSpeedExtractor(task_ids=task_ids)),
-                (JobAnnotationTime.key(), JobAnnotationTimeExtractor(task_ids=task_ids))
-            ))
+            task_ids = [item["id"] for item in db_project.tasks.values("id")]
+            primary_metric_extractors = dict(
+                (
+                    (JobObjects.key(), JobObjectsExtractor(task_ids=task_ids)),
+                    (JobAnnotationSpeed.key(), JobAnnotationSpeedExtractor(task_ids=task_ids)),
+                    (JobAnnotationTime.key(), JobAnnotationTimeExtractor(task_ids=task_ids))
+                )
+            )
             db_report, task_reports, job_reports = cls()._compute_report_for_project(
                 db_project, db_report, primary_metric_extractors
             )
@@ -369,8 +378,12 @@ class AnalyticsReportUpdateManager:
         if db_report.created_date is None or db_report.created_date < db_job.updated_date:
             primary_metrics = [
                 JobObjects(db_job, data_extractor=data_extractors.get(JobObjects.key())),
-                JobAnnotationSpeed(db_job, data_extractor=data_extractors.get(JobAnnotationSpeed.key())),
-                JobAnnotationTime(db_job, data_extractor=data_extractors.get(JobAnnotationTime.key())),
+                JobAnnotationSpeed(
+                    db_job, data_extractor=data_extractors.get(JobAnnotationSpeed.key())
+                ),
+                JobAnnotationTime(
+                    db_job, data_extractor=data_extractors.get(JobAnnotationTime.key())
+                ),
             ]
 
             primary_statistics = {
@@ -379,10 +392,14 @@ class AnalyticsReportUpdateManager:
 
             derived_metrics = [
                 JobTotalObjectCount(
-                    db_job, data_extractor=None, primary_statistics=primary_statistics[JobAnnotationSpeed.key()]
+                    db_job,
+                    data_extractor=None,
+                    primary_statistics=primary_statistics[JobAnnotationSpeed.key()]
                 ),
                 JobTotalAnnotationSpeed(
-                    db_job, data_extractor=None, primary_statistics=primary_statistics[JobAnnotationSpeed.key()]
+                    db_job,
+                    data_extractor=None,
+                    primary_statistics=primary_statistics[JobAnnotationSpeed.key()]
                 ),
             ]
 

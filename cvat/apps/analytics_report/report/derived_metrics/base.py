@@ -6,7 +6,7 @@ from cvat.apps.analytics_report.report.primary_metrics import PrimaryMetricBase,
 
 
 class DerivedMetricBase(PrimaryMetricBase):
-    def __init__(self, db_obj, data_extractor: DataExtractorBase = None, primary_statistics = []):
+    def __init__(self, db_obj, data_extractor: DataExtractorBase = None, primary_statistics=[]):
         super().__init__(db_obj, data_extractor)
 
         self._primary_statistics = primary_statistics

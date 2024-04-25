@@ -3,7 +3,10 @@
 # SPDX-License-Identifier: MIT
 
 from cvat.apps.analytics_report.models import ViewChoice
-from cvat.apps.analytics_report.report.primary_metrics.base import PrimaryMetricBase, DataExtractorBase
+from cvat.apps.analytics_report.report.primary_metrics.base import (
+    PrimaryMetricBase,
+    DataExtractorBase,
+)
 
 class JobAnnotationTimeExtractor(DataExtractorBase):
     def __init__(self, job_id: int = None, task_ids: list[int] = None):
@@ -31,9 +34,7 @@ class JobAnnotationTime(PrimaryMetricBase):
                 last_change = cur_row[0]
 
         if rows and rows[-1][1] == "in progress":
-            total_annotating_time += int(
-                (self._db_obj.updated_date - rows[-1][0]).total_seconds()
-            )
+            total_annotating_time += int((self._db_obj.updated_date - rows[-1][0]).total_seconds())
 
         if not last_change:
             last_change = self._get_utc_now()

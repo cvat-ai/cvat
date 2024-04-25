@@ -11,7 +11,10 @@ from cvat.apps.analytics_report.models import (
     TransformOperationType,
     ViewChoice,
 )
-from cvat.apps.analytics_report.report.primary_metrics.base import PrimaryMetricBase, DataExtractorBase
+from cvat.apps.analytics_report.report.primary_metrics.base import (
+    PrimaryMetricBase,
+    DataExtractorBase,
+)
 from cvat.apps.engine.models import SourceType
 
 class JobAnnotationSpeedExtractor(DataExtractorBase):
@@ -114,16 +117,19 @@ class JobAnnotationSpeed(PrimaryMetricBase):
         )
 
         # Calculate working time
-        rows = self._data_extractor.extract_for_job(self._db_obj.id, {
-            "start_datetime": start_datetime,
-            "end_datetime": self._get_utc_now(),
-        })
+        rows = self._data_extractor.extract_for_job(
+            self._db_obj.id,
+            {
+                "start_datetime": start_datetime,
+                "end_datetime": self._get_utc_now(),
+            },
+        )
 
         value = 0
         for row in rows:
             value += row[0]
 
-        value /= (1000 * 3600)
+        value /= 1000 * 3600
         data_series["working_time"].append(
             {
                 "value": value,

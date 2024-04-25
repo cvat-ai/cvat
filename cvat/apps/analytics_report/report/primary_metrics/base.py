@@ -17,9 +17,9 @@ class DataExtractorBase():
         self._initialized = False
 
         if task_ids is not None:
-            self._parameters['task_ids'] = task_ids
+            self._parameters["task_ids"] = task_ids
         elif job_id is not None:
-            self._parameters['job_id'] = job_id
+            self._parameters["job_id"] = job_id
 
     def _make_clickhouse_query(self, parameters):
         return make_clickhouse_query(query=self._query, parameters=parameters)
