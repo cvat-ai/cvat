@@ -78,14 +78,14 @@ class AnalyticsReportViewSet(viewsets.ViewSet):
             project_id = input_serializer.validated_data.get("project_id")
 
             try:
-                params = { 'user_id': request.user.id }
+                params = {"user_id": request.user.id}
                 rq_id = None
                 if job_id is not None:
-                    params['job'] = Job.objects.get(pk=int(job_id))
+                    params["job"] = Job.objects.get(pk=int(job_id))
                 elif task_id is not None:
-                    params['task'] = Task.objects.get(pk=int(task_id))
+                    params["task"] = Task.objects.get(pk=int(task_id))
                 elif project_id is not None:
-                    params['project'] = Project.objects.get(pk=int(project_id))
+                    params["project"] = Project.objects.get(pk=int(project_id))
 
                 rq_id = AnalyticsReportUpdateManager().schedule_analytics_check_job(**params)
                 serializer = RqIdSerializer({"rq_id": rq_id})

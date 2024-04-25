@@ -11,7 +11,7 @@ from cvat.apps.analytics_report.report.primary_metrics.utils import (
 )
 
 
-class DataExtractorBase():
+class DataExtractorBase:
     def __init__(self, job_id: int = None, task_ids: list[int] = None):
         # Raw SQL queries are used to execute ClickHouse queries, as there is no ORM available here
         self._query = None
