@@ -26,16 +26,11 @@ from cvat.apps.analytics_report.report.derived_metrics import (
     TaskObjects,
     TaskTotalAnnotationSpeed,
     TaskTotalObjectCount,
-    DerivedMetricBase,
 )
 from cvat.apps.analytics_report.report.primary_metrics import (
     JobAnnotationSpeed,
     JobAnnotationTime,
     JobObjects,
-    JobObjectsExtractor,
-    JobAnnotationSpeedExtractor,
-    JobAnnotationTimeExtractor,
-    PrimaryMetricBase,
 )
 from cvat.apps.engine.models import Job, Project, Task
 from cvat.utils.background_jobs import schedule_job_with_throttling
@@ -46,8 +41,8 @@ def get_empty_report():
         JobObjects(None),
         JobAnnotationSpeed(None),
         JobAnnotationTime(None),
-        JobTotalObjectCount(None),
-        JobTotalAnnotationSpeed(None),
+        JobTotalObjectCount(None, []),
+        JobTotalAnnotationSpeed(None, []),
     ]
 
     statistics = [AnalyticsReportUpdateManager._get_empty_statistics_entry(dm) for dm in metrics]
@@ -182,19 +177,16 @@ class AnalyticsReportUpdateManager:
     ) -> bool:
         if cvat_job_id is not None:
             queryset = Job.objects.select_related("analytics_report")
-            # The Job could have been deleted during scheduling
-            try:
-                db_job = queryset.get(pk=cvat_job_id)
-            except Job.DoesNotExist:
-                return False
+            with transaction.atomic():
+                # The Job could have been deleted during scheduling
+                try:
+                    db_job = queryset.get(pk=cvat_job_id)
+                except Job.DoesNotExist:
+                    return False
 
-            db_report = cls._get_analytics_report(db_job)
-            primary_metric_extractors = dict((
-                (JobObjects.key(), JobObjectsExtractor(cvat_job_id)),
-                (JobAnnotationSpeed.key(), JobAnnotationSpeedExtractor(cvat_job_id)),
-                (JobAnnotationTime.key(), JobAnnotationTimeExtractor(cvat_job_id))
-            ))
-            db_report = cls()._compute_report_for_job(db_job, db_report, primary_metric_extractors)
+                db_report = cls._get_analytics_report(db_job)
+
+            db_report = cls()._compute_report_for_job(db_job=db_job, db_report=db_report)
 
             with transaction.atomic():
                 # The job could have been deleted during processing
@@ -220,19 +212,15 @@ class AnalyticsReportUpdateManager:
             queryset = Task.objects.select_related("analytics_report").prefetch_related(
                 "segment_set__job_set"
             )
-            try:
-                db_task = queryset.get(pk=cvat_task_id)
-            except Task.DoesNotExist:
-                return False
+            with transaction.atomic():
+                try:
+                    db_task = queryset.get(pk=cvat_task_id)
+                except Task.DoesNotExist:
+                    return False
 
             db_report = cls._get_analytics_report(db_task)
-            primary_metric_extractors = dict((
-                (JobObjects.key(), JobObjectsExtractor(task_ids=[cvat_task_id])),
-                (JobAnnotationSpeed.key(), JobAnnotationSpeedExtractor(task_ids=[cvat_task_id])),
-                (JobAnnotationTime.key(), JobAnnotationTimeExtractor(task_ids=[cvat_task_id]))
-            ))
             db_report, job_reports = cls()._compute_report_for_task(
-                db_task, db_report, primary_metric_extractors
+                db_task=db_task, db_report=db_report
             )
 
             with transaction.atomic():
@@ -270,20 +258,15 @@ class AnalyticsReportUpdateManager:
             queryset = Project.objects.select_related("analytics_report").prefetch_related(
                 "tasks__segment_set__job_set"
             )
-            try:
-                db_project = queryset.get(pk=cvat_project_id)
-            except Project.DoesNotExist:
-                return False
+            with transaction.atomic():
+                try:
+                    db_project = queryset.get(pk=cvat_project_id)
+                except Project.DoesNotExist:
+                    return False
 
             db_report = cls._get_analytics_report(db_project)
-            task_ids = [item['id'] for item in db_project.tasks.values('id')]
-            primary_metric_extractors = dict((
-                (JobObjects.key(), JobObjectsExtractor(task_ids=task_ids)),
-                (JobAnnotationSpeed.key(), JobAnnotationSpeedExtractor(task_ids=task_ids)),
-                (JobAnnotationTime.key(), JobAnnotationTimeExtractor(task_ids=task_ids))
-            ))
             db_report, task_reports, job_reports = cls()._compute_report_for_project(
-                db_project, db_report, primary_metric_extractors
+                db_project=db_project, db_report=db_report
             )
 
             with transaction.atomic():
@@ -342,14 +325,14 @@ class AnalyticsReportUpdateManager:
         }
 
     @staticmethod
-    def _get_statistics_entry(statistics_object: PrimaryMetricBase | DerivedMetricBase):
+    def _get_statistics_entry(statistics_object):
         return {
             **AnalyticsReportUpdateManager._get_statistics_entry_props(statistics_object),
             **{"data_series": statistics_object.calculate()},
         }
 
     @staticmethod
-    def _get_empty_statistics_entry(statistics_object: PrimaryMetricBase | DerivedMetricBase):
+    def _get_empty_statistics_entry(statistics_object):
         return {
             **AnalyticsReportUpdateManager._get_statistics_entry_props(statistics_object),
             **{"data_series": statistics_object.get_empty()},
@@ -359,30 +342,25 @@ class AnalyticsReportUpdateManager:
     def _get_metric_by_key(key, statistics):
         return next(filter(lambda s: s["name"] == key, statistics))
 
-    def _compute_report_for_job(
-        self,
-        db_job: Job,
-        db_report: AnalyticsReport,
-        data_extractors: dict,
-    ) -> AnalyticsReport:
+    def _compute_report_for_job(self, db_job: Job, db_report: AnalyticsReport) -> AnalyticsReport:
         # recalculate the report if there is no report or the existing one is outdated
         if db_report.created_date is None or db_report.created_date < db_job.updated_date:
             primary_metrics = [
-                JobObjects(db_job, data_extractor=data_extractors.get(JobObjects.key())),
-                JobAnnotationSpeed(db_job, data_extractor=data_extractors.get(JobAnnotationSpeed.key())),
-                JobAnnotationTime(db_job, data_extractor=data_extractors.get(JobAnnotationTime.key())),
+                JobObjects(db_job),
+                JobAnnotationSpeed(db_job),
+                JobAnnotationTime(db_job),
             ]
 
             primary_statistics = {
-                pm.key(): self._get_statistics_entry(pm, ) for pm in primary_metrics
+                pm.key(): self._get_statistics_entry(pm) for pm in primary_metrics
             }
 
             derived_metrics = [
                 JobTotalObjectCount(
-                    db_job, data_extractor=None, primary_statistics=primary_statistics[JobAnnotationSpeed.key()]
+                    db_job, primary_statistics=primary_statistics[JobAnnotationSpeed.key()]
                 ),
                 JobTotalAnnotationSpeed(
-                    db_job, data_extractor=None, primary_statistics=primary_statistics[JobAnnotationSpeed.key()]
+                    db_job, primary_statistics=primary_statistics[JobAnnotationSpeed.key()]
                 ),
             ]
 
@@ -399,54 +377,48 @@ class AnalyticsReportUpdateManager:
         self,
         db_task: Task,
         db_report: AnalyticsReport,
-        data_extractors: dict,
     ) -> tuple[AnalyticsReport, list[AnalyticsReport]]:
         job_reports = []
         for db_segment in db_task.segment_set.all():
             for db_job in db_segment.job_set.all():
                 job_report = self._get_analytics_report(db_job)
                 job_reports.append(
-                    self._compute_report_for_job(db_job, job_report, data_extractors)
+                    self._compute_report_for_job(db_job=db_job, db_report=job_report)
                 )
         # recalculate the report if there is no report or the existing one is outdated
         if db_report.created_date is None or db_report.created_date < db_task.updated_date:
             derived_metrics = [
                 TaskObjects(
                     db_task,
-                    data_extractor=None,
-                    primary_statistics=[
+                    [
                         self._get_metric_by_key(JobObjects.key(), jr.statistics)
                         for jr in job_reports
                     ],
                 ),
                 TaskAnnotationSpeed(
                     db_task,
-                    data_extractor=None,
-                    primary_statistics=[
+                    [
                         self._get_metric_by_key(JobAnnotationSpeed.key(), jr.statistics)
                         for jr in job_reports
                     ],
                 ),
                 TaskAnnotationTime(
                     db_task,
-                    data_extractor=None,
-                    primary_statistics=[
+                    [
                         self._get_metric_by_key(JobAnnotationTime.key(), jr.statistics)
                         for jr in job_reports
                     ],
                 ),
                 TaskTotalObjectCount(
                     db_task,
-                    data_extractor=None,
-                    primary_statistics=[
+                    [
                         self._get_metric_by_key(JobAnnotationSpeed.key(), jr.statistics)
                         for jr in job_reports
                     ],
                 ),
                 TaskTotalAnnotationSpeed(
                     db_task,
-                    data_extractor=None,
-                    primary_statistics=[
+                    [
                         self._get_metric_by_key(JobAnnotationSpeed.key(), jr.statistics)
                         for jr in job_reports
                     ],
@@ -459,16 +431,13 @@ class AnalyticsReportUpdateManager:
         return db_report, job_reports
 
     def _compute_report_for_project(
-        self,
-        db_project: Project,
-        db_report: AnalyticsReport,
-        data_extractors: dict,
+        self, db_project: Project, db_report: AnalyticsReport
     ) -> tuple[AnalyticsReport, list[AnalyticsReport], list[AnalyticsReport]]:
         job_reports = []
         task_reports = []
         for db_task in db_project.tasks.all():
             db_task_report = self._get_analytics_report(db_task)
-            tr, jrs = self._compute_report_for_task(db_task, db_task_report, data_extractors)
+            tr, jrs = self._compute_report_for_task(db_task, db_task_report)
             task_reports.append(tr)
             job_reports.extend(jrs)
         # recalculate the report if there is no report or the existing one is outdated
@@ -476,40 +445,35 @@ class AnalyticsReportUpdateManager:
             derived_metrics = [
                 ProjectObjects(
                     db_project,
-                    data_extractor=None,
-                    primary_statistics=[
+                    [
                         self._get_metric_by_key(JobObjects.key(), jr.statistics)
                         for jr in job_reports
                     ],
                 ),
                 ProjectAnnotationSpeed(
                     db_project,
-                    data_extractor=None,
-                    primary_statistics=[
+                    [
                         self._get_metric_by_key(JobAnnotationSpeed.key(), jr.statistics)
                         for jr in job_reports
                     ],
                 ),
                 ProjectAnnotationTime(
                     db_project,
-                    data_extractor=None,
-                    primary_statistics=[
+                    [
                         self._get_metric_by_key(JobAnnotationTime.key(), jr.statistics)
                         for jr in job_reports
                     ],
                 ),
                 ProjectTotalObjectCount(
                     db_project,
-                    data_extractor=None,
-                    primary_statistics=[
+                    [
                         self._get_metric_by_key(JobAnnotationSpeed.key(), jr.statistics)
                         for jr in job_reports
                     ],
                 ),
                 ProjectTotalAnnotationSpeed(
                     db_project,
-                    data_extractor=None,
-                    primary_statistics=[
+                    [
                         self._get_metric_by_key(JobAnnotationSpeed.key(), jr.statistics)
                         for jr in job_reports
                     ],

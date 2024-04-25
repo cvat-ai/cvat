@@ -5,7 +5,6 @@
 from .annotation_speed import ProjectAnnotationSpeed, TaskAnnotationSpeed
 from .annotation_time import ProjectAnnotationTime, TaskAnnotationTime
 from .objects import ProjectObjects, TaskObjects
-from .base import DerivedMetricBase
 from .total_annotation_speed import (
     JobTotalAnnotationSpeed,
     ProjectTotalAnnotationSpeed,
