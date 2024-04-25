@@ -90,9 +90,6 @@ class AnalyticsReportUpdateManager:
         except ObjectDoesNotExist:
             return None
 
-    class AnalyticsReportsNotAvailable(Exception):
-        pass
-
     def schedule_analytics_report_autoupdate_job(self, *, job=None, task=None, project=None):
         assert sum(map(bool, (job, task, project))) == 1, "Expected only 1 argument"
 

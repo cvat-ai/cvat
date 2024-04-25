@@ -91,9 +91,9 @@ class AnalyticsReportViewSet(viewsets.ViewSet):
                 serializer = RqIdSerializer({"rq_id": rq_id})
                 return Response(serializer.data, status=status.HTTP_202_ACCEPTED)
             except ObjectDoesNotExist as ex:
-                raise NotFound(f"Resource does not exist") from ex
-            except AnalyticsReportUpdateManager.AnalyticsReportsNotAvailable as ex:
-                raise ValidationError(str(ex))
+                raise NotFound(
+                    f"The specified resource does not exist. Please check the provided identifiers"
+                ) from ex
         else:
             serializer = RqIdSerializer(data={"rq_id": rq_id})
             serializer.is_valid(raise_exception=True)
