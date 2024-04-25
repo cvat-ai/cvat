@@ -119,12 +119,14 @@ class JobAnnotationSpeed(PrimaryMetricBase):
         )
 
         # Calculate working time
-        rows = self._data_extractor.extract_for_job(
-            self._db_obj.id,
-            {
-                "start_datetime": start_datetime,
-                "end_datetime": self._get_utc_now(),
-            },
+        rows = list(
+            self._data_extractor.extract_for_job(
+                self._db_obj.id,
+                {
+                    "start_datetime": start_datetime,
+                    "end_datetime": self._get_utc_now(),
+                },
+            )
         )
 
         value = (rows[0] if len(rows) else 0) / (1000 * 3600)
