@@ -99,8 +99,8 @@ function build(): CVATCore {
                 );
                 return result;
             },
-            async authorized() {
-                const result = await PluginRegistry.apiWrapper(cvat.server.authorized);
+            async authenticated() {
+                const result = await PluginRegistry.apiWrapper(cvat.server.authenticated);
                 return result;
             },
             async healthCheck(maxRetries = 1, checkPeriod = 3000, requestTimeout = 5000, progressCallback = undefined) {
