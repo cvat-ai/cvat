@@ -14,29 +14,15 @@ from django.utils import timezone
 
 from cvat.apps.analytics_report.models import AnalyticsReport
 from cvat.apps.analytics_report.report.derived_metrics import (
-    JobTotalAnnotationSpeed,
-    JobTotalObjectCount,
-    ProjectAnnotationSpeed,
-    ProjectAnnotationTime,
-    ProjectObjects,
-    ProjectTotalAnnotationSpeed,
-    ProjectTotalObjectCount,
-    TaskAnnotationSpeed,
-    TaskAnnotationTime,
-    TaskObjects,
-    TaskTotalAnnotationSpeed,
-    TaskTotalObjectCount,
-    DerivedMetricBase,
-)
+    DerivedMetricBase, JobTotalAnnotationSpeed, JobTotalObjectCount,
+    ProjectAnnotationSpeed, ProjectAnnotationTime, ProjectObjects,
+    ProjectTotalAnnotationSpeed, ProjectTotalObjectCount, TaskAnnotationSpeed,
+    TaskAnnotationTime, TaskObjects, TaskTotalAnnotationSpeed,
+    TaskTotalObjectCount)
 from cvat.apps.analytics_report.report.primary_metrics import (
-    JobAnnotationSpeed,
-    JobAnnotationTime,
-    JobObjects,
-    JobObjectsExtractor,
-    JobAnnotationSpeedExtractor,
-    JobAnnotationTimeExtractor,
-    PrimaryMetricBase,
-)
+    JobAnnotationSpeed, JobAnnotationSpeedExtractor, JobAnnotationTime,
+    JobAnnotationTimeExtractor, JobObjects, JobObjectsExtractor,
+    PrimaryMetricBase)
 from cvat.apps.engine.models import Job, Project, Task
 from cvat.utils.background_jobs import schedule_job_with_throttling
 

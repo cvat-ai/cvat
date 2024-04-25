@@ -4,20 +4,20 @@
 
 import textwrap
 
-from drf_spectacular.types import OpenApiTypes
-from drf_spectacular.utils import OpenApiParameter, OpenApiResponse, extend_schema
 from django.core.exceptions import ObjectDoesNotExist
+from drf_spectacular.types import OpenApiTypes
+from drf_spectacular.utils import (OpenApiParameter, OpenApiResponse,
+                                   extend_schema)
 from rest_framework import status, viewsets
 from rest_framework.exceptions import NotFound, ValidationError
 from rest_framework.response import Response
 
 from cvat.apps.analytics_report.models import AnalyticsReport
-from cvat.apps.analytics_report.report.create import AnalyticsReportUpdateManager
+from cvat.apps.analytics_report.report.create import \
+    AnalyticsReportUpdateManager
 from cvat.apps.analytics_report.report.get import get_analytics_report
 from cvat.apps.analytics_report.serializers import (
-    AnalyticsReportCreateSerializer,
-    AnalyticsReportSerializer,
-)
+    AnalyticsReportCreateSerializer, AnalyticsReportSerializer)
 from cvat.apps.engine.models import Job, Project, Task
 from cvat.apps.engine.serializers import RqIdSerializer
 

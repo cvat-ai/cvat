@@ -4,9 +4,7 @@
 
 from cvat.apps.analytics_report.models import ViewChoice
 from cvat.apps.analytics_report.report.primary_metrics.base import (
-    PrimaryMetricBase,
-    DataExtractorBase,
-)
+    DataExtractorBase, PrimaryMetricBase)
 
 class JobAnnotationTimeExtractor(DataExtractorBase):
     def __init__(self, job_id: int = None, task_ids: list[int] = None):
