@@ -2026,8 +2026,6 @@ class PolicyEnforcer(BasePermission):
         for perm in permissions:
             result = perm.check_access()
             allow &= result.allow
-            if not allow:
-                break
 
         return allow
 
