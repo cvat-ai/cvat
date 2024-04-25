@@ -555,6 +555,9 @@ export class CanvasModelImpl extends MasterImpl implements CanvasModel {
 
         this.data.imageID = frameData.number;
 
+        // We set objects immideately to avoid outdated data in case if setup() is called
+        // multiple times before the frameData.data() promise is resolved.
+        // If promise is rejected we restore previous objects
         const prevZLayer = this.data.zLayer;
         const prevObjects = this.data.objects;
         this.data.zLayer = zLayer;
@@ -611,8 +614,11 @@ export class CanvasModelImpl extends MasterImpl implements CanvasModel {
                     } else {
                         this.data.exception = new Error('Unknown error occured when fetching image data');
                     }
-                    this.data.objects = prevObjects;
-                    this.data.zLayer = prevZLayer;
+                    // Restore only relevant data in case if setup() is called multiple times
+                    if (this.data.objects === objectStates && this.data.zLayer === zLayer) {
+                        this.data.objects = prevObjects;
+                        this.data.zLayer = prevZLayer;
+                    }
                     this.notify(UpdateReasons.DATA_FAILED);
                 }
             });
