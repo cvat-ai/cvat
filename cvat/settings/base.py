@@ -515,7 +515,7 @@ LOGGING = {
     },
 }
 
-CVAT_LOG_IMPORT_ERRORS = to_bool(os.getenv('CVAT_LOG_IMPORT_ERRORS', False))
+CVAT_LOG_IMPORT_ERRORS = to_bool(os.getenv('CVAT_LOG_IMPORT_ERRORS', True))
 
 if os.getenv('DJANGO_LOG_SERVER_HOST'):
     LOGGING['loggers']['vector']['handlers'] += ['vector']

@@ -35,12 +35,13 @@ class ServerLogManager:
 class DatasetLogManager:
     def __init__(self) -> None:
         self.glob = logging.getLogger("dataset_logger")
+        self.directory_depth = 5
 
     def log_import_error(self, entity, entity_id, format_name, base_error, dir_path) -> None:
         base_info = f"[{entity}.id={entity_id} format.name={format_name} exc={base_error}]"
         dir_tree = directory_tree(
             path=dir_path,
-            max_depth=5,
+            max_depth=self.directory_depth,
         )
         log_error = f"{base_info} \nDirectory tree:\n{dir_tree}"
         self.glob.error(log_error)

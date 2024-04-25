@@ -19,6 +19,7 @@ import re
 import logging
 import platform
 
+from datumaro.util.os_util import walk
 from rq.job import Job, Dependency
 from django_rq.queues import DjangoRQ
 from pathlib import Path
@@ -398,21 +399,17 @@ def build_annotations_file_name(
     ).lower()
 
 
-def directory_tree(path, max_depth=None, current_depth=0) -> str:
+def directory_tree(path, max_depth=None) -> str:
     if not os.path.exists(path):
-        return f"No such file or directory: {path}"
+        raise Exception(f"No such file or directory: {path}")
 
-    output = ""
-    if current_depth > 0:
-        output += "|  " * (current_depth - 1) + "|- "
+    tree = ""
 
-    output += os.path.basename(path) + "/\n"
-
-    if max_depth is None or current_depth < max_depth:
-        for item in os.listdir(path):
-            full_path = os.path.join(path, item)
-            if os.path.isdir(full_path):
-                output += directory_tree(full_path, max_depth, current_depth + 1)
-            else:
-                output += "|  " * current_depth + "|- " + item + "\n"
-    return output
+    baselevel = path.count(os.sep)
+    for root, _, files in walk(path, max_depth=max_depth):
+        curlevel = root.count(os.sep)
+        indent = "|  " * (curlevel - baselevel) + "|-"
+        tree += f"{indent}{os.path.basename(root)}/\n"
+        for file in files:
+            tree += f"{indent}-{file}\n"
+    return tree
