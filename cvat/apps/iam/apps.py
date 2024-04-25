@@ -1,3 +1,8 @@
+# Copyright (C) 2021 Intel Corporation
+# Copyright (C) 2022-2024 CVAT.ai Corporation
+#
+# SPDX-License-Identifier: MIT
+
 from django.apps import AppConfig
 
 class IAMConfig(AppConfig):
