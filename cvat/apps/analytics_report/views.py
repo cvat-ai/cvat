@@ -92,7 +92,7 @@ class AnalyticsReportViewSet(viewsets.ViewSet):
                 return Response(serializer.data, status=status.HTTP_202_ACCEPTED)
             except ObjectDoesNotExist as ex:
                 raise NotFound(
-                    f"The specified resource does not exist. Please check the provided identifiers"
+                    "The specified resource does not exist. Please check the provided identifiers"
                 ) from ex
         else:
             serializer = RqIdSerializer(data={"rq_id": rq_id})
