@@ -1,3 +1,8 @@
+# Copyright (C) 2022 Intel Corporation
+# Copyright (C) 2022-2024 CVAT.ai Corporation
+#
+# SPDX-License-Identifier: MIT
+
 from collections import namedtuple
 from typing import Any, Dict, List, Optional, Sequence, Union, cast
 
