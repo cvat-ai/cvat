@@ -87,6 +87,7 @@ class JobAnnotation:
         return queryset.select_related(
             'segment',
             'segment__task',
+            'segment__task__project'
         ).prefetch_related(
             'segment__task__owner',
             'segment__task__assignee',
@@ -388,8 +389,12 @@ class JobAnnotation:
         self.ir_data.tags = tags
 
     def _set_updated_date(self):
-        self.db_job.segment.task.touch()
-        self.db_job.touch()
+        db_task = self.db_job.segment.task
+        with transaction.atomic():
+            if db_project := db_task.project:
+                db_project.touch()
+            db_task.touch()
+            self.db_job.touch()
 
     @staticmethod
     def _data_is_empty(data):
