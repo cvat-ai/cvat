@@ -503,14 +503,14 @@ export function implementTask(Task) {
             taskDataSpec,
             options?.uploadStatusCallback || (() => {}),
         );
-        const request = await requestsManager.listen(null, {
+        await requestsManager.listen(null, {
             callback: options?.requestStatusCallback,
             filter: {
                 taskID,
                 action: 'create',
             },
         });
-        const [task] = await serverProxy.tasks.get({ id: request.operation.taskID });
+        const [task] = await serverProxy.tasks.get({ id: taskID });
         const labels = await serverProxy.labels.get({ task_id: task.id });
         const jobs = await serverProxy.jobs.get({
             filter: JSON.stringify({ and: [{ '==': [{ var: 'task_id' }, task.id] }] }),
