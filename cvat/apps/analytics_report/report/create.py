@@ -33,7 +33,6 @@ from cvat.apps.analytics_report.report.primary_metrics import (
     JobObjects,
 )
 from cvat.apps.engine.models import Job, Project, Task
-from cvat.utils.background_jobs import schedule_job_with_throttling
 
 
 def get_empty_report():
@@ -87,43 +86,6 @@ class AnalyticsReportUpdateManager:
 
     class AnalyticsReportsNotAvailable(Exception):
         pass
-
-    def schedule_analytics_report_autoupdate_job(self, *, job=None, task=None, project=None):
-        assert sum(map(bool, (job, task, project))) == 1, "Expected only 1 argument"
-
-        now = timezone.now()
-        delay = self._get_analytics_check_job_delay()
-        next_job_time = now.utcnow() + delay
-
-        target_obj = None
-        cvat_project_id = None
-        cvat_task_id = None
-        if job is not None:
-            if job.segment.task.project:
-                target_obj = job.segment.task.project
-                cvat_project_id = target_obj.id
-            else:
-                target_obj = job.segment.task
-                cvat_task_id = target_obj.id
-        elif task is not None:
-            if task.project:
-                target_obj = task.project
-                cvat_project_id = target_obj.id
-            else:
-                target_obj = task
-                cvat_task_id = target_obj.id
-        elif project is not None:
-            target_obj = project
-            cvat_project_id = project.id
-
-        schedule_job_with_throttling(
-            settings.CVAT_QUEUES.ANALYTICS_REPORTS.value,
-            self._make_queue_job_id_base(target_obj),
-            next_job_time,
-            self._check_analytics_report,
-            cvat_task_id=cvat_task_id,
-            cvat_project_id=cvat_project_id,
-        )
 
     def schedule_analytics_check_job(self, *, job=None, task=None, project=None, user_id):
         rq_id = self._make_custom_analytics_check_job_id()
