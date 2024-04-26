@@ -13,9 +13,9 @@ jobs:
     env:
       GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       REPO: ${{ github.repository }}
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-latest-big
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
 
       - uses: actions/cache@v3
         id: server-cache-action

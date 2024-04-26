@@ -11,7 +11,7 @@ import Text from 'antd/lib/typography/Text';
 
 import { filterApplicableLabels } from 'utils/filter-applicable-labels';
 import { Label } from 'cvat-core-wrapper';
-import { LogType } from 'cvat-logger';
+import { EventScope } from 'cvat-logger';
 import {
     activateObject as activateObjectAction,
     changeFrameAsync,
@@ -222,6 +222,7 @@ function AttributeAnnotationSidebar(props: StateToProps & DispatchToProps): JSX.
         PREVIOUS_OBJECT: keyMap.PREVIOUS_OBJECT,
         SWITCH_LOCK: keyMap.SWITCH_LOCK,
         SWITCH_OCCLUDED: keyMap.SWITCH_OCCLUDED,
+        SWITCH_PINNED: keyMap.SWITCH_PINNED,
         NEXT_KEY_FRAME: keyMap.NEXT_KEY_FRAME,
         PREV_KEY_FRAME: keyMap.PREV_KEY_FRAME,
     };
@@ -254,6 +255,13 @@ function AttributeAnnotationSidebar(props: StateToProps & DispatchToProps): JSX.
             preventDefault(event);
             if (activeObjectState && activeObjectState.objectType !== ObjectType.TAG) {
                 activeObjectState.occluded = !activeObjectState.occluded;
+                updateAnnotations([activeObjectState]);
+            }
+        },
+        SWITCH_PINNED: (event: KeyboardEvent | undefined) => {
+            preventDefault(event);
+            if (activeObjectState) {
+                activeObjectState.pinned = !activeObjectState.pinned;
                 updateAnnotations([activeObjectState]);
             }
         },
@@ -306,7 +314,7 @@ function AttributeAnnotationSidebar(props: StateToProps & DispatchToProps): JSX.
                     currentLabel={activeObjectState.label.id}
                     labels={applicableLabels}
                     changeLabel={(value: Label): void => {
-                        jobInstance.logger.log(LogType.changeLabel, {
+                        jobInstance.logger.log(EventScope.changeLabel, {
                             object_id: activeObjectState.clientID,
                             from: activeObjectState.label.id,
                             to: value.id,
@@ -337,7 +345,7 @@ function AttributeAnnotationSidebar(props: StateToProps & DispatchToProps): JSX.
                             currentValue={activeObjectState.attributes[activeAttribute.id]}
                             onChange={(value: string) => {
                                 const { attributes } = activeObjectState;
-                                jobInstance.logger.log(LogType.changeAttribute, {
+                                jobInstance.logger.log(EventScope.changeAttribute, {
                                     id: activeAttribute.id,
                                     object_id: activeObjectState.clientID,
                                     value,

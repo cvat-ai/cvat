@@ -1,5 +1,5 @@
 # Copyright (C) 2018-2022 Intel Corporation
-# Copyright (C) 2022-2023 CVAT.ai Corporation
+# Copyright (C) 2022-2024 CVAT.ai Corporation
 #
 # SPDX-License-Identifier: MIT
 
@@ -20,10 +20,10 @@ import os
 import sys
 import tempfile
 from datetime import timedelta
-from distutils.util import strtobool
 from enum import Enum
 import urllib
 
+from attr.converters import to_bool
 from corsheaders.defaults import default_headers
 from logstash_async.constants import constants as logstash_async_constants
 
@@ -40,10 +40,6 @@ BASE_DIR = str(Path(__file__).parents[2])
 
 ALLOWED_HOSTS = os.environ.get('ALLOWED_HOSTS', 'localhost,127.0.0.1').split(',')
 INTERNAL_IPS = ['127.0.0.1']
-
-redis_host = os.getenv('CVAT_REDIS_HOST', 'localhost')
-redis_port = os.getenv('CVAT_REDIS_PORT', 6379)
-redis_password = os.getenv('CVAT_REDIS_PASSWORD', '')
 
 def generate_secret_key():
     """
@@ -107,8 +103,8 @@ INSTALLED_APPS = [
     'corsheaders',
     'allauth.socialaccount',
     'health_check',
+    'health_check.cache',
     'health_check.db',
-    'health_check.contrib.migrations',
     'health_check.contrib.psutil',
     'cvat.apps.iam',
     'cvat.apps.dataset_manager',
@@ -174,16 +170,14 @@ REST_FRAMEWORK = {
 }
 
 
-REST_AUTH_REGISTER_SERIALIZERS = {
+REST_AUTH = {
     'REGISTER_SERIALIZER': 'cvat.apps.iam.serializers.RegisterSerializerEx',
-}
-
-REST_AUTH_SERIALIZERS = {
     'LOGIN_SERIALIZER': 'cvat.apps.iam.serializers.LoginSerializerEx',
     'PASSWORD_RESET_SERIALIZER': 'cvat.apps.iam.serializers.PasswordResetSerializerEx',
+    'OLD_PASSWORD_FIELD_ENABLED': True,
 }
 
-if strtobool(os.getenv('CVAT_ANALYTICS', '0')):
+if to_bool(os.getenv('CVAT_ANALYTICS', False)):
     INSTALLED_APPS += ['cvat.apps.log_viewer']
 
 MIDDLEWARE = [
@@ -201,7 +195,8 @@ MIDDLEWARE = [
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     'dj_pagination.middleware.PaginationMiddleware',
-    'cvat.apps.iam.views.ContextMiddleware',
+    'cvat.apps.iam.middleware.ContextMiddleware',
+    'allauth.account.middleware.AccountMiddleware',
 ]
 
 UI_URL = ''
@@ -234,25 +229,18 @@ TEMPLATES = [
 # IAM settings
 IAM_TYPE = 'BASIC'
 IAM_BASE_EXCEPTION = None # a class which will be used by IAM to report errors
-
-# FIXME: There are several ways to "replace" default IAM role.
-# One of them is to assign groups when you create a user inside Crowdsourcing plugin and don't add more groups
-# if user.groups field isn't empty.
-# the function should be in uppercase to able get access from django.conf.settings
-def GET_IAM_DEFAULT_ROLES(user) -> list:
-    return ['user']
+IAM_DEFAULT_ROLE = 'user'
 
 IAM_ADMIN_ROLE = 'admin'
 # Index in the list below corresponds to the priority (0 has highest priority)
 IAM_ROLES = [IAM_ADMIN_ROLE, 'business', 'user', 'worker']
 IAM_OPA_HOST = 'http://opa:8181'
 IAM_OPA_DATA_URL = f'{IAM_OPA_HOST}/v1/data'
+IAM_OPA_RULES_PATH = 'cvat/apps/iam/rules:'
 LOGIN_URL = 'rest_login'
 LOGIN_REDIRECT_URL = '/'
 
 OBJECTS_NOT_RELATED_WITH_ORG = ['user', 'function', 'request', 'server',]
-# FIXME: It looks like an internal function of IAM app.
-IAM_CONTEXT_BUILDERS = ['cvat.apps.iam.utils.build_iam_context',]
 
 # ORG settings
 ORG_INVITATION_CONFIRM = 'No'
@@ -274,8 +262,6 @@ ACCOUNT_EMAIL_CONFIRMATION_ANONYMOUS_REDIRECT_URL = '/auth/email-confirmation'
 ACCOUNT_EMAIL_VERIFICATION_SENT_REDIRECT_URL = '/auth/email-verification-sent'
 INCORRECT_EMAIL_CONFIRMATION_URL = '/auth/incorrect-email-confirmation'
 
-OLD_PASSWORD_FIELD_ENABLED = True
-
 # Django-RQ
 # https://github.com/rq/django-rq
 
@@ -289,62 +275,49 @@ class CVAT_QUEUES(Enum):
     ANALYTICS_REPORTS = 'analytics_reports'
     CLEANING = 'cleaning'
 
+redis_inmem_host = os.getenv('CVAT_REDIS_INMEM_HOST', 'localhost')
+redis_inmem_port = os.getenv('CVAT_REDIS_INMEM_PORT', 6379)
+redis_inmem_password = os.getenv('CVAT_REDIS_INMEM_PASSWORD', '')
+
+shared_queue_settings = {
+    'HOST': redis_inmem_host,
+    'PORT': redis_inmem_port,
+    'DB': 0,
+    'PASSWORD': redis_inmem_password,
+}
+
 RQ_QUEUES = {
     CVAT_QUEUES.IMPORT_DATA.value: {
-        'HOST': redis_host,
-        'PORT': redis_port,
-        'DB': 0,
+        **shared_queue_settings,
         'DEFAULT_TIMEOUT': '4h',
-        'PASSWORD': urllib.parse.quote(redis_password),
     },
     CVAT_QUEUES.EXPORT_DATA.value: {
-        'HOST': redis_host,
-        'PORT': redis_port,
-        'DB': 0,
+        **shared_queue_settings,
         'DEFAULT_TIMEOUT': '4h',
-        'PASSWORD': urllib.parse.quote(redis_password),
     },
     CVAT_QUEUES.AUTO_ANNOTATION.value: {
-        'HOST': redis_host,
-        'PORT': redis_port,
-        'DB': 0,
+        **shared_queue_settings,
         'DEFAULT_TIMEOUT': '24h',
-        'PASSWORD': urllib.parse.quote(redis_password),
     },
     CVAT_QUEUES.WEBHOOKS.value: {
-        'HOST': redis_host,
-        'PORT': redis_port,
-        'DB': 0,
+        **shared_queue_settings,
         'DEFAULT_TIMEOUT': '1h',
-        'PASSWORD': urllib.parse.quote(redis_password),
     },
     CVAT_QUEUES.NOTIFICATIONS.value: {
-        'HOST': redis_host,
-        'PORT': redis_port,
-        'DB': 0,
+        **shared_queue_settings,
         'DEFAULT_TIMEOUT': '1h',
-        'PASSWORD': urllib.parse.quote(redis_password),
     },
     CVAT_QUEUES.QUALITY_REPORTS.value: {
-        'HOST': redis_host,
-        'PORT': redis_port,
-        'DB': 0,
+        **shared_queue_settings,
         'DEFAULT_TIMEOUT': '1h',
-        'PASSWORD': urllib.parse.quote(redis_password),
     },
     CVAT_QUEUES.ANALYTICS_REPORTS.value: {
-        'HOST': redis_host,
-        'PORT': redis_port,
-        'DB': 0,
+        **shared_queue_settings,
         'DEFAULT_TIMEOUT': '1h',
-        'PASSWORD': urllib.parse.quote(redis_password),
     },
     CVAT_QUEUES.CLEANING.value: {
-        'HOST': redis_host,
-        'PORT': redis_port,
-        'DB': 0,
+        **shared_queue_settings,
         'DEFAULT_TIMEOUT': '1h',
-        'PASSWORD': urllib.parse.quote(redis_password),
     },
 }
 
@@ -463,9 +436,6 @@ os.makedirs(CLOUD_STORAGE_ROOT, exist_ok=True)
 TMP_FILES_ROOT = os.path.join(DATA_ROOT, 'tmp')
 os.makedirs(TMP_FILES_ROOT, exist_ok=True)
 
-IAM_OPA_BUNDLE_PATH = os.path.join(STATIC_ROOT, 'opa', 'bundle.tar.gz')
-os.makedirs(Path(IAM_OPA_BUNDLE_PATH).parent, exist_ok=True)
-
 # logging is known to be unreliable with RQ when using async transports
 vector_log_handler = os.getenv('VECTOR_EVENT_HANDLER', 'AsynchronousLogstashHandler')
 
@@ -495,6 +465,14 @@ LOGGING = {
             'maxBytes': 1024*1024*50, # 50 MB
             'backupCount': 5,
         },
+        'dataset_handler': {
+            'class': 'logging.handlers.RotatingFileHandler',
+            'level': 'DEBUG',
+            'filename': os.path.join(BASE_DIR, 'logs', 'cvat_server_dataset.log'),
+            'formatter': 'standard',
+            'maxBytes': 1024*1024*50, # 50 MB
+            'backupCount': 3,
+        },
         'vector': {
             'level': 'INFO',
             'class': f'logstash_async.handler.{vector_log_handler}',
@@ -517,6 +495,10 @@ LOGGING = {
             'level': os.getenv('DJANGO_LOG_LEVEL', 'DEBUG'),
         },
 
+        'dataset_logger': {
+            'handlers': ['dataset_handler']
+        },
+
         'django': {
             'level': 'INFO',
         },
@@ -529,6 +511,8 @@ LOGGING = {
         }
     },
 }
+
+CVAT_LOG_IMPORT_ERRORS = to_bool(os.getenv('CVAT_LOG_IMPORT_ERRORS', True))
 
 if os.getenv('DJANGO_LOG_SERVER_HOST'):
     LOGGING['loggers']['vector']['handlers'] += ['vector']
@@ -543,15 +527,22 @@ RESTRICTIONS = {
     'analytics_visibility': True,
 }
 
+redis_ondisk_host = os.getenv('CVAT_REDIS_ONDISK_HOST', 'localhost')
+# The default port is not Redis's default port (6379).
+# This is so that a developer can run both in-mem Redis and on-disk Kvrocks on their machine
+# without running into a port conflict.
+redis_ondisk_port = os.getenv('CVAT_REDIS_ONDISK_PORT', 6666)
+redis_ondisk_password = os.getenv('CVAT_REDIS_ONDISK_PASSWORD', '')
+
 CACHES = {
    'default': {
         'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
     },
-   'media' : {
+    'media': {
        'BACKEND' : 'django.core.cache.backends.redis.RedisCache',
-       "LOCATION": f"redis://:{urllib.parse.quote(redis_password)}@{redis_host}:{redis_port}",
+       "LOCATION": f"redis://:{urllib.parse.quote(redis_ondisk_password)}@{redis_ondisk_host}:{redis_ondisk_port}",
        'TIMEOUT' : 3600 * 24, # 1 day
-   }
+    }
 }
 
 USE_CACHE = True
@@ -617,7 +608,7 @@ SPECTACULAR_SETTINGS = {
     'TOS': 'https://www.google.com/policies/terms/',
     'EXTERNAL_DOCS': {
         'description': 'CVAT documentation',
-        'url': 'https://opencv.github.io/cvat/docs/',
+        'url': 'https://docs.cvat.ai/docs/',
     },
     # OTHER SETTINGS
     # https://drf-spectacular.readthedocs.io/en/latest/settings.html
@@ -656,7 +647,7 @@ SPECTACULAR_SETTINGS = {
 }
 
 # set similar UI restrictions
-# https://github.com/opencv/cvat/blob/bad1dc2799afbb22222faaecc7336d999f4cc3fe/cvat-ui/src/utils/validation-patterns.ts#L26
+# https://github.com/cvat-ai/cvat/blob/bad1dc2799afbb22222faaecc7336d999f4cc3fe/cvat-ui/src/utils/validation-patterns.ts#L26
 ACCOUNT_USERNAME_MIN_LENGTH = 5
 ACCOUNT_LOGOUT_ON_PASSWORD_CHANGE = True
 
@@ -696,12 +687,15 @@ DATABASES = {
         'USER': os.getenv('CVAT_POSTGRES_USER', 'root'),
         'PASSWORD': postgres_password,
         'PORT': os.getenv('CVAT_POSTGRES_PORT', 5432),
+        'OPTIONS': {
+            'application_name': os.getenv('CVAT_POSTGRES_APPLICATION_NAME', 'cvat'),
+        },
     }
 }
 
 BUCKET_CONTENT_MAX_PAGE_SIZE =  500
 
-IMPORT_CACHE_FAILED_TTL = timedelta(days=90)
+IMPORT_CACHE_FAILED_TTL = timedelta(days=30)
 IMPORT_CACHE_SUCCESS_TTL = timedelta(hours=1)
 IMPORT_CACHE_CLEAN_DELAY = timedelta(hours=12)
 
@@ -712,14 +706,15 @@ ASSET_MAX_COUNT_PER_GUIDE = 30
 
 SMOKESCREEN_ENABLED = True
 
-EXTRA_RULES_PATHS = []
-
 # By default, email backend is django.core.mail.backends.smtp.EmailBackend
 # But it won't work without additional configuration, so we set it to None
 # to check configuration and throw ImproperlyConfigured if thats a case
 EMAIL_BACKEND = None
 
-ONE_RUNNING_JOB_IN_QUEUE_PER_USER = strtobool(os.getenv('ONE_RUNNING_JOB_IN_QUEUE_PER_USER', 'false'))
+ONE_RUNNING_JOB_IN_QUEUE_PER_USER = to_bool(os.getenv('ONE_RUNNING_JOB_IN_QUEUE_PER_USER', False))
 
 # How many chunks can be prepared simultaneously during task creation in case the cache is not used
 CVAT_CONCURRENT_CHUNK_PROCESSING = int(os.getenv('CVAT_CONCURRENT_CHUNK_PROCESSING', 1))
+
+from cvat.rq_patching import update_started_job_registry_cleanup
+update_started_job_registry_cleanup()

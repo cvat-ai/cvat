@@ -1,5 +1,5 @@
 // Copyright (C) 2020-2022 Intel Corporation
-// Copyright (C) 2023 CVAT.ai Corporation
+// Copyright (C) 2023-2024 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -12,7 +12,9 @@ import Icon, {
 import { Row, Col } from 'antd/lib/grid';
 import Text from 'antd/lib/typography/Text';
 
-import { activateObject, changeFrameAsync, highlightConflict } from 'actions/annotation-actions';
+import {
+    activateObject, fetchAnnotationsAsync, changeFrameAsync, highlightConflict,
+} from 'actions/annotation-actions';
 import { reviewActions } from 'actions/review-actions';
 import CVATTooltip from 'components/common/cvat-tooltip';
 import { ActiveControl, CombinedState, Workspace } from 'reducers';
@@ -37,7 +39,11 @@ export default function LabelsListComponent(): JSX.Element {
     const ready = useSelector((state: CombinedState) => state.annotation.canvas.ready);
     const activeControl = useSelector((state: CombinedState) => state.annotation.canvas.activeControl);
 
-    let frames = issues.map((issue: Issue): number => issue.frame).sort((a: number, b: number) => +a - +b);
+    let frames = issues
+        .filter((issue: Issue) => !issuesResolvedHidden || !issue.resolved)
+        .map((issue: Issue) => issue.frame)
+        .sort((a: number, b: number) => +a - +b);
+
     if (showGroundTruth) {
         const conflictFrames = conflicts
             .map((conflict): number => conflict.frame).sort((a: number, b: number) => +a - +b);
@@ -72,6 +78,9 @@ export default function LabelsListComponent(): JSX.Element {
             <div className='cvat-objects-sidebar-issues-list-header'>
                 <Row justify='start' align='middle'>
                     <Col>
+                        <Text>{`Items: ${frameIssues.length}`}</Text>
+                    </Col>
+                    <Col offset={1}>
                         <CVATTooltip title='Find the previous frame with issues'>
                             <LeftOutlined className='cvat-issues-sidebar-previous-frame' {...dynamicLeftProps} />
                         </CVATTooltip>
@@ -113,7 +122,7 @@ export default function LabelsListComponent(): JSX.Element {
                         </CVATTooltip>
                     </Col>
                     {
-                        workspace === Workspace.REVIEW_WORKSPACE ? (
+                        workspace === Workspace.REVIEW ? (
                             <Col offset={2}>
                                 <CVATTooltip title='Show Ground truth annotations and conflicts'>
                                     <Icon
@@ -121,7 +130,10 @@ export default function LabelsListComponent(): JSX.Element {
                                             `cvat-objects-sidebar-show-ground-truth ${showGroundTruth ? 'cvat-objects-sidebar-show-ground-truth-active' : ''}`
                                         }
                                         component={ShowGroundTruthIcon}
-                                        onClick={() => dispatch(changeShowGroundTruth(!showGroundTruth))}
+                                        onClick={() => {
+                                            dispatch(changeShowGroundTruth(!showGroundTruth));
+                                            dispatch(fetchAnnotationsAsync());
+                                        }}
                                     />
                                 </CVATTooltip>
                             </Col>

@@ -3,12 +3,12 @@
 # SPDX-License-Identifier: MIT
 
 from copy import deepcopy
-from datetime import datetime, timezone
+from typing import Optional, Union
 import traceback
 import rq
 
-from rest_framework.renderers import JSONRenderer
 from rest_framework.views import exception_handler
+from rest_framework.exceptions import NotAuthenticated
 from rest_framework import status
 from crum import get_current_user, get_current_request
 
@@ -35,9 +35,8 @@ from cvat.apps.engine.serializers import (
 from cvat.apps.engine.models import ShapeType
 from cvat.apps.organizations.models import Membership, Organization, Invitation
 from cvat.apps.organizations.serializers import OrganizationReadSerializer, MembershipReadSerializer, InvitationReadSerializer
-from cvat.apps.engine.log import vlogger
 
-from .event import event_scope, create_event
+from .event import event_scope, record_server_event
 from .cache import get_cache
 
 def project_id(instance):
@@ -263,16 +262,6 @@ def get_serializer_without_url(instance):
         serializer.fields.pop("url", None)
     return serializer
 
-def set_request_id(payload=None, **kwargs):
-    _payload = payload or {}
-    return {
-        **_payload,
-        "request": {
-            **_payload.get("request", {}),
-            "id": request_id(**kwargs),
-        },
-    }
-
 def handle_create(scope, instance, **kwargs):
     oid = organization_id(instance)
     oslug = organization_slug(instance)
@@ -290,11 +279,12 @@ def handle_create(scope, instance, **kwargs):
         payload = {}
 
     payload = _cleanup_fields(obj=payload)
-    event = create_event(
+    record_server_event(
         scope=scope,
+        request_id=request_id(),
+        on_commit=True,
         obj_id=getattr(instance, 'id', None),
         obj_name=_get_object_name(instance),
-        source='server',
         org_id=oid,
         org_slug=oslug,
         project_id=pid,
@@ -303,11 +293,8 @@ def handle_create(scope, instance, **kwargs):
         user_id=uid,
         user_name=uname,
         user_email=uemail,
-        payload=set_request_id(payload),
+        payload=payload,
     )
-    message = JSONRenderer().render(event).decode('UTF-8')
-
-    vlogger.info(message)
 
 def handle_update(scope, instance, old_instance, **kwargs):
     oid = organization_id(instance)
@@ -323,16 +310,15 @@ def handle_update(scope, instance, old_instance, **kwargs):
     serializer = get_serializer_without_url(instance=instance)
     diff = get_instance_diff(old_data=old_serializer.data, data=serializer.data)
 
-    timestamp = str(datetime.now(timezone.utc).timestamp())
     for prop, change in diff.items():
         change = _cleanup_fields(change)
-        event = create_event(
+        record_server_event(
             scope=scope,
-            timestamp=timestamp,
+            request_id=request_id(),
+            on_commit=True,
             obj_name=prop,
             obj_id=getattr(instance, f'{prop}_id', None),
             obj_val=str(change["new_value"]),
-            source='server',
             org_id=oid,
             org_slug=oslug,
             project_id=pid,
@@ -341,13 +327,8 @@ def handle_update(scope, instance, old_instance, **kwargs):
             user_id=uid,
             user_name=uname,
             user_email=uemail,
-            payload=set_request_id({
-                "old_value": change["old_value"],
-            }),
+            payload={"old_value": change["old_value"]},
         )
-
-        message = JSONRenderer().render(event).decode('UTF-8')
-        vlogger.info(message)
 
 def handle_delete(scope, instance, store_in_deletion_cache=False, **kwargs):
     deletion_cache = get_cache()
@@ -383,11 +364,12 @@ def handle_delete(scope, instance, store_in_deletion_cache=False, **kwargs):
     uname = user_name(instance)
     uemail = user_email(instance)
 
-    event = create_event(
+    record_server_event(
         scope=scope,
+        request_id=request_id(),
+        on_commit=True,
         obj_id=getattr(instance, 'id', None),
         obj_name=_get_object_name(instance),
-        source='server',
         org_id=oid,
         org_slug=oslug,
         project_id=pid,
@@ -396,11 +378,7 @@ def handle_delete(scope, instance, store_in_deletion_cache=False, **kwargs):
         user_id=uid,
         user_name=uname,
         user_email=uemail,
-        payload=set_request_id(),
     )
-    message = JSONRenderer().render(event).decode('UTF-8')
-
-    vlogger.info(message)
 
 def handle_annotations_change(instance, annotations, action, **kwargs):
     _annotations = deepcopy(annotations)
@@ -428,9 +406,10 @@ def handle_annotations_change(instance, annotations, action, **kwargs):
 
     tags = [filter_shape_data(tag) for tag in _annotations.get("tags", [])]
     if tags:
-        event = create_event(
+        record_server_event(
             scope=event_scope(action, "tags"),
-            source='server',
+            request_id=request_id(),
+            on_commit=True,
             count=len(tags),
             org_id=oid,
             org_slug=oslug,
@@ -440,12 +419,8 @@ def handle_annotations_change(instance, annotations, action, **kwargs):
             user_id=uid,
             user_name=uname,
             user_email=uemail,
-            payload=set_request_id({
-                "tags": tags,
-            }),
+            payload={"tags": tags},
         )
-        message = JSONRenderer().render(event).decode('UTF-8')
-        vlogger.info(message)
 
     shapes_by_type = {shape_type[0]: [] for shape_type in ShapeType.choices()}
     for shape in _annotations.get("shapes", []):
@@ -454,10 +429,11 @@ def handle_annotations_change(instance, annotations, action, **kwargs):
     scope = event_scope(action, "shapes")
     for shape_type, shapes in shapes_by_type.items():
         if shapes:
-            event = create_event(
+            record_server_event(
                 scope=scope,
+                request_id=request_id(),
+                on_commit=True,
                 obj_name=shape_type,
-                source='server',
                 count=len(shapes),
                 org_id=oid,
                 org_slug=oslug,
@@ -467,12 +443,8 @@ def handle_annotations_change(instance, annotations, action, **kwargs):
                 user_id=uid,
                 user_name=uname,
                 user_email=uemail,
-                payload=set_request_id({
-                    "shapes": shapes,
-                }),
+                payload={"shapes": shapes},
             )
-            message = JSONRenderer().render(event).decode('UTF-8')
-            vlogger.info(message)
 
     tracks_by_type = {shape_type[0]: [] for shape_type in ShapeType.choices()}
     for track in _annotations.get("tracks", []):
@@ -486,10 +458,11 @@ def handle_annotations_change(instance, annotations, action, **kwargs):
     scope = event_scope(action, "tracks")
     for track_type, tracks in tracks_by_type.items():
         if tracks:
-            event = create_event(
+            record_server_event(
                 scope=scope,
+                request_id=request_id(),
+                on_commit=True,
                 obj_name=track_type,
-                source='server',
                 count=len(tracks),
                 org_id=oid,
                 org_slug=oslug,
@@ -499,12 +472,53 @@ def handle_annotations_change(instance, annotations, action, **kwargs):
                 user_id=uid,
                 user_name=uname,
                 user_email=uemail,
-                payload=set_request_id({
-                    "tracks": tracks,
-                }),
+                payload={"tracks": tracks},
             )
-            message = JSONRenderer().render(event).decode('UTF-8')
-            vlogger.info(message)
+
+def handle_dataset_io(
+    instance: Union[Project, Task, Job],
+    action: str,
+    *,
+    format_name: str,
+    cloud_storage: Optional[CloudStorage],
+    **payload_fields,
+) -> None:
+    payload={"format": format_name, **payload_fields}
+
+    if cloud_storage:
+        payload["cloud_storage"] = {"id": cloud_storage.id}
+
+    record_server_event(
+        scope=event_scope(action, "dataset"),
+        request_id=request_id(),
+        org_id=organization_id(instance),
+        org_slug=organization_slug(instance),
+        project_id=project_id(instance),
+        task_id=task_id(instance),
+        job_id=job_id(instance),
+        user_id=user_id(instance),
+        user_name=user_name(instance),
+        user_email=user_email(instance),
+        payload=payload,
+    )
+
+def handle_dataset_export(
+    instance: Union[Project, Task, Job],
+    *,
+    format_name: str,
+    cloud_storage: Optional[CloudStorage],
+    save_images: bool,
+) -> None:
+    handle_dataset_io(instance, "export",
+        format_name=format_name, cloud_storage=cloud_storage, save_images=save_images)
+
+def handle_dataset_import(
+    instance: Union[Project, Task, Job],
+    *,
+    format_name: str,
+    cloud_storage: Optional[CloudStorage],
+) -> None:
+    handle_dataset_io(instance, "import", format_name=format_name, cloud_storage=cloud_storage)
 
 def handle_rq_exception(rq_job, exc_type, exc_value, tb):
     oid = rq_job.meta.get("org_id", None)
@@ -518,13 +532,13 @@ def handle_rq_exception(rq_job, exc_type, exc_value, tb):
     tb_strings = traceback.format_exception(exc_type, exc_value, tb)
 
     payload = {
-        "message": tb_strings[-1],
+        "message": tb_strings[-1].rstrip("\n"),
         "stack": ''.join(tb_strings),
     }
 
-    event = create_event(
+    record_server_event(
         scope="send:exception",
-        source='server',
+        request_id=request_id(instance=rq_job),
         count=1,
         org_id=oid,
         org_slug=oslug,
@@ -534,16 +548,17 @@ def handle_rq_exception(rq_job, exc_type, exc_value, tb):
         user_id=uid,
         user_name=uname,
         user_email=uemail,
-        payload=set_request_id(payload, instance=rq_job),
+        payload=payload,
     )
-    message = JSONRenderer().render(event).decode('UTF-8')
-    vlogger.info(message)
 
     return False
 
 def handle_viewset_exception(exc, context):
     response = exception_handler(exc, context)
 
+    IGNORED_EXCEPTION_CLASSES = (NotAuthenticated, )
+    if isinstance(exc, IGNORED_EXCEPTION_CLASSES):
+        return response
     # the standard DRF exception handler only handle APIException, Http404 and PermissionDenied
     # exceptions types, any other will cause a 500 error
     status_code = status.HTTP_500_INTERNAL_SERVER_ERROR
@@ -563,22 +578,19 @@ def handle_viewset_exception(exc, context):
             "content_type": request.content_type,
             "method": request.method,
         },
-        "message": tb_strings[-1],
+        "message": tb_strings[-1].rstrip("\n"),
         "stack": ''.join(tb_strings),
         "status_code": status_code,
     }
 
-    event = create_event(
+    record_server_event(
         scope="send:exception",
-        source='server',
+        request_id=request_id(),
         count=1,
         user_id=getattr(request.user, "id", None),
         user_name=getattr(request.user, "username", None),
         user_email=getattr(request.user, "email", None),
-        payload=set_request_id(payload),
+        payload=payload,
     )
-    message = JSONRenderer().render(event).decode('UTF-8')
-    vlogger.info(message)
-
 
     return response

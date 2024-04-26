@@ -1,8 +1,10 @@
 # Copyright (C) 2019-2022 Intel Corporation
+# Copyright (C) 2024 CVAT.ai Corporation
 #
 # SPDX-License-Identifier: MIT
 
 import os
+import sysconfig
 import tempfile
 import shutil
 import zipfile
@@ -22,6 +24,7 @@ from PIL import Image, ImageFile, ImageOps
 from random import shuffle
 from cvat.apps.engine.utils import rotate_image
 from cvat.apps.engine.models import DimensionType, SortingMethod
+from rest_framework.exceptions import ValidationError
 
 # fixes: "OSError:broken data stream" when executing line 72 while loading images downloaded from the web
 # see: https://stackoverflow.com/questions/42462431/oserror-broken-data-stream-when-reading-image-file
@@ -265,7 +268,8 @@ class ArchiveReader(DirectoryReader):
 
         self._archive_source = source_path[0]
         tmp_dir = extract_dir if extract_dir else os.path.dirname(source_path[0])
-        Archive(self._archive_source).extractall(tmp_dir)
+        patool_path = os.path.join(sysconfig.get_path('scripts'), 'patool')
+        Archive(self._archive_source).extractall(tmp_dir, False, patool_path)
         if not extract_dir:
             os.remove(self._archive_source)
         super().__init__(
@@ -660,12 +664,17 @@ class ZipChunkWriter(IChunkWriter):
                 ext = os.path.splitext(path)[1].replace('.', '')
                 output = io.BytesIO()
                 if self._dimension == DimensionType.DIM_2D:
-                    if has_exif_rotation(image):
+                    # current version of Pillow applies exif rotation immediately when TIFF image opened
+                    # and it removes rotation tag after that
+                    # so, has_exif_rotation(image) will return False for TIFF images even if they were actually rotated
+                    # and original files will be added to the archive (without applied rotation)
+                    # that is why we need the second part of the condition
+                    if has_exif_rotation(image) or image.format == 'TIFF':
                         rot_image = ImageOps.exif_transpose(image)
                         try:
-                            if rot_image.format == 'TIFF':
-                            # https://pillow.readthedocs.io/en/stable/handbook/image-file-formats.html
-                            # use loseless lzw compression for tiff images
+                            if image.format == 'TIFF':
+                                # https://pillow.readthedocs.io/en/stable/handbook/image-file-formats.html
+                                # use loseless lzw compression for tiff images
                                 rot_image.save(output, format='TIFF', compression='tiff_lzw')
                             else:
                                 rot_image.save(
@@ -717,6 +726,7 @@ class ZipCompressedChunkWriter(ZipChunkWriter):
 
 class Mpeg4ChunkWriter(IChunkWriter):
     FORMAT = 'mp4'
+    MAX_MBS_PER_FRAME = 36864
 
     def __init__(self, quality=67):
         # translate inversed range [1:100] to [0:51]
@@ -746,6 +756,12 @@ class Mpeg4ChunkWriter(IChunkWriter):
             h += 1
         if w % 2:
             w += 1
+
+        # libopenh264 has 4K limitations, https://github.com/cvat-ai/cvat/issues/7425
+        if h * w > (self.MAX_MBS_PER_FRAME << 8):
+            raise ValidationError(
+                'The video codec being used does not support such high video resolution, refer https://github.com/cvat-ai/cvat/issues/7425'
+            )
 
         video_stream = container.add_stream(self._codec_name, rate=rate)
         video_stream.pix_fmt = "yuv420p"
@@ -832,7 +848,7 @@ def _is_archive(path):
     encoding = mime[1]
     supportedArchives = ['application/x-rar-compressed',
         'application/x-tar', 'application/x-7z-compressed', 'application/x-cpio',
-        'gzip', 'bzip2']
+        'application/gzip', 'application/x-bzip']
     return mime_type in supportedArchives or encoding in supportedArchives
 
 def _is_video(path):

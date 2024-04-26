@@ -10,7 +10,7 @@ from abc import ABC, abstractmethod, abstractproperty
 from enum import Enum
 from io import BytesIO
 from multiprocessing.pool import ThreadPool
-from typing import Dict, List, Optional, Any
+from typing import Dict, List, Optional, Any, Callable, TypeVar
 
 import boto3
 from azure.core.exceptions import HttpResponseError, ResourceExistsError
@@ -389,7 +389,7 @@ class AWS_S3(_CloudStorage):
             )
             == 1
         ):
-            raise Exception("Insufficient data for authorization")
+            raise Exception("Insufficient data for authentication")
 
         kwargs = dict()
         for key, arg_v in zip(
@@ -962,3 +962,35 @@ def db_storage_to_storage_instance(db_storage):
         'specific_attributes': db_storage.get_specific_attributes()
     }
     return get_cloud_storage_instance(cloud_provider=db_storage.provider_type, **details)
+
+T = TypeVar('T', Callable[[str, int, int], int], Callable[[str, int, str, bool], None])
+
+def import_resource_from_cloud_storage(
+    db_storage: Any,
+    key: str,
+    cleanup_func: Callable[[T, str,], Any],
+    import_func: T,
+    filename: str,
+    *args,
+    **kwargs,
+) -> Any:
+    storage = db_storage_to_storage_instance(db_storage)
+
+    with storage.download_fileobj(key) as data, open(filename, 'wb+') as f:
+        f.write(data.getbuffer())
+
+    return cleanup_func(import_func, filename, *args, **kwargs)
+
+def export_resource_to_cloud_storage(
+    db_storage: Any,
+    key: str,
+    key_pattern: str,
+    func: Callable[[int, Optional[str], Optional[str]], str],
+    *args,
+    **kwargs,
+) -> str:
+    file_path = func(*args, **kwargs)
+    storage = db_storage_to_storage_instance(db_storage)
+    storage.upload_file(file_path, key if key else key_pattern.format(os.path.splitext(file_path)[1].lower()))
+
+    return file_path

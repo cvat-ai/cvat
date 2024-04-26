@@ -7,7 +7,7 @@ import { Dispatch, AnyAction } from 'redux';
 import { useDispatch } from 'react-redux';
 
 import { PluginsActionTypes, pluginActions } from 'actions/plugins-actions';
-import { getCore, APIWrapperEnterOptions } from 'cvat-core-wrapper';
+import { getCore, CVATCore, APIWrapperEnterOptions } from 'cvat-core-wrapper';
 import { modelsActions } from 'actions/models-actions';
 
 const core = getCore();
@@ -27,7 +27,7 @@ export type ComponentBuilder = ({
     REGISTER_ACTION: PluginsActionTypes.ADD_UI_COMPONENT,
     REMOVE_ACTION: PluginsActionTypes.REMOVE_UI_COMPONENT,
     actionCreators: PluginActionCreators,
-    core: any,
+    core: CVATCore,
 }) => {
     name: string;
     destructor: CallableFunction;

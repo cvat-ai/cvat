@@ -4,22 +4,22 @@
 # SPDX-License-Identifier: MIT
 
 import functools
-import hashlib
 
-from django.utils.functional import SimpleLazyObject
 from django.http import Http404, HttpResponseBadRequest, HttpResponseRedirect
 from rest_framework import views, serializers
-from rest_framework.exceptions import ValidationError, NotFound
+from rest_framework.exceptions import ValidationError
 from rest_framework.permissions import AllowAny
 from django.conf import settings
 from django.http import HttpResponse
 from django.views.decorators.http import etag as django_etag
 from rest_framework.response import Response
+from dj_rest_auth.app_settings import api_settings as dj_rest_auth_settings
 from dj_rest_auth.registration.views import RegisterView
+from dj_rest_auth.utils import jwt_encode
 from dj_rest_auth.views import LoginView
 from allauth.account import app_settings as allauth_settings
 from allauth.account.views import ConfirmEmailView
-from allauth.account.utils import has_verified_email, send_email_confirmation
+from allauth.account.utils import complete_signup, has_verified_email, send_email_confirmation
 
 from furl import furl
 
@@ -28,56 +28,7 @@ from drf_spectacular.utils import OpenApiResponse, extend_schema, inline_seriali
 from drf_spectacular.contrib.rest_auth import get_token_serializer_class
 
 from .authentication import Signer
-
-def get_organization(request):
-    from cvat.apps.organizations.models import Organization
-
-    IAM_ROLES = {role: priority for priority, role in enumerate(settings.IAM_ROLES)}
-    groups = list(request.user.groups.filter(name__in=list(IAM_ROLES.keys())))
-    groups.sort(key=lambda group: IAM_ROLES[group.name])
-    privilege = groups[0] if groups else None
-
-    organization = None
-
-    try:
-        org_slug = request.GET.get('org')
-        org_id = request.GET.get('org_id')
-        org_header = request.headers.get('X-Organization')
-
-        if org_id is not None and (org_slug is not None or org_header is not None):
-            raise ValidationError('You cannot specify "org_id" query parameter with '
-                '"org" query parameter or "X-Organization" HTTP header at the same time.')
-
-        if org_slug is not None and org_header is not None and org_slug != org_header:
-            raise ValidationError('You cannot specify "org" query parameter and '
-                '"X-Organization" HTTP header with different values.')
-
-        org_slug = org_slug if org_slug is not None else org_header
-
-        if org_slug:
-            organization = Organization.objects.get(slug=org_slug)
-        elif org_id:
-            organization = Organization.objects.get(id=int(org_id))
-    except Organization.DoesNotExist:
-        raise NotFound(f'{org_slug or org_id} organization does not exist.')
-
-    context = {
-        "organization": organization,
-        "privilege": getattr(privilege, 'name', None)
-    }
-
-    return context
-
-class ContextMiddleware:
-    def __init__(self, get_response):
-        self.get_response = get_response
-
-    def __call__(self, request):
-
-        # https://stackoverflow.com/questions/26240832/django-and-middleware-which-uses-request-user-is-always-anonymous
-        request.iam_context = SimpleLazyObject(lambda: get_organization(request))
-
-        return self.get_response(request)
+from .utils import get_opa_bundle
 
 @extend_schema(tags=['auth'])
 @extend_schema_view(post=extend_schema(
@@ -148,14 +99,37 @@ class LoginViewEx(LoginView):
 
 class RegisterViewEx(RegisterView):
     def get_response_data(self, user):
-        data = self.get_serializer(user).data
-        data['email_verification_required'] = True
-        data['key'] = None
+        serializer = self.get_serializer(user)
+        return serializer.data
+
+    # NOTE: we should reimplement this method to fix the following issue:
+    # In the previous used version of dj-rest-auth 2.2.7, if the REST_SESSION_LOGIN setting was not defined in the settings file,
+    # the default value specified in the documentation (https://dj-rest-auth.readthedocs.io/en/2.2.7/configuration.html)
+    # was not applied for some unknown reason, and an authentication token was added to a user.
+    # With the dj-rest-auth version 5.0.2, there have been changes to how settings are handled,
+    # and now the default value is properly taken into account.
+    # However, even with the updated code, it still does not handle the scenario
+    # of handling two authentication flows simultaneously during registration process.
+    # Since there is no mention in the dj-rest-auth documentation that session authentication
+    # cannot be used alongside token authentication (https://dj-rest-auth.readthedocs.io/en/latest/configuration.html),
+    # and given the login implementation (https://github.com/iMerica/dj-rest-auth/blob/c6b6530eb0bfa5b10fd7b9e955a39301156e49d2/dj_rest_auth/views.py#L69-L75),
+    # this situation appears to be a bug.
+    # Link to the issue: https://github.com/iMerica/dj-rest-auth/issues/604
+    def perform_create(self, serializer):
+        user = serializer.save(self.request)
         if allauth_settings.EMAIL_VERIFICATION != \
-            allauth_settings.EmailVerificationMethod.MANDATORY:
-            data['email_verification_required'] = False
-            data['key'] = user.auth_token.key
-        return data
+                allauth_settings.EmailVerificationMethod.MANDATORY:
+            if dj_rest_auth_settings.USE_JWT:
+                self.access_token, self.refresh_token = jwt_encode(user)
+            elif self.token_model:
+                dj_rest_auth_settings.TOKEN_CREATOR(self.token_model, user, serializer)
+
+        complete_signup(
+            self.request._request, user,
+            allauth_settings.EMAIL_VERIFICATION,
+            None,
+        )
+        return user
 
 def _etag(etag_func):
     """
@@ -185,19 +159,9 @@ class RulesView(views.APIView):
     authentication_classes = []
     iam_organization_field = None
 
-    @staticmethod
-    def _get_bundle_path():
-        return settings.IAM_OPA_BUNDLE_PATH
-
-    @staticmethod
-    def _etag_func(file_path):
-        with open(file_path, 'rb') as f:
-            return hashlib.blake2b(f.read()).hexdigest()
-
-    @_etag(lambda _: RulesView._etag_func(RulesView._get_bundle_path()))
+    @_etag(lambda request: get_opa_bundle()[1])
     def get(self, request):
-        file_obj = open(self._get_bundle_path() ,"rb")
-        return HttpResponse(file_obj, content_type='application/x-tar')
+        return HttpResponse(get_opa_bundle()[0], content_type='application/x-tar')
 
 class ConfirmEmailViewEx(ConfirmEmailView):
     template_name = 'account/email/email_confirmation_signup_message.html'

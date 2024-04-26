@@ -210,24 +210,22 @@ export class FileManager extends React.PureComponent<Props, State> {
         const { active } = this.state;
 
         return (
-            <>
-                <Tabs
-                    type='card'
-                    activeKey={active}
-                    tabBarGutter={5}
-                    onChange={(activeKey: string): void => {
-                        onChangeActiveKey(activeKey);
-                        this.setState({
-                            active: activeKey as any,
-                        });
-                    }}
-                >
-                    {this.renderLocalSelector()}
-                    {this.renderShareSelector()}
-                    {this.renderRemoteSelector()}
-                    {this.renderCloudStorageSelector()}
-                </Tabs>
-            </>
+            <Tabs
+                type='card'
+                activeKey={active}
+                tabBarGutter={5}
+                onChange={(activeKey: string): void => {
+                    onChangeActiveKey(activeKey);
+                    this.setState({
+                        active: activeKey as any,
+                    });
+                }}
+            >
+                {this.renderLocalSelector()}
+                {this.renderShareSelector()}
+                {this.renderRemoteSelector()}
+                {this.renderCloudStorageSelector()}
+            </Tabs>
         );
     }
 }

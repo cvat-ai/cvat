@@ -80,7 +80,7 @@ class TestPostJobs:
         return response
 
     @pytest.mark.parametrize("task_mode", ["annotation", "interpolation"])
-    def test_can_create_gt_job_with_manual_frames(self, admin_user, tasks, task_mode):
+    def test_can_create_gt_job_with_manual_frames(self, admin_user, tasks, jobs, task_mode):
         user = admin_user
         job_frame_count = 4
         task = next(
@@ -90,6 +90,7 @@ class TestPostJobs:
             and not t["organization"]
             and t["mode"] == task_mode
             and t["size"] > job_frame_count
+            and not any(j for j in jobs if j["task_id"] == t["id"] and j["type"] == "ground_truth")
         )
         task_id = task["id"]
         with make_api_client(user) as api_client:
@@ -116,7 +117,7 @@ class TestPostJobs:
         assert job_frame_ids == gt_job_meta.included_frames
 
     @pytest.mark.parametrize("task_mode", ["annotation", "interpolation"])
-    def test_can_create_gt_job_with_random_frames(self, admin_user, tasks, task_mode):
+    def test_can_create_gt_job_with_random_frames(self, admin_user, tasks, jobs, task_mode):
         user = admin_user
         job_frame_count = 3
         required_task_frame_count = job_frame_count + 1
@@ -127,6 +128,7 @@ class TestPostJobs:
             and not t["organization"]
             and t["mode"] == task_mode
             and t["size"] > required_task_frame_count
+            and not any(j for j in jobs if j["task_id"] == t["id"] and j["type"] == "ground_truth")
         )
         task_id = task["id"]
 
@@ -171,7 +173,34 @@ class TestPostJobs:
         with make_api_client(user) as api_client:
             (gt_job_meta, _) = api_client.jobs_api.retrieve_data_meta(job_id)
 
-        assert gt_job_meta.included_frames == frame_ids
+        assert frame_ids == gt_job_meta.included_frames
+
+    @pytest.mark.parametrize("task_mode", ["annotation", "interpolation"])
+    def test_can_create_gt_job_with_all_frames(self, admin_user, tasks, jobs, task_mode):
+        user = admin_user
+        task = next(
+            t
+            for t in tasks
+            if t["mode"] == task_mode
+            and t["size"]
+            and not any(j for j in jobs if j["task_id"] == t["id"] and j["type"] == "ground_truth")
+        )
+        task_id = task["id"]
+
+        job_spec = {
+            "task_id": task_id,
+            "type": "ground_truth",
+            "frame_selection_method": "random_uniform",
+            "frame_count": task["size"],
+        }
+
+        response = self._test_create_job_ok(user, job_spec)
+        job_id = json.loads(response.data)["id"]
+
+        with make_api_client(user) as api_client:
+            (gt_job_meta, _) = api_client.jobs_api.retrieve_data_meta(job_id)
+
+        assert task["size"] == gt_job_meta.size
 
     def test_can_create_no_more_than_1_gt_job(self, admin_user, jobs):
         user = admin_user
@@ -547,9 +576,12 @@ class TestGetJobs:
     "restore_db_per_class"
 )
 class TestGetGtJobData:
-    @pytest.mark.usefixtures("restore_db_per_function")
+    def _delete_gt_job(self, user, gt_job_id):
+        with make_api_client(user) as api_client:
+            api_client.jobs_api.destroy(gt_job_id)
+
     @pytest.mark.parametrize("task_mode", ["annotation", "interpolation"])
-    def test_can_get_gt_job_meta(self, admin_user, tasks, task_mode):
+    def test_can_get_gt_job_meta(self, admin_user, tasks, jobs, task_mode, request):
         user = admin_user
         job_frame_count = 4
         task = next(
@@ -559,6 +591,7 @@ class TestGetGtJobData:
             and not t["organization"]
             and t["mode"] == task_mode
             and t["size"] > job_frame_count
+            and not any(j for j in jobs if j["task_id"] == t["id"] and j["type"] == "ground_truth")
         )
         task_id = task["id"]
         with make_api_client(user) as api_client:
@@ -568,10 +601,12 @@ class TestGetGtJobData:
         job_frame_ids = list(range(task_meta.start_frame, task_meta.stop_frame, frame_step))[
             :job_frame_count
         ]
-        gt_job = self._get_or_create_gt_job(admin_user, task_id, job_frame_ids)
+        gt_job = self._create_gt_job(admin_user, task_id, job_frame_ids)
 
         with make_api_client(user) as api_client:
             (gt_job_meta, _) = api_client.jobs_api.retrieve_data_meta(gt_job.id)
+
+        request.addfinalizer(lambda: self._delete_gt_job(user, gt_job.id))
 
         # These values are relative to the resulting task frames, unlike meta values
         assert 0 == gt_job.start_frame
@@ -595,8 +630,7 @@ class TestGetGtJobData:
         else:
             assert False
 
-    @pytest.mark.usefixtures("restore_db_per_function")
-    def test_can_get_gt_job_meta_with_complex_frame_setup(self, admin_user):
+    def test_can_get_gt_job_meta_with_complex_frame_setup(self, admin_user, request):
         image_count = 50
         start_frame = 3
         stop_frame = image_count - 4
@@ -622,10 +656,12 @@ class TestGetGtJobData:
 
         task_frame_ids = range(start_frame, stop_frame, frame_step)
         job_frame_ids = list(task_frame_ids[::3])
-        gt_job = self._get_or_create_gt_job(admin_user, task_id, job_frame_ids)
+        gt_job = self._create_gt_job(admin_user, task_id, job_frame_ids)
 
         with make_api_client(admin_user) as api_client:
             (gt_job_meta, _) = api_client.jobs_api.retrieve_data_meta(gt_job.id)
+
+        request.addfinalizer(lambda: self._delete_gt_job(admin_user, gt_job.id))
 
         # These values are relative to the resulting task frames, unlike meta values
         assert 0 == gt_job.start_frame
@@ -647,7 +683,7 @@ class TestGetGtJobData:
 
     @pytest.mark.parametrize("task_mode", ["annotation", "interpolation"])
     @pytest.mark.parametrize("quality", ["compressed", "original"])
-    def test_can_get_gt_job_chunk(self, admin_user, tasks, task_mode, quality):
+    def test_can_get_gt_job_chunk(self, admin_user, tasks, jobs, task_mode, quality, request):
         user = admin_user
         job_frame_count = 4
         task = next(
@@ -657,6 +693,7 @@ class TestGetGtJobData:
             and not t["organization"]
             and t["mode"] == task_mode
             and t["size"] > job_frame_count
+            and not any(j for j in jobs if j["task_id"] == t["id"] and j["type"] == "ground_truth")
         )
         task_id = task["id"]
         with make_api_client(user) as api_client:
@@ -666,13 +703,15 @@ class TestGetGtJobData:
         job_frame_ids = list(range(task_meta.start_frame, task_meta.stop_frame, frame_step))[
             :job_frame_count
         ]
-        gt_job = self._get_or_create_gt_job(admin_user, task_id, job_frame_ids)
+        gt_job = self._create_gt_job(admin_user, task_id, job_frame_ids)
 
         with make_api_client(admin_user) as api_client:
             (chunk_file, response) = api_client.jobs_api.retrieve_data(
                 gt_job.id, number=0, quality=quality, type="chunk"
             )
             assert response.status == HTTPStatus.OK
+
+        request.addfinalizer(lambda: self._delete_gt_job(admin_user, gt_job.id))
 
         frame_range = range(
             task_meta.start_frame, min(task_meta.stop_frame + 1, task_meta.chunk_size), frame_step
@@ -697,26 +736,29 @@ class TestGetGtJobData:
                     assert image.size > (1, 1)
                     assert np.any(image_data != 0)
 
-    def _get_or_create_gt_job(self, user, task_id, frames):
+    def _create_gt_job(self, user, task_id, frames):
+        with make_api_client(user) as api_client:
+            job_spec = {
+                "task_id": task_id,
+                "type": "ground_truth",
+                "frame_selection_method": "manual",
+                "frames": frames,
+            }
+
+            (gt_job, _) = api_client.jobs_api.create(job_spec)
+
+        return gt_job
+
+    def _get_gt_job(self, user, task_id):
         with make_api_client(user) as api_client:
             (task_jobs, _) = api_client.jobs_api.list(task_id=task_id, type="ground_truth")
-            if task_jobs.results:
-                gt_job = task_jobs.results[0]
-            else:
-                job_spec = {
-                    "task_id": task_id,
-                    "type": "ground_truth",
-                    "frame_selection_method": "manual",
-                    "frames": frames,
-                }
-
-                (gt_job, _) = api_client.jobs_api.create(job_spec)
+            gt_job = task_jobs.results[0]
 
         return gt_job
 
     @pytest.mark.parametrize("task_mode", ["annotation", "interpolation"])
     @pytest.mark.parametrize("quality", ["compressed", "original"])
-    def test_can_get_gt_job_frame(self, admin_user, tasks, task_mode, quality):
+    def test_can_get_gt_job_frame(self, admin_user, tasks, jobs, task_mode, quality, request):
         user = admin_user
         job_frame_count = 4
         task = next(
@@ -726,6 +768,7 @@ class TestGetGtJobData:
             and not t["organization"]
             and t["mode"] == task_mode
             and t["size"] > job_frame_count
+            and not any(j for j in jobs if j["task_id"] == t["id"] and j["type"] == "ground_truth")
         )
         task_id = task["id"]
         with make_api_client(user) as api_client:
@@ -735,7 +778,7 @@ class TestGetGtJobData:
         job_frame_ids = list(range(task_meta.start_frame, task_meta.stop_frame, frame_step))[
             :job_frame_count
         ]
-        gt_job = self._get_or_create_gt_job(admin_user, task_id, job_frame_ids)
+        gt_job = self._create_gt_job(admin_user, task_id, job_frame_ids)
 
         frame_range = range(
             task_meta.start_frame, min(task_meta.stop_frame + 1, task_meta.chunk_size), frame_step
@@ -759,6 +802,8 @@ class TestGetGtJobData:
                 gt_job.id, number=included_frames[0], quality=quality, type="frame"
             )
             assert response.status == HTTPStatus.OK
+
+        request.addfinalizer(lambda: self._delete_gt_job(admin_user, gt_job.id))
 
 
 @pytest.mark.usefixtures("restore_db_per_class")
@@ -1231,7 +1276,7 @@ class TestJobDataset:
 
     def test_can_export_dataset(self, admin_user: str, jobs_with_shapes: List):
         job = jobs_with_shapes[0]
-        response = self._export_dataset(admin_user, job["id"], format="CVAT for images 1.1")
+        response = self._export_dataset(admin_user, job["id"])
         assert response.data
 
     def test_non_admin_can_export_dataset(self, users, tasks, jobs_with_shapes):
@@ -1244,7 +1289,7 @@ class TestJobDataset:
                 and tasks[job["task_id"]]["organization"] is None
             )
         )
-        response = self._export_dataset(username, job_id, format="CVAT for images 1.1")
+        response = self._export_dataset(username, job_id)
         assert response.data
 
     def test_non_admin_can_export_annotations(self, users, tasks, jobs_with_shapes):
@@ -1257,7 +1302,7 @@ class TestJobDataset:
                 and tasks[job["task_id"]]["organization"] is None
             )
         )
-        response = self._export_annotations(username, job_id, format="CVAT for images 1.1")
+        response = self._export_annotations(username, job_id)
         assert response.data
 
     @pytest.mark.parametrize("username, jid", [("admin1", 14)])

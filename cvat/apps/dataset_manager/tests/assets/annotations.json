@@ -701,24 +701,6 @@
     ],
     "tracks": []
   },
-  "TFRecord 1.0": {
-    "version": 0,
-    "tags": [],
-    "shapes": [
-      {
-        "type": "rectangle",
-        "occluded": false,
-        "z_order": 0,
-        "points": [16.5, 17.2, 38.89, 25.63],
-        "frame": 0,
-        "label_id": null,
-        "group": 0,
-        "source": "manual",
-        "attributes": []
-      }
-    ],
-    "tracks": []
-  },
   "YOLO 1.1": {
     "version": 0,
     "tags": [],

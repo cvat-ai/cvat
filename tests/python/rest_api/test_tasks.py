@@ -39,8 +39,14 @@ from shared.utils.config import (
     make_api_client,
     patch_method,
     post_method,
+    put_method,
 )
-from shared.utils.helpers import generate_image_file, generate_image_files, generate_manifest
+from shared.utils.helpers import (
+    generate_image_file,
+    generate_image_files,
+    generate_manifest,
+    generate_video_file,
+)
 
 from .utils import (
     CollectionSimpleFilterTestBase,
@@ -531,7 +537,7 @@ class TestPatchTaskAnnotations:
         assert response.status_code == HTTPStatus.OK
 
     def test_can_split_skeleton_tracks_on_jobs(self, jobs):
-        # https://github.com/opencv/cvat/pull/6968
+        # https://github.com/cvat-ai/cvat/pull/6968
         task_id = 21
 
         task_jobs = [job for job in jobs if job["task_id"] == task_id]
@@ -552,9 +558,12 @@ class TestPatchTaskAnnotations:
                             "label_id": 59,
                             "frame": 0,
                             "shapes": [
+                                # https://github.com/cvat-ai/cvat/issues/7498
+                                # https://github.com/cvat-ai/cvat/pull/7615
+                                # This shape covers frame 0 to 7,
+                                # We need to check if frame 5 is generated correctly for job#1
                                 {"type": "points", "frame": 0, "points": [1.0, 2.0]},
-                                {"type": "points", "frame": 2, "points": [1.0, 2.0]},
-                                {"type": "points", "frame": 7, "points": [1.0, 2.0]},
+                                {"type": "points", "frame": 7, "points": [2.0, 4.0]},
                             ],
                         },
                     ],
@@ -583,20 +592,34 @@ class TestPatchTaskAnnotations:
             track = job_annotations["tracks"][0]
             assert track.get("elements", []), "Expected to see track with elements"
 
+            def interpolate(frame):
+                # simple interpolate from ([1, 2], 1) to ([2, 4], 7)
+                return [(2.0 - 1.0) / 7 * (frame - 0) + 1.0, (4.0 - 2.0) / 7 * (frame - 0) + 2.0]
+
             for element in track["elements"]:
                 element_frames = set(shape["frame"] for shape in element["shapes"])
+                assert all(
+                    [
+                        not DeepDiff(
+                            interpolate(shape["frame"]), shape["points"], significant_digits=2
+                        )
+                        for shape in element["shapes"]
+                        if shape["frame"] >= 0 and shape["frame"] <= 7
+                    ]
+                )
+                assert len(element["shapes"]) == 2
                 assert element_frames <= job_frame_range, "Track shapes get out of job frame range"
 
 
 @pytest.mark.usefixtures("restore_db_per_class")
 class TestGetTaskDataset:
-    def _test_export_task(self, username, tid, **kwargs):
+    def _test_export_task(self, username: str, tid: int, **kwargs):
         with make_api_client(username) as api_client:
             return export_dataset(api_client.tasks_api.retrieve_dataset_endpoint, id=tid, **kwargs)
 
     def test_can_export_task_dataset(self, admin_user, tasks_with_shapes):
         task = tasks_with_shapes[0]
-        response = self._test_export_task(admin_user, task["id"], format="CVAT for images 1.1")
+        response = self._test_export_task(admin_user, task["id"])
         assert response.data
 
     @pytest.mark.parametrize("tid", [21])
@@ -722,14 +745,33 @@ class TestGetTaskDataset:
 
         task_id, _ = create_task(admin_user, task_spec, task_data)
 
-        response = self._test_export_task(admin_user, task_id, format="CVAT for images 1.1")
+        response = self._test_export_task(admin_user, task_id)
         assert response.status == HTTPStatus.OK
         assert zipfile.is_zipfile(io.BytesIO(response.data))
+
+    def test_export_dataset_after_deleting_related_cloud_storage(self, admin_user, tasks):
+        related_field = "target_storage"
+
+        task = next(
+            t for t in tasks if t[related_field] and t[related_field]["location"] == "cloud_storage"
+        )
+        task_id = task["id"]
+        cloud_storage_id = task[related_field]["cloud_storage_id"]
+
+        with make_api_client(admin_user) as api_client:
+            _, response = api_client.cloudstorages_api.destroy(cloud_storage_id)
+            assert response.status == HTTPStatus.NO_CONTENT
+
+            result, response = api_client.tasks_api.retrieve(task_id)
+            assert not result[related_field]
+
+            response = export_dataset(api_client.tasks_api.retrieve_dataset_endpoint, id=task["id"])
+            assert response.data
 
 
 @pytest.mark.usefixtures("restore_db_per_function")
 @pytest.mark.usefixtures("restore_cvat_data")
-@pytest.mark.usefixtures("restore_redis_db_per_function")
+@pytest.mark.usefixtures("restore_redis_ondisk_per_function")
 class TestPostTaskData:
     _USERNAME = "admin1"
 
@@ -782,6 +824,68 @@ class TestPostTaskData:
             (task, _) = api_client.tasks_api.retrieve(task_id)
             assert task.size == 4
 
+    def test_default_overlap_for_small_segment_size(self):
+        task_spec = {
+            "name": f"test {self._USERNAME} with default overlap and small segment_size",
+            "labels": [{"name": "car"}],
+            "segment_size": 5,
+        }
+
+        task_data = {
+            "image_quality": 75,
+            "client_files": [generate_video_file(8)],
+        }
+
+        task_id, _ = create_task(self._USERNAME, task_spec, task_data)
+
+        # check task size
+        with make_api_client(self._USERNAME) as api_client:
+            paginated_job_list, _ = api_client.jobs_api.list(task_id=task_id)
+
+            jobs = paginated_job_list.results
+            jobs.sort(key=lambda job: job.start_frame)
+
+            assert len(jobs) == 2
+            # overlap should be 2 frames (frames 3 & 4)
+            assert jobs[0].start_frame == 0
+            assert jobs[0].stop_frame == 4
+            assert jobs[1].start_frame == 3
+            assert jobs[1].stop_frame == 7
+
+    @pytest.mark.parametrize(
+        "size,expected_segments",
+        [
+            (2, [(0, 1)]),
+            (3, [(0, 2)]),
+            (4, [(0, 2), (2, 3)]),
+            (5, [(0, 2), (2, 4)]),
+            (6, [(0, 2), (2, 4), (4, 5)]),
+        ],
+    )
+    def test_task_segmentation(self, size, expected_segments):
+        task_spec = {
+            "name": f"test {self._USERNAME} to check segmentation into jobs",
+            "labels": [{"name": "car"}],
+            "segment_size": 3,
+            "overlap": 1,
+        }
+
+        task_data = {
+            "image_quality": 75,
+            "client_files": generate_image_files(size),
+        }
+
+        task_id, _ = create_task(self._USERNAME, task_spec, task_data)
+
+        # check task size
+        with make_api_client(self._USERNAME) as api_client:
+            paginated_job_list, _ = api_client.jobs_api.list(task_id=task_id)
+
+            jobs = paginated_job_list.results
+            jobs.sort(key=lambda job: job.start_frame)
+
+            assert [(j.start_frame, j.stop_frame) for j in jobs] == expected_segments
+
     def test_can_create_task_with_exif_rotated_images(self):
         task_spec = {
             "name": f"test {self._USERNAME} to create a task with exif rotated images",
@@ -818,10 +922,11 @@ class TestPostTaskData:
                             # original is 480x640 with 90/-90 degrees rotation
                             assert frame_meta.height == 640 and frame_meta.width == 480
                             assert im.height == 640 and im.width == 480
+                            assert im.getexif().get(274, 1) == 1
 
     def test_can_create_task_with_big_images(self):
         # Checks for regressions about the issue
-        # https://github.com/opencv/cvat/issues/6878
+        # https://github.com/cvat-ai/cvat/issues/6878
         # In the case of big files (>2.5 MB by default),
         # uploaded files could be write-appended twice,
         # leading to bigger raw file sizes than expected.
@@ -866,7 +971,6 @@ class TestPostTaskData:
             chunk_image = chunk_zip.read(infos[0])
             assert chunk_image == image_bytes
 
-    @pytest.mark.skip(reason="need to wait new Pillow release till 15 October 2023")
     def test_can_create_task_with_exif_rotated_tif_image(self):
         task_spec = {
             "name": f"test {self._USERNAME} to create a task with exif rotated tif image",
@@ -882,37 +986,28 @@ class TestPostTaskData:
             "server_files": image_files,
             "image_quality": 70,
             "segment_size": 500,
-            "use_cache": True,
+            "use_cache": False,
             "sorting_method": "natural",
         }
 
         task_id, _ = create_task(self._USERNAME, task_spec, task_data)
 
-        # check that the frame has correct width and height
-        with make_api_client(self._USERNAME) as api_client:
-            _, response = api_client.tasks_api.retrieve_data(
-                task_id, number=0, type="chunk", quality="original"
-            )
-            with zipfile.ZipFile(io.BytesIO(response.data)) as zip_file:
-                assert len(zip_file.namelist()) == 1
-                name = zip_file.namelist()[0]
-                assert name == "000000.tif"
-                with zip_file.open(name) as zipped_img:
-                    im = Image.open(zipped_img)
-                    # raw image is horizontal 100x150 with -90 degrees rotation
-                    assert im.height == 150 and im.width == 100
+        for chunk_quality in ["original", "compressed"]:
+            # check that the frame has correct width and height
+            with make_api_client(self._USERNAME) as api_client:
+                _, response = api_client.tasks_api.retrieve_data(
+                    task_id, number=0, type="chunk", quality=chunk_quality
+                )
 
-            _, response = api_client.tasks_api.retrieve_data(
-                task_id, number=0, type="chunk", quality="compressed"
-            )
-            with zipfile.ZipFile(io.BytesIO(response.data)) as zip_file:
-                assert len(zip_file.namelist()) == 1
-                name = zip_file.namelist()[0]
-                assert name == "000000.jpeg"
-                with zip_file.open(name) as zipped_img:
-                    im = Image.open(zipped_img)
-                    # raw image is horizontal 100x150 with -90 degrees rotation
-                    assert im.height == 150 and im.width == 100
+                with zipfile.ZipFile(io.BytesIO(response.data)) as zip_file:
+                    assert len(zip_file.namelist()) == 1
+                    name = zip_file.namelist()[0]
+                    assert name == "000000.tif" if chunk_quality == "original" else "000000.jpeg"
+                    with zip_file.open(name) as zipped_img:
+                        im = Image.open(zipped_img)
+                        # raw image is horizontal 100x150 with -90 degrees rotation
+                        assert im.height == 150 and im.width == 100
+                        assert im.getexif().get(274, 1) == 1
 
     def test_can_create_task_with_sorting_method_natural(self):
         task_spec = {
@@ -1256,9 +1351,9 @@ class TestPostTaskData:
             "image_quality": 75,
             "use_cache": use_cache,
             "cloud_storage_id": cloud_storage["id"],
-            "server_files": server_files
-            if not use_manifest
-            else server_files + ["test/manifest.jsonl"],
+            "server_files": (
+                server_files if not use_manifest else server_files + ["test/manifest.jsonl"]
+            ),
             "sorting_method": sorting_method,
         }
         if server_files_exclude:
@@ -1870,7 +1965,7 @@ class TestPatchTaskLabel:
 
 @pytest.mark.usefixtures("restore_db_per_function")
 @pytest.mark.usefixtures("restore_cvat_data")
-@pytest.mark.usefixtures("restore_redis_db_per_function")
+@pytest.mark.usefixtures("restore_redis_ondisk_per_function")
 class TestWorkWithTask:
     _USERNAME = "admin1"
 
@@ -1968,7 +2063,7 @@ class TestTaskBackups:
     @pytest.mark.parametrize("mode", ["annotation", "interpolation"])
     def test_can_import_backup_for_task_in_nondefault_state(self, tasks, mode):
         # Reproduces the problem with empty 'mode' in a restored task,
-        # described in the reproduction steps https://github.com/opencv/cvat/issues/5668
+        # described in the reproduction steps https://github.com/cvat-ai/cvat/issues/5668
 
         task_json = next(t for t in tasks if t["mode"] == mode and t["jobs"]["count"])
 
@@ -2406,7 +2501,7 @@ class TestPatchTask:
 
 @pytest.mark.usefixtures("restore_db_per_function")
 def test_can_report_correct_completed_jobs_count(tasks_wlc, jobs_wlc, admin_user):
-    # Reproduces https://github.com/opencv/cvat/issues/6098
+    # Reproduces https://github.com/cvat-ai/cvat/issues/6098
     task = next(
         t
         for t in tasks_wlc
@@ -2433,7 +2528,8 @@ class TestImportTaskAnnotations:
         self.tmp_dir = tmp_path
         self.client = self._make_client()
         self.user = admin_user
-        self.format = "COCO 1.0"
+        self.export_format = "CVAT for images 1.1"
+        self.import_format = "CVAT 1.1"
 
         with self.client:
             self.client.login((self.user, USER_PASS))
@@ -2463,11 +2559,11 @@ class TestImportTaskAnnotations:
             filename = self.tmp_dir / f"task_{task_id}_{Path(f.name).name}_coco.zip"
 
         task = self.client.tasks.retrieve(task_id)
-        task.export_dataset(self.format, filename, include_images=False)
+        task.export_dataset(self.export_format, filename, include_images=False)
 
         self._delete_annotations(task_id)
 
-        params = {"format": self.format, "filename": filename.name}
+        params = {"format": self.import_format, "filename": filename.name}
         url = self.client.api_map.make_endpoint_url(
             self.client.api_client.tasks_api.create_annotations_endpoint.path
         ).format(id=task_id)
@@ -2476,7 +2572,7 @@ class TestImportTaskAnnotations:
         if successful_upload:
             # define time required to upload file with annotations
             start_time = time()
-            task.import_annotations(self.format, filename)
+            task.import_annotations(self.import_format, filename)
             required_time = ceil(time() - start_time) * 2
             self._delete_annotations(task_id)
 
@@ -2500,7 +2596,7 @@ class TestImportTaskAnnotations:
         if successful_upload:
             self._check_annotations(task_id)
             self._delete_annotations(task_id)
-        task.import_annotations(self.format, filename)
+        task.import_annotations(self.import_format, filename)
         self._check_annotations(task_id)
 
     @pytest.mark.skip("Fails sometimes, needs to be fixed")
@@ -2510,9 +2606,9 @@ class TestImportTaskAnnotations:
         with NamedTemporaryFile() as f:
             filename = self.tmp_dir / f"task_{task_id}_{Path(f.name).name}_coco.zip"
         task = self.client.tasks.retrieve(task_id)
-        task.export_dataset(self.format, filename, include_images=False)
+        task.export_dataset(self.export_format, filename, include_images=False)
 
-        params = {"format": self.format, "filename": filename.name}
+        params = {"format": self.import_format, "filename": filename.name}
         url = self.client.api_map.make_endpoint_url(
             self.client.api_client.tasks_api.create_annotations_endpoint.path
         ).format(id=task_id)
@@ -2540,6 +2636,38 @@ class TestImportTaskAnnotations:
                 break
         assert not number_of_files
 
+    def test_import_annotations_after_deleting_related_cloud_storage(
+        self, admin_user: str, tasks_with_shapes
+    ):
+        related_field = "source_storage"
+
+        task = next(
+            t
+            for t in tasks_with_shapes
+            if t[related_field] and t[related_field]["location"] == "cloud_storage"
+        )
+        task_id = task["id"]
+        cloud_storage_id = task["source_storage"]["cloud_storage_id"]
+
+        # generate temporary destination
+        with NamedTemporaryFile(dir=self.tmp_dir, suffix=f"task_{task_id}.zip") as f:
+            file_path = Path(f.name)
+
+        task = self.client.tasks.retrieve(task_id)
+        self._check_annotations(task_id)
+
+        with make_api_client(admin_user) as api_client:
+            _, response = api_client.cloudstorages_api.destroy(cloud_storage_id)
+            assert response.status == HTTPStatus.NO_CONTENT
+
+        task = self.client.tasks.retrieve(task_id)
+        assert not getattr(task, related_field)
+
+        task.export_dataset(self.export_format, file_path, include_images=False)
+        self._delete_annotations(task_id)
+        task.import_annotations(self.import_format, file_path)
+        self._check_annotations(task_id)
+
 
 class TestImportWithComplexFilenames:
     @staticmethod
@@ -2550,7 +2678,7 @@ class TestImportWithComplexFilenames:
         autouse=True,
         scope="class",
         # classmethod way may not work in some versions
-        # https://github.com/opencv/cvat/actions/runs/5336023573/jobs/9670573955?pr=6350
+        # https://github.com/cvat-ai/cvat/actions/runs/5336023573/jobs/9670573955?pr=6350
         name="TestImportWithComplexFilenames.setup_class",
     )
     @classmethod
@@ -2669,7 +2797,7 @@ class TestImportWithComplexFilenames:
         ],
     )
     def test_import_annotations(self, task_kind, annotation_kind, expect_success):
-        # Tests for regressions about https://github.com/opencv/cvat/issues/6319
+        # Tests for regressions about https://github.com/cvat-ai/cvat/issues/6319
         #
         # X annotations must be importable to X prefixed cases
         # with and without dots in filenames.
@@ -2692,42 +2820,880 @@ class TestImportWithComplexFilenames:
 
             assert b"Could not match item id" in capture.value.body
 
-    def test_can_export_and_import_skeleton_tracks_in_coco_format(self):
-        task = self.client.tasks.retrieve(14)
-        dataset_file = self.tmp_dir / "some_file.zip"
-        format_name = "COCO Keypoints 1.0"
+    def delete_annotation_and_import_annotations(
+        self, task_id, annotations, format_name, dataset_file
+    ):
+        task = self.client.tasks.retrieve(task_id)
+        labels = task.get_labels()
+        sublabels = labels[0].sublabels
 
-        original_annotations = task.get_annotations()
+        # if the annotations shapes label_id does not exist, the put it in the task
+        for shape in annotations["shapes"]:
+            if "label_id" not in shape:
+                shape["label_id"] = labels[0].id
+
+        for track in annotations["tracks"]:
+            if "label_id" not in track:
+                track["label_id"] = labels[0].id
+            for element_idx, element in enumerate(track["elements"]):
+                if "label_id" not in element:
+                    element["label_id"] = sublabels[element_idx].id
+
+        response = put_method(
+            "admin1", f"tasks/{task_id}/annotations", annotations, action="create"
+        )
+        assert response.status_code == 200, f"Cannot update task's annotations: {response.content}"
 
         task.export_dataset(format_name, dataset_file, include_images=False)
-        task.remove_annotations()
+
+        # get the original annotations
+        response = get_method("admin1", f"tasks/{task.id}/annotations")
+        assert response.status_code == 200, f"Cannot get task's annotations: {response.content}"
+        original_annotations = response.json()
+
+        # import the annotations
         task.import_annotations(format_name, dataset_file)
 
-        imported_annotations = task.get_annotations()
+        response = get_method("admin1", f"tasks/{task.id}/annotations")
+        assert response.status_code == 200, f"Cannot get task's annotations: {response.content}"
+        imported_annotations = response.json()
 
-        # Number of shapes and tracks hasn't changed
-        assert len(original_annotations.shapes) == len(imported_annotations.shapes)
-        assert len(original_annotations.tracks) == len(imported_annotations.tracks)
+        return original_annotations, imported_annotations
 
-        # Frames of shapes, tracks and track elements hasn't changed
-        assert set([s.frame for s in original_annotations.shapes]) == set(
-            [s.frame for s in imported_annotations.shapes]
+    def compare_original_and_import_annotations(self, original_annotations, imported_annotations):
+        assert (
+            DeepDiff(
+                original_annotations,
+                imported_annotations,
+                ignore_order=True,
+                exclude_regex_paths=[
+                    r"root(\['\w+'\]\[\d+\])+\['id'\]",
+                    r"root(\['\w+'\]\[\d+\])+\['label_id'\]",
+                    r"root(\['\w+'\]\[\d+\])+\['attributes'\]\[\d+\]\['spec_id'\]",
+                ],
+            )
+            == {}
         )
-        assert set([t.frame for t in original_annotations.tracks]) == set(
-            [t.frame for t in imported_annotations.tracks]
+
+    @pytest.mark.parametrize("format_name", ["Datumaro 1.0", "COCO 1.0", "PASCAL VOC 1.1"])
+    def test_export_and_import_tracked_format_with_outside_true(self, format_name):
+        task_id = 14
+        dataset_file = self.tmp_dir / (format_name + "outside_true_source_data.zip")
+        annotations = {
+            "shapes": [],
+            "tracks": [
+                {
+                    "frame": 0,
+                    "group": 0,
+                    "shapes": [
+                        {
+                            "type": "rectangle",
+                            "frame": 0,
+                            "points": [1.0, 2.0, 3.0, 2.0],
+                            "keyframe": True,
+                        },
+                        {
+                            "type": "rectangle",
+                            "frame": 3,
+                            "points": [1.0, 2.0, 3.0, 2.0],
+                            "keyframe": True,
+                            "outside": True,
+                        },
+                    ],
+                    "elements": [],
+                }
+            ],
+        }
+
+        original_annotations, imported_annotations = self.delete_annotation_and_import_annotations(
+            task_id, annotations, format_name, dataset_file
         )
-        assert set(
-            [
-                tes.frame
-                for t in original_annotations.tracks
-                for te in t.elements
-                for tes in te.shapes
-            ]
-        ) == set(
-            [
-                tes.frame
-                for t in imported_annotations.tracks
-                for te in t.elements
-                for tes in te.shapes
-            ]
+
+        self.compare_original_and_import_annotations(original_annotations, imported_annotations)
+
+        # check if frame 3 is imported correctly with outside = True
+        assert imported_annotations["tracks"][0]["shapes"][1]["outside"]
+
+    @pytest.mark.parametrize("format_name", ["Datumaro 1.0", "COCO 1.0", "PASCAL VOC 1.1"])
+    def test_export_and_import_tracked_format_with_intermediate_keyframe(self, format_name):
+        task_id = 14
+        dataset_file = self.tmp_dir / (format_name + "intermediate_keyframe_source_data.zip")
+        annotations = {
+            "shapes": [],
+            "tracks": [
+                {
+                    "frame": 0,
+                    "group": 0,
+                    "shapes": [
+                        {
+                            "type": "rectangle",
+                            "frame": 0,
+                            "points": [1.0, 2.0, 3.0, 2.0],
+                            "keyframe": True,
+                        },
+                        {
+                            "type": "rectangle",
+                            "frame": 3,
+                            "points": [1.0, 2.0, 3.0, 2.0],
+                            "keyframe": True,
+                        },
+                    ],
+                    "elements": [],
+                }
+            ],
+        }
+
+        original_annotations, imported_annotations = self.delete_annotation_and_import_annotations(
+            task_id, annotations, format_name, dataset_file
         )
+
+        self.compare_original_and_import_annotations(original_annotations, imported_annotations)
+
+        # check that all the keyframe is imported correctly
+        assert len(imported_annotations["tracks"][0]["shapes"]) == 2
+
+    @pytest.mark.parametrize("format_name", ["Datumaro 1.0", "COCO 1.0", "PASCAL VOC 1.1"])
+    def test_export_and_import_tracked_format_with_outside_without_keyframe(self, format_name):
+        task_id = 14
+        dataset_file = self.tmp_dir / (format_name + "outside_without_keyframe_source_data.zip")
+        annotations = {
+            "shapes": [],
+            "tracks": [
+                {
+                    "frame": 0,
+                    "group": 0,
+                    "shapes": [
+                        {
+                            "type": "rectangle",
+                            "frame": 0,
+                            "points": [1.0, 2.0, 3.0, 2.0],
+                            "keyframe": True,
+                        },
+                        {
+                            "type": "rectangle",
+                            "frame": 3,
+                            "points": [1.0, 2.0, 3.0, 2.0],
+                            "outside": True,
+                        },
+                    ],
+                    "elements": [],
+                }
+            ],
+        }
+
+        original_annotations, imported_annotations = self.delete_annotation_and_import_annotations(
+            task_id, annotations, format_name, dataset_file
+        )
+
+        self.compare_original_and_import_annotations(original_annotations, imported_annotations)
+
+        # check that all the keyframe is imported correctly
+        assert len(imported_annotations["tracks"][0]["shapes"]) == 2
+
+        # check that frame 3 is imported correctly with outside = True
+        assert imported_annotations["tracks"][0]["shapes"][1]["outside"]
+
+    @pytest.mark.parametrize("format_name", ["Datumaro 1.0", "COCO 1.0", "PASCAL VOC 1.1"])
+    def test_export_and_import_tracked_format_with_no_keyframe(self, format_name):
+        task_id = 14
+        dataset_file = self.tmp_dir / (format_name + "no_keyframe_source_data.zip")
+        annotations = {
+            "shapes": [],
+            "tracks": [
+                {
+                    "frame": 0,
+                    "group": 0,
+                    "shapes": [
+                        {
+                            "type": "rectangle",
+                            "frame": 0,
+                            "points": [1.0, 2.0, 3.0, 2.0],
+                        },
+                    ],
+                    "elements": [],
+                }
+            ],
+        }
+
+        original_annotations, imported_annotations = self.delete_annotation_and_import_annotations(
+            task_id, annotations, format_name, dataset_file
+        )
+
+        self.compare_original_and_import_annotations(original_annotations, imported_annotations)
+
+        # check if first frame is imported correctly with keyframe = True
+        assert len(imported_annotations["tracks"][0]["shapes"]) == 1
+
+    @pytest.mark.parametrize("format_name", ["Datumaro 1.0", "COCO 1.0", "PASCAL VOC 1.1"])
+    def test_export_and_import_tracked_format_with_one_outside(self, format_name):
+        task_id = 14
+        dataset_file = self.tmp_dir / (format_name + "one_outside_source_data.zip")
+        annotations = {
+            "shapes": [],
+            "tracks": [
+                {
+                    "frame": 0,
+                    "group": 0,
+                    "shapes": [
+                        {
+                            "type": "rectangle",
+                            "frame": 3,
+                            "points": [1.0, 2.0, 3.0, 2.0],
+                            "outside": True,
+                        },
+                    ],
+                    "elements": [],
+                }
+            ],
+        }
+
+        original_annotations, imported_annotations = self.delete_annotation_and_import_annotations(
+            task_id, annotations, format_name, dataset_file
+        )
+
+        self.compare_original_and_import_annotations(original_annotations, imported_annotations)
+
+        # only outside=True shape is imported, means there is no visible shape
+        assert len(imported_annotations["tracks"]) == 0
+
+    @pytest.mark.parametrize("format_name", ["Datumaro 1.0", "COCO 1.0", "PASCAL VOC 1.1"])
+    def test_export_and_import_tracked_format_with_gap(self, format_name):
+        task_id = 14
+        dataset_file = self.tmp_dir / (format_name + "with_gap_source_data.zip")
+        annotations = {
+            "shapes": [],
+            "tracks": [
+                {
+                    "frame": 0,
+                    "group": 0,
+                    "shapes": [
+                        {
+                            "type": "rectangle",
+                            "frame": 0,
+                            "points": [1.0, 2.0, 3.0, 2.0],
+                            "keyframe": True,
+                        },
+                        {
+                            "type": "rectangle",
+                            "frame": 2,
+                            "points": [1.0, 2.0, 3.0, 2.0],
+                            "outside": True,
+                        },
+                        {
+                            "type": "rectangle",
+                            "frame": 4,
+                            "points": [1.0, 2.0, 3.0, 2.0],
+                            "keyframe": True,
+                        },
+                        {
+                            "type": "rectangle",
+                            "frame": 5,
+                            "points": [1.0, 2.0, 3.0, 2.0],
+                            "outside": True,
+                        },
+                        {
+                            "type": "rectangle",
+                            "frame": 6,
+                            "points": [1.0, 2.0, 3.0, 2.0],
+                            "keyframe": True,
+                        },
+                    ],
+                    "elements": [],
+                }
+            ],
+        }
+
+        original_annotations, imported_annotations = self.delete_annotation_and_import_annotations(
+            task_id, annotations, format_name, dataset_file
+        )
+
+        self.compare_original_and_import_annotations(original_annotations, imported_annotations)
+
+        # check that all the keyframe is imported correctly
+        assert len(imported_annotations["tracks"][0]["shapes"]) == 5
+
+        outside_count = sum(
+            1 for shape in imported_annotations["tracks"][0]["shapes"] if shape["outside"]
+        )
+        assert outside_count == 2, "Outside shapes are not imported correctly"
+
+    def test_export_and_import_coco_keypoints_with_outside_true(self):
+        task_id = 14
+        format_name = "COCO Keypoints 1.0"
+        dataset_file = self.tmp_dir / (format_name + "outside_true_source_data.zip")
+        annotations = {
+            "shapes": [],
+            "tracks": [
+                {
+                    "frame": 0,
+                    "group": 0,
+                    "shapes": [
+                        {"type": "skeleton", "frame": 0, "points": [], "keyframe": True},
+                        {
+                            "type": "skeleton",
+                            "frame": 3,
+                            "points": [],
+                            "keyframe": True,
+                            "outside": True,
+                        },
+                    ],
+                    "elements": [
+                        {
+                            "frame": 0,
+                            "group": 0,
+                            "shapes": [
+                                {
+                                    "type": "points",
+                                    "frame": 0,
+                                    "points": [1.0, 2.0],
+                                    "keyframe": True,
+                                },
+                                {
+                                    "type": "points",
+                                    "frame": 3,
+                                    "points": [1.0, 2.0],
+                                    "keyframe": True,
+                                    "outside": True,
+                                },
+                            ],
+                        },
+                    ],
+                }
+            ],
+        }
+
+        original_annotations, imported_annotations = self.delete_annotation_and_import_annotations(
+            task_id, annotations, format_name, dataset_file
+        )
+
+        self.compare_original_and_import_annotations(original_annotations, imported_annotations)
+
+        # check if frame 3 is imported correctly with outside = True
+        assert imported_annotations["tracks"][0]["shapes"][1]["outside"]
+
+    def test_export_and_import_coco_keypoints_with_intermediate_keyframe(self):
+        task_id = 14
+        format_name = "COCO Keypoints 1.0"
+        dataset_file = self.tmp_dir / (format_name + "intermediate_keyframe_source_data.zip")
+        annotations = {
+            "shapes": [],
+            "tracks": [
+                {
+                    "frame": 0,
+                    "group": 0,
+                    "shapes": [
+                        {"type": "skeleton", "frame": 0, "points": [], "keyframe": True},
+                        {
+                            "type": "skeleton",
+                            "frame": 3,
+                            "points": [],
+                            "keyframe": True,
+                        },
+                    ],
+                    "elements": [
+                        {
+                            "frame": 0,
+                            "group": 0,
+                            "shapes": [
+                                {
+                                    "type": "points",
+                                    "frame": 0,
+                                    "points": [1.0, 2.0],
+                                    "keyframe": True,
+                                },
+                                {
+                                    "type": "points",
+                                    "frame": 3,
+                                    "points": [1.0, 2.0],
+                                    "keyframe": True,
+                                },
+                            ],
+                        },
+                    ],
+                }
+            ],
+        }
+
+        original_annotations, imported_annotations = self.delete_annotation_and_import_annotations(
+            task_id, annotations, format_name, dataset_file
+        )
+
+        self.compare_original_and_import_annotations(original_annotations, imported_annotations)
+
+        # check that all the keyframe is imported correctly
+        assert len(imported_annotations["tracks"][0]["shapes"]) == 2
+
+    def test_export_and_import_coco_keypoints_with_outside_without_keyframe(self):
+        task_id = 14
+        format_name = "COCO Keypoints 1.0"
+        dataset_file = self.tmp_dir / (format_name + "outside_without_keyframe_source_data.zip")
+        annotations = {
+            "shapes": [],
+            "tracks": [
+                {
+                    "frame": 0,
+                    "group": 0,
+                    "shapes": [
+                        {"type": "skeleton", "frame": 0, "points": [], "keyframe": True},
+                        {
+                            "type": "skeleton",
+                            "frame": 3,
+                            "points": [],
+                            "outside": True,
+                        },
+                    ],
+                    "elements": [
+                        {
+                            "frame": 0,
+                            "group": 0,
+                            "shapes": [
+                                {
+                                    "type": "points",
+                                    "frame": 0,
+                                    "points": [1.0, 2.0],
+                                    "keyframe": True,
+                                },
+                                {
+                                    "type": "points",
+                                    "frame": 3,
+                                    "points": [1.0, 2.0],
+                                    "outside": True,
+                                },
+                            ],
+                        },
+                    ],
+                }
+            ],
+        }
+
+        original_annotations, imported_annotations = self.delete_annotation_and_import_annotations(
+            task_id, annotations, format_name, dataset_file
+        )
+
+        self.compare_original_and_import_annotations(original_annotations, imported_annotations)
+
+        # check that all the keyframe is imported correctly
+        assert len(imported_annotations["tracks"][0]["shapes"]) == 2
+
+        # check that frame 3 is imported correctly with outside = True
+        assert imported_annotations["tracks"][0]["shapes"][1]["outside"]
+
+    def test_export_and_import_coco_keypoints_with_no_keyframe(self):
+        task_id = 14
+        format_name = "COCO Keypoints 1.0"
+        dataset_file = self.tmp_dir / (format_name + "with_no_keyframe_source_data.zip")
+        annotations = {
+            "shapes": [],
+            "tracks": [
+                {
+                    "frame": 0,
+                    "group": 0,
+                    "shapes": [
+                        {"type": "skeleton", "frame": 0, "points": []},
+                    ],
+                    "elements": [
+                        {
+                            "frame": 0,
+                            "group": 0,
+                            "shapes": [
+                                {
+                                    "type": "points",
+                                    "frame": 0,
+                                    "points": [1.0, 2.0],
+                                },
+                            ],
+                        },
+                    ],
+                }
+            ],
+        }
+
+        original_annotations, imported_annotations = self.delete_annotation_and_import_annotations(
+            task_id, annotations, format_name, dataset_file
+        )
+
+        self.compare_original_and_import_annotations(original_annotations, imported_annotations)
+
+        # check if first frame is imported correctly with keyframe = True
+        assert len(imported_annotations["tracks"][0]["shapes"]) == 1
+
+    def test_export_and_import_coco_keypoints_with_one_outside(self):
+        task_id = 14
+        format_name = "COCO Keypoints 1.0"
+        dataset_file = self.tmp_dir / (format_name + "with_one_outside_source_data.zip")
+        annotations = {
+            "shapes": [],
+            "tracks": [
+                {
+                    "frame": 0,
+                    "group": 0,
+                    "shapes": [
+                        {"type": "skeleton", "frame": 3, "points": [], "outside": True},
+                    ],
+                    "elements": [
+                        {
+                            "frame": 0,
+                            "group": 0,
+                            "shapes": [
+                                {
+                                    "type": "points",
+                                    "frame": 3,
+                                    "points": [1.0, 2.0],
+                                    "outside": True,
+                                },
+                            ],
+                        },
+                    ],
+                }
+            ],
+        }
+
+        original_annotations, imported_annotations = self.delete_annotation_and_import_annotations(
+            task_id, annotations, format_name, dataset_file
+        )
+
+        self.compare_original_and_import_annotations(original_annotations, imported_annotations)
+
+        # only outside=True shape is imported, means there is no visible shape
+        assert len(imported_annotations["tracks"]) == 0
+
+    def test_export_and_import_coco_keypoints_with_gap(self):
+        task_id = 14
+        format_name = "COCO Keypoints 1.0"
+        dataset_file = self.tmp_dir / (format_name + "with_gap_source_data.zip")
+        annotations = {
+            "shapes": [],
+            "tracks": [
+                {
+                    "frame": 0,
+                    "group": 0,
+                    "shapes": [
+                        {"type": "skeleton", "frame": 0, "points": [], "keyframe": True},
+                        {"type": "skeleton", "frame": 2, "points": [], "outside": True},
+                        {"type": "skeleton", "frame": 4, "points": [], "keyframe": True},
+                        {"type": "skeleton", "frame": 5, "points": [], "outside": True},
+                        {"type": "skeleton", "frame": 6, "points": [], "keyframe": True},
+                    ],
+                    "elements": [
+                        {
+                            "frame": 0,
+                            "group": 0,
+                            "shapes": [
+                                {
+                                    "type": "points",
+                                    "frame": 0,
+                                    "points": [1.0, 2.0],
+                                    "keyframe": True,
+                                },
+                                {
+                                    "type": "points",
+                                    "frame": 2,
+                                    "points": [1.0, 2.0],
+                                    "outside": True,
+                                },
+                                {
+                                    "type": "points",
+                                    "frame": 4,
+                                    "points": [1.0, 2.0],
+                                    "keyframe": True,
+                                },
+                                {
+                                    "type": "points",
+                                    "frame": 5,
+                                    "points": [1.0, 2.0],
+                                    "outside": True,
+                                },
+                                {
+                                    "type": "points",
+                                    "frame": 6,
+                                    "points": [1.0, 2.0],
+                                    "keyframe": True,
+                                },
+                            ],
+                        },
+                    ],
+                }
+            ],
+        }
+
+        original_annotations, imported_annotations = self.delete_annotation_and_import_annotations(
+            task_id, annotations, format_name, dataset_file
+        )
+
+        self.compare_original_and_import_annotations(original_annotations, imported_annotations)
+
+        # check if all the keyframes are imported correctly
+        assert len(imported_annotations["tracks"][0]["shapes"]) == 5
+
+        outside_count = sum(
+            1 for shape in imported_annotations["tracks"][0]["shapes"] if shape["outside"]
+        )
+        assert outside_count == 2, "Outside shapes are not imported correctly"
+
+    def test_export_and_import_complex_coco_keypoints_annotations(self):
+        task_id = 14
+        format_name = "COCO Keypoints 1.0"
+        dataset_file = self.tmp_dir / (format_name + "complex_annotations_source_data.zip")
+        annotations = {
+            "shapes": [],
+            "tracks": [
+                {
+                    "frame": 0,
+                    "group": 0,
+                    "shapes": [
+                        {"type": "skeleton", "outside": False, "frame": 0},
+                        {"type": "skeleton", "outside": False, "frame": 1},
+                        {"type": "skeleton", "outside": False, "frame": 2},
+                        {"type": "skeleton", "outside": False, "frame": 4},
+                        {"type": "skeleton", "outside": False, "frame": 5},
+                    ],
+                    "attributes": [],
+                    "elements": [
+                        {
+                            "frame": 0,
+                            "group": 0,
+                            "shapes": [
+                                {
+                                    "type": "points",
+                                    "outside": False,
+                                    "points": [256.67, 719.25],
+                                    "frame": 0,
+                                },
+                                {
+                                    "type": "points",
+                                    "outside": False,
+                                    "points": [256.67, 719.25],
+                                    "frame": 1,
+                                },
+                                {
+                                    "type": "points",
+                                    "outside": True,
+                                    "points": [256.67, 719.25],
+                                    "frame": 2,
+                                },
+                                {
+                                    "type": "points",
+                                    "outside": False,
+                                    "points": [256.67, 719.25],
+                                    "frame": 4,
+                                },
+                                {
+                                    "type": "points",
+                                    "outside": False,
+                                    "points": [256.67, 719.25],
+                                    "frame": 5,
+                                },
+                            ],
+                        },
+                        {
+                            "frame": 0,
+                            "group": 0,
+                            "shapes": [
+                                {
+                                    "type": "points",
+                                    "outside": False,
+                                    "points": [318.25, 842.06],
+                                    "frame": 0,
+                                },
+                                {
+                                    "type": "points",
+                                    "outside": True,
+                                    "points": [318.25, 842.06],
+                                    "frame": 1,
+                                },
+                                {
+                                    "type": "points",
+                                    "outside": False,
+                                    "points": [318.25, 842.06],
+                                    "frame": 2,
+                                },
+                                {
+                                    "type": "points",
+                                    "outside": True,
+                                    "points": [318.25, 842.06],
+                                    "frame": 4,
+                                },
+                            ],
+                        },
+                        {
+                            "frame": 0,
+                            "group": 0,
+                            "shapes": [
+                                {
+                                    "type": "points",
+                                    "outside": False,
+                                    "points": [199.2, 798.71],
+                                    "frame": 0,
+                                },
+                                {
+                                    "type": "points",
+                                    "outside": False,
+                                    "points": [199.2, 798.71],
+                                    "frame": 1,
+                                },
+                                {
+                                    "type": "points",
+                                    "outside": True,
+                                    "points": [199.2, 798.71],
+                                    "frame": 2,
+                                },
+                                {
+                                    "type": "points",
+                                    "outside": False,
+                                    "points": [199.2, 798.71],
+                                    "frame": 4,
+                                },
+                                {
+                                    "type": "points",
+                                    "outside": True,
+                                    "points": [199.2, 798.71],
+                                    "frame": 5,
+                                },
+                            ],
+                        },
+                    ],
+                },
+                {
+                    "frame": 0,
+                    "group": 0,
+                    "shapes": [
+                        {"type": "skeleton", "outside": False, "frame": 0},
+                        {"type": "skeleton", "outside": True, "frame": 1},
+                        {"type": "skeleton", "outside": False, "frame": 3},
+                        {"type": "skeleton", "outside": False, "frame": 4},
+                        {"type": "skeleton", "outside": False, "frame": 5},
+                    ],
+                    "attributes": [],
+                    "elements": [
+                        {
+                            "frame": 0,
+                            "group": 0,
+                            "shapes": [
+                                {
+                                    "type": "points",
+                                    "outside": False,
+                                    "points": [416.16, 244.31],
+                                    "frame": 0,
+                                },
+                                {
+                                    "type": "points",
+                                    "outside": True,
+                                    "points": [416.16, 244.31],
+                                    "frame": 1,
+                                },
+                                {
+                                    "type": "points",
+                                    "outside": False,
+                                    "points": [416.16, 244.31],
+                                    "frame": 3,
+                                },
+                                {
+                                    "type": "points",
+                                    "outside": False,
+                                    "points": [416.16, 244.31],
+                                    "frame": 4,
+                                },
+                                {
+                                    "type": "points",
+                                    "outside": False,
+                                    "points": [416.16, 244.31],
+                                    "frame": 5,
+                                },
+                            ],
+                        },
+                        {
+                            "frame": 0,
+                            "group": 0,
+                            "shapes": [
+                                {
+                                    "type": "points",
+                                    "outside": False,
+                                    "points": [486.17, 379.65],
+                                    "frame": 0,
+                                },
+                                {
+                                    "type": "points",
+                                    "outside": True,
+                                    "points": [486.17, 379.65],
+                                    "frame": 1,
+                                },
+                                {
+                                    "type": "points",
+                                    "outside": True,
+                                    "points": [486.17, 379.65],
+                                    "frame": 3,
+                                },
+                                {
+                                    "type": "points",
+                                    "outside": False,
+                                    "points": [486.17, 379.65],
+                                    "frame": 4,
+                                },
+                                {
+                                    "type": "points",
+                                    "outside": False,
+                                    "points": [486.17, 379.65],
+                                    "frame": 5,
+                                },
+                            ],
+                        },
+                        {
+                            "frame": 0,
+                            "group": 0,
+                            "shapes": [
+                                {
+                                    "type": "points",
+                                    "outside": False,
+                                    "points": [350.83, 331.88],
+                                    "frame": 0,
+                                },
+                                {
+                                    "type": "points",
+                                    "outside": True,
+                                    "points": [350.83, 331.88],
+                                    "frame": 1,
+                                },
+                                {
+                                    "type": "points",
+                                    "outside": True,
+                                    "points": [350.83, 331.88],
+                                    "frame": 3,
+                                },
+                                {
+                                    "type": "points",
+                                    "outside": False,
+                                    "points": [350.83, 331.88],
+                                    "frame": 5,
+                                },
+                            ],
+                        },
+                    ],
+                },
+            ],
+        }
+
+        original_annotations, imported_annotations = self.delete_annotation_and_import_annotations(
+            task_id, annotations, format_name, dataset_file
+        )
+
+        self.compare_original_and_import_annotations(original_annotations, imported_annotations)
+
+        def check_element_outside_count(track_idx, element_idx, expected_count):
+            outside_count = sum(
+                1
+                for shape in imported_annotations["tracks"][0]["elements"][element_idx]["shapes"]
+                if shape["outside"]
+            )
+            assert (
+                outside_count == expected_count
+            ), f"Outside shapes for track[{track_idx}]element[{element_idx}] are not imported correctly"
+
+        # check track[0] elements outside count
+        check_element_outside_count(0, 0, 1)
+        check_element_outside_count(0, 1, 2)
+        check_element_outside_count(0, 2, 2)
+
+        # check track[1] elements outside count
+        check_element_outside_count(1, 0, 1)
+        check_element_outside_count(1, 1, 2)
+        check_element_outside_count(1, 2, 2)

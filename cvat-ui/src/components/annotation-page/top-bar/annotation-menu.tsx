@@ -1,22 +1,23 @@
 // Copyright (C) 2020-2022 Intel Corporation
-// Copyright (C) 2022 CVAT.ai Corporation
+// Copyright (C) 2022-2024 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
 import React from 'react';
+import ReactDOM from 'react-dom';
 import { withRouter, RouteComponentProps } from 'react-router';
 
-import Menu from 'antd/lib/menu';
 import Modal from 'antd/lib/modal';
 import Text from 'antd/lib/typography/Text';
 import InputNumber from 'antd/lib/input-number';
 import Checkbox from 'antd/lib/checkbox';
 import Collapse from 'antd/lib/collapse';
 
-// eslint-disable-next-line import/no-extraneous-dependencies
-import { MenuInfo } from 'rc-menu/lib/interface';
 import CVATTooltip from 'components/common/cvat-tooltip';
+import Menu, { MenuInfo } from 'components/dropdown-menu';
+
 import { getCore, JobStage } from 'cvat-core-wrapper';
+import AnnotationsActionsModalContent from '../annotations-actions/annotations-actions-modal';
 
 const core = getCore();
 
@@ -25,15 +26,16 @@ interface Props {
     jobInstance: any;
     onClickMenu(params: MenuInfo): void;
     stopFrame: number;
-    removeAnnotations(startnumber: number, endnumber: number, delTrackKeyframesOnly:boolean): void;
+    removeAnnotations(startnumber: number | null, endnumber: number | null, delTrackKeyframesOnly: boolean): void;
     setForceExitAnnotationFlag(forceExit: boolean): void;
-    saveAnnotations(jobInstance: any, afterSave?: () => void): void;
+    saveAnnotations(afterSave?: () => void): void;
 }
 
 export enum Actions {
     LOAD_JOB_ANNO = 'load_job_anno',
     EXPORT_JOB_DATASET = 'export_job_dataset',
-    REMOVE_ANNO = 'remove_anno',
+    REMOVE_ANNOTATIONS = 'remove_annotations',
+    RUN_ACTIONS = 'run_actions',
     OPEN_TASK = 'open_task',
     FINISH_JOB = 'finish_job',
     RENEW_JOB = 'renew_job',
@@ -69,7 +71,7 @@ function AnnotationMenuComponent(props: Props & RouteComponentProps): JSX.Elemen
                         children: 'No',
                     },
                     onOk: () => {
-                        saveAnnotations(jobInstance, () => onClickMenu(_params));
+                        saveAnnotations(() => onClickMenu(_params));
                     },
                     onCancel: () => {
                         // do not ask leave confirmation
@@ -84,9 +86,9 @@ function AnnotationMenuComponent(props: Props & RouteComponentProps): JSX.Elemen
             }
         }
 
-        if (params.key === Actions.REMOVE_ANNO) {
-            let removeFrom: number;
-            let removeUpTo: number;
+        if (params.key === Actions.REMOVE_ANNOTATIONS) {
+            let removeFrom: number | null;
+            let removeUpTo: number | null;
             let removeOnlyKeyframes = false;
             const { Panel } = Collapse;
             Modal.confirm({
@@ -111,7 +113,9 @@ function AnnotationMenuComponent(props: Props & RouteComponentProps): JSX.Elemen
                                 <InputNumber
                                     min={0}
                                     max={stopFrame}
-                                    onChange={(value) => { removeUpTo = value; }}
+                                    onChange={(value) => {
+                                        removeUpTo = value;
+                                    }}
                                 />
                                 <CVATTooltip title='Applicable only for annotations in range'>
                                     <br />
@@ -182,10 +186,29 @@ function AnnotationMenuComponent(props: Props & RouteComponentProps): JSX.Elemen
     };
 
     return (
-        <Menu onClick={(params: MenuInfo) => onClickMenuWrapper(params)} className='cvat-annotation-menu' selectable={false}>
+        <Menu
+            triggerSubMenuAction='click'
+            onClick={(params: MenuInfo) => {
+                onClickMenuWrapper(params);
+            }}
+            className='cvat-annotation-menu'
+            selectable={false}
+        >
             <Menu.Item key={Actions.LOAD_JOB_ANNO}>Upload annotations</Menu.Item>
             <Menu.Item key={Actions.EXPORT_JOB_DATASET}>Export job dataset</Menu.Item>
-            <Menu.Item key={Actions.REMOVE_ANNO}>Remove annotations</Menu.Item>
+            <Menu.Item key={Actions.REMOVE_ANNOTATIONS}>Remove annotations</Menu.Item>
+            <Menu.Item
+                key={Actions.RUN_ACTIONS}
+                onClick={() => {
+                    const div = window.document.createElement('div');
+                    window.document.body.append(div);
+                    ReactDOM.render(
+                        <AnnotationsActionsModalContent onClose={() => div.remove()} />, div,
+                    );
+                }}
+            >
+                Run actions
+            </Menu.Item>
             <Menu.Item key={Actions.OPEN_TASK}>
                 <a
                     href={`/tasks/${taskID}`}

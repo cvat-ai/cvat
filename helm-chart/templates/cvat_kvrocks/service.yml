@@ -1,0 +1,22 @@
+{{- if .Values.cvat.kvrocks.enabled }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ .Release.Name }}-kvrocks
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "cvat.labels" . | nindent 4 }}
+    app: cvat-app
+    tier: kvrocks
+spec:
+  selector:
+    app: cvat-app
+    tier: kvrocks
+    {{- include "cvat.labels" . | nindent 4 }}
+  type: ClusterIP
+  ports:
+  - port: 6666
+    targetPort: 6666
+    protocol: TCP
+    name: http
+{{- end }}

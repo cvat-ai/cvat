@@ -1529,7 +1529,7 @@ class TestComplexFrameSetupCases(_LambdaTestCaseBase):
 
 
 class Issue4996_Cases(_LambdaTestCaseBase):
-    # Check regressions for https://github.com/opencv/cvat/issues/4996#issuecomment-1266123032
+    # Check regressions for https://github.com/cvat-ai/cvat/issues/4996#issuecomment-1266123032
     # We need to check that job assignee can call functions in the assigned jobs
     # This requires to pass the job id in the call request.
 

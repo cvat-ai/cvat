@@ -5,8 +5,6 @@
 
 import { Mutex } from 'async-mutex';
 import { MP4Reader, Bytestream } from './3rdparty/mp4';
-import ZipDecoder from './unzip_imgs.worker';
-import H264Decoder from './3rdparty/Decoder.worker';
 
 export class RequestOutdatedError extends Error {}
 
@@ -28,7 +26,9 @@ export enum DimensionType {
 export function decodeContextImages(
     block: any, start: number, end: number,
 ): Promise<Record<string, ImageBitmap>> {
-    const decodeZipWorker = ((decodeContextImages as any).zipWorker || new (ZipDecoder as any)()) as Worker;
+    const decodeZipWorker = (decodeContextImages as any).zipWorker || new Worker(
+        new URL('./unzip_imgs.worker', import.meta.url),
+    );
     (decodeContextImages as any).zipWorker = decodeZipWorker;
     return new Promise((resolve, reject) => {
         decodeContextImages.mutex.acquire().then((release) => {
@@ -200,6 +200,36 @@ export class FrameDecoder {
         return null;
     }
 
+    static cropImage(
+        imageBuffer: ArrayBuffer,
+        imageWidth: number,
+        imageHeight: number,
+        width: number,
+        height: number,
+    ): ImageData {
+        if (width === imageWidth && height === imageHeight) {
+            return new ImageData(new Uint8ClampedArray(imageBuffer), width, height);
+        }
+        const source = new Uint32Array(imageBuffer);
+
+        const bufferSize = width * height * 4;
+        if (imageWidth === width) {
+            return new ImageData(new Uint8ClampedArray(imageBuffer, 0, bufferSize), width, height);
+        }
+
+        const buffer = new ArrayBuffer(bufferSize);
+        const rgbaInt32 = new Uint32Array(buffer);
+        const rgbaInt8Clamped = new Uint8ClampedArray(buffer);
+        let writeIdx = 0;
+        for (let row = 0; row < height; row++) {
+            const start = row * imageWidth;
+            rgbaInt32.set(source.subarray(start, start + width), writeIdx);
+            writeIdx += width;
+        }
+
+        return new ImageData(rgbaInt8Clamped, width, height);
+    }
+
     async startDecode(): Promise<void> {
         const blockToDecode = { ...this.requestedChunkToDecode };
         const release = await this.mutex.acquire();
@@ -221,7 +251,9 @@ export class FrameDecoder {
             this.requestedChunkToDecode = null;
 
             if (this.blockType === BlockType.MP4VIDEO) {
-                const worker = new H264Decoder() as any as Worker;
+                const worker = new Worker(
+                    new URL('./3rdparty/Decoder.worker', import.meta.url),
+                );
                 let index = start;
 
                 worker.onmessage = (e) => {
@@ -237,8 +269,13 @@ export class FrameDecoder {
                     const height = Math.round(this.renderHeight / scaleFactor);
                     const width = Math.round(this.renderWidth / scaleFactor);
 
-                    const array = new Uint8ClampedArray(e.data.buf.slice(0, width * height * 4));
-                    createImageBitmap(new ImageData(array, width)).then((bitmap) => {
+                    createImageBitmap(FrameDecoder.cropImage(
+                        e.data.buf,
+                        e.data.width,
+                        e.data.height,
+                        width,
+                        height,
+                    )).then((bitmap) => {
                         decodedFrames[keptIndex] = bitmap;
                         this.chunkIsBeingDecoded.onDecode(keptIndex, decodedFrames[keptIndex]);
 
@@ -286,7 +323,9 @@ export class FrameDecoder {
                     });
                 }
             } else {
-                this.zipWorker = this.zipWorker || new (ZipDecoder as any)() as any as Worker;
+                this.zipWorker = this.zipWorker || new Worker(
+                    new URL('./unzip_imgs.worker', import.meta.url),
+                );
                 let index = start;
 
                 this.zipWorker.onmessage = async (event) => {

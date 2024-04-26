@@ -96,7 +96,7 @@ spec:
   eventTimeout: 30s
 
   build:
-    image: cvat.pth.facebookresearch.detectron2.retinanet_r101
+    image: cvat.pth.facebookresearch.detectron2.retinanet_r101:latest-gpu
     baseImage: ubuntu:20.04
 
     directives:

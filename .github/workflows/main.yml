@@ -10,6 +10,10 @@ on:
       - 'site/**'
       - '**/*.md'
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 env:
   CYPRESS_VERIFY_TIMEOUT: 180000 # https://docs.cypress.io/guides/guides/command-line#cypress-verify
   CVAT_VERSION: "local"
@@ -24,9 +28,9 @@ jobs:
 
   build:
     needs: search_cache
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-latest-big
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
 
       - name: Verify version consistency
         run: ./dev/update_version.py --verify-current
@@ -123,9 +127,9 @@ jobs:
 
   rest_api_testing:
     needs: build
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-latest-big
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
 
       - uses: actions/setup-python@v4
         with:
@@ -204,9 +208,9 @@ jobs:
 
   unit_testing:
     needs: build
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-latest-big
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
 
       - name: Download CVAT server image
         uses: actions/download-artifact@v3
@@ -225,9 +229,8 @@ jobs:
           python cvat/apps/iam/rules/tests/generate_tests.py \
             --output-dir cvat/apps/iam/rules/
 
-          curl -L -o opa https://openpolicyagent.org/downloads/v0.45.0/opa_linux_amd64_static
-          chmod +x ./opa
-          ./opa test cvat/apps/iam/rules
+          docker compose run --rm -v "$PWD/cvat/apps/iam/rules/:/mnt/rules" \
+            cvat_opa test /mnt/rules
 
       - name: Running unit tests
         env:
@@ -271,7 +274,7 @@ jobs:
 
   e2e_testing:
     needs: build
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-latest-big
     strategy:
       fail-fast: false
       matrix:
@@ -280,9 +283,9 @@ jobs:
                 'actions_projects_models', 'canvas3d_functionality', 'canvas3d_functionality_2',
                 'issues_prs', 'issues_prs2', 'features']
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
 
-      - uses: actions/setup-node@v3
+      - uses: actions/setup-node@v4
         with:
             node-version: '18.x'
 
@@ -382,59 +385,12 @@ jobs:
           name: cypress_screenshots_${{ matrix.specs }}
           path: ${{ github.workspace }}/tests/cypress/screenshots
 
-  generate_github_pages:
-    needs: [rest_api_testing, unit_testing, e2e_testing]
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v3
-        with:
-          submodules: recursive
-          fetch-depth: 0
-
-      - name: Download CVAT SDK
-        uses: actions/download-artifact@v3
-        with:
-          name: cvat_sdk
-          path: /tmp/cvat_sdk/
-
-      - name: Setup Hugo
-        uses: peaceiris/actions-hugo@v2
-        with:
-          hugo-version: '0.83.1'
-          extended: true
-
-      - name: Setup Node
-        uses: actions/setup-node@v3
-        with:
-          node-version: '16.x'
-
-      - name: Install npm packages
-        working-directory: ./site
-        run: |
-          npm ci
-
-      - name: Build docs
-        run: |
-          pip install -r site/requirements.txt
-          python site/process_sdk_docs.py --input-dir /tmp/cvat_sdk/docs/ --site-root site/
-          python site/build_docs.py
-        env:
-          HUGO_ENV: production
-
-      - name: Deploy
-        if: github.ref == 'refs/heads/develop'
-        uses: peaceiris/actions-gh-pages@v3
-        with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_dir: ./public
-          force_orphan: true
-
   publish_dev_images:
     if: github.ref == 'refs/heads/develop'
-    needs: [rest_api_testing, unit_testing, e2e_testing, generate_github_pages]
-    runs-on: ubuntu-latest
+    needs: [rest_api_testing, unit_testing, e2e_testing]
+    runs-on: ubuntu-latest-big
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
 
       - name: Download CVAT server images
         uses: actions/download-artifact@v3
@@ -471,10 +427,10 @@ jobs:
           docker push "${UI_IMAGE_REPO}:dev"
 
   codecov:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-latest-big
     needs: [unit_testing, e2e_testing, rest_api_testing]
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
 
       - name: Downloading coverage results
         uses: actions/download-artifact@v3

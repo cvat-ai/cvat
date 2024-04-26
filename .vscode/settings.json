@@ -30,14 +30,14 @@
         }
     ],
     "python.defaultInterpreterPath": "${workspaceFolder}/.env/",
-    "python.linting.enabled": true,
-    "python.linting.pylintEnabled": true,
-    "python.linting.pycodestyleEnabled": false,
     "python.testing.pytestArgs": [
         "--rootdir","${workspaceFolder}/tests/"
     ],
     "python.testing.unittestEnabled": false,
     "python.testing.pytestEnabled": true,
     "python.testing.pytestPath": "${workspaceFolder}/.env/bin/pytest",
-    "python.testing.cwd": "${workspaceFolder}/tests"
+    "python.testing.cwd": "${workspaceFolder}/tests",
+    "cSpell.words": [
+        "crowdsourcing"
+    ]
 }

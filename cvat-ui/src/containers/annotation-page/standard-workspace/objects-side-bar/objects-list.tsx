@@ -18,6 +18,7 @@ import {
     copyShape as copyShapeAction,
     switchPropagateVisibility as switchPropagateVisibilityAction,
     removeObject as removeObjectAction,
+    fetchAnnotationsAsync,
 } from 'actions/annotation-actions';
 import {
     changeShowGroundTruth as changeShowGroundTruthAction,
@@ -51,7 +52,6 @@ interface StateToProps {
     keyMap: KeyMap;
     normalizedKeyMap: Record<string, string>;
     showGroundTruth: boolean;
-    statesSources: number[];
     groundTruthJobFramesMeta: FramesMetaData | null;
     workspace: Workspace;
 }
@@ -78,7 +78,6 @@ function mapStateToProps(state: CombinedState): StateToProps {
                 activatedStateID,
                 activatedElementID,
                 zLayer: { min: minZLayer, max: maxZLayer },
-                statesSources,
             },
             job: { instance: jobInstance, groundTruthJobFramesMeta },
             player: {
@@ -130,7 +129,6 @@ function mapStateToProps(state: CombinedState): StateToProps {
         keyMap,
         normalizedKeyMap,
         showGroundTruth,
-        statesSources,
         groundTruthJobFramesMeta,
         workspace,
     };
@@ -161,6 +159,7 @@ function mapDispatchToProps(dispatch: any): DispatchToProps {
         },
         changeShowGroundTruth(value: boolean): void {
             dispatch(changeShowGroundTruthAction(value));
+            dispatch(fetchAnnotationsAsync());
         },
     };
 }
@@ -212,25 +211,20 @@ class ObjectsListContainer extends React.PureComponent<Props, State> {
         this.updateObjects();
     }
 
-    public componentDidUpdate(prevProps: Props): void {
-        const {
-            statesSources, objectStates,
-        } = this.props;
-        const { objectStates: stateObjects } = this.state;
-        if (objectStates !== stateObjects ||
-            statesSources !== prevProps.statesSources
-        ) {
+    public componentDidUpdate(): void {
+        const { objectStates } = this.props;
+        const { objectStates: prevObjectStates } = this.state;
+        if (objectStates !== prevObjectStates) {
             this.updateObjects();
         }
     }
 
     private updateObjects = (): void => {
         const {
-            statesSources, objectStates, frameNumber, groundTruthJobFramesMeta, workspace,
+            objectStates, frameNumber, groundTruthJobFramesMeta, workspace,
         } = this.props;
         const { statesOrdering } = this.state;
         const filteredStates = filterAnnotations(objectStates, {
-            statesSources,
             frame: frameNumber,
             groundTruthJobFramesMeta,
             workspace,
@@ -240,7 +234,7 @@ class ObjectsListContainer extends React.PureComponent<Props, State> {
             filteredStates,
             sortedStatesID: sortAndMap(filteredStates, statesOrdering),
         });
-    }
+    };
 
     private onChangeStatesOrdering = (statesOrdering: StatesOrdering): void => {
         const { filteredStates } = this.state;
@@ -276,7 +270,6 @@ class ObjectsListContainer extends React.PureComponent<Props, State> {
 
     private changeShowGroundTruth = (): void => {
         const { showGroundTruth, changeShowGroundTruth } = this.props;
-
         changeShowGroundTruth(!showGroundTruth);
     };
 
@@ -344,6 +337,7 @@ class ObjectsListContainer extends React.PureComponent<Props, State> {
             SWITCH_ALL_HIDDEN: keyMap.SWITCH_ALL_HIDDEN,
             SWITCH_HIDDEN: keyMap.SWITCH_HIDDEN,
             SWITCH_OCCLUDED: keyMap.SWITCH_OCCLUDED,
+            SWITCH_PINNED: keyMap.SWITCH_PINNED,
             SWITCH_KEYFRAME: keyMap.SWITCH_KEYFRAME,
             SWITCH_OUTSIDE: keyMap.SWITCH_OUTSIDE,
             DELETE_OBJECT: keyMap.DELETE_OBJECT,
@@ -409,6 +403,14 @@ class ObjectsListContainer extends React.PureComponent<Props, State> {
                 const state = activatedState();
                 if (state && !readonly && state.objectType !== ObjectType.TAG) {
                     state.occluded = !state.occluded;
+                    updateAnnotations([state]);
+                }
+            },
+            SWITCH_PINNED: (event: KeyboardEvent | undefined) => {
+                preventDefault(event);
+                const state = activatedState();
+                if (state && !readonly) {
+                    state.pinned = !state.pinned;
                     updateAnnotations([state]);
                 }
             },

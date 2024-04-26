@@ -1,5 +1,5 @@
 // Copyright (C) 2020-2022 Intel Corporation
-// Copyright (C) 2023 CVAT.ai Corporation
+// Copyright (C) 2023-2024 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -17,7 +17,6 @@
 
 .ant-layout-header.cvat-annotation-header {
     background-color: $background-color-2;
-    border-bottom: 1px solid $border-color-1;
     height: 48px;
     padding: 0;
 
@@ -460,7 +459,7 @@
     .ant-modal-body {
         padding: 1px;
 
-        .recently-used-wrapper {
+        .cvat-recently-used-filters-wrapper {
             padding-top: $grid-unit-size * 2;
         }
 

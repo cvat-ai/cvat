@@ -47,7 +47,7 @@ See:
 
 To create a webhook for **Project**, do the following:
 
-1. [Create a Project](/docs/manual/advanced/projects/).
+1. {{< ilink "/docs/manual/advanced/projects" "Create a Project" >}}.
 2. Go to the **Projects** and click on the project's widget.
 3. In the top right corner, click **Actions** > **Setup Webhooks**.
 4. In the top right corner click **+**
@@ -60,7 +60,7 @@ To create a webhook for **Project**, do the following:
 
 To create a webhook for **Organization**, do the following:
 
-1. [Create Organization](/docs/manual/advanced/organization/)
+1. {{< ilink "/docs/manual/advanced/organization" "Create Organization" >}}
 2. Go to the **Organization** > **Settings** > **Actions** > **Setup Webhooks**.
 3. In the top right corner click **+**
 
@@ -490,7 +490,7 @@ To create webhook via an API call,
 see [Swagger documentation](https://app.cvat.ai/api/docs).
 
 For examples,
-see [REST API tests](https://github.com/opencv/cvat/blob/develop/tests/python/rest_api/test_webhooks.py).
+see [REST API tests](https://github.com/cvat-ai/cvat/blob/develop/tests/python/rest_api/test_webhooks.py).
 
 ## Example of setup and use
 

@@ -10,9 +10,9 @@ import Spin from 'antd/lib/spin';
 import { useDispatch, useSelector } from 'react-redux';
 import { CombinedState } from 'reducers';
 import {
-    removeOrganizationMemberAsync,
-    resendOrganizationInvitationAsync, updateOrganizationMemberAsync,
+    removeOrganizationMemberAsync, updateOrganizationMemberAsync,
 } from 'actions/organization-actions';
+import { resendInvitationAsync } from 'actions/invitations-actions';
 import { Membership } from 'cvat-core-wrapper';
 import MemberItem from './member-item';
 
@@ -63,7 +63,7 @@ function MembersList(props: Props): JSX.Element {
                             }}
                             onResendInvitation={(key: string) => {
                                 dispatch(
-                                    resendOrganizationInvitationAsync(organizationInstance, key),
+                                    resendInvitationAsync(organizationInstance, key),
                                 );
                             }}
                             onDeleteInvitation={() => {

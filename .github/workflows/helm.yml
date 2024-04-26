@@ -11,15 +11,19 @@ on:
       - '**/*.md'
   workflow_dispatch:
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   testing:
     if: |
       github.event.pull_request.draft == false &&
       !startsWith(github.event.pull_request.title, '[WIP]') &&
       !startsWith(github.event.pull_request.title, '[Dependent]')
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-latest-big
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
 
     - name: Start minikube
       uses: medyagh/setup-minikube@latest

@@ -9,15 +9,15 @@ description: 'Installing a development environment for different operating syste
 
 - Install necessary dependencies:
 
-  Ubuntu 18.04
+  Ubuntu 22.04/20.04
 
   ```bash
   sudo apt-get update && sudo apt-get --no-install-recommends install -y build-essential curl git redis-server python3-dev python3-pip python3-venv python3-tk libldap2-dev libsasl2-dev
   ```
 
   ```bash
-  # Install Node.js 16 and yarn
-  curl -sL https://deb.nodesource.com/setup_16.x | sudo -E bash -
+  # Install Node.js 20 and yarn
+  curl -fsSL https://deb.nodesource.com/setup_20.x | sudo bash -
   sudo apt-get install -y nodejs
   sudo npm install --global yarn
   ```
@@ -42,12 +42,12 @@ description: 'Installing a development environment for different operating syste
   ```
 
   ```bash
-  # CVAT supports only Python 3.9, so install it if you don’t have it:
-  pikaur -S python39
+  # CVAT supports only Python 3.10, so install it if you don’t have it:
+  pikaur -S python310
   ```
 
   ```bash
-  # Install Node.js 16, yarn and npm
+  # Install Node.js, yarn and npm
   sudo pacman -S nodejs-lts-gallium yarn npm
   ```
 
@@ -66,7 +66,7 @@ description: 'Installing a development environment for different operating syste
   - [Trailing Spaces](https://marketplace.visualstudio.com/items?itemName=shardulm94.trailing-spaces)
   - [Code Spell Checker](https://marketplace.visualstudio.com/items?itemName=streetsidesoftware.code-spell-checker)
 
-- Make sure to use Python 3.9.0 or higher
+- Make sure to use Python 3.10.0 or higher
 
   ```
   python3 --version
@@ -138,11 +138,6 @@ description: 'Installing a development environment for different operating syste
   > ```
   > sudo ln -s /opt/homebrew/lib/libgeos_c.dylib /usr/local/lib
   > ```
-  >
-  > On Mac with Apple Silicon (M1) in order to install TensorFlow you will have
-  > to edit `cvat/requirements/base.txt`.
-  > Change `tensorflow` to `tensorflow-macos`
-  > May need to downgrade version Python to 3.9.\* or upgrade version `tensorflow-macos`
 
   > Note for Arch Linux users:
   >
@@ -152,25 +147,21 @@ description: 'Installing a development environment for different operating syste
   >
   > Perform this action before installing cvat requirements from the list mentioned above.
 
-- Install [Docker Engine](https://docs.docker.com/engine/install/ubuntu/) and [Docker-Compose](https://docs.docker.com/compose/install/)
+- Install [Docker Engine](https://docs.docker.com/engine/install/ubuntu/) and [Docker Compose](https://docs.docker.com/compose/install/)
 
-- Pull and run Open Policy Agent docker image:
-
-  ```bash
-   docker run -d --rm --name cvat_opa_debug -p 8181:8181 openpolicyagent/opa:0.45.0-rootless \
-   run --server --set=decision_logs.console=true --set=services.cvat.url=http://host.docker.internal:7000 \
-   --set=bundles.cvat.service=cvat --set=bundles.cvat.resource=/api/auth/rules
-  ```
-
-- Pull and run PostgreSQL docker image:
+- Start service dependencies:
 
   ```bash
-  docker run --name cvat_db_debug -e POSTGRES_HOST_AUTH_METHOD=trust -e POSTGRES_USER=root \
-  -e POSTGRES_DB=cvat -p 5432:5432 -d postgres
+  docker compose -f docker-compose.yml -f docker-compose.dev.yml up -d --build \
+    cvat_opa cvat_db cvat_redis_inmem cvat_redis_ondisk cvat_server
   ```
 
-  Note: use `docker start/stop cvat_db_debug` commands to start and stop the container.
-  If it is removed, data will be removed together with the container.
+  Note: this runs an extra copy of the CVAT server in order to supply rules to OPA.
+  If you update the OPA rules, rerun this command to recreate the server image and container.
+
+  Note: to stop these services, use
+  `docker compose -f docker-compose.yml -f docker-compose.dev.yml down`.
+  You can add `-v` to remove the data, as well.
 
 - Apply migrations and create a super user for CVAT:
 
@@ -219,8 +210,16 @@ description: 'Installing a development environment for different operating syste
 - If you choose to run CVAT in localhost: Select `server: chrome` configuration and run it (F5) to open CVAT in Chrome
 - Alternative: If you changed CVAT_UI_HOST just enter `<YOUR_HOST_IP>:3000` in your browser.
 
+> Note for Mac users
+>
+> You may have a permission denied problem starting the server because **AirPlay Receiver** running on port 5000/7000.
+>
+> Turn off AirPlay Receiver:
+> _Go to System Settings_ → _General_ → _AirDrop & Handoff_ → _Untick Airplay Receiver_.
+
+
 You have done! Now it is possible to insert breakpoints and debug server and client of the tool.
-Instructions for running tests locally are available [here](/docs/contributing/running-tests/).
+Instructions for running tests locally are available {{< ilink "/docs/contributing/running-tests" "here" >}}.
 
 ## Note for Windows users
 
@@ -269,7 +268,7 @@ cvat_vector:
 ```
 
 In addition, you can completely disable analytics if you don't need it by deleting the following data from
-[launch.json](https://github.com/opencv/cvat/blob/develop/.vscode/launch.json):
+[launch.json](https://github.com/cvat-ai/cvat/blob/develop/.vscode/launch.json):
 
 ```json
   "DJANGO_LOG_SERVER_HOST": "localhost",
@@ -277,5 +276,5 @@ In addition, you can completely disable analytics if you don't need it by deleti
 ```
 
 Analytics on GitHub:
-[Analytics Components](https://github.com/opencv/cvat/tree/develop/components/analytics)
+[Analytics Components](https://github.com/cvat-ai/cvat/tree/develop/components/analytics)
 

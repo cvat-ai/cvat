@@ -35,12 +35,12 @@ import cvat.apps.dataset_manager as dm
 from cvat.apps.engine.frame_provider import FrameProvider
 from cvat.apps.engine.models import Job, ShapeType, SourceType, Task, Label
 from cvat.apps.engine.serializers import LabeledDataSerializer
+from cvat.apps.lambda_manager.permissions import LambdaPermission
 from cvat.apps.lambda_manager.serializers import (
     FunctionCallRequestSerializer, FunctionCallSerializer
 )
 from cvat.apps.engine.utils import define_dependent_job, get_rq_job_meta, get_rq_lock_by_user
 from cvat.utils.http import make_requests_session
-from cvat.apps.iam.permissions import LambdaPermission
 from cvat.apps.iam.filters import ORGANIZATION_OPEN_API_PARAMETERS
 
 
@@ -526,7 +526,7 @@ class LambdaQueue:
             queue.deferred_job_registry.get_job_ids())
         jobs = queue.job_class.fetch_many(job_ids, queue.connection)
 
-        return [LambdaJob(job) for job in jobs if job.meta.get("lambda")]
+        return [LambdaJob(job) for job in jobs if job and job.meta.get("lambda")]
 
     def enqueue(self,
         lambda_func, threshold, task, quality, mapping, cleanup, conv_mask_to_poly, max_distance, request,

@@ -1,5 +1,5 @@
 // Copyright (C) 2020-2022 Intel Corporation
-// Copyright (C) 2022 CVAT.ai Corporation
+// Copyright (C) 2022-2024 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -17,12 +17,11 @@ import { SortingComponent, ResourceFilterHOC, defaultVisibility } from 'componen
 import { TasksQuery } from 'reducers';
 import { usePrevious } from 'utils/hooks';
 import { MultiPlusIcon } from 'icons';
+import dimensions from 'utils/dimensions';
 import CvatDropdownMenuPaper from 'components/common/cvat-dropdown-menu-paper';
 import {
     localStorageRecentKeyword, localStorageRecentCapacity, predefinedFilterValues, config,
 } from './tasks-filter-configuration';
-
-import dimensions from '../projects-page/dimensions';
 
 const FilteringComponent = ResourceFilterHOC(
     config, localStorageRecentKeyword, localStorageRecentCapacity, predefinedFilterValues,
@@ -95,6 +94,7 @@ export default function TopBarComponent(props: VisibleTopBarProps): JSX.Element 
                 <div>
                     <Dropdown
                         trigger={['click']}
+                        destroyPopupOnHide
                         overlay={(
                             <CvatDropdownMenuPaper>
                                 <Button

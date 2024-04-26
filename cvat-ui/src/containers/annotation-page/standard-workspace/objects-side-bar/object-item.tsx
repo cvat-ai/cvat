@@ -29,7 +29,7 @@ import {
     Label, ObjectState, Attribute, Job,
 } from 'cvat-core-wrapper';
 import { Canvas, CanvasMode } from 'cvat-canvas-wrapper';
-import { LogType } from 'cvat-logger';
+import { EventScope } from 'cvat-logger';
 import { Canvas3d } from 'cvat-canvas3d-wrapper';
 import { filterApplicableLabels } from 'utils/filter-applicable-labels';
 
@@ -194,7 +194,7 @@ class ObjectItemContainer extends React.PureComponent<Props, State> {
             updateActiveControl(ActiveControl.EDIT);
             canvasInstance.edit({ enabled: true, state: objectState });
         }
-    }
+    };
 
     private slice = async (): Promise<void> => {
         const {
@@ -215,7 +215,7 @@ class ObjectItemContainer extends React.PureComponent<Props, State> {
                 clientID: objectState.clientID as number,
             });
         }
-    }
+    };
 
     private remove = (): void => {
         const {
@@ -314,7 +314,7 @@ class ObjectItemContainer extends React.PureComponent<Props, State> {
     private changeLabel = (label: any): void => {
         const { jobInstance, objectState, readonly } = this.props;
         if (!readonly) {
-            jobInstance.logger.log(LogType.changeLabel, {
+            jobInstance.logger.log(EventScope.changeLabel, {
                 object_id: objectState.clientID,
                 from: objectState.label.id,
                 to: label.id,

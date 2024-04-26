@@ -1,5 +1,5 @@
 // Copyright (C) 2021-2022 Intel Corporation
-// Copyright (C) 2022 CVAT.ai Corporation
+// Copyright (C) 2022-2024 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -123,14 +123,22 @@ export default function CanvasContextMenu(props: Props): JSX.Element | null {
         return null;
     }
 
-    const state = objectStates.find((_state: any): boolean => _state.clientID === contextMenuClientID);
-    const conflict = frameConflicts.find((qualityConflict: QualityConflict) => qualityConflict.annotationConflicts.some(
-        (annotationConflict: AnnotationConflict) => annotationConflict.clientID === state.clientID,
-    ));
+    let state = objectStates
+        .find((_state: ObjectState) => _state.clientID === (contextMenuParentID || contextMenuClientID));
+    if (contextMenuParentID !== null) {
+        state = state.elements.find((_state: ObjectState) => _state.clientID === contextMenuClientID);
+    }
 
     const copyObject = state?.isGroundTruth ? state : null;
+    if (workspace === Workspace.REVIEW) {
+        const conflict = frameConflicts
+            .find((qualityConflict: QualityConflict) => qualityConflict.annotationConflicts.some(
+                (annotationConflict: AnnotationConflict) => (
+                    state && annotationConflict.serverID === state.serverID &&
+                    annotationConflict.type === state.objectType
+                ),
+            ));
 
-    if (workspace === Workspace.REVIEW_WORKSPACE) {
         return ReactDOM.createPortal(
             <ReviewContextMenu
                 key={contextMenuClientID}

@@ -88,7 +88,7 @@ section = ["HTML", "print"]
 
 [params]
 cvat_ai_terms_of_use = "https://www.cvat.ai/terms-of-use"
-cvat_privacy_notice = "https://www.cvat.ai/privacy"
+cvat_ai_privacy_notice = "https://www.cvat.ai/privacy"
 
 # First one is picked as the Twitter card image if not set on page.
 # images = ["images/project-illustration.png"]
@@ -171,30 +171,31 @@ enable = false
 	name ="Gitter public chat"
 	url = "https://gitter.im/opencv-cvat/public"
 	icon = "fab fa-gitter"
-        desc = "Join our Gitter channel for community support."
+	desc = "Join our Gitter channel for community support."
 [[params.links.user]]
 	name = "Stack Overflow"
 	url = "https://stackoverflow.com/search?q=%23cvat"
 	icon = "fab fa-stack-overflow"
-        desc = "Practical questions and curated answers"
+	desc = "Practical questions and curated answers"
 [[params.links.user]]
 	name = "YouTube"
-	url = "https://www.youtube.com/user/nmanovic"
+	url = "https://www.youtube.com/@cvat-ai"
 	icon = "fab fa-youtube"
-        desc = "Practical questions and curated answers"
+	desc = "YouTube channel of CVAT.ai"
+
 # Developer relevant links. These will show up on right side of footer and in the community page if you have one.
 [[params.links.developer]]
 	name = "GitHub"
 	url = "https://github.com/cvat-ai/cvat"
 	icon = "fab fa-github"
-        desc = "Development takes place here!"
-[[params.links.developer]]
-	name = "Forum on Intel Developer Zone"
-	url = "https://community.intel.com/t5/Intel-Distribution-of-OpenVINO/bd-p/distribution-openvino-toolkit"
-	icon = "fas fa-envelope"
-        desc = "Development takes place here!"
+	desc = "Development takes place here!"
 [[params.links.developer]]
 	name ="Gitter developers chat"
 	url = "https://gitter.im/opencv-cvat/dev"
 	icon = "fab fa-gitter"
-        desc = "Join our Gitter channel for community support."
+	desc = "Join our Gitter channel for community support."
+[[params.links.developer]]
+	name = "Discord chat"
+	url = "https://discord.gg/fNR3eXfk6C"
+	icon = "fab fa-discord"
+	desc = "Join our Discord server for community support."

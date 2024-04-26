@@ -1,5 +1,5 @@
 // Copyright (C) 2022 Intel Corporation
-// Copyright (C) 2023 CVAT.ai Corporation
+// Copyright (C) 2023-2024 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -8,11 +8,7 @@
 let selectedValueGlobal = '';
 
 Cypress.Commands.add('interactOpenCVControlButton', () => {
-    cy.get('body').focus();
-    cy.get('.cvat-opencv-control').trigger('mouseleave');
-    cy.get('.cvat-opencv-control').trigger('mouseout');
-    cy.get('.cvat-opencv-control').trigger('mousemove');
-    cy.get('.cvat-opencv-control').trigger('mouseover');
+    cy.get('.cvat-opencv-control').click();
     cy.get('.cvat-opencv-control').should('have.class', 'ant-popover-open');
     cy.get('.cvat-opencv-control-popover')
         .should('be.visible')

@@ -1,4 +1,5 @@
 // Copyright (C) 2020-2022 Intel Corporation
+// Copyright (C) 2024 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -42,7 +43,6 @@ function RotateControl(props: Props): JSX.Element {
                     </CVATTooltip>
                 </>
             )}
-            trigger='hover'
         >
             <Icon className='cvat-rotate-canvas-control' component={RotateIcon} />
         </CustomPopover>

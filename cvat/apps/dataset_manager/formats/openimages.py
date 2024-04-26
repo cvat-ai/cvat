@@ -1,5 +1,5 @@
 # Copyright (C) 2021-2022 Intel Corporation
-# Copyright (C) 2023 CVAT.ai Corporation
+# Copyright (C) 2023-2024 CVAT.ai Corporation
 #
 # SPDX-License-Identifier: MIT
 
@@ -39,13 +39,13 @@ def find_item_ids(path):
 
 @exporter(name='Open Images V6', ext='ZIP', version='1.0')
 def _export(dst_file, temp_dir, task_data, save_images=False):
-    dataset = Dataset.from_extractors(GetCVATDataExtractor(
-        task_data, include_images=save_images), env=dm_env)
-    dataset.transform(RotatedBoxesToPolygons)
-    dataset.transform('polygons_to_masks')
-    dataset.transform('merge_instance_segments')
+    with GetCVATDataExtractor(task_data, include_images=save_images) as extractor:
+        dataset = Dataset.from_extractors(extractor, env=dm_env)
+        dataset.transform(RotatedBoxesToPolygons)
+        dataset.transform('polygons_to_masks')
+        dataset.transform('merge_instance_segments')
 
-    dataset.export(temp_dir, 'open_images', save_images=save_images)
+        dataset.export(temp_dir, 'open_images', save_images=save_images)
 
     make_zip_archive(temp_dir, dst_file)
 

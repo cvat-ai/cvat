@@ -95,11 +95,7 @@ context('Export project dataset.', { browser: '!firefox' }, () => {
                 dumpType: 'CVAT for images',
             };
             cy.exportProject(exportAnnotation);
-            cy.getDownloadFileName().then((file) => {
-                datasetArchiveName = file;
-                cy.verifyDownload(datasetArchiveName);
-            });
-            cy.verifyNotification();
+            cy.waitForDownload();
         });
 
         it('Export project dataset. Dataset.', () => {
@@ -111,10 +107,14 @@ context('Export project dataset.', { browser: '!firefox' }, () => {
                 dumpType: 'CVAT for images',
             };
             cy.exportProject(exportDataset);
-            cy.waitForDownload();
+            cy.getDownloadFileName().then((file) => {
+                datasetArchiveName = file;
+                cy.verifyDownload(datasetArchiveName);
+            });
+            cy.verifyNotification();
         });
 
-        it('Export project dataset. Annotation. Rename a archive.', () => {
+        it('Export project dataset. Annotation. Rename an archive.', () => {
             cy.goToProjectsList();
             const exportAnnotationsRenameArchive = {
                 projectName,

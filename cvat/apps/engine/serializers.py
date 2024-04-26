@@ -22,6 +22,7 @@ from cvat.apps.dataset_manager.formats.utils import get_label_color
 from cvat.apps.engine import models
 from cvat.apps.engine.cloud_provider import get_cloud_storage_instance, Credentials, Status
 from cvat.apps.engine.log import ServerLogManager
+from cvat.apps.engine.permissions import TaskPermission
 from cvat.apps.engine.utils import parse_specific_attributes, build_field_filter_params, get_list_view_name, reverse
 
 from drf_spectacular.utils import OpenApiExample, extend_schema_field, extend_schema_serializer
@@ -230,6 +231,7 @@ class DelimitedStringListField(serializers.ListField):
         return '\n'.join(super().to_internal_value(data))
 
 class AttributeSerializer(serializers.ModelSerializer):
+    id = serializers.IntegerField(required=False)
     values = DelimitedStringListField(allow_empty=True,
         child=serializers.CharField(allow_blank=True, max_length=200),
     )
@@ -404,9 +406,19 @@ class LabelSerializer(SublabelSerializer):
             raise exceptions.ValidationError(str(exc)) from exc
 
         for attr in attributes:
-            (db_attr, created) = models.AttributeSpec.objects.get_or_create(
-                label=db_label, name=attr['name'], defaults=attr
-            )
+            attr_id = attr.get('id', None)
+            if attr_id is not None:
+                try:
+                    db_attr = models.AttributeSpec.objects.get(id=attr_id, label=db_label)
+                except models.AttributeSpec.DoesNotExist as ex:
+                    raise exceptions.NotFound(
+                        f'Attribute with id #{attr_id} does not exist'
+                    ) from ex
+                created = False
+            else:
+                (db_attr, created) = models.AttributeSpec.objects.get_or_create(
+                    label=db_label, name=attr['name'], defaults=attr
+                )
             if created:
                 logger.info("New {} attribute for {} label was created"
                     .format(db_attr.name, db_label.name))
@@ -415,6 +427,7 @@ class LabelSerializer(SublabelSerializer):
                     .format(db_attr.name, db_label.name))
 
                 # FIXME: need to update only "safe" fields
+                db_attr.name = attr.get('name', db_attr.name)
                 db_attr.default_value = attr.get('default_value', db_attr.default_value)
                 db_attr.mutable = attr.get('mutable', db_attr.mutable)
                 db_attr.input_type = attr.get('input_type', db_attr.input_type)
@@ -540,6 +553,12 @@ class LabelSerializer(SublabelSerializer):
         self.instance = models.Label.objects.get(pk=instance.pk)
         return self.instance
 
+class StorageSerializer(serializers.ModelSerializer):
+    cloud_storage_id = serializers.IntegerField(required=False, allow_null=True)
+
+    class Meta:
+        model = models.Storage
+        fields = ('id', 'location', 'cloud_storage_id')
 
 class JobReadSerializer(serializers.ModelSerializer):
     task_id = serializers.ReadOnlyField(source="segment.task.id")
@@ -558,19 +577,32 @@ class JobReadSerializer(serializers.ModelSerializer):
         allow_null=True, read_only=True)
     labels = LabelsSummarySerializer(source='*')
     issues = IssuesSummarySerializer(source='*')
+    target_storage = StorageSerializer(required=False, allow_null=True)
+    source_storage = StorageSerializer(required=False, allow_null=True)
 
     class Meta:
         model = models.Job
         fields = ('url', 'id', 'task_id', 'project_id', 'assignee', 'guide_id',
             'dimension', 'bug_tracker', 'status', 'stage', 'state', 'mode', 'frame_count',
             'start_frame', 'stop_frame', 'data_chunk_size', 'data_compressed_chunk_type',
-            'created_date', 'updated_date', 'issues', 'labels', 'type', 'organization')
+            'created_date', 'updated_date', 'issues', 'labels', 'type', 'organization',
+            'target_storage', 'source_storage')
         read_only_fields = fields
 
     def to_representation(self, instance):
         data = super().to_representation(instance)
         if instance.segment.type == models.SegmentType.SPECIFIC_FRAMES:
             data['data_compressed_chunk_type'] = models.DataChoice.IMAGESET
+
+        if request := self.context.get('request'):
+            perm = TaskPermission.create_scope_view(request, instance.segment.task)
+            result = perm.check_access()
+            if result.allow:
+                if task_source_storage := instance.get_source_storage():
+                    data['source_storage'] = StorageSerializer(task_source_storage).data
+                if task_target_storage := instance.get_target_storage():
+                    data['target_storage'] = StorageSerializer(task_target_storage).data
+
         return data
 
 
@@ -638,10 +670,10 @@ class JobWriteSerializer(WriteOnceMixin, serializers.ModelSerializer):
             frame_selection_method = validated_data.pop("frame_selection_method", None)
             if frame_selection_method == models.JobFrameSelectionMethod.RANDOM_UNIFORM:
                 frame_count = validated_data.pop("frame_count")
-                if size <= frame_count:
+                if size < frame_count:
                     raise serializers.ValidationError(
-                        f"The number of frames requested ({frame_count}) must be lesser than "
-                        f"the number of the task frames ({size})"
+                        f"The number of frames requested ({frame_count}) "
+                        f"must be not be greater than the number of the task frames ({size})"
                     )
 
                 seed = validated_data.pop("seed", None)
@@ -650,6 +682,13 @@ class JobWriteSerializer(WriteOnceMixin, serializers.ModelSerializer):
                 # so here we specify it explicitly
                 from numpy import random
                 rng = random.Generator(random.MT19937(seed=seed))
+
+                if seed is not None and frame_count < size:
+                    # Reproduce the old (a little bit incorrect) behavior that existed before
+                    # https://github.com/cvat-ai/cvat/pull/7126
+                    # to make the old seed-based sequences reproducible
+                    valid_frame_ids = [v for v in valid_frame_ids if v != task.data.stop_frame]
+
                 frames = rng.choice(
                     list(valid_frame_ids), size=frame_count, shuffle=False, replace=False
                 ).tolist()
@@ -828,7 +867,7 @@ class JobFileMapping(serializers.ListField):
 class DataSerializer(serializers.ModelSerializer):
     """
     Read more about parameters here:
-    https://opencv.github.io/cvat/docs/manual/basics/create_an_annotation_task/#advanced-configuration
+    https://docs.cvat.ai/docs/manual/basics/create_an_annotation_task/#advanced-configuration
     """
 
     image_quality = serializers.IntegerField(min_value=0, max_value=100,
@@ -873,7 +912,7 @@ class DataSerializer(serializers.ModelSerializer):
     use_cache = serializers.BooleanField(default=False,
         help_text=textwrap.dedent("""\
             Enable or disable task data chunk caching for the task.
-            Read more: https://opencv.github.io/cvat/docs/manual/advanced/data_on_fly/
+            Read more: https://docs.cvat.ai/docs/manual/advanced/data_on_fly/
         """))
     copy_data = serializers.BooleanField(default=False, help_text=textwrap.dedent("""\
             Copy data from the server file share to CVAT during the task creation.
@@ -915,8 +954,7 @@ class DataSerializer(serializers.ModelSerializer):
     class Meta:
         model = models.Data
         fields = (
-            'chunk_size', 'size', 'image_quality', 'start_frame', 'stop_frame', 'frame_filter',
-            'compressed_chunk_type', 'original_chunk_type',
+            'chunk_size', 'image_quality', 'start_frame', 'stop_frame', 'frame_filter',
             'client_files', 'server_files', 'remote_files',
             'use_zip_chunks', 'server_files_exclude',
             'cloud_storage_id', 'use_cache', 'copy_data', 'storage_method',
@@ -925,7 +963,6 @@ class DataSerializer(serializers.ModelSerializer):
         )
         extra_kwargs = {
             'chunk_size': { 'help_text': "Maximum number of frames per chunk" },
-            'size': { 'help_text': "The number of frames" },
             'start_frame': { 'help_text': "First frame index" },
             'stop_frame': { 'help_text': "Last frame index" },
             'frame_filter': { 'help_text': "Frame filter. The only supported syntax is: 'step=N'" },
@@ -1029,13 +1066,6 @@ class DataSerializer(serializers.ModelSerializer):
                     files_model(data=instance, **f) for f in files[files_type]
                 )
 
-class StorageSerializer(serializers.ModelSerializer):
-    cloud_storage_id = serializers.IntegerField(required=False, allow_null=True)
-
-    class Meta:
-        model = models.Storage
-        fields = ('id', 'location', 'cloud_storage_id')
-
 class TaskReadSerializer(serializers.ModelSerializer):
     data_chunk_size = serializers.ReadOnlyField(source='data.chunk_size', required=False)
     data_compressed_chunk_type = serializers.ReadOnlyField(source='data.compressed_chunk_type', required=False)
@@ -1123,7 +1153,7 @@ class TaskWriteSerializer(WriteOnceMixin, serializers.ModelSerializer):
         if os.path.isdir(task_path):
             shutil.rmtree(task_path)
 
-        os.makedirs(db_task.get_task_artifacts_dirname())
+        os.makedirs(task_path)
 
         LabelSerializer.create_labels(labels, parent_instance=db_task)
 
@@ -1745,7 +1775,7 @@ class CloudStorageWriteSerializer(serializers.ModelSerializer):
     key_file = serializers.FileField(required=False)
     account_name = serializers.CharField(max_length=24, allow_blank=True, required=False)
     manifests = ManifestSerializer(many=True, default=[])
-    connection_string = serializers.CharField(max_length=440, allow_blank=True, required=False)
+    connection_string = serializers.CharField(max_length=1024, allow_blank=True, required=False)
 
     class Meta:
         model = models.CloudStorage
@@ -1776,14 +1806,14 @@ class CloudStorageWriteSerializer(serializers.ModelSerializer):
         # AWS S3: https://docs.aws.amazon.com/AmazonS3/latest/userguide/bucketnamingrules.html?icmpid=docs_amazons3_console
         # Azure Container: https://learn.microsoft.com/en-us/rest/api/storageservices/naming-and-referencing-containers--blobs--and-metadata#container-names
         # GCS: https://cloud.google.com/storage/docs/buckets#naming
-        COMMON_ALLOWED_RESOURCE_NAME_SYMBOLS = (
+        ALLOWED_RESOURCE_NAME_SYMBOLS = (
             string.ascii_lowercase + string.digits + "-"
         )
-        ALLOWED_RESOURCE_NAME_SYMBOLS = (
-            COMMON_ALLOWED_RESOURCE_NAME_SYMBOLS
-            if provider_type != models.CloudProviderChoice.GOOGLE_CLOUD_STORAGE
-            else COMMON_ALLOWED_RESOURCE_NAME_SYMBOLS + "_"
-        )
+
+        if provider_type == models.CloudProviderChoice.GOOGLE_CLOUD_STORAGE:
+            ALLOWED_RESOURCE_NAME_SYMBOLS += "_."
+        elif provider_type == models.CloudProviderChoice.AWS_S3:
+            ALLOWED_RESOURCE_NAME_SYMBOLS += "."
 
         # We need to check only basic naming rule
         if (resource := attrs.get("resource")) and (
@@ -1905,7 +1935,7 @@ class CloudStorageWriteSerializer(serializers.ModelSerializer):
         })
         credentials_dict = {k:v for k,v in validated_data.items() if k in {
             'key','secret_key', 'account_name', 'session_token', 'key_file_path',
-            'credentials_type'
+            'credentials_type', 'connection_string'
         }}
 
         key_file = validated_data.pop('key_file', None)

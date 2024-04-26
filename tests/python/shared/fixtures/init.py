@@ -130,8 +130,12 @@ def _kube_get_clichouse_pod_name():
     return _kube_get_pod_name("app.kubernetes.io/name=clickhouse")
 
 
-def _kube_get_redis_pod_name():
-    return _kube_get_pod_name("app.kubernetes.io/name=keydb")
+def _kube_get_redis_inmem_pod_name():
+    return _kube_get_pod_name("app.kubernetes.io/name=redis")
+
+
+def _kube_get_redis_ondisk_pod_name():
+    return _kube_get_pod_name("app.kubernetes.io/name=cvat,tier=kvrocks")
 
 
 def docker_cp(source, target):
@@ -173,12 +177,21 @@ def kube_exec_clickhouse_db(command):
     _run(["kubectl", "exec", pod_name, "--"] + command)
 
 
-def docker_exec_redis_db(command):
-    _run(["docker", "exec", f"{PREFIX}_cvat_redis_1"] + command)
+def docker_exec_redis_inmem(command):
+    _run(["docker", "exec", f"{PREFIX}_cvat_redis_inmem_1"] + command)
 
 
-def kube_exec_redis_db(command):
-    pod_name = _kube_get_redis_pod_name()
+def kube_exec_redis_inmem(command):
+    pod_name = _kube_get_redis_inmem_pod_name()
+    _run(["kubectl", "exec", pod_name, "--"] + command)
+
+
+def docker_exec_redis_ondisk(command):
+    _run(["docker", "exec", f"{PREFIX}_cvat_redis_ondisk_1"] + command)
+
+
+def kube_exec_redis_ondisk(command):
+    pod_name = _kube_get_redis_ondisk_pod_name()
     _run(["kubectl", "exec", pod_name, "--"] + command)
 
 
@@ -218,23 +231,21 @@ def kube_restore_clickhouse_db():
     )
 
 
-def docker_restore_redis_db():
-    docker_exec_redis_db(
-        [
-            "/bin/sh",
-            "-c",
-            "keydb-cli flushall",
-        ]
-    )
+def docker_restore_redis_inmem():
+    docker_exec_redis_inmem(["redis-cli", "flushall"])
 
 
-def kube_restore_redis_db():
-    kube_exec_redis_db(
-        [
-            "/bin/sh",
-            "-c",
-            "keydb-cli flushall",
-        ]
+def kube_restore_redis_inmem():
+    kube_exec_redis_inmem(["redis-cli", "flushall"])
+
+
+def docker_restore_redis_ondisk():
+    docker_exec_redis_ondisk(["redis-cli", "-p", "6666", "flushall"])
+
+
+def kube_restore_redis_ondisk():
+    kube_exec_redis_ondisk(
+        ["redis-cli", "-p", "6666", "-a", "${CVAT_REDIS_ONDISK_PASSWORD}", "flushall"]
     )
 
 
@@ -570,12 +581,21 @@ def restore_clickhouse_db_per_class(request):
 
 
 @pytest.fixture(scope="function")
-def restore_redis_db_per_function(request):
+def restore_redis_inmem_per_function(request):
     # Note that autouse fixtures are executed first within their scope, so be aware of the order
     # Pre-test DB setups (eg. with class-declared autouse setup() method) may be cleaned.
     # https://docs.pytest.org/en/stable/reference/fixtures.html#autouse-fixtures-are-executed-first-within-their-scope
     platform = request.config.getoption("--platform")
     if platform == "local":
-        docker_restore_redis_db()
+        docker_restore_redis_inmem()
     else:
-        kube_restore_redis_db()
+        kube_restore_redis_inmem()
+
+
+@pytest.fixture(scope="function")
+def restore_redis_ondisk_per_function(request):
+    platform = request.config.getoption("--platform")
+    if platform == "local":
+        docker_restore_redis_ondisk()
+    else:
+        kube_restore_redis_ondisk()

@@ -104,8 +104,13 @@ class TestListQualityReports(_PermissionTestBase):
     def test_can_list_quality_reports(self, admin_user, quality_reports):
         parent_report = next(r for r in quality_reports if r["task_id"])
         task_id = parent_report["task_id"]
-        reports = [parent_report] + [
-            r for r in quality_reports if r["parent_id"] == parent_report["id"]
+
+        reports = [
+            r
+            for r in quality_reports
+            if r["task_id"] == task_id
+            or r["parent_id"]
+            and quality_reports[r["parent_id"]]["task_id"] == task_id
         ]
 
         self._test_list_reports_200(admin_user, task_id, expected_data=reports)
@@ -680,16 +685,18 @@ class TestSimpleQualityConflictsFilters(CollectionSimpleFilterTestBase):
             return job_id, job_conflicts
         elif field == "task_id":
             # This field is not included in the response
-            task_report = next(r for r in self.report_samples if r["task_id"])
-            task_reports = {task_report["id"]} | {
-                r["id"] for r in self.report_samples if r["parent_id"] == task_report["id"]
+            task_id = self._find_valid_field_value(self.report_samples, field_path=["task_id"])
+            task_reports = [r for r in self.report_samples if r["task_id"] == task_id]
+            task_report_ids = {r["id"] for r in task_reports}
+            task_report_ids |= {
+                r["id"] for r in self.report_samples if r["parent_id"] in task_report_ids
             }
             task_conflicts = [
                 c
                 for c in self.samples
-                if self._get_field(c, self._map_field("report_id")) in task_reports
+                if self._get_field(c, self._map_field("report_id")) in task_report_ids
             ]
-            return task_report["task_id"], task_conflicts
+            return task_reports[0]["task_id"], task_conflicts
         elif field == "org_id":
             org_id = self.task_samples[
                 next(
@@ -735,21 +742,23 @@ class TestSimpleQualitySettingsFilters(CollectionSimpleFilterTestBase):
 @pytest.mark.usefixtures("restore_db_per_class")
 class TestListSettings(_PermissionTestBase):
     def _test_list_settings_200(
-        self, user: str, obj_id: int, *, expected_data: Optional[Dict[str, Any]] = None, **kwargs
+        self, user: str, task_id: int, *, expected_data: Optional[Dict[str, Any]] = None, **kwargs
     ):
         with make_api_client(user) as api_client:
-            (_, response) = api_client.quality_api.retrieve_settings(obj_id, **kwargs)
-            assert response.status == HTTPStatus.OK
+            actual = get_paginated_collection(
+                api_client.quality_api.list_settings_endpoint,
+                task_id=task_id,
+                **kwargs,
+                return_json=True,
+            )
 
         if expected_data is not None:
-            assert DeepDiff(expected_data, json.loads(response.data), ignore_order=True) == {}
+            assert DeepDiff(expected_data, actual, ignore_order=True) == {}
 
-        return response
-
-    def _test_list_settings_403(self, user: str, obj_id: int, **kwargs):
+    def _test_list_settings_403(self, user: str, task_id: int, **kwargs):
         with make_api_client(user) as api_client:
-            (_, response) = api_client.quality_api.retrieve_settings(
-                obj_id, **kwargs, _parse_response=False, _check_status=False
+            (_, response) = api_client.quality_api.list_settings(
+                task_id=task_id, **kwargs, _parse_response=False, _check_status=False
             )
             assert response.status == HTTPStatus.FORBIDDEN
 
@@ -770,13 +779,12 @@ class TestListSettings(_PermissionTestBase):
         else:
             user = next(u for u in users if not is_task_staff(u["id"], task["id"]))["username"]
 
-        settings = next(s for s in quality_settings if s["task_id"] == task["id"])
-        settings_id = settings["id"]
+        settings = [s for s in quality_settings if s["task_id"] == task["id"]]
 
         if allow:
-            self._test_list_settings_200(user, settings_id, expected_data=settings)
+            self._test_list_settings_200(user, task_id=task["id"], expected_data=settings)
         else:
-            self._test_list_settings_403(user, settings_id)
+            self._test_list_settings_403(user, task_id=task["id"])
 
     @pytest.mark.parametrize(
         "org_role, is_staff, allow",
@@ -791,7 +799,7 @@ class TestListSettings(_PermissionTestBase):
             ("worker", False, False),
         ],
     )
-    def test_user_get_settings_in_org_task(
+    def test_user_list_settings_in_org_task(
         self,
         tasks,
         users,
@@ -821,13 +829,15 @@ class TestListSettings(_PermissionTestBase):
 
         assert task
 
-        settings = next(s for s in quality_settings if s["task_id"] == task["id"])
-        settings_id = settings["id"]
+        settings = [s for s in quality_settings if s["task_id"] == task["id"]]
+        org_id = task["organization"]
 
         if allow:
-            self._test_list_settings_200(user["username"], settings_id, expected_data=settings)
+            self._test_list_settings_200(
+                user["username"], task_id=task["id"], expected_data=settings, org_id=org_id
+            )
         else:
-            self._test_list_settings_403(user["username"], settings_id)
+            self._test_list_settings_403(user["username"], task_id=task["id"], org_id=org_id)
 
 
 @pytest.mark.usefixtures("restore_db_per_class")
@@ -1069,6 +1079,7 @@ class TestPatchSettings(_PermissionTestBase):
 @pytest.mark.usefixtures("restore_db_per_function")
 class TestQualityReportMetrics(_PermissionTestBase):
     demo_task_id = 22  # this task reproduces all the checkable cases
+    demo_task_id_multiple_jobs = 23  # this task reproduces cases for multiple jobs
 
     @pytest.mark.parametrize("task_id", [demo_task_id])
     def test_report_summary(self, task_id, tasks, jobs, quality_reports):
@@ -1088,7 +1099,9 @@ class TestQualityReportMetrics(_PermissionTestBase):
         assert summary["frame_share"] == summary["frame_count"] / task["size"]
 
     def test_unmodified_task_produces_the_same_metrics(self, admin_user, quality_reports):
-        old_report = next(r for r in quality_reports if r["task_id"])
+        old_report = max(
+            (r for r in quality_reports if r["task_id"] == self.demo_task_id), key=lambda r: r["id"]
+        )
         task_id = old_report["task_id"]
 
         new_report = self.create_quality_report(admin_user, task_id)
@@ -1119,9 +1132,13 @@ class TestQualityReportMetrics(_PermissionTestBase):
     def test_modified_task_produces_different_metrics(
         self, admin_user, quality_reports, jobs, labels
     ):
-        gt_job = next(j for j in jobs if j["type"] == "ground_truth")
+        gt_job = next(
+            j for j in jobs if j["type"] == "ground_truth" and j["task_id"] == self.demo_task_id
+        )
         task_id = gt_job["task_id"]
-        old_report = next(r for r in quality_reports if r["task_id"] == task_id)
+        old_report = max(
+            (r for r in quality_reports if r["task_id"] == task_id), key=lambda r: r["id"]
+        )
         job_labels = [
             l
             for l in labels
@@ -1171,7 +1188,9 @@ class TestQualityReportMetrics(_PermissionTestBase):
     def test_settings_affect_metrics(
         self, admin_user, quality_reports, quality_settings, task_id, parameter
     ):
-        old_report = next(r for r in quality_reports if r["task_id"])
+        old_report = max(
+            (r for r in quality_reports if r["task_id"] == task_id), key=lambda r: r["id"]
+        )
         task_id = old_report["task_id"]
 
         settings = deepcopy(next(s for s in quality_settings if s["task_id"] == task_id))
@@ -1191,3 +1210,37 @@ class TestQualityReportMetrics(_PermissionTestBase):
 
         new_report = self.create_quality_report(admin_user, task_id)
         assert new_report["summary"]["conflict_count"] != old_report["summary"]["conflict_count"]
+
+    def test_old_report_can_be_loaded(self, admin_user, quality_reports):
+        report = min((r for r in quality_reports if r["task_id"]), key=lambda r: r["id"])
+        assert report["created_date"] < "2024"
+
+        with make_api_client(admin_user) as api_client:
+            (report_data, _) = api_client.quality_api.retrieve_report_data(report["id"])
+
+        # This report should have been created before the Jaccard index was included.
+        for d in [report_data["comparison_summary"], *report_data["frame_results"].values()]:
+            assert d["annotations"]["confusion_matrix"]["jaccard_index"] is None
+
+    def test_accumulation_annotation_conflicts_multiple_jobs(self, admin_user):
+        report = self.create_quality_report(admin_user, self.demo_task_id_multiple_jobs)
+        with make_api_client(admin_user) as api_client:
+            (_, response) = api_client.quality_api.retrieve_report_data(report["id"])
+            assert response.status == HTTPStatus.OK
+        report_data = json.loads(response.data)
+        task_confusion_matrix = report_data["comparison_summary"]["annotations"][
+            "confusion_matrix"
+        ]["rows"]
+
+        expected_frame_confusion_matrix = {
+            "5": [[1, 0, 0], [0, 0, 0], [0, 0, 0]],
+            "7": [[1, 0, 0], [0, 0, 0], [0, 0, 0]],
+            "4": [[0, 0, 1], [0, 0, 0], [1, 0, 0]],
+        }
+        for frame_id in report_data["frame_results"].keys():
+            assert (
+                report_data["frame_results"][frame_id]["annotations"]["confusion_matrix"]["rows"]
+                == expected_frame_confusion_matrix[frame_id]
+            )
+
+        assert task_confusion_matrix == [[2, 0, 1], [0, 0, 0], [1, 0, 0]]

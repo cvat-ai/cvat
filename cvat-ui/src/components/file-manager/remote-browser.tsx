@@ -297,18 +297,16 @@ function RemoteBrowser(props: Props): JSX.Element {
             render: (name: string, node: Node) => {
                 if (node.type === 'DIR') {
                     return (
-                        <>
-                            <Button
-                                size='small'
-                                type='link'
-                                onClick={() => {
-                                    setCurrentPath([...currentPath, name]);
-                                }}
-                            >
-                                <FolderOutlined />
-                                {name}
-                            </Button>
-                        </>
+                        <Button
+                            size='small'
+                            type='link'
+                            onClick={() => {
+                                setCurrentPath([...currentPath, name]);
+                            }}
+                        >
+                            <FolderOutlined />
+                            {name}
+                        </Button>
                     );
                 }
 

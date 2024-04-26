@@ -1,5 +1,5 @@
 # Copyright (C) 2021-2022 Intel Corporation
-# Copyright (C) 2023 CVAT.ai Corporation
+# Copyright (C) 2023-2024 CVAT.ai Corporation
 #
 # SPDX-License-Identifier: MIT
 
@@ -10,8 +10,10 @@ from typing import Any, Callable, List, Mapping, Tuple
 from datumaro.components.errors import DatasetError, DatasetImportError, DatasetNotFoundError
 
 from django.db import transaction
+from django.conf import settings
 
 from cvat.apps.engine import models
+from cvat.apps.engine.log import DatasetLogManager
 from cvat.apps.engine.serializers import DataSerializer, TaskWriteSerializer
 from cvat.apps.engine.task import _create_thread as create_task
 from cvat.apps.dataset_manager.task import TaskAnnotation
@@ -20,13 +22,15 @@ from .annotation import AnnotationIR
 from .bindings import ProjectData, load_dataset_data, CvatImportError
 from .formats.registry import make_exporter, make_importer
 
+dlogger = DatasetLogManager()
+
 def export_project(project_id, dst_file, format_name,
         server_url=None, save_images=False):
     # For big tasks dump function may run for a long time and
     # we dont need to acquire lock after the task has been initialized from DB.
     # But there is the bug with corrupted dump file in case 2 or
     # more dump request received at the same time:
-    # https://github.com/opencv/cvat/issues/217
+    # https://github.com/cvat-ai/cvat/issues/217
     with transaction.atomic():
         project = ProjectAnnotationAndData(project_id)
         project.init_from_db()
@@ -152,7 +156,19 @@ class ProjectAnnotationAndData:
         temp_dir_base = self.db_project.get_tmp_dirname()
         os.makedirs(temp_dir_base, exist_ok=True)
         with TemporaryDirectory(dir=temp_dir_base) as temp_dir:
-            importer(dataset_file, temp_dir, project_data, self.load_dataset_data, **options)
+            try:
+                importer(dataset_file, temp_dir, project_data, self.load_dataset_data, **options)
+            except DatasetNotFoundError as not_found:
+                if settings.CVAT_LOG_IMPORT_ERRORS:
+                    dlogger.log_import_error(
+                        entity="project",
+                        entity_id=self.db_project.id,
+                        format_name=importer.DISPLAY_NAME,
+                        base_error=str(not_found),
+                        dir_path=temp_dir,
+                    )
+
+                raise not_found
 
         self.create({tid: ir.serialize() for tid, ir in self.annotation_irs.items() if tid in project_data.new_tasks})
 

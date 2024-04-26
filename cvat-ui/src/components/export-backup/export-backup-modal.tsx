@@ -61,8 +61,8 @@ function ExportBackupModal(): JSX.Element {
 
     useEffect(() => {
         if (instance) {
-            setDefaultStorageLocation(instance.targetStorage?.location || StorageLocation.LOCAL);
-            setDefaultStorageCloudId(instance.targetStorage?.cloudStorageId || null);
+            setDefaultStorageLocation(instance.targetStorage.location);
+            setDefaultStorageCloudId(instance.targetStorage.cloudStorageId);
         }
     }, [instance]);
 

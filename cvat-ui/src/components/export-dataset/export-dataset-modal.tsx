@@ -19,11 +19,8 @@ import TargetStorageField from 'components/storage/target-storage-field';
 import { CombinedState, StorageLocation } from 'reducers';
 import { exportActions, exportDatasetAsync } from 'actions/export-actions';
 import {
-    Dumper,
-    getCore, Job, Project, Storage, StorageData, Task,
+    Dumper, Job, Project, Storage, StorageData, Task,
 } from 'cvat-core-wrapper';
-
-const core = getCore();
 
 type FormValues = {
     selectedFormat: string | undefined;
@@ -82,27 +79,8 @@ function ExportDatasetModal(props: StateToProps): JSX.Element {
 
     useEffect(() => {
         if (instance) {
-            if (instance instanceof Project || instance instanceof Task) {
-                setDefaultStorageLocation(instance.targetStorage?.location || StorageLocation.LOCAL);
-                setDefaultStorageCloudId(instance.targetStorage?.cloudStorageId);
-            } else {
-                core.tasks.get({ id: instance.taskId })
-                    .then((response: any) => {
-                        if (response.length) {
-                            const [taskInstance] = response;
-                            setDefaultStorageLocation(taskInstance.targetStorage?.location || StorageLocation.LOCAL);
-                            setDefaultStorageCloudId(taskInstance.targetStorage?.cloudStorageId);
-                        }
-                    })
-                    .catch((error: Error) => {
-                        if ((error as any).code !== 403) {
-                            Notification.error({
-                                message: `Could not fetch the task ${instance.taskId}`,
-                                description: error.toString(),
-                            });
-                        }
-                    });
-            }
+            setDefaultStorageLocation(instance.targetStorage.location);
+            setDefaultStorageCloudId(instance.targetStorage.cloudStorageId);
         }
     }, [instance]);
 
