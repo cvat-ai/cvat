@@ -51,9 +51,9 @@ def get_empty_report():
 
 
 class AnalyticsReportUpdateManager:
-    _QUEUE_JOB_PREFIX_TASK = "update-analytics-report-task-"
-    _QUEUE_JOB_PREFIX_PROJECT = "update-analytics-report-project-"
-    _RQ_CUSTOM_ANALYTICS_CHECK_JOB_TYPE = "custom_analytics_check"
+    _QUEUE_JOB_PREFIX_TASK = "analytics:calculate-report-task-"
+    _QUEUE_JOB_PREFIX_PROJECT = "analytics:calculate-report-project-"
+    _QUEUE_JOB_PREFIX_JOB = "analytics:calculate-report-job-"
     _JOB_RESULT_TTL = 120
 
     @classmethod
@@ -69,11 +69,10 @@ class AnalyticsReportUpdateManager:
     def _make_queue_job_id_base(self, obj) -> str:
         if isinstance(obj, Task):
             return f"{self._QUEUE_JOB_PREFIX_TASK}{obj.id}"
-        else:
+        elif isinstance(obj, Project):
             return f"{self._QUEUE_JOB_PREFIX_PROJECT}{obj.id}"
-
-    def _make_custom_analytics_check_job_id(self) -> str:
-        return uuid4().hex
+        elif isinstance(obj, Job):
+            return f"{self._QUEUE_JOB_PREFIX_JOB}{obj.id}"
 
     @classmethod
     def _get_last_report_time(cls, obj):
@@ -88,7 +87,7 @@ class AnalyticsReportUpdateManager:
         pass
 
     def schedule_analytics_check_job(self, *, job=None, task=None, project=None, user_id):
-        rq_id = self._make_custom_analytics_check_job_id()
+        rq_id = self._make_queue_job_id_base(job or task or project)
 
         queue = self._get_queue()
         queue.enqueue(
@@ -97,7 +96,7 @@ class AnalyticsReportUpdateManager:
             cvat_task_id=task.id if task is not None else None,
             cvat_project_id=project.id if project is not None else None,
             job_id=rq_id,
-            meta={"user_id": user_id, "job_type": self._RQ_CUSTOM_ANALYTICS_CHECK_JOB_TYPE},
+            meta={"user_id": user_id},
             result_ttl=self._JOB_RESULT_TTL,
             failure_ttl=self._JOB_RESULT_TTL,
         )
@@ -107,14 +106,7 @@ class AnalyticsReportUpdateManager:
     def get_analytics_check_job(self, rq_id: str):
         queue = self._get_queue()
         rq_job = queue.fetch_job(rq_id)
-
-        if rq_job and not self.is_custom_analytics_check_job(rq_job):
-            rq_job = None
-
         return rq_job
-
-    def is_custom_analytics_check_job(self, rq_job) -> bool:
-        return rq_job.meta.get("job_type") == self._RQ_CUSTOM_ANALYTICS_CHECK_JOB_TYPE
 
     @staticmethod
     def _get_analytics_report(db_obj: Union[Job, Task, Project]) -> AnalyticsReport:
