@@ -391,10 +391,10 @@ class JobAnnotation:
     def _set_updated_date(self):
         db_task = self.db_job.segment.task
         with transaction.atomic():
+            self.db_job.touch()
+            db_task.touch()
             if db_project := db_task.project:
                 db_project.touch()
-            db_task.touch()
-            self.db_job.touch()
 
     @staticmethod
     def _data_is_empty(data):
