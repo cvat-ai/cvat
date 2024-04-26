@@ -558,7 +558,7 @@ async function getSelf(): Promise<SerializedUser> {
     return response.data;
 }
 
-async function authorized(): Promise<boolean> {
+async function authenticated(): Promise<boolean> {
     try {
         // In CVAT app we use two types of authentication
         // At first we check if authentication token is present
@@ -2512,7 +2512,7 @@ export default Object.freeze({
         changePassword,
         requestPasswordReset,
         resetPassword,
-        authorized,
+        authenticated,
         healthCheck,
         register,
         request: serverRequest,

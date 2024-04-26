@@ -66,7 +66,7 @@ export default interface CVATCore {
         changePassword: any;
         requestPasswordReset: any;
         resetPassword: any;
-        authorized: any;
+        authenticated: any;
         healthCheck: any;
         request: any;
         setAuthData: any;

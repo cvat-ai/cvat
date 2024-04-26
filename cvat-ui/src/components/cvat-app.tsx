@@ -83,7 +83,7 @@ import InvitationWatcher from './invitation-watcher/invitation-watcher';
 interface CVATAppProps {
     loadFormats: () => void;
     loadAbout: () => void;
-    verifyAuthorized: () => void;
+    verifyAuthenticated: () => void;
     loadUserAgreements: () => void;
     initPlugins: () => void;
     initModels: () => void;
@@ -255,7 +255,7 @@ class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentP
 
     public componentDidUpdate(prevProps: CVATAppProps): void {
         const {
-            verifyAuthorized,
+            verifyAuthenticated,
             loadFormats,
             loadAbout,
             loadUserAgreements,
@@ -297,7 +297,7 @@ class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentP
         this.showMessages();
 
         if (!userInitialized && !userFetching) {
-            verifyAuthorized();
+            verifyAuthenticated();
             return;
         }
 

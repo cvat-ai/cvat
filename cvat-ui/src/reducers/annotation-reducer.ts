@@ -104,6 +104,7 @@ const defaultState: AnnotationState = {
         states: [],
         filters: [],
         resetGroupFlag: false,
+        initialized: false,
         history: {
             undo: [],
             redo: [],
@@ -143,6 +144,10 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                     instance: null,
                     requestedId: action.payload.requestedId,
                     fetching: true,
+                },
+                annotations: {
+                    ...state.annotations,
+                    initialized: false,
                 },
             };
         }
@@ -842,11 +847,21 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                     activatedStateID: updateActivatedStateID(states, activatedStateID),
                     states,
                     history,
+                    initialized: true,
                     zLayer: {
                         min: minZ,
                         max: maxZ,
                         cur: clamp(state.annotations.zLayer.cur, minZ, maxZ),
                     },
+                },
+            };
+        }
+        case AnnotationActionTypes.FETCH_ANNOTATIONS_FAILED: {
+            return {
+                ...state,
+                annotations: {
+                    ...state.annotations,
+                    initialized: true,
                 },
             };
         }
