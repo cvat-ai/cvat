@@ -1,5 +1,5 @@
 # Copyright (C) 2018-2022 Intel Corporation
-# Copyright (C) 2022-2023 CVAT.ai Corporation
+# Copyright (C) 2022-2024 CVAT.ai Corporation
 #
 # SPDX-License-Identifier: MIT
 
@@ -465,6 +465,14 @@ LOGGING = {
             'maxBytes': 1024*1024*50, # 50 MB
             'backupCount': 5,
         },
+        'dataset_handler': {
+            'class': 'logging.handlers.RotatingFileHandler',
+            'level': 'DEBUG',
+            'filename': os.path.join(BASE_DIR, 'logs', 'cvat_server_dataset.log'),
+            'formatter': 'standard',
+            'maxBytes': 1024*1024*50, # 50 MB
+            'backupCount': 3,
+        },
         'vector': {
             'level': 'INFO',
             'class': f'logstash_async.handler.{vector_log_handler}',
@@ -487,6 +495,10 @@ LOGGING = {
             'level': os.getenv('DJANGO_LOG_LEVEL', 'DEBUG'),
         },
 
+        'dataset_logger': {
+            'handlers': ['dataset_handler']
+        },
+
         'django': {
             'level': 'INFO',
         },
@@ -499,6 +511,8 @@ LOGGING = {
         }
     },
 }
+
+CVAT_LOG_IMPORT_ERRORS = to_bool(os.getenv('CVAT_LOG_IMPORT_ERRORS', True))
 
 if os.getenv('DJANGO_LOG_SERVER_HOST'):
     LOGGING['loggers']['vector']['handlers'] += ['vector']
