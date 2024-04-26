@@ -5,6 +5,7 @@
 
 from http import HTTPStatus
 from time import sleep
+from typing import Any, Dict
 
 import pytest
 
@@ -20,14 +21,17 @@ def _post_task_remote_data(username, task_id, resources):
     return post_method(username, f"tasks/{task_id}/data", data)
 
 
-def _wait_until_task_is_created(username, task_id):
-    url = f"tasks/{task_id}/status"
+def _wait_until_task_is_created(username: str, task_id: int) -> Dict[str, Any]:
+    url = f"requests"
 
     for _ in range(100):
-        response = get_method(username, url)
+        response = get_method(username, url, action="create", task_id=task_id)
         response_json = response.json()
-        if response_json["state"] == "Finished" or response_json["state"] == "Failed":
-            return response
+        rq_jobs = response_json["results"]
+        assert 1 == len(rq_jobs), "The newly created RQ job must be returned by API"
+        rq_job_details = rq_jobs[0]
+        if rq_job_details["status"] in ("finished", "failed"):
+            return rq_job_details
         sleep(1)
     raise Exception("Cannot create task")
 
@@ -40,17 +44,15 @@ class TestCreateFromRemote:
         response = _post_task_remote_data(user, task_id, resources)
         assert response.status_code == HTTPStatus.ACCEPTED
 
-        response = _wait_until_task_is_created(user, task_id)
-        response_json = response.json()
-        assert response_json["state"] == "Finished"
+        response_json = _wait_until_task_is_created(user, task_id)
+        assert response_json["status"] == "finished"
 
     def _test_cannot_create(self, user, task_id, resources):
         response = _post_task_remote_data(user, task_id, resources)
         assert response.status_code == HTTPStatus.ACCEPTED
 
-        response = _wait_until_task_is_created(user, task_id)
-        response_json = response.json()
-        assert response_json["state"] == "Failed"
+        response_json = _wait_until_task_is_created(user, task_id)
+        assert response_json["status"] == "failed"
 
     def test_cannot_create(self, find_users):
         user = find_users(privilege="admin")[0]["username"]

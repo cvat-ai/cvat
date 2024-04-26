@@ -223,7 +223,7 @@ def get_rq_job_meta(
     tid = task_id(db_obj)
     jid = job_id(db_obj)
 
-    return {
+    meta = {
         'user': {
             'id': getattr(request.user, "id", None),
             'username': getattr(request.user, "username", None),
@@ -238,8 +238,15 @@ def get_rq_job_meta(
         'project_id': pid,
         'task_id': tid,
         'job_id': jid,
-        **({'result_url': request.build_absolute_uri() + '&action=download'} if include_result_url else {}),
     }
+
+    if include_result_url:
+        query_dict = request.query_params.copy()
+        if query_dict.get('action') != 'download':
+            query_dict['action'] = 'download'
+        meta['result_url'] = request.build_absolute_uri(request.path) + "?" + query_dict.urlencode()
+
+    return meta
 
 def reverse(viewname, *, args=None, kwargs=None,
     query_params: Optional[Dict[str, str]] = None,
