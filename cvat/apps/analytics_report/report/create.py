@@ -1,14 +1,11 @@
-# Copyright (C) 2023 CVAT.ai Corporation
+# Copyright (C) 2023-2024 CVAT.ai Corporation
 #
 # SPDX-License-Identifier: MIT
 
 from datetime import datetime, timedelta
 from typing import Union
-from uuid import uuid4
 
 import django_rq
-from rq import cancel_job
-
 from django.conf import settings
 from django.core.exceptions import ObjectDoesNotExist
 from django.db import transaction
