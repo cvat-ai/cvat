@@ -497,10 +497,14 @@ export function implementTask(Task) {
             ...(typeof this.copyData !== 'undefined' ? { copy_data: this.copyData } : {}),
             ...(typeof this.cloudStorageId !== 'undefined' ? { cloud_storage_id: this.cloudStorageId } : {}),
         };
-        const { uploadStatusCallback, requestStatusCallback } = options;
-        const taskID = await serverProxy.tasks.create(taskSpec, taskDataSpec, uploadStatusCallback);
+
+        const taskID = await serverProxy.tasks.create(
+            taskSpec,
+            taskDataSpec,
+            options?.uploadStatusCallback || (() => {}),
+        );
         const request = await requestsManager.listen(null, {
-            callback: requestStatusCallback,
+            callback: options?.requestStatusCallback,
             filter: {
                 taskID,
                 action: 'create',

@@ -268,7 +268,7 @@ class RequestsManager {
             };
 
             this.listening[storedID] = {
-                onUpdate: [callback],
+                onUpdate: callback ? [callback] : [],
                 timeout: window.setTimeout(timeoutCallback),
             };
         });
