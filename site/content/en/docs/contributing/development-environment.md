@@ -15,7 +15,7 @@ description: 'Installing a development environment for different operating syste
   - For windows users following guides may be helpful
     - [Get started using Git on Windows Subsystem for Linux](https://learn.microsoft.com/en-us/windows/wsl/tutorials/wsl-git)
 - Connect to github using SSH. ([guide](https://docs.github.com/en/authentication/connecting-to-github-with-ssh))
-- The system should have `bash` for running initial bash scripts
+- The system should have POSIX `sh` shell for running initial shell scripts
 
 ### Optional steps
 - In the root directory of the repository create a `.env` file with the variables mentioned in `dist.env` file and modify their values
