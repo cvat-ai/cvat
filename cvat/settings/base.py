@@ -234,7 +234,7 @@ IAM_DEFAULT_ROLE = 'user'
 IAM_ADMIN_ROLE = 'admin'
 # Index in the list below corresponds to the priority (0 has highest priority)
 IAM_ROLES = [IAM_ADMIN_ROLE, 'business', 'user', 'worker']
-IAM_OPA_HOST = 'http://opa:8181'
+IAM_OPA_HOST = os.getenv('IAM_OPA_HOST', 'http://opa:8181')
 IAM_OPA_DATA_URL = f'{IAM_OPA_HOST}/v1/data'
 IAM_OPA_RULES_PATH = 'cvat/apps/iam/rules:'
 LOGIN_URL = 'rest_login'
