@@ -129,7 +129,7 @@ class JobAnnotationSpeed(PrimaryMetricBase):
             )
         )
 
-        value = (rows[0] if len(rows) else 0) / (1000 * 3600)
+        value = (rows[0][0] if len(rows) else 0) / (1000 * 3600)
         data_series["working_time"].append(
             {
                 "value": value,
