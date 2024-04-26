@@ -5,7 +5,7 @@
 
 import { omit } from 'lodash';
 import { ArgumentError } from './exceptions';
-import { HistoryActions, JobType } from './enums';
+import { HistoryActions, JobType, RQStatus } from './enums';
 import { Storage } from './storage';
 import { Task as TaskClass, Job as JobClass } from './session';
 import logger from './logger';
@@ -337,7 +337,10 @@ export function implementJob(Job) {
     ) {
         const { requestStatusCallback } = options;
         const rqID = await exportDataset(this, format, saveImages, useDefaultSettings, targetStorage, customName);
-        return requestsManager.listen(rqID, { callback: requestStatusCallback });
+        if (rqID) {
+            return requestsManager.listen(rqID, { callback: requestStatusCallback });
+        }
+        return new Request({ status: RQStatus.FINISHED, message: '' });
     };
 
     Job.prototype.actions.undo.implementation = async function (count) {
@@ -807,7 +810,10 @@ export function implementTask(Task) {
     ) {
         const { requestStatusCallback } = options;
         const rqID = await exportDataset(this, format, saveImages, useDefaultSettings, targetStorage, customName);
-        return requestsManager.listen(rqID, { callback: requestStatusCallback });
+        if (rqID) {
+            return requestsManager.listen(rqID, { callback: requestStatusCallback });
+        }
+        return new Request({ status: RQStatus.FINISHED, message: '' });
     };
 
     Task.prototype.actions.undo.implementation = async function (count) {

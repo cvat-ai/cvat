@@ -197,6 +197,7 @@ Cypress.Commands.add(
 
 Cypress.Commands.add('restoreProject', (archiveWithBackup, sourceStorage = null) => {
     cy.intercept({ method: /PATCH|POST/, url: /\/api\/projects\/backup.*/ }).as('restoreProject');
+    cy.intercept({ method: /GET/, url: /\/api\/requests.*/ }).as('requestStatus');
     cy.get('.cvat-create-project-dropdown').click();
     cy.get('.cvat-import-project-button').click();
 
@@ -227,16 +228,10 @@ Cypress.Commands.add('restoreProject', (archiveWithBackup, sourceStorage = null)
         cy.wait('@restoreProject').its('response.statusCode').should('equal', 202);
         cy.wait('@restoreProject').its('response.statusCode').should('equal', 201);
         cy.wait('@restoreProject').its('response.statusCode').should('equal', 204);
-        cy.wait('@restoreProject').its('response.statusCode').should('equal', 202);
+        cy.wait('@requestStatus').its('response.statusCode').should('equal', 200);
     } else {
         cy.wait('@restoreProject').its('response.statusCode').should('equal', 202);
     }
-    cy.wait('@restoreProject').then((interception) => {
-        cy.wrap(interception).its('response.statusCode').should('be.oneOf', [201, 202]);
-        if (interception.response.statusCode === 202) {
-            cy.wait('@restoreProject').its('response.statusCode').should('equal', 201);
-        }
-    });
 
     cy.contains('The project has been restored successfully. Click here to open')
         .should('exist')
@@ -254,10 +249,7 @@ Cypress.Commands.add('getDownloadFileName', () => {
 });
 
 Cypress.Commands.add('waitForFileUploadToCloudStorage', () => {
-    cy.intercept('GET', /.*\/(annotations|dataset|backup)/).as('download');
-    cy.wait('@download', { requestTimeout: 7000 }).then((interseption) => {
-        expect(interseption.response.statusCode).to.be.equal(200);
-    });
+    cy.get('.ant-notification-notice-info').contains('uploaded to cloud storage').should('be.visible');
     cy.verifyNotification();
 });
 
@@ -265,7 +257,6 @@ Cypress.Commands.add('waitForDownload', () => {
     cy.getDownloadFileName().then((filename) => {
         cy.verifyDownload(filename);
     });
-    cy.verifyNotification();
 });
 
 Cypress.Commands.add('deleteProjectViaActions', (projectName) => {

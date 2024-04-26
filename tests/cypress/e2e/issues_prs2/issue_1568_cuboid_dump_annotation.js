@@ -37,7 +37,9 @@ context('Dump annotation if cuboid created.', () => {
                 format: exportFormat,
             };
             cy.exportJob(exportAnnotation);
+            cy.downloadExport();
             cy.waitForDownload();
+            cy.goBack();
         });
 
         it('Error notification is not exists.', () => {

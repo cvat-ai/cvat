@@ -88,11 +88,12 @@ context('Backup, restore a project.', { browser: '!firefox' }, () => {
     describe(`Testing "${caseId}"`, () => {
         it('Export the project.', () => {
             cy.backupProject(project.name);
+            cy.downloadExport();
             cy.getDownloadFileName().then((file) => {
                 projectBackupArchiveFullName = file;
                 cy.verifyDownload(projectBackupArchiveFullName);
             });
-            cy.verifyNotification();
+            cy.goBack();
         });
 
         it('Remove and restore the project from backup.', () => {
@@ -154,11 +155,12 @@ context('Backup, restore a project with a 3D task.', { browser: '!firefox' }, ()
     describe(`Testing "${caseId}"`, () => {
         it('Export the project.', () => {
             cy.backupProject(project.name);
+            cy.downloadExport();
             cy.getDownloadFileName().then((file) => {
                 projectBackupArchiveFullName = file;
                 cy.verifyDownload(projectBackupArchiveFullName);
             });
-            cy.verifyNotification();
+            cy.goBack();
         });
 
         it('Remove and restore the project from backup.', () => {

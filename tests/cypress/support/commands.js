@@ -1227,11 +1227,10 @@ Cypress.Commands.add('exportJob', ({
     cy.contains('button', 'OK').click();
     cy.get('.cvat-notification-notice-export-job-start').should('be.visible');
     cy.closeNotification('.cvat-notification-notice-export-job-start');
-
-    cy.verifyNotification();
 });
 
 Cypress.Commands.add('downloadExport', () => {
+    cy.verifyNotification();
     cy.get('.cvat-header-requests-button').click();
     cy.get('.cvat-spinner').should('not.exist');
     cy.get('.cvat-requests-list').should('be.visible');

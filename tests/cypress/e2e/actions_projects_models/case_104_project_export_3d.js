@@ -61,7 +61,9 @@ context('Export project dataset with 3D task.', { browser: '!firefox' }, () => {
                 dumpType: 'Kitti Raw Format',
             };
             cy.exportProject(exportAnnotation3d);
+            cy.downloadExport();
             cy.waitForDownload();
+            cy.goBack();
         });
 
         it('Export project with 3D task. Dataset.', () => {
@@ -73,11 +75,12 @@ context('Export project dataset with 3D task.', { browser: '!firefox' }, () => {
                 dumpType: 'Sly Point Cloud Format',
             };
             cy.exportProject(exportDataset3d);
+            cy.downloadExport();
             cy.getDownloadFileName().then((file) => {
                 datasetArchiveName = file;
                 cy.verifyDownload(datasetArchiveName);
             });
-            cy.verifyNotification();
+            cy.goBack();
         });
 
         it('Export project with 3D task. Annotation. Rename a archive.', () => {
@@ -90,7 +93,9 @@ context('Export project dataset with 3D task.', { browser: '!firefox' }, () => {
                 archiveCustomName: 'export_project_3d_annotation',
             };
             cy.exportProject(exportAnnotations3dRenameArchive);
+            cy.downloadExport();
             cy.waitForDownload();
+            cy.goBack();
         });
 
         // FIXME: Activate after implementation

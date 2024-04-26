@@ -12,6 +12,7 @@ import { exportDataset, importDataset } from './annotations';
 import { SerializedLabel } from './server-response-types';
 import { Label } from './labels';
 import AnnotationGuide from './guide';
+import { RQStatus } from './enums';
 
 export default function implementProject(projectClass) {
     projectClass.prototype.save.implementation = async function () {
@@ -101,7 +102,10 @@ export default function implementProject(projectClass) {
     ) {
         const { requestStatusCallback } = options;
         const rqID = await exportDataset(this, format, saveImages, useDefaultSettings, targetStorage, customName);
-        return requestsManager.listen(rqID, { callback: requestStatusCallback });
+        if (rqID) {
+            return requestsManager.listen(rqID, { callback: requestStatusCallback });
+        }
+        return new Request({ status: RQStatus.FINISHED, message: '' });
     };
     projectClass.prototype.annotations.importDataset.implementation = async function (
         format: string,

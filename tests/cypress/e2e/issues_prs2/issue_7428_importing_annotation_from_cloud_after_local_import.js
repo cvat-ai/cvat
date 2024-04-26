@@ -97,7 +97,9 @@ context('Incorrect cloud storage filename used in subsequent import.', () => {
                 archiveCustomName: annotationsArchiveNameLocal,
             };
             cy.exportTask(exportParams);
+            cy.downloadExport();
             cy.waitForDownload();
+            cy.goBack();
         });
 
         it('Export Annotation to the cloud storage', () => {

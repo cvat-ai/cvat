@@ -134,7 +134,7 @@ export async function exportDataset(
     useDefaultSettings: boolean,
     targetStorage: Storage,
     name?: string,
-): Promise<string> {
+): Promise<string | void> {
     if (!(instance instanceof Task || instance instanceof Project || instance instanceof Job)) {
         throw new ArgumentError('A dataset can only be created from a job, task or project');
     }

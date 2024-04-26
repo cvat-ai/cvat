@@ -572,9 +572,11 @@ export default function (state = defaultState, action: AnyAction): Notifications
             };
         }
         case ExportActionTypes.EXPORT_BACKUP_SUCCESS: {
-            const { instance, instanceType } = action.payload;
-            const message =
-                `Backup for the ${instanceType} №${instance.id} is finished, you can [download it here](/requests)`;
+            const { instance, instanceType, isLocal } = action.payload;
+            const message = isLocal ?
+                `Backup for the ${instanceType} ${instance.id} is finished,` +
+                'you can [download it here](/requests)' :
+                `Backup for the ${instanceType} ${instance.id} has been uploaded to cloud storage`;
             return {
                 ...state,
                 messages: {

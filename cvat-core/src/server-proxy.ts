@@ -849,7 +849,10 @@ function exportDataset(instanceType: 'projects' | 'jobs' | 'tasks') {
                     params,
                 })
                     .then((response) => {
-                        resolve(response.data.rq_id);
+                        if (response.status === 202) {
+                            resolve(response.data.rq_id);
+                        }
+                        resolve();
                     })
                     .catch((errorData) => {
                         reject(generateError(errorData));
