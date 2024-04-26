@@ -87,8 +87,8 @@ class JobAnnotation:
         return queryset.select_related(
             'segment',
             'segment__task',
-            'segment__task__project'
         ).prefetch_related(
+            'segment__task__project',
             'segment__task__owner',
             'segment__task__assignee',
             'segment__task__project__owner',
