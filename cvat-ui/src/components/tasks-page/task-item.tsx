@@ -70,7 +70,7 @@ class TaskItemComponent extends React.PureComponent<TaskItemProps & RouteCompone
                         });
                     }
                 },
-                params: { taskID: taskInstance.id, action: 'create' },
+                filter: { taskID: taskInstance.id, action: 'create' },
             },
             ).then((createdTask: Task) => {
                 if (!this.#isUnmounted) {
@@ -88,7 +88,7 @@ class TaskItemComponent extends React.PureComponent<TaskItemProps & RouteCompone
                         }
                     }, 1000);
                 }
-            });
+            }).catch(() => {});
         }
     }
 

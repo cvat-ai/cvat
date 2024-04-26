@@ -715,7 +715,8 @@ export default function (state = defaultState, action: AnyAction): Notifications
                         creating: {
                             message: 'Could not create the task',
                             reason: action.payload.error,
-                            shouldLog: !(action.payload.error instanceof ServerError),
+                            shouldLog: !(action.payload.error instanceof ServerError) &&
+                            !(action.payload.error instanceof RequestError),
                             className: 'cvat-notification-notice-create-task-failed',
                         },
                     },
