@@ -109,7 +109,7 @@ context('Base actions on the project', () => {
             cy.goToProjectsList();
             cy.openProject(projectName);
             getProjectID(projectName);
-            cy.get('.cvat-tasks-list-item-fail').then((countTasks) => {
+            cy.get('.cvat-tasks-list-item').then((countTasks) => {
                 // The number of created tasks is greater than zero
                 expect(countTasks.length).to.be.gt(0);
             });
