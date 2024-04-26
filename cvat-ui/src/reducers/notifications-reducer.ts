@@ -33,7 +33,7 @@ import { NotificationsState } from '.';
 const defaultState: NotificationsState = {
     errors: {
         auth: {
-            authorized: null,
+            authenticated: null,
             login: null,
             logout: null,
             register: null,
@@ -217,15 +217,15 @@ const defaultState: NotificationsState = {
 
 export default function (state = defaultState, action: AnyAction): NotificationsState {
     switch (action.type) {
-        case AuthActionTypes.AUTHORIZED_FAILED: {
+        case AuthActionTypes.AUTHENTICATED_FAILED: {
             return {
                 ...state,
                 errors: {
                     ...state.errors,
                     auth: {
                         ...state.errors.auth,
-                        authorized: {
-                            message: 'Could not check authorization on the server',
+                        authenticated: {
+                            message: 'Could not check authentication on the server',
                             reason: action.payload.error,
                             shouldLog: !(action.payload.error instanceof ServerError),
                         },
