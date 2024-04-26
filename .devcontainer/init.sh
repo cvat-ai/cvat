@@ -10,7 +10,7 @@ if ! [ -f "${env_file}" ]; then
     cp "${env_file}.dist" "${env_file}"
 fi
 
-# Get or update env var in the .env file in .devcontainer directory
+# Get env var from the .env file in .devcontainer directory
 get_env_var() {
     key="${1}"
     value="$(sed -n "s/^${key}=\([[:alpha:]]\)/\1/p" "${env_file}")"

@@ -26,8 +26,7 @@ description: 'Installing a development environment for different operating syste
 ### Local Dev-Container guide
 - Upon opening the repository in VS Code, click on the green color icon at the bottom left corner of the window labeled `Open Remote Window` and select `reopen in container`
 - Initially it shall take some time to setup as it will build the dev container image and pull all the required docker images. Subsequent builds shall be fast and use cache to build and run the container
-- The container data is persisted between builds with the help of named volumes and each volume is namespaced by git branch name. Therefore one can create separate dev container environment specific to the current working git branch
-This can be helpful for reviewing pull requests and making quick bug fixes
+- The container data is persisted between builds with the help of named volumes and each volume is namespaced by git branch name. Therefore one can create separate dev container environment specific to the current working git branch. This can be helpful for reviewing pull requests and making quick bug fixes
 
 ### GitHub Codespaces guide
 - Sign into GitHub from VS Code account panel or using GitHub Codespace extension

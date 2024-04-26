@@ -60,7 +60,7 @@ services:
     labels:
       - com.devcontainer.git_branch=${GIT_BRANCH:-}
 
-# VS code shuts down containers upon closing the window. If in any case if it to shut
+# VS code shuts down containers upon closing the window. If in any case if it fails to shut
 # down the containers they should not restart upon system restart. This shall save
 # unncessary memory usage of the system when not developing
 
