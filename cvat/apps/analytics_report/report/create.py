@@ -7,6 +7,8 @@ from typing import Union
 from uuid import uuid4
 
 import django_rq
+from rq import cancel_job
+
 from django.conf import settings
 from django.core.exceptions import ObjectDoesNotExist
 from django.db import transaction
@@ -54,7 +56,6 @@ class AnalyticsReportUpdateManager:
     _QUEUE_JOB_PREFIX_TASK = "analytics:calculate-report-task-"
     _QUEUE_JOB_PREFIX_PROJECT = "analytics:calculate-report-project-"
     _QUEUE_JOB_PREFIX_JOB = "analytics:calculate-report-job-"
-    _JOB_RESULT_TTL = 120
 
     @classmethod
     def _get_analytics_check_job_delay(cls) -> timedelta:
@@ -90,6 +91,13 @@ class AnalyticsReportUpdateManager:
         rq_id = self._make_queue_job_id_base(job or task or project)
 
         queue = self._get_queue()
+        existing_job = self.get_analytics_check_job(rq_id)
+
+        if existing_job:
+            if existing_job.get_status() in ["queued", "started", "deferred", "scheduled"]:
+                return rq_id
+            existing_job.delete()
+
         queue.enqueue(
             self._check_analytics_report,
             cvat_job_id=job.id if job is not None else None,
@@ -97,8 +105,6 @@ class AnalyticsReportUpdateManager:
             cvat_project_id=project.id if project is not None else None,
             job_id=rq_id,
             meta={"user_id": user_id},
-            result_ttl=self._JOB_RESULT_TTL,
-            failure_ttl=self._JOB_RESULT_TTL,
         )
 
         return rq_id
