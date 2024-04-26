@@ -59,7 +59,9 @@ class AnalyticsReportPermission(OpenPolicyAgentPermission):
                     perm = ProjectPermission.create_scope_view(iam_context, int(project_id))
                     permissions.append(perm)
             except ObjectDoesNotExist as ex:
-                raise ValidationError(str(ex))
+                raise ValidationError(
+                    "The specified resource does not exist. Please check the provided identifiers"
+                ) from ex
 
         return permissions
 
