@@ -483,26 +483,23 @@ class CanvasWrapperComponent extends React.PureComponent<Props> {
         if (prevProps.highlightedConflict !== highlightedConflict) {
             const severity: HighlightSeverity | undefined = highlightedConflict
                 ?.severity as unknown as HighlightSeverity;
-            const highlightedShapeClientIDs = (highlightedConflict?.annotationConflicts || [])
+            const highlightedClientIDs = (highlightedConflict?.annotationConflicts || [])
                 .map((conflict: AnnotationConflict) => annotations
-                    .find((state) => conflict.type !== 'tag' && state.serverID === conflict.serverID && state.objectType === conflict.type),
+                    .find((state) => state.serverID === conflict.serverID && state.objectType === conflict.type),
                 ).filter((state: ObjectState | undefined) => !!state)
                 .map((state) => state?.clientID) as number[];
 
-            // if current shape conflict ids is empty then there might be a conflict in tag annotations
-            if (highlightedShapeClientIDs.length === 0) {
-                const highlightedTagClientIDs = (highlightedConflict?.annotationConflicts || [])
-                    .map((conflict: AnnotationConflict) => annotations
-                        .find((state) => conflict.type === 'tag' && state.serverID === conflict.serverID && state.objectType === conflict.type),
-                    ).filter((state: ObjectState | undefined) => !!state)
-                    .map((state) => state?.clientID) as number[];
+            // check if current conflict ids corresponds to a tag annotations
+            const highlightedTagClientIDs = (highlightedConflict?.annotationConflicts || [])
+                .map((conflict: AnnotationConflict) => annotations
+                    .find((state) => conflict.type === 'tag' && state.serverID === conflict.serverID && state.objectType === conflict.type),
+                ).filter((state: ObjectState | undefined) => !!state)
+                .map((state) => state?.clientID) as number[];
 
-                const states = annotations.filter((state) => highlightedTagClientIDs.includes(state.clientID || 0));
-                if (states) {
-                    this.updateHighlightedConflict(highlightedConflict);
-                }
+            if (highlightedTagClientIDs.length) {
+                this.updateHighlightedConflict(highlightedConflict);
             } else {
-                canvasInstance.highlight(highlightedShapeClientIDs, severity || null);
+                canvasInstance.highlight(highlightedClientIDs, severity || null);
             }
         }
 
