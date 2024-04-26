@@ -1,4 +1,4 @@
 ### Added
 
-- Analytics reports calculation may be initiated manually now, instead of automatic scheduling
+- Analytics reports calculation may be initiated manually
   (<https://github.com/cvat-ai/cvat/pull/7805>)
