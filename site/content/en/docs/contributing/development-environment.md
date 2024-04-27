@@ -7,30 +7,30 @@ description: 'Installing a development environment for different operating syste
 
 ## Remote development guide
 ### Dependencies
-- Install chrome
-- Install [VS Code](https://code.visualstudio.com/docs/setup/setup-overview) or [VS Code Insiders](https://code.visualstudio.com/insiders/) in case when extensions are not installed after start of the devcontainer
-  - Install [Devcontainer](https://marketplace.visualstudio.com/items?itemName=ms-vscode-remote.remote-containers) extension for local devcontainer with all the system requirements as specified in the documentation.
+- Install Chrome
+- Install [VS Code](https://code.visualstudio.com/docs/setup/setup-overview) or [VS Code Insiders](https://code.visualstudio.com/insiders/) in case when extensions are not installed after start of the dev container
+  - Install [Dev Container](https://marketplace.visualstudio.com/items?itemName=ms-vscode-remote.remote-containers) extension for local dev container with all the system requirements as specified in the documentation.
   - Install [GitHub Codespaces](https://marketplace.visualstudio.com/items?itemName=GitHub.codespaces) extension for codespaces
 - Install [git](https://git-scm.com/downloads)
-  - For windows users following guides may be helpful
+  - For Windows users following guides may be helpful
     - [Get started using Git on Windows Subsystem for Linux](https://learn.microsoft.com/en-us/windows/wsl/tutorials/wsl-git)
-- Connect to github using SSH. ([guide](https://docs.github.com/en/authentication/connecting-to-github-with-ssh))
+- Connect to GitHub using SSH. ([guide](https://docs.github.com/en/authentication/connecting-to-github-with-ssh))
 - The system should have POSIX `sh` shell for running initial shell scripts
 
 ### Optional steps
 - In the root directory of the repository create a `.env` file with the variables mentioned in `dist.env` file and modify their values
   - If not created, default values are taken from the docker-compose file inside the `.devcontainer/docker-compose.yml`
 - In `.devcontainer` directory create a `.env` file with variables mentioned in `dist.env` file
-  - `GIT_BRANCH_ISOLATION` environment variable is used at build time of devcontainer. It enables to persist container data between builds by using docker volumes namespaced by git branch name. It is set to true by default. More about this in the later section
+- The `GIT_BRANCH_ISOLATION` environment variable is used at the build time of the dev container. It enables the persistence of container data between builds by using Docker volumes namespaced by the Git branch name. It is set to true by default. More details on this are provided in a later section.
 
 ### Local Dev-Container guide
-- Upon opening the repository in VS Code, click on the green color icon at the bottom left corner of the window labeled `Open Remote Window` and select `reopen in container`
+- Upon opening the repository in VS Code, click on the green color icon in the bottom left corner of the window labeled `Open Remote Window` and select `reopen in container`
 - Initially it shall take some time to setup as it will build the dev container image and pull all the required docker images. Subsequent builds shall be fast and use cache to build and run the container
 - The container data is persisted between builds with the help of named volumes and each volume is namespaced by git branch name. Therefore one can create separate dev container environment specific to the current working git branch. This can be helpful for reviewing pull requests and making quick bug fixes
 
 ### GitHub Codespaces guide
 - Sign into GitHub from VS Code account panel or using GitHub Codespace extension
-- Click on the green color icon at the bottom left corner of the window labeled `Open Remote Window`and select `create new codespace`
+- Click on the green color icon in the bottom left corner of the window labeled `Open Remote Window` and select `create new codespace`
 - Select your forked CVAT repository and the branch name
 - Select the machine type
 - Again from the `Open Remote Window` menu, select `connect to codespace` and select the codespace you created in the previous step amd the container shall start building
@@ -52,36 +52,36 @@ Steps are common for both local and codespaces remote development
   - **devcontainer: ui**\
       It shall do the following operations:
     - Compile the node modules and keep the webpack-dev-server running in the background
-    - Launch chrome window in debug mode and open the CVAT web application running on port `3000`
+    - Launch Chrome window in debug mode and open the CVAT web application running on port `3000`
   - **devcontainer: server: unit tests**\
       This launch config is used to run and debug python unit tests for the django apps and `cvat-cli`.
 - One can debug the django code, rq-worker code and javascript code from the `devcontainer: django` and `devcontainer: rq worker`, `devcontainer: ui` panels in the debug console respectively
 - After launching the `server` and ui `launch` configs, one should be able to login into the `cvat` website running on the `localhost:3000` with username and password as `admin`
 
 ### Dev-Container Features
-  - The devcontainer image is based on the official CVAT docker image at `cvat/server:dev` Upon every rebuild, the devcontainer shall try to pull the latest base image at and therefore it will always have the latest upstream changes without any user intervention
-  - The devcontainer pre-installs all the extensions specified in `devcontainer.json` file
+  - The dev container image is based on the official CVAT docker image at `cvat/server:dev` Upon every rebuild, the dev container shall try to pull the latest base image at and therefore it will always have the latest upstream changes without any user intervention
+  - The dev container pre-installs all the extensions specified in `devcontainer.json` file
   - The default python virtual environment contains packages installed from `testing.txt` requirements file which inherits `development`, `production` and `dataset_manifest` requirements files
   - Contains an additional python virtual environment for running `pytest`. It can be activated by selecting `/opt/venv-test/bin/python` in the `Python: Select interpreter` command pallette menu
   - All the python packages in the virtual environments as well node dependencies are updated when the container runs for the first time after rebuilding the container. This is done via the `postCreateCommand` specified in `devcontainer.json` file
   - Since the base image does not contain installation metadata for the `datumaro`, therefore it clones the git repo every time the packages are updated and takes a long time for the update to finish. To avoid this, its git commit_hash value from the base image is saved and used to check if an update is required
   - Pip cache is persisted between rebuilds
   - The default shell is `zsh`
-  - The container user is `devcontainer` and it a non-root user, however, one can access the root user via sudo without any password to perform root operations like installing development specific applications
-  - To permanently include a ubuntu package in the devcontainer such that all other users can access them, one can add it to apt package installation section in `.devcontainer/Dockerfile`, and rebuild the container
+  - The container user is `devcontainer` and it is a non-root user; however, one can access the root user via sudo without any password to perform root operations like installing development-specific applications
+  - To permanently include a ubuntu package in the dev container such that all other users can access them, one can add it to apt package installation section in `.devcontainer/Dockerfile`, and rebuild the container
   - Additional python packages can be installed into the virtual environment by command `pip install`. They shall not persist between container builds, therefore it is just useful for testing new packages. They can be made to persist by adding them to the requirements file and rebuilding the image
   - Git configurations on the host machine are mounted into the container. So things like `user.name` and `user.email` are already configured inside the container
-  - SSH keys on the host machine are mounted into the container. So one should be able to use your github ssh keys to access github
+  - SSH keys on the host machine are mounted into the container. So one should be able to use your GitHub ssh keys to access GitHub
   - `SQLTool` extension is pre-configured for the `cvat-db` database
-  - Local terminal can be accessed from the devcontainer window by selecting `Terminal: Create New Integrated Terminal (Local)` from the command pallette. It can be used to run command on the host machine. It can be useful for accessing `docker` running on the host machine
+  - Local terminal can be accessed from the dev container window by selecting `Terminal: Create New Integrated Terminal (Local)` from the command pallette. It can be used to run command on the host machine. It can be useful for accessing `docker` running on the host machine
   - Supports docker in docker to start and stop docker containers for running `pytest` tests and debug it without disturbing the main development containers and its ports
-  - Serverless components can be deployed from within the devcontainer as per the documentation
+  - Serverless components can be deployed from within the dev container as per the documentation
   - User profile data including shell history are synced between the host and the container
-  - Uses dependabot for creating automatic PRs for bumping devcontainer feature versions
+  - Uses dependabot for creating automatic PRs for bumping dev container feature versions
   - It contains `OPA` and `nuctl` cli applications preinstalled
 
 ## Limitations
-  - Cypress testing with browser is not supported in devcontainer and has to be run externally
+  - Cypress testing with browser is not supported in dev container and has to be run externally
   - In GitHub Codespaces, running recursive `chown` on an existing directory in Dockerfile is very slow. So it shall take a while to build the container for the first time
 
 ## Native development guide
