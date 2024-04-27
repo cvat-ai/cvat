@@ -21,6 +21,7 @@ git_branch_isolation="$(get_env_var GIT_BRANCH_ISOLATION)"
 
 if ! [ "${git_branch_isolation}" = "true" ] && ! [ "${git_branch_isolation}" = "false" ]; then
     echo "ERROR: Invalid value for GIT_BRANCH_ISOLATION"
+    exit 1
 fi
 
 # Echo current git branch value if git branch isolation is true
