@@ -59,7 +59,7 @@ Steps are common for both local and codespaces remote development
 - After launching the `server` and ui `launch` configs, one should be able to log in to the `cvat` website running on the `localhost:3000` with username and password as `admin`
 
 ### Dev-Container Features
-  - The dev container image is based on the official CVAT docker image at `cvat/server:dev` Upon every rebuild, the dev container shall try to pull the latest base image at and therefore it will always have the latest upstream changes without any user intervention
+  - The dev container image is based on the official CVAT docker image at `cvat/server:dev` Upon every rebuild, the dev container shall try to pull the latest base image and therefore it will always have the latest upstream changes without any user intervention
   - The dev container pre-installs all the extensions specified in `devcontainer.json` file
   - The default python virtual environment contains packages installed from `testing.txt` requirements file which inherits `development`, `production` and `dataset_manifest` requirements files
   - Contains an additional python virtual environment for running `pytest`. It can be activated by selecting `/opt/venv-test/bin/python` in the `Python: Select interpreter` command pallette menu
