@@ -50,7 +50,7 @@ copy() {
 
 is_datumro_update() {
     # Check whether datumaro packages needs update
-    datumaro_commit=$(sed --quiet 's|^datumaro @ git+https://github.com/cvat-ai/datumaro.git@\([[:alnum:]]\)|\1|p'\
+    datumaro_commit=$(sed --quiet 's|^datumaro @ git+https://github.com/cvat-ai/datumaro.git@\([0-9a-f]\{40\}\)$|\1|p'\
                     "${workspace_dir}/cvat/requirements/base.txt")
     if [[ $(head -1 /cvat/metadata/datumaro_commit.txt) == "${datumaro_commit}" ]]; then
         return 1
