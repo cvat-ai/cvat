@@ -55,5 +55,8 @@ RUN chown -R devcontainer /opt/venv /opt/venv-test
 USER devcontainer
 WORKDIR /home/devcontainer/workspaces
 
-RUN mkdir -p data keys logs static node_modules /home/devcontainer/.cache/pip \
-    /home/devcontainer/.vscode-server-insiders /home/devcontainer/.vscode-server /home/devcontainer/.ssh
+RUN mkdir -p /home/devcontainer/workspaces/data /home/devcontainer/workspaces/keys \
+    /home/devcontainer/workspaces/logs /home/devcontainer/workspaces/static \
+    /home/devcontainer/workspaces/node_modules /home/devcontainer/.cache/pip \
+    /home/devcontainer/.vscode-server-insiders /home/devcontainer/.vscode-server \
+    /home/devcontainer/.ssh
