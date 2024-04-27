@@ -16,7 +16,7 @@ USER root
 # Save commit hash of datumaro git repository for using it while updating virtal environment in
 # postcreate.sh script
 RUN mkdir -p /cvat/metadata \
-    && sed --quiet 's|^datumaro @ git+https://github.com/cvat-ai/datumaro.git@\([[:alnum:]]\)|\1|p' \
+    && sed --quiet 's|^datumaro @ git+https://github.com/cvat-ai/datumaro.git@\([0-9a-f]\{40\}\)$|\1|p' \
     /home/django/cvat/requirements/base.txt > /cvat/metadata/datumaro_commit.txt
 
 # It is needed that the host user uid matches with the container user uid, else \
