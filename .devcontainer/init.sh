@@ -20,7 +20,7 @@ get_env_var() {
 git_branch_isolation="$(get_env_var GIT_BRANCH_ISOLATION)"
 
 if ! [ "${git_branch_isolation}" = "true" ] && ! [ "${git_branch_isolation}" = "false" ]; then
-    echo "ERROR: Invalid value for GIT_BRANCH_ISOLATION"
+    echo "ERROR: Invalid value for GIT_BRANCH_ISOLATION. Please set it to 'true' or 'false'."
     exit 1
 fi
 
