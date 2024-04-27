@@ -9,11 +9,11 @@ description: 'Installing a development environment for different operating syste
 ### Dependencies
 - Install Chrome
 - Install [VS Code](https://code.visualstudio.com/docs/setup/setup-overview) or [VS Code Insiders](https://code.visualstudio.com/insiders/) in case when extensions are not installed after start of the dev container
-  - Install [Dev Container](https://marketplace.visualstudio.com/items?itemName=ms-vscode-remote.remote-containers) extension for local dev container with all the system requirements as specified in the documentation.
+  - Install the [Dev Container](https://marketplace.visualstudio.com/items?itemName=ms-vscode-remote.remote-containers) extension for local development containers, ensuring all system requirements specified in the documentation are met.
   - Install [GitHub Codespaces](https://marketplace.visualstudio.com/items?itemName=GitHub.codespaces) extension for Codespaces
 - Install [git](https://git-scm.com/downloads)
   - For Windows users following guides may be helpful
-    - [Get started to use Git on Windows Subsystem for Linux](https://learn.microsoft.com/en-us/windows/wsl/tutorials/wsl-git)
+    - [Get started with using Git on Windows Subsystem for Linux](https://learn.microsoft.com/en-us/windows/wsl/tutorials/wsl-git)
 - Connect to GitHub using SSH. ([guide](https://docs.github.com/en/authentication/connecting-to-github-with-ssh))
 - The system should have POSIX `sh` shell for running initial shell scripts
 
@@ -21,11 +21,11 @@ description: 'Installing a development environment for different operating syste
 - In the root directory of the repository create a `.env` file with the variables mentioned in `dist.env` file and modify their values
   - If not created, default values are taken from the docker-compose file inside the `.devcontainer/docker-compose.yml`
 - In `.devcontainer` directory create a `.env` file with variables mentioned in `dist.env` file
-- The `GIT_BRANCH_ISOLATION` environment variable is used at the build time of the dev container. It enables the persistence of container data between builds by using Docker volumes namespaced by the Git branch name. It is set to true by default. More details on this are provided in a later section.
+The `GIT_BRANCH_ISOLATION` environment variable, used during the build process of the dev container, controls whether Docker volumes are namespaced by the Git branch name, thus enabling data persistence across builds. This variable is set to `true` by default.
 
 ### Local Dev-Container guide
 - Upon opening the repository in VS Code, click on the green color icon in the bottom left corner of the window labeled `Open Remote Window` and select `reopen in container`
-Initially it shall take some time to set up as it will build the dev container image and pull all the required docker images. Subsequent builds shall be fast and use cache to build and run the container
+Initially, setting up may take some time as it involves building the dev container image and pulling the required Docker images. Subsequent builds will be faster, utilizing cached data to expedite the process.
 - The container data is persisted between builds with the help of named volumes and each volume is namespaced by git branch name. Therefore one can create separate dev container environment specific to the current working git branch. This can be helpful for reviewing pull requests and making quick bug fixes
 
 ### GitHub Codespaces guide
@@ -33,7 +33,7 @@ Initially it shall take some time to set up as it will build the dev container i
 - Click on the green color icon in the bottom left corner of the window labeled `Open Remote Window` and select `create new codespace`
 - Select your forked CVAT repository and the branch name
 - Select the machine type
-- Again from the `Open Remote Window` menu, select `connect to codespace` and select the codespace you created in the previous step amd the container shall start building
+- Again from the `Open Remote Window` menu, select `connect to codespace` and select the codespace you created in the previous step and the container shall start building
 - The container data is persisted between builds with the help of named volumes and each volume is namespaced by git branch name. Therefore one can create separate dev container environment specific to the current working git branch
 - One can also create separate codespace for each branch by repeating above steps with the new chosen git branch
 - The codespace shall automatically stop after 30 minutes of inactivity. One can manually stop and delete it using the VS code command panel
@@ -46,7 +46,7 @@ Steps are common for both local and codespaces remote development
     - Check availability of dependent docker containers
     - Migrate the migrations to the postgres database
     - Create a superuser as per the environment variables specified in `.env` file or use the default values
-    - Run a background django server at port `8080` for serving the `opa` container
+    - Run a background Django server on port `8080`, which serves the `opa` container
     - Start debug process for django server at port `7000`
     - Start debug process for a rq-worker process listening on all the queues
   - **devcontainer: ui**\
@@ -82,10 +82,10 @@ Steps are common for both local and codespaces remote development
 
 ## Limitations
   - Cypress testing with browser is not supported in dev container and has to be run externally
-  - In GitHub Codespaces, running recursive `chown` on an existing directory in Dockerfile is very slow. So it shall take a while to build the container for the first time
+  - In GitHub Codespaces, the recursive `chown` operation on an existing directory within the Dockerfile can be very slow, potentially delaying the initial build of the container.
 
 ## Native development guide
-### Setup the dependencies:
+### Set up the dependencies:
 
 - Install necessary dependencies:
 
