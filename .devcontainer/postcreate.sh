@@ -13,7 +13,7 @@ echo_bold() {
 error_handler() {
     local error_code=${?}
     local error_command="${BASH_COMMAND}"
-    local error_line="${BASH_LINENO}"
+    local error_line="${BASH_LINENO[0]}"
 
     echo_bold "ERROR: ${0}: Error occurred on line ${error_line}: ${error_command} (exit code: ${error_code})" >&2
     exit 1
