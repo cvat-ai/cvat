@@ -56,7 +56,7 @@ yarn run cypress:run:chrome:canvas3d
    Note: For remote development environment activate `test-venv` python virtual environment
    located at `/opt/venv-test/` and execute the above code. On VS Code this can done via the command `Python: Select Interpreter` from the command pallette.
 1. Stop any other CVAT containers which you run previously. They keep ports
-which are used by containers for the testing system. (This is not needed for `devcontainers`)
+which are used by containers for the testing system. (Not required for dev container)
 
 **Running tests**
 
@@ -144,18 +144,18 @@ Extra options:
    ```
    yarn --frozen-lockfile
    ```
-1. Build CVAT server image (Not required for **devcontainer**)
+1. Build CVAT server image (Not required for dev container)
    ```
    docker compose -f docker-compose.yml -f docker-compose.dev.yml build cvat_server
    ```
-1. Run cvat_opa container (Not required for **devcontainer**)
+1. Run cvat_opa container (Not required for dev container)
    ```
    docker compose -f docker-compose.yml -f docker-compose.dev.yml up -d cvat_opa
    ```
 
 **Running tests**
 1. Python tests
-   In **devcontainer** use python from the virtual environment located at `/opt/venv`
+   In dev container use python from the virtual environment located at `/opt/venv`
    ```
    python manage.py test --settings cvat.settings.testing cvat/apps -v 2
    ```
@@ -171,7 +171,7 @@ Extra options:
    ```
 
 **Debug python unit tests**
-1. Run `server: tests` debug task in VSCode or run `devcontainer: server: unit tests` when using **devcontainer**
+1. Run `server: tests` debug task in VSCode or run `devcontainer: server: unit tests` when using dev container
 1. If you want to debug particular tests then change the configuration
 of the corresponding task in `./vscode/launch.json`, for example:
    ```json
