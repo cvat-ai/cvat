@@ -46,6 +46,10 @@ RUN curl --silent "https://api.github.com/repos/open-policy-agent/opa/releases/t
 
 RUN /usr/bin/python3 -m venv /opt/venv-test
 ENV PATH="/opt/venv-test/bin:${PATH}"
+
+# This command shall the slow in linux docker host running old kernel as it shall do
+# regular copy instead of metadata only copy for chown operation.
+# Tracking this issue at https://github.com/docker/for-linux/issues/388#issuecomment-1108689413
 RUN chown -R devcontainer /opt/venv /opt/venv-test
 
 # If the volume mounted directories does not exist then they shall be created
