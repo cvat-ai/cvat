@@ -46,6 +46,7 @@ RUN curl --silent "https://api.github.com/repos/open-policy-agent/opa/releases/t
 
 RUN /usr/bin/python3 -m venv /opt/venv-test
 ENV PATH="/opt/venv-test/bin:${PATH}"
+RUN chown -R devcontainer /opt/venv /opt/venv-test
 
 # If the volume mounted directories does not exist then they shall be created
 # automatically during and they shall be owned by the root user and shall be

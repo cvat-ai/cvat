@@ -59,9 +59,8 @@ is_datumro_update() {
     fi
 }
 
-# Update development and testing virtual environment
 update_venvs() {
-    sudo chown -R devcontainer /opt/venv /opt/venv-test
+    # Update development and testing virtual environment
     tmpdir=/home/devcontainer/tmp
     copy "${workspace_dir}/cvat/requirements/" "${tmpdir}/cvat/requirements/"
     copy "${workspace_dir}/utils/dataset_manifest/requirements.txt" "${tmpdir}/utils/dataset_manifest/requirements.txt"
@@ -84,3 +83,4 @@ export -f echo_bold && export -f update_venvs && export -f start_nuclio_dasboard
     && export -f copy && export -f is_datumro_update && export workspace_dir="${workspace_dir}"
 parallel --jobs 4 --ungroup --halt now,fail=1 ::: \
     update_venvs start_nuclio_dasboard node_dependencies mark_git_safe
+
