@@ -5,9 +5,10 @@ set -e
 devcontainer_dir="$(dirname "$(realpath "${0}")")"
 workspace_dir="$(dirname "${devcontainer_dir}")"
 env_file="${devcontainer_dir}/.env"
+env_dist_file="${devcontainer_dir}/dist.env"
 
 if ! [ -f "${env_file}" ]; then
-    cp "${env_file}.dist" "${env_file}"
+    cp "${env_dist_file}" "${env_file}"
 fi
 
 # Get env var from the .env file in .devcontainer directory
