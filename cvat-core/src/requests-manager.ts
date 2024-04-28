@@ -15,7 +15,6 @@ export interface SerializedRequest {
     status: string;
     operation?: {
         target: string;
-        name: string;
         type: string;
         format: string;
         job_id: number | null;
@@ -34,7 +33,6 @@ export interface SerializedRequest {
 
 type Operation = {
     target: string;
-    name: string;
     type: string;
     format: string;
     jobID: number | null;
@@ -99,7 +97,6 @@ export class Request {
     get operation(): Operation {
         return {
             target: this.#operation.target,
-            name: this.#operation.name,
             type: this.#operation.type,
             format: this.#operation.format,
             jobID: this.#operation.job_id,

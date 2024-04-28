@@ -42,6 +42,23 @@ function constructLink(operation: typeof Request['operation']): string | null {
     return null;
 }
 
+function constructName(operation: typeof Request['operation']): string | null {
+    const {
+        target, jobID, taskID, projectID,
+    } = operation;
+
+    if (target === 'project' && projectID) {
+        return `Project #${projectID}`;
+    }
+    if (target === 'task' && taskID) {
+        return `Task #${taskID}`;
+    }
+    if (target === 'job' && jobID) {
+        return `Job #${jobID}`;
+    }
+    return null;
+}
+
 function constructTimestamps(request: Request): JSX.Element {
     const started = moment(request.startDate).format('MMM Do YY, H:mm');
     const finished = moment(request.finishDate).format('MMM Do YY, H:mm');
@@ -110,13 +127,6 @@ function constructTimestamps(request: Request): JSX.Element {
     }
 }
 
-function truncateName(name: string, maxLength: number): string {
-    if (name.length > maxLength) {
-        return `${name.slice(0, maxLength - 3)}...`;
-    }
-    return name;
-}
-
 function statusMessage(request: Request, defaultMessage: string, postfix?: JSX.Element): JSX.Element {
     if (request.message) {
         return (
@@ -155,7 +165,7 @@ export default function RequestCard(props: Props): JSX.Element {
     const percent = request.status === RQStatus.FINISHED ? 100 : request.progress;
     const timestamps = constructTimestamps(request);
 
-    const truncatedName = truncateName(operation.name, 60);
+    const name = constructName(operation);
 
     const progress = request.status === RQStatus.FINISHED ? 100 : request.progress;
     const percentSymbol = (request.status === RQStatus.FAILED || !progress) ? '' : '%';
@@ -181,8 +191,8 @@ export default function RequestCard(props: Props): JSX.Element {
                                 </Col>
                                 <Col className='cvat-requests-name'>
                                     {linkToEntity ?
-                                        (<Link to={linkToEntity}>{truncatedName}</Link>) :
-                                        <Text>{truncatedName}</Text>}
+                                        (<Link to={linkToEntity}>{name}</Link>) :
+                                        <Text>{name}</Text>}
                                 </Col>
                             </Row>
                             {timestamps}
