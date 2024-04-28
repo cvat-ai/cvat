@@ -53,7 +53,7 @@ yarn run cypress:run:chrome:canvas3d
    pip install -e ./cvat-sdk
    pip install -e ./cvat-cli
    ```
-   Note: For remote development environment activate `test-venv` python virtual environment
+   Note: For remote development environment, activate `test-venv` python virtual environment
    located at `/opt/venv-test/` and execute the above code. On VS Code this can done via the command `Python: Select Interpreter` from the command pallette.
 1. Stop any other CVAT containers which you run previously. They keep ports
 which are used by containers for the testing system. (Not required for dev container)
