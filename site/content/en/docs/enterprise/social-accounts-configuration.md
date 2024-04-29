@@ -80,7 +80,7 @@ There are 2 basic steps to enable GitHub account authentication.
 2. On the left menu, click **<> Developer settings** > **OAuth Apps** > **Register new application**.
    <br>For more information, see [Creating an OAuth App](https://docs.github.com/en/developers/apps/building-oauth-apps/creating-an-oauth-app)
 3. Fill in the name field, set the homepage URL (for example: `https://localhost:8080`),
-   and authorization callback URL (for example: `https://localhost:8080/api/auth/social/github/login/callback/`).
+   and authentication callback URL (for example: `https://localhost:8080/api/auth/social/github/login/callback/`).
 4. Create conпiguration file in CVAT:
 
    1. Create the `auth_config.yml` file with the following content:
@@ -113,7 +113,7 @@ To enable authentication, do the following:
 1. Create a user pool. For more information,
    see [Amazon Cognito user pools](https://docs.aws.amazon.com/cognito/latest/developerguide/cognito-user-identity-pools.html)
 2. Fill in the name field, set the homepage URL (for example: `https://localhost:8080`),
-   and authorization callback URL (for example: `https://localhost:8080/api/auth/social/amazon-cognito/login/callback/`).
+   and authentication callback URL (for example: `https://localhost:8080/api/auth/social/amazon-cognito/login/callback/`).
 3. Create conпiguration file in CVAT:
 
    1. Create the `auth_config.yml` file with the following content:

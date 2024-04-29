@@ -108,8 +108,8 @@ export default function implementAPI(cvat: CVATCore): CVATCore {
     implementationMixin(cvat.server.resetPassword, async (newPassword1, newPassword2, uid, token) => {
         await serverProxy.server.resetPassword(newPassword1, newPassword2, uid, token);
     });
-    implementationMixin(cvat.server.authorized, async () => {
-        const result = await serverProxy.server.authorized();
+    implementationMixin(cvat.server.authenticated, async () => {
+        const result = await serverProxy.server.authenticated();
         return result;
     });
     implementationMixin(cvat.server.healthCheck, async (

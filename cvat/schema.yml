@@ -1,7 +1,7 @@
 openapi: 3.0.3
 info:
   title: CVAT REST API
-  version: 2.12.0
+  version: 2.12.1
   description: REST API for Computer Vision Annotation Tool (CVAT)
   termsOfService: https://www.google.com/policies/terms/
   contact:
@@ -5684,7 +5684,7 @@ paths:
   /api/users/self:
     get:
       operationId: users_retrieve_self
-      description: Method returns an instance of a user who is currently authorized
+      description: Method returns an instance of a user who is currently authenticated
       summary: Get details of the current user
       tags:
       - users
