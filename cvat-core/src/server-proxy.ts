@@ -6,7 +6,6 @@
 import FormData from 'form-data';
 import store from 'store';
 import Axios, { AxiosError, AxiosResponse } from 'axios';
-import { isNetworkError } from 'axios-retry';
 import * as tus from 'tus-js-client';
 import { ChunkQuality } from 'cvat-data';
 
@@ -2455,34 +2454,28 @@ async function calculateAnalyticsReport(
             ...body,
             ...params,
         }).then(({ data: { rq_id: rqID } }) => {
-            listenerStorage[id].onUpdate.forEach((_onUpdate) => _onUpdate('queued', 0, 'Analytics report request sent'));
+            listenerStorage[id].onUpdate.forEach((_onUpdate) => _onUpdate(RQStatus.QUEUED, 0, 'Analytics report request sent'));
             const checkStatus = (): void => {
                 Axios.post(`${backendAPI}/analytics/reports`, {
                     ...body,
                     ...params,
                 }, { params: { rq_id: rqID } }).then((response) => {
-                    // todo: rewrite server logic, now it returns 202, 201 codes instead of RQ statuses
+                    // TODO: rewrite server logic, now it returns 202, 201 codes, but we need RQ statuses and details
+                    // after this patch is merged https://github.com/cvat-ai/cvat/pull/7537
                     if (response.status === 201) {
-                        listenerStorage[id].onUpdate.forEach((_onUpdate) => _onUpdate('finished', 0, 'Done'));
+                        listenerStorage[id].onUpdate.forEach((_onUpdate) => _onUpdate(RQStatus.FINISHED, 0, 'Done'));
                         resolve();
                         return;
                     }
 
-                    listenerStorage[id].onUpdate.forEach((_onUpdate) => _onUpdate('queued', 0, 'Analytics report is in progress'));
+                    listenerStorage[id].onUpdate.forEach((_onUpdate) => _onUpdate(RQStatus.QUEUED, 0, 'Analytics report calculation is in progress'));
                     setTimeout(checkStatus, 10000);
                 }).catch((errorData) => {
-                    if (!isNetworkError(errorData)) {
-                        // in case of network error, do nothing
-                        // wait until connection established
-                        reject(generateError(errorData));
-                    } else {
-                        listenerStorage[id].onUpdate.forEach((_onUpdate) => _onUpdate('error', 0, 'Could not establish connection to the server'));
-                        setTimeout(checkStatus, 10000);
-                    }
+                    reject(generateError(errorData));
                 });
             };
 
-            setTimeout(checkStatus, 1000);
+            setTimeout(checkStatus, 2500);
         }).catch((errorData) => {
             reject(generateError(errorData));
         });

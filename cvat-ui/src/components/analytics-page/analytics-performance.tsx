@@ -63,8 +63,8 @@ function AnalyticsOverview(props: Props): JSX.Element | null {
             <div className='cvat-analytics-overview'>
                 <Row>
                     <Col span={24}>
-                        <Card className='cvat-job-empty-performance-analytics-item'>
-                            <div>
+                        <Card>
+                            <div className='cvat-job-empty-performance-analytics-item'>
                                 {reportRefreshingStatus ? <Text>{reportRefreshingStatus}</Text> :
                                     <Title level={5}> Performance report was not calculated yet... </Title>}
                                 <Button

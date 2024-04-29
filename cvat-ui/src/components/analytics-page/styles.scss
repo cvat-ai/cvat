@@ -24,10 +24,8 @@
 }
 
 .cvat-job-empty-performance-analytics-item {
-    > div > div {
-        display: flex;
-        justify-content: space-between;
-    }
+    display: flex;
+    justify-content: space-between;
 }
 
 .cvat-task-mean-annotation-quality {
