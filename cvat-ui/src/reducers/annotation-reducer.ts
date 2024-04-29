@@ -445,6 +445,10 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                 player: {
                     ...state.player,
                     ranges: ranges || state.player.ranges,
+                    frame: {
+                        ...state.player.frame,
+                        changeFrameEvent: null,
+                    },
                 },
                 canvas: {
                     ...state.canvas,
