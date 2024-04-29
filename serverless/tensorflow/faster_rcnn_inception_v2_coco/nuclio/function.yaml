@@ -115,7 +115,7 @@ spec:
           value: ln -s faster_rcnn_inception_v2_coco_2018_01_28 faster_rcnn
         - kind: RUN
           value: pip install pillow==9.5.0 pyyaml
-          
+
   triggers:
     myHttpTrigger:
       maxWorkers: 2
