@@ -1,4 +1,7 @@
 package webhooks
+
+import rego.v1
+
 import data.utils
 import data.organizations
 
@@ -31,54 +34,54 @@ import data.organizations
 # }
 #
 
-is_project_owner {
+is_project_owner if {
     input.resource.project.owner.id == input.auth.user.id
 }
 
-is_webhook_owner {
+is_webhook_owner if {
     input.resource.owner.id == input.auth.user.id
 }
 
 default allow := false
 
-allow {
+allow if {
     utils.is_admin
 }
 
-allow {
+allow if {
     input.scope == utils.CREATE_IN_PROJECT
     utils.is_sandbox
     utils.has_perm(utils.USER)
     is_project_owner
 }
 
-allow {
+allow if {
     input.scope == utils.LIST
     utils.is_sandbox
 }
 
-allow {
+allow if {
     input.scope == utils.LIST
     organizations.is_member
 }
 
-filter := [] { # Django Q object to filter list of entries
+filter := [] if { # Django Q object to filter list of entries
     utils.is_admin
     utils.is_sandbox
-} else := qobject {
+} else := qobject if {
     utils.is_admin
     utils.is_organization
     qobject := [ {"organization": input.auth.organization.id} ]
-} else := qobject {
+} else := qobject if {
     utils.is_sandbox
     user := input.auth.user
     qobject := [ {"owner_id": user.id}, {"project__owner_id": user.id}, "|" ]
-} else := qobject {
+} else := qobject if {
     utils.is_organization
     utils.has_perm(utils.WORKER)
     organizations.has_perm(organizations.MAINTAINER)
     qobject := [ {"organization": input.auth.organization.id} ]
-} else := qobject {
+} else := qobject if {
     utils.is_organization
     utils.has_perm(utils.WORKER)
     organizations.has_perm(organizations.WORKER)
@@ -88,48 +91,48 @@ filter := [] { # Django Q object to filter list of entries
 }
 
 
-allow {
+allow if {
     input.scope == utils.VIEW
     utils.is_sandbox
     utils.is_resource_owner
 }
 
-allow {
+allow if {
     input.scope == utils.VIEW
     utils.is_sandbox
     is_project_owner
 }
 
-allow {
-    { utils.UPDATE, utils.DELETE }[input.scope]
+allow if {
+    input.scope in {utils.UPDATE, utils.DELETE}
     utils.is_sandbox
     utils.has_perm(utils.WORKER)
     utils.is_resource_owner
 }
 
-allow {
-    { utils.UPDATE, utils.DELETE }[input.scope]
+allow if {
+    input.scope in {utils.UPDATE, utils.DELETE}
     utils.is_sandbox
     utils.has_perm(utils.WORKER)
     is_project_owner
 }
 
-allow {
+allow if {
     input.scope == utils.VIEW
     input.auth.organization.id == input.resource.organization.id
     organizations.has_perm(organizations.WORKER)
     utils.is_resource_owner
 }
 
-allow {
+allow if {
     input.scope == utils.VIEW
     input.auth.organization.id == input.resource.organization.id
     organizations.has_perm(organizations.WORKER)
     is_project_owner
 }
 
-allow {
-    { utils.UPDATE, utils.DELETE }[input.scope]
+allow if {
+    input.scope in {utils.UPDATE, utils.DELETE}
     input.auth.organization.id == input.resource.organization.id
     utils.has_perm(utils.WORKER)
     organizations.has_perm(organizations.WORKER)
@@ -137,30 +140,30 @@ allow {
 }
 
 
-allow {
-    { utils.UPDATE, utils.DELETE, utils.VIEW }[input.scope]
+allow if {
+    input.scope in {utils.UPDATE, utils.DELETE, utils.VIEW}
     input.auth.organization.id == input.resource.organization.id
     utils.has_perm(utils.WORKER)
     organizations.has_perm(organizations.MAINTAINER)
 }
 
-allow {
-    { utils.CREATE_IN_PROJECT, utils.CREATE_IN_ORGANIZATION }[input.scope]
+allow if {
+    input.scope in {utils.CREATE_IN_PROJECT, utils.CREATE_IN_ORGANIZATION}
     input.auth.organization.id == input.resource.organization.id
     utils.has_perm(utils.WORKER)
     organizations.has_perm(organizations.MAINTAINER)
 }
 
-allow {
-    { utils.UPDATE, utils.DELETE }[input.scope]
+allow if {
+    input.scope in {utils.UPDATE, utils.DELETE}
     input.auth.organization.id == input.resource.organization.id
     utils.has_perm(utils.WORKER)
     organizations.has_perm(organizations.WORKER)
     is_project_owner
 }
 
-allow {
-    { utils.CREATE_IN_PROJECT }[input.scope]
+allow if {
+    input.scope in {utils.CREATE_IN_PROJECT}
     input.auth.organization.id == input.resource.organization.id
     utils.has_perm(utils.WORKER)
     organizations.has_perm(organizations.WORKER)

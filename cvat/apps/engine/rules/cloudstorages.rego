@@ -1,4 +1,7 @@
 package cloudstorages
+
+import rego.v1
+
 import data.utils
 import data.organizations
 
@@ -29,80 +32,80 @@ import data.organizations
 default allow := false
 
 # Admin has no restrictions
-allow {
+allow if {
     utils.is_admin
 }
 
-allow {
+allow if {
     input.scope == utils.CREATE
     utils.has_perm(utils.USER)
     utils.is_sandbox
 }
 
-allow {
+allow if {
     input.scope == utils.CREATE
     input.auth.organization.id == input.resource.organization.id
     utils.has_perm(utils.USER)
     organizations.has_perm(organizations.MAINTAINER)
 }
 
-allow {
+allow if {
     input.scope == utils.LIST
     utils.is_sandbox
 }
 
-allow {
+allow if {
     input.scope == utils.LIST
     organizations.is_member
 }
 
-filter := [] { # Django Q object to filter list of entries
+filter := [] if { # Django Q object to filter list of entries
     utils.is_admin
     utils.is_sandbox
-} else := qobject {
+} else := qobject if {
     utils.is_admin
     qobject := [ {"organization": input.auth.organization.id} ]
-} else := qobject {
+} else := qobject if {
     utils.has_perm(utils.USER)
     organizations.has_perm(organizations.SUPERVISOR)
     qobject := [ {"organization": input.auth.organization.id} ]
-} else := qobject {
+} else := qobject if {
     utils.is_sandbox
     qobject := [ {"owner": input.auth.user.id} ]
-} else := qobject {
+} else := qobject if {
     utils.is_organization
     qobject := [ {"owner": input.auth.user.id}, {"organization": input.auth.organization.id}, "&" ]
 }
 
-allow {
-    { utils.VIEW, utils.LIST_CONTENT }[input.scope]
+allow if {
+    input.scope in {utils.VIEW, utils.LIST_CONTENT}
     utils.is_sandbox
     utils.is_resource_owner
 }
 
-allow {
-    { utils.VIEW, utils.LIST_CONTENT }[input.scope]
+allow if {
+    input.scope in {utils.VIEW, utils.LIST_CONTENT}
     input.auth.organization.id == input.resource.organization.id
     organizations.is_member
     utils.is_resource_owner
 }
 
-allow {
-    { utils.VIEW, utils.LIST_CONTENT }[input.scope]
+allow if {
+    input.scope in {utils.VIEW, utils.LIST_CONTENT}
     input.auth.organization.id == input.resource.organization.id
     utils.has_perm(utils.USER)
     organizations.has_perm(organizations.SUPERVISOR)
 }
 
-allow {
-    { utils.UPDATE, utils.DELETE }[input.scope]
+allow if {
+    input.scope in {utils.UPDATE, utils.DELETE}
     utils.is_sandbox
     utils.has_perm(utils.WORKER)
     utils.is_resource_owner
 }
 
-allow {
-    { utils.UPDATE, utils.DELETE }[input.scope]
+allow if {
+    input.scope in {utils.UPDATE, utils.DELETE}
     input.auth.organization.id == input.resource.organization.id
     organizations.is_member
     utils.has_perm(utils.WORKER)
@@ -110,8 +113,8 @@ allow {
 }
 
 
-allow {
-    { utils.UPDATE, utils.DELETE }[input.scope]
+allow if {
+    input.scope in {utils.UPDATE, utils.DELETE}
     input.auth.organization.id == input.resource.organization.id
     utils.has_perm(utils.USER)
     organizations.has_perm(organizations.MAINTAINER)
