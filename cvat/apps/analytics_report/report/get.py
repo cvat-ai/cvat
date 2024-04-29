@@ -59,7 +59,7 @@ def _get_object_report(obj_model, pk, start_date, end_date):
         db_analytics_report = db_obj.analytics_report
         data[f"{obj_model.__name__.lower()}_id"] = pk
     except obj_model.DoesNotExist as ex:
-        raise NotFound(f"{obj_model.__class__.__name__} object with pk={pk} does not exist") from ex
+        raise NotFound(f"{obj_model.__name__} object with pk={pk} does not exist") from ex
     except AnalyticsReport.DoesNotExist:
         db_analytics_report = get_empty_report()
 
