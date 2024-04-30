@@ -30,7 +30,7 @@ Before uploading the archive to CVAT, do the following:
    as the primary image to which it should be linked.
 3. Place the contextual image(s) within the subfolder created in step 2.
 4. Add folder to the archive.
-5. [Create task](/docs/manual/basics/create_an_annotation_task/#create-a-task).
+5. {{< ilink "/docs/manual/basics/create_an_annotation_task#create-a-task" "Create task" >}}.
 
 ## Data format
 
@@ -54,13 +54,14 @@ Example file structure for 2D and 3D tasks:
 {{< /tab >}}
 {{< tab header="3D option 1" >}}
  root_directory
-    image_1_to_be_annotated.pcd
-    image_2_to_be_annotated.pcd
-     related_images/
-        image_1_to_be_annotated_pcd/
-           context_image_for_image_1.jpg
-        image_2_to_be_annotated_pcd/
-           context_image_for_image_2.jpg
+    pointcloud/
+      image_1_to_be_annotated.pcd
+      image_2_to_be_annotated.pcd
+    related_images/
+      image_1_to_be_annotated_pcd/
+        context_image_for_image_1.jpg
+      image_2_to_be_annotated_pcd/
+        context_image_for_image_2.jpg
 {{< /tab >}}
 {{< tab header="3D option 2" >}}
  /any_directory
@@ -111,7 +112,7 @@ Example file structure for 2D and 3D tasks:
 a .pcd file with the same name is considered to be a context image.
 
 For more general information about 3D data formats,
-see [3D data formats](/docs/manual/basics/create_an_annotation_task/#data-formats-for-a-3d-task).
+see {{< ilink "/docs/manual/basics/create_an_annotation_task#data-formats-for-a-3d-task" "3D data formats" >}}.
 
 ## Contextual images
 

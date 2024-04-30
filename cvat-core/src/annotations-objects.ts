@@ -7,7 +7,9 @@ import { omit } from 'lodash';
 import config from './config';
 import ObjectState, { SerializedData } from './object-state';
 import { checkObjectType, clamp } from './common';
-import { DataError, ArgumentError, ScriptingError } from './exceptions';
+import {
+    DataError, ArgumentError, ScriptingError,
+} from './exceptions';
 import { Label } from './labels';
 import {
     colors, Source, ShapeType, ObjectType, HistoryActions, DimensionType, JobType,
@@ -2073,7 +2075,7 @@ export class SkeletonShape extends Shape {
             return new ObjectState(this.get(frame));
         }
 
-        const updateElements = (affectedElements, action, property: 'points' | 'occluded' | 'hidden' | 'lock') => {
+        const updateElements = (affectedElements, action, property: 'points' | 'occluded' | 'hidden' | 'lock'): void => {
             const undoSkeletonProperties = this.elements.map((element) => element[property]);
             const undoSource = this.source;
             const redoSource = this.readOnlyFields.includes('source') ? this.source : computeNewSource(this.source);
@@ -2178,7 +2180,7 @@ export class MaskShape extends Shape {
     }
 
     protected validateStateBeforeSave(data: ObjectState, updated: ObjectState['updateFlags'], frame?: number): number[] {
-        Annotation.prototype.validateStateBeforeSave.call(this, data, updated);
+        super.validateStateBeforeSave(data, updated, frame);
         if (updated.points) {
             const { width, height } = this.frameMeta[frame];
             return cropMask(data.points, width, height);
@@ -2187,7 +2189,13 @@ export class MaskShape extends Shape {
         return [];
     }
 
-    public removeUnderlyingPixels(frame: number): void {
+    public removeUnderlyingPixels(frame: number):
+    {
+        clientIDs: number[],
+        undo: Function,
+        redo: Function,
+        emptyMaskOccurred: boolean,
+    } {
         if (frame !== this.frame) {
             throw new ArgumentError(
                 `Wrong "frame" attribute: is not equal to the shape frame (${frame} vs ${this.frame})`,
@@ -2200,7 +2208,7 @@ export class MaskShape extends Shape {
         const height = this.bottom - this.top + 1;
         const updatedObjects: Record<number, MaskShape> = {};
 
-        const masks = {};
+        let masks = {};
         const currentMask = rle2Mask(this.points, width, height);
         for (let i = 0; i < currentMask.length; i++) {
             if (currentMask[i]) {
@@ -2228,10 +2236,43 @@ export class MaskShape extends Shape {
             }
         }
 
+        const wrapper = {
+            stashedPoints: Object.values(updatedObjects).map((object) => object.points),
+            stashedRemoved: Object.values(updatedObjects).map((object) => object.removed),
+        };
+
+        let emptyMaskOccurred = false;
         for (const object of Object.values(updatedObjects)) {
-            object.points = mask2Rle(masks[object.clientID]);
-            object.updated = Date.now();
+            const points = mask2Rle(masks[object.clientID]);
+            if (points.length < 2) {
+                object.removed = true;
+                emptyMaskOccurred = true;
+            } else {
+                object.points = points;
+                object.updated = Date.now();
+            }
         }
+        masks = null;
+
+        const undo = (): void => {
+            const updatedStashedPoints = Object.values(updatedObjects).map((object) => object.points);
+            const updatedStashedRemoved = Object.values(updatedObjects).map((object) => object.removed);
+            for (const [index, object] of Object.values(updatedObjects).entries()) {
+                object.points = wrapper.stashedPoints[index];
+                object.removed = wrapper.stashedRemoved[index];
+                object.updated = Date.now();
+            }
+            wrapper.stashedPoints = updatedStashedPoints;
+            wrapper.stashedRemoved = updatedStashedRemoved;
+        };
+
+        const redo = undo;
+        return {
+            clientIDs: Object.keys(updatedObjects).map((clientID) => +clientID),
+            emptyMaskOccurred,
+            undo,
+            redo,
+        };
     }
 
     protected savePoints(maskPoints: number[], frame: number): void {
@@ -2268,15 +2309,34 @@ export class MaskShape extends Shape {
             this.updated = Date.now();
         };
 
-        this.history.do(
-            HistoryActions.CHANGED_POINTS,
-            undo, redo, [this.clientID], frame,
-        );
-
         redo();
-
-        if (config.removeUnderlyingMaskPixels) {
-            this.removeUnderlyingPixels(frame);
+        if (config.removeUnderlyingMaskPixels.enabled) {
+            const {
+                clientIDs,
+                emptyMaskOccurred,
+                undo: undoWithUnderlyingPixels,
+                redo: redoWithUnderlyingPixels,
+            } = this.removeUnderlyingPixels(frame);
+            if (emptyMaskOccurred) {
+                config.removeUnderlyingMaskPixels?.onEmptyMaskOccurrence();
+            }
+            this.history.do(
+                HistoryActions.CHANGED_POINTS,
+                () => {
+                    undoWithUnderlyingPixels();
+                    undo();
+                },
+                () => {
+                    redoWithUnderlyingPixels();
+                    redo();
+                },
+                [this.clientID, ...clientIDs], frame,
+            );
+        } else {
+            this.history.do(
+                HistoryActions.CHANGED_POINTS,
+                undo, redo, [this.clientID], frame,
+            );
         }
     }
 
@@ -2480,7 +2540,7 @@ class PolyTrack extends Track {
             return updatedMatching;
         }
 
-        function reduceInterpolation(interpolatedPoints, matching, leftPoints, rightPoints) {
+        function reduceInterpolation(interpolatedPoints, matching, leftPoints, rightPoints): void {
             function averagePoint(points: Point2D[]): Point2D {
                 let sumX = 0;
                 let sumY = 0;
@@ -2499,7 +2559,7 @@ class PolyTrack extends Track {
                 return Math.sqrt((point1.x - point2.x) ** 2 + (point1.y - point2.y) ** 2);
             }
 
-            function minimizeSegment(baseLength: number, N: number, startInterpolated, stopInterpolated) {
+            function minimizeSegment(baseLength: number, N: number, startInterpolated, stopInterpolated): void {
                 const threshold = baseLength / (2 * N);
                 const minimized = [interpolatedPoints[startInterpolated]];
                 let latestPushed = startInterpolated;
@@ -2536,7 +2596,7 @@ class PolyTrack extends Track {
                 interpolatedIndexes[i] = matching[i].map(() => accumulated++);
             }
 
-            function leftSegment(start, stop) {
+            function leftSegment(start, stop): void {
                 const startInterpolated = interpolatedIndexes[start][0];
                 const stopInterpolated = interpolatedIndexes[stop][0];
 
@@ -2551,7 +2611,7 @@ class PolyTrack extends Track {
                 reduced.push(...minimizeSegment(baseLength, N, startInterpolated, stopInterpolated));
             }
 
-            function rightSegment(leftPoint) {
+            function rightSegment(leftPoint): void {
                 const start = matching[leftPoint][0];
                 const [stop] = matching[leftPoint].slice(-1);
                 const startInterpolated = interpolatedIndexes[leftPoint][0];

@@ -1,5 +1,5 @@
 // Copyright (C) 2020-2022 Intel Corporation
-// Copyright (C) 2023 CVAT.ai Corporation
+// Copyright (C) 2023-2024 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -16,6 +16,7 @@ import { MainMenuIcon, UndoIcon, RedoIcon } from 'icons';
 import { ActiveControl, ToolsBlockerState } from 'reducers';
 import CVATTooltip from 'components/common/cvat-tooltip';
 import customizableComponents from 'components/customizable-components';
+import GlobalHotKeys, { KeyMap } from 'utils/mousetrap-react';
 
 interface Props {
     saving: boolean;
@@ -27,6 +28,7 @@ interface Props {
     switchToolsBlockerShortcut: string;
     toolsBlockerState: ToolsBlockerState;
     activeControl: ActiveControl;
+    keyMap: KeyMap;
     onSaveAnnotation(): void;
     onUndoClick(): void;
     onRedoClick(): void;
@@ -37,6 +39,7 @@ interface Props {
 function LeftGroup(props: Props): JSX.Element {
     const {
         saving,
+        keyMap,
         undoAction,
         redoAction,
         undoShortcut,
@@ -66,14 +69,39 @@ function LeftGroup(props: Props): JSX.Element {
     const shouldEnableToolsBlockerOnClick = [ActiveControl.OPENCV_TOOLS].includes(activeControl);
     const SaveButtonComponent = customizableComponents.SAVE_ANNOTATION_BUTTON;
 
+    const subKeyMap = {
+        UNDO: keyMap.UNDO,
+        REDO: keyMap.REDO,
+    };
+
+    const handlers = {
+        UNDO: (event: KeyboardEvent | undefined) => {
+            event?.preventDefault();
+            if (undoAction) {
+                onUndoClick();
+            }
+        },
+        REDO: (event: KeyboardEvent | undefined) => {
+            event?.preventDefault();
+            if (redoAction) {
+                onRedoClick();
+            }
+        },
+    };
+
     return (
         <>
+            <GlobalHotKeys keyMap={subKeyMap} handlers={handlers} />
             <Modal className='cvat-saving-job-modal' title='Saving changes on the server' visible={saving} footer={[]} closable={false}>
                 <Text>CVAT is saving your annotations, please wait </Text>
                 <LoadingOutlined />
             </Modal>
             <Col className='cvat-annotation-header-left-group'>
-                <Dropdown overlay={<AnnotationMenuContainer />}>
+                <Dropdown
+                    trigger={['click']}
+                    destroyPopupOnHide
+                    overlay={<AnnotationMenuContainer />}
+                >
                     <Button type='link' className='cvat-annotation-header-menu-button cvat-annotation-header-button'>
                         <Icon component={MainMenuIcon} />
                         Menu

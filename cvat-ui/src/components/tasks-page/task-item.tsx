@@ -1,5 +1,5 @@
 // Copyright (C) 2020-2022 Intel Corporation
-// Copyright (C) 2022-2023 CVAT.ai Corporation
+// Copyright (C) 2022-2024 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -14,7 +14,6 @@ import Dropdown from 'antd/lib/dropdown';
 import Progress from 'antd/lib/progress';
 import Badge from 'antd/lib/badge';
 import moment from 'moment';
-
 import { Task, RQStatus } from 'cvat-core-wrapper';
 import ActionsMenuContainer from 'containers/actions-menu/actions-menu';
 import Preview from 'components/common/preview';
@@ -72,12 +71,16 @@ class TaskItemComponent extends React.PureComponent<TaskItemProps & RouteCompone
             }).then((createdTask: Task) => {
                 if (!this.#isUnmounted) {
                     this.setState({ importingState: null });
+
                     setTimeout(() => {
-                        const { taskInstance: currentTaskInstance } = this.props;
-                        if (currentTaskInstance.size !== createdTask.size) {
-                            // update state only if it was not updated anywhere else
-                            // for example in createTaskAsync
-                            updateTaskInState(createdTask);
+                        if (!this.#isUnmounted) {
+                            // check again, because the component may be unmounted to this moment
+                            const { taskInstance: currentTaskInstance } = this.props;
+                            if (currentTaskInstance.size !== createdTask.size) {
+                                // update state only if it was not updated anywhere else
+                                // for example in createTaskAsync
+                                updateTaskInState(createdTask);
+                            }
                         }
                     }, 1000);
                 }
@@ -112,14 +115,13 @@ class TaskItemComponent extends React.PureComponent<TaskItemProps & RouteCompone
         const updated = moment(taskInstance.updatedDate).fromNow();
         const created = moment(taskInstance.createdDate).format('MMMM Do YYYY');
 
-        // Get and truncate a task name
-        const name = `${taskInstance.name.substring(0, 70)}${taskInstance.name.length > 70 ? '...' : ''}`;
-
         return (
             <Col span={10} className='cvat-task-item-description'>
-                <Text strong type='secondary' className='cvat-item-task-id'>{`#${id}: `}</Text>
-                <Text strong className='cvat-item-task-name'>
-                    {name}
+                <Text ellipsis={{ tooltip: taskInstance.name }}>
+                    <Text strong type='secondary' className='cvat-item-task-id'>{`#${id}: `}</Text>
+                    <Text strong className='cvat-item-task-name'>
+                        {taskInstance.name}
+                    </Text>
                 </Text>
                 <br />
                 {owner && (
@@ -254,6 +256,7 @@ class TaskItemComponent extends React.PureComponent<TaskItemProps & RouteCompone
                 </Row>
                 <Row justify='end'>
                     <Dropdown
+                        trigger={['click']}
                         destroyPopupOnHide
                         overlay={(
                             <ActionsMenuContainer

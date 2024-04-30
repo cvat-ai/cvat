@@ -95,13 +95,6 @@ def make_exporter(name):
     return EXPORT_FORMATS[name]()
 
 
-# Add checking for TF availability to avoid CVAT sever instance / interpreter
-# crash and provide a meaningful diagnostic message in the case of AVX
-# instructions unavailability:
-# https://github.com/openvinotoolkit/cvat/pull/1567
-import datumaro.util.tf_util as TF
-TF.enable_tf_check = True
-
 # pylint: disable=unused-import
 import cvat.apps.dataset_manager.formats.coco
 import cvat.apps.dataset_manager.formats.cvat
@@ -111,7 +104,6 @@ import cvat.apps.dataset_manager.formats.mask
 import cvat.apps.dataset_manager.formats.mot
 import cvat.apps.dataset_manager.formats.mots
 import cvat.apps.dataset_manager.formats.pascal_voc
-import cvat.apps.dataset_manager.formats.tfrecord
 import cvat.apps.dataset_manager.formats.yolo
 import cvat.apps.dataset_manager.formats.imagenet
 import cvat.apps.dataset_manager.formats.camvid

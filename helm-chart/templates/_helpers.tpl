@@ -77,19 +77,19 @@ Create the name of the service account to use
       name: "{{ tpl (.Values.redis.secret.name) . }}"
       key: password
 
-{{- if .Values.keydb.enabled }}
+{{- if .Values.cvat.kvrocks.enabled }}
 - name: CVAT_REDIS_ONDISK_HOST
-  value: "{{ .Release.Name }}-keydb"
+  value: "{{ .Release.Name }}-kvrocks"
 {{- else }}
 - name: CVAT_REDIS_ONDISK_HOST
-  value: "{{ .Values.keydb.external.host }}"
+  value: "{{ .Values.cvat.kvrocks.external.host }}"
 {{- end }}
 - name: CVAT_REDIS_ONDISK_PORT
-  value: "6379"
+  value: "6666"
 - name: CVAT_REDIS_ONDISK_PASSWORD
   valueFrom:
     secretKeyRef:
-      name: "{{ tpl (.Values.keydb.secret.name) . }}"
+      name: "{{ tpl (.Values.cvat.kvrocks.secret.name) . }}"
       key: password
 
 {{- if .Values.postgresql.enabled }}

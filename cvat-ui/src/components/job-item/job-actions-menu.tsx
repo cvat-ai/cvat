@@ -5,10 +5,7 @@
 import React, { useCallback } from 'react';
 import { useDispatch } from 'react-redux';
 import { useHistory } from 'react-router';
-import Menu from 'antd/lib/menu';
 import Modal from 'antd/lib/modal';
-// eslint-disable-next-line import/no-extraneous-dependencies
-import { MenuInfo } from 'rc-menu/lib/interface';
 import { exportActions } from 'actions/export-actions';
 
 import {
@@ -16,6 +13,7 @@ import {
 } from 'cvat-core-wrapper';
 import { deleteJobAsync } from 'actions/jobs-actions';
 import { importActions } from 'actions/import-actions';
+import Menu, { MenuInfo } from 'components/dropdown-menu';
 
 const core = getCore();
 
@@ -54,7 +52,9 @@ function JobActionsMenu(props: Props): JSX.Element {
                 } else if (action.key === 'project') {
                     history.push(`/projects/${job.projectId}`);
                 } else if (action.key === 'bug_tracker') {
-                    if (job.bugTracker) window.open(job.bugTracker, '_blank', 'noopener noreferrer');
+                    if (job.bugTracker) {
+                        window.open(job.bugTracker, '_blank', 'noopener noreferrer');
+                    }
                 } else if (action.key === 'import_job') {
                     dispatch(importActions.openImportDatasetModal(job));
                 } else if (action.key === 'export_job') {

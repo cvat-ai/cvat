@@ -1,5 +1,5 @@
 # Copyright (C) 2019-2022 Intel Corporation
-# Copyright (C) 2022-2023 CVAT.ai Corporation
+# Copyright (C) 2022-2024 CVAT.ai Corporation
 #
 # SPDX-License-Identifier: MIT
 
@@ -94,10 +94,10 @@ def _import_to_task(dataset, instance_data):
 
 @exporter(name='MOT', ext='ZIP', version='1.1')
 def _export(dst_file, temp_dir, instance_data, save_images=False):
-    dataset = dm.Dataset.from_extractors(GetCVATDataExtractor(
-        instance_data, include_images=save_images), env=dm_env)
+    with GetCVATDataExtractor(instance_data, include_images=save_images) as extractor:
+        dataset = dm.Dataset.from_extractors(extractor, env=dm_env)
 
-    dataset.export(temp_dir, 'mot_seq_gt', save_images=save_images)
+        dataset.export(temp_dir, 'mot_seq_gt', save_images=save_images)
 
     make_zip_archive(temp_dir, dst_file)
 

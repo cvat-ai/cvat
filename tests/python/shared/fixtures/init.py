@@ -135,7 +135,7 @@ def _kube_get_redis_inmem_pod_name():
 
 
 def _kube_get_redis_ondisk_pod_name():
-    return _kube_get_pod_name("app.kubernetes.io/name=keydb")
+    return _kube_get_pod_name("app.kubernetes.io/name=cvat,tier=kvrocks")
 
 
 def docker_cp(source, target):
@@ -240,11 +240,13 @@ def kube_restore_redis_inmem():
 
 
 def docker_restore_redis_ondisk():
-    docker_exec_redis_ondisk(["keydb-cli", "flushall"])
+    docker_exec_redis_ondisk(["redis-cli", "-p", "6666", "flushall"])
 
 
 def kube_restore_redis_ondisk():
-    kube_exec_redis_ondisk(["keydb-cli", "flushall"])
+    kube_exec_redis_ondisk(
+        ["redis-cli", "-p", "6666", "-a", "${CVAT_REDIS_ONDISK_PASSWORD}", "flushall"]
+    )
 
 
 def running_containers():

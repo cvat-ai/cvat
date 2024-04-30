@@ -1,19 +1,18 @@
 // Copyright (C) 2020-2022 Intel Corporation
-// Copyright (C) 2022-2023 CVAT.ai Corporation
+// Copyright (C) 2022-2024 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
 import { ActionUnion, createAction, ThunkAction } from 'utils/redux';
 import { RegisterData } from 'components/register-page/register-form';
-import { getCore } from 'cvat-core-wrapper';
-import isReachable from 'utils/url-checker';
+import { getCore, User } from 'cvat-core-wrapper';
 
 const cvat = getCore();
 
 export enum AuthActionTypes {
-    AUTHORIZED_REQUEST = 'AUTHORIZED_REQUEST',
-    AUTHORIZED_SUCCESS = 'AUTHORIZED_SUCCESS',
-    AUTHORIZED_FAILED = 'AUTHORIZED_FAILED',
+    AUTHENTICATED_REQUEST = 'AUTHENTICATED_REQUEST',
+    AUTHENTICATED_SUCCESS = 'AUTHENTICATED_SUCCESS',
+    AUTHENTICATED_FAILED = 'AUTHENTICATED_FAILED',
     LOGIN = 'LOGIN',
     LOGIN_SUCCESS = 'LOGIN_SUCCESS',
     LOGIN_FAILED = 'LOGIN_FAILED',
@@ -33,22 +32,19 @@ export enum AuthActionTypes {
     RESET_PASSWORD = 'RESET_PASSWORD_CONFIRM',
     RESET_PASSWORD_SUCCESS = 'RESET_PASSWORD_CONFIRM_SUCCESS',
     RESET_PASSWORD_FAILED = 'RESET_PASSWORD_CONFIRM_FAILED',
-    LOAD_AUTH_ACTIONS = 'LOAD_AUTH_ACTIONS',
-    LOAD_AUTH_ACTIONS_SUCCESS = 'LOAD_AUTH_ACTIONS_SUCCESS',
-    LOAD_AUTH_ACTIONS_FAILED = 'LOAD_AUTH_ACTIONS_FAILED',
 }
 
 export const authActions = {
-    authorizeRequest: () => createAction(AuthActionTypes.AUTHORIZED_REQUEST),
-    authorizeSuccess: (user: any) => createAction(AuthActionTypes.AUTHORIZED_SUCCESS, { user }),
-    authorizeFailed: (error: any) => createAction(AuthActionTypes.AUTHORIZED_FAILED, { error }),
+    authenticatedRequest: () => createAction(AuthActionTypes.AUTHENTICATED_REQUEST),
+    authenticatedSuccess: (user: User | null) => createAction(AuthActionTypes.AUTHENTICATED_SUCCESS, { user }),
+    authenticatedFailed: (error: any) => createAction(AuthActionTypes.AUTHENTICATED_FAILED, { error }),
     login: () => createAction(AuthActionTypes.LOGIN),
-    loginSuccess: (user: any) => createAction(AuthActionTypes.LOGIN_SUCCESS, { user }),
+    loginSuccess: (user: User) => createAction(AuthActionTypes.LOGIN_SUCCESS, { user }),
     loginFailed: (error: any, hasEmailVerificationBeenSent = false) => (
         createAction(AuthActionTypes.LOGIN_FAILED, { error, hasEmailVerificationBeenSent })
     ),
     register: () => createAction(AuthActionTypes.REGISTER),
-    registerSuccess: (user: any) => createAction(AuthActionTypes.REGISTER_SUCCESS, { user }),
+    registerSuccess: (user: User) => createAction(AuthActionTypes.REGISTER_SUCCESS, { user }),
     registerFailed: (error: any) => createAction(AuthActionTypes.REGISTER_FAILED, { error }),
     logout: () => createAction(AuthActionTypes.LOGOUT),
     logoutSuccess: () => createAction(AuthActionTypes.LOGOUT_SUCCESS),
@@ -65,14 +61,6 @@ export const authActions = {
     resetPassword: () => createAction(AuthActionTypes.RESET_PASSWORD),
     resetPasswordSuccess: () => createAction(AuthActionTypes.RESET_PASSWORD_SUCCESS),
     resetPasswordFailed: (error: any) => createAction(AuthActionTypes.RESET_PASSWORD_FAILED, { error }),
-    loadServerAuthActions: () => createAction(AuthActionTypes.LOAD_AUTH_ACTIONS),
-    loadServerAuthActionsSuccess: (allowChangePassword: boolean, allowResetPassword: boolean) => (
-        createAction(AuthActionTypes.LOAD_AUTH_ACTIONS_SUCCESS, {
-            allowChangePassword,
-            allowResetPassword,
-        })
-    ),
-    loadServerAuthActionsFailed: (error: any) => createAction(AuthActionTypes.LOAD_AUTH_ACTIONS_FAILED, { error }),
 };
 
 export type AuthActions = ActionUnion<typeof authActions>;
@@ -132,18 +120,18 @@ export const logoutAsync = (): ThunkAction => async (dispatch) => {
     }
 };
 
-export const authorizedAsync = (): ThunkAction => async (dispatch) => {
+export const authenticatedAsync = (): ThunkAction => async (dispatch) => {
     try {
-        dispatch(authActions.authorizeRequest());
-        const result = await cvat.server.authorized();
+        dispatch(authActions.authenticatedRequest());
+        const result = await cvat.server.authenticated();
         if (result) {
             const userInstance = (await cvat.users.get({ self: true }))[0];
-            dispatch(authActions.authorizeSuccess(userInstance));
+            dispatch(authActions.authenticatedSuccess(userInstance));
         } else {
-            dispatch(authActions.authorizeSuccess(null));
+            dispatch(authActions.authenticatedSuccess(null));
         }
     } catch (error) {
-        dispatch(authActions.authorizeFailed(error));
+        dispatch(authActions.authenticatedFailed(error));
     }
 };
 
@@ -186,21 +174,5 @@ export const resetPasswordAsync = (
         dispatch(authActions.resetPasswordSuccess());
     } catch (error) {
         dispatch(authActions.resetPasswordFailed(error));
-    }
-};
-
-export const loadAuthActionsAsync = (): ThunkAction => async (dispatch) => {
-    dispatch(authActions.loadServerAuthActions());
-
-    try {
-        const promises: Promise<boolean>[] = [
-            isReachable(`${cvat.config.backendAPI}/auth/password/change`, 'OPTIONS'),
-            isReachable(`${cvat.config.backendAPI}/auth/password/reset`, 'OPTIONS'),
-        ];
-        const [allowChangePassword, allowResetPassword] = await Promise.all(promises);
-
-        dispatch(authActions.loadServerAuthActionsSuccess(allowChangePassword, allowResetPassword));
-    } catch (error) {
-        dispatch(authActions.loadServerAuthActionsFailed(error));
     }
 };

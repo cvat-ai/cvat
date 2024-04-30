@@ -128,6 +128,8 @@
   },
   "dependencies": {
     "@types/fabric": "^4.5.7",
-    "fabric": "^5.2.1"
+    "@types/lodash": "^4.14.191",
+    "fabric": "^5.2.1",
+    "lodash": "^4.17.21"
   }
 }

@@ -1,5 +1,5 @@
 # Copyright (C) 2020-2022 Intel Corporation
-# Copyright (C) 2022 CVAT.ai Corporation
+# Copyright (C) 2022-2024 CVAT.ai Corporation
 #
 # SPDX-License-Identifier: MIT
 
@@ -42,7 +42,14 @@ class RandomAccessIterator:
         return v
 
     def reset(self):
+        self.close()
         self.iterator = iter(self.iterable)
+
+    def close(self):
+        if self.iterator is not None:
+            if close := getattr(self.iterator, 'close', None):
+                close()
+        self.iterator = None
         self.pos = -1
 
 class FrameProvider:
@@ -67,10 +74,18 @@ class FrameProvider:
 
         def load(self, chunk_id):
             if self.chunk_id != chunk_id:
+                self.unload()
+
                 self.chunk_id = chunk_id
                 self.chunk_reader = RandomAccessIterator(
                     self.reader_class([self.get_chunk_path(chunk_id)]))
             return self.chunk_reader
+
+        def unload(self):
+            self.chunk_id = None
+            if self.chunk_reader:
+                self.chunk_reader.close()
+                self.chunk_reader = None
 
     class BuffChunkLoader(ChunkLoader):
         def __init__(self, reader_class, path_getter, quality, db_data):
@@ -118,6 +133,10 @@ class FrameProvider:
 
     def __len__(self):
         return self._db_data.size
+
+    def unload(self):
+        for loader in self._loaders.values():
+            loader.unload()
 
     def _validate_frame_number(self, frame_number):
         frame_number_ = int(frame_number)

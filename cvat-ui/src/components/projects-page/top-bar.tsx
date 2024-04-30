@@ -1,5 +1,5 @@
 // Copyright (C) 2020-2022 Intel Corporation
-// Copyright (C) 2022 CVAT.ai Corporation
+// Copyright (C) 2022-2024 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -16,7 +16,7 @@ import { usePrevious } from 'utils/hooks';
 import { ProjectsQuery } from 'reducers';
 import { SortingComponent, ResourceFilterHOC, defaultVisibility } from 'components/resource-sorting-filtering';
 
-import dimensions from './dimensions';
+import dimensions from 'utils/dimensions';
 import {
     localStorageRecentKeyword, localStorageRecentCapacity, predefinedFilterValues, config,
 } from './projects-filter-configuration';
@@ -91,6 +91,7 @@ function TopBarComponent(props: Props): JSX.Element {
                 </div>
                 <div>
                     <Dropdown
+                        destroyPopupOnHide
                         trigger={['click']}
                         overlay={(
                             <div className='cvat-projects-page-control-buttons-wrapper'>

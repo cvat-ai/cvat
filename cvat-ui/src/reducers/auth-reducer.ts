@@ -11,30 +11,26 @@ const defaultState: AuthState = {
     initialized: false,
     fetching: false,
     user: null,
-    authActionsFetching: false,
-    authActionsInitialized: false,
-    allowChangePassword: false,
     showChangePasswordDialog: false,
-    allowResetPassword: false,
     hasEmailVerificationBeenSent: false,
 };
 
 export default function (state = defaultState, action: AuthActions | BoundariesActions): AuthState {
     switch (action.type) {
-        case AuthActionTypes.AUTHORIZED_REQUEST:
+        case AuthActionTypes.AUTHENTICATED_REQUEST:
             return {
                 ...state,
                 fetching: true,
                 initialized: false,
             };
-        case AuthActionTypes.AUTHORIZED_SUCCESS:
+        case AuthActionTypes.AUTHENTICATED_SUCCESS:
             return {
                 ...state,
                 initialized: true,
                 fetching: false,
                 user: action.payload.user,
             };
-        case AuthActionTypes.AUTHORIZED_FAILED:
+        case AuthActionTypes.AUTHENTICATED_FAILED:
             return {
                 ...state,
                 fetching: false,
@@ -139,27 +135,6 @@ export default function (state = defaultState, action: AuthActions | BoundariesA
             return {
                 ...state,
                 fetching: false,
-            };
-        case AuthActionTypes.LOAD_AUTH_ACTIONS:
-            return {
-                ...state,
-                authActionsFetching: true,
-            };
-        case AuthActionTypes.LOAD_AUTH_ACTIONS_SUCCESS:
-            return {
-                ...state,
-                authActionsFetching: false,
-                authActionsInitialized: true,
-                allowChangePassword: action.payload.allowChangePassword,
-                allowResetPassword: action.payload.allowResetPassword,
-            };
-        case AuthActionTypes.LOAD_AUTH_ACTIONS_FAILED:
-            return {
-                ...state,
-                authActionsFetching: false,
-                authActionsInitialized: true,
-                allowChangePassword: false,
-                allowResetPassword: false,
             };
         case BoundariesActionTypes.RESET_AFTER_ERROR: {
             return { ...defaultState };

@@ -1,5 +1,5 @@
 // Copyright (C) 2021-2022 Intel Corporation
-// Copyright (C) 2022 CVAT.ai Corporation
+// Copyright (C) 2022-2024 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -43,7 +43,7 @@ context('Dump/Upload annotation.', { browser: '!firefox' }, () => {
         cy.contains('.cvat-item-task-name', toTaskName)
             .parents('.cvat-tasks-list-item')
             .find('.cvat-menu-icon')
-            .trigger('mouseover');
+            .click();
         cy.contains('Upload annotations').click();
         cy.get('.cvat-modal-import-dataset').find('.cvat-modal-import-select').click();
         cy.contains('.cvat-modal-import-dataset-option-item', exportFormat.split(' ')[0]).click();

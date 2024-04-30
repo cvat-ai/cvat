@@ -1,4 +1,5 @@
 // Copyright (C) 2020-2022 Intel Corporation
+// Copyright (C) 2024 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -30,6 +31,7 @@ function renderInputElement(parameters: InputElementParameters): JSX.Element {
 
     const ref = useRef<TextAreaRef>(null);
     const [selectionStart, setSelectionStart] = useState<number>(currentValue.length);
+    const [localAttrValue, setAttributeValue] = useState(currentValue);
 
     useEffect(() => {
         const textArea = ref?.current?.resizableTextArea?.textArea;
@@ -39,13 +41,28 @@ function renderInputElement(parameters: InputElementParameters): JSX.Element {
         }
     }, [currentValue]);
 
+    useEffect(() => {
+        // attribute value updated from inside the app (for example undo/redo)
+        if (currentValue !== localAttrValue) {
+            setAttributeValue(currentValue);
+        }
+    }, [currentValue]);
+
+    useEffect(() => {
+        // wrap to internal use effect to avoid issues
+        // with chinese keyboard
+        if (localAttrValue !== currentValue) {
+            onChange(localAttrValue);
+        }
+    }, [localAttrValue]);
+
     const renderCheckbox = (): JSX.Element => (
         <>
             <Text strong>Checkbox: </Text>
             <div className='attribute-annotation-sidebar-attr-elem-wrapper'>
                 <Checkbox
-                    onChange={(event: CheckboxChangeEvent): void => onChange(event.target.checked ? 'true' : 'false')}
-                    checked={currentValue === 'true'}
+                    onChange={(event: CheckboxChangeEvent): void => setAttributeValue(event.target.checked ? 'true' : 'false')}
+                    checked={localAttrValue === 'true'}
                 />
             </div>
         </>
@@ -56,9 +73,9 @@ function renderInputElement(parameters: InputElementParameters): JSX.Element {
             <Text strong>Values: </Text>
             <div className='attribute-annotation-sidebar-attr-elem-wrapper'>
                 <Select
-                    value={currentValue}
+                    value={localAttrValue}
                     style={{ width: '80%' }}
-                    onChange={(value: SelectValue) => onChange(value as string)}
+                    onChange={(value: SelectValue) => setAttributeValue(value as string)}
                 >
                     {values.map(
                         (value: string): JSX.Element => (
@@ -76,7 +93,10 @@ function renderInputElement(parameters: InputElementParameters): JSX.Element {
         <>
             <Text strong>Values: </Text>
             <div className='attribute-annotation-sidebar-attr-elem-wrapper'>
-                <Radio.Group value={currentValue} onChange={(event: RadioChangeEvent) => onChange(event.target.value)}>
+                <Radio.Group
+                    value={localAttrValue}
+                    onChange={(event: RadioChangeEvent) => setAttributeValue(event.target.value)}
+                >
                     {values.map(
                         (value: string): JSX.Element => (
                             <Radio style={{ display: 'block' }} key={value} value={value}>
@@ -93,7 +113,7 @@ function renderInputElement(parameters: InputElementParameters): JSX.Element {
         if (['ArrowDown', 'ArrowUp', 'ArrowLeft', 'ArrowRight', 'Tab', 'Shift', 'Control'].includes(event.key)) {
             event.preventDefault();
             event.stopPropagation();
-            const copyEvent = new KeyboardEvent('keydown', event);
+            const copyEvent = new KeyboardEvent('keydown', event.nativeEvent);
             window.document.dispatchEvent(copyEvent);
         }
     };
@@ -109,11 +129,11 @@ function renderInputElement(parameters: InputElementParameters): JSX.Element {
                         min={+min}
                         max={+max}
                         step={+step}
-                        value={+currentValue}
+                        value={+localAttrValue}
                         key={`${clientID}:${attrID}`}
                         onChange={(value: number | null) => {
                             if (typeof value === 'number') {
-                                onChange(`${value}`);
+                                setAttributeValue(`${value}`);
                             }
                         }}
                         onKeyDown={handleKeydown}
@@ -131,13 +151,13 @@ function renderInputElement(parameters: InputElementParameters): JSX.Element {
                     autoFocus
                     ref={ref}
                     key={`${clientID}:${attrID}`}
-                    value={currentValue}
+                    value={localAttrValue}
                     onChange={(event: React.ChangeEvent<HTMLTextAreaElement>) => {
                         const { value } = event.target;
                         if (ref.current?.resizableTextArea?.textArea) {
                             setSelectionStart(ref.current.resizableTextArea.textArea.selectionStart);
                         }
-                        onChange(value);
+                        setAttributeValue(value);
                     }}
                     onKeyDown={handleKeydown}
                 />

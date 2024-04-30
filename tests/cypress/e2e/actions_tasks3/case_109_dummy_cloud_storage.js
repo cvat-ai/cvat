@@ -1,5 +1,5 @@
 // Copyright (C) 2021-2022 Intel Corporation
-// Copyright (C) 2023 CVAT.ai Corporation
+// Copyright (C) 2023-2024 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -74,7 +74,7 @@ context('Dummy cloud storages.', { browser: '!firefox' }, () => {
 
     function testGoToCSUpdatePage() {
         cy.get('.cvat-cloud-storage-item-menu-button').trigger('mousemove');
-        cy.get('.cvat-cloud-storage-item-menu-button').trigger('mouseover');
+        cy.get('.cvat-cloud-storage-item-menu-button').click();
         cy.get('.ant-dropdown')
             .not('.ant-dropdown-hidden')
             .within(() => {
