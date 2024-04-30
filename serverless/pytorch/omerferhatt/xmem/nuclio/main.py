@@ -3,7 +3,6 @@ import io
 import json
 
 import numpy as np
-import torch
 from model_handler import ModelHandler
 from PIL import Image
 
