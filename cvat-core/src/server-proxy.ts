@@ -1937,18 +1937,21 @@ async function getCloudStorages(filter = {}): Promise<SerializedCloudStorage[] &
 
     let response = null;
     try {
+        if ('id' in filter) {
+            response = await Axios.get(`${backendAPI}/cloudstorages/${filter.id}`);
+            return Object.assign([response.data], { count: 1 });
+        }
+
         response = await Axios.get(`${backendAPI}/cloudstorages`, {
             params: {
                 ...filter,
                 page_size: 12,
             },
         });
+        return Object.assign(response.data.results, { count: response.data.count });
     } catch (errorData) {
         throw generateError(errorData);
     }
-
-    response.data.results.count = response.data.count;
-    return response.data.results;
 }
 
 async function getCloudStorageContent(id: number, path: string, nextToken?: string, manifestPath?: string):
