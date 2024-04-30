@@ -384,6 +384,13 @@ jobs:
           name: cypress_screenshots_${{ matrix.specs }}
           path: ${{ github.workspace }}/tests/cypress/screenshots
 
+      - name: Uploading cypress videos as an artifact
+        if: failure()
+        uses: actions/upload-artifact@v3.1.1
+        with:
+          name: cypress_videos_${{ matrix.specs }}
+          path: ${{ github.workspace }}/tests/cypress/videos
+
   publish_dev_images:
     if: github.ref == 'refs/heads/develop'
     needs: [rest_api_testing, unit_testing, e2e_testing]
