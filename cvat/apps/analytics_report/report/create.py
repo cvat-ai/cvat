@@ -182,12 +182,15 @@ class AnalyticsReportUpdateManager:
                 queryset = Job.objects.select_related("analytics_report")
                 db_job = queryset.get(pk=cvat_job_id)
 
+                start_timestamp = db_job.created_date
+                end_timestamp = db_job.updated_date
+
                 db_report = cls._get_analytics_report(db_job)
                 primary_metric_extractors = dict(
                     (
-                        (JobObjects.key(), JobObjectsExtractor(cvat_job_id)),
-                        (JobAnnotationSpeed.key(), JobAnnotationSpeedExtractor(cvat_job_id)),
-                        (JobAnnotationTime.key(), JobAnnotationTimeExtractor(cvat_job_id)),
+                        (JobObjects.key(), JobObjectsExtractor(start_timestamp, end_timestamp, cvat_job_id)),
+                        (JobAnnotationSpeed.key(), JobAnnotationSpeedExtractor(start_timestamp, end_timestamp, cvat_job_id)),
+                        (JobAnnotationTime.key(), JobAnnotationTimeExtractor(start_timestamp, end_timestamp, cvat_job_id)),
                     )
                 )
                 db_report = cls()._compute_report_for_job(
@@ -208,18 +211,21 @@ class AnalyticsReportUpdateManager:
                     "segment_set__job_set"
                 )
                 db_task = queryset.get(pk=cvat_task_id)
-
                 db_report = cls._get_analytics_report(db_task)
+
+                start_timestamp = db_task.created_date
+                end_timestamp = db_task.updated_date
+
                 primary_metric_extractors = dict(
                     (
-                        (JobObjects.key(), JobObjectsExtractor(task_ids=[cvat_task_id])),
+                        (JobObjects.key(), JobObjectsExtractor(start_timestamp, end_timestamp, task_ids=[cvat_task_id])),
                         (
                             JobAnnotationSpeed.key(),
-                            JobAnnotationSpeedExtractor(task_ids=[cvat_task_id]),
+                            JobAnnotationSpeedExtractor(start_timestamp, end_timestamp, task_ids=[cvat_task_id]),
                         ),
                         (
                             JobAnnotationTime.key(),
-                            JobAnnotationTimeExtractor(task_ids=[cvat_task_id]),
+                            JobAnnotationTimeExtractor(start_timestamp, end_timestamp, task_ids=[cvat_task_id]),
                         ),
                     )
                 )
@@ -258,12 +264,17 @@ class AnalyticsReportUpdateManager:
 
                 db_project = queryset.get(pk=cvat_project_id)
                 db_report = cls._get_analytics_report(db_project)
-                task_ids = [item["id"] for item in db_project.tasks.values("id")]
+
+                tasks_data = db_project.tasks.values("id", "created_date", "updated_date")
+                start_timestamp = min([item["created_date"] for item in tasks_data])
+                end_timestamp = max([item["updated_date"] for item in tasks_data])
+                task_ids = [item["id"] for item in tasks_data]
+
                 primary_metric_extractors = dict(
                     (
-                        (JobObjects.key(), JobObjectsExtractor(task_ids=task_ids)),
-                        (JobAnnotationSpeed.key(), JobAnnotationSpeedExtractor(task_ids=task_ids)),
-                        (JobAnnotationTime.key(), JobAnnotationTimeExtractor(task_ids=task_ids)),
+                        (JobObjects.key(), JobObjectsExtractor(start_timestamp, end_timestamp, task_ids=task_ids)),
+                        (JobAnnotationSpeed.key(), JobAnnotationSpeedExtractor(start_timestamp, end_timestamp, task_ids=task_ids)),
+                        (JobAnnotationTime.key(), JobAnnotationTimeExtractor(start_timestamp, end_timestamp, task_ids=task_ids)),
                     )
                 )
                 db_report, task_reports, job_reports = cls()._compute_report_for_project(
