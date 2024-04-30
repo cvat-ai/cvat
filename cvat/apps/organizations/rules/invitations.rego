@@ -1,4 +1,7 @@
 package invitations
+
+import rego.v1
+
 import data.utils
 import data.organizations
 
@@ -29,37 +32,37 @@ import data.organizations
 
 default allow := false
 
-allow {
+allow if {
     utils.is_admin
 }
 
-allow {
+allow if {
     input.scope == utils.LIST
     utils.is_sandbox
 }
 
-allow {
+allow if {
     input.scope == utils.LIST
     organizations.is_member
 }
 
-filter := [] { # Django Q object to filter list of entries
+filter := [] if { # Django Q object to filter list of entries
     utils.is_sandbox
     utils.is_admin
-} else := qobject {
+} else := qobject if {
     utils.is_sandbox
     user := input.auth.user
     qobject := [ {"owner": user.id}, {"membership__user": user.id}, "|" ]
-} else := qobject {
+} else := qobject if {
     utils.is_organization
     utils.is_admin
     qobject := [ {"membership__organization": input.auth.organization.id} ]
-} else := qobject {
+} else := qobject if {
     utils.is_organization
     organizations.is_staff
     utils.has_perm(utils.USER)
     qobject := [ {"membership__organization": input.auth.organization.id} ]
-} else := qobject {
+} else := qobject if {
     utils.is_organization
     user := input.auth.user
     org_id := input.auth.organization.id
@@ -67,7 +70,7 @@ filter := [] { # Django Q object to filter list of entries
         {"membership__organization": org_id}, "&" ]
 }
 
-allow {
+allow if {
     input.scope == utils.CREATE
     input.auth.organization.id == input.resource.organization.id
     utils.has_perm(utils.USER)
@@ -78,7 +81,7 @@ allow {
 
 }
 
-allow {
+allow if {
     input.scope == utils.CREATE
     input.auth.organization.id == input.resource.organization.id
     utils.has_perm(utils.USER)
@@ -87,73 +90,73 @@ allow {
     input.resource.role != organizations.OWNER
 }
 
-allow {
+allow if {
     input.scope == utils.VIEW
     utils.is_sandbox
     utils.is_resource_owner
 }
 
-allow {
+allow if {
     input.scope == utils.VIEW
     utils.is_sandbox
     input.resource.invitee.id == input.auth.user.id
 }
 
-allow {
+allow if {
     input.scope == utils.VIEW
     input.auth.organization.id == input.resource.organization.id
     utils.has_perm(utils.USER)
     organizations.is_staff
 }
 
-allow {
+allow if {
     input.scope == utils.VIEW
     input.auth.organization.id == input.resource.organization.id
     utils.is_resource_owner
 }
 
-allow {
+allow if {
     input.scope == utils.VIEW
     input.auth.organization.id == input.resource.organization.id
     input.resource.invitee.id == input.auth.user.id
 }
 
-allow {
+allow if {
     input.scope == utils.RESEND
     utils.has_perm(utils.WORKER)
     utils.is_sandbox
     utils.is_resource_owner
 }
 
-allow {
+allow if {
     input.scope == utils.RESEND
     input.auth.organization.id == input.resource.organization.id
     utils.has_perm(utils.USER)
     organizations.is_staff
 }
 
-allow {
+allow if {
     input.scope == utils.RESEND
     input.auth.organization.id == input.resource.organization.id
     utils.has_perm(utils.WORKER)
     utils.is_resource_owner
 }
 
-allow {
+allow if {
     input.scope == utils.DELETE
     utils.is_sandbox
     utils.has_perm(utils.WORKER)
     utils.is_resource_owner
 }
 
-allow {
+allow if {
     input.scope == utils.DELETE
     input.auth.organization.id == input.resource.organization.id
     utils.has_perm(utils.USER)
     organizations.is_staff
 }
 
-allow {
+allow if {
     input.scope == utils.DELETE
     input.auth.organization.id == input.resource.organization.id
     utils.has_perm(utils.WORKER)
@@ -161,14 +164,14 @@ allow {
 }
 
 
-allow {
-    { utils.ACCEPT, utils.DECLINE }[input.scope]
+allow if {
+    input.scope in {utils.ACCEPT, utils.DECLINE}
     input.resource.invitee.id == input.auth.user.id
     utils.is_sandbox
 }
 
-allow {
-    { utils.ACCEPT, utils.DECLINE }[input.scope]
+allow if {
+    input.scope in {utils.ACCEPT, utils.DECLINE}
     input.auth.organization.id == input.resource.organization.id
     input.resource.invitee.id == input.auth.user.id
 }

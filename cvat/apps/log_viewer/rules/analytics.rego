@@ -1,4 +1,7 @@
 package analytics
+
+import rego.v1
+
 import data.utils
 
 # input: {
@@ -25,11 +28,11 @@ import data.utils
 
 default allow := false
 
-allow {
+allow if {
     utils.is_admin
 }
 
-allow {
+allow if {
     input.resource.visibility == utils.PUBLIC
     input.scope == utils.VIEW
     utils.has_perm(utils.BUSINESS)

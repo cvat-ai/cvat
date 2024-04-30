@@ -1,4 +1,7 @@
 package memberships
+
+import rego.v1
+
 import data.utils
 import data.organizations
 
@@ -29,53 +32,53 @@ import data.organizations
 
 default allow := false
 
-allow {
+allow if {
     utils.is_admin
 }
 
-allow {
+allow if {
     input.scope == utils.LIST
     utils.is_sandbox
 }
 
-allow {
+allow if {
     input.scope == utils.LIST
     organizations.is_member
 }
 
-filter := [] { # Django Q object to filter list of entries
+filter := [] if { # Django Q object to filter list of entries
     utils.is_admin
     utils.is_sandbox
-} else := qobject {
+} else := qobject if {
     utils.is_sandbox
     qobject := [ {"user": input.auth.user.id}, {"is_active": true}, "&" ]
-} else := qobject {
+} else := qobject if {
     utils.is_admin
     org_id := input.auth.organization.id
     qobject := [ {"organization": org_id} ]
-} else := qobject {
+} else := qobject if {
     organizations.is_staff
     org_id := input.auth.organization.id
     qobject := [ {"organization": org_id} ]
-} else := qobject {
+} else := qobject if {
     org_id := input.auth.organization.id
     qobject := [ {"organization": org_id}, {"is_active": true}, "&" ]
 }
 
-allow {
+allow if {
     input.scope == utils.VIEW
     input.resource.is_active
     utils.is_sandbox
     input.resource.user.id == input.auth.user.id
 }
 
-allow {
+allow if {
     input.scope == utils.VIEW
     organizations.is_staff
     input.resource.organization.id == input.auth.organization.id
 }
 
-allow {
+allow if {
     input.scope == utils.VIEW
     input.resource.is_active
     organizations.is_member
@@ -84,22 +87,22 @@ allow {
 
 # maintainer of the organization can change the role of any member and remove any member except
 # himself/another maintainer/owner
-allow {
-    { utils.CHANGE_ROLE, utils.DELETE }[input.scope]
+allow if {
+    input.scope in {utils.CHANGE_ROLE, utils.DELETE}
     input.resource.organization.id == input.auth.organization.id
     utils.has_perm(utils.USER)
     organizations.is_maintainer
-    not {
+    not input.resource.role in {
         organizations.OWNER,
         organizations.MAINTAINER
-    }[input.resource.role]
+    }
     input.resource.user.id != input.auth.user.id
 }
 
 
 # owner of the organization can change the role of any member and remove any member except himself
-allow {
-    { utils.CHANGE_ROLE, utils.DELETE }[input.scope]
+allow if {
+    input.scope in {utils.CHANGE_ROLE, utils.DELETE}
     input.resource.organization.id == input.auth.organization.id
     utils.has_perm(utils.USER)
     organizations.is_owner
@@ -108,7 +111,7 @@ allow {
 }
 
 # member can leave the organization except case when member is the owner
-allow {
+allow if {
     input.scope == utils.DELETE
     input.resource.is_active
     organizations.is_member

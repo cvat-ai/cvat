@@ -1,4 +1,7 @@
 package comments
+
+import rego.v1
+
 import data.utils
 import data.organizations
 
@@ -41,100 +44,100 @@ import data.organizations
 #     }
 # }
 
-is_comment_owner {
+is_comment_owner if {
     input.resource.owner.id == input.auth.user.id
 }
 
-is_issue_owner {
+is_issue_owner if {
     input.resource.issue.owner.id == input.auth.user.id
 }
 
-is_issue_assignee {
+is_issue_assignee if {
     input.resource.issue.assignee.id == input.auth.user.id
 }
 
-is_job_assignee {
+is_job_assignee if {
     input.resource.job.assignee.id == input.auth.user.id
 }
 
-is_task_owner {
+is_task_owner if {
     input.resource.task.owner.id == input.auth.user.id
 }
 
-is_task_assignee {
+is_task_assignee if {
     input.resource.task.assignee.id == input.auth.user.id
 }
 
-is_project_owner {
+is_project_owner if {
     input.resource.project.owner.id == input.auth.user.id
 }
 
-is_project_assignee {
+is_project_assignee if {
     input.resource.project.assignee.id == input.auth.user.id
 }
 
-is_project_staff {
+is_project_staff if {
     is_project_owner
 }
 
-is_project_staff {
+is_project_staff if {
     is_project_assignee
 }
 
-is_task_staff {
+is_task_staff if {
     is_project_staff
 }
 
-is_task_staff {
+is_task_staff if {
     is_task_owner
 }
 
-is_task_staff {
+is_task_staff if {
     is_task_assignee
 }
 
-is_job_staff {
+is_job_staff if {
     is_task_staff
 }
 
-is_job_staff {
+is_job_staff if {
     is_job_assignee
 }
 
-is_issue_staff {
+is_issue_staff if {
     is_job_staff
 }
 
-is_issue_staff {
+is_issue_staff if {
     is_issue_owner
 }
 
-is_issue_staff {
+is_issue_staff if {
     is_issue_assignee
 }
 
-is_comment_staff {
+is_comment_staff if {
     is_issue_staff
 }
 
-is_comment_staff {
+is_comment_staff if {
     is_comment_owner
 }
 
 default allow := false
 
-allow {
+allow if {
     utils.is_admin
 }
 
-allow {
+allow if {
     input.scope == utils.CREATE_IN_ISSUE
     utils.is_sandbox
     utils.has_perm(utils.WORKER)
     is_issue_staff
 }
 
-allow {
+allow if {
     input.scope == utils.CREATE_IN_ISSUE
     input.auth.organization.id == input.resource.organization.id
     utils.is_organization
@@ -142,7 +145,7 @@ allow {
     organizations.has_perm(organizations.MAINTAINER)
 }
 
-allow {
+allow if {
     input.scope == utils.CREATE_IN_ISSUE
     input.auth.organization.id == input.resource.organization.id
     utils.is_organization
@@ -151,20 +154,20 @@ allow {
     is_issue_staff
 }
 
-allow {
+allow if {
     input.scope == utils.LIST
     utils.is_sandbox
 }
 
-allow {
+allow if {
     input.scope == utils.LIST
     organizations.is_member
 }
 
-filter := [] { # Django Q object to filter list of entries
+filter := [] if { # Django Q object to filter list of entries
     utils.is_admin
     utils.is_sandbox
-} else := qobject {
+} else := qobject if {
     utils.is_admin
     utils.is_organization
     org := input.auth.organization
@@ -172,7 +175,7 @@ filter := [] { # Django Q object to filter list of entries
         {"issue__job__segment__task__organization": org.id},
         {"issue__job__segment__task__project__organization": org.id}, "|"
     ]
-} else := qobject {
+} else := qobject if {
     utils.is_sandbox
     user := input.auth.user
     qobject := [
@@ -185,7 +188,7 @@ filter := [] { # Django Q object to filter list of entries
         {"issue__job__segment__task__project__owner": user.id}, "|",
         {"issue__job__segment__task__project__assignee": user.id}, "|"
     ]
-} else := qobject {
+} else := qobject if {
     utils.is_organization
     utils.has_perm(utils.USER)
     organizations.has_perm(organizations.MAINTAINER)
@@ -194,7 +197,7 @@ filter := [] { # Django Q object to filter list of entries
         {"issue__job__segment__task__organization": org.id},
         {"issue__job__segment__task__project__organization": org.id}, "|"
     ]
-} else := qobject {
+} else := qobject if {
     organizations.has_perm(organizations.WORKER)
     user := input.auth.user
     org := input.auth.organization
@@ -212,42 +215,42 @@ filter := [] { # Django Q object to filter list of entries
     ]
 }
 
-allow {
+allow if {
     input.scope == utils.VIEW
     utils.is_sandbox
     is_comment_staff
 }
 
-allow {
+allow if {
     input.scope == utils.VIEW
     input.auth.organization.id == input.resource.organization.id
     utils.has_perm(utils.USER)
     organizations.has_perm(organizations.MAINTAINER)
 }
 
-allow {
+allow if {
     input.scope == utils.VIEW
     input.auth.organization.id == input.resource.organization.id
     organizations.is_member
     is_comment_staff
 }
 
-allow {
-    { utils.UPDATE, utils.DELETE }[input.scope]
+allow if {
+    input.scope in {utils.UPDATE, utils.DELETE}
     utils.is_sandbox
     utils.has_perm(utils.WORKER)
     is_comment_staff
 }
 
-allow {
-    { utils.UPDATE, utils.DELETE }[input.scope]
+allow if {
+    input.scope in {utils.UPDATE, utils.DELETE}
     input.auth.organization.id == input.resource.organization.id
     utils.has_perm(utils.USER)
     organizations.has_perm(organizations.MAINTAINER)
 }
 
-allow {
-    { utils.UPDATE, utils.DELETE }[input.scope]
+allow if {
+    input.scope in {utils.UPDATE, utils.DELETE}
     input.auth.organization.id == input.resource.organization.id
     is_comment_staff
     utils.has_perm(utils.WORKER)

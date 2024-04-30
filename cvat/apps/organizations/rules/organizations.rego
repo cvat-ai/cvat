@@ -1,4 +1,7 @@
 package organizations
+
+import rego.v1
+
 import data.utils
 
 # input: {
@@ -23,24 +26,24 @@ MAINTAINER := "maintainer"
 SUPERVISOR := "supervisor"
 WORKER     := "worker"
 
-is_owner {
+is_owner if {
     input.auth.organization.owner.id == input.auth.user.id
     input.auth.organization.user.role == OWNER
 }
 
-is_maintainer {
+is_maintainer if {
     input.auth.organization.user.role == MAINTAINER
 }
 
-is_staff {
+is_staff if {
     is_owner
 }
 
-is_staff {
+is_staff if {
     is_maintainer
 }
 
-is_member {
+is_member if {
     input.auth.organization.user.role != null
 }
 
@@ -51,60 +54,60 @@ get_priority(role) := {
     WORKER: 100
 }[role]
 
-has_perm(role) {
+has_perm(role) if {
     get_priority(input.auth.organization.user.role) <= get_priority(role)
 }
 
 default allow := false
 
-allow {
+allow if {
     utils.is_admin
 }
 
-allow {
+allow if {
     input.scope == utils.CREATE
     utils.has_perm(utils.USER)
 }
 
-allow {
+allow if {
     input.scope == utils.CREATE
     utils.has_perm(utils.BUSINESS)
 }
 
-filter := [] { # Django Q object to filter list of entries
+filter := [] if { # Django Q object to filter list of entries
     utils.is_admin
-} else := qobject {
+} else := qobject if {
     user := input.auth.user
     qobject := [{"members__user_id": user.id}, {"members__is_active": true}, "&", {"owner_id": user.id}, "|" ]
 }
 
-allow {
+allow if {
     input.scope == utils.LIST
 }
 
-allow {
+allow if {
     input.scope == utils.VIEW
     utils.is_resource_owner
 }
 
-allow {
+allow if {
     input.scope == utils.VIEW
     input.resource.user.role != null
 }
 
-allow {
+allow if {
     input.scope == utils.UPDATE
     utils.has_perm(utils.WORKER)
     utils.is_resource_owner
 }
 
-allow {
+allow if {
     input.scope == utils.UPDATE
     utils.has_perm(utils.WORKER)
     input.resource.user.role == MAINTAINER
 }
 
-allow {
+allow if {
     input.scope == utils.DELETE
     utils.has_perm(utils.WORKER)
     utils.is_resource_owner

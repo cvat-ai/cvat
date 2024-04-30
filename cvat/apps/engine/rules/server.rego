@@ -1,4 +1,7 @@
 package server
+
+import rego.v1
+
 import data.utils
 
 # input: {
@@ -22,11 +25,11 @@ import data.utils
 
 default allow := false
 
-allow {
+allow if {
     input.scope == utils.VIEW
 }
 
-allow {
+allow if {
     input.scope == utils.LIST_CONTENT
     utils.has_perm(utils.USER)
 }
