@@ -3,7 +3,6 @@ from typing import Literal, Optional, Dict, List, Tuple
 import jsonpickle
 import numpy as np
 import torch
-import torch.nn.functional as F
 import cv2
 
 from model.network import XMem
