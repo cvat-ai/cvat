@@ -29,7 +29,8 @@ class JobObjectsExtractor(DataExtractorBase):
             "timestamp < {end_datetime:DateTime64}"
         ])
 
-        self._query = f"SELECT {', '.join(SELECT)} FROM events WHERE {'AND '.join(WHERE)} GROUP BY scope, day, job_id ORDER BY day ASC"
+        GROUP_BY = ["scope", "day", "job_id"]
+        self._query = f"SELECT {', '.join(SELECT)} FROM events WHERE {'AND '.join(WHERE)} GROUP BY {', '.join(GROUP_BY)} ORDER BY day ASC"
 
 class JobObjects(PrimaryMetricBase):
     _key = "objects"
