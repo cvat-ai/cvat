@@ -19,7 +19,7 @@ spec:
 
   build:
     image: cvat.pth.omerferhatt.xmem:latest-gpu
-    baseImage: nvidia/cuda:12.1.0-runtime-ubuntu20.04
+    baseImage: nvidia/cuda:12.1.0-runtime-ubuntu22.04
 
     directives:
       preCopy:
@@ -37,12 +37,12 @@ spec:
         - kind: WORKDIR
           value: /opt/nuclio
         - kind: RUN
-          value: git clone --branch main https://github.com/hkchengrex/XMem xmem
+          value: git clone --branch main https://github.com/omerferhatt/XMem xmem
+        - kind: RUN
+          value: pip install opencv-python-headless jsonpickle
         - kind: RUN
           value: |-
-            pip install \
-              jsonpickle opencv-python-headless \
-              torch torchvision
+            pip install torch torchvision
         - kind: RUN
           value: wget 'https://www.dropbox.com/scl/fi/5m1l747p15qzgq023e0q9/xmem.pth?rlkey=ss2kjaq4qlvvk5juucyvtmrh8&dl=0' -O '/xmem.pth'
 
@@ -53,7 +53,7 @@ spec:
       workerAvailabilityTimeoutMilliseconds: 10000
       attributes:
         # Set value from the calculation of tracking of 100 objects at the same time on a 4k image
-        maxRequestBodySize: 268435456 # 256MB
+        maxRequestBodySize: 1073741824 # 1GB
 
   resources:
     limits:
