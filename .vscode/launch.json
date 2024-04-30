@@ -523,22 +523,7 @@
             "console": "integratedTerminal",
             "internalConsoleOptions": "neverOpen",
             "disableOptimisticBPs": true,
-        },
-        {
-            "name": "Serverless Debug",
-            "type": "python",
-            "request": "attach",
-            "connect": {
-              "host": "localhost",
-              "port": 5678
-            },
-            "pathMappings": [
-              {
-                "localRoot": "${workspaceFolder}/serverless/pytorch/omerferhatt/xmem/nuclio",
-                "remoteRoot": "/opt/nuclio"
-              }
-            ]
-          }
+        }
     ],
     "compounds": [
         {
