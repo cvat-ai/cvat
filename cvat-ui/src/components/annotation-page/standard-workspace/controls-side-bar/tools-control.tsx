@@ -824,7 +824,10 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
                             job: jobInstance.id,
                         }) as TrackerResults;
 
-                        // response.shapes = response.shapes.map(trackedRectangleMapper);
+                        // If shape type is rectangle, keep same approach
+                        if (response.shapes[0].length === 4) {
+                            response.shapes = response.shapes.map(trackedRectangleMapper);
+                        }
                         for (let i = 0; i < trackableObjects.clientIDs.length; i++) {
                             const clientID = trackableObjects.clientIDs[i];
                             const shape = response.shapes[i];
