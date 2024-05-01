@@ -42,8 +42,9 @@ class JobAnnotationSpeedExtractor(DataExtractorBase):
             ["timestamp >= {start_datetime:DateTime64}", "timestamp < {end_datetime:DateTime64}"]
         )
 
+        # bandit false alarm
         self._query = (
-            f"SELECT {', '.join(SELECT)} FROM events WHERE {'AND '.join(WHERE)} GROUP BY job_id"
+            f"SELECT {', '.join(SELECT)} FROM events WHERE {'AND '.join(WHERE)} GROUP BY job_id" # nosec B608
         )
 
 

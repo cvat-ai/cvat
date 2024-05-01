@@ -38,7 +38,8 @@ class JobAnnotationTimeExtractor(DataExtractorBase):
             ]
         )
 
-        self._query = f"SELECT {', '.join(SELECT)} FROM events WHERE {'AND '.join(WHERE)} ORDER BY timestamp ASC"
+        # bandit false alarm
+        self._query = f"SELECT {', '.join(SELECT)} FROM events WHERE {'AND '.join(WHERE)} ORDER BY timestamp ASC" # nosec B608
 
 
 class JobAnnotationTime(PrimaryMetricBase):

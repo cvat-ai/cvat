@@ -294,9 +294,7 @@ class AnalyticsReportUpdateManager:
                     (
                         (
                             JobObjects.key(),
-                            JobObjectsExtractor(
-                                start_timestamp, end_timestamp, task_ids=task_ids
-                            )
+                            JobObjectsExtractor(start_timestamp, end_timestamp, task_ids=task_ids),
                         ),
                         (
                             JobAnnotationSpeed.key(),
@@ -308,7 +306,7 @@ class AnalyticsReportUpdateManager:
                             JobAnnotationTime.key(),
                             JobAnnotationTimeExtractor(
                                 start_timestamp, end_timestamp, task_ids=task_ids
-                            )
+                            ),
                         ),
                     )
                 )

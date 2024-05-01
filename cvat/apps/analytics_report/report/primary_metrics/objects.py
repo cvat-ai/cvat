@@ -38,7 +38,9 @@ class JobObjectsExtractor(DataExtractorBase):
         )
 
         GROUP_BY = ["scope", "day", "job_id"]
-        self._query = f"SELECT {', '.join(SELECT)} FROM events WHERE {'AND '.join(WHERE)} GROUP BY {', '.join(GROUP_BY)} ORDER BY day ASC"
+
+        # bandit false alarm
+        self._query = f"SELECT {', '.join(SELECT)} FROM events WHERE {'AND '.join(WHERE)} GROUP BY {', '.join(GROUP_BY)} ORDER BY day ASC" # nosec B608
 
 
 class JobObjects(PrimaryMetricBase):
