@@ -7,13 +7,20 @@ from datetime import datetime, timezone
 
 from cvat.apps.analytics_report.report.primary_metrics.utils import make_clickhouse_query
 
+
 class DataExtractorBase:
-    def __init__(self, start_datetime: datetime, end_datetime: datetime, job_id: int = None, task_ids: list[int] = None):
+    def __init__(
+        self,
+        start_datetime: datetime,
+        end_datetime: datetime,
+        job_id: int = None,
+        task_ids: list[int] = None,
+    ):
         # Raw SQL queries are used to execute ClickHouse queries, as there is no ORM available here
         self._query = None
         self._parameters = {
-            'start_datetime': start_datetime,
-            'end_datetime': end_datetime,
+            "start_datetime": start_datetime,
+            "end_datetime": end_datetime,
         }
         self._rows = []
         self._initialized = False
@@ -29,8 +36,10 @@ class DataExtractorBase:
     def extract_for_job(self, job_id: int, extras: dict = None):
         if not self._initialized:
             self._rows = self._make_clickhouse_query(
-                {key: value for key, value in
-                    list(self._parameters.items()) + list((extras or {}).items())}
+                {
+                    key: value
+                    for key, value in list(self._parameters.items()) + list((extras or {}).items())
+                }
             ).result_rows
             self._initialized = True
         return map(lambda x: x[1:], filter(lambda x: x[0] == job_id, self._rows))
@@ -78,10 +87,12 @@ class PrimaryMetricBase(metaclass=ABCMeta):
         return cls._is_filterable_by_date
 
     @abstractmethod
-    def calculate(self): ...
+    def calculate(self):
+        ...
 
     @abstractmethod
-    def get_empty(self): ...
+    def get_empty(self):
+        ...
 
     @staticmethod
     def _get_utc_now():

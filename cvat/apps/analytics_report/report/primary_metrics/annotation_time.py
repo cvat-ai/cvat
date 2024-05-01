@@ -12,7 +12,13 @@ from cvat.apps.analytics_report.report.primary_metrics.base import (
 
 
 class JobAnnotationTimeExtractor(DataExtractorBase):
-    def __init__(self, start_datetime: datetime, end_datetime: datetime, job_id: int = None, task_ids: list[int] = None):
+    def __init__(
+        self,
+        start_datetime: datetime,
+        end_datetime: datetime,
+        job_id: int = None,
+        task_ids: list[int] = None,
+    ):
         super().__init__(start_datetime, end_datetime, job_id, task_ids)
 
         SELECT = ["job_id", "timestamp", "obj_val"]
@@ -23,12 +29,14 @@ class JobAnnotationTimeExtractor(DataExtractorBase):
         elif job_id is not None:
             WHERE.append("job_id={job_id:UInt64}")
 
-        WHERE.extend([
-            "scope='update:job'",
-            "obj_name='state'",
-            "timestamp >= {start_datetime:DateTime64}",
-            "timestamp < {end_datetime:DateTime64}"
-        ])
+        WHERE.extend(
+            [
+                "scope='update:job'",
+                "obj_name='state'",
+                "timestamp >= {start_datetime:DateTime64}",
+                "timestamp < {end_datetime:DateTime64}",
+            ]
+        )
 
         self._query = f"SELECT {', '.join(SELECT)} FROM events WHERE {'AND '.join(WHERE)} ORDER BY timestamp ASC"
 

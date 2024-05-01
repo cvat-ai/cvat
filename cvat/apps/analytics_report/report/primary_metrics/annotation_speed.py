@@ -2,8 +2,8 @@
 #
 # SPDX-License-Identifier: MIT
 
-from dateutil import parser
 from datetime import datetime
+from dateutil import parser
 
 import cvat.apps.dataset_manager as dm
 from cvat.apps.analytics_report.models import (
@@ -20,7 +20,13 @@ from cvat.apps.engine.models import SourceType
 
 
 class JobAnnotationSpeedExtractor(DataExtractorBase):
-    def __init__(self, start_datetime: datetime, end_datetime: datetime, job_id: int = None, task_ids: list[int] = None):
+    def __init__(
+        self,
+        start_datetime: datetime,
+        end_datetime: datetime,
+        job_id: int = None,
+        task_ids: list[int] = None,
+    ):
         super().__init__(start_datetime, end_datetime, job_id, task_ids)
 
         SELECT = ["job_id", "sum(JSONExtractUInt(payload, 'working_time')) as wt"]
@@ -31,12 +37,13 @@ class JobAnnotationSpeedExtractor(DataExtractorBase):
         elif job_id is not None:
             WHERE.append("job_id={job_id:UInt64}")
 
-        WHERE.extend([
-            "timestamp >= {start_datetime:DateTime64}",
-            "timestamp < {end_datetime:DateTime64}"
-        ])
+        WHERE.extend(
+            ["timestamp >= {start_datetime:DateTime64}", "timestamp < {end_datetime:DateTime64}"]
+        )
 
-        self._query = f"SELECT {', '.join(SELECT)} FROM events WHERE {'AND '.join(WHERE)} GROUP BY job_id"
+        self._query = (
+            f"SELECT {', '.join(SELECT)} FROM events WHERE {'AND '.join(WHERE)} GROUP BY job_id"
+        )
 
 
 class JobAnnotationSpeed(PrimaryMetricBase):
