@@ -153,11 +153,10 @@ jobs:
 
       - name: OPA tests
         run: |
-          python cvat/apps/iam/rules/tests/generate_tests.py \
-            --output-dir cvat/apps/iam/rules/
+          python cvat/apps/iam/rules/tests/generate_tests.py
 
-          docker compose run --rm -v "$PWD/cvat/apps/iam/rules/:/mnt/rules" \
-            cvat_opa test /mnt/rules
+          docker compose run --rm -v "$PWD:/mnt/src:ro" -w /mnt/src \
+            cvat_opa test cvat/apps/*/rules
 
       - name: REST API and SDK tests
         run: |

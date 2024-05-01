@@ -226,11 +226,10 @@ jobs:
 
       - name: Running OPA tests
         run: |
-          python cvat/apps/iam/rules/tests/generate_tests.py \
-            --output-dir cvat/apps/iam/rules/
+          python cvat/apps/iam/rules/tests/generate_tests.py
 
-          docker compose run --rm -v "$PWD/cvat/apps/iam/rules/:/mnt/rules" \
-            cvat_opa test /mnt/rules
+          docker compose run --rm -v "$PWD:/mnt/src:ro" -w /mnt/src \
+            cvat_opa test cvat/apps/*/rules
 
       - name: Running unit tests
         env:
@@ -384,6 +383,13 @@ jobs:
         with:
           name: cypress_screenshots_${{ matrix.specs }}
           path: ${{ github.workspace }}/tests/cypress/screenshots
+
+      - name: Uploading cypress videos as an artifact
+        if: failure()
+        uses: actions/upload-artifact@v3.1.1
+        with:
+          name: cypress_videos_${{ matrix.specs }}
+          path: ${{ github.workspace }}/tests/cypress/videos
 
   publish_dev_images:
     if: github.ref == 'refs/heads/develop'
