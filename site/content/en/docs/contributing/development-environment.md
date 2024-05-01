@@ -96,8 +96,8 @@ Steps are common for both local and codespaces remote development
   ```
 
   ```bash
-  # Install Node.js 16 and yarn
-  curl -sL https://deb.nodesource.com/setup_16.x | sudo -E bash -
+  # Install Node.js 20 and yarn
+  curl -fsSL https://deb.nodesource.com/setup_20.x | sudo bash -
   sudo apt-get install -y nodejs
   sudo npm install --global yarn
   ```
@@ -127,7 +127,7 @@ Steps are common for both local and codespaces remote development
   ```
 
   ```bash
-  # Install Node.js 16, yarn and npm
+  # Install Node.js, yarn and npm
   sudo pacman -S nodejs-lts-gallium yarn npm
   ```
 

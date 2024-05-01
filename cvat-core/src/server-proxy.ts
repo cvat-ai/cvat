@@ -557,7 +557,7 @@ async function getSelf(): Promise<SerializedUser> {
     return response.data;
 }
 
-async function authorized(): Promise<boolean> {
+async function authenticated(): Promise<boolean> {
     try {
         // In CVAT app we use two types of authentication
         // At first we check if authentication token is present
@@ -1937,18 +1937,21 @@ async function getCloudStorages(filter = {}): Promise<SerializedCloudStorage[] &
 
     let response = null;
     try {
+        if ('id' in filter) {
+            response = await Axios.get(`${backendAPI}/cloudstorages/${filter.id}`);
+            return Object.assign([response.data], { count: 1 });
+        }
+
         response = await Axios.get(`${backendAPI}/cloudstorages`, {
             params: {
                 ...filter,
                 page_size: 12,
             },
         });
+        return Object.assign(response.data.results, { count: response.data.count });
     } catch (errorData) {
         throw generateError(errorData);
     }
-
-    response.data.results.count = response.data.count;
-    return response.data.results;
 }
 
 async function getCloudStorageContent(id: number, path: string, nextToken?: string, manifestPath?: string):
@@ -2423,7 +2426,7 @@ export default Object.freeze({
         changePassword,
         requestPasswordReset,
         resetPassword,
-        authorized,
+        authenticated,
         healthCheck,
         register,
         request: serverRequest,

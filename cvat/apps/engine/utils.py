@@ -1,4 +1,5 @@
 # Copyright (C) 2020-2022 Intel Corporation
+# Copyright (C) 2024 CVAT.ai Corporation
 #
 # SPDX-License-Identifier: MIT
 
@@ -18,6 +19,7 @@ import re
 import logging
 import platform
 
+from datumaro.util.os_util import walk
 from rq.job import Job, Dependency
 from django_rq.queues import DjangoRQ
 from pathlib import Path
@@ -395,3 +397,19 @@ def build_annotations_file_name(
         class_name, identifier, 'annotations' if is_annotation_file else 'dataset',
         timestamp, format_name, extension,
     ).lower()
+
+
+def directory_tree(path, max_depth=None) -> str:
+    if not os.path.exists(path):
+        raise Exception(f"No such file or directory: {path}")
+
+    tree = ""
+
+    baselevel = path.count(os.sep)
+    for root, _, files in walk(path, max_depth=max_depth):
+        curlevel = root.count(os.sep)
+        indent = "|  " * (curlevel - baselevel) + "|-"
+        tree += f"{indent}{os.path.basename(root)}/\n"
+        for file in files:
+            tree += f"{indent}-{file}\n"
+    return tree
