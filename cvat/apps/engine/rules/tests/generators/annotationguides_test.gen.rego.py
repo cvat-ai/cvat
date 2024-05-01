@@ -178,7 +178,7 @@ def is_valid(scope, context, ownership, privilege, membership, resource, same_or
 
 def gen_test_rego(name):
     with open(f"{name}_test.gen.rego", "wt") as f:
-        f.write(f"package {name}\n\n")
+        f.write(f"package {name}\nimport rego.v1\n\n")
         for scope, context, ownership, privilege, membership, same_org, in product(
             SCOPES, CONTEXTS, OWNERSHIPS, GROUPS, ORG_ROLES, SAME_ORG,
         ):
@@ -196,7 +196,7 @@ def gen_test_rego(name):
                 )
                 result = eval_rule(scope, context, ownership, privilege, membership, data)
                 f.write(
-                    "{test_name} {{\n    {allow} with input as {data}\n}}\n\n".format(
+                    "{test_name} if {{\n    {allow} with input as {data}\n}}\n\n".format(
                         test_name=test_name,
                         allow="allow" if result else "not allow",
                         data=json.dumps(data),

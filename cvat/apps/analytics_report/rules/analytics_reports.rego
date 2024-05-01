@@ -1,5 +1,7 @@
 package analytics_reports
 
+import rego.v1
+
 import data.utils
 import data.organizations
 
@@ -24,16 +26,16 @@ import data.organizations
 
 default allow := false
 
-allow {
+allow if {
     utils.is_admin
 }
 
-allow {
+allow if {
     input.scope == utils.CREATE
     utils.has_perm(utils.USER)
 }
 
-allow {
+allow if {
     input.scope == utils.LIST
     utils.has_perm(utils.WORKER)
 }

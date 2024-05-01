@@ -1,4 +1,7 @@
 package users
+
+import rego.v1
+
 import data.utils
 import data.organizations
 
@@ -29,42 +32,42 @@ import data.organizations
 
 default allow := false
 
-allow {
+allow if {
     utils.is_admin
 }
 
-allow {
+allow if {
     input.scope == utils.LIST
     utils.is_sandbox
 }
 
-allow {
+allow if {
     input.scope == utils.LIST
     organizations.is_member
 }
 
-filter := [] { # Django Q object to filter list of entries
+filter := [] if { # Django Q object to filter list of entries
     utils.is_admin
     utils.is_sandbox
-} else := qobject {
+} else := qobject if {
     utils.is_sandbox
     qobject := [ {"id": input.auth.user.id} ]
-} else := qobject {
+} else := qobject if {
     org_id := input.auth.organization.id
     qobject := [ {"memberships__organization": org_id} ]
 }
 
-allow {
+allow if {
     input.scope == utils.VIEW
     input.resource.id == input.auth.user.id
 }
 
-allow {
+allow if {
     input.scope == utils.VIEW
     input.resource.membership.role != null
 }
 
-allow {
-    { utils.UPDATE, utils.DELETE }[input.scope]
+allow if {
+    input.scope in {utils.UPDATE, utils.DELETE}
     input.auth.user.id == input.resource.id
 }

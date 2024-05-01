@@ -1,26 +1,51 @@
-# Copyright (C) 2023 CVAT.ai Corporation
+# Copyright (C) 2023-2024 CVAT.ai Corporation
 #
 # SPDX-License-Identifier: MIT
 
 from abc import ABCMeta, abstractmethod
+from collections import ChainMap
 from datetime import datetime, timezone
 
 from cvat.apps.analytics_report.report.primary_metrics.utils import make_clickhouse_query
 
 
+class DataExtractorBase:
+    def __init__(self, job_id: int = None, task_ids: list[int] = None):
+        # Raw SQL queries are used to execute ClickHouse queries, as there is no ORM available here
+        self._query = None
+        self._parameters = {}
+        self._rows = []
+        self._initialized = False
+
+        if task_ids is not None:
+            self._parameters["task_ids"] = task_ids
+        elif job_id is not None:
+            self._parameters["job_id"] = job_id
+
+    def _make_clickhouse_query(self, parameters):
+        return make_clickhouse_query(query=self._query, parameters=parameters)
+
+    def extract_for_job(self, job_id: int, extras: dict = None):
+        if not self._initialized:
+            self._rows = self._make_clickhouse_query(
+                ChainMap(self._parameters, extras or {})
+            ).result_rows
+            self._initialized = True
+        return map(lambda x: x[1:], filter(lambda x: x[0] == job_id, self._rows))
+
+
 class PrimaryMetricBase(metaclass=ABCMeta):
+    _key = None
     _title = None
     _description = None
-    # Raw SQL queries are used to execute ClickHouse queries, as there is no ORM available here
-    _query = None
     _granularity = None
     _default_view = None
-    _key = None
     _transformations = []
     _is_filterable_by_date = True
 
-    def __init__(self, db_obj):
+    def __init__(self, db_obj, data_extractor: DataExtractorBase = None):
         self._db_obj = db_obj
+        self._data_extractor = data_extractor
 
     @classmethod
     def description(cls):
@@ -55,9 +80,6 @@ class PrimaryMetricBase(metaclass=ABCMeta):
 
     @abstractmethod
     def get_empty(self): ...
-
-    def _make_clickhouse_query(self, parameters):
-        return make_clickhouse_query(query=self._query, parameters=parameters)
 
     @staticmethod
     def _get_utc_now():
