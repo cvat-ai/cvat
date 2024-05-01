@@ -87,12 +87,10 @@ class PrimaryMetricBase(metaclass=ABCMeta):
         return cls._is_filterable_by_date
 
     @abstractmethod
-    def calculate(self):
-        ...
+    def calculate(self): ...
 
     @abstractmethod
-    def get_empty(self):
-        ...
+    def get_empty(self): ...
 
     @staticmethod
     def _get_utc_now():
