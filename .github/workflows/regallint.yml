@@ -6,7 +6,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Setup Regal
-        uses: StyraInc/setup-regal@v0.2.0
+        uses: StyraInc/setup-regal@v1
         with:
-          version: v0.11.0
+          version: v0.21.3
       - run: regal lint --format=github cvat/apps/*/rules

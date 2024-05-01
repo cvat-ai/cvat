@@ -1,4 +1,4 @@
-# Copyright (C) 2023 CVAT.ai Corporation
+# Copyright (C) 2023-2024 CVAT.ai Corporation
 #
 # SPDX-License-Identifier: MIT
 
@@ -11,17 +11,28 @@ from cvat.apps.analytics_report.models import (
     TransformOperationType,
     ViewChoice,
 )
-from cvat.apps.analytics_report.report.primary_metrics.base import PrimaryMetricBase
+from cvat.apps.analytics_report.report.primary_metrics.base import (
+    DataExtractorBase,
+    PrimaryMetricBase,
+)
 from cvat.apps.engine.models import SourceType
 
 
+class JobAnnotationSpeedExtractor(DataExtractorBase):
+    def __init__(self, job_id: int = None, task_ids: list[int] = None):
+        super().__init__(job_id, task_ids)
+
+        if task_ids is not None:
+            self._query = "SELECT job_id, sum(JSONExtractUInt(payload, 'working_time')) as wt FROM events WHERE task_id IN ({task_ids:Array(UInt64)}) AND timestamp >= {start_datetime:DateTime64} AND timestamp < {end_datetime:DateTime64} GROUP BY job_id"
+        elif job_id is not None:
+            self._query = "SELECT job_id, sum(JSONExtractUInt(payload, 'working_time')) as wt FROM events WHERE job_id={job_id:UInt64} AND timestamp >= {start_datetime:DateTime64} AND timestamp < {end_datetime:DateTime64} GROUP BY job_id"
+
+
 class JobAnnotationSpeed(PrimaryMetricBase):
+    _key = "annotation_speed"
     _title = "Annotation speed (objects per hour)"
     _description = "Metric shows the annotation speed in objects per hour."
     _default_view = ViewChoice.HISTOGRAM
-    _key = "annotation_speed"
-    # Raw SQL queries are used to execute ClickHouse queries, as there is no ORM available here
-    _query = "SELECT sum(JSONExtractUInt(payload, 'working_time')) / 1000 / 3600 as wt FROM events WHERE job_id={job_id:UInt64} AND timestamp >= {start_datetime:DateTime64} AND timestamp < {end_datetime:DateTime64}"
     _granularity = GranularityChoice.DAY
     _is_filterable_by_date = False
     _transformations = [
@@ -64,7 +75,6 @@ class JobAnnotationSpeed(PrimaryMetricBase):
             }
 
         # Calculate object count
-
         annotations = dm.task.get_job_data(self._db_obj.id)
         object_count = 0
         object_count += get_tags_count(annotations)
@@ -109,17 +119,17 @@ class JobAnnotationSpeed(PrimaryMetricBase):
         )
 
         # Calculate working time
+        rows = list(
+            self._data_extractor.extract_for_job(
+                self._db_obj.id,
+                {
+                    "start_datetime": start_datetime,
+                    "end_datetime": self._get_utc_now(),
+                },
+            )
+        )
 
-        parameters = {
-            "job_id": self._db_obj.id,
-            "start_datetime": start_datetime,
-            "end_datetime": self._get_utc_now(),
-        }
-
-        result = self._make_clickhouse_query(parameters)
-        value = 0
-        if (wt := next(iter(result.result_rows))[0]) is not None:
-            value = wt
+        value = (rows[0][0] if len(rows) else 0) / (1000 * 3600)
         data_series["working_time"].append(
             {
                 "value": value,

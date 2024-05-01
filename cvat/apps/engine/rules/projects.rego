@@ -1,4 +1,7 @@
 package projects
+
+import rego.v1
+
 import data.utils
 import data.organizations
 
@@ -31,91 +34,91 @@ import data.organizations
 
 default allow := false
 
-is_project_staff {
+is_project_staff if {
     utils.is_resource_owner
 }
 
-is_project_staff {
+is_project_staff if {
     utils.is_resource_assignee
 }
 
-allow {
+allow if {
     utils.is_admin
 }
 
-allow {
-    { utils.CREATE, utils.IMPORT_BACKUP }[input.scope]
+allow if {
+    input.scope in {utils.CREATE, utils.IMPORT_BACKUP}
     utils.is_sandbox
     utils.has_perm(utils.USER)
 }
 
-allow {
-    { utils.CREATE, utils.IMPORT_BACKUP }[input.scope]
+allow if {
+    input.scope in {utils.CREATE, utils.IMPORT_BACKUP}
     input.auth.organization.id == input.resource.organization.id
     utils.has_perm(utils.USER)
     organizations.has_perm(organizations.SUPERVISOR)
 }
 
-allow {
-    { utils.CREATE, utils.IMPORT_BACKUP }[input.scope]
+allow if {
+    input.scope in {utils.CREATE, utils.IMPORT_BACKUP}
     utils.is_sandbox
     utils.has_perm(utils.BUSINESS)
 }
 
-allow {
-    { utils.CREATE, utils.IMPORT_BACKUP }[input.scope]
+allow if {
+    input.scope in {utils.CREATE, utils.IMPORT_BACKUP}
     input.auth.organization.id == input.resource.organization.id
     utils.has_perm(utils.BUSINESS)
     organizations.has_perm(organizations.SUPERVISOR)
 }
 
-allow {
+allow if {
     input.scope == utils.LIST
     utils.is_sandbox
 }
 
-allow {
+allow if {
     input.scope == utils.LIST
     organizations.is_member
 }
 
-filter := [] { # Django Q object to filter list of entries
+filter := [] if { # Django Q object to filter list of entries
     utils.is_admin
     utils.is_sandbox
-} else := qobject {
+} else := qobject if {
     utils.is_admin
     utils.is_organization
     qobject := [ {"organization": input.auth.organization.id} ]
-} else := qobject {
+} else := qobject if {
     utils.is_sandbox
     user := input.auth.user
     qobject := [ {"owner_id": user.id}, {"assignee_id": user.id}, "|" ]
-} else := qobject {
+} else := qobject if {
     utils.is_organization
     utils.has_perm(utils.USER)
     organizations.has_perm(organizations.MAINTAINER)
     qobject := [ {"organization": input.auth.organization.id} ]
-} else := qobject {
+} else := qobject if {
     organizations.has_perm(organizations.WORKER)
     user := input.auth.user
     qobject := [ {"owner_id": user.id}, {"assignee_id": user.id}, "|",
         {"organization": input.auth.organization.id}, "&" ]
 }
 
-allow {
+allow if {
     input.scope == utils.VIEW
     utils.is_sandbox
     is_project_staff
 }
 
-allow {
+allow if {
     input.scope == utils.VIEW
     input.auth.organization.id == input.resource.organization.id
     utils.has_perm(utils.USER)
     organizations.has_perm(organizations.MAINTAINER)
 }
 
-allow {
+allow if {
     input.scope == utils.VIEW
     input.auth.organization.id == input.resource.organization.id
     organizations.has_perm(organizations.WORKER)
@@ -123,58 +126,58 @@ allow {
 }
 
 
-allow {
-    { utils.DELETE, utils.UPDATE_ORG }[input.scope]
+allow if {
+    input.scope in {utils.DELETE, utils.UPDATE_ORG}
     utils.is_sandbox
     utils.has_perm(utils.WORKER)
     utils.is_resource_owner
 }
 
-allow {
-    { utils.DELETE, utils.UPDATE_ORG }[input.scope]
+allow if {
+    input.scope in {utils.DELETE, utils.UPDATE_ORG}
     input.auth.organization.id == input.resource.organization.id
     utils.has_perm(utils.WORKER)
     organizations.is_member
     utils.is_resource_owner
 }
 
-allow {
-    { utils.DELETE, utils.UPDATE_ORG }[input.scope]
+allow if {
+    input.scope in {utils.DELETE, utils.UPDATE_ORG}
     input.auth.organization.id == input.resource.organization.id
     utils.has_perm(utils.USER)
     organizations.is_staff
 }
 
-allow {
-    { utils.UPDATE_DESC, utils.IMPORT_DATASET }[input.scope]
+allow if {
+    input.scope in {utils.UPDATE_DESC, utils.IMPORT_DATASET}
     utils.is_sandbox
     is_project_staff
     utils.has_perm(utils.WORKER)
 }
 
-allow {
-    { utils.UPDATE_DESC, utils.IMPORT_DATASET }[input.scope]
+allow if {
+    input.scope in {utils.UPDATE_DESC, utils.IMPORT_DATASET}
     input.auth.organization.id == input.resource.organization.id
     utils.has_perm(utils.USER)
     organizations.is_staff
 }
 
-allow {
-    { utils.UPDATE_DESC, utils.IMPORT_DATASET }[input.scope]
+allow if {
+    input.scope in {utils.UPDATE_DESC, utils.IMPORT_DATASET}
     is_project_staff
     input.auth.organization.id == input.resource.organization.id
     utils.has_perm(utils.WORKER)
     organizations.is_member
 }
 
-allow {
+allow if {
     input.scope == utils.UPDATE_ASSIGNEE
     utils.is_sandbox
     utils.is_resource_owner
     utils.has_perm(utils.WORKER)
 }
 
-allow {
+allow if {
     input.scope == utils.UPDATE_ASSIGNEE
     input.auth.organization.id == input.resource.organization.id
     utils.is_resource_owner
@@ -182,14 +185,14 @@ allow {
     organizations.is_member
 }
 
-allow {
+allow if {
     input.scope == utils.UPDATE_ASSIGNEE
     input.auth.organization.id == input.resource.organization.id
     utils.has_perm(utils.USER)
     organizations.is_staff
 }
 
-allow {
+allow if {
     input.scope == utils.UPDATE_OWNER
     input.auth.organization.id == input.resource.organization.id
     utils.is_resource_owner
@@ -197,28 +200,28 @@ allow {
     organizations.is_staff
 }
 
-allow {
+allow if {
     input.scope == utils.UPDATE_OWNER
     input.auth.organization.id == input.resource.organization.id
     utils.has_perm(utils.USER)
     organizations.is_staff
 }
 
-allow {
-    { utils.EXPORT_ANNOTATIONS, utils.EXPORT_DATASET, utils.EXPORT_BACKUP }[input.scope]
+allow if {
+    input.scope in {utils.EXPORT_ANNOTATIONS, utils.EXPORT_DATASET, utils.EXPORT_BACKUP}
     utils.is_sandbox
     is_project_staff
 }
 
-allow {
-    { utils.EXPORT_ANNOTATIONS, utils.EXPORT_DATASET, utils.EXPORT_BACKUP }[input.scope]
+allow if {
+    input.scope in {utils.EXPORT_ANNOTATIONS, utils.EXPORT_DATASET, utils.EXPORT_BACKUP}
     input.auth.organization.id == input.resource.organization.id
     organizations.is_member
     is_project_staff
 }
 
-allow {
-    { utils.EXPORT_ANNOTATIONS, utils.EXPORT_DATASET, utils.EXPORT_BACKUP }[input.scope]
+allow if {
+    input.scope in {utils.EXPORT_ANNOTATIONS, utils.EXPORT_DATASET, utils.EXPORT_BACKUP}
     input.auth.organization.id == input.resource.organization.id
     utils.has_perm(utils.USER)
     organizations.has_perm(organizations.MAINTAINER)

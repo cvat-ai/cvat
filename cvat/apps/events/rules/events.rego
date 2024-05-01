@@ -1,4 +1,7 @@
 package events
+
+import rego.v1
+
 import data.utils
 import data.organizations
 
@@ -23,42 +26,42 @@ import data.organizations
 
 default allow := false
 
-allow {
+allow if {
     utils.is_admin
 }
 
-allow {
+allow if {
     input.scope == utils.SEND_EVENTS
 }
 
-allow {
+allow if {
     input.scope == utils.DUMP_EVENTS
     utils.is_sandbox
     utils.has_perm(utils.WORKER)
 }
 
-allow {
+allow if {
     input.scope == utils.DUMP_EVENTS
     utils.has_perm(utils.WORKER)
     organizations.has_perm(organizations.WORKER)
 }
 
-filter := [] {
+filter := [] if {
     utils.is_admin
     utils.is_sandbox
-} else := qobject {
+} else := qobject if {
     utils.is_admin
     utils.is_organization
     qobject := [ {"org_id": input.auth.organization.id} ]
-} else := qobject {
+} else := qobject if {
     utils.is_sandbox
     qobject := [ {"user_id": input.auth.user.id} ]
-} else := qobject {
+} else := qobject if {
     utils.is_organization
     utils.has_perm(utils.USER)
     organizations.has_perm(organizations.MAINTAINER)
     qobject := [ {"org_id": input.auth.organization.id} ]
-} else := qobject {
+} else := qobject if {
     utils.is_organization
     utils.has_perm(utils.USER)
     organizations.has_perm(organizations.WORKER)
