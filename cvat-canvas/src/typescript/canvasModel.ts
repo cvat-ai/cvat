@@ -617,11 +617,6 @@ export class CanvasModelImpl extends MasterImpl implements CanvasModel {
                     } else {
                         this.data.exception = new Error('Unknown error occured when fetching image data');
                     }
-                    // Restore only relevant data in case if setup() is called multiple times
-                    if (this.data.objects === objectStates && this.data.zLayer === zLayer) {
-                        this.data.objects = prevObjects;
-                        this.data.zLayer = prevZLayer;
-                    }
                     this.notify(UpdateReasons.DATA_FAILED);
                 }
             });
