@@ -161,7 +161,6 @@ context('Analytics pipeline', () => {
 
         it('Make some actions with objects, create analytics report, check performance pages', () => {
             const { jobID, projectID, taskID } = data;
-            cy.visit(`/tasks/${taskID}`);
             cy.get('.cvat-job-item').contains('a', `Job #${jobID}`).click();
             cy.get('.cvat-spinner').should('not.exist');
 
