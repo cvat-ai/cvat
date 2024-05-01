@@ -43,9 +43,7 @@ class JobAnnotationSpeedExtractor(DataExtractorBase):
         )
 
         # bandit false alarm
-        self._query = (
-            f"SELECT {', '.join(SELECT)} FROM events WHERE {'AND '.join(WHERE)} GROUP BY job_id" # nosec B608
-        )
+        self._query = f"SELECT {', '.join(SELECT)} FROM events WHERE {'AND '.join(WHERE)} GROUP BY job_id"  # nosec B608
 
 
 class JobAnnotationSpeed(PrimaryMetricBase):

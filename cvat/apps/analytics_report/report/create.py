@@ -300,7 +300,7 @@ class AnalyticsReportUpdateManager:
                             JobAnnotationSpeed.key(),
                             JobAnnotationSpeedExtractor(
                                 start_timestamp, end_timestamp, task_ids=task_ids
-                            )
+                            ),
                         ),
                         (
                             JobAnnotationTime.key(),
