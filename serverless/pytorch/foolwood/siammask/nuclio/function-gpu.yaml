@@ -41,7 +41,7 @@ spec:
         - kind: RUN
           value: git clone https://github.com/foolwood/SiamMask.git
         - kind: RUN
-          value: pip install Cython colorama 'numpy<1.20' requests fire matplotlib numba scipy h5py pandas tqdm tensorboardX opencv_python torch torchvision jsonpickle
+          value: pip install Cython colorama 'numpy<1.20' requests fire matplotlib numba scipy h5py pandas tqdm tensorboardX opencv_python jsonpickle
         - kind: RUN
           value: pip install torch==1.9.0+cu111 torchvision==0.10.0+cu111 torchaudio==0.9.0 -f https://download.pytorch.org/whl/torch_stable.html
         - kind: RUN
