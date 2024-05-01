@@ -286,8 +286,16 @@ class AnalyticsReportUpdateManager:
                 db_report = cls._get_analytics_report(db_project)
 
                 tasks_data = db_project.tasks.values("id", "created_date", "updated_date")
-                start_timestamp = min([item["created_date"] for item in tasks_data]) if len(tasks_data) else db_project.created_date
-                end_timestamp = max([item["updated_date"] for item in tasks_data]) if len(tasks_data) else db_project.updated_date
+                start_timestamp = (
+                    min([item["created_date"] for item in tasks_data])
+                    if len(tasks_data)
+                    else db_project.created_date
+                )
+                end_timestamp = (
+                    max([item["updated_date"] for item in tasks_data])
+                    if len(tasks_data)
+                    else db_project.updated_date
+                )
                 task_ids = [item["id"] for item in tasks_data]
 
                 primary_metric_extractors = dict(
