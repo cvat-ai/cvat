@@ -21,7 +21,7 @@ def init_context(context):
     context.logger.info("Init context...100%")
 
 def handler(context, event):
-    context.logger.info("Run ViT-H model")
+    context.logger.info("Run ViT-B model")
     data = event.body
     buf = io.BytesIO(base64.b64decode(data["image"]))
 

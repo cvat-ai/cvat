@@ -2,7 +2,7 @@ metadata:
   name: pth-omerferhatt-vitb
   namespace: cvat
   annotations:
-    name: ViT-H
+    name: ViT-B
     type: detector
     framework: pytorch
     spec: |
