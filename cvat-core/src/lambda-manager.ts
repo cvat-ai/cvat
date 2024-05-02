@@ -6,7 +6,7 @@
 import serverProxy from './server-proxy';
 import { ArgumentError } from './exceptions';
 import MLModel from './ml-model';
-import { RQStatus, ShapeType } from './enums';
+import { ObjectType, RQStatus, ShapeType } from './enums';
 
 export interface ModelProvider {
     name: string;
@@ -22,6 +22,7 @@ export interface InteractorResults {
 
 export interface DetectedShape {
     type: ShapeType;
+    objectType?: ObjectType;
     rotation?: number;
     attributes: { name: string; value: string }[];
     label: string;
