@@ -601,6 +601,7 @@ export class CanvasModelImpl extends MasterImpl implements CanvasModel {
                 this.notify(UpdateReasons.IMAGE_CHANGED);
 
                 if (prevZLayer === this.data.zLayer && prevObjects === this.data.objects) {
+                    // check the request is relevant, other setup() may have been called while promise resolving
                     this.data.zLayer = zLayer;
                     this.data.objects = objectStates;
                 }
