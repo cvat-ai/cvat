@@ -53,7 +53,7 @@ context('Analytics pipeline', () => {
     ];
 
     const cardEntryNames = ['annotation_time', 'total_object_count', 'total_annotation_speed'];
-    function checkCards(notNull) {
+    function checkCards() {
         cy.get('.cvat-analytics-card')
             .should('have.length', 3)
             .each((card) => {
@@ -61,7 +61,7 @@ context('Analytics pipeline', () => {
                     .invoke('data', 'entry-name')
                     .then((val) => {
                         expect(cardEntryNames.includes(val)).to.eq(true);
-                        if (notNull && ['total_object_count', 'total_annotation_speed'].includes(val)) {
+                        if (['total_object_count', 'total_annotation_speed'].includes(val)) {
                             cy.wrap(card).within(() => {
                                 cy.get('.cvat-analytics-card-value').should('not.have.text', '0.0');
                             });
@@ -192,12 +192,12 @@ context('Analytics pipeline', () => {
                 cy.get('button').contains('Request').click();
             });
 
-            checkCards(true);
+            checkCards();
             checkHistograms();
 
             cy.visit(`/tasks/${taskID}`);
             openAnalytics('task');
-            checkCards(true);
+            checkCards();
             checkHistograms();
 
             cy.visit(`/tasks/${taskID}`);
@@ -213,7 +213,7 @@ context('Analytics pipeline', () => {
                 .find('[role="menuitem"]')
                 .filter(':contains("View analytics")')
                 .click();
-            checkCards(true);
+            checkCards();
             checkHistograms();
         });
     });
