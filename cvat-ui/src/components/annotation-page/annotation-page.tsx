@@ -28,6 +28,7 @@ import { readLatestFrame } from 'utils/remember-latest-frame';
 interface Props {
     job: any | null | undefined;
     fetching: boolean;
+    annotationsInitialized: boolean;
     frameNumber: number;
     workspace: Workspace;
     getJob(): void;
@@ -38,7 +39,7 @@ interface Props {
 
 export default function AnnotationPageComponent(props: Props): JSX.Element {
     const {
-        job, fetching, workspace, frameNumber, getJob, closeJob, saveLogs, changeFrame,
+        job, fetching, annotationsInitialized, workspace, frameNumber, getJob, closeJob, saveLogs, changeFrame,
     } = props;
     const prevJob = usePrevious(job);
     const prevFetching = usePrevious(fetching);
@@ -124,7 +125,7 @@ export default function AnnotationPageComponent(props: Props): JSX.Element {
         }
     }, [job, fetching, prevJob, prevFetching]);
 
-    if (job === null) {
+    if (job === null || !annotationsInitialized) {
         return <Spin size='large' className='cvat-spinner' />;
     }
 

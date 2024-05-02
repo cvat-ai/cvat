@@ -389,7 +389,7 @@ class AWS_S3(_CloudStorage):
             )
             == 1
         ):
-            raise Exception("Insufficient data for authorization")
+            raise Exception("Insufficient data for authentication")
 
         kwargs = dict()
         for key, arg_v in zip(

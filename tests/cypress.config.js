@@ -2,7 +2,7 @@ const { defineConfig } = require('cypress');
 const plugins = require('./cypress/plugins/index');
 
 module.exports = defineConfig({
-    video: false,
+    video: true,
     viewportWidth: 1300,
     viewportHeight: 960,
     defaultCommandTimeout: 25000,

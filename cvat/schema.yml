@@ -5684,7 +5684,7 @@ paths:
   /api/users/self:
     get:
       operationId: users_retrieve_self
-      description: Method returns an instance of a user who is currently authorized
+      description: Method returns an instance of a user who is currently authenticated
       summary: Get details of the current user
       tags:
       - users

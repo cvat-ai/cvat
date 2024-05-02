@@ -39,5 +39,10 @@
     "python.testing.cwd": "${workspaceFolder}/tests",
     "cSpell.words": [
         "crowdsourcing"
-    ]
+    ],
+    "isort.args":["--profile", "black"],
+    "[python]": {
+        "editor.defaultFormatter": "ms-python.black-formatter",
+        "editor.formatOnSave": true
+    }
 }
