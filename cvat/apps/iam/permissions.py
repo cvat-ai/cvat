@@ -9,6 +9,7 @@ import importlib
 import operator
 from abc import ABCMeta, abstractmethod
 from enum import Enum
+from pathlib import Path
 from typing import Any, Dict, List, Optional, Sequence, TypeVar
 
 from attrs import define, field
@@ -20,6 +21,7 @@ from rest_framework.permissions import BasePermission
 from cvat.apps.organizations.models import Membership, Organization
 from cvat.utils.http import make_requests_session
 
+from .utils import add_opa_rules_path
 
 class StrEnum(str, Enum):
     def __str__(self) -> str:
@@ -243,7 +245,7 @@ class IsAuthenticatedOrReadPublicResource(BasePermission):
 
 def load_app_permissions(config: AppConfig) -> None:
     """
-    Ensures that permissions from the given app are loaded.
+    Ensures that permissions and OPA rules from the given app are loaded.
 
     This function should be called from the AppConfig.ready() method of every
     app that defines a permissions module.
@@ -254,3 +256,5 @@ def load_app_permissions(config: AppConfig) -> None:
         isinstance(attr, type) and issubclass(attr, OpenPolicyAgentPermission)
         for attr in vars(permissions_module).values()
     )
+
+    add_opa_rules_path(Path(config.path, "rules"))
