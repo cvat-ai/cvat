@@ -587,6 +587,8 @@ export interface NotificationsState {
         };
         requests: {
             fetching: null | ErrorState;
+            canceling: null | ErrorState;
+            deleting: null | ErrorState;
         }
     };
     messages: {

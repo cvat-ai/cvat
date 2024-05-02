@@ -176,6 +176,8 @@ const defaultState: NotificationsState = {
         },
         requests: {
             fetching: null,
+            canceling: null,
+            deleting: null,
         },
     },
     messages: {
@@ -1349,7 +1351,7 @@ export default function (state = defaultState, action: AnyAction): Notifications
                     ...state.errors,
                     requests: {
                         ...state.errors.requests,
-                        fetching: {
+                        canceling: {
                             message: 'Could not cancel the request',
                             reason: action.payload.error,
                             shouldLog: !(action.payload.error instanceof ServerError),
@@ -1365,7 +1367,7 @@ export default function (state = defaultState, action: AnyAction): Notifications
                     ...state.errors,
                     requests: {
                         ...state.errors.requests,
-                        fetching: {
+                        deleting: {
                             message: 'Could not delete the request',
                             reason: action.payload.error,
                             shouldLog: !(action.payload.error instanceof ServerError),
@@ -1671,7 +1673,7 @@ export default function (state = defaultState, action: AnyAction): Notifications
                     organizations: {
                         ...state.errors.organizations,
                         activation: {
-                            message: `Could not activate organization ${action.payload.slug || null}`,
+                            message: `Could not activate organization ${action.payload.slug || ''}`,
                             reason: action.payload.error,
                             shouldLog: !(action.payload.error instanceof ServerError),
                             className: 'cvat-notification-notice-activate-organization-failed',

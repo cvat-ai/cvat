@@ -100,7 +100,7 @@ export default function implementProject(projectClass) {
         customName?: string,
         options?: { requestStatusCallback?: (request: Request) => void },
     ) {
-        const { requestStatusCallback } = options;
+        const { requestStatusCallback } = options || {};
         const rqID = await exportDataset(this, format, saveImages, useDefaultSettings, targetStorage, customName);
         if (rqID) {
             return requestsManager.listen(rqID, { callback: requestStatusCallback });
@@ -118,7 +118,7 @@ export default function implementProject(projectClass) {
             requestStatusCallback?: (request: Request) => void,
         },
     ) {
-        const { requestStatusCallback } = options;
+        const { requestStatusCallback } = options || {};
         const rqID = await importDataset(this, format, useDefaultSettings, sourceStorage, file, options);
         return requestsManager.listen(rqID, { callback: requestStatusCallback });
     };
@@ -129,7 +129,7 @@ export default function implementProject(projectClass) {
         fileName?: string,
         options?: { requestStatusCallback?: (request: Request) => void },
     ) {
-        const { requestStatusCallback } = options;
+        const { requestStatusCallback } = options || {};
         const rqID = await serverProxy.projects.backup(this.id, targetStorage, useDefaultSettings, fileName);
         return requestsManager.listen(rqID, { callback: requestStatusCallback });
     };
@@ -139,7 +139,7 @@ export default function implementProject(projectClass) {
         file: File | string,
         options?: { requestStatusCallback?: (request: Request) => void },
     ) {
-        const { requestStatusCallback } = options;
+        const { requestStatusCallback } = options || {};
         const rqID = await serverProxy.projects.restore(storage, file);
         return requestsManager.listen(rqID, { callback: requestStatusCallback });
     };

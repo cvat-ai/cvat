@@ -6,30 +6,9 @@ import serverProxy from './server-proxy';
 import { RQStatus } from './enums';
 import User from './user';
 import { StorageData } from './storage';
-import { RequestsFilter } from './server-response-types';
+import { RequestsFilter, SerializedRequest } from './server-response-types';
 import { fieldsToSnakeCase } from './common';
 import { RequestError } from './exceptions';
-
-export interface SerializedRequest {
-    id?: string;
-    status: string;
-    operation?: {
-        target: string;
-        type: string;
-        format: string;
-        job_id: number | null;
-        task_id: number | null;
-        project_id: number | null;
-    };
-    percent?: number;
-    message: string;
-    result_url?: string;
-    enqueue_date?: string;
-    start_date?: string;
-    finish_date?: string;
-    expire_date?: string;
-    owner?: any;
-}
 
 type Operation = {
     target: string;

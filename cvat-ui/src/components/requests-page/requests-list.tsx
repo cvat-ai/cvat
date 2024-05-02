@@ -46,7 +46,7 @@ function RequestsList(): JSX.Element {
 
     return (
         <>
-            <Row justify='center' align='middle'>
+            <Row justify='center'>
                 <Col className='cvat-requests-list' {...dimensions}>
                     {requestViews}
                 </Col>

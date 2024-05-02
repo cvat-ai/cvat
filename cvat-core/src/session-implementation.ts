@@ -314,7 +314,7 @@ export function implementJob(Job) {
         file: File | string,
         options?: { convMaskToPoly?: boolean, requestStatusCallback?: (request: Request) => void },
     ) {
-        const { requestStatusCallback } = options;
+        const { requestStatusCallback } = options || {};
         const rqID = await importDataset(this, format, useDefaultLocation, sourceStorage, file, options);
         return requestsManager.listen(rqID, { callback: requestStatusCallback });
     };
@@ -335,7 +335,7 @@ export function implementJob(Job) {
         customName?: string,
         options?: { requestStatusCallback?: (request: Request) => void },
     ) {
-        const { requestStatusCallback } = options;
+        const { requestStatusCallback } = options || {};
         const rqID = await exportDataset(this, format, saveImages, useDefaultSettings, targetStorage, customName);
         if (rqID) {
             return requestsManager.listen(rqID, { callback: requestStatusCallback });
@@ -552,7 +552,7 @@ export function implementTask(Task) {
         fileName?: string,
         options?: { requestStatusCallback?: (request: Request) => void },
     ) {
-        const { requestStatusCallback } = options;
+        const { requestStatusCallback } = options || {};
         const rqID = await serverProxy.tasks.backup(this.id, targetStorage, useDefaultSettings, fileName);
         return requestsManager.listen(rqID, { callback: requestStatusCallback });
     };
@@ -562,7 +562,7 @@ export function implementTask(Task) {
         file: File | string,
         options?: { requestStatusCallback?: (request: Request) => void },
     ) {
-        const { requestStatusCallback } = options;
+        const { requestStatusCallback } = options || {};
         const rqID = await serverProxy.tasks.restore(storage, file);
         return requestsManager.listen(rqID, { callback: requestStatusCallback });
     };
@@ -791,7 +791,7 @@ export function implementTask(Task) {
         file: File | string,
         options?: { convMaskToPoly?: boolean, requestStatusCallback?: (request: Request) => void },
     ) {
-        const { requestStatusCallback } = options;
+        const { requestStatusCallback } = options || {};
         const rqID = await importDataset(this, format, useDefaultLocation, sourceStorage, file, options);
         return requestsManager.listen(rqID, { callback: requestStatusCallback });
     };
@@ -812,7 +812,7 @@ export function implementTask(Task) {
         customName?: string,
         options?: { requestStatusCallback?: (request: Request) => void },
     ) {
-        const { requestStatusCallback } = options;
+        const { requestStatusCallback } = options || {};
         const rqID = await exportDataset(this, format, saveImages, useDefaultSettings, targetStorage, customName);
         if (rqID) {
             return requestsManager.listen(rqID, { callback: requestStatusCallback });

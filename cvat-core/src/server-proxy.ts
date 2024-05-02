@@ -18,7 +18,7 @@ import {
     SerializedInvitationData, SerializedCloudStorage, SerializedFramesMetaData, SerializedCollection,
     SerializedQualitySettingsData, ApiQualitySettingsFilter, SerializedQualityConflictData, ApiQualityConflictsFilter,
     SerializedQualityReportData, ApiQualityReportsFilter, SerializedAnalyticsReport, ApiAnalyticsReportFilter,
-    ApiRequestsFilter,
+    SerializedRequest, ApiRequestsFilter,
 } from './server-response-types';
 import { PaginatedResource } from './core-types';
 import { Storage } from './storage';
@@ -1675,7 +1675,7 @@ async function getLambdaRequests() {
     }
 }
 
-async function getRequestStatus(requestID) {
+async function getLambdaRequestStatus(requestID) {
     const { backendAPI } = config;
 
     try {
@@ -2222,7 +2222,7 @@ async function getAnalyticsReports(
     }
 }
 
-async function getRequestsList(): Promise<any> {
+async function getRequestsList(): Promise<PaginatedResource<SerializedRequest>> {
     const { backendAPI } = config;
 
     try {
@@ -2234,7 +2234,7 @@ async function getRequestsList(): Promise<any> {
     }
 }
 
-async function getImportRequestStatus(rqID: string | null, filter: ApiRequestsFilter): Promise<any> {
+async function getRequestStatus(rqID: string | null, filter: ApiRequestsFilter): Promise<SerializedRequest> {
     const { backendAPI } = config;
 
     try {
@@ -2365,7 +2365,7 @@ export default Object.freeze({
 
     lambda: Object.freeze({
         list: getLambdaFunctions,
-        status: getRequestStatus,
+        status: getLambdaRequestStatus,
         requests: getLambdaRequests,
         run: runLambdaRequest,
         call: callLambdaFunction,
@@ -2443,7 +2443,7 @@ export default Object.freeze({
 
     requests: Object.freeze({
         list: getRequestsList,
-        status: getImportRequestStatus,
+        status: getRequestStatus,
         cancel: cancelRequest,
         delete: deleteRequest,
     }),
