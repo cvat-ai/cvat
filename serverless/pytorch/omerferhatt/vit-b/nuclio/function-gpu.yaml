@@ -1,0 +1,88 @@
+metadata:
+  name: pth-omerferhatt-vitb
+  namespace: cvat
+  annotations:
+    name: ViT-B
+    type: detector
+    framework: pytorch
+    spec: |
+      [
+        { "id": 0, "name": "tench", "type": "tag" },
+        { "id": 1, "name": "goldfish", "type": "tag" },
+        { "id": 2, "name": "great white shark", "type": "tag" },
+        { "id": 3, "name": "tiger shark", "type": "tag" },
+        { "id": 4, "name": "hammerhead shark", "type": "tag" },
+        { "id": 5, "name": "electric ray", "type": "tag" },
+        { "id": 6, "name": "stingray", "type": "tag" },
+        { "id": 7, "name": "cock", "type": "tag" },
+        { "id": 8, "name": "hen", "type": "tag" },
+        { "id": 9, "name": "ostrich", "type": "tag" },
+        { "id": 10, "name": "brambling", "type": "tag" },
+        { "id": 11, "name": "goldfinch", "type": "tag" },
+        { "id": 12, "name": "house finch", "type": "tag" },
+        { "id": 13, "name": "junco", "type": "tag" },
+        { "id": 14, "name": "indigo bunting", "type": "tag" },
+        { "id": 15, "name": "robin", "type": "tag" },
+        { "id": 16, "name": "bulbul", "type": "tag" },
+        { "id": 17, "name": "jay", "type": "tag" },
+        { "id": 18, "name": "magpie", "type": "tag" },
+        { "id": 19, "name": "chickadee", "type": "tag" },
+        { "id": 20, "name": "water ouzel", "type": "tag" },
+        { "id": 21, "name": "kite", "type": "tag" },
+        { "id": 22, "name": "bald eagle", "type": "tag" },
+        { "id": 23, "name": "vulture", "type": "tag" },
+        { "id": 24, "name": "great grey owl", "type": "tag" },
+        { "id": 25, "name": "European fire salamander", "type": "tag" },
+        { "id": 26, "name": "common newt", "type": "tag" },
+        { "id": 27, "name": "eft", "type": "tag" },
+        { "id": 28, "name": "spotted salamander", "type": "tag" },
+        { "id": 29, "name": "axolotl", "type": "tag" }
+      ]
+spec:
+  description: ImageNet-1k pretrained ViT-B
+  runtime: 'python:3.8'
+  handler: main:handler
+  eventTimeout: 30s
+  build:
+    image: cvat.pth.omerferhatt.vitb:latest-gpu
+    baseImage: nvidia/cuda:12.1.0-runtime-ubuntu22.04
+
+    directives:
+      preCopy:
+        - kind: RUN
+          value: |-
+            apt update \
+              && apt install -y --no-install-recommends \
+                wget \
+                git \
+                ca-certificates \
+                python-is-python3 \
+                python3 \
+                python3-pip \
+              && rm -rf /var/lib/apt/lists/*
+        - kind: WORKDIR
+          value: /opt/nuclio
+        - kind: RUN
+          value: pip install pillow pyyaml
+        - kind: RUN
+          value: |-
+            pip install torch torchvision
+
+  triggers:
+    myHttpTrigger:
+      maxWorkers: 1
+      kind: 'http'
+      workerAvailabilityTimeoutMilliseconds: 10000
+      attributes:
+        maxRequestBodySize: 33554432 # 32MB
+
+  resources:
+    limits:
+      nvidia.com/gpu: 1
+
+  platform:
+    attributes:
+      restartPolicy:
+        name: always
+        maximumRetryCount: 3
+      mountMode: volume
