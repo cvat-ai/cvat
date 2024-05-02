@@ -1245,7 +1245,7 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
 
                                 const objectData = {
                                     label: jobLabel,
-                                    objectType: ObjectType.SHAPE,
+                                    objectType: data.objectType || ObjectType.SHAPE,
                                     frame,
                                     occluded: false,
                                     rotation: [
