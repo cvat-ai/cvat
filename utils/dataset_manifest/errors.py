@@ -7,7 +7,7 @@ class BasicError(Exception):
     The basic exception type for all exceptions in the library
     """
 
-class InvalidVideoFrameError(BasicError):
+class InvalidVideoError(BasicError):
     """
     Indicates an invalid video frame
     """
