@@ -496,9 +496,7 @@ class CanvasWrapperComponent extends React.PureComponent<Props> {
                 ).filter((state: ObjectState | undefined) => !!state)
                 .map((state) => state?.clientID) as number[];
 
-            if (highlightedTagClientIDs.length) {
-                this.updateHighlightedConflict(highlightedConflict);
-            } else {
+            if (highlightedTagClientIDs.length === 0) {
                 canvasInstance.highlight(highlightedClientIDs, severity || null);
             }
         }
@@ -607,12 +605,6 @@ class CanvasWrapperComponent extends React.PureComponent<Props> {
         canvasInstance.html().removeEventListener('canvas.error', this.onCanvasErrorOccurrence);
         canvasInstance.html().removeEventListener('canvas.message', this.onCanvasMessage as EventListener);
     }
-
-    // updates the value of highlightedConflict state based on the value of props
-    updateHighlightedConflict = (newHighlightedConflict: QualityConflict | null): void => {
-        // eslint-disable-next-line react/no-unused-state
-        this.setState({ highlightedConflict: newHighlightedConflict });
-    };
 
     private onCanvasErrorOccurrence = (event: any): void => {
         const { exception, domain } = event.detail;
