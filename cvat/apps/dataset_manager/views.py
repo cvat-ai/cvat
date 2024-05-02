@@ -1,5 +1,5 @@
 # Copyright (C) 2019-2022 Intel Corporation
-# Copyright (C) 2023 CVAT.ai Corporation
+# Copyright (C) 2023-2024 CVAT.ai Corporation
 #
 # SPDX-License-Identifier: MIT
 
@@ -41,10 +41,11 @@ def get_export_cache_dir(db_instance):
     else:
         raise FileNotFoundError('{} dir {} does not exist'.format(db_instance.__class__.__name__, base_dir))
 
-DEFAULT_CACHE_TTL = timedelta(hours=10)
+DEFAULT_CACHE_TTL = timedelta(seconds=settings.DATASET_CACHE_TTL)
 TASK_CACHE_TTL = DEFAULT_CACHE_TTL
 PROJECT_CACHE_TTL = DEFAULT_CACHE_TTL / 3
 JOB_CACHE_TTL = DEFAULT_CACHE_TTL
+
 
 def export(dst_format, project_id=None, task_id=None, job_id=None, server_url=None, save_images=False):
     try:
