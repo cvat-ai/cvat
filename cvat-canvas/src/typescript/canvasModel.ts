@@ -556,11 +556,6 @@ export class CanvasModelImpl extends MasterImpl implements CanvasModel {
         this.data.imageID = frameData.number;
 
         const { zLayer: prevZLayer, objects: prevObjects } = this.data;
-        const isSetupRequestRelevant = (): boolean => (
-            frameData.number === this.data.imageID &&
-            prevZLayer === this.data.zLayer &&
-            prevObjects === this.data.objects
-        );
 
         frameData
             .data((): void => {
@@ -568,7 +563,7 @@ export class CanvasModelImpl extends MasterImpl implements CanvasModel {
                 this.notify(UpdateReasons.IMAGE_CHANGED);
             })
             .then((data: Image): void => {
-                if (!isSetupRequestRelevant()) {
+                if (frameData.number !== this.data.imageID) {
                     // check that request is still relevant after async image data fetching
                     return;
                 }
@@ -605,8 +600,11 @@ export class CanvasModelImpl extends MasterImpl implements CanvasModel {
 
                 this.notify(UpdateReasons.IMAGE_CHANGED);
 
-                this.data.zLayer = zLayer;
-                this.data.objects = objectStates;
+                if (prevZLayer === this.data.zLayer && prevObjects === this.data.objects) {
+                    this.data.zLayer = zLayer;
+                    this.data.objects = objectStates;
+                }
+
                 this.notify(UpdateReasons.OBJECTS_UPDATED);
             })
             .catch((exception: unknown): void => {
