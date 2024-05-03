@@ -1,5 +1,5 @@
 # Copyright (C) 2018-2022 Intel Corporation
-# Copyright (C) 2022-2023 CVAT.ai Corporation
+# Copyright (C) 2022-2024 CVAT.ai Corporation
 #
 # SPDX-License-Identifier: MIT
 
@@ -2986,24 +2986,35 @@ def _export_annotations(
 
                     if not file_path:
                         return Response('A result for exporting job was not found for finished RQ job', status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-                    elif not osp.exists(file_path):
-                        return Response('The result file does not exist in export cache', status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
-                    if action == "download":
-                        filename = filename or \
-                            build_annotations_file_name(
-                                class_name=db_instance.__class__.__name__,
-                                identifier=db_instance.name if isinstance(db_instance, (Task, Project)) else db_instance.id,
-                                timestamp=timestamp,
-                                format_name=format_name,
-                                is_annotation_file=is_annotation_file,
-                                extension=osp.splitext(file_path)[1]
-                            )
+                    cache_dir = osp.dirname(file_path)
+                    with dm.util.get_dataset_cache_lock(
+                        cache_dir,
+                        mode=dm.util.LockMode.shared,
+                        block=False,
+                        timeout=dm.views.EXPORT_CACHE_LOCKING_TIMEOUT
+                    ):
+                        if action == "download":
+                            if not osp.exists(file_path):
+                                return Response('The result file does not exist in export cache', status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
-                        rq_job.delete()
-                        return sendfile(request, file_path, attachment=True, attachment_filename=filename)
+                            filename = filename or \
+                                build_annotations_file_name(
+                                    class_name=db_instance.__class__.__name__,
+                                    identifier=db_instance.name if isinstance(db_instance, (Task, Project)) else db_instance.id,
+                                    timestamp=timestamp,
+                                    format_name=format_name,
+                                    is_annotation_file=is_annotation_file,
+                                    extension=osp.splitext(file_path)[1]
+                                )
 
-                    return Response(status=status.HTTP_201_CREATED)
+                            rq_job.delete()
+                            return sendfile(request, file_path, attachment=True, attachment_filename=filename)
+                        else:
+                            if osp.exists(file_path):
+                                return Response(status=status.HTTP_201_CREATED)
+                            else:
+                                rq_job.delete()
                 else:
                     raise NotImplementedError(f"Export to {location} location is not implemented yet")
             elif rq_job.is_failed:
