@@ -228,7 +228,7 @@ function SwitchKeyframe(props: Props): JSX.Element {
     return (
         <CVATTooltip title={`Switch keyframe property ${switchKeyFrameShortcut}`}>
             {keyframe ? (
-                <StarFilled style={keyframeStyle} onClick={unsetKeyframe} />
+                <StarFilled style={keyframeStyle} onClick={unsetKeyframe} {...classes.keyframe.enabled} />
             ) : (
                 <StarOutlined style={keyframeStyle} onClick={setKeyframe} {...classes.keyframe.disabled} />
             )}
