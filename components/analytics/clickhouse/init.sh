@@ -28,5 +28,7 @@ CREATE TABLE IF NOT EXISTS ${CLICKHOUSE_DB}.events
 ENGINE = MergeTree
 PARTITION BY toYYYYMM(timestamp)
 ORDER BY (timestamp)
+TTL toDateTime(timestamp) + INTERVAL ${CLICKHOUSE_ERRORS_TTL} DELETE WHERE scope = 'send:exception',
+    toDateTime(timestamp) + INTERVAL ${CLICKHOUSE_EVENTS_TTL} DELETE WHERE scope != 'send:exception'
 SETTINGS index_granularity = 8192
 ;" | clickhouse-client

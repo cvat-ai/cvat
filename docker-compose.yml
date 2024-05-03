@@ -299,6 +299,8 @@ services:
       - CLICKHOUSE_DB=cvat
       - CLICKHOUSE_USER=user
       - CLICKHOUSE_PASSWORD=user
+      - CLICKHOUSE_EVENTS_TTL='3 MONTH'
+      - CLICKHOUSE_ERRORS_TTL='12 MONTH'
     networks:
       cvat:
         aliases:
