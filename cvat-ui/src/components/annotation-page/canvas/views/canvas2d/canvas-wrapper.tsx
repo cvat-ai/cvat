@@ -483,20 +483,17 @@ class CanvasWrapperComponent extends React.PureComponent<Props> {
         if (prevProps.highlightedConflict !== highlightedConflict) {
             const severity: HighlightSeverity | undefined = highlightedConflict
                 ?.severity as unknown as HighlightSeverity;
-            const highlightedClientIDs = (highlightedConflict?.annotationConflicts || [])
+
+            const highlightedObjects = (highlightedConflict?.annotationConflicts || [])
                 .map((conflict: AnnotationConflict) => annotations
                     .find((state) => state.serverID === conflict.serverID && state.objectType === conflict.type),
-                ).filter((state: ObjectState | undefined) => !!state)
-                .map((state) => state?.clientID) as number[];
+                ).filter((state: ObjectState | undefined) => !!state) as ObjectState[];
+            const highlightedClientIDs = highlightedObjects.map((state) => state?.clientID) as number[];
 
-            // check if current conflict ids corresponds to a tag annotations
-            const highlightedTagClientIDs = (highlightedConflict?.annotationConflicts || [])
-                .map((conflict: AnnotationConflict) => annotations
-                    .find((state) => conflict.type === 'tag' && state.serverID === conflict.serverID && state.objectType === conflict.type),
-                ).filter((state: ObjectState | undefined) => !!state)
-                .map((state) => state?.clientID) as number[];
-
-            if (highlightedTagClientIDs.length === 0) {
+            const higlightedTags = highlightedObjects.some((state) => state?.objectType === ObjectType.TAG);
+            if (higlightedTags && prevProps.highlightedConflict) {
+                canvasInstance.highlight([], null);
+            } else if (!higlightedTags) {
                 canvasInstance.highlight(highlightedClientIDs, severity || null);
             }
         }
