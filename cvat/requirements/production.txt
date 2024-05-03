@@ -6,11 +6,14 @@
 #    pip-compile-multi
 #
 -r base.txt
+--no-binary lxml
+--no-binary xmlsec
+
 anyio==4.3.0
     # via watchfiles
 coverage==7.2.3
     # via -r cvat/requirements/production.in
-exceptiongroup==1.2.0
+exceptiongroup==1.2.1
     # via anyio
 h11==0.14.0
     # via uvicorn
