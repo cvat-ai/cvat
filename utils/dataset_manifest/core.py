@@ -343,7 +343,7 @@ class _Index:
         return len(self._index)
 
     def is_empty(self) -> bool:
-        return not bool(self)
+        return not len(self)
 
 class _ManifestManager(ABC):
     BASE_INFORMATION = {
