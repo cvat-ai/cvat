@@ -408,7 +408,7 @@ class ObjectsListContainer extends React.PureComponent<Props, State> {
             },
             SWITCH_PINNED: (event: KeyboardEvent | undefined) => {
                 preventDefault(event);
-                const state = activatedState();
+                const state = activatedState(true);
                 if (state && !readonly) {
                     state.pinned = !state.pinned;
                     updateAnnotations([state]);
@@ -456,7 +456,7 @@ class ObjectsListContainer extends React.PureComponent<Props, State> {
             },
             TO_BACKGROUND: (event: KeyboardEvent | undefined) => {
                 preventDefault(event);
-                const state = activatedState();
+                const state = activatedState(true);
                 if (state && !readonly && state.objectType !== ObjectType.TAG) {
                     state.zOrder = minZLayer - 1;
                     updateAnnotations([state]);
@@ -464,14 +464,14 @@ class ObjectsListContainer extends React.PureComponent<Props, State> {
             },
             TO_FOREGROUND: (event: KeyboardEvent | undefined) => {
                 preventDefault(event);
-                const state = activatedState();
+                const state = activatedState(true);
                 if (state && !readonly && state.objectType !== ObjectType.TAG) {
                     state.zOrder = maxZLayer + 1;
                     updateAnnotations([state]);
                 }
             },
             COPY_SHAPE: () => {
-                const state = activatedState();
+                const state = activatedState(true);
                 if (state && !readonly) {
                     copyShape(state);
                 }
