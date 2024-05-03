@@ -38,3 +38,7 @@ watchfiles==0.21.0
     # via uvicorn
 websockets==12.0
     # via uvicorn
+xmlsec==1.3.14
+    # via
+    #   -r cvat/requirements/production.in
+    #   python3-saml

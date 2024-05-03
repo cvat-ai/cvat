@@ -1,5 +1,4 @@
 -r ../../utils/dataset_manifest/requirements.in
---no-binary lxml,xmlsec
 
 attrs==21.4.0
 av==9.2.0
@@ -28,9 +27,6 @@ djangorestframework~=3.14.0
 drf-spectacular==0.26.2
 furl==2.1.0
 google-cloud-storage==1.42.0
-lxml>=5.2.1,<6
-xmlsec>=1.3.14,<2
-
 natsort==8.0.0
 numpy~=1.22.2
 opencv-python-headless~=4.8
