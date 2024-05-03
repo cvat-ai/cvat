@@ -23,9 +23,8 @@ def init_context(context):
 def handler(context, event):
     context.logger.info("Run ViT-B model")
     data = event.body
-    buf = io.BytesIO(base64.b64decode(data["image"]))
+    image = Image.open(io.BytesIO(base64.b64decode(data["image"]))).convert("RGB")
 
-    image = Image.open(buf).convert("RGB")
     class_id, _, score = context.user_data.model.infer(image)
 
     results = [{
