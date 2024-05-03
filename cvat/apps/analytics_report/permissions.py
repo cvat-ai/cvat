@@ -4,6 +4,7 @@
 # SPDX-License-Identifier: MIT
 
 from django.conf import settings
+from django.core.exceptions import ObjectDoesNotExist
 from rest_framework.exceptions import ValidationError
 
 from cvat.apps.engine.models import Job, Project, Task
@@ -26,44 +27,41 @@ class AnalyticsReportPermission(OpenPolicyAgentPermission):
                 self = cls.create_base_perm(request, view, scope, iam_context, obj)
                 permissions.append(self)
 
-            if view.action == Scopes.LIST:
-                job_id = request.query_params.get("job_id", None)
-                task_id = request.query_params.get("task_id", None)
-                project_id = request.query_params.get("project_id", None)
-            else:
-                job_id = request.data.get("job_id", None)
-                task_id = request.data.get("task_id", None)
-                project_id = request.data.get("project_id", None)
+            try:
+                if view.action == Scopes.LIST:
+                    job_id = request.query_params.get("job_id", None)
+                    task_id = request.query_params.get("task_id", None)
+                    project_id = request.query_params.get("project_id", None)
 
-            if job_id:
-                try:
-                    job = Job.objects.get(id=job_id)
-                except Job.DoesNotExist as ex:
-                    raise ValidationError(str(ex))
+                    if job_id:
+                        job = Job.objects.get(id=job_id)
+                        iam_context = get_iam_context(request, job)
+                        perm = JobPermission.create_scope_view(iam_context, int(job_id))
+                        permissions.append(perm)
+                else:
+                    job_id = request.data.get("job_id", None)
+                    task_id = request.data.get("task_id", None)
+                    project_id = request.data.get("project_id", None)
 
-                iam_context = get_iam_context(request, job)
-                perm = JobPermission.create_scope_view(iam_context, int(job_id))
-                permissions.append(perm)
+                    if job_id:
+                        job = Job.objects.select_related("segment__task").get(id=job_id)
+                        task_id = job.segment.task.id
 
-            if task_id:
-                try:
+                if task_id:
                     task = Task.objects.get(id=task_id)
-                except Task.DoesNotExist as ex:
-                    raise ValidationError(str(ex))
+                    iam_context = get_iam_context(request, task)
+                    perm = TaskPermission.create_scope_view(request, int(task_id), iam_context)
+                    permissions.append(perm)
 
-                iam_context = get_iam_context(request, task)
-                perm = TaskPermission.create_scope_view(request, int(task_id), iam_context)
-                permissions.append(perm)
-
-            if project_id:
-                try:
+                if project_id:
                     project = Project.objects.get(id=project_id)
-                except Project.DoesNotExist as ex:
-                    raise ValidationError(str(ex))
-
-                iam_context = get_iam_context(request, project)
-                perm = ProjectPermission.create_scope_view(iam_context, int(project_id))
-                permissions.append(perm)
+                    iam_context = get_iam_context(request, project)
+                    perm = ProjectPermission.create_scope_view(iam_context, int(project_id))
+                    permissions.append(perm)
+            except ObjectDoesNotExist as ex:
+                raise ValidationError(
+                    "The specified resource does not exist. Please check the provided identifiers"
+                ) from ex
 
         return permissions
 

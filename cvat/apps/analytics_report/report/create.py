@@ -1,10 +1,9 @@
-# Copyright (C) 2023 CVAT.ai Corporation
+# Copyright (C) 2023-2024 CVAT.ai Corporation
 #
 # SPDX-License-Identifier: MIT
 
-from datetime import datetime, timedelta
+from datetime import datetime
 from typing import Union
-from uuid import uuid4
 
 import django_rq
 from django.conf import settings
@@ -38,7 +37,6 @@ from cvat.apps.analytics_report.report.primary_metrics import (
     PrimaryMetricBase,
 )
 from cvat.apps.engine.models import Job, Project, Task
-from cvat.utils.background_jobs import schedule_job_with_throttling
 
 
 def get_empty_report():
@@ -57,17 +55,9 @@ def get_empty_report():
 
 
 class AnalyticsReportUpdateManager:
-    _QUEUE_JOB_PREFIX_TASK = "update-analytics-report-task-"
-    _QUEUE_JOB_PREFIX_PROJECT = "update-analytics-report-project-"
-    _RQ_CUSTOM_ANALYTICS_CHECK_JOB_TYPE = "custom_analytics_check"
-    _JOB_RESULT_TTL = 120
-
-    @classmethod
-    def _get_analytics_check_job_delay(cls) -> timedelta:
-        return timedelta(seconds=settings.ANALYTICS_CHECK_JOB_DELAY)
-
-    def _get_scheduler(self):
-        return django_rq.get_scheduler(settings.CVAT_QUEUES.ANALYTICS_REPORTS.value)
+    _QUEUE_JOB_PREFIX_TASK = "analytics:calculate-report-task-"
+    _QUEUE_JOB_PREFIX_PROJECT = "analytics:calculate-report-project-"
+    _QUEUE_JOB_PREFIX_JOB = "analytics:calculate-report-job-"
 
     def _get_queue(self):
         return django_rq.get_queue(settings.CVAT_QUEUES.ANALYTICS_REPORTS.value)
@@ -75,11 +65,10 @@ class AnalyticsReportUpdateManager:
     def _make_queue_job_id_base(self, obj) -> str:
         if isinstance(obj, Task):
             return f"{self._QUEUE_JOB_PREFIX_TASK}{obj.id}"
-        else:
+        elif isinstance(obj, Project):
             return f"{self._QUEUE_JOB_PREFIX_PROJECT}{obj.id}"
-
-    def _make_custom_analytics_check_job_id(self) -> str:
-        return uuid4().hex
+        elif isinstance(obj, Job):
+            return f"{self._QUEUE_JOB_PREFIX_JOB}{obj.id}"
 
     @classmethod
     def _get_last_report_time(cls, obj):
@@ -90,56 +79,24 @@ class AnalyticsReportUpdateManager:
         except ObjectDoesNotExist:
             return None
 
-    def schedule_analytics_report_autoupdate_job(self, *, job=None, task=None, project=None):
-        assert sum(map(bool, (job, task, project))) == 1, "Expected only 1 argument"
-
-        now = timezone.now()
-        delay = self._get_analytics_check_job_delay()
-        next_job_time = now.utcnow() + delay
-
-        target_obj = None
-        cvat_project_id = None
-        cvat_task_id = None
-        if job is not None:
-            if job.segment.task.project:
-                target_obj = job.segment.task.project
-                cvat_project_id = target_obj.id
-            else:
-                target_obj = job.segment.task
-                cvat_task_id = target_obj.id
-        elif task is not None:
-            if task.project:
-                target_obj = task.project
-                cvat_project_id = target_obj.id
-            else:
-                target_obj = task
-                cvat_task_id = target_obj.id
-        elif project is not None:
-            target_obj = project
-            cvat_project_id = project.id
-
-        schedule_job_with_throttling(
-            settings.CVAT_QUEUES.ANALYTICS_REPORTS.value,
-            self._make_queue_job_id_base(target_obj),
-            next_job_time,
-            self._check_analytics_report,
-            cvat_task_id=cvat_task_id,
-            cvat_project_id=cvat_project_id,
-        )
-
     def schedule_analytics_check_job(self, *, job=None, task=None, project=None, user_id):
-        rq_id = self._make_custom_analytics_check_job_id()
+        rq_id = self._make_queue_job_id_base(job or task or project)
 
         queue = self._get_queue()
+        existing_job = self.get_analytics_check_job(rq_id)
+
+        if existing_job:
+            if existing_job.get_status() in ["queued", "started", "deferred", "scheduled"]:
+                return rq_id
+            existing_job.delete()
+
         queue.enqueue(
             self._check_analytics_report,
             cvat_job_id=job.id if job is not None else None,
             cvat_task_id=task.id if task is not None else None,
             cvat_project_id=project.id if project is not None else None,
             job_id=rq_id,
-            meta={"user_id": user_id, "job_type": self._RQ_CUSTOM_ANALYTICS_CHECK_JOB_TYPE},
-            result_ttl=self._JOB_RESULT_TTL,
-            failure_ttl=self._JOB_RESULT_TTL,
+            meta={"user_id": user_id},
         )
 
         return rq_id
@@ -147,14 +104,7 @@ class AnalyticsReportUpdateManager:
     def get_analytics_check_job(self, rq_id: str):
         queue = self._get_queue()
         rq_job = queue.fetch_job(rq_id)
-
-        if rq_job and not self.is_custom_analytics_check_job(rq_job):
-            rq_job = None
-
         return rq_job
-
-    def is_custom_analytics_check_job(self, rq_job) -> bool:
-        return rq_job.meta.get("job_type") == self._RQ_CUSTOM_ANALYTICS_CHECK_JOB_TYPE
 
     @staticmethod
     def _get_analytics_report(db_obj: Union[Job, Task, Project]) -> AnalyticsReport:
