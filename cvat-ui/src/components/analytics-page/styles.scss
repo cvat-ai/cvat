@@ -16,10 +16,16 @@
 }
 
 .cvat-task-quality-page,
+.cvat-analytics-overview,
 .cvat-project-quality-page {
     >.ant-row {
         margin-top: $grid-unit-size;
     }
+}
+
+.cvat-empty-performance-analytics-item {
+    display: flex;
+    justify-content: space-between;
 }
 
 .cvat-task-mean-annotation-quality {
@@ -33,6 +39,10 @@
     .ant-card-body {
         padding: $grid-unit-size * 2 $grid-unit-size * 3;
     }
+}
+
+.cvat-analytics-refresh-button {
+    margin-right: $grid-unit-size;
 }
 
 .cvat-analytics-card-title {
