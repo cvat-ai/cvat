@@ -2,7 +2,7 @@
 #
 # SPDX-License-Identifier: MIT
 
-from datetime import datetime, timedelta
+from datetime import datetime
 from typing import Union
 
 import django_rq
