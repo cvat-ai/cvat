@@ -132,7 +132,20 @@ async function chunkUpload(file: File, uploadConfig): Promise<{ uploadSentSize: 
                 Authorization: Axios.defaults.headers.common.Authorization,
             },
             chunkSize,
-            retryDelays: null,
+            retryDelays: [2000, 4000, 8000, 16000, 32000, 64000],
+            onShouldRetry(err: tus.DetailedError | Error): boolean {
+                if (err instanceof tus.DetailedError) {
+                    const { originalResponse } = (err as tus.DetailedError);
+                    const code = (originalResponse?.getStatus() || 0);
+
+                    // do not retry if (code >= 400 && code < 500) is default tus behaviour
+                    // retry if code === 409 or 423 is default tus behaviour
+                    // additionally handle codes 429 and 0
+                    return !(code >= 400 && code < 500) || [409, 423, 429, 0].includes(code);
+                }
+
+                return false;
+            },
             onError(error) {
                 reject(error);
             },
