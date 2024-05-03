@@ -31,7 +31,7 @@ class JobAnnotationSpeedExtractor(DataExtractorBase):
     ):
         super().__init__(start_datetime, end_datetime, job_id, task_ids)
 
-        SELECT = ["job_id", "JSONExtractUInt(payload, 'working_time') as wt, timestamp"]
+        SELECT = ["job_id", "JSONExtractUInt(payload, 'working_time') as wt", "timestamp"]
         WHERE = []
 
         if task_ids is not None:
