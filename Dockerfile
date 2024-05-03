@@ -20,7 +20,6 @@ RUN apt-get update && \
         libxml2-dev \
         libxmlsec1-dev \
         libxmlsec1-openssl \
-        build-essential \
     && rm -rf /var/lib/apt/lists/*
 
 ARG PIP_VERSION
