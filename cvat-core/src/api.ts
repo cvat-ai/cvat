@@ -348,6 +348,14 @@ function build(): CVATCore {
                     const result = await PluginRegistry.apiWrapper(cvat.analytics.performance.reports, filter);
                     return result;
                 },
+                async calculate(body, onUpdate) {
+                    const result = await PluginRegistry.apiWrapper(
+                        cvat.analytics.performance.calculate,
+                        body,
+                        onUpdate,
+                    );
+                    return result;
+                },
             },
             quality: {
                 async reports(filter = {}) {
