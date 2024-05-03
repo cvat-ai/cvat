@@ -1,7 +1,13 @@
 -r base.in
+--no-binary lxml
+--no-binary xmlsec
 
 # To collect the coverage for REST API tests.
 # It will be enabled only if COVERAGE_PROCESS_START env is defined.
 coverage==7.2.3
 
 uvicorn[standard]==0.22.0
+
+lxml>=5.2.1,<6
+xmlsec>=1.3.14,<2
+django-allauth[saml]==0.57.2
