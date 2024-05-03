@@ -59,13 +59,6 @@ class AnalyticsReportUpdateManager:
     _QUEUE_JOB_PREFIX_PROJECT = "analytics:calculate-report-project-"
     _QUEUE_JOB_PREFIX_JOB = "analytics:calculate-report-job-"
 
-    @classmethod
-    def _get_analytics_check_job_delay(cls) -> timedelta:
-        return timedelta(seconds=settings.ANALYTICS_CHECK_JOB_DELAY)
-
-    def _get_scheduler(self):
-        return django_rq.get_scheduler(settings.CVAT_QUEUES.ANALYTICS_REPORTS.value)
-
     def _get_queue(self):
         return django_rq.get_queue(settings.CVAT_QUEUES.ANALYTICS_REPORTS.value)
 
