@@ -14,8 +14,12 @@ import {
     removeObject as removeObjectAction,
 } from 'actions/annotation-actions';
 import { CombinedState, ObjectType, Workspace } from 'reducers';
-import { QualityConflict, ObjectState, AnnotationConflict } from 'cvat-core-wrapper';
+import {
+    QualityConflict, ObjectState, AnnotationConflict, getCore,
+} from 'cvat-core-wrapper';
 import { filterAnnotations } from 'utils/filter-annotations';
+
+const core = getCore();
 
 interface StateToProps {
     highlightedConflict: QualityConflict | null;
@@ -67,7 +71,7 @@ function FrameTags(props: StateToProps & DispatchToProps): JSX.Element {
         <>
             <div>
                 {frameTags
-                    .filter((tag: any) => tag.source !== 'Ground truth')
+                    .filter((tag: any) => tag.source !== core.enums.Source.GT)
                     .map((tag: any) => (
                         <Tag
                             className={
@@ -86,7 +90,7 @@ function FrameTags(props: StateToProps & DispatchToProps): JSX.Element {
             </div>
             <div>
                 {frameTags
-                    .filter((tag: any) => tag.source === 'Ground truth')
+                    .filter((tag: any) => tag.source === core.enums.Source.GT)
                     .map((tag: any) => (
                         <Tag
                             className={
@@ -97,7 +101,6 @@ function FrameTags(props: StateToProps & DispatchToProps): JSX.Element {
                                 onRemoveState(tag);
                             }}
                             key={tag.clientID}
-                            closable
                         >
                             {tag.label.name}
                             {' '}
