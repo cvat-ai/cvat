@@ -6,7 +6,6 @@
 #    pip-compile-multi
 #
 -r ../../utils/dataset_manifest/requirements.txt
-
 asgiref==3.8.1
     # via django
 async-timeout==4.0.3

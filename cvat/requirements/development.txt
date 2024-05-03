@@ -6,7 +6,6 @@
 #    pip-compile-multi
 #
 -r base.txt
-
 astroid==2.11.7
     # via pylint
 autopep8==2.1.0
