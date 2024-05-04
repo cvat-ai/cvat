@@ -21,13 +21,13 @@ export interface SerializedRequest {
         task_id: number | null;
         project_id: number | null;
     };
-    percent?: number;
+    progress?: number;
     message: string;
     result_url?: string;
     enqueue_date?: string;
     start_date?: string;
     finish_date?: string;
-    expire_date?: string;
+    expiry_date?: string;
     owner?: any;
 }
 
@@ -58,14 +58,14 @@ export class Request {
         this.#id = initialData.id;
         this.#status = initialData.status as RQStatus;
         this.#operation = initialData.operation;
-        this.#progress = initialData.percent;
+        this.#progress = initialData.progress;
         this.#message = initialData.message;
         this.#resultUrl = initialData.result_url;
 
         this.#enqueueDate = initialData.enqueue_date;
         this.#startDate = initialData.start_date;
         this.#finishDate = initialData.finish_date;
-        this.#expireDate = initialData.expire_date;
+        this.#expireDate = initialData.expiry_date;
 
         if (initialData.owner) {
             this.#owner = new User(initialData.owner);
@@ -139,8 +139,8 @@ export class Request {
         if (request.operation !== undefined) {
             this.#operation = request.operation;
         }
-        if (request.percent !== undefined) {
-            this.#progress = request.percent;
+        if (request.progress !== undefined) {
+            this.#progress = request.progress;
         }
         if (request.message !== undefined) {
             this.#message = request.message;
@@ -157,8 +157,8 @@ export class Request {
         if (request.finish_date !== undefined) {
             this.#finishDate = request.finish_date;
         }
-        if (request.expire_date !== undefined) {
-            this.#expireDate = request.expire_date;
+        if (request.expiry_date !== undefined) {
+            this.#expireDate = request.expiry_date;
         }
         if (request.owner !== undefined) {
             this.#owner = new User(request.owner);

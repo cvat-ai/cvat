@@ -3,6 +3,7 @@
 #
 # SPDX-License-Identifier: MIT
 
+import warnings
 from copy import copy
 from inspect import isclass
 import os
@@ -828,6 +829,11 @@ class RqStatusSerializer(serializers.Serializer):
         "Queued", "Started", "Finished", "Failed"])
     message = serializers.CharField(allow_blank=True, default="")
     progress = serializers.FloatField(max_value=100, default=0)
+
+    def __init__(self, instance=None, data=..., **kwargs):
+        warnings.warn("RqStatusSerializer is deprecated, "
+                      "use cvat.apps.engine.serializers.RequestSerializer instead", DeprecationWarning)
+        super().__init__(instance, data, **kwargs)
 
 class RqIdSerializer(serializers.Serializer):
     rq_id = serializers.CharField(help_text="Request id")
@@ -2185,14 +2191,37 @@ class UserIdentifiersSerializer(BasicUserSerializer):
             "username",
         )
 
-class RQJobOperationSerializer(serializers.Serializer):
+from django.db.models import TextChoices
+
+
+class StatusChoices(TextChoices):
+    QUEUED = "queued"
+    STARTED = "started"
+    FAILED = "failed"
+    FINISHED = "finished"
+
+class ActionChoices(TextChoices):
+    CREATE = "create"
+    IMPORT = "import"
+    EXPORT = "export"
+
+class TargetChoices(TextChoices):
+    PROJECT = 'project'
+    TASK = 'task'
+    JOB = 'job'
+
+class SubresourceChoices(TextChoices):
+    ANNOTATIONS = 'annotations'
+    DATASET = 'dataset'
+    BACKUP = 'backup'
+
+class RequestOperationSerializer(serializers.Serializer):
     type = serializers.CharField(read_only=True)
-    target = serializers.ChoiceField(choices=["project", "task", "job"], read_only=True)
+    target = serializers.ChoiceField(choices=TargetChoices.choices, read_only=True)
     project_id = serializers.IntegerField(required=False, allow_null=True, read_only=True)
     task_id = serializers.IntegerField(required=False, allow_null=True, read_only=True)
     job_id = serializers.IntegerField(required=False, allow_null=True, read_only=True)
     format = serializers.CharField(required=False, allow_null=True, read_only=True)
-    name = serializers.CharField(source="id", read_only=True)  # TODO: duplicated field
 
     def to_representation(self, rq_job: RQJob) -> Dict[str, Any]:
         try:
@@ -2212,28 +2241,32 @@ class RQJobOperationSerializer(serializers.Serializer):
             "task_id": rq_job.meta["task_id"],
             "job_id": rq_job.meta["job_id"],
             "format": parsed_rq_id.format,
-            "name": rq_job.id,
         }
 
 
-class RQJobDetailsSerializer(serializers.Serializer):
+class RequestSerializer(serializers.Serializer):
     status = serializers.SerializerMethodField()
     message = serializers.SerializerMethodField()
-    id = serializers.CharField(read_only=True)
-    operation = RQJobOperationSerializer(source="*")
-    percent = serializers.SerializerMethodField()
-    enqueue_date = serializers.DateTimeField(source="enqueued_at", read_only=True)
-    start_date = serializers.DateTimeField(
-        required=False, allow_null=True, source="started_at", read_only=True
+    id = serializers.CharField()
+    operation = RequestOperationSerializer(source="*")
+    progress = serializers.SerializerMethodField()
+    created_date = serializers.DateTimeField(source="created_at")
+    # Note: generally RQ job.enqueued_at can be None, but not in our case,
+    # since we handle only enqueued jobs.
+    enqueued_date = serializers.DateTimeField(source="enqueued_at")
+    started_date = serializers.DateTimeField(
+        required=False, allow_null=True, source="started_at",
     )
     finished_date = serializers.DateTimeField(
-        required=False, allow_null=True, source="ended_at", read_only=True
+        required=False, allow_null=True, source="ended_at",
     )
-    expire_date = serializers.SerializerMethodField()
+    expiry_date = serializers.SerializerMethodField()
     owner = serializers.SerializerMethodField()
-    result_url = serializers.URLField(required=False, allow_null=True, read_only=True)
+    result_url = serializers.URLField(required=False, allow_null=True)
+    # TODO:
+    # result_value = serializers.CharField(required=False, allow_null=True)
 
-    @extend_schema_field(UserIdentifiersSerializer(read_only=True))
+    @extend_schema_field(UserIdentifiersSerializer())
     def get_owner(self, rq_job: RQJob) -> Dict[str, Any]:
         return UserIdentifiersSerializer(rq_job.meta["user"]).data
 
@@ -2248,21 +2281,15 @@ class RQJobDetailsSerializer(serializers.Serializer):
         return representation
 
     @extend_schema_field(
-        # FUTURE-FIXME: DecimalField(string type with decimal format and correct pattern in api schema)
-        # is converted to string type by openapi generator
-        # serializers.DecimalField(
-        #     max_digits=5, decimal_places=2, required=False, allow_null=True,
-        #     read_only=True
-        # )
-        serializers.FloatField(required=False, allow_null=True, read_only=True)
+        serializers.FloatField(min_value=0, max_value=1, required=False, allow_null=True, read_only=True)
     )
-    def get_percent(self, rq_job: RQJob) -> Decimal:
+    def get_progress(self, rq_job: RQJob) -> Decimal:
         # progress of task creation is stored in "task_progress" field
         # progress of project import is stored in "progress" field
-        return Decimal(rq_job.meta.get("progress") or rq_job.meta.get("task_progress") or 0.) * 100
+        return Decimal(rq_job.meta.get("progress") or rq_job.meta.get("task_progress") or 0.)
 
     @extend_schema_field(serializers.DateTimeField(required=False, allow_null=True, read_only=True))
-    def get_expire_date(self, rq_job: RQJob) -> Optional[str]:
+    def get_expiry_date(self, rq_job: RQJob) -> Optional[str]:
         delta = None
         if rq_job.is_finished:
             delta = rq_job.result_ttl or rq_defaults.DEFAULT_RESULT_TTL
@@ -2275,7 +2302,7 @@ class RQJobDetailsSerializer(serializers.Serializer):
         return None
 
     @extend_schema_field(
-        serializers.ChoiceField(choices=['queued', 'started', 'failed', 'finished'], read_only=True)
+        serializers.ChoiceField(choices=StatusChoices.choices, required=True)
     )
     def get_status(self, rq_job: RQJob) -> str:
         status = rq_job.get_status()
@@ -2285,7 +2312,7 @@ class RQJobDetailsSerializer(serializers.Serializer):
 
         return str(status)
 
-    @extend_schema_field(serializers.CharField(allow_blank=True, read_only=True))
+    @extend_schema_field(serializers.CharField(allow_blank=True))
     def get_message(self, rq_job: RQJob) -> str:
         if rq_job.get_status() != RQJobStatus.FAILED:
             return ""

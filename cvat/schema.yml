@@ -4284,14 +4284,39 @@ paths:
   /api/requests:
     get:
       operationId: requests_list
-      summary: List RQ jobs
+      summary: List requests
       parameters:
-      - in: query
-        name: action
+      - name: action
+        in: query
+        description: A simple equality filter for the action field
         schema:
           type: string
           enum:
           - create
+          - import
+          - export
+      - name: filter
+        required: false
+        in: query
+        description: |2-
+
+          JSON Logic filter. This filter can be used to perform complex filtering by grouping rules.
+
+          Details about the syntax used can be found at the link: https://jsonlogic.com/
+
+           Available filter_fields: ['status', 'project_id', 'task_id', 'job_id', 'action', 'subresource', 'format'].
+        schema:
+          type: string
+      - name: format
+        in: query
+        description: A simple equality filter for the format field
+        schema:
+          type: string
+      - name: job_id
+        in: query
+        description: A simple equality filter for the job_id field
+        schema:
+          type: integer
       - name: page
         required: false
         in: query
@@ -4304,8 +4329,40 @@ paths:
         description: Number of results to return per page.
         schema:
           type: integer
-      - in: query
-        name: task_id
+      - name: project_id
+        in: query
+        description: A simple equality filter for the project_id field
+        schema:
+          type: integer
+      - name: sort
+        required: false
+        in: query
+        description: 'Which field to use when ordering the results. Available ordering_fields:
+          [''created_date'', ''enqueued_date'', ''status'']'
+        schema:
+          type: string
+      - name: status
+        in: query
+        description: A simple equality filter for the status field
+        schema:
+          type: string
+          enum:
+          - queued
+          - started
+          - failed
+          - finished
+      - name: subresource
+        in: query
+        description: A simple equality filter for the subresource field
+        schema:
+          type: string
+          enum:
+          - annotations
+          - dataset
+          - backup
+      - name: task_id
+        in: query
+        description: A simple equality filter for the task_id field
         schema:
           type: integer
       tags:
@@ -4321,12 +4378,12 @@ paths:
           content:
             application/vnd.cvat+json:
               schema:
-                $ref: '#/components/schemas/PaginatedRQJobDetailsList'
+                $ref: '#/components/schemas/PaginatedRequestList'
           description: ''
   /api/requests/{id}:
     get:
       operationId: requests_retrieve
-      summary: Get RQ job details
+      summary: Get request details
       parameters:
       - in: path
         name: id
@@ -4346,32 +4403,12 @@ paths:
           content:
             application/vnd.cvat+json:
               schema:
-                $ref: '#/components/schemas/RQJobDetails'
+                $ref: '#/components/schemas/Request'
           description: ''
-    delete:
-      operationId: requests_destroy
-      summary: Delete RQ job
-      parameters:
-      - in: path
-        name: id
-        schema:
-          type: string
-        required: true
-      tags:
-      - requests
-      security:
-      - sessionAuth: []
-        csrfAuth: []
-        tokenAuth: []
-      - signatureAuth: []
-      - basicAuth: []
-      responses:
-        '204':
-          description: RQ job has been deleted
   /api/requests/{id}/cancel:
     post:
       operationId: requests_create_cancel
-      summary: Cancel RQ job
+      summary: Cancel request
       parameters:
       - in: path
         name: id
@@ -4388,7 +4425,7 @@ paths:
       - basicAuth: []
       responses:
         '200':
-          description: RQ job has been cancelled
+          description: The request has been cancelled
   /api/schema/:
     get:
       operationId: schema_retrieve
@@ -5512,8 +5549,8 @@ paths:
     get:
       operationId: tasks_retrieve_status
       description: 'This method is deprecated and will be removed in version 2.14.0.
-        To check status of a task creation, use new common API for managing background
-        operations: GET /requests/<rq_id>/'
+        To check status of a task creation, use new common APIfor managing background
+        operations: GET /api/requests/?action=create&task_id=<task_id>'
       summary: Get the creation status of a task
       parameters:
       - in: path
@@ -8524,7 +8561,7 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/QualitySettings'
-    PaginatedRQJobDetailsList:
+    PaginatedRequestList:
       type: object
       properties:
         count:
@@ -8543,7 +8580,7 @@ components:
         results:
           type: array
           items:
-            $ref: '#/components/schemas/RQJobDetails'
+            $ref: '#/components/schemas/Request'
     PaginatedTaskReadList:
       type: object
       properties:
@@ -9354,107 +9391,6 @@ components:
         compare_attributes:
           type: boolean
           description: Enables or disables annotation attribute comparison
-    RQJobDetails:
-      type: object
-      properties:
-        status:
-          allOf:
-          - $ref: '#/components/schemas/RQJobDetailsStatusEnum'
-          readOnly: true
-        message:
-          type: string
-          readOnly: true
-        id:
-          type: string
-          readOnly: true
-        operation:
-          $ref: '#/components/schemas/RQJobOperation'
-        percent:
-          type: number
-          format: double
-          readOnly: true
-          nullable: true
-        enqueue_date:
-          type: string
-          format: date-time
-          readOnly: true
-        start_date:
-          type: string
-          format: date-time
-          readOnly: true
-          nullable: true
-        finished_date:
-          type: string
-          format: date-time
-          readOnly: true
-          nullable: true
-        expire_date:
-          type: string
-          format: date-time
-          readOnly: true
-          nullable: true
-        owner:
-          allOf:
-          - $ref: '#/components/schemas/UserIdentifiers'
-          readOnly: true
-        result_url:
-          type: string
-          format: uri
-          readOnly: true
-          nullable: true
-      required:
-      - operation
-    RQJobDetailsStatusEnum:
-      enum:
-      - queued
-      - started
-      - failed
-      - finished
-      type: string
-      description: |-
-        * `queued` - queued
-        * `started` - started
-        * `failed` - failed
-        * `finished` - finished
-    RQJobOperation:
-      type: object
-      properties:
-        type:
-          type: string
-          readOnly: true
-        target:
-          allOf:
-          - $ref: '#/components/schemas/RQJobOperationTargetEnum'
-          readOnly: true
-        project_id:
-          type: integer
-          readOnly: true
-          nullable: true
-        task_id:
-          type: integer
-          readOnly: true
-          nullable: true
-        job_id:
-          type: integer
-          readOnly: true
-          nullable: true
-        format:
-          type: string
-          readOnly: true
-          nullable: true
-        name:
-          type: string
-          readOnly: true
-    RQJobOperationTargetEnum:
-      enum:
-      - project
-      - task
-      - job
-      type: string
-      description: |-
-        * `project` - project
-        * `task` - task
-        * `job` - job
     RegisterSerializerEx:
       type: object
       properties:
@@ -9507,6 +9443,107 @@ components:
       - password1
       - password2
       - username
+    Request:
+      type: object
+      properties:
+        status:
+          allOf:
+          - $ref: '#/components/schemas/RequestStatusEnum'
+          readOnly: true
+        message:
+          type: string
+          readOnly: true
+        id:
+          type: string
+        operation:
+          $ref: '#/components/schemas/RequestOperation'
+        progress:
+          type: number
+          format: double
+          maximum: 1
+          minimum: 0
+          readOnly: true
+          nullable: true
+        created_date:
+          type: string
+          format: date-time
+        enqueued_date:
+          type: string
+          format: date-time
+        started_date:
+          type: string
+          format: date-time
+          nullable: true
+        finished_date:
+          type: string
+          format: date-time
+          nullable: true
+        expiry_date:
+          type: string
+          format: date-time
+          readOnly: true
+          nullable: true
+        owner:
+          allOf:
+          - $ref: '#/components/schemas/UserIdentifiers'
+          readOnly: true
+        result_url:
+          type: string
+          format: uri
+          nullable: true
+      required:
+      - created_date
+      - enqueued_date
+      - id
+      - operation
+    RequestOperation:
+      type: object
+      properties:
+        type:
+          type: string
+          readOnly: true
+        target:
+          allOf:
+          - $ref: '#/components/schemas/RequestOperationTargetEnum'
+          readOnly: true
+        project_id:
+          type: integer
+          readOnly: true
+          nullable: true
+        task_id:
+          type: integer
+          readOnly: true
+          nullable: true
+        job_id:
+          type: integer
+          readOnly: true
+          nullable: true
+        format:
+          type: string
+          readOnly: true
+          nullable: true
+    RequestOperationTargetEnum:
+      enum:
+      - project
+      - task
+      - job
+      type: string
+      description: |-
+        * `project` - Project
+        * `task` - Task
+        * `job` - Job
+    RequestStatusEnum:
+      enum:
+      - queued
+      - started
+      - failed
+      - finished
+      type: string
+      description: |-
+        * `queued` - Queued
+        * `started` - Started
+        * `failed` - Failed
+        * `finished` - Finished
     RestAuthDetail:
       type: object
       properties:
