@@ -31,6 +31,11 @@ allow if {
 }
 
 allow if {
+    input.scope == utils.CREATE
+    utils.has_perm(utils.USER)
+}
+
+allow if {
     input.scope == utils.LIST
     utils.has_perm(utils.WORKER)
 }

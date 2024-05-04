@@ -550,7 +550,7 @@ context('Ground truth jobs', () => {
             cy.contains('button', 'Submit').should('be.disabled');
             cy.wait('@delayedRequest');
 
-            cy.get('.cvat-spinner').should('not.exist');
+            cy.get('.cvat-canvas-container').should('exist').and('be.visible');
             cy.url().then((url) => {
                 jobID = Number(url.split('/').slice(-1)[0].split('?')[0]);
             }).should('match', /\/tasks\/\d+\/jobs\/\d+/);
