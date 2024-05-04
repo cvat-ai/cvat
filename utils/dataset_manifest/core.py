@@ -32,7 +32,7 @@ class VideoStreamReader:
                 for frame in packet.decode():
                     # check type of first frame
                     if not frame.pict_type.name == 'I':
-                        raise InvalidVideoError('First frame is not key frame')
+                        raise InvalidVideoError('The first frame is not a key frame')
 
                     # get video resolution
                     if video_stream.metadata.get('rotate'):
@@ -96,9 +96,9 @@ class VideoStreamReader:
                 for frame in packet.decode():
                     # Check PTS and DTS sequences for validity
                     if None not in {frame.pts, prev_pts} and frame.pts <= prev_pts:
-                        raise InvalidVideoError('Invalid pts sequences')
+                        raise InvalidVideoError('Detected non-increasing PTS sequence in the video')
                     if None not in {frame.dts, prev_dts} and frame.dts <= prev_dts:
-                        raise InvalidVideoError('Invalid dts sequences')
+                        raise InvalidVideoError('Detected non-increasing DTS sequence in the video')
                     prev_pts, prev_dts = frame.pts, frame.dts
 
                     if frame.key_frame:
@@ -131,7 +131,7 @@ class VideoStreamReader:
 
                     # Check if the number of key frames meets the upper bound
                     if key_frame_ratio >= self._upper_bound and not self._force:
-                        raise InvalidVideoError('Too few keyframes')
+                        raise InvalidVideoError('The number of keyframes is not enough for smooth iteration over the video')
 
             # Update frames number if not already set
             if not self._frames_number:
