@@ -5,22 +5,26 @@ import hashlib
 import io
 import tarfile
 
-from django.conf import settings
+_OPA_RULES_PATHS = {
+    Path(__file__).parent / 'rules',
+}
 
-@functools.lru_cache()
+@functools.lru_cache(maxsize=None)
 def get_opa_bundle() -> Tuple[bytes, str]:
-    rules_paths = [Path(settings.BASE_DIR) / rel_path for rel_path in settings.IAM_OPA_RULES_PATH.strip(':').split(':')]
-
     bundle_file = io.BytesIO()
 
     with tarfile.open(fileobj=bundle_file, mode='w:gz') as tar:
-        for p in rules_paths:
+        for p in _OPA_RULES_PATHS:
             for f in p.glob('*[!.gen].rego'):
                 tar.add(name=f, arcname=f.relative_to(p.parent))
 
     bundle = bundle_file.getvalue()
     etag = hashlib.blake2b(bundle).hexdigest()
     return bundle, etag
+
+def add_opa_rules_path(path: Path) -> None:
+    _OPA_RULES_PATHS.add(path)
+    get_opa_bundle.cache_clear()
 
 def get_dummy_user(email):
     from allauth.account.models import EmailAddress

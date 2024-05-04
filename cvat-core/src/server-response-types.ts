@@ -494,8 +494,29 @@ export interface SerializedAPISchema {
     };
 }
 
+export interface SerializedRequest {
+    id?: string;
+    status: string;
+    operation?: {
+        target: string;
+        type: string;
+        format: string;
+        job_id: number | null;
+        task_id: number | null;
+        project_id: number | null;
+    };
+    percent?: number;
+    message: string;
+    result_url?: string;
+    enqueue_date?: string;
+    start_date?: string;
+    finish_date?: string;
+    expiry_date?: string;
+    owner?: any;
+}
+
 export interface ApiRequestsFilter extends ApiCommonFilterParams {
     task_id?: number;
     action?: string;
 }
-export type RequestsFilter = Camelized<ApiQualityConflictsFilter>;
+export type RequestsFilter = Camelized<ApiRequestsFilter>;

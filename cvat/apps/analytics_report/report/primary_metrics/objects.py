@@ -1,18 +1,29 @@
-# Copyright (C) 2023 CVAT.ai Corporation
+# Copyright (C) 2023-2024 CVAT.ai Corporation
 #
 # SPDX-License-Identifier: MIT
 
 from cvat.apps.analytics_report.models import GranularityChoice, ViewChoice
-from cvat.apps.analytics_report.report.primary_metrics.base import PrimaryMetricBase
+from cvat.apps.analytics_report.report.primary_metrics.base import (
+    DataExtractorBase,
+    PrimaryMetricBase,
+)
+
+
+class JobObjectsExtractor(DataExtractorBase):
+    def __init__(self, job_id: int = None, task_ids: list[int] = None):
+        super().__init__(job_id, task_ids)
+
+        if task_ids is not None:
+            self._query = "SELECT job_id, toStartOfDay(timestamp) as day, scope, sum(count) FROM events WHERE scope IN ({scopes:Array(String)}) AND task_id IN ({task_ids:Array(UInt64)}) GROUP BY scope, day, job_id ORDER BY day ASC"
+        elif job_id is not None:
+            self._query = "SELECT job_id, toStartOfDay(timestamp) as day, scope, sum(count) FROM events WHERE scope IN ({scopes:Array(String)}) AND job_id = {job_id:UInt64} GROUP BY scope, day, job_id ORDER BY day ASC"
 
 
 class JobObjects(PrimaryMetricBase):
+    _key = "objects"
     _title = "Objects"
     _description = "Metric shows number of added/changed/deleted objects for the Job."
     _default_view = ViewChoice.HISTOGRAM
-    _key = "objects"
-    # Raw SQL queries are used to execute ClickHouse queries, as there is no ORM available here
-    _query = "SELECT toStartOfDay(timestamp) as day, scope, sum(count) FROM events WHERE scope IN ({scopes:Array(String)}) AND job_id = {job_id:UInt64} GROUP BY scope, day ORDER BY day ASC"
     _granularity = GranularityChoice.DAY
 
     def calculate(self):
@@ -25,17 +36,10 @@ class JobObjects(PrimaryMetricBase):
             for obj_type in obj_types:
                 statistics[action][obj_type] = {}
 
-        result = self._make_clickhouse_query(
-            {
-                "scopes": scopes,
-                "job_id": self._db_obj.id,
-            }
-        )
-
-        for day, scope, count in result.result_rows:
+        rows = self._data_extractor.extract_for_job(self._db_obj.id, {"scopes": scopes})
+        for day, scope, count in rows:
             action, obj_type = scope.split(":")
             statistics[action][obj_type][day] = count
-
         objects_statistics = self.get_empty()
 
         dates = set()

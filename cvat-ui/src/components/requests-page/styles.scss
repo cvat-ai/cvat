@@ -5,10 +5,18 @@
 @import '../../base';
 
 .cvat-requests-page {
-    margin-top: $grid-unit-size * 4;
+    height: 100%;
+    padding-top: $grid-unit-size * 2;
+    padding-bottom: $grid-unit-size;
+
+    > div:nth-child(1) {
+        height: 95%;
+    }
 }
 
 .cvat-requests-list {
+    overflow-y: auto;
+
     .ant-card {
         margin-bottom: $grid-unit-size;
 
