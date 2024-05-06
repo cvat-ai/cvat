@@ -7,7 +7,6 @@ from datetime import datetime
 
 from dateutil import parser
 
-from cvat.apps.dataset_manager.task import JobAnnotation
 from cvat.apps.analytics_report.models import (
     BinaryOperatorType,
     GranularityChoice,
@@ -18,6 +17,7 @@ from cvat.apps.analytics_report.report.primary_metrics.base import (
     DataExtractorBase,
     PrimaryMetricBase,
 )
+from cvat.apps.dataset_manager.task import JobAnnotation
 from cvat.apps.engine.models import SourceType
 
 
@@ -89,7 +89,11 @@ class JobAnnotationSpeed(PrimaryMetricBase):
 
         object_count = 0
         object_count += self._db_obj.labeledimage_set.exclude(source=SourceType.FILE).count()
-        object_count += self._db_obj.labeledshape_set.filter(parent=None).exclude(source=SourceType.FILE).count()
+        object_count += (
+            self._db_obj.labeledshape_set.filter(parent=None)
+            .exclude(source=SourceType.FILE)
+            .count()
+        )
         object_count += get_track_count(annotations.data)
 
         start_datetime = self._db_obj.created_date
