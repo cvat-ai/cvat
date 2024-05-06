@@ -242,7 +242,7 @@ class AnalyticsReportUpdateManager:
                     else db_project.created_date
                 )
                 end_timestamp = (
-                    max([item["updated_date"] for item in tasks_data])
+                    max(item["updated_date"] for item in tasks_data)
                     if len(tasks_data)
                     else db_project.updated_date
                 )
