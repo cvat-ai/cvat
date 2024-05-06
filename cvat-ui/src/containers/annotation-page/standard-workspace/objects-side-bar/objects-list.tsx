@@ -418,8 +418,11 @@ class ObjectsListContainer extends React.PureComponent<Props, State> {
                 preventDefault(event);
                 const state = activatedState();
                 if (state && !readonly && state.objectType === ObjectType.TRACK) {
-                    state.keyframe = !state.keyframe;
-                    updateAnnotations([state]);
+                    const { first, last } = state.keyframes as NonNullable<typeof state.keyframes>;
+                    if (first !== last || !state.keyframe) {
+                        state.keyframe = !state.keyframe;
+                        updateAnnotations([state]);
+                    }
                 }
             },
             SWITCH_OUTSIDE: (event: KeyboardEvent | undefined) => {
