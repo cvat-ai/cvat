@@ -108,14 +108,16 @@ class JobAnnotationSpeed(PrimaryMetricBase):
             for track in db_tracks:
                 if track["source"] == SourceType.FILE:
                     continue
-                elif len(track["shapes"]) == 1:
+
+                if len(track["shapes"]) == 1:
                     count += self._db_obj.segment.stop_frame - track["shapes"][0]["frame"] + 1
-                else:
-                    for prev_shape, cur_shape in zip(track["shapes"], track["shapes"][1:]):
-                        if prev_shape["outside"] is not True:
-                            count += cur_shape["frame"] - prev_shape["frame"]
-                    if cur_shape["outside"] is not True:
-                        count += self._db_obj.segment.stop_frame - cur_shape["frame"]
+                    continue
+
+                for prev_shape, cur_shape in zip(track["shapes"], track["shapes"][1:]):
+                    if prev_shape["outside"] is not True:
+                        count += cur_shape["frame"] - prev_shape["frame"]
+                if cur_shape["outside"] is not True:
+                    count += self._db_obj.segment.stop_frame - cur_shape["frame"]
 
             return count
 
