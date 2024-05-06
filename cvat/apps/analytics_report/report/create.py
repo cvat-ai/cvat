@@ -237,7 +237,7 @@ class AnalyticsReportUpdateManager:
 
                 tasks_data = db_project.tasks.values("id", "created_date", "updated_date")
                 start_timestamp = (
-                    min([item["created_date"] for item in tasks_data])
+                    min(item["created_date"] for item in tasks_data)
                     if len(tasks_data)
                     else db_project.created_date
                 )
