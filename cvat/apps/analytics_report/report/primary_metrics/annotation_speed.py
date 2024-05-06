@@ -90,7 +90,7 @@ class JobAnnotationSpeed(PrimaryMetricBase):
         object_count = 0
         object_count += self._db_obj.labeledimage_set.exclude(source=SourceType.FILE).count()
         object_count += self._db_obj.labeledshape_set.filter(parent=None).exclude(source=SourceType.FILE).count()
-        object_count += get_track_count(annotations)
+        object_count += get_track_count(annotations.data)
 
         start_datetime = self._db_obj.created_date
         timestamp = self._db_obj.updated_date
