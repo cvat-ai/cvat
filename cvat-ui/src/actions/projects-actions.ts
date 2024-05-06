@@ -145,7 +145,7 @@ export function deleteProjectAsync(projectInstance: any): ThunkAction {
             const store = getCVATStore();
             const state: CombinedState = store.getState();
             const query: Partial<TasksQuery> = {
-                ...state.projects.tasksGettingQuery,
+                ...state.tasks.gettingQuery,
             };
             dispatch(getTasksAsync(query, false));
         } catch (error) {
