@@ -83,10 +83,9 @@ class JobAnnotationSpeed(PrimaryMetricBase):
             )
 
         def get_track_count():
-            db_tracks = self._db_obj.labeledtrack_set.values(
+            db_tracks = self._db_obj.labeledtrack_set.filter(parent=None).values(
                 "id",
                 "source",
-                "parent",
                 "trackedshape__id",
                 "trackedshape__frame",
                 "trackedshape__outside",
@@ -106,7 +105,7 @@ class JobAnnotationSpeed(PrimaryMetricBase):
 
             count = 0
             for track in db_tracks:
-                if track["source"] == SourceType.FILE or track["parent"] is not None:
+                if track["source"] == SourceType.FILE:
                     continue
 
                 if len(track["shapes"]) == 1:
