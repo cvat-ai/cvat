@@ -141,6 +141,13 @@ export function deleteProjectAsync(projectInstance: any): ThunkAction {
         try {
             await projectInstance.delete();
             dispatch(projectActions.deleteProjectSuccess(projectInstance.id));
+
+            const store = getCVATStore();
+            const state: CombinedState = store.getState();
+            const query: Partial<TasksQuery> = {
+                ...state.projects.tasksGettingQuery,
+            };
+            dispatch(getTasksAsync(query, false));
         } catch (error) {
             dispatch(projectActions.deleteProjectFailed(projectInstance.id, error));
         }
