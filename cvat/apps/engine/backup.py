@@ -232,6 +232,10 @@ class _TaskBackupBase(_BackupBase):
             'attributes',
             'shapes',
             'elements',
+            'gender',
+            'age',
+            'accent',
+            'transcript'
         }
 
         def _update_attribute(attribute, label):
@@ -470,7 +474,7 @@ class TaskExporter(_ExporterBase, _TaskBackupBase):
         self._write_data(zip_obj, target_dir)
         self._write_task(zip_obj, target_dir)
         self._write_manifest(zip_obj, target_dir)
-        self._write_annotations(zip_obj, target_dir)
+        # self._write_annotations(zip_obj, target_dir)
         self._write_annotation_guide(zip_obj, target_dir)
 
     def export_to(self, file, target_dir=None):

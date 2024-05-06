@@ -1043,17 +1043,17 @@ MEDIA_TYPES = {
         'mode': 'annotation',
         'unique': False,
     },
-    'video': {
-        'has_mime_type': _is_video,
-        'extractor': VideoReader,
-        'mode': 'interpolation',
-        'unique': True,
-    },
     'audio': {
         'has_mime_type': _is_audio,
         'extractor': AudioReader,
         'mode': 'interpolation',
         'unique': False,
+    },
+    'video': {
+        'has_mime_type': _is_video,
+        'extractor': VideoReader,
+        'mode': 'interpolation',
+        'unique': True,
     },
     'archive': {
         'has_mime_type': _is_archive,

@@ -245,6 +245,9 @@ def _count_files(data):
     def count_files(file_mapping, counter):
         for rel_path, full_path in file_mapping.items():
             mime = get_mime(full_path)
+
+            slogger.glob.debug("Mimetype")
+            slogger.glob.debug(mime)
             if mime in counter:
                 counter[mime].append(rel_path)
             elif rel_path.endswith('.jsonl'):
@@ -686,6 +689,7 @@ def _create_thread(
 
     # count and validate uploaded files
     media = _count_files(data)
+
     media, task_mode = _validate_data(media, manifest_files)
 
     if job_file_mapping is not None and task_mode != 'annotation':

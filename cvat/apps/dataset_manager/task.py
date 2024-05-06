@@ -22,6 +22,7 @@ from datumaro.components.errors import DatasetError, DatasetImportError, Dataset
 from django.conf import settings
 from django.db import transaction
 from django.db.models.query import Prefetch
+from cvat.apps.engine.models import Job, Label, AttributeSpec
 from django.utils import timezone
 from rest_framework.exceptions import ValidationError
 
@@ -993,6 +994,34 @@ def get_audio_job_export_data(job_id, dst_file, job, temp_dir_base, temp_dir):
     # All Annotations
     annotations = job.data["shapes"]
 
+    # Job detail
+
+    # Find labels of a particular job
+    job_details = Job.objects.get(id=job_id)
+    labels_queryset = job_details.get_labels()
+    labels_list = list(labels_queryset.values())
+
+    labels_mapping = {}
+
+    for label in labels_list:
+        labels_mapping[label["id"]] = label
+
+        label_attributes_queryset = AttributeSpec.objects.filter(label=label["id"])
+
+        attributes_list = list(label_attributes_queryset.values())
+
+        labels_mapping[label["id"]]["attributes"] = {}
+
+        for attribute in attributes_list:
+            labels_mapping[label["id"]]["attributes"][attribute["id"]] = attribute
+
+        slogger.glob.debug("JOB LABELS ATTRIBUTES")
+        slogger.glob.debug(json.dumps(attributes_list))
+
+
+    slogger.glob.debug("JOB LABELS")
+    slogger.glob.debug(json.dumps(labels_list))
+
     audio_file_path = os.path.join(temp_dir, str(job_id) + ".wav")
     with wave.open(audio_file_path, 'wb') as wave_file:
         wave_file.setnchannels(1)
@@ -1003,20 +1032,30 @@ def get_audio_job_export_data(job_id, dst_file, job, temp_dir_base, temp_dir):
     annotation_audio_chunk_file_paths = chunk_annotation_audio(audio_file_path, temp_dir, annotations)
 
     for i in range(0, len(annotation_audio_chunk_file_paths)):
-        final_data.append({"path" : os.path.basename(annotation_audio_chunk_file_paths[i]), "sentence" : annotations[i]["transcript"], "age" : annotations[i]["age"], "gender" : annotations[i]["gender"], "accents" : annotations[i]["accent"], "locale" : annotations[i]["locale"], "emotion" : annotations[i]["emotion"] })
+        annotation_attribute_id = annotations[i]["attributes"][0]["spec_id"]
+        label_attributes = labels_mapping[annotations[i]["label_id"]]["attributes"]
+        annotation_attribute = label_attributes[annotation_attribute_id]
+        attribute_name = annotation_attribute["name"]
+        attribute_val = annotations[i]["attributes"][0]["value"]
 
+        final_data.append({"path" : os.path.basename(annotation_audio_chunk_file_paths[i]), "sentence" : annotations[i]["transcript"], "age" : annotations[i]["age"], "gender" : annotations[i]["gender"], "accents" : annotations[i]["accent"], "locale" : annotations[i]["locale"], "emotion" : annotations[i]["emotion"], "label" : labels_mapping[annotations[i]["label_id"]]["name"], "attribute_name" : attribute_name, "attribute_value" : attribute_val })
+
+    slogger.glob.debug("JOB ANNOTATION DATA")
+    slogger.glob.debug(json.dumps(final_data))
+    slogger.glob.debug("All  ANNOTATIONs DATA")
+    slogger.glob.debug(json.dumps(annotations))
     return final_data, annotation_audio_chunk_file_paths
 
 def convert_annotation_data_format(data, format_name):
     if format_name == "Common Voice":
         return data
     elif format_name == "Librispeech":
-        data = list(map(lambda x: {"chapter_id" : "", "file" : x["path"], "id" : str(uuid.uuid4()), "speaker_id" : "", "text" : x["sentence"]}, data))
+        data = list(map(lambda x: {"chapter_id" : "", "file" : x["path"], "id" : str(uuid.uuid4()), "speaker_id" : "", "text" : x["sentence"], "label" : x["label"], "attribute_name" : x["attribute_name"], "attribute_value" : x["attribute_value"]}, data))
     elif format_name == "VoxPopuli":
         language_id_mapping = {"en" : 0}
-        data = list(map(lambda x: {"audio_id" : str(uuid.uuid4()), "language" : language_id_mapping[x["locale"]] if language_id_mapping.get(x["locale"]) else None, "audio_path" : x["path"], "raw_text" : x["sentence"], "normalized_text" : x["sentence"], "gender" : x["gender"], "speaker_id" : "", "is_gold_transcript" : False, "accent" : x["accent"]}, data))
+        data = list(map(lambda x: {"audio_id" : str(uuid.uuid4()), "language" : language_id_mapping[x["locale"]] if language_id_mapping.get(x["locale"]) else None, "audio_path" : x["path"], "raw_text" : x["sentence"], "normalized_text" : x["sentence"], "gender" : x["gender"], "speaker_id" : "", "is_gold_transcript" : False, "accent" : x["accent"], "label" : x["label"], "attribute_name" : x["attribute_name"], "attribute_value" : x["attribute_value"]}, data))
     elif format_name == "Ted-Lium":
-        data = list(map(lambda x: {"file" : x["path"], "text" : x["sentence"], "gender" : x["gender"], "id" : str(uuid.uuid4()), "speaker_id" : ""}, data))
+        data = list(map(lambda x: {"file" : x["path"], "text" : x["sentence"], "gender" : x["gender"], "id" : str(uuid.uuid4()), "speaker_id" : "", "label" : x["label"], "attribute_name" : x["attribute_name"], "attribute_value" : x["attribute_value"]}, data))
 
     return data
 def export_audino_job(job_id, dst_file, format_name, server_url=None, save_images=False):
