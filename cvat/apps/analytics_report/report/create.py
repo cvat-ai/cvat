@@ -2,7 +2,7 @@
 #
 # SPDX-License-Identifier: MIT
 
-from datetime import datetime
+from datetime import datetime, timedelta
 from typing import Union
 
 import django_rq
@@ -133,7 +133,7 @@ class AnalyticsReportUpdateManager:
                 db_job = queryset.get(pk=cvat_job_id)
 
                 start_timestamp = db_job.created_date
-                end_timestamp = db_job.updated_date
+                end_timestamp = db_job.updated_date + timedelta(seconds=1)
 
                 db_report = cls._get_analytics_report(db_job)
                 primary_metric_extractors = dict(
@@ -175,7 +175,7 @@ class AnalyticsReportUpdateManager:
                 db_report = cls._get_analytics_report(db_task)
 
                 start_timestamp = db_task.created_date
-                end_timestamp = db_task.updated_date
+                end_timestamp = db_task.updated_date + timedelta(seconds=1)
 
                 primary_metric_extractors = dict(
                     (
@@ -245,7 +245,7 @@ class AnalyticsReportUpdateManager:
                     max(item["updated_date"] for item in tasks_data)
                     if len(tasks_data)
                     else db_project.updated_date
-                )
+                ) + timedelta(seconds=1)
                 task_ids = [item["id"] for item in tasks_data]
 
                 primary_metric_extractors = dict(
