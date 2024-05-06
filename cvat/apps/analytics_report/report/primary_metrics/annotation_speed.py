@@ -90,7 +90,7 @@ class JobAnnotationSpeed(PrimaryMetricBase):
                     "trackedshape__frame",
                     "trackedshape__outside",
                 )
-                .order_by('id', 'trackedshape__frame')
+                .order_by("id", "trackedshape__frame")
                 .iterator(chunk_size=2000)
             )
 
