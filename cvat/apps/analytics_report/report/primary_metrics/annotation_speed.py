@@ -69,8 +69,6 @@ class JobAnnotationSpeed(PrimaryMetricBase):
         },
     ]
 
-
-
     def calculate(self):
         def get_tags_count():
             return self._db_obj.labeledimage_set.exclude(source=SourceType.FILE).count()
@@ -83,18 +81,23 @@ class JobAnnotationSpeed(PrimaryMetricBase):
             )
 
         def get_track_count():
-            db_tracks = self._db_obj.labeledtrack_set.filter(parent=None).values(
-                "id",
-                "source",
-                "trackedshape__id",
-                "trackedshape__frame",
-                "trackedshape__outside",
-            ).order_by('id', 'trackedshape__frame').iterator(chunk_size=2000)
+            db_tracks = (
+                self._db_obj.labeledtrack_set.filter(parent=None)
+                .values(
+                    "id",
+                    "source",
+                    "trackedshape__id",
+                    "trackedshape__frame",
+                    "trackedshape__outside",
+                )
+                .order_by('id', 'trackedshape__frame')
+                .iterator(chunk_size=2000)
+            )
 
             db_tracks = merge_table_rows(
                 rows=db_tracks,
                 keys_for_merge={
-                    "shapes":[
+                    "shapes": [
                         "trackedshape__id",
                         "trackedshape__frame",
                         "trackedshape__outside",
