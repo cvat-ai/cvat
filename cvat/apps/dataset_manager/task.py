@@ -48,7 +48,7 @@ class PatchAction(str, Enum):
     def __str__(self):
         return self.value
 
-def _merge_table_rows(rows, keys_for_merge, field_id):
+def merge_table_rows(rows, keys_for_merge, field_id):
     # It is necessary to keep a stable order of original rows
     # (e.g. for tracked boxes). Otherwise prev_box.frame can be bigger
     # than next_box.frame.
@@ -492,7 +492,7 @@ class JobAnnotation:
                     ('value', db_attr.value),
                 ]))
 
-    def init_tags_from_db(self):
+    def _init_tags_from_db(self):
         # NOTE: do not use .prefetch_related() with .values() since it's useless:
         # https://github.com/cvat-ai/cvat/pull/7748#issuecomment-2063695007
         db_tags = self.db_job.labeledimage_set.values(
@@ -506,7 +506,7 @@ class JobAnnotation:
             'labeledimageattributeval__id',
         ).order_by('frame').iterator(chunk_size=2000)
 
-        db_tags = _merge_table_rows(
+        db_tags = merge_table_rows(
             rows=db_tags,
             keys_for_merge={
                 "labeledimageattributeval_set": [
@@ -525,7 +525,7 @@ class JobAnnotation:
         serializer = serializers.LabeledImageSerializerFromDB(db_tags, many=True)
         self.ir_data.tags = serializer.data
 
-    def init_shapes_from_db(self):
+    def _init_shapes_from_db(self):
         # NOTE: do not use .prefetch_related() with .values() since it's useless:
         # https://github.com/cvat-ai/cvat/pull/7748#issuecomment-2063695007
         db_shapes = self.db_job.labeledshape_set.values(
@@ -546,7 +546,7 @@ class JobAnnotation:
             'labeledshapeattributeval__id',
         ).order_by('frame').iterator(chunk_size=2000)
 
-        db_shapes = _merge_table_rows(
+        db_shapes = merge_table_rows(
             rows=db_shapes,
             keys_for_merge={
                 'labeledshapeattributeval_set': [
@@ -578,7 +578,7 @@ class JobAnnotation:
         serializer = serializers.LabeledShapeSerializerFromDB(list(shapes.values()), many=True)
         self.ir_data.shapes = serializer.data
 
-    def init_tracks_from_db(self):
+    def _init_tracks_from_db(self):
         # NOTE: do not use .prefetch_related() with .values() since it's useless:
         # https://github.com/cvat-ai/cvat/pull/7748#issuecomment-2063695007
         db_tracks = self.db_job.labeledtrack_set.values(
@@ -604,7 +604,7 @@ class JobAnnotation:
             "trackedshape__trackedshapeattributeval__id",
         ).order_by('id', 'trackedshape__frame').iterator(chunk_size=2000)
 
-        db_tracks = _merge_table_rows(
+        db_tracks = merge_table_rows(
             rows=db_tracks,
             keys_for_merge={
                 "labeledtrackattributeval_set": [
@@ -632,7 +632,7 @@ class JobAnnotation:
         tracks = {}
         elements = {}
         for db_track in db_tracks:
-            db_track["trackedshape_set"] = _merge_table_rows(db_track["trackedshape_set"], {
+            db_track["trackedshape_set"] = merge_table_rows(db_track["trackedshape_set"], {
                 'trackedshapeattributeval_set': [
                     'trackedshapeattributeval__value',
                     'trackedshapeattributeval__spec_id',
@@ -674,9 +674,9 @@ class JobAnnotation:
         self.ir_data.version = 0 # FIXME: should be removed in the future
 
     def init_from_db(self):
-        self.init_tags_from_db()
-        self.init_shapes_from_db()
-        self.init_tracks_from_db()
+        self._init_tags_from_db()
+        self._init_shapes_from_db()
+        self._init_tracks_from_db()
         self._init_version_from_db()
 
     @property

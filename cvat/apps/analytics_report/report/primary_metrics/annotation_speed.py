@@ -17,7 +17,7 @@ from cvat.apps.analytics_report.report.primary_metrics.base import (
     DataExtractorBase,
     PrimaryMetricBase,
 )
-from cvat.apps.dataset_manager.task import JobAnnotation
+from cvat.apps.dataset_manager.task import merge_table_rows
 from cvat.apps.engine.models import SourceType
 
 
@@ -69,11 +69,44 @@ class JobAnnotationSpeed(PrimaryMetricBase):
         },
     ]
 
+
+
     def calculate(self):
-        def get_track_count(annotations):
+        def get_tags_count():
+            return self._db_obj.labeledimage_set.exclude(source=SourceType.FILE).count()
+
+        def get_shapes_count():
+            return (
+                self._db_obj.labeledshape_set.filter(parent=None)
+                .exclude(source=SourceType.FILE)
+                .count()
+            )
+
+        def get_track_count():
+            db_tracks = self._db_obj.labeledtrack_set.values(
+                "id",
+                "source",
+                "parent",
+                "trackedshape__id",
+                "trackedshape__frame",
+                "trackedshape__outside",
+            ).order_by('id', 'trackedshape__frame').iterator(chunk_size=2000)
+
+            db_tracks = merge_table_rows(
+                rows=db_tracks,
+                keys_for_merge={
+                    "shapes":[
+                        "trackedshape__id",
+                        "trackedshape__frame",
+                        "trackedshape__outside",
+                    ],
+                },
+                field_id="id",
+            )
+
             count = 0
-            for track in annotations["tracks"]:
-                if track["source"] == SourceType.FILE:
+            for track in db_tracks:
+                if track["source"] == SourceType.FILE or track["parent"] != None:
                     continue
                 if len(track["shapes"]) == 1:
                     count += self._db_obj.segment.stop_frame - track["shapes"][0]["frame"] + 1
@@ -84,17 +117,10 @@ class JobAnnotationSpeed(PrimaryMetricBase):
             return count
 
         # Calculate object count
-        annotations = JobAnnotation(self._db_obj.id)
-        annotations.init_tracks_from_db()
-
         object_count = 0
-        object_count += self._db_obj.labeledimage_set.exclude(source=SourceType.FILE).count()
-        object_count += (
-            self._db_obj.labeledshape_set.filter(parent=None)
-            .exclude(source=SourceType.FILE)
-            .count()
-        )
-        object_count += get_track_count(annotations.data)
+        object_count += get_tags_count()
+        object_count += get_shapes_count()
+        object_count += get_track_count()
 
         start_datetime = self._db_obj.created_date
         timestamp = self._db_obj.updated_date
