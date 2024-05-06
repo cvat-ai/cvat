@@ -83,6 +83,7 @@ class JobAnnotationSpeed(PrimaryMetricBase):
         def get_track_count():
             db_tracks = (
                 self._db_obj.labeledtrack_set.filter(parent=None)
+                .exclude(source=SourceType.FILE)
                 .values(
                     "id",
                     "source",
@@ -108,9 +109,6 @@ class JobAnnotationSpeed(PrimaryMetricBase):
 
             count = 0
             for track in db_tracks:
-                if track["source"] == SourceType.FILE:
-                    continue
-
                 if len(track["shapes"]) == 1:
                     count += self._db_obj.segment.stop_frame - track["shapes"][0]["frame"] + 1
 
