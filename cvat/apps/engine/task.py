@@ -121,9 +121,9 @@ def _get_task_segment_data(
     slogger.glob.debug(segment_duration)
     if segment_duration is not None:
         # Total audio duration in milliseconds
-        total_audio_duration = (db_task.data.total_audio_duration)
+        audio_total_duration = (db_task.data.audio_total_duration)
 
-        num_segments = max(1, math.ceil(total_audio_duration / segment_duration))
+        num_segments = max(1, math.ceil(audio_total_duration / segment_duration))
 
         slogger.glob.debug("Num segments")
         slogger.glob.debug(num_segments)
@@ -1147,16 +1147,16 @@ def _create_thread(
         total_duration = len(audio)  # Duration in milliseconds
         return total_duration
 
-    db_task.data.total_audio_duration = None
+    db_task.data.audio_total_duration = None
     if MEDIA_TYPE == "audio":
 
         segment_duration = db_task.segment_duration
-        db_task.data.total_audio_duration = get_audio_duration(details['source_path'][0])
+        db_task.data.audio_total_duration = get_audio_duration(details['source_path'][0])
 
         if segment_duration == 0:
             db_task.segment_size = 0
         else:
-            num_segments = max(1, math.ceil(db_task.data.total_audio_duration / segment_duration))
+            num_segments = max(1, math.ceil(db_task.data.audio_total_duration / segment_duration))
 
             slogger.glob.debug("Segment Size Before")
             slogger.glob.debug(db_task.segment_size)
@@ -1173,7 +1173,7 @@ def _create_thread(
             slogger.glob.debug(db_task.data.size)
 
             slogger.glob.debug("Audio Duration")
-            slogger.glob.debug(db_task.data.total_audio_duration)
+            slogger.glob.debug(db_task.data.audio_total_duration)
 
     if db_task.mode == 'annotation':
         models.Image.objects.bulk_create(db_images)
