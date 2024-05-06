@@ -492,7 +492,7 @@ class JobAnnotation:
                     ('value', db_attr.value),
                 ]))
 
-    def _init_tags_from_db(self):
+    def init_tags_from_db(self):
         # NOTE: do not use .prefetch_related() with .values() since it's useless:
         # https://github.com/cvat-ai/cvat/pull/7748#issuecomment-2063695007
         db_tags = self.db_job.labeledimage_set.values(
@@ -525,7 +525,7 @@ class JobAnnotation:
         serializer = serializers.LabeledImageSerializerFromDB(db_tags, many=True)
         self.ir_data.tags = serializer.data
 
-    def _init_shapes_from_db(self):
+    def init_shapes_from_db(self):
         # NOTE: do not use .prefetch_related() with .values() since it's useless:
         # https://github.com/cvat-ai/cvat/pull/7748#issuecomment-2063695007
         db_shapes = self.db_job.labeledshape_set.values(
@@ -578,7 +578,7 @@ class JobAnnotation:
         serializer = serializers.LabeledShapeSerializerFromDB(list(shapes.values()), many=True)
         self.ir_data.shapes = serializer.data
 
-    def _init_tracks_from_db(self):
+    def init_tracks_from_db(self):
         # NOTE: do not use .prefetch_related() with .values() since it's useless:
         # https://github.com/cvat-ai/cvat/pull/7748#issuecomment-2063695007
         db_tracks = self.db_job.labeledtrack_set.values(
@@ -674,9 +674,9 @@ class JobAnnotation:
         self.ir_data.version = 0 # FIXME: should be removed in the future
 
     def init_from_db(self):
-        self._init_tags_from_db()
-        self._init_shapes_from_db()
-        self._init_tracks_from_db()
+        self.init_tags_from_db()
+        self.init_shapes_from_db()
+        self.init_tracks_from_db()
         self._init_version_from_db()
 
     @property
