@@ -106,7 +106,7 @@ class JobAnnotationSpeed(PrimaryMetricBase):
 
             count = 0
             for track in db_tracks:
-                if track["source"] == SourceType.FILE:
+                if track["source"] == SourceType.FILE or track["parent"] is not None:
                     continue
 
                 if len(track["shapes"]) == 1:
