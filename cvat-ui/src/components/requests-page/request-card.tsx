@@ -60,10 +60,10 @@ function constructName(operation: typeof Request['operation']): string | null {
 }
 
 function constructTimestamps(request: Request): JSX.Element {
-    const started = moment(request.startDate).format('MMM Do YY, H:mm');
-    const finished = moment(request.finishDate).format('MMM Do YY, H:mm');
-    const enqueued = moment(request.enqueueDate).format('MMM Do YY, H:mm');
-    const expired = moment(request.expireDate).format('MMM Do YY, H:mm');
+    const started = moment(request.startedDate).format('MMM Do YY, H:mm');
+    const finished = moment(request.finishedDate).format('MMM Do YY, H:mm');
+    const enqueued = moment(request.enqueuedDate).format('MMM Do YY, H:mm');
+    const expired = moment(request.expiryDate).format('MMM Do YY, H:mm');
 
     switch (request.status) {
         case RQStatus.QUEUED: {
@@ -74,7 +74,7 @@ function constructTimestamps(request: Request): JSX.Element {
             );
         }
         case RQStatus.FINISHED: {
-            if (request.expireDate) {
+            if (request.expiryDate) {
                 return (
                     <>
                         <Row>
@@ -93,7 +93,6 @@ function constructTimestamps(request: Request): JSX.Element {
                     </Row>
                     <Row>
                         <Text type='secondary'>{`Finished on ${finished}`}</Text>
-
                     </Row>
                 </>
             );
@@ -176,8 +175,7 @@ export default function RequestCard(props: Props): JSX.Element {
 
     const name = constructName(operation);
 
-    const progress = request.status === RQStatus.FINISHED ? 100 : request.progress;
-    const percentSymbol = (request.status === RQStatus.FAILED || !progress) ? '' : '%';
+    const percentProgress = (request.status === RQStatus.FAILED || !percent) ? '' : `${percent.toFixed(2)}%`;
 
     const style: React.CSSProperties = {};
     if (!isActive) {
@@ -258,8 +256,7 @@ export default function RequestCard(props: Props): JSX.Element {
                                             }
                                         </Col>
                                         <Col span={2} className='cvat-requests-percent'>
-                                            {progress || ''}
-                                            {percentSymbol}
+                                            {percentProgress}
                                         </Col>
                                     </Row>
                                     {

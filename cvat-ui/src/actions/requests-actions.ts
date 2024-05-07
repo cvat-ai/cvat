@@ -74,11 +74,13 @@ export function updateRequestProgress(request: Request, dispatch: (action: Reque
 export function listen(request: Request, dispatch: (action: RequestsActions) => void): Promise<void | Request> {
     const { id } = request;
     return core.requests
-        .listen(id, (updatedRequest) => {
-            updateRequestProgress(updatedRequest, dispatch);
+        .listen(id, {
+            callback: (updatedRequest) => {
+                updateRequestProgress(updatedRequest, dispatch);
+            },
         })
         .catch((error: Error) => {
-            request.updateFields({ status: RQStatus.UNKNOWN, percent: 0, message: '' });
+            request.updateFields({ status: RQStatus.UNKNOWN, progress: 0, message: '' });
             dispatch(
                 requestsActions.getRequestStatusFailed(request, error),
             );
@@ -117,6 +119,7 @@ export function getRequestsAsync(query: RequestsQuery, notify = true): ThunkActi
             requests
                 .filter((request: Request) => [RQStatus.STARTED, RQStatus.QUEUED].includes(request.status))
                 .forEach((request: Request): void => {
+                    console.log(request);
                     listen(request, dispatch);
                 });
         } catch (error) {

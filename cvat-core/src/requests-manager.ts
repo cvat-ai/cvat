@@ -25,10 +25,10 @@ export class Request {
     #message: string;
     #progress: number;
     #resultUrl: string;
-    #enqueueDate: string;
-    #startDate: string;
-    #finishDate: string;
-    #expireDate: string;
+    #enqueuedDate: string;
+    #startedDate: string;
+    #finishedDate: string;
+    #expiryDate: string;
     #owner: User;
 
     constructor(initialData: SerializedRequest) {
@@ -39,10 +39,10 @@ export class Request {
         this.#message = initialData.message;
         this.#resultUrl = initialData.result_url;
 
-        this.#enqueueDate = initialData.enqueue_date;
-        this.#startDate = initialData.start_date;
-        this.#finishDate = initialData.finish_date;
-        this.#expireDate = initialData.expiry_date;
+        this.#enqueuedDate = initialData.enqueued_date;
+        this.#startedDate = initialData.started_date;
+        this.#finishedDate = initialData.finished_date;
+        this.#expiryDate = initialData.expiry_date;
 
         if (initialData.owner) {
             this.#owner = new User(initialData.owner);
@@ -86,20 +86,20 @@ export class Request {
         return this.#resultUrl;
     }
 
-    get enqueueDate(): string {
-        return this.#enqueueDate;
+    get enqueuedDate(): string {
+        return this.#enqueuedDate;
     }
 
-    get startDate(): string {
-        return this.#startDate;
+    get startedDate(): string {
+        return this.#startedDate;
     }
 
-    get finishDate(): string {
-        return this.#finishDate;
+    get finishedDate(): string {
+        return this.#finishedDate;
     }
 
-    get expireDate(): string {
-        return this.#expireDate;
+    get expiryDate(): string {
+        return this.#expiryDate;
     }
 
     get owner(): User {
@@ -125,17 +125,17 @@ export class Request {
         if (request.result_url !== undefined) {
             this.#resultUrl = request.result_url;
         }
-        if (request.enqueue_date !== undefined) {
-            this.#enqueueDate = request.enqueue_date;
+        if (request.enqueued_date !== undefined) {
+            this.#enqueuedDate = request.enqueued_date;
         }
-        if (request.start_date !== undefined) {
-            this.#startDate = request.start_date;
+        if (request.started_date !== undefined) {
+            this.#startedDate = request.started_date;
         }
-        if (request.finish_date !== undefined) {
-            this.#finishDate = request.finish_date;
+        if (request.finished_date !== undefined) {
+            this.#finishedDate = request.finished_date;
         }
         if (request.expiry_date !== undefined) {
-            this.#expireDate = request.expiry_date;
+            this.#expiryDate = request.expiry_date;
         }
         if (request.owner !== undefined) {
             this.#owner = new User(request.owner);

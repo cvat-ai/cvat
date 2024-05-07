@@ -80,7 +80,7 @@
         @extend .cvat-requests-scrollbar;
 
         max-height: $grid-unit-size * 8;
-        overflow-y: auto;
+        overflow: hidden auto;
     }
 
     .ant-card-body {

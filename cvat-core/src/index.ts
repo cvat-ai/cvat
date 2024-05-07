@@ -4,6 +4,7 @@
 
 import {
     AnalyticsReportFilter, QualityConflictsFilter, QualityReportsFilter, QualitySettingsFilter,
+    RequestsFilter,
 } from './server-response-types';
 import PluginRegistry from './plugins';
 import serverProxy from './server-proxy';
@@ -153,7 +154,10 @@ export default interface CVATCore {
     };
     requests: {
         list: () => Promise<{ requests: Request[], count: number }>;
-        listen: (rqID: string, callback: (request: Request) => void) => Promise<Request>;
+        listen: (
+            rqID: string,
+            options?: { callback?: (request: Request) => void, filter?: RequestsFilter }
+        ) => Promise<Request>;
         cancel: (rqID: string) => Promise<void>;
         delete: (rqID: string) => Promise<void>;
     };
