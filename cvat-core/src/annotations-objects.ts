@@ -1671,7 +1671,16 @@ export class PolylineShape extends PolyShape {
             const y2 = points[i + 3];
 
             // Find the shortest distance from point to an edge
-            if ((x - x1) * (x2 - x) >= 0 && (y - y1) * (y2 - y) >= 0) {
+            // using perpendicular or by the distance to the nearest point
+
+            // Get coordinate vectors
+            const AB = [x2 - x1, y2 - y1];
+            const BM = [x - x2, y - y2];
+            const AM = [x - x1, y - y1];
+
+            // scalar products have different signs for two pairs of vectors
+            // it means that perpendicular projection lies on the edge
+            if (Math.sign(AB[0] * BM[0] + AB[1] * BM[1]) !== Math.sign(AB[0] * AM[0] + AB[1] * AM[1])) {
                 // Find the length of a perpendicular
                 // https://en.wikipedia.org/wiki/Distance_from_a_point_to_a_line
                 distances.push(
