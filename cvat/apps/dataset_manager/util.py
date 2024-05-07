@@ -3,21 +3,21 @@
 #
 # SPDX-License-Identifier: MIT
 
+from contextlib import contextmanager, suppress
 from copy import deepcopy
-from datetime import datetime, timedelta
-import random
-from time import sleep
-from typing import IO, Any, Optional, Protocol, Sequence, Union
+from datetime import timedelta
+from threading import Lock
+from typing import Any, Generator, Optional, Sequence
 from enum import IntEnum, auto
 import inspect
-import os, os.path as osp
-import zipfile
-import fcntl
 import os
-import errno
+import os.path as osp
+import zipfile
 
+import django_rq
 from django.conf import settings
 from django.db import models
+from pottery import Redlock, ReleaseUnlockedLock
 
 
 def current_function_name(depth=1):
@@ -99,147 +99,48 @@ class LockTimeoutError(LockError):
 class LockNotAvailableError(LockError):
     pass
 
-EXPORT_CACHE_DIR_LOCK_FILENAME = "dir.lock"
-
 class LockMode(IntEnum):
     shared = auto()
     exclusive = auto()
 
-class HasFileno(Protocol):
-    def fileno(self) -> int: ...
 
-FileDescriptorLike = Union[int, HasFileno]
-
-
-def _lock_file(
-    f: FileDescriptorLike,
-    mode: LockMode = LockMode.exclusive,
-    block: bool = False,
-):
-    """
-    Creates an advisory, filesystem-level lock using BSD Flock.
-    """
-
-    flags = 0
-
-    if mode == LockMode.exclusive:
-        flags |= fcntl.LOCK_EX
-    elif mode == LockMode.shared:
-        flags |= fcntl.LOCK_SH
-    else:
-        assert False
-
-    if not block:
-        flags |= fcntl.LOCK_NB
-
-    try:
-        # Flock call details:
-        # https://manpages.debian.org/bookworm/manpages-dev/flock.2.en.html
-        fcntl.flock(f, flags)
-    except OSError as e:
-        # Interrupts (errno.EINTR) should be forwarded
-        if e.errno in [errno.EWOULDBLOCK, errno.ENOLCK]:
-            raise LockNotAvailableError
-        else:
-            raise
-
-def _unlock_file(f: FileDescriptorLike):
-    # Flock call details:
-    # https://manpages.debian.org/bookworm/manpages-dev/flock.2.en.html
-    fcntl.flock(f, fcntl.LOCK_UN)
-
-
-class AtomicOpen:
-    """
-    Class for ensuring that all file operations are atomic, treat
-    initialization like a standard call to 'open' that happens to be atomic.
-    This file opener *must* be used in a "with" block.
-    """
-
-    def __init__(
-        self,
-        path: str,
-        *args,
-        lock_mode: LockMode = LockMode.exclusive,
-        block: bool = True,
-        **kwargs,
-    ):
-        # Open the file to obtain a file descriptor for locking
-        self.file: IO[Any] = open(path, *args, **kwargs)
-
-        # Lock the opened file
-        _lock_file(self.file, mode=lock_mode, block=block)
-
-    # Return the opened file object (knowing a lock has been obtained).
-    def __enter__(self, *args, **kwargs):
-        return self.file
-
-    # Unlock the file and close the file object.
-    def __exit__(self, exc_type=None, exc_value=None, traceback=None):
-        # Flush to make sure all buffered contents are written to file.
-        self.file.flush()
-        os.fsync(self.file.fileno())
-
-        # Release the lock on the file.
-        _unlock_file(self.file)
-
-        self.file.close()
-
-        # Handle exceptions that may have come up during execution, by
-        # default any exceptions are raised to the user.
-        if (exc_type != None):
-            return False
-        else:
-            return True
-
-
-def get_file_lock(
-    file_path: os.PathLike[str],
-    *open_args,
-    lock_mode: LockMode = LockMode.exclusive,
-    block: bool = False,
-    timeout: Optional[int | timedelta] = None,
-    **open_kwargs
-) -> AtomicOpen:
-    if block and timeout:
-        raise NotImplementedError("Can't use timeout with blocking mode")
-
-    time_start = None
-    if timeout:
-        time_start = datetime.now()
-
-        if isinstance(timeout, int):
-            timeout = timedelta(seconds=timeout)
-
-    while True:
-        if timeout and time_start + timeout < datetime.now():
-            raise LockTimeoutError
-
-        try:
-            return AtomicOpen(
-                file_path, *open_args, block=block, lock_mode=lock_mode, **open_kwargs
-            )
-        except LockNotAvailableError as e:
-            if timeout:
-                delay = 0.1 + random.random(1)
-                if time_start + timeout < datetime.now() + delay:
-                    raise LockTimeoutError from e
-
-                sleep(delay)
-            else:
-                raise
-
-    assert False, "Unreachable"
-
-
+@contextmanager
 def get_dataset_cache_lock(
-    export_dir: os.PathLike[str],
+    export_path: os.PathLike[str],
     *,
-    mode: LockMode = LockMode.exclusive,
-    block: bool = False,
-    timeout: Optional[int | timedelta] = None,
-) -> AtomicOpen:
-    # Lock the directory using a file inside the directory
-    lock_file_path = osp.join(export_dir, EXPORT_CACHE_DIR_LOCK_FILENAME)
+    ttl: int | timedelta,
+    block: bool = True,
+    acquire_timeout: Optional[int | timedelta] = None,
+) -> Generator[Lock, Any, Any]:
+    if isinstance(acquire_timeout, timedelta):
+        acquire_timeout = acquire_timeout.total_seconds()
 
-    return get_file_lock(lock_file_path, mode='a', lock_mode=mode, block=block, timeout=timeout)
+    if acquire_timeout is None:
+        acquire_timeout = -1
+
+    if isinstance(ttl, timedelta):
+        ttl = ttl.total_seconds()
+    elif not ttl:
+        raise ValueError("max_ttl must be a positive number")
+
+    lock = Redlock(
+        key=export_path,
+        masters={
+            django_rq.get_connection(settings.CVAT_QUEUES.EXPORT_DATA.value)
+        },
+        auto_release_time=ttl,
+        raise_on_redis_errors=True,
+    )
+    try:
+        acquired = lock.acquire(blocking=block, timeout=acquire_timeout)
+        if acquired:
+            yield lock
+        else:
+            if acquire_timeout > 0:
+                raise LockTimeoutError
+            else:
+                raise LockNotAvailableError
+
+    finally:
+        with suppress(ReleaseUnlockedLock):
+            lock.release()
