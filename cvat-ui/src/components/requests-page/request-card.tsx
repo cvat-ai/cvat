@@ -145,6 +145,15 @@ function statusMessage(request: Request, defaultMessage: string, postfix?: JSX.E
     );
 }
 
+const dimensions = {
+    xs: 6,
+    sm: 6,
+    md: 8,
+    lg: 8,
+    xl: 8,
+    xxl: 6,
+};
+
 export default function RequestCard(props: Props): JSX.Element {
     const { request } = props;
     const { operation } = request;
@@ -183,7 +192,7 @@ export default function RequestCard(props: Props): JSX.Element {
                     <Row justify='space-between'>
                         <Col span={12}>
                             <Row style={{ paddingBottom: [RQStatus.FAILED].includes(request.status) ? '10px' : '0' }}>
-                                <Col className='cvat-requests-type' span={5}>
+                                <Col className='cvat-requests-type' {...dimensions}>
                                     <Text>
                                         {type.split(':').map((word) => word.charAt(0).toUpperCase() + word.slice(1)).join(' ')}
                                         {' '}
@@ -202,6 +211,7 @@ export default function RequestCard(props: Props): JSX.Element {
                                 <Col span={21}>
                                     <Row>
                                         <Text
+                                            className='cvat-request-item-progress-message'
                                             type={textType}
                                             strong
                                         >
@@ -229,11 +239,6 @@ export default function RequestCard(props: Props): JSX.Element {
                                                 return statusMessage(request, 'Unknown status received');
                                             })()}
                                         </Text>
-                                        {
-                                            request.status === RQStatus.FAILED ? (
-                                                <Text type='danger'>{request.message}</Text>
-                                            ) : null
-                                        }
                                     </Row>
                                     <Row>
                                         <Col span={18} className='cvat-requests-progress'>

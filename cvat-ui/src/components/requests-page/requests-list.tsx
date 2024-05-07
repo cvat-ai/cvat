@@ -17,7 +17,7 @@ import moment from 'moment';
 import dimensions from 'utils/dimensions';
 import RequestCard from './request-card';
 
-export const PAGE_SIZE = 7;
+export const PAGE_SIZE = 10;
 
 function setUpRequestsList(requests: Request[], newPage: number): Request[] {
     const displayRequests = [...requests];

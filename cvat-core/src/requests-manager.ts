@@ -5,7 +5,6 @@
 import serverProxy from './server-proxy';
 import { RQStatus } from './enums';
 import User from './user';
-import { StorageData } from './storage';
 import { RequestsFilter, SerializedRequest } from './server-response-types';
 import { fieldsToSnakeCase } from './common';
 import { RequestError } from './exceptions';
@@ -31,7 +30,6 @@ export class Request {
     #finishDate: string;
     #expireDate: string;
     #owner: User;
-    #meta: { storage: StorageData };
 
     constructor(initialData: SerializedRequest) {
         this.#id = initialData.id;

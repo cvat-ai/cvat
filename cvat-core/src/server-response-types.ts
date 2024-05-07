@@ -507,7 +507,7 @@ export interface SerializedRequest {
         task_id: number | null;
         project_id: number | null;
     };
-    percent?: number;
+    progress?: number;
     message: string;
     result_url?: string;
     enqueue_date?: string;
@@ -517,8 +517,8 @@ export interface SerializedRequest {
     owner?: any;
 }
 
-export interface ApiRequestsFilter extends ApiCommonFilterParams {
+export interface APIRequestsFilter extends APICommonFilterParams {
     task_id?: number;
     action?: string;
 }
-export type RequestsFilter = Camelized<ApiRequestsFilter>;
+export type RequestsFilter = Camelized<APIRequestsFilter>;

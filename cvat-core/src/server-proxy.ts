@@ -18,7 +18,7 @@ import {
     SerializedInvitationData, SerializedCloudStorage, SerializedFramesMetaData, SerializedCollection,
     SerializedQualitySettingsData, APIQualitySettingsFilter, SerializedQualityConflictData, APIQualityConflictsFilter,
     SerializedQualityReportData, APIQualityReportsFilter, SerializedAnalyticsReport, APIAnalyticsReportFilter,
-    SerializedRequest, ApiRequestsFilter,
+    SerializedRequest, APIRequestsFilter,
 } from './server-response-types';
 import { PaginatedResource } from './core-types';
 import { Storage } from './storage';
@@ -886,7 +886,6 @@ async function importDataset(
     options: {
         convMaskToPoly: boolean,
         uploadStatusCallback: (s: string, n: number) => void,
-        requestStatusCallback,
     },
 ): Promise<string> {
     const { backendAPI, origin } = config;
@@ -2253,7 +2252,7 @@ async function getRequestsList(): Promise<PaginatedResource<SerializedRequest>> 
     }
 }
 
-async function getRequestStatus(rqID: string | null, filter: ApiRequestsFilter): Promise<SerializedRequest> {
+async function getRequestStatus(rqID: string | null, filter: APIRequestsFilter): Promise<SerializedRequest> {
     const { backendAPI } = config;
 
     try {
