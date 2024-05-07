@@ -366,6 +366,9 @@ class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentP
                 message: (
                     <ReactMarkdown>{notificationState.message}</ReactMarkdown>
                 ),
+                description: notificationState?.description && (
+                    <ReactMarkdown>{notificationState?.description}</ReactMarkdown>
+                ),
                 duration: notificationState.duration || null,
             });
         }

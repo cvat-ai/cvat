@@ -536,9 +536,9 @@ export default function (state = defaultState, action: AnyAction): Notifications
             const {
                 instance, instanceType, isLocal, resource,
             } = action.payload;
-            const message = isLocal ?
-                `Export ${resource} for ${instanceType} ${instance.id} is finished,` +
-                'you can [download it here](/requests)' :
+            const description = isLocal ?
+                `Export ${resource} for ${instanceType} ${instance.id} is finished. ` +
+                'You can [download it here](/requests)' :
                 `Export ${resource} for ${instanceType} ${instance.id} has been uploaded to cloud storage`;
             return {
                 ...state,
@@ -547,8 +547,9 @@ export default function (state = defaultState, action: AnyAction): Notifications
                     exporting: {
                         ...state.messages.exporting,
                         dataset: {
-                            message,
+                            message: 'Export is finished',
                             duration: config.REQUEST_SUCCESS_NOTIFICATION_DURATION,
+                            description,
                         },
                     },
                 },
@@ -575,9 +576,9 @@ export default function (state = defaultState, action: AnyAction): Notifications
         }
         case ExportActionTypes.EXPORT_BACKUP_SUCCESS: {
             const { instance, instanceType, isLocal } = action.payload;
-            const message = isLocal ?
-                `Backup for the ${instanceType} ${instance.id} is finished,` +
-                'you can [download it here](/requests)' :
+            const description = isLocal ?
+                `Backup for the ${instanceType} ${instance.id} is finished. ` +
+                'You can [download it here](/requests)' :
                 `Backup for the ${instanceType} ${instance.id} has been uploaded to cloud storage`;
             return {
                 ...state,
@@ -586,8 +587,9 @@ export default function (state = defaultState, action: AnyAction): Notifications
                     exporting: {
                         ...state.messages.exporting,
                         backup: {
-                            message,
+                            message: 'Backup export is finished',
                             duration: config.REQUEST_SUCCESS_NOTIFICATION_DURATION,
+                            description,
                         },
                     },
                 },
@@ -595,7 +597,7 @@ export default function (state = defaultState, action: AnyAction): Notifications
         }
         case ImportActionTypes.IMPORT_DATASET_SUCCESS: {
             const { instance, resource } = action.payload;
-            const message = resource === 'annotation' ?
+            const description = resource === 'annotation' ?
                 'Annotations have been loaded to the ' +
                 `[task ${instance.taskId || instance.id}](/tasks/${instance.taskId || instance.id}) ` :
                 `Dataset was imported to the [project ${instance.id}](/projects/${instance.id})`;
@@ -606,8 +608,9 @@ export default function (state = defaultState, action: AnyAction): Notifications
                     importing: {
                         ...state.messages.importing,
                         [resource]: {
-                            message,
+                            message: 'Annotations import is finished',
                             duration: config.REQUEST_SUCCESS_NOTIFICATION_DURATION,
+                            description,
                         },
                     },
                 },
@@ -639,6 +642,8 @@ export default function (state = defaultState, action: AnyAction): Notifications
         }
         case ImportActionTypes.IMPORT_BACKUP_SUCCESS: {
             const { instanceId, instanceType } = action.payload;
+            const description = `The ${instanceType} has been restored successfully.
+                Click [here](/${instanceType}s/${instanceId}) to open`;
             return {
                 ...state,
                 messages: {
@@ -646,9 +651,9 @@ export default function (state = defaultState, action: AnyAction): Notifications
                     importing: {
                         ...state.messages.importing,
                         backup: {
-                            message: `The ${instanceType} has been restored successfully.
-                            Click [here](/${instanceType}s/${instanceId}) to open`,
+                            message: 'Import backup is finished',
                             duration: config.REQUEST_SUCCESS_NOTIFICATION_DURATION,
+                            description,
                         },
                     },
                 },

@@ -6,6 +6,7 @@
 import './styles.scss';
 import React, { useCallback, useEffect, useReducer } from 'react';
 import { connect, useDispatch } from 'react-redux';
+import ReactMarkdown from 'react-markdown';
 import Modal from 'antd/lib/modal';
 import Form, { RuleObject } from 'antd/lib/form';
 import Text from 'antd/lib/typography/Text';
@@ -24,7 +25,6 @@ import Space from 'antd/lib/space';
 import Switch from 'antd/lib/switch';
 import { getCore, Storage, StorageData } from 'cvat-core-wrapper';
 import StorageField from 'components/storage/storage-field';
-import ReactMarkdown from 'react-markdown';
 import { createAction, ActionUnion } from 'utils/redux';
 import ImportDatasetStatusModal from './import-dataset-status-modal';
 

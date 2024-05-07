@@ -438,6 +438,7 @@ export interface ErrorState {
 
 export interface NotificationState {
     message: string;
+    description?: string;
     duration?: number;
 }
 

@@ -131,7 +131,10 @@ export default function implementProject(projectClass) {
     ) {
         const { requestStatusCallback } = options || {};
         const rqID = await serverProxy.projects.backup(this.id, targetStorage, useDefaultSettings, fileName);
-        return requestsManager.listen(rqID, { callback: requestStatusCallback });
+        if (rqID) {
+            return requestsManager.listen(rqID, { callback: requestStatusCallback });
+        }
+        return new Request({ status: RQStatus.FINISHED, message: '' });
     };
 
     projectClass.restore.implementation = async function (

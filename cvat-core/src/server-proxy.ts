@@ -952,7 +952,7 @@ async function backupTask(
     targetStorage: Storage,
     useDefaultSettings: boolean,
     fileName?: string,
-): Promise<string> {
+): Promise<string | void> {
     const { backendAPI } = config;
     const params: Params = {
         ...enableOrganization(),
@@ -961,13 +961,16 @@ async function backupTask(
     };
     const url = `${backendAPI}/tasks/${id}/backup`;
 
-    return new Promise<string>((resolve, reject) => {
+    return new Promise<string | void>((resolve, reject) => {
         async function request() {
             try {
                 const response = await Axios.get(url, {
                     params,
                 });
-                resolve(response.data.rq_id);
+                if (response.status === 202) {
+                    resolve(response.data.rq_id);
+                }
+                resolve();
             } catch (errorData) {
                 reject(generateError(errorData));
             }
@@ -1024,7 +1027,7 @@ async function backupProject(
     targetStorage: Storage,
     useDefaultSettings: boolean,
     fileName?: string,
-): Promise<string> {
+): Promise<string | void> {
     const { backendAPI } = config;
     // keep current default params to 'freeze" them during this request
     const params: Params = {
@@ -1035,13 +1038,16 @@ async function backupProject(
 
     const url = `${backendAPI}/projects/${id}/backup`;
 
-    return new Promise<string>((resolve, reject) => {
+    return new Promise<string | void>((resolve, reject) => {
         async function request() {
             try {
                 const response = await Axios.get(url, {
                     params,
                 });
-                resolve(response.data.rq_id);
+                if (response.status === 202) {
+                    resolve(response.data.rq_id);
+                }
+                resolve();
             } catch (errorData) {
                 reject(generateError(errorData));
             }
