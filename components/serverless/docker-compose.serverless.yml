@@ -1,7 +1,7 @@
 services:
   nuclio:
     container_name: nuclio
-    image: quay.io/nuclio/dashboard:1.11.24-amd64
+    image: quay.io/nuclio/dashboard:1.13.0-amd64
     restart: always
     networks:
       - cvat

@@ -16,8 +16,8 @@ import {
     SerializedAbout, SerializedRemoteFile, SerializedUserAgreement,
     SerializedRegister, JobsFilter, SerializedJob, SerializedGuide, SerializedAsset, SerializedAPISchema,
     SerializedInvitationData, SerializedCloudStorage, SerializedFramesMetaData, SerializedCollection,
-    SerializedQualitySettingsData, ApiQualitySettingsFilter, SerializedQualityConflictData, ApiQualityConflictsFilter,
-    SerializedQualityReportData, ApiQualityReportsFilter, SerializedAnalyticsReport, ApiAnalyticsReportFilter,
+    SerializedQualitySettingsData, APIQualitySettingsFilter, SerializedQualityConflictData, APIQualityConflictsFilter,
+    SerializedQualityReportData, APIQualityReportsFilter, SerializedAnalyticsReport, APIAnalyticsReportFilter,
     SerializedRequest, ApiRequestsFilter,
 } from './server-response-types';
 import { PaginatedResource } from './core-types';
@@ -133,7 +133,20 @@ async function chunkUpload(file: File, uploadConfig): Promise<{ uploadSentSize: 
                 Authorization: Axios.defaults.headers.common.Authorization,
             },
             chunkSize,
-            retryDelays: null,
+            retryDelays: [2000, 4000, 8000, 16000, 32000, 64000],
+            onShouldRetry(err: tus.DetailedError | Error): boolean {
+                if (err instanceof tus.DetailedError) {
+                    const { originalResponse } = (err as tus.DetailedError);
+                    const code = (originalResponse?.getStatus() || 0);
+
+                    // do not retry if (code >= 400 && code < 500) is default tus behaviour
+                    // retry if code === 409 or 423 is default tus behaviour
+                    // additionally handle codes 429 and 0
+                    return !(code >= 400 && code < 500) || [409, 423, 429, 0].includes(code);
+                }
+
+                return false;
+            },
             onError(error) {
                 reject(error);
             },
@@ -1076,9 +1089,15 @@ async function restoreProject(storage: Storage, file: File | string): Promise<st
                 headers: { 'Upload-Finish': true },
             });
     }
+
     const rqId = response.data.rq_id;
     return rqId;
 }
+
+type LongProcessListener<R> = Record<number, {
+    promise: Promise<R>;
+    onUpdate: ((state: string, progress: number, message: string) => void)[];
+}>;
 
 async function createTask(
     taskSpec: Partial<SerializedTask>,
@@ -2132,7 +2151,7 @@ async function createAsset(file: File, guideId: number): Promise<SerializedAsset
 }
 
 async function getQualitySettings(
-    filter: ApiQualitySettingsFilter,
+    filter: APIQualitySettingsFilter,
 ): Promise<SerializedQualitySettingsData> {
     const { backendAPI } = config;
 
@@ -2168,7 +2187,7 @@ async function updateQualitySettings(
 }
 
 async function getQualityConflicts(
-    filter: ApiQualityConflictsFilter,
+    filter: APIQualityConflictsFilter,
 ): Promise<SerializedQualityConflictData[]> {
     const params = enableOrganization();
     const { backendAPI } = config;
@@ -2186,7 +2205,7 @@ async function getQualityConflicts(
 }
 
 async function getQualityReports(
-    filter: ApiQualityReportsFilter,
+    filter: APIQualityReportsFilter,
 ): Promise<PaginatedResource<SerializedQualityReportData>> {
     const { backendAPI } = config;
 
@@ -2205,7 +2224,7 @@ async function getQualityReports(
 }
 
 async function getAnalyticsReports(
-    filter: ApiAnalyticsReportFilter,
+    filter: APIAnalyticsReportFilter,
 ): Promise<SerializedAnalyticsReport> {
     const { backendAPI } = config;
 
@@ -2278,6 +2297,86 @@ async function deleteRequest(requestID): Promise<void> {
     } catch (errorData) {
         throw generateError(errorData);
     }
+}
+
+const listenToCreateAnalyticsReportCallbacks: {
+    job: LongProcessListener<void>;
+    task: LongProcessListener<void>;
+    project: LongProcessListener<void>;
+} = {
+    job: {},
+    task: {},
+    project: {},
+};
+
+async function calculateAnalyticsReport(
+    body: {
+        job_id?: number;
+        task_id?: number;
+        project_id?: number;
+    },
+    onUpdate: (state: string, progress: number, message: string) => void,
+): Promise<void> {
+    const id = body.job_id || body.task_id || body.project_id;
+    const { backendAPI } = config;
+    const params = enableOrganization();
+    let listenerStorage: LongProcessListener<void> = null;
+
+    if (Number.isInteger(body.job_id)) {
+        listenerStorage = listenToCreateAnalyticsReportCallbacks.job;
+    } else if (Number.isInteger(body.task_id)) {
+        listenerStorage = listenToCreateAnalyticsReportCallbacks.task;
+    } else if (Number.isInteger(body.project_id)) {
+        listenerStorage = listenToCreateAnalyticsReportCallbacks.project;
+    }
+
+    if (listenerStorage[id]) {
+        listenerStorage[id].onUpdate.push(onUpdate);
+        return listenerStorage[id].promise;
+    }
+
+    const promise = new Promise<void>((resolve, reject) => {
+        Axios.post(`${backendAPI}/analytics/reports`, {
+            ...body,
+            ...params,
+        }).then(({ data: { rq_id: rqID } }) => {
+            listenerStorage[id].onUpdate.forEach((_onUpdate) => _onUpdate(RQStatus.QUEUED, 0, 'Analytics report request sent'));
+            const checkStatus = (): void => {
+                Axios.post(`${backendAPI}/analytics/reports`, {
+                    ...body,
+                    ...params,
+                }, { params: { rq_id: rqID } }).then((response) => {
+                    // TODO: rewrite server logic, now it returns 202, 201 codes, but we need RQ statuses and details
+                    // after this patch is merged https://github.com/cvat-ai/cvat/pull/7537
+                    if (response.status === 201) {
+                        listenerStorage[id].onUpdate.forEach((_onUpdate) => _onUpdate(RQStatus.FINISHED, 0, 'Done'));
+                        resolve();
+                        return;
+                    }
+
+                    listenerStorage[id].onUpdate.forEach((_onUpdate) => _onUpdate(RQStatus.QUEUED, 0, 'Analytics report calculation is in progress'));
+                    setTimeout(checkStatus, 10000);
+                }).catch((errorData) => {
+                    reject(generateError(errorData));
+                });
+            };
+
+            setTimeout(checkStatus, 2500);
+        }).catch((errorData) => {
+            reject(generateError(errorData));
+        });
+    });
+
+    listenerStorage[id] = {
+        promise,
+        onUpdate: [onUpdate],
+    };
+
+    promise.finally(() => {
+        delete listenerStorage[id];
+    });
+
+    return promise;
 }
 
 export default Object.freeze({
@@ -2430,6 +2529,7 @@ export default Object.freeze({
     analytics: Object.freeze({
         performance: Object.freeze({
             reports: getAnalyticsReports,
+            calculate: calculateAnalyticsReport,
         }),
         quality: Object.freeze({
             reports: getQualityReports,
