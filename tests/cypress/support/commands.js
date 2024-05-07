@@ -300,6 +300,13 @@ Cypress.Commands.add('headlessCreateProject', (projectSpec) => {
     });
 });
 
+Cypress.Commands.add('headlessDeleteProject', (projectID) => {
+    cy.window().then(async ($win) => {
+        const [project] = await $win.cvat.projects.get({ id: projectID });
+        await project.delete();
+    });
+});
+
 Cypress.Commands.add('headlessCreateUser', (userSpec) => {
     cy.request({
         method: 'POST',

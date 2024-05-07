@@ -28,7 +28,7 @@ jobs:
 
   build:
     needs: search_cache
-    runs-on: ubuntu-latest-big
+    runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
 
@@ -127,7 +127,7 @@ jobs:
 
   rest_api_testing:
     needs: build
-    runs-on: ubuntu-latest-big
+    runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
 
@@ -170,7 +170,8 @@ jobs:
       - name: Install SDK
         run: |
           pip3 install -r ./tests/python/requirements.txt \
-            -e './cvat-sdk[pytorch]' -e ./cvat-cli
+            -e './cvat-sdk[pytorch]' -e ./cvat-cli \
+            --extra-index-url https://download.pytorch.org/whl/cpu
 
       - name: Run REST API and SDK tests
         id: run_tests
@@ -208,7 +209,7 @@ jobs:
 
   unit_testing:
     needs: build
-    runs-on: ubuntu-latest-big
+    runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
 
@@ -226,11 +227,10 @@ jobs:
 
       - name: Running OPA tests
         run: |
-          python cvat/apps/iam/rules/tests/generate_tests.py \
-            --output-dir cvat/apps/iam/rules/
+          python cvat/apps/iam/rules/tests/generate_tests.py
 
-          docker compose run --rm -v "$PWD/cvat/apps/iam/rules/:/mnt/rules" \
-            cvat_opa test /mnt/rules
+          docker compose run --rm -v "$PWD:/mnt/src:ro" -w /mnt/src \
+            cvat_opa test cvat/apps/*/rules
 
       - name: Running unit tests
         env:
@@ -274,7 +274,7 @@ jobs:
 
   e2e_testing:
     needs: build
-    runs-on: ubuntu-latest-big
+    runs-on: ubuntu-latest
     strategy:
       fail-fast: false
       matrix:
@@ -385,10 +385,17 @@ jobs:
           name: cypress_screenshots_${{ matrix.specs }}
           path: ${{ github.workspace }}/tests/cypress/screenshots
 
+      - name: Uploading cypress videos as an artifact
+        if: failure()
+        uses: actions/upload-artifact@v3.1.1
+        with:
+          name: cypress_videos_${{ matrix.specs }}
+          path: ${{ github.workspace }}/tests/cypress/videos
+
   publish_dev_images:
     if: github.ref == 'refs/heads/develop'
     needs: [rest_api_testing, unit_testing, e2e_testing]
-    runs-on: ubuntu-latest-big
+    runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
 
@@ -427,7 +434,7 @@ jobs:
           docker push "${UI_IMAGE_REPO}:dev"
 
   codecov:
-    runs-on: ubuntu-latest-big
+    runs-on: ubuntu-latest
     needs: [unit_testing, e2e_testing, rest_api_testing]
     steps:
       - uses: actions/checkout@v4
