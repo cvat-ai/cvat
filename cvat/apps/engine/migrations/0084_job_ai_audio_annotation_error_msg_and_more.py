@@ -36,9 +36,4 @@ class Migration(migrations.Migration):
             name="ai_audio_annotation_task_id",
             field=models.CharField(blank=True, default="", max_length=100, null=True),
         ),
-        migrations.AddField(
-            model_name="task",
-            name="total_audio_duration",
-            field=models.IntegerField(blank=True, null=True),
-        ),
     ]

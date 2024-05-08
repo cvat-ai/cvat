@@ -9,10 +9,6 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
-        migrations.RemoveField(
-            model_name="task",
-            name="total_audio_duration",
-        ),
         migrations.AddField(
             model_name="task",
             name="audio_total_duration",

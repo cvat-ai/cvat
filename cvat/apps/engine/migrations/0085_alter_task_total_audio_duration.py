@@ -9,9 +9,4 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
-        migrations.AlterField(
-            model_name="task",
-            name="total_audio_duration",
-            field=models.IntegerField(blank=True, default=None, null=True),
-        ),
     ]
