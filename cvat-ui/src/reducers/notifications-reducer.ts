@@ -5,7 +5,9 @@
 
 import { AnyAction } from 'redux';
 
-import { ServerError, RequestError } from 'cvat-core-wrapper';
+import {
+    Project, ServerError, Task, RequestError,
+} from 'cvat-core-wrapper';
 import { AuthActionTypes } from 'actions/auth-actions';
 import { FormatsActionTypes } from 'actions/formats-actions';
 import { ModelsActionTypes } from 'actions/models-actions';
@@ -597,10 +599,17 @@ export default function (state = defaultState, action: AnyAction): Notifications
         }
         case ImportActionTypes.IMPORT_DATASET_SUCCESS: {
             const { instance, resource } = action.payload;
-            const description = resource === 'annotation' ?
-                'Annotations have been loaded to the ' +
-                `[task ${instance.taskId || instance.id}](/tasks/${instance.taskId || instance.id}) ` :
-                `Dataset was imported to the [project ${instance.id}](/projects/${instance.id})`;
+            let description = resource === 'annotation' ?
+                'Annotations have been loaded to the ' :
+                'Dataset was imported to the ';
+            if (instance instanceof Project) {
+                description += `[Project ${instance.id}](/projects/${instance.id})`;
+            } else if (instance instanceof Task) {
+                description += `[Task ${instance.id}](/tasks/${instance.id})`;
+            } else {
+                description += `[Job ${instance.id}](/jobs/${instance.id})`;
+            }
+
             return {
                 ...state,
                 messages: {
