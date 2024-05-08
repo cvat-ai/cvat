@@ -35,7 +35,7 @@ def parse_args(args: Optional[Sequence[str]] = None) -> Namespace:
 def call_generator(generator_path: Path, gen_params: Namespace) -> None:
     rules_dir = generator_path.parents[2]
     subprocess.check_call(
-        [sys.executable, generator_path, rules_dir / 'tests/configs'], cwd=rules_dir
+        [sys.executable, generator_path.relative_to(rules_dir), 'tests/configs'], cwd=rules_dir
     )
 
 
