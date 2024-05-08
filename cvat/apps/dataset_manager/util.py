@@ -8,7 +8,6 @@ from copy import deepcopy
 from datetime import timedelta
 from threading import Lock
 from typing import Any, Generator, Optional, Sequence
-from enum import IntEnum, auto
 import inspect
 import os
 import os.path as osp
@@ -93,15 +92,13 @@ def deepcopy_simple(v):
 class LockError(Exception):
     pass
 
+
 class LockTimeoutError(LockError):
     pass
 
+
 class LockNotAvailableError(LockError):
     pass
-
-class LockMode(IntEnum):
-    shared = auto()
-    exclusive = auto()
 
 
 @contextmanager
@@ -114,29 +111,27 @@ def get_dataset_cache_lock(
 ) -> Generator[Lock, Any, Any]:
     if isinstance(acquire_timeout, timedelta):
         acquire_timeout = acquire_timeout.total_seconds()
-
-    if acquire_timeout is None:
+    elif acquire_timeout and acquire_timeout < 0:
+        raise ValueError("acquire_timeout must be a positive number")
+    elif acquire_timeout is None:
         acquire_timeout = -1
 
     if isinstance(ttl, timedelta):
         ttl = ttl.total_seconds()
-    elif not ttl:
-        raise ValueError("max_ttl must be a positive number")
+    elif not ttl or ttl < 0:
+        raise ValueError("ttl must be a positive number")
 
     lock = Redlock(
         key=export_path,
-        masters={
-            django_rq.get_connection(settings.CVAT_QUEUES.EXPORT_DATA.value)
-        },
+        masters={django_rq.get_connection(settings.CVAT_QUEUES.EXPORT_DATA.value)},
         auto_release_time=ttl,
-        raise_on_redis_errors=True,
     )
     try:
         acquired = lock.acquire(blocking=block, timeout=acquire_timeout)
         if acquired:
             yield lock
         else:
-            if acquire_timeout > 0:
+            if 0 < acquire_timeout:
                 raise LockTimeoutError
             else:
                 raise LockNotAvailableError
