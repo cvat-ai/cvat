@@ -6,6 +6,9 @@
 #    pip-compile-multi
 #
 -r development.txt
+--no-binary lxml
+--no-binary xmlsec
+
 coverage==7.2.3
     # via -r cvat/requirements/testing.in
 fakeredis==2.10.3
