@@ -52,8 +52,8 @@ class Signer:
         except User.DoesNotExist:
             raise signing.BadSignature()
 
-# Even with token authorization it is very important to have a valid session id
-# in cookies because in some cases we cannot use token authorization (e.g. when
+# Even with token authentication it is very important to have a valid session id
+# in cookies because in some cases we cannot use token authentication (e.g. when
 # we redirect to the server in UI using just URL). To overkill that we override
 # the class to call `login` method which restores the session id in cookies.
 class TokenAuthenticationEx(TokenAuthentication):

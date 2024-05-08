@@ -1671,7 +1671,16 @@ export class PolylineShape extends PolyShape {
             const y2 = points[i + 3];
 
             // Find the shortest distance from point to an edge
-            if ((x - x1) * (x2 - x) >= 0 && (y - y1) * (y2 - y) >= 0) {
+            // using perpendicular or by the distance to the nearest point
+
+            // Get coordinate vectors
+            const AB = [x2 - x1, y2 - y1];
+            const BM = [x - x2, y - y2];
+            const AM = [x - x1, y - y1];
+
+            // scalar products have different signs for two pairs of vectors
+            // it means that perpendicular projection lies on the edge
+            if (Math.sign(AB[0] * BM[0] + AB[1] * BM[1]) !== Math.sign(AB[0] * AM[0] + AB[1] * AM[1])) {
                 // Find the length of a perpendicular
                 // https://en.wikipedia.org/wiki/Distance_from_a_point_to_a_line
                 distances.push(
@@ -2075,7 +2084,7 @@ export class SkeletonShape extends Shape {
             return new ObjectState(this.get(frame));
         }
 
-        const updateElements = (affectedElements, action, property: 'points' | 'occluded' | 'hidden' | 'lock') => {
+        const updateElements = (affectedElements, action, property: 'points' | 'occluded' | 'hidden' | 'lock'): void => {
             const undoSkeletonProperties = this.elements.map((element) => element[property]);
             const undoSource = this.source;
             const redoSource = this.readOnlyFields.includes('source') ? this.source : computeNewSource(this.source);
@@ -2540,7 +2549,7 @@ class PolyTrack extends Track {
             return updatedMatching;
         }
 
-        function reduceInterpolation(interpolatedPoints, matching, leftPoints, rightPoints) {
+        function reduceInterpolation(interpolatedPoints, matching, leftPoints, rightPoints): void {
             function averagePoint(points: Point2D[]): Point2D {
                 let sumX = 0;
                 let sumY = 0;
@@ -2559,7 +2568,7 @@ class PolyTrack extends Track {
                 return Math.sqrt((point1.x - point2.x) ** 2 + (point1.y - point2.y) ** 2);
             }
 
-            function minimizeSegment(baseLength: number, N: number, startInterpolated, stopInterpolated) {
+            function minimizeSegment(baseLength: number, N: number, startInterpolated, stopInterpolated): void {
                 const threshold = baseLength / (2 * N);
                 const minimized = [interpolatedPoints[startInterpolated]];
                 let latestPushed = startInterpolated;
@@ -2596,7 +2605,7 @@ class PolyTrack extends Track {
                 interpolatedIndexes[i] = matching[i].map(() => accumulated++);
             }
 
-            function leftSegment(start, stop) {
+            function leftSegment(start, stop): void {
                 const startInterpolated = interpolatedIndexes[start][0];
                 const stopInterpolated = interpolatedIndexes[stop][0];
 
@@ -2611,7 +2620,7 @@ class PolyTrack extends Track {
                 reduced.push(...minimizeSegment(baseLength, N, startInterpolated, stopInterpolated));
             }
 
-            function rightSegment(leftPoint) {
+            function rightSegment(leftPoint): void {
                 const start = matching[leftPoint][0];
                 const [stop] = matching[leftPoint].slice(-1);
                 const startInterpolated = interpolatedIndexes[leftPoint][0];

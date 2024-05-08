@@ -68,7 +68,6 @@ services:
 
   cvat_worker_analytics_reports:
     environment:
-      CVAT_ANALYTICS_CHECK_JOB_DELAY: 5
       # For debugging, make sure to set 1 process
       # Due to the supervisord specifics, the extra processes will fail and
       # after few attempts supervisord will give up restarting, leaving only 1 process

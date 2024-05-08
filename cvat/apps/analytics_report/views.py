@@ -1,9 +1,10 @@
-# Copyright (C) 2023 CVAT.ai Corporation
+# Copyright (C) 2023-2024 CVAT.ai Corporation
 #
 # SPDX-License-Identifier: MIT
 
 import textwrap
 
+from django.core.exceptions import ObjectDoesNotExist
 from drf_spectacular.types import OpenApiTypes
 from drf_spectacular.utils import OpenApiParameter, OpenApiResponse, extend_schema
 from rest_framework import status, viewsets
@@ -76,47 +77,23 @@ class AnalyticsReportViewSet(viewsets.ViewSet):
             task_id = input_serializer.validated_data.get("task_id")
             project_id = input_serializer.validated_data.get("project_id")
 
-            if job_id is not None:
-                try:
-                    job = Job.objects.get(pk=int(job_id))
-                except Job.DoesNotExist as ex:
-                    raise NotFound(f"Job {job_id} does not exist") from ex
+            try:
+                params = {"user_id": request.user.id}
+                rq_id = None
+                if job_id is not None:
+                    params["job"] = Job.objects.get(pk=int(job_id))
+                elif task_id is not None:
+                    params["task"] = Task.objects.get(pk=int(task_id))
+                elif project_id is not None:
+                    params["project"] = Project.objects.get(pk=int(project_id))
 
-                try:
-                    rq_id = AnalyticsReportUpdateManager().schedule_analytics_check_job(
-                        job=job, user_id=request.user.id
-                    )
-                    serializer = RqIdSerializer({"rq_id": rq_id})
-                    return Response(serializer.data, status=status.HTTP_202_ACCEPTED)
-                except AnalyticsReportUpdateManager.AnalyticsReportsNotAvailable as ex:
-                    raise ValidationError(str(ex))
-            elif task_id is not None:
-                try:
-                    task = Task.objects.get(pk=int(task_id))
-                except Task.DoesNotExist as ex:
-                    raise NotFound(f"Task {task_id} does not exist") from ex
-
-                try:
-                    rq_id = AnalyticsReportUpdateManager().schedule_analytics_check_job(
-                        task=task, user_id=request.user.id
-                    )
-                    serializer = RqIdSerializer({"rq_id": rq_id})
-                    return Response(serializer.data, status=status.HTTP_202_ACCEPTED)
-                except AnalyticsReportUpdateManager.AnalyticsReportsNotAvailable as ex:
-                    raise ValidationError(str(ex))
-            elif project_id is not None:
-                try:
-                    project = Project.objects.get(pk=int(project_id))
-                except Project.DoesNotExist as ex:
-                    raise NotFound(f"Project {project_id} does not exist") from ex
-                try:
-                    rq_id = AnalyticsReportUpdateManager().schedule_analytics_check_job(
-                        project=project, user_id=request.user.id
-                    )
-                    serializer = RqIdSerializer({"rq_id": rq_id})
-                    return Response(serializer.data, status=status.HTTP_202_ACCEPTED)
-                except AnalyticsReportUpdateManager.AnalyticsReportsNotAvailable as ex:
-                    raise ValidationError(str(ex))
+                rq_id = AnalyticsReportUpdateManager().schedule_analytics_check_job(**params)
+                serializer = RqIdSerializer({"rq_id": rq_id})
+                return Response(serializer.data, status=status.HTTP_202_ACCEPTED)
+            except ObjectDoesNotExist as ex:
+                raise NotFound(
+                    "The specified resource does not exist. Please check the provided identifiers"
+                ) from ex
         else:
             serializer = RqIdSerializer(data={"rq_id": rq_id})
             serializer.is_valid(raise_exception=True)

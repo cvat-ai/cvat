@@ -4,7 +4,6 @@
 # SPDX-License-Identifier: MIT
 
 import functools
-import hashlib
 
 from django.http import Http404, HttpResponseBadRequest, HttpResponseRedirect
 from rest_framework import views, serializers
@@ -29,6 +28,7 @@ from drf_spectacular.utils import OpenApiResponse, extend_schema, inline_seriali
 from drf_spectacular.contrib.rest_auth import get_token_serializer_class
 
 from .authentication import Signer
+from .utils import get_opa_bundle
 
 @extend_schema(tags=['auth'])
 @extend_schema_view(post=extend_schema(
@@ -159,19 +159,9 @@ class RulesView(views.APIView):
     authentication_classes = []
     iam_organization_field = None
 
-    @staticmethod
-    def _get_bundle_path():
-        return settings.IAM_OPA_BUNDLE_PATH
-
-    @staticmethod
-    def _etag_func(file_path):
-        with open(file_path, 'rb') as f:
-            return hashlib.blake2b(f.read()).hexdigest()
-
-    @_etag(lambda _: RulesView._etag_func(RulesView._get_bundle_path()))
+    @_etag(lambda request: get_opa_bundle()[1])
     def get(self, request):
-        file_obj = open(self._get_bundle_path() ,"rb")
-        return HttpResponse(file_obj, content_type='application/x-tar')
+        return HttpResponse(get_opa_bundle()[0], content_type='application/x-tar')
 
 class ConfirmEmailViewEx(ConfirmEmailView):
     template_name = 'account/email/email_confirmation_signup_message.html'

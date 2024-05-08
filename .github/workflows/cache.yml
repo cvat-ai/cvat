@@ -13,7 +13,7 @@ jobs:
     env:
       GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       REPO: ${{ github.repository }}
-    runs-on: ubuntu-latest-big
+    runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
 
