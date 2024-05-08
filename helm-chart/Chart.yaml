@@ -32,7 +32,7 @@ dependencies:
     condition: postgresql.enabled
 
   - name: nuclio
-    version: 0.12.1
+    version: 0.19.0
     repository: https://nuclio.github.io/nuclio/charts
     condition: nuclio.enabled
 

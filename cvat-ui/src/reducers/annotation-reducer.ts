@@ -104,6 +104,7 @@ const defaultState: AnnotationState = {
         states: [],
         filters: [],
         resetGroupFlag: false,
+        initialized: false,
         history: {
             undo: [],
             redo: [],
@@ -143,6 +144,10 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                     instance: null,
                     requestedId: action.payload.requestedId,
                     fetching: true,
+                },
+                annotations: {
+                    ...state.annotations,
+                    initialized: false,
                 },
             };
         }
@@ -440,6 +445,10 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                 player: {
                     ...state.player,
                     ranges: ranges || state.player.ranges,
+                    frame: {
+                        ...state.player.frame,
+                        changeFrameEvent: null,
+                    },
                 },
                 canvas: {
                     ...state.canvas,
@@ -770,15 +779,16 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
             };
         }
         case AnnotationActionTypes.UPLOAD_JOB_ANNOTATIONS_SUCCESS: {
-            const { states, history } = action.payload;
-
             return {
                 ...state,
                 annotations: {
                     ...state.annotations,
-                    history,
-                    states,
+                    history: { undo: [], redo: [] },
+                    states: [],
                     activatedStateID: null,
+                    activatedElementID: null,
+                    activatedAttributeID: null,
+                    highlightedConflict: null,
                     collapsed: {},
                 },
             };
@@ -842,11 +852,21 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                     activatedStateID: updateActivatedStateID(states, activatedStateID),
                     states,
                     history,
+                    initialized: true,
                     zLayer: {
                         min: minZ,
                         max: maxZ,
                         cur: clamp(state.annotations.zLayer.cur, minZ, maxZ),
                     },
+                },
+            };
+        }
+        case AnnotationActionTypes.FETCH_ANNOTATIONS_FAILED: {
+            return {
+                ...state,
+                annotations: {
+                    ...state.annotations,
+                    initialized: true,
                 },
             };
         }
@@ -1064,10 +1084,7 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
         }
         case AnnotationActionTypes.CLOSE_JOB:
         case AuthActionTypes.LOGOUT_SUCCESS: {
-            if (state.canvas.instance) {
-                state.canvas.instance.destroy();
-            }
-            return { ...defaultState };
+            return defaultState;
         }
         default: {
             return state;

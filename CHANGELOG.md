@@ -16,6 +16,29 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 <!-- scriv-insert-here -->
 
+<a id='changelog-2.12.1'></a>
+## \[2.12.1\] - 2024-04-26
+
+### Fixed
+
+- Formats with the custom `track_id` attribute should import `outside` track shapes properly (e.g. `COCO`, `COCO Keypoints`, `Datumaro`, `PASCAL VOC`)
+  (<https://github.com/opencv/cvat/pull/7669>)
+
+- Inefficient resources fetching in admin panel leading to 504 Gateway Timeout
+  (<https://github.com/cvat-ai/cvat/pull/7767>)
+
+- Optimized memory usage when retrieving annotations by disabling internal Django QuerySet caching
+  (<https://github.com/cvat-ai/cvat/pull/7748>)
+
+- Annotations are not shown on the `0` frame sometimes
+  (<https://github.com/cvat-ai/cvat/pull/7796>)
+
+- Extra requests in PolicyEnforcer when at least one policy is rejected, others are not checked
+  (<https://github.com/cvat-ai/cvat/pull/7803>)
+
+- Project's `updated_date` was not updated after changing annotations in jobs
+  (<https://github.com/cvat-ai/cvat/pull/7808>)
+
 <a id='changelog-2.12.0'></a>
 ## \[2.12.0\] - 2024-04-15
 

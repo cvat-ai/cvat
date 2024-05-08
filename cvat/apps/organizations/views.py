@@ -14,9 +14,9 @@ from rest_framework.response import Response
 
 from drf_spectacular.utils import OpenApiResponse, extend_schema, extend_schema_view
 
-from cvat.apps.iam.permissions import (
-    InvitationPermission, MembershipPermission, OrganizationPermission)
 from cvat.apps.iam.filters import ORGANIZATION_OPEN_API_PARAMETERS
+from cvat.apps.organizations.permissions import (
+    InvitationPermission, MembershipPermission, OrganizationPermission)
 from cvat.apps.organizations.throttle import ResendOrganizationInvitationThrottle
 from cvat.apps.engine.mixins import PartialUpdateModelMixin
 
