@@ -48,7 +48,7 @@ class PatchAction(str, Enum):
     def __str__(self):
         return self.value
 
-def _merge_table_rows(rows, keys_for_merge, field_id):
+def merge_table_rows(rows, keys_for_merge, field_id):
     # It is necessary to keep a stable order of original rows
     # (e.g. for tracked boxes). Otherwise prev_box.frame can be bigger
     # than next_box.frame.
@@ -506,7 +506,7 @@ class JobAnnotation:
             'labeledimageattributeval__id',
         ).order_by('frame').iterator(chunk_size=2000)
 
-        db_tags = _merge_table_rows(
+        db_tags = merge_table_rows(
             rows=db_tags,
             keys_for_merge={
                 "labeledimageattributeval_set": [
@@ -546,7 +546,7 @@ class JobAnnotation:
             'labeledshapeattributeval__id',
         ).order_by('frame').iterator(chunk_size=2000)
 
-        db_shapes = _merge_table_rows(
+        db_shapes = merge_table_rows(
             rows=db_shapes,
             keys_for_merge={
                 'labeledshapeattributeval_set': [
@@ -604,7 +604,7 @@ class JobAnnotation:
             "trackedshape__trackedshapeattributeval__id",
         ).order_by('id', 'trackedshape__frame').iterator(chunk_size=2000)
 
-        db_tracks = _merge_table_rows(
+        db_tracks = merge_table_rows(
             rows=db_tracks,
             keys_for_merge={
                 "labeledtrackattributeval_set": [
@@ -632,7 +632,7 @@ class JobAnnotation:
         tracks = {}
         elements = {}
         for db_track in db_tracks:
-            db_track["trackedshape_set"] = _merge_table_rows(db_track["trackedshape_set"], {
+            db_track["trackedshape_set"] = merge_table_rows(db_track["trackedshape_set"], {
                 'trackedshapeattributeval_set': [
                     'trackedshapeattributeval__value',
                     'trackedshapeattributeval__spec_id',
