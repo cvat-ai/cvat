@@ -4,7 +4,6 @@
 // SPDX-License-Identifier: MIT
 
 import React, { useEffect } from 'react';
-import { useHistory } from 'react-router';
 import Layout from 'antd/lib/layout';
 import Result from 'antd/lib/result';
 import Spin from 'antd/lib/spin';
@@ -44,7 +43,6 @@ export default function AnnotationPageComponent(props: Props): JSX.Element {
     const prevJob = usePrevious(job);
     const prevFetching = usePrevious(fetching);
 
-    const history = useHistory();
     useEffect(() => {
         saveLogs();
         const root = window.document.getElementById('root');
@@ -54,12 +52,10 @@ export default function AnnotationPageComponent(props: Props): JSX.Element {
 
         return () => {
             saveLogs();
+            closeJob();
+
             if (root) {
                 root.style.minHeight = '';
-            }
-
-            if (!history.location.pathname.includes('/jobs')) {
-                closeJob();
             }
         };
     }, []);
