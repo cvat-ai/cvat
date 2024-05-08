@@ -143,9 +143,14 @@ export class Request {
     }
 }
 
+const PROGRESS_EPS = 25;
+const requestDelays = [6000, 12000, 18000, 24000, 30000];
+
 class RequestsManager {
     private listening: Record<string, {
         onUpdate: ((request: Request) => void)[];
+        requestDelaysIdx: number | null,
+        progress: number,
         timeout: number | null;
         promise?: Promise<Request>;
     }>;
@@ -198,15 +203,14 @@ class RequestsManager {
             const timeoutCallback = (): void => {
                 serverProxy.requests.status(id, params).then((response) => {
                     const request = new Request({ ...response });
-                    let { status } = response;
-                    status = status.toLowerCase();
+                    const { status } = request;
                     if (storedID in this.listening) {
                         // check it was not cancelled
                         const { onUpdate } = this.listening[storedID];
                         if ([RQStatus.QUEUED, RQStatus.STARTED].includes(status)) {
                             onUpdate.forEach((update) => update(request));
                             this.listening[storedID].timeout = window
-                                .setTimeout(timeoutCallback, status === RQStatus.QUEUED ? 3000 : 3000);
+                                .setTimeout(timeoutCallback, this.delayFor(storedID, request));
                         } else {
                             delete this.listening[storedID];
                             if (status === RQStatus.FINISHED) {
@@ -244,6 +248,8 @@ class RequestsManager {
             this.listening[storedID] = {
                 onUpdate: callback ? [callback] : [],
                 timeout: window.setTimeout(timeoutCallback),
+                requestDelaysIdx: null,
+                progress: 0,
             };
         });
 
@@ -270,6 +276,23 @@ class RequestsManager {
                 delete this.listening[rqID];
             }
         });
+    }
+
+    private delayFor(rqID: string, updatedRequest: Request): number {
+        const state = this.listening[rqID];
+        const prevDelayIdx = state.requestDelaysIdx;
+        if (prevDelayIdx === null) {
+            state.requestDelaysIdx = 0;
+        } else if (updatedRequest.status === RQStatus.QUEUED) {
+            state.requestDelaysIdx = Math.min(prevDelayIdx + 1, requestDelays.length - 1);
+        } else if (updatedRequest.status === RQStatus.STARTED) {
+            if (Math.round(Math.abs(updatedRequest.progress - state.progress) * 100) < PROGRESS_EPS) {
+                state.requestDelaysIdx = Math.min(prevDelayIdx + 1, requestDelays.length - 1);
+            }
+            state.progress = updatedRequest.progress;
+        }
+
+        return requestDelays[state.requestDelaysIdx];
     }
 }
 
