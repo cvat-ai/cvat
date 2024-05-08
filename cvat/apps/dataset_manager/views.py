@@ -24,7 +24,7 @@ from cvat.apps.engine.log import ServerLogManager
 from cvat.apps.engine.models import Project, Task, Job
 
 from .formats.registry import EXPORT_FORMATS, IMPORT_FORMATS
-from .util import current_function_name, get_dataset_cache_lock, LockMode, LockError
+from .util import current_function_name, get_dataset_cache_lock, LockError
 
 slogger = ServerLogManager(__name__)
 
