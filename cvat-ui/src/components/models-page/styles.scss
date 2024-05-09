@@ -37,38 +37,6 @@
     flex-wrap: wrap;
 }
 
-.cvat-models-list-item {
-    position: relative;
-    width: 100%;
-    height: auto;
-    border: 1px solid $border-color-1;
-    border-radius: 3px;
-    margin-bottom: $grid-unit-size * 2;
-    padding: $grid-unit-size * 2;
-    background: $background-color-1;
-
-    &:hover {
-        border: 1px solid $border-color-hover;
-    }
-
-    > div {
-        display: flex;
-        align-items: center;
-    }
-
-    > div:nth-child(2) > span {
-        text-overflow: ellipsis;
-        white-space: nowrap;
-        overflow: hidden;
-    }
-
-    > div:nth-child(3) > span {
-        text-overflow: ellipsis;
-        white-space: nowrap;
-        overflow: hidden;
-    }
-}
-
 .cvat-models-item-card-removed {
     opacity: 0.5;
     pointer-events: none;

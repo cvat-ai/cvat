@@ -9,6 +9,7 @@
     min-height: $grid-unit-size * 95;
     padding: $grid-unit-size * 4;
     padding-bottom: $grid-unit-size;
+    border-radius: $border-radius-base;
 
     .ant-tabs {
         height: 100%;

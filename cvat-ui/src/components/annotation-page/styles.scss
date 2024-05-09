@@ -75,7 +75,7 @@
             width: $grid-unit-size * 9;
             background: black;
             color: white;
-            border-radius: 4px;
+            border-radius: $border-radius-base;
 
             &:hover {
                 background: black;
@@ -312,7 +312,7 @@
     position: fixed;
     z-index: 10;
     background-color: #fff;
-    border-radius: 4px;
+    border-radius: $border-radius-base;
 
     &:hover {
         opacity: 1;
@@ -325,7 +325,7 @@
     bottom: 0;
     left: 50%;
     opacity: 0.5;
-    border-radius: 6px 6px 0 0;
+    border-radius: $border-radius-base $border-radius-base 0 0;
     border: 1px solid $border-color-1;
     z-index: 100;
     padding: 4px 12px;
@@ -342,7 +342,7 @@
 .cvat-canvas-image-setups-content {
     background: $background-color-2;
     padding: 8px;
-    border-radius: 6px;
+    border-radius: $border-radius-base;
     opacity: 0.9;
 }
 
@@ -397,7 +397,7 @@
     right: 10px;
     height: 150px;
     z-index: 100;
-    border-radius: 6px;
+    border-radius: $border-radius-base;
     opacity: 0.5;
     border: 1px solid $border-color-1;
     display: flex;

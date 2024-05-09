@@ -85,7 +85,7 @@
 .cvat-tools-control,
 .cvat-extra-controls-control,
 .cvat-opencv-control {
-    border-radius: 3.3px;
+    border-radius: $border-radius-base;
     transform: scale(0.65);
     padding: 2px;
 
@@ -124,7 +124,6 @@
 .cvat-rotate-canvas-controls-left,
 .cvat-rotate-canvas-controls-right {
     transform: scale(0.65);
-    border-radius: 5px;
 
     &:hover {
         transform: scale(0.75);
@@ -171,12 +170,9 @@
 }
 
 .cvat-interactor-tip-container {
-    background: $background-color-2;
-    padding: $grid-unit-size;
-    box-shadow: $box-shadow-base;
     width: $grid-unit-size * 40;
     text-align: center;
-    border-radius: 4px;
+    border-radius: $border-radius-base;
 }
 
 .cvat-interactor-tip-image {

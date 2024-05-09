@@ -119,7 +119,7 @@
             margin: $grid-unit-size;
             width: $grid-unit-size * 4;
             background: white;
-            border-radius: 4px;
+            border-radius: $border-radius-base;
             text-align: center;
             opacity: 0.5;
             padding: $grid-unit-size;
@@ -132,7 +132,7 @@
             margin: $grid-unit-size $grid-unit-size $grid-unit-size 0;
             width: fit-content;
             background: white;
-            border-radius: 0 4px 4px 0;
+            border-radius: 0 $border-radius-base $border-radius-base 0;
             padding: $grid-unit-size;
             opacity: 0.5;
             transition: 0.15s all ease;
