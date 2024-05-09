@@ -30,7 +30,7 @@ if UI_PORT and UI_PORT != '80':
 CSRF_TRUSTED_ORIGINS = [UI_URL]
 
 # set UI url to redirect to after successful e-mail confirmation
-ACCOUNT_EMAIL_CONFIRMATION_ANONYMOUS_REDIRECT_URL = '{}/auth/email-confirmation'.format(UI_URL)
+ACCOUNT_EMAIL_CONFIRMATION_ANONYMOUS_REDIRECT_URL = '{}/auth/email-confirmatio'.format(UI_URL)
 ACCOUNT_EMAIL_VERIFICATION_SENT_REDIRECT_URL = '{}/auth/email-verification-sent'.format(UI_URL)
 INCORRECT_EMAIL_CONFIRMATION_URL = '{}/auth/incorrect-email-confirmation'.format(UI_URL)
 
