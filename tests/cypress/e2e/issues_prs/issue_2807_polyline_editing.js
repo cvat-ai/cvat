@@ -43,7 +43,7 @@ context('After draw correcting line and press the latest drawn point then it clo
             cy.get('.cvat-canvas-container').trigger('mouseover', 600, 250);
             cy.get('#cvat_canvas_shape_1').should('have.class', 'cvat_canvas_shape_activated');
             getCircleAndWriteToArr(svgJsCircle); // Getting a list of "SvgjsCircleNNNN" objects
-            cy.get('.cvat-canvas-container').click(600, 255, { shiftKey: true }); // Activate editing move
+            cy.get('.cvat-canvas-container').click(600, 250, { shiftKey: true }); // Activate editing move
             // There is no "cvat_canvas_shape_activated" class during the activated change mode
             cy.get('#cvat_canvas_shape_1').should('not.have.class', 'cvat_canvas_shape_activated');
             cy.get('.cvat-canvas-container').trigger('mousemove', 500, 250);

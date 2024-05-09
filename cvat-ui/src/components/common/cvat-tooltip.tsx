@@ -9,7 +9,7 @@ function CVATTooltip(props: TooltipProps): JSX.Element {
     const { children, ...rest } = props;
 
     return (
-        <Tooltip destroyTooltipOnHide mouseEnterDelay={100} mouseLeaveDelay={0} {...rest}>
+        <Tooltip destroyTooltipOnHide mouseEnterDelay={0.25} mouseLeaveDelay={0} {...rest}>
             {children}
         </Tooltip>
     );
