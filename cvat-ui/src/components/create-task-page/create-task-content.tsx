@@ -595,9 +595,7 @@ class CreateTaskContent extends React.PureComponent<Props & RouteComponentProps,
 
     private handleSubmitMultiTasks = (): void => {
         this.validateBlocks()
-            .then(() => {
-                this.addMultiTasks();
-            })
+            .then(this.addMultiTasks)
             .then(this.createMultiTasks)
             .then(() => {
                 const { multiTasks } = this.state;
