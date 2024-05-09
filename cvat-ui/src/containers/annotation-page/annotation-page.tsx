@@ -24,6 +24,7 @@ interface StateToProps {
     job: any | null | undefined;
     frameNumber: number;
     fetching: boolean;
+    annotationsInitialized: boolean;
     workspace: Workspace;
 }
 
@@ -46,6 +47,9 @@ function mapStateToProps(state: CombinedState, own: OwnProps): StateToProps {
                     number: frameNumber,
                 },
             },
+            annotations: {
+                initialized: annotationsInitialized,
+            },
         },
     } = state;
 
@@ -54,6 +58,7 @@ function mapStateToProps(state: CombinedState, own: OwnProps): StateToProps {
         fetching,
         workspace,
         frameNumber,
+        annotationsInitialized,
     };
 }
 
@@ -64,6 +69,14 @@ function mapDispatchToProps(dispatch: any, own: OwnProps): DispatchToProps {
     const searchParams = new URLSearchParams(window.location.search);
     const initialFilters: object[] = [];
     const initialOpenGuide = searchParams.has('openGuide');
+
+    const parsedPointsCount = +(searchParams.get('defaultPointsCount') || 'NaN');
+    const defaultLabel = searchParams.get('defaultLabel') || null;
+    const defaultPointsCount = Number.isInteger(parsedPointsCount) && parsedPointsCount >= 1 ? parsedPointsCount : null;
+    const initialWorkspace = Object.entries(Workspace).find(([key]) => (
+        key === searchParams.get('defaultWorkspace')?.toUpperCase()
+    )) || null;
+
     const parsedFrame = +(searchParams.get('frame') || 'NaN');
     const initialFrame = Number.isInteger(parsedFrame) && parsedFrame >= 0 ? parsedFrame : null;
 
@@ -77,8 +90,14 @@ function mapDispatchToProps(dispatch: any, own: OwnProps): DispatchToProps {
         }
     }
 
-    if (searchParams.size) {
-        own.history.replace(own.history.location.pathname);
+    const initialSize = searchParams.size;
+    searchParams.delete('frame');
+    searchParams.delete('serverID');
+    searchParams.delete('type');
+    searchParams.delete('openGuide');
+
+    if (searchParams.size !== initialSize) {
+        own.history.replace(`${own.history.location.pathname}?${searchParams.toString()}`);
     }
 
     return {
@@ -88,7 +107,12 @@ function mapDispatchToProps(dispatch: any, own: OwnProps): DispatchToProps {
                 jobID,
                 initialFrame,
                 initialFilters,
-                initialOpenGuide,
+                queryParameters: {
+                    initialOpenGuide,
+                    defaultLabel,
+                    defaultPointsCount,
+                    ...(initialWorkspace ? { initialWorkspace: initialWorkspace[1] } : { initialWorkspace }),
+                },
             }));
         },
         saveLogs(): void {

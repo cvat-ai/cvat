@@ -372,7 +372,7 @@ class CanvasWrapperComponent extends React.PureComponent<Props> {
         wrapper.appendChild(canvasInstance.html());
 
         canvasInstance.configure({
-            forceDisableEditing: workspace === Workspace.REVIEW_WORKSPACE,
+            forceDisableEditing: workspace === Workspace.REVIEW,
             undefinedAttrValue: config.UNDEFINED_ATTRIBUTE_VALUE,
             displayAllText: showObjectsTextAlways,
             autoborders: automaticBordering,
@@ -483,13 +483,19 @@ class CanvasWrapperComponent extends React.PureComponent<Props> {
         if (prevProps.highlightedConflict !== highlightedConflict) {
             const severity: HighlightSeverity | undefined = highlightedConflict
                 ?.severity as unknown as HighlightSeverity;
-            const highlightedClientIDs = (highlightedConflict?.annotationConflicts || [])
+
+            const highlightedObjects = (highlightedConflict?.annotationConflicts || [])
                 .map((conflict: AnnotationConflict) => annotations
                     .find((state) => state.serverID === conflict.serverID && state.objectType === conflict.type),
-                ).filter((state: ObjectState | undefined) => !!state)
-                .map((state) => state?.clientID) as number[];
+                ).filter((state: ObjectState | undefined) => !!state) as ObjectState[];
+            const highlightedClientIDs = highlightedObjects.map((state) => state?.clientID) as number[];
 
-            canvasInstance.highlight(highlightedClientIDs, severity || null);
+            const higlightedTags = highlightedObjects.some((state) => state?.objectType === ObjectType.TAG);
+            if (higlightedTags && prevProps.highlightedConflict) {
+                canvasInstance.highlight([], null);
+            } else if (!higlightedTags) {
+                canvasInstance.highlight(highlightedClientIDs, severity || null);
+            }
         }
 
         if (gridSize !== prevProps.gridSize) {
@@ -548,11 +554,11 @@ class CanvasWrapperComponent extends React.PureComponent<Props> {
         }
 
         if (prevProps.workspace !== workspace) {
-            if (workspace === Workspace.REVIEW_WORKSPACE) {
+            if (workspace === Workspace.REVIEW) {
                 canvasInstance.configure({
                     forceDisableEditing: true,
                 });
-            } else if (prevProps.workspace === Workspace.REVIEW_WORKSPACE) {
+            } else if (prevProps.workspace === Workspace.REVIEW) {
                 canvasInstance.configure({
                     forceDisableEditing: false,
                 });
@@ -730,7 +736,7 @@ class CanvasWrapperComponent extends React.PureComponent<Props> {
         const { workspace, activatedStateID, onActivateObject } = this.props;
 
         if ((e.target as HTMLElement).tagName === 'svg' && e.button !== 2) {
-            if (activatedStateID !== null && workspace !== Workspace.ATTRIBUTE_ANNOTATION) {
+            if (activatedStateID !== null && workspace !== Workspace.ATTRIBUTES) {
                 onActivateObject(null, null);
             }
         }
@@ -796,7 +802,7 @@ class CanvasWrapperComponent extends React.PureComponent<Props> {
             jobInstance, activatedStateID, activatedElementID, workspace, onActivateObject,
         } = this.props;
 
-        if (![Workspace.STANDARD, Workspace.REVIEW_WORKSPACE].includes(workspace)) {
+        if (![Workspace.STANDARD, Workspace.REVIEW].includes(workspace)) {
             return;
         }
 
@@ -904,7 +910,7 @@ class CanvasWrapperComponent extends React.PureComponent<Props> {
 
         if (activatedStateID !== null) {
             const [activatedState] = annotations.filter((state: any): boolean => state.clientID === activatedStateID);
-            if (workspace === Workspace.ATTRIBUTE_ANNOTATION) {
+            if (workspace === Workspace.ATTRIBUTES) {
                 if (activatedState.objectType !== ObjectType.TAG) {
                     canvasInstance.focus(activatedStateID, aamZoomMargin);
                 } else {
@@ -914,7 +920,7 @@ class CanvasWrapperComponent extends React.PureComponent<Props> {
             if (activatedState && activatedState.objectType !== ObjectType.TAG) {
                 canvasInstance.activate(activatedStateID, activatedAttributeID);
             }
-        } else if (workspace === Workspace.ATTRIBUTE_ANNOTATION) {
+        } else if (workspace === Workspace.ATTRIBUTES) {
             canvasInstance.fit();
         }
     }

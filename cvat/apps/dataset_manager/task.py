@@ -1,5 +1,5 @@
 # Copyright (C) 2019-2022 Intel Corporation
-# Copyright (C) 2022-2023 CVAT.ai Corporation
+# Copyright (C) 2022-2024 CVAT.ai Corporation
 #
 # SPDX-License-Identifier: MIT
 
@@ -12,10 +12,12 @@ from datumaro.components.errors import DatasetError, DatasetImportError, Dataset
 
 from django.db import transaction
 from django.db.models.query import Prefetch
+from django.conf import settings
 from rest_framework.exceptions import ValidationError
 
 from cvat.apps.engine import models, serializers
 from cvat.apps.engine.plugins import plugin_decorator
+from cvat.apps.engine.log import DatasetLogManager
 from cvat.apps.events.handlers import handle_annotations_change
 from cvat.apps.profiler import silk_profile
 
@@ -23,6 +25,8 @@ from cvat.apps.dataset_manager.annotation import AnnotationIR, AnnotationManager
 from cvat.apps.dataset_manager.bindings import TaskData, JobData, CvatImportError
 from cvat.apps.dataset_manager.formats.registry import make_exporter, make_importer
 from cvat.apps.dataset_manager.util import add_prefetch_fields, bulk_create, get_cached
+
+dlogger = DatasetLogManager()
 
 class dotdict(OrderedDict):
     """dot.notation access to dictionary attributes"""
@@ -44,7 +48,7 @@ class PatchAction(str, Enum):
     def __str__(self):
         return self.value
 
-def _merge_table_rows(rows, keys_for_merge, field_id):
+def merge_table_rows(rows, keys_for_merge, field_id):
     # It is necessary to keep a stable order of original rows
     # (e.g. for tracked boxes). Otherwise prev_box.frame can be bigger
     # than next_box.frame.
@@ -88,6 +92,7 @@ class JobAnnotation:
             'segment',
             'segment__task',
         ).prefetch_related(
+            'segment__task__project',
             'segment__task__owner',
             'segment__task__assignee',
             'segment__task__project__owner',
@@ -388,46 +393,58 @@ class JobAnnotation:
         self.ir_data.tags = tags
 
     def _set_updated_date(self):
-        self.db_job.segment.task.touch()
-        self.db_job.touch()
+        db_task = self.db_job.segment.task
+        with transaction.atomic():
+            self.db_job.touch()
+            db_task.touch()
+            if db_project := db_task.project:
+                db_project.touch()
 
-    def _save_to_db(self, data):
+    @staticmethod
+    def _data_is_empty(data):
+        return not (data["tags"] or data["shapes"] or data["tracks"])
+
+    def _create(self, data):
         self.reset()
         self._save_tags_to_db(data["tags"])
         self._save_shapes_to_db(data["shapes"])
         self._save_tracks_to_db(data["tracks"])
 
-        return self.ir_data.tags or self.ir_data.shapes or self.ir_data.tracks
-
-    def _create(self, data):
-        if self._save_to_db(data):
-            self._set_updated_date()
-
     def create(self, data):
         self._create(data)
         handle_annotations_change(self.db_job, self.data, "create")
 
+        if not self._data_is_empty(self.data):
+            self._set_updated_date()
+
     def put(self, data):
         deleted_data = self._delete()
         handle_annotations_change(self.db_job, deleted_data, "delete")
+
+        deleted_data_is_empty = self._data_is_empty(deleted_data)
+
         self._create(data)
         handle_annotations_change(self.db_job, self.data, "create")
 
+        if not deleted_data_is_empty or not self._data_is_empty(self.data):
+            self._set_updated_date()
 
     def update(self, data):
         self._delete(data)
         self._create(data)
         handle_annotations_change(self.db_job, self.data, "update")
 
+        if not self._data_is_empty(self.data):
+            self._set_updated_date()
+
     def _delete(self, data=None):
-        deleted_shapes = 0
         deleted_data = {}
         if data is None:
             self.init_from_db()
             deleted_data = self.data
-            deleted_shapes += self.db_job.labeledimage_set.all().delete()[0]
-            deleted_shapes += self.db_job.labeledshape_set.all().delete()[0]
-            deleted_shapes += self.db_job.labeledtrack_set.all().delete()[0]
+            self.db_job.labeledimage_set.all().delete()
+            self.db_job.labeledshape_set.all().delete()
+            self.db_job.labeledtrack_set.all().delete()
         else:
             labeledimage_ids = [image["id"] for image in data["tags"]]
             labeledshape_ids = [shape["id"] for shape in data["shapes"]]
@@ -446,9 +463,9 @@ class JobAnnotation:
             self.ir_data.shapes = data['shapes']
             self.ir_data.tracks = data['tracks']
 
-            deleted_shapes += labeledimage_set.delete()[0]
-            deleted_shapes += labeledshape_set.delete()[0]
-            deleted_shapes += labeledtrack_set.delete()[0]
+            labeledimage_set.delete()
+            labeledshape_set.delete()
+            labeledtrack_set.delete()
 
             deleted_data = {
                 "tags": data["tags"],
@@ -456,14 +473,14 @@ class JobAnnotation:
                 "tracks": data["tracks"],
             }
 
-        if deleted_shapes:
-            self._set_updated_date()
-
         return deleted_data
 
     def delete(self, data=None):
         deleted_data = self._delete(data)
         handle_annotations_change(self.db_job, deleted_data, "delete")
+
+        if not self._data_is_empty(deleted_data):
+            self._set_updated_date()
 
     @staticmethod
     def _extend_attributes(attributeval_set, default_attribute_values):
@@ -476,10 +493,9 @@ class JobAnnotation:
                 ]))
 
     def _init_tags_from_db(self):
-        db_tags = self.db_job.labeledimage_set.prefetch_related(
-            "label",
-            "labeledimageattributeval_set"
-        ).values(
+        # NOTE: do not use .prefetch_related() with .values() since it's useless:
+        # https://github.com/cvat-ai/cvat/pull/7748#issuecomment-2063695007
+        db_tags = self.db_job.labeledimage_set.values(
             'id',
             'frame',
             'label_id',
@@ -488,9 +504,9 @@ class JobAnnotation:
             'labeledimageattributeval__spec_id',
             'labeledimageattributeval__value',
             'labeledimageattributeval__id',
-        ).order_by('frame')
+        ).order_by('frame').iterator(chunk_size=2000)
 
-        db_tags = _merge_table_rows(
+        db_tags = merge_table_rows(
             rows=db_tags,
             keys_for_merge={
                 "labeledimageattributeval_set": [
@@ -510,10 +526,9 @@ class JobAnnotation:
         self.ir_data.tags = serializer.data
 
     def _init_shapes_from_db(self):
-        db_shapes = self.db_job.labeledshape_set.prefetch_related(
-            "label",
-            "labeledshapeattributeval_set"
-        ).values(
+        # NOTE: do not use .prefetch_related() with .values() since it's useless:
+        # https://github.com/cvat-ai/cvat/pull/7748#issuecomment-2063695007
+        db_shapes = self.db_job.labeledshape_set.values(
             'id',
             'label_id',
             'type',
@@ -529,9 +544,9 @@ class JobAnnotation:
             'labeledshapeattributeval__spec_id',
             'labeledshapeattributeval__value',
             'labeledshapeattributeval__id',
-            ).order_by('frame')
+        ).order_by('frame').iterator(chunk_size=2000)
 
-        db_shapes = _merge_table_rows(
+        db_shapes = merge_table_rows(
             rows=db_shapes,
             keys_for_merge={
                 'labeledshapeattributeval_set': [
@@ -564,11 +579,9 @@ class JobAnnotation:
         self.ir_data.shapes = serializer.data
 
     def _init_tracks_from_db(self):
-        db_tracks = self.db_job.labeledtrack_set.prefetch_related(
-            "label",
-            "labeledtrackattributeval_set",
-            "trackedshape_set__trackedshapeattributeval_set"
-        ).values(
+        # NOTE: do not use .prefetch_related() with .values() since it's useless:
+        # https://github.com/cvat-ai/cvat/pull/7748#issuecomment-2063695007
+        db_tracks = self.db_job.labeledtrack_set.values(
             "id",
             "frame",
             "label_id",
@@ -589,9 +602,9 @@ class JobAnnotation:
             "trackedshape__trackedshapeattributeval__spec_id",
             "trackedshape__trackedshapeattributeval__value",
             "trackedshape__trackedshapeattributeval__id",
-        ).order_by('id', 'trackedshape__frame')
+        ).order_by('id', 'trackedshape__frame').iterator(chunk_size=2000)
 
-        db_tracks = _merge_table_rows(
+        db_tracks = merge_table_rows(
             rows=db_tracks,
             keys_for_merge={
                 "labeledtrackattributeval_set": [
@@ -619,7 +632,7 @@ class JobAnnotation:
         tracks = {}
         elements = {}
         for db_track in db_tracks:
-            db_track["trackedshape_set"] = _merge_table_rows(db_track["trackedshape_set"], {
+            db_track["trackedshape_set"] = merge_table_rows(db_track["trackedshape_set"], {
                 'trackedshapeattributeval_set': [
                     'trackedshapeattributeval__value',
                     'trackedshapeattributeval__spec_id',
@@ -693,7 +706,19 @@ class JobAnnotation:
         temp_dir_base = self.db_job.get_tmp_dirname()
         os.makedirs(temp_dir_base, exist_ok=True)
         with TemporaryDirectory(dir=temp_dir_base) as temp_dir:
-            importer(src_file, temp_dir, job_data, **options)
+            try:
+                importer(src_file, temp_dir, job_data, **options)
+            except DatasetNotFoundError as not_found:
+                if settings.CVAT_LOG_IMPORT_ERRORS:
+                    dlogger.log_import_error(
+                        entity="job",
+                        entity_id=self.db_job.id,
+                        format_name=importer.DISPLAY_NAME,
+                        base_error=str(not_found),
+                        dir_path=temp_dir,
+                    )
+
+                raise not_found
 
         self.create(job_data.data.slice(self.start_frame, self.stop_frame).serialize())
 
@@ -793,7 +818,19 @@ class TaskAnnotation:
         temp_dir_base = self.db_task.get_tmp_dirname()
         os.makedirs(temp_dir_base, exist_ok=True)
         with TemporaryDirectory(dir=temp_dir_base) as temp_dir:
-            importer(src_file, temp_dir, task_data, **options)
+            try:
+                importer(src_file, temp_dir, task_data, **options)
+            except DatasetNotFoundError as not_found:
+                if settings.CVAT_LOG_IMPORT_ERRORS:
+                    dlogger.log_import_error(
+                        entity="task",
+                        entity_id=self.db_task.id,
+                        format_name=importer.DISPLAY_NAME,
+                        base_error=str(not_found),
+                        dir_path=temp_dir,
+                    )
+
+                raise not_found
 
         self.create(task_data.data.serialize())
 
@@ -843,7 +880,7 @@ def export_job(job_id, dst_file, format_name, server_url=None, save_images=False
     # we dont need to acquire lock after the task has been initialized from DB.
     # But there is the bug with corrupted dump file in case 2 or
     # more dump request received at the same time:
-    # https://github.com/opencv/cvat/issues/217
+    # https://github.com/cvat-ai/cvat/issues/217
     with transaction.atomic():
         job = JobAnnotation(job_id)
         job.init_from_db()
@@ -892,7 +929,7 @@ def export_task(task_id, dst_file, format_name, server_url=None, save_images=Fal
     # we dont need to acquire lock after the task has been initialized from DB.
     # But there is the bug with corrupted dump file in case 2 or
     # more dump request received at the same time:
-    # https://github.com/opencv/cvat/issues/217
+    # https://github.com/cvat-ai/cvat/issues/217
     with transaction.atomic():
         task = TaskAnnotation(task_id)
         task.init_from_db()

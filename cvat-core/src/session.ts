@@ -1,5 +1,5 @@
 // Copyright (C) 2019-2022 Intel Corporation
-// Copyright (C) 2022-2023 CVAT.ai Corporation
+// Copyright (C) 2022-2024 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -82,23 +82,13 @@ function buildDuplicatedAPI(prototype) {
                     return result;
                 },
 
-                async search(filters, frameFrom, frameTo) {
+                async search(frameFrom, frameTo, searchParameters) {
                     const result = await PluginRegistry.apiWrapper.call(
                         this,
                         prototype.annotations.search,
-                        filters,
                         frameFrom,
                         frameTo,
-                    );
-                    return result;
-                },
-
-                async searchEmpty(frameFrom, frameTo) {
-                    const result = await PluginRegistry.apiWrapper.call(
-                        this,
-                        prototype.annotations.searchEmpty,
-                        frameFrom,
-                        frameTo,
+                        searchParameters,
                     );
                     return result;
                 },
@@ -324,7 +314,6 @@ export class Session {
         slice: CallableFunction;
         clear: CallableFunction;
         search: CallableFunction;
-        searchEmpty: CallableFunction;
         upload: CallableFunction;
         select: CallableFunction;
         import: CallableFunction;
@@ -377,7 +366,6 @@ export class Session {
             slice: Object.getPrototypeOf(this).annotations.slice.bind(this),
             clear: Object.getPrototypeOf(this).annotations.clear.bind(this),
             search: Object.getPrototypeOf(this).annotations.search.bind(this),
-            searchEmpty: Object.getPrototypeOf(this).annotations.searchEmpty.bind(this),
             upload: Object.getPrototypeOf(this).annotations.upload.bind(this),
             select: Object.getPrototypeOf(this).annotations.select.bind(this),
             import: Object.getPrototypeOf(this).annotations.import.bind(this),

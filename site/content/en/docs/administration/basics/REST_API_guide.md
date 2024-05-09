@@ -18,7 +18,7 @@ Make a request to a resource stored on a server and the server will respond with
 The HTTP protocol is used to transport a data.
 Requests are divided into groups:
 
-- `auth` - user authorization queries
+- `auth` - user authentication queries
 - `comments` - requests to post/delete comments to issues
 - `issues` - update, delete and view problem comments
 - `jobs` -requests to manage the job

@@ -1,0 +1,77 @@
+// Copyright (C) 2024 CVAT.ai Corporation
+//
+// SPDX-License-Identifier: MIT
+
+@import 'base';
+
+.cvat-single-shape-workspace {
+    height: 100%;
+}
+
+.cvat-single-shape-annotation-sidebar {
+    padding: $grid-unit-size;
+    overflow: auto;
+    background: $background-color-2;
+
+    .cvat-single-shape-annotation-sidebar-label-select,
+    .cvat-single-shape-annotation-sidebar-label-type-selector {
+        .ant-select {
+            width: $grid-unit-size * 20;
+        }
+    }
+
+    .cvat-single-shape-annotation-sidebar-points-count-input {
+        .ant-input-number    {
+            width: $grid-unit-size * 20;
+        }
+    }
+
+    .cvat-single-shape-annotation-sidebar-label,
+    .cvat-single-shape-annotation-sidebar-label-type,
+    .cvat-single-shape-annotation-sidebar-points-count,
+    .cvat-single-shape-annotation-sidebar-label-select,
+    .cvat-single-shape-annotation-sidebar-points-count-input,
+    .cvat-single-shape-annotation-sidebar-navigate-empty-checkbox,
+    .cvat-single-shape-annotation-sidebar-predefined-pounts-count-checkbox,
+    .cvat-single-shape-annotation-sidebar-auto-save-checkbox {
+        margin-top: $grid-unit-size;
+    }
+
+    .cvat-single-shape-annotation-sidebar-auto-next-frame-checkbox {
+        margin-top: $grid-unit-size * 3;
+    }
+
+    .cvat-single-shape-annotation-sidebar-auto-next-frame-checkbox,
+    .cvat-single-shape-annotation-sidebar-auto-save-checkbox,
+    .cvat-single-shape-annotation-sidebar-navigate-empty-checkbox,
+    .cvat-single-shape-annotation-sidebar-predefined-pounts-count-checkbox {
+        user-select: none;
+    }
+
+    .cvat-single-shape-annotation-sidebar-hint {
+        row-gap: 0;
+        text-align: center;
+        font-size: large;
+        margin-bottom: $grid-unit-size;
+    }
+
+    .cvat-single-shape-annotation-sidebar-ux-hints {
+        ul {
+            padding-left: $grid-unit-size * 2;
+        }
+    }
+
+    .cvat-single-shape-annotation-sidebar-skip-wrapper {
+        margin-bottom: $grid-unit-size;
+
+        button {
+            width: $grid-unit-size * 35.5;
+        }
+    }
+
+    .cvat-single-shape-annotation-sidebar-not-found-wrapper {
+        margin-top: $grid-unit-size * 3;
+        text-align: center;
+        flex-grow: 10;
+    }
+}

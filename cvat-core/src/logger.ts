@@ -34,6 +34,7 @@ type IgnoredRules = EventScope.zoomImage | EventScope.changeAttribute | EventSco
 class Logger {
     public clientID: string;
     public collection: Array<Event>;
+    public lastSentEvent: Event | null;
     public ignoreRules: Record<IgnoredRules, IgnoreRule>;
     public isActiveChecker: (() => boolean) | null;
     public saving: boolean;
@@ -42,6 +43,7 @@ class Logger {
     constructor() {
         this.clientID = Date.now().toString().substr(-6);
         this.collection = [];
+        this.lastSentEvent = null;
         this.isActiveChecker = null;
         this.saving = false;
         this.compressedScopes = [EventScope.changeFrame];
@@ -209,8 +211,11 @@ Object.defineProperties(Logger.prototype.save, {
                 this.collection = [];
                 await serverProxy.events.save({
                     events: collectionToSend.map((event) => event.dump()),
+                    previous_event: this.lastSentEvent?.dump(),
                     timestamp: new Date().toISOString(),
                 });
+
+                this.lastSentEvent = collectionToSend[collectionToSend.length - 1];
 
                 for (const rule of Object.values<IgnoreRule>(this.ignoreRules)) {
                     rule.lastEvent = null;
@@ -220,6 +225,8 @@ Object.defineProperties(Logger.prototype.save, {
                 // potentially new events may be generated during saving
                 // that is why we add this.collection
                 this.collection = [...collectionToSend, ...this.collection];
+
+                throw error;
             } finally {
                 this.saving = false;
             }

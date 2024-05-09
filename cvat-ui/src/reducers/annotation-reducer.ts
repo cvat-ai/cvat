@@ -17,6 +17,7 @@ import {
     ActiveControl,
     AnnotationState,
     ContextMenuType,
+    NavigationType,
     ObjectType,
     ShapeType,
     Workspace,
@@ -57,7 +58,11 @@ const defaultState: AnnotationState = {
         requestedId: null,
         groundTruthJobFramesMeta: null,
         groundTruthInstance: null,
-        initialOpenGuide: false,
+        queryParameters: {
+            initialOpenGuide: false,
+            defaultLabel: null,
+            defaultPointsCount: null,
+        },
         instance: null,
         attributes: {},
         fetching: false,
@@ -74,6 +79,7 @@ const defaultState: AnnotationState = {
             changeTime: null,
             changeFrameEvent: null,
         },
+        navigationType: NavigationType.REGULAR,
         ranges: '',
         playing: false,
         frameAngles: [],
@@ -98,6 +104,7 @@ const defaultState: AnnotationState = {
         states: [],
         filters: [],
         resetGroupFlag: false,
+        initialized: false,
         history: {
             undo: [],
             redo: [],
@@ -138,13 +145,16 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                     requestedId: action.payload.requestedId,
                     fetching: true,
                 },
+                annotations: {
+                    ...state.annotations,
+                    initialized: false,
+                },
             };
         }
         case BoundariesActionTypes.RESET_AFTER_ERROR:
         case AnnotationActionTypes.GET_JOB_SUCCESS: {
             const {
                 job,
-                states,
                 openTime,
                 frameNumber: number,
                 frameFilename: filename,
@@ -152,21 +162,22 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                 colors,
                 filters,
                 frameData: data,
-                minZ,
-                maxZ,
-                initialOpenGuide,
+                queryParameters,
                 groundTruthInstance,
                 groundTruthJobFramesMeta,
             } = action.payload;
 
-            const isReview = job.stage === JobStage.VALIDATION;
-            let workspaceSelected = Workspace.STANDARD;
-
             const defaultLabel = job.labels.length ? job.labels[0] : null;
+            const isReview = job.stage === JobStage.VALIDATION;
+            let workspaceSelected = null;
             let activeShapeType = defaultLabel && defaultLabel.type !== 'any' ?
                 defaultLabel.type : ShapeType.RECTANGLE;
-
-            if (job.dimension === DimensionType.DIMENSION_3D) {
+            if (job.dimension === DimensionType.DIMENSION_2D) {
+                if (queryParameters.initialWorkspace !== Workspace.STANDARD3D) {
+                    workspaceSelected = queryParameters.initialWorkspace;
+                }
+                workspaceSelected = workspaceSelected || (isReview ? Workspace.REVIEW : Workspace.STANDARD);
+            } else {
                 workspaceSelected = Workspace.STANDARD3D;
                 activeShapeType = ShapeType.CUBOID;
             }
@@ -188,19 +199,17 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                             acc[label.id] = label.attributes;
                             return acc;
                         }, {}),
-                    initialOpenGuide,
                     groundTruthInstance,
                     groundTruthJobFramesMeta,
+                    queryParameters: {
+                        initialOpenGuide: queryParameters.initialOpenGuide,
+                        defaultLabel: queryParameters.defaultLabel,
+                        defaultPointsCount: queryParameters.defaultPointsCount,
+                    },
                 },
                 annotations: {
                     ...state.annotations,
-                    states,
                     filters,
-                    zLayer: {
-                        min: minZ,
-                        max: maxZ,
-                        cur: maxZ,
-                    },
                 },
                 player: {
                     ...state.player,
@@ -225,7 +234,7 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                 },
                 colors,
                 workspace: isReview && job.dimension === DimensionType.DIMENSION_2D ?
-                    Workspace.REVIEW_WORKSPACE : workspaceSelected,
+                    Workspace.REVIEW : workspaceSelected,
             };
         }
         case AnnotationActionTypes.GET_JOB_FAILED: {
@@ -283,6 +292,7 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                 filename,
                 relatedFiles,
                 states,
+                history,
                 minZ,
                 maxZ,
                 curZ,
@@ -311,6 +321,7 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                     activatedStateID: updateActivatedStateID(states, activatedStateID),
                     highlightedConflict: null,
                     states,
+                    history,
                     zLayer: {
                         min: minZ,
                         max: maxZ,
@@ -434,6 +445,10 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                 player: {
                     ...state.player,
                     ranges: ranges || state.player.ranges,
+                    frame: {
+                        ...state.player.frame,
+                        changeFrameEvent: null,
+                    },
                 },
                 canvas: {
                     ...state.canvas,
@@ -764,15 +779,16 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
             };
         }
         case AnnotationActionTypes.UPLOAD_JOB_ANNOTATIONS_SUCCESS: {
-            const { states, history } = action.payload;
-
             return {
                 ...state,
                 annotations: {
                     ...state.annotations,
-                    history,
-                    states,
+                    history: { undo: [], redo: [] },
+                    states: [],
                     activatedStateID: null,
+                    activatedElementID: null,
+                    activatedAttributeID: null,
+                    highlightedConflict: null,
                     collapsed: {},
                 },
             };
@@ -836,11 +852,21 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                     activatedStateID: updateActivatedStateID(states, activatedStateID),
                     states,
                     history,
+                    initialized: true,
                     zLayer: {
                         min: minZ,
                         max: maxZ,
                         cur: clamp(state.annotations.zLayer.cur, minZ, maxZ),
                     },
+                },
+            };
+        }
+        case AnnotationActionTypes.FETCH_ANNOTATIONS_FAILED: {
+            return {
+                ...state,
+                annotations: {
+                    ...state.annotations,
+                    initialized: true,
                 },
             };
         }
@@ -965,6 +991,15 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                 },
             };
         }
+        case AnnotationActionTypes.SET_NAVIGATION_TYPE: {
+            return {
+                ...state,
+                player: {
+                    ...state.player,
+                    navigationType: action.payload.navigationType,
+                },
+            };
+        }
         case AnnotationActionTypes.DELETE_FRAME:
         case AnnotationActionTypes.RESTORE_FRAME: {
             return {
@@ -1049,10 +1084,7 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
         }
         case AnnotationActionTypes.CLOSE_JOB:
         case AuthActionTypes.LOGOUT_SUCCESS: {
-            if (state.canvas.instance) {
-                state.canvas.instance.destroy();
-            }
-            return { ...defaultState };
+            return defaultState;
         }
         default: {
             return state;

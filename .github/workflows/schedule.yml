@@ -153,9 +153,10 @@ jobs:
 
       - name: OPA tests
         run: |
-          curl -L -o opa https://openpolicyagent.org/downloads/v0.45.0/opa_linux_amd64_static
-          chmod +x ./opa
-          ./opa test cvat/apps/iam/rules
+          python cvat/apps/iam/rules/tests/generate_tests.py
+
+          docker compose run --rm -v "$PWD:/mnt/src:ro" -w /mnt/src \
+            cvat_opa test cvat/apps/*/rules
 
       - name: REST API and SDK tests
         run: |

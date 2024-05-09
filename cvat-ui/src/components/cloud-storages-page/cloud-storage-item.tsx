@@ -94,7 +94,7 @@ export default function CloudStorageItemComponent(props: Props): JSX.Element {
         >
             <Meta
                 title={(
-                    <Paragraph>
+                    <Paragraph ellipsis={{ tooltip: displayName }}>
                         <Text strong>{`#${id}: `}</Text>
                         <Text>{displayName}</Text>
                     </Paragraph>

@@ -1,7 +1,7 @@
 openapi: 3.0.3
 info:
   title: CVAT REST API
-  version: 2.11.0
+  version: 2.13.0
   description: REST API for Computer Vision Annotation Tool (CVAT)
   termsOfService: https://www.google.com/policies/terms/
   contact:
@@ -16,7 +16,7 @@ paths:
     get:
       operationId: analytics_get_reports
       description: Receive analytics report
-      summary: Method returns analytics report
+      summary: Get an analytics report
       parameters:
       - in: query
         name: end_date
@@ -64,8 +64,7 @@ paths:
           description: Not found
     post:
       operationId: analytics_create_report
-      summary: Creates a analytics report asynchronously and allows to check request
-        status
+      summary: Create an analytics report
       parameters:
       - in: query
         name: rq_id
@@ -105,8 +104,7 @@ paths:
   /api/assets:
     post:
       operationId: assets_create
-      summary: Method saves new asset on the server and attaches it to a corresponding
-        guide
+      summary: Create an asset
       tags:
       - assets
       requestBody:
@@ -134,7 +132,7 @@ paths:
   /api/assets/{uuid}:
     get:
       operationId: assets_retrieve
-      summary: Method returns an asset file
+      summary: Get an asset
       parameters:
       - in: path
         name: uuid
@@ -156,7 +154,7 @@ paths:
           description: Asset file
     delete:
       operationId: assets_destroy
-      summary: Method deletes a specific asset from the server
+      summary: Delete an asset
       parameters:
       - in: path
         name: uuid
@@ -391,7 +389,7 @@ paths:
   /api/cloudstorages:
     get:
       operationId: cloudstorages_list
-      summary: Returns a paginated list of storages
+      summary: List cloud storages
       parameters:
       - name: X-Organization
         in: header
@@ -504,7 +502,7 @@ paths:
           description: ''
     post:
       operationId: cloudstorages_create
-      summary: Method creates a cloud storage with a specified characteristics
+      summary: Create a cloud storage
       parameters:
       - in: header
         name: X-Organization
@@ -592,7 +590,7 @@ paths:
   /api/cloudstorages/{id}:
     get:
       operationId: cloudstorages_retrieve
-      summary: Method returns details of a specific cloud storage
+      summary: Get cloud storage details
       parameters:
       - in: path
         name: id
@@ -617,7 +615,7 @@ paths:
           description: ''
     patch:
       operationId: cloudstorages_partial_update
-      summary: Methods does a partial update of chosen fields in a cloud storage instance
+      summary: Update a cloud storage
       parameters:
       - in: path
         name: id
@@ -694,7 +692,7 @@ paths:
           description: ''
     delete:
       operationId: cloudstorages_destroy
-      summary: Method deletes a specific cloud storage
+      summary: Delete a cloud storage
       parameters:
       - in: path
         name: id
@@ -718,7 +716,7 @@ paths:
       operationId: cloudstorages_retrieve_actions
       description: Method return allowed actions for cloud storage. It's required
         for reading/writing
-      summary: Method returns allowed actions for the cloud storage
+      summary: Get allowed actions for a cloud storage
       parameters:
       - in: path
         name: id
@@ -744,7 +742,7 @@ paths:
   /api/cloudstorages/{id}/content-v2:
     get:
       operationId: cloudstorages_retrieve_content_v2
-      summary: Method returns the content of the cloud storage
+      summary: Get cloud storage content
       parameters:
       - in: path
         name: id
@@ -789,7 +787,7 @@ paths:
   /api/cloudstorages/{id}/preview:
     get:
       operationId: cloudstorages_retrieve_preview
-      summary: Method returns a preview image from a cloud storage
+      summary: Get a preview image for a cloud storage
       parameters:
       - in: path
         name: id
@@ -815,7 +813,7 @@ paths:
   /api/cloudstorages/{id}/status:
     get:
       operationId: cloudstorages_retrieve_status
-      summary: Method returns a cloud storage status
+      summary: Get the status of a cloud storage
       parameters:
       - in: path
         name: id
@@ -841,7 +839,7 @@ paths:
   /api/comments:
     get:
       operationId: comments_list
-      summary: Method returns a paginated list of comments
+      summary: List comments
       parameters:
       - name: X-Organization
         in: header
@@ -936,7 +934,7 @@ paths:
           description: ''
     post:
       operationId: comments_create
-      summary: Method creates a comment
+      summary: Create a comment
       parameters:
       - in: header
         name: X-Organization
@@ -977,7 +975,7 @@ paths:
   /api/comments/{id}:
     get:
       operationId: comments_retrieve
-      summary: Method returns details of a comment
+      summary: Get comment details
       parameters:
       - in: path
         name: id
@@ -1002,7 +1000,7 @@ paths:
           description: ''
     patch:
       operationId: comments_partial_update
-      summary: Methods does a partial update of chosen fields in a comment
+      summary: Update a comment
       parameters:
       - in: path
         name: id
@@ -1032,7 +1030,7 @@ paths:
           description: ''
     delete:
       operationId: comments_destroy
-      summary: Method deletes a comment
+      summary: Delete a comment
       parameters:
       - in: path
         name: id
@@ -1054,8 +1052,8 @@ paths:
   /api/events:
     get:
       operationId: events_list
-      description: Receive logs from the server
-      summary: 'Method returns csv log file '
+      description: The log is returned in the CSV format.
+      summary: Get an event log
       parameters:
       - in: query
         name: action
@@ -1132,7 +1130,7 @@ paths:
     post:
       operationId: events_create
       description: Sends logs to the Clickhouse if it is connected
-      summary: Method saves logs from a client on the server
+      summary: Log client events
       parameters:
       - in: header
         name: X-Organization
@@ -1173,7 +1171,9 @@ paths:
   /api/guides:
     post:
       operationId: guides_create
-      summary: Method creates a new annotation guide binded to a project or to a task
+      description: The new guide will be bound either to a project or a task, depending
+        on parameters.
+      summary: Create an annotation guide
       tags:
       - guides
       requestBody:
@@ -1197,7 +1197,7 @@ paths:
   /api/guides/{id}:
     get:
       operationId: guides_retrieve
-      summary: Method returns details of a specific annotation guide
+      summary: Get annotation guide details
       parameters:
       - in: path
         name: id
@@ -1222,7 +1222,7 @@ paths:
           description: ''
     patch:
       operationId: guides_partial_update
-      summary: Methods does a partial update of chosen fields in an annotation guide
+      summary: Update an annotation guide
       parameters:
       - in: path
         name: id
@@ -1252,7 +1252,8 @@ paths:
           description: ''
     delete:
       operationId: guides_destroy
-      summary: Method deletes a specific annotation guide and all attached assets
+      description: This also deletes all assets attached to the guide.
+      summary: Delete an annotation guide
       parameters:
       - in: path
         name: id
@@ -1274,7 +1275,7 @@ paths:
   /api/invitations:
     get:
       operationId: invitations_list
-      summary: Method returns a paginated list of invitations
+      summary: List invitations
       parameters:
       - name: X-Organization
         in: header
@@ -1354,7 +1355,7 @@ paths:
           description: ''
     post:
       operationId: invitations_create
-      summary: Method creates an invitation
+      summary: Create an invitation
       parameters:
       - in: header
         name: X-Organization
@@ -1395,7 +1396,7 @@ paths:
   /api/invitations/{key}:
     get:
       operationId: invitations_retrieve
-      summary: Method returns details of an invitation
+      summary: Get invitation details
       parameters:
       - in: path
         name: key
@@ -1420,7 +1421,7 @@ paths:
           description: ''
     patch:
       operationId: invitations_partial_update
-      summary: Methods does a partial update of chosen fields in an invitation
+      summary: Update an invitation
       parameters:
       - in: path
         name: key
@@ -1450,7 +1451,7 @@ paths:
           description: ''
     delete:
       operationId: invitations_destroy
-      summary: Method deletes an invitation
+      summary: Delete an invitation
       parameters:
       - in: path
         name: key
@@ -1472,7 +1473,7 @@ paths:
   /api/invitations/{key}/accept:
     post:
       operationId: invitations_accept
-      summary: Method registers user and accepts invitation to organization
+      summary: Accept an invitation
       parameters:
       - in: path
         name: key
@@ -1500,7 +1501,7 @@ paths:
   /api/invitations/{key}/decline:
     post:
       operationId: invitations_decline
-      summary: Method declines the invitation to organization
+      summary: Decline an invitation
       parameters:
       - in: path
         name: key
@@ -1522,7 +1523,7 @@ paths:
   /api/invitations/{key}/resend:
     post:
       operationId: invitations_resend
-      summary: Method resends the invitation to organization
+      summary: Resend an invitation
       parameters:
       - in: path
         name: key
@@ -1546,7 +1547,7 @@ paths:
   /api/issues:
     get:
       operationId: issues_list
-      summary: Method returns a paginated list of issues
+      summary: List issues
       parameters:
       - name: X-Organization
         in: header
@@ -1652,7 +1653,7 @@ paths:
           description: ''
     post:
       operationId: issues_create
-      summary: Method creates an issue
+      summary: Create an issue
       parameters:
       - in: header
         name: X-Organization
@@ -1693,7 +1694,7 @@ paths:
   /api/issues/{id}:
     get:
       operationId: issues_retrieve
-      summary: Method returns details of an issue
+      summary: Get issue details
       parameters:
       - in: path
         name: id
@@ -1718,7 +1719,7 @@ paths:
           description: ''
     patch:
       operationId: issues_partial_update
-      summary: Methods does a partial update of chosen fields in an issue
+      summary: Update an issue
       parameters:
       - in: path
         name: id
@@ -1748,7 +1749,7 @@ paths:
           description: ''
     delete:
       operationId: issues_destroy
-      summary: Method deletes an issue
+      summary: Delete an issue
       parameters:
       - in: path
         name: id
@@ -1770,7 +1771,7 @@ paths:
   /api/jobs:
     get:
       operationId: jobs_list
-      summary: Method returns a paginated list of jobs
+      summary: List jobs
       parameters:
       - name: X-Organization
         in: header
@@ -1907,7 +1908,7 @@ paths:
           description: ''
     post:
       operationId: jobs_create
-      summary: Method creates a new job in the task
+      summary: Create a job
       tags:
       - jobs
       requestBody:
@@ -1932,7 +1933,7 @@ paths:
   /api/jobs/{id}:
     get:
       operationId: jobs_retrieve
-      summary: Method returns details of a job
+      summary: Get job details
       parameters:
       - in: path
         name: id
@@ -1957,7 +1958,7 @@ paths:
           description: ''
     patch:
       operationId: jobs_partial_update
-      summary: Methods does a partial update of chosen fields in a job
+      summary: Update a job
       parameters:
       - in: path
         name: id
@@ -1988,9 +1989,11 @@ paths:
     delete:
       operationId: jobs_destroy
       description: |
+        Related annotations will be deleted as well.
+
         Please note, that not every job can be removed. Currently,
         it is only available for Ground Truth jobs.
-      summary: Method deletes a job and its related annotations
+      summary: Delete a job
       parameters:
       - in: path
         name: id
@@ -2012,8 +2015,10 @@ paths:
   /api/jobs/{id}/annotations/:
     get:
       operationId: jobs_retrieve_annotations
-      summary: Method returns annotations for a specific job as a JSON document. If
-        format is specified, a zip archive is returned.
+      description: |
+        If format is specified, a ZIP archive will be returned. Otherwise,
+        the annotations will be returned as a JSON document.
+      summary: Get job annotations
       parameters:
       - in: query
         name: action
@@ -2086,11 +2091,10 @@ paths:
       operationId: jobs_create_annotations
       description: |2
 
-        The request POST /api/jobs/id/annotations will initiate file upload and will create
-        the rq job on the server in which the process of annotations uploading from file
-        will be carried out. Please, use the PUT /api/jobs/id/annotations endpoint for checking status of the process.
-      summary: Method allows to initialize the process of the job annotation upload
-        from a local file or a cloud storage
+        The request POST /api/jobs/id/annotations will initiate the import and will create
+        the rq job on the server in which the import will be carried out.
+        Please, use the PUT /api/jobs/id/annotations endpoint for checking status of the process.
+      summary: Import annotations into a job
       parameters:
       - in: query
         name: cloud_storage_id
@@ -2161,13 +2165,12 @@ paths:
       operationId: jobs_update_annotations
       description: |2
 
-        To check the status of the process of uploading a job annotations from a file:
+        To check the status of an import request:
 
-        After initiating the annotations upload, you will receive an rq_id parameter.
+        After initiating the annotation import, you will receive an rq_id parameter.
         Make sure to include this parameter as a query parameter in your subsequent
-        PUT /api/jobs/id/annotations requests to track the status of the annotations upload.
-      summary: Method performs an update of all annotations in a specific job or used
-        for uploading annotations from a file
+        PUT /api/jobs/id/annotations requests to track the status of the import.
+      summary: Replace job annotations / Get annotation import status
       parameters:
       - in: query
         name: cloud_storage_id
@@ -2230,14 +2233,14 @@ paths:
       - basicAuth: []
       responses:
         '201':
-          description: Uploading has finished
+          description: Import has finished
         '202':
-          description: Uploading has been started
+          description: Import is in progress
         '405':
           description: Format is not available
     patch:
       operationId: jobs_partial_update_annotations
-      summary: Method performs a partial update of annotations in a specific job
+      summary: Update job annotations
       parameters:
       - in: query
         name: action
@@ -2275,7 +2278,7 @@ paths:
           description: Annotations successfully uploaded
     delete:
       operationId: jobs_destroy_annotations
-      summary: Method deletes all annotations for a specific job
+      summary: Delete job annotations
       parameters:
       - in: path
         name: id
@@ -2297,7 +2300,7 @@ paths:
   /api/jobs/{id}/data:
     get:
       operationId: jobs_retrieve_data
-      summary: Method returns data for a specific job
+      summary: Get data of a job
       parameters:
       - in: path
         name: id
@@ -2346,8 +2349,7 @@ paths:
   /api/jobs/{id}/data/meta:
     get:
       operationId: jobs_retrieve_data_meta
-      summary: Method provides a meta information about media files which are related
-        with the job
+      summary: Get metainformation for media files in a job
       parameters:
       - in: path
         name: id
@@ -2372,8 +2374,7 @@ paths:
           description: ''
     patch:
       operationId: jobs_partial_update_data_meta
-      summary: Method provides a meta information about media files which are related
-        with the job
+      summary: Update metainformation for media files in a job
       parameters:
       - in: path
         name: id
@@ -2478,7 +2479,7 @@ paths:
   /api/jobs/{id}/preview:
     get:
       operationId: jobs_retrieve_preview
-      summary: Method returns a preview image for the job
+      summary: Get a preview image for a job
       parameters:
       - in: path
         name: id
@@ -2500,7 +2501,7 @@ paths:
   /api/labels:
     get:
       operationId: labels_list
-      summary: Method returns a paginated list of labels
+      summary: List labels
       parameters:
       - in: header
         name: X-Organization
@@ -2627,7 +2628,7 @@ paths:
   /api/labels/{id}:
     get:
       operationId: labels_retrieve
-      summary: Method returns details of a label
+      summary: Get label details
       parameters:
       - in: path
         name: id
@@ -2652,8 +2653,9 @@ paths:
           description: ''
     patch:
       operationId: labels_partial_update
-      summary: Methods does a partial update of chosen fields in a labelTo modify
-        a sublabel, please use the PATCH method of the parent label
+      description: To modify a sublabel, please use the PATCH method of the parent
+        label.
+      summary: Update a label
       parameters:
       - in: path
         name: id
@@ -2683,8 +2685,9 @@ paths:
           description: ''
     delete:
       operationId: labels_destroy
-      summary: Method deletes a label. To delete a sublabel, please use the PATCH
-        method of the parent label
+      description: To delete a sublabel, please use the PATCH method of the parent
+        label.
+      summary: Delete a label
       parameters:
       - in: path
         name: id
@@ -2888,7 +2891,7 @@ paths:
   /api/memberships:
     get:
       operationId: memberships_list
-      summary: Method returns a paginated list of memberships
+      summary: List memberships
       parameters:
       - name: X-Organization
         in: header
@@ -2979,7 +2982,7 @@ paths:
   /api/memberships/{id}:
     get:
       operationId: memberships_retrieve
-      summary: Method returns details of a membership
+      summary: Get membership details
       parameters:
       - in: path
         name: id
@@ -3004,7 +3007,7 @@ paths:
           description: ''
     patch:
       operationId: memberships_partial_update
-      summary: Methods does a partial update of chosen fields in a membership
+      summary: Update a membership
       parameters:
       - in: path
         name: id
@@ -3034,7 +3037,7 @@ paths:
           description: ''
     delete:
       operationId: memberships_destroy
-      summary: Method deletes a membership
+      summary: Delete a membership
       parameters:
       - in: path
         name: id
@@ -3056,7 +3059,7 @@ paths:
   /api/organizations:
     get:
       operationId: organizations_list
-      summary: Method returns a paginated list of organizations
+      summary: List organizations
       parameters:
       - name: filter
         required: false
@@ -3132,7 +3135,7 @@ paths:
           description: ''
     post:
       operationId: organizations_create
-      summary: Method creates an organization
+      summary: Create an organization
       tags:
       - organizations
       requestBody:
@@ -3157,7 +3160,7 @@ paths:
   /api/organizations/{id}:
     get:
       operationId: organizations_retrieve
-      summary: Method returns details of an organization
+      summary: Get organization details
       parameters:
       - in: path
         name: id
@@ -3182,7 +3185,7 @@ paths:
           description: ''
     patch:
       operationId: organizations_partial_update
-      summary: Methods does a partial update of chosen fields in an organization
+      summary: Update an organization
       parameters:
       - in: path
         name: id
@@ -3212,7 +3215,7 @@ paths:
           description: ''
     delete:
       operationId: organizations_destroy
-      summary: Method deletes an organization
+      summary: Delete an organization
       parameters:
       - in: path
         name: id
@@ -3234,7 +3237,7 @@ paths:
   /api/projects:
     get:
       operationId: projects_list
-      summary: Returns a paginated list of projects
+      summary: List projects
       parameters:
       - name: X-Organization
         in: header
@@ -3334,7 +3337,7 @@ paths:
           description: ''
     post:
       operationId: projects_create
-      summary: Method creates a new project
+      summary: Create a project
       parameters:
       - in: header
         name: X-Organization
@@ -3375,7 +3378,7 @@ paths:
   /api/projects/{id}:
     get:
       operationId: projects_retrieve
-      summary: Method returns details of a specific project
+      summary: Get project details
       parameters:
       - in: path
         name: id
@@ -3400,7 +3403,7 @@ paths:
           description: ''
     patch:
       operationId: projects_partial_update
-      summary: Methods does a partial update of chosen fields in a project
+      summary: Update a project
       parameters:
       - in: path
         name: id
@@ -3430,7 +3433,7 @@ paths:
           description: ''
     delete:
       operationId: projects_destroy
-      summary: Method deletes a specific project
+      summary: Delete a project
       parameters:
       - in: path
         name: id
@@ -3452,7 +3455,7 @@ paths:
   /api/projects/{id}/annotations:
     get:
       operationId: projects_retrieve_annotations
-      summary: Method allows to download project annotations
+      summary: Get project annotations
       parameters:
       - in: query
         name: action
@@ -3527,7 +3530,7 @@ paths:
   /api/projects/{id}/backup:
     get:
       operationId: projects_retrieve_backup
-      summary: Methods creates a backup copy of a project
+      summary: Back up a project
       parameters:
       - in: query
         name: action
@@ -3593,7 +3596,7 @@ paths:
         Make sure to include this parameter as a query parameter in your subsequent
         GET /api/projects/id/dataset requests to track the status of the dataset import.
         Also you should specify action parameter: action=import_status.
-      summary: Export project as a dataset in a specific format
+      summary: Export a project as a dataset / Check dataset import status
       parameters:
       - in: query
         name: action
@@ -3676,8 +3679,7 @@ paths:
         The request POST /api/projects/id/dataset will initiate file upload and will create
         the rq job on the server in which the process of dataset import from a file
         will be carried out. Please, use the GET /api/projects/id/dataset endpoint for checking status of the process.
-      summary: Import dataset in specific format as a project or check status of dataset
-        import process
+      summary: Import a dataset into a project
       parameters:
       - in: query
         name: cloud_storage_id
@@ -3748,7 +3750,7 @@ paths:
   /api/projects/{id}/preview:
     get:
       operationId: projects_retrieve_preview
-      summary: Method returns a preview image for the project
+      summary: Get a preview image for a project
       parameters:
       - in: path
         name: id
@@ -3784,7 +3786,7 @@ paths:
         Make sure to include this parameter as a query parameter in your subsequent requests
         to track the status of the project creation.
         Once the project has been successfully created, the server will return the id of the newly created project.
-      summary: Methods create a project from a backup
+      summary: Recreate a project from a backup
       parameters:
       - in: header
         name: X-Organization
@@ -3853,7 +3855,7 @@ paths:
   /api/quality/conflicts:
     get:
       operationId: quality_list_conflicts
-      summary: Method returns a paginated list of annotation conflicts
+      summary: List annotation conflicts in a quality report
       parameters:
       - name: X-Organization
         in: header
@@ -3965,7 +3967,7 @@ paths:
   /api/quality/reports:
     get:
       operationId: quality_list_reports
-      summary: Method returns a paginated list of quality reports
+      summary: List quality reports
       parameters:
       - name: X-Organization
         in: header
@@ -4055,8 +4057,7 @@ paths:
           description: ''
     post:
       operationId: quality_create_report
-      summary: Creates a quality report asynchronously and allows to check request
-        status
+      summary: Create a quality report
       parameters:
       - in: query
         name: rq_id
@@ -4100,7 +4101,7 @@ paths:
   /api/quality/reports/{id}:
     get:
       operationId: quality_retrieve_report
-      summary: Method returns details of a quality report
+      summary: Get quality report details
       parameters:
       - in: path
         name: id
@@ -4126,7 +4127,7 @@ paths:
   /api/quality/reports/{id}/data:
     get:
       operationId: quality_retrieve_report_data
-      summary: Retrieve full contents of the report in JSON format
+      summary: Get quality report contents
       parameters:
       - in: path
         name: id
@@ -4152,7 +4153,7 @@ paths:
   /api/quality/settings:
     get:
       operationId: quality_list_settings
-      summary: Method returns a paginated list of quality settings instances
+      summary: List quality settings instances
       parameters:
       - name: X-Organization
         in: header
@@ -4227,7 +4228,7 @@ paths:
   /api/quality/settings/{id}:
     get:
       operationId: quality_retrieve_settings
-      summary: Method returns details of the quality settings instance
+      summary: Get quality settings instance details
       parameters:
       - in: path
         name: id
@@ -4252,8 +4253,7 @@ paths:
           description: ''
     patch:
       operationId: quality_partial_update_settings
-      summary: Methods does a partial update of chosen fields in the quality settings
-        instance
+      summary: Update a quality settings instance
       parameters:
       - in: path
         name: id
@@ -4427,7 +4427,7 @@ paths:
   /api/server/about:
     get:
       operationId: server_retrieve_about
-      summary: Method provides basic CVAT information
+      summary: Get basic CVAT information
       tags:
       - server
       security:
@@ -4446,7 +4446,7 @@ paths:
   /api/server/annotation/formats:
     get:
       operationId: server_retrieve_annotation_formats
-      summary: Method provides the list of supported annotations formats
+      summary: Get supported annotation formats
       tags:
       - server
       security:
@@ -4465,7 +4465,7 @@ paths:
   /api/server/plugins:
     get:
       operationId: server_retrieve_plugins
-      summary: Method provides allowed plugins
+      summary: Get enabled plugins
       tags:
       - server
       security:
@@ -4484,8 +4484,7 @@ paths:
   /api/server/share:
     get:
       operationId: server_list_share
-      summary: Returns all files and folders that are on the server along specified
-        path
+      summary: List files/directories in the mounted share
       parameters:
       - in: query
         name: directory
@@ -4517,7 +4516,7 @@ paths:
   /api/tasks:
     get:
       operationId: tasks_list
-      summary: Returns a paginated list of tasks
+      summary: List tasks
       parameters:
       - name: X-Organization
         in: header
@@ -4659,8 +4658,10 @@ paths:
           description: ''
     post:
       operationId: tasks_create
-      summary: Method creates a new task in a database without any attached images
-        and videos
+      description: |
+        The new task will not have any attached images or videos.
+        To attach them, use the /api/tasks/<id>/data endpoint.
+      summary: Create a task
       parameters:
       - in: header
         name: X-Organization
@@ -4701,7 +4702,7 @@ paths:
   /api/tasks/{id}:
     get:
       operationId: tasks_retrieve
-      summary: Method returns details of a specific task
+      summary: Get task details
       parameters:
       - in: path
         name: id
@@ -4726,7 +4727,7 @@ paths:
           description: ''
     patch:
       operationId: tasks_partial_update
-      summary: Methods does a partial update of chosen fields in a task
+      summary: Update a task
       parameters:
       - in: path
         name: id
@@ -4756,8 +4757,8 @@ paths:
           description: ''
     delete:
       operationId: tasks_destroy
-      summary: Method deletes a specific task, all attached jobs, annotations, and
-        data
+      description: All attached jobs, annotations and data will be deleted as well.
+      summary: Delete a task
       parameters:
       - in: path
         name: id
@@ -4779,7 +4780,7 @@ paths:
   /api/tasks/{id}/annotations/:
     get:
       operationId: tasks_retrieve_annotations
-      summary: Method allows to download task annotations
+      summary: Get task annotations
       parameters:
       - in: query
         name: action
@@ -4854,11 +4855,10 @@ paths:
       operationId: tasks_create_annotations
       description: |2
 
-        The request POST /api/tasks/id/annotations will initiate file upload and will create
-        the rq job on the server in which the process of annotations uploading from file
-        will be carried out. Please, use the PUT /api/tasks/id/annotations endpoint for checking status of the process.
-      summary: Method allows to initialize the  process of upload task annotations
-        from a local or a cloud storage file
+        The request POST /api/tasks/id/annotations will initiate the import and will create
+        the rq job on the server in which the import will be carried out.
+        Please, use the PUT /api/tasks/id/annotations endpoint for checking status of the process.
+      summary: Import annotations into a task
       parameters:
       - in: query
         name: cloud_storage_id
@@ -4929,12 +4929,12 @@ paths:
       operationId: tasks_update_annotations
       description: |2
 
-        To check the status of the process of uploading a task annotations from a file:
+        To check the status of an import request:
 
-        After initiating the annotations upload, you will receive an rq_id parameter.
+        After initiating the annotation import, you will receive an rq_id parameter.
         Make sure to include this parameter as a query parameter in your subsequent
-        PUT /api/tasks/id/annotations requests to track the status of the annotations upload.
-      summary: Method allows to upload task annotations or edit existing annotations
+        PUT /api/tasks/id/annotations requests to track the status of the import.
+      summary: Replace task annotations / Get annotation import status
       parameters:
       - in: query
         name: format
@@ -4973,14 +4973,14 @@ paths:
       - basicAuth: []
       responses:
         '201':
-          description: Uploading has finished
+          description: Import has finished
         '202':
-          description: Uploading has been started
+          description: Import is in progress
         '405':
           description: Format is not available
     patch:
       operationId: tasks_partial_update_annotations
-      summary: Method performs a partial update of annotations in a specific task
+      summary: Update task annotations
       parameters:
       - in: query
         name: action
@@ -5022,7 +5022,7 @@ paths:
           description: ''
     delete:
       operationId: tasks_destroy_annotations
-      summary: Method deletes all annotations for a specific task
+      summary: Delete task annotations
       parameters:
       - in: path
         name: id
@@ -5044,7 +5044,7 @@ paths:
   /api/tasks/{id}/backup:
     get:
       operationId: tasks_retrieve_backup
-      summary: Method backup a specified task
+      summary: Back up a task
       parameters:
       - in: query
         name: action
@@ -5104,7 +5104,7 @@ paths:
   /api/tasks/{id}/data/:
     get:
       operationId: tasks_retrieve_data
-      summary: Method returns data for a specific task
+      summary: Get data of a task
       parameters:
       - in: path
         name: id
@@ -5148,7 +5148,7 @@ paths:
     post:
       operationId: tasks_create_data
       description: |
-        Allows to upload data to a task.
+        Allows to upload data (images, video, etc.) to a task.
         Supports the TUS open file uploading protocol (https://tus.io/).
 
         Supports the following protocols:
@@ -5193,11 +5193,13 @@ paths:
         For archives (e.g. '.zip'), a manifest file ('*.jsonl') is required when using
         the 'predefined' file ordering. Such file must be provided next to the archive
         in the list of files. Read more about manifest files here:
-        https://opencv.github.io/cvat/docs/manual/advanced/dataset_manifest/
+        https://docs.cvat.ai/docs/manual/advanced/dataset_manifest/
 
         After all data is sent, the operation status can be retrieved via
         the /status endpoint.
-      summary: Method permanently attaches data (images, video, etc.) to a task
+
+        Once data is attached to a task, it cannot be detached or replaced.
+      summary: Attach data to a task
       parameters:
       - in: header
         name: Upload-Finish
@@ -5245,8 +5247,7 @@ paths:
   /api/tasks/{id}/data/meta:
     get:
       operationId: tasks_retrieve_data_meta
-      summary: Method provides a meta information about media files which are related
-        with the task
+      summary: Get metainformation for media files in a task
       parameters:
       - in: path
         name: id
@@ -5271,8 +5272,7 @@ paths:
           description: ''
     patch:
       operationId: tasks_partial_update_data_meta
-      summary: Method provides a meta information about media files which are related
-        with the task
+      summary: Update metainformation for media files in a task
       parameters:
       - in: path
         name: id
@@ -5379,7 +5379,7 @@ paths:
   /api/tasks/{id}/preview:
     get:
       operationId: tasks_retrieve_preview
-      summary: Method returns a preview image for the task
+      summary: Get a preview image for a task
       parameters:
       - in: path
         name: id
@@ -5403,8 +5403,7 @@ paths:
   /api/tasks/{id}/status:
     get:
       operationId: tasks_retrieve_status
-      summary: When task is being created the method returns information about a status
-        of the creation process
+      summary: Get the creation status of a task
       parameters:
       - in: path
         name: id
@@ -5442,7 +5441,7 @@ paths:
         Make sure to include this parameter as a query parameter in your subsequent requests
         to track the status of the task creation.
         Once the task has been successfully created, the server will return the id of the newly created task.
-      summary: Method recreates a task from an attached task backup file
+      summary: Recreate a task from a backup
       parameters:
       - in: header
         name: X-Organization
@@ -5511,7 +5510,7 @@ paths:
   /api/users:
     get:
       operationId: users_list
-      summary: Method returns a paginated list of users
+      summary: List users
       parameters:
       - name: X-Organization
         in: header
@@ -5608,7 +5607,7 @@ paths:
   /api/users/{id}:
     get:
       operationId: users_retrieve
-      summary: Method provides information of a specific user
+      summary: Get user details
       parameters:
       - in: path
         name: id
@@ -5633,7 +5632,7 @@ paths:
           description: ''
     patch:
       operationId: users_partial_update
-      summary: Method updates chosen fields of a user
+      summary: Update a user
       parameters:
       - in: path
         name: id
@@ -5663,7 +5662,7 @@ paths:
           description: ''
     delete:
       operationId: users_destroy
-      summary: Method deletes a specific user from the server
+      summary: Delete a user
       parameters:
       - in: path
         name: id
@@ -5685,8 +5684,8 @@ paths:
   /api/users/self:
     get:
       operationId: users_retrieve_self
-      description: Method returns an instance of a user who is currently authorized
-      summary: Method returns an instance of a user who is currently authorized
+      description: Method returns an instance of a user who is currently authenticated
+      summary: Get details of the current user
       tags:
       - users
       security:
@@ -5705,7 +5704,7 @@ paths:
   /api/webhooks:
     get:
       operationId: webhooks_list
-      summary: Method returns a paginated list of webhook according to query parameters
+      summary: List webhooks
       parameters:
       - name: X-Organization
         in: header
@@ -5805,7 +5804,7 @@ paths:
           description: ''
     post:
       operationId: webhooks_create
-      summary: Method creates a webhook
+      summary: Create a webhook
       parameters:
       - in: header
         name: X-Organization
@@ -5846,7 +5845,7 @@ paths:
   /api/webhooks/{id}:
     get:
       operationId: webhooks_retrieve
-      summary: Method returns details of a webhook
+      summary: Get webhook details
       parameters:
       - in: path
         name: id
@@ -5871,7 +5870,7 @@ paths:
           description: ''
     put:
       operationId: webhooks_update
-      summary: Method updates a webhook by id
+      summary: Replace a webhook
       parameters:
       - in: path
         name: id
@@ -5902,7 +5901,7 @@ paths:
           description: ''
     patch:
       operationId: webhooks_partial_update
-      summary: Methods does a partial update of chosen fields in a webhook
+      summary: Update a webhook
       parameters:
       - in: path
         name: id
@@ -5932,7 +5931,7 @@ paths:
           description: ''
     delete:
       operationId: webhooks_destroy
-      summary: Method deletes a webhook
+      summary: Delete a webhook
       parameters:
       - in: path
         name: id
@@ -5954,7 +5953,7 @@ paths:
   /api/webhooks/{id}/deliveries:
     get:
       operationId: webhooks_list_deliveries
-      summary: Method return a list of deliveries for a specific webhook
+      summary: List deliveries for a webhook
       parameters:
       - in: path
         name: id
@@ -5992,7 +5991,7 @@ paths:
   /api/webhooks/{id}/deliveries/{delivery_id}:
     get:
       operationId: webhooks_retrieve_deliveries
-      summary: Method return a specific delivery for a specific webhook
+      summary: Get details of a webhook delivery
       parameters:
       - in: path
         name: delivery_id
@@ -6024,7 +6023,7 @@ paths:
   /api/webhooks/{id}/deliveries/{delivery_id}/redelivery:
     post:
       operationId: webhooks_create_deliveries_redelivery
-      summary: Method redeliver a specific webhook delivery
+      summary: Redeliver a webhook delivery
       parameters:
       - in: path
         name: delivery_id
@@ -6052,7 +6051,7 @@ paths:
   /api/webhooks/{id}/ping:
     post:
       operationId: webhooks_create_ping
-      summary: Method send ping webhook
+      summary: Send a ping webhook
       parameters:
       - in: path
         name: id
@@ -6078,7 +6077,7 @@ paths:
   /api/webhooks/events:
     get:
       operationId: webhooks_retrieve_events
-      summary: Method return a list of available webhook events
+      summary: List available webhook events
       parameters:
       - in: query
         name: type
@@ -6316,7 +6315,6 @@ components:
       properties:
         id:
           type: integer
-          readOnly: true
         name:
           type: string
           maxLength: 64
@@ -6340,6 +6338,8 @@ components:
     AttributeRequest:
       type: object
       properties:
+        id:
+          type: integer
         name:
           type: string
           minLength: 1
@@ -6487,6 +6487,11 @@ components:
           items:
             $ref: '#/components/schemas/EventRequest'
           default: []
+        previous_event:
+          allOf:
+          - $ref: '#/components/schemas/EventRequest'
+          writeOnly: true
+          nullable: true
         timestamp:
           type: string
           format: date-time
@@ -6726,7 +6731,7 @@ components:
       type: object
       description: |-
         Read more about parameters here:
-        https://opencv.github.io/cvat/docs/manual/basics/create_an_annotation_task/#advanced-configuration
+        https://docs.cvat.ai/docs/manual/basics/create_an_annotation_task/#advanced-configuration
       properties:
         chunk_size:
           type: integer
@@ -6734,11 +6739,6 @@ components:
           minimum: 0
           nullable: true
           description: Maximum number of frames per chunk
-        size:
-          type: integer
-          maximum: 2147483647
-          minimum: 0
-          description: The number of frames
         image_quality:
           type: integer
           maximum: 100
@@ -6758,10 +6758,6 @@ components:
           type: string
           description: 'Frame filter. The only supported syntax is: ''step=N'''
           maxLength: 256
-        compressed_chunk_type:
-          $ref: '#/components/schemas/ChunkType'
-        original_chunk_type:
-          $ref: '#/components/schemas/ChunkType'
         client_files:
           type: array
           items:
@@ -6835,7 +6831,7 @@ components:
           default: false
           description: |
             Enable or disable task data chunk caching for the task.
-            Read more: https://opencv.github.io/cvat/docs/manual/advanced/data_on_fly/
+            Read more: https://docs.cvat.ai/docs/manual/advanced/data_on_fly/
         copy_data:
           type: boolean
           default: false
@@ -9135,6 +9131,8 @@ components:
           type: integer
         gt_count:
           type: integer
+        total_count:
+          type: integer
       required:
       - conflict_count
       - conflicts_by_type
@@ -9143,6 +9141,7 @@ components:
       - frame_count
       - frame_share
       - gt_count
+      - total_count
       - valid_count
       - warning_count
     QualityReportTarget:
@@ -9237,6 +9236,13 @@ components:
           type: string
         last_name:
           type: string
+        email_verification_required:
+          type: boolean
+          readOnly: true
+        key:
+          type: string
+          nullable: true
+          readOnly: true
       required:
       - username
     RegisterSerializerExRequest:
@@ -10150,4 +10156,4 @@ components:
       x-token-prefix: Token
 externalDocs:
   description: CVAT documentation
-  url: https://opencv.github.io/cvat/docs/
+  url: https://docs.cvat.ai/docs/

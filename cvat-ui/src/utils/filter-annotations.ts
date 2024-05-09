@@ -1,4 +1,4 @@
-// Copyright (C) 2023 CVAT.ai Corporation
+// Copyright (C) 2023-2024 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -32,7 +32,7 @@ export function filterAnnotations(annotations: ObjectState[], params: FilterAnno
         }
 
         // GT tracks are shown only on GT frames
-        if (workspace === Workspace.REVIEW_WORKSPACE && groundTruthJobFramesMeta && frame) {
+        if (workspace === Workspace.REVIEW && groundTruthJobFramesMeta && frame) {
             if (state.objectType === ObjectType.TRACK && state.isGroundTruth) {
                 return groundTruthJobFramesMeta.includedFrames.includes(frame);
             }

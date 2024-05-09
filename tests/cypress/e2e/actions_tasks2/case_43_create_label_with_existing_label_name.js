@@ -24,7 +24,7 @@ context('Creating a label with existing label name.', () => {
                     // Try to create a label with existing label name
                     cy.get('.cvat-constructor-viewer-new-item').click();
                     cy.get('[placeholder="Label name"]').type(firstLabelName);
-                    cy.contains('[role="alert"]', 'Label name must be unique for the task') // Checking alert visibility
+                    cy.contains('[role="alert"]', 'Label name must be unique') // Checking alert visibility
                         .should('exist')
                         .and('be.visible');
                 });

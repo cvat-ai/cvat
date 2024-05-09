@@ -9,15 +9,15 @@ description: 'Installing a development environment for different operating syste
 
 - Install necessary dependencies:
 
-  Ubuntu 18.04
+  Ubuntu 22.04/20.04
 
   ```bash
   sudo apt-get update && sudo apt-get --no-install-recommends install -y build-essential curl git redis-server python3-dev python3-pip python3-venv python3-tk libldap2-dev libsasl2-dev
   ```
 
   ```bash
-  # Install Node.js 16 and yarn
-  curl -sL https://deb.nodesource.com/setup_16.x | sudo -E bash -
+  # Install Node.js 20 and yarn
+  curl -fsSL https://deb.nodesource.com/setup_20.x | sudo bash -
   sudo apt-get install -y nodejs
   sudo npm install --global yarn
   ```
@@ -42,12 +42,12 @@ description: 'Installing a development environment for different operating syste
   ```
 
   ```bash
-  # CVAT supports only Python 3.9, so install it if you don’t have it:
-  pikaur -S python39
+  # CVAT supports only Python 3.10, so install it if you don’t have it:
+  pikaur -S python310
   ```
 
   ```bash
-  # Install Node.js 16, yarn and npm
+  # Install Node.js, yarn and npm
   sudo pacman -S nodejs-lts-gallium yarn npm
   ```
 
@@ -66,7 +66,7 @@ description: 'Installing a development environment for different operating syste
   - [Trailing Spaces](https://marketplace.visualstudio.com/items?itemName=shardulm94.trailing-spaces)
   - [Code Spell Checker](https://marketplace.visualstudio.com/items?itemName=streetsidesoftware.code-spell-checker)
 
-- Make sure to use Python 3.9.0 or higher
+- Make sure to use Python 3.10.0 or higher
 
   ```
   python3 --version
@@ -210,8 +210,16 @@ description: 'Installing a development environment for different operating syste
 - If you choose to run CVAT in localhost: Select `server: chrome` configuration and run it (F5) to open CVAT in Chrome
 - Alternative: If you changed CVAT_UI_HOST just enter `<YOUR_HOST_IP>:3000` in your browser.
 
+> Note for Mac users
+>
+> You may have a permission denied problem starting the server because **AirPlay Receiver** running on port 5000/7000.
+>
+> Turn off AirPlay Receiver:
+> _Go to System Settings_ → _General_ → _AirDrop & Handoff_ → _Untick Airplay Receiver_.
+
+
 You have done! Now it is possible to insert breakpoints and debug server and client of the tool.
-Instructions for running tests locally are available [here](/docs/contributing/running-tests/).
+Instructions for running tests locally are available {{< ilink "/docs/contributing/running-tests" "here" >}}.
 
 ## Note for Windows users
 
@@ -260,7 +268,7 @@ cvat_vector:
 ```
 
 In addition, you can completely disable analytics if you don't need it by deleting the following data from
-[launch.json](https://github.com/opencv/cvat/blob/develop/.vscode/launch.json):
+[launch.json](https://github.com/cvat-ai/cvat/blob/develop/.vscode/launch.json):
 
 ```json
   "DJANGO_LOG_SERVER_HOST": "localhost",
@@ -268,5 +276,5 @@ In addition, you can completely disable analytics if you don't need it by deleti
 ```
 
 Analytics on GitHub:
-[Analytics Components](https://github.com/opencv/cvat/tree/develop/components/analytics)
+[Analytics Components](https://github.com/cvat-ai/cvat/tree/develop/components/analytics)
 

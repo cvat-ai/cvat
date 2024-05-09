@@ -1,5 +1,5 @@
 // Copyright (C) 2019-2022 Intel Corporation
-// Copyright (C) 2022-2023 CVAT.ai Corporation
+// Copyright (C) 2022-2024 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -16,8 +16,8 @@ import {
     SerializedAbout, SerializedRemoteFile, SerializedUserAgreement,
     SerializedRegister, JobsFilter, SerializedJob, SerializedGuide, SerializedAsset, SerializedAPISchema,
     SerializedInvitationData, SerializedCloudStorage, SerializedFramesMetaData, SerializedCollection,
-    SerializedQualitySettingsData, ApiQualitySettingsFilter, SerializedQualityConflictData, ApiQualityConflictsFilter,
-    SerializedQualityReportData, ApiQualityReportsFilter, SerializedAnalyticsReport, ApiAnalyticsReportFilter,
+    SerializedQualitySettingsData, APIQualitySettingsFilter, SerializedQualityConflictData, APIQualityConflictsFilter,
+    SerializedQualityReportData, APIQualityReportsFilter, SerializedAnalyticsReport, APIAnalyticsReportFilter,
 } from './server-response-types';
 import { PaginatedResource } from './core-types';
 import { Storage } from './storage';
@@ -132,7 +132,20 @@ async function chunkUpload(file: File, uploadConfig): Promise<{ uploadSentSize: 
                 Authorization: Axios.defaults.headers.common.Authorization,
             },
             chunkSize,
-            retryDelays: null,
+            retryDelays: [2000, 4000, 8000, 16000, 32000, 64000],
+            onShouldRetry(err: tus.DetailedError | Error): boolean {
+                if (err instanceof tus.DetailedError) {
+                    const { originalResponse } = (err as tus.DetailedError);
+                    const code = (originalResponse?.getStatus() || 0);
+
+                    // do not retry if (code >= 400 && code < 500) is default tus behaviour
+                    // retry if code === 409 or 423 is default tus behaviour
+                    // additionally handle codes 429 and 0
+                    return !(code >= 400 && code < 500) || [409, 423, 429, 0].includes(code);
+                }
+
+                return false;
+            },
             onError(error) {
                 reject(error);
             },
@@ -557,7 +570,7 @@ async function getSelf(): Promise<SerializedUser> {
     return response.data;
 }
 
-async function authorized(): Promise<boolean> {
+async function authenticated(): Promise<boolean> {
     try {
         // In CVAT app we use two types of authentication
         // At first we check if authentication token is present
@@ -1172,18 +1185,20 @@ async function restoreProject(storage: Storage, file: File | string) {
     return wait();
 }
 
-const listenToCreateCallbacks: Record<number, {
-    promise: Promise<SerializedTask>;
+type LongProcessListener<R> = Record<number, {
+    promise: Promise<R>;
     onUpdate: ((state: string, progress: number, message: string) => void)[];
-}> = {};
+}>;
+
+const listenToCreateTaskCallbacks: LongProcessListener<SerializedTask> = {};
 
 function listenToCreateTask(
     id, onUpdate: (state: RQStatus, progress: number, message: string) => void,
 ): Promise<SerializedTask> {
-    if (id in listenToCreateCallbacks) {
-        listenToCreateCallbacks[id].onUpdate.push(onUpdate);
+    if (id in listenToCreateTaskCallbacks) {
+        listenToCreateTaskCallbacks[id].onUpdate.push(onUpdate);
         // to avoid extra status check requests we do not create any more promises
-        return listenToCreateCallbacks[id].promise;
+        return listenToCreateTaskCallbacks[id].promise;
     }
 
     const promise = new Promise<SerializedTask>((resolve, reject) => {
@@ -1195,7 +1210,7 @@ function listenToCreateTask(
                 const state = response.data.state?.toLowerCase();
                 if ([RQStatus.QUEUED, RQStatus.STARTED].includes(state)) {
                     // notify all the subscribtions when data status changed
-                    listenToCreateCallbacks[id].onUpdate.forEach((callback) => {
+                    listenToCreateTaskCallbacks[id].onUpdate.forEach((callback) => {
                         callback(
                             state,
                             response.data.progress || 0,
@@ -1210,14 +1225,14 @@ function listenToCreateTask(
                     resolve(createdTask);
                 } else if (state === RQStatus.FAILED) {
                     const failMessage = 'Images processing failed';
-                    listenToCreateCallbacks[id].onUpdate.forEach((callback) => {
+                    listenToCreateTaskCallbacks[id].onUpdate.forEach((callback) => {
                         callback(state, 0, failMessage);
                     });
 
                     reject(new ServerError(filterPythonTraceback(response.data.message), 400));
                 } else {
                     const failMessage = 'Unknown status received';
-                    listenToCreateCallbacks[id].onUpdate.forEach((callback) => {
+                    listenToCreateTaskCallbacks[id].onUpdate.forEach((callback) => {
                         callback(state || RQStatus.UNKNOWN, 0, failMessage);
                     });
                     reject(
@@ -1228,7 +1243,7 @@ function listenToCreateTask(
                     );
                 }
             } catch (errorData) {
-                listenToCreateCallbacks[id].onUpdate.forEach((callback) => {
+                listenToCreateTaskCallbacks[id].onUpdate.forEach((callback) => {
                     callback('failed', 0, 'Server request failed');
                 });
                 reject(generateError(errorData));
@@ -1238,13 +1253,13 @@ function listenToCreateTask(
         setTimeout(checkStatus, 100);
     });
 
-    listenToCreateCallbacks[id] = {
+    listenToCreateTaskCallbacks[id] = {
         promise,
         onUpdate: [onUpdate],
     };
     promise.catch(() => {
         // do nothing, avoid uncaught promise exceptions
-    }).finally(() => delete listenToCreateCallbacks[id]);
+    }).finally(() => delete listenToCreateTaskCallbacks[id]);
     return promise;
 }
 
@@ -1937,18 +1952,21 @@ async function getCloudStorages(filter = {}): Promise<SerializedCloudStorage[] &
 
     let response = null;
     try {
+        if ('id' in filter) {
+            response = await Axios.get(`${backendAPI}/cloudstorages/${filter.id}`);
+            return Object.assign([response.data], { count: 1 });
+        }
+
         response = await Axios.get(`${backendAPI}/cloudstorages`, {
             params: {
                 ...filter,
                 page_size: 12,
             },
         });
+        return Object.assign(response.data.results, { count: response.data.count });
     } catch (errorData) {
         throw generateError(errorData);
     }
-
-    response.data.results.count = response.data.count;
-    return response.data.results;
 }
 
 async function getCloudStorageContent(id: number, path: string, nextToken?: string, manifestPath?: string):
@@ -2321,7 +2339,7 @@ async function createAsset(file: File, guideId: number): Promise<SerializedAsset
 }
 
 async function getQualitySettings(
-    filter: ApiQualitySettingsFilter,
+    filter: APIQualitySettingsFilter,
 ): Promise<SerializedQualitySettingsData> {
     const { backendAPI } = config;
 
@@ -2357,7 +2375,7 @@ async function updateQualitySettings(
 }
 
 async function getQualityConflicts(
-    filter: ApiQualityConflictsFilter,
+    filter: APIQualityConflictsFilter,
 ): Promise<SerializedQualityConflictData[]> {
     const params = enableOrganization();
     const { backendAPI } = config;
@@ -2375,7 +2393,7 @@ async function getQualityConflicts(
 }
 
 async function getQualityReports(
-    filter: ApiQualityReportsFilter,
+    filter: APIQualityReportsFilter,
 ): Promise<PaginatedResource<SerializedQualityReportData>> {
     const { backendAPI } = config;
 
@@ -2394,7 +2412,7 @@ async function getQualityReports(
 }
 
 async function getAnalyticsReports(
-    filter: ApiAnalyticsReportFilter,
+    filter: APIAnalyticsReportFilter,
 ): Promise<SerializedAnalyticsReport> {
     const { backendAPI } = config;
 
@@ -2411,6 +2429,86 @@ async function getAnalyticsReports(
     }
 }
 
+const listenToCreateAnalyticsReportCallbacks: {
+    job: LongProcessListener<void>;
+    task: LongProcessListener<void>;
+    project: LongProcessListener<void>;
+} = {
+    job: {},
+    task: {},
+    project: {},
+};
+
+async function calculateAnalyticsReport(
+    body: {
+        job_id?: number;
+        task_id?: number;
+        project_id?: number;
+    },
+    onUpdate: (state: string, progress: number, message: string) => void,
+): Promise<void> {
+    const id = body.job_id || body.task_id || body.project_id;
+    const { backendAPI } = config;
+    const params = enableOrganization();
+    let listenerStorage: LongProcessListener<void> = null;
+
+    if (Number.isInteger(body.job_id)) {
+        listenerStorage = listenToCreateAnalyticsReportCallbacks.job;
+    } else if (Number.isInteger(body.task_id)) {
+        listenerStorage = listenToCreateAnalyticsReportCallbacks.task;
+    } else if (Number.isInteger(body.project_id)) {
+        listenerStorage = listenToCreateAnalyticsReportCallbacks.project;
+    }
+
+    if (listenerStorage[id]) {
+        listenerStorage[id].onUpdate.push(onUpdate);
+        return listenerStorage[id].promise;
+    }
+
+    const promise = new Promise<void>((resolve, reject) => {
+        Axios.post(`${backendAPI}/analytics/reports`, {
+            ...body,
+            ...params,
+        }).then(({ data: { rq_id: rqID } }) => {
+            listenerStorage[id].onUpdate.forEach((_onUpdate) => _onUpdate(RQStatus.QUEUED, 0, 'Analytics report request sent'));
+            const checkStatus = (): void => {
+                Axios.post(`${backendAPI}/analytics/reports`, {
+                    ...body,
+                    ...params,
+                }, { params: { rq_id: rqID } }).then((response) => {
+                    // TODO: rewrite server logic, now it returns 202, 201 codes, but we need RQ statuses and details
+                    // after this patch is merged https://github.com/cvat-ai/cvat/pull/7537
+                    if (response.status === 201) {
+                        listenerStorage[id].onUpdate.forEach((_onUpdate) => _onUpdate(RQStatus.FINISHED, 0, 'Done'));
+                        resolve();
+                        return;
+                    }
+
+                    listenerStorage[id].onUpdate.forEach((_onUpdate) => _onUpdate(RQStatus.QUEUED, 0, 'Analytics report calculation is in progress'));
+                    setTimeout(checkStatus, 10000);
+                }).catch((errorData) => {
+                    reject(generateError(errorData));
+                });
+            };
+
+            setTimeout(checkStatus, 2500);
+        }).catch((errorData) => {
+            reject(generateError(errorData));
+        });
+    });
+
+    listenerStorage[id] = {
+        promise,
+        onUpdate: [onUpdate],
+    };
+
+    promise.finally(() => {
+        delete listenerStorage[id];
+    });
+
+    return promise;
+}
+
 export default Object.freeze({
     server: Object.freeze({
         setAuthData,
@@ -2423,7 +2521,7 @@ export default Object.freeze({
         changePassword,
         requestPasswordReset,
         resetPassword,
-        authorized,
+        authenticated,
         healthCheck,
         register,
         request: serverRequest,
@@ -2562,6 +2660,7 @@ export default Object.freeze({
     analytics: Object.freeze({
         performance: Object.freeze({
             reports: getAnalyticsReports,
+            calculate: calculateAnalyticsReport,
         }),
         quality: Object.freeze({
             reports: getQualityReports,

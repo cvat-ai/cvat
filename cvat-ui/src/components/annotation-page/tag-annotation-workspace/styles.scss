@@ -47,7 +47,7 @@
     }
 }
 
-.labels-tag-annotation-sidebar-not-found-wrapper {
+.cvat-tag-annotation-sidebar-empty {
     margin-top: $grid-unit-size * 4;
 }
 
@@ -85,4 +85,14 @@
     margin-left: $grid-unit-size;
     width: $grid-unit-size * 4;
     height: $grid-unit-size * 4;
+}
+
+.cvat-frame-tag {
+    transform-origin: left;
+}
+
+.cvat-frame-tag-highlighted {
+    @extend .cvat-frame-tag;
+
+    transform: scale(1.1);
 }

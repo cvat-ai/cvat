@@ -1,5 +1,5 @@
 // Copyright (C) 2020-2022 Intel Corporation
-// Copyright (C) 2022-2023 CVAT.ai Corporation
+// Copyright (C) 2022-2024 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -70,7 +70,7 @@ import showPlatformNotification, {
 } from 'utils/platform-checker';
 import '../styles.scss';
 import appConfig from 'config';
-import EventRecorder from 'utils/controls-logger';
+import EventRecorder from 'utils/event-recorder';
 import { authQuery } from 'utils/auth-query';
 import EmailConfirmationPage from './email-confirmation-pages/email-confirmed';
 import EmailVerificationSentPage from './email-confirmation-pages/email-verification-sent';
@@ -82,7 +82,7 @@ import InvitationWatcher from './invitation-watcher/invitation-watcher';
 interface CVATAppProps {
     loadFormats: () => void;
     loadAbout: () => void;
-    verifyAuthorized: () => void;
+    verifyAuthenticated: () => void;
     loadUserAgreements: () => void;
     initPlugins: () => void;
     initModels: () => void;
@@ -148,7 +148,6 @@ class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentP
         });
 
         core.logger.configure(() => window.document.hasFocus, userActivityCallback);
-        EventRecorder.initSave();
 
         core.config.onOrganizationChange = (newOrgId: number | null) => {
             if (newOrgId === null) {
@@ -253,9 +252,9 @@ class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentP
         }
     }
 
-    public componentDidUpdate(): void {
+    public componentDidUpdate(prevProps: CVATAppProps): void {
         const {
-            verifyAuthorized,
+            verifyAuthenticated,
             loadFormats,
             loadAbout,
             loadUserAgreements,
@@ -297,8 +296,16 @@ class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentP
         this.showMessages();
 
         if (!userInitialized && !userFetching) {
-            verifyAuthorized();
+            verifyAuthenticated();
             return;
+        }
+
+        if (user !== prevProps.user) {
+            if (user) {
+                EventRecorder.initSave();
+            } else {
+                EventRecorder.cancelSave();
+            }
         }
 
         if (!userAgreementsInitialized && !userAgreementsFetching) {

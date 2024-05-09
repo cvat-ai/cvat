@@ -1,4 +1,5 @@
 # Copyright (C) 2020-2022 Intel Corporation
+# Copyright (C) 2024 CVAT.ai Corporation
 #
 # SPDX-License-Identifier: MIT
 
@@ -18,6 +19,7 @@ import re
 import logging
 import platform
 
+from datumaro.util.os_util import walk
 from rq.job import Job, Dependency
 from django_rq.queues import DjangoRQ
 from pathlib import Path
@@ -144,9 +146,7 @@ def parse_exception_message(msg):
     return parsed_msg
 
 def process_failed_job(rq_job: Job):
-    exc_info = str(rq_job.exc_info or getattr(rq_job.dependency, 'exc_info', None) or '')
-    if rq_job.dependency:
-        rq_job.dependency.delete()
+    exc_info = str(rq_job.exc_info or '')
     rq_job.delete()
 
     msg = parse_exception_message(exc_info)
@@ -204,49 +204,10 @@ def define_dependent_job(
     return Dependency(jobs=[sorted(user_jobs, key=lambda job: job.created_at)[-1]], allow_failure=True) if user_jobs else None
 
 
-def get_rq_lock_by_user(queue: DjangoRQ, user_id: int, additional_condition: bool = True) -> Union[Lock, nullcontext]:
-    if settings.ONE_RUNNING_JOB_IN_QUEUE_PER_USER and additional_condition:
+def get_rq_lock_by_user(queue: DjangoRQ, user_id: int) -> Union[Lock, nullcontext]:
+    if settings.ONE_RUNNING_JOB_IN_QUEUE_PER_USER:
         return queue.connection.lock(f'{queue.name}-lock-{user_id}', timeout=30)
     return nullcontext()
-
-
-def configure_dependent_job_to_download_from_cs(
-    queue: DjangoRQ,
-    rq_id: str,
-    rq_func: Callable[[Any, str, str], None],
-    db_storage: Any,
-    filename: str,
-    key: str,
-    request: HttpRequest,
-    result_ttl: float,
-    failure_ttl: float,
-    should_be_dependent: bool = settings.ONE_RUNNING_JOB_IN_QUEUE_PER_USER,
-) -> Job:
-    rq_job_id_download_file = rq_id + f'?action=download_{key.replace("/", ".")}'
-    rq_job_download_file = queue.fetch_job(rq_job_id_download_file)
-
-    if rq_job_download_file and (rq_job_download_file.is_finished or rq_job_download_file.is_failed):
-        rq_job_download_file.delete()
-        rq_job_download_file = None
-
-    if not rq_job_download_file:
-        # note: boto3 resource isn't pickleable, so we can't use storage
-        user_id = request.user.id
-
-        with get_rq_lock_by_user(queue, user_id):
-            rq_job_download_file = queue.enqueue_call(
-                func=rq_func,
-                args=(db_storage, filename, key),
-                job_id=rq_job_id_download_file,
-                meta={
-                    **get_rq_job_meta(request=request, db_obj=db_storage),
-                    KEY_TO_EXCLUDE_FROM_DEPENDENCY: True,
-                },
-                result_ttl=result_ttl,
-                failure_ttl=failure_ttl,
-                depends_on=define_dependent_job(queue, user_id, should_be_dependent, rq_id=rq_job_id_download_file)
-            )
-    return rq_job_download_file
 
 def get_rq_job_meta(request, db_obj):
     # to prevent circular import
@@ -436,3 +397,19 @@ def build_annotations_file_name(
         class_name, identifier, 'annotations' if is_annotation_file else 'dataset',
         timestamp, format_name, extension,
     ).lower()
+
+
+def directory_tree(path, max_depth=None) -> str:
+    if not os.path.exists(path):
+        raise Exception(f"No such file or directory: {path}")
+
+    tree = ""
+
+    baselevel = path.count(os.sep)
+    for root, _, files in walk(path, max_depth=max_depth):
+        curlevel = root.count(os.sep)
+        indent = "|  " * (curlevel - baselevel) + "|-"
+        tree += f"{indent}{os.path.basename(root)}/\n"
+        for file in files:
+            tree += f"{indent}-{file}\n"
+    return tree

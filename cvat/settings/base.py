@@ -1,5 +1,5 @@
 # Copyright (C) 2018-2022 Intel Corporation
-# Copyright (C) 2022-2023 CVAT.ai Corporation
+# Copyright (C) 2022-2024 CVAT.ai Corporation
 #
 # SPDX-License-Identifier: MIT
 
@@ -105,7 +105,6 @@ INSTALLED_APPS = [
     'health_check',
     'health_check.cache',
     'health_check.db',
-    'health_check.contrib.migrations',
     'health_check.contrib.psutil',
     'cvat.apps.iam',
     'cvat.apps.dataset_manager',
@@ -171,13 +170,11 @@ REST_FRAMEWORK = {
 }
 
 
-REST_AUTH_REGISTER_SERIALIZERS = {
+REST_AUTH = {
     'REGISTER_SERIALIZER': 'cvat.apps.iam.serializers.RegisterSerializerEx',
-}
-
-REST_AUTH_SERIALIZERS = {
     'LOGIN_SERIALIZER': 'cvat.apps.iam.serializers.LoginSerializerEx',
     'PASSWORD_RESET_SERIALIZER': 'cvat.apps.iam.serializers.PasswordResetSerializerEx',
+    'OLD_PASSWORD_FIELD_ENABLED': True,
 }
 
 if to_bool(os.getenv('CVAT_ANALYTICS', False)):
@@ -199,6 +196,7 @@ MIDDLEWARE = [
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     'dj_pagination.middleware.PaginationMiddleware',
     'cvat.apps.iam.middleware.ContextMiddleware',
+    'allauth.account.middleware.AccountMiddleware',
 ]
 
 UI_URL = ''
@@ -238,7 +236,6 @@ IAM_ADMIN_ROLE = 'admin'
 IAM_ROLES = [IAM_ADMIN_ROLE, 'business', 'user', 'worker']
 IAM_OPA_HOST = 'http://opa:8181'
 IAM_OPA_DATA_URL = f'{IAM_OPA_HOST}/v1/data'
-IAM_OPA_RULES_PATH = 'cvat/apps/iam/rules:'
 LOGIN_URL = 'rest_login'
 LOGIN_REDIRECT_URL = '/'
 
@@ -264,8 +261,6 @@ ACCOUNT_EMAIL_CONFIRMATION_ANONYMOUS_REDIRECT_URL = '/auth/email-confirmation'
 ACCOUNT_EMAIL_VERIFICATION_SENT_REDIRECT_URL = '/auth/email-verification-sent'
 INCORRECT_EMAIL_CONFIRMATION_URL = '/auth/incorrect-email-confirmation'
 
-OLD_PASSWORD_FIELD_ENABLED = True
-
 # Django-RQ
 # https://github.com/rq/django-rq
 
@@ -287,7 +282,7 @@ shared_queue_settings = {
     'HOST': redis_inmem_host,
     'PORT': redis_inmem_port,
     'DB': 0,
-    'PASSWORD': urllib.parse.quote(redis_inmem_password),
+    'PASSWORD': redis_inmem_password,
 }
 
 RQ_QUEUES = {
@@ -440,9 +435,6 @@ os.makedirs(CLOUD_STORAGE_ROOT, exist_ok=True)
 TMP_FILES_ROOT = os.path.join(DATA_ROOT, 'tmp')
 os.makedirs(TMP_FILES_ROOT, exist_ok=True)
 
-IAM_OPA_BUNDLE_PATH = os.path.join(STATIC_ROOT, 'opa', 'bundle.tar.gz')
-os.makedirs(Path(IAM_OPA_BUNDLE_PATH).parent, exist_ok=True)
-
 # logging is known to be unreliable with RQ when using async transports
 vector_log_handler = os.getenv('VECTOR_EVENT_HANDLER', 'AsynchronousLogstashHandler')
 
@@ -472,6 +464,14 @@ LOGGING = {
             'maxBytes': 1024*1024*50, # 50 MB
             'backupCount': 5,
         },
+        'dataset_handler': {
+            'class': 'logging.handlers.RotatingFileHandler',
+            'level': 'DEBUG',
+            'filename': os.path.join(BASE_DIR, 'logs', 'cvat_server_dataset.log'),
+            'formatter': 'standard',
+            'maxBytes': 1024*1024*50, # 50 MB
+            'backupCount': 3,
+        },
         'vector': {
             'level': 'INFO',
             'class': f'logstash_async.handler.{vector_log_handler}',
@@ -494,6 +494,10 @@ LOGGING = {
             'level': os.getenv('DJANGO_LOG_LEVEL', 'DEBUG'),
         },
 
+        'dataset_logger': {
+            'handlers': ['dataset_handler']
+        },
+
         'django': {
             'level': 'INFO',
         },
@@ -506,6 +510,8 @@ LOGGING = {
         }
     },
 }
+
+CVAT_LOG_IMPORT_ERRORS = to_bool(os.getenv('CVAT_LOG_IMPORT_ERRORS', True))
 
 if os.getenv('DJANGO_LOG_SERVER_HOST'):
     LOGGING['loggers']['vector']['handlers'] += ['vector']
@@ -601,7 +607,7 @@ SPECTACULAR_SETTINGS = {
     'TOS': 'https://www.google.com/policies/terms/',
     'EXTERNAL_DOCS': {
         'description': 'CVAT documentation',
-        'url': 'https://opencv.github.io/cvat/docs/',
+        'url': 'https://docs.cvat.ai/docs/',
     },
     # OTHER SETTINGS
     # https://drf-spectacular.readthedocs.io/en/latest/settings.html
@@ -640,7 +646,7 @@ SPECTACULAR_SETTINGS = {
 }
 
 # set similar UI restrictions
-# https://github.com/opencv/cvat/blob/bad1dc2799afbb22222faaecc7336d999f4cc3fe/cvat-ui/src/utils/validation-patterns.ts#L26
+# https://github.com/cvat-ai/cvat/blob/bad1dc2799afbb22222faaecc7336d999f4cc3fe/cvat-ui/src/utils/validation-patterns.ts#L26
 ACCOUNT_USERNAME_MIN_LENGTH = 5
 ACCOUNT_LOGOUT_ON_PASSWORD_CHANGE = True
 
