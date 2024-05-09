@@ -204,7 +204,7 @@ MIDDLEWARE = [
     'cvat.apps.iam.views.ContextMiddleware',
 ]
 
-UI_URL = ''
+UI_URL = 'https://app.audino.in'
 
 STATICFILES_FINDERS = [
     'django.contrib.staticfiles.finders.FileSystemFinder',
@@ -270,9 +270,9 @@ ACCOUNT_AUTHENTICATION_METHOD = 'username_email'
 
 # set UI url to redirect after a successful e-mail confirmation
 #changed from '/auth/login' to '/auth/email-confirmation' for email confirmation message
-ACCOUNT_EMAIL_CONFIRMATION_ANONYMOUS_REDIRECT_URL = '/auth/email-confirmationn'
-ACCOUNT_EMAIL_VERIFICATION_SENT_REDIRECT_URL = '/auth/email-verification-sent'
-INCORRECT_EMAIL_CONFIRMATION_URL = '/auth/incorrect-email-confirmation'
+ACCOUNT_EMAIL_CONFIRMATION_ANONYMOUS_REDIRECT_URL = f'{UI_URL}/auth/email-confirmationn'
+ACCOUNT_EMAIL_VERIFICATION_SENT_REDIRECT_URL = f'{UI_URL}/auth/email-verification-sent'
+INCORRECT_EMAIL_CONFIRMATION_URL = f'{UI_URL}/auth/incorrect-email-confirmation'
 
 OLD_PASSWORD_FIELD_ENABLED = True
 
