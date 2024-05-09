@@ -220,7 +220,7 @@
 
 .cvat-objects-sidebar-state-item {
     width: 100%;
-    transition: box-shadow 0.5s;
+    transition: box-shadow $box-shadow-transition;
     border: 1px solid $border-color-1;
     border-radius: 4px;
     padding: $grid-unit-size * 0.5;
@@ -347,7 +347,7 @@
 
 .cvat-objects-sidebar-label-item {
     height: 2.5em;
-    transition: box-shadow 0.5s;
+    transition: box-shadow $box-shadow-transition;
     border: 1px solid $border-color-1;
     border-radius: 4px;
     padding: $grid-unit-size * 0.5;

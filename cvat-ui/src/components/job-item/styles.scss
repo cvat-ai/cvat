@@ -11,7 +11,7 @@
     background: $background-color-1;
 
     &:hover {
-        transition: box-shadow 0.5s;
+        transition: box-shadow $box-shadow-transition;
         box-shadow: $box-shadow-base;
     }
 
