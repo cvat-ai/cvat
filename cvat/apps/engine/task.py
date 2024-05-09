@@ -2,7 +2,8 @@
 # Copyright (C) 2022-2023 CVAT.ai Corporation
 #
 # SPDX-License-Identifier: MIT
-from pydub import AudioSegment
+# from pydub import AudioSegment
+import av
 import math
 import itertools
 import fnmatch
@@ -139,6 +140,8 @@ def _get_task_segment_data(
                 start_time = stop_time + 1
 
         segments = _segments()
+        slogger.glob.debug("Segment length")
+        slogger.glob.debug(len(segments))
         segment_size = 0
         overlap = 0
 
@@ -1142,10 +1145,21 @@ def _create_thread(
             while not futures.empty():
                 process_results(futures.get().result())
 
-    def get_audio_duration(audio_path):
-        audio = AudioSegment.from_file(audio_path)
-        total_duration = len(audio)  # Duration in milliseconds
-        return total_duration
+    def get_audio_duration(file_path):
+        # Open the audio file
+        container = av.open(file_path)
+
+        # Find the audio stream
+        audio_stream = next(s for s in container.streams if s.type == 'audio')
+
+        # Get the duration of the audio stream in seconds
+        duration_seconds = audio_stream.duration / av.time_base
+
+        # Close the container
+        container.close()
+
+        return duration_seconds
+
 
     db_task.data.audio_total_duration = None
     if MEDIA_TYPE == "audio":
