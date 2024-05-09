@@ -5,7 +5,9 @@
 
 import { createAction, ActionUnion, ThunkAction } from 'utils/redux';
 import { CombinedState } from 'reducers';
-import { getCore, Storage } from 'cvat-core-wrapper';
+import {
+    getCore, Storage, Job, Task, Project,
+} from 'cvat-core-wrapper';
 import { EventScope } from 'cvat-logger';
 import { getProjectsAsync } from './projects-actions';
 import { AnnotationActionTypes, fetchAnnotationsAsync } from './annotation-actions';
@@ -36,10 +38,10 @@ export const importActions = {
     importDataset: (instance: any, format: string) => (
         createAction(ImportActionTypes.IMPORT_DATASET, { instance, format })
     ),
-    importDatasetSuccess: (instance: any, resource: 'dataset' | 'annotation') => (
+    importDatasetSuccess: (instance: Job | Task | Project, resource: 'dataset' | 'annotation') => (
         createAction(ImportActionTypes.IMPORT_DATASET_SUCCESS, { instance, resource })
     ),
-    importDatasetFailed: (instance: any, resource: 'dataset' | 'annotation', error: any) => (
+    importDatasetFailed: (instance: Job | Task | Project, resource: 'dataset' | 'annotation', error: any) => (
         createAction(ImportActionTypes.IMPORT_DATASET_FAILED, {
             instance,
             resource,
@@ -112,22 +114,18 @@ export const importDatasetAsync = (
                 await instance.logger.log(EventScope.uploadAnnotations);
                 await instance.annotations.clear(true);
                 await instance.actions.clear();
-                const history = await instance.actions.get();
 
                 // first set empty objects list
                 // to escape some problems in canvas when shape with the same
                 // clientID has different type (polygon, rectangle) for example
-                dispatch({
-                    type: AnnotationActionTypes.UPLOAD_JOB_ANNOTATIONS_SUCCESS,
-                    payload: {
-                        states: [],
-                        history,
-                    },
-                });
+                dispatch({ type: AnnotationActionTypes.UPLOAD_JOB_ANNOTATIONS_SUCCESS });
 
-                setTimeout(() => {
-                    dispatch(fetchAnnotationsAsync());
-                });
+                const relevantInstance = getState().annotation.job.instance;
+                if (relevantInstance && relevantInstance.id === instance.id) {
+                    setTimeout(() => {
+                        dispatch(fetchAnnotationsAsync());
+                    });
+                }
             }
         } catch (error) {
             dispatch(importActions.importDatasetFailed(instance, resource, error));

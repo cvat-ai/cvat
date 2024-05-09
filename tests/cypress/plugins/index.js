@@ -41,5 +41,11 @@ module.exports = (on, config) => {
         }
         return launchOptions;
     });
+
+    on('after:spec', (spec, results) => {
+        if (results && results.stats.failures === 0 && results.video) {
+            fs.unlinkSync(results.video);
+        }
+    });
     return config;
 };

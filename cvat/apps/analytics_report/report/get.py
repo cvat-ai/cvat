@@ -53,31 +53,27 @@ def _clamp_working_time(statistics):
 
 
 def _get_object_report(obj_model, pk, start_date, end_date):
+    data = {}
     try:
         db_obj = obj_model.objects.get(pk=pk)
         db_analytics_report = db_obj.analytics_report
+        data[f"{obj_model.__name__.lower()}_id"] = pk
     except obj_model.DoesNotExist as ex:
-        raise NotFound(f"{obj_model.__class__.__name__} object with pk={pk} does not exist") from ex
+        raise NotFound(f"{obj_model.__name__} object with pk={pk} does not exist") from ex
     except AnalyticsReport.DoesNotExist:
         db_analytics_report = get_empty_report()
 
     statistics = _filter_statistics_by_date(db_analytics_report.statistics, start_date, end_date)
     statistics = _convert_datetime_to_date(statistics)
-    statistics = _clamp_working_time(statistics)
+    data["statistics"] = _clamp_working_time(statistics)
+    data["created_date"] = db_analytics_report.created_date
 
     if obj_model is Job:
-        target = TargetChoice.JOB
+        data["target"] = TargetChoice.JOB
     elif obj_model is Task:
-        target = TargetChoice.TASK
+        data["target"] = TargetChoice.TASK
     elif obj_model is Project:
-        target = TargetChoice.PROJECT
-
-    data = {
-        "target": target,
-        f"{obj_model.__name__.lower()}_id": pk,
-        "statistics": statistics,
-        "created_date": db_analytics_report.created_date,
-    }
+        data["target"] = TargetChoice.PROJECT
     return data
 
 
