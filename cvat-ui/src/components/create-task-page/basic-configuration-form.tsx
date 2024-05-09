@@ -15,7 +15,7 @@ export interface BaseConfiguration {
 }
 
 interface Props {
-    onChange(values: BaseConfiguration): Promise<void>;
+    onChange(values: BaseConfiguration): void;
     many: boolean;
     exampleMultiTaskName?: string;
 }

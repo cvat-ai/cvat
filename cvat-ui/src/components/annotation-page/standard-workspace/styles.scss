@@ -33,8 +33,9 @@
         flex-direction: column;
 
         > .cvat-objects-sidebar-tabs {
-            flex-grow: 10;
+            flex-grow: 1;
             padding-top: $grid-unit-size;
+            height: 0;
 
             > div {
                 display: flex;

@@ -181,6 +181,7 @@ class AdvancedConfigurationForm extends React.PureComponent<Props> {
                     });
                 });
             }
+
             return this.formRef.current.validateFields()
                 .then(
                     (values: Store): Promise<void> => {

@@ -240,13 +240,11 @@ class CreateTaskContent extends React.PureComponent<Props & RouteComponentProps,
         }));
     };
 
-    private handleChangeBasicConfiguration = (values: BaseConfiguration): Promise<void> => (
-        new Promise((resolve) => {
-            this.setState({
-                basic: { ...values },
-            }, resolve);
-        })
-    );
+    private handleChangeBasicConfiguration = (values: BaseConfiguration): void => {
+        this.setState({
+            basic: { ...values },
+        });
+    };
 
     private handleSubmitAdvancedConfiguration = (values: AdvancedConfiguration): Promise<void> => (
         new Promise((resolve) => {

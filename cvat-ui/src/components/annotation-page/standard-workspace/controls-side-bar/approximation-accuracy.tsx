@@ -62,7 +62,9 @@ function ApproximationAccuracy(props: Props): React.ReactPortal | null {
                         max={MAX_ACCURACY}
                         step={1}
                         dots
-                        tooltipVisible={false}
+                        tooltip={{
+                            open: false,
+                        }}
                         onChange={onChange}
                         marks={marks}
                     />

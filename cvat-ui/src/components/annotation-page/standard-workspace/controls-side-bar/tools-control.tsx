@@ -1432,7 +1432,7 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
             <Modal
                 title='Making a server request'
                 zIndex={Number.MAX_SAFE_INTEGER}
-                visible
+                open
                 destroyOnClose
                 closable={false}
                 footer={[]}
