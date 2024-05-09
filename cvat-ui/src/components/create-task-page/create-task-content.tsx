@@ -240,17 +240,21 @@ class CreateTaskContent extends React.PureComponent<Props & RouteComponentProps,
         }));
     };
 
-    private handleChangeBasicConfiguration = (values: BaseConfiguration): void => {
-        this.setState({
-            basic: { ...values },
-        });
-    };
+    private handleChangeBasicConfiguration = (values: BaseConfiguration): Promise<void> => (
+        new Promise((resolve) => {
+            this.setState({
+                basic: { ...values },
+            }, resolve);
+        })
+    );
 
-    private handleSubmitAdvancedConfiguration = (values: AdvancedConfiguration): void => {
-        this.setState({
-            advanced: { ...values },
-        });
-    };
+    private handleSubmitAdvancedConfiguration = (values: AdvancedConfiguration): Promise<void> => (
+        new Promise((resolve) => {
+            this.setState({
+                advanced: { ...values },
+            }, resolve);
+        })
+    );
 
     private handleTaskSubsetChange = (value: string): void => {
         this.setState({
@@ -437,7 +441,7 @@ class CreateTaskContent extends React.PureComponent<Props & RouteComponentProps,
                         .then((response: any) => {
                             const [project] = response;
                             const { advanced } = this.state;
-                            this.handleSubmitAdvancedConfiguration({
+                            return this.handleSubmitAdvancedConfiguration({
                                 ...advanced,
                                 sourceStorage: new Storage(
                                     project.sourceStorage || { location: StorageLocation.LOCAL },
@@ -446,7 +450,6 @@ class CreateTaskContent extends React.PureComponent<Props & RouteComponentProps,
                                     project.targetStorage || { location: StorageLocation.LOCAL },
                                 ),
                             });
-                            return Promise.resolve();
                         })
                         .catch((error: Error): void => {
                             throw new Error(`Couldn't fetch the project ${projectId} ${error.toString()}`);
