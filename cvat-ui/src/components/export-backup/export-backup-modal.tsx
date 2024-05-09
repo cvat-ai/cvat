@@ -1,4 +1,4 @@
-// Copyright (c) 2022 CVAT.ai Corporation
+// Copyright (c) 2022-2024 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
