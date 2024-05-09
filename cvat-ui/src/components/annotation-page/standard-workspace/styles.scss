@@ -20,7 +20,7 @@
     background-color: $background-color-2;
     border-left: 1px solid $border-color-1;
     border-bottom: 1px solid $border-color-1;
-    border-radius: 4px 0 0 4px;
+    border-radius: $border-radius-base * 0.5 0 0 $border-radius-base * 0.5;
     z-index: 2;
 }
 
