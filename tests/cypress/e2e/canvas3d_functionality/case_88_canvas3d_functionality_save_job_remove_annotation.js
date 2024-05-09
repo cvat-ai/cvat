@@ -48,7 +48,7 @@ context('Canvas 3D functionality. Save a job. Remove annotations.', () => {
         it('Remove annotations. Save the job.', () => {
             cy.removeAnnotations();
             cy.saveJob('PUT');
-            cy.contains('Saving changes on the server').should('be.hidden');
+            cy.get('Saving changes on the server').should('not.exist');
             cy.get('.cvat-objects-sidebar-state-item').should('not.exist');
             cy.wait(waitTime);
             cy.customScreenshot('.cvat-canvas3d-topview', 'canvas3d_topview_after_remove_annotations');
