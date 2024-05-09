@@ -893,7 +893,7 @@ class CreateTaskContent extends React.PureComponent<Props & RouteComponentProps,
                 </Col>
                 <Col>
                     <Button
-                        className='cvat-submit-open-task-button'
+                        className='cvat-submit-continue-task-button'
                         type='primary'
                         onClick={this.handleSubmitAndContinue}
                         disabled={!!uploadFileErrorMessage}
