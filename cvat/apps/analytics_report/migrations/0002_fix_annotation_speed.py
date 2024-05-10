@@ -2,6 +2,7 @@
 
 from django.db import migrations
 
+
 def upgrade_report(report):
     statistics = [stat for stat in report.statistics if stat["name"] == "annotation_speed"]
     modified = False
@@ -10,8 +11,8 @@ def upgrade_report(report):
         if len(statistic["data_series"]["object_count"]) > 2:
             records_1 = list(reversed(statistic["data_series"]["object_count"]))
             records_2 = records_1[1:]
-            for next, prev in zip(records_1, records_2):
-                next["value"] += prev["value"]
+            for next_item, prev_item in zip(records_1, records_2):
+                next_item["value"] += prev_item["value"]
             previous_count = 0
             for item in statistic["data_series"]["object_count"]:
                 item["value"] -= previous_count
@@ -22,7 +23,7 @@ def upgrade_report(report):
 
 
 def forwards_func(apps, schema_editor):
-    AnalyticsReport = apps.get_model('analytics_report', 'AnalyticsReport')
+    AnalyticsReport = apps.get_model("analytics_report", "AnalyticsReport")
 
     # first upgrade all reports, related to jobs
     reports = AnalyticsReport.objects.exclude(job_id=None).all()
@@ -30,13 +31,13 @@ def forwards_func(apps, schema_editor):
     for report in reports:
         try:
             objects_to_update.append(upgrade_report(report))
-        except Exception:
+        except Exception: # nosec B110
             # I do not expect exception to happen here
             # but if it happened, let's just ignore the report
             pass
 
     objects_to_update = list(filter(lambda x: x is not None, objects_to_update))
-    AnalyticsReport.objects.bulk_update(objects_to_update, fields=['statistics'], batch_size=500)
+    AnalyticsReport.objects.bulk_update(objects_to_update, fields=["statistics"], batch_size=500)
 
     # finally remove all reports, not related to jobs
     # they will be recalculated by user request, based on adjusted data
