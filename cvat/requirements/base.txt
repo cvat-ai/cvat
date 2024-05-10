@@ -409,4 +409,3 @@ setuptools==68.2.2
     #   tensorflow
 
 soundfile==0.12.1
-pydub==0.25.1

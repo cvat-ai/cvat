@@ -2,7 +2,6 @@
 # Copyright (C) 2022-2023 CVAT.ai Corporation
 #
 # SPDX-License-Identifier: MIT
-from pydub import AudioSegment
 import av
 import math
 import itertools
@@ -1145,10 +1144,30 @@ def _create_thread(
             while not futures.empty():
                 process_results(futures.get().result())
 
-    def get_audio_duration(audio_path):
-        audio = AudioSegment.from_file(audio_path)
-        total_duration = len(audio)  # Duration in milliseconds
-        return total_duration
+    def get_audio_duration(file_path):
+        # Open the audio file
+        container = av.open(file_path)
+
+        # Get the first audio stream
+        audio_stream = next((stream for stream in container.streams if stream.codec.type == 'audio'), None)
+
+        if not audio_stream:
+            print("Error: No audio stream found in the file.")
+            return None
+
+        # Get the duration in seconds based on stream information
+        duration_milliseconds = int(audio_stream.duration * audio_stream.time_base * 1000)
+
+        slogger.glob.debug("FFF AUDIO DURATION")
+        slogger.glob.debug(audio_stream.duration)
+
+        slogger.glob.debug("PPP AUDIO DURATION")
+        slogger.glob.debug(audio_stream.time_base)
+
+        # Close the container
+        container.close()
+
+        return duration_milliseconds
 
 
     db_task.data.audio_total_duration = None
@@ -1156,6 +1175,9 @@ def _create_thread(
 
         segment_duration = db_task.segment_duration
         db_task.data.audio_total_duration = get_audio_duration(details['source_path'][0])
+
+        slogger.glob.debug("TOTAL AUDIO DURATION")
+        slogger.glob.debug(db_task.data.audio_total_duration)
 
         if segment_duration == 0:
             db_task.segment_size = 0
