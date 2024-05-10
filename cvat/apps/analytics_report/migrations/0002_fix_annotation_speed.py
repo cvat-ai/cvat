@@ -31,7 +31,7 @@ def forwards_func(apps, schema_editor):
     for report in reports:
         try:
             objects_to_update.append(upgrade_report(report))
-        except Exception: # nosec B110
+        except Exception:  # nosec B110
             # I do not expect exception to happen here
             # but if it happened, let's just ignore the report
             pass
