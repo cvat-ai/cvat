@@ -18,7 +18,7 @@ from cvat.apps.analytics_report.report.primary_metrics.base import (
     PrimaryMetricBase,
 )
 from cvat.apps.dataset_manager.task import merge_table_rows
-from cvat.apps.engine.models import SourceType
+from cvat.apps.engine.models import SourceType, ShapeType
 
 
 class JobAnnotationSpeedExtractor(DataExtractorBase):
@@ -75,20 +75,21 @@ class JobAnnotationSpeed(PrimaryMetricBase):
 
         def get_shapes_count():
             return (
-                self._db_obj.labeledshape_set.filter(parent=None)
+                self._db_obj.labeledshape_set
                 .exclude(source=SourceType.FILE)
+                .exclude(type=ShapeType.SKELETON) # skeleton's points are already counted as objects
                 .count()
             )
 
         def get_track_count():
             db_tracks = (
-                self._db_obj.labeledtrack_set.filter(parent=None)
+                self._db_obj.labeledtrack_set
                 .exclude(source=SourceType.FILE)
                 .values(
                     "id",
-                    "source",
                     "trackedshape__id",
                     "trackedshape__frame",
+                    "trackedshape__type",
                     "trackedshape__outside",
                 )
                 .order_by("id", "trackedshape__frame")
@@ -101,6 +102,7 @@ class JobAnnotationSpeed(PrimaryMetricBase):
                     "shapes": [
                         "trackedshape__id",
                         "trackedshape__frame",
+                        "trackedshape__type",
                         "trackedshape__outside",
                     ],
                 },
@@ -109,12 +111,16 @@ class JobAnnotationSpeed(PrimaryMetricBase):
 
             count = 0
             for track in db_tracks:
+                if track["shapes"] and track["shapes"][0]["type"] == ShapeType.SKELETON:
+                    # skeleton's points are already counted as objects
+                    continue
+
                 if len(track["shapes"]) == 1:
                     count += self._db_obj.segment.stop_frame - track["shapes"][0]["frame"] + 1
 
                 for prev_shape, cur_shape in zip(track["shapes"], track["shapes"][1:]):
-                    if prev_shape["outside"] is not True:
-                        count += cur_shape["frame"] - prev_shape["frame"]
+                    if not prev_shape["outside"]:
+                        count += cur_shape["frame"] - prev_shape["frame"] + 1
 
             return count
 
