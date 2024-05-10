@@ -62,5 +62,5 @@ tornado==6.3.3
     # via snakeviz
 
 soundfile==0.12.1
-ffmpeg-python==0.2.0
+pydub==0.25.1
 # The following packages are considered to be unsafe in a requirements file:
