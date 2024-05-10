@@ -2,8 +2,8 @@
 # Copyright (C) 2022-2023 CVAT.ai Corporation
 #
 # SPDX-License-Identifier: MIT
-# from pydub import AudioSegment
-import av
+
+import ffmpeg
 import math
 import itertools
 import fnmatch
@@ -1146,26 +1146,17 @@ def _create_thread(
                 process_results(futures.get().result())
 
     def get_audio_duration(file_path):
-        # Open the audio file
-        container = av.open(file_path)
-
-        # Find the audio stream
-        audio_stream = next(s for s in container.streams if s.type == 'audio')
-
-        # Get the duration of the audio stream in seconds
-        duration_seconds = audio_stream.duration / av.time_base
-
-        # Close the container
-        container.close()
-
-        return duration_seconds
-
+        duration = ffmpeg.probe(file_path)['format']['duration']
+        return float(duration)*1000
 
     db_task.data.audio_total_duration = None
     if MEDIA_TYPE == "audio":
 
         segment_duration = db_task.segment_duration
         db_task.data.audio_total_duration = get_audio_duration(details['source_path'][0])
+
+        slogger.glob.debug("Total Audio Duration")
+        slogger.glob.debug(db_task.data.audio_total_duration)
 
         if segment_duration == 0:
             db_task.segment_size = 0
