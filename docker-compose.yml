@@ -1,4 +1,5 @@
 # Copyright (C) 2018-2022 Intel Corporation
+# Copyright (C) 2024 CVAT.ai Corporation
 #
 # SPDX-License-Identifier: MIT
 
@@ -9,6 +10,7 @@ x-backend-env: &backend-env
   CVAT_REDIS_INMEM_PORT: 6379
   CVAT_REDIS_ONDISK_HOST: cvat_redis_ondisk
   CVAT_REDIS_ONDISK_PORT: 6666
+  CVAT_LOG_IMPORT_ERRORS: 'true'
   DJANGO_LOG_SERVER_HOST: vector
   DJANGO_LOG_SERVER_PORT: 80
   no_proxy: clickhouse,grafana,vector,nuclio,opa,${no_proxy:-}
@@ -82,7 +84,6 @@ services:
       DJANGO_MODWSGI_EXTRA_ARGS: ''
       ALLOWED_HOSTS: '*'
       ADAPTIVE_AUTO_ANNOTATION: 'false'
-      IAM_OPA_BUNDLE: '1'
       NUMPROCS: 2
       CVAT_ANALYTICS: 1
       CVAT_BASE_URL:
@@ -274,7 +275,7 @@ services:
 
   cvat_opa:
     container_name: cvat_opa
-    image: openpolicyagent/opa:0.45.0-rootless
+    image: openpolicyagent/opa:0.63.0
     restart: always
     networks:
       cvat:

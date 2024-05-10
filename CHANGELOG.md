@@ -16,6 +16,150 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 <!-- scriv-insert-here -->
 
+<a id='changelog-2.12.1'></a>
+## \[2.12.1\] - 2024-04-26
+
+### Fixed
+
+- Formats with the custom `track_id` attribute should import `outside` track shapes properly (e.g. `COCO`, `COCO Keypoints`, `Datumaro`, `PASCAL VOC`)
+  (<https://github.com/opencv/cvat/pull/7669>)
+
+- Inefficient resources fetching in admin panel leading to 504 Gateway Timeout
+  (<https://github.com/cvat-ai/cvat/pull/7767>)
+
+- Optimized memory usage when retrieving annotations by disabling internal Django QuerySet caching
+  (<https://github.com/cvat-ai/cvat/pull/7748>)
+
+- Annotations are not shown on the `0` frame sometimes
+  (<https://github.com/cvat-ai/cvat/pull/7796>)
+
+- Extra requests in PolicyEnforcer when at least one policy is rejected, others are not checked
+  (<https://github.com/cvat-ai/cvat/pull/7803>)
+
+- Project's `updated_date` was not updated after changing annotations in jobs
+  (<https://github.com/cvat-ai/cvat/pull/7808>)
+
+<a id='changelog-2.12.0'></a>
+## \[2.12.0\] - 2024-04-15
+
+### Added
+
+- Number of objects on the frame is shown on the right sidebar
+  (<https://github.com/opencv/cvat/pull/7654>)
+
+- Shortcut to switch "pinned" property (P)
+  (<https://github.com/opencv/cvat/pull/7709>)
+
+- Support for `.rar`, `.tar`, `.gz`, `.bz2`, `.cpio`, `.7z` archives
+  (<https://github.com/opencv/cvat/pull/7729>)
+
+### Changed
+
+- Updated links to the documentation website to point to the new domain,
+  `docs.cvat.ai`
+  (<https://github.com/cvat-ai/cvat/pull/7722>)
+
+- Job and task `download_frames` now accepts custom extension for images
+  (<https://github.com/cvat-ai/cvat/pull/7697>)
+
+### Fixed
+
+- Creating tasks with special characters in uploaded filename
+  (<https://github.com/opencv/cvat/pull/7646>)
+
+- `Find next frame with issues` ignored `hide resolved issues` setting
+  (<https://github.com/opencv/cvat/pull/7653>)
+
+- Objects menu is invisible for GT objects in GT job
+  (<https://github.com/opencv/cvat/pull/7714>)
+
+- Missing RegisterSerializerEx `email_verification_required` and `key` parameters now are included in the server schema
+  (<https://github.com/cvat-ai/cvat/pull/7635>)
+
+- Standardize the alignment of empty-list components
+  (<https://github.com/opencv/cvat/pull/7659>)
+
+- Labels in WiderFace dataset example
+  (<https://github.com/opencv/cvat/pull/7716>)
+- Export without images in Datumaro format -
+  no empty "media" and "point_cloud" fields should be present
+  (<https://github.com/opencv/cvat/pull/7716>)
+
+- Fixed the inability to rename label attributes after creating them.
+  (<https://github.com/cvat-ai/cvat/pull/7670>)
+
+- When user starts editing a mask, it becomes smoother (not pixelated)
+  (<https://github.com/cvat-ai/cvat/pull/7747>)
+
+<a id='changelog-2.11.3'></a>
+## \[2.11.3\] - 2024-04-02
+
+### Added
+
+- Tooltips for long names on cards (projects, tasks, cloud storages, and models)
+  (<https://github.com/opencv/cvat/pull/7550>)
+
+### Removed
+
+- The `POST /api/tasks/{id}/data` endpoint no longer accepts several
+  parameters that didn't have any useful function: `size`,
+  `compressed_chunk_type`, `original_chunk_type`
+  (<https://github.com/opencv/cvat/pull/7663>)
+
+### Fixed
+
+- Duplicated notifications for automatic annotation
+  (<https://github.com/opencv/cvat/pull/7595>)
+
+- Made quality report update job scheduling more efficient
+  (<https://github.com/opencv/cvat/pull/7596>)
+
+- Incorrect file name usage when importing annotations from a cloud storage
+  (<https://github.com/opencv/cvat/pull/7599>)
+
+- Using single shape annotation mode with multiple labels
+  (<https://github.com/opencv/cvat/pull/7606>)
+
+- Part of sidebar not visible in attribute annotation mode when there are a lot of attribute values
+  (<https://github.com/opencv/cvat/pull/7610>)
+
+- Changed interpolation behavior in `annotation.py`, now correctly keep the last frame
+- Insert last frame if it is key to the track, fixes data corruption when tracks crossing more than 1 jobs
+  (<https://github.com/opencv/cvat/pull/7615>)
+
+- Label constructor validation of empty label names
+  (<https://github.com/opencv/cvat/pull/7627>)
+
+- Incorrect alignment of empty job list component
+  (<https://github.com/opencv/cvat/pull/7621>)
+
+- Remove underlying pixels feature is not applied immediately
+  (<https://github.com/opencv/cvat/pull/7637>)
+
+- Corrected the formula for per-class accuracy in quality reports;
+  the old formula is now exposed as the `jaccard_index` key
+  (<https://github.com/opencv/cvat/pull/7640>)
+
+- Sending `/events` request from logged-out user  (<https://github.com/opencv/cvat/pull/7608>)
+
+- Fixed accuracy being displayed incorrectly on the task analytics page
+  (<https://github.com/opencv/cvat/pull/7652>)
+
+- Fixed an invalid default overlap size being selected for video tasks
+  with small segments
+  (<https://github.com/opencv/cvat/pull/7681>)
+
+- Fixed redundant jobs being created for tasks with non-zero overlap
+  in certain cases
+  (<https://github.com/opencv/cvat/pull/7681>)
+
+- Accumulation of confusion matrix across all jobs in a task when creating a quality report
+  (<https://github.com/opencv/cvat/pull/7604>)
+
+- 90 deg-rotated video was added with "Prefer Zip Chunks" disabled
+was warped, fixed using the static cropImage function.
+  (<https://github.com/opencv/cvat/pull/7583>)
+
 <a id='changelog-2.11.2'></a>
 ## \[2.11.2\] - 2024-03-11
 

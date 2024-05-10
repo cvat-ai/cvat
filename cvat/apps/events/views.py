@@ -10,8 +10,8 @@ from drf_spectacular.types import OpenApiTypes
 from rest_framework.renderers import JSONRenderer
 
 
-from cvat.apps.iam.permissions import EventsPermission
 from cvat.apps.iam.filters import ORGANIZATION_OPEN_API_PARAMETERS
+from cvat.apps.events.permissions import EventsPermission
 from cvat.apps.events.serializers import ClientEventsSerializer
 from cvat.apps.engine.log import vlogger
 from .export import export
@@ -19,7 +19,7 @@ from .export import export
 class EventsViewSet(viewsets.ViewSet):
     serializer_class = None
 
-    @extend_schema(summary='Method saves logs from a client on the server',
+    @extend_schema(summary='Log client events',
         methods=['POST'],
         description='Sends logs to the Clickhouse if it is connected',
         parameters=ORGANIZATION_OPEN_API_PARAMETERS,
@@ -37,9 +37,9 @@ class EventsViewSet(viewsets.ViewSet):
 
         return Response(serializer.data, status=status.HTTP_201_CREATED)
 
-    @extend_schema(summary='Method returns csv log file ',
+    @extend_schema(summary='Get an event log',
         methods=['GET'],
-        description='Receive logs from the server',
+        description='The log is returned in the CSV format.',
         parameters=[
             OpenApiParameter('org_id', location=OpenApiParameter.QUERY, type=OpenApiTypes.INT, required=False,
                 description="Filter events by organization ID"),

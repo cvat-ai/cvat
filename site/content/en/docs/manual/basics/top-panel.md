@@ -18,7 +18,8 @@ It is the main menu of the annotation tool. It can be used to download, upload a
 Button assignment:
 
 - **Upload Annotations** — uploads annotations into a task.
-- **Export as a dataset** — download a data set from a task in one of the [supported formats](/docs/manual/advanced/formats/).
+- **Export as a dataset** — download a data set from a task in one of the
+  {{< ilink "/docs/manual/advanced/formats" "supported formats" >}}.
   You can also enter a **Custom name** and enable the **Save images**
   checkbox if you want the dataset to contain images.
 - **Remove Annotations** — calls the confirmation window if you click **Delete**, the annotation of the current job
@@ -29,7 +30,7 @@ Button assignment:
 
 - **Run actions** - opens annotations actions modal (annotations action is a feature
   that allow you to modify a bulk of annotations on many frames,
-  e.g. [Shapes converter](/docs/enterprise/shapes-converter/)). It supports only `shape` objects.
+  e.g. {{< ilink "/docs/enterprise/shapes-converter" "Shapes converter" >}}). It supports only `shape` objects.
 - **Open the task** — opens a page with details about the task.
 - **Change job state** - changes the state of the job (`new`, `in progress`, `rejected`, `completed`).
 - **Finish the job**/**Renew the job** - changes the job stage and state
@@ -62,8 +63,9 @@ Used to complete the creation of the object. This button appears only when the o
 ![](/images/image226.jpg)
 
 Used to pause automatic line creation when drawing a polygon with
-[OpenCV Intelligent scissors](/docs/manual/advanced/opencv-tools/#intelligent-scissors).
-Also used to postpone server requests when creating an object using [AI Tools](/docs/manual/advanced/ai-tools/).
+{{< ilink "/docs/manual/advanced/ai-tools#opencv-intelligent-scissors" "OpenCV Intelligent scissors" >}}.
+Also used to postpone server requests when creating an object using
+{{< ilink "/docs/manual/advanced/ai-tools" "AI Tools" >}}.
 When blocking is activated, the button turns blue.
 
 ---
@@ -85,7 +87,7 @@ To customize, right-click on the button and select one of three options:
 
 1. The default option - go to the next / previous frame (the step is 1 frame).
 2. Go to the next / previous frame that has any objects (in particular filtered).
-   Read the [filter](/docs/manual/advanced/filter/) section to know the details how to use it.
+   Read the {{< ilink "/docs/manual/advanced/filter" "filter" >}} section to know the details how to use it.
 3. Go to the next / previous frame without annotation at all.
    Use this option in cases when you need to find missed frames quickly.
 
@@ -126,7 +128,7 @@ _Overview_:
 
 - `Assignee` - the one to whom the job is assigned.
 - `Reviewer` – a user assigned to carry out the review,
-  read more in the [review](/docs/manual/advanced/review) section.
+  read more in the {{< ilink "/docs/manual/advanced/analytics-and-monitoring/manual-qa" "review" >}} section.
 - `Start Frame` - the number of the first frame in this job.
 - `End Frame` - the number of the last frame in this job.
 - `Frames` - the total number of all frames in the job.

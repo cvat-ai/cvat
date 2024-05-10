@@ -5,7 +5,7 @@
 
 import { AnyAction } from 'redux';
 
-import { ServerError } from 'cvat-core-wrapper';
+import { Project, ServerError, Task } from 'cvat-core-wrapper';
 import { AuthActionTypes } from 'actions/auth-actions';
 import { FormatsActionTypes } from 'actions/formats-actions';
 import { ModelsActionTypes } from 'actions/models-actions';
@@ -31,7 +31,7 @@ import { NotificationsState } from '.';
 const defaultState: NotificationsState = {
     errors: {
         auth: {
-            authorized: null,
+            authenticated: null,
             login: null,
             logout: null,
             register: null,
@@ -212,15 +212,15 @@ const defaultState: NotificationsState = {
 
 export default function (state = defaultState, action: AnyAction): NotificationsState {
     switch (action.type) {
-        case AuthActionTypes.AUTHORIZED_FAILED: {
+        case AuthActionTypes.AUTHENTICATED_FAILED: {
             return {
                 ...state,
                 errors: {
                     ...state.errors,
                     auth: {
                         ...state.errors.auth,
-                        authorized: {
-                            message: 'Could not check authorization on the server',
+                        authenticated: {
+                            message: 'Could not check authentication on the server',
                             reason: action.payload.error,
                             shouldLog: !(action.payload.error instanceof ServerError),
                         },
@@ -567,10 +567,17 @@ export default function (state = defaultState, action: AnyAction): Notifications
         }
         case ImportActionTypes.IMPORT_DATASET_SUCCESS: {
             const { instance, resource } = action.payload;
-            const message = resource === 'annotation' ?
-                'Annotations have been loaded to the ' +
-                `[task ${instance.taskId || instance.id}](/tasks/${instance.taskId || instance.id}) ` :
-                `Dataset was imported to the [project ${instance.id}](/projects/${instance.id})`;
+            let message = resource === 'annotation' ?
+                'Annotations have been loaded to the ' :
+                'Dataset was imported to the ';
+            if (instance instanceof Project) {
+                message += `[Project ${instance.id}](/projects/${instance.id})`;
+            } else if (instance instanceof Task) {
+                message += `[Task ${instance.id}](/tasks/${instance.id})`;
+            } else {
+                message += `[Job ${instance.id}](/jobs/${instance.id})`;
+            }
+
             return {
                 ...state,
                 messages: {

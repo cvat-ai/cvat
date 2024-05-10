@@ -337,6 +337,7 @@ class ObjectsListContainer extends React.PureComponent<Props, State> {
             SWITCH_ALL_HIDDEN: keyMap.SWITCH_ALL_HIDDEN,
             SWITCH_HIDDEN: keyMap.SWITCH_HIDDEN,
             SWITCH_OCCLUDED: keyMap.SWITCH_OCCLUDED,
+            SWITCH_PINNED: keyMap.SWITCH_PINNED,
             SWITCH_KEYFRAME: keyMap.SWITCH_KEYFRAME,
             SWITCH_OUTSIDE: keyMap.SWITCH_OUTSIDE,
             DELETE_OBJECT: keyMap.DELETE_OBJECT,
@@ -405,12 +406,23 @@ class ObjectsListContainer extends React.PureComponent<Props, State> {
                     updateAnnotations([state]);
                 }
             },
+            SWITCH_PINNED: (event: KeyboardEvent | undefined) => {
+                preventDefault(event);
+                const state = activatedState(true);
+                if (state && !readonly) {
+                    state.pinned = !state.pinned;
+                    updateAnnotations([state]);
+                }
+            },
             SWITCH_KEYFRAME: (event: KeyboardEvent | undefined) => {
                 preventDefault(event);
                 const state = activatedState();
                 if (state && !readonly && state.objectType === ObjectType.TRACK) {
-                    state.keyframe = !state.keyframe;
-                    updateAnnotations([state]);
+                    const { first, last } = state.keyframes as NonNullable<typeof state.keyframes>;
+                    if (first !== last || !state.keyframe) {
+                        state.keyframe = !state.keyframe;
+                        updateAnnotations([state]);
+                    }
                 }
             },
             SWITCH_OUTSIDE: (event: KeyboardEvent | undefined) => {
@@ -447,7 +459,7 @@ class ObjectsListContainer extends React.PureComponent<Props, State> {
             },
             TO_BACKGROUND: (event: KeyboardEvent | undefined) => {
                 preventDefault(event);
-                const state = activatedState();
+                const state = activatedState(true);
                 if (state && !readonly && state.objectType !== ObjectType.TAG) {
                     state.zOrder = minZLayer - 1;
                     updateAnnotations([state]);
@@ -455,14 +467,14 @@ class ObjectsListContainer extends React.PureComponent<Props, State> {
             },
             TO_FOREGROUND: (event: KeyboardEvent | undefined) => {
                 preventDefault(event);
-                const state = activatedState();
+                const state = activatedState(true);
                 if (state && !readonly && state.objectType !== ObjectType.TAG) {
                     state.zOrder = maxZLayer + 1;
                     updateAnnotations([state]);
                 }
             },
             COPY_SHAPE: () => {
-                const state = activatedState();
+                const state = activatedState(true);
                 if (state && !readonly) {
                     copyShape(state);
                 }
