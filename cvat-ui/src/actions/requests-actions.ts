@@ -119,7 +119,6 @@ export function getRequestsAsync(query: RequestsQuery, notify = true): ThunkActi
             requests
                 .filter((request: Request) => [RQStatus.STARTED, RQStatus.QUEUED].includes(request.status))
                 .forEach((request: Request): void => {
-                    console.log(request);
                     listen(request, dispatch);
                 });
         } catch (error) {
