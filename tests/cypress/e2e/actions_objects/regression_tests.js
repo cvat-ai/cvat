@@ -7,10 +7,9 @@
 // import { taskName, labelName } from '../../support/const';
 
 context('Regression tests', () => {
+    let taskID = null;
+    let jobID = null;
     const labelName = 'Main label';
-    const taskName = `New annotation task for ${labelName}`;
-    const attrName = `Attr for ${labelName}`;
-    const textDefaultValue = 'Some default value for type Text';
     const imagesCount = 75;
     const imageFileName = `image_${labelName.replace(' ', '_').toLowerCase()}`;
     const width = 800;
@@ -23,6 +22,26 @@ context('Regression tests', () => {
     const imagesFolder = `cypress/fixtures/${imageFileName}`;
     const directoryToArchive = imagesFolder;
     const zipLevel = 0;
+
+    const taskPayload = {
+        name: 'Test annotations actions',
+        labels: [{
+            name: 'label 1',
+            attributes: [],
+            type: 'any',
+        }],
+        project_id: null,
+        source_storage: { location: 'local' },
+        target_storage: { location: 'local' },
+    };
+
+    const dataPayload = {
+        server_files: [archivePath],
+        image_quality: 70,
+        use_zip_chunks: true,
+        use_cache: true,
+        sorting_method: 'lexicographical',
+    };
 
     const createRectangleShape2Points = {
         points: 'By 2 Points',
@@ -43,37 +62,49 @@ context('Regression tests', () => {
     });
 
     describe('Regression tests', () => {
-        it('Object is not activated while frame fetching', () => {
-            cy.createAnnotationTask(taskName, labelName, attrName, textDefaultValue, archiveName);
-            cy.goToTaskList();
-            cy.openTaskJob(taskName);
+        it('UI does not crash if to activate an object while frame fetching', () => {
+            cy.headlessCreateTask(taskPayload, dataPayload).then((response) => {
+                taskID = response.taskID;
+                [jobID] = response.jobIDs;
 
-            cy.get('.cvat-player-last-button').click();
-            cy.createRectangle(createRectangleShape2Points);
-            cy.get('#cvat_canvas_shape_1').trigger('mousemove');
-            cy.get('#cvat_canvas_shape_1').should('have.class', 'cvat_canvas_shape_activated');
-            cy.saveJob();
+                cy.visit(`/tasks/${taskID}/jobs/${jobID}`);
 
-            cy.reload();
-            cy.get('.cvat-player-last-button').click();
+                cy.get('.cvat-player-last-button').click();
+                cy.createRectangle(createRectangleShape2Points);
+                cy.get('#cvat_canvas_shape_1').trigger('mousemove');
+                cy.get('#cvat_canvas_shape_1').should('have.class', 'cvat_canvas_shape_activated');
+                cy.saveJob();
 
-            cy.intercept('GET', '/api/jobs/**/data?**', (req) => {
-                req.continue((res) => {
-                    res.setDelay(3000);
-                });
-            }).as('delayedRequest');
+                cy.reload();
+                cy.get('.cvat-player-last-button').click();
 
-            cy.get('#cvat_canvas_shape_1').trigger('mousemove');
-            cy.get('#cvat_canvas_shape_1').should('not.have.class', 'cvat_canvas_shape_activated');
+                cy.intercept('GET', '/api/jobs/**/data?**', (req) => {
+                    req.continue((res) => {
+                        res.setDelay(3000);
+                    });
+                }).as('delayedRequest');
 
-            cy.wait('@delayedRequest');
-            cy.get('#cvat_canvas_shape_1').trigger('mousemove');
-            cy.get('#cvat_canvas_shape_1').should('have.class', 'cvat_canvas_shape_activated');
+                cy.get('#cvat_canvas_shape_1').trigger('mousemove');
+                cy.get('#cvat_canvas_shape_1').should('not.have.class', 'cvat_canvas_shape_activated');
+
+                cy.wait('@delayedRequest');
+                cy.get('#cvat_canvas_shape_1').trigger('mousemove');
+                cy.get('#cvat_canvas_shape_1').should('have.class', 'cvat_canvas_shape_activated');
+            });
         });
     });
 
     after(() => {
-        cy.goToTaskList();
-        cy.deleteTask(taskName);
+        cy.logout();
+        cy.getAuthKey().then((response) => {
+            const authKey = response.body.key;
+            cy.request({
+                method: 'DELETE',
+                url: `/api/tasks/${taskID}`,
+                headers: {
+                    Authorization: `Token ${authKey}`,
+                },
+            });
+        });
     });
 });
