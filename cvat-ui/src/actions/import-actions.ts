@@ -6,12 +6,14 @@
 import { createAction, ActionUnion, ThunkAction } from 'utils/redux';
 import { CombinedState } from 'reducers';
 import {
-    getCore, Storage, Job, Task, Project, Request,
+    getCore, Storage, Job, Task, Project, Request, InstanceType,
 } from 'cvat-core-wrapper';
 import { EventScope } from 'cvat-logger';
 import { getProjectsAsync } from './projects-actions';
 import { AnnotationActionTypes, fetchAnnotationsAsync } from './annotation-actions';
-import { updateRequestProgress } from './requests-actions';
+import {
+    getInstanceType, isRequestInstanceType, RequestInstanceType, updateRequestProgress,
+} from './requests-actions';
 
 const core = getCore();
 
@@ -36,13 +38,13 @@ export const importActions = {
     closeImportDatasetModal: (instance: any) => (
         createAction(ImportActionTypes.CLOSE_IMPORT_DATASET_MODAL, { instance })
     ),
-    importDataset: (instance: any, format: string) => (
+    importDataset: (instance: InstanceType | RequestInstanceType, format: string) => (
         createAction(ImportActionTypes.IMPORT_DATASET, { instance, format })
     ),
-    importDatasetSuccess: (instance: Job | Task | Project, resource: 'dataset' | 'annotation') => (
+    importDatasetSuccess: (instance: InstanceType | RequestInstanceType, resource: 'dataset' | 'annotation') => (
         createAction(ImportActionTypes.IMPORT_DATASET_SUCCESS, { instance, resource })
     ),
-    importDatasetFailed: (instance: Job | Task | Project, resource: 'dataset' | 'annotation', error: any) => (
+    importDatasetFailed: (instance: InstanceType | RequestInstanceType, resource: 'dataset' | 'annotation', error: any) => (
         createAction(ImportActionTypes.IMPORT_DATASET_FAILED, {
             instance,
             resource,
@@ -68,7 +70,7 @@ export const importActions = {
 };
 
 export const importDatasetAsync = (
-    instance: any,
+    instance: InstanceType | RequestInstanceType,
     format: string,
     useDefaultSettings?: boolean,
     sourceStorage?: Storage,
@@ -77,20 +79,21 @@ export const importDatasetAsync = (
     listeningPromise?: Promise<Request>,
 ): ThunkAction => (
     async (dispatch, getState) => {
-        const resource = instance instanceof core.classes.Project ? 'dataset' : 'annotation';
+        const instanceType = getInstanceType(instance);
+        const resource = instanceType === 'project' ? 'dataset' : 'annotation';
 
         try {
             const state: CombinedState = getState();
 
-            if (instance instanceof core.classes.Project) {
+            if (instanceType === 'project') {
                 if (state.import.projects.dataset.current?.[instance.id]) {
                     throw Error('Only one importing of annotation/dataset allowed at the same time');
                 }
                 dispatch(importActions.importDataset(instance, format));
-                if (listeningPromise) {
+                if (isRequestInstanceType(instance)) {
                     await listeningPromise;
                 } else {
-                    await instance.annotations
+                    await (instance as Project).annotations
                         .importDataset(format, useDefaultSettings, sourceStorage, file, {
                             convMaskToPoly,
                             uploadStatusCallback: (message: string, progress: number) => (
@@ -103,15 +106,15 @@ export const importDatasetAsync = (
                             },
                         });
                 }
-            } else if (instance instanceof core.classes.Task) {
+            } else if (instanceType === 'task') {
                 if (state.import.tasks.dataset.current?.[instance.id]) {
                     throw Error('Only one importing of annotation/dataset allowed at the same time');
                 }
                 dispatch(importActions.importDataset(instance, format));
-                if (listeningPromise) {
+                if (isRequestInstanceType(instance)) {
                     await listeningPromise;
                 } else {
-                    await instance.annotations
+                    await (instance as Task).annotations
                         .upload(format, useDefaultSettings, sourceStorage, file, {
                             convMaskToPoly,
                             requestStatusCallback: (request: Request) => {
@@ -120,7 +123,8 @@ export const importDatasetAsync = (
                         });
                 }
             } else { // job
-                if (state.import.tasks.dataset.current?.[instance.taskId]) {
+                if (!isRequestInstanceType(instance) &&
+                    state.import.tasks.dataset.current?.[(instance as Job).taskId]) {
                     throw Error('Annotations is being uploaded for the task');
                 }
                 if (state.import.jobs.dataset.current?.[instance.id]) {
@@ -129,11 +133,11 @@ export const importDatasetAsync = (
 
                 dispatch(importActions.importDataset(instance, format));
 
-                if (listeningPromise) {
+                if (isRequestInstanceType(instance)) {
                     await listeningPromise;
                     dispatch({ type: AnnotationActionTypes.UPLOAD_JOB_ANNOTATIONS_SUCCESS });
                 } else {
-                    await instance.annotations
+                    await (instance as Job).annotations
                         .upload(format, useDefaultSettings, sourceStorage, file, {
                             convMaskToPoly,
                             requestStatusCallback: (request: Request) => {
@@ -141,9 +145,9 @@ export const importDatasetAsync = (
                             },
                         });
 
-                    await instance.logger.log(EventScope.uploadAnnotations);
-                    await instance.annotations.clear(true);
-                    await instance.actions.clear();
+                    await (instance as Job).logger.log(EventScope.uploadAnnotations);
+                    await (instance as Job).annotations.clear(true);
+                    await (instance as Job).actions.clear();
 
                     // first set empty objects list
                     // to escape some problems in canvas when shape with the same

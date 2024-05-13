@@ -19,7 +19,7 @@ import TargetStorageField from 'components/storage/target-storage-field';
 import { CombinedState, StorageLocation } from 'reducers';
 import { exportActions, exportDatasetAsync } from 'actions/export-actions';
 import {
-    Dumper, Job, Project, Storage, StorageData, Task,
+    Dumper, InstanceType, Job, Project, Storage, StorageData, Task,
 } from 'cvat-core-wrapper';
 import ReactMarkdown from 'react-markdown';
 
@@ -102,7 +102,7 @@ function ExportDatasetModal(props: StateToProps): JSX.Element {
             // have to validate format before so it would not be undefined
             dispatch(
                 exportDatasetAsync(
-                    instance,
+                    instance as InstanceType,
                     values.selectedFormat as string,
                     values.saveImages,
                     useDefaultTargetStorage,

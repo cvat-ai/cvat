@@ -4,7 +4,9 @@
 
 import { ActionUnion, createAction } from 'utils/redux';
 import { RequestsQuery } from 'reducers';
-import { Request } from 'cvat-core-wrapper';
+import { Request, InstanceType, getCore } from 'cvat-core-wrapper';
+
+const core = getCore();
 
 export enum RequestsActionsTypes {
     GET_REQUESTS = 'GET_REQUESTS',
@@ -48,6 +50,37 @@ export const requestsActions = {
 };
 
 export type RequestsActions = ActionUnion<typeof requestsActions>;
+
+export interface RequestInstanceType {
+    id: number;
+    type: 'project' | 'task' | 'job';
+}
+
+export function getInstanceType(instance: InstanceType | RequestInstanceType): 'project' | 'task' | 'job' {
+    if (instance instanceof core.classes.Project) {
+        return 'project';
+    }
+
+    if (instance instanceof core.classes.Task) {
+        return 'task';
+    }
+
+    if (instance instanceof core.classes.Job) {
+        return 'job';
+    }
+
+    return instance.type;
+}
+
+export function isRequestInstanceType(instance: any): instance is RequestInstanceType {
+    return 'id' in instance && 'type' in instance;
+}
+
+export function isInstanceType(instance: any): instance is InstanceType {
+    return instance instanceof core.classes.Project ||
+            instance instanceof core.classes.Task ||
+            instance instanceof core.classes.Job;
+}
 
 export function updateRequestProgress(request: Request, dispatch: (action: RequestsActions) => void): void {
     dispatch(

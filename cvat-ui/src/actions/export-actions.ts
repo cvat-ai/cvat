@@ -5,10 +5,12 @@
 
 import { ActionUnion, createAction, ThunkAction } from 'utils/redux';
 
-import { getCore, Storage, Request } from 'cvat-core-wrapper';
-import { updateRequestProgress } from './requests-actions';
-
-const core = getCore();
+import {
+    Storage, Request, InstanceType, Job,
+} from 'cvat-core-wrapper';
+import {
+    getInstanceType, isRequestInstanceType, RequestInstanceType, updateRequestProgress,
+} from './requests-actions';
 
 export enum ExportActionTypes {
     OPEN_EXPORT_DATASET_MODAL = 'OPEN_EXPORT_DATASET_MODAL',
@@ -30,11 +32,11 @@ export const exportActions = {
     closeExportDatasetModal: (instance: any) => (
         createAction(ExportActionTypes.CLOSE_EXPORT_DATASET_MODAL, { instance })
     ),
-    exportDataset: (instance: any, format: string) => (
+    exportDataset: (instance: InstanceType | RequestInstanceType, format: string) => (
         createAction(ExportActionTypes.EXPORT_DATASET, { instance, format })
     ),
     exportDatasetSuccess: (
-        instance: any,
+        instance: InstanceType | RequestInstanceType,
         instanceType: 'project' | 'task' | 'job',
         format: string,
         isLocal: boolean,
@@ -48,7 +50,7 @@ export const exportActions = {
             resource,
         })
     ),
-    exportDatasetFailed: (instance: any, instanceType: 'project' | 'task' | 'job', format: string, error: any) => (
+    exportDatasetFailed: (instance: InstanceType | RequestInstanceType, instanceType: 'project' | 'task' | 'job', format: string, error: any) => (
         createAction(ExportActionTypes.EXPORT_DATASET_FAILED, {
             instance,
             instanceType,
@@ -62,19 +64,19 @@ export const exportActions = {
     closeExportBackupModal: (instance: any) => (
         createAction(ExportActionTypes.CLOSE_EXPORT_BACKUP_MODAL, { instance })
     ),
-    exportBackup: (instance: any) => (
+    exportBackup: (instance: Exclude<InstanceType, Job> | RequestInstanceType) => (
         createAction(ExportActionTypes.EXPORT_BACKUP, { instance })
     ),
-    exportBackupSuccess: (instance: any, instanceType: 'task' | 'project', isLocal: boolean) => (
+    exportBackupSuccess: (instance: Exclude<InstanceType, Job> | RequestInstanceType, instanceType: 'task' | 'project', isLocal: boolean) => (
         createAction(ExportActionTypes.EXPORT_BACKUP_SUCCESS, { instance, instanceType, isLocal })
     ),
-    exportBackupFailed: (instance: any, instanceType: 'task' | 'project', error: any) => (
+    exportBackupFailed: (instance: Exclude<InstanceType, Job> | RequestInstanceType, instanceType: 'task' | 'project', error: any) => (
         createAction(ExportActionTypes.EXPORT_BACKUP_FAILED, { instance, instanceType, error })
     ),
 };
 
 export const exportDatasetAsync = (
-    instance: any,
+    instance: InstanceType | RequestInstanceType,
     format: string,
     saveImages: boolean,
     useDefaultSettings: boolean,
@@ -84,22 +86,21 @@ export const exportDatasetAsync = (
 ): ThunkAction => async (dispatch) => {
     dispatch(exportActions.exportDataset(instance, format));
 
-    let instanceType: 'project' | 'task' | 'job';
-    if (instance instanceof core.classes.Project) {
-        instanceType = 'project';
-    } else if (instance instanceof core.classes.Task) {
-        instanceType = 'task';
-    } else {
-        instanceType = 'job';
-    }
+    const instanceType = getInstanceType(instance);
 
     try {
-        const result = listeningPromise ? await listeningPromise : await instance.annotations
-            .exportDataset(format, saveImages, useDefaultSettings, targetStorage, name, {
-                requestStatusCallback: (request: Request) => {
-                    updateRequestProgress(request, dispatch);
-                },
-            });
+        let result;
+        if (isRequestInstanceType(instance)) {
+            result = await listeningPromise;
+        } else {
+            result = await instance.annotations
+                .exportDataset(format, saveImages, useDefaultSettings, targetStorage, name, {
+                    requestStatusCallback: (request: Request) => {
+                        updateRequestProgress(request, dispatch);
+                    },
+                });
+        }
+
         const resource = saveImages ? 'Dataset' : 'Annotations';
         dispatch(exportActions.exportDatasetSuccess(instance, instanceType, format, !!result.url, resource));
     } catch (error) {
@@ -108,22 +109,27 @@ export const exportDatasetAsync = (
 };
 
 export const exportBackupAsync = (
-    instance: any,
+    instance: Exclude<InstanceType, Job> | RequestInstanceType,
     targetStorage?: Storage,
     useDefaultSetting?: boolean,
     fileName?: string,
     listeningPromise?: Promise<Request>,
 ): ThunkAction => async (dispatch) => {
     dispatch(exportActions.exportBackup(instance));
-    const instanceType = (instance instanceof core.classes.Project) ? 'project' : 'task';
+    const instanceType = getInstanceType(instance);
 
     try {
-        const result = listeningPromise ? await listeningPromise : await instance
-            .backup(targetStorage, useDefaultSetting, fileName, {
-                requestStatusCallback: (request: Request) => {
-                    updateRequestProgress(request, dispatch);
-                },
-            });
+        let result;
+        if (isRequestInstanceType(instance)) {
+            result = await listeningPromise;
+        } else {
+            result = listeningPromise ? await listeningPromise : await instance
+                .backup(targetStorage, useDefaultSetting, fileName, {
+                    requestStatusCallback: (request: Request) => {
+                        updateRequestProgress(request, dispatch);
+                    },
+                });
+        }
 
         dispatch(exportActions.exportBackupSuccess(instance, instanceType, !!result.url));
     } catch (error) {

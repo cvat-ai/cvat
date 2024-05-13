@@ -5,9 +5,7 @@
 
 import { AnyAction } from 'redux';
 
-import {
-    Project, ServerError, Task, RequestError,
-} from 'cvat-core-wrapper';
+import { ServerError, RequestError } from 'cvat-core-wrapper';
 import { AuthActionTypes } from 'actions/auth-actions';
 import { FormatsActionTypes } from 'actions/formats-actions';
 import { ModelsActionTypes } from 'actions/models-actions';
@@ -25,7 +23,7 @@ import { JobsActionTypes } from 'actions/jobs-actions';
 import { WebhooksActionsTypes } from 'actions/webhooks-actions';
 import { InvitationsActionTypes } from 'actions/invitations-actions';
 import { ServerAPIActionTypes } from 'actions/server-actions';
-import { RequestsActionsTypes } from 'actions/requests-actions';
+import { RequestsActionsTypes, getInstanceType } from 'actions/requests-actions';
 import { ImportActionTypes } from 'actions/import-actions';
 import { ExportActionTypes } from 'actions/export-actions';
 
@@ -602,9 +600,10 @@ export default function (state = defaultState, action: AnyAction): Notifications
             let description = resource === 'annotation' ?
                 'Annotations have been loaded to the ' :
                 'Dataset was imported to the ';
-            if (instance instanceof Project) {
+            const instanceType = getInstanceType(instance);
+            if (instanceType === 'project') {
                 description += `[Project ${instance.id}](/projects/${instance.id})`;
-            } else if (instance instanceof Task) {
+            } else if (instanceType === 'task') {
                 description += `[Task ${instance.id}](/tasks/${instance.id})`;
             } else {
                 description += `[Job ${instance.id}](/jobs/${instance.id})`;
@@ -629,7 +628,7 @@ export default function (state = defaultState, action: AnyAction): Notifications
             const { instance, resource } = action.payload;
             const message = resource === 'annotation' ?
                 'Could not upload annotation for the ' +
-                `[task ${instance.taskId || instance.id}](/tasks/${instance.taskId || instance.id})` :
+                `[task ${instance?.taskId || instance.id}](/tasks/${instance?.taskId || instance.id})` :
                 `Could not import dataset to the [project ${instance.id}](/projects/${instance.id})`;
             return {
                 ...state,

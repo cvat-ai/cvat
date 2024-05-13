@@ -10,7 +10,9 @@ import {
     getCore, RQStatus, Request, Project, Task, Job,
 } from 'cvat-core-wrapper';
 import { exportBackupAsync, exportDatasetAsync } from './export-actions';
-import { requestsActions, RequestsActions, updateRequestProgress } from './requests-actions';
+import {
+    RequestInstanceType, requestsActions, RequestsActions, updateRequestProgress,
+} from './requests-actions';
 import { importDatasetAsync } from './import-actions';
 
 const core = getCore();
@@ -76,13 +78,13 @@ export function getRequestsAsync(query: RequestsQuery, notify = true): ThunkActi
                             type, target, format, taskID, projectID, jobID,
                         },
                     } = request;
-                    let instance = null;
+                    let instance: RequestInstanceType | null = null;
                     if (target === 'task') {
-                        instance = new Task({ id: taskID as number });
+                        instance = { id: taskID as number, type: target };
                     } else if (target === 'job') {
-                        instance = new Job({ id: jobID as number });
+                        instance = { id: jobID as number, type: target };
                     } else if (target === 'project') {
-                        instance = new Project({ id: projectID as number });
+                        instance = { id: projectID as number, type: target };
                     }
 
                     const [operationType, operationTarget] = type.split(':');
@@ -91,14 +93,14 @@ export function getRequestsAsync(query: RequestsQuery, notify = true): ThunkActi
                     if (operationType === 'export') {
                         if (operationTarget === 'backup') {
                             dispatch(exportBackupAsync(
-                                instance,
+                                instance as RequestInstanceType,
                                 undefined,
                                 undefined,
                                 undefined,
                             ));
                         } else {
                             dispatch(exportDatasetAsync(
-                                instance,
+                                instance as RequestInstanceType,
                                 format,
                                 operationTarget === 'dataset',
                                 true,
@@ -109,7 +111,7 @@ export function getRequestsAsync(query: RequestsQuery, notify = true): ThunkActi
                         }
                     } else if (operationType === 'import') {
                         dispatch(importDatasetAsync(
-                            instance,
+                            instance as RequestInstanceType,
                             format,
                             undefined,
                             undefined,

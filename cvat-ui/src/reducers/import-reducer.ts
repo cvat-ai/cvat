@@ -1,22 +1,22 @@
 // Copyright (C) 2021-2022 Intel Corporation
-// Copyright (C) 2022 CVAT.ai Corporation
+// Copyright (C) 2022-2024 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
 import { omit } from 'lodash';
 import { ImportActions, ImportActionTypes } from 'actions/import-actions';
-import { getCore } from 'cvat-core-wrapper';
+import { getInstanceType, RequestInstanceType } from 'actions/requests-actions';
+import { InstanceType } from 'cvat-core-wrapper';
 import { ImportState } from '.';
-
-const core = getCore();
 
 const defaultProgress = 0.0;
 
-export function defineActititiesField(instance: any): 'projects' | 'tasks' | 'jobs' {
-    if (instance instanceof core.classes.Project) {
+export function defineActititiesField(instance: InstanceType | RequestInstanceType): 'projects' | 'tasks' | 'jobs' {
+    const instanceType = getInstanceType(instance);
+    if (instanceType === 'project') {
         return 'projects';
     }
-    if (instance instanceof core.classes.Task) {
+    if (instanceType === 'task') {
         return 'tasks';
     }
     return 'jobs';
