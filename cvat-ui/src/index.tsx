@@ -23,7 +23,7 @@ import createRootReducer from 'reducers/root-reducer';
 import { activateOrganizationAsync } from 'actions/organization-actions';
 import { resetErrors, resetMessages } from 'actions/notification-actions';
 import { getInvitationsAsync } from 'actions/invitations-actions';
-import { getRequestsAsync } from 'actions/requests-actions';
+import { getRequestsAsync } from 'actions/requests-async-actions';
 import { getServerAPISchemaAsync } from 'actions/server-actions';
 import { CombinedState, NotificationsState, PluginsState } from './reducers';
 

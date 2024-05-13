@@ -19,7 +19,7 @@ import Menu from 'antd/lib/menu';
 import { RQStatus, Request } from 'cvat-core-wrapper';
 
 import moment from 'moment';
-import { cancelRequestAsync, deleteRequestAsync } from 'actions/requests-actions';
+import { cancelRequestAsync, deleteRequestAsync } from 'actions/requests-async-actions';
 
 export interface Props {
     request: Request;

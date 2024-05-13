@@ -10,7 +10,7 @@ import { useHistory } from 'react-router';
 
 import Spin from 'antd/lib/spin';
 
-import { getRequestsAsync } from 'actions/requests-actions';
+import { getRequestsAsync } from 'actions/requests-async-actions';
 import { updateHistoryFromQuery } from 'components/resource-sorting-filtering';
 import EmptyListComponent from './empty-list';
 import RequestsList, { PAGE_SIZE } from './requests-list';

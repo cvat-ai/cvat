@@ -70,10 +70,11 @@ export const importActions = {
 export const importDatasetAsync = (
     instance: any,
     format: string,
-    useDefaultSettings: boolean,
-    sourceStorage: Storage,
-    file: File | string,
-    convMaskToPoly: boolean,
+    useDefaultSettings?: boolean,
+    sourceStorage?: Storage,
+    file?: File | string,
+    convMaskToPoly?: boolean,
+    listeningPromise?: Promise<Request>,
 ): ThunkAction => (
     async (dispatch, getState) => {
         const resource = instance instanceof core.classes.Project ? 'dataset' : 'annotation';
@@ -86,31 +87,38 @@ export const importDatasetAsync = (
                     throw Error('Only one importing of annotation/dataset allowed at the same time');
                 }
                 dispatch(importActions.importDataset(instance, format));
-                await instance.annotations
-                    .importDataset(format, useDefaultSettings, sourceStorage, file, {
-                        convMaskToPoly,
-                        uploadStatusCallback: (message: string, progress: number) => (
-                            dispatch(importActions.importDatasetUpdateStatus(
-                                instance, Math.floor(progress * 100), message,
-                            ))
-                        ),
-                        requestStatusCallback: (request: Request) => {
-                            updateRequestProgress(request, dispatch);
-                        },
-                    });
+                if (listeningPromise) {
+                    await listeningPromise;
+                } else {
+                    await instance.annotations
+                        .importDataset(format, useDefaultSettings, sourceStorage, file, {
+                            convMaskToPoly,
+                            uploadStatusCallback: (message: string, progress: number) => (
+                                dispatch(importActions.importDatasetUpdateStatus(
+                                    instance, Math.floor(progress * 100), message,
+                                ))
+                            ),
+                            requestStatusCallback: (request: Request) => {
+                                updateRequestProgress(request, dispatch);
+                            },
+                        });
+                }
             } else if (instance instanceof core.classes.Task) {
                 if (state.import.tasks.dataset.current?.[instance.id]) {
                     throw Error('Only one importing of annotation/dataset allowed at the same time');
                 }
                 dispatch(importActions.importDataset(instance, format));
-
-                await instance.annotations
-                    .upload(format, useDefaultSettings, sourceStorage, file, {
-                        convMaskToPoly,
-                        requestStatusCallback: (request: Request) => {
-                            updateRequestProgress(request, dispatch);
-                        },
-                    });
+                if (listeningPromise) {
+                    await listeningPromise;
+                } else {
+                    await instance.annotations
+                        .upload(format, useDefaultSettings, sourceStorage, file, {
+                            convMaskToPoly,
+                            requestStatusCallback: (request: Request) => {
+                                updateRequestProgress(request, dispatch);
+                            },
+                        });
+                }
             } else { // job
                 if (state.import.tasks.dataset.current?.[instance.taskId]) {
                     throw Error('Annotations is being uploaded for the task');
@@ -121,28 +129,33 @@ export const importDatasetAsync = (
 
                 dispatch(importActions.importDataset(instance, format));
 
-                await instance.annotations
-                    .upload(format, useDefaultSettings, sourceStorage, file, {
-                        convMaskToPoly,
-                        requestStatusCallback: (request: Request) => {
-                            updateRequestProgress(request, dispatch);
-                        },
-                    });
+                if (listeningPromise) {
+                    await listeningPromise;
+                    dispatch({ type: AnnotationActionTypes.UPLOAD_JOB_ANNOTATIONS_SUCCESS });
+                } else {
+                    await instance.annotations
+                        .upload(format, useDefaultSettings, sourceStorage, file, {
+                            convMaskToPoly,
+                            requestStatusCallback: (request: Request) => {
+                                updateRequestProgress(request, dispatch);
+                            },
+                        });
 
-                await instance.logger.log(EventScope.uploadAnnotations);
-                await instance.annotations.clear(true);
-                await instance.actions.clear();
+                    await instance.logger.log(EventScope.uploadAnnotations);
+                    await instance.annotations.clear(true);
+                    await instance.actions.clear();
 
-                // first set empty objects list
-                // to escape some problems in canvas when shape with the same
-                // clientID has different type (polygon, rectangle) for example
-                dispatch({ type: AnnotationActionTypes.UPLOAD_JOB_ANNOTATIONS_SUCCESS });
+                    // first set empty objects list
+                    // to escape some problems in canvas when shape with the same
+                    // clientID has different type (polygon, rectangle) for example
+                    dispatch({ type: AnnotationActionTypes.UPLOAD_JOB_ANNOTATIONS_SUCCESS });
 
-                const relevantInstance = getState().annotation.job.instance;
-                if (relevantInstance && relevantInstance.id === instance.id) {
-                    setTimeout(() => {
-                        dispatch(fetchAnnotationsAsync());
-                    });
+                    const relevantInstance = getState().annotation.job.instance;
+                    if (relevantInstance && relevantInstance.id === instance.id) {
+                        setTimeout(() => {
+                            dispatch(fetchAnnotationsAsync());
+                        });
+                    }
                 }
             }
         } catch (error) {
@@ -151,7 +164,7 @@ export const importDatasetAsync = (
         }
 
         dispatch(importActions.importDatasetSuccess(instance, resource));
-        if (instance instanceof core.classes.Project) {
+        if (!listeningPromise && instance instanceof core.classes.Project) {
             dispatch(getProjectsAsync({ id: instance.id }, getState().projects.tasksGettingQuery));
         }
     }

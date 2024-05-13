@@ -11,7 +11,7 @@ import { Row, Col } from 'antd/lib/grid';
 import Pagination from 'antd/lib/pagination';
 
 import { Request } from 'cvat-core-wrapper';
-import { getRequestsAsync } from 'actions/requests-actions';
+import { getRequestsAsync } from 'actions/requests-async-actions';
 
 import moment from 'moment';
 import dimensions from 'utils/dimensions';
@@ -21,7 +21,7 @@ export const PAGE_SIZE = 10;
 
 function setUpRequestsList(requests: Request[], newPage: number): Request[] {
     const displayRequests = [...requests];
-    displayRequests.sort((a, b) => moment(b.enqueueDate).valueOf() - moment(a.enqueueDate).valueOf());
+    displayRequests.sort((a, b) => moment(b.enqueuedDate).valueOf() - moment(a.enqueuedDate).valueOf());
     return displayRequests.slice((newPage - 1) * PAGE_SIZE, newPage * PAGE_SIZE);
 }
 

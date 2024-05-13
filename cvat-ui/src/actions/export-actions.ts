@@ -78,8 +78,9 @@ export const exportDatasetAsync = (
     format: string,
     saveImages: boolean,
     useDefaultSettings: boolean,
-    targetStorage: Storage,
+    targetStorage?: Storage,
     name?: string,
+    listeningPromise?: Promise<Request>,
 ): ThunkAction => async (dispatch) => {
     dispatch(exportActions.exportDataset(instance, format));
 
@@ -93,7 +94,7 @@ export const exportDatasetAsync = (
     }
 
     try {
-        const result = await instance.annotations
+        const result = listeningPromise ? await listeningPromise : await instance.annotations
             .exportDataset(format, saveImages, useDefaultSettings, targetStorage, name, {
                 requestStatusCallback: (request: Request) => {
                     updateRequestProgress(request, dispatch);
@@ -108,19 +109,21 @@ export const exportDatasetAsync = (
 
 export const exportBackupAsync = (
     instance: any,
-    targetStorage: Storage,
-    useDefaultSetting: boolean,
+    targetStorage?: Storage,
+    useDefaultSetting?: boolean,
     fileName?: string,
+    listeningPromise?: Promise<Request>,
 ): ThunkAction => async (dispatch) => {
     dispatch(exportActions.exportBackup(instance));
     const instanceType = (instance instanceof core.classes.Project) ? 'project' : 'task';
 
     try {
-        const result = await instance.backup(targetStorage, useDefaultSetting, fileName, {
-            requestStatusCallback: (request: Request) => {
-                updateRequestProgress(request, dispatch);
-            },
-        });
+        const result = listeningPromise ? await listeningPromise : await instance
+            .backup(targetStorage, useDefaultSetting, fileName, {
+                requestStatusCallback: (request: Request) => {
+                    updateRequestProgress(request, dispatch);
+                },
+            });
 
         dispatch(exportActions.exportBackupSuccess(instance, instanceType, !!result.url));
     } catch (error) {
