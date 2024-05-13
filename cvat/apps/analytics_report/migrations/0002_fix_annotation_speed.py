@@ -39,10 +39,6 @@ def forwards_func(apps, schema_editor):
     objects_to_update = list(filter(lambda x: x is not None, objects_to_update))
     AnalyticsReport.objects.bulk_update(objects_to_update, fields=["statistics"], batch_size=500)
 
-    # finally remove all reports, not related to jobs
-    # they will be recalculated by user request, based on adjusted data
-    AnalyticsReport.objects.filter(job_id=None).delete()
-
 
 class Migration(migrations.Migration):
 
