@@ -1132,7 +1132,16 @@ export class Track extends Drawn {
         );
     }
 
-    protected appendShapeActionToHistory(actionType, frame, undoShape, redoShape, undoSource, redoSource): void {
+    protected appendShapeActionToHistory(
+        actionType,
+        frame,
+        undoShape,
+        redoShape,
+        undoSource,
+        redoSource,
+        undoFrame,
+        redoFrame,
+    ): void {
         this.history.do(
             actionType,
             () => {
@@ -1142,6 +1151,7 @@ export class Track extends Drawn {
                     this.shapes[frame] = undoShape;
                 }
                 this.source = undoSource;
+                this.frame = undoFrame;
                 this.updated = Date.now();
             },
             () => {
@@ -1151,6 +1161,7 @@ export class Track extends Drawn {
                     this.shapes[frame] = redoShape;
                 }
                 this.source = redoSource;
+                this.frame = redoFrame;
                 this.updated = Date.now();
             },
             [this.clientID],
@@ -1162,12 +1173,15 @@ export class Track extends Drawn {
         const wasKeyframe = frame in this.shapes;
         const undoSource = this.source;
         const redoSource = this.readOnlyFields.includes('source') ? this.source : computeNewSource(this.source);
+        const undoFrame = this.frame;
+        const redoFrame = Math.min(frame, this.frame);
         const undoShape = wasKeyframe ? this.shapes[frame] : undefined;
         const redoShape = wasKeyframe ?
             { ...this.shapes[frame], rotation } : copyShape(this.get(frame), { rotation });
 
         this.shapes[frame] = redoShape;
         this.source = redoSource;
+        this.frame = redoFrame;
         this.appendShapeActionToHistory(
             HistoryActions.CHANGED_ROTATION,
             frame,
@@ -1175,6 +1189,8 @@ export class Track extends Drawn {
             redoShape,
             undoSource,
             redoSource,
+            undoFrame,
+            redoFrame,
         );
     }
 
@@ -1182,12 +1198,15 @@ export class Track extends Drawn {
         const wasKeyframe = frame in this.shapes;
         const undoSource = this.source;
         const redoSource = this.readOnlyFields.includes('source') ? this.source : computeNewSource(this.source);
+        const undoFrame = this.frame;
+        const redoFrame = Math.min(frame, this.frame);
         const undoShape = wasKeyframe ? this.shapes[frame] : undefined;
         const redoShape = wasKeyframe ?
             { ...this.shapes[frame], points } : copyShape(this.get(frame), { points });
 
         this.shapes[frame] = redoShape;
         this.source = redoSource;
+        this.frame = redoFrame;
         this.appendShapeActionToHistory(
             HistoryActions.CHANGED_POINTS,
             frame,
@@ -1195,6 +1214,8 @@ export class Track extends Drawn {
             redoShape,
             undoSource,
             redoSource,
+            undoFrame,
+            redoFrame,
         );
     }
 
@@ -1202,6 +1223,8 @@ export class Track extends Drawn {
         const wasKeyframe = frame in this.shapes;
         const undoSource = this.source;
         const redoSource = this.readOnlyFields.includes('source') ? this.source : computeNewSource(this.source);
+        const undoFrame = this.frame;
+        const redoFrame = Math.min(frame, this.frame);
         const undoShape = wasKeyframe ? this.shapes[frame] : undefined;
         const redoShape = wasKeyframe ?
             { ...this.shapes[frame], outside } :
@@ -1209,6 +1232,7 @@ export class Track extends Drawn {
 
         this.shapes[frame] = redoShape;
         this.source = redoSource;
+        this.frame = redoFrame;
         this.appendShapeActionToHistory(
             HistoryActions.CHANGED_OUTSIDE,
             frame,
@@ -1216,6 +1240,8 @@ export class Track extends Drawn {
             redoShape,
             undoSource,
             redoSource,
+            undoFrame,
+            redoFrame,
         );
     }
 
@@ -1223,6 +1249,8 @@ export class Track extends Drawn {
         const wasKeyframe = frame in this.shapes;
         const undoSource = this.source;
         const redoSource = this.readOnlyFields.includes('source') ? this.source : computeNewSource(this.source);
+        const undoFrame = this.frame;
+        const redoFrame = Math.min(frame, this.frame);
         const undoShape = wasKeyframe ? this.shapes[frame] : undefined;
         const redoShape = wasKeyframe ?
             { ...this.shapes[frame], occluded } :
@@ -1230,6 +1258,7 @@ export class Track extends Drawn {
 
         this.shapes[frame] = redoShape;
         this.source = redoSource;
+        this.frame = redoFrame;
         this.appendShapeActionToHistory(
             HistoryActions.CHANGED_OCCLUDED,
             frame,
@@ -1237,6 +1266,8 @@ export class Track extends Drawn {
             redoShape,
             undoSource,
             redoSource,
+            undoFrame,
+            redoFrame,
         );
     }
 
@@ -1244,6 +1275,8 @@ export class Track extends Drawn {
         const wasKeyframe = frame in this.shapes;
         const undoSource = this.source;
         const redoSource = this.readOnlyFields.includes('source') ? this.source : computeNewSource(this.source);
+        const undoFrame = this.frame;
+        const redoFrame = Math.min(frame, this.frame);
         const undoShape = wasKeyframe ? this.shapes[frame] : undefined;
         const redoShape = wasKeyframe ?
             { ...this.shapes[frame], zOrder } :
@@ -1251,6 +1284,7 @@ export class Track extends Drawn {
 
         this.shapes[frame] = redoShape;
         this.source = redoSource;
+        this.frame = redoFrame;
         this.appendShapeActionToHistory(
             HistoryActions.CHANGED_ZORDER,
             frame,
@@ -1258,6 +1292,8 @@ export class Track extends Drawn {
             redoShape,
             undoSource,
             redoSource,
+            undoFrame,
+            redoFrame,
         );
     }
 
@@ -1270,6 +1306,7 @@ export class Track extends Drawn {
 
         const undoSource = this.source;
         const redoSource = this.readOnlyFields.includes('source') ? this.source : computeNewSource(this.source);
+        const undoFrame = this.frame;
         const undoShape = wasKeyframe ? this.shapes[frame] : undefined;
         const redoShape = keyframe ? copyShape(this.get(frame)) : undefined;
 
@@ -1279,6 +1316,8 @@ export class Track extends Drawn {
         } else {
             delete this.shapes[frame];
         }
+        const redoFrame = Math.min(...Object.keys(this.shapes).map((key) => +key));
+        this.frame = redoFrame;
 
         this.appendShapeActionToHistory(
             HistoryActions.CHANGED_KEYFRAME,
@@ -1287,6 +1326,8 @@ export class Track extends Drawn {
             redoShape,
             undoSource,
             redoSource,
+            undoFrame,
+            redoFrame,
         );
     }
 
