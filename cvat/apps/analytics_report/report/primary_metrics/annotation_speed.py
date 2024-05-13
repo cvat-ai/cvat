@@ -18,7 +18,7 @@ from cvat.apps.analytics_report.report.primary_metrics.base import (
     PrimaryMetricBase,
 )
 from cvat.apps.dataset_manager.task import merge_table_rows
-from cvat.apps.engine.models import SourceType, ShapeType
+from cvat.apps.engine.models import ShapeType, SourceType
 
 
 class JobAnnotationSpeedExtractor(DataExtractorBase):
