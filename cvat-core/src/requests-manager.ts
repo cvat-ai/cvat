@@ -201,8 +201,8 @@ class RequestsManager {
         }
         const promise = new Promise<Request>((resolve, reject) => {
             const timeoutCallback = (): void => {
-                serverProxy.requests.status(id, params).then((response) => {
-                    const request = new Request({ ...response });
+                serverProxy.requests.status(id, params).then((serializedRequest) => {
+                    const request = new Request({ ...serializedRequest });
                     const { status } = request;
                     if (storedID in this.listening) {
                         // check it was not cancelled
