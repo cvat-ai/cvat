@@ -75,16 +75,16 @@ class JobAnnotationSpeed(PrimaryMetricBase):
 
         def get_shapes_count():
             return (
-                self._db_obj.labeledshape_set
-                .exclude(source=SourceType.FILE)
-                .exclude(type=ShapeType.SKELETON) # skeleton's points are already counted as objects
+                self._db_obj.labeledshape_set.exclude(source=SourceType.FILE)
+                .exclude(
+                    type=ShapeType.SKELETON
+                )  # skeleton's points are already counted as objects
                 .count()
             )
 
         def get_track_count():
             db_tracks = (
-                self._db_obj.labeledtrack_set
-                .exclude(source=SourceType.FILE)
+                self._db_obj.labeledtrack_set.exclude(source=SourceType.FILE)
                 .values(
                     "id",
                     "trackedshape__id",
