@@ -9,19 +9,6 @@
 context('Regression tests', () => {
     let taskID = null;
     let jobID = null;
-    const labelName = 'Main label';
-    const imagesCount = 75;
-    const imageFileName = `image_${labelName.replace(' ', '_').toLowerCase()}`;
-    const width = 800;
-    const height = 800;
-    const posX = 10;
-    const posY = 10;
-    const color = 'gray';
-    const archiveName = `${imageFileName}.zip`;
-    const archivePath = `cypress/fixtures/${archiveName}`;
-    const imagesFolder = `cypress/fixtures/${imageFileName}`;
-    const directoryToArchive = imagesFolder;
-    const zipLevel = 0;
 
     const taskPayload = {
         name: 'Test annotations actions',
@@ -36,7 +23,7 @@ context('Regression tests', () => {
     };
 
     const dataPayload = {
-        server_files: [archivePath],
+        server_files: ['archive.zip'],
         image_quality: 70,
         use_zip_chunks: true,
         use_cache: true,
@@ -46,7 +33,7 @@ context('Regression tests', () => {
     const createRectangleShape2Points = {
         points: 'By 2 Points',
         type: 'Shape',
-        labelName,
+        labelName: 'label 1',
         firstX: 250,
         firstY: 350,
         secondX: 350,
@@ -56,9 +43,6 @@ context('Regression tests', () => {
     before(() => {
         cy.visit('auth/login');
         cy.login();
-        cy.imageGenerator(imagesFolder, imageFileName, width, height, color, posX,
-            posY, labelName, imagesCount);
-        cy.createZipArchive(directoryToArchive, archivePath, zipLevel);
     });
 
     describe('Regression tests', () => {
