@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: MIT
 
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 
 import { Row, Col } from 'antd/lib/grid';
@@ -19,7 +19,7 @@ import Menu from 'antd/lib/menu';
 import { RQStatus, Request } from 'cvat-core-wrapper';
 
 import moment from 'moment';
-import { cancelRequestAsync, deleteRequestAsync } from 'actions/requests-async-actions';
+import { cancelRequestAsync } from 'actions/requests-async-actions';
 
 export interface Props {
     request: Request;
@@ -183,6 +183,41 @@ export default function RequestCard(props: Props): JSX.Element {
         style.opacity = 0.5;
     }
 
+    const [menuItems, setMenuItems] = useState<JSX.Element[]>([]);
+    useEffect(() => {
+        const newMenuItems = [];
+        if (request.url) {
+            newMenuItems.push(
+                <Menu.Item
+                    key='download'
+                    onClick={() => {
+                        const downloadAnchor = window.document.getElementById('downloadAnchor') as HTMLAnchorElement;
+                        downloadAnchor.href = request.url;
+                        downloadAnchor.click();
+                    }}
+                >
+                    Download
+                </Menu.Item>,
+            );
+        }
+        if (request.status === RQStatus.STARTED) {
+            newMenuItems.push(
+                <Menu.Item
+                    key='cancel'
+                    onClick={() => {
+                        dispatch(cancelRequestAsync(request, () => {
+                            setIsActive(false);
+                        }));
+                    }}
+                >
+                    Cancel
+                </Menu.Item>,
+            );
+        }
+
+        setMenuItems(newMenuItems);
+    }, [request]);
+
     return (
         <Row justify='center' align='middle'>
             <Col span={24}>
@@ -269,56 +304,22 @@ export default function RequestCard(props: Props): JSX.Element {
                                         ) : null
                                     }
                                 </Col>
-
                                 <Col span={3} style={{ display: 'flex', justifyContent: 'end' }}>
-                                    <Dropdown
-                                        destroyPopupOnHide
-                                        trigger={['click']}
-                                        overlay={() => (
-                                            <Menu selectable={false} className='cvat-actions-menu cvat-request-actions-menu'>
-                                                {
-                                                    request.url ? (
-                                                        <Menu.Item
-                                                            key='download'
-                                                            onClick={() => {
-                                                                const downloadAnchor = window.document.getElementById('downloadAnchor') as HTMLAnchorElement;
-                                                                downloadAnchor.href = request.url;
-                                                                downloadAnchor.click();
-                                                            }}
-                                                        >
-                                                                Download
-                                                        </Menu.Item>
-                                                    ) : null
-                                                }
-                                                <Menu.Item
-                                                    key='delete'
-                                                    onClick={() => {
-                                                        dispatch(deleteRequestAsync(request, () => {
-                                                            setIsActive(false);
-                                                        }));
-                                                    }}
-                                                >
-                                                        Delete
-                                                </Menu.Item>
-                                                {
-                                                    request.status === RQStatus.STARTED ? (
-                                                        <Menu.Item
-                                                            key='cancel'
-                                                            onClick={() => {
-                                                                dispatch(cancelRequestAsync(request, () => {
-                                                                    setIsActive(false);
-                                                                }));
-                                                            }}
-                                                        >
-                                                                Cancel
-                                                        </Menu.Item>
-                                                    ) : null
-                                                }
-                                            </Menu>
-                                        )}
-                                    >
-                                        <Button type='link' size='middle' className='cvat-requests-page-actions-button' icon={<MoreOutlined className='cvat-menu-icon' />} />
-                                    </Dropdown>
+                                    {
+                                        menuItems.length !== 0 ? (
+                                            <Dropdown
+                                                destroyPopupOnHide
+                                                trigger={['click']}
+                                                overlay={() => (
+                                                    <Menu selectable={false} className='cvat-actions-menu cvat-request-actions-menu'>
+                                                        { menuItems.map((element) => element)}
+                                                    </Menu>
+                                                )}
+                                            >
+                                                <Button type='link' size='middle' className='cvat-requests-page-actions-button' icon={<MoreOutlined className='cvat-menu-icon' />} />
+                                            </Dropdown>
+                                        ) : null
+                                    }
                                 </Col>
                             </Row>
                         </Col>

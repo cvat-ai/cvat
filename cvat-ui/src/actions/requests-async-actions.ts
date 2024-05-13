@@ -137,16 +137,3 @@ export function cancelRequestAsync(request: Request, onSuccess: () => void): Thu
         }
     };
 }
-
-export function deleteRequestAsync(request: Request, onSuccess: () => void): ThunkAction {
-    return async (dispatch): Promise<void> => {
-        dispatch(requestsActions.deleteRequest(request));
-
-        try {
-            await core.requests.delete(request.id);
-            onSuccess();
-        } catch (error) {
-            dispatch(requestsActions.deleteRequestFailed(request, error));
-        }
-    };
-}

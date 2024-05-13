@@ -2294,16 +2294,6 @@ async function cancelRequest(requestID): Promise<void> {
     }
 }
 
-async function deleteRequest(requestID): Promise<void> {
-    const { backendAPI } = config;
-
-    try {
-        await Axios.delete(`${backendAPI}/requests/${requestID}`);
-    } catch (errorData) {
-        throw generateError(errorData);
-    }
-}
-
 const listenToCreateAnalyticsReportCallbacks: {
     job: LongProcessListener<void>;
     task: LongProcessListener<void>;
@@ -2550,6 +2540,5 @@ export default Object.freeze({
         list: getRequestsList,
         status: getRequestStatus,
         cancel: cancelRequest,
-        delete: deleteRequest,
     }),
 });
