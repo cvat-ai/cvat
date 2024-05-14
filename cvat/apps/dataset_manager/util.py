@@ -111,16 +111,19 @@ def get_dataset_cache_lock(
 ) -> Generator[Lock, Any, Any]:
     if isinstance(acquire_timeout, timedelta):
         acquire_timeout = acquire_timeout.total_seconds()
-    if acquire_timeout and acquire_timeout < 0:
-        raise ValueError("acquire_timeout must be a positive number")
+    if acquire_timeout is not None and acquire_timeout < 0:
+        raise ValueError("acquire_timeout must be a non-negative number")
     elif acquire_timeout is None:
         acquire_timeout = -1
 
     if isinstance(ttl, timedelta):
         ttl = ttl.total_seconds()
     if not ttl or ttl < 0:
-        raise ValueError("ttl must be a positive number")
+        raise ValueError("ttl must be a non-negative number")
 
+    # The lock is exclusive, so it may potentially reduce performance in some cases,
+    # where parallel access is potentially possible and valid,
+    # e.g. dataset downloading could use a shared lock instead.
     lock = Redlock(
         key=make_export_lock_key(export_path),
         masters={django_rq.get_connection(settings.CVAT_QUEUES.EXPORT_DATA.value)},
