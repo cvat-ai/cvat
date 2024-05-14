@@ -121,6 +121,7 @@ def get_dataset_cache_lock(
     if not ttl or ttl < 0:
         raise ValueError("ttl must be a non-negative number")
 
+    # https://redis.io/docs/latest/develop/use/patterns/distributed-locks/
     # The lock is exclusive, so it may potentially reduce performance in some cases,
     # where parallel access is potentially possible and valid,
     # e.g. dataset downloading could use a shared lock instead.
