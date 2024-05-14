@@ -59,7 +59,7 @@ tomli==2.0.1
     #   autopep8
     #   black
     #   pylint
-tomlkit==0.12.4
+tomlkit==0.12.5
     # via pylint
 tornado==6.4
     # via snakeviz
