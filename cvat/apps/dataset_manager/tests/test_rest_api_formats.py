@@ -14,10 +14,11 @@ import numpy as np
 import random
 import xml.etree.ElementTree as ET
 import zipfile
-from contextlib import ExitStack, contextmanager, suppress
+from contextlib import ExitStack, contextmanager
 from datetime import timedelta
 from functools import partial
 from io import BytesIO
+from tempfile import TemporaryDirectory
 from typing import Any, Callable, ClassVar, Optional, overload
 from unittest.mock import MagicMock, patch, DEFAULT as MOCK_DEFAULT
 
@@ -1273,7 +1274,7 @@ class TaskDumpUploadTest(_DbTestBase):
                     data_from_task_after_upload = self._get_data_from_task(task_id, include_images)
                     compare_datasets(self, data_from_task_before_upload, data_from_task_after_upload)
 
-class ExportConcurrencyTest(_DbTestBase):
+class ExportBehaviorTest(_DbTestBase):
     @define
     class SharedBase:
         condition: multiprocessing.Condition = field(factory=multiprocessing.Condition, init=False)
@@ -1401,6 +1402,8 @@ class ExportConcurrencyTest(_DbTestBase):
 
             if isinstance(acquire_timeout, timedelta):
                 acquire_timeout = acquire_timeout.total_seconds()
+            if acquire_timeout is None:
+                acquire_timeout = -1
 
             acquired = export_cache_lock.acquire(
                 block=block,
@@ -1433,7 +1436,11 @@ class ExportConcurrencyTest(_DbTestBase):
                 original_log_exception(logger, exc_info)
 
             with (
-                patch('cvat.apps.dataset_manager.views.get_dataset_cache_lock', new=patched_get_dataset_cache_lock),
+                patch('cvat.apps.dataset_manager.views.EXPORT_CACHE_LOCK_TIMEOUT', new=5),
+                patch(
+                    'cvat.apps.dataset_manager.views.get_dataset_cache_lock',
+                    new=patched_get_dataset_cache_lock
+                ),
                 patch('cvat.apps.dataset_manager.views.osp.exists') as mock_osp_exists,
                 patch('cvat.apps.dataset_manager.views.os.replace') as mock_os_replace,
                 patch('cvat.apps.dataset_manager.views.rq.get_current_job') as mock_rq_get_current_job,
@@ -1452,20 +1459,29 @@ class ExportConcurrencyTest(_DbTestBase):
                     side_effect(wait_condition, clear_removed_the_file),
                 )
 
-                mock_rq_job = MagicMock(timeout=5)
-                mock_rq_get_current_job.return_value = mock_rq_job
+                mock_rq_get_current_job.return_value = MagicMock(timeout=5)
 
-                with suppress(_LockTimeoutError):
+                exited_by_timeout = False
+                try:
                     export(dst_format=format_name, task_id=task_id)
+                except _LockTimeoutError:
+                    # should come from waiting for clear_removed_the_file
+                    exited_by_timeout = True
 
+                assert exited_by_timeout
                 mock_os_replace.assert_called_once()
 
 
         def _clear(*_, file_path: str, file_ctime: str):
             from os import remove as original_remove
+            from cvat.apps.dataset_manager.util import LockNotAvailableError
 
             with (
-                patch('cvat.apps.dataset_manager.views.get_dataset_cache_lock', new=patched_get_dataset_cache_lock),
+                patch('cvat.apps.dataset_manager.views.EXPORT_CACHE_LOCK_TIMEOUT', new=5),
+                patch(
+                    'cvat.apps.dataset_manager.views.get_dataset_cache_lock',
+                    new=patched_get_dataset_cache_lock
+                ),
                 patch('cvat.apps.dataset_manager.views.os.remove') as mock_os_remove,
                 patch('cvat.apps.dataset_manager.views.rq.get_current_job') as mock_rq_get_current_job,
                 patch('cvat.apps.dataset_manager.views.django_rq.get_scheduler'),
@@ -1477,13 +1493,18 @@ class ExportConcurrencyTest(_DbTestBase):
                     side_effect(set_condition, clear_removed_the_file),
                 )
 
-                mock_rq_job = MagicMock(timeout=5)
-                mock_rq_get_current_job.return_value = mock_rq_job
+                mock_rq_get_current_job.return_value = MagicMock(timeout=5)
 
-                with suppress(_LockTimeoutError):
+                exited_by_timeout = False
+                try:
                     clear_export_cache(
                         file_path=file_path, file_ctime=file_ctime, logger=MagicMock()
                     )
+                except LockNotAvailableError:
+                    # should come from waiting for get_dataset_cache_lock
+                    exited_by_timeout = True
+
+                assert exited_by_timeout
 
 
         # The problem checked is TOCTOU / race condition for file existence check and
@@ -1525,12 +1546,20 @@ class ExportConcurrencyTest(_DbTestBase):
             # Threads could be faster, but they can't be terminated
             export_process = es.enter_context(process_closing(multiprocessing.Process(
                 target=_export,
-                args=(export_checked_the_file, export_created_the_file),
+                args=(
+                    export_cache_lock,
+                    export_checked_the_file, export_created_the_file,
+                    export_file_path, clear_removed_the_file,
+                ),
                 kwargs=dict(task_id=task_id),
             )))
             clear_process = es.enter_context(process_closing(multiprocessing.Process(
                 target=_clear,
-                args=(export_checked_the_file, export_created_the_file),
+                args=(
+                    export_cache_lock,
+                    export_checked_the_file, export_created_the_file,
+                    export_file_path, clear_removed_the_file,
+                ),
                 kwargs=dict(file_path=first_export_path, file_ctime=export_instance_time),
             )))
 
@@ -1541,12 +1570,12 @@ class ExportConcurrencyTest(_DbTestBase):
 
             # A deadlock (interrupted by a timeout error) is the positive outcome in this test,
             # if the problem is fixed.
+            # clear() must wait for the export cache lock release (acquired by export()).
+            # It must be finished by a timeout, as export() holds it, waiting
+            clear_process.join(timeout=10)
+
             # export() must wait for the clear() file existence check and fail because of timeout
             export_process.join(timeout=10)
-
-            # clear() must wait for the export cache lock release (acquired by export()).
-            # It must be finished by a timeout, as export() holds it
-            clear_process.join(timeout=10)
 
             self.assertFalse(export_process.is_alive())
             self.assertFalse(clear_process.is_alive())
@@ -1570,6 +1599,205 @@ class ExportConcurrencyTest(_DbTestBase):
         new_export_path = export_file_path.get()
         self.assertGreater(len(new_export_path), 0)
         self.assertTrue(osp.isfile(new_export_path))
+
+    def test_concurrent_download_and_cleanup(self):
+        side_effect = self.side_effect
+        chain_side_effects = self.chain_side_effects
+        set_condition = self.set_condition
+        wait_condition = self.wait_condition
+        _LockTimeoutError = self._LockTimeoutError
+        process_closing = self.process_closing
+
+        format_name = "CVAT for images 1.1"
+
+        export_cache_lock = multiprocessing.Lock()
+
+        download_checked_the_file = self.SharedBool()
+        clear_removed_the_file = self.SharedBool()
+
+        images = self._generate_task_images(3)
+        task = self._create_task(tasks["main"], images)
+        self._create_annotations(task, f'{format_name} many jobs', "default")
+        task_id = task["id"]
+
+        download_url = self._generate_url_dump_tasks_annotations(task_id)
+        download_params = {
+            "format": format_name,
+            "action": "download",
+        }
+
+        @contextmanager
+        def patched_get_dataset_cache_lock(export_path, *, ttl, block=True, acquire_timeout=None):
+            # fakeredis lock acquired in a subprocess won't be visible to other processes
+            # just implement the lock here
+            from cvat.apps.dataset_manager.util import LockNotAvailableError
+
+            if isinstance(acquire_timeout, timedelta):
+                acquire_timeout = acquire_timeout.total_seconds()
+            if acquire_timeout is None:
+                acquire_timeout = -1
+
+            acquired = export_cache_lock.acquire(
+                block=block,
+                timeout=acquire_timeout if acquire_timeout > -1 else None
+            )
+
+            if not acquired:
+                raise LockNotAvailableError
+
+            try:
+                yield
+            finally:
+                export_cache_lock.release()
+
+        def _download(*_, task_id: int, export_path: str):
+            from os.path import exists as original_exists
+
+            def patched_osp_exists(path: str):
+                result = original_exists(path)
+
+                if path == export_path:
+                    set_condition(download_checked_the_file)
+                    wait_condition(
+                        clear_removed_the_file, timeout=20
+                    ) # wait more than the process timeout
+
+                return result
+
+            with (
+                patch(
+                    'cvat.apps.engine.views.dm.util.get_dataset_cache_lock',
+                    new=patched_get_dataset_cache_lock
+                ),
+                patch('cvat.apps.dataset_manager.views.osp.exists') as mock_osp_exists,
+                TemporaryDirectory() as temp_dir,
+            ):
+                mock_osp_exists.side_effect = patched_osp_exists
+
+                self._download_file(
+                    download_url, download_params, self.admin, osp.join(temp_dir, "export.zip")
+                )
+
+                mock_osp_exists.assert_called()
+
+        def _clear(*_, file_path: str, file_ctime: str):
+            from os import remove as original_remove
+            from cvat.apps.dataset_manager.util import LockNotAvailableError
+
+            with (
+                patch('cvat.apps.dataset_manager.views.EXPORT_CACHE_LOCK_TIMEOUT', new=5),
+                patch(
+                    'cvat.apps.dataset_manager.views.get_dataset_cache_lock',
+                    new=patched_get_dataset_cache_lock
+                ),
+                patch('cvat.apps.dataset_manager.views.os.remove') as mock_os_remove,
+                patch('cvat.apps.dataset_manager.views.rq.get_current_job') as mock_rq_get_current_job,
+                patch('cvat.apps.dataset_manager.views.django_rq.get_scheduler'),
+                patch('cvat.apps.dataset_manager.views.TTL_CONSTS', new={'task': timedelta(seconds=0)}),
+            ):
+                mock_os_remove.side_effect = chain_side_effects(
+                    original_remove,
+                    side_effect(set_condition, clear_removed_the_file),
+                )
+
+                mock_rq_get_current_job.return_value = MagicMock(timeout=5)
+
+                exited_by_timeout = False
+                try:
+                    clear_export_cache(
+                        file_path=file_path, file_ctime=file_ctime, logger=MagicMock()
+                    )
+                except LockNotAvailableError:
+                    # should come from waiting for get_dataset_cache_lock
+                    exited_by_timeout = True
+
+                assert exited_by_timeout
+
+
+        # The problem checked is TOCTOU / race condition for file existence check and
+        # further file reading / removal. There are several possible variants of the problem.
+        # An example:
+        # 1. download exports the file
+        # 2. download checks the export is still relevant
+        # 3. clear checks the file exists
+        # 4. clear removes the export file
+        # 5. download checks if the file exists -> an exception
+        #
+        # There can be variations on the intermediate calls, such as:
+        # - download: exists()
+        # - clear: remove()
+        # - download: open() -> an exception
+        # etc.
+
+        export_path = None
+
+        def patched_export(*args, **kwargs):
+            nonlocal export_path
+
+            result = export(*args, **kwargs)
+            export_path = result
+
+            return result
+
+        with (
+            patch('cvat.apps.dataset_manager.views.export', new=patched_export),
+            TemporaryDirectory() as temp_dir,
+        ):
+            self._download_file(
+                download_url, download_params, self.admin, osp.join(temp_dir, "export.zip")
+            )
+
+        export_instance_time = parse_export_filename(export_path).instance_timestamp
+
+        processes_finished_correctly = False
+        with ExitStack() as es:
+            # Run both operations concurrently
+            # Threads could be faster, but they can't be terminated
+            download_process = es.enter_context(process_closing(multiprocessing.Process(
+                target=_download,
+                args=(download_checked_the_file, clear_removed_the_file, export_cache_lock),
+                kwargs=dict(task_id=task_id, export_path=export_path),
+            )))
+            clear_process = es.enter_context(process_closing(multiprocessing.Process(
+                target=_clear,
+                args=(download_checked_the_file, clear_removed_the_file, export_cache_lock),
+                kwargs=dict(file_path=export_path, file_ctime=export_instance_time),
+            )))
+
+            download_process.start()
+
+            wait_condition(download_checked_the_file) # ensure the expected execution order
+            clear_process.start()
+
+            # A deadlock (interrupted by a timeout error) is the positive outcome in this test,
+            # if the problem is fixed.
+            # clear() must wait for the export cache lock release (acquired by download()).
+            # It must be finished by a timeout, as download() holds it, waiting
+            clear_process.join(timeout=5)
+
+            # download() must wait for the clear() file existence check and fail because of timeout
+            download_process.join(timeout=5)
+
+            self.assertTrue(download_process.is_alive())
+            self.assertFalse(clear_process.is_alive())
+
+            download_process.terminate()
+            download_process.join(timeout=5)
+
+            # All the expected exceptions should be handled in the process callbacks.
+            # This is to avoid passing the test with unexpected errors
+            self.assertEqual(download_process.exitcode, -15) # sigterm
+            self.assertEqual(clear_process.exitcode, 0)
+
+            processes_finished_correctly = True
+
+        self.assertTrue(processes_finished_correctly)
+
+        # terminate() may break the locks, don't try to acquire
+        # https://docs.python.org/3/library/multiprocessing.html#multiprocessing.Process.terminate
+        self.assertTrue(download_checked_the_file.get())
+
+        self.assertFalse(clear_removed_the_file.get())
 
     def test_export_can_create_file_and_cleanup_job(self):
         format_name = "CVAT for images 1.1"
