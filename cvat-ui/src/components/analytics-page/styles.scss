@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: MIT
 
-@import '../../base';
+@import 'base';
 
 .cvat-analytics-inner {
     background: $background-color-1;
@@ -129,7 +129,7 @@
 .cvat-quality-settings-switch {
     padding: 6px 8px;
     border: 1px solid lightgray;
-    margin-left: 8px;
+    margin-left: $grid-unit-size;
     border-radius: $border-radius-base;
 }
 

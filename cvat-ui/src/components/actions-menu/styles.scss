@@ -3,22 +3,11 @@
 //
 // SPDX-License-Identifier: MIT
 
-@import '../../base';
-
-.cvat-menu-dump-submenu-item,
-.cvat-menu-export-submenu-item {
-    > span[role='img'] {
-        color: $info-icon-color;
-    }
-
-    &:hover {
-        background-color: $hover-menu-color;
-    }
-}
+@import 'base';
 
 .cvat-menu-icon {
     font-size: 16px;
-    margin-left: 8px;
+    margin-left: $grid-unit-size;
     align-self: center;
 }
 

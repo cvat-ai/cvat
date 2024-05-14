@@ -56,8 +56,8 @@
     transform: scaleX(-1);
 }
 
-.cvat-canvas-controls-sidebar {
-    background-color: $background-color-2;
+.ant-layout-sider.cvat-canvas-controls-sidebar {
+    background: $background-color-2;
     border-right: 1px solid $border-color-1;
     overflow: hidden;
 }
@@ -244,7 +244,7 @@
     padding: $grid-unit-size;
     border-radius: $grid-unit-size;
     background: $background-color-2;
-    width: 32 * $grid-unit-size;
+    width: $grid-unit-size * 32;
 
     > div {
         margin-top: $grid-unit-size;
