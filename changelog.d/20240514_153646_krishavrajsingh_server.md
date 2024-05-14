@@ -1,4 +1,3 @@
-
 ### Fixed
 
 - Server now checks default_attribute and values for checkbox
