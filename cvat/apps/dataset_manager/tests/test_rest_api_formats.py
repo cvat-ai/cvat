@@ -15,9 +15,10 @@ import random
 import xml.etree.ElementTree as ET
 import zipfile
 from contextlib import ExitStack, contextmanager, suppress
+from datetime import timedelta
 from functools import partial
 from io import BytesIO
-from typing import Any
+from typing import Any, Callable, ClassVar, Optional, overload
 from unittest.mock import MagicMock, patch, DEFAULT as MOCK_DEFAULT
 
 from attr import define, field
@@ -31,7 +32,7 @@ from rest_framework.test import APIClient, APITestCase
 import cvat.apps.dataset_manager as dm
 from cvat.apps.dataset_manager.bindings import CvatTaskOrJobDataExtractor, TaskData
 from cvat.apps.dataset_manager.task import TaskAnnotation
-from cvat.apps.dataset_manager.views import clear_export_cache, export
+from cvat.apps.dataset_manager.views import clear_export_cache, export, parse_export_filename
 from cvat.apps.engine.models import Task
 from cvat.apps.engine.tests.utils import get_paginated_collection
 
@@ -1272,86 +1273,157 @@ class TaskDumpUploadTest(_DbTestBase):
                     data_from_task_after_upload = self._get_data_from_task(task_id, include_images)
                     compare_datasets(self, data_from_task_before_upload, data_from_task_after_upload)
 
+class ExportConcurrencyTest(_DbTestBase):
+    @define
+    class SharedBase:
+        condition: multiprocessing.Condition = field(factory=multiprocessing.Condition, init=False)
+
+    @define
+    class SharedBool(SharedBase):
+        value: multiprocessing.Value = field(
+            factory=partial(multiprocessing.Value, 'i', 0), init=False
+        )
+
+        def set(self, value: bool = True):
+            self.value.value = int(value)
+
+        def get(self) -> bool:
+            return bool(self.value.value)
+
+    @define
+    class SharedString(SharedBase):
+        MAX_LEN: ClassVar[int] = 2048
+
+        value: multiprocessing.Value = field(
+            factory=partial(multiprocessing.Array, 'c', MAX_LEN), init=False
+        )
+
+        def set(self, value: str):
+            self.value.get_obj().value = value.encode()[ : self.MAX_LEN - 1]
+
+        def get(self) -> str:
+            return self.value.get_obj().value.decode()
+
+    class _LockTimeoutError(Exception):
+        pass
+
+    @overload
+    @classmethod
+    def set_condition(cls, var: SharedBool, value: bool = True): ...
+
+    @overload
+    @classmethod
+    def set_condition(cls, var: SharedBase, value: Any): ...
+
+    _not_set = object()
+
+    @classmethod
+    def set_condition(cls, var: SharedBase, value: Any = _not_set):
+        if isinstance(var, cls.SharedBool) and value is cls._not_set:
+            value = True
+
+        with var.condition:
+            var.set(value)
+            var.condition.notify()
+
+    @classmethod
+    def wait_condition(cls, var: SharedBase, timeout: Optional[int] = 5):
+        with var.condition:
+            if not var.condition.wait(timeout):
+                raise cls._LockTimeoutError
+
+    @staticmethod
+    def side_effect(f: Callable, *args, **kwargs) -> Callable:
+        """
+        Wraps the passed function to be executed with the given parameters
+        and return the regular mock output
+        """
+
+        def wrapped(*_, **__):
+            f(*args, **kwargs)
+            return MOCK_DEFAULT
+
+        return wrapped
+
+    @staticmethod
+    def chain_side_effects(*calls: Callable) -> Callable:
+        """
+        Makes a callable that calls all the passed functions sequentially,
+        and returns the last call result
+        """
+
+        def wrapped(*args, **kwargs):
+            result = MOCK_DEFAULT
+
+            for f in calls:
+                new_result = f(*args, **kwargs)
+                if new_result is not MOCK_DEFAULT:
+                    result = new_result
+
+            return result
+
+        return wrapped
+
+    @staticmethod
+    @contextmanager
+    def process_closing(process: multiprocessing.Process, *, timeout: Optional[int] = 10):
+        try:
+            yield process
+        finally:
+            if process.is_alive():
+                process.terminate()
+
+            process.join(timeout=timeout)
+            process.close()
+
     def test_concurrent_export_and_cleanup(self):
-        @define
-        class SharedBool:
-            value: multiprocessing.Value = field(
-                factory=partial(multiprocessing.Value, 'i', 0)
-            )
-            condition: multiprocessing.Condition = field(factory=multiprocessing.Condition)
-
-            def set(self, value: bool = True):
-                self.value.value = int(value)
-
-            def get(self):
-                return bool(self.value.value)
-
-        class _LockTimeoutError(Exception):
-            pass
-
-        export_checked_the_file = SharedBool()
-        export_created_the_file = SharedBool()
-        clear_removed_the_file = SharedBool()
-
-        def _set_condition(var: SharedBool):
-            with var.condition:
-                var.set()
-                var.condition.notify()
-
-        def _wait_condition(var: SharedBool, timeout: int = 5):
-            with var.condition:
-                if not var.condition.wait(timeout):
-                    raise _LockTimeoutError
-
-        def _side_effect(f, *args, **kwargs):
-            """
-            Wraps the passed function to be executed with the given parameters
-            and return the regular mock output
-            """
-
-            def wrapped(*_, **__):
-                f(*args, **kwargs)
-                return MOCK_DEFAULT
-
-            return wrapped
-
-        def _chain_side_effects(*calls):
-            """
-            Makes a callable that calls all the passed functions sequentially,
-            and returns the last call result
-            """
-
-            def wrapped(*args, **kwargs):
-                result = MOCK_DEFAULT
-
-                for f in calls:
-                    new_result = f(*args, **kwargs)
-                    if new_result is not MOCK_DEFAULT:
-                        result = new_result
-
-                return result
-
-            return wrapped
-
-        @contextmanager
-        def process_closing(process: multiprocessing.Process):
-            try:
-                yield process
-            finally:
-                if process.is_alive():
-                    process.terminate()
-
-                process.join(timeout=10)
-                process.close()
-
+        side_effect = self.side_effect
+        chain_side_effects = self.chain_side_effects
+        set_condition = self.set_condition
+        wait_condition = self.wait_condition
+        _LockTimeoutError = self._LockTimeoutError
+        process_closing = self.process_closing
 
         format_name = "CVAT for images 1.1"
+
+        export_cache_lock = multiprocessing.Lock()
+
+        export_checked_the_file = self.SharedBool()
+        export_created_the_file = self.SharedBool()
+        export_file_path = self.SharedString()
+        clear_removed_the_file = self.SharedBool()
+
+        @contextmanager
+        def patched_get_dataset_cache_lock(export_path, *, ttl, block=True, acquire_timeout=None):
+            # fakeredis lock acquired in a subprocess won't be visible to the other processes
+            # just implement the lock here
+            from cvat.apps.dataset_manager.util import LockNotAvailableError
+
+            if isinstance(acquire_timeout, timedelta):
+                acquire_timeout = acquire_timeout.total_seconds()
+
+            acquired = export_cache_lock.acquire(
+                block=block,
+                timeout=acquire_timeout if acquire_timeout > -1 else None
+            )
+
+            if not acquired:
+                raise LockNotAvailableError
+
+            try:
+                yield
+            finally:
+                export_cache_lock.release()
 
         def _export(*_, task_id: int):
             from os.path import exists as original_exists
             from os import replace as original_replace
             from cvat.apps.dataset_manager.views import log_exception as original_log_exception
             import sys
+
+            def replace_dst_recorder(_: str, dst: str):
+                set_condition(export_file_path, dst)
+                return MOCK_DEFAULT
 
             def patched_log_exception(logger=None, exc_info=True):
                 cur_exc_info = sys.exc_info() if exc_info is True else exc_info
@@ -1361,21 +1433,23 @@ class TaskDumpUploadTest(_DbTestBase):
                 original_log_exception(logger, exc_info)
 
             with (
+                patch('cvat.apps.dataset_manager.views.get_dataset_cache_lock', new=patched_get_dataset_cache_lock),
                 patch('cvat.apps.dataset_manager.views.osp.exists') as mock_osp_exists,
                 patch('cvat.apps.dataset_manager.views.os.replace') as mock_os_replace,
                 patch('cvat.apps.dataset_manager.views.rq.get_current_job') as mock_rq_get_current_job,
                 patch('cvat.apps.dataset_manager.views.django_rq.get_scheduler'),
                 patch('cvat.apps.dataset_manager.views.log_exception', new=patched_log_exception),
             ):
-                mock_osp_exists.side_effect = _chain_side_effects(
+                mock_osp_exists.side_effect = chain_side_effects(
                     original_exists,
-                    _side_effect(_set_condition, export_checked_the_file),
+                    side_effect(set_condition, export_checked_the_file),
                 )
 
-                mock_os_replace.side_effect = _chain_side_effects(
+                mock_os_replace.side_effect = chain_side_effects(
                     original_replace,
-                    _side_effect(_set_condition, export_created_the_file),
-                    _side_effect(_wait_condition, clear_removed_the_file),
+                    replace_dst_recorder,
+                    side_effect(set_condition, export_created_the_file),
+                    side_effect(wait_condition, clear_removed_the_file),
                 )
 
                 mock_rq_job = MagicMock()
@@ -1385,26 +1459,33 @@ class TaskDumpUploadTest(_DbTestBase):
                 with suppress(_LockTimeoutError):
                     export(dst_format=format_name, task_id=task_id)
 
+                mock_os_replace.assert_called_once()
+
 
         def _clear(*_, file_path: str, file_ctime: str):
             from os import remove as original_remove
 
             with (
+                patch('cvat.apps.dataset_manager.views.get_dataset_cache_lock', new=patched_get_dataset_cache_lock),
                 patch('cvat.apps.dataset_manager.views.os.remove') as mock_os_remove,
                 patch('cvat.apps.dataset_manager.views.rq.get_current_job') as mock_rq_get_current_job,
                 patch('cvat.apps.dataset_manager.views.django_rq.get_scheduler'),
+                patch('cvat.apps.dataset_manager.views.TTL_CONSTS', new={'task': timedelta(seconds=0)}),
             ):
-                mock_os_remove.side_effect = _chain_side_effects(
-                    _side_effect(_wait_condition, export_created_the_file),
+                mock_os_remove.side_effect = chain_side_effects(
+                    side_effect(wait_condition, export_created_the_file),
                     original_remove,
-                    _side_effect(_set_condition, clear_removed_the_file),
+                    side_effect(set_condition, clear_removed_the_file),
                 )
 
                 mock_rq_job = MagicMock()
                 mock_rq_job.timeout = 5
                 mock_rq_get_current_job.return_value = mock_rq_job
 
-                clear_export_cache(file_path=file_path, file_ctime=file_ctime, logger=MagicMock())
+                with suppress(_LockTimeoutError):
+                    clear_export_cache(
+                        file_path=file_path, file_ctime=file_ctime, logger=MagicMock()
+                    )
 
 
         # The problem checked is TOCTOU / race condition for file existence check and
@@ -1435,12 +1516,13 @@ class TaskDumpUploadTest(_DbTestBase):
             mock_rq_job.timeout = 5
             mock_rq_get_current_job.return_value = mock_rq_job
 
-            export_path = export(dst_format=format_name, task_id=task_id)
+            first_export_path = export(dst_format=format_name, task_id=task_id)
 
-        export_birth_time = osp.getmtime(export_path)
+        export_instance_time = parse_export_filename(first_export_path).instance_timestamp
 
         self._create_annotations(task, f'{format_name} many jobs', "default")
 
+        processes_finished_correctly = False
         with ExitStack() as es:
             # Run both operations concurrently
             # Threads could be faster, but they can't be terminated
@@ -1452,12 +1534,12 @@ class TaskDumpUploadTest(_DbTestBase):
             clear_process = es.enter_context(process_closing(multiprocessing.Process(
                 target=_clear,
                 args=(export_checked_the_file, export_created_the_file),
-                kwargs=dict(file_path=export_path, file_ctime=export_birth_time),
+                kwargs=dict(file_path=first_export_path, file_ctime=export_instance_time),
             )))
 
             export_process.start()
 
-            _wait_condition(export_checked_the_file) # ensure the expected execution order
+            wait_condition(export_checked_the_file) # ensure the expected execution order
             clear_process.start()
 
             # A deadlock (interrupted by a timeout error) is the positive outcome in this test,
@@ -1472,12 +1554,25 @@ class TaskDumpUploadTest(_DbTestBase):
             self.assertFalse(export_process.is_alive())
             self.assertFalse(clear_process.is_alive())
 
-        # terminate() may make locks broken, don't try to acquire
+            # All the expected exceptions should be handled in the process callbacks.
+            # This is to avoid passing the test with unexpected errors
+            self.assertEqual(export_process.exitcode, 0)
+            self.assertEqual(clear_process.exitcode, 0)
+
+            processes_finished_correctly = True
+
+        self.assertTrue(processes_finished_correctly)
+
+        # terminate() may break the locks, don't try to acquire
+        # https://docs.python.org/3/library/multiprocessing.html#multiprocessing.Process.terminate
         self.assertTrue(export_checked_the_file.get())
         self.assertTrue(export_created_the_file.get())
+
         self.assertFalse(clear_removed_the_file.get())
 
-        self.assertTrue(osp.isfile(export_path))
+        new_export_path = export_file_path.get()
+        self.assertGreater(len(new_export_path), 0)
+        self.assertTrue(osp.isfile(new_export_path))
 
 
 class ProjectDumpUpload(_DbTestBase):
