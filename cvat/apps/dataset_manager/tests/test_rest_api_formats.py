@@ -1395,7 +1395,7 @@ class ExportConcurrencyTest(_DbTestBase):
 
         @contextmanager
         def patched_get_dataset_cache_lock(export_path, *, ttl, block=True, acquire_timeout=None):
-            # fakeredis lock acquired in a subprocess won't be visible to the other processes
+            # fakeredis lock acquired in a subprocess won't be visible to other processes
             # just implement the lock here
             from cvat.apps.dataset_manager.util import LockNotAvailableError
 
@@ -1421,7 +1421,7 @@ class ExportConcurrencyTest(_DbTestBase):
             from cvat.apps.dataset_manager.views import log_exception as original_log_exception
             import sys
 
-            def replace_dst_recorder(_: str, dst: str):
+            def os_replace_dst_recorder(_: str, dst: str):
                 set_condition(export_file_path, dst)
                 return MOCK_DEFAULT
 
@@ -1447,13 +1447,12 @@ class ExportConcurrencyTest(_DbTestBase):
 
                 mock_os_replace.side_effect = chain_side_effects(
                     original_replace,
-                    replace_dst_recorder,
+                    os_replace_dst_recorder,
                     side_effect(set_condition, export_created_the_file),
                     side_effect(wait_condition, clear_removed_the_file),
                 )
 
-                mock_rq_job = MagicMock()
-                mock_rq_job.timeout = 5
+                mock_rq_job = MagicMock(timeout=5)
                 mock_rq_get_current_job.return_value = mock_rq_job
 
                 with suppress(_LockTimeoutError):
@@ -1478,8 +1477,7 @@ class ExportConcurrencyTest(_DbTestBase):
                     side_effect(set_condition, clear_removed_the_file),
                 )
 
-                mock_rq_job = MagicMock()
-                mock_rq_job.timeout = 5
+                mock_rq_job = MagicMock(timeout=5)
                 mock_rq_get_current_job.return_value = mock_rq_job
 
                 with suppress(_LockTimeoutError):
@@ -1512,8 +1510,7 @@ class ExportConcurrencyTest(_DbTestBase):
             patch('cvat.apps.dataset_manager.views.rq.get_current_job') as mock_rq_get_current_job,
             patch('cvat.apps.dataset_manager.views.django_rq.get_scheduler'),
         ):
-            mock_rq_job = MagicMock()
-            mock_rq_job.timeout = 5
+            mock_rq_job = MagicMock(timeout=5)
             mock_rq_get_current_job.return_value = mock_rq_job
 
             first_export_path = export(dst_format=format_name, task_id=task_id)
@@ -1573,6 +1570,162 @@ class ExportConcurrencyTest(_DbTestBase):
         new_export_path = export_file_path.get()
         self.assertGreater(len(new_export_path), 0)
         self.assertTrue(osp.isfile(new_export_path))
+
+    def test_export_can_create_file_and_cleanup_job(self):
+        format_name = "CVAT for images 1.1"
+        images = self._generate_task_images(3)
+        task = self._create_task(tasks["main"], images)
+        self._create_annotations(task, f'{format_name} many jobs', "default")
+        task_id = task["id"]
+
+        with (
+            patch('cvat.apps.dataset_manager.views.rq.get_current_job') as mock_rq_get_current_job,
+            patch('cvat.apps.dataset_manager.views.django_rq.get_scheduler') as mock_rq_get_scheduler,
+            patch('cvat.apps.dataset_manager.views.TTL_CONSTS', new={'task': timedelta(seconds=0)}),
+        ):
+            mock_rq_job = MagicMock(timeout=5)
+            mock_rq_get_current_job.return_value = mock_rq_job
+
+            mock_rq_scheduler = MagicMock()
+            mock_rq_get_scheduler.return_value = mock_rq_scheduler
+
+            export_path = export(dst_format=format_name, task_id=task_id)
+
+        self.assertTrue(osp.isfile(export_path))
+        mock_rq_scheduler.enqueue_in.assert_called_once()
+
+    def test_export_can_request_retry_on_locking_failure(self):
+        format_name = "CVAT for images 1.1"
+        images = self._generate_task_images(3)
+        task = self._create_task(tasks["main"], images)
+        self._create_annotations(task, f'{format_name} many jobs', "default")
+        task_id = task["id"]
+
+        from cvat.apps.dataset_manager.util import LockNotAvailableError
+        with (
+            patch(
+                'cvat.apps.dataset_manager.views.get_dataset_cache_lock',
+                side_effect=LockNotAvailableError
+            ) as mock_get_dataset_cache_lock,
+            patch('cvat.apps.dataset_manager.views.rq.get_current_job') as mock_rq_get_current_job,
+            patch('cvat.apps.dataset_manager.views.django_rq.get_scheduler'),
+            self.assertRaises(LockNotAvailableError),
+        ):
+            mock_rq_job = MagicMock(timeout=5)
+            mock_rq_get_current_job.return_value = mock_rq_job
+
+            export(dst_format=format_name, task_id=task_id)
+
+        mock_get_dataset_cache_lock.assert_called()
+        self.assertEqual(mock_rq_job.retries_left, 1)
+        self.assertEqual(len(mock_rq_job.retry_intervals), 1)
+
+    def test_cleanup_can_remove_file(self):
+        format_name = "CVAT for images 1.1"
+        images = self._generate_task_images(3)
+        task = self._create_task(tasks["main"], images)
+        self._create_annotations(task, f'{format_name} many jobs', "default")
+        task_id = task["id"]
+
+        with (
+            patch('cvat.apps.dataset_manager.views.rq.get_current_job') as mock_rq_get_current_job,
+            patch('cvat.apps.dataset_manager.views.django_rq.get_scheduler'),
+        ):
+            mock_rq_get_current_job.return_value = MagicMock(timeout=5)
+
+            export_path = export(dst_format=format_name, task_id=task_id)
+
+        with (
+            patch('cvat.apps.dataset_manager.views.rq.get_current_job') as mock_rq_get_current_job,
+            patch('cvat.apps.dataset_manager.views.django_rq.get_scheduler'),
+            patch('cvat.apps.dataset_manager.views.TTL_CONSTS', new={'task': timedelta(seconds=0)}),
+        ):
+            mock_rq_get_current_job.return_value = MagicMock(timeout=5)
+
+            export_path = export(dst_format=format_name, task_id=task_id)
+            file_ctime = parse_export_filename(export_path).instance_timestamp
+            clear_export_cache(file_path=export_path, file_ctime=file_ctime, logger=MagicMock())
+
+        self.assertFalse(osp.isfile(export_path))
+
+    def test_cleanup_can_request_retry_on_locking_failure(self):
+        format_name = "CVAT for images 1.1"
+        images = self._generate_task_images(3)
+        task = self._create_task(tasks["main"], images)
+        self._create_annotations(task, f'{format_name} many jobs', "default")
+        task_id = task["id"]
+
+        from cvat.apps.dataset_manager.util import LockNotAvailableError
+        with (
+            patch('cvat.apps.dataset_manager.views.rq.get_current_job') as mock_rq_get_current_job,
+            patch('cvat.apps.dataset_manager.views.django_rq.get_scheduler'),
+        ):
+            mock_rq_get_current_job.return_value = MagicMock(timeout=5)
+
+            export_path = export(dst_format=format_name, task_id=task_id)
+
+        with (
+            patch(
+                'cvat.apps.dataset_manager.views.get_dataset_cache_lock',
+                side_effect=LockNotAvailableError
+            ) as mock_get_dataset_cache_lock,
+            patch('cvat.apps.dataset_manager.views.rq.get_current_job') as mock_rq_get_current_job,
+            patch('cvat.apps.dataset_manager.views.django_rq.get_scheduler'),
+            self.assertRaises(LockNotAvailableError),
+        ):
+            mock_rq_job = MagicMock(timeout=5)
+            mock_rq_get_current_job.return_value = mock_rq_job
+
+            file_ctime = parse_export_filename(export_path).instance_timestamp
+            clear_export_cache(file_path=export_path, file_ctime=file_ctime, logger=MagicMock())
+
+        mock_get_dataset_cache_lock.assert_called()
+        self.assertEqual(mock_rq_job.retries_left, 1)
+        self.assertEqual(len(mock_rq_job.retry_intervals), 1)
+        self.assertTrue(osp.isfile(export_path))
+
+    def test_cleanup_can_fail_if_no_file(self):
+        with (
+            patch('cvat.apps.dataset_manager.views.rq.get_current_job') as mock_rq_get_current_job,
+            patch('cvat.apps.dataset_manager.views.django_rq.get_scheduler'),
+            self.assertRaises(FileNotFoundError),
+        ):
+            mock_rq_job = MagicMock(timeout=5)
+            mock_rq_get_current_job.return_value = mock_rq_job
+
+            clear_export_cache(file_path="non existent file path", file_ctime=0, logger=MagicMock())
+
+    def test_cleanup_can_defer_removal_if_file_is_used_recently(self):
+        format_name = "CVAT for images 1.1"
+        images = self._generate_task_images(3)
+        task = self._create_task(tasks["main"], images)
+        self._create_annotations(task, f'{format_name} many jobs', "default")
+        task_id = task["id"]
+
+        with (
+            patch('cvat.apps.dataset_manager.views.rq.get_current_job') as mock_rq_get_current_job,
+            patch('cvat.apps.dataset_manager.views.django_rq.get_scheduler'),
+        ):
+            mock_rq_get_current_job.return_value = MagicMock(timeout=5)
+
+            export_path = export(dst_format=format_name, task_id=task_id)
+
+        from cvat.apps.dataset_manager.views import FileIsBeingUsedError
+        with (
+            patch('cvat.apps.dataset_manager.views.rq.get_current_job') as mock_rq_get_current_job,
+            patch('cvat.apps.dataset_manager.views.TTL_CONSTS', new={'task': timedelta(hours=1)}),
+            self.assertRaises(FileIsBeingUsedError),
+        ):
+            mock_rq_job = MagicMock(timeout=5)
+            mock_rq_get_current_job.return_value = mock_rq_job
+
+            export_path = export(dst_format=format_name, task_id=task_id)
+            file_ctime = parse_export_filename(export_path).instance_timestamp
+            clear_export_cache(file_path=export_path, file_ctime=file_ctime, logger=MagicMock())
+
+        self.assertEqual(mock_rq_job.retries_left, 1)
+        self.assertEqual(len(mock_rq_job.retry_intervals), 1)
+        self.assertTrue(osp.isfile(export_path))
 
 
 class ProjectDumpUpload(_DbTestBase):
