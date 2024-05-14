@@ -2283,14 +2283,14 @@ class LabelViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
                 "Please send a PATCH request with updated parent label data instead.",
                 code=status.HTTP_400_BAD_REQUEST)
 
-        attributes = self.request.data.get('attributes')
+        attributes = self.request.data.get('attributes', [])
         for attribute in attributes:
             if attribute.get('input_type') == 'checkbox':
                 def_val = attribute.get('default_value')
-                values = attribute.get('values')[0]
-                if(values!='true' and values!='false'):
+                values = attribute.get('values', [])
+                if values and values[0] not in ['true', 'false']:
                     raise ValidationError('checkbox values must be either true or false')
-                if(def_val!='true' and def_val!='false'):
+                if def_val and def_val not in ['true','false']:
                     raise ValidationError("default_value for checkbox must be either true or false")
         return super().perform_update(serializer)
 
