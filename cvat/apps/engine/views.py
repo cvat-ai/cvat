@@ -3090,8 +3090,8 @@ def _export_annotations(
             job_id=rq_id,
             meta=get_rq_job_meta(request=request, db_obj=db_instance),
             depends_on=define_dependent_job(queue, user_id, rq_id=rq_id),
-            result_ttl=cache_ttl,
-            failure_ttl=cache_ttl,
+            result_ttl=cache_ttl.total_seconds(),
+            failure_ttl=cache_ttl.total_seconds(),
         )
 
     handle_dataset_export(db_instance,

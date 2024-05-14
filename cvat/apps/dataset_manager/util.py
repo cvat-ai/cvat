@@ -3,20 +3,26 @@
 #
 # SPDX-License-Identifier: MIT
 
-from contextlib import contextmanager, suppress
-from copy import deepcopy
-from datetime import timedelta
-from threading import Lock
-from typing import Any, Generator, Optional, Sequence
 import inspect
 import os
 import os.path as osp
+import re
 import zipfile
+from contextlib import contextmanager, suppress
+from copy import deepcopy
+from datetime import datetime, timedelta
+from threading import Lock
+from typing import Any, Generator, Optional, Sequence
 
+import attrs
 import django_rq
+from datumaro.util import to_snake_case
+from datumaro.util.os_util import make_file_name
 from django.conf import settings
 from django.db import models
 from pottery import Redlock, ReleaseUnlockedLock
+
+from cvat.apps.engine.models import Job, Project, Task
 
 
 def current_function_name(depth=1):
@@ -88,18 +94,12 @@ def deepcopy_simple(v):
         return deepcopy(v)
 
 
-
-class LockError(Exception):
+class LockNotAvailableError(Exception):
     pass
 
 
-class LockTimeoutError(LockError):
-    pass
-
-
-class LockNotAvailableError(LockError):
-    pass
-
+def make_export_lock_key(filename: os.PathLike[str]) -> str:
+    return f"export_lock:{filename}"
 
 @contextmanager
 def get_dataset_cache_lock(
@@ -111,18 +111,18 @@ def get_dataset_cache_lock(
 ) -> Generator[Lock, Any, Any]:
     if isinstance(acquire_timeout, timedelta):
         acquire_timeout = acquire_timeout.total_seconds()
-    elif acquire_timeout and acquire_timeout < 0:
+    if acquire_timeout and acquire_timeout < 0:
         raise ValueError("acquire_timeout must be a positive number")
     elif acquire_timeout is None:
         acquire_timeout = -1
 
     if isinstance(ttl, timedelta):
         ttl = ttl.total_seconds()
-    elif not ttl or ttl < 0:
+    if not ttl or ttl < 0:
         raise ValueError("ttl must be a positive number")
 
     lock = Redlock(
-        key=export_path,
+        key=make_export_lock_key(export_path),
         masters={django_rq.get_connection(settings.CVAT_QUEUES.EXPORT_DATA.value)},
         auto_release_time=ttl,
     )
@@ -131,11 +131,95 @@ def get_dataset_cache_lock(
         if acquired:
             yield lock
         else:
-            if 0 < acquire_timeout:
-                raise LockTimeoutError
-            else:
-                raise LockNotAvailableError
+            raise LockNotAvailableError
 
     finally:
         with suppress(ReleaseUnlockedLock):
             lock.release()
+
+
+EXPORT_CACHE_DIR_NAME = 'export_cache'
+
+def get_export_cache_dir(db_instance: Project | Task | Job) -> str:
+    base_dir = osp.abspath(db_instance.get_dirname())
+
+    if osp.isdir(base_dir):
+        return osp.join(base_dir, EXPORT_CACHE_DIR_NAME)
+    else:
+        raise FileNotFoundError(
+            '{} dir {} does not exist'.format(db_instance.__class__.__name__, base_dir)
+        )
+
+
+def make_export_filename(
+    dst_dir: str,
+    save_images: bool,
+    instance_update_time: datetime,
+    format_name: str,
+) -> str:
+    from .formats.registry import EXPORT_FORMATS
+    file_ext = EXPORT_FORMATS[format_name].EXT
+
+    filename = '%s-instance%s-%s.%s' % (
+        'dataset' if save_images else 'annotations',
+        # store the instance timestamp in the file name to reliably get this information
+        # ctime / mtime do not return file creation time on linux
+        # mtime is used for file usage checks
+        instance_update_time.timestamp(),
+        make_file_name(to_snake_case(format_name)),
+        file_ext,
+    )
+    return osp.join(dst_dir, filename)
+
+
+@attrs.define
+class ParsedExportFilename:
+    instance_type: str
+    has_images: bool
+    instance_timestamp: Optional[float]
+    format_repr: str
+    file_ext: str
+
+
+def parse_export_filename(file_path: os.PathLike[str]) -> ParsedExportFilename:
+    file_path = osp.normpath(file_path)
+    dirname, basename = osp.split(file_path)
+
+    basename_match = re.match(
+        (
+            r'(?P<export_mode>dataset|annotations)'
+            r'(?:-instance(?P<instance_timestamp>\d+\.\d+))?' # optional for backward compatibility
+            r'-(?P<format_tag>.+)'
+            r'\.(?P<file_ext>.+)'
+        ),
+        basename
+    )
+    if not basename_match:
+        raise ValueError(f"Couldn't parse filename components in '{basename}'")
+
+    dirname_match = re.search(rf'/(jobs|tasks|projects)/\d+/{EXPORT_CACHE_DIR_NAME}$', dirname)
+    if not dirname_match:
+        raise ValueError(f"Couldn't parse instance type in '{dirname}'")
+
+    match dirname_match.group(1):
+        case 'jobs':
+            instance_type_name = 'job'
+        case 'tasks':
+            instance_type_name = 'task'
+        case 'projects':
+            instance_type_name = 'project'
+        case _:
+            assert False
+
+    if 'instance_timestamp' in basename_match.groupdict():
+        instance_timestamp = float(basename_match.group('instance_timestamp'))
+    else:
+        instance_timestamp = None
+
+    return ParsedExportFilename(
+        instance_type=instance_type_name,
+        has_images=basename_match.group('export_mode') == 'dataset',
+        instance_timestamp=instance_timestamp,
+        format_repr=basename_match.group('format_tag'),
+        file_ext=basename_match.group('file_ext'),
+    )

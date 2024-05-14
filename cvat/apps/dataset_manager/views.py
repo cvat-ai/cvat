@@ -3,28 +3,30 @@
 #
 # SPDX-License-Identifier: MIT
 
-from contextlib import suppress
 import logging
 import os
 import os.path as osp
-import re
 import tempfile
 from datetime import timedelta
 
 import django_rq
 import rq
-from datumaro.util.os_util import make_file_name
-from datumaro.util import to_snake_case
-from django.utils import timezone
 from django.conf import settings
+from django.utils import timezone
 
-import cvat.apps.dataset_manager.task as task
 import cvat.apps.dataset_manager.project as project
+import cvat.apps.dataset_manager.task as task
 from cvat.apps.engine.log import ServerLogManager
-from cvat.apps.engine.models import Project, Task, Job
+from cvat.apps.engine.models import Job, Project, Task
 
 from .formats.registry import EXPORT_FORMATS, IMPORT_FORMATS
-from .util import current_function_name, get_dataset_cache_lock, LockError
+from .util import (
+    LockNotAvailableError,
+    current_function_name, get_dataset_cache_lock,
+    get_export_cache_dir, make_export_filename,
+    parse_export_filename
+)
+from .util import EXPORT_CACHE_DIR_NAME  # pylint: disable=unused-import
 
 slogger = ServerLogManager(__name__)
 
@@ -36,40 +38,25 @@ def log_exception(logger=None, exc_info=True):
             (_MODULE_NAME, current_function_name(2)),
         exc_info=exc_info)
 
-EXPORT_CACHE_DIR_NAME = 'export_cache'
-
-def get_export_cache_dir(db_instance):
-    base_dir = osp.abspath(db_instance.get_dirname())
-
-    if osp.isdir(base_dir):
-        return osp.join(base_dir, EXPORT_CACHE_DIR_NAME)
-    else:
-        raise FileNotFoundError(
-            '{} dir {} does not exist'.format(db_instance.__class__.__name__, base_dir)
-        )
-
 DEFAULT_CACHE_TTL = timedelta(seconds=settings.DATASET_CACHE_TTL)
 PROJECT_CACHE_TTL = DEFAULT_CACHE_TTL / 3
 TASK_CACHE_TTL = DEFAULT_CACHE_TTL
 JOB_CACHE_TTL = DEFAULT_CACHE_TTL
+TTL_CONSTS = {
+    'project': PROJECT_CACHE_TTL,
+    'task': TASK_CACHE_TTL,
+    'job': JOB_CACHE_TTL,
+}
 
 EXPORT_CACHE_LOCK_TIMEOUT = timedelta(seconds=settings.DATASET_CACHE_LOCK_TIMEOUT)
+EXPORT_LOCKED_RETRY_INTERVAL = timedelta(seconds=settings.DATASET_EXPORT_LOCKED_RETRY_INTERVAL)
 
-def get_export_cache_ttl(db_instance: str | Project | Task | Job) -> int:
-    TTL_CONSTS = {
-        'project': PROJECT_CACHE_TTL,
-        'task': TASK_CACHE_TTL,
-        'job': JOB_CACHE_TTL,
-    }
 
-    if not isinstance(db_instance, str):
-        db_instance = db_instance.__class__.__name__.lower()
+def get_export_cache_ttl(db_instance: str | Project | Task | Job) -> timedelta:
+    if isinstance(db_instance, (Project, Task, Job)):
+        db_instance = db_instance.__class__.__name__
 
-    return TTL_CONSTS[db_instance].total_seconds()
-
-def get_file_instance_timestamp(file_path: str) -> float:
-    match = re.search(r'instance(\d+\.\d+)', osp.basename(file_path))
-    return float(match.group(1))
+    return TTL_CONSTS[db_instance.lower()]
 
 
 def export(dst_format, project_id=None, task_id=None, job_id=None, server_url=None, save_images=False):
@@ -87,11 +74,14 @@ def export(dst_format, project_id=None, task_id=None, job_id=None, server_url=No
             export_fn = task.export_job
             db_instance = Job.objects.get(pk=job_id)
 
-        cache_ttl = timedelta(seconds=get_export_cache_ttl(db_instance))
+        cache_ttl = get_export_cache_ttl(db_instance)
 
         cache_dir = get_export_cache_dir(db_instance)
-        exporter = EXPORT_FORMATS[dst_format]
 
+        # As we're not locking the db object here, it can be updated by the time of actual export.
+        # The file will be saved with older timestamp.
+        # When it's time to download the file, it will be handled - the export will be restarted.
+        # The situation is considered rare, so no locking is used.
         instance_update_time = timezone.localtime(db_instance.updated_date)
         if isinstance(db_instance, Project):
             tasks_update = list(map(
@@ -100,16 +90,7 @@ def export(dst_format, project_id=None, task_id=None, job_id=None, server_url=No
             ))
             instance_update_time = max(tasks_update + [instance_update_time])
 
-        output_path = '%s-instance%s_%s.%s' % (
-            'dataset' if save_images else 'annotations',
-            # store the instance timestamp in the file name to reliably get this information
-            # ctime / mtime do not return file creation time on linux
-            # mtime is used for file usage checks
-            instance_update_time.timestamp(),
-            make_file_name(to_snake_case(dst_format)),
-            exporter.EXT,
-        )
-        output_path = osp.join(cache_dir, output_path)
+        output_path = make_export_filename(cache_dir, save_images, instance_update_time, dst_format)
 
         os.makedirs(cache_dir, exist_ok=True)
 
@@ -119,10 +100,7 @@ def export(dst_format, project_id=None, task_id=None, job_id=None, server_url=No
             acquire_timeout=EXPORT_CACHE_LOCK_TIMEOUT,
             ttl=rq.get_current_job().timeout,
         ):
-            if not (
-                osp.exists(output_path)
-                and instance_update_time.timestamp() <= get_file_instance_timestamp(output_path)
-            ):
+            if not osp.exists(output_path):
                 with tempfile.TemporaryDirectory(dir=cache_dir) as temp_dir:
                     temp_file = osp.join(temp_dir, 'result')
                     export_fn(db_instance.id, temp_file, dst_format,
@@ -149,10 +127,12 @@ def export(dst_format, project_id=None, task_id=None, job_id=None, server_url=No
                 )
 
         return output_path
-    except LockError:
-        rq_job = rq.get_current_job()
-        rq_job.retry(django_rq.get_queue(settings.CVAT_QUEUES.EXPORT_DATA.value))
-        return
+    except LockNotAvailableError:
+        # Need to retry later if the lock was not available
+        rq_job = rq.get_current_job() # the worker references the same object
+        rq_job.retries_left = 1
+        rq_job.retry_intervals = [EXPORT_LOCKED_RETRY_INTERVAL.total_seconds()]
+        raise # should be handled by the worker
     except Exception:
         log_exception(logger)
         raise
@@ -176,7 +156,12 @@ def export_project_annotations(project_id, dst_format=None, server_url=None):
     return export(dst_format, project_id=project_id, server_url=server_url, save_images=False)
 
 
+class FileIsBeingUsedError(Exception):
+    pass
+
 def clear_export_cache(file_path: str, file_ctime: float, logger: logging.Logger) -> None:
+    # file_ctime is for backward compatibility with older RQ jobs, not needed now
+
     try:
         with get_dataset_cache_lock(
             file_path,
@@ -184,47 +169,33 @@ def clear_export_cache(file_path: str, file_ctime: float, logger: logging.Logger
             acquire_timeout=EXPORT_CACHE_LOCK_TIMEOUT,
             ttl=rq.get_current_job().timeout,
         ):
-            if 'job' in file_path:
-                instance_type = 'job'
-            elif 'task' in file_path:
-                instance_type = 'task'
-            elif 'project' in file_path:
-                instance_type = 'project'
-            else:
-                assert False
+            if not osp.exists(file_path):
+                raise FileNotFoundError("Export cache file '{}' doesn't exist".format(file_path))
 
-            cache_ttl = get_export_cache_ttl(instance_type)
+            parsed_filename = parse_export_filename(file_path)
+            cache_ttl = get_export_cache_ttl(parsed_filename.instance_type)
 
-            instance_timestamp = None
-            with suppress(AttributeError): # backward compatibility
-                instance_timestamp = get_file_instance_timestamp(file_path)
-            if instance_timestamp and instance_timestamp != file_ctime:
-                logger.info("Export cache file '{}' has changed, skipping".format(file_path))
-                return
-
-            if timezone.now().timestamp() <= osp.getmtime(file_path) + cache_ttl:
+            if timezone.now().timestamp() <= osp.getmtime(file_path) + cache_ttl.total_seconds():
                 # Need to retry later, the export is in use
-                rq_job = rq.get_current_job()
+                rq_job = rq.get_current_job() # the worker references the same object
                 rq_job.retries_left = 1
-                rq_job.retry_intervals = [cache_ttl]
-                rq_job.retry(
-                    django_rq.get_queue(settings.CVAT_QUEUES.EXPORT_DATA.value), pipeline=None
-                )
+                rq_job.retry_intervals = [cache_ttl.total_seconds()]
                 logger.info(
                     "Export cache file '{}' is recently accessed, will retry in {}".format(
-                        file_path, timedelta(seconds=cache_ttl)
+                        file_path, cache_ttl
                     )
                 )
-                return
+                raise FileIsBeingUsedError # should be handled by the worker
 
             # TODO: maybe remove all outdated exports
             os.remove(file_path)
             logger.info("Export cache file '{}' successfully removed".format(file_path))
-    except LockError:
+    except LockNotAvailableError:
         # Need to retry later if the lock was not available
-        rq_job = rq.get_current_job()
-        rq_job.retry(django_rq.get_queue(settings.CVAT_QUEUES.EXPORT_DATA.value), pipeline=None)
-        return
+        rq_job = rq.get_current_job() # the worker references the same object
+        rq_job.retries_left = 1
+        rq_job.retry_intervals = [EXPORT_LOCKED_RETRY_INTERVAL.total_seconds()]
+        raise # should be handled by the worker
     except Exception:
         log_exception(logger)
         raise
