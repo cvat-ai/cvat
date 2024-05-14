@@ -11,6 +11,7 @@ from types import SimpleNamespace
 from typing import Optional, Any, Dict, List, cast, Callable
 import traceback
 import textwrap
+from collections import namedtuple
 from copy import copy
 from datetime import datetime
 from redis.exceptions import ConnectionError as RedisConnectionError
@@ -82,7 +83,7 @@ from cvat.apps.engine.utils import (
     import_resource_with_clean_up_after, sendfile, define_dependent_job, get_rq_lock_by_user,
     build_annotations_file_name
 )
-from cvat.apps.engine.rq_job_handler import RQIdManager, is_rq_job_owner
+from cvat.apps.engine.rq_job_handler import RQIdManager, is_rq_job_owner, RQJobMetaField
 from cvat.apps.engine import backup
 from cvat.apps.engine.mixins import PartialUpdateModelMixin, UploadMixin, AnnotationMixin, SerializeMixin
 from cvat.apps.engine.location import get_location_configuration, StorageType
@@ -2840,7 +2841,7 @@ class AnnotationGuidesViewSet(
         instance.delete()
 
 def rq_exception_handler(rq_job, exc_type, exc_value, tb):
-    rq_job.meta["formatted_exception"] = "".join(
+    rq_job.meta[RQJobMetaField.FORMATTED_EXCEPTION] = "".join(
         traceback.format_exception_only(exc_type, exc_value))
     rq_job.save_meta()
 
@@ -3002,7 +3003,7 @@ def _export_annotations(
     is_annotation_file = rq_id.startswith('export:annotations')
 
     if rq_job:
-        rq_request = rq_job.meta.get('request', None)
+        rq_request = rq_job.meta.get(RQJobMetaField.REQUEST, None)
         request_time = rq_request.get('timestamp', None) if rq_request else None
         if request_time is None or request_time < last_instance_update_time:
             # in case the server is configured with ONE_RUNNING_JOB_IN_QUEUE_PER_USER
@@ -3040,7 +3041,7 @@ def _export_annotations(
                 else:
                     raise NotImplementedError(f"Export to {location} location is not implemented yet")
             elif rq_job.is_failed:
-                exc_info = rq_job.meta.get('formatted_exception', str(rq_job.exc_info))
+                exc_info = rq_job.meta.get(RQJobMetaField.FORMATTED_EXCEPTION, str(rq_job.exc_info))
                 rq_job.delete()
                 return Response(exc_info,
                     status=status.HTTP_500_INTERNAL_SERVER_ERROR)
@@ -3231,16 +3232,10 @@ class RequestViewSet(viewsets.GenericViewSet):
         NonModelOrderingFilter,
     ]
 
-    ordering_fields = ['created_date', 'enqueued_date', 'status']
+    ordering_fields = ['created_date', 'enqueued_date', 'status', 'action']
     ordering = '-created_date'
 
-    # tODO: refactor, separate schema
     simple_filters = [
-        ('status', 'string', StatusChoices.choices),
-        ('project_id', 'integer', None), ('task_id', 'integer', None), ('job_id', 'integer', None),
-        ('action', 'string', ActionChoices.choices), ('subresource', 'string', SubresourceChoices.choices), ('format', 'string', None),
-    ]
-    filter_fields = [
         # RQ job fields
         'status',
         # derivatives fields (from meta)
@@ -3253,6 +3248,8 @@ class RequestViewSet(viewsets.GenericViewSet):
         'format',
     ]
 
+    filter_fields = simple_filters
+
     lookup_fields = {
         'created_date': 'created_at',
         'enqueued_date': 'enqueued_at',
@@ -3262,6 +3259,18 @@ class RequestViewSet(viewsets.GenericViewSet):
         'project_id': 'meta.project_id',
         'task_id': 'meta.task_id',
         'job_id': 'meta.job_id',
+    }
+
+    SchemaField = namedtuple('SchemaField', ['type', 'choices'], defaults=(None,))
+
+    simple_filters_schema = {
+        'status': SchemaField('string', StatusChoices.choices),
+        'project_id': SchemaField('integer'),
+        'task_id': SchemaField('integer'),
+        'job_id': SchemaField('integer'),
+        'action': SchemaField('string', ActionChoices.choices),
+        'subresource': SchemaField('string', SubresourceChoices.choices),
+        'format': SchemaField('string'),
     }
 
     def get_queryset(self):
@@ -3283,7 +3292,7 @@ class RequestViewSet(viewsets.GenericViewSet):
             if job and is_rq_job_owner(job, user_id):
                 try:
                     parsed_rq_id = RQIdManager.parse(job.id)
-                except:
+                except Exception: # nosec B112
                     continue
                 job.parsed_rq_id = parsed_rq_id
                 jobs.append(job)
@@ -3318,11 +3327,17 @@ class RequestViewSet(viewsets.GenericViewSet):
         Returns:
             Optional[RQJob]: The retrieved RQJob, or None if not found.
         """
+        try:
+            parsed_rq_id = RQIdManager.parse(rq_id)
+        except Exception:
+            return None
+
         job: Optional[RQJob] = None
 
         for queue in self.queues:
             job = queue.fetch_job(rq_id)
             if job:
+                job.parsed_rq_id = parsed_rq_id
                 break
 
         return job

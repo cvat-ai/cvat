@@ -7,29 +7,47 @@ import attrs
 from typing import Optional, Union
 from uuid import UUID
 from rq.job import Job as RQJob
+from django.db.models import TextChoices
+
+class RQJobMetaField(TextChoices):
+    REQUEST = 'request'
+    USER = 'user'
+    PROJECT_ID = 'project_id'
+    TASK_ID = 'task_id'
+    JOB_ID = 'job_id'
+    ORG_ID = 'org_id'
+    ORG_SLUG = 'org_slug'
+    RESULT_URL = 'result_url'
+    STATUS = 'status'
+    PROGRESS = 'progress'
+    TASK_PROGRESS = 'task_progress'
+    FORMATTED_EXCEPTION = "formatted_exception"
+
+    # lambda fields
+    # LAMBDA = 'lambda'
+    # quality control fields
+    # JOB_TYPE = 'job_type'
+    # USER_ID = 'user_id'
 
 def is_rq_job_owner(rq_job: RQJob, user_id: int) -> bool:
-    return rq_job.meta.get('user', {}).get('id') == user_id
+    return rq_job.meta.get(RQJobMetaField.USER, {}).get('id') == user_id
 
-RQ_ID_ACTIONS = ("import", "export", "create",)
-RQ_ID_RESOURCES = ("project", "task", "job",)
-RQ_ID_SUBRESOURCES = ("annotations", "dataset", "backup",)
 
 
 @attrs.define(kw_only=True)
 class RQId:
     action: str = attrs.field(
-        validator=attrs.validators.in_(RQ_ID_ACTIONS)
+        validator=attrs.validators.instance_of(str)
     )
     resource: str = attrs.field(
-        validator=attrs.validators.in_(RQ_ID_RESOURCES)
+        validator=attrs.validators.instance_of(str)
     )
     identifier: Union[int, UUID] = attrs.field(
         validator=attrs.validators.instance_of((int, UUID))
     )
     subresource: Optional[str] = attrs.field(
         validator=attrs.validators.optional(
-            attrs.validators.in_(RQ_ID_SUBRESOURCES)
+            attrs.validators.instance_of(str)
         )
     )
     user_id: Optional[int] = attrs.field(
@@ -74,7 +92,12 @@ class RQIdManager:
 
     @staticmethod
     def parse(rq_id: str) -> RQId:
-        action = resource = identifier = subresource = user_id = anno_format = None
+        action: Optional[str] = None
+        resource: Optional[str] = None
+        identifier: Optional[Union[UUID, int]] = None
+        subresource: Optional[str] = None
+        user_id: Optional[int] = None
+        anno_format: Optional[str] = None
 
         try:
             action_and_resource, unparsed = rq_id.split("-", maxsplit=1)
@@ -116,11 +139,3 @@ class RQIdManager:
         except Exception as ex:
             raise ValueError(f"The {rq_id!r} RQ ID cannot be parsed: {str(ex)}") from ex
 
-    @classmethod
-    def can_be_parsed(cls, job_id: str) -> bool:
-        try:
-            cls.parse(job_id)
-        except Exception:
-            return False
-
-        return True

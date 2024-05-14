@@ -4338,7 +4338,7 @@ paths:
         required: false
         in: query
         description: 'Which field to use when ordering the results. Available ordering_fields:
-          [''created_date'', ''enqueued_date'', ''status'']'
+          [''created_date'', ''enqueued_date'', ''status'', ''action'']'
         schema:
           type: string
       - name: status
@@ -9455,8 +9455,11 @@ components:
           readOnly: true
         id:
           type: string
+          readOnly: true
         operation:
-          $ref: '#/components/schemas/RequestOperation'
+          allOf:
+          - $ref: '#/components/schemas/RequestOperation'
+          readOnly: true
         progress:
           type: number
           format: double
@@ -9467,16 +9470,20 @@ components:
         created_date:
           type: string
           format: date-time
+          readOnly: true
         enqueued_date:
           type: string
           format: date-time
+          readOnly: true
         started_date:
           type: string
           format: date-time
+          readOnly: true
           nullable: true
         finished_date:
           type: string
           format: date-time
+          readOnly: true
           nullable: true
         expiry_date:
           type: string
@@ -9490,12 +9497,12 @@ components:
         result_url:
           type: string
           format: uri
+          readOnly: true
           nullable: true
-      required:
-      - created_date
-      - enqueued_date
-      - id
-      - operation
+        result_id:
+          type: integer
+          readOnly: true
+          nullable: true
     RequestOperation:
       type: object
       properties:

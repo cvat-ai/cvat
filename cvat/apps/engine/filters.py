@@ -353,19 +353,34 @@ class SimpleFilter(DjangoFilterBackend):
         return parameters
 
 
-class DotDict(dict):
-    """recursive dot.notation access to dictionary attributes"""
-    __getattr__ = dict.get
-    __setattr__ = dict.__setitem__
-    __delattr__ = dict.__delitem__
+class _NestedAttributeHandler:
+    nested_attribute_separator = '.'
 
-    def __init__(self, dct: Dict):
-        for key, value in dct.items():
-            if isinstance(value, dict):
-                value = DotDict(value)
-            self[key] = value
+    class DotDict(dict):
+        """recursive dot.notation access to dictionary attributes"""
+        __getattr__ = dict.get
+        __setattr__ = dict.__setitem__
+        __delattr__ = dict.__delitem__
 
-class NonModelSimpleFilter(SimpleFilter):
+        def __init__(self, dct: Dict):
+            for key, value in dct.items():
+                if isinstance(value, dict):
+                    value = self.__class__(value)
+                self[key] = value
+
+    def get_nested_attr(self, obj: Any, nested_attr_path: str) -> Any:
+        result = obj
+        for attribute in nested_attr_path.split(self.nested_attribute_separator):
+            if isinstance(result, dict):
+                result = self.DotDict(result)
+            result = getattr(result, attribute)
+
+        if callable(result):
+            result = result()
+
+        return result
+
+class NonModelSimpleFilter(SimpleFilter, _NestedAttributeHandler):
     """
     A simple filter backend for non-model views, useful for small search queries and manually-edited
     requests.
@@ -373,25 +388,15 @@ class NonModelSimpleFilter(SimpleFilter):
     Argument types are numbers and strings. The only available check is equality.
     Operators are not supported (e.g. or, less, greater, not etc.).
     """
-    nested_attribute_separator = "."
-
-    def get_lookup_fields(self, view):
-        simple_filters = getattr(view, self.filter_fields_attr, None)
-        if simple_filters:
-            fields = {f[0] for f in simple_filters}
-            for k in self.reserved_names:
-                assert k not in fields, \
-                    f"Query parameter '{k}' is reserved, try to change the filter name."
-
-        return get_lookup_fields(view, fields=fields)
 
     def get_schema_operation_parameters(self, view):
         simple_filters = getattr(view, self.filter_fields_attr, None)
+        simple_filters_schema = getattr(view, 'simple_filters_schema', None)
 
         parameters = []
-        if simple_filters:
-            for filter_name, filter_type, filter_choices in simple_filters:
-
+        if simple_filters and simple_filters_schema:
+            for filter_name in simple_filters:
+                filter_type, filter_choices = simple_filters_schema[filter_name]
                 parameter = {
                     'name': filter_name,
                     'in': 'query',
@@ -417,29 +422,26 @@ class NonModelSimpleFilter(SimpleFilter):
         lookup_fields = self.get_lookup_fields(view)
 
         if simple_filters and lookup_fields:
-            supported_filters_names = {f[0] for f in simple_filters}
-            if (intersection := filters_to_use & supported_filters_names):
-                def _get_nested_attr(obj: Any, nested_attr_path: str) -> Any:
-                    result = obj
-                    for attribute in nested_attr_path.split(self.nested_attribute_separator):
-                        if isinstance(result, dict):
-                            result = DotDict(result)
-                        result = getattr(result, attribute)
-
-                    if callable(result):
-                        result = result()
-
-                    return result
-
+            if (intersection := filters_to_use & set(simple_filters)):
                 filtered_queryset = []
 
                 for obj in queryset:
-                    if all([_get_nested_attr(obj, lookup_fields[field]) == query_params[field] for field in intersection]):
+                    fits_filter = False
+                    for field in intersection:
+                        query_param = query_params[field]
+                        if query_param.isnumeric():
+                            query_param = int(query_param)
+
+                        fits_filter = self.get_nested_attr(obj, lookup_fields[field]) == query_param
+                        if not fits_filter:
+                            break
+
+                    if fits_filter:
                         filtered_queryset.append(obj)
 
         return filtered_queryset
 
-class NonModelOrderingFilter(OrderingFilter):
+class NonModelOrderingFilter(OrderingFilter, _NestedAttributeHandler):
     """Ordering filter for non-model views.
     This filter backend supports the following syntaxes:
     ?sort=field
@@ -447,8 +449,6 @@ class NonModelOrderingFilter(OrderingFilter):
     ?sort=field1,field2
     ?sort=-field1,-field2
     """
-
-    nested_attribute_separator = "."
 
     def get_ordering(self, request, queryset, view) -> Tuple[List[str], bool]:
         ordering = super().get_ordering(request, queryset, view)
@@ -465,41 +465,16 @@ class NonModelOrderingFilter(OrderingFilter):
         ordering, reverse_flag = self.get_ordering(request, queryset, view)
 
         if ordering:
-            def _get_nested_attr(obj: Any, nested_attr_path: str) -> Any:
-                result = obj
-                for attribute in nested_attr_path.split(self.nested_attribute_separator):
-                    if isinstance(result, dict):
-                        result = DotDict(result)
-                    result = getattr(result, attribute)
-
-                if callable(result):
-                    result = result()
-
-                return result
-
-            return sorted(queryset, key=lambda obj: [_get_nested_attr(obj, field) for field in ordering], reverse=reverse_flag)
+            return sorted(queryset, key=lambda obj: [self.get_nested_attr(obj, field) for field in ordering], reverse=reverse_flag)
 
         return queryset
 
 
-class NonModelJsonLogicFilter(JsonLogicFilter):
+class NonModelJsonLogicFilter(JsonLogicFilter, _NestedAttributeHandler):
     filter_description = _(dedent("""
         JSON Logic filter. This filter can be used to perform complex filtering by grouping rules.\n
         Details about the syntax used can be found at the link: https://jsonlogic.com/\n
     """))
-    nested_attribute_separator = "."
-
-    def _get_nested_attr(self, obj: Any, nested_attr_path: str) -> Any:
-        result = obj
-        for attribute in nested_attr_path.split(self.nested_attribute_separator):
-            if isinstance(result, dict):
-                result = DotDict(result)
-            result = getattr(result, attribute)
-
-        if callable(result):
-            result = result()
-
-        return result
 
     def _apply_filter(self, rules, lookup_fields, obj):
         op, args = next(iter(rules.items()))
@@ -509,13 +484,14 @@ class NonModelJsonLogicFilter(JsonLogicFilter):
                 'and': all,
             }[op], [self._apply_filter(arg, lookup_fields, obj) for arg in args])
         elif op == '!':
-            return not self._apply_filter(args, lookup_fields)
+            return not self._apply_filter(args, lookup_fields, obj)
         elif op == 'var':
-            var_value = self._get_nested_attr(obj, var)
+            var = lookup_fields[args]
+            var_value = self.get_nested_attr(obj, var)
             return var_value is not None
         elif op in ['!=', '==', '<', '>', '<=', '>='] and len(args) == 2:
             var = lookup_fields[args[0]['var']]
-            var_value = self._get_nested_attr(obj, var)
+            var_value = self.get_nested_attr(obj, var)
             return {
                 '!=': operator.ne,
                 '==': operator.eq,
@@ -527,16 +503,15 @@ class NonModelJsonLogicFilter(JsonLogicFilter):
         elif op == 'in':
             if isinstance(args[0], dict):
                 var = lookup_fields[args[0]['var']]
-                var_value = self._get_nested_attr(obj, var)
+                var_value = self.get_nested_attr(obj, var)
                 return operator.contains(args[1], var_value)
             else:
                 var = lookup_fields[args[1]['var']]
-                var_value = self._get_nested_attr(obj, var)
+                var_value = self.get_nested_attr(obj, var)
                 return operator.contains(args[0], var_value)
         elif op == '<=' and len(args) == 3:
-            # TODO:
             var = lookup_fields[args[1]['var']]
-            var_value = self._get_nested_attr(obj, var)
+            var_value = self.get_nested_attr(obj, var)
             return var_value >= args[0] and var_value <= args[2]
         else:
             raise ValidationError(f'filter: {op} operation with {args} arguments is not implemented')

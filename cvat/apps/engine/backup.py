@@ -40,7 +40,7 @@ from cvat.apps.engine.utils import (
     get_rq_job_meta, import_resource_with_clean_up_after,
     sendfile, define_dependent_job, get_rq_lock_by_user, build_backup_file_name,
 )
-from cvat.apps.engine.rq_job_handler import RQIdManager
+from cvat.apps.engine.rq_job_handler import RQIdManager, RQJobMetaField
 from cvat.apps.engine.models import (
     StorageChoice, StorageMethodChoice, DataChoice, Task, Project, Location)
 from cvat.apps.engine.task import JobFileMapping, _create_thread
@@ -962,7 +962,7 @@ def export(db_instance, request, queue_name):
     location = location_conf.get('location')
 
     if rq_job:
-        rq_request = rq_job.meta.get('request', None)
+        rq_request = rq_job.meta.get(RQJobMetaField.REQUEST, None)
         request_time = rq_request.get("timestamp", None) if rq_request else None
         if request_time is None or request_time < last_instance_update_time:
             # in case the server is configured with ONE_RUNNING_JOB_IN_QUEUE_PER_USER
@@ -1000,7 +1000,7 @@ def export(db_instance, request, queue_name):
                 else:
                     raise NotImplementedError()
             elif rq_job.is_failed:
-                exc_info = rq_job.meta.get('formatted_exception', str(rq_job.exc_info))
+                exc_info = rq_job.meta.get(RQJobMetaField.FORMATTED_EXCEPTION, str(rq_job.exc_info))
                 rq_job.delete()
                 return Response(exc_info,
                     status=status.HTTP_500_INTERNAL_SERVER_ERROR)
@@ -1052,7 +1052,7 @@ def export(db_instance, request, queue_name):
 def _import(importer, request, queue, rq_id, Serializer, file_field_name, location_conf, filename=None):
     rq_job = queue.fetch_job(rq_id)
 
-    if (user_id_from_meta := getattr(rq_job, 'meta', {}).get('user', {}).get('id')) and user_id_from_meta != request.user.id:
+    if (user_id_from_meta := getattr(rq_job, 'meta', {}).get(RQJobMetaField.USER, {}).get('id')) and user_id_from_meta != request.user.id:
         return Response(status=status.HTTP_403_FORBIDDEN)
 
     if not rq_job:

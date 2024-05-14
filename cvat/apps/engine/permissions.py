@@ -1201,7 +1201,6 @@ class RequestPermission(OpenPolicyAgentPermission):
     class Scopes(StrEnum):
         LIST = 'list'
         VIEW = 'view'
-        DELETE = 'delete'
         CANCEL = 'cancel'
 
     @classmethod
@@ -1209,11 +1208,8 @@ class RequestPermission(OpenPolicyAgentPermission):
         permissions = []
         if view.basename == 'request':
             for scope in cls.get_scopes(request, view, obj):
-                if scope in (cls.Scopes.DELETE, cls.Scopes.CANCEL):
-                    try:
-                        parsed_rq_id = RQIdManager.parse(obj.id)
-                    except ValueError as ex:
-                        raise ValidationError(f"Unsupported RQ ID template: {obj.id}") from ex
+                if scope == cls.Scopes.CANCEL:
+                    parsed_rq_id = obj.parsed_rq_id
 
                     permission_class, resource_scope = {
                         ('import', 'project', 'dataset'): (ProjectPermission, ProjectPermission.Scopes.IMPORT_DATASET),
@@ -1265,7 +1261,6 @@ class RequestPermission(OpenPolicyAgentPermission):
         return [{
             ('list', 'GET'): Scopes.LIST,
             ('retrieve', 'GET'): Scopes.VIEW,
-            ('destroy', 'DELETE'): Scopes.DELETE,
             ('cancel', 'POST'): Scopes.CANCEL,
         }.get((view.action, request.method))]
 
