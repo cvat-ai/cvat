@@ -1620,6 +1620,36 @@ class ExportConcurrencyTest(_DbTestBase):
         self.assertEqual(mock_rq_job.retries_left, 1)
         self.assertEqual(len(mock_rq_job.retry_intervals), 1)
 
+    def test_export_can_reuse_older_file_if_still_relevant(self):
+        format_name = "CVAT for images 1.1"
+        images = self._generate_task_images(3)
+        task = self._create_task(tasks["main"], images)
+        self._create_annotations(task, f'{format_name} many jobs', "default")
+        task_id = task["id"]
+
+        with (
+            patch('cvat.apps.dataset_manager.views.rq.get_current_job') as mock_rq_get_current_job,
+            patch('cvat.apps.dataset_manager.views.django_rq.get_scheduler'),
+        ):
+            mock_rq_get_current_job.return_value = MagicMock(timeout=5)
+
+            first_export_path = export(dst_format=format_name, task_id=task_id)
+
+        from os.path import exists as original_exists
+        with (
+            patch('cvat.apps.dataset_manager.views.rq.get_current_job') as mock_rq_get_current_job,
+            patch('cvat.apps.dataset_manager.views.django_rq.get_scheduler'),
+            patch('cvat.apps.dataset_manager.views.osp.exists', side_effect=original_exists) as mock_osp_exists,
+            patch('cvat.apps.dataset_manager.views.os.replace') as mock_os_replace,
+        ):
+            mock_rq_get_current_job.return_value = MagicMock(timeout=5)
+
+            second_export_path = export(dst_format=format_name, task_id=task_id)
+
+        self.assertEqual(first_export_path, second_export_path)
+        mock_osp_exists.assert_called_with(first_export_path)
+        mock_os_replace.assert_not_called()
+
     def test_cleanup_can_remove_file(self):
         format_name = "CVAT for images 1.1"
         images = self._generate_task_images(3)
