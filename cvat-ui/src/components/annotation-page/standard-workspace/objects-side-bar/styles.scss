@@ -222,7 +222,6 @@
     width: 100%;
     transition: box-shadow $box-shadow-transition;
     border: 1px solid $border-color-1;
-    border-radius: $border-radius-base;
     padding: $grid-unit-size * 0.5;
     margin-left: $grid-unit-size * 0.25;
     margin-right: $grid-unit-size * 0.25;
@@ -349,7 +348,6 @@
     height: 2.5em;
     transition: box-shadow $box-shadow-transition;
     border: 1px solid $border-color-1;
-    border-radius: $border-radius-base;
     padding: $grid-unit-size * 0.5;
     margin-left: $grid-unit-size * 0.25;
     margin-right: $grid-unit-size * 0.25;
