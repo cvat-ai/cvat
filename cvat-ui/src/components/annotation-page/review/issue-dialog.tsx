@@ -136,7 +136,7 @@ export default function IssueDialog(props: Props): JSX.Element {
         >
             <Row className='cvat-issue-dialog-header' justify='space-between'>
                 <Col>
-                    <Text strong>{typeof id === 'number' ? `Issue ID ${id}` : 'Issue'}</Text>
+                    <Text strong>{typeof id === 'number' ? `Issue #${id}` : 'Issue'}</Text>
                 </Col>
                 <Col>
                     <CVATTooltip title='Collapse the chat'>

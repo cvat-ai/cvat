@@ -24,8 +24,6 @@ export default function withVisibilityHandling(WrappedComponent: typeof Popover,
                 {...rest}
                 overlayStyle={{
                     ...(typeof overlayStyle === 'object' ? overlayStyle : {}),
-                    animationDuration: '0s',
-                    animationDelay: '0s',
                 }}
                 trigger={['click']}
                 overlayClassName={overlayClassNames.join(' ').trim()}
