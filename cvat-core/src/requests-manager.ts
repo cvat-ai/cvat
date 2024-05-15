@@ -144,7 +144,7 @@ export class Request {
 }
 
 const PROGRESS_EPS = 25;
-const requestDelays = [6000, 12000, 18000, 24000, 30000];
+const requestDelays = [3000, 7000, 13000, 19000, 29000, 37000];
 
 class RequestsManager {
     private listening: Record<string, {

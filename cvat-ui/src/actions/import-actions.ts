@@ -32,10 +32,10 @@ export enum ImportActionTypes {
 }
 
 export const importActions = {
-    openImportDatasetModal: (instance: any) => (
+    openImportDatasetModal: (instance: InstanceType) => (
         createAction(ImportActionTypes.OPEN_IMPORT_DATASET_MODAL, { instance })
     ),
-    closeImportDatasetModal: (instance: any) => (
+    closeImportDatasetModal: (instance: InstanceType) => (
         createAction(ImportActionTypes.CLOSE_IMPORT_DATASET_MODAL, { instance })
     ),
     importDataset: (instance: InstanceType | RequestInstanceType, format: string) => (
@@ -51,7 +51,7 @@ export const importActions = {
             error,
         })
     ),
-    importDatasetUpdateStatus: (instance: any, progress: number, status: string) => (
+    importDatasetUpdateStatus: (instance: InstanceType, progress: number, status: string) => (
         createAction(ImportActionTypes.IMPORT_DATASET_UPDATE_STATUS, { instance, progress, status })
     ),
     openImportBackupModal: (instanceType: 'project' | 'task') => (
