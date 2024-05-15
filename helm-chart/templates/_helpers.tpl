@@ -51,7 +51,7 @@ app.kubernetes.io/instance: {{ .Release.Name }}
 {{- end }}
 
 {{/*
-The name of the service account to use
+The name of the service account to use for backend pods
 */}}
 {{- define "cvat.backend.serviceAccountName" -}}
 {{- default "default" .Values.cvat.backend.serviceAccount.name }}
