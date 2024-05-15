@@ -2282,14 +2282,7 @@ class LabelViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
                 "Sublabels cannot be modified this way. "
                 "Please send a PATCH request with updated parent label data instead.",
                 code=status.HTTP_400_BAD_REQUEST)
-        attributes = self.request.data.get('attributes')
-        encountered_names = set()
-        for attribute in attributes:
-            attr_name = attribute.get('name')
-            if attr_name in encountered_names:
-                raise ValidationError('attribute with same name exists')
-            else:
-                encountered_names.add(attr_name)
+
         return super().perform_update(serializer)
 
     def perform_destroy(self, instance: models.Label):

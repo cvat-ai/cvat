@@ -335,6 +335,13 @@ class LabelSerializer(SublabelSerializer):
         parent_info, logger = cls._get_parent_info(parent_instance)
 
         attributes = validated_data.pop('attributespec_set', [])
+        encountered_names = set()
+        for attribute in attributes:
+            attr_name = attribute.get('name')
+            if attr_name in encountered_names:
+                raise exceptions.ValidationError('attribute with same name exists')
+            else:
+                encountered_names.add(attr_name)
 
         if validated_data.get('id') is not None:
             try:
@@ -450,6 +457,14 @@ class LabelSerializer(SublabelSerializer):
 
         for label in labels:
             attributes = label.pop('attributespec_set')
+            
+            encountered_names = set()
+            for attribute in attributes:
+                attr_name = attribute.get('name')
+                if attr_name in encountered_names:
+                    raise exceptions.ValidationError('attribute with same name exists')
+                else:
+                    encountered_names.add(attr_name)
 
             if label.get('id', None):
                 del label['id']
