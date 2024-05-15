@@ -17,6 +17,11 @@ cvat:
     additionalEnv: []
     additionalVolumes: []
     additionalVolumeMounts: []
+    # -- The service account the backend pods will use to interact with the Kubernetes API
+    serviceAccount:
+      # If set, the specified service account is used
+      # otherwise default service account is used
+      name: ""
 
     initializer:
       labels: {}
@@ -36,7 +41,6 @@ cvat:
       tolerations: []
       envs:
         ALLOWED_HOSTS: "*"
-        DJANGO_MODWSGI_EXTRA_ARGS: ""
       additionalEnv: []
       additionalVolumes: []
       additionalVolumeMounts: []
@@ -275,9 +279,11 @@ postgresql:
   #See https://github.com/bitnami/charts/blob/master/bitnami/postgresql/ for more info
   enabled: true # false for external db
   external:
-    host: 127.0.0.1
-    port: 5432
- # If not external following config will be applied by default
+    # Ignored if an empty value is set
+    host: ""
+    # Ignored if an empty value is set
+    port: ""
+  # If not external following config will be applied by default
   auth:
     existingSecret: "{{ .Release.Name }}-postgres-secret"
     username: cvat
