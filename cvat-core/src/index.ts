@@ -155,7 +155,7 @@ export default interface CVATCore {
     requests: {
         list: () => Promise<{ requests: Request[], count: number }>;
         listen: (
-            rqID: string,
+            rqID: string | null,
             options?: { callback?: (request: Request) => void, filter?: RequestsFilter }
         ) => Promise<Request>;
         cancel: (rqID: string) => Promise<void>;

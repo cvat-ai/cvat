@@ -54,6 +54,7 @@ export type RequestsActions = ActionUnion<typeof requestsActions>;
 export interface RequestInstanceType {
     id: number;
     type: 'project' | 'task' | 'job';
+    requestPromise: Promise<Request>;
 }
 
 export function getInstanceType(instance: InstanceType | RequestInstanceType): 'project' | 'task' | 'job' {
@@ -72,8 +73,8 @@ export function getInstanceType(instance: InstanceType | RequestInstanceType): '
     return instance.type;
 }
 
-export function isRequestInstanceType(instance: any): instance is RequestInstanceType {
-    return 'id' in instance && 'type' in instance;
+export function isRequestInstanceType(instance: InstanceType | RequestInstanceType): instance is RequestInstanceType {
+    return 'id' in instance && 'type' in instance && 'requestPromise' in instance;
 }
 
 export function isInstanceType(instance: any): instance is InstanceType {

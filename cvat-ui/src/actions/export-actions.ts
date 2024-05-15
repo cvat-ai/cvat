@@ -123,14 +123,13 @@ export const exportBackupAsync = (
         if (isRequestInstanceType(instance)) {
             result = await listeningPromise;
         } else {
-            result = listeningPromise ? await listeningPromise : await instance
+            result = await instance
                 .backup(targetStorage, useDefaultSetting, fileName, {
                     requestStatusCallback: (request: Request) => {
                         updateRequestProgress(request, dispatch);
                     },
                 });
         }
-
         dispatch(exportActions.exportBackupSuccess(instance, instanceType, !!result.url));
     } catch (error) {
         dispatch(exportActions.exportBackupFailed(instance, instanceType, error as Error));

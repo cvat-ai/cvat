@@ -269,15 +269,6 @@ class RequestsManager {
         });
     }
 
-    async delete(rqID: string): Promise<void> {
-        await serverProxy.requests.delete(rqID).then(() => {
-            if (rqID in this.listening) {
-                clearTimeout(this.listening[rqID].timeout);
-                delete this.listening[rqID];
-            }
-        });
-    }
-
     private delayFor(rqID: string, updatedRequest: Request): number {
         const state = this.listening[rqID];
         const prevDelayIdx = state.requestDelaysIdx;

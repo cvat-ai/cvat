@@ -8,6 +8,7 @@ import {
 } from 'reducers';
 import {
     getCore, RQStatus, Request, Project, Task, Job,
+    RequestsFilter,
 } from 'cvat-core-wrapper';
 import { exportBackupAsync, exportDatasetAsync } from './export-actions';
 import {
@@ -25,12 +26,18 @@ export interface RequestParams {
 }
 
 export function listen(request: Request, dispatch: (action: RequestsActions) => void): Promise<Request> {
-    const { id } = request;
+    const { id, operation: { type, taskID } } = request;
+    let filter: RequestsFilter | undefined;
+    if (type === 'create:task') {
+        filter = { taskID: taskID as number, action: 'create' };
+    }
+
     return core.requests
-        .listen(id, {
+        .listen(filter ? null : id, {
             callback: (updatedRequest) => {
                 updateRequestProgress(updatedRequest, dispatch);
             },
+            filter,
         })
         .catch((error: Error) => {
             request.updateFields({ status: RQStatus.UNKNOWN, progress: 0, message: '' });
@@ -79,16 +86,16 @@ export function getRequestsAsync(query: RequestsQuery, notify = true): ThunkActi
                         },
                     } = request;
                     let instance: RequestInstanceType | null = null;
-                    if (target === 'task') {
-                        instance = { id: taskID as number, type: target };
-                    } else if (target === 'job') {
-                        instance = { id: jobID as number, type: target };
-                    } else if (target === 'project') {
-                        instance = { id: projectID as number, type: target };
-                    }
 
                     const [operationType, operationTarget] = type.split(':');
                     const listeningPromise = listen(request, dispatch);
+                    if (target === 'task') {
+                        instance = { id: taskID as number, type: target, requestPromise: listeningPromise };
+                    } else if (target === 'job') {
+                        instance = { id: jobID as number, type: target, requestPromise: listeningPromise };
+                    } else if (target === 'project') {
+                        instance = { id: projectID as number, type: target, requestPromise: listeningPromise };
+                    }
 
                     if (operationType === 'export') {
                         if (operationTarget === 'backup') {
