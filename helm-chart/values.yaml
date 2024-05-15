@@ -19,9 +19,7 @@ cvat:
     additionalVolumeMounts: []
     # -- The service account the backend pods will use to interact with the Kubernetes API
     serviceAccount:
-      # If set, the specified service account is used
-      # otherwise default service account is used
-      name: ""
+      name: default
 
     initializer:
       labels: {}
