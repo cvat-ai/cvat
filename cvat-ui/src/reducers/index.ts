@@ -438,7 +438,7 @@ export interface ErrorState {
 export interface NotificationsState {
     errors: {
         auth: {
-            authorized: null | ErrorState;
+            authenticated: null | ErrorState;
             login: null | ErrorState;
             logout: null | ErrorState;
             register: null | ErrorState;
@@ -760,6 +760,7 @@ export interface AnnotationState {
         states: any[];
         filters: object[];
         resetGroupFlag: boolean;
+        initialized: boolean;
         history: {
             undo: [string, number][];
             redo: [string, number][];

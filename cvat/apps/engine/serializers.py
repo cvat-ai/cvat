@@ -22,8 +22,8 @@ from cvat.apps.dataset_manager.formats.utils import get_label_color
 from cvat.apps.engine import models
 from cvat.apps.engine.cloud_provider import get_cloud_storage_instance, Credentials, Status
 from cvat.apps.engine.log import ServerLogManager
+from cvat.apps.engine.permissions import TaskPermission
 from cvat.apps.engine.utils import parse_specific_attributes, build_field_filter_params, get_list_view_name, reverse
-from cvat.apps.iam.permissions import TaskPermission
 
 from drf_spectacular.utils import OpenApiExample, extend_schema_field, extend_schema_serializer
 
@@ -1208,7 +1208,8 @@ class TaskWriteSerializer(WriteOnceMixin, serializers.ModelSerializer):
                     for (model, model_name) in (
                         (models.LabeledTrackAttributeVal, 'track'),
                         (models.LabeledShapeAttributeVal, 'shape'),
-                        (models.LabeledImageAttributeVal, 'image')
+                        (models.LabeledImageAttributeVal, 'image'),
+                        (models.TrackedShapeAttributeVal, 'shape__track')
                     ):
                         model.objects.filter(**{
                             f'{model_name}__job__segment__task': instance,

@@ -99,8 +99,8 @@ function build(): CVATCore {
                 );
                 return result;
             },
-            async authorized() {
-                const result = await PluginRegistry.apiWrapper(cvat.server.authorized);
+            async authenticated() {
+                const result = await PluginRegistry.apiWrapper(cvat.server.authenticated);
                 return result;
             },
             async healthCheck(maxRetries = 1, checkPeriod = 3000, requestTimeout = 5000, progressCallback = undefined) {
@@ -346,6 +346,14 @@ function build(): CVATCore {
             performance: {
                 async reports(filter = {}) {
                     const result = await PluginRegistry.apiWrapper(cvat.analytics.performance.reports, filter);
+                    return result;
+                },
+                async calculate(body, onUpdate) {
+                    const result = await PluginRegistry.apiWrapper(
+                        cvat.analytics.performance.calculate,
+                        body,
+                        onUpdate,
+                    );
                     return result;
                 },
             },

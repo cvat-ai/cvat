@@ -81,11 +81,12 @@ from cvat.apps.engine.location import get_location_configuration, StorageType
 
 from . import models, task
 from .log import ServerLogManager
-from cvat.apps.iam.permissions import (CloudStoragePermission,
-    CommentPermission, IssuePermission, JobPermission, LabelPermission, ProjectPermission,
-    TaskPermission, UserPermission, PolicyEnforcer, IsAuthenticatedOrReadPublicResource)
 from cvat.apps.iam.filters import ORGANIZATION_OPEN_API_PARAMETERS
+from cvat.apps.iam.permissions import PolicyEnforcer, IsAuthenticatedOrReadPublicResource
 from cvat.apps.engine.cache import MediaCache
+from cvat.apps.engine.permissions import (CloudStoragePermission,
+    CommentPermission, IssuePermission, JobPermission, LabelPermission, ProjectPermission,
+    TaskPermission, UserPermission)
 from cvat.apps.engine.view_utils import tus_chunk_action
 
 slogger = ServerLogManager(__name__)
@@ -2393,7 +2394,7 @@ class UserViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
     @action(detail=False, methods=['GET'])
     def self(self, request):
         """
-        Method returns an instance of a user who is currently authorized
+        Method returns an instance of a user who is currently authenticated
         """
         serializer_class = self.get_serializer_class()
         serializer = serializer_class(request.user, context={ "request": request })

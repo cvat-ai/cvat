@@ -16,6 +16,100 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 <!-- scriv-insert-here -->
 
+<a id='changelog-2.13.0'></a>
+## \[2.13.0\] - 2024-05-09
+
+### Added
+
+- Quality Report calculation will now also include annotation of type Tag.
+  (<https://github.com/opencv/cvat/pull/7582>)
+
+- Added feature to show tags of GT and manual job in separate row. Tags of GT job have '(GT)' in their name.
+  (<https://github.com/cvat-ai/cvat/pull/7774>)
+
+### Changed
+
+- Analytics reports calculation may be initiated manually instead of automatic scheduling
+  (<https://github.com/cvat-ai/cvat/pull/7805>)
+
+- Update the Nuclio version and related packages/libraries
+  (<https://github.com/cvat-ai/cvat/pull/7787>)
+
+- Remove keyframe button is disabled when there is only one keyframe element
+  (<https://github.com/cvat-ai/cvat/pull/7844>)
+
+### Removed
+
+- The `mask_rcnn` function has been removed because it was using python3.6.
+  In new version of Nuclio python3.6 is no longer supported. Nuclio officially recommends using python3.9.
+  Running `mask_rcnn` on python3.9 causes errors within the function and package conflicts. (<https://github.com/cvat-ai/cvat/pull/7787>)
+
+### Fixed
+
+- Analytics report calculation fails with timeout because of redundant number of requests to ClickHouse
+  (<https://github.com/cvat-ai/cvat/pull/7804>)
+
+- Incorrect duration of `change:frame` event
+  (<https://github.com/cvat-ai/cvat/pull/7817>)
+
+- Infinite loading cloud storage update page when a lot of cloud storages are available for a user
+  (<https://github.com/cvat-ai/cvat/pull/7823>)
+
+- Opening update CS page sends infinite requests when CS id does not exist
+  (<https://github.com/cvat-ai/cvat/pull/7828>)
+
+Uploading files with TUS immediately failed when one of the requests failed
+  (<https://github.com/cvat-ai/cvat/pull/7830>)
+
+- Longer analytics report calculation because of inefficient requests to analytics db
+  (<https://github.com/cvat-ai/cvat/pull/7833>)
+
+- Cannot read properties of undefined (reading 'addClass')
+  (<https://github.com/cvat-ai/cvat/pull/7834>)
+
+- Fixed exception 'Could not read property length of undefined' when copy/paste a skeleton point
+  (<https://github.com/cvat-ai/cvat/pull/7843>)
+
+- Task creation from a video file without keyframes allowing for random iteration
+  (<https://github.com/cvat-ai/cvat/pull/7838>)
+
+- Cannot read property 'annotations' of null when uploading annotations into a job
+  (<https://github.com/cvat-ai/cvat/pull/7857>)
+
+- Vertical polyline of two points is difficult to select
+  (<https://github.com/cvat-ai/cvat/pull/7860>)
+
+- Tracked attribute values are lost when moving a task to a project
+  (<https://github.com/cvat-ai/cvat/pull/7863>)
+
+### Security
+
+- Disable the nginx server signature by default to make it slightly harder for attackers to find known vulnerabilities.
+  (<https://github.com/cvat-ai/cvat/pull/7814>)
+
+<a id='changelog-2.12.1'></a>
+## \[2.12.1\] - 2024-04-26
+
+### Fixed
+
+- Formats with the custom `track_id` attribute should import `outside` track shapes properly (e.g. `COCO`, `COCO Keypoints`, `Datumaro`, `PASCAL VOC`)
+  (<https://github.com/opencv/cvat/pull/7669>)
+
+- Inefficient resources fetching in admin panel leading to 504 Gateway Timeout
+  (<https://github.com/cvat-ai/cvat/pull/7767>)
+
+- Optimized memory usage when retrieving annotations by disabling internal Django QuerySet caching
+  (<https://github.com/cvat-ai/cvat/pull/7748>)
+
+- Annotations are not shown on the `0` frame sometimes
+  (<https://github.com/cvat-ai/cvat/pull/7796>)
+
+- Extra requests in PolicyEnforcer when at least one policy is rejected, others are not checked
+  (<https://github.com/cvat-ai/cvat/pull/7803>)
+
+- Project's `updated_date` was not updated after changing annotations in jobs
+  (<https://github.com/cvat-ai/cvat/pull/7808>)
+
 <a id='changelog-2.12.0'></a>
 ## \[2.12.0\] - 2024-04-15
 

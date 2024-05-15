@@ -869,10 +869,17 @@ export function resetCanvas(): AnyAction {
 }
 
 export function closeJob(): ThunkAction {
-    return async (dispatch: ActionCreator<Dispatch>): Promise<void> => {
+    return async (dispatch: ActionCreator<Dispatch>, getState): Promise<void> => {
+        const state = getState();
+        const { instance: canvasInstance } = state.annotation.canvas;
         const { jobInstance } = receiveAnnotationsParameters();
+
         if (jobInstance) {
             await jobInstance.close();
+        }
+
+        if (canvasInstance) {
+            canvasInstance.destroy();
         }
 
         dispatch({
