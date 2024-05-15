@@ -235,10 +235,11 @@ class AttributeSerializer(serializers.ModelSerializer):
     values = DelimitedStringListField(allow_empty=True,
         child=serializers.CharField(allow_blank=True, max_length=200),
     )
+    display_order = serializers.IntegerField(required=False)
 
     class Meta:
         model = models.AttributeSpec
-        fields = ('id', 'name', 'mutable', 'input_type', 'default_value', 'values')
+        fields = ('id', 'name', 'mutable', 'input_type', 'default_value', 'values', 'display_order')
 
 class SublabelSerializer(serializers.ModelSerializer):
     id = serializers.IntegerField(required=False)
@@ -432,6 +433,7 @@ class LabelSerializer(SublabelSerializer):
                 db_attr.mutable = attr.get('mutable', db_attr.mutable)
                 db_attr.input_type = attr.get('input_type', db_attr.input_type)
                 db_attr.values = attr.get('values', db_attr.values)
+                db_attr.display_order = attr.get('display_order', db_attr.display_order)
                 db_attr.save()
 
         return db_label

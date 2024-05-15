@@ -2196,7 +2196,7 @@ class LabelViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
     mixins.RetrieveModelMixin, mixins.DestroyModelMixin, PartialUpdateModelMixin
 ):
     queryset = Label.objects.prefetch_related(
-        Prefetch('attributespec_set', queryset=AttributeSpec.objects.order_by('-updated_time')),
+        Prefetch('attributespec_set', queryset=AttributeSpec.objects.order_by('-display_order')),
         'sublabels__attributespec_set',
         'task',
         'task__owner',

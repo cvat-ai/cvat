@@ -72,7 +72,9 @@ export default class LabelForm extends React.Component<Props> {
         if (updatedLayout) {
             const attr = values.attributes;
             updatedLayout.forEach((obj: any, index: number) => {
+                attr[index].display_order = obj.y;
                 arr[obj.y] = attr[index];
+                console.log(index, obj.y, 'val', attr[index]);
             });
         }
         values.attributes = arr;
@@ -112,6 +114,7 @@ export default class LabelForm extends React.Component<Props> {
                     default_value: attribute.default_value && attrValues.includes(attribute.default_value) ?
                         attribute.default_value : attrValues[0],
                     input_type: attribute.type.toLowerCase(),
+                    display_order: attribute.display_order,
                 };
             }),
             ...(skeletonConfiguration || {}),
@@ -719,6 +722,7 @@ export default class LabelForm extends React.Component<Props> {
                                         width={600}
                                         onLayoutChange={(updatedLayout) => {
                                             this.formRef.current?.setFieldsValue({ layout: updatedLayout });
+                                            console.log(this.formRef.current?.getFieldValue('attributes'));
                                         }}
                                         draggableHandle='.cvat-drag-drop'
                                     >
