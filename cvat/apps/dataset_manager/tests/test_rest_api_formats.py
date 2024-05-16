@@ -1383,7 +1383,7 @@ class ExportBehaviorTest(_DbTestBase):
         clear_removed_the_file = self.SharedBool()
 
         @contextmanager
-        def patched_get_dataset_cache_lock(export_path, *, ttl, block=True, acquire_timeout=None):
+        def patched_get_export_cache_lock(export_path, *, ttl, block=True, acquire_timeout=None):
             # fakeredis lock acquired in a subprocess won't be visible to other processes
             # just implement the lock here
             from cvat.apps.dataset_manager.util import LockNotAvailableError
@@ -1426,8 +1426,8 @@ class ExportBehaviorTest(_DbTestBase):
             with (
                 patch('cvat.apps.dataset_manager.views.EXPORT_CACHE_LOCK_TIMEOUT', new=5),
                 patch(
-                    'cvat.apps.dataset_manager.views.get_dataset_cache_lock',
-                    new=patched_get_dataset_cache_lock
+                    'cvat.apps.dataset_manager.views.get_export_cache_lock',
+                    new=patched_get_export_cache_lock
                 ),
                 patch('cvat.apps.dataset_manager.views.osp.exists') as mock_osp_exists,
                 patch('cvat.apps.dataset_manager.views.os.replace') as mock_os_replace,
@@ -1467,8 +1467,8 @@ class ExportBehaviorTest(_DbTestBase):
             with (
                 patch('cvat.apps.dataset_manager.views.EXPORT_CACHE_LOCK_TIMEOUT', new=5),
                 patch(
-                    'cvat.apps.dataset_manager.views.get_dataset_cache_lock',
-                    new=patched_get_dataset_cache_lock
+                    'cvat.apps.dataset_manager.views.get_export_cache_lock',
+                    new=patched_get_export_cache_lock
                 ),
                 patch('cvat.apps.dataset_manager.views.os.remove') as mock_os_remove,
                 patch('cvat.apps.dataset_manager.views.rq.get_current_job') as mock_rq_get_current_job,
@@ -1489,7 +1489,7 @@ class ExportBehaviorTest(_DbTestBase):
                         file_path=file_path, file_ctime=file_ctime, logger=MagicMock()
                     )
                 except LockNotAvailableError:
-                    # should come from waiting for get_dataset_cache_lock
+                    # should come from waiting for get_export_cache_lock
                     exited_by_timeout = True
 
                 assert exited_by_timeout
@@ -1614,7 +1614,7 @@ class ExportBehaviorTest(_DbTestBase):
         }
 
         @contextmanager
-        def patched_get_dataset_cache_lock(export_path, *, ttl, block=True, acquire_timeout=None):
+        def patched_get_export_cache_lock(export_path, *, ttl, block=True, acquire_timeout=None):
             # fakeredis lock acquired in a subprocess won't be visible to other processes
             # just implement the lock here
             from cvat.apps.dataset_manager.util import LockNotAvailableError
@@ -1653,8 +1653,8 @@ class ExportBehaviorTest(_DbTestBase):
 
             with (
                 patch(
-                    'cvat.apps.engine.views.dm.util.get_dataset_cache_lock',
-                    new=patched_get_dataset_cache_lock
+                    'cvat.apps.engine.views.dm.util.get_export_cache_lock',
+                    new=patched_get_export_cache_lock
                 ),
                 patch('cvat.apps.dataset_manager.views.osp.exists') as mock_osp_exists,
                 TemporaryDirectory() as temp_dir,
@@ -1674,8 +1674,8 @@ class ExportBehaviorTest(_DbTestBase):
             with (
                 patch('cvat.apps.dataset_manager.views.EXPORT_CACHE_LOCK_TIMEOUT', new=5),
                 patch(
-                    'cvat.apps.dataset_manager.views.get_dataset_cache_lock',
-                    new=patched_get_dataset_cache_lock
+                    'cvat.apps.dataset_manager.views.get_export_cache_lock',
+                    new=patched_get_export_cache_lock
                 ),
                 patch('cvat.apps.dataset_manager.views.os.remove') as mock_os_remove,
                 patch('cvat.apps.dataset_manager.views.rq.get_current_job') as mock_rq_get_current_job,
@@ -1695,7 +1695,7 @@ class ExportBehaviorTest(_DbTestBase):
                         file_path=file_path, file_ctime=file_ctime, logger=MagicMock()
                     )
                 except LockNotAvailableError:
-                    # should come from waiting for get_dataset_cache_lock
+                    # should come from waiting for get_export_cache_lock
                     exited_by_timeout = True
 
                 assert exited_by_timeout
@@ -1819,9 +1819,9 @@ class ExportBehaviorTest(_DbTestBase):
         from cvat.apps.dataset_manager.util import LockNotAvailableError
         with (
             patch(
-                'cvat.apps.dataset_manager.views.get_dataset_cache_lock',
+                'cvat.apps.dataset_manager.views.get_export_cache_lock',
                 side_effect=LockNotAvailableError
-            ) as mock_get_dataset_cache_lock,
+            ) as mock_get_export_cache_lock,
             patch('cvat.apps.dataset_manager.views.rq.get_current_job') as mock_rq_get_current_job,
             patch('cvat.apps.dataset_manager.views.django_rq.get_scheduler'),
             self.assertRaises(LockNotAvailableError),
@@ -1831,7 +1831,7 @@ class ExportBehaviorTest(_DbTestBase):
 
             export(dst_format=format_name, task_id=task_id)
 
-        mock_get_dataset_cache_lock.assert_called()
+        mock_get_export_cache_lock.assert_called()
         self.assertEqual(mock_rq_job.retries_left, 1)
         self.assertEqual(len(mock_rq_job.retry_intervals), 1)
 
@@ -1911,9 +1911,9 @@ class ExportBehaviorTest(_DbTestBase):
 
         with (
             patch(
-                'cvat.apps.dataset_manager.views.get_dataset_cache_lock',
+                'cvat.apps.dataset_manager.views.get_export_cache_lock',
                 side_effect=LockNotAvailableError
-            ) as mock_get_dataset_cache_lock,
+            ) as mock_get_export_cache_lock,
             patch('cvat.apps.dataset_manager.views.rq.get_current_job') as mock_rq_get_current_job,
             patch('cvat.apps.dataset_manager.views.django_rq.get_scheduler'),
             self.assertRaises(LockNotAvailableError),
@@ -1924,7 +1924,7 @@ class ExportBehaviorTest(_DbTestBase):
             file_ctime = parse_export_filename(export_path).instance_timestamp
             clear_export_cache(file_path=export_path, file_ctime=file_ctime, logger=MagicMock())
 
-        mock_get_dataset_cache_lock.assert_called()
+        mock_get_export_cache_lock.assert_called()
         self.assertEqual(mock_rq_job.retries_left, 1)
         self.assertEqual(len(mock_rq_job.retry_intervals), 1)
         self.assertTrue(osp.isfile(export_path))
