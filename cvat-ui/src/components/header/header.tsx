@@ -359,8 +359,7 @@ function HeaderComponent(props: Props): JSX.Element {
                 },
             }] : []),
             ...(!!organizationsList && viewType === 'menu' ? [{
-                // eslint-disable-next-line @typescript-eslint/prefer-as-const
-                type: 'divider' as 'divider',
+                type: 'divider' as const,
             }, {
                 key: '$personal',
                 label: 'Personal workspace',
