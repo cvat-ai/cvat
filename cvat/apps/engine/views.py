@@ -2993,7 +2993,7 @@ def _export_annotations(
                             status=status.HTTP_500_INTERNAL_SERVER_ERROR
                         )
 
-                    with dm.util.get_dataset_cache_lock(
+                    with dm.util.get_export_cache_lock(
                         file_path, ttl=60, # request timeout
                     ):
                         if action == "download":

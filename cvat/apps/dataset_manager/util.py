@@ -98,11 +98,12 @@ class LockNotAvailableError(Exception):
     pass
 
 
-def make_export_lock_key(filename: os.PathLike[str]) -> str:
+def make_export_cache_lock_key(filename: os.PathLike[str]) -> str:
     return f"export_lock:{filename}"
 
+
 @contextmanager
-def get_dataset_cache_lock(
+def get_export_cache_lock(
     export_path: os.PathLike[str],
     *,
     ttl: int | timedelta,
@@ -126,7 +127,7 @@ def get_dataset_cache_lock(
     # where parallel access is potentially possible and valid,
     # e.g. dataset downloading could use a shared lock instead.
     lock = Redlock(
-        key=make_export_lock_key(export_path),
+        key=make_export_cache_lock_key(export_path),
         masters={django_rq.get_connection(settings.CVAT_QUEUES.EXPORT_DATA.value)},
         auto_release_time=ttl,
     )
@@ -143,6 +144,7 @@ def get_dataset_cache_lock(
 
 
 EXPORT_CACHE_DIR_NAME = 'export_cache'
+
 
 def get_export_cache_dir(db_instance: Project | Task | Job) -> str:
     base_dir = osp.abspath(db_instance.get_dirname())

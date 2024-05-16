@@ -22,7 +22,7 @@ from cvat.apps.engine.models import Job, Project, Task
 from .formats.registry import EXPORT_FORMATS, IMPORT_FORMATS
 from .util import (
     LockNotAvailableError,
-    current_function_name, get_dataset_cache_lock,
+    current_function_name, get_export_cache_lock,
     get_export_cache_dir, make_export_filename,
     parse_export_filename
 )
@@ -94,7 +94,7 @@ def export(dst_format, project_id=None, task_id=None, job_id=None, server_url=No
 
         os.makedirs(cache_dir, exist_ok=True)
 
-        with get_dataset_cache_lock(
+        with get_export_cache_lock(
             output_path,
             block=True,
             acquire_timeout=EXPORT_CACHE_LOCK_TIMEOUT,
@@ -163,7 +163,7 @@ def clear_export_cache(file_path: str, file_ctime: float, logger: logging.Logger
     # file_ctime is for backward compatibility with older RQ jobs, not needed now
 
     try:
-        with get_dataset_cache_lock(
+        with get_export_cache_lock(
             file_path,
             block=True,
             acquire_timeout=EXPORT_CACHE_LOCK_TIMEOUT,
