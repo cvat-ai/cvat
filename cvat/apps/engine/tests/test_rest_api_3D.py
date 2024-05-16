@@ -19,7 +19,6 @@ import itertools
 
 from django.contrib.auth.models import Group, User
 from rest_framework import status
-from rest_framework.test import APIClient, APITestCase
 
 from cvat.apps.engine.media_extractors import ValidateDimension
 from cvat.apps.dataset_manager.task import TaskAnnotation
