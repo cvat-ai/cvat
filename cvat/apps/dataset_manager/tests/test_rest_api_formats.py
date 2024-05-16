@@ -28,14 +28,13 @@ from datumaro.util.test_utils import compare_datasets, TestDir
 from django.contrib.auth.models import Group, User
 from PIL import Image
 from rest_framework import status
-from rest_framework.test import APIClient, APITestCase
 
 import cvat.apps.dataset_manager as dm
 from cvat.apps.dataset_manager.bindings import CvatTaskOrJobDataExtractor, TaskData
 from cvat.apps.dataset_manager.task import TaskAnnotation
 from cvat.apps.dataset_manager.views import clear_export_cache, export, parse_export_filename
 from cvat.apps.engine.models import Task
-from cvat.apps.engine.tests.utils import get_paginated_collection
+from cvat.apps.engine.tests.utils import get_paginated_collection, ApiTestBase, ForceLogin
 
 projects_path = osp.join(osp.dirname(__file__), 'assets', 'projects.json')
 with open(projects_path) as file:
@@ -95,26 +94,7 @@ def generate_video_file(filename, width=1280, height=720, duration=1, fps=25, co
     return [(width, height)] * total_frames, f
 
 
-class ForceLogin:
-    def __init__(self, user, client):
-        self.user = user
-        self.client = client
-
-    def __enter__(self):
-        if self.user:
-            self.client.force_login(self.user,
-                backend='django.contrib.auth.backends.ModelBackend')
-
-        return self
-
-    def __exit__(self, exception_type, exception_value, traceback):
-        if self.user:
-            self.client.logout()
-
-class _DbTestBase(APITestCase):
-    def setUp(self):
-        self.client = APIClient()
-
+class _DbTestBase(ApiTestBase):
     @classmethod
     def setUpTestData(cls):
         cls.create_db_users()
@@ -436,6 +416,8 @@ class TaskDumpUploadTest(_DbTestBase):
                     url = self._generate_url_dump_tasks_annotations(task_id)
 
                     for user, edata in list(expected.items()):
+                        self._clear_rq_jobs() # clean up from previous tests and iterations
+
                         user_name = edata['name']
                         file_zip_name = osp.join(test_dir, f'{test_name}_{user_name}_{dump_format_name}.zip')
                         data = {
@@ -541,6 +523,8 @@ class TaskDumpUploadTest(_DbTestBase):
                     url = self._generate_url_dump_tasks_annotations(task_id)
 
                     for user, edata in list(expected.items()):
+                        self._clear_rq_jobs() # clean up from previous tests and iterations
+
                         user_name = edata['name']
                         file_zip_name = osp.join(test_dir, f'{test_name}_{user_name}_{dump_format_name}.zip')
                         data = {
@@ -626,6 +610,8 @@ class TaskDumpUploadTest(_DbTestBase):
             for user, edata in list(expected.items()):
                 with self.subTest(format=f"{edata['name']}"):
                     with TestDir() as test_dir:
+                        self._clear_rq_jobs() # clean up from previous tests and iterations
+
                         user_name = edata['name']
                         url = self._generate_url_dump_tasks_annotations(task_id)
 
@@ -874,6 +860,8 @@ class TaskDumpUploadTest(_DbTestBase):
                     # dump annotations
                     url = self._generate_url_dump_task_dataset(task_id)
                     for user, edata in list(expected.items()):
+                        self._clear_rq_jobs() # clean up from previous tests and iterations
+
                         user_name = edata['name']
                         file_zip_name = osp.join(test_dir, f'{test_name}_{user_name}_{dump_format_name}.zip')
                         data = {
@@ -2032,6 +2020,8 @@ class ProjectDumpUpload(_DbTestBase):
                     self._create_annotations(task, dump_format_name, "random")
 
                 for user, edata in list(expected.items()):
+                    self._clear_rq_jobs() # clean up from previous tests and iterations
+
                     user_name = edata['name']
                     file_zip_name = osp.join(test_dir, f'{test_name}_{user_name}_{dump_format_name}.zip')
                     data = {
@@ -2112,6 +2102,8 @@ class ProjectDumpUpload(_DbTestBase):
                     url = self._generate_url_dump_project_annotations(project['id'], dump_format_name)
 
                     for user, edata in list(expected.items()):
+                        self._clear_rq_jobs() # clean up from previous tests and iterations
+
                         user_name = edata['name']
                         file_zip_name = osp.join(test_dir, f'{test_name}_{user_name}_{dump_format_name}.zip')
                         data = {
