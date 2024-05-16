@@ -864,7 +864,7 @@ class AttributeSpec(models.Model):
     class Meta:
         default_permissions = ()
         unique_together = ('label', 'name')
-        ordering = ['-display_order']
+        ordering = ['display_order']
 
     def __str__(self):
         return self.name

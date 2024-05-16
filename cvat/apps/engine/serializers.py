@@ -406,6 +406,7 @@ class LabelSerializer(SublabelSerializer):
         except models.InvalidLabel as exc:
             raise exceptions.ValidationError(str(exc)) from exc
 
+        display_order=0
         for attr in attributes:
             attr_id = attr.get('id', None)
             if attr_id is not None:
@@ -428,12 +429,13 @@ class LabelSerializer(SublabelSerializer):
                     .format(db_attr.name, db_label.name))
 
                 # FIXME: need to update only "safe" fields
+                db_attr.display_order = display_order
                 db_attr.name = attr.get('name', db_attr.name)
                 db_attr.default_value = attr.get('default_value', db_attr.default_value)
                 db_attr.mutable = attr.get('mutable', db_attr.mutable)
                 db_attr.input_type = attr.get('input_type', db_attr.input_type)
                 db_attr.values = attr.get('values', db_attr.values)
-                db_attr.display_order = attr.get('display_order', db_attr.display_order)
+                display_order += 1
                 db_attr.save()
 
         return db_label
@@ -482,10 +484,14 @@ class LabelSerializer(SublabelSerializer):
                 db_skeleton = models.Skeleton.objects.create(root=db_label, svg=svg)
                 logger.info(f'label:create Skeleton id:{db_skeleton.id} for label_id:{db_label.id}')
 
+            display_order = 0
             for attr in attributes:
                 if attr.get('id', None):
                     del attr['id']
+                    
+                attr['display_order'] = display_order
                 models.AttributeSpec.objects.create(label=db_label, **attr)
+                display_order += 1
 
     @classmethod
     @transaction.atomic
