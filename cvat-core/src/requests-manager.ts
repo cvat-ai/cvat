@@ -143,25 +143,31 @@ export class Request {
     }
 }
 
+const REQUESTS_COUNT = 5;
 const PROGRESS_EPS = 25;
-const requestDelays = [3000, 7000, 13000, 19000, 29000, 37000];
+const EPS_DELAYS = {
+    [RQStatus.STARTED]: [3000, 7000, 13000],
+    [RQStatus.QUEUED]: [7000, 13000, 19000],
+    [RQStatus.DEFERRED]: [120000, 180000, 240000],
+};
 
 class RequestsManager {
     private listening: Record<string, {
         onUpdate: ((request: Request) => void)[];
-        requestDelaysIdx: number | null,
-        progress: number,
+        requestDelayIdx: number | null,
+        request: Request | null,
         timeout: number | null;
         promise?: Promise<Request>;
     }>;
 
+    private requestStack: number[];
     constructor() {
         this.listening = {};
+        this.requestStack = [];
     }
 
     async list(): Promise<{ requests: Request[], count: number }> {
         const result = await serverProxy.requests.list();
-
         const requests = [];
         for (const request of result) {
             requests.push(
@@ -178,6 +184,7 @@ class RequestsManager {
         options?: {
             callback?: (request: Request) => void,
             filter?: RequestsFilter,
+            initialRequest?: Request,
         },
     ): Promise<Request> {
         let storedID = null;
@@ -192,6 +199,7 @@ class RequestsManager {
             throw new Error('Neither request id nor filter is provided');
         }
         const callback = options?.callback;
+        const initialRequest = options?.initialRequest;
 
         if (storedID in this.listening) {
             if (callback) {
@@ -201,16 +209,41 @@ class RequestsManager {
         }
         const promise = new Promise<Request>((resolve, reject) => {
             const timeoutCallback = (): void => {
+                if (!(storedID in this.listening)) {
+                    return;
+                }
+
+                // We make sure that no more than REQUESTS_COUNT requests are sent simultaneously
+                // If thats the case, we re-schedule the timeout
+                const timestamp = Date.now();
+                if (this.requestStack.length >= REQUESTS_COUNT) {
+                    const timestampToCheck = this.requestStack[this.requestStack.length - 1];
+                    const delay = this.delayFor(storedID);
+                    if (timestamp - timestampToCheck < delay) {
+                        this.listening[storedID].timeout = window.setTimeout(timeoutCallback, delay);
+                        return;
+                    }
+                }
+                if (this.requestStack.length >= REQUESTS_COUNT) {
+                    this.requestStack.pop();
+                }
+                this.requestStack.unshift(timestamp);
+
                 serverProxy.requests.status(id, params).then((serializedRequest) => {
                     const request = new Request({ ...serializedRequest });
                     const { status } = request;
+                    // check it was not cancelled
                     if (storedID in this.listening) {
-                        // check it was not cancelled
                         const { onUpdate } = this.listening[storedID];
-                        if ([RQStatus.QUEUED, RQStatus.STARTED].includes(status)) {
+                        if ([RQStatus.QUEUED, RQStatus.STARTED, RQStatus.DEFERRED].includes(status)) {
                             onUpdate.forEach((update) => update(request));
+                            this.listening[storedID].requestDelayIdx = this.updateRequestDelayIdx(
+                                storedID,
+                                request,
+                            );
+                            this.listening[storedID].request = request;
                             this.listening[storedID].timeout = window
-                                .setTimeout(timeoutCallback, this.delayFor(storedID, request));
+                                .setTimeout(timeoutCallback, this.delayFor(storedID));
                         } else {
                             delete this.listening[storedID];
                             if (status === RQStatus.FINISHED) {
@@ -228,7 +261,6 @@ class RequestsManager {
                     }
                 }).catch((error) => {
                     if (storedID in this.listening) {
-                        // check it was not cancelled
                         const { onUpdate } = this.listening[storedID];
 
                         onUpdate
@@ -248,8 +280,8 @@ class RequestsManager {
             this.listening[storedID] = {
                 onUpdate: callback ? [callback] : [],
                 timeout: window.setTimeout(timeoutCallback),
-                requestDelaysIdx: null,
-                progress: 0,
+                request: initialRequest,
+                requestDelayIdx: 0,
             };
         });
 
@@ -269,21 +301,56 @@ class RequestsManager {
         });
     }
 
-    private delayFor(rqID: string, updatedRequest: Request): number {
+    private delayFor(rqID: string): number {
         const state = this.listening[rqID];
-        const prevDelayIdx = state.requestDelaysIdx;
-        if (prevDelayIdx === null) {
-            state.requestDelaysIdx = 0;
-        } else if (updatedRequest.status === RQStatus.QUEUED) {
-            state.requestDelaysIdx = Math.min(prevDelayIdx + 1, requestDelays.length - 1);
-        } else if (updatedRequest.status === RQStatus.STARTED) {
-            if (Math.round(Math.abs(updatedRequest.progress - state.progress) * 100) < PROGRESS_EPS) {
-                state.requestDelaysIdx = Math.min(prevDelayIdx + 1, requestDelays.length - 1);
-            }
-            state.progress = updatedRequest.progress;
+        const { request, requestDelayIdx } = state;
+
+        // request is not checked yet, call it immideately
+        if (!request) {
+            return 0;
         }
 
-        return requestDelays[state.requestDelaysIdx];
+        const addRndComponent = (val: number): number => (
+            val + Math.floor(Math.random() * Math.floor(val / 2))
+        );
+
+        switch (request.status) {
+            case RQStatus.STARTED: {
+                return addRndComponent(EPS_DELAYS[RQStatus.STARTED][requestDelayIdx]);
+            }
+            case RQStatus.QUEUED: {
+                return addRndComponent(EPS_DELAYS[RQStatus.QUEUED][requestDelayIdx]);
+            }
+            case RQStatus.DEFERRED: {
+                return addRndComponent(EPS_DELAYS[RQStatus.DEFERRED][requestDelayIdx]);
+            }
+            default:
+                return 0;
+        }
+    }
+
+    private updateRequestDelayIdx(rqID: string, updatedRequest: Request): number {
+        const state = this.listening[rqID];
+        const { requestDelayIdx, request } = state;
+
+        let progress = 0;
+        if (request) {
+            progress = request?.progress;
+        }
+
+        switch (updatedRequest.status) {
+            case RQStatus.QUEUED: {
+                return Math.min(requestDelayIdx + 1, EPS_DELAYS[RQStatus.QUEUED].length - 1);
+            }
+            case RQStatus.STARTED: {
+                if (Math.round(Math.abs(updatedRequest.progress - progress) * 100) < PROGRESS_EPS) {
+                    return Math.min(requestDelayIdx + 1, EPS_DELAYS[RQStatus.STARTED].length - 1);
+                }
+                return requestDelayIdx;
+            }
+            default:
+                return requestDelayIdx;
+        }
     }
 }
 

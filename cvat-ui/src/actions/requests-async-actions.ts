@@ -38,6 +38,7 @@ export function listen(request: Request, dispatch: (action: RequestsActions) => 
                 updateRequestProgress(updatedRequest, dispatch);
             },
             filter,
+            initialRequest: request,
         })
         .catch((error: Error) => {
             request.updateFields({ status: RQStatus.UNKNOWN, progress: 0, message: '' });

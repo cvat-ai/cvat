@@ -50,6 +50,7 @@ export enum RQStatus {
     FINISHED = 'finished',
     FAILED = 'failed',
     UNKNOWN = 'unknown',
+    DEFERRED = 'deferred',
 }
 
 export enum TaskMode {

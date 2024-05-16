@@ -38,8 +38,8 @@ export const importActions = {
     closeImportDatasetModal: (instance: InstanceType) => (
         createAction(ImportActionTypes.CLOSE_IMPORT_DATASET_MODAL, { instance })
     ),
-    importDataset: (instance: InstanceType | RequestInstanceType, format: string) => (
-        createAction(ImportActionTypes.IMPORT_DATASET, { instance, format })
+    importDataset: (instance: InstanceType | RequestInstanceType, format: string, reportProgress: boolean) => (
+        createAction(ImportActionTypes.IMPORT_DATASET, { instance, format, reportProgress })
     ),
     importDatasetSuccess: (instance: InstanceType | RequestInstanceType, resource: 'dataset' | 'annotation') => (
         createAction(ImportActionTypes.IMPORT_DATASET_SUCCESS, { instance, resource })
@@ -86,10 +86,10 @@ export const importDatasetAsync = (
             const state: CombinedState = getState();
 
             if (instanceType === 'project') {
-                if (state.import.projects.dataset.current?.[instance.id]) {
+                if (state.import.projects.dataset.current?.[instance.id] && !listeningPromise) {
                     throw Error('Only one importing of annotation/dataset allowed at the same time');
                 }
-                dispatch(importActions.importDataset(instance, format));
+                dispatch(importActions.importDataset(instance, format, !listeningPromise));
                 if (isRequestInstanceType(instance)) {
                     await listeningPromise;
                 } else {
@@ -107,10 +107,10 @@ export const importDatasetAsync = (
                         });
                 }
             } else if (instanceType === 'task') {
-                if (state.import.tasks.dataset.current?.[instance.id]) {
+                if (state.import.tasks.dataset.current?.[instance.id] && !listeningPromise) {
                     throw Error('Only one importing of annotation/dataset allowed at the same time');
                 }
-                dispatch(importActions.importDataset(instance, format));
+                dispatch(importActions.importDataset(instance, format, !listeningPromise));
                 if (isRequestInstanceType(instance)) {
                     await listeningPromise;
                 } else {
@@ -127,11 +127,11 @@ export const importDatasetAsync = (
                     state.import.tasks.dataset.current?.[(instance as Job).taskId]) {
                     throw Error('Annotations is being uploaded for the task');
                 }
-                if (state.import.jobs.dataset.current?.[instance.id]) {
+                if (state.import.jobs.dataset.current?.[instance.id] && !listeningPromise) {
                     throw Error('Only one uploading of annotations for a job allowed at the same time');
                 }
 
-                dispatch(importActions.importDataset(instance, format));
+                dispatch(importActions.importDataset(instance, format, !listeningPromise));
 
                 if (isRequestInstanceType(instance)) {
                     await listeningPromise;
