@@ -4,6 +4,7 @@
 
 import { ThunkAction } from 'utils/redux';
 import {
+    CombinedState,
     RequestsQuery, StorageLocation,
 } from 'reducers';
 import {
@@ -50,8 +51,10 @@ export function listen(request: Request, dispatch: (action: RequestsActions) => 
 }
 
 export function getRequestsAsync(query: RequestsQuery, notify = true): ThunkAction {
-    return async (dispatch): Promise<void> => {
+    return async (dispatch, getState): Promise<void> => {
         dispatch(requestsActions.getRequests(query));
+
+        const state: CombinedState = getState();
 
         try {
             const { requests, count } = await core.requests.list();
@@ -100,13 +103,20 @@ export function getRequestsAsync(query: RequestsQuery, notify = true): ThunkActi
 
                     if (operationType === 'export') {
                         if (operationTarget === 'backup') {
-                            dispatch(exportBackupAsync(
-                                instance as RequestInstanceType,
-                                undefined,
-                                undefined,
-                                undefined,
-                            ));
-                        } else {
+                            if (!(state.import.tasks.backup.importing ||
+                                state.import.projects.backup.importing)
+                            ) {
+                                dispatch(exportBackupAsync(
+                                    instance as RequestInstanceType,
+                                    undefined,
+                                    undefined,
+                                    undefined,
+                                ));
+                            }
+                        } else if (!(state.import.tasks.dataset.current?.[(instance as RequestInstanceType).id] ||
+                            state.import.projects.dataset.current?.[(instance as RequestInstanceType).id] ||
+                            state.import.jobs.dataset.current?.[(instance as RequestInstanceType).id])
+                        ) {
                             dispatch(exportDatasetAsync(
                                 instance as RequestInstanceType,
                                 format,
@@ -118,15 +128,20 @@ export function getRequestsAsync(query: RequestsQuery, notify = true): ThunkActi
                             ));
                         }
                     } else if (operationType === 'import') {
-                        dispatch(importDatasetAsync(
-                            instance as RequestInstanceType,
-                            format,
-                            undefined,
-                            undefined,
-                            undefined,
-                            undefined,
-                            listeningPromise,
-                        ));
+                        if (!(state.import.tasks.dataset.current?.[(instance as RequestInstanceType).id] ||
+                            state.import.projects.dataset.current?.[(instance as RequestInstanceType).id] ||
+                            state.import.jobs.dataset.current?.[(instance as RequestInstanceType).id])
+                        ) {
+                            dispatch(importDatasetAsync(
+                                instance as RequestInstanceType,
+                                format,
+                                undefined,
+                                undefined,
+                                undefined,
+                                undefined,
+                                listeningPromise,
+                            ));
+                        }
                     }
                 });
         } catch (error) {

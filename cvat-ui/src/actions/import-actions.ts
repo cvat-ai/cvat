@@ -86,7 +86,7 @@ export const importDatasetAsync = (
             const state: CombinedState = getState();
 
             if (instanceType === 'project') {
-                if (state.import.projects.dataset.current?.[instance.id] && !listeningPromise) {
+                if (state.import.projects.dataset.current?.[instance.id]) {
                     throw Error('Only one importing of annotation/dataset allowed at the same time');
                 }
                 dispatch(importActions.importDataset(instance, format, !listeningPromise));
@@ -107,7 +107,7 @@ export const importDatasetAsync = (
                         });
                 }
             } else if (instanceType === 'task') {
-                if (state.import.tasks.dataset.current?.[instance.id] && !listeningPromise) {
+                if (state.import.tasks.dataset.current?.[instance.id]) {
                     throw Error('Only one importing of annotation/dataset allowed at the same time');
                 }
                 dispatch(importActions.importDataset(instance, format, !listeningPromise));
@@ -127,7 +127,7 @@ export const importDatasetAsync = (
                     state.import.tasks.dataset.current?.[(instance as Job).taskId]) {
                     throw Error('Annotations is being uploaded for the task');
                 }
-                if (state.import.jobs.dataset.current?.[instance.id] && !listeningPromise) {
+                if (state.import.jobs.dataset.current?.[instance.id]) {
                     throw Error('Only one uploading of annotations for a job allowed at the same time');
                 }
 
