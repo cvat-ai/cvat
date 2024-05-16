@@ -2897,6 +2897,9 @@ export class SkeletonTrack extends Track {
         this.shapeType = ShapeType.SKELETON;
         this.readOnlyFields = ['points', 'label', 'occluded', 'outside'];
         this.pinned = false;
+        Object.values(this.shapes).forEach((shape) => {
+            shape.points = [];
+        });
 
         const [cx, cy] = data.elements.reduce((acc, element, idx) => {
             const shape = element.shapes[0];
@@ -3029,6 +3032,11 @@ export class SkeletonTrack extends Track {
     // Method is used to export data to the server
     public toJSON(): SerializedTrack {
         const result: SerializedTrack = Track.prototype.toJSON.call(this);
+
+        result.shapes.forEach((shape) => {
+            shape.points = [];
+        });
+
         result.elements = this.elements.map((el) => ({
             ...el.toJSON(),
             source: this.source,
@@ -3050,7 +3058,7 @@ export class SkeletonTrack extends Track {
         return result;
     }
 
-    public get(frame: number): Omit<Required<SerializedData>, 'parentID'> {
+    public get(frame: number): Required<SerializedData> {
         const { prev, next } = this.boundedKeyframes(frame);
         const position = this.getPosition(frame, prev, next);
         const elements = this.elements.map((element) => ({
@@ -3063,6 +3071,7 @@ export class SkeletonTrack extends Track {
 
         return {
             ...position,
+            parentID: null,
             keyframe: position.keyframe || elements.some((el) => el.keyframe),
             attributes: this.getAttributes(frame),
             descriptions: [...this.descriptions],
@@ -3238,7 +3247,7 @@ export class SkeletonTrack extends Track {
 
     protected getPosition(
         targetFrame: number, leftKeyframe: number | null, rightKeyframe: number | null,
-    ): Omit<InterpolatedPosition, 'points'> & { keyframe: boolean } {
+    ): InterpolatedPosition & { keyframe: boolean } {
         const leftFrame = targetFrame in this.shapes ? targetFrame : leftKeyframe;
         const rightPosition = Number.isInteger(rightKeyframe) ? this.shapes[rightKeyframe] : null;
         const leftPosition = Number.isInteger(leftFrame) ? this.shapes[leftFrame] : null;
@@ -3250,6 +3259,7 @@ export class SkeletonTrack extends Track {
                 outside: leftPosition.outside,
                 zOrder: leftPosition.zOrder,
                 keyframe: targetFrame in this.shapes,
+                points: [],
             };
         }
 
@@ -3261,6 +3271,7 @@ export class SkeletonTrack extends Track {
                 zOrder: singlePosition.zOrder,
                 keyframe: targetFrame in this.shapes,
                 outside: singlePosition === rightPosition ? true : singlePosition.outside,
+                points: [],
             };
         }
 
