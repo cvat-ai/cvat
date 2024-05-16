@@ -23,9 +23,7 @@ class JobAverageAnnotationSpeed(DerivedMetricBase):
             total_wt += ds[1]["value"]
 
         metric = self.get_empty()
-        metric[self._key][0]["value"] = (
-            total_count / total_wt if total_wt != 0 else 0
-        )
+        metric[self._key][0]["value"] = total_count / total_wt if total_wt != 0 else 0
         return metric
 
     def get_empty(self):
