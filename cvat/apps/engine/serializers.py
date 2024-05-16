@@ -734,22 +734,20 @@ class JobWriteSerializer(WriteOnceMixin, serializers.ModelSerializer):
         return job
 
     def update(self, instance, validated_data):
-        state = validated_data.get('state')
-        stage = validated_data.get('stage')
-        if stage or state:
-            stage = stage or instance.stage
-            state = state or instance.state
+        stage = validated_data.get('stage', instance.stage)
+        state = validated_data.get('state', models.StateChoice.NEW if stage != instance.stage else instance.state)
 
+        if 'stage' in validated_data or 'state' in validated_data:
             if stage == models.StageChoice.ANNOTATION:
                 status = models.StatusChoice.ANNOTATION
             elif stage == models.StageChoice.ACCEPTANCE and state == models.StateChoice.COMPLETED:
                 status = models.StatusChoice.COMPLETED
             else:
                 status = models.StatusChoice.VALIDATION
-
             validated_data['status'] = status
-            if stage != instance.stage and not state:
-                validated_data['state'] = models.StateChoice.NEW
+
+        if state != instance.state:
+            validated_data['state'] = state
 
         assignee = validated_data.get('assignee')
         if assignee is not None:
