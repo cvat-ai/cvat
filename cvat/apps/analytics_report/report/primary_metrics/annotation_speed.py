@@ -137,27 +137,24 @@ class JobAnnotationSpeed(PrimaryMetricBase):
             if statistics is not None:
                 data_series = deepcopy(statistics["data_series"])
 
-        last_entry_count = 0
+        previous_count = 0
         if data_series["object_count"]:
-            last_entry = data_series["object_count"][-1]
-            last_entry_timestamp = parser.parse(last_entry["datetime"])
+            last_entry_timestamp = parser.parse(data_series["object_count"][-1]["datetime"])
 
             if last_entry_timestamp.date() == timestamp.date():
                 # remove last entry, it will be re-calculated below, because of the same date
                 data_series["object_count"] = data_series["object_count"][:-1]
                 data_series["working_time"] = data_series["working_time"][:-1]
 
-                if len(data_series["object_count"]):
-                    current_last_entry = data_series["object_count"][-1]
-                    start_datetime = parser.parse(current_last_entry["datetime"])
-                    last_entry_count = current_last_entry["value"]
-            else:
-                last_entry_count = last_entry["value"]
-                start_datetime = parser.parse(last_entry["datetime"])
+            for entry in data_series["object_count"]:
+                previous_count += entry["value"]
+
+            if data_series["object_count"]:
+                start_datetime = parser.parse(data_series["object_count"][-1]["datetime"])
 
         data_series["object_count"].append(
             {
-                "value": object_count - last_entry_count,
+                "value": object_count - previous_count,
                 "datetime": timestamp_str,
             }
         )
