@@ -454,6 +454,9 @@ traefik:
             RequestProtocol: keep
             RouterName: keep
             StartUTC: keep
+  providers:
+    kubernetesIngress:
+      allowEmptyServices: true
 
 smokescreen:
   opts: ''
