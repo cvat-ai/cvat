@@ -8,7 +8,7 @@ import os
 import os.path as osp
 import re
 import zipfile
-from contextlib import contextmanager, suppress
+from contextlib import contextmanager
 from copy import deepcopy
 from datetime import datetime, timedelta
 from threading import Lock
@@ -20,7 +20,7 @@ from datumaro.util import to_snake_case
 from datumaro.util.os_util import make_file_name
 from django.conf import settings
 from django.db import models
-from pottery import Redlock, ReleaseUnlockedLock
+from pottery import Redlock
 
 from cvat.apps.engine.models import Job, Project, Task
 
@@ -138,7 +138,7 @@ def get_dataset_cache_lock(
             raise LockNotAvailableError
 
     finally:
-        with suppress(ReleaseUnlockedLock):
+        if lock.locked():
             lock.release()
 
 
