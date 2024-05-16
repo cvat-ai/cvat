@@ -79,7 +79,7 @@ def export(dst_format, project_id=None, task_id=None, job_id=None, server_url=No
         cache_dir = get_export_cache_dir(db_instance)
 
         # As we're not locking the db object here, it can be updated by the time of actual export.
-        # The file will be saved with older timestamp.
+        # The file will be saved with the older timestamp.
         # When it's time to download the file, it will be handled - the export will be restarted.
         # The situation is considered rare, so no locking is used.
         instance_update_time = timezone.localtime(db_instance.updated_date)
