@@ -1593,7 +1593,6 @@ class ExportBehaviorTest(_DbTestBase):
         chain_side_effects = self.chain_side_effects
         set_condition = self.set_condition
         wait_condition = self.wait_condition
-        _LockTimeoutError = self._LockTimeoutError
         process_closing = self.process_closing
 
         format_name = "CVAT for images 1.1"
@@ -1972,6 +1971,42 @@ class ExportBehaviorTest(_DbTestBase):
         self.assertEqual(mock_rq_job.retries_left, 1)
         self.assertEqual(len(mock_rq_job.retry_intervals), 1)
         self.assertTrue(osp.isfile(export_path))
+
+    def test_cleanup_can_be_called_with_old_signature(self):
+        # Test RQ jobs for backward compatibility of API prior to the PR
+        # https://github.com/cvat-ai/cvat/pull/7864
+        # Jobs referring to the old API can exist in the redis queues after the server is updated
+
+        format_name = "CVAT for images 1.1"
+        images = self._generate_task_images(3)
+        task = self._create_task(tasks["main"], images)
+        self._create_annotations(task, f'{format_name} many jobs', "default")
+        task_id = task["id"]
+
+        with (
+            patch('cvat.apps.dataset_manager.views.rq.get_current_job') as mock_rq_get_current_job,
+            patch('cvat.apps.dataset_manager.views.django_rq.get_scheduler'),
+        ):
+            mock_rq_get_current_job.return_value = MagicMock(timeout=5)
+
+            export_path = export(dst_format=format_name, task_id=task_id)
+
+        file_ctime = parse_export_filename(export_path).instance_timestamp
+        old_kwargs = {
+            'file_path': export_path,
+            'file_ctime': file_ctime,
+            'logger': MagicMock(),
+        }
+
+        with (
+            patch('cvat.apps.dataset_manager.views.rq.get_current_job') as mock_rq_get_current_job,
+            patch('cvat.apps.dataset_manager.views.TTL_CONSTS', new={'task': timedelta(seconds=0)}),
+        ):
+            mock_rq_get_current_job.return_value = MagicMock(timeout=5)
+
+            clear_export_cache(**old_kwargs)
+
+        self.assertFalse(osp.isfile(export_path))
 
 
 class ProjectDumpUpload(_DbTestBase):
