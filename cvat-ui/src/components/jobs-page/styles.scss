@@ -13,6 +13,8 @@
     overflow: auto;
 
     .cvat-jobs-page-top-bar {
+        margin-bottom: $grid-unit-size;
+
         > div {
             display: flex;
             justify-content: space-between;
@@ -25,7 +27,6 @@
 
                 .cvat-jobs-page-search-bar {
                     width: $grid-unit-size * 32;
-                    padding-left: $grid-unit-size * 0.5;
                 }
 
                 > div {
@@ -49,12 +50,8 @@
     }
 
     .cvat-job-page-list-item {
-        width: calc(25% - $grid-unit-size);
         display: flex;
         flex-direction: column;
-        border-color: #f5f5f5;
-        margin-left: $grid-unit-size;
-        margin-top: $grid-unit-size;
 
         .ant-card-cover {
             flex: 1;
@@ -142,14 +139,22 @@
 
     .cvat-jobs-page-pagination {
         display: flex;
+        margin-top: $grid-unit-size;
         justify-content: center;
     }
 
     .cvat-jobs-page-list {
         display: flex;
         flex-wrap: wrap;
-        padding-top: $grid-unit-size;
-        padding-bottom: $grid-unit-size;
+
+        > div {
+            width: 100%;
+            margin-bottom: $grid-unit-size;
+
+            > div:not(:first-child) {
+                padding-left: $grid-unit-size;
+            }
+        }
     }
 
     .cvat-job-card-more-button {

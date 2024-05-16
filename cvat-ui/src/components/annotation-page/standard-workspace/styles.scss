@@ -40,7 +40,11 @@
             > div {
                 display: flex;
 
-                div[role='tabpanel'] {
+                div[role="tab"] {
+                    color: $text-color;
+                }
+
+                div[role="tabpanel"] {
                     height: 100%;
                 }
             }

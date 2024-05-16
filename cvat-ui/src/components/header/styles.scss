@@ -14,9 +14,13 @@
     background: $header-color;
 }
 
-.ant-btn.cvat-header-button {
+.ant-btn.ant-btn-link.cvat-header-button {
     color: $text-color;
     margin-right: $grid-unit-size;
+
+    &:hover {
+        color: $text-color;
+    }
 }
 
 .cvat-left-header {

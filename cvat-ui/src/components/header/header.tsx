@@ -342,7 +342,7 @@ function HeaderComponent(props: Props): JSX.Element {
                 key: 'switch_organization',
                 label: 'Switch organization',
                 onClick: () => {
-                    Modal.info({
+                    Modal.confirm({
                         title: 'Select an organization',
                         okButtonProps: {
                             style: { display: 'none' },

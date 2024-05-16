@@ -95,7 +95,6 @@
 
             .cvat-projects-page-search-bar {
                 width: $grid-unit-size * 32;
-                padding-left: $grid-unit-size * 0.5;
             }
         }
     }
@@ -123,10 +122,6 @@
     padding-bottom: $grid-unit-size;
 
     .ant-ribbon-wrapper {
-        width: calc(25% - $grid-unit-size);
-        margin-left: $grid-unit-size;
-        margin-top: $grid-unit-size;
-
         .cvat-projects-project-item-card {
             .cvat-projects-project-item-card-preview-wrapper {
                 height: 100%;
@@ -207,6 +202,15 @@
 .cvat-projects-list {
     display: flex;
     flex-wrap: wrap;
+
+    > div {
+        width: 100%;
+        margin-bottom: $grid-unit-size;
+
+        > div:not(:first-child) {
+            padding-left: $grid-unit-size;
+        }
+    }
 }
 
 .cvat-export-project-loading {
