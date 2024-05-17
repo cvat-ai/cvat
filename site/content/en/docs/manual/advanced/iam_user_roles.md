@@ -21,7 +21,7 @@ using the [**Free plan**](https://www.cvat.ai/pricing/cloud) and can be lifted u
 
 All roles are predefined and cannot be modified through the user interface.
 However, within the _self-hosted solution_, roles can be adjusted using `.rego`
-files stored in `cvat/apps/iam/rules/`.
+files stored in `cvat/apps/*/rules/`.
 Rego is a declarative language employed for defining
 OPA (Open Policy Agent) policies, and its syntax is detailed
 in the [**OPA documentation**](https://www.openpolicyagent.org/docs/latest/policy-language/).

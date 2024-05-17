@@ -51,14 +51,10 @@ app.kubernetes.io/instance: {{ .Release.Name }}
 {{- end }}
 
 {{/*
-Create the name of the service account to use
+The name of the service account to use for backend pods
 */}}
-{{- define "cvat.serviceAccountName" -}}
-{{- if .Values.serviceAccount.create }}
-{{- default (include "cvat.fullname" .) .Values.serviceAccount.name }}
-{{- else }}
-{{- default "default" .Values.serviceAccount.name }}
-{{- end }}
+{{- define "cvat.backend.serviceAccountName" -}}
+{{- default "default" .Values.cvat.backend.serviceAccount.name }}
 {{- end }}
 
 {{- define "cvat.sharedBackendEnv" }}
@@ -98,10 +94,14 @@ Create the name of the service account to use
 - name: CVAT_POSTGRES_PORT
   value: "{{ .Values.postgresql.service.ports.postgresql }}"
 {{- else }}
+{{- if .Values.postgresql.external.host }}
 - name: CVAT_POSTGRES_HOST
   value: "{{ .Values.postgresql.external.host }}"
+{{- end }}
+{{- if .Values.postgresql.external.port }}
 - name: CVAT_POSTGRES_PORT
   value: "{{ .Values.postgresql.external.port }}"
+{{- end}}
 {{- end }}
 - name: CVAT_POSTGRES_USER
   valueFrom:

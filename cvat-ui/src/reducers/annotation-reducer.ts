@@ -445,6 +445,10 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                 player: {
                     ...state.player,
                     ranges: ranges || state.player.ranges,
+                    frame: {
+                        ...state.player.frame,
+                        changeFrameEvent: null,
+                    },
                 },
                 canvas: {
                     ...state.canvas,
@@ -775,15 +779,16 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
             };
         }
         case AnnotationActionTypes.UPLOAD_JOB_ANNOTATIONS_SUCCESS: {
-            const { states, history } = action.payload;
-
             return {
                 ...state,
                 annotations: {
                     ...state.annotations,
-                    history,
-                    states,
+                    history: { undo: [], redo: [] },
+                    states: [],
                     activatedStateID: null,
+                    activatedElementID: null,
+                    activatedAttributeID: null,
+                    highlightedConflict: null,
                     collapsed: {},
                 },
             };
@@ -1079,10 +1084,7 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
         }
         case AnnotationActionTypes.CLOSE_JOB:
         case AuthActionTypes.LOGOUT_SUCCESS: {
-            if (state.canvas.instance) {
-                state.canvas.instance.destroy();
-            }
-            return { ...defaultState };
+            return defaultState;
         }
         default: {
             return state;
