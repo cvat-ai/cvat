@@ -103,8 +103,8 @@ export function getRequestsAsync(query: RequestsQuery, notify = true): ThunkActi
 
                     if (operationType === 'export') {
                         if (operationTarget === 'backup') {
-                            if (!(state.import.tasks.backup.importing ||
-                                state.import.projects.backup.importing)
+                            if (!(state.export.tasks.backup.current?.[(instance as RequestInstanceType).id] ||
+                                state.export.projects.backup.current?.[(instance as RequestInstanceType).id])
                             ) {
                                 dispatch(exportBackupAsync(
                                     instance as RequestInstanceType,
@@ -113,9 +113,9 @@ export function getRequestsAsync(query: RequestsQuery, notify = true): ThunkActi
                                     undefined,
                                 ));
                             }
-                        } else if (!(state.import.tasks.dataset.current?.[(instance as RequestInstanceType).id] ||
-                            state.import.projects.dataset.current?.[(instance as RequestInstanceType).id] ||
-                            state.import.jobs.dataset.current?.[(instance as RequestInstanceType).id])
+                        } else if (!(state.export.tasks.dataset.current?.[(instance as RequestInstanceType).id] ||
+                            state.export.projects.dataset.current?.[(instance as RequestInstanceType).id] ||
+                            state.export.jobs.dataset.current?.[(instance as RequestInstanceType).id])
                         ) {
                             dispatch(exportDatasetAsync(
                                 instance as RequestInstanceType,

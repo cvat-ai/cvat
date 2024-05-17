@@ -11,7 +11,7 @@ import { useDispatch } from 'react-redux';
 import Card from 'antd/lib/card';
 import Text from 'antd/lib/typography/Text';
 import Progress from 'antd/lib/progress';
-import { LoadingOutlined, MoreOutlined } from '@ant-design/icons';
+import { MoreOutlined } from '@ant-design/icons';
 import Dropdown from 'antd/lib/dropdown';
 import Button from 'antd/lib/button';
 import Menu from 'antd/lib/menu';
@@ -20,6 +20,7 @@ import { RQStatus, Request } from 'cvat-core-wrapper';
 
 import moment from 'moment';
 import { cancelRequestAsync } from 'actions/requests-async-actions';
+import { StatusMessage } from './request-status';
 
 export interface Props {
     request: Request;
@@ -64,7 +65,7 @@ function constructTimestamps(request: Request): JSX.Element {
     const finished = moment(request.finishedDate).format('MMM Do YY, H:mm');
     const enqueued = moment(request.enqueuedDate).format('MMM Do YY, H:mm');
     const expired = moment(request.expiryDate).format('MMM Do YY, H:mm');
-
+    const { operation: { type } } = request;
     switch (request.status) {
         case RQStatus.QUEUED: {
             return (
@@ -74,7 +75,7 @@ function constructTimestamps(request: Request): JSX.Element {
             );
         }
         case RQStatus.FINISHED: {
-            if (request.expiryDate) {
+            if (request.expiryDate && !type.includes('create') && !type.includes('import')) {
                 return (
                     <>
                         <Row>
@@ -126,24 +127,6 @@ function constructTimestamps(request: Request): JSX.Element {
     }
 }
 
-function statusMessage(request: Request, defaultMessage: string, postfix?: JSX.Element): JSX.Element {
-    if (request.message) {
-        return (
-            <>
-                {request.message}
-                {postfix || null}
-            </>
-        );
-    }
-
-    return (
-        <>
-            {defaultMessage}
-            {postfix || null}
-        </>
-    );
-}
-
 const dimensions = {
     xs: 6,
     sm: 6,
@@ -161,14 +144,6 @@ export default function RequestCard(props: Props): JSX.Element {
     const dispatch = useDispatch();
     const [isActive, setIsActive] = useState(true);
 
-    let textType: 'success' | 'danger' | 'warning' | undefined;
-    if ([RQStatus.FAILED, RQStatus.UNKNOWN].includes(request.status)) {
-        textType = 'danger';
-    } else if ([RQStatus.QUEUED].includes(request.status)) {
-        textType = 'warning';
-    } else if ([RQStatus.FINISHED].includes(request.status)) {
-        textType = 'success';
-    }
     const linkToEntity = constructLink(request.operation);
     const percent = request.status === RQStatus.FINISHED ? 100 : request.progress;
     const timestamps = constructTimestamps(request);
@@ -242,37 +217,8 @@ export default function RequestCard(props: Props): JSX.Element {
                         <Col span={10} className='cvat-request-item-progress-wrapper'>
                             <Row>
                                 <Col span={21}>
-                                    <Row>
-                                        <Text
-                                            className='cvat-request-item-progress-message'
-                                            type={textType}
-                                            strong
-                                        >
-                                            {((): JSX.Element => {
-                                                if (request.status === RQStatus.FINISHED) {
-                                                    return statusMessage(request, 'Finished');
-                                                }
-
-                                                if ([RQStatus.QUEUED].includes(request.status)) {
-                                                    return statusMessage(request, 'Queued', <LoadingOutlined />);
-                                                }
-
-                                                if ([RQStatus.STARTED].includes(request.status)) {
-                                                    return statusMessage(request, 'In progress', <LoadingOutlined />);
-                                                }
-
-                                                if (request.status === RQStatus.FAILED) {
-                                                    return statusMessage(request, 'Failed');
-                                                }
-
-                                                if (request.status === RQStatus.UNKNOWN) {
-                                                    return statusMessage(request, 'Unknown status received');
-                                                }
-
-                                                return statusMessage(request, 'Unknown status received');
-                                            })()}
-                                        </Text>
-                                    </Row>
+                                    <Row />
+                                    <StatusMessage message={request.message} status={request.status} />
                                     <Row>
                                         <Col span={18} className='cvat-requests-progress'>
                                             {

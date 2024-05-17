@@ -76,13 +76,6 @@
         }
     }
 
-    .cvat-request-item-progress-message {
-        @extend .cvat-requests-scrollbar;
-
-        max-height: $grid-unit-size * 8;
-        overflow: hidden auto;
-    }
-
     .ant-card-body {
         width: 100%;
         height: 100%;
@@ -126,6 +119,14 @@
     &:hover {
         border: 1px solid $border-color-hover;
     }
+}
+
+.cvat-request-item-progress-message {
+    @extend .cvat-requests-scrollbar;
+
+    max-height: $grid-unit-size * 8;
+    overflow: hidden auto;
+    display: block;
 }
 
 .cvat-requests-page-actions-button {
