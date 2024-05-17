@@ -18,7 +18,7 @@ from cvat.apps.analytics_report.report.primary_metrics.base import (
     PrimaryMetricBase,
 )
 from cvat.apps.dataset_manager.task import merge_table_rows
-from cvat.apps.engine.models import SourceType
+from cvat.apps.engine.models import ShapeType, SourceType
 
 
 class JobAnnotationSpeedExtractor(DataExtractorBase):
@@ -75,20 +75,21 @@ class JobAnnotationSpeed(PrimaryMetricBase):
 
         def get_shapes_count():
             return (
-                self._db_obj.labeledshape_set.filter(parent=None)
-                .exclude(source=SourceType.FILE)
+                self._db_obj.labeledshape_set.exclude(source=SourceType.FILE)
+                .exclude(
+                    type=ShapeType.SKELETON
+                )  # skeleton's points are already counted as objects
                 .count()
             )
 
         def get_track_count():
             db_tracks = (
-                self._db_obj.labeledtrack_set.filter(parent=None)
-                .exclude(source=SourceType.FILE)
+                self._db_obj.labeledtrack_set.exclude(source=SourceType.FILE)
                 .values(
                     "id",
-                    "source",
                     "trackedshape__id",
                     "trackedshape__frame",
+                    "trackedshape__type",
                     "trackedshape__outside",
                 )
                 .order_by("id", "trackedshape__frame")
@@ -101,6 +102,7 @@ class JobAnnotationSpeed(PrimaryMetricBase):
                     "shapes": [
                         "trackedshape__id",
                         "trackedshape__frame",
+                        "trackedshape__type",
                         "trackedshape__outside",
                     ],
                 },
@@ -109,12 +111,16 @@ class JobAnnotationSpeed(PrimaryMetricBase):
 
             count = 0
             for track in db_tracks:
+                if track["shapes"] and track["shapes"][0]["type"] == ShapeType.SKELETON:
+                    # skeleton's points are already counted as objects
+                    continue
+
                 if len(track["shapes"]) == 1:
                     count += self._db_obj.segment.stop_frame - track["shapes"][0]["frame"] + 1
 
                 for prev_shape, cur_shape in zip(track["shapes"], track["shapes"][1:]):
-                    if prev_shape["outside"] is not True:
-                        count += cur_shape["frame"] - prev_shape["frame"]
+                    if not prev_shape["outside"]:
+                        count += cur_shape["frame"] - prev_shape["frame"] + 1
 
             return count
 
@@ -137,27 +143,24 @@ class JobAnnotationSpeed(PrimaryMetricBase):
             if statistics is not None:
                 data_series = deepcopy(statistics["data_series"])
 
-        last_entry_count = 0
+        previous_count = 0
         if data_series["object_count"]:
-            last_entry = data_series["object_count"][-1]
-            last_entry_timestamp = parser.parse(last_entry["datetime"])
+            last_entry_timestamp = parser.parse(data_series["object_count"][-1]["datetime"])
 
             if last_entry_timestamp.date() == timestamp.date():
                 # remove last entry, it will be re-calculated below, because of the same date
                 data_series["object_count"] = data_series["object_count"][:-1]
                 data_series["working_time"] = data_series["working_time"][:-1]
 
-                if len(data_series["object_count"]):
-                    current_last_entry = data_series["object_count"][-1]
-                    start_datetime = parser.parse(current_last_entry["datetime"])
-                    last_entry_count = current_last_entry["value"]
-            else:
-                last_entry_count = last_entry["value"]
-                start_datetime = parser.parse(last_entry["datetime"])
+            for entry in data_series["object_count"]:
+                previous_count += entry["value"]
+
+            if data_series["object_count"]:
+                start_datetime = parser.parse(data_series["object_count"][-1]["datetime"])
 
         data_series["object_count"].append(
             {
-                "value": object_count - last_entry_count,
+                "value": object_count - previous_count,
                 "datetime": timestamp_str,
             }
         )
