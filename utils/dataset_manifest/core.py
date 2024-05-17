@@ -235,7 +235,7 @@ class DatasetImagesReader:
             elif self.start or self.step != 1:
                 idx = 0
                 for image in self._sources:
-                    if idx >= self.start and not ((idx - self._start) % self.step):
+                    if idx >= self.start and not (idx - self._start) % self.step:
                         yield self._get_img_properties(image)
                     else:
                         yield dict()
