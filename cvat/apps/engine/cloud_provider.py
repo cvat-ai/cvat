@@ -11,7 +11,7 @@ from abc import ABC, abstractmethod, abstractproperty
 from enum import Enum
 from io import BytesIO
 from multiprocessing.pool import ThreadPool
-from typing import Dict, List, Optional, Any, Callable, TypeVar, Generator
+from typing import Dict, List, Optional, Any, Callable, TypeVar, Iterator
 from concurrent.futures import ThreadPoolExecutor
 
 import boto3
@@ -205,10 +205,10 @@ class _CloudStorage(ABC):
         *,
         threads_number: Optional[int] = None,
         _use_optimal_downloading: bool = True,
-    ) -> Generator[BytesIO]:
+    ) -> Iterator[BytesIO]:
         func = self.optimally_image_download if _use_optimal_downloading else self.download_fileobj
         if threads_number is None:
-            threads_number = min(CPU_NUMBER, MAX_THREADS_NUMBER, max(math.ceil(len(files) / 1000), 1))
+            threads_number = min(CPU_NUMBER, MAX_THREADS_NUMBER, max(math.ceil(len(files) / NUMBER_OF_FILES_PER_THREAD), 1))
         else:
             threads_number = min(threads_number, CPU_NUMBER, MAX_THREADS_NUMBER)
 

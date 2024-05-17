@@ -18,7 +18,7 @@ from inspect import isgenerator
 from .errors import InvalidManifestError, InvalidVideoError
 from .utils import SortingMethod, md5_hash, rotate_image, sort
 
-from typing import Any, Dict, List, Union, Optional, Iterator, Tuple, Generator
+from typing import Any, Dict, List, Union, Optional, Iterator, Tuple
 
 class VideoStreamReader:
     def __init__(self, source_path, chunk_size, force):
@@ -140,7 +140,7 @@ class VideoStreamReader:
 
 class DatasetImagesReader:
     def __init__(self,
-        sources: Union[List[str], Generator[BytesIO]],
+        sources: Union[List[str], Iterator[BytesIO]],
         *,
         start: int = 0,
         step: int = 1,
