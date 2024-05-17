@@ -2979,9 +2979,11 @@ def _export_annotations(
             # In the case the server is configured with ONE_RUNNING_JOB_IN_QUEUE_PER_USER
             # we have to enqueue dependent jobs after canceling one.
             rq_job.cancel(enqueue_dependents=settings.ONE_RUNNING_JOB_IN_QUEUE_PER_USER)
+            rq_job.delete()
         else:
             if rq_job.is_finished:
                 if location == Location.CLOUD_STORAGE:
+                    rq_job.delete()
                     return Response(status=status.HTTP_200_OK)
 
                 elif location == Location.LOCAL:
@@ -3013,6 +3015,7 @@ def _export_annotations(
                                     extension=osp.splitext(file_path)[1]
                                 )
 
+                            rq_job.delete()
                             return sendfile(request, file_path, attachment=True, attachment_filename=filename)
                         else:
                             if osp.exists(file_path):
@@ -3027,10 +3030,12 @@ def _export_annotations(
                                 # In the case the server is configured with ONE_RUNNING_JOB_IN_QUEUE_PER_USER
                                 # we have to enqueue dependent jobs after canceling one.
                                 rq_job.cancel(enqueue_dependents=settings.ONE_RUNNING_JOB_IN_QUEUE_PER_USER)
+                                rq_job.delete()
                 else:
                     raise NotImplementedError(f"Export to {location} location is not implemented yet")
             elif rq_job.is_failed:
                 exc_info = rq_job.meta.get('formatted_exception', str(rq_job.exc_info))
+                rq_job.delete()
                 return Response(exc_info, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
             elif rq_job.is_deferred and rq_id not in queue.deferred_job_registry.get_job_ids():
                 # Sometimes jobs can depend on outdated jobs in the deferred jobs registry.
@@ -3047,6 +3052,7 @@ def _export_annotations(
                 # In the case the server is configured with ONE_RUNNING_JOB_IN_QUEUE_PER_USER
                 # we have to enqueue dependent jobs after canceling one.
                 rq_job.cancel(enqueue_dependents=settings.ONE_RUNNING_JOB_IN_QUEUE_PER_USER)
+                rq_job.delete()
             else:
                 return Response(status=status.HTTP_202_ACCEPTED)
     try:
