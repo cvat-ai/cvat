@@ -4,7 +4,7 @@
 # SPDX-License-Identifier: MIT
 
 import os
-
+import signal
 from rq import Worker
 
 import cvat.utils.remote_debugger as debug
@@ -42,12 +42,18 @@ class SimpleWorker(Worker):
         # errors during debugging
         # https://stackoverflow.com/questions/8242837/django-multiprocessing-and-database-connections/10684672#10684672
         from django import db
-        db.connections.close_all()
 
+        db.connections.close_all()
         return self.perform_job(*args, **kwargs)
+
+    def kill_horse(self, sig: signal.Signals = signal.SIGTERM):
+        # Send SIGTERM instead of default SIGKILL in debug mode as SIGKILL can't be handled
+        # to prevent killing rq worker process as rq code handles SIGTERM properly
+        super().kill_horse(sig)
 
 
 if debug.is_debugging_enabled():
+
     class RemoteDebugWorker(SimpleWorker):
         """
         Support for VS code debugger
@@ -68,6 +74,7 @@ if debug.is_debugging_enabled():
 
 if os.environ.get("COVERAGE_PROCESS_START"):
     import coverage
+
     default_exit = os._exit
 
     def coverage_exit(*args, **kwargs):

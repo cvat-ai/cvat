@@ -521,6 +521,11 @@ def handle_dataset_import(
     handle_dataset_io(instance, "import", format_name=format_name, cloud_storage=cloud_storage)
 
 def handle_rq_exception(rq_job, exc_type, exc_value, tb):
+    if isinstance(exc_type, SystemExit):
+        # rq process was killed intentionally by SIGTERM
+        # we do not need to log it
+        return False
+
     oid = rq_job.meta.get("org_id", None)
     oslug = rq_job.meta.get("org_slug", None)
     pid = rq_job.meta.get("project_id", None)
