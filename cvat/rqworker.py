@@ -1,5 +1,5 @@
 # Copyright (C) 2018-2022 Intel Corporation
-# Copyright (C) 2022-2023 CVAT.ai Corporation
+# Copyright (C) 2022-2024 CVAT.ai Corporation
 #
 # SPDX-License-Identifier: MIT
 
@@ -48,12 +48,12 @@ class SimpleWorker(Worker):
 
     def kill_horse(self, sig: signal.Signals = signal.SIGTERM):
         # Send SIGTERM instead of default SIGKILL in debug mode as SIGKILL can't be handled
-        # to prevent killing rq worker process as rq code handles SIGTERM properly
+        # to prevent killing debug process (rq code handles SIGTERM properly)
+        # and just starts a new rq job
         super().kill_horse(sig)
 
 
 if debug.is_debugging_enabled():
-
     class RemoteDebugWorker(SimpleWorker):
         """
         Support for VS code debugger
@@ -74,7 +74,6 @@ if debug.is_debugging_enabled():
 
 if os.environ.get("COVERAGE_PROCESS_START"):
     import coverage
-
     default_exit = os._exit
 
     def coverage_exit(*args, **kwargs):
