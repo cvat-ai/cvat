@@ -1610,7 +1610,6 @@ class ExportBehaviorTest(_DbTestBase):
         download_url = self._generate_url_dump_tasks_annotations(task_id)
         download_params = {
             "format": format_name,
-            "action": "download",
         }
 
         @contextmanager
@@ -1661,9 +1660,12 @@ class ExportBehaviorTest(_DbTestBase):
             ):
                 mock_osp_exists.side_effect = patched_osp_exists
 
-                self._download_file(
-                    download_url, download_params, self.admin, osp.join(temp_dir, "export.zip")
-                )
+                response = self._get_request_with_data(download_url, download_params, self.admin)
+                self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+                content = BytesIO(b"".join(response.streaming_content))
+                with open(osp.join(temp_dir, "export.zip"), "wb") as f:
+                    f.write(content.getvalue())
 
                 mock_osp_exists.assert_called()
 
@@ -1726,15 +1728,16 @@ class ExportBehaviorTest(_DbTestBase):
 
             return result
 
-        with (
-            patch('cvat.apps.dataset_manager.views.export', new=patched_export),
-            TemporaryDirectory() as temp_dir,
-        ):
-            self._download_file(
-                download_url, download_params, self.admin, osp.join(temp_dir, "export.zip")
-            )
+        with patch('cvat.apps.dataset_manager.views.export', new=patched_export):
+            response = self._get_request_with_data(download_url, download_params, self.admin)
+            self.assertEqual(response.status_code, status.HTTP_202_ACCEPTED)
+
+            response = self._get_request_with_data(download_url, download_params, self.admin)
+            self.assertEqual(response.status_code, status.HTTP_201_CREATED)
 
         export_instance_time = parse_export_filename(export_path).instance_timestamp
+
+        download_params["action"] = "download"
 
         processes_finished_correctly = False
         with ExitStack() as es:
