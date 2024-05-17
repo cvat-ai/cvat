@@ -234,6 +234,11 @@ IAM_DEFAULT_ROLE = 'user'
 IAM_ADMIN_ROLE = 'admin'
 # Index in the list below corresponds to the priority (0 has highest priority)
 IAM_ROLES = [IAM_ADMIN_ROLE, 'business', 'user', 'worker']
+
+IAM_REGISTRATION_ENABLED = to_bool(os.getenv('IAM_REGISTRATION_ENABLED', 'true'))
+if IAM_REGISTRATION_ENABLED:
+    INSTALLED_APPS.append('dj_rest_auth.registration')
+
 IAM_OPA_HOST = 'http://opa:8181'
 IAM_OPA_DATA_URL = f'{IAM_OPA_HOST}/v1/data'
 LOGIN_URL = 'rest_login'
