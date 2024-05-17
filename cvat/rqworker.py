@@ -70,7 +70,7 @@ class SimpleWorker(Worker):
         if not is_stopped_export_job:
             # we do not need to write exception here because the process was stopped intentionally
             # moreover default code saves meta in and rewrites request datetime in meta with old value
-            super().handle_job_failure(*args, **kwargs)
+            super().handle_exception(*args, **kwargs)
 
 
 if debug.is_debugging_enabled():
