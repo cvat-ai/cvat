@@ -65,6 +65,7 @@ spec:
           ports:
           - containerPort: 8080
           volumeMounts:
+          {{- if .Values.cvat.backend.defaultStorage.enabled }}
           {{- if not .Values.cvat.backend.disableDistinctCachePerService }}
           - mountPath: /home/django/data/cache
             name: cvat-backend-per-service-cache
@@ -81,6 +82,7 @@ spec:
           - mountPath: /home/django/models
             name: cvat-backend-data
             subPath: models
+          {{- end }}
           {{- with concat .Values.cvat.backend.additionalVolumeMounts $localValues.additionalVolumeMounts }}
           {{- toYaml . | nindent 10 }}
           {{- end }}

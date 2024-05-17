@@ -61,6 +61,7 @@ spec:
           {{- toYaml . | nindent 10 }}
           {{- end }}
           volumeMounts:
+          {{- if .Values.cvat.backend.defaultStorage.enabled }}
           {{- if not .Values.cvat.backend.disableDistinctCachePerService }}
           - mountPath: /home/django/data/cache
             name: cvat-backend-per-service-cache
@@ -80,6 +81,7 @@ spec:
           - mountPath: /home/django/tmp_storage
             name: cvat-backend-data
             subPath: tmp_storage
+          {{- end }}
           {{- with concat .Values.cvat.backend.additionalVolumeMounts $localValues.additionalVolumeMounts }}
           {{- toYaml . | nindent 10 }}
           {{- end }}
