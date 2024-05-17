@@ -312,7 +312,7 @@ class MediaCache:
             manifest.set_index()
             if not len(manifest):
                 continue
-            preview_info = manifest[0]
+            preview_info = manifest.get_first_not_empty_item()
             preview_filename = ''.join([preview_info['name'], preview_info['extension']])
             preview_path = os.path.join(manifest_prefix, preview_filename)
             break

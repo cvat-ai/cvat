@@ -13,11 +13,12 @@ from abc import ABC, abstractmethod, abstractproperty, abstractstaticmethod
 from contextlib import closing
 from PIL import Image
 from json.decoder import JSONDecodeError
+from inspect import isgenerator
 
 from .errors import InvalidManifestError, InvalidVideoError
 from .utils import SortingMethod, md5_hash, rotate_image, sort
 
-from typing import Dict, List, Union, Optional, Iterator, Tuple
+from typing import Any, Dict, List, Union, Optional, Iterator, Tuple, Generator
 
 class VideoStreamReader:
     def __init__(self, source_path, chunk_size, force):
@@ -139,23 +140,33 @@ class VideoStreamReader:
 
 class DatasetImagesReader:
     def __init__(self,
-                sources: Union[List[str], List[BytesIO]],
-                *,
-                start: int = 0,
-                step: int = 1,
-                stop: Optional[int] = None,
-                meta: Optional[Dict[str, List[str]]] = None,
-                sorting_method: SortingMethod =SortingMethod.PREDEFINED,
-                use_image_hash: bool = False,
-                **kwargs):
-        self._raw_data_used = not isinstance(sources[0], str)
-        func = (lambda x: x.filename) if self._raw_data_used else None
-        self._sources = sort(sources, sorting_method, func=func)
+        sources: Union[List[str], Generator[BytesIO]],
+        *,
+        start: int = 0,
+        step: int = 1,
+        stop: Optional[int] = None,
+        meta: Optional[Dict[str, List[str]]] = None,
+        sorting_method: SortingMethod =SortingMethod.PREDEFINED,
+        use_image_hash: bool = False,
+        are_sources_filtered: bool = False,
+        **kwargs
+    ):
+        self._is_generator_used = isgenerator(sources)
+
+        if not self._is_generator_used:
+            raw_data_used = not isinstance(sources[0], str)
+            func = (lambda x: x.filename) if raw_data_used else None
+            self._sources = sort(sources, sorting_method, func=func)
+        else:
+            if sorting_method != SortingMethod.PREDEFINED:
+                raise ValueError('Only SortingMethod.PREDEFINED can be used with generator')
+            self._sources = sources
         self._meta = meta
         self._data_dir = kwargs.get('data_dir', None)
         self._use_image_hash = use_image_hash
         self._start = start
-        self._stop = stop if stop else len(sources)
+        self._stop = stop if stop or self._is_generator_used else len(sources)
+        self.are_sources_filtered = are_sources_filtered
         self._step = step
 
     @property
@@ -182,37 +193,69 @@ class DatasetImagesReader:
     def step(self, value):
         self._step = int(value)
 
+    def _get_img_properties(self, image: Union[str, BytesIO]) -> Dict[str, Any]:
+        img = Image.open(image, mode='r')
+        if self._data_dir:
+            img_name = os.path.relpath(image, self._data_dir)
+        else:
+            img_name = os.path.basename(image) if isinstance(image, str) else image.filename
+
+        name, extension = os.path.splitext(img_name)
+        image_properties = {
+            'name': name.replace('\\', '/'),
+            'extension': extension,
+        }
+
+        width, height = img.width, img.height
+        orientation = img.getexif().get(274, 1)
+        if orientation > 4:
+            width, height = height, width
+        image_properties['width'] = width
+        image_properties['height'] = height
+
+        if self._meta and img_name in self._meta:
+            image_properties['meta'] = self._meta[img_name]
+
+        if self._use_image_hash:
+            image_properties['checksum'] = md5_hash(img)
+
+        return image_properties
+
     def __iter__(self):
-        sources = (i for i in self._sources)
-        for idx in range(self._stop):
-            if idx in self.range_:
-                image = next(sources)
-                img = Image.open(image, mode='r')
-
-                img_name = os.path.relpath(image, self._data_dir) if self._data_dir \
-                    else os.path.basename(image) if not self._raw_data_used else image.filename
-                name, extension = os.path.splitext(img_name)
-                image_properties = {
-                    'name': name.replace('\\', '/'),
-                    'extension': extension,
-                }
-
-                width, height = img.width, img.height
-                orientation = img.getexif().get(274, 1)
-                if orientation > 4:
-                    width, height = height, width
-                image_properties['width'] = width
-                image_properties['height'] = height
-
-                if self._meta and img_name in self._meta:
-                    image_properties['meta'] = self._meta[img_name]
-
-                if self._use_image_hash:
-                    image_properties['checksum'] = md5_hash(img)
-
-                yield image_properties
+        if not self.are_sources_filtered:
+            if self.stop is not None:
+                index_range = range(self.start, self.stop, self.step)
+                idx = 0
+                for image in self._sources:
+                    if idx in index_range:
+                        yield self._get_img_properties(image)
+                    else:
+                        yield dict()
+                    idx += 1
+            elif self.start or self.step != 1:
+                idx = 0
+                for image in self._sources:
+                    if idx >= self.start and not ((idx - self._start) % self.step):
+                        yield self._get_img_properties(image)
+                    else:
+                        yield dict()
             else:
-                yield dict()
+                for image in self._sources:
+                    yield self._get_img_properties(image)
+        else:
+            sources = iter(self._sources) if not self._is_generator_used else self._sources
+
+            assert self.start is not None
+            assert self.stop is not None
+            assert self.step is not None
+
+            index_range = range(self.start, self.stop, self.step)
+            for idx in range(self.stop):
+                if idx in index_range:
+                    image = next(sources)
+                    yield self._get_img_properties(image)
+                else:
+                    yield dict()
 
     @property
     def range_(self):
@@ -351,13 +394,15 @@ class _ManifestManager(ABC):
         'type': 2,
     }
 
-    def _json_item_is_valid(self, **state):
+    def _validate_json_item(self, **state) -> None:
         for item in self._required_item_attributes:
             if state.get(item, None) is None:
                 raise InvalidManifestError(
                     f"Invalid '{self.manifest.name}' file structure: "
                     f"'{item}' is required, but not found"
                 )
+
+        return None
 
     def __init__(self, path, create_index, upload_dir=None):
         self._manifest = _Manifest(path, upload_dir)
@@ -383,8 +428,9 @@ class _ManifestManager(ABC):
                 offset = self._index[line]
                 manifest_file.seek(offset)
                 properties = manifest_file.readline()
+                # fixme: remove from common class
                 parsed_properties = ImageProperties(json.loads(properties))
-                self._json_item_is_valid(**parsed_properties)
+                self._validate_json_item(**parsed_properties)
                 return parsed_properties
 
     def init_index(self):
@@ -424,8 +470,9 @@ class _ManifestManager(ABC):
             for idx, line_start in enumerate(self._index):
                 manifest_file.seek(line_start)
                 line = manifest_file.readline()
+                # fixme: remove from common class
                 item = ImageProperties(json.loads(line))
-                self._json_item_is_valid(**item)
+                self._validate_json_item(**item)
                 yield (idx, item)
 
     @property
@@ -579,6 +626,13 @@ class ImageManifestManager(_ManifestManager):
         super().__init__(manifest_path, create_index, upload_dir)
         setattr(self._manifest, 'TYPE', 'images')
 
+    def _validate_json_item(self, **state) -> None:
+        # empty json is allowed
+        if state:
+            super()._validate_json_item(**state)
+
+        return None
+
     def link(self, **kwargs):
         ReaderClass = DatasetImagesReader if not kwargs.get('DIM_3D', None) else Dataset3DImagesReader
         self._reader = ReaderClass(**kwargs)
@@ -610,6 +664,13 @@ class ImageManifestManager(_ManifestManager):
             self._write_core_part(manifest_file, obj, _tqdm)
 
         self.set_index()
+
+    def get_first_not_empty_item(self) -> ImageProperties:
+        for _, image in self:
+            if image:
+                return image
+
+        raise InvalidManifestError('Manifest is empty')
 
     def partial_update(self, number, properties):
         pass

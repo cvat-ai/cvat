@@ -6,11 +6,13 @@
 import functools
 import json
 import os
+import math
 from abc import ABC, abstractmethod, abstractproperty
 from enum import Enum
 from io import BytesIO
 from multiprocessing.pool import ThreadPool
-from typing import Dict, List, Optional, Any, Callable, TypeVar
+from typing import Dict, List, Optional, Any, Callable, TypeVar, Generator
+from concurrent.futures import ThreadPoolExecutor
 
 import boto3
 from azure.core.exceptions import HttpResponseError, ResourceExistsError
@@ -34,6 +36,10 @@ from cvat.apps.engine.utils import get_cpu_number
 slogger = ServerLogManager(__name__)
 
 ImageFile.LOAD_TRUNCATED_IMAGES = True
+
+CPU_NUMBER = get_cpu_number()
+MAX_THREADS_NUMBER = 4
+NUMBER_OF_FILES_PER_THREAD = 1000
 
 class Status(str, Enum):
     AVAILABLE = 'AVAILABLE'
@@ -176,7 +182,7 @@ class _CloudStorage(ABC):
         Returns:
             BytesIO: Buffer with image
         """
-        image_parser=ImageFile.Parser()
+        image_parser = ImageFile.Parser()
 
         chunk = self.download_range_of_bytes(key, chunk_size - 1)
         image_parser.feed(chunk)
@@ -196,29 +202,39 @@ class _CloudStorage(ABC):
     def bulk_download_to_memory(
         self,
         files: List[str],
-        threads_number: int = min(get_cpu_number(), 4),
+        *,
+        threads_number: Optional[int] = None,
         _use_optimal_downloading: bool = True,
-    ) -> List[BytesIO]:
+    ) -> Generator[BytesIO]:
         func = self.optimally_image_download if _use_optimal_downloading else self.download_fileobj
-        if threads_number > 1:
-            with ThreadPool(threads_number) as pool:
-                return pool.map(func, files)
+        if threads_number is None:
+            threads_number = min(CPU_NUMBER, MAX_THREADS_NUMBER, max(math.ceil(len(files) / 1000), 1))
         else:
-            slogger.glob.warning('Download files to memory in series in one thread.')
-            return [func(f) for f in files]
+            threads_number = min(threads_number, CPU_NUMBER, MAX_THREADS_NUMBER)
+
+        if threads_number == 1:
+            slogger.glob.info('Download files to memory in series in one thread.')
+
+        with ThreadPoolExecutor(max_workers=threads_number) as executor:
+            yield from executor.map(func, files)
 
     def bulk_download_to_dir(
         self,
         files: List[str],
         upload_dir: str,
-        threads_number: int = min(get_cpu_number(), 4),
+        threads_number: Optional[int] = None,
     ):
+        if threads_number is None:
+            threads_number = min(CPU_NUMBER, MAX_THREADS_NUMBER, max(math.ceil(len(files) / NUMBER_OF_FILES_PER_THREAD), 1))
+        else:
+            threads_number = min(threads_number, CPU_NUMBER, MAX_THREADS_NUMBER)
+
         args = zip(files, [os.path.join(upload_dir, f) for f in files])
         if threads_number > 1:
             with ThreadPool(threads_number) as pool:
                 return pool.map(lambda x: self.download_file(*x), args)
         else:
-            slogger.glob.warning(f'Download files to {upload_dir} directory in series in one thread.')
+            slogger.glob.info(f'Download files to {upload_dir} directory in series in one thread.')
             for f, path in args:
                 self.download_file(f, path)
 
