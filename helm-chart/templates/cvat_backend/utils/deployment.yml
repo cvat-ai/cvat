@@ -86,7 +86,11 @@ spec:
         {{- if .Values.cvat.backend.permissionFix.enabled }}
         - name: user-data-permission-fix
           image: busybox
-          command: ["/bin/chmod", "-R", "777", "/home/django"]
+          command:
+            - "/bin/chmod"
+            - "-R"
+            - "777"
+            {{- toYaml .Values.cvat.backend.permissionFix.paths | nindent 12 }}
           {{- with merge $localValues.resources .Values.cvat.backend.resources }}
           resources:
           {{- toYaml . | nindent 12 }}
