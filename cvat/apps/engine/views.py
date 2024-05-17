@@ -16,6 +16,7 @@ from tempfile import NamedTemporaryFile
 from textwrap import dedent
 
 import django_rq
+from rq.command import send_stop_job_command
 from attr.converters import to_bool
 from django.conf import settings
 from django.contrib.auth.models import User
@@ -2965,6 +2966,7 @@ def _export_annotations(
         tasks_update = list(map(lambda db_task: timezone.localtime(db_task.updated_date), db_instance.tasks.all()))
         last_instance_update_time = max(tasks_update + [last_instance_update_time])
 
+
     timestamp = datetime.strftime(last_instance_update_time, "%Y_%m_%d_%H_%M_%S")
     is_annotation_file = rq_id.startswith('export:annotations')
 
@@ -2972,7 +2974,7 @@ def _export_annotations(
         rq_request = rq_job.meta.get('request', None)
         request_time = rq_request.get('timestamp', None) if rq_request else None
         if request_time is None or request_time < last_instance_update_time:
-            if rq_job.worker_name:
+            if rq_job.get_status() == "started":
                 send_stop_job_command(rq_job.connection, rq_job.id)
             else:
                 # in case the server is configured with ONE_RUNNING_JOB_IN_QUEUE_PER_USER

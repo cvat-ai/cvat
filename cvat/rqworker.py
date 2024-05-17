@@ -6,6 +6,7 @@
 import os
 import signal
 from rq import Worker
+from rq.worker import StopRequested
 
 import cvat.utils.remote_debugger as debug
 
@@ -51,6 +52,25 @@ class SimpleWorker(Worker):
         # to prevent killing debug process (rq code handles SIGTERM properly)
         # and just starts a new rq job
         super().kill_horse(sig)
+
+    def handle_job_failure(self, *args, **kwargs):
+        # export job with the same ID was re-queued in the main process
+        # we do not need to handle failure
+        is_stopped_export_job = kwargs['queue'].name == 'export' and kwargs['exc_string'].strip().split('\n')[-1] == 'rq.worker.StopRequested'
+        signal.signal(signal.SIGTERM, self.request_stop)
+        if not is_stopped_export_job:
+            super().handle_job_failure(*args, **kwargs)
+
+        # after the first warm stop (StopRequested), default code reassignes SIGTERM signal to cold stop (SysExit)
+        # we still want use warm stops in debug process
+        signal.signal(signal.SIGTERM, self.request_stop)
+
+    def handle_exception(self, *args, **kwargs):
+        is_stopped_export_job = args[1] == StopRequested
+        if not is_stopped_export_job:
+            # we do not need to write exception here because the process was stopped intentionally
+            # moreover default code saves meta in and rewrites request datetime in meta with old value
+            super().handle_job_failure(*args, **kwargs)
 
 
 if debug.is_debugging_enabled():
