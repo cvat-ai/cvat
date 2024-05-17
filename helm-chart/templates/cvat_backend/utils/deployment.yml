@@ -91,6 +91,11 @@ spec:
             - "-R"
             - "777"
             {{- toYaml .Values.cvat.backend.permissionFix.paths | nindent 12 }}
+            - "&&"
+            - "/bin/chown"
+            - "-R"
+            - "django"
+            {{- toYaml .Values.cvat.backend.permissionFix.paths | nindent 12 }}
           {{- with merge $localValues.resources .Values.cvat.backend.resources }}
           resources:
           {{- toYaml . | nindent 12 }}
