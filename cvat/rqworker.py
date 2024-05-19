@@ -6,12 +6,28 @@
 import os
 import signal
 from rq import Worker
-from rq.worker import StopRequested
 
 import cvat.utils.remote_debugger as debug
 
+class CVATWorker(Worker):
+    def _install_signal_handlers(self):
+        super()._install_signal_handlers()
+        # by default first SIGTERM request warm shutdown used, then switched to cold
+        # we want always use cold shutdown
+        signal.signal(signal.SIGTERM, self.request_force_stop)
 
-DefaultWorker = Worker
+    def handle_job_failure(self, job, queue, **kwargs):
+        if self._stopped_job_id == job.id:
+            self._stopped_job_id = None
+            self.set_current_job_id(None)
+        else:
+            # the job was stopped intentionally, we do not need update its status or put it into failed registry
+            # in our case the job is immediately removed after stop request
+            super().handle_job_failure(job, queue, **kwargs)
+
+
+
+DefaultWorker = CVATWorker
 
 
 class BaseDeathPenalty:
@@ -25,7 +41,7 @@ class BaseDeathPenalty:
         pass
 
 
-class SimpleWorker(Worker):
+class SimpleWorker(CVATWorker):
     """
     Allows to work with at most 1 worker thread. Useful for debugging.
     """
@@ -50,26 +66,17 @@ class SimpleWorker(Worker):
     def kill_horse(self, sig: signal.Signals = signal.SIGTERM):
         # Send SIGTERM instead of default SIGKILL in debug mode as SIGKILL can't be handled
         # to prevent killing debug process (rq code handles SIGTERM properly)
-        # and just starts a new rq job
         super().kill_horse(sig)
 
-    def handle_job_failure(self, *args, **kwargs):
-        # export job with the same ID was re-queued in the main process
-        # we do not need to handle failure
-        is_stopped_export_job = kwargs['queue'].name == 'export' and kwargs['exc_string'].strip().split('\n')[-1] == 'rq.worker.StopRequested'
-        signal.signal(signal.SIGTERM, self.request_stop)
-        if not is_stopped_export_job:
-            super().handle_job_failure(*args, **kwargs)
-
-        # after the first warm stop (StopRequested), default code reassignes SIGTERM signal to cold stop (SysExit)
-        # we still want use warm stops in debug process
-        signal.signal(signal.SIGTERM, self.request_stop)
-
     def handle_exception(self, *args, **kwargs):
-        is_stopped_export_job = args[1] == StopRequested
+        # on production it sends SIGKILL to work horse process
+        # but for development we overrided it and it sends SIGTERM to the process
+        # we need to prevent exception handling as the process killed intentilnally
+
+        # moreover default code saves meta with exception
+        # and rewrites request datetime in meta with old value, as new job with the same ID may aldeady been created in a new process
+        is_stopped_export_job = args[1] == SystemExit
         if not is_stopped_export_job:
-            # we do not need to write exception here because the process was stopped intentionally
-            # moreover default code saves meta in and rewrites request datetime in meta with old value
             super().handle_exception(*args, **kwargs)
 
 
