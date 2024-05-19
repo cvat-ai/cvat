@@ -18,7 +18,7 @@ class CVATWorker(Worker):
             self.set_current_job_id(None)
         else:
             # the job was stopped intentionally, we do not need update its status or put it into failed registry
-            # in our case the job is immediately removed after stop request
+            # in our case we remove the job from the main process immediately, after stop request
             super().handle_job_failure(job, queue, **kwargs)
 
 
@@ -60,17 +60,21 @@ class SimpleWorker(CVATWorker):
         return self.perform_job(*args, **kwargs)
 
     def kill_horse(self, sig: signal.Signals = signal.SIGTERM):
-        # Send SIGTERM instead of default SIGKILL in debug mode as SIGKILL can't be handled
-        # to prevent killing debug process (rq code handles SIGTERM properly)
+        # In debug mode we send SIGTERM instead of default SIGKILL
+        # Because SIGKILL is not handled (and can't be handled) by RQ code and it kills debug process from VSCode
+        # All three signals (SIGKILL, SIGTERM, SIGINT) are regularly used at RQ code
         super().kill_horse(sig)
 
     def handle_exception(self, *args, **kwargs):
-        # on production it sends SIGKILL to work horse process
-        # but for development we overrided it and it sends SIGTERM to the process
-        # we need to prevent exception handling as the process killed intentilnally
+        # In production environment it sends SIGKILL to work horse process
+        # But for development we overrided it and it sends SIGTERM to the process
+        # So, we need additionally prevent exception handling as the process killed intentionally
 
-        # moreover default code saves meta with exception
-        # and rewrites request datetime in meta with old value, as new job with the same ID may aldeady been created in a new process
+        # Moreover default "handle_exception" code saves meta with exception
+        # It leads to extra bugs:
+        # - we create another job with the same ID in the server process
+        # - when exception message is saved in worker code, it also saves outdated datetime value as part of meta information
+        # - this outdated value then used in server code
         is_stopped_export_job = isinstance(args[2], (StopRequested, SystemExit))
         if not is_stopped_export_job:
             super().handle_exception(*args, **kwargs)
