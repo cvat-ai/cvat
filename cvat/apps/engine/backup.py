@@ -17,6 +17,7 @@ from datetime import datetime
 from tempfile import NamedTemporaryFile
 
 import django_rq
+from rq.command import send_stop_job_command
 from attr.converters import to_bool
 from django.conf import settings
 from django.db import transaction
@@ -964,9 +965,12 @@ def export(db_instance, request, queue_name):
         rq_request = rq_job.meta.get('request', None)
         request_time = rq_request.get("timestamp", None) if rq_request else None
         if request_time is None or request_time < last_instance_update_time:
-            # in case the server is configured with ONE_RUNNING_JOB_IN_QUEUE_PER_USER
-            # we have to enqueue dependent jobs after canceling one
-            rq_job.cancel(enqueue_dependents=settings.ONE_RUNNING_JOB_IN_QUEUE_PER_USER)
+            if rq_job.get_status() == "started":
+                send_stop_job_command(rq_job.connection, rq_job.id)
+            else:
+                # in case the server is configured with ONE_RUNNING_JOB_IN_QUEUE_PER_USER
+                # we have to enqueue dependent jobs after canceling onegg
+                rq_job.cancel(enqueue_dependents=settings.ONE_RUNNING_JOB_IN_QUEUE_PER_USER)
             rq_job.delete()
         else:
             if rq_job.is_finished:
