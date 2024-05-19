@@ -11,6 +11,7 @@ import cvat.utils.remote_debugger as debug
 
 class CVATWorker(Worker):
     def handle_job_failure(self, job, queue, **kwargs):
+        # pylint: disable=access-member-before-definition
         if self._stopped_job_id == job.id:
             self._stopped_job_id = None
             self.set_current_job_id(None)
