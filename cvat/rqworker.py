@@ -6,6 +6,7 @@
 import os
 import signal
 from rq import Worker
+from rq.worker import StopRequested
 
 import cvat.utils.remote_debugger as debug
 
@@ -43,12 +44,6 @@ class SimpleWorker(CVATWorker):
 
     death_penalty_class = BaseDeathPenalty
 
-    def _install_signal_handlers(self):
-        super()._install_signal_handlers()
-        # by default first SIGTERM request uses warm shutdown, then switched to cold
-        # we want always use cold shutdown
-        signal.signal(signal.SIGTERM, self.request_force_stop)
-
     def main_work_horse(self, *args, **kwargs):
         raise NotImplementedError("Test worker does not implement this method")
 
@@ -76,7 +71,7 @@ class SimpleWorker(CVATWorker):
 
         # moreover default code saves meta with exception
         # and rewrites request datetime in meta with old value, as new job with the same ID may aldeady been created in a new process
-        is_stopped_export_job = args[1] == SystemExit
+        is_stopped_export_job = isinstance(args[2], (StopRequested, SystemExit))
         if not is_stopped_export_job:
             super().handle_exception(*args, **kwargs)
 
