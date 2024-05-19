@@ -10,12 +10,6 @@ from rq import Worker
 import cvat.utils.remote_debugger as debug
 
 class CVATWorker(Worker):
-    def _install_signal_handlers(self):
-        super()._install_signal_handlers()
-        # by default first SIGTERM request warm shutdown used, then switched to cold
-        # we want always use cold shutdown
-        signal.signal(signal.SIGTERM, self.request_force_stop)
-
     def handle_job_failure(self, job, queue, **kwargs):
         if self._stopped_job_id == job.id:
             self._stopped_job_id = None
@@ -47,6 +41,12 @@ class SimpleWorker(CVATWorker):
     """
 
     death_penalty_class = BaseDeathPenalty
+
+    def _install_signal_handlers(self):
+        super()._install_signal_handlers()
+        # by default first SIGTERM request warm shutdown used, then switched to cold
+        # we want always use cold shutdown
+        signal.signal(signal.SIGTERM, self.request_force_stop)
 
     def main_work_horse(self, *args, **kwargs):
         raise NotImplementedError("Test worker does not implement this method")
