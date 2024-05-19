@@ -44,7 +44,7 @@ class SimpleWorker(CVATWorker):
 
     def _install_signal_handlers(self):
         super()._install_signal_handlers()
-        # by default first SIGTERM request warm shutdown used, then switched to cold
+        # by default first SIGTERM request uses warm shutdown, then switched to cold
         # we want always use cold shutdown
         signal.signal(signal.SIGTERM, self.request_force_stop)
 
