@@ -201,8 +201,8 @@ export class MasksHandlerImpl implements MasksHandler {
             .reduce((acc: TwoCornerBox, rect: BoundingRect) => {
                 acc.top = Math.floor(Math.max(0, Math.min(rect.top, acc.top)));
                 acc.left = Math.floor(Math.max(0, Math.min(rect.left, acc.left)));
-                acc.bottom = Math.floor(Math.min(height, Math.max(rect.top + rect.height, acc.bottom)));
-                acc.right = Math.floor(Math.min(width, Math.max(rect.left + rect.width, acc.right)));
+                acc.bottom = Math.floor(Math.min(height - 1, Math.max(rect.top + rect.height, acc.bottom)));
+                acc.right = Math.floor(Math.min(width - 1, Math.max(rect.left + rect.width, acc.right)));
                 return acc;
             }, {
                 left: Number.MAX_SAFE_INTEGER,
