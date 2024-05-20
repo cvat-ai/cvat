@@ -2230,7 +2230,7 @@ class SubresourceChoices(TextChoices):
     DATASET = 'dataset'
     BACKUP = 'backup'
 
-class RequestOperationSerializer(serializers.Serializer):
+class RequestDataOperationSerializer(serializers.Serializer):
     type = serializers.CharField(read_only=True)
     target = serializers.ChoiceField(choices=TargetChoices.choices, read_only=True)
     project_id = serializers.IntegerField(required=False, allow_null=True, read_only=True)
@@ -2274,7 +2274,7 @@ class RequestSerializer(serializers.Serializer):
     status = serializers.SerializerMethodField()
     message = serializers.SerializerMethodField()
     id = serializers.CharField(read_only=True)
-    operation = RequestOperationSerializer(source="*", read_only=True)
+    operation = RequestDataOperationSerializer(source="*", read_only=True)
     progress = serializers.SerializerMethodField()
     created_date = serializers.DateTimeField(source="created_at", read_only=True)
     # Note: generally RQ job.enqueued_at can be None, but not in our case,

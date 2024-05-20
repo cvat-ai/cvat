@@ -9458,7 +9458,7 @@ components:
           readOnly: true
         operation:
           allOf:
-          - $ref: '#/components/schemas/RequestOperation'
+          - $ref: '#/components/schemas/RequestDataOperation'
           readOnly: true
         progress:
           type: number
@@ -9503,7 +9503,7 @@ components:
           type: integer
           readOnly: true
           nullable: true
-    RequestOperation:
+    RequestDataOperation:
       type: object
       properties:
         type:
@@ -9511,7 +9511,7 @@ components:
           readOnly: true
         target:
           allOf:
-          - $ref: '#/components/schemas/RequestOperationTargetEnum'
+          - $ref: '#/components/schemas/RequestDataOperationTargetEnum'
           readOnly: true
         project_id:
           type: integer
@@ -9529,7 +9529,7 @@ components:
           type: string
           readOnly: true
           nullable: true
-    RequestOperationTargetEnum:
+    RequestDataOperationTargetEnum:
       enum:
       - project
       - task
