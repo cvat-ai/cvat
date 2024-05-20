@@ -36,7 +36,7 @@ from cvat.apps.analytics_report.report.primary_metrics import (
     JobObjectsExtractor,
     PrimaryMetricBase,
 )
-from cvat.apps.engine.models import Job, Project, Task, JobType
+from cvat.apps.engine.models import Job, JobType, Project, Task
 
 
 def get_empty_report():
