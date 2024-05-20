@@ -6,6 +6,7 @@ import * as SVG from 'svg.js';
 import {
     stringifyPoints, translateToCanvas, translateFromCanvas, translateToSVG,
     findIntersection, zipChannels, Segment, findClosestPointOnSegment, segmentsFromPoints,
+    toReversed,
 } from './shared';
 import {
     Geometry, SliceData, Configuration, CanvasHint,
@@ -26,16 +27,6 @@ type EnhancedSliceData = {
     state: any;
     shapeType: 'mask' | 'polygon';
 };
-
-function toReversed<T>(array: Array<T>): Array<T> {
-    // actually toReversed already exists in ESMA specification
-    // but not all CVAT customers uses a browser fresh enough to use it
-    // instead of using a library with polyfills I will prefer just to rewrite it with reduceRight
-    return array.reduceRight<Array<T>>((acc, val: T) => {
-        acc.push(val);
-        return acc;
-    }, []);
-}
 
 function drawOverOffscreenCanvas(context: OffscreenCanvasRenderingContext2D, image: CanvasImageSource): void {
     context.fillStyle = 'black';
@@ -304,7 +295,7 @@ export class SliceHandlerImpl implements SliceHandler {
                 const d2 = Math.sqrt((p2[0] - p[0]) ** 2 + (p2[1] - p[1]) ** 2);
 
                 if (d2 > d1) {
-                    contour2.push(...toReversed(otherPoints).flat());
+                    contour2.push(...toReversed<[number, number]>(otherPoints).flat());
                 } else {
                     contour2.push(...otherPoints.flat());
                 }
@@ -321,7 +312,7 @@ export class SliceHandlerImpl implements SliceHandler {
                     ...firstSegmentPoint, // first intersection
                     // intermediate points (reversed if intersections order was swopped)
                     ...(firstSegmentIdx === firstIntersectedSegmentIdx ?
-                        intermediatePoints : toReversed(intermediatePoints)
+                        intermediatePoints : toReversed<[number, number]>(intermediatePoints)
                     ).flat(),
                     // second intersection
                     ...secondSegmentPoint,
@@ -334,7 +325,7 @@ export class SliceHandlerImpl implements SliceHandler {
                     ...firstSegmentPoint, // first intersection
                     // intermediate points (reversed if intersections order was swopped)
                     ...(firstSegmentIdx === firstIntersectedSegmentIdx ?
-                        intermediatePoints : toReversed(intermediatePoints)
+                        intermediatePoints : toReversed<[number, number]>(intermediatePoints)
                     ).flat(),
                     ...secondSegmentPoint,
                     // all the previous contours points N, N-1, .. until (including) the first intersected segment

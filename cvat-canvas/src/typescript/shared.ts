@@ -535,5 +535,15 @@ export function segmentsFromPoints(points: number[], circuit = false): Segment[]
     }, []);
 }
 
+export function toReversed<T>(array: Array<T>): Array<T> {
+    // actually toReversed already exists in ESMA specification
+    // but not all CVAT customers uses a browser fresh enough to use it
+    // instead of using a library with polyfills I will prefer just to rewrite it with reduceRight
+    return array.reduceRight<Array<T>>((acc, val: T) => {
+        acc.push(val);
+        return acc;
+    }, []);
+}
+
 export type Segment = [[number, number], [number, number]];
 export type PropType<T, Prop extends keyof T> = T[Prop];
