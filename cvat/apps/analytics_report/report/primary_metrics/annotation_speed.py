@@ -54,7 +54,7 @@ class JobAnnotationSpeedExtractor(DataExtractorBase):
 class JobAnnotationSpeed(PrimaryMetricBase):
     _key = "annotation_speed"
     _title = "Annotation speed (objects per hour)"
-    _description = "Metric shows the annotation speed in objects per hour."
+    _description = "Metric shows annotation speed in the job as number of objects per hour."
     _default_view = ViewChoice.HISTOGRAM
     _granularity = GranularityChoice.DAY
     _is_filterable_by_date = False
