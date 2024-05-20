@@ -27,6 +27,16 @@ type EnhancedSliceData = {
     shapeType: 'mask' | 'polygon';
 };
 
+function toReversed<T>(array: Array<T>): Array<T> {
+    // actually toReversed already exists in ESMA specification
+    // but not all CVAT customers uses a browser fresh enough to use it
+    // instead of using a polyfills library I will prefer just to rewrite it with reduceRight
+    return array.reduceRight<Array<T>>((acc, val: T) => {
+        acc.push(val);
+        return acc;
+    }, []);
+}
+
 function drawOverOffscreenCanvas(context: OffscreenCanvasRenderingContext2D, image: CanvasImageSource): void {
     context.fillStyle = 'black';
     context.globalCompositeOperation = 'source-over';
@@ -295,7 +305,7 @@ export class SliceHandlerImpl implements SliceHandler {
 
                 if (d2 > d1) {
                     // @ts-ignore error TS2551 (need to update typescript up to 5.2)
-                    contour2.push(...otherPoints.toReversed().flat());
+                    contour2.push(...toReversed(otherPoints).flat());
                 } else {
                     contour2.push(...otherPoints.flat());
                 }
@@ -313,7 +323,7 @@ export class SliceHandlerImpl implements SliceHandler {
                     // intermediate points (reversed if intersections order was swopped)
                     ...(firstSegmentIdx === firstIntersectedSegmentIdx ?
                         // @ts-ignore error TS2551 (need to update typescript up to 5.2)
-                        intermediatePoints : intermediatePoints.toReversed()
+                        intermediatePoints : toReversed(intermediatePoints)
                     ).flat(),
                     // second intersection
                     ...secondSegmentPoint,
@@ -327,7 +337,7 @@ export class SliceHandlerImpl implements SliceHandler {
                     // intermediate points (reversed if intersections order was swopped)
                     ...(firstSegmentIdx === firstIntersectedSegmentIdx ?
                         // @ts-ignore error TS2551 (need to update typescript up to 5.2)
-                        intermediatePoints : intermediatePoints.toReversed()
+                        intermediatePoints : toReversed(intermediatePoints)
                     ).flat(),
                     ...secondSegmentPoint,
                     // all the previous contours points N, N-1, .. until (including) the first intersected segment
