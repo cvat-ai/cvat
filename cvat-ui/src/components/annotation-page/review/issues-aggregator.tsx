@@ -138,7 +138,7 @@ export default function IssueAggregatorComponent(): JSX.Element | null {
                         _state.objectType === mainAnnotationsConflict.type
                     ));
 
-                    if (state && state.zOrder <= annotationsZLayer) {
+                    if (state && state.zOrder <= annotationsZLayer && !state.hidden) {
                         const points = canvasInstance.setupConflictRegions(state);
                         if (points) {
                             return {
