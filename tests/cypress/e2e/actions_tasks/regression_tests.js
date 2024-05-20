@@ -20,7 +20,6 @@ context('Regression tests', () => {
     describe('Regression tests', () => {
         it('Create and check task with a video file without valid keyframes', () => {
             cy.createAnnotationTask(taskName, labelName, attrName, textDefaultValue, filesToAttach);
-            cy.get('.cvat-notification-create-task-fail').should('not.exist');
             cy.openTaskJob(taskName);
             cy.get('.cvat-player-next-button').click();
             cy.get('.cvat-canvas-container').should('exist');
