@@ -13,10 +13,8 @@ context('Regression tests', () => {
     const filesToAttach = [`../../${pathToFile}/video_without_valid_keyframes.ts`];
 
     before(() => {
-        before(() => {
-            cy.visit('auth/login');
-            cy.login();
-        });
+        cy.visit('auth/login');
+        cy.login();
     });
 
     describe('Regression tests', () => {
