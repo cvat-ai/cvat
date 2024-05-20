@@ -304,7 +304,6 @@ export class SliceHandlerImpl implements SliceHandler {
                 const d2 = Math.sqrt((p2[0] - p[0]) ** 2 + (p2[1] - p[1]) ** 2);
 
                 if (d2 > d1) {
-                    // @ts-ignore error TS2551 (need to update typescript up to 5.2)
                     contour2.push(...toReversed(otherPoints).flat());
                 } else {
                     contour2.push(...otherPoints.flat());
@@ -322,7 +321,6 @@ export class SliceHandlerImpl implements SliceHandler {
                     ...firstSegmentPoint, // first intersection
                     // intermediate points (reversed if intersections order was swopped)
                     ...(firstSegmentIdx === firstIntersectedSegmentIdx ?
-                        // @ts-ignore error TS2551 (need to update typescript up to 5.2)
                         intermediatePoints : toReversed(intermediatePoints)
                     ).flat(),
                     // second intersection
@@ -336,7 +334,6 @@ export class SliceHandlerImpl implements SliceHandler {
                     ...firstSegmentPoint, // first intersection
                     // intermediate points (reversed if intersections order was swopped)
                     ...(firstSegmentIdx === firstIntersectedSegmentIdx ?
-                        // @ts-ignore error TS2551 (need to update typescript up to 5.2)
                         intermediatePoints : toReversed(intermediatePoints)
                     ).flat(),
                     ...secondSegmentPoint,
