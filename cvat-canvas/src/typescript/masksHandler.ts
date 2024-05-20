@@ -572,7 +572,7 @@ export class MasksHandlerImpl implements MasksHandler {
                                 image.globalCompositeOperation = 'xor';
                                 image.opacity = 0.5;
                                 this.canvas.add(image);
-                                this.drawnObjects.push(image);
+                                this.drawnObjects = [image];
                                 this.canvas.renderAll();
                             } finally {
                                 resolve();
