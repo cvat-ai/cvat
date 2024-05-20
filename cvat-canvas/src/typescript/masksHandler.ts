@@ -572,6 +572,10 @@ export class MasksHandlerImpl implements MasksHandler {
                                 image.globalCompositeOperation = 'xor';
                                 image.opacity = 0.5;
                                 this.canvas.add(image);
+                                // When paste a mask, we do not need additional logic implemented
+                                // in MasksHandlerImpl::createDrawnObjectsArray.push
+                                // because we will not work with any drawing tools here, and it will cause the issue
+                                // because this.tools may be undefined here when it is used inside the push logic
                                 this.drawnObjects = [image];
                                 this.canvas.renderAll();
                             } finally {
