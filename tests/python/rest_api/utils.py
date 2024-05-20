@@ -141,7 +141,7 @@ def build_exclude_paths_expr(ignore_fields: Iterator[str]) -> List[str]:
     return exclude_expr_parts
 
 
-def wait_until_task_is_created(api: apis.RequestsApi, task_id: int):
+def wait_until_task_is_created(api: apis.RequestsApi, task_id: int) -> Any:
     for _ in range(100):
         (requests, _) = api.list(task_id=task_id, action="create")
         results = requests["results"]

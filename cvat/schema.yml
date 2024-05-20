@@ -9475,6 +9475,7 @@ components:
           type: string
           format: date-time
           readOnly: true
+          nullable: true
         started_date:
           type: string
           format: date-time
