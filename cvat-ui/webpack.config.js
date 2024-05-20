@@ -102,8 +102,6 @@ module.exports = (env) => {
                         loader: 'babel-loader',
                         options: {
                             plugins: [
-                                '@babel/plugin-proposal-class-properties',
-                                '@babel/plugin-proposal-optional-chaining',
                                 [
                                     'import',
                                     {

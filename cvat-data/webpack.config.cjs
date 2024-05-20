@@ -29,10 +29,7 @@ const cvatData = {
                 use: {
                     loader: 'babel-loader',
                     options: {
-                        plugins: [
-                            '@babel/plugin-proposal-class-properties',
-                            '@babel/plugin-proposal-optional-chaining',
-                        ],
+                        plugins: [],
                         presets: ['@babel/preset-env', '@babel/typescript'],
                         sourceType: 'unambiguous',
                     },
