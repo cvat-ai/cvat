@@ -1,4 +1,4 @@
-# Copyright (C) 2023 CVAT.ai Corporation
+# Copyright (C) 2023-2024 CVAT.ai Corporation
 #
 # SPDX-License-Identifier: MIT
 
@@ -7,11 +7,11 @@ from cvat.apps.analytics_report.models import ViewChoice
 from .base import DerivedMetricBase
 
 
-class JobTotalAnnotationSpeed(DerivedMetricBase):
-    _title = "Total Annotation Speed (objects per hour)"
-    _description = "Metric shows total annotation speed in the Job."
+class JobAverageAnnotationSpeed(DerivedMetricBase):
+    _title = "Average Annotation Speed (objects per hour)"
+    _description = "Metric shows average annotation speed in the Job."
     _default_view = ViewChoice.NUMERIC
-    _key = "total_annotation_speed"
+    _key = "average_annotation_speed"
     _is_filterable_by_date = False
 
     def calculate(self):
@@ -23,14 +23,12 @@ class JobTotalAnnotationSpeed(DerivedMetricBase):
             total_wt += ds[1]["value"]
 
         metric = self.get_empty()
-        metric["total_annotation_speed"][0]["value"] = (
-            total_count / max(total_wt, 1) if total_wt != 0 else 0
-        )
+        metric[self._key][0]["value"] = total_count / total_wt if total_wt != 0 else 0
         return metric
 
     def get_empty(self):
         return {
-            "total_annotation_speed": [
+            self._key: [
                 {
                     "value": 0,
                     "datetime": self._get_utc_now().strftime("%Y-%m-%dT%H:%M:%SZ"),
@@ -39,8 +37,8 @@ class JobTotalAnnotationSpeed(DerivedMetricBase):
         }
 
 
-class TaskTotalAnnotationSpeed(JobTotalAnnotationSpeed):
-    _description = "Metric shows total annotation speed in the Task."
+class TaskAverageAnnotationSpeed(JobAverageAnnotationSpeed):
+    _description = "Metric shows average annotation speed in the Task."
 
     def calculate(self):
         total_count = 0
@@ -53,14 +51,14 @@ class TaskTotalAnnotationSpeed(JobTotalAnnotationSpeed):
                 total_wt += wt_entry["value"]
 
         return {
-            "total_annotation_speed": [
+            self._key: [
                 {
-                    "value": total_count / max(total_wt, 1) if total_wt != 0 else 0,
+                    "value": total_count / total_wt if total_wt != 0 else 0,
                     "datetime": self._get_utc_now().strftime("%Y-%m-%dT%H:%M:%SZ"),
                 },
             ]
         }
 
 
-class ProjectTotalAnnotationSpeed(TaskTotalAnnotationSpeed):
-    _description = "Metric shows total annotation speed in the Project."
+class ProjectAverageAnnotationSpeed(TaskAverageAnnotationSpeed):
+    _description = "Metric shows average annotation speed in the Project."
