@@ -461,9 +461,9 @@ class AnalyticsReportUpdateManager:
         task_reports = []
 
         for db_task in db_project.tasks.all():
-            db_task_report = self._get_analytics_report(db_task)
+            current_task_report = self._get_analytics_report(db_task)
             _task_report, _job_reports = self._compute_report_for_task(
-                db_task, db_task_report, data_extractors
+                db_task, current_task_report, data_extractors
             )
             task_reports.append(_task_report)
             job_reports.extend(_job_reports)
