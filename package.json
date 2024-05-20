@@ -1,7 +1,7 @@
 {
   "name": "cvat",
   "version": "1.0.0",
-  "description": "Eslint && remarklint dependencies",
+  "description": "Common dependencies for CVAT modules",
   "main": ".eslintrc.cjs",
   "private": true,
   "directories": {
@@ -28,7 +28,7 @@
     "@typescript-eslint/eslint-plugin": "^6.13.1",
     "@typescript-eslint/parser": "^6.13.1",
     "airbnb": "0.0.2",
-    "babel-loader": "^8.0.6",
+    "babel-loader": "^9.1.3",
     "babel-plugin-import": "^1.12.2",
     "babel-plugin-istanbul": "^6.0.0",
     "bundle-declarations-webpack-plugin": "^3.1.0",
