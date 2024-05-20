@@ -113,11 +113,11 @@ class AnalyticsReportUpdateManager:
             db_report = AnalyticsReport(statistics=[])
 
             if isinstance(db_obj, Job):
-                db_report.job_id = db_obj.id
+                db_report.job = db_obj
             elif isinstance(db_obj, Task):
-                db_report.task_id = db_obj.id
+                db_report.task = db_obj
             elif isinstance(db_obj, Project):
-                db_report.project_id = db_obj.id
+                db_report.project = db_obj
 
             db_obj.analytics_report = db_report
 
@@ -199,7 +199,7 @@ class AnalyticsReportUpdateManager:
                         ),
                     )
                 )
-                db_report, job_reports, _ = cls()._compute_report_for_task(
+                db_report, job_reports = cls()._compute_report_for_task(
                     db_task, db_report, primary_metric_extractors
                 )
 
@@ -391,20 +391,16 @@ class AnalyticsReportUpdateManager:
         db_report: AnalyticsReport,
         data_extractors: dict,
     ) -> tuple[AnalyticsReport, list[AnalyticsReport], list[AnalyticsReport]]:
-        filtered_job_reports = []
         job_reports = []
 
         for db_segment in db_task.segment_set.all():
             for db_job in db_segment.job_set.all():
                 current_job_report = self._get_analytics_report(db_job)
-                updated_job_report = self._compute_report_for_job(
-                    db_job, current_job_report, data_extractors
+                job_reports.append(
+                    self._compute_report_for_job(db_job, current_job_report, data_extractors)
                 )
-                job_reports.append(updated_job_report)
-                if db_job.type == JobType.ANNOTATION:
-                    # to calculate analytics in a task we only consider annotation jobs
-                    filtered_job_reports.append(updated_job_report)
 
+        filtered_job_reports = list(filter(lambda x: x.job.type == JobType.ANNOTATION, job_reports))
         # recalculate the report if there is no report or the existing one is outdated
         if db_report.created_date is None or db_report.created_date < db_task.updated_date:
             derived_metrics = [
@@ -453,7 +449,7 @@ class AnalyticsReportUpdateManager:
             statistics = [self._get_statistics_entry(dm) for dm in derived_metrics]
             db_report.statistics = statistics
 
-        return db_report, job_reports, filtered_job_reports
+        return db_report, job_reports
 
     def _compute_report_for_project(
         self,
@@ -461,19 +457,18 @@ class AnalyticsReportUpdateManager:
         db_report: AnalyticsReport,
         data_extractors: dict,
     ) -> tuple[AnalyticsReport, list[AnalyticsReport], list[AnalyticsReport]]:
-        filtered_job_reports = []
         job_reports = []
         task_reports = []
 
         for db_task in db_project.tasks.all():
             db_task_report = self._get_analytics_report(db_task)
-            _task_reports, _job_reports, _filtered_job_reports = self._compute_report_for_task(
+            _task_reports, _job_reports = self._compute_report_for_task(
                 db_task, db_task_report, data_extractors
             )
             task_reports.append(_task_reports)
             job_reports.extend(_job_reports)
-            filtered_job_reports.extend(_filtered_job_reports)
 
+        filtered_job_reports = list(filter(lambda x: x.job.type == JobType.ANNOTATION, job_reports))
         # recalculate the report if there is no report or the existing one is outdated
         if db_report.created_date is None or db_report.created_date < db_project.updated_date:
             derived_metrics = [
