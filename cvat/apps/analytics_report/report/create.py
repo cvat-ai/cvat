@@ -14,17 +14,17 @@ from django.utils import timezone
 from cvat.apps.analytics_report.models import AnalyticsReport
 from cvat.apps.analytics_report.report.derived_metrics import (
     DerivedMetricBase,
-    JobTotalAnnotationSpeed,
+    JobAverageAnnotationSpeed,
     JobTotalObjectCount,
     ProjectAnnotationSpeed,
     ProjectAnnotationTime,
+    ProjectAverageAnnotationSpeed,
     ProjectObjects,
-    ProjectTotalAnnotationSpeed,
     ProjectTotalObjectCount,
     TaskAnnotationSpeed,
     TaskAnnotationTime,
+    TaskAverageAnnotationSpeed,
     TaskObjects,
-    TaskTotalAnnotationSpeed,
     TaskTotalObjectCount,
 )
 from cvat.apps.analytics_report.report.primary_metrics import (
@@ -45,7 +45,7 @@ def get_empty_report():
         JobAnnotationSpeed(None),
         JobAnnotationTime(None),
         JobTotalObjectCount(None),
-        JobTotalAnnotationSpeed(None),
+        JobAverageAnnotationSpeed(None),
     ]
 
     statistics = [AnalyticsReportUpdateManager._get_empty_statistics_entry(dm) for dm in metrics]
@@ -369,7 +369,7 @@ class AnalyticsReportUpdateManager:
                     data_extractor=None,
                     primary_statistics=primary_statistics[JobAnnotationSpeed.key()],
                 ),
-                JobTotalAnnotationSpeed(
+                JobAverageAnnotationSpeed(
                     db_job,
                     data_extractor=None,
                     primary_statistics=primary_statistics[JobAnnotationSpeed.key()],
@@ -433,7 +433,7 @@ class AnalyticsReportUpdateManager:
                         for jr in job_reports
                     ],
                 ),
-                TaskTotalAnnotationSpeed(
+                TaskAverageAnnotationSpeed(
                     db_task,
                     data_extractor=None,
                     primary_statistics=[
@@ -496,7 +496,7 @@ class AnalyticsReportUpdateManager:
                         for jr in job_reports
                     ],
                 ),
-                ProjectTotalAnnotationSpeed(
+                ProjectAverageAnnotationSpeed(
                     db_project,
                     data_extractor=None,
                     primary_statistics=[
