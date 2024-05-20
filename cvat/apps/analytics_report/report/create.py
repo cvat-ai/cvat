@@ -390,7 +390,7 @@ class AnalyticsReportUpdateManager:
         db_task: Task,
         db_report: AnalyticsReport,
         data_extractors: dict,
-    ) -> tuple[AnalyticsReport, list[AnalyticsReport], list[AnalyticsReport]]:
+    ) -> tuple[AnalyticsReport, list[AnalyticsReport]]:
         job_reports = []
 
         for db_segment in db_task.segment_set.all():
