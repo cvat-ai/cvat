@@ -38,6 +38,7 @@ export default function IssueAggregatorComponent(): JSX.Element | null {
     const issuesResolvedHidden = useSelector((state: CombinedState): boolean => state.review.issuesResolvedHidden);
     const canvasInstance = useSelector((state: CombinedState) => state.annotation.canvas.instance);
     const canvasIsReady = useSelector((state: CombinedState): boolean => state.annotation.canvas.ready);
+    const annotationsZLayer = useSelector((state: CombinedState): number => state.annotation.annotations.zLayer.cur);
     const newIssuePosition = useSelector((state: CombinedState): number[] | null => state.review.newIssuePosition);
     const issueFetching = useSelector((state: CombinedState): number | null => state.review.fetching.issueId);
     const [geometry, setGeometry] = useState<Canvas['geometry'] | null>(null);
@@ -137,7 +138,7 @@ export default function IssueAggregatorComponent(): JSX.Element | null {
                         _state.objectType === mainAnnotationsConflict.type
                     ));
 
-                    if (state) {
+                    if (state && state.zOrder <= annotationsZLayer) {
                         const points = canvasInstance.setupConflictRegions(state);
                         if (points) {
                             return {
@@ -158,7 +159,7 @@ export default function IssueAggregatorComponent(): JSX.Element | null {
         } else {
             setConflictMapping([]);
         }
-    }, [geometry, objectStates, showConflicts, canvasReady, qualityConflicts]);
+    }, [geometry, objectStates, showConflicts, canvasReady, qualityConflicts, annotationsZLayer]);
 
     if (!canvasReady || !geometry) {
         return null;
