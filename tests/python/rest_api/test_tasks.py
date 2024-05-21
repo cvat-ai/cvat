@@ -1097,7 +1097,7 @@ class TestPostTaskData:
         task_id, _ = create_task(self._USERNAME, task_spec, task_data)
 
         with make_api_client(self._USERNAME) as api_client:
-            (task, response) = api_client.tasks_api.retrieve(task_id)
+            (_, response) = api_client.tasks_api.retrieve(task_id)
             assert response.status == HTTPStatus.OK
 
     def test_can_get_annotations_from_new_task_with_skeletons(self):
