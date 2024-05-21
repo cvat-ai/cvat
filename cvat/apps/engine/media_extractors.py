@@ -505,6 +505,17 @@ class AudioReader(IMediaReader):
 
         return False
 
+    def get_total_frames(self):
+        total_frame = 0
+        with self._get_av_container() as container:
+            stream = container.streams.audio[0]
+            stream.thread_type = 'AUTO'
+            for packet in container.demux(stream):
+                for image in packet.decode():
+                    total_frame += 1
+
+        return total_frame
+
     def __iter__(self):
         with self._get_av_container() as container:
             stream = container.streams.audio[0]

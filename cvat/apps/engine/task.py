@@ -950,19 +950,88 @@ def _create_thread(
     compressed_chunk_writer = compressed_chunk_writer_class(db_data.image_quality, **kwargs)
     original_chunk_writer = original_chunk_writer_class(original_quality, **kwargs)
 
-    # calculate chunk size if it isn't specified
-    if db_data.chunk_size is None:
-        if isinstance(compressed_chunk_writer, ZipCompressedChunkWriter):
-            if not is_data_in_cloud:
-                w, h = extractor.get_image_size(0)
-            else:
-                img_properties = manifest[0]
-                w, h = img_properties['width'], img_properties['height']
-            area = h * w
-            db_data.chunk_size = max(2, min(72, 36 * 1920 * 1080 // area))
-        else:
-            db_data.chunk_size = 36
+    def get_audio_duration(file_path):
+        # Open the audio file
+        container = av.open(file_path)
 
+        # Get the first audio stream
+        audio_stream = next((stream for stream in container.streams if stream.codec.type == 'audio'), None)
+
+        if not audio_stream:
+            print("Error: No audio stream found in the file.")
+            return None
+
+        # Get the duration in seconds based on stream information
+        duration_milliseconds = int(audio_stream.duration * audio_stream.time_base * 1000)
+
+        slogger.glob.debug("FFF AUDIO DURATION")
+        slogger.glob.debug(audio_stream.duration)
+
+        slogger.glob.debug("PPP AUDIO DURATION")
+        slogger.glob.debug(audio_stream.time_base)
+
+        # Close the container
+        container.close()
+
+        return duration_milliseconds
+
+
+    db_task.data.audio_total_duration = None
+
+    if MEDIA_TYPE == "audio":
+
+        segment_duration = db_task.segment_duration
+        db_task.data.audio_total_duration = get_audio_duration(details['source_path'][0])
+        total_audio_frames = extractor.get_total_frames()
+
+        slogger.glob.debug("TOTAL AUDIO DURATION")
+        slogger.glob.debug(db_task.data.audio_total_duration)
+
+        num_frames_per_millisecond = total_audio_frames / db_task.data.audio_total_duration
+
+        if segment_duration == 0:
+            segment_duration = db_task.data.audio_total_duration
+            # db_task.segment_size = 0
+            # db_data.chunk_size = db_task.data.audio_total_duration*num_frames_per_millisecond
+        # else:
+
+        num_frames_per_segment_duration = num_frames_per_millisecond*segment_duration
+        db_task.segment_size = int(round(num_frames_per_segment_duration))
+
+        num_segments = max(1, int(math.ceil(db_task.data.audio_total_duration / segment_duration)))
+
+        slogger.glob.debug("Segment Size Before")
+        slogger.glob.debug(db_task.segment_size)
+
+        slogger.glob.debug("Segment Size After")
+        slogger.glob.debug(db_task.segment_size)
+
+        slogger.glob.debug("Num segments")
+        slogger.glob.debug(num_segments)
+
+        slogger.glob.debug("Num frames")
+        slogger.glob.debug(total_audio_frames)
+
+        slogger.glob.debug("Audio Duration")
+        slogger.glob.debug(db_task.data.audio_total_duration)
+
+        # Default chunk size = entire frames
+        db_data.chunk_size = db_task.segment_size #db_task.data.size
+    else:
+        if db_data.chunk_size is None:
+            if isinstance(compressed_chunk_writer, ZipCompressedChunkWriter):
+                if not is_data_in_cloud:
+                    w, h = extractor.get_image_size(0)
+                else:
+                    img_properties = manifest[0]
+                    w, h = img_properties['width'], img_properties['height']
+                area = h * w
+                db_data.chunk_size = max(2, min(72, 36 * 1920 * 1080 // area))
+            else:
+                db_data.chunk_size = 36
+
+    slogger.glob.debug("OPPPPP CHUNK SIZE")
+    slogger.glob.debug(db_data.chunk_size)
     video_path = ""
     video_size = (0, 0)
 
@@ -1143,63 +1212,6 @@ def _create_thread(
 
             while not futures.empty():
                 process_results(futures.get().result())
-
-    def get_audio_duration(file_path):
-        # Open the audio file
-        container = av.open(file_path)
-
-        # Get the first audio stream
-        audio_stream = next((stream for stream in container.streams if stream.codec.type == 'audio'), None)
-
-        if not audio_stream:
-            print("Error: No audio stream found in the file.")
-            return None
-
-        # Get the duration in seconds based on stream information
-        duration_milliseconds = int(audio_stream.duration * audio_stream.time_base * 1000)
-
-        slogger.glob.debug("FFF AUDIO DURATION")
-        slogger.glob.debug(audio_stream.duration)
-
-        slogger.glob.debug("PPP AUDIO DURATION")
-        slogger.glob.debug(audio_stream.time_base)
-
-        # Close the container
-        container.close()
-
-        return duration_milliseconds
-
-
-    db_task.data.audio_total_duration = None
-    if MEDIA_TYPE == "audio":
-
-        segment_duration = db_task.segment_duration
-        db_task.data.audio_total_duration = get_audio_duration(details['source_path'][0])
-
-        slogger.glob.debug("TOTAL AUDIO DURATION")
-        slogger.glob.debug(db_task.data.audio_total_duration)
-
-        if segment_duration == 0:
-            db_task.segment_size = 0
-        else:
-            num_segments = max(1, math.ceil(db_task.data.audio_total_duration / segment_duration))
-
-            slogger.glob.debug("Segment Size Before")
-            slogger.glob.debug(db_task.segment_size)
-
-            db_task.segment_size = db_task.data.size // num_segments
-
-            slogger.glob.debug("Segment Size After")
-            slogger.glob.debug(db_task.segment_size)
-
-            slogger.glob.debug("Num segments")
-            slogger.glob.debug(num_segments)
-
-            slogger.glob.debug("Num frames")
-            slogger.glob.debug(db_task.data.size)
-
-            slogger.glob.debug("Audio Duration")
-            slogger.glob.debug(db_task.data.audio_total_duration)
 
     if db_task.mode == 'annotation':
         models.Image.objects.bulk_create(db_images)

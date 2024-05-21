@@ -1053,7 +1053,7 @@ def convert_annotation_data_format(data, format_name):
         data = list(map(lambda x: {"chapter_id" : "", "file" : x["path"], "id" : str(uuid.uuid4()), "speaker_id" : "", "text" : x["sentence"], "label" : x["label"], "attribute_name" : x["attribute_name"], "attribute_value" : x["attribute_value"]}, data))
     elif format_name == "VoxPopuli":
         language_id_mapping = {"en" : 0}
-        data = list(map(lambda x: {"audio_id" : str(uuid.uuid4()), "language" : language_id_mapping[x["locale"]] if language_id_mapping.get(x["locale"]) else None, "audio_path" : x["path"], "raw_text" : x["sentence"], "normalized_text" : x["sentence"], "gender" : x["gender"], "speaker_id" : "", "is_gold_transcript" : False, "accent" : x["accent"], "label" : x["label"], "attribute_name" : x["attribute_name"], "attribute_value" : x["attribute_value"]}, data))
+        data = list(map(lambda x: {"audio_id" : str(uuid.uuid4()), "language" : language_id_mapping[x["locale"]] if language_id_mapping.get(x["locale"]) else None, "audio_path" : x["path"], "raw_text" : x["sentence"], "normalized_text" : x["sentence"], "gender" : x["gender"], "speaker_id" : "", "is_gold_transcript" : False, "accent" : x["accents"], "label" : x["label"], "attribute_name" : x["attribute_name"], "attribute_value" : x["attribute_value"]}, data))
     elif format_name == "Ted-Lium":
         data = list(map(lambda x: {"file" : x["path"], "text" : x["sentence"], "gender" : x["gender"], "id" : str(uuid.uuid4()), "speaker_id" : "", "label" : x["label"], "attribute_name" : x["attribute_name"], "attribute_value" : x["attribute_value"]}, data))
 
