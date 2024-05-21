@@ -11,17 +11,19 @@ from rq.worker import StopRequested
 import cvat.utils.remote_debugger as debug
 
 class CVATWorker(Worker):
-    # this method may be called not only from work-horse process
-    # but also from parent process in Worker::monitor_work_horse_process
+    # may be called from work horse's perform_job::except block
+    # or from parent's Worker::monitor_work_horse_process
     # if parent process sees that work-horse is dead
+
+    # This modification ensures that jobs stopped intentionally
+    # do not get their status updated or placed in the failed registry
+    # as the main server code must delete them at all
     def handle_job_failure(self, job, queue, **kwargs):
         # pylint: disable=access-member-before-definition
         if self._stopped_job_id == job.id:
             self._stopped_job_id = None
             self.set_current_job_id(None)
         else:
-            # the job was stopped intentionally, we do not need update its status or put it into failed registry
-            # in our case we remove the job from the main process immediately, after stop request
             super().handle_job_failure(job, queue, **kwargs)
 
 
@@ -69,12 +71,13 @@ class SimpleWorker(CVATWorker):
         super().kill_horse(sig)
 
     def handle_exception(self, *args, **kwargs):
-        # In production environment it sends SIGKILL to work horse process
-        # But for development we overrided it and it sends SIGTERM to the process
-        # So, we need additionally prevent exception handling as the process killed intentionally
+        # In production environment it sends SIGKILL to work horse process and this method never called
+        # But for development we overrided the signal and it sends SIGTERM to the process
+        # This modification ensures that exceptions are handled differently
+        # when the job is stopped intentionally, avoiding incorrect exception handling.
 
-        # Moreover default "handle_exception" code saves meta with exception
-        # It leads to extra bugs:
+        # PROBLEM: default "handle_exception" code saves meta with exception
+        # It leads to bugs:
         # - we create another job with the same ID in the server process
         # - when exception message is saved in worker code, it also saves outdated datetime value as part of meta information
         # - this outdated value then used in server code
