@@ -19,7 +19,7 @@ from cvat.apps.engine.task import _create_thread as create_task
 from cvat.apps.dataset_manager.task import TaskAnnotation
 
 from .annotation import AnnotationIR
-from .bindings import ProjectData, load_dataset_data, CvatImportError
+from .bindings import CvatDatasetNotFoundError, ProjectData, load_dataset_data, CvatImportError
 from .formats.registry import make_exporter, make_importer
 
 dlogger = DatasetLogManager()
@@ -158,7 +158,7 @@ class ProjectAnnotationAndData:
         with TemporaryDirectory(dir=temp_dir_base) as temp_dir:
             try:
                 importer(dataset_file, temp_dir, project_data, self.load_dataset_data, **options)
-            except DatasetNotFoundError as not_found:
+            except (DatasetNotFoundError, CvatDatasetNotFoundError) as not_found:
                 if settings.CVAT_LOG_IMPORT_ERRORS:
                     dlogger.log_import_error(
                         entity="project",
@@ -190,5 +190,5 @@ def import_dataset_as_project(src_file, project_id, format_name, conv_mask_to_po
     with open(src_file, 'rb') as f:
         try:
             project.import_dataset(f, importer, conv_mask_to_poly=conv_mask_to_poly)
-        except (DatasetError, DatasetImportError, DatasetNotFoundError) as ex:
+        except (DatasetError, DatasetImportError, DatasetNotFoundError, CvatDatasetNotFoundError) as ex:
             raise CvatImportError(str(ex))

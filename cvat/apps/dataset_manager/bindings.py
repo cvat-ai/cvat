@@ -20,8 +20,10 @@ import datumaro as dm
 import defusedxml.ElementTree as ET
 import numpy as np
 import rq
-from attr import attrib, attrs
+from attr import attrib, attrs, field
 from datumaro.components.media import PointCloud
+from datumaro.components.environment import Environment
+from datumaro.components.format_detection import RejectionReason
 from django.db.models import QuerySet
 from django.utils import timezone
 
@@ -1664,6 +1666,13 @@ def GetCVATDataExtractor(
 class CvatImportError(Exception):
     pass
 
+class CvatDatasetNotFoundError(Exception):
+    message = field(default="")
+    reason = field(default="")
+
+    def __str__(self):
+        return f"{self.message}"
+
 def mangle_image_name(name: str, subset: str, names: DefaultDict[Tuple[str, str], int]) -> str:
     name, ext = name.rsplit(osp.extsep, maxsplit=1)
 
@@ -2265,3 +2274,18 @@ def load_dataset_data(project_annotation, dataset: dm.Dataset, project_data):
             dataset_files['data_root'] = osp.commonpath(root_paths) + osp.sep
 
         project_annotation.add_task(task_fields, dataset_files, project_data)
+
+def detect_dataset(temp_dir, format_name, importer):
+    not_found_error_instance = CvatDatasetNotFoundError()
+
+    def not_found_error(_, reason, human_message):
+        not_found_error_instance.reason = reason
+        not_found_error_instance.message = human_message
+
+    detection_env = Environment()
+    detection_env.importers.items.clear()
+    detection_env.importers.register(format_name, importer)
+    detected = detection_env.detect_dataset(temp_dir, depth=4, rejection_callback=not_found_error)
+
+    if not detected and not_found_error_instance.reason != RejectionReason.detection_unsupported:
+        raise not_found_error_instance

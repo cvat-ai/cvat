@@ -9,8 +9,10 @@ from datumaro.components.annotation import (AnnotationType, Caption, Label,
     LabelCategories)
 from datumaro.components.dataset import Dataset
 from datumaro.components.extractor import ItemTransform
+from datumaro.plugins.icdar_format.extractor import (IcdarWordRecognitionImporter,
+    IcdarTextSegmentationImporter, IcdarTextLocalizationImporter)
 
-from cvat.apps.dataset_manager.bindings import (GetCVATDataExtractor,
+from cvat.apps.dataset_manager.bindings import (GetCVATDataExtractor, detect_dataset,
     import_dm_annotations)
 from cvat.apps.dataset_manager.util import make_zip_archive
 
@@ -88,6 +90,7 @@ def _export_recognition(dst_file, temp_dir, instance_data, save_images=False):
 @importer(name='ICDAR Recognition', ext='ZIP', version='1.0')
 def _import(src_file, temp_dir, instance_data, load_data_callback=None, **kwargs):
     zipfile.ZipFile(src_file).extractall(temp_dir)
+    detect_dataset(temp_dir, format_name='icdar_word_recognition', importer=IcdarWordRecognitionImporter)
     dataset = Dataset.import_from(temp_dir, 'icdar_word_recognition', env=dm_env)
     dataset.transform(CaptionToLabel, label='icdar')
     if load_data_callback is not None:
@@ -107,6 +110,7 @@ def _export_localization(dst_file, temp_dir, instance_data, save_images=False):
 def _import(src_file, temp_dir, instance_data, load_data_callback=None, **kwargs):
     zipfile.ZipFile(src_file).extractall(temp_dir)
 
+    detect_dataset(temp_dir, format_name='icdar_text_localization', importer=IcdarTextLocalizationImporter)
     dataset = Dataset.import_from(temp_dir, 'icdar_text_localization', env=dm_env)
     dataset.transform(AddLabelToAnns, label='icdar')
     if load_data_callback is not None:
@@ -129,6 +133,7 @@ def _export_segmentation(dst_file, temp_dir, instance_data, save_images=False):
 @importer(name='ICDAR Segmentation', ext='ZIP', version='1.0')
 def _import(src_file, temp_dir, instance_data, load_data_callback=None, **kwargs):
     zipfile.ZipFile(src_file).extractall(temp_dir)
+    detect_dataset(temp_dir, format_name='icdar_text_segmentation', importer=IcdarTextSegmentationImporter)
     dataset = Dataset.import_from(temp_dir, 'icdar_text_segmentation', env=dm_env)
     dataset.transform(AddLabelToAnns, label='icdar')
     dataset = MaskToPolygonTransformation.convert_dataset(dataset, **kwargs)

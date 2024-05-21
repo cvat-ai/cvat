@@ -8,8 +8,10 @@ import zipfile
 from glob import glob
 
 from datumaro.components.dataset import Dataset
+from datumaro.plugins.imagenet_format import ImagenetImporter
+from datumaro.plugins.imagenet_txt_format import ImagenetTxtImporter
 
-from cvat.apps.dataset_manager.bindings import GetCVATDataExtractor, \
+from cvat.apps.dataset_manager.bindings import GetCVATDataExtractor, detect_dataset, \
     import_dm_annotations
 from cvat.apps.dataset_manager.util import make_zip_archive
 
@@ -31,8 +33,10 @@ def _export(dst_file, temp_dir, instance_data, save_images=False):
 def _import(src_file, temp_dir, instance_data, load_data_callback=None, **kwargs):
     zipfile.ZipFile(src_file).extractall(temp_dir)
     if glob(osp.join(temp_dir, '*.txt')):
+        detect_dataset(temp_dir, format_name='imagenet_txt', importer=ImagenetTxtImporter)
         dataset = Dataset.import_from(temp_dir, 'imagenet_txt', env=dm_env)
     else:
+        detect_dataset(temp_dir, format_name='imagenet', importer=ImagenetImporter)
         dataset = Dataset.import_from(temp_dir, 'imagenet', env=dm_env)
         if load_data_callback is not None:
             load_data_callback(dataset, instance_data)

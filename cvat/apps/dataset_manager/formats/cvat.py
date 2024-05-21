@@ -20,7 +20,7 @@ from datumaro.components.extractor import (DEFAULT_SUBSET_NAME, Extractor,
 from datumaro.util.image import Image
 from defusedxml import ElementTree
 
-from cvat.apps.dataset_manager.bindings import (ProjectData, CommonData,
+from cvat.apps.dataset_manager.bindings import (ProjectData, CommonData, detect_dataset,
                                                 get_defaulted_subset,
                                                 import_dm_annotations,
                                                 match_dm_item)
@@ -1439,6 +1439,7 @@ def _import(src_file, temp_dir, instance_data, load_data_callback=None, **kwargs
         zipfile.ZipFile(src_file).extractall(temp_dir)
 
         if isinstance(instance_data, ProjectData):
+            detect_dataset(temp_dir, format_name='cvat', importer=dm_env.importers.get('cvat'))
             dataset = Dataset.import_from(temp_dir, 'cvat', env=dm_env)
             if load_data_callback is not None:
                 load_data_callback(dataset, instance_data)
