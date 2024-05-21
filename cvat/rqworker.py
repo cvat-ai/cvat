@@ -11,6 +11,9 @@ from rq.worker import StopRequested
 import cvat.utils.remote_debugger as debug
 
 class CVATWorker(Worker):
+    # this method may be called not only from work-horse process
+    # but also from parent process in Worker::monitor_work_horse_process
+    # if parent process sees that work-horse is dead
     def handle_job_failure(self, job, queue, **kwargs):
         # pylint: disable=access-member-before-definition
         if self._stopped_job_id == job.id:
