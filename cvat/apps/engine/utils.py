@@ -183,7 +183,14 @@ def define_dependent_job(
         # if there are active or deferred jobs when restarting the worker container.
         if job and job.meta.get("user", {}).get("id") == user_id and job.is_deferred
     ]
-    all_user_jobs = started_user_jobs + deferred_user_jobs
+    queued_user_jobs = [
+        job
+        for job in queue.job_class.fetch_many(
+            queue.get_job_ids(), queue.connection
+        )
+        if job and job.meta.get("user", {}).get("id") == user_id and job.is_deferred
+    ]
+    all_user_jobs = started_user_jobs + deferred_user_jobs + queued_user_jobs
 
     # prevent possible cyclic dependencies
     if rq_id:
