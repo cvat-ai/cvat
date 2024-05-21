@@ -165,32 +165,22 @@ def define_dependent_job(
     if not should_be_dependent:
         return None
 
-    started_user_jobs = [
-        job
-        for job in queue.job_class.fetch_many(
-            queue.started_job_registry.get_job_ids(), queue.connection
-        )
-        if job and job.meta.get("user", {}).get("id") == user_id
-    ]
-    deferred_user_jobs = [
-        job
-        for job in queue.job_class.fetch_many(
-            queue.deferred_job_registry.get_job_ids(), queue.connection
-        )
+    keys = []
+    with queue.connection.pipeline() as pipeline:
         # Since there is no cleanup implementation in DeferredJobRegistry,
         # this registry can contain "outdated" jobs that weren't deleted from it
         # but were added to another registry. Probably such situations can occur
         # if there are active or deferred jobs when restarting the worker container.
-        if job and job.meta.get("user", {}).get("id") == user_id and job.is_deferred
+        for registry in [queue.started_job_registry, queue.deferred_job_registry]:
+            pipeline.zrange(registry.key, 0, -1)
+        pipeline.lrange(queue.key, 0, -1)
+        results = pipeline.execute()
+        keys = [bytes_key.decode('utf-8') for result in results for bytes_key in result]
+
+    all_user_jobs = [
+        job for job in queue.job_class.fetch_many(keys, queue.connection)
+        if job and job.meta.get("user", {}).get("id") == user_id
     ]
-    queued_user_jobs = [
-        job
-        for job in queue.job_class.fetch_many(
-            queue.get_job_ids(), queue.connection
-        )
-        if job and job.meta.get("user", {}).get("id") == user_id and job.is_deferred
-    ]
-    all_user_jobs = started_user_jobs + deferred_user_jobs + queued_user_jobs
 
     # prevent possible cyclic dependencies
     if rq_id:
