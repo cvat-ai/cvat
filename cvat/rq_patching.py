@@ -1,4 +1,4 @@
-# Copyright (C) 2023 CVAT.ai Corporation
+# Copyright (C) 2023-2024 CVAT.ai Corporation
 #
 # SPDX-License-Identifier: MIT
 
@@ -8,14 +8,11 @@ from datetime import datetime
 from typing import Optional
 
 import rq.registry
-from redis.client import Pipeline
 from rq.exceptions import AbandonedJobError, NoSuchJobError
 from rq.job import JobStatus
 from rq.utils import current_timestamp, utcformat
 from rq.version import VERSION
 from rq.worker import StopRequested
-import cvat.utils.remote_debugger as debug
-
 
 
 # NOTE: we should patch implementation of original method because
