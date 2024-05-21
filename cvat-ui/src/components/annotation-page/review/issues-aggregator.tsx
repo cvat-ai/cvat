@@ -1,11 +1,11 @@
 // Copyright (C) 2020-2022 Intel Corporation
-// Copyright (C) 2023 CVAT.ai Corporation
+// Copyright (C) 2023-2024 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
 import './styles.scss';
 import React, { useState, useEffect, useCallback } from 'react';
-import { useSelector, useDispatch } from 'react-redux';
+import { useSelector, useDispatch, shallowEqual } from 'react-redux';
 
 import { ActiveControl, CombinedState } from 'reducers';
 import { Canvas } from 'cvat-canvas/src/typescript/canvas';
@@ -32,26 +32,42 @@ interface ConflictMappingElement {
 
 export default function IssueAggregatorComponent(): JSX.Element | null {
     const dispatch = useDispatch();
-    const [expandedIssue, setExpandedIssue] = useState<number | null>(null);
-    const frameIssues = useSelector((state: CombinedState): any[] => state.review.frameIssues);
-    const issuesHidden = useSelector((state: CombinedState): boolean => state.review.issuesHidden);
-    const issuesResolvedHidden = useSelector((state: CombinedState): boolean => state.review.issuesResolvedHidden);
-    const canvasInstance = useSelector((state: CombinedState) => state.annotation.canvas.instance);
-    const canvasIsReady = useSelector((state: CombinedState): boolean => state.annotation.canvas.ready);
-    const annotationsZLayer = useSelector((state: CombinedState): number => state.annotation.annotations.zLayer.cur);
-    const newIssuePosition = useSelector((state: CombinedState): number[] | null => state.review.newIssuePosition);
-    const issueFetching = useSelector((state: CombinedState): number | null => state.review.fetching.issueId);
-    const [geometry, setGeometry] = useState<Canvas['geometry'] | null>(null);
 
-    const qualityConflicts = useSelector((state: CombinedState) => state.review.frameConflicts);
-    const objectStates = useSelector((state: CombinedState) => state.annotation.annotations.states);
-    const showConflicts = useSelector((state: CombinedState) => state.settings.shapes.showGroundTruth);
-    const highlightedConflict = useSelector((state: CombinedState) => state.annotation.annotations.highlightedConflict);
+    const {
+        frameIssues,
+        issuesHidden,
+        issuesResolvedHidden,
+        canvasInstance,
+        canvasIsReady,
+        annotationsZLayer,
+        newIssuePosition,
+        issueFetching,
+        qualityConflicts,
+        objectStates,
+        showConflicts,
+        highlightedConflict,
+        activeControl,
+    } = useSelector((state: CombinedState) => ({
+        frameIssues: state.review.frameIssues,
+        issuesHidden: state.review.issuesHidden,
+        issuesResolvedHidden: state.review.issuesResolvedHidden,
+        canvasInstance: state.annotation.canvas.instance,
+        canvasIsReady: state.annotation.canvas.ready,
+        annotationsZLayer: state.annotation.annotations.zLayer.cur,
+        newIssuePosition: state.review.newIssuePosition,
+        issueFetching: state.review.fetching.issueId,
+        qualityConflicts: state.review.frameConflicts,
+        objectStates: state.annotation.annotations.states,
+        showConflicts: state.settings.shapes.showGroundTruth,
+        highlightedConflict: state.annotation.annotations.highlightedConflict,
+        activeControl: state.annotation.canvas.activeControl,
+    }), shallowEqual);
+
+    const [expandedIssue, setExpandedIssue] = useState<number | null>(null);
+    const [geometry, setGeometry] = useState<Canvas['geometry'] | null>(null);
 
     const highlightedObjectsIDs = highlightedConflict?.annotationConflicts
         ?.map((annotationConflict: AnnotationConflict) => annotationConflict.serverID);
-
-    const activeControl = useSelector((state: CombinedState) => state.annotation.canvas.activeControl);
 
     const canvasReady = canvasInstance instanceof Canvas && canvasIsReady;
 
