@@ -1936,8 +1936,7 @@ export class SkeletonShape extends Shape {
             return null;
         }
 
-        // The shortest distance from point to an edge
-        return Math.min.apply(null, [x - xtl, y - ytl, xbr - x, ybr - y]);
+        return Math.min.apply(null, distances);
     }
 
     // Method is used to export data to the server
