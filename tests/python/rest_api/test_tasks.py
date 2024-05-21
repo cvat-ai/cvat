@@ -1090,7 +1090,7 @@ class TestPostTaskData:
         }
 
         task_data = {
-            "server_files": ["videos/video_without_valid_keyframes.ts"],
+            "server_files": [os.path.join("videos", "test_video_without_valid_keyframes.ts")],
             "image_quality": 70,
         }
 
