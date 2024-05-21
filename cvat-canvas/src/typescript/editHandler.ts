@@ -31,8 +31,10 @@ export class EditHandlerImpl implements EditHandler {
     private autobordersEnabled: boolean;
     private intelligentCutEnabled: boolean;
     private outlinedBorders: string;
+    private circle: SVG.Circle | null = null;
 
     private setupTrailingPoint(circle: SVG.Circle): void {
+        this.circle = circle;
         const head = this.editedShape.attr('points').split(' ').slice(0, this.editData.pointID).join(' ');
         circle.on('mouseenter', (): void => {
             circle.attr({
@@ -47,7 +49,7 @@ export class EditHandlerImpl implements EditHandler {
         });
 
         const minimumPoints = 2;
-        circle.on('mousedown', (e: MouseEvent): void => {
+        circle.on('click', (e: MouseEvent): void => {
             if (e.button !== 0) return;
             const { offset } = this.geometry;
             const stringifiedPoints = `${head} ${this.editLine.node.getAttribute('points').slice(0, -2)}`;
@@ -383,6 +385,18 @@ export class EditHandlerImpl implements EditHandler {
         this.release();
     }
 
+    private onNKeyUp = (e: KeyboardEvent): void => {
+        if (e.key === 'n' && this.editData.state.shapeType === 'polyline') {
+            const mouseEvent = new MouseEvent('click', {
+                bubbles: true,
+                cancelable: true,
+                view: window,
+                button: 0,
+            });
+            this.circle.node.dispatchEvent(mouseEvent);
+        }
+    };
+
     public constructor(
         onEditDone: EditHandlerImpl['onEditDone'],
         canvas: SVG.Container,
@@ -400,6 +414,7 @@ export class EditHandlerImpl implements EditHandler {
         this.editLine = null;
         this.geometry = null;
         this.clones = [];
+        document.addEventListener('keyup', this.onNKeyUp);
     }
 
     public edit(editData: any): void {

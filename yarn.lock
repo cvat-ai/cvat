@@ -3557,9 +3557,9 @@ camera-controls@^1.25.3:
   integrity sha512-EfzbovxLssyWpJVG9uKcazSDDIEcd1hUsPhPF/OWWnICsKY9WbLY/2S4UPW73HHbvnVeR/Z9wsWaQKtANy/2Yg==
 
 caniuse-lite@^1.0.30001538, caniuse-lite@^1.0.30001541:
-  version "1.0.30001565"
-  resolved "https://registry.yarnpkg.com/caniuse-lite/-/caniuse-lite-1.0.30001565.tgz#a528b253c8a2d95d2b415e11d8b9942acc100c4f"
-  integrity sha512-xrE//a3O7TP0vaJ8ikzkD2c2NgcVUvsEe2IvFTntV4Yd1Z9FVzh+gW+enX96L0psrbaFMcVcH2l90xNuGDWc8w==
+  version "1.0.30001620"
+  resolved "https://registry.npmjs.org/caniuse-lite/-/caniuse-lite-1.0.30001620.tgz"
+  integrity sha512-WJvYsOjd1/BYUY6SNGUosK9DUidBPDTnOARHp3fSmFO1ekdxaY6nKRttEVrfMmYi80ctS0kz1wiWmm14fVc3ew==
 
 canvas@^2.8.0:
   version "2.11.2"
@@ -4214,7 +4214,7 @@ custom-error-instance@2.1.1:
     three "^0.156.1"
 
 "cvat-canvas@link:./cvat-canvas":
-  version "2.20.0"
+  version "2.20.1"
   dependencies:
     "@types/polylabel" "^1.0.5"
     polylabel "^1.1.0"
@@ -4225,7 +4225,7 @@ custom-error-instance@2.1.1:
     svg.select.js "3.0.1"
 
 "cvat-core@link:./cvat-core":
-  version "15.0.2"
+  version "15.0.5"
   dependencies:
     axios "^1.6.0"
     axios-retry "^4.0.0"
