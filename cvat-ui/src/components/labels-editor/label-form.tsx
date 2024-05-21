@@ -70,6 +70,7 @@ export default class LabelForm extends React.Component<Props> {
         const arr: SerializedAttribute[] = []; // to store the updated attributes
         const updatedLayout = this.formRef.current?.getFieldValue('layout');
         if (updatedLayout) {
+            // Updating attributes based on updatedLayout before sending it to server
             const attr = values.attributes;
             updatedLayout.forEach((obj: any, index: number) => {
                 arr[obj.y] = attr[index];
@@ -719,7 +720,6 @@ export default class LabelForm extends React.Component<Props> {
                                         width={600}
                                         onLayoutChange={(updatedLayout) => {
                                             this.formRef.current?.setFieldsValue({ layout: updatedLayout });
-                                            console.log(this.formRef.current?.getFieldValue('attributes'));
                                         }}
                                         draggableHandle='.cvat-drag-drop'
                                     >
