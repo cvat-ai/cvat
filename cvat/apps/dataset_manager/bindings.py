@@ -6,6 +6,7 @@
 from __future__ import annotations
 
 import os.path as osp
+import re
 import sys
 from collections import namedtuple
 from functools import reduce
@@ -26,6 +27,7 @@ from datumaro.components.environment import Environment
 from datumaro.components.format_detection import RejectionReason
 from django.db.models import QuerySet
 from django.utils import timezone
+from django.conf import settings
 
 from cvat.apps.dataset_manager.formats.utils import get_label_color
 from cvat.apps.dataset_manager.util import add_prefetch_fields
@@ -1669,9 +1671,22 @@ class CvatImportError(Exception):
 class CvatDatasetNotFoundError(Exception):
     message = field(default="")
     reason = field(default="")
+    format_name = field(default="")
+    _docs_base_url = f"{settings.CVAT_DOCS_URL}/manual/advanced/formats/"
 
     def __str__(self):
-        return f"{self.message}"
+        formatted_format_name = self.format_name.replace("_", "-")
+        if "coco" in formatted_format_name:
+            formatted_format_name = "coco"
+
+        docs_message = f"Check [format docs]({self._docs_base_url}format-{self.format_name})"
+        display_message = re.sub(r'^.*?:', "", self.message)
+        if "dataset must contain a file matching pattern" in display_message:
+            display_message = display_message.replace("dataset must contain a file matching pattern", "")
+            display_message = display_message.replace("\n", "")
+            display_message = "Dataset must contain a file:" + display_message
+        display_message = re.sub(r' +', " ", display_message)
+        return f"{docs_message}. {display_message}"
 
 def mangle_image_name(name: str, subset: str, names: DefaultDict[Tuple[str, str], int]) -> str:
     name, ext = name.rsplit(osp.extsep, maxsplit=1)
@@ -2279,6 +2294,7 @@ def detect_dataset(temp_dir, format_name, importer):
     not_found_error_instance = CvatDatasetNotFoundError()
 
     def not_found_error(_, reason, human_message):
+        not_found_error_instance.format_name = format_name
         not_found_error_instance.reason = reason
         not_found_error_instance.message = human_message
 

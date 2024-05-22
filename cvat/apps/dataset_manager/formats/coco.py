@@ -7,7 +7,7 @@ import zipfile
 
 from datumaro.components.dataset import Dataset
 from datumaro.components.annotation import AnnotationType
-from datumaro.plugins.coco_format.importer import CocoInstancesImporter, CocoPersonKeypointsImporter
+from datumaro.plugins.coco_format.importer import CocoImporter
 
 from cvat.apps.dataset_manager.bindings import GetCVATDataExtractor, detect_dataset, \
     import_dm_annotations
@@ -28,7 +28,8 @@ def _export(dst_file, temp_dir, instance_data, save_images=False):
 def _import(src_file, temp_dir, instance_data, load_data_callback=None, **kwargs):
     if zipfile.is_zipfile(src_file):
         zipfile.ZipFile(src_file).extractall(temp_dir)
-        detect_dataset(temp_dir, format_name='coco_instances', importer=CocoInstancesImporter)
+        # We use coco importer because it gives better error message
+        detect_dataset(temp_dir, format_name='coco', importer=CocoImporter)
         dataset = Dataset.import_from(temp_dir, 'coco_instances', env=dm_env)
         if load_data_callback is not None:
             load_data_callback(dataset, instance_data)
@@ -57,7 +58,8 @@ def _import(src_file, temp_dir, instance_data, load_data_callback=None, **kwargs
 
     if zipfile.is_zipfile(src_file):
         zipfile.ZipFile(src_file).extractall(temp_dir)
-        detect_dataset(temp_dir, format_name='coco_person_keypoints', importer=CocoPersonKeypointsImporter)
+        # We use coco importer because it gives better error message
+        detect_dataset(temp_dir, format_name='coco', importer=CocoImporter)
         dataset = Dataset.import_from(temp_dir, 'coco_person_keypoints', env=dm_env)
         remove_extra_annotations(dataset)
         if load_data_callback is not None:

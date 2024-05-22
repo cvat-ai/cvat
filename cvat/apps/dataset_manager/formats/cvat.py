@@ -17,6 +17,8 @@ from datumaro.components.annotation import (AnnotationType, Bbox, Label,
 from datumaro.components.dataset import Dataset, DatasetItem
 from datumaro.components.extractor import (DEFAULT_SUBSET_NAME, Extractor,
                                            Importer)
+from datumaro.plugins.cvat_format.extractor import CvatImporter as _CvatImporter
+
 from datumaro.util.image import Image
 from defusedxml import ElementTree
 
@@ -1439,7 +1441,7 @@ def _import(src_file, temp_dir, instance_data, load_data_callback=None, **kwargs
         zipfile.ZipFile(src_file).extractall(temp_dir)
 
         if isinstance(instance_data, ProjectData):
-            detect_dataset(temp_dir, format_name='cvat', importer=dm_env.importers.get('cvat'))
+            detect_dataset(temp_dir, format_name='cvat', importer=_CvatImporter)
             dataset = Dataset.import_from(temp_dir, 'cvat', env=dm_env)
             if load_data_callback is not None:
                 load_data_callback(dataset, instance_data)

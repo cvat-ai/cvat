@@ -190,5 +190,5 @@ def import_dataset_as_project(src_file, project_id, format_name, conv_mask_to_po
     with open(src_file, 'rb') as f:
         try:
             project.import_dataset(f, importer, conv_mask_to_poly=conv_mask_to_poly)
-        except (DatasetError, DatasetImportError, DatasetNotFoundError, CvatDatasetNotFoundError) as ex:
+        except (DatasetError, DatasetImportError, DatasetNotFoundError) as ex:
             raise CvatImportError(str(ex))
