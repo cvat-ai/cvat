@@ -179,7 +179,7 @@ def define_dependent_job(
 
     all_user_jobs = [
         job for job in queue.job_class.fetch_many(keys, queue.connection)
-        if job and job.meta.get("user", {}).get("id") == user_id
+        if job and job.meta.get("user", {}).get("id") == user_id and job.get_status() in ["started", "queued", "deferred"]
     ]
 
     # prevent possible cyclic dependencies
