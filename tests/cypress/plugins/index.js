@@ -44,11 +44,7 @@ module.exports = (on, config) => {
 
     on('after:spec', (spec, results) => {
         if (results && results.stats.failures === 0 && results.video) {
-            try {
-                fs.unlinkSync(results.video);
-            } catch (error) {
-                console.error('Error deleting video', error);
-            }
+            fs.unlinkSync(results.video);
         }
     });
     return config;
