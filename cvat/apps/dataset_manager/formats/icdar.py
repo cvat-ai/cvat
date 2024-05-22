@@ -10,8 +10,7 @@ from datumaro.components.annotation import (AnnotationType, Caption, Label,
 from datumaro.components.dataset import Dataset
 from datumaro.components.extractor import ItemTransform
 
-from cvat.apps.dataset_manager.bindings import (GetCVATDataExtractor, detect_dataset,
-    import_dm_annotations)
+from cvat.apps.dataset_manager.bindings import (GetCVATDataExtractor, import_dm_annotations)
 from cvat.apps.dataset_manager.util import make_zip_archive
 
 from .transformations import MaskToPolygonTransformation, RotatedBoxesToPolygons
