@@ -111,6 +111,7 @@ export function getRequestsAsync(query: RequestsQuery, notify = true): ThunkActi
                                     undefined,
                                     undefined,
                                     undefined,
+                                    listeningPromise,
                                 ));
                             }
                         } else if (!(state.export.tasks.dataset.current?.[(instance as RequestInstanceType).id] ||
