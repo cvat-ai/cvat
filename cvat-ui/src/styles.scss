@@ -5,9 +5,6 @@
 
 @import './base';
 
-$highlight-color: #1890ff;
-$highlight-active: #40a9ff;
-
 hr {
     border: none;
     border-top: 1px solid $border-color-1;
@@ -118,15 +115,6 @@ html, body {
 
     .cvat-title {
         padding-top: 0;
-    }
-}
-
-.cvat-menu-item-highlighted {
-    color: white;
-    background: $highlight-color;
-
-    &:hover {
-        background: $highlight-active;
     }
 }
 

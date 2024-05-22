@@ -210,21 +210,21 @@ function HeaderComponent(props: Props): JSX.Element {
     const aboutPlugins = usePlugins((state: CombinedState) => state.plugins.components.about.links.items, props);
     const aboutLinks: [JSX.Element, number][] = [];
     aboutLinks.push([(
-        <Col>
+        <Col key='changelog'>
             <a href={CHANGELOG_URL} target='_blank' rel='noopener noreferrer'>
                 What&apos;s new?
             </a>
         </Col>
     ), 0]);
     aboutLinks.push([(
-        <Col>
+        <Col key='license'>
             <a href={LICENSE_URL} target='_blank' rel='noopener noreferrer'>
                 MIT License
             </a>
         </Col>
     ), 10]);
     aboutLinks.push([(
-        <Col>
+        <Col key='discord'>
             <a href={DISCORD_URL} target='_blank' rel='noopener noreferrer'>
                 Find us on Discord
             </a>
