@@ -15,6 +15,7 @@ import mimetypes
 from zipfile import ZipFile
 from datetime import datetime
 from tempfile import NamedTemporaryFile
+from contextlib import suppress
 
 import django_rq
 from rq.command import send_stop_job_command
@@ -969,11 +970,8 @@ def export(db_instance, request, queue_name):
             # in case the server is configured with ONE_RUNNING_JOB_IN_QUEUE_PER_USER
             # we have to enqueue dependent jobs after canceling one
             rq_job.cancel(enqueue_dependents=settings.ONE_RUNNING_JOB_IN_QUEUE_PER_USER)
-            try:
+            with suppress(InvalidJobOperation):
                 send_stop_job_command(rq_job.connection, rq_job.id)
-            except InvalidJobOperation:
-                pass
-
             rq_job.delete()
         else:
             if rq_job.is_finished:
