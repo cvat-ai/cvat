@@ -4,11 +4,9 @@
 # SPDX-License-Identifier: MIT
 
 from datumaro.components.dataset import Dataset
-from datumaro.plugins.camvid_format import CamvidImporter
 from pyunpack import Archive
 
-from cvat.apps.dataset_manager.bindings import (GetCVATDataExtractor, detect_dataset,
-    import_dm_annotations)
+from cvat.apps.dataset_manager.bindings import (GetCVATDataExtractor, import_dm_annotations)
 from cvat.apps.dataset_manager.util import make_zip_archive
 
 from .transformations import MaskToPolygonTransformation, RotatedBoxesToPolygons
@@ -36,7 +34,6 @@ def _export(dst_file, temp_dir, instance_data, save_images=False):
 def _import(src_file, temp_dir, instance_data, load_data_callback=None, **kwargs):
     Archive(src_file.name).extractall(temp_dir)
 
-    detect_dataset(temp_dir, format_name='camvid', importer=CamvidImporter)
     dataset = Dataset.import_from(temp_dir, 'camvid', env=dm_env)
     dataset = MaskToPolygonTransformation.convert_dataset(dataset, **kwargs)
     if load_data_callback is not None:
