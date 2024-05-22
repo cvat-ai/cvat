@@ -152,7 +152,7 @@ $social-google-background: #4286f5;
 .cvat-credentials-action-button {
     width: 100%;
     border-radius: $border-radius-base;
-    background-color: $action-button-color-1 !important;
+    background-color: $action-button-color-1;
     height: $grid-unit-size * 11;
     color: white;
     font-size: 16px;
@@ -161,8 +161,7 @@ $social-google-background: #4286f5;
     box-shadow: none;
     transition: $base-transition;
 
-    &:hover,
-    &:focus {
+    &:hover {
         background-color: $action-button-color-1 !important;
         color: $action-button-color-2 !important;
     }
