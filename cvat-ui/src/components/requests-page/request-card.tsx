@@ -166,6 +166,7 @@ export default function RequestCard(props: Props): JSX.Element {
                 <Menu.Item
                     key='download'
                     onClick={() => {
+                        setIsActive(false);
                         const downloadAnchor = window.document.getElementById('downloadAnchor') as HTMLAnchorElement;
                         downloadAnchor.href = request.url;
                         downloadAnchor.click();
