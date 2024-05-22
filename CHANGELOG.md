@@ -16,6 +16,61 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 <!-- scriv-insert-here -->
 
+<a id='changelog-2.14.0'></a>
+## \[2.14.0\] - 2024-05-21
+
+### Added
+
+- Added security headers enforcing strict `Referrer-Policy` for cross origins and disabling MIME type sniffing via `X-Content-Type-Options`.
+  (<https://github.com/opencv/cvat/pull/7752>)
+
+- \[Helm\] Ability to specify ServiceAccount for backend pods
+  (<https://github.com/cvat-ai/cvat/pull/7894>)
+
+### Changed
+
+- Working time rounding to a minimal value of 1 hour is not applied to the annotation speed metric any more
+  (<https://github.com/cvat-ai/cvat/pull/7898>)
+
+- Total annotation speed metric renamed to Average annotation speed
+  (<https://github.com/cvat-ai/cvat/pull/7898>)
+
+- Ground truth jobs are not considered when computing analytics report for a task/project
+  (<https://github.com/cvat-ai/cvat/pull/7919>)
+
+### Fixed
+
+- Fixed calculation of annotation speed metrics for analytics reports
+  (<https://github.com/opencv/cvat/pull/7144>)
+
+- \[Helm\] Prevented spurious 200 OK responses from API endpoints
+  before the backend is ready
+  (<https://github.com/cvat-ai/cvat/pull/7859>)
+
+- Analytic reports incorrect count of objects for a skeleton track/shape
+  (<https://github.com/cvat-ai/cvat/pull/7883>)
+
+- Analytic reports incorrect number of objects for a track (always less by 1)
+  (<https://github.com/cvat-ai/cvat/pull/7883>)
+
+- REST API allowed to create several attributes with the same name within one label
+  (<https://github.com/cvat-ai/cvat/pull/7890>)
+
+- Job's/task's status are not updated when job's state updated to completed and stage is already acceptance
+  (<https://github.com/cvat-ai/cvat/pull/7901>)
+
+- Exception: Cannot read properties of undefined (reading 'onBlockUpdated')
+  (<https://github.com/cvat-ai/cvat/pull/7913>)
+
+- One more found way to create an empty mask
+  (<https://github.com/cvat-ai/cvat/pull/7915>)
+
+- Slice function may not work in Google Chrome < 110
+  (<https://github.com/cvat-ai/cvat/pull/7916>)
+
+- Selecting a skeleton by cursor does not work correctly when there are some hidden points
+  (<https://github.com/cvat-ai/cvat/pull/7921>)
+
 <a id='changelog-2.13.0'></a>
 ## \[2.13.0\] - 2024-05-09
 

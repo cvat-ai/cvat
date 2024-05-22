@@ -808,7 +808,7 @@ class CanvasWrapperComponent extends React.PureComponent<Props> {
 
         const result = await jobInstance.annotations.select(event.detail.states, event.detail.x, event.detail.y);
         if (result && result.state) {
-            if (['polyline', 'points'].includes(result.state.shapeType)) {
+            if ([ShapeType.POLYLINE, ShapeType.POINTS].includes(result.state.shapeType)) {
                 if (result.distance > MAX_DISTANCE_TO_OPEN_SHAPE) {
                     return;
                 }
