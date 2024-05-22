@@ -104,6 +104,18 @@
     &:nth-child(4n) {
         border-right: 0;
     }
+
+    .cvat-models-item-card-preview-wrapper {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        height: $grid-unit-size * 18;
+        overflow: hidden;
+
+        &:hover {
+            cursor: pointer;
+        }
+    }
 }
 
 .cvat-model-item-loading-preview,
@@ -119,18 +131,6 @@
 
 .cvat-model-item-loading-preview {
     padding-top: $grid-unit-size * 3;
-}
-
-.cvat-models-item-card-preview-wrapper {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    height: $grid-unit-size * 18;
-    overflow: hidden;
-
-    &:hover {
-        cursor: pointer;
-    }
 }
 
 .cvat-model-item-top-bar {
