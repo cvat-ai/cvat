@@ -95,7 +95,9 @@ export const exportDatasetAsync = (
         } else {
             const rqID = await instance.annotations
                 .exportDataset(format, saveImages, useDefaultSettings, targetStorage, name);
-            result = await listen(rqID, dispatch);
+            if (rqID) {
+                result = await listen(rqID, dispatch);
+            }
         }
 
         const resource = saveImages ? 'Dataset' : 'Annotations';
@@ -122,7 +124,9 @@ export const exportBackupAsync = (
         } else {
             const rqID = await instance
                 .backup(targetStorage, useDefaultSetting, fileName);
-            result = await listen(rqID, dispatch);
+            if (rqID) {
+                result = await listen(rqID, dispatch);
+            }
         }
         dispatch(exportActions.exportBackupSuccess(instance, instanceType, !!result?.url));
     } catch (error) {
