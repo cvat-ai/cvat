@@ -161,10 +161,6 @@ class RequestsManager {
         }
         const promise = new Promise<Request>((resolve, reject) => {
             const timeoutCallback = async (): Promise<void> => {
-                if (!(requestID in this.listening)) {
-                    return;
-                }
-
                 // We make sure that no more than REQUESTS_COUNT requests are sent simultaneously
                 // If thats the case, we re-schedule the timeout
                 const timestamp = Date.now();
