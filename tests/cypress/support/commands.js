@@ -215,7 +215,8 @@ Cypress.Commands.add(
             if (advancedConfigurationParams) {
                 cy.advancedConfiguration(advancedConfigurationParams);
             }
-            cy.contains('button', 'Submit & Continue').click();
+            cy.get('.cvat-submit-continue-task-button').scrollIntoView();
+            cy.get('.cvat-submit-continue-task-button').click();
             if (expectedResult === 'success') {
                 cy.get('.cvat-notification-create-task-success').should('exist').find('[data-icon="close"]').click();
             }
@@ -1073,6 +1074,7 @@ Cypress.Commands.add('addNewLabelViaContinueButton', (additionalLabels) => {
             for (let j = 0; j < additionalLabels.length; j++) {
                 cy.get('[placeholder="Label name"]').type(additionalLabels[j]);
                 cy.contains('button', 'Continue').click();
+                cy.contains('button', 'Continue').trigger('mouseout');
             }
             cy.contains('button', 'Cancel').click();
         }

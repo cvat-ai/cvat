@@ -531,7 +531,7 @@ function ImportDatasetModal(props: StateToProps): JSX.Element {
                         }
                     </>
                 )}
-                visible={!!instance}
+                open={!!instance}
                 onCancel={closeModal}
                 onOk={() => form.submit()}
                 className='cvat-modal-import-dataset'

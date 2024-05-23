@@ -6,6 +6,7 @@
 import React, {
     useState, useEffect, useCallback, CSSProperties,
 } from 'react';
+
 import { Row, Col } from 'antd/lib/grid';
 import Icon, { LinkOutlined, DeleteOutlined } from '@ant-design/icons';
 import Slider from 'antd/lib/slider';
@@ -168,7 +169,7 @@ function PlayerNavigation(props: Props): JSX.Element {
                 </Row>
                 <Row justify='center'>
                     <Col className='cvat-player-filename-wrapper'>
-                        <CVATTooltip title={frameFilename}>
+                        <CVATTooltip title={`${frameFilename}`}>
                             <Text type='secondary'>{frameFilename}</Text>
                         </CVATTooltip>
                     </Col>

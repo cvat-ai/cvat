@@ -201,8 +201,8 @@ export class MasksHandlerImpl implements MasksHandler {
             .reduce((acc: TwoCornerBox, rect: BoundingRect) => {
                 acc.top = Math.floor(Math.max(0, Math.min(rect.top, acc.top)));
                 acc.left = Math.floor(Math.max(0, Math.min(rect.left, acc.left)));
-                acc.bottom = Math.floor(Math.min(height, Math.max(rect.top + rect.height, acc.bottom)));
-                acc.right = Math.floor(Math.min(width, Math.max(rect.left + rect.width, acc.right)));
+                acc.bottom = Math.floor(Math.min(height - 1, Math.max(rect.top + rect.height, acc.bottom)));
+                acc.right = Math.floor(Math.min(width - 1, Math.max(rect.left + rect.width, acc.right)));
                 return acc;
             }, {
                 left: Number.MAX_SAFE_INTEGER,
@@ -572,7 +572,14 @@ export class MasksHandlerImpl implements MasksHandler {
                                 image.globalCompositeOperation = 'xor';
                                 image.opacity = 0.5;
                                 this.canvas.add(image);
-                                this.drawnObjects.push(image);
+                                /*
+                                    when we paste a mask, we do not need additional logic implemented
+                                    in MasksHandlerImpl::createDrawnObjectsArray.push using JS Proxy
+                                    because we will not work with any drawing tools here, and it will cause the issue
+                                    because this.tools may be undefined here
+                                    when it is used inside the push custom implementation
+                                */
+                                this.drawnObjects = [image];
                                 this.canvas.renderAll();
                             } finally {
                                 resolve();

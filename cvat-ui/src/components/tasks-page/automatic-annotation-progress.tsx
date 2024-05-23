@@ -1,5 +1,5 @@
 // Copyright (C) 2020-2022 Intel Corporation
-// Copyright (C) 2023 CVAT.ai Corporation
+// Copyright (C) 2023-2024 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -74,7 +74,6 @@ export default function AutomaticAnnotationProgress(props: Props): JSX.Element |
                         to: '#87d068',
                     }}
                     showInfo={false}
-                    strokeWidth={5}
                     size='small'
                 />
             </Col>
