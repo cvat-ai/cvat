@@ -717,3 +717,6 @@ CVAT_CONCURRENT_CHUNK_PROCESSING = int(os.getenv('CVAT_CONCURRENT_CHUNK_PROCESSI
 
 from cvat.rq_patching import update_started_job_registry_cleanup
 update_started_job_registry_cleanup()
+
+CVAT_MAX_THREADS_NUMBER_FOR_DATA_DOWNLOADING = 4
+CVAT_NUMBER_OF_FILES_PER_THREAD = 1000
