@@ -1668,10 +1668,10 @@ def GetCVATDataExtractor(
 class CvatImportError(Exception):
     pass
 
-class CvatDatasetNotFoundError(Exception):
-    message = field(default="")
-    reason = field(default="")
-    format_name = field(default="")
+class CvatDatasetNotFoundError(CvatImportError):
+    message: str = ""
+    reason: str = ""
+    format_name: str = ""
     _docs_base_url = f"{settings.CVAT_DOCS_URL}/manual/advanced/formats/"
 
     def __str__(self):
