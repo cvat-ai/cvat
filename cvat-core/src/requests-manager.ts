@@ -105,42 +105,6 @@ export class Request {
     get owner(): User {
         return this.#owner;
     }
-
-    updateFields(request: Partial<SerializedRequest>): void {
-        if (request.id !== undefined) {
-            this.#id = request.id;
-        }
-        if (request.status !== undefined) {
-            this.#status = request.status as RQStatus;
-        }
-        if (request.operation !== undefined) {
-            this.#operation = request.operation;
-        }
-        if (request.progress !== undefined) {
-            this.#progress = request.progress;
-        }
-        if (request.message !== undefined) {
-            this.#message = request.message;
-        }
-        if (request.result_url !== undefined) {
-            this.#resultUrl = request.result_url;
-        }
-        if (request.enqueued_date !== undefined) {
-            this.#enqueuedDate = request.enqueued_date;
-        }
-        if (request.started_date !== undefined) {
-            this.#startedDate = request.started_date;
-        }
-        if (request.finished_date !== undefined) {
-            this.#finishedDate = request.finished_date;
-        }
-        if (request.expiry_date !== undefined) {
-            this.#expiryDate = request.expiry_date;
-        }
-        if (request.owner !== undefined) {
-            this.#owner = new User(request.owner);
-        }
-    }
 }
 
 const REQUESTS_COUNT = 5;
