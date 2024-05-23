@@ -180,7 +180,7 @@ class RequestsManager {
     }
 
     async listen(
-        id: string | null,
+        id: string,
         options?: {
             callback?: (request: Request) => void,
             filter?: RequestsFilter,

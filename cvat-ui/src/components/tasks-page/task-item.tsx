@@ -25,6 +25,7 @@ export interface TaskItemProps {
     taskInstance: any;
     deleted: boolean;
     activeInference: ActiveInference | null;
+    activeRequest: Request | null;
     ribbonPlugins: PluginComponent[];
     cancelAutoAnnotation(): void;
     updateTaskInState(task: Task): void;
@@ -55,11 +56,20 @@ class TaskItemComponent extends React.PureComponent<TaskItemProps & RouteCompone
     }
 
     public componentDidMount(): void {
-        const { taskInstance, updateTaskInState } = this.props;
+        const { taskInstance, updateTaskInState, activeRequest } = this.props;
         const { importingState } = this.state;
 
-        if (importingState !== null) {
-            taskInstance.listenToCreate({
+        if (importingState !== null && activeRequest !== null) {
+            if (!this.#isUnmounted) {
+                this.setState({
+                    importingState: {
+                        message: activeRequest.message,
+                        progress: Math.floor(activeRequest.progress * 100),
+                        state: activeRequest.status,
+                    },
+                });
+            }
+            taskInstance.listenToCreate(activeRequest.id, {
                 callback: (request: Request) => {
                     if (!this.#isUnmounted) {
                         this.setState({
@@ -71,7 +81,6 @@ class TaskItemComponent extends React.PureComponent<TaskItemProps & RouteCompone
                         });
                     }
                 },
-                filter: { taskID: taskInstance.id, action: 'create' },
             },
             ).then((createdTask: Task) => {
                 if (!this.#isUnmounted) {

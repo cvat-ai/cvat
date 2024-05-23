@@ -1108,7 +1108,7 @@ async function createTask(
     taskSpec: Partial<SerializedTask>,
     taskDataSpec: any,
     onUpdate: (state: RQStatus, progress: number, message: string) => void,
-): Promise<number> {
+): Promise<string> {
     const { backendAPI, origin } = config;
     // keep current default params to 'freeze" them during this request
     const params = enableOrganization();
@@ -1221,7 +1221,8 @@ async function createTask(
     }
 
     try {
-        return response.data.id;
+        const rqID = `create:task-${response.data.id}`;
+        return rqID;
     } catch (createException) {
         await deleteTask(response.data.id, params.org || null);
         throw createException;
