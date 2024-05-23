@@ -11,6 +11,7 @@ import os
 
 from abc import ABC, abstractmethod, abstractproperty, abstractstaticmethod
 from contextlib import closing
+from itertools import islice
 from PIL import Image
 from json.decoder import JSONDecodeError
 from inspect import isgenerator
@@ -146,9 +147,8 @@ class DatasetImagesReader:
         step: int = 1,
         stop: Optional[int] = None,
         meta: Optional[Dict[str, List[str]]] = None,
-        sorting_method: SortingMethod =SortingMethod.PREDEFINED,
+        sorting_method: SortingMethod = SortingMethod.PREDEFINED,
         use_image_hash: bool = False,
-        are_sources_filtered: bool = False,
         **kwargs
     ):
         self._is_generator_used = isgenerator(sources)
@@ -166,7 +166,8 @@ class DatasetImagesReader:
         self._use_image_hash = use_image_hash
         self._start = start
         self._stop = stop if stop or self._is_generator_used else len(sources)
-        self.are_sources_filtered = are_sources_filtered
+        if self._stop is None:
+            raise ValueError('The stop parameter should be passed when generator is used')
         self._step = step
 
     @property
@@ -222,40 +223,14 @@ class DatasetImagesReader:
         return image_properties
 
     def __iter__(self):
-        if not self.are_sources_filtered:
-            if self.stop is not None:
-                index_range = range(self.start, self.stop, self.step)
-                idx = 0
-                for image in self._sources:
-                    if idx in index_range:
-                        yield self._get_img_properties(image)
-                    else:
-                        yield dict()
-                    idx += 1
-            elif self.start or self.step != 1:
-                idx = 0
-                for image in self._sources:
-                    if idx >= self.start and not (idx - self._start) % self.step:
-                        yield self._get_img_properties(image)
-                    else:
-                        yield dict()
+        sources = self._sources if self._is_generator_used else islice(self._sources, self.start, self.stop + 1, self.step)
+
+        for idx in range(self.stop + 1):
+            if idx in range(self.start, self.stop + 1, self.step):
+                image = next(sources)
+                yield self._get_img_properties(image)
             else:
-                for image in self._sources:
-                    yield self._get_img_properties(image)
-        else:
-            sources = iter(self._sources) if not self._is_generator_used else self._sources
-
-            assert self.start is not None
-            assert self.stop is not None
-            assert self.step is not None
-
-            index_range = range(self.start, self.stop, self.step)
-            for idx in range(self.stop):
-                if idx in index_range:
-                    image = next(sources)
-                    yield self._get_img_properties(image)
-                else:
-                    yield dict()
+                yield dict()
 
     @property
     def range_(self):
@@ -428,7 +403,6 @@ class _ManifestManager(ABC):
                 offset = self._index[line]
                 manifest_file.seek(offset)
                 properties = manifest_file.readline()
-                # fixme: remove from common class
                 parsed_properties = ImageProperties(json.loads(properties))
                 self._validate_json_item(**parsed_properties)
                 return parsed_properties
@@ -470,7 +444,6 @@ class _ManifestManager(ABC):
             for idx, line_start in enumerate(self._index):
                 manifest_file.seek(line_start)
                 line = manifest_file.readline()
-                # fixme: remove from common class
                 item = ImageProperties(json.loads(line))
                 self._validate_json_item(**item)
                 yield (idx, item)

@@ -41,6 +41,12 @@ CPU_NUMBER = get_cpu_number()
 MAX_THREADS_NUMBER = 4
 NUMBER_OF_FILES_PER_THREAD = 1000
 
+def normalize_threads_number(threads_number: Optional[int], number_of_files: int) -> int:
+    if threads_number is None:
+        return min(CPU_NUMBER, MAX_THREADS_NUMBER, max(math.ceil(number_of_files / NUMBER_OF_FILES_PER_THREAD), 1))
+
+    return min(threads_number, CPU_NUMBER, MAX_THREADS_NUMBER)
+
 class Status(str, Enum):
     AVAILABLE = 'AVAILABLE'
     NOT_FOUND = 'NOT_FOUND'
@@ -207,13 +213,7 @@ class _CloudStorage(ABC):
         _use_optimal_downloading: bool = True,
     ) -> Iterator[BytesIO]:
         func = self.optimally_image_download if _use_optimal_downloading else self.download_fileobj
-        if threads_number is None:
-            threads_number = min(CPU_NUMBER, MAX_THREADS_NUMBER, max(math.ceil(len(files) / NUMBER_OF_FILES_PER_THREAD), 1))
-        else:
-            threads_number = min(threads_number, CPU_NUMBER, MAX_THREADS_NUMBER)
-
-        if threads_number == 1:
-            slogger.glob.info('Download files to memory in series in one thread.')
+        threads_number = normalize_threads_number(threads_number, len(files))
 
         with ThreadPoolExecutor(max_workers=threads_number) as executor:
             yield from executor.map(func, files)
@@ -222,19 +222,16 @@ class _CloudStorage(ABC):
         self,
         files: List[str],
         upload_dir: str,
+        *,
         threads_number: Optional[int] = None,
-    ):
-        if threads_number is None:
-            threads_number = min(CPU_NUMBER, MAX_THREADS_NUMBER, max(math.ceil(len(files) / NUMBER_OF_FILES_PER_THREAD), 1))
-        else:
-            threads_number = min(threads_number, CPU_NUMBER, MAX_THREADS_NUMBER)
+    ) -> None:
+        threads_number = normalize_threads_number(threads_number, len(files))
 
         args = zip(files, [os.path.join(upload_dir, f) for f in files])
         if threads_number > 1:
             with ThreadPool(threads_number) as pool:
-                return pool.map(lambda x: self.download_file(*x), args)
+                pool.map(lambda x: self.download_file(*x), args)
         else:
-            slogger.glob.info(f'Download files to {upload_dir} directory in series in one thread.')
             for f, path in args:
                 self.download_file(f, path)
 

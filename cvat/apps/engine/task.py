@@ -482,14 +482,17 @@ def _create_task_manifest_from_cloud_data(
     sorted_media: List[str],
     manifest: ImageManifestManager,
     *,
-    stop_frame: int,
     start_frame: int = 0,
+    stop_frame: Optional[int] = None,
     step: int = 1,
     dimension: models.DimensionType = models.DimensionType.DIM_2D,
 ) -> None:
+    if stop_frame is None:
+        stop_frame = len(sorted_media) - 1
     cloud_storage_instance = db_storage_to_storage_instance(db_storage)
-    index_range = range(start_frame, stop_frame, step)
-    filtered_sorted_media = [sorted_media[idx] for idx in index_range]
+    filtered_sorted_media = sorted_media
+    if start_frame != 0 or step != 1 or stop_frame != len(sorted_media) - 1:
+        filtered_sorted_media = sorted_media[start_frame : stop_frame + 1 : step]
     content_generator = cloud_storage_instance.bulk_download_to_memory(filtered_sorted_media)
 
     manifest.link(
@@ -498,7 +501,6 @@ def _create_task_manifest_from_cloud_data(
         stop=stop_frame,
         start=start_frame,
         step=step,
-        are_sources_filtered=True,
     )
     manifest.create()
 
@@ -675,16 +677,16 @@ def _create_thread(
 
             if media['image']:
                 start_frame = db_data.start_frame
-
-                stop_frame = len(filtered_data)
+                stop_frame = len(filtered_data) - 1
                 if data['stop_frame'] is not None:
-                    stop_frame = min(stop_frame, data['stop_frame'] + 1)
+                    stop_frame = min(stop_frame, data['stop_frame'])
 
                 step = db_data.get_frame_step()
-                if start_frame or step != 1 or stop_frame != len(filtered_data):
-                    media_to_download = [filtered_data[idx] for idx in range(start_frame, stop_frame, step)]
+                if start_frame or step != 1 or stop_frame != len(filtered_data) - 1:
+                    media_to_download = filtered_data[start_frame : stop_frame + 1: step]
             _download_data_from_cloud_storage(db_data.cloud_storage, media_to_download, upload_dir)
             del media_to_download
+            del filtered_data
             is_data_in_cloud = False
             db_data.storage = models.StorageChoice.LOCAL
         else:
@@ -713,9 +715,9 @@ def _create_thread(
                     cloud_storage_manifest, manifest)
             else: # without manifest file but with use_cache option
                 # Define task manifest content based on list with uploaded files
-                stop_frame = len(sorted_media)
+                stop_frame = len(sorted_media) - 1
                 if data['stop_frame'] is not None:
-                    stop_frame = min(stop_frame, data['stop_frame'] + 1)
+                    stop_frame = min(stop_frame, data['stop_frame'])
                 _create_task_manifest_from_cloud_data(
                     db_data.cloud_storage, sorted_media, manifest,
                     start_frame=db_data.start_frame, stop_frame=stop_frame, step=db_data.get_frame_step()
@@ -943,10 +945,11 @@ def _create_thread(
     # calculate chunk size if it isn't specified
     if db_data.chunk_size is None:
         if isinstance(compressed_chunk_writer, ZipCompressedChunkWriter):
+            first_image_idx = db_data.start_frame
             if not is_data_in_cloud:
-                w, h = extractor.get_image_size(0)
+                w, h = extractor.get_image_size(first_image_idx)
             else:
-                img_properties = manifest.get_first_not_empty_item()
+                img_properties = manifest[first_image_idx]
                 w, h = img_properties['width'], img_properties['height']
             area = h * w
             db_data.chunk_size = max(2, min(72, 36 * 1920 * 1080 // area))
