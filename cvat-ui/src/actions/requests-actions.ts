@@ -4,7 +4,9 @@
 
 import { ActionUnion, createAction } from 'utils/redux';
 import { RequestsQuery } from 'reducers';
-import { Request, InstanceType, getCore } from 'cvat-core-wrapper';
+import {
+    Request, InstanceType, getCore,
+} from 'cvat-core-wrapper';
 
 const core = getCore();
 
@@ -87,4 +89,18 @@ export function updateRequestProgress(request: Request, dispatch: (action: Reque
     dispatch(
         requestsActions.getRequestStatusSuccess(request),
     );
+}
+
+export function listen(
+    requestID: string,
+    dispatch: (action: RequestsActions) => void,
+    initialRequest?: Request,
+) : Promise<Request> {
+    return core.requests
+        .listen(requestID, {
+            callback: (updatedRequest) => {
+                updateRequestProgress(updatedRequest, dispatch);
+            },
+            initialRequest,
+        });
 }

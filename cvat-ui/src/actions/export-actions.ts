@@ -10,6 +10,7 @@ import {
 } from 'cvat-core-wrapper';
 import {
     getInstanceType, isRequestInstanceType, RequestInstanceType, updateRequestProgress,
+    listen,
 } from './requests-actions';
 
 export enum ExportActionTypes {
@@ -93,16 +94,13 @@ export const exportDatasetAsync = (
         if (isRequestInstanceType(instance)) {
             result = await listeningPromise;
         } else {
-            result = await instance.annotations
-                .exportDataset(format, saveImages, useDefaultSettings, targetStorage, name, {
-                    requestStatusCallback: (request: Request) => {
-                        updateRequestProgress(request, dispatch);
-                    },
-                });
+            const rqID = await instance.annotations
+                .exportDataset(format, saveImages, useDefaultSettings, targetStorage, name);
+            result = await listen(rqID, dispatch);
         }
 
         const resource = saveImages ? 'Dataset' : 'Annotations';
-        dispatch(exportActions.exportDatasetSuccess(instance, instanceType, format, !!result.url, resource));
+        dispatch(exportActions.exportDatasetSuccess(instance, instanceType, format, !!result?.url, resource));
     } catch (error) {
         dispatch(exportActions.exportDatasetFailed(instance, instanceType, format, error));
     }

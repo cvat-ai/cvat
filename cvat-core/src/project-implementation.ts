@@ -98,14 +98,9 @@ export default function implementProject(projectClass) {
         useDefaultSettings: boolean,
         targetStorage: Storage,
         customName?: string,
-        options?: { requestStatusCallback?: (request: Request) => void },
     ) {
-        const { requestStatusCallback } = options || {};
         const rqID = await exportDataset(this, format, saveImages, useDefaultSettings, targetStorage, customName);
-        if (rqID) {
-            return requestsManager.listen(rqID, { callback: requestStatusCallback });
-        }
-        return new Request({ status: RQStatus.FINISHED, message: '' });
+        return rqID;
     };
     projectClass.prototype.annotations.importDataset.implementation = async function (
         format: string,

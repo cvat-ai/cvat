@@ -9,12 +9,9 @@ import {
 } from 'reducers';
 import {
     getCore, RQStatus, Request, Project, Task, Job,
-    RequestsFilter,
 } from 'cvat-core-wrapper';
 import { exportBackupAsync, exportDatasetAsync } from './export-actions';
-import {
-    RequestInstanceType, requestsActions, RequestsActions, updateRequestProgress,
-} from './requests-actions';
+import { RequestInstanceType, listen, requestsActions } from './requests-actions';
 import { importDatasetAsync } from './import-actions';
 
 const core = getCore();
@@ -24,30 +21,6 @@ export interface RequestParams {
     type: string;
     instance?: Project | Task | Job;
     location?: StorageLocation;
-}
-
-export function listen(request: Request, dispatch: (action: RequestsActions) => void): Promise<Request> {
-    const { id, operation: { type, taskID } } = request;
-    let filter: RequestsFilter | undefined;
-    if (type === 'create:task') {
-        filter = { taskID: taskID as number, action: 'create' };
-    }
-
-    return core.requests
-        .listen(filter ? null : id, {
-            callback: (updatedRequest) => {
-                updateRequestProgress(updatedRequest, dispatch);
-            },
-            filter,
-            initialRequest: request,
-        })
-        .catch((error: Error) => {
-            request.updateFields({ status: RQStatus.UNKNOWN, progress: 0, message: '' });
-            dispatch(
-                requestsActions.getRequestStatusFailed(request, error),
-            );
-            return request;
-        });
 }
 
 export function getRequestsAsync(query: RequestsQuery, notify = true): ThunkAction {
@@ -92,7 +65,7 @@ export function getRequestsAsync(query: RequestsQuery, notify = true): ThunkActi
                     let instance: RequestInstanceType | null = null;
 
                     const [operationType, operationTarget] = type.split(':');
-                    const listeningPromise = listen(request, dispatch);
+                    const listeningPromise = listen(request.id, dispatch, request);
                     if (target === 'task') {
                         instance = { id: taskID as number, type: target, requestPromise: listeningPromise };
                     } else if (target === 'job') {

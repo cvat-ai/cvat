@@ -163,7 +163,7 @@ export function importDataset(
     options: {
         convMaskToPoly?: boolean,
         requestStatusCallback?: (request: Request) => void,
-        uploadStatusCallback?:(s: string, n: number) => void,
+        uploadStatusCallback?: (s: string, n: number) => void,
     } = {},
 ): Promise<string> {
     const uploadStatusCallback = options.uploadStatusCallback || (() => {});

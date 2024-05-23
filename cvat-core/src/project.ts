@@ -265,7 +265,6 @@ Object.defineProperties(
                     useDefaultSettings: boolean,
                     targetStorage: Storage,
                     customName?: string,
-                    options?: { requestStatusCallback?: (request: Request) => void },
                 ) {
                     const result = await PluginRegistry.apiWrapper.call(
                         this,
@@ -275,7 +274,6 @@ Object.defineProperties(
                         useDefaultSettings,
                         targetStorage,
                         customName,
-                        options,
                     );
                     return result;
                 },

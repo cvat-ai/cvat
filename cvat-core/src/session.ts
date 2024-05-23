@@ -170,9 +170,6 @@ function buildDuplicatedAPI(prototype) {
                     useDefaultSettings: boolean,
                     targetStorage: Storage,
                     customName?: string,
-                    options?: {
-                        requestStatusCallback?: (request: Request) => void,
-                    },
                 ) {
                     const result = await PluginRegistry.apiWrapper.call(
                         this,
@@ -182,7 +179,6 @@ function buildDuplicatedAPI(prototype) {
                         useDefaultSettings,
                         targetStorage,
                         customName,
-                        options,
                     );
                     return result;
                 },

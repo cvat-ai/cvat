@@ -333,14 +333,9 @@ export function implementJob(Job) {
         useDefaultSettings: boolean,
         targetStorage: Storage,
         customName?: string,
-        options?: { requestStatusCallback?: (request: Request) => void },
     ) {
-        const { requestStatusCallback } = options || {};
         const rqID = await exportDataset(this, format, saveImages, useDefaultSettings, targetStorage, customName);
-        if (rqID) {
-            return requestsManager.listen(rqID, { callback: requestStatusCallback });
-        }
-        return new Request({ status: RQStatus.FINISHED, message: '' });
+        return rqID;
     };
 
     Job.prototype.actions.undo.implementation = async function (count) {
@@ -813,14 +808,9 @@ export function implementTask(Task) {
         useDefaultSettings: boolean,
         targetStorage: Storage,
         customName?: string,
-        options?: { requestStatusCallback?: (request: Request) => void },
     ) {
-        const { requestStatusCallback } = options || {};
         const rqID = await exportDataset(this, format, saveImages, useDefaultSettings, targetStorage, customName);
-        if (rqID) {
-            return requestsManager.listen(rqID, { callback: requestStatusCallback });
-        }
-        return new Request({ status: RQStatus.FINISHED, message: '' });
+        return rqID;
     };
 
     Task.prototype.actions.undo.implementation = async function (count) {
