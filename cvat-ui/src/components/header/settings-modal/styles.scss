@@ -1,9 +1,9 @@
 // Copyright (C) 2020-2022 Intel Corporation
-// Copyright (C) 2023 CVAT.ai Corporation
+// Copyright (C) 2023-2024 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
-@import '../../../base';
+@import 'base';
 
 .cvat-settings-tabs {
     height: 100%;
@@ -19,10 +19,11 @@
 .cvat-workspace-settings,
 .cvat-player-settings,
 .cvat-organizations-settings {
-    width: 100%;
+    width: calc(100% - 24px);
     height: max-content;
-    background: $background-color-1;
-    padding: 24px;
+    background: white;
+    padding-top: 24px;
+    padding-left: 24px;
 }
 
 .cvat-workspace-settings-text-content {
