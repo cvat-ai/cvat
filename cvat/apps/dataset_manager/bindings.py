@@ -1682,8 +1682,6 @@ class CvatDatasetNotFoundError(Exception):
 
     def _format_name_for_docs(self):
         formatted_name = self.format_name.replace("_", "-")
-        if "coco" in formatted_name:
-            return "coco"
         return formatted_name
 
     def _docs_message(self, formatted_format_name):
