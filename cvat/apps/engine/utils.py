@@ -174,7 +174,7 @@ def define_dependent_job(
     all_user_jobs = []
     for q, f in zip(queues, filters):
         job_ids = q.get_job_ids()
-        jobs = queue.job_class.fetch_many(job_ids, queue.connection)
+        jobs = q.job_class.fetch_many(job_ids, q.connection)
         jobs = filter(lambda job: job.meta.get("user", {}).get("id") == user_id and f(job), jobs)
         all_user_jobs.extend(jobs)
 
