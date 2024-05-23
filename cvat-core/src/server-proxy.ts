@@ -898,7 +898,7 @@ async function importDataset(
     };
 
     const url = `${backendAPI}/projects/${id}/dataset`;
-    let rqId: string;
+    let rqID: string;
 
     const isCloudStorage = sourceStorage.location === StorageLocation.CLOUD_STORAGE;
 
@@ -908,7 +908,7 @@ async function importDataset(
                 new FormData(), {
                     params,
                 });
-            rqId = response.data.rq_id;
+            rqID = response.data.rq_id;
         } catch (errorData) {
             throw generateError(errorData);
         }
@@ -935,16 +935,13 @@ async function importDataset(
                     params,
                     headers: { 'Upload-Finish': true },
                 });
-            rqId = response.data.rq_id;
+            rqID = response.data.rq_id;
         } catch (errorData) {
             throw generateError(errorData);
         }
     }
-    try {
-        return rqId;
-    } catch (errorData) {
-        throw generateError(errorData);
-    }
+
+    return rqID;
 }
 
 async function backupTask(
@@ -1018,8 +1015,8 @@ async function restoreTask(storage: Storage, file: File | string): Promise<strin
                 headers: { 'Upload-Finish': true },
             });
     }
-    const rqId = response.data.rq_id;
-    return rqId;
+    const rqID = response.data.rq_id;
+    return rqID;
 }
 
 async function backupProject(
@@ -1095,8 +1092,8 @@ async function restoreProject(storage: Storage, file: File | string): Promise<st
             });
     }
 
-    const rqId = response.data.rq_id;
-    return rqId;
+    const rqID = response.data.rq_id;
+    return rqID;
 }
 
 type LongProcessListener<R> = Record<number, {
@@ -1220,13 +1217,8 @@ async function createTask(
         throw generateError(errorData);
     }
 
-    try {
-        const rqID = `create:task-${response.data.id}`;
-        return rqID;
-    } catch (createException) {
-        await deleteTask(response.data.id, params.org || null);
-        throw createException;
-    }
+    const rqID = `create:task-${response.data.id}`;
+    return rqID;
 }
 
 async function getJobs(
@@ -1595,7 +1587,7 @@ async function uploadAnnotations(
         filename: typeof file === 'string' ? file : file.name,
         conv_mask_to_poly: options.convMaskToPoly,
     };
-    let rqId: string;
+    let rqID: string;
 
     const url = `${backendAPI}/${session}s/${id}/annotations`;
     const isCloudStorage = sourceStorage.location === StorageLocation.CLOUD_STORAGE;
@@ -1606,7 +1598,7 @@ async function uploadAnnotations(
                 new FormData(), {
                     params,
                 });
-            rqId = response.data.rq_id;
+            rqID = response.data.rq_id;
         } catch (errorData) {
             throw generateError(errorData);
         }
@@ -1629,16 +1621,13 @@ async function uploadAnnotations(
                     params,
                     headers: { 'Upload-Finish': true },
                 });
-            rqId = response.data.rq_id;
+            rqID = response.data.rq_id;
         } catch (errorData) {
             throw generateError(errorData);
         }
     }
-    try {
-        return rqId;
-    } catch (errorData) {
-        throw generateError(errorData);
-    }
+
+    return rqID;
 }
 
 async function saveEvents(events) {

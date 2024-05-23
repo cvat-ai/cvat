@@ -160,7 +160,7 @@ class RequestsManager {
             return this.listening[requestID].promise;
         }
         const promise = new Promise<Request>((resolve, reject) => {
-            const timeoutCallback = (): void => {
+            const timeoutCallback = async (): Promise<void> => {
                 if (!(requestID in this.listening)) {
                     return;
                 }
@@ -181,11 +181,12 @@ class RequestsManager {
                 }
                 this.requestStack.unshift(timestamp);
 
-                serverProxy.requests.status(requestID).then((serializedRequest) => {
-                    const request = new Request({ ...serializedRequest });
-                    const { status } = request;
-                    // check it was not cancelled
+                try {
+                    const serializedRequest = await serverProxy.requests.status(requestID);
                     if (requestID in this.listening) {
+                        const request = new Request({ ...serializedRequest });
+                        const { status } = request;
+
                         const { onUpdate } = this.listening[requestID];
                         if ([RQStatus.QUEUED, RQStatus.STARTED].includes(status)) {
                             onUpdate.forEach((update) => update(request));
@@ -211,7 +212,7 @@ class RequestsManager {
                             }
                         }
                     }
-                }).catch((error) => {
+                } catch (error) {
                     if (requestID in this.listening) {
                         const { onUpdate } = this.listening[requestID];
 
@@ -222,7 +223,7 @@ class RequestsManager {
                             })));
                         reject(error);
                     }
-                });
+                }
             };
 
             if (initialRequest?.status === RQStatus.FAILED) {
