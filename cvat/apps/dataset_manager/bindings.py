@@ -1675,18 +1675,27 @@ class CvatDatasetNotFoundError(Exception):
     _docs_base_url = f"{settings.CVAT_DOCS_URL}/manual/advanced/formats/"
 
     def __str__(self):
-        formatted_format_name = self.format_name.replace("_", "-")
-        if "coco" in formatted_format_name:
-            formatted_format_name = "coco"
-
-        docs_message = f"Check [format docs]({self._docs_base_url}format-{self.format_name})"
-        display_message = re.sub(r'^.*?:', "", self.message)
-        if "dataset must contain a file matching pattern" in display_message:
-            display_message = display_message.replace("dataset must contain a file matching pattern", "")
-            display_message = display_message.replace("\n", "")
-            display_message = "Dataset must contain a file:" + display_message
-        display_message = re.sub(r' +', " ", display_message)
+        formatted_format_name = self._format_name_for_docs()
+        docs_message = self._docs_message(formatted_format_name)
+        display_message = self._clean_display_message()
         return f"{docs_message}. {display_message}"
+
+    def _format_name_for_docs(self):
+        formatted_name = self.format_name.replace("_", "-")
+        if "coco" in formatted_name:
+            return "coco"
+        return formatted_name
+
+    def _docs_message(self, formatted_format_name):
+        return f"Check [format docs]({self._docs_base_url}format-{formatted_format_name})"
+
+    def _clean_display_message(self):
+        message = re.sub(r'^.*?:', "", self.message)
+        if "dataset must contain a file matching pattern" in message:
+            message = message.replace("dataset must contain a file matching pattern", "")
+            message = message.replace("\n", "")
+            message = "Dataset must contain a file:" + message
+        return re.sub(r' +', " ", message)
 
 def mangle_image_name(name: str, subset: str, names: DefaultDict[Tuple[str, str], int]) -> str:
     name, ext = name.rsplit(osp.extsep, maxsplit=1)
