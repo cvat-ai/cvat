@@ -4,7 +4,7 @@
 # SPDX-License-Identifier: MIT
 
 from enum import Enum
-from io import StringIO, BytesIO
+from io import StringIO
 import av
 import json
 import os
