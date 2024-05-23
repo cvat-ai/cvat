@@ -898,32 +898,25 @@ async function importDataset(
     };
 
     const url = `${backendAPI}/projects/${id}/dataset`;
-
     const isCloudStorage = sourceStorage.location === StorageLocation.CLOUD_STORAGE;
 
-    if (isCloudStorage) {
-        try {
+    try {
+        if (isCloudStorage) {
             const response = await Axios.post(url,
                 new FormData(), {
                     params,
                 });
             return response.data.rq_id;
-        } catch (errorData) {
-            throw generateError(errorData);
         }
-    }
-
-    const uploadConfig = {
-        chunkSize: config.uploadChunkSize * 1024 * 1024,
-        endpoint: `${origin}${backendAPI}/projects/${id}/dataset/`,
-        totalSentSize: 0,
-        totalSize: (file as File).size,
-        onUpdate: (percentage) => {
-            options.uploadStatusCallback('The dataset is being uploaded to the server', percentage);
-        },
-    };
-
-    try {
+        const uploadConfig = {
+            chunkSize: config.uploadChunkSize * 1024 * 1024,
+            endpoint: `${origin}${backendAPI}/projects/${id}/dataset/`,
+            totalSentSize: 0,
+            totalSize: (file as File).size,
+            onUpdate: (percentage) => {
+                options.uploadStatusCallback('The dataset is being uploaded to the server', percentage);
+            },
+        };
         await Axios.post(url,
             new FormData(), {
                 params,
@@ -983,24 +976,18 @@ async function restoreTask(storage: Storage, file: File | string): Promise<strin
     };
 
     const url = `${backendAPI}/tasks/backup`;
+    const isCloudStorage = storage.location === StorageLocation.CLOUD_STORAGE;
     let response;
 
-    const isCloudStorage = storage.location === StorageLocation.CLOUD_STORAGE;
-
-    if (isCloudStorage) {
-        try {
+    try {
+        if (isCloudStorage) {
             params.filename = file as string;
             response = await Axios.post(url,
                 new FormData(), {
                     params,
                 });
             return response.data.rq_id;
-        } catch (errorData) {
-            throw generateError(errorData);
         }
-    }
-
-    try {
         const uploadConfig = {
             chunkSize: config.uploadChunkSize * 1024 * 1024,
             endpoint: `${origin}${backendAPI}/tasks/backup/`,
@@ -1071,19 +1058,15 @@ async function restoreProject(storage: Storage, file: File | string): Promise<st
     const isCloudStorage = storage.location === StorageLocation.CLOUD_STORAGE;
     let response;
 
-    if (isCloudStorage) {
-        try {
+    try {
+        if (isCloudStorage) {
             params.filename = file;
             response = await Axios.post(url,
                 new FormData(), {
                     params,
                 });
             return response.data.rq_id;
-        } catch (errorData) {
-            throw generateError(errorData);
         }
-    }
-    try {
         const uploadConfig = {
             chunkSize: config.uploadChunkSize * 1024 * 1024,
             endpoint: `${origin}${backendAPI}/projects/backup/`,
@@ -1602,24 +1585,19 @@ async function uploadAnnotations(
     const url = `${backendAPI}/${session}s/${id}/annotations`;
     const isCloudStorage = sourceStorage.location === StorageLocation.CLOUD_STORAGE;
 
-    if (isCloudStorage) {
-        try {
+    try {
+        if (isCloudStorage) {
             const response = await Axios.post(url,
                 new FormData(), {
                     params,
                 });
             return response.data.rq_id;
-        } catch (errorData) {
-            throw generateError(errorData);
         }
-    }
-    const chunkSize = config.uploadChunkSize * 1024 * 1024;
-    const uploadConfig = {
-        chunkSize,
-        endpoint: `${origin}${backendAPI}/${session}s/${id}/annotations/`,
-    };
-
-    try {
+        const chunkSize = config.uploadChunkSize * 1024 * 1024;
+        const uploadConfig = {
+            chunkSize,
+            endpoint: `${origin}${backendAPI}/${session}s/${id}/annotations/`,
+        };
         await Axios.post(url,
             new FormData(), {
                 params,
