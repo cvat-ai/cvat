@@ -54,7 +54,7 @@ context('Regression tests', () => {
             cy.reload();
             cy.intercept('GET', '/api/jobs/**/data?**', (req) => {
                 req.continue((res) => {
-                    res.setDelay(1500);
+                    res.setDelay(1000);
                 });
             }).as('delayedRequest');
             cy.get('.cvat-player-last-button').click();
