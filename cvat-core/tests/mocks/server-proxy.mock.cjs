@@ -229,7 +229,7 @@ class ServerProxy {
                 labels: JSON.parse(JSON.stringify(taskData.labels)),
             });
 
-            return id;
+            return { taskID: id, rqID: `create:task-${id}` };
         }
 
         async function deleteTask(id) {

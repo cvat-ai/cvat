@@ -492,15 +492,14 @@ export function implementTask(Task) {
             ...(typeof this.cloudStorageId !== 'undefined' ? { cloud_storage_id: this.cloudStorageId } : {}),
         };
 
-        const rqID = await serverProxy.tasks.create(
+        const { taskID, rqID } = await serverProxy.tasks.create(
             taskSpec,
             taskDataSpec,
             options?.uploadStatusCallback || (() => {}),
         );
-        const request = await requestsManager.listen(rqID, {
+        await requestsManager.listen(rqID, {
             callback: options?.requestStatusCallback,
         });
-        const taskID = request.operation?.taskID;
         const [task] = await serverProxy.tasks.get({ id: taskID });
         const labels = await serverProxy.labels.get({ task_id: task.id });
         const jobs = await serverProxy.jobs.get({

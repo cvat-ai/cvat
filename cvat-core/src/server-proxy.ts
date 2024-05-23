@@ -1116,7 +1116,7 @@ async function createTask(
     taskSpec: Partial<SerializedTask>,
     taskDataSpec: any,
     onUpdate: (state: RQStatus, progress: number, message: string) => void,
-): Promise<string> {
+): Promise<{ taskID: number, rqID: string }> {
     const { backendAPI, origin } = config;
     // keep current default params to 'freeze" them during this request
     const params = enableOrganization();
@@ -1229,7 +1229,7 @@ async function createTask(
     }
 
     const rqID = `create:task-${response.data.id}`;
-    return rqID;
+    return { taskID: response.data.id, rqID };
 }
 
 async function getJobs(
