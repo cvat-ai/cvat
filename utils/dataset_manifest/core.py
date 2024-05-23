@@ -165,7 +165,7 @@ class DatasetImagesReader:
         self._data_dir = kwargs.get('data_dir', None)
         self._use_image_hash = use_image_hash
         self._start = start
-        self._stop = stop if stop or self._is_generator_used else len(sources)
+        self._stop = stop if stop or self._is_generator_used else len(sources) - 1
         if self._stop is None:
             raise ValueError('The stop parameter should be passed when generator is used')
         self._step = step
