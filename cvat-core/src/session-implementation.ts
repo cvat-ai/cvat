@@ -516,10 +516,11 @@ export function implementTask(Task) {
     };
 
     Task.prototype.listenToCreate.implementation = async function (
+        rqID,
         options,
     ): Promise<TaskClass> {
         if (Number.isInteger(this.id) && this.size === 0) {
-            const request = await requestsManager.listen(null, options);
+            const request = await requestsManager.listen(rqID, options);
             const [serializedTask] = await serverProxy.tasks.get({ id: request.operation.taskID });
             return new Task(omit(serializedTask, ['labels', 'jobs']));
         }

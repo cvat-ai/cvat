@@ -81,6 +81,7 @@ class TaskItemComponent extends React.PureComponent<TaskItemProps & RouteCompone
                         });
                     }
                 },
+                initialRequest: activeRequest,
             },
             ).then((createdTask: Task) => {
                 if (!this.#isUnmounted) {

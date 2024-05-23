@@ -1072,9 +1072,10 @@ export class Task extends Session {
     }
 
     async listenToCreate(
+        rqID,
         options,
     ): Promise<Task> {
-        const result = await PluginRegistry.apiWrapper.call(this, Task.prototype.listenToCreate, options);
+        const result = await PluginRegistry.apiWrapper.call(this, Task.prototype.listenToCreate, rqID, options);
         return result;
     }
 

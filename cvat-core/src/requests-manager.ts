@@ -278,12 +278,16 @@ class RequestsManager {
                 });
             };
 
-            this.listening[storedID] = {
-                onUpdate: callback ? [callback] : [],
-                timeout: window.setTimeout(timeoutCallback),
-                request: initialRequest,
-                requestDelayIdx: 0,
-            };
+            if (initialRequest?.status === RQStatus.FAILED) {
+                reject(new RequestError(initialRequest?.message));
+            } else {
+                this.listening[storedID] = {
+                    onUpdate: callback ? [callback] : [],
+                    timeout: window.setTimeout(timeoutCallback),
+                    request: initialRequest,
+                    requestDelayIdx: 0,
+                };
+            }
         });
 
         this.listening[storedID] = {
