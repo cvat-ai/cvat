@@ -9,8 +9,7 @@ import {
     Storage, Request, InstanceType, Job,
 } from 'cvat-core-wrapper';
 import {
-    getInstanceType, isRequestInstanceType, RequestInstanceType, updateRequestProgress,
-    listen,
+    getInstanceType, isRequestInstanceType, RequestInstanceType, listen,
 } from './requests-actions';
 
 export enum ExportActionTypes {
@@ -114,21 +113,18 @@ export const exportBackupAsync = (
     listeningPromise?: Promise<Request>,
 ): ThunkAction => async (dispatch) => {
     dispatch(exportActions.exportBackup(instance));
-    const instanceType = getInstanceType(instance);
+    const instanceType = getInstanceType(instance) as 'project' | 'task';
 
     try {
         let result;
         if (isRequestInstanceType(instance)) {
             result = await listeningPromise;
         } else {
-            result = await instance
-                .backup(targetStorage, useDefaultSetting, fileName, {
-                    requestStatusCallback: (request: Request) => {
-                        updateRequestProgress(request, dispatch);
-                    },
-                });
+            const rqID = await instance
+                .backup(targetStorage, useDefaultSetting, fileName);
+            result = await listen(rqID, dispatch);
         }
-        dispatch(exportActions.exportBackupSuccess(instance, instanceType, !!result.url));
+        dispatch(exportActions.exportBackupSuccess(instance, instanceType, !!result?.url));
     } catch (error) {
         dispatch(exportActions.exportBackupFailed(instance, instanceType, error as Error));
     }

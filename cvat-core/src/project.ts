@@ -226,7 +226,6 @@ export default class Project {
         targetStorage: Storage,
         useDefaultSettings: boolean,
         fileName?: string,
-        options?: { requestStatusCallback?: (request: Request) => void },
     ) {
         const result = await PluginRegistry.apiWrapper.call(
             this,
@@ -234,7 +233,6 @@ export default class Project {
             targetStorage,
             useDefaultSettings,
             fileName,
-            options,
         );
         return result;
     }
@@ -284,7 +282,6 @@ Object.defineProperties(
                     file: File | string,
                     options?: {
                         convMaskToPoly?: boolean,
-                        requestStatusCallback?: (request: Request) => void,
                         uploadStatusCallback?: (s: string, n: number) => void,
                     },
                 ) {

@@ -3,7 +3,6 @@
 //
 // SPDX-License-Identifier: MIT
 
-import { Request } from './requests-manager';
 import { Storage } from './storage';
 import serverProxy from './server-proxy';
 import AnnotationsCollection, { FrameMeta } from './annotations-collection';
@@ -162,15 +161,12 @@ export function importDataset(
     file: File | string,
     options: {
         convMaskToPoly?: boolean,
-        requestStatusCallback?: (request: Request) => void,
         uploadStatusCallback?: (s: string, n: number) => void,
     } = {},
 ): Promise<string> {
     const uploadStatusCallback = options.uploadStatusCallback || (() => {});
-    const requestStatusCallback = options.requestStatusCallback || (() => {});
     const convMaskToPoly = 'convMaskToPoly' in options ? options.convMaskToPoly : true;
     const adjustedOptions = {
-        requestStatusCallback,
         uploadStatusCallback,
         convMaskToPoly,
     };

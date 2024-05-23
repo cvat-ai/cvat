@@ -5,7 +5,7 @@
 
 import { omit } from 'lodash';
 import { ArgumentError } from './exceptions';
-import { HistoryActions, JobType, RQStatus } from './enums';
+import { HistoryActions, JobType } from './enums';
 import { Storage } from './storage';
 import { Task as TaskClass, Job as JobClass } from './session';
 import logger from './logger';
@@ -312,11 +312,10 @@ export function implementJob(Job) {
         useDefaultLocation: boolean,
         sourceStorage: Storage,
         file: File | string,
-        options?: { convMaskToPoly?: boolean, requestStatusCallback?: (request: Request) => void },
+        options?: { convMaskToPoly?: boolean },
     ) {
-        const { requestStatusCallback } = options || {};
         const rqID = await importDataset(this, format, useDefaultLocation, sourceStorage, file, options);
-        return requestsManager.listen(rqID, { callback: requestStatusCallback });
+        return rqID;
     };
 
     Job.prototype.annotations.import.implementation = function (data) {
@@ -545,14 +544,9 @@ export function implementTask(Task) {
         targetStorage: Storage,
         useDefaultSettings: boolean,
         fileName?: string,
-        options?: { requestStatusCallback?: (request: Request) => void },
     ) {
-        const { requestStatusCallback } = options || {};
         const rqID = await serverProxy.tasks.backup(this.id, targetStorage, useDefaultSettings, fileName);
-        if (rqID) {
-            return requestsManager.listen(rqID, { callback: requestStatusCallback });
-        }
-        return new Request({ status: RQStatus.FINISHED, message: '' });
+        return rqID;
     };
 
     Task.restore.implementation = async function (
@@ -787,11 +781,10 @@ export function implementTask(Task) {
         useDefaultLocation: boolean,
         sourceStorage: Storage,
         file: File | string,
-        options?: { convMaskToPoly?: boolean, requestStatusCallback?: (request: Request) => void },
+        options?: { convMaskToPoly?: boolean },
     ) {
-        const { requestStatusCallback } = options || {};
         const rqID = await importDataset(this, format, useDefaultLocation, sourceStorage, file, options);
-        return requestsManager.listen(rqID, { callback: requestStatusCallback });
+        return rqID;
     };
 
     Task.prototype.annotations.import.implementation = function (data) {

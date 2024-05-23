@@ -12,7 +12,7 @@ import { EventScope } from 'cvat-logger';
 import { getProjectsAsync } from './projects-actions';
 import { AnnotationActionTypes, fetchAnnotationsAsync } from './annotation-actions';
 import {
-    getInstanceType, isRequestInstanceType, RequestInstanceType, updateRequestProgress,
+    getInstanceType, isRequestInstanceType, listen, RequestInstanceType, updateRequestProgress,
 } from './requests-actions';
 
 const core = getCore();
@@ -93,7 +93,7 @@ export const importDatasetAsync = (
                 if (isRequestInstanceType(instance)) {
                     await listeningPromise;
                 } else {
-                    await (instance as Project).annotations
+                    const rqID = await (instance as Project).annotations
                         .importDataset(format, useDefaultSettings, sourceStorage, file, {
                             convMaskToPoly,
                             uploadStatusCallback: (message: string, progress: number) => (
@@ -101,10 +101,8 @@ export const importDatasetAsync = (
                                     instance, Math.floor(progress * 100), message,
                                 ))
                             ),
-                            requestStatusCallback: (request: Request) => {
-                                updateRequestProgress(request, dispatch);
-                            },
                         });
+                    await listen(rqID, dispatch);
                 }
             } else if (instanceType === 'task') {
                 if (state.import.tasks.dataset.current?.[instance.id]) {
@@ -114,13 +112,14 @@ export const importDatasetAsync = (
                 if (isRequestInstanceType(instance)) {
                     await listeningPromise;
                 } else {
-                    await (instance as Task).annotations
+                    const rqID = await (instance as Task).annotations
                         .upload(format, useDefaultSettings, sourceStorage, file, {
                             convMaskToPoly,
                             requestStatusCallback: (request: Request) => {
                                 updateRequestProgress(request, dispatch);
                             },
                         });
+                    await listen(rqID, dispatch);
                 }
             } else { // job
                 if (!isRequestInstanceType(instance) &&
@@ -137,13 +136,14 @@ export const importDatasetAsync = (
                     await listeningPromise;
                     dispatch({ type: AnnotationActionTypes.UPLOAD_JOB_ANNOTATIONS_SUCCESS });
                 } else {
-                    await (instance as Job).annotations
+                    const rqID = await (instance as Job).annotations
                         .upload(format, useDefaultSettings, sourceStorage, file, {
                             convMaskToPoly,
                             requestStatusCallback: (request: Request) => {
                                 updateRequestProgress(request, dispatch);
                             },
                         });
+                    await listen(rqID, dispatch);
 
                     await (instance as Job).logger.log(EventScope.uploadAnnotations);
                     await (instance as Job).annotations.clear(true);

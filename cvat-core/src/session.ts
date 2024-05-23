@@ -1087,7 +1087,6 @@ export class Task extends Session {
         targetStorage: Storage,
         useDefaultSettings: boolean,
         fileName?: string,
-        options?: { requestStatusCallback?: (request: Request) => void },
     ) {
         const result = await PluginRegistry.apiWrapper.call(
             this,
@@ -1095,7 +1094,6 @@ export class Task extends Session {
             targetStorage,
             useDefaultSettings,
             fileName,
-            options,
         );
         return result;
     }
