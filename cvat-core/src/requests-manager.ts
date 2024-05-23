@@ -58,9 +58,6 @@ export class Request {
     get status(): RQStatus {
         return this.#status.toLowerCase() as RQStatus;
     }
-    set status(status) {
-        this.#status = status;
-    }
 
     get progress(): number {
         return this.#progress;
@@ -68,9 +65,6 @@ export class Request {
 
     get message(): string {
         return this.#message;
-    }
-    set message(message) {
-        this.#message = message;
     }
 
     get operation(): Operation {
