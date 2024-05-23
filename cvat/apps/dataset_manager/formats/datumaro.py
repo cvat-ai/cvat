@@ -6,7 +6,6 @@
 from datumaro.components.dataset import Dataset
 from datumaro.components.extractor import ItemTransform
 from datumaro.util.image import Image
-from datumaro.plugins.datumaro_format.extractor import DatumaroImporter
 
 from pyunpack import Archive
 
