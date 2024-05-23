@@ -1,5 +1,5 @@
 // Copyright (C) 2020-2022 Intel Corporation
-// Copyright (C) 2023 CVAT.ai Corporation
+// Copyright (C) 2023-2024 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -75,7 +75,7 @@ function SettingsModal(props: SettingsModalProps): JSX.Element {
     return (
         <Modal
             title='Settings'
-            visible={visible}
+            open={visible}
             onCancel={onClose}
             width={800}
             className='cvat-settings-modal'
@@ -93,30 +93,29 @@ function SettingsModal(props: SettingsModalProps): JSX.Element {
             )}
         >
             <div className='cvat-settings-tabs'>
-                <Tabs type='card' tabBarStyle={{ marginBottom: '0px', marginLeft: '-1px' }}>
-                    <Tabs.TabPane
-                        tab={(
+                <Tabs
+                    type='card'
+                    tabBarStyle={{ marginBottom: '0px', marginLeft: '-1px' }}
+                    items={[{
+                        key: 'player',
+                        label: (
                             <span>
                                 <PlayCircleOutlined />
                                 <Text>Player</Text>
                             </span>
-                        )}
-                        key='player'
-                    >
-                        <PlayerSettingsContainer />
-                    </Tabs.TabPane>
-                    <Tabs.TabPane
-                        tab={(
+                        ),
+                        children: <PlayerSettingsContainer />,
+                    }, {
+                        key: 'workspace',
+                        label: (
                             <span>
                                 <LaptopOutlined />
                                 <Text>Workspace</Text>
                             </span>
-                        )}
-                        key='workspace'
-                    >
-                        <WorkspaceSettingsContainer />
-                    </Tabs.TabPane>
-                </Tabs>
+                        ),
+                        children: <WorkspaceSettingsContainer />,
+                    }]}
+                />
             </div>
         </Modal>
     );
