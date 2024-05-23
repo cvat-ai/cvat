@@ -1,5 +1,5 @@
 // Copyright (C) 2019-2022 Intel Corporation
-// Copyright (C) 2022-2023 CVAT.ai Corporation
+// Copyright (C) 2022-2024 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -96,22 +96,21 @@ class DetailsComponent extends React.PureComponent<Props, State> {
         const { task: taskInstance, onUpdateTask } = this.props;
 
         return (
-            <Title level={4}>
-                <Text
-                    editable={{
-                        onChange: (value: string): void => {
-                            this.setState({
-                                name: value,
-                            });
+            <Title
+                level={4}
+                editable={{
+                    onChange: (value: string): void => {
+                        this.setState({
+                            name: value,
+                        });
 
-                            taskInstance.name = value;
-                            onUpdateTask(taskInstance);
-                        },
-                    }}
-                    className='cvat-text-color'
-                >
-                    {name}
-                </Text>
+                        taskInstance.name = value;
+                        onUpdateTask(taskInstance);
+                    },
+                }}
+                className='cvat-text-color cvat-task-name'
+            >
+                {name}
             </Title>
         );
     }

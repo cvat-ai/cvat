@@ -440,13 +440,13 @@ function SingleShapeSidebar(): JSX.Element {
                                     reducerActions.setActiveLabel(state.label as Label, labelType),
                                 )}
                             >
-                                <Select value={LabelType.RECTANGLE}>{LabelType.RECTANGLE}</Select>
-                                <Select value={LabelType.POLYGON}>{LabelType.POLYGON}</Select>
-                                <Select value={LabelType.POLYLINE}>{LabelType.POLYLINE}</Select>
-                                <Select value={LabelType.POINTS}>{LabelType.POINTS}</Select>
-                                <Select value={LabelType.ELLIPSE}>{LabelType.ELLIPSE}</Select>
-                                <Select value={LabelType.CUBOID}>{LabelType.CUBOID}</Select>
-                                <Select value={LabelType.MASK}>{LabelType.MASK}</Select>
+                                <Select.Option value={LabelType.RECTANGLE}>{LabelType.RECTANGLE}</Select.Option>
+                                <Select.Option value={LabelType.POLYGON}>{LabelType.POLYGON}</Select.Option>
+                                <Select.Option value={LabelType.POLYLINE}>{LabelType.POLYLINE}</Select.Option>
+                                <Select.Option value={LabelType.POINTS}>{LabelType.POINTS}</Select.Option>
+                                <Select.Option value={LabelType.ELLIPSE}>{LabelType.ELLIPSE}</Select.Option>
+                                <Select.Option value={LabelType.CUBOID}>{LabelType.CUBOID}</Select.Option>
+                                <Select.Option value={LabelType.MASK}>{LabelType.MASK}</Select.Option>
                             </Select>
                         </Col>
                     </Row>

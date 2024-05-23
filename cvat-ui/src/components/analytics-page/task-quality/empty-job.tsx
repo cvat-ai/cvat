@@ -9,7 +9,7 @@ import { Link } from 'react-router-dom';
 import { Col, Row } from 'antd/lib/grid';
 import Card from 'antd/lib/card';
 import Button from 'antd/lib/button';
-import Title from 'antd/lib/typography/Title';
+import Text from 'antd/lib/typography/Text';
 
 interface Props {
     taskID: number,
@@ -23,7 +23,7 @@ function EmptyJobComponent(props: Props): JSX.Element {
             <Card className='cvat-job-empty-ground-truth-item'>
                 <Row justify='space-between' align='middle'>
                     <Col>
-                        <Title level={5}>No Ground Truth job created yet...</Title>
+                        <Text>A ground truth job for the task was not created</Text>
                     </Col>
                     <Col>
                         <Button type='primary'>

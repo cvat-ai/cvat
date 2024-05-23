@@ -16,7 +16,7 @@ import Space from 'antd/lib/space';
 import Input from 'antd/lib/input';
 import Form from 'antd/lib/form';
 import Select from 'antd/lib/select';
-import Dropdown from 'antd/lib/dropdown';
+import Popover from 'antd/lib/popover';
 import { useForm } from 'antd/lib/form/Form';
 import { Store } from 'antd/lib/form/interface';
 
@@ -120,10 +120,11 @@ function OrganizationTopBar(props: Props): JSX.Element {
                                 </Text>
                             </Col>
                             <Col>
-                                <Dropdown
+                                <Popover
                                     trigger={['click']}
-                                    destroyPopupOnHide
-                                    overlay={() => (
+                                    destroyTooltipOnHide
+                                    overlayInnerStyle={{ padding: 0 }}
+                                    content={() => (
                                         <Menu className='cvat-organization-actions-menu'>
                                             <Menu.Item key={MenuActions.SET_WEBHOOKS}>
                                                 <a
@@ -154,7 +155,7 @@ function OrganizationTopBar(props: Props): JSX.Element {
                                         <Text className='cvat-text-color'>Actions</Text>
                                         <MoreOutlined className='cvat-menu-icon' />
                                     </Button>
-                                </Dropdown>
+                                </Popover>
                             </Col>
 
                         </Row>
@@ -320,7 +321,7 @@ function OrganizationTopBar(props: Props): JSX.Element {
             </Row>
             <Modal
                 className='cvat-organization-invitation-modal'
-                visible={visibleInviteModal}
+                open={visibleInviteModal}
                 onCancel={() => {
                     setVisibleInviteModal(false);
                     form.resetFields(['users']);
