@@ -13,7 +13,7 @@ from cvat.apps.dataset_manager.bindings import (GetCVATDataExtractor, detect_dat
 from cvat.apps.dataset_manager.util import make_zip_archive
 from datumaro.components.extractor import DatasetItem
 from datumaro.components.project import Dataset
-from datumaro.plugins.yolo_format.extractor import YoloExtractor, YoloImporter
+from datumaro.plugins.yolo_format.extractor import YoloExtractor
 
 from .registry import dm_env, exporter, importer
 
@@ -46,7 +46,7 @@ def _import(src_file, temp_dir, instance_data, load_data_callback=None, **kwargs
         if frame_info is not None:
             image_info[frame] = (frame_info['height'], frame_info['width'])
 
-    detect_dataset(temp_dir, format_name='yolo', importer=YoloImporter)
+    detect_dataset(temp_dir, format_name='yolo', importer=dm_env.importers.get('yolo'))
     dataset = Dataset.import_from(temp_dir, 'yolo',
         env=dm_env, image_info=image_info)
     if load_data_callback is not None:

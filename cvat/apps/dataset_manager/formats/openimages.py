@@ -7,7 +7,7 @@ import glob
 import os.path as osp
 
 from datumaro.components.dataset import Dataset, DatasetItem
-from datumaro.plugins.open_images_format import OpenImagesPath, OpenImagesImporter
+from datumaro.plugins.open_images_format import OpenImagesPath
 from datumaro.util.image import DEFAULT_IMAGE_META_FILE_NAME
 from pyunpack import Archive
 
@@ -75,7 +75,7 @@ def _import(src_file, temp_dir, instance_data, load_data_callback=None, **kwargs
             if frame_info is not None:
                 image_meta[item_id] = (frame_info['height'], frame_info['width'])
 
-    detect_dataset(temp_dir, format_name='open_images', importer=OpenImagesImporter)
+    detect_dataset(temp_dir, format_name='open_images', importer=dm_env.importers.get('open_images'))
     dataset = Dataset.import_from(temp_dir, 'open_images',
         image_meta=image_meta, env=dm_env)
     dataset = MaskToPolygonTransformation.convert_dataset(dataset, **kwargs)

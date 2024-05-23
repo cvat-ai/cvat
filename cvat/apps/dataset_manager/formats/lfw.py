@@ -6,8 +6,6 @@
 from datumaro.components.dataset import Dataset
 from pyunpack import Archive
 
-from datumaro.plugins.lfw_format import LfwImporter
-
 from cvat.apps.dataset_manager.bindings import (GetCVATDataExtractor, detect_dataset,
                                                 import_dm_annotations)
 from cvat.apps.dataset_manager.util import make_zip_archive
@@ -19,7 +17,7 @@ from .registry import dm_env, exporter, importer
 def _import(src_file, temp_dir, instance_data, load_data_callback=None, **kwargs):
     Archive(src_file.name).extractall(temp_dir)
 
-    detect_dataset(temp_dir, format_name='lfw', importer=LfwImporter)
+    detect_dataset(temp_dir, format_name='lfw', importer=dm_env.importers.get('lfw'))
     dataset = Dataset.import_from(temp_dir, 'lfw')
     if load_data_callback is not None:
         load_data_callback(dataset, instance_data)

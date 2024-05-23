@@ -9,7 +9,6 @@ from datumaro.components.annotation import (AnnotationType, Label,
     LabelCategories)
 from datumaro.components.dataset import Dataset
 from datumaro.components.extractor import ItemTransform
-from datumaro.plugins.market1501_format import Market1501Importer
 
 from cvat.apps.dataset_manager.bindings import (GetCVATDataExtractor, detect_dataset,
     import_dm_annotations)
@@ -75,7 +74,7 @@ def _export(dst_file, temp_dir, instance_data, save_images=False):
 def _import(src_file, temp_dir, instance_data, load_data_callback=None, **kwargs):
     zipfile.ZipFile(src_file).extractall(temp_dir)
 
-    detect_dataset(temp_dir, format_name='market1501', importer=Market1501Importer)
+    detect_dataset(temp_dir, format_name='market1501', importer=dm_env.importers.get('market1501'))
     dataset = Dataset.import_from(temp_dir, 'market1501', env=dm_env)
     dataset.transform(AttrToLabelAttr, label='market-1501')
     if load_data_callback is not None:

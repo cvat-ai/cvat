@@ -6,7 +6,7 @@
 import os.path as osp
 
 from datumaro.components.dataset import Dataset
-from datumaro.plugins.cityscapes_format import write_label_map, CityscapesImporter
+from datumaro.plugins.cityscapes_format import write_label_map
 from pyunpack import Archive
 
 from cvat.apps.dataset_manager.bindings import (GetCVATDataExtractor, detect_dataset,
@@ -43,7 +43,7 @@ def _import(src_file, temp_dir, instance_data, load_data_callback=None, **kwargs
             for label, info in make_colormap(instance_data).items()}
         write_label_map(labelmap_file, colormap)
 
-    detect_dataset(temp_dir, format_name='cityscapes', importer=CityscapesImporter)
+    detect_dataset(temp_dir, format_name='cityscapes', importer= dm_env.importers.get('cityscapes'))
     dataset = Dataset.import_from(temp_dir, 'cityscapes', env=dm_env)
     dataset = MaskToPolygonTransformation.convert_dataset(dataset, **kwargs)
     if load_data_callback is not None:

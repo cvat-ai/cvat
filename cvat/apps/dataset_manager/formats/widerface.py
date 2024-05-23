@@ -10,7 +10,6 @@ from datumaro.components.dataset import Dataset
 from cvat.apps.dataset_manager.bindings import GetCVATDataExtractor, detect_dataset, \
     import_dm_annotations
 from cvat.apps.dataset_manager.util import make_zip_archive
-from datumaro.plugins.widerface_format import WiderFaceImporter
 
 from .registry import dm_env, exporter, importer
 
@@ -27,7 +26,7 @@ def _export(dst_file, temp_dir, instance_data, save_images=False):
 def _import(src_file, temp_dir, instance_data, load_data_callback=None, **kwargs):
     zipfile.ZipFile(src_file).extractall(temp_dir)
 
-    detect_dataset(temp_dir, format_name='wider_face', importer=WiderFaceImporter)
+    detect_dataset(temp_dir, format_name='wider_face', importer=dm_env.importers.get('wider_face'))
     dataset = Dataset.import_from(temp_dir, 'wider_face', env=dm_env)
     if load_data_callback is not None:
         load_data_callback(dataset, instance_data)

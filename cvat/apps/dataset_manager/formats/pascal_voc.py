@@ -9,7 +9,6 @@ import shutil
 from glob import glob
 
 from datumaro.components.dataset import Dataset
-from datumaro.plugins.voc_format.importer import VocImporter
 from pyunpack import Archive
 
 from cvat.apps.dataset_manager.bindings import (GetCVATDataExtractor, detect_dataset, import_dm_annotations)
@@ -55,7 +54,7 @@ def _import(src_file, temp_dir, instance_data, load_data_callback=None, **kwargs
         for f in anno_files:
             shutil.move(f, anno_dir)
 
-    detect_dataset(temp_dir, format_name='voc', importer=VocImporter)
+    detect_dataset(temp_dir, format_name='voc', importer=dm_env.importers.get('voc'))
     dataset = Dataset.import_from(temp_dir, 'voc', env=dm_env)
     dataset = MaskToPolygonTransformation.convert_dataset(dataset, **kwargs)
     if load_data_callback is not None:
