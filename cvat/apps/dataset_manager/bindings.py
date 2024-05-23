@@ -21,7 +21,7 @@ import datumaro as dm
 import defusedxml.ElementTree as ET
 import numpy as np
 import rq
-from attr import attrib, attrs, field
+from attr import attrib, attrs
 from datumaro.components.media import PointCloud
 from datumaro.components.environment import Environment
 from datumaro.components.format_detection import RejectionReason
@@ -1668,6 +1668,7 @@ def GetCVATDataExtractor(
 class CvatImportError(Exception):
     pass
 
+@attrs
 class CvatDatasetNotFoundError(CvatImportError):
     message: str = ""
     reason: str = ""
@@ -1681,8 +1682,7 @@ class CvatDatasetNotFoundError(CvatImportError):
         return f"{docs_message}. {display_message}"
 
     def _format_name_for_docs(self):
-        formatted_name = self.format_name.replace("_", "-")
-        return formatted_name
+        return self.format_name.replace("_", "-")
 
     def _docs_message(self, formatted_format_name):
         return f"Check [format docs]({self._docs_base_url}format-{formatted_format_name})"
