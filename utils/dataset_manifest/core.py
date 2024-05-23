@@ -18,8 +18,10 @@ from inspect import isgenerator
 
 from .errors import InvalidManifestError, InvalidVideoError
 from .utils import SortingMethod, md5_hash, rotate_image, sort
+from .types import NamedBytesIO
 
-from typing import Any, Dict, List, Union, Optional, Iterator, Tuple
+from typing import Any, Dict, List, Union, Optional, Iterator, Tuple, Callable
+
 
 class VideoStreamReader:
     def __init__(self, source_path, chunk_size, force):
@@ -141,7 +143,7 @@ class VideoStreamReader:
 
 class DatasetImagesReader:
     def __init__(self,
-        sources: Union[List[str], Iterator[BytesIO]],
+        sources: Union[List[str], Iterator[NamedBytesIO]],
         *,
         start: int = 0,
         step: int = 1,
@@ -155,7 +157,7 @@ class DatasetImagesReader:
 
         if not self._is_generator_used:
             raw_data_used = not isinstance(sources[0], str)
-            func = (lambda x: x.filename) if raw_data_used else None
+            func: Optional[Callable[[NamedBytesIO], str]] = (lambda x: x.filename) if raw_data_used else None
             self._sources = sort(sources, sorting_method, func=func)
         else:
             if sorting_method != SortingMethod.PREDEFINED:
@@ -194,7 +196,7 @@ class DatasetImagesReader:
     def step(self, value):
         self._step = int(value)
 
-    def _get_img_properties(self, image: Union[str, BytesIO]) -> Dict[str, Any]:
+    def _get_img_properties(self, image: Union[str, NamedBytesIO]) -> Dict[str, Any]:
         img = Image.open(image, mode='r')
         if self._data_dir:
             img_name = os.path.relpath(image, self._data_dir)
@@ -234,7 +236,7 @@ class DatasetImagesReader:
 
     @property
     def range_(self):
-        return range(self._start, self._stop, self._step)
+        return range(self._start, self._stop + 1, self._step)
 
     def __len__(self):
         return len(self.range_)
@@ -245,7 +247,7 @@ class Dataset3DImagesReader(DatasetImagesReader):
 
     def __iter__(self):
         sources = (i for i in self._sources)
-        for idx in range(self._stop):
+        for idx in range(self._stop + 1):
             if idx in self.range_:
                 image = next(sources)
                 img_name = os.path.relpath(image, self._data_dir) if self._data_dir \
@@ -353,7 +355,7 @@ class _Index:
 
     def __getitem__(self, number):
         if not 0 <= number < len(self):
-            raise IndexError('Invalid index number: {}\nMax: {}'.format(number, len(self) - 1))
+            raise IndexError('Invalid index number: {}, Maximum allowed index is {}'.format(number, len(self) - 1))
 
         return self._index[number]
 

@@ -10,9 +10,8 @@ import math
 from abc import ABC, abstractmethod, abstractproperty
 from enum import Enum
 from io import BytesIO
-from multiprocessing.pool import ThreadPool
 from typing import Dict, List, Optional, Any, Callable, TypeVar, Iterator
-from concurrent.futures import ThreadPoolExecutor
+from concurrent.futures import ThreadPoolExecutor, as_completed
 
 import boto3
 from azure.core.exceptions import HttpResponseError, ResourceExistsError
@@ -32,6 +31,15 @@ from rest_framework.exceptions import (NotFound, PermissionDenied,
 from cvat.apps.engine.log import ServerLogManager
 from cvat.apps.engine.models import CloudProviderChoice, CredentialsTypeChoice
 from cvat.apps.engine.utils import get_cpu_number
+
+class NamedBytesIO(BytesIO):
+    @property
+    def filename(self) -> Optional[str]:
+        return getattr(self, '_filename', None)
+
+    @filename.setter
+    def filename(self, value: str) -> None:
+        self._filename = value
 
 slogger = ServerLogManager(__name__)
 
@@ -138,7 +146,7 @@ class _CloudStorage(ABC):
         pass
 
     @abstractmethod
-    def download_fileobj(self, key):
+    def download_fileobj(self, key: str) -> NamedBytesIO:
         pass
 
     def download_file(self, key, path):
@@ -173,7 +181,7 @@ class _CloudStorage(ABC):
     def _download_range_of_bytes(self, key: str, stop_byte: int, start_byte: int):
         pass
 
-    def optimally_image_download(self, key: str, chunk_size: int = 65536) -> BytesIO:
+    def optimally_image_download(self, key: str, chunk_size: int = 65536) -> NamedBytesIO:
         """
         Method downloads image by the following approach:
         Firstly we try to download the first N bytes of image which will be enough for determining image properties.
@@ -192,7 +200,8 @@ class _CloudStorage(ABC):
         image_parser.feed(chunk)
 
         if image_parser.image:
-            buff = BytesIO(chunk)
+            buff = NamedBytesIO(chunk)
+            buff.filename = key
         else:
             buff = self.download_fileobj(key)
             image_size_in_bytes = len(buff.getvalue())
@@ -200,7 +209,7 @@ class _CloudStorage(ABC):
                 f'The {chunk_size} bytes were not enough to parse "{key}" image. '
                 f'Image size was {image_size_in_bytes} bytes. Image resolution was {Image.open(buff).size}. '
                 f'Downloaded percent was {round(min(chunk_size, image_size_in_bytes) / image_size_in_bytes * 100)}')
-        buff.filename = key
+
         return buff
 
     def bulk_download_to_memory(
@@ -225,13 +234,10 @@ class _CloudStorage(ABC):
     ) -> None:
         threads_number = normalize_threads_number(threads_number, len(files))
 
-        args = zip(files, [os.path.join(upload_dir, f) for f in files])
-        if threads_number > 1:
-            with ThreadPool(threads_number) as pool:
-                pool.map(lambda x: self.download_file(*x), args)
-        else:
-            for f, path in args:
-                self.download_file(f, path)
+        with ThreadPoolExecutor(max_workers=threads_number) as executor:
+            futures = [executor.submit(self.download_file, f, os.path.join(upload_dir, f)) for f in files]
+            for future in as_completed(futures):
+                future.result()
 
     @abstractmethod
     def upload_fileobj(self, file_obj, file_name):
@@ -524,14 +530,15 @@ class AWS_S3(_CloudStorage):
 
     @validate_file_status
     @validate_bucket_status
-    def download_fileobj(self, key):
-        buf = BytesIO()
+    def download_fileobj(self, key: str) -> NamedBytesIO:
+        buf = NamedBytesIO()
         self.bucket.download_fileobj(
             Key=key,
             Fileobj=buf,
             Config=TransferConfig(max_io_queue=self.transfer_config['max_io_queue'])
         )
         buf.seek(0)
+        buf.filename = key
         return buf
 
     @validate_file_status
@@ -725,8 +732,8 @@ class AzureBlobContainer(_CloudStorage):
 
     @validate_file_status
     @validate_bucket_status
-    def download_fileobj(self, key):
-        buf = BytesIO()
+    def download_fileobj(self, key: str) -> NamedBytesIO:
+        buf = NamedBytesIO()
         storage_stream_downloader = self._client.download_blob(
             blob=key,
             offset=None,
@@ -734,6 +741,7 @@ class AzureBlobContainer(_CloudStorage):
         )
         storage_stream_downloader.download_to_stream(buf, max_concurrency=self.MAX_CONCURRENCY)
         buf.seek(0)
+        buf.filename = key
         return buf
 
     @validate_file_status
@@ -838,11 +846,12 @@ class GoogleCloudStorage(_CloudStorage):
 
     @validate_file_status
     @validate_bucket_status
-    def download_fileobj(self, key):
-        buf = BytesIO()
+    def download_fileobj(self, key: str) -> NamedBytesIO:
+        buf = NamedBytesIO()
         blob = self.bucket.blob(key)
         self._client.download_blob_to_file(blob, buf)
         buf.seek(0)
+        buf.filename = key
         return buf
 
     @validate_file_status
