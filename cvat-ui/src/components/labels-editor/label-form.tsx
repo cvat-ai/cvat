@@ -1,5 +1,5 @@
 // Copyright (C) 2020-2022 Intel Corporation
-// Copyright (C) 2022-2023 CVAT.ai Corporation
+// Copyright (C) 2022-2024 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -556,7 +556,7 @@ export default class LabelForm extends React.Component<Props> {
     private renderNewAttributeButton(): JSX.Element {
         return (
             <Form.Item>
-                <Button type='ghost' onClick={this.addAttribute} className='cvat-new-attribute-button'>
+                <Button onClick={this.addAttribute} className='cvat-new-attribute-button'>
                     Add an attribute
                     <PlusCircleOutlined />
                 </Button>

@@ -1,4 +1,5 @@
 // Copyright (C) 2020-2022 Intel Corporation
+// Copyright (C) 2024 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -50,7 +51,6 @@ function MessageForm(props: FormProps): JSX.Element {
                     <Button
                         onClick={cancel}
                         disabled={fetching}
-                        type='ghost'
                         className='cvat-create-issue-dialog-cancel-button'
                     >
                         Cancel

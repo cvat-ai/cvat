@@ -270,16 +270,8 @@ function BrushTools(): React.ReactPortal | null {
                         className='cvat-brush-tools-brush-size'
                         value={brushSize}
                         min={MIN_BRUSH_SIZE}
-                        formatter={(val: number | undefined) => {
-                            if (val) return `${val}px`;
-                            return '';
-                        }}
-                        parser={(val: string | undefined): number => {
-                            if (val) return +val.replace('px', '');
-                            return 0;
-                        }}
-                        onChange={(value: number) => {
-                            if (Number.isInteger(value) && value >= MIN_BRUSH_SIZE) {
+                        onChange={(value: number | null) => {
+                            if (typeof value === 'number' && Number.isInteger(value) && value >= MIN_BRUSH_SIZE) {
                                 setBrushSize(value);
                             }
                         }}

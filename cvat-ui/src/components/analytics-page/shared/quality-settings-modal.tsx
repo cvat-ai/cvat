@@ -80,7 +80,7 @@ export default function QualitySettingsModal(props: Props): JSX.Element | null {
             okText='Save'
             cancelText='Cancel'
             title={<Text strong>Annotation Quality Settings</Text>}
-            visible={visible}
+            open={visible}
             onOk={onOk}
             onCancel={onCancel}
             confirmLoading={fetching}

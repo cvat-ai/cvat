@@ -1,5 +1,5 @@
 // Copyright (C) 2021-2022 Intel Corporation
-// Copyright (C) 2022 CVAT.ai Corporation
+// Copyright (C) 2022-2024 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -43,7 +43,7 @@ function ImportDatasetStatusModal(): JSX.Element {
     return (
         <Modal
             title={`Importing a dataset for the project #${importingId}`}
-            visible={importing}
+            open={importing}
             closable={false}
             footer={null}
             className='cvat-modal-import-dataset-status'
