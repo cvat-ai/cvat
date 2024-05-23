@@ -147,8 +147,9 @@ const REQUESTS_COUNT = 5;
 const PROGRESS_EPS = 25;
 const EPS_DELAYS = {
     [RQStatus.STARTED]: [3000, 7000, 13000],
-    [RQStatus.QUEUED]: [7000, 13000, 19000],
-    [RQStatus.DEFERRED]: [120000, 180000, 240000],
+    [RQStatus.QUEUED]: [7000, 13000, 19000, 29000,
+        41000, 53000, 67000, 79000,
+        101000, 113000, 139000, 163000],
 };
 
 class RequestsManager {
@@ -235,7 +236,7 @@ class RequestsManager {
                     // check it was not cancelled
                     if (storedID in this.listening) {
                         const { onUpdate } = this.listening[storedID];
-                        if ([RQStatus.QUEUED, RQStatus.STARTED, RQStatus.DEFERRED].includes(status)) {
+                        if ([RQStatus.QUEUED, RQStatus.STARTED].includes(status)) {
                             onUpdate.forEach((update) => update(request));
                             this.listening[storedID].requestDelayIdx = this.updateRequestDelayIdx(
                                 storedID,
@@ -320,9 +321,6 @@ class RequestsManager {
             }
             case RQStatus.QUEUED: {
                 return addRndComponent(EPS_DELAYS[RQStatus.QUEUED][requestDelayIdx]);
-            }
-            case RQStatus.DEFERRED: {
-                return addRndComponent(EPS_DELAYS[RQStatus.DEFERRED][requestDelayIdx]);
             }
             default:
                 return 0;
