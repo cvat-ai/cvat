@@ -30,8 +30,8 @@ export function getRequestsAsync(query: RequestsQuery, notify = true): ThunkActi
         const state: CombinedState = getState();
 
         try {
-            const { requests, count } = await core.requests.list();
-            dispatch(requestsActions.getRequestsSuccess(requests, count));
+            const requests = await core.requests.list();
+            dispatch(requestsActions.getRequestsSuccess(requests));
 
             if (notify) {
                 const shownNotifications = JSON.parse(localStorage.getItem('requestsNotifications') || '[]');

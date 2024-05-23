@@ -28,8 +28,8 @@ export const requestsActions = {
     getRequests: (query?: RequestsQuery) => createAction(RequestsActionsTypes.GET_REQUESTS, { query }),
     requestFinished: (request: Request) => createAction(RequestsActionsTypes.REQUEST_FINISHED, { request }),
     requestFailed: (request: Request) => createAction(RequestsActionsTypes.REQUEST_FAILED, { request }),
-    getRequestsSuccess: (requests: Request[], count: number) => createAction(
-        RequestsActionsTypes.GET_REQUESTS_SUCCESS, { requests, count },
+    getRequestsSuccess: (requests: Request[]) => createAction(
+        RequestsActionsTypes.GET_REQUESTS_SUCCESS, { requests },
     ),
     getRequestsFailed: (error: any) => createAction(RequestsActionsTypes.GET_REQUESTS_FAILED, {
         error,

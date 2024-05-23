@@ -15,7 +15,7 @@ import {
     Label, Attribute,
 } from 'cvat-core/src/labels';
 import {
-    SerializedAttribute, SerializedLabel, SerializedAPISchema, RequestsFilter,
+    SerializedAttribute, SerializedLabel, SerializedAPISchema,
 } from 'cvat-core/src/server-response-types';
 import { Job, Task } from 'cvat-core/src/session';
 import Project from 'cvat-core/src/project';
@@ -115,5 +115,4 @@ export type {
     CVATCore,
     SerializedAPISchema,
     InstanceType,
-    RequestsFilter,
 };

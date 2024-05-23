@@ -517,9 +517,3 @@ export interface SerializedRequest {
     expiry_date?: string;
     owner?: any;
 }
-
-export interface APIRequestsFilter extends APICommonFilterParams {
-    task_id?: number;
-    action?: string;
-}
-export type RequestsFilter = Camelized<APIRequestsFilter>;

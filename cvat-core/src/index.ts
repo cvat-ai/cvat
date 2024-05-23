@@ -4,7 +4,6 @@
 
 import {
     AnalyticsReportFilter, QualityConflictsFilter, QualityReportsFilter, QualitySettingsFilter,
-    RequestsFilter,
 } from './server-response-types';
 import PluginRegistry from './plugins';
 import serverProxy from './server-proxy';
@@ -153,12 +152,11 @@ export default interface CVATCore {
         getMeta: any;
     };
     requests: {
-        list: () => Promise<{ requests: Request[], count: number }>;
+        list: () => Promise<PaginatedResource<Request>>;
         listen: (
-            rqID: string | null,
+            rqID: string,
             options?: {
                 callback?: (request: Request) => void,
-                filter?: RequestsFilter,
                 initialRequest?: Request,
             }
         ) => Promise<Request>;

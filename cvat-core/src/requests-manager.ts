@@ -5,9 +5,9 @@
 import serverProxy from './server-proxy';
 import { RQStatus } from './enums';
 import User from './user';
-import { RequestsFilter, SerializedRequest } from './server-response-types';
-import { fieldsToSnakeCase } from './common';
+import { SerializedRequest } from './server-response-types';
 import { RequestError } from './exceptions';
+import { PaginatedResource } from './core-types';
 
 type Operation = {
     target: string;
@@ -167,50 +167,37 @@ class RequestsManager {
         this.requestStack = [];
     }
 
-    async list(): Promise<{ requests: Request[], count: number }> {
+    async list(): Promise<PaginatedResource<Request>> {
         const result = await serverProxy.requests.list();
-        const requests = [];
-        for (const request of result) {
-            requests.push(
-                new Request({
-                    ...request,
-                }),
-            );
-        }
-        return { requests, count: requests.length };
+        const requests = result.map((serializedRequest) => new Request({
+            ...serializedRequest,
+        })) as PaginatedResource<Request>;
+        requests.count = requests.length;
+        return requests;
     }
 
     async listen(
-        id: string,
+        requestID: string,
         options?: {
             callback?: (request: Request) => void,
-            filter?: RequestsFilter,
             initialRequest?: Request,
         },
     ): Promise<Request> {
-        let storedID = null;
-        const params = options?.filter ? fieldsToSnakeCase(options.filter) : {};
-        if (id) {
-            storedID = id;
-        } else if (options?.filter) {
-            storedID = new URLSearchParams(params).toString();
-        }
-
-        if (!storedID) {
-            throw new Error('Neither request id nor filter is provided');
+        if (!requestID) {
+            throw new Error('Request id is not provided');
         }
         const callback = options?.callback;
         const initialRequest = options?.initialRequest;
 
-        if (storedID in this.listening) {
+        if (requestID in this.listening) {
             if (callback) {
-                this.listening[storedID].onUpdate.push(callback);
+                this.listening[requestID].onUpdate.push(callback);
             }
-            return this.listening[storedID].promise;
+            return this.listening[requestID].promise;
         }
         const promise = new Promise<Request>((resolve, reject) => {
             const timeoutCallback = (): void => {
-                if (!(storedID in this.listening)) {
+                if (!(requestID in this.listening)) {
                     return;
                 }
 
@@ -219,9 +206,9 @@ class RequestsManager {
                 const timestamp = Date.now();
                 if (this.requestStack.length >= REQUESTS_COUNT) {
                     const timestampToCheck = this.requestStack[this.requestStack.length - 1];
-                    const delay = this.delayFor(storedID);
+                    const delay = this.delayFor(requestID);
                     if (timestamp - timestampToCheck < delay) {
-                        this.listening[storedID].timeout = window.setTimeout(timeoutCallback, delay);
+                        this.listening[requestID].timeout = window.setTimeout(timeoutCallback, delay);
                         return;
                     }
                 }
@@ -230,23 +217,23 @@ class RequestsManager {
                 }
                 this.requestStack.unshift(timestamp);
 
-                serverProxy.requests.status(id, params).then((serializedRequest) => {
+                serverProxy.requests.status(requestID).then((serializedRequest) => {
                     const request = new Request({ ...serializedRequest });
                     const { status } = request;
                     // check it was not cancelled
-                    if (storedID in this.listening) {
-                        const { onUpdate } = this.listening[storedID];
+                    if (requestID in this.listening) {
+                        const { onUpdate } = this.listening[requestID];
                         if ([RQStatus.QUEUED, RQStatus.STARTED].includes(status)) {
                             onUpdate.forEach((update) => update(request));
-                            this.listening[storedID].requestDelayIdx = this.updateRequestDelayIdx(
-                                storedID,
+                            this.listening[requestID].requestDelayIdx = this.updateRequestDelayIdx(
+                                requestID,
                                 request,
                             );
-                            this.listening[storedID].request = request;
-                            this.listening[storedID].timeout = window
-                                .setTimeout(timeoutCallback, this.delayFor(storedID));
+                            this.listening[requestID].request = request;
+                            this.listening[requestID].timeout = window
+                                .setTimeout(timeoutCallback, this.delayFor(requestID));
                         } else {
-                            delete this.listening[storedID];
+                            delete this.listening[requestID];
                             if (status === RQStatus.FINISHED) {
                                 onUpdate
                                     .forEach((update) => update(request));
@@ -261,19 +248,15 @@ class RequestsManager {
                         }
                     }
                 }).catch((error) => {
-                    if (storedID in this.listening) {
-                        const { onUpdate } = this.listening[storedID];
+                    if (requestID in this.listening) {
+                        const { onUpdate } = this.listening[requestID];
 
                         onUpdate
                             .forEach((update) => update(new Request({
                                 status: RQStatus.FAILED,
-                                message: `Could not get a status of the request ${storedID}. ${error.toString()}`,
+                                message: `Could not get a status of the request ${requestID}. ${error.toString()}`,
                             })));
                         reject(error);
-                    }
-                }).finally(() => {
-                    if (storedID in this.listening) {
-                        this.listening[storedID].timeout = null;
                     }
                 });
             };
@@ -281,7 +264,7 @@ class RequestsManager {
             if (initialRequest?.status === RQStatus.FAILED) {
                 reject(new RequestError(initialRequest?.message));
             } else {
-                this.listening[storedID] = {
+                this.listening[requestID] = {
                     onUpdate: callback ? [callback] : [],
                     timeout: window.setTimeout(timeoutCallback),
                     request: initialRequest,
@@ -290,8 +273,8 @@ class RequestsManager {
             }
         });
 
-        this.listening[storedID] = {
-            ...this.listening[storedID],
+        this.listening[requestID] = {
+            ...this.listening[requestID],
             promise,
         };
         return promise;

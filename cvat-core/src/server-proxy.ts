@@ -18,7 +18,7 @@ import {
     SerializedInvitationData, SerializedCloudStorage, SerializedFramesMetaData, SerializedCollection,
     SerializedQualitySettingsData, APIQualitySettingsFilter, SerializedQualityConflictData, APIQualityConflictsFilter,
     SerializedQualityReportData, APIQualityReportsFilter, SerializedAnalyticsReport, APIAnalyticsReportFilter,
-    SerializedRequest, APIRequestsFilter,
+    SerializedRequest,
 } from './server-response-types';
 import { PaginatedResource } from './core-types';
 import { Storage } from './storage';
@@ -2259,27 +2259,13 @@ async function getRequestsList(): Promise<PaginatedResource<SerializedRequest>> 
     }
 }
 
-async function getRequestStatus(rqID: string | null, filter: APIRequestsFilter): Promise<SerializedRequest> {
+async function getRequestStatus(rqID: string): Promise<SerializedRequest> {
     const { backendAPI } = config;
 
     try {
-        if (rqID) {
-            const response = await Axios.get(`${backendAPI}/requests/${rqID}`, {
-                params: {
-                    ...filter,
-                },
-            });
+        const response = await Axios.get(`${backendAPI}/requests/${rqID}`);
 
-            return response.data;
-        }
-
-        const response = await Axios.get(`${backendAPI}/requests`, {
-            params: {
-                ...filter,
-            },
-        });
-
-        return response.data.results[0];
+        return response.data;
     } catch (errorData) {
         throw generateError(errorData);
     }

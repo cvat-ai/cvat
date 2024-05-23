@@ -37,7 +37,7 @@ export default function (
             return {
                 ...state,
                 requests: Object.fromEntries(action.payload.requests.map((r) => [r.id, r])),
-                count: action.payload.count,
+                count: action.payload.requests.count,
                 initialized: true,
                 fetching: false,
             };
