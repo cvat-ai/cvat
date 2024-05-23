@@ -3,7 +3,6 @@
 //
 // SPDX-License-Identifier: MIT
 
-import requestsManager, { Request } from './requests-manager';
 import { Storage } from './storage';
 import serverProxy from './server-proxy';
 import { decodePreview } from './frames';
@@ -12,7 +11,6 @@ import { exportDataset, importDataset } from './annotations';
 import { SerializedLabel } from './server-response-types';
 import { Label } from './labels';
 import AnnotationGuide from './guide';
-import { RQStatus } from './enums';
 
 export default function implementProject(projectClass) {
     projectClass.prototype.save.implementation = async function () {
@@ -110,36 +108,27 @@ export default function implementProject(projectClass) {
         options?: {
             convMaskToPoly?: boolean,
             uploadStatusCallback?: (s: string, n: number) => void,
-            requestStatusCallback?: (request: Request) => void,
         },
     ) {
-        const { requestStatusCallback } = options || {};
         const rqID = await importDataset(this, format, useDefaultSettings, sourceStorage, file, options);
-        return requestsManager.listen(rqID, { callback: requestStatusCallback });
+        return rqID;
     };
 
     projectClass.prototype.backup.implementation = async function (
         targetStorage: Storage,
         useDefaultSettings: boolean,
         fileName?: string,
-        options?: { requestStatusCallback?: (request: Request) => void },
     ) {
-        const { requestStatusCallback } = options || {};
         const rqID = await serverProxy.projects.backup(this.id, targetStorage, useDefaultSettings, fileName);
-        if (rqID) {
-            return requestsManager.listen(rqID, { callback: requestStatusCallback });
-        }
-        return new Request({ status: RQStatus.FINISHED, message: '' });
+        return rqID;
     };
 
     projectClass.restore.implementation = async function (
         storage: Storage,
         file: File | string,
-        options?: { requestStatusCallback?: (request: Request) => void },
     ) {
-        const { requestStatusCallback } = options || {};
         const rqID = await serverProxy.projects.restore(storage, file);
-        return requestsManager.listen(rqID, { callback: requestStatusCallback });
+        return rqID;
     };
 
     projectClass.prototype.guide.implementation = async function guide() {

@@ -12,7 +12,7 @@ import { EventScope } from 'cvat-logger';
 import { getProjectsAsync } from './projects-actions';
 import { AnnotationActionTypes, fetchAnnotationsAsync } from './annotation-actions';
 import {
-    getInstanceType, isRequestInstanceType, listen, RequestInstanceType, updateRequestProgress,
+    getInstanceType, isRequestInstanceType, listen, RequestInstanceType,
 } from './requests-actions';
 
 const core = getCore();
@@ -115,9 +115,6 @@ export const importDatasetAsync = (
                     const rqID = await (instance as Task).annotations
                         .upload(format, useDefaultSettings, sourceStorage, file, {
                             convMaskToPoly,
-                            requestStatusCallback: (request: Request) => {
-                                updateRequestProgress(request, dispatch);
-                            },
                         });
                     await listen(rqID, dispatch);
                 }
@@ -139,9 +136,6 @@ export const importDatasetAsync = (
                     const rqID = await (instance as Job).annotations
                         .upload(format, useDefaultSettings, sourceStorage, file, {
                             convMaskToPoly,
-                            requestStatusCallback: (request: Request) => {
-                                updateRequestProgress(request, dispatch);
-                            },
                         });
                     await listen(rqID, dispatch);
 
@@ -179,13 +173,10 @@ export const importBackupAsync = (instanceType: 'project' | 'task', storage: Sto
         dispatch(importActions.importBackup());
         try {
             const instanceClass = (instanceType === 'task') ? core.classes.Task : core.classes.Project;
-            const instance = await instanceClass.restore(storage, file, {
-                requestStatusCallback: (request: Request) => {
-                    updateRequestProgress(request, dispatch);
-                },
-            });
+            const rqID = await instanceClass.restore(storage, file);
+            const result = await listen(rqID, dispatch);
 
-            dispatch(importActions.importBackupSuccess(instance.id, instanceType));
+            dispatch(importActions.importBackupSuccess(result?.resultID, instanceType));
         } catch (error) {
             dispatch(importActions.importBackupFailed(instanceType, error));
         }

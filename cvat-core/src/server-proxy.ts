@@ -988,32 +988,40 @@ async function restoreTask(storage: Storage, file: File | string): Promise<strin
     const isCloudStorage = storage.location === StorageLocation.CLOUD_STORAGE;
 
     if (isCloudStorage) {
-        params.filename = file as string;
-        response = await Axios.post(url,
-            new FormData(), {
-                params,
-            });
-        return response.data.rq_id;
+        try {
+            params.filename = file as string;
+            response = await Axios.post(url,
+                new FormData(), {
+                    params,
+                });
+            return response.data.rq_id;
+        } catch (errorData) {
+            throw generateError(errorData);
+        }
     }
 
-    const uploadConfig = {
-        chunkSize: config.uploadChunkSize * 1024 * 1024,
-        endpoint: `${origin}${backendAPI}/tasks/backup/`,
-        totalSentSize: 0,
-        totalSize: (file as File).size,
-    };
-    await Axios.post(url,
-        new FormData(), {
-            params,
-            headers: { 'Upload-Start': true },
-        });
-    const { filename } = await chunkUpload(file as File, uploadConfig);
-    response = await Axios.post(url,
-        new FormData(), {
-            params: { ...params, filename },
-            headers: { 'Upload-Finish': true },
-        });
-    return response.data.rq_id;
+    try {
+        const uploadConfig = {
+            chunkSize: config.uploadChunkSize * 1024 * 1024,
+            endpoint: `${origin}${backendAPI}/tasks/backup/`,
+            totalSentSize: 0,
+            totalSize: (file as File).size,
+        };
+        await Axios.post(url,
+            new FormData(), {
+                params,
+                headers: { 'Upload-Start': true },
+            });
+        const { filename } = await chunkUpload(file as File, uploadConfig);
+        response = await Axios.post(url,
+            new FormData(), {
+                params: { ...params, filename },
+                headers: { 'Upload-Finish': true },
+            });
+        return response.data.rq_id;
+    } catch (errorData) {
+        throw generateError(errorData);
+    }
 }
 
 async function backupProject(
@@ -1064,31 +1072,39 @@ async function restoreProject(storage: Storage, file: File | string): Promise<st
     let response;
 
     if (isCloudStorage) {
-        params.filename = file;
-        response = await Axios.post(url,
+        try {
+            params.filename = file;
+            response = await Axios.post(url,
+                new FormData(), {
+                    params,
+                });
+            return response.data.rq_id;
+        } catch (errorData) {
+            throw generateError(errorData);
+        }
+    }
+    try {
+        const uploadConfig = {
+            chunkSize: config.uploadChunkSize * 1024 * 1024,
+            endpoint: `${origin}${backendAPI}/projects/backup/`,
+            totalSentSize: 0,
+            totalSize: (file as File).size,
+        };
+        await Axios.post(url,
             new FormData(), {
                 params,
+                headers: { 'Upload-Start': true },
+            });
+        const { filename } = await chunkUpload(file as File, uploadConfig);
+        response = await Axios.post(url,
+            new FormData(), {
+                params: { ...params, filename },
+                headers: { 'Upload-Finish': true },
             });
         return response.data.rq_id;
+    } catch (errorData) {
+        throw generateError(errorData);
     }
-    const uploadConfig = {
-        chunkSize: config.uploadChunkSize * 1024 * 1024,
-        endpoint: `${origin}${backendAPI}/projects/backup/`,
-        totalSentSize: 0,
-        totalSize: (file as File).size,
-    };
-    await Axios.post(url,
-        new FormData(), {
-            params,
-            headers: { 'Upload-Start': true },
-        });
-    const { filename } = await chunkUpload(file as File, uploadConfig);
-    response = await Axios.post(url,
-        new FormData(), {
-            params: { ...params, filename },
-            headers: { 'Upload-Finish': true },
-        });
-    return response.data.rq_id;
 }
 
 type LongProcessListener<R> = Record<number, {

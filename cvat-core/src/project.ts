@@ -13,7 +13,6 @@ import { Label } from './labels';
 import User from './user';
 import { FieldUpdateTrigger } from './common';
 import AnnotationGuide from './guide';
-import { Request } from './requests-manager';
 
 export default class Project {
     public readonly id: number;
@@ -240,9 +239,8 @@ export default class Project {
     static async restore(
         storage: Storage,
         file: File | string,
-        options?: { requestStatusCallback?: (request: Request) => void },
     ) {
-        const result = await PluginRegistry.apiWrapper.call(this, Project.restore, storage, file, options);
+        const result = await PluginRegistry.apiWrapper.call(this, Project.restore, storage, file);
         return result;
     }
 

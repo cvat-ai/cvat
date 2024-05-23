@@ -30,7 +30,7 @@ import {
     importDataset, exportDataset, clearCache, getHistory,
 } from './annotations';
 import AnnotationGuide from './guide';
-import requestsManager, { Request } from './requests-manager';
+import requestsManager from './requests-manager';
 
 // must be called with task/job context
 async function deleteFrameWrapper(jobID, frame): Promise<void> {
@@ -550,11 +550,9 @@ export function implementTask(Task) {
     Task.restore.implementation = async function (
         storage: Storage,
         file: File | string,
-        options?: { requestStatusCallback?: (request: Request) => void },
     ) {
-        const { requestStatusCallback } = options || {};
         const rqID = await serverProxy.tasks.restore(storage, file);
-        return requestsManager.listen(rqID, { callback: requestStatusCallback });
+        return rqID;
     };
 
     Task.prototype.frames.get.implementation = async function (frame, isPlaying, step) {

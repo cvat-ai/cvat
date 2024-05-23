@@ -510,6 +510,7 @@ export interface SerializedRequest {
     progress?: number;
     message: string;
     result_url?: string;
+    result_id?: number;
     created_date?: string;
     enqueued_date?: string;
     started_date?: string;

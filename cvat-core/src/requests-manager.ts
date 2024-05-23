@@ -25,6 +25,7 @@ export class Request {
     #message: string;
     #progress: number;
     #resultUrl: string;
+    #resultID: number;
     #enqueuedDate: string;
     #startedDate: string;
     #finishedDate: string;
@@ -38,6 +39,7 @@ export class Request {
         this.#progress = initialData.progress;
         this.#message = initialData.message;
         this.#resultUrl = initialData.result_url;
+        this.#resultID = initialData.result_id;
 
         this.#enqueuedDate = initialData.enqueued_date;
         this.#startedDate = initialData.started_date;
@@ -84,6 +86,10 @@ export class Request {
 
     get url(): string {
         return this.#resultUrl;
+    }
+
+    get resultID(): number {
+        return this.#resultID;
     }
 
     get enqueuedDate(): string {
