@@ -38,13 +38,10 @@
 .cvat-requests-list {
     height: 100%;
     overflow-y: auto;
+    margin: $grid-unit-size;
 
-    .ant-card {
-        margin-bottom: $grid-unit-size;
-
-        .ant-card-body {
-            padding: $grid-unit-size * 2;
-        }
+    .ant-card .ant-card-body {
+        padding: $grid-unit-size * 2;
     }
 }
 
@@ -59,8 +56,11 @@
 
 .cvat-requests-card {
     height: $grid-unit-size * 11;
-    width: 100%;
-    position: relative;
+    width: calc(100% - $grid-unit-size * 2);
+    border: 1px solid $border-color-1;
+    border-radius: $border-radius-base;
+    background: $background-color-1;
+    margin: $grid-unit-size;
 
     .cvat-request-item-progress-wrapper {
         > .ant-row {
@@ -114,10 +114,9 @@
     }
 
 
-    border: 1px solid $border-color-1;
-
     &:hover {
-        border: 1px solid $border-color-hover;
+        transition: box-shadow $box-shadow-transition;
+        box-shadow: $box-shadow-base;
     }
 }
 
