@@ -174,8 +174,6 @@ def define_dependent_job(
         jobs = filter(lambda job: job.meta.get("user", {}).get("id") == user_id and f(job), jobs)
         all_user_jobs.extend(jobs)
 
-    print(all_user_jobs)
-
     # prevent possible cyclic dependencies
     if rq_id:
         all_job_dependency_ids = {
