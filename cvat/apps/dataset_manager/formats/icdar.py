@@ -10,7 +10,8 @@ from datumaro.components.annotation import (AnnotationType, Caption, Label,
 from datumaro.components.dataset import Dataset
 from datumaro.components.extractor import ItemTransform
 
-from cvat.apps.dataset_manager.bindings import (GetCVATDataExtractor, import_dm_annotations)
+from cvat.apps.dataset_manager.bindings import (GetCVATDataExtractor,
+    import_dm_annotations)
 from cvat.apps.dataset_manager.util import make_zip_archive
 
 from .transformations import MaskToPolygonTransformation, RotatedBoxesToPolygons
@@ -87,7 +88,6 @@ def _export_recognition(dst_file, temp_dir, instance_data, save_images=False):
 @importer(name='ICDAR Recognition', ext='ZIP', version='1.0')
 def _import(src_file, temp_dir, instance_data, load_data_callback=None, **kwargs):
     zipfile.ZipFile(src_file).extractall(temp_dir)
-
     dataset = Dataset.import_from(temp_dir, 'icdar_word_recognition', env=dm_env)
     dataset.transform(CaptionToLabel, label='icdar')
     if load_data_callback is not None:
@@ -129,7 +129,6 @@ def _export_segmentation(dst_file, temp_dir, instance_data, save_images=False):
 @importer(name='ICDAR Segmentation', ext='ZIP', version='1.0')
 def _import(src_file, temp_dir, instance_data, load_data_callback=None, **kwargs):
     zipfile.ZipFile(src_file).extractall(temp_dir)
-
     dataset = Dataset.import_from(temp_dir, 'icdar_text_segmentation', env=dm_env)
     dataset.transform(AddLabelToAnns, label='icdar')
     dataset = MaskToPolygonTransformation.convert_dataset(dataset, **kwargs)

@@ -24,6 +24,7 @@ import rq
 from attr import attrib, attrs
 from datumaro.components.media import PointCloud
 from datumaro.components.environment import Environment
+from datumaro.components.extractor import Importer
 from datumaro.components.format_detection import RejectionReason
 from django.db.models import QuerySet
 from django.utils import timezone
@@ -2297,7 +2298,7 @@ def load_dataset_data(project_annotation, dataset: dm.Dataset, project_data):
 
         project_annotation.add_task(task_fields, dataset_files, project_data)
 
-def detect_dataset(temp_dir, format_name, importer):
+def detect_dataset(dataset_dir: str, format_name: str, importer: Importer) -> None:
     not_found_error_instance = CvatDatasetNotFoundError()
 
     def not_found_error(_, reason, human_message):
@@ -2308,7 +2309,7 @@ def detect_dataset(temp_dir, format_name, importer):
     detection_env = Environment()
     detection_env.importers.items.clear()
     detection_env.importers.register(format_name, importer)
-    detected = detection_env.detect_dataset(temp_dir, depth=4, rejection_callback=not_found_error)
+    detected = detection_env.detect_dataset(dataset_dir, depth=4, rejection_callback=not_found_error)
 
     if not detected and not_found_error_instance.reason != RejectionReason.detection_unsupported:
         raise not_found_error_instance
