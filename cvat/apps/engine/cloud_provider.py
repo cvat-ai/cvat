@@ -11,7 +11,7 @@ from abc import ABC, abstractmethod, abstractproperty
 from enum import Enum
 from io import BytesIO
 from typing import Dict, List, Optional, Any, Callable, TypeVar, Iterator
-from concurrent.futures import ThreadPoolExecutor, as_completed
+from concurrent.futures import ThreadPoolExecutor, wait
 
 import boto3
 from azure.core.exceptions import HttpResponseError, ResourceExistsError
@@ -53,16 +53,16 @@ def normalize_threads_number(
     threads_number = (
         min(
             CPU_NUMBER,
-            settings.CVAT_MAX_THREADS_NUMBER_FOR_DATA_DOWNLOADING,
+            settings.CLOUD_DATA_DOWNLOADING_MAX_THREADS_NUMBER,
             max(
-                math.ceil(number_of_files / settings.CVAT_NUMBER_OF_FILES_PER_THREAD), 1
+                math.ceil(number_of_files / settings.CLOUD_DATA_DOWNLOADING_NUMBER_OF_FILES_PER_THREAD), 1
             ),
         )
         if threads_number is None
         else min(
             threads_number,
             CPU_NUMBER,
-            settings.CVAT_MAX_THREADS_NUMBER_FOR_DATA_DOWNLOADING,
+            settings.CLOUD_DATA_DOWNLOADING_MAX_THREADS_NUMBER,
         )
     )
     threads_number = max(threads_number, 1)
@@ -252,8 +252,7 @@ class _CloudStorage(ABC):
 
         with ThreadPoolExecutor(max_workers=threads_number) as executor:
             futures = [executor.submit(self.download_file, f, os.path.join(upload_dir, f)) for f in files]
-            for future in as_completed(futures):
-                future.result()
+            wait(futures)
 
     @abstractmethod
     def upload_fileobj(self, file_obj, file_name):
