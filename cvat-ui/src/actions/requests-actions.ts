@@ -4,9 +4,7 @@
 
 import { ActionUnion, createAction } from 'utils/redux';
 import { RequestsQuery } from 'reducers';
-import {
-    Request, InstanceType, getCore,
-} from 'cvat-core-wrapper';
+import { Request, InstanceType, getCore } from 'cvat-core-wrapper';
 
 const core = getCore();
 
@@ -14,7 +12,7 @@ export enum RequestsActionsTypes {
     GET_REQUESTS = 'GET_REQUESTS',
     GET_REQUESTS_SUCCESS = 'GET_REQUESTS_SUCCESS',
     GET_REQUESTS_FAILED = 'GET_REQUESTS_FAILED',
-    GET_REQUESTS_STATUS_SUCCESS = 'GET_REQUESTS_STATUS_SUCCESS',
+    GET_REQUEST_STATUS_SUCCESS = 'GET_REQUEST_STATUS_SUCCESS',
     GET_REQUESTS_STATUS_FAILED = 'GET_REQUESTS_STATUS_FAILED',
     REQUEST_FINISHED = 'REQUEST_FINISHED',
     REQUEST_FAILED = 'REQUEST_FAILED',
@@ -35,7 +33,7 @@ export const requestsActions = {
         error,
     }),
     getRequestStatusSuccess: (request: Request) => (
-        createAction(RequestsActionsTypes.GET_REQUESTS_STATUS_SUCCESS, {
+        createAction(RequestsActionsTypes.GET_REQUEST_STATUS_SUCCESS, {
             request,
         })
     ),

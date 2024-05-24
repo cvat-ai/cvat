@@ -49,7 +49,7 @@ export default function (
                 fetching: false,
             };
         }
-        case RequestsActionsTypes.GET_REQUESTS_STATUS_SUCCESS:
+        case RequestsActionsTypes.GET_REQUEST_STATUS_SUCCESS:
         case RequestsActionsTypes.GET_REQUESTS_STATUS_FAILED: {
             const { requests } = state;
 
