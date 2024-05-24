@@ -35,7 +35,7 @@ from cvat.apps.engine.mime_types import mimetypes
 from cvat.apps.engine.models import (DataChoice, DimensionType, Job, Image,
                                      StorageChoice, CloudStorage)
 from cvat.apps.engine.utils import md5_hash, preload_images
-from utils.dataset_manifest import ImageManifestManager
+from utils.dataset_manifest import ImageManifestManager, InvalidManifestError
 
 slogger = ServerLogManager(__name__)
 
@@ -310,9 +310,10 @@ class MediaCache:
             )
             # need to update index
             manifest.set_index()
-            if not len(manifest):
+            try:
+                preview_info = manifest.get_first_not_empty_item()
+            except InvalidManifestError:
                 continue
-            preview_info = manifest.get_first_not_empty_item()
             preview_filename = ''.join([preview_info['name'], preview_info['extension']])
             preview_path = os.path.join(manifest_prefix, preview_filename)
             break
