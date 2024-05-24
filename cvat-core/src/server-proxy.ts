@@ -21,6 +21,7 @@ import {
     SerializedRequest,
 } from './server-response-types';
 import { PaginatedResource } from './core-types';
+import { Request } from './request';
 import { Storage } from './storage';
 import { RQStatus, StorageLocation, WebhookSourceType } from './enums';
 import { isEmail, isResourceURL } from './common';
@@ -1098,7 +1099,7 @@ type LongProcessListener<R> = Record<number, {
 async function createTask(
     taskSpec: Partial<SerializedTask>,
     taskDataSpec: any,
-    onUpdate: (state: RQStatus, progress: number, message: string) => void,
+    onUpdate: (request: Request) => void,
 ): Promise<{ taskID: number, rqID: string }> {
     const { backendAPI, origin } = config;
     // keep current default params to 'freeze" them during this request
@@ -1133,7 +1134,12 @@ async function createTask(
 
     let response = null;
 
-    onUpdate(RQStatus.UNKNOWN, 0, 'CVAT is creating your task');
+    onUpdate(new Request({
+        status: RQStatus.UNKNOWN,
+        progress: 0,
+        message: 'CVAT is creating your task',
+    }));
+
     try {
         response = await Axios.post(`${backendAPI}/tasks`, taskSpec, {
             params,
@@ -1142,7 +1148,11 @@ async function createTask(
         throw generateError(errorData);
     }
 
-    onUpdate(RQStatus.UNKNOWN, 0, 'CVAT is uploading task data to the server');
+    onUpdate(new Request({
+        status: RQStatus.UNKNOWN,
+        progress: 0,
+        message: 'CVAT is uploading task data to the server',
+    }));
 
     async function bulkUpload(taskId, files) {
         const fileBulks = files.reduce((fileGroups, file) => {
@@ -1162,7 +1172,11 @@ async function createTask(
                 taskData.append(`client_files[${idx}]`, element);
             }
             const percentage = totalSentSize / totalSize;
-            onUpdate(RQStatus.UNKNOWN, percentage, 'CVAT is uploading task data to the server');
+            onUpdate(new Request({
+                status: RQStatus.UNKNOWN,
+                progress: percentage,
+                message: 'CVAT is uploading task data to the server',
+            }));
             await Axios.post(`${backendAPI}/tasks/${taskId}/data`, taskData, {
                 ...params,
                 headers: { 'Upload-Multiple': true },
@@ -1184,7 +1198,11 @@ async function createTask(
         const uploadConfig = {
             endpoint: `${origin}${backendAPI}/tasks/${response.data.id}/data/`,
             onUpdate: (percentage) => {
-                onUpdate(RQStatus.UNKNOWN, percentage, 'CVAT is uploading task data to the server');
+                onUpdate(new Request({
+                    status: RQStatus.UNKNOWN,
+                    progress: percentage,
+                    message: 'CVAT is uploading task data to the server',
+                }));
             },
             chunkSize,
             totalSize,

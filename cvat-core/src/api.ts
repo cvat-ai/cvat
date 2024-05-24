@@ -22,7 +22,7 @@ import Organization from './organization';
 import Webhook from './webhook';
 import AnnotationGuide from './guide';
 import BaseSingleFrameAction from './annotations-actions';
-import { Request } from './requests-manager';
+import { Request } from './request';
 
 import * as enums from './enums';
 

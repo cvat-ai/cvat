@@ -495,7 +495,7 @@ export function implementTask(Task) {
         const { taskID, rqID } = await serverProxy.tasks.create(
             taskSpec,
             taskDataSpec,
-            options?.uploadStatusCallback || (() => {}),
+            options?.requestStatusCallback || (() => {}),
         );
         await requestsManager.listen(rqID, {
             callback: options?.requestStatusCallback,

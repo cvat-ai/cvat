@@ -260,16 +260,6 @@ ThunkAction<Promise<void>, {}, {}, AnyAction> {
 
         try {
             const savedTask = await taskInstance.save({
-                uploadStatusCallback: (status: RQStatus, progress: number, message: string): void => {
-                    if (status === RQStatus.UNKNOWN) {
-                        onProgress?.(`${message} ${progress ? `${Math.floor(progress * 100)}%` : ''}`);
-                    } else if ([RQStatus.QUEUED, RQStatus.STARTED].includes(status)) {
-                        const helperMessage = 'You may close the window.';
-                        onProgress?.(`${message} ${progress ? `${Math.floor(progress * 100)}%` : ''}. ${helperMessage}`);
-                    } else {
-                        onProgress?.(`${status}: ${message}`);
-                    }
-                },
                 requestStatusCallback(request) {
                     let { message } = request;
                     let helperMessage = '';
@@ -287,7 +277,7 @@ ThunkAction<Promise<void>, {}, {}, AnyAction> {
                         }
                     }
                     onProgress?.(`${message} ${progress ? `${Math.floor(progress * 100)}%` : ''}. ${helperMessage}`);
-                    updateRequestProgress(request, dispatch);
+                    if (request.id) updateRequestProgress(request, dispatch);
                 },
             });
 

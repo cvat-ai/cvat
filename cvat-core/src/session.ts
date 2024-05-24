@@ -6,7 +6,7 @@
 import _ from 'lodash';
 import {
     ChunkType, DimensionType, JobStage,
-    JobState, JobType, RQStatus, StorageLocation, TaskMode, TaskStatus,
+    JobState, JobType, StorageLocation, TaskMode, TaskStatus,
 } from './enums';
 import { Storage } from './storage';
 
@@ -19,7 +19,7 @@ import { SerializedJob, SerializedLabel, SerializedTask } from './server-respons
 import AnnotationGuide from './guide';
 import { FrameData } from './frames';
 import Statistics from './statistics';
-import { Request } from './requests-manager';
+import { Request } from './request';
 
 function buildDuplicatedAPI(prototype) {
     Object.defineProperties(prototype, {
@@ -1064,7 +1064,6 @@ export class Task extends Session {
     async save(
         options?: {
             requestStatusCallback?: (request: Request) => void,
-            uploadStatusCallback: (state: RQStatus, progress: number, message: string) => void,
         },
     ): Promise<Task> {
         const result = await PluginRegistry.apiWrapper.call(this, Task.prototype.save, options);
