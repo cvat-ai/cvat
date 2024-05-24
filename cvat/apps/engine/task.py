@@ -660,6 +660,7 @@ def _create_thread(
     # count and validate uploaded files
     media = _count_files(data)
     media, task_mode = _validate_data(media, manifest_files)
+    is_media_sorted = False
 
     if is_data_in_cloud:
         # first we need to filter files and keep only supported ones
@@ -703,10 +704,13 @@ def _create_thread(
                 upload_dir, data.get('server_files_path'), data.get('server_files_exclude'))
             manifest_root = upload_dir
         elif is_data_in_cloud:
+            # we should sort media before sorting in the extractor because the manifest structure should match to the sorted media
             if job_file_mapping is not None:
                 sorted_media = list(itertools.chain.from_iterable(job_file_mapping))
             else:
                 sorted_media = sort(media['image'], data['sorting_method'])
+                media['image'] = sorted_media
+            is_media_sorted = True
 
             if manifest_file:
                 # Define task manifest content based on cloud storage manifest content and uploaded files
@@ -782,7 +786,8 @@ def _create_thread(
             upload_dir = db_data.get_upload_dirname()
             db_data.storage = models.StorageChoice.LOCAL
         if media_type != 'video':
-            details['sorting_method'] = data['sorting_method']
+            details['sorting_method'] = data['sorting_method'] if not is_media_sorted else models.SortingMethod.PREDEFINED
+
         extractor = MEDIA_TYPES[media_type]['extractor'](**details)
 
     if extractor is None:

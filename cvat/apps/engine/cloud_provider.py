@@ -11,7 +11,7 @@ from abc import ABC, abstractmethod, abstractproperty
 from enum import Enum
 from io import BytesIO
 from typing import Dict, List, Optional, Any, Callable, TypeVar, Iterator
-from concurrent.futures import ThreadPoolExecutor, wait
+from concurrent.futures import ThreadPoolExecutor, wait, FIRST_EXCEPTION
 
 import boto3
 from azure.core.exceptions import HttpResponseError, ResourceExistsError
@@ -252,7 +252,10 @@ class _CloudStorage(ABC):
 
         with ThreadPoolExecutor(max_workers=threads_number) as executor:
             futures = [executor.submit(self.download_file, f, os.path.join(upload_dir, f)) for f in files]
-            wait(futures)
+            done, _ = wait(futures, return_when=FIRST_EXCEPTION)
+            for future in done:
+                if ex := future.exception():
+                    raise ex
 
     @abstractmethod
     def upload_fileobj(self, file_obj, file_name):
