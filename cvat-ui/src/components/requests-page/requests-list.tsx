@@ -58,7 +58,7 @@ function RequestsList(): JSX.Element {
                         dispatch(getRequestsAsync({
                             ...query,
                             page: newPage,
-                        }, false));
+                        }));
                     }}
                     showSizeChanger={false}
                     total={count}

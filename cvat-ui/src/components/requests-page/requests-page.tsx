@@ -43,7 +43,7 @@ export default function RequestsPageComponent(): JSX.Element {
     ) : <EmptyListComponent />;
 
     useEffect(() => {
-        dispatch(getRequestsAsync(query, false));
+        dispatch(getRequestsAsync(query));
     }, []);
 
     return (

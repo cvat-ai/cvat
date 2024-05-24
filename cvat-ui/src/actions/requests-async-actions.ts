@@ -3,10 +3,7 @@
 // SPDX-License-Identifier: MIT
 
 import { ThunkAction } from 'utils/redux';
-import {
-    CombinedState,
-    RequestsQuery, StorageLocation,
-} from 'reducers';
+import { CombinedState, RequestsQuery, StorageLocation } from 'reducers';
 import {
     getCore, RQStatus, Request, Project, Task, Job,
 } from 'cvat-core-wrapper';
@@ -23,7 +20,7 @@ export interface RequestParams {
     location?: StorageLocation;
 }
 
-export function getRequestsAsync(query: RequestsQuery, notify = true): ThunkAction {
+export function getRequestsAsync(query: RequestsQuery): ThunkAction {
     return async (dispatch, getState): Promise<void> => {
         dispatch(requestsActions.getRequests(query));
 
@@ -33,27 +30,6 @@ export function getRequestsAsync(query: RequestsQuery, notify = true): ThunkActi
             const requests = await core.requests.list();
             dispatch(requestsActions.getRequestsSuccess(requests));
 
-            if (notify) {
-                const shownNotifications = JSON.parse(localStorage.getItem('requestsNotifications') || '[]');
-
-                requests
-                    .forEach((request: Request): void => {
-                        if (!shownNotifications.includes(request.id)) {
-                            if (request.status === RQStatus.FAILED) {
-                                dispatch(requestsActions.requestFailed(request));
-                            }
-                            if (request.status === RQStatus.FINISHED) {
-                                dispatch(requestsActions.requestFinished(request));
-                            }
-
-                            if ([RQStatus.FAILED, RQStatus.FINISHED].includes(request.status)) {
-                                shownNotifications.push(request.id);
-                            }
-                        }
-                    });
-
-                localStorage.setItem('requestsNotifications', JSON.stringify(shownNotifications));
-            }
             requests
                 .filter((request: Request) => [RQStatus.STARTED, RQStatus.QUEUED].includes(request.status))
                 .forEach((request: Request): void => {

@@ -12,14 +12,7 @@ import { ImportState } from '.';
 const defaultProgress = 0.0;
 
 export function defineActititiesField(instance: InstanceType | RequestInstanceType): 'projects' | 'tasks' | 'jobs' {
-    const instanceType = getInstanceType(instance);
-    if (instanceType === 'project') {
-        return 'projects';
-    }
-    if (instanceType === 'task') {
-        return 'tasks';
-    }
-    return 'jobs';
+    return `${getInstanceType(instance)}s`;
 }
 
 const defaultState: ImportState = {
