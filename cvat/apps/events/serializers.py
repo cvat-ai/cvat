@@ -5,7 +5,9 @@
 import datetime
 import json
 
+from contextlib import suppress
 from rest_framework import serializers
+from cvat.apps.engine.models import Job
 
 class EventSerializer(serializers.Serializer):
     scope = serializers.CharField(required=True)
@@ -54,10 +56,14 @@ class ClientEventsSerializer(serializers.Serializer):
 
         if previous_event := data["previous_event"]:
             previous_end_timestamp = self._end_timestamp(previous_event)
+            previous_job_id = previous_event.get("job_id")
         elif data["events"]:
             previous_end_timestamp = data["events"][0]["timestamp"]
+            previous_job_id = data["events"][0].get("job_id")
 
+        working_time_per_job = {}
         for event in data["events"]:
+            job_id = event.get('job_id')
             working_time = datetime.timedelta()
 
             timestamp = event["timestamp"]
@@ -73,11 +79,15 @@ class ClientEventsSerializer(serializers.Serializer):
                 working_time += end_timestamp - previous_end_timestamp
                 previous_end_timestamp = end_timestamp
 
-            payload = json.loads(event.get("payload", "{}"))
-            payload.update({
-                "working_time": working_time // self._WORKING_TIME_RESOLUTION,
-                "username": request.user.username,
-            })
+            if previous_job_id not in working_time_per_job:
+                working_time_per_job[previous_job_id] = datetime.timedelta()
+            working_time_per_job[previous_job_id] += working_time
+            previous_job_id = job_id
+
+            try:
+                json_payload = json.dumps(json.loads(event.get("payload", "{}")))
+            except:
+                raise serializers.ValidationError("JSON payload is not valid in passed event")
 
             event.update({
                 "timestamp": str((timestamp + time_correction).timestamp()),
@@ -87,7 +97,39 @@ class ClientEventsSerializer(serializers.Serializer):
                 "user_id": request.user.id,
                 "user_name": request.user.username,
                 "user_email": request.user.email,
-                "payload": json.dumps(payload),
+                "payload": json_payload,
             })
+
+        for job_id in working_time_per_job:
+            if working_time_per_job[job_id].total_seconds():
+                task_id = None
+                project_id = None
+
+                if job_id is not None:
+                    with suppress(Job.DoesNotExist):
+                        task_id, project_id = Job.objects.values_list(
+                            "segment__task__id", "segment__task__project__id"
+                        ).get(pk=job_id)
+
+                value = working_time_per_job[job_id] // self._WORKING_TIME_RESOLUTION
+                event = {
+                    "scope": "service:event",
+                    "obj_name": "working_time",
+                    "obj_val": value,
+                    "source": "server",
+                    "timestamp": str(receive_time.timestamp()),
+                    "count": 1,
+                    "project_id": project_id,
+                    "task_id": task_id,
+                    "job_id": job_id,
+                    "user_id": request.user.id,
+                    "user_name": request.user.username,
+                    "user_email": request.user.email,
+                    "org_id": org_id,
+                    "org_slug": org_slug,
+                    "payload": json.dumps({ "working_time": value }) # for backward compatibility
+                }
+
+                data["events"].append(event)
 
         return data
