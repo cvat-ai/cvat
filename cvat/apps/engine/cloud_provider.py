@@ -47,11 +47,27 @@ ImageFile.LOAD_TRUNCATED_IMAGES = True
 
 CPU_NUMBER = get_cpu_number()
 
-def normalize_threads_number(threads_number: Optional[int], number_of_files: int) -> int:
-    if threads_number is None:
-        return min(CPU_NUMBER, settings.CVAT_MAX_THREADS_NUMBER_FOR_DATA_DOWNLOADING, max(math.ceil(number_of_files / settings.CVAT_NUMBER_OF_FILES_PER_THREAD), 1))
+def normalize_threads_number(
+    threads_number: Optional[int], number_of_files: int
+) -> int:
+    threads_number = (
+        min(
+            CPU_NUMBER,
+            settings.CVAT_MAX_THREADS_NUMBER_FOR_DATA_DOWNLOADING,
+            max(
+                math.ceil(number_of_files / settings.CVAT_NUMBER_OF_FILES_PER_THREAD), 1
+            ),
+        )
+        if threads_number is None
+        else min(
+            threads_number,
+            CPU_NUMBER,
+            settings.CVAT_MAX_THREADS_NUMBER_FOR_DATA_DOWNLOADING,
+        )
+    )
+    threads_number = max(threads_number, 1)
 
-    return min(threads_number, CPU_NUMBER, settings.CVAT_MAX_THREADS_NUMBER_FOR_DATA_DOWNLOADING)
+    return threads_number
 
 class Status(str, Enum):
     AVAILABLE = 'AVAILABLE'
