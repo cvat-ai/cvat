@@ -7,9 +7,9 @@ import { CombinedState, RequestsQuery, StorageLocation } from 'reducers';
 import {
     getCore, RQStatus, Request, Project, Task, Job,
 } from 'cvat-core-wrapper';
-import { exportBackupAsync, exportDatasetAsync } from './export-actions';
+import { listenExportBackupAsync, listenExportDatasetAsync } from './export-actions';
 import { RequestInstanceType, listen, requestsActions } from './requests-actions';
-import { importDatasetAsync } from './import-actions';
+import { listenImportDatasetAsync } from './import-actions';
 
 const core = getCore();
 
@@ -34,6 +34,7 @@ export function getRequestsAsync(query: RequestsQuery): ThunkAction {
                 .filter((request: Request) => [RQStatus.STARTED, RQStatus.QUEUED].includes(request.status))
                 .forEach((request: Request): void => {
                     const {
+                        id: rqID,
                         operation: {
                             type, target, format, taskID, projectID, jobID,
                         },
@@ -55,42 +56,29 @@ export function getRequestsAsync(query: RequestsQuery): ThunkAction {
                             if (!(state.export.tasks.backup.current?.[(instance as RequestInstanceType).id] ||
                                 state.export.projects.backup.current?.[(instance as RequestInstanceType).id])
                             ) {
-                                dispatch(exportBackupAsync(
-                                    instance as RequestInstanceType,
-                                    undefined,
-                                    undefined,
-                                    undefined,
-                                    listeningPromise,
-                                ));
+                                listenExportBackupAsync(rqID, instance as RequestInstanceType, dispatch);
                             }
                         } else if (!(state.export.tasks.dataset.current?.[(instance as RequestInstanceType).id] ||
                             state.export.projects.dataset.current?.[(instance as RequestInstanceType).id] ||
                             state.export.jobs.dataset.current?.[(instance as RequestInstanceType).id])
                         ) {
-                            dispatch(exportDatasetAsync(
+                            listenExportDatasetAsync(
+                                rqID,
                                 instance as RequestInstanceType,
-                                format,
-                                operationTarget === 'dataset',
-                                true,
-                                undefined,
-                                undefined,
-                                listeningPromise,
-                            ));
+                                dispatch,
+                                { format, saveImages: type.includes('dataset') },
+                            );
                         }
                     } else if (operationType === 'import') {
                         if (!(state.import.tasks.dataset.current?.[(instance as RequestInstanceType).id] ||
                             state.import.projects.dataset.current?.[(instance as RequestInstanceType).id] ||
                             state.import.jobs.dataset.current?.[(instance as RequestInstanceType).id])
                         ) {
-                            dispatch(importDatasetAsync(
-                                instance as RequestInstanceType,
-                                format,
-                                undefined,
-                                undefined,
-                                undefined,
-                                undefined,
-                                listeningPromise,
-                            ));
+                            listenImportDatasetAsync(
+                                rqID,
+                                dispatch,
+                                { instance: instance as RequestInstanceType, format, showSuccessNotification: true },
+                            );
                         }
                     }
                 });

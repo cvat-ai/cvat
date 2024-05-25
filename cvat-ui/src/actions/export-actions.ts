@@ -6,10 +6,10 @@
 import { ActionUnion, createAction, ThunkAction } from 'utils/redux';
 
 import {
-    Storage, Request, InstanceType, Job,
+    Storage, InstanceType, Job,
 } from 'cvat-core-wrapper';
 import {
-    getInstanceType, isRequestInstanceType, RequestInstanceType, listen,
+    getInstanceType, RequestInstanceType, listen, RequestsActions,
 } from './requests-actions';
 
 export enum ExportActionTypes {
@@ -75,60 +75,86 @@ export const exportActions = {
     ),
 };
 
+export async function listenExportDatasetAsync(
+    rqID: string,
+    dispatch: (action: ExportActions | RequestsActions) => void,
+    params: {
+        instance: InstanceType | RequestInstanceType,
+        format: string,
+        saveImages: boolean,
+    },
+): Promise<void> {
+    const { instance, format, saveImages } = params;
+    dispatch(exportActions.exportDataset(instance, format));
+
+    const instanceType = getInstanceType(instance);
+    try {
+        let result;
+        if (rqID) {
+            result = await listen(rqID, dispatch);
+        }
+        const resource = saveImages ? 'Dataset' : 'Annotations';
+        dispatch(exportActions.exportDatasetSuccess(instance, instanceType, format, !!result?.url, resource));
+    } catch (error) {
+        dispatch(exportActions.exportDatasetFailed(instance, instanceType, format, error));
+    }
+}
+
 export const exportDatasetAsync = (
-    instance: InstanceType | RequestInstanceType,
+    instance: InstanceType,
     format: string,
     saveImages: boolean,
     useDefaultSettings: boolean,
-    targetStorage?: Storage,
-    name?: string,
-    listeningPromise?: Promise<Request>,
+    targetStorage: Storage,
+    name: string,
 ): ThunkAction => async (dispatch) => {
     dispatch(exportActions.exportDataset(instance, format));
 
     const instanceType = getInstanceType(instance);
 
     try {
-        let result;
-        if (isRequestInstanceType(instance)) {
-            result = await listeningPromise;
-        } else {
-            const rqID = await instance.annotations
-                .exportDataset(format, saveImages, useDefaultSettings, targetStorage, name);
-            if (rqID) {
-                result = await listen(rqID, dispatch);
-            }
-        }
-
-        const resource = saveImages ? 'Dataset' : 'Annotations';
-        dispatch(exportActions.exportDatasetSuccess(instance, instanceType, format, !!result?.url, resource));
+        const rqID = await instance.annotations
+            .exportDataset(format, saveImages, useDefaultSettings, targetStorage, name);
+        await listenExportDatasetAsync(rqID, dispatch, { instance, format, saveImages });
     } catch (error) {
         dispatch(exportActions.exportDatasetFailed(instance, instanceType, format, error));
     }
 };
 
+export async function listenExportBackupAsync(
+    rqID: string,
+    dispatch: (action: ExportActions | RequestsActions) => void,
+    params: {
+        instance: Exclude<InstanceType, Job> | RequestInstanceType,
+    },
+): Promise<void> {
+    const { instance } = params;
+    const instanceType = getInstanceType(instance) as 'project' | 'task';
+
+    try {
+        let result;
+        if (rqID) {
+            result = await listen(rqID, dispatch);
+        }
+        dispatch(exportActions.exportBackupSuccess(instance, instanceType, !!result?.url));
+    } catch (error) {
+        dispatch(exportActions.exportBackupFailed(instance, instanceType, error as Error));
+    }
+}
+
 export const exportBackupAsync = (
-    instance: Exclude<InstanceType, Job> | RequestInstanceType,
-    targetStorage?: Storage,
-    useDefaultSetting?: boolean,
-    fileName?: string,
-    listeningPromise?: Promise<Request>,
+    instance: Exclude<InstanceType, Job>,
+    targetStorage: Storage,
+    useDefaultSetting: boolean,
+    fileName: string,
 ): ThunkAction => async (dispatch) => {
     dispatch(exportActions.exportBackup(instance));
     const instanceType = getInstanceType(instance) as 'project' | 'task';
 
     try {
-        let result;
-        if (isRequestInstanceType(instance)) {
-            result = await listeningPromise;
-        } else {
-            const rqID = await instance
-                .backup(targetStorage, useDefaultSetting, fileName);
-            if (rqID) {
-                result = await listen(rqID, dispatch);
-            }
-        }
-        dispatch(exportActions.exportBackupSuccess(instance, instanceType, !!result?.url));
+        const rqID = await instance
+            .backup(targetStorage, useDefaultSetting, fileName);
+        await listenExportBackupAsync(rqID, dispatch, { instance });
     } catch (error) {
         dispatch(exportActions.exportBackupFailed(instance, instanceType, error as Error));
     }

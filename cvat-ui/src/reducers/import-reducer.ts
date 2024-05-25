@@ -81,7 +81,7 @@ export default (state: ImportState = defaultState, action: ImportActions): Impor
             };
         }
         case ImportActionTypes.IMPORT_DATASET: {
-            const { format, instance, reportProgress } = action.payload;
+            const { format, instance } = action.payload;
 
             const activitiesField = defineActititiesField(instance);
 
@@ -90,7 +90,7 @@ export default (state: ImportState = defaultState, action: ImportActions): Impor
                 status?: string;
                 progress?: number;
             } = { format };
-            if (activitiesField === 'projects' && reportProgress) {
+            if (activitiesField === 'projects') {
                 updatedActivity = {
                     ...updatedActivity,
                     status: 'The file is being uploaded to the server',
