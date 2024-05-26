@@ -1,0 +1,4 @@
+{% load i18n %}
+{% autoescape off %}
+{% blocktrans %} Error with Your Audio Annotation Job!{% endblocktrans %}
+{% endautoescape %}

@@ -27,6 +27,10 @@ from django.db.models import Count
 from django.db.models.query import Prefetch
 from django.http import HttpResponse, HttpResponseNotFound, HttpResponseBadRequest
 from django.utils import timezone
+from django.core.mail import send_mail
+from django.contrib.sites.shortcuts import get_current_site
+from django.core.exceptions import ImproperlyConfigured
+from allauth.account.adapter import get_adapter
 
 from drf_spectacular.types import OpenApiTypes
 from drf_spectacular.utils import (
@@ -2021,6 +2025,30 @@ class AIAudioAnnotationViewSet(viewsets.ModelViewSet):
     filter_fields = []
     filter_backends = []
 
+    def send_annotation_email(self, request, template_name, err=None):
+        job_id = request.data.get('jobId')
+        if settings.EMAIL_BACKEND is None:
+            raise ImproperlyConfigured("Email backend is not configured")
+
+        # Find the user associated with current request
+        user = self.request.user
+
+        target_email = user.email
+        current_site = get_current_site(request)
+        site_name = current_site.name
+        domain = current_site.domain
+        context = {
+            'username': user.username,
+            'domain': domain,
+            'site_name': site_name,
+            'job_id': job_id,
+            'protocol': 'https' if request.is_secure() else 'http'
+        }
+        if err:
+            context['error'] = err
+
+        get_adapter(request).send_mail(f'audio_annotation/{template_name}', target_email, context)
+
     @action(detail=False, methods=['post'], url_path='save')
     def save_segments(self, request):
         try:
@@ -2060,9 +2088,11 @@ class AIAudioAnnotationViewSet(viewsets.ModelViewSet):
 
             job.save()
 
+            self.send_annotation_email(request, 'annotation')
             return Response({'success': True, 'segments': saved_segments}, status=status.HTTP_201_CREATED)
 
         except Exception as e:
+            self.send_annotation_email(request, 'error', err=str(e))
             return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
     @action(detail=False, methods=['post'], url_path='ai-annotate')
