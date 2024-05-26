@@ -113,7 +113,7 @@ volumes:
 
 ## How to mark job/task as completed
 
-The status is set by the user in the {{< ilink "/docs/manual/basics/top-panel#info" "Info window" >}}
+The status is set by the user in the {{< ilink "/docs/manual/basics/CVAT-annotation-Interface/navbar.md#top-panel" "Info window" >}}
 of the job annotation view.
 There are three types of status: annotation, validation or completed.
 The status of the job changes the progress bar of the task.

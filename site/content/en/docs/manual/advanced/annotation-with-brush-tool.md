@@ -49,7 +49,7 @@ It has the following elements:
 
 To annotate with brush, do the following:
 
-1. From the {{< ilink "/docs/manual/basics/controls-sidebar" "controls sidebar" >}}, select **Brush** ![Brush icon](/images/brushing_tools_icon.png).
+1. From the {{< ilink "/docs/manual/basics/CVAT-annotation-Interface/controls-sidebar" "controls sidebar" >}}, select **Brush** ![Brush icon](/images/brushing_tools_icon.png).
 2. In the **Draw new mask** menu, select label for your mask, and click **Shape**. <br>The **Brush**![Brush](/images/brushing_tools_icon.png) tool will be selected by default.
 
    ![BT context menu](/images/brushing_tools_context_menu.png)
@@ -59,11 +59,11 @@ To annotate with brush, do the following:
    ![Brushing](/images/brushing_tools.gif)
 
 4. After you applied the mask, on the top menu bar click **Save mask** ![Tick icon](/images/tick_icon.png) <br>to finish the process (or **N** on the keyboard).
-5. Added object will appear on the {{< ilink "/docs/manual/basics/objects-sidebar" "objects sidebar" >}}.
+5. Added object will appear on the {{< ilink "/docs/manual/basics/CVAT-annotation-Interface/objects-sidebar" "objects sidebar" >}}.
 
 To add the next object, repeat steps 1 to 5.
 All added objects will be visible on the image and the
-{{< ilink "/docs/manual/basics/objects-sidebar" "objects sidebar" >}}.
+{{< ilink "/docs/manual/basics/CVAT-annotation-Interface/objects-sidebar" "objects sidebar" >}}.
 
 To save the job with all added objects, on the top menu click **Save** ![Save](/images/brushing_tools_save.png).
 
@@ -73,7 +73,7 @@ To save the job with all added objects, on the top menu click **Save** ![Save](/
 
 To annotate with polygon-to-mask, do the following:
 
-1. From the {{< ilink "/docs/manual/basics/controls-sidebar" "controls sidebar" >}}, select **Brush** ![Brush icon](/images/brushing_tools_icon.png).
+1. From the {{< ilink "/docs/manual/basics/CVAT-annotation-Interface/controls-sidebar" "controls sidebar" >}}, select **Brush** ![Brush icon](/images/brushing_tools_icon.png).
 2. In the **Draw new mask** menu, select label for your mask, and click **Shape**.
 
    ![BT context menu](/images/brushing_tools_context_menu.png)
@@ -85,12 +85,12 @@ To annotate with polygon-to-mask, do the following:
    ![Brushing](/images/brushing_tools_polygon.gif)
 
 6. After you added the polygon selection, on the top menu bar click **Save mask** ![Tick icon](/images/tick_icon.png) <br>to finish the process (or **N** on the keyboard).
-7. Click **Save mask** ![Tick icon](/images/tick_icon.png) again (or **N** on the keyboard). <br>The added object will appear on the {{< ilink "/docs/manual/basics/objects-sidebar" "objects sidebar" >}}.
+7. Click **Save mask** ![Tick icon](/images/tick_icon.png) again (or **N** on the keyboard). <br>The added object will appear on the {{< ilink "/docs/manual/basics/CVAT-annotation-Interface/objects-sidebar" "objects sidebar" >}}.
 
 To add the next object, repeat steps 1 to 5.
 
 All added objects will be visible on the image and the
-{{< ilink "/docs/manual/basics/objects-sidebar" "objects sidebar" >}}.
+{{< ilink "/docs/manual/basics/CVAT-annotation-Interface/objects-sidebar" "objects sidebar" >}}.
 
 To save the job with all added objects, on the top menu click **Save** ![Save](/images/brushing_tools_save.png).
 
