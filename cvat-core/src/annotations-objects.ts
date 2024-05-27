@@ -35,6 +35,21 @@ function copyShape(state: TrackedShape, data: Partial<TrackedShape> = {}): Track
     };
 }
 
+function serverTrackedShapeToClient(shape: SerializedTrack['shapes'][0]): TrackedShape {
+    return {
+        serverID: shape.id,
+        occluded: shape.occluded,
+        zOrder: shape.z_order,
+        points: shape.points,
+        outside: shape.outside,
+        rotation: shape.rotation || 0,
+        attributes: shape.attributes.reduce((attributeAccumulator, attr) => {
+            attributeAccumulator[attr.spec_id] = attr.value;
+            return attributeAccumulator;
+        }, {}),
+    };
+}
+
 function computeNewSource(currentSource: Source): Source {
     if ([Source.AUTO, Source.SEMI_AUTO].includes(currentSource)) {
         return Source.SEMI_AUTO;
@@ -330,7 +345,7 @@ class Annotation {
         this.serverID = undefined;
     }
 
-    public updateServerID(body: any): void {
+    public updateServerID(body: { id: number }): void {
         this.serverID = body.id;
     }
 
@@ -818,19 +833,7 @@ export class Track extends Drawn {
     ) {
         super(data, clientID, color, injection);
         this.shapes = data.shapes.reduce((shapeAccumulator, value) => {
-            shapeAccumulator[value.frame] = {
-                serverID: value.id,
-                occluded: value.occluded,
-                zOrder: value.z_order,
-                points: value.points,
-                outside: value.outside,
-                rotation: value.rotation || 0,
-                attributes: value.attributes.reduce((attributeAccumulator, attr) => {
-                    attributeAccumulator[attr.spec_id] = attr.value;
-                    return attributeAccumulator;
-                }, {}),
-            };
-
+            shapeAccumulator[value.frame] = serverTrackedShapeToClient(value);
             return shapeAccumulator;
         }, {});
     }
@@ -1001,7 +1004,11 @@ export class Track extends Drawn {
     public updateServerID(body: SerializedTrack): void {
         this.serverID = body.id;
         for (const shape of body.shapes) {
-            this.shapes[shape.frame].serverID = shape.id;
+            if (shape.frame in this.shapes) {
+                this.shapes[shape.frame].serverID = shape.id;
+            } else {
+                this.shapes[shape.frame] = serverTrackedShapeToClient(shape);
+            }
         }
     }
 
@@ -2064,8 +2071,8 @@ export class SkeletonShape extends Shape {
     public updateServerID(body: SerializedShape): void {
         Shape.prototype.updateServerID.call(this, body);
         for (const element of body.elements) {
-            const thisElement = this.elements.find((_element: Shape) => _element.label.id === element.label_id);
-            thisElement.updateServerID(element);
+            const context = this.elements.find((_element: Shape) => _element.label.id === element.label_id);
+            context.updateServerID(element);
         }
     }
 
@@ -2955,8 +2962,8 @@ export class SkeletonTrack extends Track {
     public updateServerID(body: SerializedTrack): void {
         Track.prototype.updateServerID.call(this, body);
         for (const element of body.elements) {
-            const thisElement = this.elements.find((_element: Track) => _element.label.id === element.label_id);
-            thisElement.updateServerID(element);
+            const context = this.elements.find((_element: Track) => _element.label.id === element.label_id);
+            context.updateServerID(element);
         }
     }
 
