@@ -722,7 +722,7 @@ export class Shape extends Drawn {
             throw new ScriptingError('Received frame is not equal to the frame of the shape');
         }
 
-        if (this.lock && data.lock) {
+        if (data.lock) {
             return new ObjectState(this.get(frame));
         }
 
@@ -1332,7 +1332,7 @@ export class Track extends Drawn {
     }
 
     public save(frame: number, data: ObjectState): ObjectState {
-        if (this.lock && data.lock) {
+        if (data.lock) {
             return new ObjectState(this.get(frame));
         }
 
@@ -1495,7 +1495,7 @@ export class Tag extends Annotation {
             throw new ScriptingError('Received frame is not equal to the frame of the tag');
         }
 
-        if (this.lock && data.lock) {
+        if (data.lock) {
             return new ObjectState(this.get(frame));
         }
 
@@ -2120,7 +2120,7 @@ export class SkeletonShape extends Shape {
     }
 
     public save(frame: number, data: ObjectState): ObjectState {
-        if (this.lock && data.lock) {
+        if (data.lock) {
             return new ObjectState(this.get(frame));
         }
 
@@ -3070,7 +3070,7 @@ export class SkeletonTrack extends Track {
             rotation: 0,
         }));
 
-        return {
+        const result = {
             ...position,
             parentID: null,
             keyframe: position.keyframe || elements.some((el) => el.keyframe),
@@ -3095,6 +3095,13 @@ export class SkeletonTrack extends Track {
             hidden: elements.every((el) => el.hidden),
             ...this.withContext(frame),
         };
+
+        elements.forEach((el) => {
+            // illegal to update skeleton element if initial skeleton frame is earlier
+            el.lock = el.lock || el.frame < this.frame;
+        });
+
+        return result;
     }
 
     // finds keyframes considering keyframes of nested elements
@@ -3129,13 +3136,14 @@ export class SkeletonTrack extends Track {
     }
 
     public save(frame: number, data: ObjectState): ObjectState {
-        if (this.lock && data.lock) {
+        if (data.lock) {
             return new ObjectState(this.get(frame));
         }
 
         const updateElements = (affectedElements, action, property: 'hidden' | 'lock' | null = null): void => {
-            const undoSkeletonProperties = this.elements.map((element) => element[property] || null);
+            const undoSkeletonProperties = this.elements.map((element) => element[property] ?? null);
             const undoSkeletonShapes = this.elements.map((element) => element.shapes[frame]);
+            const undoSkeletonStartFrames = this.elements.map((element) => element.frame);
             const undoSource = this.source;
             const redoSource = this.readOnlyFields.includes('source') ? this.source : computeNewSource(this.source);
 
@@ -3143,19 +3151,40 @@ export class SkeletonTrack extends Track {
             try {
                 this.history.freeze(true);
                 affectedElements.forEach((element, idx) => {
+                    // ignore element's locking here
+                    const beforeLock = element.lock;
+                    element.lock = false;
+
                     try {
                         const annotationContext = this.elements[idx];
                         annotationContext.save(frame, element);
                     } catch (error: any) {
                         errors.push(error);
+                    } finally {
+                        element.lock = beforeLock;
                     }
                 });
             } finally {
                 this.history.freeze(false);
             }
 
-            const redoSkeletonProperties = this.elements.map((element) => element[property] || null);
+            const undoFrame = this.frame;
+            const redoFrame = Math.min(...[
+                ...this.elements.map((element) => element.frame), this.frame,
+            ]);
+
+            const moveKeyframe = (from: number, to: number): void => {
+                if (from !== to && this.shapes[from]) {
+                    this.shapes[to] = copyShape(this.shapes[from]);
+                    delete this.shapes[from];
+                }
+            };
+
+            moveKeyframe(undoFrame, redoFrame);
+
+            const redoSkeletonProperties = this.elements.map((element) => element[property] ?? null);
             const redoSkeletonShapes = this.elements.map((element) => element.shapes[frame]);
+            const redoSkeletonStartFrames = this.elements.map((element) => element.frame);
 
             this.history.do(
                 action,
@@ -3163,14 +3192,17 @@ export class SkeletonTrack extends Track {
                     for (let i = 0; i < this.elements.length; i++) {
                         if (property) {
                             this.elements[i][property] = undoSkeletonProperties[i];
-                        } if (undoSkeletonShapes[i]) {
-                            this.elements[i].shapes[frame] = undoSkeletonShapes[i];
+                        } else if (undoSkeletonShapes[i]) {
+                            this.elements[i].shapes[frame] = copyShape(undoSkeletonShapes[i]);
                         } else if (redoSkeletonShapes[i]) {
                             delete this.elements[i].shapes[frame];
                         }
+                        this.elements[i].frame = undoSkeletonStartFrames[i];
                         this.elements[i].updated = Date.now();
                     }
+                    this.frame = undoFrame;
                     this.source = undoSource;
+                    moveKeyframe(redoFrame, undoFrame);
                     this.updated = Date.now();
                 },
                 () => {
@@ -3178,13 +3210,16 @@ export class SkeletonTrack extends Track {
                         if (property) {
                             this.elements[i][property] = redoSkeletonProperties[i];
                         } else if (redoSkeletonShapes[i]) {
-                            this.elements[i].shapes[frame] = redoSkeletonShapes[i];
+                            this.elements[i].shapes[frame] = copyShape(redoSkeletonShapes[i]);
                         } else if (undoSkeletonShapes[i]) {
                             delete this.elements[i].shapes[frame];
                         }
+                        this.elements[i].frame = redoSkeletonStartFrames[i];
                         this.elements[i].updated = Date.now();
                     }
+                    this.frame = redoFrame;
                     this.source = redoSource;
+                    moveKeyframe(undoFrame, redoFrame);
                     this.updated = Date.now();
                 },
                 [this.clientID, ...affectedElements.map((element) => element.clientID)],

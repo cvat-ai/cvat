@@ -1,5 +1,5 @@
 // Copyright (C) 2019-2022 Intel Corporation
-// Copyright (C) 2022-2023 CVAT.ai Corporation
+// Copyright (C) 2022-2024 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -227,13 +227,7 @@ export default class ObjectState {
                     },
                 },
                 hidden: {
-                    get: () => {
-                        if (data.shapeType === ShapeType.SKELETON) {
-                            return data.elements.every((element: ObjectState) => element.hidden);
-                        }
-
-                        return data.hidden;
-                    },
+                    get: () => data.hidden,
                     set: (hidden) => {
                         if (data.shapeType === ShapeType.SKELETON) {
                             data.elements.forEach((element: ObjectState) => {
@@ -314,12 +308,7 @@ export default class ObjectState {
                     },
                 },
                 outside: {
-                    get: () => {
-                        if (data.shapeType === ShapeType.SKELETON) {
-                            return data.elements.every((el) => el.outside);
-                        }
-                        return data.outside;
-                    },
+                    get: () => data.outside,
                     set: (outside) => {
                         if (data.shapeType === ShapeType.SKELETON) {
                             for (const element of this.elements) {
@@ -332,13 +321,7 @@ export default class ObjectState {
                     },
                 },
                 keyframe: {
-                    get: () => {
-                        if (data.shapeType === ShapeType.SKELETON) {
-                            return data.keyframe || data.elements.some((el) => el.keyframe);
-                        }
-
-                        return data.keyframe;
-                    },
+                    get: () => data.keyframe,
                     set: (keyframe) => {
                         if (data.shapeType === ShapeType.SKELETON) {
                             for (const element of this.elements) {
@@ -360,12 +343,7 @@ export default class ObjectState {
                     },
                 },
                 occluded: {
-                    get: () => {
-                        if (data.shapeType === ShapeType.SKELETON) {
-                            return data.elements.every((el) => el.occluded);
-                        }
-                        return data.occluded;
-                    },
+                    get: () => data.occluded,
                     set: (occluded) => {
                         if (data.shapeType === ShapeType.SKELETON) {
                             for (const element of this.elements) {
@@ -378,12 +356,7 @@ export default class ObjectState {
                     },
                 },
                 lock: {
-                    get: () => {
-                        if (data.shapeType === ShapeType.SKELETON) {
-                            return data.elements.every((el) => el.lock);
-                        }
-                        return data.lock;
-                    },
+                    get: () => data.lock,
                     set: (lock) => {
                         if (data.shapeType === ShapeType.SKELETON) {
                             for (const element of this.elements) {
@@ -396,13 +369,7 @@ export default class ObjectState {
                     },
                 },
                 pinned: {
-                    get: () => {
-                        if (typeof data.pinned === 'boolean') {
-                            return data.pinned;
-                        }
-
-                        return null;
-                    },
+                    get: () => data.pinned,
                     set: (pinned) => {
                         data.updateFlags.pinned = true;
                         data.pinned = pinned;
