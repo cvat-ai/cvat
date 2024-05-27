@@ -161,7 +161,6 @@ export default interface CVATCore {
             }
         ) => Promise<Request>;
         cancel: (rqID: string) => Promise<void>;
-        delete: (rqID: string) => Promise<void>;
     };
     actions: {
         list: typeof listActions;

@@ -7,15 +7,10 @@ import { RQStatus } from './enums';
 import { Request } from './request';
 import { RequestError } from './exceptions';
 import { PaginatedResource } from './core-types';
+import config from './config';
 
 const REQUESTS_COUNT = 5;
 const PROGRESS_EPS = 25;
-const EPS_DELAYS = {
-    [RQStatus.STARTED]: [3000, 7000, 13000],
-    [RQStatus.QUEUED]: [7000, 13000, 19000, 29000,
-        41000, 53000, 67000, 79000,
-        101000, 113000, 139000, 163000],
-};
 
 class RequestsManager {
     private listening: Record<string, {
@@ -166,10 +161,10 @@ class RequestsManager {
 
         switch (request.status) {
             case RQStatus.STARTED: {
-                return addRndComponent(EPS_DELAYS[RQStatus.STARTED][requestDelayIdx]);
+                return addRndComponent(config.requestsStatusDelays[RQStatus.STARTED][requestDelayIdx]);
             }
             case RQStatus.QUEUED: {
-                return addRndComponent(EPS_DELAYS[RQStatus.QUEUED][requestDelayIdx]);
+                return addRndComponent(config.requestsStatusDelays[RQStatus.QUEUED][requestDelayIdx]);
             }
             default:
                 return 0;
@@ -187,11 +182,11 @@ class RequestsManager {
 
         switch (updatedRequest.status) {
             case RQStatus.QUEUED: {
-                return Math.min(requestDelayIdx + 1, EPS_DELAYS[RQStatus.QUEUED].length - 1);
+                return Math.min(requestDelayIdx + 1, config.requestsStatusDelays[RQStatus.QUEUED].length - 1);
             }
             case RQStatus.STARTED: {
                 if (Math.round(Math.abs(updatedRequest.progress - progress) * 100) < PROGRESS_EPS) {
-                    return Math.min(requestDelayIdx + 1, EPS_DELAYS[RQStatus.STARTED].length - 1);
+                    return Math.min(requestDelayIdx + 1, config.requestsStatusDelays[RQStatus.STARTED].length - 1);
                 }
                 return requestDelayIdx;
             }

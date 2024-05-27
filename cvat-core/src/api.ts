@@ -380,10 +380,6 @@ function build(): CVATCore {
                 const result = await PluginRegistry.apiWrapper(cvat.requests.list);
                 return result;
             },
-            async delete(rqID: string) {
-                const result = await PluginRegistry.apiWrapper(cvat.requests.delete, rqID);
-                return result;
-            },
             async cancel(rqID: string) {
                 const result = await PluginRegistry.apiWrapper(cvat.requests.cancel, rqID);
                 return result;

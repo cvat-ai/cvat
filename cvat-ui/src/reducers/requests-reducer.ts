@@ -50,7 +50,7 @@ export default function (
             };
         }
         case RequestsActionsTypes.GET_REQUEST_STATUS_SUCCESS:
-        case RequestsActionsTypes.GET_REQUESTS_STATUS_FAILED: {
+        case RequestsActionsTypes.GET_REQUEST_STATUS_FAILED: {
             const { requests } = state;
 
             return {

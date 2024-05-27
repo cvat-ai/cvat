@@ -104,7 +104,7 @@ export async function listenExportDatasetAsync(
         let target: 'cloudstorage' | 'local' | undefined;
         if (rqID) {
             result = await listen(rqID, dispatch);
-            target = result?.url ? 'cloudstorage' : 'local';
+            target = !result?.url ? 'cloudstorage' : 'local';
         }
         if (showSuccessNotification) {
             dispatch(exportActions.exportDatasetSuccess(
@@ -156,7 +156,7 @@ export async function listenExportBackupAsync(
         let target: 'cloudstorage' | 'local' | undefined;
         if (rqID) {
             result = await listen(rqID, dispatch);
-            target = result?.url ? 'cloudstorage' : 'local';
+            target = !result?.url ? 'cloudstorage' : 'local';
         }
         if (showSuccessNotification) {
             dispatch(exportActions.exportBackupSuccess(instance, instanceType, target));
