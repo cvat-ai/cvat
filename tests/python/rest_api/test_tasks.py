@@ -2668,7 +2668,7 @@ class TestImportTaskAnnotations:
         task.import_annotations(self.import_format, file_path)
         self._check_annotations(task_id)
 
-    def test_check_error_on_wrong_file_structure(self, tasks_with_shapes):
+    def test_check_import_error_on_wrong_file_structure(self, tasks_with_shapes):
         task_id = tasks_with_shapes[0]["id"]
 
         source_archive_path = self.tmp_dir / "incorrect_archive.zip"
