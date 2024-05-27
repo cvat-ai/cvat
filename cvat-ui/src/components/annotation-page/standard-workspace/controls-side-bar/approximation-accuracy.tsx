@@ -1,4 +1,5 @@
 // Copyright (C) 2021-2022 Intel Corporation
+// Copyright (C) 2024 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -62,7 +63,9 @@ function ApproximationAccuracy(props: Props): React.ReactPortal | null {
                         max={MAX_ACCURACY}
                         step={1}
                         dots
-                        tooltipVisible={false}
+                        tooltip={{
+                            open: false,
+                        }}
                         onChange={onChange}
                         marks={marks}
                     />

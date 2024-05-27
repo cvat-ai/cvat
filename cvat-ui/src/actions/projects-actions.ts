@@ -1,5 +1,5 @@
 // Copyright (C) 2019-2022 Intel Corporation
-// Copyright (C) 2022-2023 CVAT.ai Corporation
+// Copyright (C) 2022-2024 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -32,7 +32,6 @@ export enum ProjectsActionTypes {
     GET_PROJECT_PREVIEW_FAILED = 'GET_PROJECT_PREVIEW_FAILED',
 }
 
-// prettier-ignore
 const projectActions = {
     getProjects: () => createAction(ProjectsActionTypes.GET_PROJECTS),
     getProjectsSuccess: (array: any[], count: number) => (

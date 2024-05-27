@@ -1,5 +1,5 @@
 // Copyright (C) 2020-2022 Intel Corporation
-// Copyright (C) 2022-2023 CVAT.ai Corporation
+// Copyright (C) 2022-2024 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -246,11 +246,13 @@ class CreateTaskContent extends React.PureComponent<Props & RouteComponentProps,
         });
     };
 
-    private handleSubmitAdvancedConfiguration = (values: AdvancedConfiguration): void => {
-        this.setState({
-            advanced: { ...values },
-        });
-    };
+    private handleSubmitAdvancedConfiguration = (values: AdvancedConfiguration): Promise<void> => (
+        new Promise((resolve) => {
+            this.setState({
+                advanced: { ...values },
+            }, resolve);
+        })
+    );
 
     private handleTaskSubsetChange = (value: string): void => {
         this.setState({
@@ -437,7 +439,7 @@ class CreateTaskContent extends React.PureComponent<Props & RouteComponentProps,
                         .then((response: any) => {
                             const [project] = response;
                             const { advanced } = this.state;
-                            this.handleSubmitAdvancedConfiguration({
+                            return this.handleSubmitAdvancedConfiguration({
                                 ...advanced,
                                 sourceStorage: new Storage(
                                     project.sourceStorage || { location: StorageLocation.LOCAL },
@@ -446,7 +448,6 @@ class CreateTaskContent extends React.PureComponent<Props & RouteComponentProps,
                                     project.targetStorage || { location: StorageLocation.LOCAL },
                                 ),
                             });
-                            return Promise.resolve();
                         })
                         .catch((error: Error): void => {
                             throw new Error(`Couldn't fetch the project ${projectId} ${error.toString()}`);
@@ -594,9 +595,7 @@ class CreateTaskContent extends React.PureComponent<Props & RouteComponentProps,
 
     private handleSubmitMultiTasks = (): void => {
         this.validateBlocks()
-            .then(() => {
-                this.addMultiTasks();
-            })
+            .then(this.addMultiTasks)
             .then(this.createMultiTasks)
             .then(() => {
                 const { multiTasks } = this.state;
@@ -892,7 +891,7 @@ class CreateTaskContent extends React.PureComponent<Props & RouteComponentProps,
                 </Col>
                 <Col>
                     <Button
-                        className='cvat-submit-open-task-button'
+                        className='cvat-submit-continue-task-button'
                         type='primary'
                         onClick={this.handleSubmitAndContinue}
                         disabled={!!uploadFileErrorMessage}

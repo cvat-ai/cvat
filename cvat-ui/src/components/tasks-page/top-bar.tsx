@@ -8,7 +8,7 @@ import { useDispatch } from 'react-redux';
 import { useHistory } from 'react-router';
 
 import { Row, Col } from 'antd/lib/grid';
-import Dropdown from 'antd/lib/dropdown';
+import Popover from 'antd/lib/popover';
 import { PlusOutlined, UploadOutlined, LoadingOutlined } from '@ant-design/icons';
 import Button from 'antd/lib/button';
 import Input from 'antd/lib/input';
@@ -92,10 +92,11 @@ export default function TopBarComponent(props: VisibleTopBarProps): JSX.Element 
                     </div>
                 </div>
                 <div>
-                    <Dropdown
+                    <Popover
                         trigger={['click']}
-                        destroyPopupOnHide
-                        overlay={(
+                        destroyTooltipOnHide
+                        overlayInnerStyle={{ padding: 0 }}
+                        content={(
                             <CvatDropdownMenuPaper>
                                 <Button
                                     className='cvat-create-task-button'
@@ -127,7 +128,7 @@ export default function TopBarComponent(props: VisibleTopBarProps): JSX.Element 
                         )}
                     >
                         <Button type='primary' className='cvat-create-task-dropdown' icon={<PlusOutlined />} />
-                    </Dropdown>
+                    </Popover>
                 </div>
             </Col>
         </Row>

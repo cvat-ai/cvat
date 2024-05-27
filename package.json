@@ -118,14 +118,11 @@
   "bugs": {
     "url": "https://github.com/cvat-ai/cvat/issues"
   },
-  "homepage": "https://github.com/cvat-ai/cvat#readme",
   "resolutions": {
-    "@types/react": "^17.0.30",
-    "@types/react-dom": "^18.0.5",
-    "@types/react-redux": "^7.1.24",
-    "@types/react-router-dom": "^5.3.3",
-    "@types/prettier": "2.4.1"
+    "@types/react": "18.2.55",
+    "@types/react-dom": "18.2.19"
   },
+  "homepage": "https://github.com/cvat-ai/cvat#readme",
   "dependencies": {
     "@types/fabric": "^4.5.7",
     "@types/lodash": "^4.14.191",

@@ -52,13 +52,12 @@ context('Regression tests', () => {
     describe('Regression tests', () => {
         it('UI does not crash if to activate an object while frame fetching', () => {
             cy.reload();
-            cy.get('.cvat-player-last-button').click();
-
             cy.intercept('GET', '/api/jobs/**/data?**', (req) => {
                 req.continue((res) => {
                     res.setDelay(1000);
                 });
             }).as('delayedRequest');
+            cy.get('.cvat-player-last-button').click();
 
             cy.get('#cvat_canvas_shape_1').trigger('mousemove');
             cy.get('#cvat_canvas_shape_1').should('not.have.class', 'cvat_canvas_shape_activated');

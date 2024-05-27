@@ -249,7 +249,6 @@ questions and get our support.
 - [How to Use CVAT (Roboflow guide)](https://blog.roboflow.com/cvat/)
 - [How to auto-label data in CVAT with one of 50,000+ models on Roboflow Universe](https://blog.roboflow.com/how-to-use-roboflow-models-in-cvat/)
 
-  <!-- prettier-ignore-start -->
   <!-- Badges -->
 
 [docker-server-pulls-img]: https://img.shields.io/docker/pulls/cvat/server.svg?style=flat-square&label=server%20pulls
