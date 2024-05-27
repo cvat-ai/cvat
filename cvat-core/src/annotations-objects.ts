@@ -3098,7 +3098,7 @@ export class SkeletonTrack extends Track {
         };
 
         elements.forEach((el) => {
-            // illegal to update skeleton element if initial skeleton frame is earlier
+            // illegal to update skeleton element if the first skeleton frame is later
             // the skeleton elements will be locked on such frames
             el.lock = el.lock || el.frame < this.frame;
         });
