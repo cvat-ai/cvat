@@ -2668,6 +2668,26 @@ class TestImportTaskAnnotations:
         task.import_annotations(self.import_format, file_path)
         self._check_annotations(task_id)
 
+    def test_check_error_on_wrong_file_structure(self, tasks_with_shapes):
+        task_id = tasks_with_shapes[0]["id"]
+
+        source_archive_path = self.tmp_dir / "incorrect_archive.zip"
+
+        incorrect_files = ["incorrect_file1.txt", "incorrect_file2.txt"]
+        for file in incorrect_files:
+            with open(self.tmp_dir / file, "w") as f:
+                f.write("Some text")
+
+        zip_file = zipfile.ZipFile(source_archive_path, mode='a')
+        for path in incorrect_files:
+            zip_file.write(self.tmp_dir / path, path)
+        task = self.client.tasks.retrieve(task_id)
+
+        with pytest.raises(exceptions.ApiException) as capture:
+            task.import_annotations('YOLO 1.1', source_archive_path)
+
+            assert b"Check [format docs]" in capture.value.body
+            assert b"Dataset must contain a file: \"obj.data\"" in capture.value.body
 
 class TestImportWithComplexFilenames:
     @staticmethod
@@ -3697,3 +3717,6 @@ class TestImportWithComplexFilenames:
         check_element_outside_count(1, 0, 1)
         check_element_outside_count(1, 1, 2)
         check_element_outside_count(1, 2, 2)
+
+
+
