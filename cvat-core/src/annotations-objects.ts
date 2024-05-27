@@ -1316,7 +1316,7 @@ export class Track extends Drawn {
         } else {
             delete this.shapes[frame];
         }
-        const redoFrame = Math.min(...Object.keys(this.shapes).map((key) => +key));
+        const redoFrame = Math.min.apply(null, Object.keys(this.shapes).map((key) => +key));
         this.frame = redoFrame;
 
         this.appendShapeActionToHistory(
@@ -2898,6 +2898,7 @@ export class SkeletonTrack extends Track {
         this.readOnlyFields = ['points', 'label', 'occluded', 'outside'];
         this.pinned = false;
         Object.values(this.shapes).forEach((shape) => {
+            // skeletons do not have their own points
             shape.points = [];
         });
 
