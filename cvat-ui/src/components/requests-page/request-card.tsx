@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: MIT
 
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 
 import { Row, Col } from 'antd/lib/grid';
@@ -14,7 +14,7 @@ import Progress from 'antd/lib/progress';
 import { MoreOutlined } from '@ant-design/icons';
 import Dropdown from 'antd/lib/dropdown';
 import Button from 'antd/lib/button';
-import Menu from 'antd/lib/menu';
+import { MenuProps } from 'antd/lib/menu';
 
 import { RQStatus, Request } from 'cvat-core-wrapper';
 
@@ -158,41 +158,31 @@ export default function RequestCard(props: Props): JSX.Element {
         style.opacity = 0.5;
     }
 
-    const [menuItems, setMenuItems] = useState<JSX.Element[]>([]);
-    useEffect(() => {
-        const newMenuItems = [];
-        if (request.url) {
-            newMenuItems.push(
-                <Menu.Item
-                    key='download'
-                    onClick={() => {
-                        const downloadAnchor = window.document.getElementById('downloadAnchor') as HTMLAnchorElement;
-                        downloadAnchor.href = request.url;
-                        downloadAnchor.click();
-                        setTimeout(() => setIsActive(false));
-                    }}
-                >
-                    Download
-                </Menu.Item>,
-            );
-        }
-        if (request.status === RQStatus.STARTED) {
-            newMenuItems.push(
-                <Menu.Item
-                    key='cancel'
-                    onClick={() => {
-                        dispatch(cancelRequestAsync(request, () => {
-                            setIsActive(false);
-                        }));
-                    }}
-                >
-                    Cancel
-                </Menu.Item>,
-            );
-        }
+    const menuItems: NonNullable<MenuProps['items']> = [];
+    if (request?.url) {
+        menuItems.push({
+            key: 'download',
+            label: 'Download',
+            onClick: () => {
+                const downloadAnchor = window.document.getElementById('downloadAnchor') as HTMLAnchorElement;
+                downloadAnchor.href = request.url;
+                downloadAnchor.click();
+                setIsActive(false);
+            },
+        });
+    }
 
-        setMenuItems(newMenuItems);
-    }, [request]);
+    if (request.status === RQStatus.STARTED) {
+        menuItems.push({
+            key: 'cancel',
+            label: 'Download',
+            onClick: () => {
+                dispatch(cancelRequestAsync(request, () => {
+                    setIsActive(false);
+                }));
+            },
+        });
+    }
 
     return (
         <Card className='cvat-requests-card' style={style}>
@@ -255,11 +245,11 @@ export default function RequestCard(props: Props): JSX.Element {
                                     <Dropdown
                                         destroyPopupOnHide
                                         trigger={['click']}
-                                        overlay={() => (
-                                            <Menu selectable={false} className='cvat-actions-menu cvat-request-actions-menu'>
-                                                { menuItems.map((element) => element)}
-                                            </Menu>
-                                        )}
+                                        menu={{
+                                            items: menuItems,
+                                            triggerSubMenuAction: 'click',
+                                            className: 'cvat-request-menu',
+                                        }}
                                     >
                                         <Button type='link' size='middle' className='cvat-requests-page-actions-button' icon={<MoreOutlined className='cvat-menu-icon' />} />
                                     </Dropdown>
