@@ -7,6 +7,7 @@ import { Col, Row } from 'antd/lib/grid';
 import Input from 'antd/lib/input';
 
 import { JobsQuery } from 'reducers';
+import dimensions from 'utils/dimensions';
 import { SortingComponent, ResourceFilterHOC, defaultVisibility } from 'components/resource-sorting-filtering';
 import {
     localStorageRecentKeyword, localStorageRecentCapacity, predefinedFilterValues, config,
@@ -31,7 +32,7 @@ function TopBarComponent(props: Props): JSX.Element {
 
     return (
         <Row className='cvat-jobs-page-top-bar' justify='center' align='middle'>
-            <Col md={22} lg={18} xl={16} xxl={16}>
+            <Col {...dimensions}>
                 <div>
                     <Input.Search
                         enterButton

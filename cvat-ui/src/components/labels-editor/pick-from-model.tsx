@@ -1,4 +1,4 @@
-// Copyright (C) 2023 CVAT.ai Corporation
+// Copyright (C) 2023-2024 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -77,7 +77,6 @@ function PickFromModelComponent(props: Props): JSX.Element {
                 )}
                 {labels.map((label) => (
                     <Button
-                        type='ghost'
                         key={label.name}
                         disabled={labelNames.includes(label.name)}
                         onClick={() => {

@@ -651,8 +651,12 @@ export class CanvasModelImpl extends MasterImpl implements CanvasModel {
     }
 
     public highlight(clientIDs: number[], severity: HighlightSeverity | null): void {
+        const elementsIDs = clientIDs.filter((id: number): boolean => (
+            this.objects.find((_state: any): boolean => _state.clientID === id)
+        ));
+
         this.data.highlightedElements = {
-            elementsIDs: clientIDs,
+            elementsIDs,
             severity,
         };
 

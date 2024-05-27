@@ -116,7 +116,7 @@ export default class Collection {
         };
     }
 
-    import(data: Omit<SerializedCollection, 'version'>): ImportedCollection {
+    public import(data: Omit<SerializedCollection, 'version'>): ImportedCollection {
         const result = {
             tags: [],
             shapes: [],
@@ -159,7 +159,7 @@ export default class Collection {
         return result;
     }
 
-    export(): Omit<SerializedCollection, 'version'> {
+    public export(): Omit<SerializedCollection, 'version'> {
         const data = {
             tracks: this.tracks.filter((track) => !track.removed).map((track) => track.toJSON() as SerializedTrack),
             shapes: Object.values(this.shapes)
@@ -215,7 +215,7 @@ export default class Collection {
         return objectStates;
     }
 
-    _mergeInternal(objectsForMerge: (Track | Shape)[], shapeType: ShapeType, label: Label): SerializedTrack {
+    private _mergeInternal(objectsForMerge: (Track | Shape)[], shapeType: ShapeType, label: Label): SerializedTrack {
         const keyframes: Record<number, SerializedTrack['shapes'][0]> = {}; // frame: position
         const elements = {}; // element_sublabel_id: [element], each sublabel will be merged recursively
 
@@ -398,7 +398,7 @@ export default class Collection {
         return track;
     }
 
-    merge(objectStates: ObjectState[]): void {
+    public merge(objectStates: ObjectState[]): void {
         checkObjectType('shapes to merge', objectStates, null, Array);
         if (!objectStates.length) return;
         const objectsForMerge = objectStates.map((state) => {
@@ -455,7 +455,7 @@ export default class Collection {
         );
     }
 
-    _splitInternal(objectState: ObjectState, object: Track, frame: number): SerializedTrack[] {
+    private _splitInternal(objectState: ObjectState, object: Track, frame: number): SerializedTrack[] {
         const labelAttributes = labelAttributesAsDict(object.label);
         // first clear all server ids which may exist in the object being splitted
         const copy = trackFactory(object.toJSON(), -1, this.injection);
@@ -523,7 +523,7 @@ export default class Collection {
         return [prev, next];
     }
 
-    split(objectState: ObjectState, frame: number): void {
+    public split(objectState: ObjectState, frame: number): void {
         checkObjectType('object state', objectState, null, ObjectState);
         checkObjectType('frame', frame, 'integer', null);
 
@@ -564,7 +564,7 @@ export default class Collection {
         );
     }
 
-    group(objectStates: ObjectState[], reset: boolean): number {
+    public group(objectStates: ObjectState[], reset: boolean): number {
         checkObjectType('shapes to group', objectStates, null, Array);
 
         const objectsForGroup = objectStates.map((state) => {
@@ -605,7 +605,7 @@ export default class Collection {
         return groupIdx;
     }
 
-    join(objectStates: ObjectState[], points: number[]): void {
+    public join(objectStates: ObjectState[], points: number[]): void {
         checkObjectType('shapes to join', objectStates, null, Array);
         checkObjectType('joined rle mask', points, null, Array);
 
@@ -690,7 +690,7 @@ export default class Collection {
         }
     }
 
-    slice(state: ObjectState, results: number[][]): void {
+    public slice(state: ObjectState, results: number[][]): void {
         if (results.length !== 2) {
             throw new Error('Not supported slicing count');
         }
@@ -774,7 +774,7 @@ export default class Collection {
         );
     }
 
-    clear(startframe: number, endframe: number, delTrackKeyframesOnly: boolean): void {
+    public clear(startframe: number, endframe: number, delTrackKeyframesOnly: boolean): void {
         if (startframe !== undefined && endframe !== undefined) {
             // If only a range of annotations need to be cleared
             for (let frame = startframe; frame <= endframe; frame++) {
@@ -818,7 +818,7 @@ export default class Collection {
         }
     }
 
-    statistics(): Statistics {
+    public statistics(): Statistics {
         const labels = {};
         const shapes = ['rectangle', 'polygon', 'polyline', 'points', 'ellipse', 'cuboid', 'skeleton'];
         const body = {
@@ -958,7 +958,7 @@ export default class Collection {
         return new Statistics(labels, total);
     }
 
-    put(objectStates: ObjectState[]): number[] {
+    public put(objectStates: ObjectState[]): number[] {
         checkObjectType('shapes for put', objectStates, null, Array);
         const constructed = {
             shapes: [],
@@ -1149,7 +1149,7 @@ export default class Collection {
         return importedArray.map((value) => value.clientID);
     }
 
-    select(objectStates: ObjectState[], x: number, y: number): {
+    public select(objectStates: ObjectState[], x: number, y: number): {
         state: ObjectState,
         distance: number | null,
     } {
@@ -1195,7 +1195,13 @@ export default class Collection {
                     throw new ArgumentError(`Unknown shape type "${state.shapeType}"`);
             }
 
-            const distance = distanceMetric(state.points, x, y, state.rotation);
+            let points = [];
+            if (state.shapeType === ShapeType.SKELETON) {
+                points = state.elements.filter((el) => !el.outside && !el.hidden).map((el) => el.points).flat();
+            } else {
+                points = state.points;
+            }
+            const distance = distanceMetric(points, x, y, state.rotation);
             if (distance !== null && (minimumDistance === null || distance < minimumDistance)) {
                 minimumDistance = distance;
                 minimumState = state;
@@ -1208,7 +1214,7 @@ export default class Collection {
         };
     }
 
-    _searchEmpty(
+    private _searchEmpty(
         frameFrom: number,
         frameTo: number,
         searchParameters: {
@@ -1254,7 +1260,7 @@ export default class Collection {
         return null;
     }
 
-    search(
+    public search(
         frameFrom: number,
         frameTo: number,
         searchParameters: {

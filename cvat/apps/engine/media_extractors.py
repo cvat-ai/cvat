@@ -679,7 +679,8 @@ class ZipChunkWriter(IChunkWriter):
                             else:
                                 rot_image.save(
                                     output,
-                                    format=rot_image.format if rot_image.format else self.IMAGE_EXT,
+                                    # use format from original image, https://github.com/python-pillow/Pillow/issues/5527
+                                    format=image.format if image.format else self.IMAGE_EXT,
                                     quality=100,
                                     subsampling=0
                                 )

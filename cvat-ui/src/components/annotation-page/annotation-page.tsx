@@ -87,7 +87,7 @@ export default function AnnotationPageComponent(props: Props): JSX.Element {
                                 type='link'
                                 onClick={() => {
                                     changeFrame(latestFrame);
-                                    notification.close(notificationKey);
+                                    notification.destroy(notificationKey);
                                 }}
                             >
                                 here

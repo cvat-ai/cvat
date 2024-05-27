@@ -225,7 +225,7 @@ export default function CreateProjectContent(): JSX.Element {
                 </Collapse>
             </Col>
             <Col span={24}>
-                <Row justify='end' gutter={5}>
+                <Row justify='end' gutter={8}>
                     <Col>
                         <Button className='cvat-submit-open-project-button' type='primary' onClick={onSubmitAndOpen}>
                             Submit & Open
