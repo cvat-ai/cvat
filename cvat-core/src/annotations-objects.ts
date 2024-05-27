@@ -3008,7 +3008,7 @@ export class SkeletonTrack extends Track {
                 for (let i = 0; i < this.elements.length; i++) {
                     const element = this.elements[i];
                     if (undoSkeletonShapes[i]) {
-                        element.shapes[frame] = undoSkeletonShapes[i];
+                        element.shapes[frame] = copyShape(undoSkeletonShapes[i]);
                     } else {
                         delete element.shapes[frame];
                     }
@@ -3020,7 +3020,7 @@ export class SkeletonTrack extends Track {
             () => {
                 for (let i = 0; i < this.elements.length; i++) {
                     const element = this.elements[i];
-                    element.shapes[frame] = redoSkeletonShapes[i];
+                    element.shapes[frame] = copyShape(redoSkeletonShapes[i]);
                     this.updated = Date.now();
                 }
                 this.source = redoSource;
@@ -3244,6 +3244,7 @@ export class SkeletonTrack extends Track {
         const updatedHidden = data.elements.filter((el) => el.updateFlags.hidden);
         const updatedLock = data.elements.filter((el) => el.updateFlags.lock);
 
+        updatedPoints.forEach((el) => { el.updateFlags.points = false; });
         updatedOccluded.forEach((el) => { el.updateFlags.occluded = false; });
         updatedOutside.forEach((el) => { el.updateFlags.outside = false; });
         updatedKeyframe.forEach((el) => { el.updateFlags.keyframe = false; });
@@ -3251,17 +3252,21 @@ export class SkeletonTrack extends Track {
         updatedLock.forEach((el) => { el.updateFlags.lock = false; });
 
         if (updatedPoints.length) {
+            updatedPoints.forEach((el) => { el.updateFlags.points = true; });
             updateElements(updatedPoints, HistoryActions.CHANGED_POINTS);
+            updatedPoints.forEach((el) => { el.updateFlags.points = false; });
         }
 
         if (updatedOccluded.length) {
             updatedOccluded.forEach((el) => { el.updateFlags.occluded = true; });
             updateElements(updatedOccluded, HistoryActions.CHANGED_OCCLUDED);
+            updatedOccluded.forEach((el) => { el.updateFlags.occluded = false; });
         }
 
         if (updatedOutside.length) {
             updatedOutside.forEach((el) => { el.updateFlags.outside = true; });
             updateElements(updatedOutside, HistoryActions.CHANGED_OUTSIDE);
+            updatedOutside.forEach((el) => { el.updateFlags.outside = false; });
         }
 
         if (updatedKeyframe.length) {
@@ -3271,20 +3276,22 @@ export class SkeletonTrack extends Track {
             this.saveKeyframe(frame, data.keyframe);
             data.updateFlags.keyframe = false;
             updateElements(updatedKeyframe, HistoryActions.CHANGED_KEYFRAME);
+            updatedKeyframe.forEach((el) => { el.updateFlags.keyframe = false; });
         }
 
         if (updatedHidden.length) {
             updatedHidden.forEach((el) => { el.updateFlags.hidden = true; });
             updateElements(updatedHidden, HistoryActions.CHANGED_HIDDEN, 'hidden');
+            updatedHidden.forEach((el) => { el.updateFlags.hidden = false; });
         }
 
         if (updatedLock.length) {
             updatedLock.forEach((el) => { el.updateFlags.lock = true; });
             updateElements(updatedLock, HistoryActions.CHANGED_LOCK, 'lock');
+            updatedLock.forEach((el) => { el.updateFlags.lock = false; });
         }
 
-        const result = Track.prototype.save.call(this, frame, data);
-        return result;
+        return Track.prototype.save.call(this, frame, data);
     }
 
     protected getPosition(
