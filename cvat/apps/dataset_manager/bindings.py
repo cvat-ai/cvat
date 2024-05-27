@@ -1676,19 +1676,19 @@ class CvatDatasetNotFoundError(CvatImportError):
     format_name: str = ""
     _docs_base_url = f"{settings.CVAT_DOCS_URL}/manual/advanced/formats/"
 
-    def __str__(self):
+    def __str__(self) -> str:
         formatted_format_name = self._format_name_for_docs()
         docs_message = self._docs_message(formatted_format_name)
         display_message = self._clean_display_message()
         return f"{docs_message}. {display_message}"
 
-    def _format_name_for_docs(self):
+    def _format_name_for_docs(self) -> str:
         return self.format_name.replace("_", "-")
 
-    def _docs_message(self, formatted_format_name):
+    def _docs_message(self, formatted_format_name: str) -> str:
         return f"Check [format docs]({self._docs_base_url}format-{formatted_format_name})"
 
-    def _clean_display_message(self):
+    def _clean_display_message(self) -> str:
         message = re.sub(r'^.*?:', "", self.message)
         if "dataset must contain a file matching pattern" in message:
             message = message.replace("dataset must contain a file matching pattern", "")
