@@ -102,9 +102,9 @@ function ExportDatasetModal(props: StateToProps): JSX.Element {
         (values: FormValues): void => {
             let inProgress = false;
             if (values.saveImages) {
-                inProgress = currentDataset.includes(values.selectedFormat as string);
+                inProgress = currentDataset?.includes(values.selectedFormat as string);
             } else {
-                inProgress = currentAnnotations.includes(values.selectedFormat as string);
+                inProgress = currentAnnotations?.includes(values.selectedFormat as string);
             }
 
             if (!inProgress) {
@@ -135,7 +135,8 @@ function ExportDatasetModal(props: StateToProps): JSX.Element {
                 className: `cvat-notification-notice-export-${instanceType.split(' ')[0]}-start`,
             });
         },
-        [instance, instanceType, useDefaultTargetStorage, defaultStorageLocation, defaultStorageCloudId, targetStorage],
+        [instance, instanceType, useDefaultTargetStorage,
+            defaultStorageLocation, defaultStorageCloudId, targetStorage, currentAnnotations, currentDataset],
     );
 
     return (

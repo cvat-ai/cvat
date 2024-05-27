@@ -537,12 +537,16 @@ export default function (state = defaultState, action: AnyAction): Notifications
         }
         case ExportActionTypes.EXPORT_DATASET_SUCCESS: {
             const {
-                instance, instanceType, isLocal, resource,
+                instance, instanceType, resource, target,
             } = action.payload;
-            const description = isLocal ?
-                `Export ${resource} for ${instanceType} ${instance.id} is finished. ` +
-                'You can [download it here](/requests)' :
-                `Export ${resource} for ${instanceType} ${instance.id} has been uploaded to cloud storage`;
+            let description = '';
+            if (target === 'local') {
+                description = `Export ${resource} for ${instanceType} ${instance.id} is finished. ` +
+                'You can [download it here](/requests)';
+            } else if (target === 'cloudstorage') {
+                description =
+                    `Export ${resource} for ${instanceType} ${instance.id} has been uploaded to cloud storage`;
+            }
             return {
                 ...state,
                 messages: {
@@ -577,11 +581,17 @@ export default function (state = defaultState, action: AnyAction): Notifications
             };
         }
         case ExportActionTypes.EXPORT_BACKUP_SUCCESS: {
-            const { instance, instanceType, isLocal } = action.payload;
-            const description = isLocal ?
-                `Backup for the ${instanceType} ${instance.id} is finished. ` +
-                'You can [download it here](/requests)' :
-                `Backup for the ${instanceType} ${instance.id} has been uploaded to cloud storage`;
+            const {
+                instance, instanceType, target,
+            } = action.payload;
+            let description = '';
+            if (target === 'local') {
+                description = `Backup for the ${instanceType} ${instance.id} is finished. ` +
+                'You can [download it here](/requests)';
+            } else if (target === 'cloudstorage') {
+                description =
+                    `Backup for the ${instanceType} ${instance.id} has been uploaded to cloud storage`;
+            }
             return {
                 ...state,
                 messages: {

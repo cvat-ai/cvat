@@ -39,14 +39,14 @@ export const exportActions = {
         instance: InstanceType | RequestInstanceType,
         instanceType: 'project' | 'task' | 'job',
         format: string,
-        isLocal: boolean,
         resource: 'dataset' | 'annotations',
+        target: 'local' | 'cloudstorage' | undefined,
     ) => (
         createAction(ExportActionTypes.EXPORT_DATASET_SUCCESS, {
             instance,
             instanceType,
             format,
-            isLocal,
+            target,
             resource,
         })
     ),
@@ -74,8 +74,8 @@ export const exportActions = {
     exportBackup: (instance: Exclude<InstanceType, Job> | RequestInstanceType) => (
         createAction(ExportActionTypes.EXPORT_BACKUP, { instance })
     ),
-    exportBackupSuccess: (instance: Exclude<InstanceType, Job> | RequestInstanceType, instanceType: 'task' | 'project', isLocal: boolean) => (
-        createAction(ExportActionTypes.EXPORT_BACKUP_SUCCESS, { instance, instanceType, isLocal })
+    exportBackupSuccess: (instance: Exclude<InstanceType, Job> | RequestInstanceType, instanceType: 'task' | 'project', target: 'local' | 'cloudstorage' | undefined) => (
+        createAction(ExportActionTypes.EXPORT_BACKUP_SUCCESS, { instance, instanceType, target })
     ),
     exportBackupFailed: (instance: Exclude<InstanceType, Job> | RequestInstanceType, instanceType: 'task' | 'project', error: any) => (
         createAction(ExportActionTypes.EXPORT_BACKUP_FAILED, { instance, instanceType, error })
@@ -101,11 +101,15 @@ export async function listenExportDatasetAsync(
     const instanceType = getInstanceType(instance);
     try {
         let result;
+        let target: 'cloudstorage' | 'local' | undefined;
         if (rqID) {
             result = await listen(rqID, dispatch);
+            target = result?.url ? 'cloudstorage' : 'local';
         }
         if (showSuccessNotification) {
-            dispatch(exportActions.exportDatasetSuccess(instance, instanceType, format, !!result?.url, resource));
+            dispatch(exportActions.exportDatasetSuccess(
+                instance, instanceType, format, resource, target,
+            ));
         }
     } catch (error) {
         dispatch(exportActions.exportDatasetFailed(instance, instanceType, format, resource, error));
@@ -149,11 +153,13 @@ export async function listenExportBackupAsync(
 
     try {
         let result;
+        let target: 'cloudstorage' | 'local' | undefined;
         if (rqID) {
             result = await listen(rqID, dispatch);
+            target = result?.url ? 'cloudstorage' : 'local';
         }
         if (showSuccessNotification) {
-            dispatch(exportActions.exportBackupSuccess(instance, instanceType, !!result?.url));
+            dispatch(exportActions.exportBackupSuccess(instance, instanceType, target));
         }
     } catch (error) {
         dispatch(exportActions.exportBackupFailed(instance, instanceType, error as Error));
