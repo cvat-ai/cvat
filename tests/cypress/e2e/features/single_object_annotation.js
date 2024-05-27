@@ -87,6 +87,7 @@ context('Single object annotation mode', { scrollBehavior: false }, () => {
                 ...params,
             },
         });
+        cy.get('.cvat-canvas-container').should('not.exist');
         cy.get('.cvat-canvas-container').should('exist').and('be.visible');
     }
 

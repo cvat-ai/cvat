@@ -3,7 +3,7 @@
 //
 // SPDX-License-Identifier: MIT
 
-import React, { useState } from 'react';
+import React from 'react';
 import { useHistory } from 'react-router';
 import Card from 'antd/lib/card';
 import Descriptions from 'antd/lib/descriptions';
@@ -18,7 +18,7 @@ import JobActionsMenu from 'components/job-item/job-actions-menu';
 const useCardHeight = useCardHeightHOC({
     containerClassName: 'cvat-jobs-page',
     siblingClassNames: ['cvat-jobs-page-pagination', 'cvat-jobs-page-top-bar'],
-    paddings: 40,
+    paddings: 64,
     minHeight: 200,
     numberOfRows: 3,
 });
@@ -30,7 +30,6 @@ interface Props {
 
 function JobCardComponent(props: Props): JSX.Element {
     const { job, onJobUpdate } = props;
-    const [expanded, setExpanded] = useState<boolean>(false);
     const history = useHistory();
     const height = useCardHeight();
     const onClick = (event: React.MouseEvent): void => {
@@ -44,8 +43,6 @@ function JobCardComponent(props: Props): JSX.Element {
 
     return (
         <Card
-            onMouseEnter={() => setExpanded(true)}
-            onMouseLeave={() => setExpanded(false)}
             style={{ height }}
             className='cvat-job-page-list-item'
             cover={(
@@ -65,16 +62,14 @@ function JobCardComponent(props: Props): JSX.Element {
                     <div className='cvat-job-page-list-item-dimension'>{job.dimension.toUpperCase()}</div>
                 </>
             )}
+            hoverable
         >
             <Descriptions column={1} size='small'>
-                <Descriptions.Item label='Stage'>{job.stage}</Descriptions.Item>
-                <Descriptions.Item label='State'>{job.state}</Descriptions.Item>
-                { expanded ? (
-                    <Descriptions.Item label='Size'>{job.stopFrame - job.startFrame + 1}</Descriptions.Item>
-                ) : null}
-                { expanded && job.assignee ? (
+                <Descriptions.Item label='Stage and state'>{`${job.stage} ${job.state}`}</Descriptions.Item>
+                <Descriptions.Item label='Frames'>{job.stopFrame - job.startFrame + 1}</Descriptions.Item>
+                { job.assignee ? (
                     <Descriptions.Item label='Assignee'>{job.assignee.username}</Descriptions.Item>
-                ) : null}
+                ) : <Descriptions.Item label='Assignee'> </Descriptions.Item>}
             </Descriptions>
             <Dropdown
                 trigger={['click']}

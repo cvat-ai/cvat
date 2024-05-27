@@ -1,5 +1,5 @@
 // Copyright (C) 2021-2022 Intel Corporation
-// Copyright (C) 2022-2023 CVAT.ai Corporation
+// Copyright (C) 2022-2024 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -93,7 +93,6 @@ function ObjectItemComponent(props: Props): JSX.Element {
 
     return (
         <div style={{ display: 'flex', marginBottom: '1px' }}>
-            <div className='cvat-objects-sidebar-state-item-color' style={{ background: `${color}` }} />
             <div
                 onMouseEnter={activateState}
                 id={`cvat-objects-sidebar-state-item-${clientID}`}

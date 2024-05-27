@@ -366,7 +366,7 @@ context('Ground truth jobs', () => {
 
             cy.changeWorkspace('Review');
             cy.get('.cvat-objects-sidebar-tabs').within(() => {
-                cy.contains('span', 'Issues').click();
+                cy.contains('[role="tab"]', 'Issues').click();
             });
             cy.get('.cvat-objects-sidebar-show-ground-truth').filter(':visible').click();
 
