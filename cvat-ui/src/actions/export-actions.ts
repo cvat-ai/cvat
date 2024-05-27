@@ -89,14 +89,10 @@ export async function listenExportDatasetAsync(
         instance: InstanceType | RequestInstanceType,
         format: string,
         saveImages: boolean,
-        showSuccessNotification?: boolean,
     },
 ): Promise<void> {
-    const {
-        instance, format, saveImages, showSuccessNotification,
-    } = params;
+    const { instance, format, saveImages } = params;
     const resource = saveImages ? 'dataset' : 'annotations';
-    dispatch(exportActions.exportDataset(instance, format, resource));
 
     const instanceType = getInstanceType(instance);
     try {
@@ -106,11 +102,9 @@ export async function listenExportDatasetAsync(
             result = await listen(rqID, dispatch);
             target = !result?.url ? 'cloudstorage' : 'local';
         }
-        if (showSuccessNotification) {
-            dispatch(exportActions.exportDatasetSuccess(
-                instance, instanceType, format, resource, target,
-            ));
-        }
+        dispatch(exportActions.exportDatasetSuccess(
+            instance, instanceType, format, resource, target,
+        ));
     } catch (error) {
         dispatch(exportActions.exportDatasetFailed(instance, instanceType, format, resource, error));
     }
@@ -133,7 +127,7 @@ export const exportDatasetAsync = (
         const rqID = await instance.annotations
             .exportDataset(format, saveImages, useDefaultSettings, targetStorage, name);
         await listenExportDatasetAsync(rqID, dispatch, {
-            instance, format, saveImages, showSuccessNotification: true,
+            instance, format, saveImages,
         });
     } catch (error) {
         dispatch(exportActions.exportDatasetFailed(instance, instanceType, format, resource, error));
@@ -145,10 +139,9 @@ export async function listenExportBackupAsync(
     dispatch: (action: ExportActions | RequestsActions) => void,
     params: {
         instance: Exclude<InstanceType, Job> | RequestInstanceType,
-        showSuccessNotification?: boolean,
     },
 ): Promise<void> {
-    const { instance, showSuccessNotification } = params;
+    const { instance } = params;
     const instanceType = getInstanceType(instance) as 'project' | 'task';
 
     try {
@@ -158,9 +151,7 @@ export async function listenExportBackupAsync(
             result = await listen(rqID, dispatch);
             target = !result?.url ? 'cloudstorage' : 'local';
         }
-        if (showSuccessNotification) {
-            dispatch(exportActions.exportBackupSuccess(instance, instanceType, target));
-        }
+        dispatch(exportActions.exportBackupSuccess(instance, instanceType, target));
     } catch (error) {
         dispatch(exportActions.exportBackupFailed(instance, instanceType, error as Error));
     }
@@ -178,7 +169,7 @@ export const exportBackupAsync = (
     try {
         const rqID = await instance
             .backup(targetStorage, useDefaultSetting, fileName);
-        await listenExportBackupAsync(rqID, dispatch, { instance, showSuccessNotification: true });
+        await listenExportBackupAsync(rqID, dispatch, { instance });
     } catch (error) {
         dispatch(exportActions.exportBackupFailed(instance, instanceType, error as Error));
     }

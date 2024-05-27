@@ -74,18 +74,15 @@ export async function listenImportDatasetAsync(
     dispatch: (action: ImportActions | RequestsActions) => void,
     params: {
         instance: InstanceType | RequestInstanceType,
-        format: string,
-        showSuccessNotification?: boolean,
     },
 ): Promise<void> {
-    const { instance, format, showSuccessNotification } = params;
-    dispatch(importActions.importDataset(instance, format));
+    const { instance } = params;
 
     const instanceType = getInstanceType(instance);
     const resource = instanceType === 'project' ? 'dataset' : 'annotation';
     try {
         await listen(rqID, dispatch);
-        if (showSuccessNotification) dispatch(importActions.importDatasetSuccess(instance, resource));
+        dispatch(importActions.importDatasetSuccess(instance, resource));
     } catch (error) {
         dispatch(importActions.importDatasetFailed(instance, resource, error));
     }
@@ -110,6 +107,7 @@ export const importDatasetAsync = (
                 if (state.import.projects.dataset.current?.[instance.id]) {
                     throw Error('Only one importing of annotation/dataset allowed at the same time');
                 }
+                dispatch(importActions.importDataset(instance, format));
                 const rqID = await (instance as Project).annotations
                     .importDataset(format, useDefaultSettings, sourceStorage, file, {
                         convMaskToPoly,
@@ -119,16 +117,17 @@ export const importDatasetAsync = (
                             ))
                         ),
                     });
-                await listenImportDatasetAsync(rqID, dispatch, { instance, format });
+                await listen(rqID, dispatch);
             } else if (instanceType === 'task') {
                 if (state.import.tasks.dataset.current?.[instance.id]) {
                     throw Error('Only one importing of annotation/dataset allowed at the same time');
                 }
+                dispatch(importActions.importDataset(instance, format));
                 const rqID = await (instance as Task).annotations
                     .upload(format, useDefaultSettings, sourceStorage, file, {
                         convMaskToPoly,
                     });
-                await listenImportDatasetAsync(rqID, dispatch, { instance, format });
+                await listen(rqID, dispatch);
             } else { // job
                 if (state.import.tasks.dataset.current?.[(instance as Job).taskId]) {
                     throw Error('Annotations is being uploaded for the task');
@@ -138,12 +137,11 @@ export const importDatasetAsync = (
                 }
 
                 dispatch(importActions.importDataset(instance, format));
-
                 const rqID = await (instance as Job).annotations
                     .upload(format, useDefaultSettings, sourceStorage, file, {
                         convMaskToPoly,
                     });
-                await listenImportDatasetAsync(rqID, dispatch, { instance, format });
+                await listen(rqID, dispatch);
 
                 await (instance as Job).logger.log(EventScope.uploadAnnotations);
                 await (instance as Job).annotations.clear(true);

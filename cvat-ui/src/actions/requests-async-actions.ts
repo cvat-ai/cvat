@@ -7,9 +7,9 @@ import { CombinedState, RequestsQuery, StorageLocation } from 'reducers';
 import {
     getCore, RQStatus, Request, Project, Task, Job,
 } from 'cvat-core-wrapper';
-import { listenExportBackupAsync, listenExportDatasetAsync } from './export-actions';
-import { RequestInstanceType, listen, requestsActions } from './requests-actions';
-import { listenImportDatasetAsync } from './import-actions';
+import { exportActions, listenExportBackupAsync, listenExportDatasetAsync } from './export-actions';
+import { RequestInstanceType, requestsActions } from './requests-actions';
+import { importActions, listenImportDatasetAsync } from './import-actions';
 
 const core = getCore();
 
@@ -42,13 +42,12 @@ export function getRequestsAsync(query: RequestsQuery): ThunkAction {
                     let instance: RequestInstanceType | null = null;
 
                     const [operationType, operationTarget] = type.split(':');
-                    const listeningPromise = listen(request.id, dispatch, request);
                     if (target === 'task') {
-                        instance = { id: taskID as number, type: target, requestPromise: listeningPromise };
+                        instance = { id: taskID as number, type: target };
                     } else if (target === 'job') {
-                        instance = { id: jobID as number, type: target, requestPromise: listeningPromise };
+                        instance = { id: jobID as number, type: target };
                     } else if (target === 'project') {
-                        instance = { id: projectID as number, type: target, requestPromise: listeningPromise };
+                        instance = { id: projectID as number, type: target };
                     }
 
                     if (operationType === 'export') {
@@ -56,27 +55,33 @@ export function getRequestsAsync(query: RequestsQuery): ThunkAction {
                             if (!(state.export.tasks.backup.current?.[(instance as RequestInstanceType).id] ||
                                 state.export.projects.backup.current?.[(instance as RequestInstanceType).id])
                             ) {
+                                dispatch(exportActions.exportBackup(instance as RequestInstanceType));
                                 listenExportBackupAsync(rqID, dispatch, { instance: instance as RequestInstanceType });
                             }
-                        } else if (!(state.export.tasks.dataset.current?.[(instance as RequestInstanceType).id] ||
-                            state.export.projects.dataset.current?.[(instance as RequestInstanceType).id] ||
-                            state.export.jobs.dataset.current?.[(instance as RequestInstanceType).id])
-                        ) {
-                            listenExportDatasetAsync(
-                                rqID,
-                                dispatch,
-                                { instance: instance as RequestInstanceType, format, saveImages: type.includes('dataset') },
-                            );
+                        } else if (operationTarget === 'dataset') {
+                            const field = operationTarget === 'dataset' ? 'dataset' : 'annotations';
+                            if (!(state.export.tasks[field].current?.[(instance as RequestInstanceType).id] ||
+                                state.export.projects[field].current?.[(instance as RequestInstanceType).id] ||
+                                state.export.jobs[field].current?.[(instance as RequestInstanceType).id])
+                            ) {
+                                dispatch(exportActions.exportDataset(instance as RequestInstanceType, format, field));
+                                listenExportDatasetAsync(
+                                    rqID,
+                                    dispatch,
+                                    { instance: instance as RequestInstanceType, format, saveImages: type.includes('dataset') },
+                                );
+                            }
                         }
                     } else if (operationType === 'import') {
                         if (!(state.import.tasks.dataset.current?.[(instance as RequestInstanceType).id] ||
                             state.import.projects.dataset.current?.[(instance as RequestInstanceType).id] ||
                             state.import.jobs.dataset.current?.[(instance as RequestInstanceType).id])
                         ) {
+                            dispatch(importActions.importDataset(instance as RequestInstanceType, format));
                             listenImportDatasetAsync(
                                 rqID,
                                 dispatch,
-                                { instance: instance as RequestInstanceType, format, showSuccessNotification: true },
+                                { instance: instance as RequestInstanceType },
                             );
                         }
                     }
