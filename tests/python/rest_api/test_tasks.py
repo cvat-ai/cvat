@@ -2678,16 +2678,17 @@ class TestImportTaskAnnotations:
             with open(self.tmp_dir / file, "w") as f:
                 f.write("Some text")
 
-        zip_file = zipfile.ZipFile(source_archive_path, mode='a')
+        zip_file = zipfile.ZipFile(source_archive_path, mode="a")
         for path in incorrect_files:
             zip_file.write(self.tmp_dir / path, path)
         task = self.client.tasks.retrieve(task_id)
 
         with pytest.raises(exceptions.ApiException) as capture:
-            task.import_annotations('YOLO 1.1', source_archive_path)
+            task.import_annotations("YOLO 1.1", source_archive_path)
 
             assert b"Check [format docs]" in capture.value.body
-            assert b"Dataset must contain a file: \"obj.data\"" in capture.value.body
+            assert b'Dataset must contain a file: "obj.data"' in capture.value.body
+
 
 class TestImportWithComplexFilenames:
     @staticmethod
@@ -3717,6 +3718,3 @@ class TestImportWithComplexFilenames:
         check_element_outside_count(1, 0, 1)
         check_element_outside_count(1, 1, 2)
         check_element_outside_count(1, 2, 2)
-
-
-
