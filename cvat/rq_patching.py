@@ -71,7 +71,7 @@ def custom_started_job_registry_cleanup(self, timestamp: Optional[float] = None)
 
     return job_ids
 
-def custom_hearbeat(self, timestamp: datetime, ttl: int, pipeline: Optional['Pipeline'] = None, xx: bool = False):
+def custom_heartbeat(self, timestamp: datetime, ttl: int, pipeline: Optional['Pipeline'] = None, xx: bool = False):
     self.last_heartbeat = timestamp
     connection = pipeline if pipeline is not None else self.connection
     connection.hset(self.key, 'last_heartbeat', utcformat(self.last_heartbeat))
@@ -81,12 +81,12 @@ def custom_hearbeat(self, timestamp: datetime, ttl: int, pipeline: Optional['Pip
     # that is not clear why they adds a job to started_job_registry when the job has failed
     # also, as far as I see they also commented this line in unrealeased (2.0) version
     exc_info = sys.exc_info()
-    is_stopped_export_job = isinstance(exc_info[1], (StopRequested, SystemExit))
-    if not is_stopped_export_job:
+    is_stopped_job = isinstance(exc_info[1], (StopRequested, SystemExit))
+    if not is_stopped_job:
         self.started_job_registry.add(self, ttl, pipeline=pipeline, xx=xx)
 
 def update_started_job_registry_cleanup() -> None:
     # don't forget to check if the issue https://github.com/rq/rq/issues/2006 has been resolved in upstream
     assert VERSION == '1.16.0'
     rq.registry.StartedJobRegistry.cleanup = custom_started_job_registry_cleanup
-    rq.job.Job.heartbeat = custom_hearbeat
+    rq.job.Job.heartbeat = custom_heartbeat

@@ -81,8 +81,8 @@ class SimpleWorker(CVATWorker):
         # - we create another job with the same ID in the server process
         # - when exception message is saved in worker code, it also saves outdated datetime value as part of meta information
         # - this outdated value then used in server code
-        is_stopped_export_job = isinstance(args[2], (StopRequested, SystemExit))
-        if not is_stopped_export_job:
+        is_stopped_job = isinstance(args[2], (StopRequested, SystemExit))
+        if not is_stopped_job:
             super().handle_exception(*args, **kwargs)
 
 
