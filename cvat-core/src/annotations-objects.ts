@@ -3159,7 +3159,7 @@ export class SkeletonTrack extends Track {
                         annotationContext.save(frame, new Proxy(element, {
                             // ignore element's locking here
                             get(target, prop) {
-                                if (prop === 'lock') {
+                                if (prop === 'lock' && property !== 'lock') {
                                     return false;
                                 }
 
