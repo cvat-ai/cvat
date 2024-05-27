@@ -722,11 +722,11 @@ export class Shape extends Drawn {
             throw new ScriptingError('Received frame is not equal to the frame of the shape');
         }
 
-        if (data.lock) {
+        const updated = data.updateFlags;
+        if (data.lock && !updated.lock) {
             return new ObjectState(this.get(frame));
         }
 
-        const updated = data.updateFlags;
         for (const readOnlyField of this.readOnlyFields) {
             updated[readOnlyField] = false;
         }
@@ -1332,11 +1332,11 @@ export class Track extends Drawn {
     }
 
     public save(frame: number, data: ObjectState): ObjectState {
-        if (data.lock) {
+        const updated = data.updateFlags;
+        if (data.lock && !updated.lock) {
             return new ObjectState(this.get(frame));
         }
 
-        const updated = data.updateFlags;
         for (const readOnlyField of this.readOnlyFields) {
             updated[readOnlyField] = false;
         }
@@ -1495,11 +1495,11 @@ export class Tag extends Annotation {
             throw new ScriptingError('Received frame is not equal to the frame of the tag');
         }
 
-        if (data.lock) {
+        const updated = data.updateFlags;
+        if (data.lock && !updated.lock) {
             return new ObjectState(this.get(frame));
         }
 
-        const updated = data.updateFlags;
         for (const readOnlyField of this.readOnlyFields) {
             updated[readOnlyField] = false;
         }
@@ -2051,9 +2051,9 @@ export class SkeletonShape extends Shape {
             color: this.color,
             updated: Math.max(this.updated, ...this.elements.map((element) => element.updated)),
             pinned: this.pinned,
+            lock: this.lock,
             outside: elements.every((el) => el.outside),
             occluded: elements.every((el) => el.occluded),
-            lock: elements.every((el) => el.lock),
             hidden: elements.every((el) => el.hidden),
             frame,
             source: this.source,
@@ -2120,7 +2120,8 @@ export class SkeletonShape extends Shape {
     }
 
     public save(frame: number, data: ObjectState): ObjectState {
-        if (data.lock) {
+        const updated = data.updateFlags;
+        if (data.lock && !updated.lock) {
             return new ObjectState(this.get(frame));
         }
 
@@ -3089,15 +3090,16 @@ export class SkeletonTrack extends Track {
             elements,
             frame,
             source: this.source,
+            lock: this.lock,
             outside: elements.every((el) => el.outside),
             occluded: elements.every((el) => el.occluded),
-            lock: elements.every((el) => el.lock),
             hidden: elements.every((el) => el.hidden),
             ...this.withContext(frame),
         };
 
         elements.forEach((el) => {
             // illegal to update skeleton element if initial skeleton frame is earlier
+            // the skeleton elements will be locked on such frames
             el.lock = el.lock || el.frame < this.frame;
         });
 
@@ -3136,7 +3138,8 @@ export class SkeletonTrack extends Track {
     }
 
     public save(frame: number, data: ObjectState): ObjectState {
-        if (data.lock) {
+        const updated = data.updateFlags;
+        if (data.lock && !updated.lock) {
             return new ObjectState(this.get(frame));
         }
 
@@ -3151,17 +3154,20 @@ export class SkeletonTrack extends Track {
             try {
                 this.history.freeze(true);
                 affectedElements.forEach((element, idx) => {
-                    // ignore element's locking here
-                    const beforeLock = element.lock;
-                    element.lock = false;
-
                     try {
                         const annotationContext = this.elements[idx];
-                        annotationContext.save(frame, element);
+                        annotationContext.save(frame, new Proxy(element, {
+                            // ignore element's locking here
+                            get(target, prop) {
+                                if (prop === 'lock') {
+                                    return false;
+                                }
+
+                                return target[prop];
+                            },
+                        }));
                     } catch (error: any) {
                         errors.push(error);
-                    } finally {
-                        element.lock = beforeLock;
                     }
                 });
             } finally {

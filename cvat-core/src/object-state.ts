@@ -358,13 +358,12 @@ export default class ObjectState {
                 lock: {
                     get: () => data.lock,
                     set: (lock) => {
+                        data.updateFlags.lock = true;
+                        data.lock = lock;
                         if (data.shapeType === ShapeType.SKELETON) {
                             for (const element of this.elements) {
                                 element.lock = lock;
                             }
-                        } else {
-                            data.updateFlags.lock = true;
-                            data.lock = lock;
                         }
                     },
                 },
