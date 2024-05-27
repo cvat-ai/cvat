@@ -32,7 +32,7 @@ from rest_framework import status
 import cvat.apps.dataset_manager as dm
 from cvat.apps.dataset_manager.bindings import CvatTaskOrJobDataExtractor, TaskData
 from cvat.apps.dataset_manager.task import TaskAnnotation
-from cvat.apps.dataset_manager.views import clear_export_cache, export, parse_export_filename
+from cvat.apps.dataset_manager.views import clear_export_cache, export, parse_export_file_path
 from cvat.apps.engine.models import Task
 from cvat.apps.engine.tests.utils import get_paginated_collection, ApiTestBase, ForceLogin
 
@@ -1524,7 +1524,7 @@ class ExportBehaviorTest(_DbTestBase):
 
             first_export_path = export(dst_format=format_name, task_id=task_id)
 
-        export_instance_time = parse_export_filename(first_export_path).instance_timestamp
+        export_instance_timestamp = parse_export_file_path(first_export_path).instance_timestamp
 
         self._create_annotations(task, f'{format_name} many jobs', "default")
 
@@ -1548,7 +1548,7 @@ class ExportBehaviorTest(_DbTestBase):
                     export_checked_the_file, export_created_the_file,
                     export_file_path, clear_removed_the_file,
                 ),
-                kwargs=dict(file_path=first_export_path, file_ctime=export_instance_time),
+                kwargs=dict(file_path=first_export_path, file_ctime=export_instance_timestamp),
             )))
 
             export_process.start()
@@ -1735,7 +1735,7 @@ class ExportBehaviorTest(_DbTestBase):
             response = self._get_request_with_data(download_url, download_params, self.admin)
             self.assertEqual(response.status_code, status.HTTP_201_CREATED)
 
-        export_instance_time = parse_export_filename(export_path).instance_timestamp
+        export_instance_time = parse_export_file_path(export_path).instance_timestamp
 
         download_params["action"] = "download"
 
@@ -1891,7 +1891,7 @@ class ExportBehaviorTest(_DbTestBase):
             mock_rq_get_current_job.return_value = MagicMock(timeout=5)
 
             export_path = export(dst_format=format_name, task_id=task_id)
-            file_ctime = parse_export_filename(export_path).instance_timestamp
+            file_ctime = parse_export_file_path(export_path).instance_timestamp
             clear_export_cache(file_path=export_path, file_ctime=file_ctime, logger=MagicMock())
 
         self.assertFalse(osp.isfile(export_path))
@@ -1924,7 +1924,7 @@ class ExportBehaviorTest(_DbTestBase):
             mock_rq_job = MagicMock(timeout=5)
             mock_rq_get_current_job.return_value = mock_rq_job
 
-            file_ctime = parse_export_filename(export_path).instance_timestamp
+            file_ctime = parse_export_file_path(export_path).instance_timestamp
             clear_export_cache(file_path=export_path, file_ctime=file_ctime, logger=MagicMock())
 
         mock_get_export_cache_lock.assert_called()
@@ -1968,7 +1968,7 @@ class ExportBehaviorTest(_DbTestBase):
             mock_rq_get_current_job.return_value = mock_rq_job
 
             export_path = export(dst_format=format_name, task_id=task_id)
-            file_ctime = parse_export_filename(export_path).instance_timestamp
+            file_ctime = parse_export_file_path(export_path).instance_timestamp
             clear_export_cache(file_path=export_path, file_ctime=file_ctime, logger=MagicMock())
 
         self.assertEqual(mock_rq_job.retries_left, 1)
@@ -1994,7 +1994,7 @@ class ExportBehaviorTest(_DbTestBase):
 
             export_path = export(dst_format=format_name, task_id=task_id)
 
-        file_ctime = parse_export_filename(export_path).instance_timestamp
+        file_ctime = parse_export_file_path(export_path).instance_timestamp
         old_kwargs = {
             'file_path': export_path,
             'file_ctime': file_ctime,

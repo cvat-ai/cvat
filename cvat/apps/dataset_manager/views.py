@@ -24,7 +24,7 @@ from .util import (
     LockNotAvailableError,
     current_function_name, get_export_cache_lock,
     get_export_cache_dir, make_export_filename,
-    parse_export_filename
+    parse_export_file_path
 )
 from .util import EXPORT_CACHE_DIR_NAME  # pylint: disable=unused-import
 
@@ -90,7 +90,9 @@ def export(dst_format, project_id=None, task_id=None, job_id=None, server_url=No
             ))
             instance_update_time = max(tasks_update + [instance_update_time])
 
-        output_path = make_export_filename(cache_dir, save_images, instance_update_time, dst_format)
+        output_path = make_export_filename(
+            cache_dir, save_images, instance_update_time.timestamp(), dst_format
+        )
 
         os.makedirs(cache_dir, exist_ok=True)
 
@@ -172,7 +174,7 @@ def clear_export_cache(file_path: str, file_ctime: float, logger: logging.Logger
             if not osp.exists(file_path):
                 raise FileNotFoundError("Export cache file '{}' doesn't exist".format(file_path))
 
-            parsed_filename = parse_export_filename(file_path)
+            parsed_filename = parse_export_file_path(file_path)
             cache_ttl = get_export_cache_ttl(parsed_filename.instance_type)
 
             if timezone.now().timestamp() <= osp.getmtime(file_path) + cache_ttl.total_seconds():

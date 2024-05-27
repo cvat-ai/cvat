@@ -99,7 +99,7 @@ class LockNotAvailableError(Exception):
 
 
 def make_export_cache_lock_key(filename: os.PathLike[str]) -> str:
-    return f"export_lock:{filename}"
+    return f"export_lock:{os.fspath(filename)}"
 
 
 @contextmanager
@@ -160,18 +160,18 @@ def get_export_cache_dir(db_instance: Project | Task | Job) -> str:
 def make_export_filename(
     dst_dir: str,
     save_images: bool,
-    instance_update_time: datetime,
+    instance_timestamp: float,
     format_name: str,
 ) -> str:
     from .formats.registry import EXPORT_FORMATS
     file_ext = EXPORT_FORMATS[format_name].EXT
 
-    filename = '%s-instance%s-%s.%s' % (
+    filename = '%s-instance%f-%s.%s' % (
         'dataset' if save_images else 'annotations',
         # store the instance timestamp in the file name to reliably get this information
         # ctime / mtime do not return file creation time on linux
         # mtime is used for file usage checks
-        instance_update_time.timestamp(),
+        instance_timestamp,
         make_file_name(to_snake_case(format_name)),
         file_ext,
     )
@@ -187,11 +187,11 @@ class ParsedExportFilename:
     file_ext: str
 
 
-def parse_export_filename(file_path: os.PathLike[str]) -> ParsedExportFilename:
+def parse_export_file_path(file_path: os.PathLike[str]) -> ParsedExportFilename:
     file_path = osp.normpath(file_path)
     dirname, basename = osp.split(file_path)
 
-    basename_match = re.match(
+    basename_match = re.fullmatch(
         (
             r'(?P<export_mode>dataset|annotations)'
             r'(?:-instance(?P<instance_timestamp>\d+\.\d+))?' # optional for backward compatibility
