@@ -55,8 +55,7 @@ context('Canvas 3D functionality. Dump/upload annotation. "Point Cloud" format',
                 format: dumpTypePC,
             };
             cy.exportJob(exportAnnotation);
-            cy.downloadExport();
-            cy.getDownloadFileName().then((file) => {
+            cy.downloadExport().then((file) => {
                 annotationPCArchiveName = file;
                 cy.verifyDownload(annotationPCArchiveName);
             });
@@ -71,8 +70,7 @@ context('Canvas 3D functionality. Dump/upload annotation. "Point Cloud" format',
                 archiveCustomName: 'job_export_3d_annotation_custome_name_pc_format',
             };
             cy.exportJob(exportAnnotationRenameArchive);
-            cy.downloadExport();
-            cy.getDownloadFileName().then((file) => {
+            cy.downloadExport().then((file) => {
                 annotationPCArchiveCustomName = file;
                 cy.verifyDownload(annotationPCArchiveCustomName);
             });

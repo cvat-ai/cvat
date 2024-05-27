@@ -61,8 +61,9 @@ context('Export project dataset with 3D task.', { browser: '!firefox' }, () => {
                 dumpType: 'Kitti Raw Format',
             };
             cy.exportProject(exportAnnotation3d);
-            cy.downloadExport();
-            cy.waitForDownload();
+            cy.downloadExport().then((file) => {
+                cy.verifyDownload(file);
+            });
             cy.goBack();
         });
 
@@ -75,8 +76,7 @@ context('Export project dataset with 3D task.', { browser: '!firefox' }, () => {
                 dumpType: 'Sly Point Cloud Format',
             };
             cy.exportProject(exportDataset3d);
-            cy.downloadExport();
-            cy.getDownloadFileName().then((file) => {
+            cy.downloadExport().then((file) => {
                 datasetArchiveName = file;
                 cy.verifyDownload(datasetArchiveName);
             });
@@ -93,8 +93,9 @@ context('Export project dataset with 3D task.', { browser: '!firefox' }, () => {
                 archiveCustomName: 'export_project_3d_annotation',
             };
             cy.exportProject(exportAnnotations3dRenameArchive);
-            cy.downloadExport();
-            cy.waitForDownload();
+            cy.downloadExport().then((file) => {
+                cy.verifyDownload(file);
+            });
             cy.goBack();
         });
 

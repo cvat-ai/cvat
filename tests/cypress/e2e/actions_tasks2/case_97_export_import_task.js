@@ -90,8 +90,7 @@ context('Export, import an annotation task.', { browser: '!firefox' }, () => {
             cy.get('.cvat-modal-export-task').contains('button', 'OK').click();
             cy.get('.cvat-notification-notice-export-backup-start').should('be.visible');
             cy.closeNotification('.cvat-notification-notice-export-backup-start');
-            cy.downloadExport();
-            cy.getDownloadFileName().then((file) => {
+            cy.downloadExport().then((file) => {
                 taskBackupArchiveFullName = file;
                 cy.verifyDownload(taskBackupArchiveFullName);
             });

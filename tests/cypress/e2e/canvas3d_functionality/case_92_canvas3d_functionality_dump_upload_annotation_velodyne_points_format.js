@@ -55,8 +55,7 @@ context('Canvas 3D functionality. Dump/upload annotation. "Velodyne Points" form
                 format: dumpTypeVC,
             };
             cy.exportJob(exportAnnotation);
-            cy.downloadExport();
-            cy.getDownloadFileName().then((file) => {
+            cy.downloadExport().then((file) => {
                 annotationVCArchiveName = file;
                 cy.verifyDownload(annotationVCArchiveName);
             });
@@ -71,8 +70,7 @@ context('Canvas 3D functionality. Dump/upload annotation. "Velodyne Points" form
                 archiveCustomName: 'job_export_3d_annotation_custome_name_vc_format',
             };
             cy.exportJob(exportAnnotationRenameArchive);
-            cy.downloadExport();
-            cy.getDownloadFileName().then((file) => {
+            cy.downloadExport().then((file) => {
                 annotationVCArchiveNameCustomName = file;
                 cy.verifyDownload(annotationVCArchiveNameCustomName);
             });

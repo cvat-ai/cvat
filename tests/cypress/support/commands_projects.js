@@ -239,24 +239,9 @@ Cypress.Commands.add('restoreProject', (archiveWithBackup, sourceStorage = null)
     cy.closeNotification('.ant-notification-notice-info');
 });
 
-Cypress.Commands.add('getDownloadFileName', () => {
-    cy.intercept('GET', '**=download').as('download');
-    cy.wait('@download').then((download) => {
-        const filename = download.response.headers['content-disposition'].split(';')[1].split('filename=')[1];
-        // need to remove quotes
-        return filename.substring(1, filename.length - 1);
-    });
-});
-
 Cypress.Commands.add('waitForFileUploadToCloudStorage', () => {
     cy.get('.ant-notification-notice-info').contains('uploaded to cloud storage').should('be.visible');
     cy.verifyNotification();
-});
-
-Cypress.Commands.add('waitForDownload', () => {
-    cy.getDownloadFileName().then((filename) => {
-        cy.verifyDownload(filename);
-    });
 });
 
 Cypress.Commands.add('deleteProjectViaActions', (projectName) => {

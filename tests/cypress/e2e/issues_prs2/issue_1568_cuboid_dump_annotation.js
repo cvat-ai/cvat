@@ -37,8 +37,9 @@ context('Dump annotation if cuboid created.', () => {
                 format: exportFormat,
             };
             cy.exportJob(exportAnnotation);
-            cy.downloadExport();
-            cy.waitForDownload();
+            cy.downloadExport().then((file) => {
+                cy.verifyDownload(file);
+            });
             cy.goBack();
         });
 

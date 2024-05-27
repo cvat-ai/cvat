@@ -88,10 +88,9 @@ context('Backup, restore a project.', { browser: '!firefox' }, () => {
     describe(`Testing "${caseId}"`, () => {
         it('Export the project.', () => {
             cy.backupProject(project.name);
-            cy.downloadExport();
-            cy.getDownloadFileName().then((file) => {
+            cy.downloadExport().then((file) => {
                 projectBackupArchiveFullName = file;
-                cy.verifyDownload(projectBackupArchiveFullName);
+                cy.verifyDownload(file);
             });
             cy.goBack();
         });
@@ -155,8 +154,7 @@ context('Backup, restore a project with a 3D task.', { browser: '!firefox' }, ()
     describe(`Testing "${caseId}"`, () => {
         it('Export the project.', () => {
             cy.backupProject(project.name);
-            cy.downloadExport();
-            cy.getDownloadFileName().then((file) => {
+            cy.downloadExport().then((file) => {
                 projectBackupArchiveFullName = file;
                 cy.verifyDownload(projectBackupArchiveFullName);
             });

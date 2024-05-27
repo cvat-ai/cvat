@@ -39,8 +39,9 @@ context('Export project dataset.', { browser: '!firefox' }, () => {
 
     function checkCounTasksInXML(projectParams, expectedCount) {
         cy.exportProject(projectParams);
-        cy.downloadExport();
-        cy.waitForDownload();
+        cy.downloadExport().then((file) => {
+            cy.verifyDownload(file);
+        });
         cy.unpackZipArchive(`cypress/fixtures/${projectParams.archiveCustomName}.zip`);
         cy.readFile('cypress/fixtures/annotations.xml').should('exist').then((xml) => {
             const tasks = Cypress.$(Cypress.$.parseXML(xml)).find('task').find('name');
@@ -97,8 +98,9 @@ context('Export project dataset.', { browser: '!firefox' }, () => {
                 dumpType: 'CVAT for images',
             };
             cy.exportProject(exportAnnotation);
-            cy.downloadExport();
-            cy.waitForDownload();
+            cy.downloadExport().then((file) => {
+                cy.verifyDownload(file);
+            });
             cy.goBack();
         });
 
@@ -111,10 +113,9 @@ context('Export project dataset.', { browser: '!firefox' }, () => {
                 dumpType: 'CVAT for images',
             };
             cy.exportProject(exportDataset);
-            cy.downloadExport();
-            cy.getDownloadFileName().then((file) => {
+            cy.downloadExport().then((file) => {
+                cy.verifyDownload(file);
                 datasetArchiveName = file;
-                cy.verifyDownload(datasetArchiveName);
             });
             cy.goBack();
         });

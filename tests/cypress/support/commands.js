@@ -1269,10 +1269,17 @@ Cypress.Commands.add('downloadExport', () => {
     cy.get('.cvat-requests-card').first().within(() => {
         cy.get('.cvat-requests-page-actions-button').click();
     });
+    cy.intercept('GET', '**=download').as('download');
     cy.get('.ant-dropdown')
         .not('.ant-dropdown-hidden')
         .within(() => {
             cy.contains('[role="menuitem"]', 'Download').click();
+        });
+    cy.wait('@download')
+        .then((download) => {
+            const filename = download.response.headers['content-disposition'].split(';')[1].split('filename=')[1];
+            // need to remove quotes
+            return filename.substring(1, filename.length - 1);
         });
 });
 

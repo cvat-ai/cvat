@@ -141,8 +141,9 @@ context('Tests source & target storage for backups.', () => {
                 { location: 'Local' },
                 false,
             );
-            cy.downloadExport();
-            cy.waitForDownload();
+            cy.downloadExport().then((file) => {
+                cy.verifyDownload(file);
+            });
             cy.goBack();
         });
 

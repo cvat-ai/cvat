@@ -76,8 +76,7 @@ context('Dump/Upload annotation.', { browser: '!firefox' }, () => {
                 archiveCustomName: 'task_export_annotation_custome_name',
             };
             cy.exportJob(exportAnnotationRenameArchive);
-            cy.downloadExport();
-            cy.getDownloadFileName().then((file) => {
+            cy.downloadExport().then((file) => {
                 annotationArchiveNameCustomName = file;
                 cy.verifyDownload(annotationArchiveNameCustomName);
             });
@@ -91,8 +90,7 @@ context('Dump/Upload annotation.', { browser: '!firefox' }, () => {
                 format: exportFormat,
             };
             cy.exportJob(exportAnnotation);
-            cy.downloadExport();
-            cy.getDownloadFileName().then((file) => {
+            cy.downloadExport().then((file) => {
                 annotationArchiveName = file;
                 cy.verifyDownload(annotationArchiveName);
             });

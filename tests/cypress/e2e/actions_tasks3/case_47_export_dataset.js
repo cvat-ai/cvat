@@ -34,8 +34,9 @@ context('Export task dataset.', () => {
                 format: exportFormat,
             };
             cy.exportJob(exportDataset);
-            cy.downloadExport();
-            cy.waitForDownload();
+            cy.downloadExport().then((file) => {
+                cy.verifyDownload(file);
+            });
             cy.goBack();
         });
 
@@ -47,8 +48,9 @@ context('Export task dataset.', () => {
                 archiveCustomName: 'job_export_dataset_custome_name',
             };
             cy.exportJob(exportDataset);
-            cy.downloadExport();
-            cy.waitForDownload();
+            cy.downloadExport().then((file) => {
+                cy.verifyDownload(file);
+            });
             cy.goBack();
         });
     });

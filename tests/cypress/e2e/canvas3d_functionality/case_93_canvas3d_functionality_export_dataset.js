@@ -36,8 +36,9 @@ context('Canvas 3D functionality. Export as a dataset.', () => {
                 format: dumpTypePC,
             };
             cy.exportJob(exportDatasetPCFormat);
-            cy.downloadExport();
-            cy.waitForDownload();
+            cy.downloadExport().then((file) => {
+                cy.verifyDownload(file);
+            });
             cy.goBack();
         });
 
@@ -48,8 +49,9 @@ context('Canvas 3D functionality. Export as a dataset.', () => {
                 format: dumpTypeVC,
             };
             cy.exportJob(exportDatasetVCFormat);
-            cy.downloadExport();
-            cy.waitForDownload();
+            cy.downloadExport().then((file) => {
+                cy.verifyDownload(file);
+            });
             cy.goBack();
         });
 
@@ -61,8 +63,9 @@ context('Canvas 3D functionality. Export as a dataset.', () => {
                 archiveCustomName: 'job_export_3d_dataset_custome_name_vc_format',
             };
             cy.exportJob(exportDatasetVCFormatRenameArchive);
-            cy.downloadExport();
-            cy.waitForDownload();
+            cy.downloadExport().then((file) => {
+                cy.verifyDownload(file);
+            });
             cy.goBack();
             cy.removeAnnotations();
             cy.saveJob('PUT');
