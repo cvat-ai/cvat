@@ -3074,7 +3074,6 @@ export class SkeletonTrack extends Track {
         const result = {
             ...position,
             parentID: null,
-            keyframe: position.keyframe || elements.some((el) => el.keyframe),
             attributes: this.getAttributes(frame),
             descriptions: [...this.descriptions],
             group: this.groupObject,
@@ -3091,6 +3090,7 @@ export class SkeletonTrack extends Track {
             frame,
             source: this.source,
             lock: this.lock,
+            keyframe: position.keyframe || elements.some((el) => el.keyframe),
             outside: elements.every((el) => el.outside),
             occluded: elements.every((el) => el.occluded),
             hidden: elements.every((el) => el.hidden),
