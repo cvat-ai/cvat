@@ -32,15 +32,15 @@ export const exportActions = {
     closeExportDatasetModal: (instance: any) => (
         createAction(ExportActionTypes.CLOSE_EXPORT_DATASET_MODAL, { instance })
     ),
-    exportDataset: (instance: InstanceType | RequestInstanceType, format: string) => (
-        createAction(ExportActionTypes.EXPORT_DATASET, { instance, format })
+    exportDataset: (instance: InstanceType | RequestInstanceType, format: string, resource: 'dataset' | 'annotations') => (
+        createAction(ExportActionTypes.EXPORT_DATASET, { instance, format, resource })
     ),
     exportDatasetSuccess: (
         instance: InstanceType | RequestInstanceType,
         instanceType: 'project' | 'task' | 'job',
         format: string,
         isLocal: boolean,
-        resource: 'Dataset' | 'Annotations',
+        resource: 'dataset' | 'annotations',
     ) => (
         createAction(ExportActionTypes.EXPORT_DATASET_SUCCESS, {
             instance,
@@ -50,11 +50,18 @@ export const exportActions = {
             resource,
         })
     ),
-    exportDatasetFailed: (instance: InstanceType | RequestInstanceType, instanceType: 'project' | 'task' | 'job', format: string, error: any) => (
+    exportDatasetFailed: (
+        instance: InstanceType | RequestInstanceType,
+        instanceType: 'project' | 'task' | 'job',
+        format: string,
+        resource: 'dataset' | 'annotations',
+        error: any,
+    ) => (
         createAction(ExportActionTypes.EXPORT_DATASET_FAILED, {
             instance,
             instanceType,
             format,
+            resource,
             error,
         })
     ),
@@ -82,10 +89,14 @@ export async function listenExportDatasetAsync(
         instance: InstanceType | RequestInstanceType,
         format: string,
         saveImages: boolean,
+        showSuccessNotification?: boolean,
     },
 ): Promise<void> {
-    const { instance, format, saveImages } = params;
-    dispatch(exportActions.exportDataset(instance, format));
+    const {
+        instance, format, saveImages, showSuccessNotification,
+    } = params;
+    const resource = saveImages ? 'dataset' : 'annotations';
+    dispatch(exportActions.exportDataset(instance, format, resource));
 
     const instanceType = getInstanceType(instance);
     try {
@@ -93,10 +104,11 @@ export async function listenExportDatasetAsync(
         if (rqID) {
             result = await listen(rqID, dispatch);
         }
-        const resource = saveImages ? 'Dataset' : 'Annotations';
-        dispatch(exportActions.exportDatasetSuccess(instance, instanceType, format, !!result?.url, resource));
+        if (showSuccessNotification) {
+            dispatch(exportActions.exportDatasetSuccess(instance, instanceType, format, !!result?.url, resource));
+        }
     } catch (error) {
-        dispatch(exportActions.exportDatasetFailed(instance, instanceType, format, error));
+        dispatch(exportActions.exportDatasetFailed(instance, instanceType, format, resource, error));
     }
 }
 
@@ -106,18 +118,21 @@ export const exportDatasetAsync = (
     saveImages: boolean,
     useDefaultSettings: boolean,
     targetStorage: Storage,
-    name: string,
+    name?: string,
 ): ThunkAction => async (dispatch) => {
-    dispatch(exportActions.exportDataset(instance, format));
+    const resource = saveImages ? 'dataset' : 'annotations';
+    dispatch(exportActions.exportDataset(instance, format, resource));
 
     const instanceType = getInstanceType(instance);
 
     try {
         const rqID = await instance.annotations
             .exportDataset(format, saveImages, useDefaultSettings, targetStorage, name);
-        await listenExportDatasetAsync(rqID, dispatch, { instance, format, saveImages });
+        await listenExportDatasetAsync(rqID, dispatch, {
+            instance, format, saveImages, showSuccessNotification: true,
+        });
     } catch (error) {
-        dispatch(exportActions.exportDatasetFailed(instance, instanceType, format, error));
+        dispatch(exportActions.exportDatasetFailed(instance, instanceType, format, resource, error));
     }
 };
 
@@ -126,9 +141,10 @@ export async function listenExportBackupAsync(
     dispatch: (action: ExportActions | RequestsActions) => void,
     params: {
         instance: Exclude<InstanceType, Job> | RequestInstanceType,
+        showSuccessNotification?: boolean,
     },
 ): Promise<void> {
-    const { instance } = params;
+    const { instance, showSuccessNotification } = params;
     const instanceType = getInstanceType(instance) as 'project' | 'task';
 
     try {
@@ -136,7 +152,9 @@ export async function listenExportBackupAsync(
         if (rqID) {
             result = await listen(rqID, dispatch);
         }
-        dispatch(exportActions.exportBackupSuccess(instance, instanceType, !!result?.url));
+        if (showSuccessNotification) {
+            dispatch(exportActions.exportBackupSuccess(instance, instanceType, !!result?.url));
+        }
     } catch (error) {
         dispatch(exportActions.exportBackupFailed(instance, instanceType, error as Error));
     }
@@ -154,7 +172,7 @@ export const exportBackupAsync = (
     try {
         const rqID = await instance
             .backup(targetStorage, useDefaultSetting, fileName);
-        await listenExportBackupAsync(rqID, dispatch, { instance });
+        await listenExportBackupAsync(rqID, dispatch, { instance, showSuccessNotification: true });
     } catch (error) {
         dispatch(exportActions.exportBackupFailed(instance, instanceType, error as Error));
     }

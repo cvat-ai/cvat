@@ -56,7 +56,7 @@ export function getRequestsAsync(query: RequestsQuery): ThunkAction {
                             if (!(state.export.tasks.backup.current?.[(instance as RequestInstanceType).id] ||
                                 state.export.projects.backup.current?.[(instance as RequestInstanceType).id])
                             ) {
-                                listenExportBackupAsync(rqID, instance as RequestInstanceType, dispatch);
+                                listenExportBackupAsync(rqID, dispatch, { instance: instance as RequestInstanceType });
                             }
                         } else if (!(state.export.tasks.dataset.current?.[(instance as RequestInstanceType).id] ||
                             state.export.projects.dataset.current?.[(instance as RequestInstanceType).id] ||
@@ -64,9 +64,8 @@ export function getRequestsAsync(query: RequestsQuery): ThunkAction {
                         ) {
                             listenExportDatasetAsync(
                                 rqID,
-                                instance as RequestInstanceType,
                                 dispatch,
-                                { format, saveImages: type.includes('dataset') },
+                                { instance: instance as RequestInstanceType, format, saveImages: type.includes('dataset') },
                             );
                         }
                     } else if (operationType === 'import') {

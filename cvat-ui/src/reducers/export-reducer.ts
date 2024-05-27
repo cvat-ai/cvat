@@ -1,5 +1,5 @@
 // Copyright (C) 2021-2022 Intel Corporation
-// Copyright (C) 2022 CVAT.ai Corporation
+// Copyright (C) 2022-2024 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -16,6 +16,9 @@ const defaultState: ExportState = {
             current: {},
             modalInstance: null,
         },
+        annotations: {
+            current: {},
+        },
         backup: {
             modalInstance: null,
             current: {},
@@ -26,6 +29,9 @@ const defaultState: ExportState = {
             current: {},
             modalInstance: null,
         },
+        annotations: {
+            current: {},
+        },
         backup: {
             modalInstance: null,
             current: {},
@@ -35,6 +41,9 @@ const defaultState: ExportState = {
         dataset: {
             current: {},
             modalInstance: null,
+        },
+        annotations: {
+            current: {},
         },
     },
     instanceType: null,
@@ -76,19 +85,19 @@ export default (state: ExportState = defaultState, action: ExportActions): Expor
             };
         }
         case ExportActionTypes.EXPORT_DATASET: {
-            const { instance, format } = action.payload;
+            const { instance, format, resource } = action.payload;
             const field = defineActititiesField(instance) as 'projects' | 'tasks' | 'jobs';
 
             return {
                 ...state,
                 [field]: {
                     ...state[field],
-                    dataset: {
-                        ...state[field].dataset,
+                    [resource]: {
+                        ...state[field][resource],
                         current: {
-                            ...state[field].dataset.current,
-                            [instance.id]: !state[field].dataset.current[instance.id] ? [format] :
-                                [...state[field].dataset.current[instance.id], format],
+                            ...state[field][resource].current,
+                            [instance.id]: !state[field][resource].current[instance.id] ? [format] :
+                                [...state[field][resource].current[instance.id], format],
                         },
                     },
                 },
@@ -96,17 +105,20 @@ export default (state: ExportState = defaultState, action: ExportActions): Expor
         }
         case ExportActionTypes.EXPORT_DATASET_FAILED:
         case ExportActionTypes.EXPORT_DATASET_SUCCESS: {
-            const { instance, format } = action.payload;
+            const { instance, format, resource } = action.payload;
             const field: 'projects' | 'tasks' | 'jobs' = defineActititiesField(instance);
-            const activities = deepCopy(state[field]);
+            const activities = deepCopy(state[field][resource]);
 
-            activities.dataset.current[instance.id] = activities.dataset.current[instance.id].filter(
+            activities.current[instance.id] = activities.current[instance.id].filter(
                 (exporterName: string): boolean => exporterName !== format,
             );
 
             return {
                 ...state,
-                [field]: activities,
+                [field]: {
+                    ...state[field],
+                    [resource]: activities,
+                },
             };
         }
         case ExportActionTypes.OPEN_EXPORT_BACKUP_MODAL: {

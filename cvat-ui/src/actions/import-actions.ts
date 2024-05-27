@@ -143,7 +143,7 @@ export const importDatasetAsync = (
                     .upload(format, useDefaultSettings, sourceStorage, file, {
                         convMaskToPoly,
                     });
-                await listen(rqID, dispatch);
+                await listenImportDatasetAsync(rqID, dispatch, { instance, format });
 
                 await (instance as Job).logger.log(EventScope.uploadAnnotations);
                 await (instance as Job).annotations.clear(true);

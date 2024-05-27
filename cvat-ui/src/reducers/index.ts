@@ -121,6 +121,11 @@ export interface ExportState {
             };
             modalInstance: any | null;
         };
+        annotations: {
+            current: {
+                [id: number]: string[];
+            };
+        };
         backup: {
             current: {
                 [id: number]: boolean;
@@ -135,6 +140,11 @@ export interface ExportState {
             };
             modalInstance: any | null;
         };
+        annotations: {
+            current: {
+                [id: number]: string[];
+            };
+        };
         backup: {
             current: {
                 [id: number]: boolean;
@@ -148,6 +158,11 @@ export interface ExportState {
                 [id: number]: string[];
             };
             modalInstance: any | null;
+        };
+        annotations: {
+            current: {
+                [id: number]: string[];
+            };
         };
     };
     instanceType: 'project' | 'task' | 'job' | null;

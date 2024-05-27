@@ -8,7 +8,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { connect, useDispatch } from 'react-redux';
 import Modal from 'antd/lib/modal';
 import Notification from 'antd/lib/notification';
-import { DownloadOutlined, LoadingOutlined } from '@ant-design/icons';
+import { DownloadOutlined } from '@ant-design/icons';
 import Text from 'antd/lib/typography/Text';
 import Select from 'antd/lib/select';
 import Input from 'antd/lib/input';
@@ -45,8 +45,9 @@ const initialValues: FormValues = {
 function ExportDatasetModal(props: StateToProps): JSX.Element {
     const {
         dumpers,
+        currentDataset,
+        currentAnnotations,
         instance,
-        current,
     } = props;
 
     const [instanceType, setInstanceType] = useState('');
@@ -99,20 +100,29 @@ function ExportDatasetModal(props: StateToProps): JSX.Element {
 
     const handleExport = useCallback(
         (values: FormValues): void => {
-            // have to validate format before so it would not be undefined
-            dispatch(
-                exportDatasetAsync(
-                    instance as InstanceType,
-                    values.selectedFormat as string,
-                    values.saveImages,
-                    useDefaultTargetStorage,
-                    useDefaultTargetStorage ? new Storage({
-                        location: defaultStorageLocation,
-                        cloudStorageId: defaultStorageCloudId,
-                    }) : new Storage(targetStorage),
-                    values.customName ? `${values.customName}.zip` : undefined,
-                ),
-            );
+            let inProgress = false;
+            if (values.saveImages) {
+                inProgress = currentDataset.includes(values.selectedFormat as string);
+            } else {
+                inProgress = currentAnnotations.includes(values.selectedFormat as string);
+            }
+
+            if (!inProgress) {
+                // have to validate format before so it would not be undefined
+                dispatch(
+                    exportDatasetAsync(
+                        instance as InstanceType,
+                        values.selectedFormat as string,
+                        values.saveImages,
+                        useDefaultTargetStorage,
+                        useDefaultTargetStorage ? new Storage({
+                            location: defaultStorageLocation,
+                            cloudStorageId: defaultStorageCloudId,
+                        }) : new Storage(targetStorage),
+                        values.customName ? `${values.customName}.zip` : undefined,
+                    ),
+                );
+            }
             closeModal();
             const resource = values.saveImages ? 'Dataset' : 'Annotations';
             const description = `${resource} export was started for ${instanceType}. ` +
@@ -157,23 +167,16 @@ function ExportDatasetModal(props: StateToProps): JSX.Element {
                                     (instance instanceof Project && instance.dimension === null),
                             )
                             .map(
-                                (dumper: Dumper): JSX.Element => {
-                                    const pending = (instance && current ? current : [])
-                                        .includes(dumper.name);
-                                    const disabled = !dumper.enabled || pending;
-                                    return (
-                                        <Select.Option
-                                            value={dumper.name}
-                                            key={dumper.name}
-                                            disabled={disabled}
-                                            className='cvat-modal-export-option-item'
-                                        >
-                                            <DownloadOutlined />
-                                            <Text disabled={disabled}>{dumper.name}</Text>
-                                            {pending && <LoadingOutlined style={{ marginLeft: 10 }} />}
-                                        </Select.Option>
-                                    );
-                                },
+                                (dumper: Dumper): JSX.Element => (
+                                    <Select.Option
+                                        value={dumper.name}
+                                        key={dumper.name}
+                                        className='cvat-modal-export-option-item'
+                                    >
+                                        <DownloadOutlined />
+                                        <Text>{dumper.name}</Text>
+                                    </Select.Option>
+                                ),
                             )}
                     </Select>
                 </Form.Item>
@@ -216,7 +219,8 @@ function ExportDatasetModal(props: StateToProps): JSX.Element {
 interface StateToProps {
     dumpers: Dumper[];
     instance: Project | Task | Job | null;
-    current: string[];
+    currentDataset: string[];
+    currentAnnotations: string[];
 }
 
 function mapStateToProps(state: CombinedState): StateToProps {
@@ -227,9 +231,12 @@ function mapStateToProps(state: CombinedState): StateToProps {
 
     return {
         instance,
-        current: !instanceType ? [] : (
+        currentDataset: !instanceType ? [] : (
             state.export[`${instanceType}s` as 'projects' | 'tasks' | 'jobs']
         ).dataset.current[instance.id],
+        currentAnnotations: !instanceType ? [] : (
+            state.export[`${instanceType}s` as 'projects' | 'tasks' | 'jobs']
+        ).annotations.current[instance.id],
         dumpers: state.formats.annotationFormats.dumpers,
     };
 }
