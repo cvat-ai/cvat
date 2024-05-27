@@ -8,7 +8,7 @@ import { useHistory } from 'react-router';
 import { useDispatch } from 'react-redux';
 import { Row, Col } from 'antd/lib/grid';
 import Button from 'antd/lib/button';
-import Dropdown from 'antd/lib/dropdown';
+import Popover from 'antd/lib/popover';
 import Input from 'antd/lib/input';
 import { PlusOutlined, UploadOutlined, LoadingOutlined } from '@ant-design/icons';
 import { importActions } from 'actions/import-actions';
@@ -90,10 +90,11 @@ function TopBarComponent(props: Props): JSX.Element {
                     </div>
                 </div>
                 <div>
-                    <Dropdown
-                        destroyPopupOnHide
+                    <Popover
+                        destroyTooltipOnHide
                         trigger={['click']}
-                        overlay={(
+                        overlayInnerStyle={{ padding: 0 }}
+                        content={(
                             <div className='cvat-projects-page-control-buttons-wrapper'>
                                 <Button
                                     id='cvat-create-project-button'
@@ -118,7 +119,7 @@ function TopBarComponent(props: Props): JSX.Element {
                         )}
                     >
                         <Button type='primary' className='cvat-create-project-dropdown' icon={<PlusOutlined />} />
-                    </Dropdown>
+                    </Popover>
                 </div>
             </Col>
         </Row>

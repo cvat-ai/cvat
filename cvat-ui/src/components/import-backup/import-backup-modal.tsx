@@ -1,5 +1,5 @@
 // Copyright (C) 2022 CVAT.ai Corporation
-// Copyright (C) 2023 CVAT.ai Corporation
+// Copyright (C) 2023-2024 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -145,7 +145,7 @@ function ImportBackupModal(): JSX.Element {
                     {`Create ${instanceType} from backup`}
                 </Text>
             )}
-            visible={modalVisible}
+            open={modalVisible}
             onCancel={closeModal}
             onOk={() => form.submit()}
             className='cvat-modal-import-backup'

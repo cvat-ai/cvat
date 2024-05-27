@@ -2,15 +2,17 @@
 //
 // SPDX-License-Identifier: MIT
 
-@import '../../base';
+@import 'base';
 
 .cvat-job-item {
     border: 1px solid $border-color-1;
-    border-radius: 3px;
+    border-radius: $border-radius-base;
+    margin-bottom: $grid-unit-size;
     background: $background-color-1;
 
     &:hover {
-        border: 1px solid $border-color-hover;
+        transition: box-shadow $box-shadow-transition;
+        box-shadow: $box-shadow-base;
     }
 
     .cvat-job-item-icon {

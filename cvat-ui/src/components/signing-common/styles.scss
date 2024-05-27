@@ -1,4 +1,4 @@
-// Copyright (C) 2022-2023 CVAT.ai Corporation
+// Copyright (C) 2022-2024 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -151,7 +151,7 @@ $social-google-background: #4286f5;
 
 .cvat-credentials-action-button {
     width: 100%;
-    border-radius: $grid-unit-size * 2;
+    border-radius: $border-radius-base;
     background-color: $action-button-color-1;
     height: $grid-unit-size * 11;
     color: white;
@@ -161,15 +161,14 @@ $social-google-background: #4286f5;
     box-shadow: none;
     transition: $base-transition;
 
-    &:hover,
-    &:focus {
-        background-color: $action-button-color-1;
-        color: $action-button-color-2;
+    &:hover {
+        background-color: $action-button-color-1 !important;
+        color: $action-button-color-2 !important;
     }
 }
 
 .cvat-login-form-wrapper {
-    border-radius: $grid-unit-size * 4;
+    border-radius: $border-radius-base;
     background: $background-color-1;
     padding: $grid-unit-size * 6;
     height: $grid-unit-size * 87;
@@ -269,7 +268,7 @@ $social-google-background: #4286f5;
             .ant-checkbox-inner {
                 width: $grid-unit-size * 5;
                 height: $grid-unit-size * 3;
-                border-radius: 12px;
+                border-radius: $border-radius-base;
                 background: #d9d9d9;
                 border: none;
 
@@ -282,7 +281,7 @@ $social-google-background: #4286f5;
                     content: "";
                     height: $grid-unit-size * 2;
                     width: $grid-unit-size * 2;
-                    border-radius: $grid-unit-size;
+                    border-radius: $border-radius-base;
                     top: $grid-unit-size * 0.5;
                     left: $grid-unit-size * 0.5;
                     background-color: white;
@@ -297,7 +296,7 @@ $social-google-background: #4286f5;
             .ant-checkbox-inner {
                 width: $grid-unit-size * 5;
                 height: $grid-unit-size * 3;
-                border-radius: 12px;
+                border-radius: $border-radius-base;
                 background: $slider-color;
                 border: none;
 
@@ -310,7 +309,7 @@ $social-google-background: #4286f5;
                     content: "";
                     height: $grid-unit-size * 2;
                     width: $grid-unit-size * 2;
-                    border-radius: $grid-unit-size;
+                    border-radius: $border-radius-base;
                     top: $grid-unit-size * 0.5;
                     left: $grid-unit-size * 2.5;
                     background-color: white;

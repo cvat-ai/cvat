@@ -195,84 +195,80 @@ export default function RequestCard(props: Props): JSX.Element {
     }, [request]);
 
     return (
-        <Row justify='center' align='middle'>
-            <Col span={24}>
-                <Card className='cvat-requests-card' style={style}>
-                    <Row justify='space-between'>
-                        <Col span={12}>
-                            <Row style={{ paddingBottom: [RQStatus.FAILED].includes(request.status) ? '10px' : '0' }}>
-                                <Col className='cvat-requests-type' {...dimensions}>
-                                    <Text>
-                                        {type.split(':').map((word) => word.charAt(0).toUpperCase() + word.slice(1)).join(' ')}
-                                        {' '}
-                                    </Text>
-                                </Col>
-                                <Col className='cvat-requests-name'>
-                                    {linkToEntity ?
-                                        (<Link to={linkToEntity}>{name}</Link>) :
-                                        <Text>{name}</Text>}
-                                </Col>
-                            </Row>
-                            {timestamps}
+        <Card className='cvat-requests-card' style={style}>
+            <Row justify='space-between'>
+                <Col span={12}>
+                    <Row style={{ paddingBottom: [RQStatus.FAILED].includes(request.status) ? '10px' : '0' }}>
+                        <Col className='cvat-requests-type' {...dimensions}>
+                            <Text>
+                                {type.split(':').map((word) => word.charAt(0).toUpperCase() + word.slice(1)).join(' ')}
+                                {' '}
+                            </Text>
                         </Col>
-                        <Col span={10} className='cvat-request-item-progress-wrapper'>
-                            <Row>
-                                <Col span={21}>
-                                    <Row />
-                                    <StatusMessage message={request.message} status={request.status} />
-                                    <Row>
-                                        <Col span={18} className='cvat-requests-progress'>
-                                            {
-                                                request.status !== RQStatus.FAILED ? (
-                                                    <Progress
-                                                        percent={percent}
-                                                        strokeColor={{
-                                                            from: '#108ee9',
-                                                            to: '#87d068',
-                                                        }}
-                                                        showInfo={false}
-                                                        strokeWidth={5}
-                                                        size='small'
-                                                    />
-                                                ) : null
-                                            }
-                                        </Col>
-                                        <Col span={2} className='cvat-requests-percent'>
-                                            {percentProgress}
-                                        </Col>
-                                    </Row>
-                                    {
-                                        operation?.format ? (
-                                            <Row>
-                                                <Col className='cvat-format-name'>
-                                                    <Text type='secondary'>{operation.format}</Text>
-                                                </Col>
-                                            </Row>
-                                        ) : null
-                                    }
-                                </Col>
-                                <Col span={3} style={{ display: 'flex', justifyContent: 'end' }}>
-                                    {
-                                        menuItems.length !== 0 ? (
-                                            <Dropdown
-                                                destroyPopupOnHide
-                                                trigger={['click']}
-                                                overlay={() => (
-                                                    <Menu selectable={false} className='cvat-actions-menu cvat-request-actions-menu'>
-                                                        { menuItems.map((element) => element)}
-                                                    </Menu>
-                                                )}
-                                            >
-                                                <Button type='link' size='middle' className='cvat-requests-page-actions-button' icon={<MoreOutlined className='cvat-menu-icon' />} />
-                                            </Dropdown>
-                                        ) : null
-                                    }
-                                </Col>
-                            </Row>
+                        <Col className='cvat-requests-name'>
+                            {linkToEntity ?
+                                (<Link to={linkToEntity}>{name}</Link>) :
+                                <Text>{name}</Text>}
                         </Col>
                     </Row>
-                </Card>
-            </Col>
-        </Row>
+                    {timestamps}
+                </Col>
+                <Col span={10} className='cvat-request-item-progress-wrapper'>
+                    <Row>
+                        <Col span={21}>
+                            <Row />
+                            <StatusMessage message={request.message} status={request.status} />
+                            <Row>
+                                <Col span={18} className='cvat-requests-progress'>
+                                    {
+                                        request.status !== RQStatus.FAILED ? (
+                                            <Progress
+                                                percent={percent}
+                                                strokeColor={{
+                                                    from: '#108ee9',
+                                                    to: '#87d068',
+                                                }}
+                                                showInfo={false}
+                                                strokeWidth={5}
+                                                size='small'
+                                            />
+                                        ) : null
+                                    }
+                                </Col>
+                                <Col span={2} className='cvat-requests-percent'>
+                                    {percentProgress}
+                                </Col>
+                            </Row>
+                            {
+                                operation?.format ? (
+                                    <Row>
+                                        <Col className='cvat-format-name'>
+                                            <Text type='secondary'>{operation.format}</Text>
+                                        </Col>
+                                    </Row>
+                                ) : null
+                            }
+                        </Col>
+                        <Col span={3} style={{ display: 'flex', justifyContent: 'end' }}>
+                            {
+                                menuItems.length !== 0 ? (
+                                    <Dropdown
+                                        destroyPopupOnHide
+                                        trigger={['click']}
+                                        overlay={() => (
+                                            <Menu selectable={false} className='cvat-actions-menu cvat-request-actions-menu'>
+                                                { menuItems.map((element) => element)}
+                                            </Menu>
+                                        )}
+                                    >
+                                        <Button type='link' size='middle' className='cvat-requests-page-actions-button' icon={<MoreOutlined className='cvat-menu-icon' />} />
+                                    </Dropdown>
+                                ) : null
+                            }
+                        </Col>
+                    </Row>
+                </Col>
+            </Row>
+        </Card>
     );
 }

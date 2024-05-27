@@ -142,7 +142,7 @@ function ExportDatasetModal(props: StateToProps): JSX.Element {
     return (
         <Modal
             title={<Text strong>{`Export ${instanceType} as a dataset`}</Text>}
-            visible={!!instance}
+            open={!!instance}
             onCancel={closeModal}
             onOk={() => form.submit()}
             className={`cvat-modal-export-${instanceType.split(' ')[0]}`}
