@@ -1048,7 +1048,7 @@ class TestPostTaskData:
         }
 
         task_data = {
-            "server_files": [os.path.join("videos", "video_without_valid_keyframes.mp4")],
+            "server_files": [osp.join("videos", "video_without_valid_keyframes.mp4")],
             "image_quality": 70,
         }
 
