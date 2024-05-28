@@ -15,12 +15,6 @@
     .cvat-models-page-top-bar {
         padding-bottom: $grid-unit-size;
     }
-
-    >div:nth-child(2) {
-        &:not(.cvat-empty-models-list) {
-            height: 90%;
-        }
-    }
 }
 
 .cvat-empty-models-list {

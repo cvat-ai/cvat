@@ -1037,6 +1037,27 @@ class TestPostTaskData:
             for image_file, frame in zip(image_files, data_meta.frames):
                 assert image_file.name == frame.name
 
+    def test_can_create_task_with_video_without_keyframes(self):
+        task_spec = {
+            "name": f"test {self._USERNAME} to create a task with a video without keyframes",
+            "labels": [
+                {
+                    "name": "label1",
+                }
+            ],
+        }
+
+        task_data = {
+            "server_files": [osp.join("videos", "video_without_valid_keyframes.mp4")],
+            "image_quality": 70,
+        }
+
+        task_id, _ = create_task(self._USERNAME, task_spec, task_data)
+
+        with make_api_client(self._USERNAME) as api_client:
+            (_, response) = api_client.tasks_api.retrieve(task_id)
+            assert response.status == HTTPStatus.OK
+
     @pytest.mark.parametrize("data_source", ["client_files", "server_files"])
     def test_can_create_task_with_sorting_method_predefined(self, data_source):
         task_spec = {
