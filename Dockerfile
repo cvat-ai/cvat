@@ -24,7 +24,7 @@ RUN apt-get update && \
 
 ARG PIP_VERSION
 ENV PIP_DISABLE_PIP_VERSION_CHECK=1
-RUN --mount=type=cache,target=/root/.cache/pip/http \
+RUN --mount=type=cache,target=/root/.cache/pip/http-v2 \
     python3 -m pip install -U pip==${PIP_VERSION}
 
 # We build OpenH264, FFmpeg and PyAV in a separate build stage,
@@ -62,7 +62,7 @@ RUN sed -i '/^av==/!d' /tmp/utils/dataset_manifest/requirements.txt
 # Work around https://github.com/PyAV-Org/PyAV/issues/1140
 RUN pip install setuptools wheel 'cython<3'
 
-RUN --mount=type=cache,target=/root/.cache/pip/http \
+RUN --mount=type=cache,target=/root/.cache/pip/http-v2 \
     python3 -m pip wheel --no-binary=av --no-build-isolation \
     -r /tmp/utils/dataset_manifest/requirements.txt \
     -w /tmp/wheelhouse
@@ -78,7 +78,7 @@ RUN sed -i '/^av==/d' /tmp/utils/dataset_manifest/requirements.txt
 
 ARG CVAT_CONFIGURATION="production"
 
-RUN --mount=type=cache,target=/root/.cache/pip/http \
+RUN --mount=type=cache,target=/root/.cache/pip/http-v2 \
     DATUMARO_HEADLESS=1 python3 -m pip wheel --no-deps \
     -r /tmp/cvat/requirements/${CVAT_CONFIGURATION}.txt \
     -w /tmp/wheelhouse
