@@ -1,5 +1,5 @@
 // Copyright (C) 2020-2022 Intel Corporation
-// Copyright (C) 2022-2023 CVAT.ai Corporation
+// Copyright (C) 2022-2024 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -71,7 +71,7 @@ const initialValues: AdvancedConfiguration = {
 };
 
 interface Props {
-    onSubmit(values: AdvancedConfiguration): void;
+    onSubmit(values: AdvancedConfiguration): Promise<void>;
     onChangeUseProjectSourceStorage(value: boolean): void;
     onChangeUseProjectTargetStorage(value: boolean): void;
     onChangeSourceStorageLocation: (value: StorageLocation) => void;
@@ -169,7 +169,7 @@ class AdvancedConfigurationForm extends React.PureComponent<Props> {
                         (entry: [string, unknown]): boolean => entry[0] !== frameFilter,
                     );
 
-                    onSubmit({
+                    return onSubmit({
                         ...((Object.fromEntries(entries) as any) as AdvancedConfiguration),
                         frameFilter,
                         sourceStorage: values.useProjectSourceStorage ?
@@ -179,9 +179,9 @@ class AdvancedConfigurationForm extends React.PureComponent<Props> {
                             new Storage(project.targetStorage || { location: StorageLocation.LOCAL }) :
                             new Storage(values.targetStorage),
                     });
-                    return Promise.resolve();
                 });
             }
+
             return this.formRef.current.validateFields()
                 .then(
                     (values: Store): Promise<void> => {
@@ -190,13 +190,12 @@ class AdvancedConfigurationForm extends React.PureComponent<Props> {
                             (entry: [string, unknown]): boolean => entry[0] !== frameFilter,
                         );
 
-                        onSubmit({
+                        return onSubmit({
                             ...((Object.fromEntries(entries) as any) as AdvancedConfiguration),
                             frameFilter,
                             sourceStorage: new Storage(values.sourceStorage),
                             targetStorage: new Storage(values.targetStorage),
                         });
-                        return Promise.resolve();
                     },
                 );
         }

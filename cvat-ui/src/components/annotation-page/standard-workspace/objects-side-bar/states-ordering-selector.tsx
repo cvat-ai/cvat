@@ -24,7 +24,7 @@ function StatesOrderingSelectorComponent(props: StatesOrderingSelectorComponentP
             <Select
                 size='small'
                 className='cvat-objects-sidebar-ordering-selector'
-                dropdownClassName='cvat-objects-sidebar-ordering-dropdown'
+                popupClassName='cvat-objects-sidebar-ordering-dropdown'
                 value={statesOrdering}
                 onChange={changeStatesOrdering}
             >

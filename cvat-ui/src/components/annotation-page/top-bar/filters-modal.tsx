@@ -11,7 +11,7 @@ import {
 
 import { omit } from 'lodash';
 import { DownOutlined } from '@ant-design/icons';
-import Dropdown from 'antd/lib/dropdown';
+import Popover from 'antd/lib/popover';
 import Menu from 'antd/lib/menu';
 import Button from 'antd/lib/button';
 import Modal from 'antd/lib/modal';
@@ -268,7 +268,7 @@ function FiltersModalComponent(): JSX.Element {
     return (
         <Modal
             className={visible ? 'cvat-filters-modal cvat-filters-modal-visible' : 'cvat-filters-modal'}
-            visible={visible}
+            open={visible}
             closable={false}
             width={800}
             destroyOnClose
@@ -306,11 +306,13 @@ function FiltersModalComponent(): JSX.Element {
                 className='cvat-recently-used-filters-wrapper'
                 style={{ display: filters.length ? 'inline-block' : 'none' }}
             >
-                <Dropdown
-                    destroyPopupOnHide
-                    trigger={['click']}
-                    overlay={menu}
+                <Popover
+                    destroyTooltipOnHide
+                    trigger='click'
+                    placement='top'
+                    overlayInnerStyle={{ padding: 0 }}
                     overlayClassName='cvat-recently-used-filters-dropdown'
+                    content={menu}
                 >
                     <Button
                         type='text'
@@ -320,7 +322,7 @@ function FiltersModalComponent(): JSX.Element {
                         {' '}
                         <DownOutlined />
                     </Button>
-                </Dropdown>
+                </Popover>
             </div>
             { !!config.fields && (
                 <Query
