@@ -61,15 +61,16 @@ class Logger {
             },
             [EventScope.exception]: {
                 lastEvent: null,
-                ignore: (previousEvent: Event, currentPayload: any): boolean => {
-                    const { stack } = currentPayload;
+                ignore: (previousEvent: Event, currentPayload: JSONEventPayload): boolean => {
+                    const { stack, message } = currentPayload;
                     const [lastCollectionEvent] = this.collection.slice(-1);
                     return lastCollectionEvent === previousEvent &&
-                        stack && stack === previousEvent.payload.stack;
+                        stack && stack === previousEvent.payload.stack &&
+                        message && message === previousEvent.payload.message;
                 },
-                update(previousEvent: Event): object {
+                update(previousEvent: Event): JSONEventPayload {
                     const count = Number.isInteger(previousEvent.payload.count) ?
-                        previousEvent.payload.count : 1;
+                        previousEvent.payload.count as number : 1;
                     return {
                         ...previousEvent.payload,
                         count: count + 1,
