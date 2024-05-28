@@ -9,7 +9,7 @@ import {
 } from 'cvat-core-wrapper';
 import { exportActions, listenExportBackupAsync, listenExportDatasetAsync } from './export-actions';
 import { RequestInstanceType, requestsActions } from './requests-actions';
-import { importActions, listenImportDatasetAsync } from './import-actions';
+import { importActions, listenImportBackupAsync, listenImportDatasetAsync } from './import-actions';
 
 const core = getCore();
 
@@ -50,19 +50,22 @@ export function getRequestsAsync(query: RequestsQuery): ThunkAction {
                         instance = { id: projectID as number, type: target };
                     }
 
+                    const instanceID = (instance as RequestInstanceType).id;
                     if (operationType === 'export') {
                         if (operationTarget === 'backup') {
-                            if (!(state.export.tasks.backup.current?.[(instance as RequestInstanceType).id] ||
-                                state.export.projects.backup.current?.[(instance as RequestInstanceType).id])
+                            if (
+                                (target === 'task' && !(state.export.tasks.backup.current?.[instanceID])) ||
+                                (target === 'project' && !(state.export.projects.backup.current?.[instanceID]))
                             ) {
                                 dispatch(exportActions.exportBackup(instance as RequestInstanceType));
                                 listenExportBackupAsync(rqID, dispatch, { instance: instance as RequestInstanceType });
                             }
-                        } else if (operationTarget === 'dataset') {
+                        } else if (operationTarget === 'dataset' || operationTarget === 'annotations') {
                             const field = operationTarget === 'dataset' ? 'dataset' : 'annotations';
-                            if (!(state.export.tasks[field].current?.[(instance as RequestInstanceType).id] ||
-                                state.export.projects[field].current?.[(instance as RequestInstanceType).id] ||
-                                state.export.jobs[field].current?.[(instance as RequestInstanceType).id])
+                            if (
+                                (target === 'task' && !(state.export.tasks[field].current?.[instanceID])) ||
+                                (target === 'project' && !(state.export.projects[field].current?.[instanceID])) ||
+                                (target === 'job' && !(state.export.jobs[field].current?.[instanceID]))
                             ) {
                                 dispatch(exportActions.exportDataset(instance as RequestInstanceType, format, field));
                                 listenExportDatasetAsync(
@@ -73,16 +76,22 @@ export function getRequestsAsync(query: RequestsQuery): ThunkAction {
                             }
                         }
                     } else if (operationType === 'import') {
-                        if (!(state.import.tasks.dataset.current?.[(instance as RequestInstanceType).id] ||
-                            state.import.projects.dataset.current?.[(instance as RequestInstanceType).id] ||
-                            state.import.jobs.dataset.current?.[(instance as RequestInstanceType).id])
-                        ) {
-                            dispatch(importActions.importDataset(instance as RequestInstanceType, format));
-                            listenImportDatasetAsync(
-                                rqID,
-                                dispatch,
-                                { instance: instance as RequestInstanceType },
-                            );
+                        if (operationTarget === 'backup') {
+                            dispatch(importActions.importBackup());
+                            listenImportBackupAsync(rqID, dispatch, { instanceType: (instance as RequestInstanceType).type as 'project' | 'task' });
+                        } else if (operationTarget === 'dataset' || operationTarget === 'annotations') {
+                            if (
+                                (target === 'task' && !(state.import.tasks.dataset.current?.[instanceID])) ||
+                                (target === 'project' && !(state.import.projects.dataset.current?.[instanceID])) ||
+                                (target === 'job' && !(state.import.jobs.dataset.current?.[instanceID]))
+                            ) {
+                                dispatch(importActions.importDataset(instance as RequestInstanceType, format));
+                                listenImportDatasetAsync(
+                                    rqID,
+                                    dispatch,
+                                    { instance: instance as RequestInstanceType },
+                                );
+                            }
                         }
                     }
                 });

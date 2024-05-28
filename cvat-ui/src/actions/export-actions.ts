@@ -83,7 +83,7 @@ export const exportActions = {
 };
 
 export async function listenExportDatasetAsync(
-    rqID: string,
+    rqID: string | undefined,
     dispatch: (action: ExportActions | RequestsActions) => void,
     params: {
         instance: InstanceType | RequestInstanceType,
@@ -135,7 +135,7 @@ export const exportDatasetAsync = (
 };
 
 export async function listenExportBackupAsync(
-    rqID: string,
+    rqID: string | undefined,
     dispatch: (action: ExportActions | RequestsActions) => void,
     params: {
         instance: Exclude<InstanceType, Job> | RequestInstanceType,

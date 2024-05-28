@@ -13,7 +13,6 @@ export enum RequestsActionsTypes {
     GET_REQUESTS_SUCCESS = 'GET_REQUESTS_SUCCESS',
     GET_REQUESTS_FAILED = 'GET_REQUESTS_FAILED',
     GET_REQUEST_STATUS_SUCCESS = 'GET_REQUEST_STATUS_SUCCESS',
-    GET_REQUEST_STATUS_FAILED = 'GET_REQUEST_STATUS_FAILED',
     REQUEST_FINISHED = 'REQUEST_FINISHED',
     REQUEST_FAILED = 'REQUEST_FAILED',
     CANCEL_REQUEST = 'CANCEL_REQUEST',
@@ -35,12 +34,6 @@ export const requestsActions = {
     getRequestStatusSuccess: (request: Request) => (
         createAction(RequestsActionsTypes.GET_REQUEST_STATUS_SUCCESS, {
             request,
-        })
-    ),
-    getRequestStatusFailed: (request: Request, error: any) => (
-        createAction(RequestsActionsTypes.GET_REQUEST_STATUS_FAILED, {
-            request,
-            error,
         })
     ),
     cancelRequest: (request: Request) => createAction(RequestsActionsTypes.CANCEL_REQUEST, { request }),

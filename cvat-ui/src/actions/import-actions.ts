@@ -171,15 +171,31 @@ export const importDatasetAsync = (
     }
 );
 
+export async function listenImportBackupAsync(
+    rqID: string,
+    dispatch: (action: ImportActions | RequestsActions) => void,
+    params: {
+        instanceType: 'project' | 'task',
+    },
+): Promise<void> {
+    const { instanceType } = params;
+
+    try {
+        const result = await listen(rqID, dispatch);
+
+        dispatch(importActions.importBackupSuccess(result?.resultID, instanceType));
+    } catch (error) {
+        dispatch(importActions.importBackupFailed(instanceType, error));
+    }
+}
+
 export const importBackupAsync = (instanceType: 'project' | 'task', storage: Storage, file: File | string): ThunkAction => (
     async (dispatch) => {
         dispatch(importActions.importBackup());
         try {
             const instanceClass = (instanceType === 'task') ? core.classes.Task : core.classes.Project;
             const rqID = await instanceClass.restore(storage, file);
-            const result = await listen(rqID, dispatch);
-
-            dispatch(importActions.importBackupSuccess(result?.resultID, instanceType));
+            await listenImportBackupAsync(rqID, dispatch, { instanceType });
         } catch (error) {
             dispatch(importActions.importBackupFailed(instanceType, error));
         }
