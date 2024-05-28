@@ -22,14 +22,13 @@ import EmptyListComponent from './empty-list';
 
 interface Props {
     fetching: boolean;
-    importing: boolean;
     query: TasksQuery;
     count: number;
 }
 
 function TasksPageComponent(props: Props): JSX.Element {
     const {
-        query, fetching, importing, count,
+        query, fetching, count,
     } = props;
 
     const dispatch = useDispatch();
@@ -117,7 +116,6 @@ function TasksPageComponent(props: Props): JSX.Element {
                     );
                 }}
                 query={updatedQuery}
-                importing={importing}
             />
             { fetching ? (
                 <div className='cvat-empty-tasks-list'>

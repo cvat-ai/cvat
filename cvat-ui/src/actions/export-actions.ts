@@ -33,9 +33,6 @@ export const exportActions = {
     closeExportDatasetModal: (instance: any) => (
         createAction(ExportActionTypes.CLOSE_EXPORT_DATASET_MODAL, { instance })
     ),
-    exportDataset: (instance: InstanceType | RequestInstanceType, format: string, resource: 'dataset' | 'annotations') => (
-        createAction(ExportActionTypes.EXPORT_DATASET, { instance, format, resource })
-    ),
     exportDatasetSuccess: (
         instance: InstanceType | RequestInstanceType,
         instanceType: 'project' | 'task' | 'job',
@@ -71,9 +68,6 @@ export const exportActions = {
     ),
     closeExportBackupModal: (instance: any) => (
         createAction(ExportActionTypes.CLOSE_EXPORT_BACKUP_MODAL, { instance })
-    ),
-    exportBackup: (instance: Exclude<InstanceType, Job> | RequestInstanceType) => (
-        createAction(ExportActionTypes.EXPORT_BACKUP, { instance })
     ),
     exportBackupSuccess: (instance: Exclude<InstanceType, Job> | RequestInstanceType, instanceType: 'task' | 'project', target?: 'local' | 'cloudstorage') => (
         createAction(ExportActionTypes.EXPORT_BACKUP_SUCCESS, { instance, instanceType, target })
@@ -118,8 +112,6 @@ export const exportDatasetAsync = (
     const state = getState();
 
     const resource = saveImages ? 'dataset' : 'annotations';
-    dispatch(exportActions.exportDataset(instance, format, resource));
-
     const instanceType = getInstanceType(instance);
 
     try {
@@ -167,7 +159,6 @@ export const exportBackupAsync = (
 ): ThunkAction => async (dispatch, getState) => {
     const state = getState();
 
-    dispatch(exportActions.exportBackup(instance));
     const instanceType = getInstanceType(instance) as 'project' | 'task';
 
     try {

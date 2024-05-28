@@ -151,7 +151,6 @@ export interface ImportState {
         };
         backup: {
             modalVisible: boolean;
-            importing: boolean;
         }
     };
     tasks: {
@@ -166,7 +165,6 @@ export interface ImportState {
         };
         backup: {
             modalVisible: boolean;
-            importing: boolean;
         }
     };
     jobs: {

@@ -27,7 +27,6 @@ export enum ImportActionTypes {
     IMPORT_DATASET_UPDATE_STATUS = 'IMPORT_DATASET_UPDATE_STATUS',
     OPEN_IMPORT_BACKUP_MODAL = 'OPEN_IMPORT_BACKUP_MODAL',
     CLOSE_IMPORT_BACKUP_MODAL = 'CLOSE_IMPORT_BACKUP_MODAL',
-    IMPORT_BACKUP = 'IMPORT_BACKUP',
     IMPORT_BACKUP_SUCCESS = 'IMPORT_BACKUP_SUCCESS',
     IMPORT_BACKUP_FAILED = 'IMPORT_BACKUP_FAILED',
 }
@@ -61,7 +60,6 @@ export const importActions = {
     closeImportBackupModal: (instanceType: 'project' | 'task') => (
         createAction(ImportActionTypes.CLOSE_IMPORT_BACKUP_MODAL, { instanceType })
     ),
-    importBackup: () => createAction(ImportActionTypes.IMPORT_BACKUP),
     importBackupSuccess: (instanceId: number, instanceType: 'project' | 'task') => (
         createAction(ImportActionTypes.IMPORT_BACKUP_SUCCESS, { instanceId, instanceType })
     ),
@@ -187,7 +185,6 @@ export const importBackupAsync = (instanceType: 'project' | 'task', storage: Sto
     async (dispatch, getState) => {
         const state: CombinedState = getState();
 
-        dispatch(importActions.importBackup());
         try {
             const instanceClass = (instanceType === 'task') ? core.classes.Task : core.classes.Project;
             const rqID = await instanceClass.restore(storage, file);

@@ -23,7 +23,6 @@ export default function ProjectsPageComponent(): JSX.Element {
     const count = useSelector((state: CombinedState) => state.projects.current.length);
     const query = useSelector((state: CombinedState) => state.projects.gettingQuery);
     const tasksQuery = useSelector((state: CombinedState) => state.projects.tasksGettingQuery);
-    const importing = useSelector((state: CombinedState) => state.import.projects.backup.importing);
     const [isMounted, setIsMounted] = useState(false);
     const isAnySearch = anySearch<ProjectsQuery>(query);
 
@@ -82,7 +81,6 @@ export default function ProjectsPageComponent(): JSX.Element {
                     );
                 }}
                 query={updatedQuery}
-                importing={importing}
             />
             { fetching ? (
                 <div className='cvat-empty-project-list'>

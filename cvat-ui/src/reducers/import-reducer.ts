@@ -27,7 +27,6 @@ const defaultState: ImportState = {
         },
         backup: {
             modalVisible: false,
-            importing: false,
         },
     },
     tasks: {
@@ -42,7 +41,6 @@ const defaultState: ImportState = {
         },
         backup: {
             modalVisible: false,
-            importing: false,
         },
     },
     jobs: {
@@ -175,37 +173,6 @@ export default (state: ImportState = defaultState, action: ImportActions): Impor
                     },
                 },
                 instanceType: null,
-            };
-        }
-        case ImportActionTypes.IMPORT_BACKUP: {
-            const { instanceType } = state;
-            const field = `${instanceType}s` as 'projects' | 'tasks';
-
-            return {
-                ...state,
-                [field]: {
-                    ...state[field],
-                    backup: {
-                        ...state[field].backup,
-                        importing: true,
-                    },
-                },
-            };
-        }
-        case ImportActionTypes.IMPORT_BACKUP_FAILED:
-        case ImportActionTypes.IMPORT_BACKUP_SUCCESS: {
-            const { instanceType } = action.payload;
-            const field = `${instanceType}s` as 'projects' | 'tasks';
-
-            return {
-                ...state,
-                [`${instanceType}s`]: {
-                    ...state[field],
-                    backup: {
-                        ...state[field].backup,
-                        importing: false,
-                    },
-                },
             };
         }
         default:
