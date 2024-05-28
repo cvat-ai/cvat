@@ -1,4 +1,4 @@
-ARG PIP_VERSION=22.0.2
+ARG PIP_VERSION=24.0
 ARG BASE_IMAGE=ubuntu:22.04
 
 FROM ${BASE_IMAGE} as build-image-base
