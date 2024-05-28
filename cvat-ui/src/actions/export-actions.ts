@@ -10,6 +10,7 @@ import {
 } from 'cvat-core-wrapper';
 import {
     getInstanceType, RequestInstanceType, listen, RequestsActions,
+    shouldListenForProgress,
 } from './requests-actions';
 
 export enum ExportActionTypes {
@@ -40,7 +41,7 @@ export const exportActions = {
         instanceType: 'project' | 'task' | 'job',
         format: string,
         resource: 'dataset' | 'annotations',
-        target: 'local' | 'cloudstorage' | undefined,
+        target?: 'local' | 'cloudstorage',
     ) => (
         createAction(ExportActionTypes.EXPORT_DATASET_SUCCESS, {
             instance,
@@ -74,7 +75,7 @@ export const exportActions = {
     exportBackup: (instance: Exclude<InstanceType, Job> | RequestInstanceType) => (
         createAction(ExportActionTypes.EXPORT_BACKUP, { instance })
     ),
-    exportBackupSuccess: (instance: Exclude<InstanceType, Job> | RequestInstanceType, instanceType: 'task' | 'project', target: 'local' | 'cloudstorage' | undefined) => (
+    exportBackupSuccess: (instance: Exclude<InstanceType, Job> | RequestInstanceType, instanceType: 'task' | 'project', target?: 'local' | 'cloudstorage') => (
         createAction(ExportActionTypes.EXPORT_BACKUP_SUCCESS, { instance, instanceType, target })
     ),
     exportBackupFailed: (instance: Exclude<InstanceType, Job> | RequestInstanceType, instanceType: 'task' | 'project', error: any) => (
@@ -83,7 +84,7 @@ export const exportActions = {
 };
 
 export async function listenExportDatasetAsync(
-    rqID: string | undefined,
+    rqID: string,
     dispatch: (action: ExportActions | RequestsActions) => void,
     params: {
         instance: InstanceType | RequestInstanceType,
@@ -96,12 +97,8 @@ export async function listenExportDatasetAsync(
 
     const instanceType = getInstanceType(instance);
     try {
-        let result;
-        let target: 'cloudstorage' | 'local' | undefined;
-        if (rqID) {
-            result = await listen(rqID, dispatch);
-            target = !result?.url ? 'cloudstorage' : 'local';
-        }
+        const result = await listen(rqID, dispatch);
+        const target = !result?.url ? 'cloudstorage' : 'local';
         dispatch(exportActions.exportDatasetSuccess(
             instance, instanceType, format, resource, target,
         ));
@@ -117,7 +114,9 @@ export const exportDatasetAsync = (
     useDefaultSettings: boolean,
     targetStorage: Storage,
     name?: string,
-): ThunkAction => async (dispatch) => {
+): ThunkAction => async (dispatch, getState) => {
+    const state = getState();
+
     const resource = saveImages ? 'dataset' : 'annotations';
     dispatch(exportActions.exportDataset(instance, format, resource));
 
@@ -126,16 +125,23 @@ export const exportDatasetAsync = (
     try {
         const rqID = await instance.annotations
             .exportDataset(format, saveImages, useDefaultSettings, targetStorage, name);
-        await listenExportDatasetAsync(rqID, dispatch, {
-            instance, format, saveImages,
-        });
+        if (shouldListenForProgress(rqID, state.requests)) {
+            await listenExportDatasetAsync(rqID, dispatch, {
+                instance, format, saveImages,
+            });
+        }
+        if (!rqID) {
+            dispatch(exportActions.exportDatasetSuccess(
+                instance, instanceType, format, resource,
+            ));
+        }
     } catch (error) {
         dispatch(exportActions.exportDatasetFailed(instance, instanceType, format, resource, error));
     }
 };
 
 export async function listenExportBackupAsync(
-    rqID: string | undefined,
+    rqID: string,
     dispatch: (action: ExportActions | RequestsActions) => void,
     params: {
         instance: Exclude<InstanceType, Job> | RequestInstanceType,
@@ -145,12 +151,8 @@ export async function listenExportBackupAsync(
     const instanceType = getInstanceType(instance) as 'project' | 'task';
 
     try {
-        let result;
-        let target: 'cloudstorage' | 'local' | undefined;
-        if (rqID) {
-            result = await listen(rqID, dispatch);
-            target = !result?.url ? 'cloudstorage' : 'local';
-        }
+        const result = await listen(rqID, dispatch);
+        const target = !result?.url ? 'cloudstorage' : 'local';
         dispatch(exportActions.exportBackupSuccess(instance, instanceType, target));
     } catch (error) {
         dispatch(exportActions.exportBackupFailed(instance, instanceType, error as Error));
@@ -162,14 +164,21 @@ export const exportBackupAsync = (
     targetStorage: Storage,
     useDefaultSetting: boolean,
     fileName: string,
-): ThunkAction => async (dispatch) => {
+): ThunkAction => async (dispatch, getState) => {
+    const state = getState();
+
     dispatch(exportActions.exportBackup(instance));
     const instanceType = getInstanceType(instance) as 'project' | 'task';
 
     try {
         const rqID = await instance
             .backup(targetStorage, useDefaultSetting, fileName);
-        await listenExportBackupAsync(rqID, dispatch, { instance });
+        if (shouldListenForProgress(rqID, state.requests)) {
+            await listenExportBackupAsync(rqID, dispatch, { instance });
+        }
+        if (!rqID) {
+            dispatch(exportActions.exportBackupSuccess(instance, instanceType));
+        }
     } catch (error) {
         dispatch(exportActions.exportBackupFailed(instance, instanceType, error as Error));
     }

@@ -3,8 +3,10 @@
 // SPDX-License-Identifier: MIT
 
 import { ActionUnion, createAction } from 'utils/redux';
-import { RequestsQuery } from 'reducers';
-import { Request, InstanceType, getCore } from 'cvat-core-wrapper';
+import { RequestsQuery, RequestsState } from 'reducers';
+import {
+    Request, InstanceType, getCore, RQStatus,
+} from 'cvat-core-wrapper';
 
 const core = getCore();
 
@@ -68,6 +70,13 @@ export function getInstanceType(instance: InstanceType | RequestInstanceType): '
 export function updateRequestProgress(request: Request, dispatch: (action: RequestsActions) => void): void {
     dispatch(
         requestsActions.getRequestStatusSuccess(request),
+    );
+}
+
+export function shouldListenForProgress(rqID: string | undefined, state: RequestsState): boolean {
+    return (
+        !!rqID &&
+        (!state.requests[rqID] || [RQStatus.FINISHED, RQStatus.FAILED].includes(state.requests[rqID]?.status))
     );
 }
 

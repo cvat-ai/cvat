@@ -7,9 +7,9 @@ import { CombinedState, RequestsQuery, StorageLocation } from 'reducers';
 import {
     getCore, RQStatus, Request, Project, Task, Job,
 } from 'cvat-core-wrapper';
-import { exportActions, listenExportBackupAsync, listenExportDatasetAsync } from './export-actions';
+import { listenExportBackupAsync, listenExportDatasetAsync } from './export-actions';
 import { RequestInstanceType, requestsActions } from './requests-actions';
-import { importActions, listenImportBackupAsync, listenImportDatasetAsync } from './import-actions';
+import { listenImportBackupAsync, listenImportDatasetAsync } from './import-actions';
 
 const core = getCore();
 
@@ -28,7 +28,6 @@ export function getRequestsAsync(query: RequestsQuery): ThunkAction {
 
         try {
             const requests = await core.requests.list();
-            dispatch(requestsActions.getRequestsSuccess(requests));
 
             requests
                 .filter((request: Request) => [RQStatus.STARTED, RQStatus.QUEUED].includes(request.status))
@@ -50,24 +49,13 @@ export function getRequestsAsync(query: RequestsQuery): ThunkAction {
                         instance = { id: projectID as number, type: target };
                     }
 
-                    const instanceID = (instance as RequestInstanceType).id;
                     if (operationType === 'export') {
                         if (operationTarget === 'backup') {
-                            if (
-                                (target === 'task' && !(state.export.tasks.backup.current?.[instanceID])) ||
-                                (target === 'project' && !(state.export.projects.backup.current?.[instanceID]))
-                            ) {
-                                dispatch(exportActions.exportBackup(instance as RequestInstanceType));
+                            if (!state.requests.requests[rqID]) {
                                 listenExportBackupAsync(rqID, dispatch, { instance: instance as RequestInstanceType });
                             }
                         } else if (operationTarget === 'dataset' || operationTarget === 'annotations') {
-                            const field = operationTarget === 'dataset' ? 'dataset' : 'annotations';
-                            if (
-                                (target === 'task' && !(state.export.tasks[field].current?.[instanceID])) ||
-                                (target === 'project' && !(state.export.projects[field].current?.[instanceID])) ||
-                                (target === 'job' && !(state.export.jobs[field].current?.[instanceID]))
-                            ) {
-                                dispatch(exportActions.exportDataset(instance as RequestInstanceType, format, field));
+                            if (!state.requests.requests[rqID]) {
                                 listenExportDatasetAsync(
                                     rqID,
                                     dispatch,
@@ -77,15 +65,9 @@ export function getRequestsAsync(query: RequestsQuery): ThunkAction {
                         }
                     } else if (operationType === 'import') {
                         if (operationTarget === 'backup') {
-                            dispatch(importActions.importBackup());
                             listenImportBackupAsync(rqID, dispatch, { instanceType: (instance as RequestInstanceType).type as 'project' | 'task' });
                         } else if (operationTarget === 'dataset' || operationTarget === 'annotations') {
-                            if (
-                                (target === 'task' && !(state.import.tasks.dataset.current?.[instanceID])) ||
-                                (target === 'project' && !(state.import.projects.dataset.current?.[instanceID])) ||
-                                (target === 'job' && !(state.import.jobs.dataset.current?.[instanceID]))
-                            ) {
-                                dispatch(importActions.importDataset(instance as RequestInstanceType, format));
+                            if (!state.requests.requests[rqID]) {
                                 listenImportDatasetAsync(
                                     rqID,
                                     dispatch,
@@ -95,6 +77,7 @@ export function getRequestsAsync(query: RequestsQuery): ThunkAction {
                         }
                     }
                 });
+            dispatch(requestsActions.getRequestsSuccess(requests));
         } catch (error) {
             dispatch(requestsActions.getRequestsFailed(error));
         }

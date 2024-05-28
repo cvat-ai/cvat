@@ -13,6 +13,7 @@ import { getProjectsAsync } from './projects-actions';
 import { AnnotationActionTypes, fetchAnnotationsAsync } from './annotation-actions';
 import {
     getInstanceType, listen, RequestInstanceType, RequestsActions,
+    shouldListenForProgress,
 } from './requests-actions';
 
 const core = getCore();
@@ -104,9 +105,6 @@ export const importDatasetAsync = (
             const state: CombinedState = getState();
 
             if (instanceType === 'project') {
-                if (state.import.projects.dataset.current?.[instance.id]) {
-                    throw Error('Only one importing of annotation/dataset allowed at the same time');
-                }
                 dispatch(importActions.importDataset(instance, format));
                 const rqID = await (instance as Project).annotations
                     .importDataset(format, useDefaultSettings, sourceStorage, file, {
@@ -117,46 +115,42 @@ export const importDatasetAsync = (
                             ))
                         ),
                     });
-                await listen(rqID, dispatch);
-            } else if (instanceType === 'task') {
-                if (state.import.tasks.dataset.current?.[instance.id]) {
-                    throw Error('Only one importing of annotation/dataset allowed at the same time');
+                if (shouldListenForProgress(rqID, state.requests)) {
+                    await listen(rqID, dispatch);
                 }
+            } else if (instanceType === 'task') {
                 dispatch(importActions.importDataset(instance, format));
                 const rqID = await (instance as Task).annotations
                     .upload(format, useDefaultSettings, sourceStorage, file, {
                         convMaskToPoly,
                     });
-                await listen(rqID, dispatch);
+                if (shouldListenForProgress(rqID, state.requests)) {
+                    await listen(rqID, dispatch);
+                }
             } else { // job
-                if (state.import.tasks.dataset.current?.[(instance as Job).taskId]) {
-                    throw Error('Annotations is being uploaded for the task');
-                }
-                if (state.import.jobs.dataset.current?.[instance.id]) {
-                    throw Error('Only one uploading of annotations for a job allowed at the same time');
-                }
-
                 dispatch(importActions.importDataset(instance, format));
                 const rqID = await (instance as Job).annotations
                     .upload(format, useDefaultSettings, sourceStorage, file, {
                         convMaskToPoly,
                     });
-                await listen(rqID, dispatch);
+                if (shouldListenForProgress(rqID, state.requests)) {
+                    await listen(rqID, dispatch);
 
-                await (instance as Job).logger.log(EventScope.uploadAnnotations);
-                await (instance as Job).annotations.clear(true);
-                await (instance as Job).actions.clear();
+                    await (instance as Job).logger.log(EventScope.uploadAnnotations);
+                    await (instance as Job).annotations.clear(true);
+                    await (instance as Job).actions.clear();
 
-                // first set empty objects list
-                // to escape some problems in canvas when shape with the same
-                // clientID has different type (polygon, rectangle) for example
-                dispatch({ type: AnnotationActionTypes.UPLOAD_JOB_ANNOTATIONS_SUCCESS });
+                    // first set empty objects list
+                    // to escape some problems in canvas when shape with the same
+                    // clientID has different type (polygon, rectangle) for example
+                    dispatch({ type: AnnotationActionTypes.UPLOAD_JOB_ANNOTATIONS_SUCCESS });
 
-                const relevantInstance = getState().annotation.job.instance;
-                if (relevantInstance && relevantInstance.id === instance.id) {
-                    setTimeout(() => {
-                        dispatch(fetchAnnotationsAsync());
-                    });
+                    const relevantInstance = getState().annotation.job.instance;
+                    if (relevantInstance && relevantInstance.id === instance.id) {
+                        setTimeout(() => {
+                            dispatch(fetchAnnotationsAsync());
+                        });
+                    }
                 }
             }
         } catch (error) {
@@ -190,12 +184,16 @@ export async function listenImportBackupAsync(
 }
 
 export const importBackupAsync = (instanceType: 'project' | 'task', storage: Storage, file: File | string): ThunkAction => (
-    async (dispatch) => {
+    async (dispatch, getState) => {
+        const state: CombinedState = getState();
+
         dispatch(importActions.importBackup());
         try {
             const instanceClass = (instanceType === 'task') ? core.classes.Task : core.classes.Project;
             const rqID = await instanceClass.restore(storage, file);
-            await listenImportBackupAsync(rqID, dispatch, { instanceType });
+            if (shouldListenForProgress(rqID, state.requests)) {
+                await listenImportBackupAsync(rqID, dispatch, { instanceType });
+            }
         } catch (error) {
             dispatch(importActions.importBackupFailed(instanceType, error));
         }

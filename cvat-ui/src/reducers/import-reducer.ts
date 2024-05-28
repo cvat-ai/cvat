@@ -3,7 +3,6 @@
 //
 // SPDX-License-Identifier: MIT
 
-import { omit } from 'lodash';
 import { ImportActions, ImportActionTypes } from 'actions/import-actions';
 import { getInstanceType, RequestInstanceType } from 'actions/requests-actions';
 import { InstanceType } from 'cvat-core-wrapper';
@@ -19,7 +18,12 @@ const defaultState: ImportState = {
     projects: {
         dataset: {
             modalInstance: null,
-            current: {},
+            uploadState: {
+                id: null,
+                format: '',
+                progress: 0,
+                status: '',
+            },
         },
         backup: {
             modalVisible: false,
@@ -29,7 +33,12 @@ const defaultState: ImportState = {
     tasks: {
         dataset: {
             modalInstance: null,
-            current: {},
+            uploadState: {
+                id: null,
+                format: '',
+                progress: 0,
+                status: '',
+            },
         },
         backup: {
             modalVisible: false,
@@ -39,7 +48,12 @@ const defaultState: ImportState = {
     jobs: {
         dataset: {
             modalInstance: null,
-            current: {},
+            uploadState: {
+                id: null,
+                format: '',
+                progress: 0,
+                status: '',
+            },
         },
     },
     instanceType: null,
@@ -86,10 +100,11 @@ export default (state: ImportState = defaultState, action: ImportActions): Impor
             const activitiesField = defineActititiesField(instance);
 
             let updatedActivity: {
+                id: number;
                 format: string;
                 status?: string;
                 progress?: number;
-            } = { format };
+            } = { format, id: instance.id };
             if (activitiesField === 'projects') {
                 updatedActivity = {
                     ...updatedActivity,
@@ -103,9 +118,9 @@ export default (state: ImportState = defaultState, action: ImportActions): Impor
                     ...state[activitiesField],
                     dataset: {
                         ...state[activitiesField].dataset,
-                        current: {
-                            ...state[activitiesField].dataset.current,
-                            [instance.id]: updatedActivity,
+                        uploadState: {
+                            ...state[activitiesField].dataset.uploadState,
+                            ...updatedActivity,
                         },
                     },
                 },
@@ -121,31 +136,11 @@ export default (state: ImportState = defaultState, action: ImportActions): Impor
                     ...state[activitiesField],
                     dataset: {
                         ...state[activitiesField].dataset,
-                        current: {
-                            ...state[activitiesField].dataset.current,
-                            [instance.id]: {
-                                ...state[activitiesField].dataset.current[instance.id] as Record<string, unknown>,
-                                progress,
-                                status,
-                            },
+                        uploadState: {
+                            ...state[activitiesField].dataset.uploadState,
+                            progress,
+                            status,
                         },
-                    },
-                },
-            };
-        }
-        case ImportActionTypes.IMPORT_DATASET_FAILED:
-        case ImportActionTypes.IMPORT_DATASET_SUCCESS: {
-            const { instance } = action.payload;
-            const activitiesField = defineActititiesField(instance);
-            const { current } = state[activitiesField].dataset;
-
-            return {
-                ...state,
-                [activitiesField]: {
-                    ...state[activitiesField],
-                    dataset: {
-                        ...state[activitiesField].dataset,
-                        current: omit(current, instance.id),
                     },
                 },
             };

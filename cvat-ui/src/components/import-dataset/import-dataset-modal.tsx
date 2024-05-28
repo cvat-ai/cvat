@@ -16,7 +16,7 @@ import message from 'antd/lib/message';
 import Upload, { RcFile } from 'antd/lib/upload';
 import Input from 'antd/lib/input/Input';
 import {
-    UploadOutlined, InboxOutlined, LoadingOutlined, QuestionCircleOutlined,
+    UploadOutlined, InboxOutlined, QuestionCircleOutlined,
 } from '@ant-design/icons';
 import CVATTooltip from 'components/common/cvat-tooltip';
 import { CombinedState, StorageLocation } from 'reducers';
@@ -276,7 +276,6 @@ function ImportDatasetModal(props: StateToProps): JSX.Element {
         importers,
         instanceT,
         instance,
-        current,
     } = props;
     const [form] = Form.useForm();
     const appDispatch = useDispatch();
@@ -574,22 +573,16 @@ function ImportDatasetModal(props: StateToProps): JSX.Element {
                                     ),
                                 )
                                 .map(
-                                    (importer: any): JSX.Element => {
-                                        const pending = current ? instance.id in current : false;
-                                        const disabled = !importer.enabled || pending;
-                                        return (
-                                            <Select.Option
-                                                value={importer.name}
-                                                key={importer.name}
-                                                disabled={disabled}
-                                                className='cvat-modal-import-dataset-option-item'
-                                            >
-                                                <UploadOutlined />
-                                                <Text disabled={disabled}>{importer.name}</Text>
-                                                {pending && <LoadingOutlined style={{ marginLeft: 10 }} />}
-                                            </Select.Option>
-                                        );
-                                    },
+                                    (importer: any): JSX.Element => (
+                                        <Select.Option
+                                            value={importer.name}
+                                            key={importer.name}
+                                            className='cvat-modal-import-dataset-option-item'
+                                        >
+                                            <UploadOutlined />
+                                            <Text>{importer.name}</Text>
+                                        </Select.Option>
+                                    ),
                                 )}
                         </Select>
                     </Form.Item>
@@ -656,7 +649,6 @@ interface StateToProps {
     importers: any;
     instanceT: 'project' | 'task' | 'job' | null;
     instance: any;
-    current: any;
 }
 
 function mapStateToProps(state: CombinedState): StateToProps {
@@ -668,9 +660,6 @@ function mapStateToProps(state: CombinedState): StateToProps {
         instance: !instanceType ? null : (
             state.import[`${instanceType}s` as 'projects' | 'tasks' | 'jobs']
         ).dataset.modalInstance,
-        current: !instanceType ? null : (
-            state.import[`${instanceType}s` as 'projects' | 'tasks' | 'jobs']
-        ).dataset.current,
     };
 }
 

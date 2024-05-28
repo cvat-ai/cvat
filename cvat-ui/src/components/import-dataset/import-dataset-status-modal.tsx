@@ -4,7 +4,7 @@
 // SPDX-License-Identifier: MIT
 
 import './styles.scss';
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import { useSelector } from 'react-redux';
 import Modal from 'antd/lib/modal';
 import Alert from 'antd/lib/alert';
@@ -13,37 +13,25 @@ import Progress from 'antd/lib/progress';
 import { CombinedState } from 'reducers';
 
 function ImportDatasetStatusModal(): JSX.Element {
-    const current = useSelector((state: CombinedState) => state.import.projects.dataset.current);
-    const [importingId, setImportingId] = useState<number | null>(null);
+    const importingId = useSelector((state: CombinedState) => state.import.projects.dataset.uploadState.id);
 
-    useEffect(() => {
-        const [id] = Object.keys(current);
-        setImportingId(parseInt(id, 10));
-    }, [current]);
-
-    const importing = useSelector((state: CombinedState) => {
-        if (!importingId) {
-            return false;
-        }
-        return !!state.import.projects.dataset.current[importingId];
-    });
     const progress = useSelector((state: CombinedState) => {
         if (!importingId) {
             return 0;
         }
-        return state.import.projects.dataset.current[importingId]?.progress;
+        return state.import.projects.dataset.uploadState?.progress;
     });
     const status = useSelector((state: CombinedState) => {
         if (!importingId) {
             return '';
         }
-        return state.import.projects.dataset.current[importingId]?.status;
+        return state.import.projects.dataset.uploadState?.status;
     });
 
     return (
         <Modal
             title={`Importing a dataset for the project #${importingId}`}
-            open={importing && progress < 100}
+            open={!!importingId && progress < 100}
             closable={false}
             footer={null}
             className='cvat-modal-import-dataset-status'
