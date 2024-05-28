@@ -13,13 +13,21 @@ const { CONTROLS_LOGS_INTERVAL } = config;
 const classFilter = ['ant-btn'];
 const parentClassFilter = ['ant-btn'];
 
+interface Logger {
+    log(...parameters: Parameters<typeof core.logger.log>): ReturnType<typeof core.logger['log']>;
+}
+
+const defaultLogger: Logger = core.logger;
+
 // the class is responsible for logging general mouse events
 // and for saving recorded events to the server with a certain period
 class EventRecorder {
     #savingTimeout: number | null;
+    #logger: Logger | null;
 
     public constructor() {
         this.#savingTimeout = null;
+        this.#logger = null;
         core.logger.log(EventScope.loadTool, {
             location: window.location.pathname + window.location.search,
             platform: platformInfo(),
@@ -50,7 +58,7 @@ class EventRecorder {
         }
 
         if (toRecord) {
-            core.logger.log(EventScope.clickElement, logData, false);
+            (this.#logger || defaultLogger).log(EventScope.clickElement, logData, false);
         }
     }
 
@@ -79,6 +87,10 @@ class EventRecorder {
             window.clearTimeout(this.#savingTimeout);
             this.#savingTimeout = null;
         }
+    }
+
+    public set logger(logger: Logger | null) {
+        this.#logger = logger;
     }
 
     private filterClassName(cls: string): string {
