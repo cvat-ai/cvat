@@ -16,6 +16,132 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 <!-- scriv-insert-here -->
 
+<a id='changelog-2.14.0'></a>
+## \[2.14.0\] - 2024-05-21
+
+### Added
+
+- Added security headers enforcing strict `Referrer-Policy` for cross origins and disabling MIME type sniffing via `X-Content-Type-Options`.
+  (<https://github.com/opencv/cvat/pull/7752>)
+
+- \[Helm\] Ability to specify ServiceAccount for backend pods
+  (<https://github.com/cvat-ai/cvat/pull/7894>)
+
+### Changed
+
+- Working time rounding to a minimal value of 1 hour is not applied to the annotation speed metric any more
+  (<https://github.com/cvat-ai/cvat/pull/7898>)
+
+- Total annotation speed metric renamed to Average annotation speed
+  (<https://github.com/cvat-ai/cvat/pull/7898>)
+
+- Ground truth jobs are not considered when computing analytics report for a task/project
+  (<https://github.com/cvat-ai/cvat/pull/7919>)
+
+### Fixed
+
+- Fixed calculation of annotation speed metrics for analytics reports
+  (<https://github.com/opencv/cvat/pull/7144>)
+
+- \[Helm\] Prevented spurious 200 OK responses from API endpoints
+  before the backend is ready
+  (<https://github.com/cvat-ai/cvat/pull/7859>)
+
+- Analytic reports incorrect count of objects for a skeleton track/shape
+  (<https://github.com/cvat-ai/cvat/pull/7883>)
+
+- Analytic reports incorrect number of objects for a track (always less by 1)
+  (<https://github.com/cvat-ai/cvat/pull/7883>)
+
+- REST API allowed to create several attributes with the same name within one label
+  (<https://github.com/cvat-ai/cvat/pull/7890>)
+
+- Job's/task's status are not updated when job's state updated to completed and stage is already acceptance
+  (<https://github.com/cvat-ai/cvat/pull/7901>)
+
+- Exception: Cannot read properties of undefined (reading 'onBlockUpdated')
+  (<https://github.com/cvat-ai/cvat/pull/7913>)
+
+- One more found way to create an empty mask
+  (<https://github.com/cvat-ai/cvat/pull/7915>)
+
+- Slice function may not work in Google Chrome < 110
+  (<https://github.com/cvat-ai/cvat/pull/7916>)
+
+- Selecting a skeleton by cursor does not work correctly when there are some hidden points
+  (<https://github.com/cvat-ai/cvat/pull/7921>)
+
+<a id='changelog-2.13.0'></a>
+## \[2.13.0\] - 2024-05-09
+
+### Added
+
+- Quality Report calculation will now also include annotation of type Tag.
+  (<https://github.com/opencv/cvat/pull/7582>)
+
+- Added feature to show tags of GT and manual job in separate row. Tags of GT job have '(GT)' in their name.
+  (<https://github.com/cvat-ai/cvat/pull/7774>)
+
+### Changed
+
+- Analytics reports calculation may be initiated manually instead of automatic scheduling
+  (<https://github.com/cvat-ai/cvat/pull/7805>)
+
+- Update the Nuclio version and related packages/libraries
+  (<https://github.com/cvat-ai/cvat/pull/7787>)
+
+- Remove keyframe button is disabled when there is only one keyframe element
+  (<https://github.com/cvat-ai/cvat/pull/7844>)
+
+### Removed
+
+- The `mask_rcnn` function has been removed because it was using python3.6.
+  In new version of Nuclio python3.6 is no longer supported. Nuclio officially recommends using python3.9.
+  Running `mask_rcnn` on python3.9 causes errors within the function and package conflicts. (<https://github.com/cvat-ai/cvat/pull/7787>)
+
+### Fixed
+
+- Analytics report calculation fails with timeout because of redundant number of requests to ClickHouse
+  (<https://github.com/cvat-ai/cvat/pull/7804>)
+
+- Incorrect duration of `change:frame` event
+  (<https://github.com/cvat-ai/cvat/pull/7817>)
+
+- Infinite loading cloud storage update page when a lot of cloud storages are available for a user
+  (<https://github.com/cvat-ai/cvat/pull/7823>)
+
+- Opening update CS page sends infinite requests when CS id does not exist
+  (<https://github.com/cvat-ai/cvat/pull/7828>)
+
+Uploading files with TUS immediately failed when one of the requests failed
+  (<https://github.com/cvat-ai/cvat/pull/7830>)
+
+- Longer analytics report calculation because of inefficient requests to analytics db
+  (<https://github.com/cvat-ai/cvat/pull/7833>)
+
+- Cannot read properties of undefined (reading 'addClass')
+  (<https://github.com/cvat-ai/cvat/pull/7834>)
+
+- Fixed exception 'Could not read property length of undefined' when copy/paste a skeleton point
+  (<https://github.com/cvat-ai/cvat/pull/7843>)
+
+- Task creation from a video file without keyframes allowing for random iteration
+  (<https://github.com/cvat-ai/cvat/pull/7838>)
+
+- Cannot read property 'annotations' of null when uploading annotations into a job
+  (<https://github.com/cvat-ai/cvat/pull/7857>)
+
+- Vertical polyline of two points is difficult to select
+  (<https://github.com/cvat-ai/cvat/pull/7860>)
+
+- Tracked attribute values are lost when moving a task to a project
+  (<https://github.com/cvat-ai/cvat/pull/7863>)
+
+### Security
+
+- Disable the nginx server signature by default to make it slightly harder for attackers to find known vulnerabilities.
+  (<https://github.com/cvat-ai/cvat/pull/7814>)
+
 <a id='changelog-2.12.1'></a>
 ## \[2.12.1\] - 2024-04-26
 

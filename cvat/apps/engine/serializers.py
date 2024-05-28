@@ -321,6 +321,16 @@ class LabelSerializer(SublabelSerializer):
 
         return attrs
 
+    @staticmethod
+    def check_attribute_names_unique(attrs):
+        encountered_names = set()
+        for attribute in attrs:
+            attr_name = attribute.get('name')
+            if attr_name in encountered_names:
+                raise serializers.ValidationError(f"Duplicate attribute with name '{attr_name}' exists")
+            else:
+                encountered_names.add(attr_name)
+
     @classmethod
     @transaction.atomic
     def update_label(
@@ -335,6 +345,8 @@ class LabelSerializer(SublabelSerializer):
         parent_info, logger = cls._get_parent_info(parent_instance)
 
         attributes = validated_data.pop('attributespec_set', [])
+
+        cls.check_attribute_names_unique(attributes)
 
         if validated_data.get('id') is not None:
             try:
@@ -450,6 +462,8 @@ class LabelSerializer(SublabelSerializer):
 
         for label in labels:
             attributes = label.pop('attributespec_set')
+
+            cls.check_attribute_names_unique(attributes)
 
             if label.get('id', None):
                 del label['id']
@@ -734,19 +748,19 @@ class JobWriteSerializer(WriteOnceMixin, serializers.ModelSerializer):
         return job
 
     def update(self, instance, validated_data):
-        state = validated_data.get('state')
-        stage = validated_data.get('stage')
-        if stage:
-            if stage == models.StageChoice.ANNOTATION:
-                status = models.StatusChoice.ANNOTATION
-            elif stage == models.StageChoice.ACCEPTANCE and state == models.StateChoice.COMPLETED:
-                status = models.StatusChoice.COMPLETED
-            else:
-                status = models.StatusChoice.VALIDATION
+        stage = validated_data.get('stage', instance.stage)
+        state = validated_data.get('state', models.StateChoice.NEW if stage != instance.stage else instance.state)
 
-            validated_data['status'] = status
-            if stage != instance.stage and not state:
-                validated_data['state'] = models.StateChoice.NEW
+        if 'stage' in validated_data or 'state' in validated_data:
+            if stage == models.StageChoice.ANNOTATION:
+                validated_data['status'] = models.StatusChoice.ANNOTATION
+            elif stage == models.StageChoice.ACCEPTANCE and state == models.StateChoice.COMPLETED:
+                validated_data['status'] = models.StatusChoice.COMPLETED
+            else:
+                validated_data['status'] = models.StatusChoice.VALIDATION
+
+        if state != instance.state:
+            validated_data['state'] = state
 
         assignee = validated_data.get('assignee')
         if assignee is not None:
@@ -1208,7 +1222,8 @@ class TaskWriteSerializer(WriteOnceMixin, serializers.ModelSerializer):
                     for (model, model_name) in (
                         (models.LabeledTrackAttributeVal, 'track'),
                         (models.LabeledShapeAttributeVal, 'shape'),
-                        (models.LabeledImageAttributeVal, 'image')
+                        (models.LabeledImageAttributeVal, 'image'),
+                        (models.TrackedShapeAttributeVal, 'shape__track')
                     ):
                         model.objects.filter(**{
                             f'{model_name}__job__segment__task': instance,

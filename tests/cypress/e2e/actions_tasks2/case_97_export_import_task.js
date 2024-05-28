@@ -60,7 +60,7 @@ context('Export, import an annotation task.', { browser: '!firefox' }, () => {
         cy.get('.svg_select_points_rot').trigger('mousemove');
         cy.get('.svg_select_points_rot').trigger('mouseover');
         cy.get('.svg_select_points_rot').trigger('mousedown', { button: 0 });
-        cy.get('.cvat-canvas-container').trigger('mousemove', 345, 150);
+        cy.get('.cvat-canvas-container').trigger('mousemove', 350, 150);
         cy.get('.cvat-canvas-container').trigger('mouseup');
         cy.get('#cvat_canvas_shape_1').should('have.attr', 'transform');
         cy.document().then((doc) => {

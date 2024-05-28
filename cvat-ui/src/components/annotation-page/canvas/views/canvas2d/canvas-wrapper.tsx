@@ -9,7 +9,7 @@ import React from 'react';
 import { connect } from 'react-redux';
 import Slider from 'antd/lib/slider';
 import Spin from 'antd/lib/spin';
-import Dropdown from 'antd/lib/dropdown';
+import Popover from 'antd/lib/popover';
 import { PlusCircleOutlined, UpOutlined } from '@ant-design/icons';
 import notification from 'antd/lib/notification';
 import debounce from 'lodash/debounce';
@@ -483,13 +483,19 @@ class CanvasWrapperComponent extends React.PureComponent<Props> {
         if (prevProps.highlightedConflict !== highlightedConflict) {
             const severity: HighlightSeverity | undefined = highlightedConflict
                 ?.severity as unknown as HighlightSeverity;
-            const highlightedClientIDs = (highlightedConflict?.annotationConflicts || [])
+
+            const highlightedObjects = (highlightedConflict?.annotationConflicts || [])
                 .map((conflict: AnnotationConflict) => annotations
                     .find((state) => state.serverID === conflict.serverID && state.objectType === conflict.type),
-                ).filter((state: ObjectState | undefined) => !!state)
-                .map((state) => state?.clientID) as number[];
+                ).filter((state: ObjectState | undefined) => !!state) as ObjectState[];
+            const highlightedClientIDs = highlightedObjects.map((state) => state?.clientID) as number[];
 
-            canvasInstance.highlight(highlightedClientIDs, severity || null);
+            const higlightedTags = highlightedObjects.some((state) => state?.objectType === ObjectType.TAG);
+            if (higlightedTags && prevProps.highlightedConflict) {
+                canvasInstance.highlight([], null);
+            } else if (!higlightedTags) {
+                canvasInstance.highlight(highlightedClientIDs, severity || null);
+            }
         }
 
         if (gridSize !== prevProps.gridSize) {
@@ -802,7 +808,7 @@ class CanvasWrapperComponent extends React.PureComponent<Props> {
 
         const result = await jobInstance.annotations.select(event.detail.states, event.detail.x, event.detail.y);
         if (result && result.state) {
-            if (['polyline', 'points'].includes(result.state.shapeType)) {
+            if ([ShapeType.POLYLINE, ShapeType.POINTS].includes(result.state.shapeType)) {
                 if (result.distance > MAX_DISTANCE_TO_OPEN_SHAPE) {
                     return;
                 }
@@ -1118,14 +1124,15 @@ class CanvasWrapperComponent extends React.PureComponent<Props> {
 
                 <BrushTools />
 
-                <Dropdown
-                    destroyPopupOnHide
-                    trigger={['click']}
-                    placement='topCenter'
-                    overlay={<ImageSetupsContent />}
+                <Popover
+                    destroyTooltipOnHide
+                    trigger='click'
+                    placement='top'
+                    overlayInnerStyle={{ padding: 0 }}
+                    content={<ImageSetupsContent />}
                 >
                     <UpOutlined className='cvat-canvas-image-setups-trigger' />
-                </Dropdown>
+                </Popover>
 
                 <div className='cvat-canvas-z-axis-wrapper'>
                     <Slider

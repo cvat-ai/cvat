@@ -3,13 +3,13 @@
 //
 // SPDX-License-Identifier: MIT
 
-@import '../../base';
+@import 'base';
 
 textarea.ant-input.cvat-raw-labels-viewer {
     border-color: $border-color-1;
     box-shadow: none;
     border-top: none;
-    border-radius: 0 0 5px 5px;
+    border-radius: 0 0 $border-radius-base $border-radius-base;
     min-height: 9em;
     font-family: $monospaced-fonts-stack;
 
@@ -28,7 +28,7 @@ textarea.ant-input.cvat-raw-labels-viewer {
     border: 1px solid $border-color-1;
     box-shadow: none;
     border-top: none;
-    border-radius: 0 0 $grid-unit-size $grid-unit-size;
+    border-radius: 0 0 $border-radius-base $border-radius-base;
     padding: $grid-unit-size;
     display: flex;
     overflow-y: auto;
@@ -42,9 +42,9 @@ textarea.ant-input.cvat-raw-labels-viewer {
     display: flex;
     align-items: center;
     padding: 2px $grid-unit-size;
-    border-radius: 2px;
+    border-radius: $border-radius-base;
     margin: 2px;
-    margin-left: $grid-unit-size * 2;
+    margin-left: $grid-unit-size;
     user-select: none;
     border: 1px solid $border-color-1;
     opacity: 0.6;
@@ -69,11 +69,11 @@ textarea.ant-input.cvat-raw-labels-viewer {
     display: flex;
     align-items: center;
     padding: 2px $grid-unit-size;
-    border-radius: 2px;
     margin: 2px;
     margin-left: $grid-unit-size;
     user-select: none;
     opacity: 1;
+    border-color: $border-color-1;
 }
 
 .cvat-label-constructor-creator,
@@ -103,10 +103,10 @@ textarea.ant-input.cvat-raw-labels-viewer {
     }
 }
 
-.cvat-change-task-label-color-badge .ant-badge-status-dot {
+.ant-badge.cvat-change-task-label-color-badge > .ant-badge-status-dot {
     width: $grid-unit-size * 2;
     height: $grid-unit-size * 2;
-    border-radius: unset;
+    border-radius: $border-radius-base;
 }
 
 .cvat-skeleton-configurator {
@@ -137,7 +137,7 @@ textarea.ant-input.cvat-raw-labels-viewer {
 .cvat-skeleton-configurator-canvas {
     width: 100%;
     border: 1px solid $border-color-1;
-    border-radius: $grid-unit-size;
+    border-radius: $border-radius-base;
     height: auto;
 }
 
@@ -235,7 +235,7 @@ textarea.ant-input.cvat-raw-labels-viewer {
 
     .cvat-label-constructor-pick-from-model-list {
         width: 100%;
-        border-radius: 0 0 8px 8px;
+        border-radius: 0 0 $border-radius-base $border-radius-base;
         display: flex;
         flex-wrap: wrap;
 

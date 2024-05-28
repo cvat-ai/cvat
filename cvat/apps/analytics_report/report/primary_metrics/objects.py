@@ -2,6 +2,8 @@
 #
 # SPDX-License-Identifier: MIT
 
+from datetime import datetime
+
 from cvat.apps.analytics_report.models import GranularityChoice, ViewChoice
 from cvat.apps.analytics_report.report.primary_metrics.base import (
     DataExtractorBase,
@@ -10,13 +12,35 @@ from cvat.apps.analytics_report.report.primary_metrics.base import (
 
 
 class JobObjectsExtractor(DataExtractorBase):
-    def __init__(self, job_id: int = None, task_ids: list[int] = None):
-        super().__init__(job_id, task_ids)
+    def __init__(
+        self,
+        start_datetime: datetime,
+        end_datetime: datetime,
+        job_id: int = None,
+        task_ids: list[int] = None,
+    ):
+        super().__init__(start_datetime, end_datetime, job_id, task_ids)
+
+        SELECT = ["job_id", "toStartOfDay(timestamp) as day", "scope", "sum(count)"]
+        WHERE = []
 
         if task_ids is not None:
-            self._query = "SELECT job_id, toStartOfDay(timestamp) as day, scope, sum(count) FROM events WHERE scope IN ({scopes:Array(String)}) AND task_id IN ({task_ids:Array(UInt64)}) GROUP BY scope, day, job_id ORDER BY day ASC"
+            WHERE.append("task_id IN ({task_ids:Array(UInt64)})")
         elif job_id is not None:
-            self._query = "SELECT job_id, toStartOfDay(timestamp) as day, scope, sum(count) FROM events WHERE scope IN ({scopes:Array(String)}) AND job_id = {job_id:UInt64} GROUP BY scope, day, job_id ORDER BY day ASC"
+            WHERE.append("job_id={job_id:UInt64}")
+
+        WHERE.extend(
+            [
+                "scope IN ({scopes:Array(String)})",
+                "timestamp >= {start_datetime:DateTime64}",
+                "timestamp < {end_datetime:DateTime64}",
+            ]
+        )
+
+        GROUP_BY = ["scope", "day", "job_id"]
+
+        # bandit false alarm
+        self._query = f"SELECT {', '.join(SELECT)} FROM events WHERE {' AND '.join(WHERE)} GROUP BY {', '.join(GROUP_BY)} ORDER BY day ASC"  # nosec B608
 
 
 class JobObjects(PrimaryMetricBase):
