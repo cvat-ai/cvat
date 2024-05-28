@@ -3,7 +3,7 @@
 //
 // SPDX-License-Identifier: MIT
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useDispatch } from 'react-redux';
 import { useHistory } from 'react-router';
 
@@ -15,6 +15,7 @@ import Input from 'antd/lib/input';
 import { importActions } from 'actions/import-actions';
 import { SortingComponent, ResourceFilterHOC, defaultVisibility } from 'components/resource-sorting-filtering';
 import { TasksQuery } from 'reducers';
+import { usePrevious } from 'utils/hooks';
 import { MultiPlusIcon } from 'icons';
 import dimensions from 'utils/dimensions';
 import CvatDropdownMenuPaper from 'components/common/cvat-dropdown-menu-paper';
@@ -31,15 +32,23 @@ interface VisibleTopBarProps {
     onApplySorting(sorting: string | null): void;
     onApplySearch(search: string | null): void;
     query: TasksQuery;
+    importing: boolean;
 }
 
 export default function TopBarComponent(props: VisibleTopBarProps): JSX.Element {
     const dispatch = useDispatch();
     const {
-        query, onApplyFilter, onApplySorting, onApplySearch,
+        importing, query, onApplyFilter, onApplySorting, onApplySearch,
     } = props;
     const [visibility, setVisibility] = useState(defaultVisibility);
     const history = useHistory();
+    const prevImporting = usePrevious(importing);
+
+    useEffect(() => {
+        if (prevImporting && !importing) {
+            onApplyFilter(query.filter);
+        }
+    }, [importing]);
 
     return (
         <Row className='cvat-tasks-page-top-bar' justify='center' align='middle'>

@@ -11,6 +11,7 @@ interface StateToProps {
     fetching: boolean;
     query: TasksQuery;
     count: number;
+    importing: boolean;
 }
 
 function mapStateToProps(state: CombinedState): StateToProps {
@@ -20,6 +21,7 @@ function mapStateToProps(state: CombinedState): StateToProps {
         fetching: state.tasks.fetching,
         query: tasks.gettingQuery,
         count: state.tasks.count,
+        importing: state.import.tasks.backup.importing,
     };
 }
 

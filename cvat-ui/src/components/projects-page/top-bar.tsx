@@ -3,7 +3,7 @@
 //
 // SPDX-License-Identifier: MIT
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useHistory } from 'react-router';
 import { useDispatch } from 'react-redux';
 import { Row, Col } from 'antd/lib/grid';
@@ -12,6 +12,7 @@ import Popover from 'antd/lib/popover';
 import Input from 'antd/lib/input';
 import { PlusOutlined, UploadOutlined } from '@ant-design/icons';
 import { importActions } from 'actions/import-actions';
+import { usePrevious } from 'utils/hooks';
 import { ProjectsQuery } from 'reducers';
 import { SortingComponent, ResourceFilterHOC, defaultVisibility } from 'components/resource-sorting-filtering';
 
@@ -29,15 +30,22 @@ interface Props {
     onApplySorting(sorting: string | null): void;
     onApplySearch(search: string | null): void;
     query: ProjectsQuery;
+    importing: boolean;
 }
 
 function TopBarComponent(props: Props): JSX.Element {
     const dispatch = useDispatch();
     const {
-        query, onApplyFilter, onApplySorting, onApplySearch,
+        importing, query, onApplyFilter, onApplySorting, onApplySearch,
     } = props;
     const [visibility, setVisibility] = useState(defaultVisibility);
+    const prevImporting = usePrevious(importing);
 
+    useEffect(() => {
+        if (prevImporting && !importing) {
+            onApplyFilter(query.filter);
+        }
+    }, [importing]);
     const history = useHistory();
 
     return (
@@ -100,6 +108,7 @@ function TopBarComponent(props: Props): JSX.Element {
                                 <Button
                                     className='cvat-import-project-button'
                                     type='primary'
+                                    disabled={importing}
                                     icon={<UploadOutlined />}
                                     onClick={() => dispatch(importActions.openImportBackupModal('project'))}
                                 >
