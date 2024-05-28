@@ -10,5 +10,5 @@ all available options that you can use to annotate image data accurately and qui
 
 The interface includes the following areas:
 
-![](/images/image034_detrac.png)
+![Description of the image](/images/image034_detrac.png)
 
