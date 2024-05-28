@@ -2669,12 +2669,30 @@ class TestImportTaskAnnotations:
         self._check_annotations(task_id)
 
     @pytest.mark.parametrize(
-        "format_name", ["COCO 1.0", "COCO Keypoints 1.0", "CVAT 1.1", "LabelMe 3.0",
-            "MOT 1.1", "MOTS PNG 1.0", "PASCAL VOC 1.1", "Segmentation mask 1.1",
-            "YOLO 1.1", "WiderFace 1.0", "VGGFace2 1.0", "Market-1501 1.0",
-            "Kitti Raw Format 1.0", "Sly Point Cloud Format 1.0", "KITTI 1.0",
-            "LFW 1.0", "Cityscapes 1.0", "Open Images V6 1.0", "Datumaro 1.0",
-            "Datumaro 3D 1.0"])
+        "format_name",
+        [
+            "COCO 1.0",
+            "COCO Keypoints 1.0",
+            "CVAT 1.1",
+            "LabelMe 3.0",
+            "MOT 1.1",
+            "MOTS PNG 1.0",
+            "PASCAL VOC 1.1",
+            "Segmentation mask 1.1",
+            "YOLO 1.1",
+            "WiderFace 1.0",
+            "VGGFace2 1.0",
+            "Market-1501 1.0",
+            "Kitti Raw Format 1.0",
+            "Sly Point Cloud Format 1.0",
+            "KITTI 1.0",
+            "LFW 1.0",
+            "Cityscapes 1.0",
+            "Open Images V6 1.0",
+            "Datumaro 1.0",
+            "Datumaro 3D 1.0",
+        ],
+    )
     def test_check_import_error_on_wrong_file_structure(self, tasks_with_shapes, format_name):
         task_id = tasks_with_shapes[0]["id"]
 
@@ -2694,7 +2712,7 @@ class TestImportTaskAnnotations:
             task.import_annotations(format_name, source_archive_path)
 
             assert b"Check [format docs]" in capture.value.body
-            assert b'Dataset must contain a file:' in capture.value.body
+            assert b"Dataset must contain a file:" in capture.value.body
 
 
 class TestImportWithComplexFilenames:
