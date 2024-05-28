@@ -141,14 +141,11 @@ class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentP
         } = appConfig;
 
         // Logger configuration
-        const userActivityCallback: (() => void)[] = [];
         window.addEventListener('click', (event: MouseEvent) => {
-            userActivityCallback.forEach((handler) => handler());
             EventRecorder.log(event);
         });
 
-        core.logger.configure(() => window.document.hasFocus, userActivityCallback);
-
+        core.logger.configure(() => window.document.hasFocus);
         core.config.onOrganizationChange = (newOrgId: number | null) => {
             if (newOrgId === null) {
                 localStorage.removeItem('currentOrganization');

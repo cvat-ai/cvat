@@ -85,12 +85,11 @@ class Logger {
         };
     }
 
-    public async configure(isActiveChecker, activityHelper): Promise<void> {
+    public async configure(isActiveChecker): Promise<void> {
         const result = await PluginRegistry.apiWrapper.call(
             this,
             Logger.prototype.configure,
             isActiveChecker,
-            activityHelper,
         );
         return result;
     }
@@ -111,14 +110,10 @@ Object.defineProperties(Logger.prototype.configure, {
         writable: false,
         enumerable: false,
         value: async function implementation(
-            this: Logger, isActiveChecker: () => boolean, userActivityCallback: Array<any>,
+            this: Logger, isActiveChecker: () => boolean,
         ) {
             if (typeof isActiveChecker !== 'function') {
                 throw new ArgumentError('isActiveChecker argument must be callable');
-            }
-
-            if (!Array.isArray(userActivityCallback)) {
-                throw new ArgumentError('userActivityCallback argument must be an array');
             }
 
             this.isActiveChecker = () => !!isActiveChecker();
