@@ -35,6 +35,39 @@ class ClientEventsSerializer(serializers.Serializer):
     _TIME_THRESHOLD = datetime.timedelta(seconds=100)
     _WORKING_TIME_RESOLUTION = datetime.timedelta(milliseconds=1)
     _COLLAPSED_EVENT_SCOPES = frozenset(("change:frame",))
+    _WORKING_TIME_SCOPE = 'send:working_time'
+
+    @classmethod
+    def _generate_wt_event(cls, job_id: int | None, wt: datetime.timedelta, common: dict) -> EventSerializer:
+        if wt.total_seconds():
+            task_id = None
+            project_id = None
+
+            if job_id is not None:
+                with suppress(Job.DoesNotExist):
+                    task_id, project_id = Job.objects.values_list(
+                        "segment__task__id", "segment__task__project__id"
+                    ).get(pk=job_id)
+
+            value = wt // cls._WORKING_TIME_RESOLUTION
+            event = EventSerializer(data={
+                **common,
+                "scope": cls._WORKING_TIME_SCOPE,
+                "obj_name": "working_time",
+                "obj_val": value,
+                "source": "server",
+                "count": 1,
+                "project_id": project_id,
+                "task_id": task_id,
+                "job_id": job_id,
+                # keep it in payload for backward compatibility
+                # but in the future it is much better to use a dedicated field "obj_value"
+                # because parsing JSON in SQL query is very slow
+                "payload": json.dumps({ "working_time": value })
+            })
+
+            event.is_valid(raise_exception=True)
+            return event
 
     @classmethod
     def _end_timestamp(cls, event: dict) -> datetime.datetime:
@@ -100,36 +133,17 @@ class ClientEventsSerializer(serializers.Serializer):
                 "payload": json_payload,
             })
 
+        common = {
+            "timestamp": str(receive_time.timestamp()),
+            "user_id": request.user.id,
+            "user_name": request.user.username,
+            "user_email": request.user.email,
+            "org_id": org_id,
+            "org_slug": org_slug,
+        }
+
         for job_id in working_time_per_job:
-            if working_time_per_job[job_id].total_seconds():
-                task_id = None
-                project_id = None
-
-                if job_id is not None:
-                    with suppress(Job.DoesNotExist):
-                        task_id, project_id = Job.objects.values_list(
-                            "segment__task__id", "segment__task__project__id"
-                        ).get(pk=job_id)
-
-                value = working_time_per_job[job_id] // self._WORKING_TIME_RESOLUTION
-                event = {
-                    "scope": "service:event",
-                    "obj_name": "working_time",
-                    "obj_val": value,
-                    "source": "server",
-                    "timestamp": str(receive_time.timestamp()),
-                    "count": 1,
-                    "project_id": project_id,
-                    "task_id": task_id,
-                    "job_id": job_id,
-                    "user_id": request.user.id,
-                    "user_name": request.user.username,
-                    "user_email": request.user.email,
-                    "org_id": org_id,
-                    "org_slug": org_slug,
-                    "payload": json.dumps({ "working_time": value }) # for backward compatibility
-                }
-
-                data["events"].append(event)
+            event = ClientEventsSerializer._generate_wt_event(job_id, working_time_per_job[job_id], common)
+            data["events"].append(event.to_internal_value())
 
         return data
