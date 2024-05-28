@@ -3,11 +3,11 @@
 //
 // SPDX-License-Identifier: MIT
 
+import { omit } from 'lodash';
 import { detect } from 'detect-browser';
 import PluginRegistry from './plugins';
 import { EventScope } from './enums';
 import { ArgumentError } from './exceptions';
-import { omit } from 'lodash';
 
 export interface SerializedEvent {
     scope: EventScope;

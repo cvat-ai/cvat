@@ -86,7 +86,7 @@ class ClientEventsSerializer(serializers.Serializer):
 
             try:
                 json_payload = json.dumps(json.loads(event.get("payload", "{}")))
-            except:
+            except json.JSONDecodeError:
                 raise serializers.ValidationError("JSON payload is not valid in passed event")
 
             event.update({
