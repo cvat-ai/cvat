@@ -1641,6 +1641,8 @@ export class CanvasViewImpl implements CanvasView, Listener {
                 this.masksHandler.edit(data);
             } else if (this.masksHandler.enabled) {
                 this.masksHandler.edit(data);
+            } else if (this.editHandler.enabled) {
+                this.editHandler.edit(data);
             }
         } else if (reason === UpdateReasons.INTERACT) {
             const data: InteractionData = this.controller.interactionData;
