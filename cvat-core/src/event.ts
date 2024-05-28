@@ -7,6 +7,7 @@ import { detect } from 'detect-browser';
 import PluginRegistry from './plugins';
 import { EventScope } from './enums';
 import { ArgumentError } from './exceptions';
+import { omit } from 'lodash';
 
 export interface SerializedEvent {
     scope: EventScope;
@@ -27,7 +28,6 @@ export interface SerializedEvent {
 export type JSONEventPayload = { [key: string]: number | string | boolean };
 
 export class Event {
-    public readonly id: number;
     public readonly scope: EventScope;
     public readonly timestamp: Date;
     public payload: JSONEventPayload;
@@ -175,6 +175,7 @@ class EventWithControlsInfo extends Event {
         this.payload = {
             obj_val: this.payload?.text,
             obj_name: this.payload?.classes,
+            ...omit(this.payload, ['text', 'classes']),
         };
         return super.dump();
     }

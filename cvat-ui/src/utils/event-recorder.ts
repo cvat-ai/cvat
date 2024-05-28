@@ -29,7 +29,7 @@ class EventRecorder {
         this.#savingTimeout = null;
         this.#logger = null;
         core.logger.log(EventScope.loadTool, {
-            location: window.location.pathname + window.location.search,
+            location: window.location.pathname,
             platform: platformInfo(),
         });
     }
@@ -46,7 +46,7 @@ class EventRecorder {
         const logData = {
             text: element.innerText,
             classes: this.filterClassName(element.className),
-            location: window.location.pathname + window.location.search,
+            location: window.location.pathname,
         };
 
         if (!toRecord) {
