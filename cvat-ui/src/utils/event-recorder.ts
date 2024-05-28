@@ -13,6 +13,8 @@ const { CONTROLS_LOGS_INTERVAL } = config;
 const classFilter = ['ant-btn'];
 const parentClassFilter = ['ant-btn'];
 
+// the class is responsible for logging general mouse events
+// and for saving recorded events to the server with a certain period
 class EventRecorder {
     #savingTimeout: number | null;
 
@@ -24,13 +26,13 @@ class EventRecorder {
         });
     }
 
-    public log(event: MouseEvent): void {
+    public recordMouseEvent(event: MouseEvent): void {
         const { target } = event;
         if (!target) {
             return;
         }
 
-        let element = (target as HTMLElement);
+        const element = (target as HTMLElement);
         let toRecord = this.isEventToBeRecorded(element, classFilter);
 
         const logData = {
@@ -39,10 +41,12 @@ class EventRecorder {
             location: window.location.pathname + window.location.search,
         };
 
-        if (!toRecord && element.parentElement) {
-            element = element.parentElement;
-            toRecord = this.isEventToBeRecorded(element, parentClassFilter);
-            logData.classes = this.filterClassName(element.className);
+        if (!toRecord) {
+            const parentElement = element?.parentElement;
+            if (parentElement) {
+                toRecord = this.isEventToBeRecorded(parentElement, parentClassFilter);
+                logData.classes = this.filterClassName(parentElement.className);
+            }
         }
 
         if (toRecord) {
@@ -79,7 +83,7 @@ class EventRecorder {
 
     private filterClassName(cls: string): string {
         if (typeof cls === 'string') {
-            return cls.split(' ').filter((_cls: string) => _cls.startsWith('cvat')).join(' ');
+            return cls.split(/\s+/).filter((_cls: string) => _cls.startsWith('cvat')).join(' ');
         }
 
         return '';
