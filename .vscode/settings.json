@@ -39,5 +39,5 @@
     "python.testing.cwd": "${workspaceFolder}/tests",
     "cSpell.words": [
         "crowdsourcing"
-    ],
+    ]
 }
