@@ -136,19 +136,16 @@ class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentP
         const core = getCore();
         const { history, location } = this.props;
         const {
-            HEALTH_CHECK_RETRIES, HEALTH_CHECK_PERIOD, HEALTH_CHECK_REQUEST_TIMEOUT, SERVER_UNAVAILABLE_COMPONENT,
-            RESET_NOTIFICATIONS_PATHS,
+            HEALTH_CHECK_RETRIES, HEALTH_CHECK_PERIOD, HEALTH_CHECK_REQUEST_TIMEOUT,
+            SERVER_UNAVAILABLE_COMPONENT, RESET_NOTIFICATIONS_PATHS,
         } = appConfig;
 
         // Logger configuration
-        const userActivityCallback: (() => void)[] = [];
         window.addEventListener('click', (event: MouseEvent) => {
-            userActivityCallback.forEach((handler) => handler());
-            EventRecorder.log(event);
+            EventRecorder.recordMouseEvent(event);
         });
 
-        core.logger.configure(() => window.document.hasFocus, userActivityCallback);
-
+        core.logger.configure(() => window.document.hasFocus());
         core.config.onOrganizationChange = (newOrgId: number | null) => {
             if (newOrgId === null) {
                 localStorage.removeItem('currentOrganization');
