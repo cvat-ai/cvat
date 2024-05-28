@@ -36,7 +36,7 @@ class Logger {
     public collection: Array<Event>;
     public lastSentEvent: Event | null;
     public ignoreRules: Record<IgnoredRules, IgnoreRule>;
-    public isActiveChecker: (() => boolean) | null;
+    public isActiveChecker: () => boolean;
     public saving: boolean;
     public compressedScopes: Array<IgnoredRules>;
 
@@ -44,7 +44,7 @@ class Logger {
         this.clientID = Date.now().toString().substr(-6);
         this.collection = [];
         this.lastSentEvent = null;
-        this.isActiveChecker = null;
+        this.isActiveChecker = () => true;
         this.saving = false;
         this.compressedScopes = [EventScope.changeFrame];
         this.ignoreRules = {
@@ -85,7 +85,7 @@ class Logger {
         };
     }
 
-    public async configure(isActiveChecker): Promise<void> {
+    public async configure(isActiveChecker: () => boolean): Promise<void> {
         const result = await PluginRegistry.apiWrapper.call(
             this,
             Logger.prototype.configure,
@@ -116,7 +116,7 @@ Object.defineProperties(Logger.prototype.configure, {
                 throw new ArgumentError('isActiveChecker argument must be callable');
             }
 
-            this.isActiveChecker = () => !!isActiveChecker();
+            this.isActiveChecker = isActiveChecker;
         },
     },
 });
@@ -152,9 +152,7 @@ Object.defineProperties(Logger.prototype.log, {
 
             const eventPayload = { ...payload };
             eventPayload.client_id = this.clientID;
-            if (this.isActiveChecker) {
-                eventPayload.is_active = this.isActiveChecker();
-            }
+            eventPayload.is_active = this.isActiveChecker();
 
             const event = makeEvent(scope, { ...eventPayload });
 
@@ -190,14 +188,6 @@ Object.defineProperties(Logger.prototype.save, {
 
             while (this.saving) {
                 await sleep(1000);
-            }
-
-            const eventPayload: any = {
-                client_id: this.clientID,
-            };
-
-            if (this.isActiveChecker) {
-                eventPayload.is_active = this.isActiveChecker();
             }
 
             const collectionToSend = [...this.collection];
