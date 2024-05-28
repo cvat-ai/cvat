@@ -10,9 +10,6 @@ import { platformInfo } from 'utils/platform-checker';
 const core = getCore();
 const { CONTROLS_LOGS_INTERVAL } = config;
 
-const classFilter = ['ant-btn'];
-const parentClassFilter = ['ant-btn'];
-
 interface Logger {
     log(...parameters: Parameters<typeof core.logger.log>): ReturnType<typeof core.logger['log']>;
 }
@@ -35,30 +32,13 @@ class EventRecorder {
     }
 
     public recordMouseEvent(event: MouseEvent): void {
-        const { target } = event;
-        if (!target) {
-            return;
-        }
-
-        const element = (target as HTMLElement);
-        let toRecord = this.isEventToBeRecorded(element, classFilter);
-
-        const logData = {
-            obj_val: element.innerText,
-            obj_name: this.filterClassName(element.className),
-            location: window.location.pathname,
-        };
-
-        if (!toRecord) {
-            const parentElement = element?.parentElement;
-            if (parentElement) {
-                toRecord = this.isEventToBeRecorded(parentElement, parentClassFilter);
-                logData.obj_name = this.filterClassName(parentElement.className);
-            }
-        }
-
-        if (toRecord) {
-            (this.#logger || defaultLogger).log(EventScope.clickElement, logData, false);
+        const elementToRecord = this.isEventToBeRecorded(event.target as HTMLElement | null, ['ant-btn']);
+        if (elementToRecord) {
+            (this.#logger || defaultLogger).log(EventScope.clickElement, {
+                obj_val: elementToRecord.innerText,
+                obj_name: this.filterClassName(elementToRecord.className),
+                location: window.location.pathname,
+            }, false);
         }
     }
 
@@ -101,8 +81,17 @@ class EventRecorder {
         return '';
     }
 
-    private isEventToBeRecorded(node: HTMLElement, filter: string[]): boolean {
-        return filter.some((cssClass: string) => node.classList.contains(cssClass));
+    private isEventToBeRecorded(element: HTMLElement | null, cssFilter: string[], maxDepth = 5): HTMLElement | null {
+        if (!element) {
+            return null;
+        }
+
+        const { classList } = element;
+        if (cssFilter.some((cssClass: string) => classList.contains(cssClass))) {
+            return element;
+        }
+
+        return this.isEventToBeRecorded(element.parentElement, cssFilter, maxDepth - 1);
     }
 }
 
