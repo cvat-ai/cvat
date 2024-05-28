@@ -20,6 +20,7 @@ import AnnotationGuide from './guide';
 import { FrameData } from './frames';
 import Statistics from './statistics';
 import { Request } from './request';
+import logger from './logger';
 
 function buildDuplicatedAPI(prototype) {
     Object.defineProperties(prototype, {
@@ -345,7 +346,11 @@ export class Session {
     };
 
     public logger: {
-        log: CallableFunction;
+        log: (
+            scope: Parameters<typeof logger.log>[0],
+            payload: Parameters<typeof logger.log>[1],
+            wait: Parameters<typeof logger.log>[2],
+        ) => ReturnType<typeof logger.log>;
     };
 
     public constructor() {
