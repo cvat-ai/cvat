@@ -24,7 +24,7 @@ RUN apt-get update && \
 
 ARG PIP_VERSION
 ENV PIP_DISABLE_PIP_VERSION_CHECK=1
-RUN --mount=type=cache,target=/root/.cache/pip/http-v2 \
+RUN --mount=type=cache,target=/root/.cache/pip/http \
     python3 -m pip install -U pip==${PIP_VERSION}
 
 # We build OpenH264, FFmpeg and PyAV in a separate build stage,
