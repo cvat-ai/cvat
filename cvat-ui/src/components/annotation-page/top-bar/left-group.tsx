@@ -9,10 +9,9 @@ import Icon, { StopOutlined, CheckCircleOutlined, LoadingOutlined } from '@ant-d
 import Modal from 'antd/lib/modal';
 import Button from 'antd/lib/button';
 import Text from 'antd/lib/typography/Text';
-import Dropdown from 'antd/lib/dropdown';
 
 import AnnotationMenuContainer from 'containers/annotation-page/top-bar/annotation-menu';
-import { MainMenuIcon, UndoIcon, RedoIcon } from 'icons';
+import { UndoIcon, RedoIcon } from 'icons';
 import { ActiveControl, ToolsBlockerState } from 'reducers';
 import CVATTooltip from 'components/common/cvat-tooltip';
 import customizableComponents from 'components/customizable-components';
@@ -92,21 +91,20 @@ function LeftGroup(props: Props): JSX.Element {
     return (
         <>
             <GlobalHotKeys keyMap={subKeyMap} handlers={handlers} />
-            <Modal className='cvat-saving-job-modal' title='Saving changes on the server' visible={saving} footer={[]} closable={false}>
-                <Text>CVAT is saving your annotations, please wait </Text>
-                <LoadingOutlined />
-            </Modal>
-            <Col className='cvat-annotation-header-left-group'>
-                <Dropdown
-                    trigger={['click']}
-                    destroyPopupOnHide
-                    overlay={<AnnotationMenuContainer />}
+            { saving && (
+                <Modal
+                    open
+                    destroyOnClose
+                    className='cvat-saving-job-modal'
+                    closable={false}
+                    footer={[]}
                 >
-                    <Button type='link' className='cvat-annotation-header-menu-button cvat-annotation-header-button'>
-                        <Icon component={MainMenuIcon} />
-                        Menu
-                    </Button>
-                </Dropdown>
+                    <Text>CVAT is saving your annotations, please wait </Text>
+                    <LoadingOutlined />
+                </Modal>
+            )}
+            <Col className='cvat-annotation-header-left-group'>
+                <AnnotationMenuContainer />
                 <SaveButtonComponent
                     isSaving={saving}
                     onClick={saving ? undefined : onSaveAnnotation}

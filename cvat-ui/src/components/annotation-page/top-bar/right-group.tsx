@@ -153,7 +153,7 @@ function RightGroup(props: Props): JSX.Element {
             </Button>
             <div>
                 <Select
-                    dropdownClassName='cvat-workspace-selector-dropdown'
+                    popupClassName='cvat-workspace-selector-dropdown'
                     className='cvat-workspace-selector'
                     onChange={changeWorkspace}
                     value={workspace}

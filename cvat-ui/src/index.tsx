@@ -4,7 +4,7 @@
 // SPDX-License-Identifier: MIT
 
 import React from 'react';
-import ReactDOM from 'react-dom';
+import { createRoot } from 'react-dom/client';
 import { connect, Provider } from 'react-redux';
 import { BrowserRouter } from 'react-router-dom';
 
@@ -122,16 +122,16 @@ function mapDispatchToProps(dispatch: any): DispatchToProps {
 
 const ReduxAppWrapper = connect(mapStateToProps, mapDispatchToProps)(CVATApplication);
 
-ReactDOM.render(
+const root = createRoot(document.getElementById('root') as HTMLDivElement);
+root.render((
     <Provider store={cvatStore}>
         <BrowserRouter>
             <PluginsEntrypoint />
             <ReduxAppWrapper />
         </BrowserRouter>
         <LayoutGrid />
-    </Provider>,
-    document.getElementById('root'),
-);
+    </Provider>
+));
 
 window.addEventListener('error', (errorEvent: ErrorEvent): boolean => {
     const {

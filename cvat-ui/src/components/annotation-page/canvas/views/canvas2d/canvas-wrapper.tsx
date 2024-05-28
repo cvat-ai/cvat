@@ -9,7 +9,7 @@ import React from 'react';
 import { connect } from 'react-redux';
 import Slider from 'antd/lib/slider';
 import Spin from 'antd/lib/spin';
-import Dropdown from 'antd/lib/dropdown';
+import Popover from 'antd/lib/popover';
 import { PlusCircleOutlined, UpOutlined } from '@ant-design/icons';
 import notification from 'antd/lib/notification';
 import debounce from 'lodash/debounce';
@@ -808,7 +808,7 @@ class CanvasWrapperComponent extends React.PureComponent<Props> {
 
         const result = await jobInstance.annotations.select(event.detail.states, event.detail.x, event.detail.y);
         if (result && result.state) {
-            if (['polyline', 'points'].includes(result.state.shapeType)) {
+            if ([ShapeType.POLYLINE, ShapeType.POINTS].includes(result.state.shapeType)) {
                 if (result.distance > MAX_DISTANCE_TO_OPEN_SHAPE) {
                     return;
                 }
@@ -1124,14 +1124,15 @@ class CanvasWrapperComponent extends React.PureComponent<Props> {
 
                 <BrushTools />
 
-                <Dropdown
-                    destroyPopupOnHide
-                    trigger={['click']}
-                    placement='topCenter'
-                    overlay={<ImageSetupsContent />}
+                <Popover
+                    destroyTooltipOnHide
+                    trigger='click'
+                    placement='top'
+                    overlayInnerStyle={{ padding: 0 }}
+                    content={<ImageSetupsContent />}
                 >
                     <UpOutlined className='cvat-canvas-image-setups-trigger' />
-                </Dropdown>
+                </Popover>
 
                 <div className='cvat-canvas-z-axis-wrapper'>
                     <Slider
