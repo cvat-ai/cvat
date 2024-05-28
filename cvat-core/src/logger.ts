@@ -5,7 +5,7 @@
 
 import PluginRegistry from './plugins';
 import serverProxy from './server-proxy';
-import makeEvent, { Event } from './event';
+import makeEvent, { Event, JSONEventPayload } from './event';
 import { EventScope } from './enums';
 import { ArgumentError } from './exceptions';
 
@@ -15,7 +15,7 @@ function sleep(ms): Promise<void> {
     });
 }
 
-function defaultUpdate(previousEvent: Event, currentPayload: any): object {
+function defaultUpdate(previousEvent: Event, currentPayload: JSONEventPayload): JSONEventPayload {
     return {
         ...previousEvent.payload,
         ...currentPayload,
@@ -25,8 +25,8 @@ function defaultUpdate(previousEvent: Event, currentPayload: any): object {
 interface IgnoreRule {
     lastEvent: Event | null;
     timeThreshold?: number;
-    ignore: (previousEvent: Event, currentPayload: any) => boolean;
-    update: (previousEvent: Event, currentPayload: any) => object;
+    ignore: (previousEvent: Event, currentPayload: JSONEventPayload) => boolean;
+    update: (previousEvent: Event, currentPayload: JSONEventPayload) => JSONEventPayload;
 }
 
 type IgnoredRules = EventScope.zoomImage | EventScope.changeAttribute | EventScope.changeFrame;
@@ -58,7 +58,7 @@ class Logger {
             },
             [EventScope.changeAttribute]: {
                 lastEvent: null,
-                ignore(previousEvent: Event, currentPayload: any): boolean {
+                ignore(previousEvent: Event, currentPayload: JSONEventPayload): boolean {
                     return (
                         currentPayload.object_id === previousEvent.payload.object_id &&
                         currentPayload.id === previousEvent.payload.id
@@ -68,17 +68,17 @@ class Logger {
             },
             [EventScope.changeFrame]: {
                 lastEvent: null,
-                ignore(previousEvent: Event, currentPayload: any): boolean {
+                ignore(previousEvent: Event, currentPayload: JSONEventPayload): boolean {
                     return (
                         currentPayload.job_id === previousEvent.payload.job_id &&
                         currentPayload.step === previousEvent.payload.step
                     );
                 },
-                update(previousEvent: Event, currentPayload: any): object {
+                update(previousEvent: Event, currentPayload: JSONEventPayload): JSONEventPayload {
                     return {
                         ...previousEvent.payload,
                         to: currentPayload.to,
-                        count: previousEvent.payload.count + 1,
+                        count: (previousEvent.payload.count as number) + 1,
                     };
                 },
             },
@@ -125,7 +125,12 @@ Object.defineProperties(Logger.prototype.log, {
     implementation: {
         writable: false,
         enumerable: false,
-        value: async function implementation(this: Logger, scope: EventScope, payload: any, wait: boolean) {
+        value: async function implementation(
+            this: Logger,
+            scope: EventScope,
+            payload: JSONEventPayload,
+            wait: boolean,
+        ) {
             if (typeof payload !== 'object') {
                 throw new ArgumentError('Payload must be an object');
             }

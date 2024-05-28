@@ -21,6 +21,7 @@ import {
 } from './server-response-types';
 import { PaginatedResource } from './core-types';
 import { Storage } from './storage';
+import { SerializedEvent } from './event';
 import { RQStatus, StorageLocation, WebhookSourceType } from './enums';
 import { isEmail, isResourceURL } from './common';
 import config from './config';
@@ -1823,7 +1824,11 @@ async function uploadAnnotations(
     }
 }
 
-async function saveEvents(events) {
+async function saveEvents(events: {
+    events: SerializedEvent[];
+    previous_event?: SerializedEvent;
+    timestamp: string;
+}): Promise<void> {
     const { backendAPI } = config;
 
     try {

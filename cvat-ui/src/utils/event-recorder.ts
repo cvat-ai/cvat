@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: MIT
 
-import { getCore } from 'cvat-core-wrapper';
+import { ServerError, getCore } from 'cvat-core-wrapper';
 import { EventScope } from 'cvat-logger';
 import config from 'config';
 import { platformInfo } from 'utils/platform-checker';
@@ -57,10 +57,11 @@ class EventRecorder {
                 this.#savingTimeout = null;
                 this.initSave();
             };
+
             core.logger.save()
                 .then(scheduleSave)
-                .catch((error) => {
-                    if (error?.code === 401) {
+                .catch((error: unknown) => {
+                    if (error instanceof ServerError && error.code === 401) {
                         this.cancelSave();
                     } else {
                         scheduleSave();
