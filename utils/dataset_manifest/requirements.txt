@@ -5,9 +5,6 @@
 #
 #    pip-compile-multi
 #
---no-binary lxml
---no-binary xmlsec
-
 av==9.2.0
     # via -r utils/dataset_manifest/requirements.in
 natsort==8.0.0
