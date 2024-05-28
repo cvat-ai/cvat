@@ -19,6 +19,7 @@ from datetime import timedelta
 from functools import partial
 from io import BytesIO
 from tempfile import TemporaryDirectory
+from time import sleep
 from typing import Any, Callable, ClassVar, Optional, overload
 from unittest.mock import MagicMock, patch, DEFAULT as MOCK_DEFAULT
 
@@ -32,6 +33,7 @@ from rest_framework import status
 import cvat.apps.dataset_manager as dm
 from cvat.apps.dataset_manager.bindings import CvatTaskOrJobDataExtractor, TaskData
 from cvat.apps.dataset_manager.task import TaskAnnotation
+from cvat.apps.dataset_manager.util import get_export_cache_lock
 from cvat.apps.dataset_manager.views import clear_export_cache, export, parse_export_file_path
 from cvat.apps.engine.models import Task
 from cvat.apps.engine.tests.utils import get_paginated_collection, ApiTestBase, ForceLogin
@@ -1811,6 +1813,14 @@ class ExportBehaviorTest(_DbTestBase):
 
         self.assertTrue(osp.isfile(export_path))
         mock_rq_scheduler.enqueue_in.assert_called_once()
+
+    def test_export_cache_lock_can_raise_on_releasing_expired_lock(self):
+        from pottery import ReleaseUnlockedLock
+
+        with self.assertRaises(ReleaseUnlockedLock):
+            lock_time = 2
+            with get_export_cache_lock('test_export_path', ttl=lock_time, acquire_timeout=5):
+                sleep(lock_time + 1)
 
     def test_export_can_request_retry_on_locking_failure(self):
         format_name = "CVAT for images 1.1"

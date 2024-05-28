@@ -131,15 +131,15 @@ def get_export_cache_lock(
         masters={django_rq.get_connection(settings.CVAT_QUEUES.EXPORT_DATA.value)},
         auto_release_time=ttl,
     )
+    acquired = lock.acquire(blocking=block, timeout=acquire_timeout)
     try:
-        acquired = lock.acquire(blocking=block, timeout=acquire_timeout)
         if acquired:
             yield lock
         else:
             raise LockNotAvailableError
 
     finally:
-        if lock.locked():
+        if acquired:
             lock.release()
 
 
