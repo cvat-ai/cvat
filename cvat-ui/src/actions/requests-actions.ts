@@ -25,7 +25,7 @@ export const requestsActions = {
     getRequests: (query?: RequestsQuery) => createAction(RequestsActionsTypes.GET_REQUESTS, { query }),
     requestFinished: (request: Request) => createAction(RequestsActionsTypes.REQUEST_FINISHED, { request }),
     requestFailed: (request: Request) => createAction(RequestsActionsTypes.REQUEST_FAILED, { request }),
-    getRequestsSuccess: (requests: Request[]) => createAction(
+    getRequestsSuccess: (requests: Awaited<ReturnType<typeof core['requests']['list']>>) => createAction(
         RequestsActionsTypes.GET_REQUESTS_SUCCESS, { requests },
     ),
     getRequestsFailed: (error: any) => createAction(RequestsActionsTypes.GET_REQUESTS_FAILED, {
@@ -63,12 +63,6 @@ export function getInstanceType(instance: InstanceType | RequestInstanceType): '
     }
 
     return instance.type;
-}
-
-export function isInstanceType(instance: any): instance is InstanceType {
-    return instance instanceof core.classes.Project ||
-            instance instanceof core.classes.Task ||
-            instance instanceof core.classes.Job;
 }
 
 export function updateRequestProgress(request: Request, dispatch: (action: RequestsActions) => void): void {
