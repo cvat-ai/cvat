@@ -29,6 +29,8 @@ The brush tool menu appears on the top of the screen after you click **Shape**:
 
 It has the following elements:
 
+<!--lint disable maximum-line-length-->
+
 | Element                                                         | Description                                                                                                                                                                                              |
 | --------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --- |
 | ![Tick icon](/images/tick_icon.png)                             | **Save mask** saves the created mask. The saved mask will appear on the object sidebar                                                                                                                   |
@@ -42,6 +44,8 @@ It has the following elements:
 | ![Pixel remove](/images/brushing_tools_pixels.png)              | **Remove underlying pixels**. When you are drawing or editing a mask with this tool, <br>pixels on other masks that are located at the same positions as the pixels of the <br>current mask are deleted. |
 | ![Label](/images/brushing_tools_label_drop.png)                 | **Label** that will be assigned to the newly created mask                                                                                                                                                |     |
 | ![Move](/images/brushing_tools_brush_move.png)                  | **Move**. Click and hold to move the menu bar to the other place on the screen                                                                                                                           |
+
+<!--lint enable maximum-line-length-->
 
 ## Annotation with brush
 
