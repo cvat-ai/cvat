@@ -10,5 +10,4 @@ all available options that you can use to annotate image data accurately and qui
 
 The interface includes the following areas:
 
-![](/images/image034_detrac.png)
-
+![CVAT Interfaces](/images/image034_detrac.png)
