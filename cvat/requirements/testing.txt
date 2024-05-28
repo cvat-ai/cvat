@@ -8,7 +8,7 @@
 -r development.txt
 coverage==7.2.3
     # via -r cvat/requirements/testing.in
-fakeredis==2.10.3
+fakeredis==2.23.2
     # via -r cvat/requirements/testing.in
 sortedcontainers==2.4.0
     # via fakeredis
