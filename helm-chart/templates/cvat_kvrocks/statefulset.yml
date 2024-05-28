@@ -15,6 +15,7 @@ spec:
       {{- include "cvat.labels" . | nindent 6 }}
       app: cvat-app
       tier: kvrocks
+  serviceName: {{ .Release.Name }}-kvrocks
   template:
     metadata:
       labels:
