@@ -44,8 +44,8 @@ class EventRecorder {
         let toRecord = this.isEventToBeRecorded(element, classFilter);
 
         const logData = {
-            text: element.innerText,
-            classes: this.filterClassName(element.className),
+            obj_val: element.innerText,
+            obj_name: this.filterClassName(element.className),
             location: window.location.pathname,
         };
 
@@ -53,7 +53,7 @@ class EventRecorder {
             const parentElement = element?.parentElement;
             if (parentElement) {
                 toRecord = this.isEventToBeRecorded(parentElement, parentClassFilter);
-                logData.classes = this.filterClassName(parentElement.className);
+                logData.obj_name = this.filterClassName(parentElement.className);
             }
         }
 

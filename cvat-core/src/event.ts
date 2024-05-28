@@ -3,7 +3,6 @@
 //
 // SPDX-License-Identifier: MIT
 
-import { omit } from 'lodash';
 import { detect } from 'detect-browser';
 import PluginRegistry from './plugins';
 import { EventScope } from './enums';
@@ -170,17 +169,6 @@ class EventWithExceptionInfo extends Event {
     }
 }
 
-class EventWithControlsInfo extends Event {
-    public dump(): any {
-        this.payload = {
-            obj_val: this.payload?.text,
-            obj_name: this.payload?.classes,
-            ...omit(this.payload, ['text', 'classes']),
-        };
-        return super.dump();
-    }
-}
-
 export default function makeEvent(scope: EventScope, payload: JSONEventPayload): Event {
     const eventsWithCount = [
         EventScope.deleteObject,
@@ -197,10 +185,6 @@ export default function makeEvent(scope: EventScope, payload: JSONEventPayload):
 
     if (scope === EventScope.exception) {
         return new EventWithExceptionInfo(scope, payload);
-    }
-
-    if (scope === EventScope.clickElement) {
-        return new EventWithControlsInfo(scope, payload);
     }
 
     return new Event(scope, payload);
