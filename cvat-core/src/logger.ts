@@ -29,7 +29,10 @@ interface IgnoreRule {
     update: (previousEvent: Event, currentPayload: any) => object;
 }
 
-type IgnoredRules = EventScope.zoomImage | EventScope.changeAttribute | EventScope.changeFrame;
+type IgnoredRules = (
+    EventScope.zoomImage | EventScope.changeAttribute |
+    EventScope.changeFrame | EventScope.exception
+);
 
 class Logger {
     public clientID: string;
@@ -50,11 +53,28 @@ class Logger {
         this.ignoreRules = {
             [EventScope.zoomImage]: {
                 lastEvent: null,
-                timeThreshold: 4000,
-                ignore(previousEvent: Event): boolean {
-                    return (Date.now() - previousEvent.timestamp.getTime()) < this.timeThreshold;
+                ignore: (previousEvent: Event): boolean => {
+                    const [lastCollectionEvent] = this.collection.slice(-1);
+                    return previousEvent === lastCollectionEvent;
                 },
                 update: defaultUpdate,
+            },
+            [EventScope.exception]: {
+                lastEvent: null,
+                ignore: (previousEvent: Event, currentPayload: any): boolean => {
+                    const { stack } = currentPayload;
+                    const [lastCollectionEvent] = this.collection.slice(-1);
+                    return lastCollectionEvent === previousEvent &&
+                        stack && stack === previousEvent.payload.stack;
+                },
+                update(previousEvent: Event): object {
+                    const count = Number.isInteger(previousEvent.payload.count) ?
+                        previousEvent.payload.count : 1;
+                    return {
+                        ...previousEvent.payload,
+                        count: count + 1,
+                    };
+                },
             },
             [EventScope.changeAttribute]: {
                 lastEvent: null,
