@@ -15,6 +15,9 @@ from tqdm import tqdm
 
 from utils import detect_related_images, is_image, is_video, SortingMethod
 
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+from dataset_manifest.core import VideoManifestManager, ImageManifestManager
+
 def get_args():
     parser = argparse.ArgumentParser()
     parser.add_argument('--force', action='store_true',
@@ -96,7 +99,4 @@ def main():
     print('The manifest file has been prepared')
 
 if __name__ == "__main__":
-    base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-    sys.path.append(base_dir)
-    from dataset_manifest.core import VideoManifestManager, ImageManifestManager
     main()

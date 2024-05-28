@@ -58,7 +58,7 @@ class Converter:
 
             # In some cases we need to convert colors additionally
             if 'YBR' in self._photometric_interpretation:
-                 pixel_array = convert_color_space(pixel_array, self._photometric_interpretation, 'RGB')
+                pixel_array = convert_color_space(pixel_array, self._photometric_interpretation, 'RGB')
 
             if self._depth == 8:
                 image = Image.fromarray(pixel_array.astype(np.uint8))

@@ -38,6 +38,8 @@ def _wrap_format(f_or_cls, klass, name, version, ext, display_name, enabled, dim
         wrapper.__name__ = f_or_cls.__name__
         wrapper.__module__ = f_or_cls.__module__
         target = wrapper
+    else:
+        assert False, "f_or_cls must be a class or a function"
 
     target.NAME = name or klass.NAME or f_or_cls.__name__
     target.VERSION = version or klass.VERSION

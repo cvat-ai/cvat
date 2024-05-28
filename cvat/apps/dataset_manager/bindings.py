@@ -1540,6 +1540,8 @@ class CvatTaskOrJobDataExtractor(dm.SourceExtractor, CVATDataExtractorMixin):
                     annotations=dm_anno, media=PointCloud(dm_image[0]), related_images=dm_image[1],
                     attributes=attributes
                 )
+            else:
+                assert False, f"Unexpected value for dimension: {dimension!r}"
 
             dm_items.append(dm_item)
 
@@ -1728,7 +1730,7 @@ class CvatToDmAnnotationConverter:
                 if a_desc['input_type'] == AttributeType.NUMBER:
                     a_value = float(a_value)
                 elif a_desc['input_type'] == AttributeType.CHECKBOX:
-                    a_value = (a_value.lower() == 'true')
+                    a_value = a_value.lower() == 'true'
                 dm_attr[a_name] = a_value
             except Exception as e:
                 raise Exception(

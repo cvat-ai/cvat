@@ -79,7 +79,7 @@ def migrate_task_data(db_task_id, db_data_id, original_video, original_images, s
                         compressed_chunk_path = os.path.join(compressed_cache_dir, '{}.zip'.format(chunk_idx))
                         compressed_chunk_writer.save_as_chunk(chunk_images, compressed_chunk_path)
 
-                    preview = reader.get_preview()
+                    preview = reader.get_preview(0)
                     preview.save(os.path.join(db_data_dir, 'preview.jpeg'))
                 else:
                     original_chunk_writer = ZipChunkWriter(100)
@@ -146,7 +146,7 @@ def migrate_task_data(db_task_id, db_data_id, original_video, original_images, s
                         original_chunk_path = os.path.join(original_cache_dir, '{}.zip'.format(chunk_idx))
                         original_chunk_writer.save_as_chunk(chunk_images, original_chunk_path)
 
-                    preview = reader.get_preview()
+                    preview = reader.get_preview(0)
                     preview.save(os.path.join(db_data_dir, 'preview.jpeg'))
             shutil.rmtree(old_db_task_dir)
         return_dict[db_task_id] = (True, '')
@@ -284,7 +284,7 @@ def create_data_objects(apps, schema_editor):
                     if res.exitcode == 0:
                         ret_code, message = return_dict[res_idx]
                         if ret_code:
-                            counter = (task_idx - len(results))
+                            counter = task_idx - len(results)
                             progress = (100 * counter) / task_count
                             log.info('Data migration for the task {} completed. Progress: {:.02f}% | {}/{}.'.format(res_idx, progress, counter, task_count))
                         else:

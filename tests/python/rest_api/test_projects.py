@@ -67,6 +67,8 @@ class TestGetProjects:
 
     # Project owner or project assignee can see project.
     def test_project_owner_accessibility(self, projects):
+        project_with_owner = project_with_assignee = None
+
         for p in projects:
             if p["owner"] is not None:
                 project_with_owner = p
@@ -1038,6 +1040,8 @@ class TestGetProjectPreview:
 
     # Project owner or project assignee can see project preview.
     def test_project_preview_owner_accessibility(self, projects):
+        project_with_owner = project_with_assignee = None
+
         for p in projects:
             if not p["tasks"]:
                 continue
@@ -1055,6 +1059,8 @@ class TestGetProjectPreview:
         )
 
     def test_project_preview_not_found(self, projects, tasks):
+        project_with_owner = project_with_assignee = None
+
         for p in projects:
             if any(t["project_id"] == p["id"] for t in tasks):
                 continue

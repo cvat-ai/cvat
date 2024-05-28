@@ -28,7 +28,7 @@ def split_text_attribute(apps, schema_editor):
     for attribute in AttributeSpec.objects.all():
         spec = parse_attribute(attribute.text)
         if spec:
-            attribute.mutable = (spec['prefix'] == '~')
+            attribute.mutable = spec['prefix'] == '~'
             attribute.input_type = spec['type']
             attribute.name = spec['name']
             attribute.default_value = spec['values'][0] if spec['values'] else ''

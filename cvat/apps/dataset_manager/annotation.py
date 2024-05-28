@@ -605,7 +605,7 @@ class TrackManager(ObjectManager):
 
         def simple_3d_interpolation(shape0, shape1):
             result = simple_interpolation(shape0, shape1)
-            angles = (shape0["points"][3:6] + shape1["points"][3:6])
+            angles = shape0["points"][3:6] + shape1["points"][3:6]
             distance = shape1["frame"] - shape0["frame"]
 
             for shape in result:

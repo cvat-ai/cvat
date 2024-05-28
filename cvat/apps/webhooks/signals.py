@@ -139,17 +139,16 @@ def pre_save_resource_event(sender, instance, **kwargs):
     instance._webhooks_selected_webhooks = []
 
     if instance.pk is None:
-        created = True
+        old_instance = None
     else:
         try:
             old_instance = sender.objects.get(pk=instance.pk)
-            created = False
         except ObjectDoesNotExist:
-            created = True
+            old_instance = None
 
     resource_name = instance.__class__.__name__.lower()
 
-    event_type = event_name("create" if created else "update", resource_name)
+    event_type = event_name("update" if old_instance else "create", resource_name)
     if event_type not in map(lambda a: a[0], EventTypeChoice.choices()):
         return
 
@@ -157,11 +156,11 @@ def pre_save_resource_event(sender, instance, **kwargs):
     if not instance._webhooks_selected_webhooks:
         return
 
-    if created:
-        instance._webhooks_old_data = None
-    else:
+    if old_instance:
         old_serializer = get_serializer(instance=old_instance)
         instance._webhooks_old_data = old_serializer.data
+    else:
+        instance._webhooks_old_data = None
 
 @receiver(post_save, sender=Project, dispatch_uid=__name__ + ":project:post_save")
 @receiver(post_save, sender=Task, dispatch_uid=__name__ + ":task:post_save")

@@ -6,12 +6,12 @@ from django.db import migrations, models
 import django.db.models.deletion
 
 def create_profile(apps, schema_editor):
-	User = apps.get_model('auth', 'User')
-	Profile = apps.get_model('engine', 'Profile')
-	for user in User.objects.all():
-		profile = Profile()
-		profile.user = user
-		profile.save()
+    User = apps.get_model('auth', 'User')
+    Profile = apps.get_model('engine', 'Profile')
+    for user in User.objects.all():
+        profile = Profile()
+        profile.user = user
+        profile.save()
 
 class Migration(migrations.Migration):
 

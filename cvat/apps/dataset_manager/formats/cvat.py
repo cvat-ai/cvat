@@ -228,15 +228,15 @@ class CvatExtractor(Extractor):
                     if el.tag == 'points' and el.attrib.get('occluded') == '1':
                         shape_element['visibility'] = [Points.Visibility.hidden] * (len(shape_element['points']) // 2)
                     else:
-                        shape_element['occluded'] = (el.attrib.get('occluded') == '1')
+                        shape_element['occluded'] = el.attrib.get('occluded') == '1'
 
                     if el.tag == 'points' and el.attrib.get('outside') == '1':
                         shape_element['visibility'] = [Points.Visibility.absent] * (len(shape_element['points']) // 2)
                     else:
-                        shape_element['outside'] = (el.attrib.get('outside') == '1')
+                        shape_element['outside'] = el.attrib.get('outside') == '1'
 
                     if track:
-                        shape_element['keyframe'] = (el.attrib.get('keyframe') == '1')
+                        shape_element['keyframe'] = el.attrib.get('keyframe') == '1'
                         if shape_element['keyframe']:
                             track_elements.append(shape_element)
                     else:
@@ -246,14 +246,14 @@ class CvatExtractor(Extractor):
                 elif el.tag in cls._SUPPORTED_SHAPES:
                     if track is not None:
                         shape['frame'] = el.attrib['frame']
-                        shape['outside'] = (el.attrib.get('outside') == '1')
-                        shape['keyframe'] = (el.attrib.get('keyframe') == '1')
+                        shape['outside'] = el.attrib.get('outside') == '1'
+                        shape['keyframe'] = el.attrib.get('keyframe') == '1'
                     if image is not None:
                         shape['label'] = el.attrib.get('label')
                         shape['group'] = int(el.attrib.get('group_id', 0))
 
                     shape['type'] = el.tag
-                    shape['occluded'] = (el.attrib.get('occluded') == '1')
+                    shape['occluded'] = el.attrib.get('occluded') == '1'
                     shape['z_order'] = int(el.attrib.get('z_order', 0))
                     shape['rotation'] = float(el.attrib.get('rotation', 0))
 
