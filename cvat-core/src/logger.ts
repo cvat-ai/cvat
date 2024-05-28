@@ -73,6 +73,7 @@ class Logger {
                     return {
                         ...previousEvent.payload,
                         count: count + 1,
+                        lastTimestamp: new Date().toISOString(),
                     };
                 },
             },
