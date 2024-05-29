@@ -5,12 +5,12 @@
 
 import { ImportActions, ImportActionTypes } from 'actions/import-actions';
 import { getInstanceType, RequestInstanceType } from 'actions/requests-actions';
-import { InstanceType } from 'cvat-core-wrapper';
+import { ProjectOrTaskOrJob } from 'cvat-core-wrapper';
 import { ImportState } from '.';
 
 const defaultProgress = 0.0;
 
-export function defineActititiesField(instance: InstanceType | RequestInstanceType): 'projects' | 'tasks' | 'jobs' {
+export function defineActititiesField(instance: ProjectOrTaskOrJob | RequestInstanceType): 'projects' | 'tasks' | 'jobs' {
     return `${getInstanceType(instance)}s`;
 }
 

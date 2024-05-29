@@ -6,7 +6,7 @@
 import { createAction, ActionUnion, ThunkAction } from 'utils/redux';
 import { CombinedState } from 'reducers';
 import {
-    getCore, Storage, Job, Task, Project, InstanceType,
+    getCore, Storage, Job, Task, Project, ProjectOrTaskOrJob,
 } from 'cvat-core-wrapper';
 import { EventScope } from 'cvat-logger';
 import { getProjectsAsync } from './projects-actions';
@@ -33,26 +33,26 @@ export enum ImportActionTypes {
 }
 
 export const importActions = {
-    openImportDatasetModal: (instance: InstanceType) => (
+    openImportDatasetModal: (instance: ProjectOrTaskOrJob) => (
         createAction(ImportActionTypes.OPEN_IMPORT_DATASET_MODAL, { instance })
     ),
-    closeImportDatasetModal: (instance: InstanceType) => (
+    closeImportDatasetModal: (instance: ProjectOrTaskOrJob) => (
         createAction(ImportActionTypes.CLOSE_IMPORT_DATASET_MODAL, { instance })
     ),
-    importDataset: (instance: InstanceType | RequestInstanceType, format: string) => (
+    importDataset: (instance: ProjectOrTaskOrJob | RequestInstanceType, format: string) => (
         createAction(ImportActionTypes.IMPORT_DATASET, { instance, format })
     ),
-    importDatasetSuccess: (instance: InstanceType | RequestInstanceType, resource: 'dataset' | 'annotation') => (
+    importDatasetSuccess: (instance: ProjectOrTaskOrJob | RequestInstanceType, resource: 'dataset' | 'annotation') => (
         createAction(ImportActionTypes.IMPORT_DATASET_SUCCESS, { instance, resource })
     ),
-    importDatasetFailed: (instance: InstanceType | RequestInstanceType, resource: 'dataset' | 'annotation', error: any) => (
+    importDatasetFailed: (instance: ProjectOrTaskOrJob | RequestInstanceType, resource: 'dataset' | 'annotation', error: any) => (
         createAction(ImportActionTypes.IMPORT_DATASET_FAILED, {
             instance,
             resource,
             error,
         })
     ),
-    importDatasetUpdateStatus: (instance: InstanceType, progress: number, status: string) => (
+    importDatasetUpdateStatus: (instance: ProjectOrTaskOrJob, progress: number, status: string) => (
         createAction(ImportActionTypes.IMPORT_DATASET_UPDATE_STATUS, { instance, progress, status })
     ),
     openImportBackupModal: (instanceType: 'project' | 'task') => (
@@ -74,7 +74,7 @@ export async function listenImportDatasetAsync(
     rqID: string,
     dispatch: (action: ImportActions | RequestsActions) => void,
     params: {
-        instance: InstanceType | RequestInstanceType,
+        instance: ProjectOrTaskOrJob | RequestInstanceType,
     },
 ): Promise<void> {
     const { instance } = params;
@@ -90,7 +90,7 @@ export async function listenImportDatasetAsync(
 }
 
 export const importDatasetAsync = (
-    instance: InstanceType,
+    instance: ProjectOrTaskOrJob,
     format: string,
     useDefaultSettings: boolean,
     sourceStorage: Storage,

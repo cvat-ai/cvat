@@ -5,7 +5,7 @@
 import { ActionUnion, createAction } from 'utils/redux';
 import { RequestsQuery, RequestsState } from 'reducers';
 import {
-    Request, InstanceType, getCore, RQStatus,
+    Request, ProjectOrTaskOrJob, getCore, RQStatus,
 } from 'cvat-core-wrapper';
 
 const core = getCore();
@@ -51,7 +51,7 @@ export interface RequestInstanceType {
     type: 'project' | 'task' | 'job';
 }
 
-export function getInstanceType(instance: InstanceType | RequestInstanceType): 'project' | 'task' | 'job' {
+export function getInstanceType(instance: ProjectOrTaskOrJob | RequestInstanceType): 'project' | 'task' | 'job' {
     if (instance instanceof core.classes.Project) {
         return 'project';
     }

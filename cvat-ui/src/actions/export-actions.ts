@@ -5,9 +5,7 @@
 
 import { ActionUnion, createAction, ThunkAction } from 'utils/redux';
 
-import {
-    Storage, InstanceType, Job,
-} from 'cvat-core-wrapper';
+import { Storage, ProjectOrTaskOrJob, Job } from 'cvat-core-wrapper';
 import {
     getInstanceType, RequestInstanceType, listen, RequestsActions,
     shouldListenForProgress,
@@ -34,7 +32,7 @@ export const exportActions = {
         createAction(ExportActionTypes.CLOSE_EXPORT_DATASET_MODAL, { instance })
     ),
     exportDatasetSuccess: (
-        instance: InstanceType | RequestInstanceType,
+        instance: ProjectOrTaskOrJob | RequestInstanceType,
         instanceType: 'project' | 'task' | 'job',
         format: string,
         resource: 'dataset' | 'annotations',
@@ -49,7 +47,7 @@ export const exportActions = {
         })
     ),
     exportDatasetFailed: (
-        instance: InstanceType | RequestInstanceType,
+        instance: ProjectOrTaskOrJob | RequestInstanceType,
         instanceType: 'project' | 'task' | 'job',
         format: string,
         resource: 'dataset' | 'annotations',
@@ -69,10 +67,10 @@ export const exportActions = {
     closeExportBackupModal: (instance: any) => (
         createAction(ExportActionTypes.CLOSE_EXPORT_BACKUP_MODAL, { instance })
     ),
-    exportBackupSuccess: (instance: Exclude<InstanceType, Job> | RequestInstanceType, instanceType: 'task' | 'project', target?: 'local' | 'cloudstorage') => (
+    exportBackupSuccess: (instance: Exclude<ProjectOrTaskOrJob, Job> | RequestInstanceType, instanceType: 'task' | 'project', target?: 'local' | 'cloudstorage') => (
         createAction(ExportActionTypes.EXPORT_BACKUP_SUCCESS, { instance, instanceType, target })
     ),
-    exportBackupFailed: (instance: Exclude<InstanceType, Job> | RequestInstanceType, instanceType: 'task' | 'project', error: any) => (
+    exportBackupFailed: (instance: Exclude<ProjectOrTaskOrJob, Job> | RequestInstanceType, instanceType: 'task' | 'project', error: any) => (
         createAction(ExportActionTypes.EXPORT_BACKUP_FAILED, { instance, instanceType, error })
     ),
 };
@@ -81,7 +79,7 @@ export async function listenExportDatasetAsync(
     rqID: string,
     dispatch: (action: ExportActions | RequestsActions) => void,
     params: {
-        instance: InstanceType | RequestInstanceType,
+        instance: ProjectOrTaskOrJob | RequestInstanceType,
         format: string,
         saveImages: boolean,
     },
@@ -102,7 +100,7 @@ export async function listenExportDatasetAsync(
 }
 
 export const exportDatasetAsync = (
-    instance: InstanceType,
+    instance: ProjectOrTaskOrJob,
     format: string,
     saveImages: boolean,
     useDefaultSettings: boolean,
@@ -136,7 +134,7 @@ export async function listenExportBackupAsync(
     rqID: string,
     dispatch: (action: ExportActions | RequestsActions) => void,
     params: {
-        instance: Exclude<InstanceType, Job> | RequestInstanceType,
+        instance: Exclude<ProjectOrTaskOrJob, Job> | RequestInstanceType,
     },
 ): Promise<void> {
     const { instance } = params;
@@ -152,7 +150,7 @@ export async function listenExportBackupAsync(
 }
 
 export const exportBackupAsync = (
-    instance: Exclude<InstanceType, Job>,
+    instance: Exclude<ProjectOrTaskOrJob, Job>,
     targetStorage: Storage,
     useDefaultSetting: boolean,
     fileName: string,
