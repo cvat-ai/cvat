@@ -37,6 +37,8 @@ context('Dump annotation if cuboid created.', () => {
                 format: exportFormat,
             };
             cy.exportJob(exportAnnotation);
+            cy.intercept('GET', '/api/jobs/**/annotations?**').as('getAnnotations');
+            cy.wait('@getAnnotations');
             cy.waitForDownload();
         });
 
