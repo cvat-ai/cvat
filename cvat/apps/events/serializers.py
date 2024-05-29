@@ -118,8 +118,8 @@ class ClientEventsSerializer(serializers.Serializer):
             previous_job_id = job_id
 
             try:
-                json_payload = json.dumps(json.loads(event.get("payload", "{}")))
-            except:
+                json_payload = json.loads(event.get("payload", "{}"))
+            except json.JSONDecodeError:
                 raise serializers.ValidationError("JSON payload is not valid in passed event")
 
             event.update({
@@ -130,7 +130,7 @@ class ClientEventsSerializer(serializers.Serializer):
                 "user_id": request.user.id,
                 "user_name": request.user.username,
                 "user_email": request.user.email,
-                "payload": json_payload,
+                "payload": json.dumps(json_payload),
             })
 
         common = {
