@@ -604,15 +604,11 @@ def handle_client_events_push(request, data):
     WORKING_TIME_RESOLUTION = datetime.timedelta(milliseconds=1)
     org = request.iam_context["organization"]
 
-    def build_complex_id(event):
+    def read_ids(event) -> tuple[int | None, int | None, int | None]:
         job_id = event.get("job_id")
         task_id = event.get("task_id")
         project_id = event.get("project_id")
-        return ':'.join((str(job_id), str(task_id), str(project_id)))
-
-    def parse_complex_id(id):
-        job_id, task_id, project_id = map(lambda x: None if x == 'None' else int(x), id.split(':'))
-        return job_id, task_id, project_id
+        return (job_id, task_id, project_id)
 
     def get_end_timestamp(event: dict) -> datetime.datetime:
         COLLAPSED_EVENT_SCOPES = frozenset(("change:frame",))
@@ -621,8 +617,12 @@ def handle_client_events_push(request, data):
 
         return event["timestamp"]
 
-    def generate_wt_event(id: str, wt: datetime.timedelta, common: dict) -> EventSerializer | None:
-        job_id, task_id, project_id = parse_complex_id(id)
+    def generate_wt_event(
+        ids: tuple[int | None, int | None, int | None],
+        wt: datetime.timedelta,
+        common: dict
+    ) -> EventSerializer | None:
+        job_id, task_id, project_id = ids
         if wt.total_seconds():
             value = wt // WORKING_TIME_RESOLUTION
             event = EventSerializer(data={
@@ -645,14 +645,14 @@ def handle_client_events_push(request, data):
 
     if previous_event := data["previous_event"]:
         previous_end_timestamp = get_end_timestamp(previous_event)
-        previous_id = build_complex_id(previous_event)
+        previous_ids = read_ids(previous_event)
     elif data["events"]:
         previous_end_timestamp = data["events"][0]["timestamp"]
-        previous_id = build_complex_id(data["events"][0])
+        previous_ids = read_ids(data["events"][0])
 
-    working_time_per_id = {}
+    working_time_dict = {}
     for event in data["events"]:
-        id = build_complex_id(event)
+        current_ids = read_ids(event)
         working_time = datetime.timedelta()
 
         timestamp = event["timestamp"]
@@ -668,10 +668,10 @@ def handle_client_events_push(request, data):
             working_time += end_timestamp - previous_end_timestamp
             previous_end_timestamp = end_timestamp
 
-        if previous_id not in working_time_per_id:
-            working_time_per_id[previous_id] = datetime.timedelta()
-        working_time_per_id[previous_id] += working_time
-        previous_id = id
+        if previous_ids not in working_time_dict:
+            working_time_dict[previous_ids] = datetime.timedelta()
+        working_time_dict[previous_ids] += working_time
+        previous_ids = current_ids
 
     common = {
         "timestamp": datetime.datetime.now(datetime.timezone.utc),
@@ -682,8 +682,8 @@ def handle_client_events_push(request, data):
         "org_slug": getattr(org, "slug", None),
     }
 
-    for id in working_time_per_id:
-        event = generate_wt_event(id, working_time_per_id[id], common)
+    for ids in working_time_dict:
+        event = generate_wt_event(ids, working_time_dict[ids], common)
         if event:
             event.is_valid(raise_exception=True)
             record_server_event(
