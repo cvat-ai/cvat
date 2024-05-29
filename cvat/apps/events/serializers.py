@@ -123,7 +123,7 @@ class ClientEventsSerializer(serializers.Serializer):
                 raise serializers.ValidationError("JSON payload is not valid in passed event")
 
             event.update({
-                "timestamp": str((timestamp + time_correction).timestamp()),
+                "timestamp": str(timestamp + time_correction),
                 "source": "client",
                 "org_id": org_id,
                 "org_slug": org_slug,
@@ -134,7 +134,7 @@ class ClientEventsSerializer(serializers.Serializer):
             })
 
         common = {
-            "timestamp": str(receive_time.timestamp()),
+            "timestamp": str(receive_time),
             "user_id": request.user.id,
             "user_name": request.user.username,
             "user_email": request.user.email,
@@ -144,6 +144,6 @@ class ClientEventsSerializer(serializers.Serializer):
 
         for job_id in working_time_per_job:
             event = ClientEventsSerializer._generate_wt_event(job_id, working_time_per_job[job_id], common)
-            data["events"].append(event.to_internal_value())
+            data["events"].append(event.validated_data)
 
         return data
