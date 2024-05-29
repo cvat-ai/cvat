@@ -7061,7 +7061,6 @@ components:
         user_email:
           type: string
           nullable: true
-          minLength: 1
         org_id:
           type: integer
           nullable: true
