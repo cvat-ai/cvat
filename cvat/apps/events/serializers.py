@@ -35,11 +35,24 @@ class ClientEventsSerializer(serializers.Serializer):
     _WORKING_TIME_SCOPE = 'send:working_time'
     _TIME_THRESHOLD = datetime.timedelta(seconds=100)
     _WORKING_TIME_RESOLUTION = datetime.timedelta(milliseconds=1)
-    _PROHIBITED_CLIENT_SCOPES = frozenset((_WORKING_TIME_SCOPE,))
     _COLLAPSED_EVENT_SCOPES = frozenset(("change:frame",))
+    _PROHIBITED_CLIENT_SCOPES = frozenset((
+        _WORKING_TIME_SCOPE,
+        'create:project', 'update:project', 'delete:project',
+        'create:task', 'update:task', 'delete:task',
+        'create:job', 'update:job', 'delete:job',
+        'create:organization', 'update:organization', 'delete:organization',
+        'create:user', 'update:user', 'delete:user',
+        'create:cloudstorage', 'update:cloudstorage', 'delete:cloudstorage',
+        'create:issue', 'update:issue', 'delete:issue',
+        'create:comment', 'update:comment', 'delete:comment',
+        'create:annotations', 'update:annotations', 'delete:annotations',
+        'create:label', 'update:label', 'delete:label',
+        'export:dataset', 'import:dataset',
+    ))
 
     @classmethod
-    def _generate_wt_event(cls, job_id: int | None, wt: datetime.timedelta, common: dict) -> EventSerializer:
+    def _generate_wt_event(cls, job_id: int | None, wt: datetime.timedelta, common: dict) -> EventSerializer | None:
         if wt.total_seconds():
             task_id = None
             project_id = None
@@ -145,6 +158,7 @@ class ClientEventsSerializer(serializers.Serializer):
 
         for job_id in working_time_per_job:
             event = ClientEventsSerializer._generate_wt_event(job_id, working_time_per_job[job_id], common)
-            data["events"].append(event.validated_data)
+            if event:
+                data["events"].append(event.validated_data)
 
         return data
