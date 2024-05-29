@@ -157,13 +157,13 @@ Client events:
 
 ### Working time calculation
 
-Here is a short overview of how CVAT understands the user's working time:
+Here is a short overview of how CVAT deals with the user's working time:
 
 - The user interface collects events when a user interacts with the interface
 (resizing canvas, drawing objects, clicking buttons, etc)
 The structure of one single event is described [here](#events-log-structure).
 
--  The user interface sends these events in bulks to the server.
+- The user interface sends these events in bulks to the server.
 Currently, it uses the following triggers to send events:
     - Periodical timer (~90 seconds)
     - A user clicks the "Save" button on the annotation view
@@ -182,7 +182,8 @@ the end of the previous event and the end of the next event.
 These events may be, or not be bounded to a certain job/task/project.
 CVAT defines belonging of the working time based on events, that were used to calculate.
 
-- If Clickhouse was configured, CVAT saves the event in the database and later these events are used to compute analytics.
+- If Clickhouse was configured, CVAT saves the event in
+the database and later these events are used to compute analytics.
 
 ### Request `id` for tracking
 
