@@ -5,6 +5,7 @@
 from django.conf import settings
 from rest_framework import status, viewsets
 from rest_framework.response import Response
+from rest_framework.exceptions import PermissionDenied
 from drf_spectacular.utils import OpenApiResponse, OpenApiParameter, extend_schema
 from drf_spectacular.types import OpenApiTypes
 from rest_framework.renderers import JSONRenderer
@@ -19,6 +20,20 @@ from .handlers import handle_client_events_push
 
 class EventsViewSet(viewsets.ViewSet):
     serializer_class = None
+    PROHIBITED_CLIENT_SCOPES = frozenset((
+        'create:project', 'update:project', 'delete:project',
+        'create:task', 'update:task', 'delete:task',
+        'create:job', 'update:job', 'delete:job',
+        'create:organization', 'update:organization', 'delete:organization',
+        'create:user', 'update:user', 'delete:user',
+        'create:cloudstorage', 'update:cloudstorage', 'delete:cloudstorage',
+        'create:issue', 'update:issue', 'delete:issue',
+        'create:comment', 'update:comment', 'delete:comment',
+        'create:annotations', 'update:annotations', 'delete:annotations',
+        'create:label', 'update:label', 'delete:label',
+        'export:dataset', 'import:dataset',
+        'send:working_time',
+    ))
 
     @extend_schema(summary='Log client events',
         methods=['POST'],
@@ -31,6 +46,11 @@ class EventsViewSet(viewsets.ViewSet):
     def create(self, request):
         serializer = ClientEventsSerializer(data=request.data, context={"request": request})
         serializer.is_valid(raise_exception=True)
+
+        for event in serializer.validated_data['events']:
+            scope = event['scope']
+            if scope in EventsViewSet.PROHIBITED_CLIENT_SCOPES:
+                raise PermissionDenied(f'Event scope **{scope}** is not allowed from client')
 
         for event in serializer.validated_data["events"]:
             message = JSONRenderer().render(event).decode('UTF-8')
