@@ -1,10 +1,11 @@
-# Copyright (C) 2023 CVAT.ai Corporation
+# Copyright (C) 2023-2024 CVAT.ai Corporation
 #
 # SPDX-License-Identifier: MIT
 
 from django.conf import settings
 from rest_framework import status, viewsets
 from rest_framework.response import Response
+from rest_framework.exceptions import PermissionDenied
 from drf_spectacular.utils import OpenApiResponse, OpenApiParameter, extend_schema
 from drf_spectacular.types import OpenApiTypes
 from rest_framework.renderers import JSONRenderer
@@ -30,6 +31,11 @@ class EventsViewSet(viewsets.ViewSet):
     def create(self, request):
         serializer = ClientEventsSerializer(data=request.data, context={"request": request})
         serializer.is_valid(raise_exception=True)
+
+        for event in request.data['events']:
+            scope = event['scope']
+            if scope in ClientEventsSerializer._PROHIBITED_CLIENT_SCOPES:
+                raise PermissionDenied(f'Event scope **{scope}** is not allowed from client')
 
         for event in serializer.data["events"]:
             message = JSONRenderer().render(event).decode('UTF-8')

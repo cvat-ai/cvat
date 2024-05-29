@@ -32,10 +32,11 @@ class ClientEventsSerializer(serializers.Serializer):
     events = EventSerializer(many=True, default=[])
     previous_event = EventSerializer(default=None, allow_null=True, write_only=True)
     timestamp = serializers.DateTimeField()
+    _WORKING_TIME_SCOPE = 'send:working_time'
     _TIME_THRESHOLD = datetime.timedelta(seconds=100)
     _WORKING_TIME_RESOLUTION = datetime.timedelta(milliseconds=1)
+    _PROHIBITED_CLIENT_SCOPES = frozenset((_WORKING_TIME_SCOPE,))
     _COLLAPSED_EVENT_SCOPES = frozenset(("change:frame",))
-    _WORKING_TIME_SCOPE = 'send:working_time'
 
     @classmethod
     def _generate_wt_event(cls, job_id: int | None, wt: datetime.timedelta, common: dict) -> EventSerializer:
