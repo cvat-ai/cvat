@@ -676,7 +676,8 @@ def handle_client_events_push(request, data: dict):
             if event:
                 event.is_valid(raise_exception=True)
                 record_server_event(
-                    scope=event.validated_data['scope'],
+                    scope=WORKING_TIME_SCOPE,
                     request_id=request_id(),
-                    payload=event.validated_data
+                    payload=json.loads(event.validated_data['payload']),
+                    **{key: value for key, value in event.validated_data.items() if key not in ['scope', 'payload']}
                 )
