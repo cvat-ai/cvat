@@ -7,7 +7,7 @@ from drf_spectacular.types import OpenApiTypes
 from drf_spectacular.utils import (OpenApiParameter, OpenApiResponse,
                                    extend_schema)
 from rest_framework import status, viewsets
-from rest_framework.exceptions import PermissionDenied
+from rest_framework.serializers import ValidationError
 from rest_framework.renderers import JSONRenderer
 from rest_framework.response import Response
 
@@ -22,7 +22,7 @@ from .handlers import handle_client_events_push
 
 class EventsViewSet(viewsets.ViewSet):
     serializer_class = None
-    PROHIBITED_CLIENT_SCOPES = frozenset((
+    SERVER_ONLY_SCOPES = frozenset((
         'create:project', 'update:project', 'delete:project',
         'create:task', 'update:task', 'delete:task',
         'create:job', 'update:job', 'delete:job',
@@ -51,8 +51,8 @@ class EventsViewSet(viewsets.ViewSet):
 
         for event in serializer.validated_data['events']:
             scope = event['scope']
-            if scope in EventsViewSet.PROHIBITED_CLIENT_SCOPES:
-                raise PermissionDenied(f'Event scope **{scope}** is not allowed from client')
+            if scope in EventsViewSet.SERVER_ONLY_SCOPES:
+                raise ValidationError(f'Event scope **{scope}** is not allowed from client')
 
         for event in serializer.validated_data["events"]:
             message = JSONRenderer().render(event).decode('UTF-8')
