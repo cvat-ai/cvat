@@ -604,6 +604,16 @@ def handle_client_events_push(request, data):
     WORKING_TIME_RESOLUTION = datetime.timedelta(milliseconds=1)
     org = request.iam_context["organization"]
 
+    def build_complex_id(event):
+        job_id = event.get("job_id")
+        task_id = event.get("task_id")
+        project_id = event.get("project_id")
+        return ':'.join((str(job_id), str(task_id), str(project_id)))
+
+    def parse_complex_id(id):
+        job_id, task_id, project_id = map(lambda x: None if x == 'None' else int(x), id.split(':'))
+        return job_id, task_id, project_id
+
     def get_end_timestamp(event: dict) -> datetime.datetime:
         COLLAPSED_EVENT_SCOPES = frozenset(("change:frame",))
         if event["scope"] in COLLAPSED_EVENT_SCOPES:
@@ -612,7 +622,7 @@ def handle_client_events_push(request, data):
         return event["timestamp"]
 
     def generate_wt_event(id: str, wt: datetime.timedelta, common: dict) -> EventSerializer | None:
-        job_id, task_id, project_id = map(lambda x: None if x == 'None' else int(x), id.split(':'))
+        job_id, task_id, project_id = parse_complex_id(id)
         if wt.total_seconds():
             value = wt // WORKING_TIME_RESOLUTION
             event = EventSerializer(data={
@@ -633,22 +643,16 @@ def handle_client_events_push(request, data):
 
             return event
 
-    def get_combined_id(event):
-        job_id = event.get("job_id")
-        task_id = event.get("task_id")
-        project_id = event.get("project_id")
-        return ':'.join((str(job_id), str(task_id), str(project_id)))
-
     if previous_event := data["previous_event"]:
         previous_end_timestamp = get_end_timestamp(previous_event)
-        previous_id = get_combined_id(previous_event)
+        previous_id = build_complex_id(previous_event)
     elif data["events"]:
         previous_end_timestamp = data["events"][0]["timestamp"]
-        previous_id = get_combined_id(data["events"][0])
+        previous_id = build_complex_id(data["events"][0])
 
     working_time_per_id = {}
     for event in data["events"]:
-        id = get_combined_id(event)
+        id = build_complex_id(event)
         working_time = datetime.timedelta()
 
         timestamp = event["timestamp"]
