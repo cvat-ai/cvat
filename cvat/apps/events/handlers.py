@@ -679,5 +679,6 @@ def handle_client_events_push(request, data: dict):
                     scope=WORKING_TIME_SCOPE,
                     request_id=request_id(),
                     payload=json.loads(event.validated_data['payload']),
-                    **{key: value for key, value in event.validated_data.items() if key not in ['scope', 'payload']}
+                    timestamp=str(event.validated_data['timestamp'].timestamp()),
+                    **{key: value for key, value in event.validated_data.items() if key not in ['scope', 'payload', 'timestamp']}
                 )
