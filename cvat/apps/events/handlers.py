@@ -39,7 +39,7 @@ from cvat.apps.engine.models import ShapeType
 from cvat.apps.organizations.models import Membership, Organization, Invitation
 from cvat.apps.organizations.serializers import OrganizationReadSerializer, MembershipReadSerializer, InvitationReadSerializer
 
-from .serializers import ClientEventsSerializer, EventSerializer
+from .serializers import EventSerializer
 from .event import event_scope, record_server_event
 from .cache import get_cache
 
