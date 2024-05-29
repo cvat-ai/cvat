@@ -1,4 +1,4 @@
-# Copyright (C) 2023-2024 CVAT.ai Corporation
+# Copyright (C) 2023 CVAT.ai Corporation
 #
 # SPDX-License-Identifier: MIT
 
@@ -31,11 +31,6 @@ class EventsViewSet(viewsets.ViewSet):
     def create(self, request):
         serializer = ClientEventsSerializer(data=request.data, context={"request": request})
         serializer.is_valid(raise_exception=True)
-
-        for event in request.data['events']:
-            scope = event['scope']
-            if scope in ClientEventsSerializer._PROHIBITED_CLIENT_SCOPES:
-                raise PermissionDenied(f'Event scope **{scope}** is not allowed from client')
 
         for event in serializer.data["events"]:
             message = JSONRenderer().render(event).decode('UTF-8')

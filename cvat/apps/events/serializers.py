@@ -36,20 +36,6 @@ class ClientEventsSerializer(serializers.Serializer):
     _TIME_THRESHOLD = datetime.timedelta(seconds=100)
     _WORKING_TIME_RESOLUTION = datetime.timedelta(milliseconds=1)
     _COLLAPSED_EVENT_SCOPES = frozenset(("change:frame",))
-    _PROHIBITED_CLIENT_SCOPES = frozenset((
-        _WORKING_TIME_SCOPE,
-        'create:project', 'update:project', 'delete:project',
-        'create:task', 'update:task', 'delete:task',
-        'create:job', 'update:job', 'delete:job',
-        'create:organization', 'update:organization', 'delete:organization',
-        'create:user', 'update:user', 'delete:user',
-        'create:cloudstorage', 'update:cloudstorage', 'delete:cloudstorage',
-        'create:issue', 'update:issue', 'delete:issue',
-        'create:comment', 'update:comment', 'delete:comment',
-        'create:annotations', 'update:annotations', 'delete:annotations',
-        'create:label', 'update:label', 'delete:label',
-        'export:dataset', 'import:dataset',
-    ))
 
     @classmethod
     def _generate_wt_event(cls, job_id: int | None, wt: datetime.timedelta, common: dict) -> EventSerializer | None:
