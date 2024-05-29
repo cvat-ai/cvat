@@ -2,45 +2,36 @@
 #
 # SPDX-License-Identifier: MIT
 
+import datetime
+import json
+import traceback
 from copy import deepcopy
 from typing import Optional, Union
-import datetime
-import traceback
-import json
+
 import rq
-
-from rest_framework.views import exception_handler
-from rest_framework.exceptions import NotAuthenticated
+from crum import get_current_request, get_current_user
 from rest_framework import status
-from crum import get_current_user, get_current_request
+from rest_framework.exceptions import NotAuthenticated
+from rest_framework.views import exception_handler
 
-from cvat.apps.engine.models import (
-    Project,
-    Task,
-    Job,
-    User,
-    CloudStorage,
-    Issue,
-    Comment,
-    Label,
-)
-from cvat.apps.engine.serializers import (
-    ProjectReadSerializer,
-    TaskReadSerializer,
-    JobReadSerializer,
-    BasicUserSerializer,
-    CloudStorageReadSerializer,
-    IssueReadSerializer,
-    CommentReadSerializer,
-    LabelSerializer,
-)
-from cvat.apps.engine.models import ShapeType
-from cvat.apps.organizations.models import Membership, Organization, Invitation
-from cvat.apps.organizations.serializers import OrganizationReadSerializer, MembershipReadSerializer, InvitationReadSerializer
+from cvat.apps.engine.models import (CloudStorage, Comment, Issue, Job, Label,
+                                     Project, ShapeType, Task, User)
+from cvat.apps.engine.serializers import (BasicUserSerializer,
+                                          CloudStorageReadSerializer,
+                                          CommentReadSerializer,
+                                          IssueReadSerializer,
+                                          JobReadSerializer, LabelSerializer,
+                                          ProjectReadSerializer,
+                                          TaskReadSerializer)
+from cvat.apps.organizations.models import Invitation, Membership, Organization
+from cvat.apps.organizations.serializers import (InvitationReadSerializer,
+                                                 MembershipReadSerializer,
+                                                 OrganizationReadSerializer)
 
-from .serializers import EventSerializer
-from .event import event_scope, record_server_event
 from .cache import get_cache
+from .event import event_scope, record_server_event
+from .serializers import EventSerializer
+
 
 def project_id(instance):
     if isinstance(instance, Project):

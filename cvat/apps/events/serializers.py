@@ -7,6 +7,7 @@ import json
 
 from rest_framework import serializers
 
+
 class EventSerializer(serializers.Serializer):
     scope = serializers.CharField(required=True)
     obj_name = serializers.CharField(required=False, allow_null=True)
