@@ -598,13 +598,13 @@ def handle_viewset_exception(exc, context):
 
     return response
 
-def handle_client_events_push(request, data):
+def handle_client_events_push(request, data: dict):
     TIME_THRESHOLD = datetime.timedelta(seconds=100)
     WORKING_TIME_SCOPE = 'send:working_time'
     WORKING_TIME_RESOLUTION = datetime.timedelta(milliseconds=1)
     org = request.iam_context["organization"]
 
-    def read_ids(event) -> tuple[int | None, int | None, int | None]:
+    def read_ids(event: dict) -> tuple[int | None, int | None, int | None]:
         job_id = event.get("job_id")
         task_id = event.get("task_id")
         project_id = event.get("project_id")
