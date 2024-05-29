@@ -54,6 +54,7 @@ class EventsViewSet(viewsets.ViewSet):
             if scope in EventsViewSet.SERVER_ONLY_SCOPES:
                 raise ValidationError(f'Event scope **{scope}** is not allowed from client')
 
+        handle_client_events_push(request, serializer.validated_data)
         for event in serializer.validated_data["events"]:
             message = JSONRenderer().render({
                 **event,
@@ -61,7 +62,6 @@ class EventsViewSet(viewsets.ViewSet):
             }).decode('UTF-8')
             vlogger.info(message)
 
-        handle_client_events_push(request, serializer.validated_data)
         return Response(serializer.validated_data, status=status.HTTP_201_CREATED)
 
     @extend_schema(summary='Get an event log',
