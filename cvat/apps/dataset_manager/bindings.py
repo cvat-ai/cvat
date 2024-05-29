@@ -6,6 +6,7 @@
 from __future__ import annotations
 
 import os.path as osp
+import re
 import sys
 from collections import namedtuple
 from functools import reduce
@@ -22,8 +23,12 @@ import numpy as np
 import rq
 from attr import attrib, attrs
 from datumaro.components.media import PointCloud
+from datumaro.components.environment import Environment
+from datumaro.components.extractor import Importer
+from datumaro.components.format_detection import RejectionReason
 from django.db.models import QuerySet
 from django.utils import timezone
+from django.conf import settings
 
 from cvat.apps.dataset_manager.formats.utils import get_label_color
 from cvat.apps.dataset_manager.util import add_prefetch_fields
@@ -1664,6 +1669,33 @@ def GetCVATDataExtractor(
 class CvatImportError(Exception):
     pass
 
+@attrs
+class CvatDatasetNotFoundError(CvatImportError):
+    message: str = ""
+    reason: str = ""
+    format_name: str = ""
+    _docs_base_url = f"{settings.CVAT_DOCS_URL}/manual/advanced/formats/"
+
+    def __str__(self) -> str:
+        formatted_format_name = self._format_name_for_docs()
+        docs_message = self._docs_message(formatted_format_name)
+        display_message = self._clean_display_message()
+        return f"{docs_message}. {display_message}"
+
+    def _format_name_for_docs(self) -> str:
+        return self.format_name.replace("_", "-")
+
+    def _docs_message(self, formatted_format_name: str) -> str:
+        return f"Check [format docs]({self._docs_base_url}format-{formatted_format_name})"
+
+    def _clean_display_message(self) -> str:
+        message = re.sub(r'^.*?:', "", self.message)
+        if "dataset must contain a file matching pattern" in message:
+            message = message.replace("dataset must contain a file matching pattern", "")
+            message = message.replace("\n", "")
+            message = "Dataset must contain a file:" + message
+        return re.sub(r' +', " ", message)
+
 def mangle_image_name(name: str, subset: str, names: DefaultDict[Tuple[str, str], int]) -> str:
     name, ext = name.rsplit(osp.extsep, maxsplit=1)
 
@@ -2265,3 +2297,19 @@ def load_dataset_data(project_annotation, dataset: dm.Dataset, project_data):
             dataset_files['data_root'] = osp.commonpath(root_paths) + osp.sep
 
         project_annotation.add_task(task_fields, dataset_files, project_data)
+
+def detect_dataset(dataset_dir: str, format_name: str, importer: Importer) -> None:
+    not_found_error_instance = CvatDatasetNotFoundError()
+
+    def not_found_error(_, reason, human_message):
+        not_found_error_instance.format_name = format_name
+        not_found_error_instance.reason = reason
+        not_found_error_instance.message = human_message
+
+    detection_env = Environment()
+    detection_env.importers.items.clear()
+    detection_env.importers.register(format_name, importer)
+    detected = detection_env.detect_dataset(dataset_dir, depth=4, rejection_callback=not_found_error)
+
+    if not detected and not_found_error_instance.reason != RejectionReason.detection_unsupported:
+        raise not_found_error_instance

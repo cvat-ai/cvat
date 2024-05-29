@@ -22,7 +22,7 @@ from cvat.apps.events.handlers import handle_annotations_change
 from cvat.apps.profiler import silk_profile
 
 from cvat.apps.dataset_manager.annotation import AnnotationIR, AnnotationManager
-from cvat.apps.dataset_manager.bindings import TaskData, JobData, CvatImportError
+from cvat.apps.dataset_manager.bindings import TaskData, JobData, CvatImportError, CvatDatasetNotFoundError
 from cvat.apps.dataset_manager.formats.registry import make_exporter, make_importer
 from cvat.apps.dataset_manager.util import add_prefetch_fields, bulk_create, get_cached
 
@@ -708,7 +708,7 @@ class JobAnnotation:
         with TemporaryDirectory(dir=temp_dir_base) as temp_dir:
             try:
                 importer(src_file, temp_dir, job_data, **options)
-            except DatasetNotFoundError as not_found:
+            except (DatasetNotFoundError, CvatDatasetNotFoundError) as not_found:
                 if settings.CVAT_LOG_IMPORT_ERRORS:
                     dlogger.log_import_error(
                         entity="job",
@@ -820,7 +820,7 @@ class TaskAnnotation:
         with TemporaryDirectory(dir=temp_dir_base) as temp_dir:
             try:
                 importer(src_file, temp_dir, task_data, **options)
-            except DatasetNotFoundError as not_found:
+            except (DatasetNotFoundError, CvatDatasetNotFoundError) as not_found:
                 if settings.CVAT_LOG_IMPORT_ERRORS:
                     dlogger.log_import_error(
                         entity="task",

@@ -181,7 +181,11 @@ async function chunkUpload(file: File, uploadConfig): Promise<{ uploadSentSize: 
 function filterPythonTraceback(data: string): string {
     if (typeof data === 'string' && data.trim().startsWith('Traceback')) {
         const lastRow = data.split('\n').findLastIndex((str) => str.trim().length);
-        return `${data.split('\n').slice(lastRow, lastRow + 1)[0]}`;
+        let errorText = `${data.split('\n').slice(lastRow, lastRow + 1)[0]}`;
+        if (errorText.includes('CvatDatasetNotFoundError')) {
+            errorText = errorText.replace(/.*CvatDatasetNotFoundError: /, '');
+        }
+        return errorText;
     }
 
     return data;
