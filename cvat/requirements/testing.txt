@@ -9,7 +9,7 @@
 
 coverage==7.2.3
     # via -r cvat/requirements/testing.in
-fakeredis[lua]==2.23.2
+fakeredis[lua]==2.10.3
     # via -r cvat/requirements/testing.in
 lupa==1.14.1
     # via fakeredis
