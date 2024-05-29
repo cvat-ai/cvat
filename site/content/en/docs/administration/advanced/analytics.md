@@ -177,13 +177,15 @@ the end of the previous event and the end of the next event.
     - But if the difference is more then threshold (~100 seconds), the difference is not added to the working time
     - Regardless different events may have `duration` field, we consider only `change:frame`
     event as a continuous event when computing working time
+    - So, the only `duration` of the `change:frame` event is added to the working time.
+    Thresholding is not involved here.
 
 - After calculation, the server generates `send:working_time` events with time value in payload.
 These events may be, or not be bounded to a certain job/task/project.
 CVAT defines belonging of the working time based on events, that were used to calculate.
 
 - If Clickhouse was configured, CVAT saves the event in
-the database and later these events are used to compute analytics.
+the database and later these events are used to compute metrics for analytics.
 
 ### Request `id` for tracking
 
