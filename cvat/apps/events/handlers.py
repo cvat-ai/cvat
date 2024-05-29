@@ -1,10 +1,13 @@
-# Copyright (C) 2023 CVAT.ai Corporation
+# Copyright (C) 2023-2024 CVAT.ai Corporation
 #
 # SPDX-License-Identifier: MIT
 
 from copy import deepcopy
+from datetime import datetime
+from contextlib import suppress
 from typing import Optional, Union
 import traceback
+import json
 import rq
 
 from rest_framework.views import exception_handler
@@ -36,6 +39,7 @@ from cvat.apps.engine.models import ShapeType
 from cvat.apps.organizations.models import Membership, Organization, Invitation
 from cvat.apps.organizations.serializers import OrganizationReadSerializer, MembershipReadSerializer, InvitationReadSerializer
 
+from .serializers import ClientEventsSerializer, EventSerializer
 from .event import event_scope, record_server_event
 from .cache import get_cache
 
@@ -594,3 +598,97 @@ def handle_viewset_exception(exc, context):
     )
 
     return response
+
+def handle_client_events_push(request, data):
+    def get_end_timestamp(event: dict) -> datetime.datetime:
+        COLLAPSED_EVENT_SCOPES = frozenset(("change:frame",))
+        if event["scope"] in COLLAPSED_EVENT_SCOPES:
+            return event["timestamp"] + datetime.timedelta(milliseconds=event["duration"])
+
+        return event["timestamp"]
+
+    def generate_wt_event(job_id: int | None, wt: datetime.timedelta, common: dict) -> EventSerializer | None:
+        WORKING_TIME_SCOPE = 'send:working_time'
+        WORKING_TIME_RESOLUTION = datetime.timedelta(milliseconds=1)
+
+        if wt.total_seconds():
+            task_id = None
+            project_id = None
+
+            if job_id is not None:
+                with suppress(Job.DoesNotExist):
+                    task_id, project_id = Job.objects.values_list(
+                        "segment__task__id", "segment__task__project__id"
+                    ).get(pk=job_id)
+
+            value = wt // WORKING_TIME_RESOLUTION
+            event = EventSerializer(data={
+                **common,
+                "scope": WORKING_TIME_SCOPE,
+                "obj_name": "working_time",
+                "obj_val": value,
+                "source": "server",
+                "count": 1,
+                "project_id": project_id,
+                "task_id": task_id,
+                "job_id": job_id,
+                # keep it in payload for backward compatibility
+                # but in the future it is much better to use a dedicated field "obj_value"
+                # because parsing JSON in SQL query is very slow
+                "payload": json.dumps({ "working_time": value })
+            })
+
+            event.is_valid(raise_exception=True)
+            return event
+
+    TIME_THRESHOLD = datetime.timedelta(seconds=100)
+
+    org = request.iam_context["organization"]
+
+    if previous_event := data["previous_event"]:
+        previous_end_timestamp = get_end_timestamp(previous_event)
+        previous_job_id = previous_event.get("job_id")
+    elif data["events"]:
+        previous_end_timestamp = data["events"][0]["timestamp"]
+        previous_job_id = data["events"][0].get("job_id")
+
+    working_time_per_job = {}
+    for event in data["events"]:
+        job_id = event.get('job_id')
+        working_time = datetime.timedelta()
+
+        timestamp = event["timestamp"]
+        if timestamp > previous_end_timestamp:
+            t_diff = timestamp - previous_end_timestamp
+            if t_diff < TIME_THRESHOLD:
+                working_time += t_diff
+
+            previous_end_timestamp = timestamp
+
+        end_timestamp = get_end_timestamp(event)
+        if end_timestamp > previous_end_timestamp:
+            working_time += end_timestamp - previous_end_timestamp
+            previous_end_timestamp = end_timestamp
+
+        if previous_job_id not in working_time_per_job:
+            working_time_per_job[previous_job_id] = datetime.timedelta()
+        working_time_per_job[previous_job_id] += working_time
+        previous_job_id = job_id
+
+    common = {
+        "timestamp": str(datetime.datetime.now(datetime.timezone.utc)),
+        "user_id": request.user.id,
+        "user_name": request.user.username,
+        "user_email": request.user.email,
+        "org_id": getattr(org, "id", None),
+        "org_slug": getattr(org, "slug", None),
+    }
+
+    for job_id in working_time_per_job:
+        event = generate_wt_event(job_id, working_time_per_job[job_id], common)
+        if event:
+            record_server_event(
+                scope=event.validated_data['scope'],
+                request_id=request_id(),
+                payload=event.validated_data
+            )

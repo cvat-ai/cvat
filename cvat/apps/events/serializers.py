@@ -5,9 +5,7 @@
 import datetime
 import json
 
-from contextlib import suppress
 from rest_framework import serializers
-from cvat.apps.engine.models import Job
 
 class EventSerializer(serializers.Serializer):
     scope = serializers.CharField(required=True)
@@ -32,49 +30,6 @@ class ClientEventsSerializer(serializers.Serializer):
     events = EventSerializer(many=True, default=[])
     previous_event = EventSerializer(default=None, allow_null=True, write_only=True)
     timestamp = serializers.DateTimeField()
-    _WORKING_TIME_SCOPE = 'send:working_time'
-    _TIME_THRESHOLD = datetime.timedelta(seconds=100)
-    _WORKING_TIME_RESOLUTION = datetime.timedelta(milliseconds=1)
-    _COLLAPSED_EVENT_SCOPES = frozenset(("change:frame",))
-
-    @classmethod
-    def _generate_wt_event(cls, job_id: int | None, wt: datetime.timedelta, common: dict) -> EventSerializer | None:
-        if wt.total_seconds():
-            task_id = None
-            project_id = None
-
-            if job_id is not None:
-                with suppress(Job.DoesNotExist):
-                    task_id, project_id = Job.objects.values_list(
-                        "segment__task__id", "segment__task__project__id"
-                    ).get(pk=job_id)
-
-            value = wt // cls._WORKING_TIME_RESOLUTION
-            event = EventSerializer(data={
-                **common,
-                "scope": cls._WORKING_TIME_SCOPE,
-                "obj_name": "working_time",
-                "obj_val": value,
-                "source": "server",
-                "count": 1,
-                "project_id": project_id,
-                "task_id": task_id,
-                "job_id": job_id,
-                # keep it in payload for backward compatibility
-                # but in the future it is much better to use a dedicated field "obj_value"
-                # because parsing JSON in SQL query is very slow
-                "payload": json.dumps({ "working_time": value })
-            })
-
-            event.is_valid(raise_exception=True)
-            return event
-
-    @classmethod
-    def _end_timestamp(cls, event: dict) -> datetime.datetime:
-        if event["scope"] in cls._COLLAPSED_EVENT_SCOPES:
-            return event["timestamp"] + datetime.timedelta(milliseconds=event["duration"])
-
-        return event["timestamp"]
 
     def to_internal_value(self, data):
         data = super().to_internal_value(data)
@@ -87,35 +42,8 @@ class ClientEventsSerializer(serializers.Serializer):
         receive_time = datetime.datetime.now(datetime.timezone.utc)
         time_correction = receive_time - send_time
 
-        if previous_event := data["previous_event"]:
-            previous_end_timestamp = self._end_timestamp(previous_event)
-            previous_job_id = previous_event.get("job_id")
-        elif data["events"]:
-            previous_end_timestamp = data["events"][0]["timestamp"]
-            previous_job_id = data["events"][0].get("job_id")
-
-        working_time_per_job = {}
         for event in data["events"]:
-            job_id = event.get('job_id')
-            working_time = datetime.timedelta()
-
             timestamp = event["timestamp"]
-            if timestamp > previous_end_timestamp:
-                t_diff = timestamp - previous_end_timestamp
-                if t_diff < self._TIME_THRESHOLD:
-                    working_time += t_diff
-
-                previous_end_timestamp = timestamp
-
-            end_timestamp = self._end_timestamp(event)
-            if end_timestamp > previous_end_timestamp:
-                working_time += end_timestamp - previous_end_timestamp
-                previous_end_timestamp = end_timestamp
-
-            if previous_job_id not in working_time_per_job:
-                working_time_per_job[previous_job_id] = datetime.timedelta()
-            working_time_per_job[previous_job_id] += working_time
-            previous_job_id = job_id
 
             try:
                 json_payload = json.loads(event.get("payload", "{}"))
@@ -132,19 +60,5 @@ class ClientEventsSerializer(serializers.Serializer):
                 "user_email": request.user.email,
                 "payload": json.dumps(json_payload),
             })
-
-        common = {
-            "timestamp": str(receive_time),
-            "user_id": request.user.id,
-            "user_name": request.user.username,
-            "user_email": request.user.email,
-            "org_id": org_id,
-            "org_slug": org_slug,
-        }
-
-        for job_id in working_time_per_job:
-            event = ClientEventsSerializer._generate_wt_event(job_id, working_time_per_job[job_id], common)
-            if event:
-                data["events"].append(event.validated_data)
 
         return data
