@@ -28,7 +28,7 @@ from pathlib import Path
 
 from cvat.apps.engine import models
 from cvat.apps.engine.log import ServerLogManager
-from cvat.apps.engine.media_extractors import (MEDIA_TYPES, ImageListReader, Mpeg4ChunkWriter, Mpeg4CompressedChunkWriter, AudioChunkWriter, AudioCompressedChunkWriter,
+from cvat.apps.engine.media_extractors import (MEDIA_TYPES, ImageListReader, Mpeg4ChunkWriter, Mpeg4CompressedChunkWriter, AudioChunkWriter,
     ValidateDimension, ZipChunkWriter, ZipCompressedChunkWriter, get_mime, sort)
 from cvat.apps.engine.utils import av_scan_paths,get_rq_job_meta, define_dependent_job, get_rq_lock_by_user, preload_images
 from cvat.utils.http import make_requests_session, PROXIES_FOR_UNTRUSTED_URLS
@@ -123,6 +123,9 @@ def _get_task_segment_data(
         # Total audio duration in milliseconds
         audio_total_duration = (db_task.data.audio_total_duration)
 
+        if audio_total_duration == 0:
+            return SegmentsParams(iter([]), 0, 0)
+
         num_segments = max(1, math.ceil(audio_total_duration / segment_duration))
 
         slogger.glob.debug("Num segments")
@@ -167,6 +170,9 @@ def _get_task_segment_data(
 
         segment_size = db_task.segment_size
         segment_step = segment_size
+
+        if segment_size == 0:
+            raise ValueError("Segment size cannot be zero.")
 
         slogger.glob.debug(data_size)
         slogger.glob.debug(segment_size)
@@ -950,7 +956,19 @@ def _create_thread(
     compressed_chunk_writer = compressed_chunk_writer_class(db_data.image_quality, **kwargs)
     original_chunk_writer = original_chunk_writer_class(original_quality, **kwargs)
 
+    def get_file_encoding(file_path):
+        import chardet
+
+        with open(file_path, 'rb') as f:
+            rawdata = f.read(1024)
+        result = chardet.detect(rawdata)
+        encoding = result['encoding']
+
+        return encoding
     def get_audio_duration(file_path):
+        encoding=get_file_encoding(file_path)
+        slogger.glob.debug("ENCODING")
+        slogger.glob.debug(encoding)
         # Open the audio file
         container = av.open(file_path)
 
