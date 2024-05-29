@@ -11,7 +11,7 @@ from datumaro.plugins.open_images_format import OpenImagesPath
 from datumaro.util.image import DEFAULT_IMAGE_META_FILE_NAME
 from pyunpack import Archive
 
-from cvat.apps.dataset_manager.bindings import (GetCVATDataExtractor,
+from cvat.apps.dataset_manager.bindings import (GetCVATDataExtractor, detect_dataset,
     find_dataset_root, import_dm_annotations, match_dm_item)
 from cvat.apps.dataset_manager.util import make_zip_archive
 
@@ -75,6 +75,7 @@ def _import(src_file, temp_dir, instance_data, load_data_callback=None, **kwargs
             if frame_info is not None:
                 image_meta[item_id] = (frame_info['height'], frame_info['width'])
 
+    detect_dataset(temp_dir, format_name='open_images', importer=dm_env.importers.get('open_images'))
     dataset = Dataset.import_from(temp_dir, 'open_images',
         image_meta=image_meta, env=dm_env)
     dataset = MaskToPolygonTransformation.convert_dataset(dataset, **kwargs)

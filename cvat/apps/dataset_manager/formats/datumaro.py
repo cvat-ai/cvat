@@ -6,9 +6,10 @@
 from datumaro.components.dataset import Dataset
 from datumaro.components.extractor import ItemTransform
 from datumaro.util.image import Image
+
 from pyunpack import Archive
 
-from cvat.apps.dataset_manager.bindings import (GetCVATDataExtractor,
+from cvat.apps.dataset_manager.bindings import (GetCVATDataExtractor, detect_dataset,
     import_dm_annotations)
 from cvat.apps.dataset_manager.util import make_zip_archive
 from cvat.apps.engine.models import DimensionType
@@ -37,6 +38,7 @@ def _export(dst_file, temp_dir, instance_data, save_images=False):
 def _import(src_file, temp_dir, instance_data, load_data_callback=None, **kwargs):
     Archive(src_file.name).extractall(temp_dir)
 
+    detect_dataset(temp_dir, format_name='datumaro', importer=dm_env.importers.get('datumaro'))
     dataset = Dataset.import_from(temp_dir, 'datumaro', env=dm_env)
 
     if load_data_callback is not None:
@@ -61,6 +63,7 @@ def _export(dst_file, temp_dir, instance_data, save_images=False):
 def _import(src_file, temp_dir, instance_data, load_data_callback=None, **kwargs):
     Archive(src_file.name).extractall(temp_dir)
 
+    detect_dataset(temp_dir, format_name='datumaro', importer=dm_env.importers.get('datumaro'))
     dataset = Dataset.import_from(temp_dir, 'datumaro', env=dm_env)
 
     if load_data_callback is not None:

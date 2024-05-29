@@ -8,7 +8,7 @@ import zipfile
 from datumaro.components.dataset import Dataset
 from datumaro.components.extractor import ItemTransform
 
-from cvat.apps.dataset_manager.bindings import GetCVATDataExtractor, \
+from cvat.apps.dataset_manager.bindings import GetCVATDataExtractor, detect_dataset, \
     import_dm_annotations
 from .registry import dm_env
 
@@ -42,6 +42,7 @@ def _export_images(dst_file, temp_dir, task_data, save_images=False):
 def _import(src_file, temp_dir, instance_data, load_data_callback=None, **kwargs):
     if zipfile.is_zipfile(src_file):
         zipfile.ZipFile(src_file).extractall(temp_dir)
+        detect_dataset(temp_dir, format_name='kitti_raw', importer=dm_env.importers.get('kitti_raw'))
         dataset = Dataset.import_from(temp_dir, 'kitti_raw', env=dm_env)
     else:
         dataset = Dataset.import_from(src_file.name, 'kitti_raw', env=dm_env)
