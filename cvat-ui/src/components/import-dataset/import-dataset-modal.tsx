@@ -26,7 +26,6 @@ import Switch from 'antd/lib/switch';
 import { getCore, Storage, StorageData } from 'cvat-core-wrapper';
 import StorageField from 'components/storage/storage-field';
 import { createAction, ActionUnion } from 'utils/redux';
-import ImportDatasetStatusModal from './import-dataset-status-modal';
 
 const { confirm } = Modal;
 
@@ -370,7 +369,7 @@ function ImportDatasetModal(props: StateToProps): JSX.Element {
                 accept='.zip,.json,.xml'
                 beforeUpload={(_file: RcFile): boolean => {
                     if (!selectedLoader) {
-                        message.warn('Please select a format first', 3);
+                        message.warning('Please select a format first', 3);
                     } else if (isDataset() && !['application/zip', 'application/x-zip-compressed'].includes(_file.type)) {
                         message.error('Only ZIP archive is supported for import a dataset');
                     } else if (isAnnotation() &&
@@ -398,7 +397,7 @@ function ImportDatasetModal(props: StateToProps): JSX.Element {
 
     const validateFileName = (_: RuleObject, value: string): Promise<void> => {
         if (!selectedLoader) {
-            message.warn('Please select a format first', 3);
+            message.warning('Please select a format first', 3);
             return Promise.reject();
         }
         if (value) {
@@ -508,140 +507,137 @@ function ImportDatasetModal(props: StateToProps): JSX.Element {
     )) || (!useDefaultSettings && selectedSourceStorageLocation === StorageLocation.LOCAL);
 
     return (
-        <>
-            <Modal
-                title={(
-                    <>
-                        <Text strong>
-                            {`Import ${resource} to ${instanceType}`}
-                        </Text>
-                        {
-                            instance instanceof core.classes.Project && (
-                                <CVATTooltip
-                                    title={
-                                        instance && !instance.labels.length ?
-                                            'Labels will be imported from dataset' :
-                                            'Labels from project will be used'
-                                    }
-                                >
-                                    <QuestionCircleOutlined className='cvat-modal-import-header-question-icon' />
-                                </CVATTooltip>
-                            )
-                        }
-                    </>
-                )}
-                open={!!instance}
-                onCancel={closeModal}
-                onOk={() => form.submit()}
-                className='cvat-modal-import-dataset'
-                destroyOnClose
+        <Modal
+            title={(
+                <>
+                    <Text strong>
+                        {`Import ${resource} to ${instanceType}`}
+                    </Text>
+                    {
+                        instance instanceof core.classes.Project && (
+                            <CVATTooltip
+                                title={
+                                    instance && !instance.labels.length ?
+                                        'Labels will be imported from dataset' :
+                                        'Labels from project will be used'
+                                }
+                            >
+                                <QuestionCircleOutlined className='cvat-modal-import-header-question-icon' />
+                            </CVATTooltip>
+                        )
+                    }
+                </>
+            )}
+            open={!!instance}
+            onCancel={closeModal}
+            onOk={() => form.submit()}
+            className='cvat-modal-import-dataset'
+            destroyOnClose
+        >
+            <Form
+                name={`Import ${resource}`}
+                form={form}
+                initialValues={{
+                    ...initialValues,
+                    convMaskToPoly: uploadParams.convMaskToPoly,
+                }}
+                onFinish={handleImport}
+                layout='vertical'
             >
-                <Form
-                    name={`Import ${resource}`}
-                    form={form}
-                    initialValues={{
-                        ...initialValues,
-                        convMaskToPoly: uploadParams.convMaskToPoly,
-                    }}
-                    onFinish={handleImport}
-                    layout='vertical'
+                <Form.Item
+                    name='selectedFormat'
+                    label='Import format'
+                    rules={[{ required: true, message: 'Format must be selected' }]}
+                    hasFeedback
                 >
-                    <Form.Item
-                        name='selectedFormat'
-                        label='Import format'
-                        rules={[{ required: true, message: 'Format must be selected' }]}
-                        hasFeedback
+                    <Select
+                        placeholder={`Select ${resource} format`}
+                        className='cvat-modal-import-select'
+                        virtual={false}
+                        onChange={(format: string) => {
+                            const [loader] = importers.filter(
+                                (importer: any): boolean => importer.name === format,
+                            );
+                            dispatch(reducerActions.setSelectedLoader(loader));
+                            dispatch(reducerActions.setSelectedFormat(format));
+                        }}
                     >
-                        <Select
-                            placeholder={`Select ${resource} format`}
-                            className='cvat-modal-import-select'
-                            virtual={false}
-                            onChange={(format: string) => {
-                                const [loader] = importers.filter(
-                                    (importer: any): boolean => importer.name === format,
-                                );
-                                dispatch(reducerActions.setSelectedLoader(loader));
-                                dispatch(reducerActions.setSelectedFormat(format));
-                            }}
-                        >
-                            {importers
-                                .sort((a: any, b: any) => a.name.localeCompare(b.name))
-                                .filter(
-                                    (importer: any): boolean => (
-                                        instance !== null &&
-                                        (!instance?.dimension || importer.dimension === instance.dimension)
-                                    ),
-                                )
-                                .map(
-                                    (importer: any): JSX.Element => (
-                                        <Select.Option
-                                            value={importer.name}
-                                            key={importer.name}
-                                            className='cvat-modal-import-dataset-option-item'
-                                        >
-                                            <UploadOutlined />
-                                            <Text>{importer.name}</Text>
-                                        </Select.Option>
-                                    ),
-                                )}
-                        </Select>
-                    </Form.Item>
-                    <Space className='cvat-modal-import-switch-conv-mask-to-poly-container'>
-                        <Form.Item
-                            name='convMaskToPoly'
-                            valuePropName='checked'
-                            className='cvat-modal-import-switch-conv-mask-to-poly'
-                        >
-                            <Switch
-                                onChange={(value: boolean) => {
-                                    dispatch(reducerActions.setConvMaskToPoly(value));
-                                }}
-                            />
-                        </Form.Item>
-                        <Text strong>Convert masks to polygons</Text>
-                        <CVATTooltip title='The option is relevant for formats that work with masks only'>
-                            <QuestionCircleOutlined />
-                        </CVATTooltip>
-                    </Space>
-                    <Space className='cvat-modal-import-switch-use-default-storage-container'>
-                        <Form.Item
-                            name='useDefaultSettings'
-                            valuePropName='checked'
-                            className='cvat-modal-import-switch-use-default-storage'
-                        >
-                            <Switch
-                                onChange={(value: boolean) => {
-                                    dispatch(reducerActions.setUseDefaultSettings(value));
-                                }}
-                            />
-                        </Form.Item>
-                        <Text strong>Use default settings</Text>
-                        <CVATTooltip title={helpMessage}>
-                            <QuestionCircleOutlined />
-                        </CVATTooltip>
-                    </Space>
-                    {!useDefaultSettings && (
-                        <StorageField
-                            locationName={['sourceStorage', 'location']}
-                            selectCloudStorageName={['sourceStorage', 'cloudStorageId']}
-                            onChangeStorage={(value: StorageData) => {
-                                dispatch(reducerActions.setSourceStorage(new Storage({
-                                    location: value?.location || defaultStorageLocation,
-                                    cloudStorageId: (value.location) ? value.cloudStorageId : defaultStorageCloudId,
-                                })));
-                            }}
-                            locationValue={selectedSourceStorageLocation}
-                            onChangeLocationValue={(value: StorageLocation) => {
-                                dispatch(reducerActions.setSelectedSourceStorageLocation(value));
+                        {importers
+                            .sort((a: any, b: any) => a.name.localeCompare(b.name))
+                            .filter(
+                                (importer: any): boolean => (
+                                    instance !== null &&
+                                    (!instance?.dimension || importer.dimension === instance.dimension)
+                                ),
+                            )
+                            .map(
+                                (importer: any): JSX.Element => (
+                                    <Select.Option
+                                        value={importer.name}
+                                        key={importer.name}
+                                        className='cvat-modal-import-dataset-option-item'
+                                    >
+                                        <UploadOutlined />
+                                        <Text>{importer.name}</Text>
+                                    </Select.Option>
+                                ),
+                            )}
+                    </Select>
+                </Form.Item>
+                <Space className='cvat-modal-import-switch-conv-mask-to-poly-container'>
+                    <Form.Item
+                        name='convMaskToPoly'
+                        valuePropName='checked'
+                        className='cvat-modal-import-switch-conv-mask-to-poly'
+                    >
+                        <Switch
+                            onChange={(value: boolean) => {
+                                dispatch(reducerActions.setConvMaskToPoly(value));
                             }}
                         />
-                    )}
-                    { !loadFromLocal && renderCustomName() }
-                    { loadFromLocal && uploadLocalFile() }
-                </Form>
-            </Modal>
-            <ImportDatasetStatusModal />
-        </>
+                    </Form.Item>
+                    <Text strong>Convert masks to polygons</Text>
+                    <CVATTooltip title='The option is relevant for formats that work with masks only'>
+                        <QuestionCircleOutlined />
+                    </CVATTooltip>
+                </Space>
+                <Space className='cvat-modal-import-switch-use-default-storage-container'>
+                    <Form.Item
+                        name='useDefaultSettings'
+                        valuePropName='checked'
+                        className='cvat-modal-import-switch-use-default-storage'
+                    >
+                        <Switch
+                            onChange={(value: boolean) => {
+                                dispatch(reducerActions.setUseDefaultSettings(value));
+                            }}
+                        />
+                    </Form.Item>
+                    <Text strong>Use default settings</Text>
+                    <CVATTooltip title={helpMessage}>
+                        <QuestionCircleOutlined />
+                    </CVATTooltip>
+                </Space>
+                {!useDefaultSettings && (
+                    <StorageField
+                        locationName={['sourceStorage', 'location']}
+                        selectCloudStorageName={['sourceStorage', 'cloudStorageId']}
+                        onChangeStorage={(value: StorageData) => {
+                            dispatch(reducerActions.setSourceStorage(new Storage({
+                                location: value?.location || defaultStorageLocation,
+                                cloudStorageId: (value.location) ? value.cloudStorageId : defaultStorageCloudId,
+                            })));
+                        }}
+                        locationValue={selectedSourceStorageLocation}
+                        onChangeLocationValue={(value: StorageLocation) => {
+                            dispatch(reducerActions.setSelectedSourceStorageLocation(value));
+                        }}
+                    />
+                )}
+                { !loadFromLocal && renderCustomName() }
+                { loadFromLocal && uploadLocalFile() }
+            </Form>
+        </Modal>
     );
 }
 

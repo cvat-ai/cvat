@@ -154,10 +154,10 @@ Cypress.Commands.add('importProject', ({
     cy.get('input[type="file"]').last().attachFile(archive, { subjectType: 'drag-n-drop' });
     cy.get(`[title="${archive}"]`).should('be.visible');
     cy.contains('button', 'OK').click();
-    cy.get('.cvat-modal-import-dataset-status').should('be.visible');
+    cy.get('.cvat-modal-upload-file-status').should('be.visible');
     cy.get('.cvat-notification-notice-import-dataset-start').should('be.visible');
     cy.closeNotification('.cvat-notification-notice-import-dataset-start');
-    cy.get('.cvat-modal-import-dataset-status').should('not.exist');
+    cy.get('.cvat-modal-upload-file-status').should('not.exist');
 });
 
 Cypress.Commands.add(

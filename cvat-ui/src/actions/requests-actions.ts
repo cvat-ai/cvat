@@ -75,7 +75,7 @@ export function updateRequestProgress(request: Request, dispatch: (action: Reque
 
 export function shouldListenForProgress(rqID: string | undefined, state: RequestsState): boolean {
     return (
-        !!rqID &&
+        typeof rqID === 'string' &&
         (!state.requests[rqID] || [RQStatus.FINISHED, RQStatus.FAILED].includes(state.requests[rqID]?.status))
     );
 }
