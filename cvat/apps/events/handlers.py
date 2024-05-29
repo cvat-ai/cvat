@@ -135,7 +135,7 @@ def user_name(instance=None):
 
 def user_email(instance=None):
     current_user = get_user(instance)
-    return _get_value(current_user, "email")
+    return _get_value(current_user, "email") or None
 
 def organization_slug(instance):
     if isinstance(instance, Organization):
@@ -666,7 +666,7 @@ def handle_client_events_push(request, data: dict):
             "timestamp": data["events"][0]["timestamp"],
             "user_id": request.user.id,
             "user_name": request.user.username,
-            "user_email": request.user.email,
+            "user_email": request.user.email or None,
             "org_id": getattr(org, "id", None),
             "org_slug": getattr(org, "slug", None),
         }

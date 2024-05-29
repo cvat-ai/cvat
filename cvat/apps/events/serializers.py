@@ -22,7 +22,7 @@ class EventSerializer(serializers.Serializer):
     job_id = serializers.IntegerField(required=False, allow_null=True)
     user_id = serializers.IntegerField(required=False, allow_null=True)
     user_name = serializers.CharField(required=False, allow_null=True)
-    user_email = serializers.CharField(required=False, allow_blank=True, allow_null=True)
+    user_email = serializers.CharField(required=False, allow_null=True)
     org_id = serializers.IntegerField(required=False, allow_null=True)
     org_slug = serializers.CharField(required=False, allow_null=True)
     payload = serializers.CharField(required=False, allow_null=True)
