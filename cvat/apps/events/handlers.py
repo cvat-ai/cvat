@@ -661,21 +661,22 @@ def handle_client_events_push(request, data: dict):
         working_time_dict[previous_ids] += working_time
         previous_ids = current_ids
 
-    common = {
-        "timestamp": datetime.datetime.now(datetime.timezone.utc),
-        "user_id": request.user.id,
-        "user_name": request.user.username,
-        "user_email": request.user.email,
-        "org_id": getattr(org, "id", None),
-        "org_slug": getattr(org, "slug", None),
-    }
+    if data["events"]:
+        common = {
+            "timestamp": data["events"][0]["timestamp"],
+            "user_id": request.user.id,
+            "user_name": request.user.username,
+            "user_email": request.user.email,
+            "org_id": getattr(org, "id", None),
+            "org_slug": getattr(org, "slug", None),
+        }
 
-    for ids in working_time_dict:
-        event = generate_wt_event(ids, working_time_dict[ids], common)
-        if event:
-            event.is_valid(raise_exception=True)
-            record_server_event(
-                scope=event.validated_data['scope'],
-                request_id=request_id(),
-                payload=event.validated_data
-            )
+        for ids in working_time_dict:
+            event = generate_wt_event(ids, working_time_dict[ids], common)
+            if event:
+                event.is_valid(raise_exception=True)
+                record_server_event(
+                    scope=event.validated_data['scope'],
+                    request_id=request_id(),
+                    payload=event.validated_data
+                )
