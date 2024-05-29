@@ -3,9 +3,9 @@
 # SPDX-License-Identifier: MIT
 
 from copy import deepcopy
-from datetime import datetime
 from contextlib import suppress
 from typing import Optional, Union
+import datetime
 import traceback
 import json
 import rq
@@ -600,6 +600,11 @@ def handle_viewset_exception(exc, context):
     return response
 
 def handle_client_events_push(request, data):
+    TIME_THRESHOLD = datetime.timedelta(seconds=100)
+    WORKING_TIME_SCOPE = 'send:working_time'
+    WORKING_TIME_RESOLUTION = datetime.timedelta(milliseconds=1)
+    org = request.iam_context["organization"]
+
     def get_end_timestamp(event: dict) -> datetime.datetime:
         COLLAPSED_EVENT_SCOPES = frozenset(("change:frame",))
         if event["scope"] in COLLAPSED_EVENT_SCOPES:
@@ -608,9 +613,6 @@ def handle_client_events_push(request, data):
         return event["timestamp"]
 
     def generate_wt_event(job_id: int | None, wt: datetime.timedelta, common: dict) -> EventSerializer | None:
-        WORKING_TIME_SCOPE = 'send:working_time'
-        WORKING_TIME_RESOLUTION = datetime.timedelta(milliseconds=1)
-
         if wt.total_seconds():
             task_id = None
             project_id = None
@@ -638,12 +640,7 @@ def handle_client_events_push(request, data):
                 "payload": json.dumps({ "working_time": value })
             })
 
-            event.is_valid(raise_exception=True)
             return event
-
-    TIME_THRESHOLD = datetime.timedelta(seconds=100)
-
-    org = request.iam_context["organization"]
 
     if previous_event := data["previous_event"]:
         previous_end_timestamp = get_end_timestamp(previous_event)
@@ -676,7 +673,7 @@ def handle_client_events_push(request, data):
         previous_job_id = job_id
 
     common = {
-        "timestamp": str(datetime.datetime.now(datetime.timezone.utc)),
+        "timestamp": datetime.datetime.now(datetime.timezone.utc),
         "user_id": request.user.id,
         "user_name": request.user.username,
         "user_email": request.user.email,
@@ -687,6 +684,7 @@ def handle_client_events_push(request, data):
     for job_id in working_time_per_job:
         event = generate_wt_event(job_id, working_time_per_job[job_id], common)
         if event:
+            event.is_valid(raise_exception=True)
             record_server_event(
                 scope=event.validated_data['scope'],
                 request_id=request_id(),

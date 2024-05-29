@@ -42,16 +42,19 @@ class ClientEventsSerializer(serializers.Serializer):
         receive_time = datetime.datetime.now(datetime.timezone.utc)
         time_correction = receive_time - send_time
 
-        for event in data["events"]:
-            timestamp = event["timestamp"]
+        if data["previous_event"]:
+            data["previous_event"].update({
+                "timestamp": data["previous_event"]["timestamp"] + time_correction,
+            })
 
+        for event in data["events"]:
             try:
                 json_payload = json.loads(event.get("payload", "{}"))
             except json.JSONDecodeError:
                 raise serializers.ValidationError("JSON payload is not valid in passed event")
 
             event.update({
-                "timestamp": str(timestamp + time_correction),
+                "timestamp": event["timestamp"] + time_correction,
                 "source": "client",
                 "org_id": org_id,
                 "org_slug": org_slug,
