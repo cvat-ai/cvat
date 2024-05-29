@@ -602,16 +602,13 @@ def handle_client_events_push(request, data: dict):
     TIME_THRESHOLD = datetime.timedelta(seconds=100)
     WORKING_TIME_SCOPE = 'send:working_time'
     WORKING_TIME_RESOLUTION = datetime.timedelta(milliseconds=1)
+    COLLAPSED_EVENT_SCOPES = frozenset(("change:frame",))
     org = request.iam_context["organization"]
 
     def read_ids(event: dict) -> tuple[int | None, int | None, int | None]:
-        job_id = event.get("job_id")
-        task_id = event.get("task_id")
-        project_id = event.get("project_id")
-        return (job_id, task_id, project_id)
+        return event.get("job_id"), event.get("task_id"), event.get("project_id")
 
     def get_end_timestamp(event: dict) -> datetime.datetime:
-        COLLAPSED_EVENT_SCOPES = frozenset(("change:frame",))
         if event["scope"] in COLLAPSED_EVENT_SCOPES:
             return event["timestamp"] + datetime.timedelta(milliseconds=event["duration"])
 
