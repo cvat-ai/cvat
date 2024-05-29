@@ -29,6 +29,7 @@ See:
   - [Ports settings](#ports-settings)
   - [Events log structure](#events-log-structure)
   - [Types of supported events](#types-of-supported-events)
+  - [Working time calculation](#working-time-calculation)
   - [Request `id` for tracking](#request-id-for-tracking)
   - [Fetching event data as CSV from the `/api/events` endpoint](#fetching-event-data-as-csv-from-the-apievents-endpoint)
 - [Dashboards](#dashboards)
@@ -153,6 +154,35 @@ Client events:
 - `click:element`
 
 <!--lint enable maximum-line-length-->
+
+### Working time calculation
+
+Here is a short overview of how CVAT understands the user's working time:
+
+- The user interface collects events when a user interacts with the interface
+(resizing canvas, drawing objects, clicking buttons, etc)
+The structure of one single event is described [here](#events-log-structure).
+
+-  The user interface sends these events in bulks to the server.
+Currently, it uses the following triggers to send events:
+    - Periodical timer (~90 seconds)
+    - A user clicks the "Save" button on the annotation view
+    - A user opens the annotation view
+    - A user closes the annotation view (but not the tab/browser)
+
+- When events reach the server, it calculates working time based on timestamps of the events.
+
+- Working time is computed as a sum of time differences between
+the end of the previous event and the end of the next event.
+    - But if the difference is more then threshold (~100 seconds), the difference is not added to the working time
+    - Regardless different events may have `duration` field, we consider only `change:frame`
+    event as a continuous event when computing working time
+
+- After calculation, the server generates `send:working_time` events with time value in payload.
+These events may be, or not be bounded to a certain job/task/project.
+CVAT defines belonging of the working time based on events, that were used to calculate.
+
+- If Clickhouse was configured, CVAT saves the event in the database and later these events are used to compute analytics.
 
 ### Request `id` for tracking
 
