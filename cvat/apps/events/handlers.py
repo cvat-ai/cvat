@@ -602,7 +602,6 @@ def handle_client_events_push(request, data: dict):
     def get_end_timestamp(event: dict) -> datetime.datetime:
         if event["scope"] in COLLAPSED_EVENT_SCOPES:
             return event["timestamp"] + datetime.timedelta(milliseconds=event["duration"])
-
         return event["timestamp"]
 
     def generate_wt_event(
@@ -640,10 +639,9 @@ def handle_client_events_push(request, data: dict):
 
     working_time_dict = {}
     for event in data["events"]:
-        current_ids = read_ids(event)
         working_time = datetime.timedelta()
-
         timestamp = event["timestamp"]
+
         if timestamp > previous_end_timestamp:
             t_diff = timestamp - previous_end_timestamp
             if t_diff < TIME_THRESHOLD:
@@ -658,8 +656,9 @@ def handle_client_events_push(request, data: dict):
 
         if previous_ids not in working_time_dict:
             working_time_dict[previous_ids] = datetime.timedelta()
+
         working_time_dict[previous_ids] += working_time
-        previous_ids = current_ids
+        previous_ids = read_ids(event)
 
     if data["events"]:
         common = {

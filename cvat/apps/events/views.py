@@ -7,9 +7,9 @@ from drf_spectacular.types import OpenApiTypes
 from drf_spectacular.utils import (OpenApiParameter, OpenApiResponse,
                                    extend_schema)
 from rest_framework import status, viewsets
-from rest_framework.serializers import ValidationError
 from rest_framework.renderers import JSONRenderer
 from rest_framework.response import Response
+from rest_framework.serializers import ValidationError
 
 from cvat.apps.engine.log import vlogger
 from cvat.apps.events.permissions import EventsPermission
