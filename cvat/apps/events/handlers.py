@@ -3,7 +3,6 @@
 # SPDX-License-Identifier: MIT
 
 from copy import deepcopy
-from contextlib import suppress
 from typing import Optional, Union
 import datetime
 import traceback
@@ -612,17 +611,9 @@ def handle_client_events_push(request, data):
 
         return event["timestamp"]
 
-    def generate_wt_event(job_id: int | None, wt: datetime.timedelta, common: dict) -> EventSerializer | None:
+    def generate_wt_event(id: str, wt: datetime.timedelta, common: dict) -> EventSerializer | None:
+        job_id, task_id, project_id = map(lambda x: None if x == 'None' else int(x), id.split(':'))
         if wt.total_seconds():
-            task_id = None
-            project_id = None
-
-            if job_id is not None:
-                with suppress(Job.DoesNotExist):
-                    task_id, project_id = Job.objects.values_list(
-                        "segment__task__id", "segment__task__project__id"
-                    ).get(pk=job_id)
-
             value = wt // WORKING_TIME_RESOLUTION
             event = EventSerializer(data={
                 **common,
@@ -642,16 +633,22 @@ def handle_client_events_push(request, data):
 
             return event
 
+    def get_combined_id(event):
+        job_id = event.get("job_id")
+        task_id = event.get("task_id")
+        project_id = event.get("project_id")
+        return ':'.join((str(job_id), str(task_id), str(project_id)))
+
     if previous_event := data["previous_event"]:
         previous_end_timestamp = get_end_timestamp(previous_event)
-        previous_job_id = previous_event.get("job_id")
+        previous_id = get_combined_id(previous_event)
     elif data["events"]:
         previous_end_timestamp = data["events"][0]["timestamp"]
-        previous_job_id = data["events"][0].get("job_id")
+        previous_id = get_combined_id(data["events"][0])
 
-    working_time_per_job = {}
+    working_time_per_id = {}
     for event in data["events"]:
-        job_id = event.get('job_id')
+        id = get_combined_id(event)
         working_time = datetime.timedelta()
 
         timestamp = event["timestamp"]
@@ -667,10 +664,10 @@ def handle_client_events_push(request, data):
             working_time += end_timestamp - previous_end_timestamp
             previous_end_timestamp = end_timestamp
 
-        if previous_job_id not in working_time_per_job:
-            working_time_per_job[previous_job_id] = datetime.timedelta()
-        working_time_per_job[previous_job_id] += working_time
-        previous_job_id = job_id
+        if previous_id not in working_time_per_id:
+            working_time_per_id[previous_id] = datetime.timedelta()
+        working_time_per_id[previous_id] += working_time
+        previous_id = id
 
     common = {
         "timestamp": datetime.datetime.now(datetime.timezone.utc),
@@ -681,8 +678,8 @@ def handle_client_events_push(request, data):
         "org_slug": getattr(org, "slug", None),
     }
 
-    for job_id in working_time_per_job:
-        event = generate_wt_event(job_id, working_time_per_job[job_id], common)
+    for id in working_time_per_id:
+        event = generate_wt_event(id, working_time_per_id[id], common)
         if event:
             event.is_valid(raise_exception=True)
             record_server_event(
