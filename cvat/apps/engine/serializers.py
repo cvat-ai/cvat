@@ -27,7 +27,6 @@ from django.db.models import TextChoices
 
 from cvat.apps.dataset_manager.formats.utils import get_label_color
 from cvat.apps.engine.utils import parse_exception_message
-from cvat.apps.engine.rq_job_handler import RQIdManager
 from cvat.apps.engine import models
 from cvat.apps.engine.cloud_provider import get_cloud_storage_instance, Credentials, Status
 from cvat.apps.engine.log import ServerLogManager

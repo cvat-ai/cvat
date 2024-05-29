@@ -11,7 +11,7 @@ from django.conf import settings
 from rest_framework.exceptions import ValidationError, PermissionDenied
 from rq.job import Job as RQJob
 
-from cvat.apps.engine.rq_job_handler import RQIdManager, is_rq_job_owner
+from cvat.apps.engine.rq_job_handler import is_rq_job_owner
 from cvat.apps.iam.permissions import (
     OpenPolicyAgentPermission, StrEnum, get_iam_context, get_membership
 )
