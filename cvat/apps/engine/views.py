@@ -69,7 +69,7 @@ from cvat.apps.engine.serializers import (
     LabeledDataSerializer,
     ProjectReadSerializer, ProjectWriteSerializer,
     RqStatusSerializer, TaskReadSerializer, TaskWriteSerializer,
-    UserSerializer, PluginsSerializer, IssueReadSerializer, AIAudioAnnotationSerializer, ExportAudioAnnotationSerializer,
+    UserSerializer, PluginsSerializer, IssueReadSerializer, AIAudioAnnotationSerializer,
     AnnotationGuideReadSerializer, AnnotationGuideWriteSerializer,
     AssetReadSerializer, AssetWriteSerializer,
     IssueWriteSerializer, CommentReadSerializer, CommentWriteSerializer, CloudStorageWriteSerializer,
@@ -2056,8 +2056,8 @@ class AIAudioAnnotationViewSet(viewsets.ModelViewSet):
 
             # Find labels of a particular job
             job = Job.objects.get(id=job_id)
-            labels_queryset = job.get_labels()
-            labels_list = list(labels_queryset.values())
+            # labels_queryset = job.get_labels()
+            # labels_list = list(labels_queryset.values())
 
             segments = request.data.get('segments')
 

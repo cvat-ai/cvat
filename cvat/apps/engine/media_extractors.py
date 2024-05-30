@@ -13,8 +13,8 @@ from enum import IntEnum
 from abc import ABC, abstractmethod
 from contextlib import closing
 from typing import Iterable
-from cvat.apps.engine.log import ServerLogManager
-slogger = ServerLogManager(__name__)
+# from cvat.apps.engine.log import ServerLogManager
+# slogger = ServerLogManager(__name__)
 
 import av
 import numpy as np
@@ -554,25 +554,24 @@ class AudioReader(IMediaReader):
 
     def get_preview(self, frame):
         with self._get_av_container() as container:
-            stream = container.streams.video[0]
+            stream = container.streams.audio[0]
             tb_denominator = stream.time_base.denominator
             needed_time = int((frame / stream.guessed_rate) * tb_denominator)
             container.seek(offset=needed_time, stream=stream)
             for packet in container.demux(stream):
                 for frame in packet.decode():
                     return self._get_preview(frame.to_image() if not stream.metadata.get('rotate') \
-                        else av.VideoFrame().from_ndarray(
+                        else av.AudioFrame().from_ndarray(
                             rotate_image(
                                 frame.to_ndarray(format='bgr24'),
-                                360 - int(container.streams.video[0].metadata.get('rotate'))
+                                360 - int(container.streams.audio[0].metadata.get('rotate'))
                             ),
                             format ='bgr24'
                         ).to_image()
                     )
 
     def get_image_size(self, i):
-        image = (next(iter(self)))[0]
-        return image.width, image.height
+        return 1, 1
 
 class FragmentMediaReader:
     def __init__(self, chunk_number, chunk_size, start, stop, step=1):
@@ -927,44 +926,6 @@ class AudioChunkWriter(IChunkWriter):
             container.mux(packet)
 
 class Mpeg4CompressedChunkWriter(Mpeg4ChunkWriter):
-    def __init__(self, quality):
-        super().__init__(quality)
-        if self._codec_name == 'libx264':
-            self._codec_opts = {
-                'profile': 'baseline',
-                'coder': '0',
-                'crf': str(self._image_quality),
-                'wpredp': '0',
-                'flags': '-loop',
-            }
-
-    def save_as_chunk(self, images, chunk_path):
-        if not images:
-            raise Exception('no images to save')
-
-        input_w = images[0][0].width
-        input_h = images[0][0].height
-
-        downscale_factor = 1
-        while input_h / downscale_factor >= 1080:
-            downscale_factor *= 2
-
-        output_h = input_h // downscale_factor
-        output_w = input_w // downscale_factor
-
-        with av.open(chunk_path, 'w', format=self.FORMAT) as output_container:
-            output_v_stream = self._add_video_stream(
-                container=output_container,
-                w=output_w,
-                h=output_h,
-                rate=self._output_fps,
-                options=self._codec_opts,
-            )
-
-            self._encode_images(images, output_container, output_v_stream)
-        return [(input_w, input_h)]
-
-class AudioCompressedChunkWriter(AudioChunkWriter):
     def __init__(self, quality):
         super().__init__(quality)
         if self._codec_name == 'libx264':

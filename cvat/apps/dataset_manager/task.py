@@ -19,10 +19,10 @@ from enum import Enum
 from tempfile import TemporaryDirectory
 from datumaro.components.errors import DatasetError, DatasetImportError, DatasetNotFoundError
 
-from django.conf import settings
+# from django.conf import settings
 from django.db import transaction
 from django.db.models.query import Prefetch
-from cvat.apps.engine.models import Job, Label, AttributeSpec
+from cvat.apps.engine.models import Job, AttributeSpec
 from django.utils import timezone
 from rest_framework.exceptions import ValidationError
 
@@ -30,7 +30,6 @@ from cvat.apps.engine import models, serializers
 from cvat.apps.engine.plugins import plugin_decorator
 from cvat.apps.events.handlers import handle_annotations_change
 from cvat.apps.profiler import silk_profile
-from cvat.apps.engine.cache import MediaCache
 from cvat.apps.engine.frame_provider import FrameProvider
 from cvat.apps.dataset_manager.annotation import AnnotationIR, AnnotationManager
 from cvat.apps.dataset_manager.bindings import TaskData, JobData, CvatImportError
@@ -879,9 +878,6 @@ def jobChunkPathGetter(db_data, start, stop, task_dimension, data_quality, data_
     # db_data = Task Data
     frame_provider = FrameProvider(db_data, task_dimension)
 
-    start_chunk = frame_provider.get_chunk_number(start)
-    stop_chunk = frame_provider.get_chunk_number(stop)
-
     # self.type = data_type
     number = int(data_num) if data_num is not None else None
 
@@ -960,7 +956,6 @@ def get_np_audio_array_from_job(job_id):
 
     job_data_chunk_size = job.db_job.segment.task.data.chunk_size
     task_dimension = job.db_job.segment.task.dimension
-    storage_method = job.db_job.segment.task.data.storage_method
 
     start = job.start_frame/job_data_chunk_size
     stop = job.stop_frame/job_data_chunk_size
@@ -968,7 +963,7 @@ def get_np_audio_array_from_job(job_id):
     audio_array_buffer = []
     for i in range(math.trunc(start), math.trunc(stop)+1):
         db_job = job.db_job
-        data_type = "chunk"
+        # data_type = "chunk"
         data_num = i
         data_quality = 'compressed'
 
