@@ -161,10 +161,10 @@ Here is a short overview of how CVAT deals with the user's working time:
 
 - The user interface collects events when a user interacts with the interface
 (resizing canvas, drawing objects, clicking buttons, etc)
-The structure of one single event is described [here](#events-log-structure).
+  The structure of one single event is described [here](#events-log-structure).
 
 - The user interface sends these events in bulk to the server.
-Currently, it uses the following triggers to send events:
+  Currently, it uses the following triggers to send events:
     - Periodical timer (~90 seconds)
     - A user clicks the "Save" button on the annotation view
     - A user opens the annotation view
@@ -178,7 +178,7 @@ Currently, it uses the following triggers to send events:
     - The duration of the event, for events of type `change:frame`.
 
 - After calculation, the server generates `send:working_time` events with time value in payload.
-These events may or may not be bound to a certain job/task/project,
+  These events may or may not be bound to a certain job/task/project,
 depending on the client-side events that were used to generate them.
 
 - CVAT saves the event in the database and later these events are used to compute metrics for analytics.
