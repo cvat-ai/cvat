@@ -157,12 +157,6 @@ export interface ImportState {
     tasks: {
         dataset: {
             modalInstance: any | null;
-            uploadState: {
-                id: number | null,
-                format: string;
-                progress: number;
-                status: string;
-            };
         };
         backup: {
             modalVisible: boolean;
@@ -172,12 +166,6 @@ export interface ImportState {
     jobs: {
         dataset: {
             modalInstance: any | null;
-            uploadState: {
-                id: number | null,
-                format: string;
-                progress: number;
-                status: string;
-            };
         };
     };
     instanceType: 'project' | 'task' | 'job' | null;

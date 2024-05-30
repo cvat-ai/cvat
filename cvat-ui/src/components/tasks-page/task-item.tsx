@@ -18,7 +18,7 @@ import { Task, RQStatus, Request } from 'cvat-core-wrapper';
 import ActionsMenuContainer from 'containers/actions-menu/actions-menu';
 import Preview from 'components/common/preview';
 import { ActiveInference, PluginComponent } from 'reducers';
-import { StatusMessage } from 'components/requests-page/request-status';
+import StatusMessage from 'components/requests-page/request-status';
 import AutomaticAnnotationProgress from './automatic-annotation-progress';
 
 export interface TaskItemProps {

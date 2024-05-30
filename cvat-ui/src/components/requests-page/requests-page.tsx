@@ -3,24 +3,20 @@
 // SPDX-License-Identifier: MIT
 
 import './styles.scss';
-import { useDispatch, useSelector } from 'react-redux';
+import { useSelector } from 'react-redux';
 import React, { useEffect } from 'react';
 import { CombinedState, Indexable } from 'reducers';
 import { useHistory } from 'react-router';
 
 import Spin from 'antd/lib/spin';
 
-import { getRequestsAsync } from 'actions/requests-async-actions';
 import { updateHistoryFromQuery } from 'components/resource-sorting-filtering';
 import EmptyListComponent from './empty-list';
 import RequestsList, { PAGE_SIZE } from './requests-list';
 
 export default function RequestsPageComponent(): JSX.Element {
     const history = useHistory();
-    const dispatch = useDispatch();
-    const fetching = useSelector((state: CombinedState) => state.requests.fetching);
-    const count = useSelector((state: CombinedState) => state.requests.count);
-    const query = useSelector((state: CombinedState) => state.requests.query);
+    const { fetching, count, query } = useSelector((state: CombinedState) => state.requests);
 
     const updatedQuery = { ...query };
     const queryParams = new URLSearchParams(history.location.search);
@@ -39,12 +35,8 @@ export default function RequestsPageComponent(): JSX.Element {
 
     const pageOutOfBounds = updatedQuery.page ? updatedQuery.page > Math.ceil(count / PAGE_SIZE) : false;
     const content = (count && !pageOutOfBounds) ? (
-        <RequestsList />
+        <RequestsList query={updatedQuery} />
     ) : <EmptyListComponent />;
-
-    useEffect(() => {
-        dispatch(getRequestsAsync(query));
-    }, []);
 
     return (
         <div className='cvat-requests-page'>

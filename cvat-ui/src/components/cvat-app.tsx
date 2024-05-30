@@ -340,7 +340,7 @@ class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentP
             loadAbout();
         }
 
-        if (!requestsInitialized && !requestsFetching && history.location.pathname !== '/requests') {
+        if (!requestsInitialized && !requestsFetching) {
             initRequests();
         }
 

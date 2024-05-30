@@ -33,12 +33,6 @@ const defaultState: ImportState = {
     tasks: {
         dataset: {
             modalInstance: null,
-            uploadState: {
-                id: null,
-                format: '',
-                progress: 0,
-                status: '',
-            },
         },
         backup: {
             modalVisible: false,
@@ -48,12 +42,6 @@ const defaultState: ImportState = {
     jobs: {
         dataset: {
             modalInstance: null,
-            uploadState: {
-                id: null,
-                format: '',
-                progress: 0,
-                status: '',
-            },
         },
     },
     instanceType: null,
@@ -111,39 +99,43 @@ export default (state: ImportState = defaultState, action: ImportActions): Impor
                     status: 'The file is being uploaded to the server',
                     progress: defaultProgress,
                 };
-            }
-            return {
-                ...state,
-                [activitiesField]: {
-                    ...state[activitiesField],
-                    dataset: {
-                        ...state[activitiesField].dataset,
-                        uploadState: {
-                            ...state[activitiesField].dataset.uploadState,
-                            ...updatedActivity,
+                return {
+                    ...state,
+                    [activitiesField]: {
+                        ...state[activitiesField],
+                        dataset: {
+                            ...state[activitiesField].dataset,
+                            uploadState: {
+                                ...state[activitiesField].dataset.uploadState,
+                                ...updatedActivity,
+                            },
                         },
                     },
-                },
-            };
+                };
+            }
+            return state;
         }
         case ImportActionTypes.IMPORT_DATASET_UPDATE_STATUS: {
             const { progress, status, instance } = action.payload;
 
             const activitiesField = defineActititiesField(instance);
-            return {
-                ...state,
-                [activitiesField]: {
-                    ...state[activitiesField],
-                    dataset: {
-                        ...state[activitiesField].dataset,
-                        uploadState: {
-                            ...state[activitiesField].dataset.uploadState,
-                            progress,
-                            status,
+            if (activitiesField === 'projects') {
+                return {
+                    ...state,
+                    [activitiesField]: {
+                        ...state[activitiesField],
+                        dataset: {
+                            ...state[activitiesField].dataset,
+                            uploadState: {
+                                ...state[activitiesField].dataset.uploadState,
+                                progress,
+                                status,
+                            },
                         },
                     },
-                },
-            };
+                };
+            }
+            return state;
         }
         case ImportActionTypes.OPEN_IMPORT_BACKUP_MODAL: {
             const { instanceType } = action.payload;

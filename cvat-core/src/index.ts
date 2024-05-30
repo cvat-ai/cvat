@@ -155,8 +155,8 @@ export default interface CVATCore {
         list: () => Promise<PaginatedResource<Request>>;
         listen: (
             rqID: string,
-            options?: {
-                callback?: (request: Request) => void,
+            options: {
+                callback: (request: Request) => void,
                 initialRequest?: Request,
             }
         ) => Promise<Request>;
@@ -178,6 +178,7 @@ export default interface CVATCore {
         };
         onOrganizationChange: (newOrgId: number | null) => void | null;
         globalObjectsCounter: typeof config.globalObjectsCounter;
+        requestsStatusDelay: typeof config.requestsStatusDelay;
     },
     client: {
         version: string;

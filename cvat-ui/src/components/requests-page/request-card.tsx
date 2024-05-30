@@ -20,7 +20,7 @@ import { RQStatus, Request } from 'cvat-core-wrapper';
 
 import moment from 'moment';
 import { cancelRequestAsync } from 'actions/requests-async-actions';
-import { StatusMessage } from './request-status';
+import StatusMessage from './request-status';
 
 export interface Props {
     request: Request;
@@ -136,7 +136,7 @@ const dimensions = {
     xxl: 6,
 };
 
-export default function RequestCard(props: Props): JSX.Element {
+function RequestCard(props: Props): JSX.Element {
     const { request } = props;
     const { operation } = request;
     const { type } = operation;
@@ -262,3 +262,5 @@ export default function RequestCard(props: Props): JSX.Element {
         </Card>
     );
 }
+
+export default React.memo(RequestCard);

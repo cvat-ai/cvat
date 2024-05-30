@@ -24,9 +24,10 @@ export default function (
 ): RequestsState {
     switch (action.type) {
         case RequestsActionsTypes.GET_REQUESTS: {
+            const { fetching } = action.payload;
             return {
                 ...state,
-                fetching: true,
+                fetching,
                 query: {
                     ...state.query,
                     ...action.payload.query,

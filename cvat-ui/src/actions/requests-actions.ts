@@ -24,7 +24,9 @@ export enum RequestsActionsTypes {
 }
 
 export const requestsActions = {
-    getRequests: (query?: RequestsQuery) => createAction(RequestsActionsTypes.GET_REQUESTS, { query }),
+    getRequests: (query: RequestsQuery, fetching = true) => (
+        createAction(RequestsActionsTypes.GET_REQUESTS, { query, fetching })
+    ),
     requestFinished: (request: Request) => createAction(RequestsActionsTypes.REQUEST_FINISHED, { request }),
     requestFailed: (request: Request) => createAction(RequestsActionsTypes.REQUEST_FAILED, { request }),
     getRequestsSuccess: (requests: Awaited<ReturnType<typeof core['requests']['list']>>) => createAction(
