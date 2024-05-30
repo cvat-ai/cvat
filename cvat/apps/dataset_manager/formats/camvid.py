@@ -35,6 +35,9 @@ def _export(dst_file, temp_dir, instance_data, save_images=False):
 def _import(src_file, temp_dir, instance_data, load_data_callback=None, **kwargs):
     Archive(src_file.name).extractall(temp_dir)
 
+    # We do not run detect_dataset before import because the Camvid format
+    # has problem with the dataset detection in case of empty annotation file(s)
+    # Details in: https://github.com/cvat-ai/datumaro/issues/43
     dataset = Dataset.import_from(temp_dir, 'camvid', env=dm_env)
     dataset = MaskToPolygonTransformation.convert_dataset(dataset, **kwargs)
     if load_data_callback is not None:

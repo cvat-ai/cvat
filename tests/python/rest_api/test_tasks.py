@@ -2689,6 +2689,52 @@ class TestImportTaskAnnotations:
         task.import_annotations(self.import_format, file_path)
         self._check_annotations(task_id)
 
+    @pytest.mark.parametrize(
+        "format_name",
+        [
+            "COCO 1.0",
+            "COCO Keypoints 1.0",
+            "CVAT 1.1",
+            "LabelMe 3.0",
+            "MOT 1.1",
+            "MOTS PNG 1.0",
+            "PASCAL VOC 1.1",
+            "Segmentation mask 1.1",
+            "YOLO 1.1",
+            "WiderFace 1.0",
+            "VGGFace2 1.0",
+            "Market-1501 1.0",
+            "Kitti Raw Format 1.0",
+            "Sly Point Cloud Format 1.0",
+            "KITTI 1.0",
+            "LFW 1.0",
+            "Cityscapes 1.0",
+            "Open Images V6 1.0",
+            "Datumaro 1.0",
+            "Datumaro 3D 1.0",
+        ],
+    )
+    def test_check_import_error_on_wrong_file_structure(self, tasks_with_shapes, format_name):
+        task_id = tasks_with_shapes[0]["id"]
+
+        source_archive_path = self.tmp_dir / "incorrect_archive.zip"
+
+        incorrect_files = ["incorrect_file1.txt", "incorrect_file2.txt"]
+        for file in incorrect_files:
+            with open(self.tmp_dir / file, "w") as f:
+                f.write("Some text")
+
+        zip_file = zipfile.ZipFile(source_archive_path, mode="a")
+        for path in incorrect_files:
+            zip_file.write(self.tmp_dir / path, path)
+        task = self.client.tasks.retrieve(task_id)
+
+        with pytest.raises(exceptions.ApiException) as capture:
+            task.import_annotations(format_name, source_archive_path)
+
+            assert b"Check [format docs]" in capture.value.body
+            assert b"Dataset must contain a file:" in capture.value.body
+
 
 class TestImportWithComplexFilenames:
     @staticmethod
