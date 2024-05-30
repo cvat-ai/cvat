@@ -6,7 +6,6 @@ import datetime
 import json
 
 from rest_framework import serializers
-from rest_framework.serializers import ValidationError
 
 
 class EventSerializer(serializers.Serializer):
@@ -61,12 +60,12 @@ class ClientEventsSerializer(serializers.Serializer):
         for event in data["events"]:
             scope = event["scope"]
             if scope not in ClientEventsSerializer.ALLOWED_SCOPES:
-                raise ValidationError(f"Event scope **{scope}** is not allowed from client")
+                raise serializers.ValidationError({ "scope": f"Event scope **{scope}** is not allowed from client" })
 
             try:
                 payload = json.loads(event.get("payload", "{}"))
             except json.JSONDecodeError:
-                raise serializers.ValidationError("JSON payload is not valid in passed event")
+                raise serializers.ValidationError({ "payload": "JSON payload is not valid in passed event" })
 
             event.update({
                 "timestamp": event["timestamp"] + time_correction,
