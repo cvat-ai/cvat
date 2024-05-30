@@ -9,7 +9,6 @@ from drf_spectacular.utils import (OpenApiParameter, OpenApiResponse,
 from rest_framework import status, viewsets
 from rest_framework.renderers import JSONRenderer
 from rest_framework.response import Response
-from rest_framework.serializers import ValidationError
 
 from cvat.apps.engine.log import vlogger
 from cvat.apps.events.permissions import EventsPermission
@@ -22,20 +21,6 @@ from .handlers import handle_client_events_push
 
 class EventsViewSet(viewsets.ViewSet):
     serializer_class = None
-    SERVER_ONLY_SCOPES = frozenset((
-        'create:project', 'update:project', 'delete:project',
-        'create:task', 'update:task', 'delete:task',
-        'create:job', 'update:job', 'delete:job',
-        'create:organization', 'update:organization', 'delete:organization',
-        'create:user', 'update:user', 'delete:user',
-        'create:cloudstorage', 'update:cloudstorage', 'delete:cloudstorage',
-        'create:issue', 'update:issue', 'delete:issue',
-        'create:comment', 'update:comment', 'delete:comment',
-        'create:annotations', 'update:annotations', 'delete:annotations',
-        'create:label', 'update:label', 'delete:label',
-        'export:dataset', 'import:dataset',
-        'send:working_time',
-    ))
 
     @extend_schema(summary='Log client events',
         methods=['POST'],
@@ -48,11 +33,6 @@ class EventsViewSet(viewsets.ViewSet):
     def create(self, request):
         serializer = ClientEventsSerializer(data=request.data, context={"request": request})
         serializer.is_valid(raise_exception=True)
-
-        for event in serializer.validated_data['events']:
-            scope = event['scope']
-            if scope in EventsViewSet.SERVER_ONLY_SCOPES:
-                raise ValidationError(f'Event scope **{scope}** is not allowed from client')
 
         handle_client_events_push(request, serializer.validated_data)
         for event in serializer.validated_data["events"]:

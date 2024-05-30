@@ -623,7 +623,7 @@ def handle_client_events_push(request, data: dict):
                 "task_id": task_id,
                 "job_id": job_id,
                 # keep it in payload for backward compatibility
-                # but in the future it is much better to use a dedicated field "obj_value"
+                # but in the future it is much better to use a dedicated field "obj_val"
                 # because parsing JSON in SQL query is very slow
                 "payload": json.dumps({ "working_time": value })
             })
@@ -637,7 +637,7 @@ def handle_client_events_push(request, data: dict):
         previous_end_timestamp = data["events"][0]["timestamp"]
         previous_ids = read_ids(data["events"][0])
 
-    working_time_dict = {}
+    working_time_per_ids = {}
     for event in data["events"]:
         working_time = datetime.timedelta()
         timestamp = event["timestamp"]
@@ -654,10 +654,10 @@ def handle_client_events_push(request, data: dict):
             working_time += end_timestamp - previous_end_timestamp
             previous_end_timestamp = end_timestamp
 
-        if previous_ids not in working_time_dict:
-            working_time_dict[previous_ids] = datetime.timedelta()
+        if previous_ids not in working_time_per_ids:
+            working_time_per_ids[previous_ids] = datetime.timedelta()
 
-        working_time_dict[previous_ids] += working_time
+        working_time_per_ids[previous_ids] += working_time
         previous_ids = read_ids(event)
 
     if data["events"]:
@@ -670,8 +670,8 @@ def handle_client_events_push(request, data: dict):
             "org_slug": getattr(org, "slug", None),
         }
 
-        for ids in working_time_dict:
-            event = generate_wt_event(ids, working_time_dict[ids], common)
+        for ids in working_time_per_ids:
+            event = generate_wt_event(ids, working_time_per_ids[ids], common)
             if event:
                 event.is_valid(raise_exception=True)
                 record_server_event(

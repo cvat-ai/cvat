@@ -1,4 +1,4 @@
 ### Changed
 
-- CVAT now stores user's working time in ad hoc event type
+- CVAT now stores users' working time in events of a dedicated type
   (<https://github.com/cvat-ai/cvat/pull/7958>)

@@ -6,6 +6,7 @@ import datetime
 import json
 
 from rest_framework import serializers
+from rest_framework.serializers import ValidationError
 
 
 class EventSerializer(serializers.Serializer):
@@ -28,6 +29,17 @@ class EventSerializer(serializers.Serializer):
     payload = serializers.CharField(required=False, allow_null=True)
 
 class ClientEventsSerializer(serializers.Serializer):
+    ALLOWED_SCOPES = frozenset((
+        'load:cvat', 'load:job', 'save:job', 'restore:job',
+        'upload:annotations', 'send:exception', 'send:task_info',
+        'draw:object', 'paste:object', 'copy:object', 'propagate:object',
+        'drag:object', 'resize:object', 'delete:object', 'lock:object',
+        'merge:objects', 'split:objects', 'group:objects', 'slice:object',
+        'join:objects', 'change:attribute', 'change:label', 'change:frame',
+        'zoom:image', 'fit:image', 'rotate:image', 'action:undo', 'action:redo',
+        'debug:info', 'run:annotations_action', 'click:element'
+    ))
+
     events = EventSerializer(many=True, default=[])
     previous_event = EventSerializer(default=None, allow_null=True, write_only=True)
     timestamp = serializers.DateTimeField()
@@ -44,13 +56,15 @@ class ClientEventsSerializer(serializers.Serializer):
         time_correction = receive_time - send_time
 
         if data["previous_event"]:
-            data["previous_event"].update({
-                "timestamp": data["previous_event"]["timestamp"] + time_correction,
-            })
+            data["previous_event"]["timestamp"] += time_correction
 
         for event in data["events"]:
+            scope = event["scope"]
+            if scope not in ClientEventsSerializer.ALLOWED_SCOPES:
+                raise ValidationError(f"Event scope **{scope}** is not allowed from client")
+
             try:
-                json_payload = json.loads(event.get("payload", "{}"))
+                payload = json.loads(event.get("payload", "{}"))
             except json.JSONDecodeError:
                 raise serializers.ValidationError("JSON payload is not valid in passed event")
 
@@ -62,7 +76,7 @@ class ClientEventsSerializer(serializers.Serializer):
                 "user_id": request.user.id,
                 "user_name": request.user.username,
                 "user_email": request.user.email,
-                "payload": json.dumps(json_payload),
+                "payload": json.dumps(payload),
             })
 
         return data
