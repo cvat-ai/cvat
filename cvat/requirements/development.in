@@ -9,3 +9,4 @@ pylint==2.14.5
 rope==0.17.0
 snakeviz==2.1.0
 soundfile==0.12.1
+chardet==5.2.0
