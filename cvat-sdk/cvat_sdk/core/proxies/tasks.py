@@ -132,26 +132,24 @@ class Task(
             self._client.logger.info("Awaiting for task %s creation...", self.id)
             while True:
                 sleep(status_check_period)
-                (status, response) = self.api.retrieve_status(self.id)
+                requests, response = self._client.api_client.requests_api.list(action="create", task_id=self.id)
+                assert response.status == 200
+                assert 1 == len(requests.results)
+                request_details = requests.results[0]
+                status, message = request_details.status, request_details.message
 
                 self._client.logger.info(
                     "Task %s creation status: %s (message=%s)",
                     self.id,
-                    status.state.value,
-                    status.message,
+                    status,
+                    message,
                 )
 
-                if (
-                    status.state.value
-                    == models.RqStatusStateEnum.allowed_values[("value",)]["FINISHED"]
-                ):
+                if "finished" == status.lower():
                     break
-                elif (
-                    status.state.value
-                    == models.RqStatusStateEnum.allowed_values[("value",)]["FAILED"]
-                ):
+                elif "failed" == status.lower():
                     raise exceptions.ApiException(
-                        status=status.state.value, reason=status.message, http_resp=response
+                        status=status, reason=message, http_resp=response
                     )
 
             self.fetch()
@@ -431,16 +429,12 @@ class TasksRepo(
             logger=self._client.logger.debug,
         )
 
-        rq_id = json.loads(response.data)["rq_id"]
-        response = self._client.wait_for_completion(
-            url,
-            success_status=201,
-            positive_statuses=[202],
-            post_params={"rq_id": rq_id},
-            status_check_period=status_check_period,
-        )
+        rq_id = json.loads(response.data).get("rq_id")
+        assert rq_id, "Request ID was not found in server response"
 
-        task_id = json.loads(response.data)["id"]
+        request, response = self._client.wait_for_completion(rq_id, status_check_period=status_check_period)
+
+        task_id = request.result_id
         self._client.logger.info(f"Task has been imported successfully. Task ID: {task_id}")
 
         return self.retrieve(task_id)

@@ -45,6 +45,9 @@ from rest_framework.permissions import SAFE_METHODS
 from rest_framework.response import Response
 from rest_framework.settings import api_settings
 
+from rq.queue import Queue as RQQueue
+from rq.job import Job as RQJob, JobStatus as RQJobStatus
+
 import cvat.apps.dataset_manager as dm
 import cvat.apps.dataset_manager.views  # pylint: disable=unused-import
 from cvat.apps.engine.cloud_provider import db_storage_to_storage_instance, import_resource_from_cloud_storage, export_resource_to_cloud_storage
@@ -97,10 +100,6 @@ from cvat.apps.engine.permissions import (CloudStoragePermission,
     CommentPermission, IssuePermission, JobPermission, LabelPermission, ProjectPermission,
     TaskPermission, UserPermission)
 from cvat.apps.engine.view_utils import tus_chunk_action
-
-
-from rq.queue import Queue as RQQueue
-from rq.job import Job as RQJob
 
 slogger = ServerLogManager(__name__)
 
@@ -3003,50 +3002,49 @@ def _export_annotations(
     is_annotation_file = rq_id.startswith('export:annotations')
 
     if rq_job:
-        rq_request = rq_job.meta.get(RQJobMetaField.REQUEST, None)
-        request_time = rq_request.get('timestamp', None) if rq_request else None
-        if request_time is None or request_time < last_instance_update_time:
-            # in case the server is configured with ONE_RUNNING_JOB_IN_QUEUE_PER_USER
-            # we have to enqueue dependent jobs after canceling one
-            rq_job.cancel(enqueue_dependents=settings.ONE_RUNNING_JOB_IN_QUEUE_PER_USER)
-            rq_job.delete()
-        else:
-            if rq_job.is_finished:
-                if location == Location.CLOUD_STORAGE:
-                    rq_job.delete()
-                    return Response(status=status.HTTP_200_OK)
-
-                elif location == Location.LOCAL:
-                    file_path = rq_job.return_value()
-
-                    if not file_path:
-                        return Response('A result for exporting job was not found for finished RQ job', status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-                    elif not osp.exists(file_path):
-                        return Response('The result file does not exist in export cache', status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-
-                    if action == "download":
-                        filename = filename or \
-                            build_annotations_file_name(
-                                class_name=db_instance.__class__.__name__,
-                                identifier=db_instance.name if isinstance(db_instance, (Task, Project)) else db_instance.id,
-                                timestamp=timestamp,
-                                format_name=format_name,
-                                is_annotation_file=is_annotation_file,
-                                extension=osp.splitext(file_path)[1]
-                            )
-
-                        rq_job.delete()
-                        return sendfile(request, file_path, attachment=True, attachment_filename=filename)
-                    return Response(status=status.HTTP_201_CREATED)
-                else:
-                    raise NotImplementedError(f"Export to {location} location is not implemented yet")
-            elif rq_job.is_failed:
-                exc_info = rq_job.meta.get(RQJobMetaField.FORMATTED_EXCEPTION, str(rq_job.exc_info))
+        if rq_job.is_finished:
+            if location == Location.CLOUD_STORAGE:
                 rq_job.delete()
-                return Response(exc_info,
-                    status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+                return Response(status=status.HTTP_200_OK)
+
+            elif location == Location.LOCAL:
+                file_path = rq_job.return_value()
+
+                if not file_path:
+                    return Response('A result for exporting job was not found for finished RQ job', status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+                elif not osp.exists(file_path):
+                    return Response('The result file does not exist in export cache', status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+                if action == "download":
+                    filename = filename or \
+                        build_annotations_file_name(
+                            class_name=db_instance.__class__.__name__,
+                            identifier=db_instance.name if isinstance(db_instance, (Task, Project)) else db_instance.id,
+                            timestamp=timestamp,
+                            format_name=format_name,
+                            is_annotation_file=is_annotation_file,
+                            extension=osp.splitext(file_path)[1]
+                        )
+
+                    rq_job.delete()
+                    return sendfile(request, file_path, attachment=True, attachment_filename=filename)
+                return Response(status=status.HTTP_201_CREATED)
             else:
-                return Response(status=status.HTTP_202_ACCEPTED)
+                raise NotImplementedError(f"Export to {location} location is not implemented yet")
+        elif rq_job.is_failed:
+            exc_info = rq_job.meta.get(RQJobMetaField.FORMATTED_EXCEPTION, str(rq_job.exc_info))
+            rq_job.delete()
+            return Response(exc_info,
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        else:
+            rq_request = rq_job.meta.get(RQJobMetaField.REQUEST, None)
+            request_time = rq_request.get('timestamp', None) if rq_request else None
+            if request_time is None or request_time < last_instance_update_time:
+                # in case the server is configured with ONE_RUNNING_JOB_IN_QUEUE_PER_USER
+                # we have to enqueue dependent jobs after canceling one
+                rq_job.cancel(enqueue_dependents=settings.ONE_RUNNING_JOB_IN_QUEUE_PER_USER)
+                rq_job.delete()
+            return Response(status=status.HTTP_202_ACCEPTED)
 
     try:
         if request.scheme:
@@ -3400,9 +3398,13 @@ class RequestViewSet(viewsets.GenericViewSet):
 
         self.check_object_permissions(request, rq_job)
 
-        if not rq_job.is_started:
-            return HttpResponseBadRequest(f"Only requests with 'started' status can be cancelled")
+        if rq_job.get_status(refresh=False) not in {RQJobStatus.QUEUED, RQJobStatus.DEFERRED}:
+            return HttpResponseBadRequest("Only requests that have not yet been started can be cancelled")
 
+        # tODO: race condition is possible here
         rq_job.cancel(enqueue_dependents=settings.ONE_RUNNING_JOB_IN_QUEUE_PER_USER)
 
         return Response(status=status.HTTP_200_OK)
+
+
+# tODO: implement endpoint for retrieving files  in second phase of feature

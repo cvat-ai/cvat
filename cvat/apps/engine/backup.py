@@ -962,50 +962,49 @@ def export(db_instance, request, queue_name):
     location = location_conf.get('location')
 
     if rq_job:
-        rq_request = rq_job.meta.get(RQJobMetaField.REQUEST, None)
-        request_time = rq_request.get("timestamp", None) if rq_request else None
-        if request_time is None or request_time < last_instance_update_time:
-            # in case the server is configured with ONE_RUNNING_JOB_IN_QUEUE_PER_USER
-            # we have to enqueue dependent jobs after canceling one
-            rq_job.cancel(enqueue_dependents=settings.ONE_RUNNING_JOB_IN_QUEUE_PER_USER)
-            rq_job.delete()
-        else:
-            if rq_job.is_finished:
-                if location == Location.LOCAL:
-                    file_path = rq_job.return_value()
+        if rq_job.is_finished:
+            if location == Location.LOCAL:
+                file_path = rq_job.return_value()
 
-                    if not file_path:
-                        return Response('A result for exporting job was not found for finished RQ job', status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+                if not file_path:
+                    return Response('A result for exporting job was not found for finished RQ job', status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
-                    elif not os.path.exists(file_path):
-                        return Response('The result file does not exist in export cache', status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+                elif not os.path.exists(file_path):
+                    return Response('The result file does not exist in export cache', status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
-                    filename = filename or build_backup_file_name(
-                        class_name=obj_type,
-                        identifier=db_instance.name,
-                        timestamp=timestamp,
-                        extension=os.path.splitext(file_path)[1]
-                    )
+                filename = filename or build_backup_file_name(
+                    class_name=obj_type,
+                    identifier=db_instance.name,
+                    timestamp=timestamp,
+                    extension=os.path.splitext(file_path)[1]
+                )
 
-                    if action == "download":
-                        rq_job.delete()
-                        return sendfile(request, file_path, attachment=True,
-                            attachment_filename=filename)
-
-                    return Response(status=status.HTTP_201_CREATED)
-
-                elif location == Location.CLOUD_STORAGE:
+                if action == "download":
                     rq_job.delete()
-                    return Response(status=status.HTTP_200_OK)
-                else:
-                    raise NotImplementedError()
-            elif rq_job.is_failed:
-                exc_info = rq_job.meta.get(RQJobMetaField.FORMATTED_EXCEPTION, str(rq_job.exc_info))
+                    return sendfile(request, file_path, attachment=True,
+                        attachment_filename=filename)
+
+                return Response(status=status.HTTP_201_CREATED)
+
+            elif location == Location.CLOUD_STORAGE:
                 rq_job.delete()
-                return Response(exc_info,
-                    status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+                return Response(status=status.HTTP_200_OK)
             else:
-                return Response(status=status.HTTP_202_ACCEPTED)
+                raise NotImplementedError()
+        elif rq_job.is_failed:
+            exc_info = rq_job.meta.get(RQJobMetaField.FORMATTED_EXCEPTION, str(rq_job.exc_info))
+            rq_job.delete()
+            return Response(exc_info,
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        else:
+            rq_request = rq_job.meta.get(RQJobMetaField.REQUEST, None)
+            request_time = rq_request.get("timestamp", None) if rq_request else None
+            if request_time is None or request_time < last_instance_update_time:
+                # in case the server is configured with ONE_RUNNING_JOB_IN_QUEUE_PER_USER
+                # we have to enqueue dependent jobs after canceling one
+                rq_job.cancel(enqueue_dependents=settings.ONE_RUNNING_JOB_IN_QUEUE_PER_USER)
+                rq_job.delete()
+            return Response(status=status.HTTP_202_ACCEPTED)
 
     ttl = dm.views.PROJECT_CACHE_TTL.total_seconds()
     user_id = request.user.id

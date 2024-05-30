@@ -4,6 +4,7 @@ from abc import ABC, abstractstaticmethod
 from contextlib import ExitStack
 from http import HTTPStatus
 from typing import Any, Dict, Optional, TypeVar
+from time import sleep
 
 import pytest
 
@@ -91,15 +92,73 @@ class _CloudStorageResourceTest(ABC):
         _expect_status: Optional[int] = None,
         **kwargs,
     ):
-        _expect_status = _expect_status or HTTPStatus.OK
+        _expect_status = _expect_status or HTTPStatus.ACCEPTED
 
+        sleep_interval = 0.1
+        number_of_checks = 100
+
+        # initialize the export process
         response = get_method(user, f"{obj}/{obj_id}/{resource}", **kwargs)
+        assert response.status_code == _expect_status
+
+        if _expect_status == HTTPStatus.FORBIDDEN:
+            return
+
+        rq_id = json.loads(response.content).get("rq_id")
+        assert rq_id, "The rq_id was not found in server request"
+
+        for i in range(number_of_checks):
+            sleep(sleep_interval)
+            # use new requests API for checking the status of the operation
+            response = get_method(user, f"requests/{rq_id}")
+            assert response.status_code == HTTPStatus.OK
+
+            request_details = json.loads(response.content)
+            status = request_details["status"]
+            assert status in {"started", "queued", "finished", "failed"}
+            if status in {"finished", "failed"}:
+                break
+                # TODO/FIXME: add direct call to old API to remove rq job or integrate new IDs for jobs
+
+        return
+
+
+    def _import_resource_from_cloud_storage(
+        self,
+        url: str,
+        *,
+        user: str,
+        _expect_status: Optional[int] = None,
+        **kwargs
+    ) -> None:
+        _expect_status = _expect_status or HTTPStatus.ACCEPTED
+
+        response = post_method(user, url, data=None, **kwargs)
         status = response.status_code
 
-        while status != _expect_status:
-            assert status in (HTTPStatus.CREATED, HTTPStatus.ACCEPTED)
-            response = get_method(user, f"{obj}/{obj_id}/{resource}", action="download", **kwargs)
-            status = response.status_code
+        assert status == _expect_status
+        if status == HTTPStatus.FORBIDDEN:
+            return
+
+        rq_id = response.json().get("rq_id")
+        assert rq_id, "The rq_id parameter was not found in the server response"
+
+        number_of_checks = 100
+        sleep_interval = 0.1
+
+        for _ in range(number_of_checks):
+            sleep(sleep_interval)
+            # use new requests API for checking the status of the operation
+            response = get_method(user, f"requests/{rq_id}")
+            assert response.status_code == HTTPStatus.OK
+
+            request_details = json.loads(response.content)
+            status = request_details["status"]
+            assert status in {"started", "queued", "finished", "failed"}
+            if status in {"finished", "failed"}:
+                break
+                # TODO/FIXME: add direct call to old API to remove rq job or integrate new IDs for jobs
+
 
     def _import_annotations_from_cloud_storage(
         self,
@@ -119,6 +178,7 @@ class _CloudStorageResourceTest(ABC):
 
         # Only the first POST request contains rq_id in response.
         # Exclude cases with 403 expected status.
+        # fIXME
         rq_id = None
         if status == HTTPStatus.ACCEPTED:
             rq_id = response.json().get("rq_id")
@@ -146,6 +206,7 @@ class _CloudStorageResourceTest(ABC):
         response = post_method(user, url, data=None, **kwargs)
         status = response.status_code
 
+        # FIXME
         while status != _expect_status:
             assert status == HTTPStatus.ACCEPTED
             data = json.loads(response.content.decode("utf8"))
@@ -164,6 +225,7 @@ class _CloudStorageResourceTest(ABC):
         # Only the first POST request contains rq_id in response.
         # Exclude cases with 403 expected status.
         rq_id = None
+        # FIXME
         if status == HTTPStatus.ACCEPTED:
             rq_id = response.json().get("rq_id")
             assert rq_id, "The rq_id was not found in the response"

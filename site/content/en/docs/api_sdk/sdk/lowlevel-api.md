@@ -92,6 +92,7 @@ with ApiClient(configuration) as api_client:
 
     # Wait till task data is processed
     for _ in range(100):
+        # fixme
         (status, _) = api_client.tasks_api.retrieve_status(task.id)
         if status.state.value in ['Finished', 'Failed']:
             break

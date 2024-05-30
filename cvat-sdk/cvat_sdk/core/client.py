@@ -209,37 +209,23 @@ class Client:
 
     def wait_for_completion(
         self: Client,
-        url: str,
+        rq_id: str,
         *,
-        success_status: int,
         status_check_period: Optional[int] = None,
-        query_params: Optional[Dict[str, Any]] = None,
-        post_params: Optional[Dict[str, Any]] = None,
-        method: str = "POST",
-        positive_statuses: Optional[Sequence[int]] = None,
-    ) -> urllib3.HTTPResponse:
+    ) -> Tuple[models.Request, urllib3.HTTPResponse]:
         if status_check_period is None:
             status_check_period = self.config.status_check_period
-
-        positive_statuses = set(positive_statuses) | {success_status}
 
         while True:
             sleep(status_check_period)
 
-            response = self.api_client.rest_client.request(
-                method=method,
-                url=url,
-                headers=self.api_client.get_common_headers(),
-                query_params=query_params,
-                post_params=post_params,
-            )
+            request, response = self.api_client.requests_api.retrieve(rq_id)
 
-            self.logger.debug("STATUS %s", response.status)
-            expect_status(positive_statuses, response)
-            if response.status == success_status:
+            assert request.status in {"started", "queued", "finished"}, "Background job failed, unexpected status: {request.status}, message: "
+            if request.status == "finished":
                 break
 
-        return response
+        return request, response
 
     def check_server_version(self, fail_if_unsupported: Optional[bool] = None) -> None:
         if fail_if_unsupported is None:
