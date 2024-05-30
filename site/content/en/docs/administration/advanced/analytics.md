@@ -165,17 +165,17 @@ Here is a short overview of how CVAT deals with the user's working time:
 
 - The user interface sends these events in bulk to the server.
   Currently, it uses the following triggers to send events:
-    - Periodical timer (~90 seconds)
-    - A user clicks the "Save" button on the annotation view
-    - A user opens the annotation view
-    - A user closes the annotation view (but not the tab/browser)
+  - Periodical timer (~90 seconds)
+  - A user clicks the "Save" button on the annotation view
+  - A user opens the annotation view
+  - A user closes the annotation view (but not the tab/browser)
 
 - When events reach the server, it calculates working time based on timestamps of the events.
 
 - The working time for an event is computed as the sum of the following:
-    - The difference between the start time of the event and the end time of
+  - The difference between the start time of the event and the end time of
     the previous event, if it is not more than 100 seconds.
-    - The duration of the event, for events of type `change:frame`.
+  - The duration of the event, for events of type `change:frame`.
 
 - After calculation, the server generates `send:working_time` events with time value in payload.
   These events may or may not be bound to a certain job/task/project,
