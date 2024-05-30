@@ -63,5 +63,5 @@ tornado==6.4
     # via snakeviz
 
 # The following packages are considered to be unsafe in a requirements file:
-setuptools==69.5.1
+setuptools==70.0.0
     # via astroid

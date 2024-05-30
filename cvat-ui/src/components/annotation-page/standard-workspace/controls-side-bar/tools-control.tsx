@@ -1242,6 +1242,16 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
 
                                 if (!jobLabel) return null;
 
+                                if (data.type === 'tag') {
+                                    return new core.classes.ObjectState({
+                                        frame,
+                                        label: jobLabel,
+                                        attributes: loadAttributes(data.attributes, jobLabel),
+                                        objectType: ObjectType.TAG,
+                                        source: core.enums.Source.AUTO,
+                                    });
+                                }
+
                                 const objectData = {
                                     label: jobLabel,
                                     objectType: ObjectType.SHAPE,
