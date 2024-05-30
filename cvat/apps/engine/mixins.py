@@ -188,7 +188,7 @@ class UploadMixin:
         'Tus-Max-Size': _tus_max_file_size,
         'Access-Control-Allow-Origin': "*",
         'Access-Control-Allow-Methods': "PATCH,HEAD,GET,POST,OPTIONS",
-        'Access-Control-Expose-Headers': "Tus-Resumable,upload-length,upload-metadata,Location,Upload-Offset",
+        'Access-Control-Expose-Headers': "Tus-Resumable,upload-length,upload-metadata,Location,Upload-Offset,Upload-Filename",
         'Access-Control-Allow-Headers': "Tus-Resumable,upload-length,upload-metadata,Location,Upload-Offset,content-type",
         'Cache-Control': 'no-store'
     }
@@ -284,8 +284,8 @@ class UploadMixin:
             tus_file = TusFile.create_file(metadata, file_size, self.get_upload_dir())
 
             location = request.build_absolute_uri()
-            if 'HTTP_X_FORWARDED_HOST' not in request.META:
-                location = request.META.get('HTTP_ORIGIN') + request.META.get('PATH_INFO')
+            # if 'HTTP_X_FORWARDED_HOST' not in request.META:
+            #     location = request.META.get('HTTP_ORIGIN') + request.META.get('PATH_INFO')
 
             if import_type in ('backup', 'annotations', 'datasets'):
                 scheduler = django_rq.get_scheduler(settings.CVAT_QUEUES.CLEANING.value)
