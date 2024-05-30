@@ -546,7 +546,10 @@ class AudioReader(IMediaReader):
             self._source_path[0].seek(0) # required for re-reading
 
         encoding = self.get_file_encoding(self._source_path[0])
-        return av.open(self._source_path[0], metadata_encoding = encoding)
+        if encoding:
+            return av.open(self._source_path[0], metadata_encoding = encoding)
+        else:
+            return av.open(self._source_path[0])
 
     def _get_duration(self):
         with self._get_av_container() as container:

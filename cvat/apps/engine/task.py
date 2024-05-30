@@ -970,7 +970,10 @@ def _create_thread(
         slogger.glob.debug("ENCODING")
         slogger.glob.debug(encoding)
         # Open the audio file
-        container = av.open(file_path, metadata_encoding=encoding)
+        if encoding:
+            container = av.open(file_path, metadata_encoding=encoding)
+        else:
+            container = av.open(file_path)
 
         # Get the first audio stream
         audio_stream = next((stream for stream in container.streams if stream.codec.type == 'audio'), None)
