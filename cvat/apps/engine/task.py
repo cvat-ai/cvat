@@ -956,19 +956,19 @@ def _create_thread(
     compressed_chunk_writer = compressed_chunk_writer_class(db_data.image_quality, **kwargs)
     original_chunk_writer = original_chunk_writer_class(original_quality, **kwargs)
 
-    def get_file_encoding(file_path):
-        import chardet
+    # def get_file_encoding(file_path):
+    #     import chardet
 
-        with open(file_path, 'rb') as f:
-            rawdata = f.read(1024)
-        result = chardet.detect(rawdata)
-        encoding = result['encoding']
+    #     with open(file_path, 'rb') as f:
+    #         rawdata = f.read(1024)
+    #     result = chardet.detect(rawdata)
+    #     encoding = result['encoding']
 
-        return encoding
+    #     return encoding
     def get_audio_duration(file_path):
-        encoding=get_file_encoding(file_path)
-        slogger.glob.debug("ENCODING")
-        slogger.glob.debug(encoding)
+        # encoding=get_file_encoding(file_path)
+        # slogger.glob.debug("ENCODING")
+        # slogger.glob.debug(encoding)
         # Open the audio file
         container = av.open(file_path)
 
