@@ -655,14 +655,16 @@ def handle_client_events_push(request, data: dict):
             previous_end_timestamp = end_timestamp
 
         if previous_ids not in working_time_per_ids:
-            working_time_per_ids[previous_ids] = datetime.timedelta()
+            working_time_per_ids[previous_ids] = {
+                "value": datetime.timedelta(),
+                "timestamp": timestamp,
+            }
 
-        working_time_per_ids[previous_ids] += working_time
+        working_time_per_ids[previous_ids]["value"] += working_time
         previous_ids = read_ids(event)
 
     if data["events"]:
         common = {
-            "timestamp": data["events"][0]["timestamp"],
             "user_id": request.user.id,
             "user_name": request.user.username,
             "user_email": request.user.email or None,
@@ -670,8 +672,9 @@ def handle_client_events_push(request, data: dict):
             "org_slug": getattr(org, "slug", None),
         }
 
-        for ids in working_time_per_ids:
-            event = generate_wt_event(ids, working_time_per_ids[ids], common)
+        for ids, working_time in working_time_per_ids.items():
+            common["timestamp"] = working_time["timestamp"]
+            event = generate_wt_event(ids, working_time["value"], common)
             if event:
                 event.is_valid(raise_exception=True)
                 record_server_event(
