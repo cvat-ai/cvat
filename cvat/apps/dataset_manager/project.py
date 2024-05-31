@@ -85,6 +85,7 @@ class ProjectAnnotationAndData:
             "use_cache": False,
             "use_zip_chunks": True,
             "image_quality": 70,
+            "consensus_job_per_segment": 0,
         })
         data_serializer.is_valid(raise_exception=True)
         db_data = data_serializer.save()

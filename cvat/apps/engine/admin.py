@@ -59,7 +59,7 @@ class AssetInline(admin.TabularInline):
 
 class DataAdmin(admin.ModelAdmin):
     model = Data
-    fields = ('chunk_size', 'size', 'image_quality', 'start_frame', 'stop_frame', 'frame_filter', 'compressed_chunk_type', 'original_chunk_type')
+    fields = ('chunk_size', 'size', 'image_quality', 'start_frame', 'stop_frame', 'frame_filter', 'compressed_chunk_type', 'original_chunk_type', 'consensus_job_per_segment')
     readonly_fields = fields
     autocomplete_fields = ('cloud_storage', )
 

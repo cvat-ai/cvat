@@ -593,6 +593,7 @@ class JobReadSerializer(serializers.ModelSerializer):
     issues = IssuesSummarySerializer(source='*')
     target_storage = StorageSerializer(required=False, allow_null=True)
     source_storage = StorageSerializer(required=False, allow_null=True)
+    source_job_id = serializers.ReadOnlyField(allow_null=True)
 
     class Meta:
         model = models.Job
@@ -600,7 +601,7 @@ class JobReadSerializer(serializers.ModelSerializer):
             'dimension', 'bug_tracker', 'status', 'stage', 'state', 'mode', 'frame_count',
             'start_frame', 'stop_frame', 'data_chunk_size', 'data_compressed_chunk_type',
             'created_date', 'updated_date', 'issues', 'labels', 'type', 'organization',
-            'target_storage', 'source_storage')
+            'target_storage', 'source_storage', 'source_job_id')
         read_only_fields = fields
 
     def to_representation(self, instance):
@@ -964,6 +965,10 @@ class DataSerializer(serializers.ModelSerializer):
             pass the list of file names in the required order.
         """.format(models.SortingMethod.PREDEFINED))
     )
+    consensus_job_per_segment = serializers.IntegerField(default=1,
+        help_text=textwrap.dedent("""\
+            Number of Consensus Jobs for each Normal Job.
+        """))
 
     class Meta:
         model = models.Data
@@ -973,7 +978,7 @@ class DataSerializer(serializers.ModelSerializer):
             'use_zip_chunks', 'server_files_exclude',
             'cloud_storage_id', 'use_cache', 'copy_data', 'storage_method',
             'storage', 'sorting_method', 'filename_pattern',
-            'job_file_mapping', 'upload_file_order',
+            'job_file_mapping', 'upload_file_order', 'consensus_job_per_segment',
         )
         extra_kwargs = {
             'chunk_size': { 'help_text': "Maximum number of frames per chunk" },
@@ -1096,6 +1101,7 @@ class TaskReadSerializer(serializers.ModelSerializer):
     source_storage = StorageSerializer(required=False, allow_null=True)
     jobs = JobsSummarySerializer(url_filter_key='task_id', source='segment_set')
     labels = LabelsSummarySerializer(source='*')
+    consensus_job_per_segment = serializers.IntegerField(source='data.consensus_job_per_segment', required=False)
 
     class Meta:
         model = models.Task
@@ -1104,6 +1110,7 @@ class TaskReadSerializer(serializers.ModelSerializer):
             'status', 'data_chunk_size', 'data_compressed_chunk_type', 'guide_id',
             'data_original_chunk_type', 'size', 'image_quality', 'data', 'dimension',
             'subset', 'organization', 'target_storage', 'source_storage', 'jobs', 'labels',
+            'consensus_job_per_segment'
         )
         read_only_fields = fields
         extra_kwargs = {
@@ -1119,12 +1126,13 @@ class TaskWriteSerializer(WriteOnceMixin, serializers.ModelSerializer):
     project_id = serializers.IntegerField(required=False, allow_null=True)
     target_storage = StorageSerializer(required=False, allow_null=True)
     source_storage = StorageSerializer(required=False, allow_null=True)
+    consensus_job_per_segment = serializers.IntegerField(required=False)
 
     class Meta:
         model = models.Task
         fields = ('url', 'id', 'name', 'project_id', 'owner_id', 'assignee_id',
             'bug_tracker', 'overlap', 'segment_size', 'labels', 'subset',
-            'target_storage', 'source_storage',
+            'target_storage', 'source_storage', 'consensus_job_per_segment'
         )
         write_once_fields = ('overlap', 'segment_size')
 
@@ -1184,6 +1192,7 @@ class TaskWriteSerializer(WriteOnceMixin, serializers.ModelSerializer):
             instance.bug_tracker)
         instance.subset = validated_data.get('subset', instance.subset)
         labels = validated_data.get('label_set', [])
+        instance.consensus_job_per_segment = validated_data.get('consensus_job_per_segment', instance.consensus_job_per_segment)
 
         if instance.project_id is None:
             LabelSerializer.update_labels(labels, parent_instance=instance)
@@ -1444,6 +1453,7 @@ class DataMetaReadSerializer(serializers.ModelSerializer):
         help_text=textwrap.dedent("""\
         A list of valid frame ids. The None value means all frames are included.
         """))
+    consensus_job_per_segment = serializers.IntegerField(default=1)
 
     class Meta:
         model = models.Data
@@ -1457,6 +1467,7 @@ class DataMetaReadSerializer(serializers.ModelSerializer):
             'frames',
             'deleted_frames',
             'included_frames',
+            'consensus_job_per_segment',
         )
         read_only_fields = fields
         extra_kwargs = {

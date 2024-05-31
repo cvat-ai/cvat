@@ -201,6 +201,7 @@ class _TaskBackupBase(_BackupBase):
             'deleted_frames',
             'custom_segments',
             'job_file_mapping',
+            'consensus_job_per_segment'
         }
 
         self._prepare_meta(allowed_fields, data)
