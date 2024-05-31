@@ -167,7 +167,7 @@ Client events:
 Here is a short overview of how CVAT deals with the user's working time:
 
 - The user interface collects events when a user interacts with the interface
-(resizing canvas, drawing objects, clicking buttons, etc)
+  (resizing canvas, drawing objects, clicking buttons, etc)
   The structure of one single event is described [here](#events-log-structure).
 
 - The user interface sends these events in bulk to the server.
@@ -186,7 +186,7 @@ Here is a short overview of how CVAT deals with the user's working time:
 
 - After calculation, the server generates `send:working_time` events with time value in payload.
   These events may or may not be bound to a certain job/task/project,
-depending on the client-side events that were used to generate them.
+  depending on the client-side events that were used to generate them.
 
 - CVAT saves the event in the database and later these events are used to compute metrics for analytics.
 
