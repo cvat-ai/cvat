@@ -138,17 +138,23 @@ class GlobalErrorBoundary extends React.PureComponent<Props, State> {
                             <Paragraph>
                                 <Paragraph strong>What has happened?</Paragraph>
                                 <Paragraph>Program error has just occurred</Paragraph>
-                                <Collapse accordion defaultActiveKey={['errorMessage']}>
-                                    <Collapse.Panel header='Error message' key='errorMessage'>
-                                        <Text type='danger'>
-                                            <TextArea
-                                                className='cvat-global-boundary-error-field'
-                                                autoSize
-                                                value={message}
-                                            />
-                                        </Text>
-                                    </Collapse.Panel>
-                                </Collapse>
+                                <Collapse
+                                    accordion
+                                    defaultActiveKey={['errorMessage']}
+                                    items={[{
+                                        key: 'errorMessage',
+                                        label: 'Exception details',
+                                        children: (
+                                            <Text type='danger'>
+                                                <TextArea
+                                                    className='cvat-global-boundary-error-field'
+                                                    autoSize
+                                                    value={message}
+                                                />
+                                            </Text>
+                                        ),
+                                    }]}
+                                />
                             </Paragraph>
 
                             <Paragraph>
@@ -159,9 +165,7 @@ class GlobalErrorBoundary extends React.PureComponent<Props, State> {
                                     <CVATTooltip title='Copied!' trigger='click'>
                                         {/* eslint-disable-next-line */}
                                         <a
-                                            onClick={() => {
-                                                copy(message);
-                                            }}
+                                            onClick={() => copy(message)}
                                         >
                                             {' '}
                                             Copy

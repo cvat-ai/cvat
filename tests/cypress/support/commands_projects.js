@@ -246,7 +246,7 @@ Cypress.Commands.add('restoreProject', (archiveWithBackup, sourceStorage = null)
 
 Cypress.Commands.add('getDownloadFileName', () => {
     cy.intercept('GET', '**=download').as('download');
-    cy.wait('@download').then((download) => {
+    cy.wait('@download', { responseTimeout: 10000 }).then((download) => {
         const filename = download.response.headers['content-disposition'].split(';')[1].split('filename=')[1];
         // need to remove quotes
         return filename.substring(1, filename.length - 1);

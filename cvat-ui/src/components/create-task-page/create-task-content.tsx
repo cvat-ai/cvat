@@ -845,28 +845,33 @@ class CreateTaskContent extends React.PureComponent<Props & RouteComponentProps,
         } = this.state;
         return (
             <Col span={24}>
-                <Collapse className='cvat-advanced-configuration-wrapper'>
-                    <Collapse.Panel key='1' header={<Text className='cvat-title'>Advanced configuration</Text>}>
-                        <AdvancedConfigurationForm
-                            activeFileManagerTab={activeFileManagerTab}
-                            ref={this.advancedConfigurationComponent}
-                            onSubmit={this.handleSubmitAdvancedConfiguration}
-                            projectId={projectId}
-                            useProjectSourceStorage={useProjectSourceStorage}
-                            useProjectTargetStorage={useProjectTargetStorage}
-                            sourceStorageLocation={sourceStorageLocation}
-                            targetStorageLocation={targetStorageLocation}
-                            onChangeUseProjectSourceStorage={this.handleUseProjectSourceStorageChange}
-                            onChangeUseProjectTargetStorage={this.handleUseProjectTargetStorageChange}
-                            onChangeSourceStorageLocation={(value: StorageLocation) => {
-                                this.handleChangeStorageLocation('sourceStorage', value);
-                            }}
-                            onChangeTargetStorageLocation={(value: StorageLocation) => {
-                                this.handleChangeStorageLocation('targetStorage', value);
-                            }}
-                        />
-                    </Collapse.Panel>
-                </Collapse>
+                <Collapse
+                    className='cvat-advanced-configuration-wrapper'
+                    items={[{
+                        key: '1',
+                        label: <Text className='cvat-title'>Advanced configuration</Text>,
+                        children: (
+                            <AdvancedConfigurationForm
+                                activeFileManagerTab={activeFileManagerTab}
+                                ref={this.advancedConfigurationComponent}
+                                onSubmit={this.handleSubmitAdvancedConfiguration}
+                                projectId={projectId}
+                                useProjectSourceStorage={useProjectSourceStorage}
+                                useProjectTargetStorage={useProjectTargetStorage}
+                                sourceStorageLocation={sourceStorageLocation}
+                                targetStorageLocation={targetStorageLocation}
+                                onChangeUseProjectSourceStorage={this.handleUseProjectSourceStorageChange}
+                                onChangeUseProjectTargetStorage={this.handleUseProjectTargetStorageChange}
+                                onChangeSourceStorageLocation={(value: StorageLocation) => {
+                                    this.handleChangeStorageLocation('sourceStorage', value);
+                                }}
+                                onChangeTargetStorageLocation={(value: StorageLocation) => {
+                                    this.handleChangeStorageLocation('targetStorage', value);
+                                }}
+                            />
+                        ),
+                    }]}
+                />
             </Col>
         );
     }
