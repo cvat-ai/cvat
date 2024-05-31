@@ -232,6 +232,7 @@ class Data(models.Model):
     cloud_storage = models.ForeignKey('CloudStorage', on_delete=models.SET_NULL, null=True, related_name='data')
     sorting_method = models.CharField(max_length=15, choices=SortingMethod.choices(), default=SortingMethod.LEXICOGRAPHICAL)
     deleted_frames = IntArrayField(store_sorted=True, unique_values=True)
+    consensus_job_per_segment = models.IntegerField(default=0, blank=True)
 
     class Meta:
         default_permissions = ()
@@ -677,6 +678,7 @@ class Job(TimestampedModel):
 
     type = models.CharField(max_length=32, choices=JobType.choices(),
         default=JobType.ANNOTATION)
+    source_job_id = models.PositiveIntegerField(null=True, blank=True, default=None)
 
     def get_target_storage(self) -> Optional[Storage]:
         return self.segment.task.target_storage
