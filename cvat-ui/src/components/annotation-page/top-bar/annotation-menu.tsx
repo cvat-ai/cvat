@@ -171,7 +171,6 @@ function AnnotationMenuComponent(props: Props): JSX.Element {
             let removeFrom: number | null;
             let removeUpTo: number | null;
             let removeOnlyKeyframes = false;
-            const { Panel } = Collapse;
             Modal.confirm({
                 title: 'Remove Annotations',
                 content: (
@@ -180,37 +179,44 @@ function AnnotationMenuComponent(props: Props): JSX.Element {
                         <Text>It will stay on the server till you save the job. Continue?</Text>
                         <br />
                         <br />
-                        <Collapse bordered={false}>
-                            <Panel header={<Text>Select Range</Text>} key={1}>
-                                <Text>From: </Text>
-                                <InputNumber
-                                    min={0}
-                                    max={stopFrame}
-                                    onChange={(value) => {
-                                        removeFrom = value;
-                                    }}
-                                />
-                                <Text>  To: </Text>
-                                <InputNumber
-                                    min={0}
-                                    max={stopFrame}
-                                    onChange={(value) => {
-                                        removeUpTo = value;
-                                    }}
-                                />
-                                <CVATTooltip title='Applicable only for annotations in range'>
-                                    <br />
-                                    <br />
-                                    <Checkbox
-                                        onChange={(check) => {
-                                            removeOnlyKeyframes = check.target.checked;
-                                        }}
-                                    >
-                                        Delete only keyframes for tracks
-                                    </Checkbox>
-                                </CVATTooltip>
-                            </Panel>
-                        </Collapse>
+                        <Collapse
+                            bordered={false}
+                            items={[{
+                                key: 1,
+                                label: <Text>Select Range</Text>,
+                                children: (
+                                    <>
+                                        <Text>From: </Text>
+                                        <InputNumber
+                                            min={0}
+                                            max={stopFrame}
+                                            onChange={(value) => {
+                                                removeFrom = value;
+                                            }}
+                                        />
+                                        <Text>  To: </Text>
+                                        <InputNumber
+                                            min={0}
+                                            max={stopFrame}
+                                            onChange={(value) => {
+                                                removeUpTo = value;
+                                            }}
+                                        />
+                                        <CVATTooltip title='Applicable only for annotations in range'>
+                                            <br />
+                                            <br />
+                                            <Checkbox
+                                                onChange={(check) => {
+                                                    removeOnlyKeyframes = check.target.checked;
+                                                }}
+                                            >
+                                                Delete only keyframes for tracks
+                                            </Checkbox>
+                                        </CVATTooltip>
+                                    </>
+                                ),
+                            }]}
+                        />
                     </div>
                 ),
                 className: 'cvat-modal-confirm-remove-annotation',
