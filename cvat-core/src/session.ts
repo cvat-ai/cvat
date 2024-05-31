@@ -454,6 +454,7 @@ export class Job extends Session {
             updated_date: undefined,
             source_storage: undefined,
             target_storage: undefined,
+            source_job_id: null,
         };
 
         const updateTrigger = new FieldUpdateTrigger();
@@ -588,6 +589,9 @@ export class Job extends Session {
                 bugTracker: {
                     get: () => data.bug_tracker,
                 },
+                sourceID: {
+                    get: () => data.source_job_id,
+                },
                 createdDate: {
                     get: () => data.created_date,
                 },
@@ -667,6 +671,7 @@ export class Task extends Session {
     public readonly organization: number | null;
     public readonly progress: { count: number; completed: number };
     public readonly jobs: Job[];
+    public readonly consensusJobPerSegment: number;
 
     public readonly startFrame: number;
     public readonly stopFrame: number;
@@ -721,6 +726,7 @@ export class Task extends Session {
             cloud_storage_id: undefined,
             sorting_method: undefined,
             files: undefined,
+            consensus_job_per_segment: undefined,
 
             quality_settings: undefined,
         };
@@ -798,6 +804,7 @@ export class Task extends Session {
                     data_chunk_size: data.data_chunk_size,
                     target_storage: initialData.target_storage,
                     source_storage: initialData.source_storage,
+                    source_job_id: job.source_job_id,
                 });
                 data.jobs.push(jobInstance);
             }
@@ -904,6 +911,9 @@ export class Task extends Session {
                 },
                 copyData: {
                     get: () => data.copy_data,
+                },
+                consensusJobPerSegment: {
+                    get: () => data.consensus_job_per_segment,
                 },
                 labels: {
                     get: () => [...data.labels],
