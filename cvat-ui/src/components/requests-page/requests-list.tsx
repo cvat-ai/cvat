@@ -20,6 +20,7 @@ export const PAGE_SIZE = 10;
 
 interface Props {
     query: RequestsQuery;
+    count: number;
 }
 
 function setUpRequestsList(requests: Request[], newPage: number): Request[] {
@@ -30,9 +31,9 @@ function setUpRequestsList(requests: Request[], newPage: number): Request[] {
 
 function RequestsList(props: Props): JSX.Element {
     const dispatch = useDispatch();
-    const { query } = props;
+    const { query, count } = props;
     const { page } = query;
-    const { requests, count } = useSelector((state: CombinedState) => state.requests);
+    const { requests } = useSelector((state: CombinedState) => state.requests);
 
     const requestViews = setUpRequestsList(Object.values(requests), page)
         .map((request: Request): JSX.Element => <RequestCard request={request} key={request.id} />);

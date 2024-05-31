@@ -16,8 +16,9 @@ import RequestsList, { PAGE_SIZE } from './requests-list';
 
 export default function RequestsPageComponent(): JSX.Element {
     const history = useHistory();
-    const { fetching, count, query } = useSelector((state: CombinedState) => state.requests);
+    const { fetching, query, requests } = useSelector((state: CombinedState) => state.requests);
 
+    const count = Object.keys(requests).length;
     const updatedQuery = { ...query };
     const queryParams = new URLSearchParams(history.location.search);
     for (const key of Object.keys(updatedQuery)) {
@@ -35,7 +36,7 @@ export default function RequestsPageComponent(): JSX.Element {
 
     const pageOutOfBounds = updatedQuery.page ? updatedQuery.page > Math.ceil(count / PAGE_SIZE) : false;
     const content = (count && !pageOutOfBounds) ? (
-        <RequestsList query={updatedQuery} />
+        <RequestsList query={updatedQuery} count={count} />
     ) : <EmptyListComponent />;
 
     return (

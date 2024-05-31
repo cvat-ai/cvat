@@ -948,7 +948,6 @@ export interface RequestsState {
     fetching: boolean;
     initialized: boolean;
     requests: Record<string, Request>;
-    count: number;
     urls: string[];
     query: RequestsQuery;
 }

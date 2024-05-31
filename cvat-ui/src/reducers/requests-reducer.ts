@@ -10,7 +10,6 @@ import { RequestsState } from '.';
 const defaultState: RequestsState = {
     initialized: false,
     fetching: false,
-    count: 0,
     requests: {},
     urls: [],
     query: {
@@ -38,7 +37,6 @@ export default function (
             return {
                 ...state,
                 requests: Object.fromEntries(action.payload.requests.map((r) => [r.id, r])),
-                count: action.payload.requests.count,
                 initialized: true,
                 fetching: false,
             };
