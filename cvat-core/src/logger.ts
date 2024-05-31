@@ -29,7 +29,10 @@ interface IgnoreRule {
     update: (previousEvent: Event, currentPayload: JSONEventPayload) => JSONEventPayload;
 }
 
-type IgnoredRules = EventScope.zoomImage | EventScope.changeAttribute | EventScope.changeFrame;
+type IgnoredRules = (
+    EventScope.zoomImage | EventScope.changeAttribute |
+    EventScope.changeFrame | EventScope.exception
+);
 
 class Logger {
     public clientID: string;
@@ -50,11 +53,30 @@ class Logger {
         this.ignoreRules = {
             [EventScope.zoomImage]: {
                 lastEvent: null,
-                timeThreshold: 4000,
-                ignore(previousEvent: Event): boolean {
-                    return (Date.now() - previousEvent.timestamp.getTime()) < this.timeThreshold;
+                ignore: (previousEvent: Event): boolean => {
+                    const [lastCollectionEvent] = this.collection.slice(-1);
+                    return previousEvent === lastCollectionEvent;
                 },
                 update: defaultUpdate,
+            },
+            [EventScope.exception]: {
+                lastEvent: null,
+                ignore: (previousEvent: Event, currentPayload: JSONEventPayload): boolean => {
+                    const { stack, message } = currentPayload;
+                    const [lastCollectionEvent] = this.collection.slice(-1);
+                    return lastCollectionEvent === previousEvent &&
+                        stack === previousEvent.payload.stack &&
+                        message === previousEvent.payload.message;
+                },
+                update(previousEvent: Event): JSONEventPayload {
+                    const count = Number.isInteger(previousEvent.payload.count) ?
+                        previousEvent.payload.count as number : 1;
+                    return {
+                        ...previousEvent.payload,
+                        count: count + 1,
+                        lastTimestamp: new Date().toISOString(),
+                    };
+                },
             },
             [EventScope.changeAttribute]: {
                 lastEvent: null,

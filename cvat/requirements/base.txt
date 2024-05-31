@@ -275,7 +275,7 @@ pyyaml==6.0.1
     #   drf-spectacular
 rcssmin==1.1.1
     # via django-compressor
-redis==4.5.4
+redis==4.6.0
     # via
     #   -r cvat/requirements/base.in
     #   django-rq

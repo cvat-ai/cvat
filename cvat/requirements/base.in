@@ -44,7 +44,7 @@ psycopg2-binary==2.9.5
 python-ldap==3.4.3
 python-logstash-async==2.5.0
 pyunpack==0.2.1
-redis==4.5.4
+redis==4.6.0
 requests~=2.26
 rq-scheduler==0.13.1
 rq==1.16.0
