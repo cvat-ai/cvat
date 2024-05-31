@@ -26,10 +26,14 @@ export interface Props {
     request: Request;
 }
 
-function constructLink(operation: typeof Request['operation']): string | null {
+function constructLink(request: Request): string | null {
     const {
-        target, jobID, taskID, projectID,
-    } = operation;
+        type, target, jobID, taskID, projectID,
+    } = request.operation;
+
+    if (request.status === RQStatus.FAILED && type.includes('create')) {
+        return null;
+    }
 
     if (target === 'project' && projectID) {
         return `/projects/${projectID}`;
@@ -144,7 +148,7 @@ function RequestCard(props: Props): JSX.Element {
     const dispatch = useDispatch();
     const [isActive, setIsActive] = useState(true);
 
-    const linkToEntity = constructLink(request.operation);
+    const linkToEntity = constructLink(request);
     const percent = request.status === RQStatus.FINISHED ? 100 : request.progress;
     const timestamps = constructTimestamps(request);
 

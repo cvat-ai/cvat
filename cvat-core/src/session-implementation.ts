@@ -4,8 +4,9 @@
 // SPDX-License-Identifier: MIT
 
 import { omit } from 'lodash';
+import config from './config';
 import { ArgumentError } from './exceptions';
-import { HistoryActions, JobType } from './enums';
+import { HistoryActions, JobType, RQStatus } from './enums';
 import { Storage } from './storage';
 import { Task as TaskClass, Job as JobClass } from './session';
 import logger from './logger';
@@ -31,6 +32,7 @@ import {
 } from './annotations';
 import AnnotationGuide from './guide';
 import requestsManager from './requests-manager';
+import { Request } from './request';
 
 // must be called with task/job context
 async function deleteFrameWrapper(jobID, frame): Promise<void> {
@@ -497,9 +499,16 @@ export function implementTask(Task) {
             taskDataSpec,
             options?.requestStatusCallback || (() => {}),
         );
+
         await requestsManager.listen(rqID, {
-            callback: options?.requestStatusCallback,
+            callback: async (request: Request) => {
+                options?.requestStatusCallback(request);
+                if (request.status === RQStatus.FAILED) {
+                    await serverProxy.tasks.delete(taskID, config.organization.organizationSlug || null);
+                }
+            },
         });
+
         const [task] = await serverProxy.tasks.get({ id: taskID });
         const labels = await serverProxy.labels.get({ task_id: task.id });
         const jobs = await serverProxy.jobs.get({
