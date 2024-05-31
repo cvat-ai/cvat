@@ -8,7 +8,7 @@ fail() {
 }
 
 wait_for_db() {
-    ~/wait-for-it.sh "${CVAT_POSTGRES_HOST}:5432" -t 0
+    ~/wait-for-it.sh "${CVAT_POSTGRES_HOST}:${CVAT_POSTGRES_PORT:-5432}" -t 0
 }
 
 cmd_bash() {
@@ -18,6 +18,11 @@ cmd_bash() {
 cmd_init() {
     wait_for_db
     ~/manage.py migrate
+}
+
+cmd_ensuresuperuser() {
+    wait_for_db
+    ~/manage.py ensuresuperuser --no-input
 }
 
 cmd_run() {
