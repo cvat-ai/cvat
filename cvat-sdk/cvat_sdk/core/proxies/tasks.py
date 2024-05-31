@@ -78,7 +78,7 @@ class Task(
         """
         params = params or {}
 
-        data = {"image_quality": 70}
+        data = {"image_quality": 70, 'consensus_job_per_segment': 0}
 
         data.update(
             filter_dict(
@@ -96,6 +96,7 @@ class Task(
                     "filename_pattern",
                     "cloud_storage_id",
                     "server_files_exclude",
+                    "consensus_job_per_segment",
                 ],
             )
         )
