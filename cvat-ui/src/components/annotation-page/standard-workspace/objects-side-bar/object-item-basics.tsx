@@ -136,7 +136,7 @@ function ItemTopComponent(props: Props): JSX.Element {
                         placement='bottomLeft'
                         trigger={['click']}
                         className='cvat-object-item-menu-button'
-                        overlay={ItemMenu({
+                        menu={ItemMenu({
                             jobInstance,
                             readonly,
                             serverID,

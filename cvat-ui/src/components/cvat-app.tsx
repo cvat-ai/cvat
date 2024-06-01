@@ -15,7 +15,6 @@ import { DisconnectOutlined } from '@ant-design/icons';
 import Space from 'antd/lib/space';
 import Text from 'antd/lib/typography/Text';
 import ReactMarkdown from 'react-markdown';
-import 'antd/dist/antd.css';
 
 import LogoutComponent from 'components/logout-component';
 import LoginPageContainer from 'containers/login-page/login-page';
@@ -137,19 +136,16 @@ class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentP
         const core = getCore();
         const { history, location } = this.props;
         const {
-            HEALTH_CHECK_RETRIES, HEALTH_CHECK_PERIOD, HEALTH_CHECK_REQUEST_TIMEOUT, SERVER_UNAVAILABLE_COMPONENT,
-            RESET_NOTIFICATIONS_PATHS,
+            HEALTH_CHECK_RETRIES, HEALTH_CHECK_PERIOD, HEALTH_CHECK_REQUEST_TIMEOUT,
+            SERVER_UNAVAILABLE_COMPONENT, RESET_NOTIFICATIONS_PATHS,
         } = appConfig;
 
         // Logger configuration
-        const userActivityCallback: (() => void)[] = [];
         window.addEventListener('click', (event: MouseEvent) => {
-            userActivityCallback.forEach((handler) => handler());
-            EventRecorder.log(event);
+            EventRecorder.recordMouseEvent(event);
         });
 
-        core.logger.configure(() => window.document.hasFocus, userActivityCallback);
-
+        core.logger.configure(() => window.document.hasFocus());
         core.config.onOrganizationChange = (newOrgId: number | null) => {
             if (newOrgId === null) {
                 localStorage.removeItem('currentOrganization');
@@ -379,13 +375,18 @@ class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentP
         function showError(title: string, _error: Error, shouldLog?: boolean, className?: string): void {
             const error = _error?.message || _error.toString();
             const dynamicProps = typeof className === 'undefined' ? {} : { className };
+            let errorLength = error.length;
+            // Do not count the length of the link in the Markdown error message
+            if (/]\(.+\)/.test(error)) {
+                errorLength = error.replace(/]\(.+\)/, ']').length;
+            }
             notification.error({
                 ...dynamicProps,
                 message: (
                     <ReactMarkdown>{title}</ReactMarkdown>
                 ),
                 duration: null,
-                description: error.length > 300 ? 'Open the Browser Console to get details' : <ReactMarkdown>{error}</ReactMarkdown>,
+                description: errorLength > 300 ? 'Open the Browser Console to get details' : <ReactMarkdown>{error}</ReactMarkdown>,
             });
 
             if (shouldLog) {
@@ -603,7 +604,9 @@ class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentP
             );
         }
 
-        return <Spin size='large' className='cvat-spinner' tip='Connecting...' />;
+        return (
+            <Spin size='large' fullscreen className='cvat-spinner' tip='Connecting...' />
+        );
     }
 }
 

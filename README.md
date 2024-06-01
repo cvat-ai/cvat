@@ -212,6 +212,11 @@ up to 10x. Here is a list of the algorithms we support, and the platforms they c
 
 The code is released under the [MIT License](https://opensource.org/licenses/MIT).
 
+The code contained within the `/serverless` directory is released under the **MIT License**.
+However, it may download and utilize various assets, such as source code, architectures, and weights, among others.
+These assets may be distributed under different licenses, including non-commercial licenses.
+It is your responsibility to ensure compliance with the terms of these licenses before using the assets.
+
 This software uses LGPL-licensed libraries from the [FFmpeg](https://www.ffmpeg.org) project.
 The exact steps on how FFmpeg was configured and compiled can be found in the [Dockerfile](Dockerfile).
 
@@ -249,7 +254,6 @@ questions and get our support.
 - [How to Use CVAT (Roboflow guide)](https://blog.roboflow.com/cvat/)
 - [How to auto-label data in CVAT with one of 50,000+ models on Roboflow Universe](https://blog.roboflow.com/how-to-use-roboflow-models-in-cvat/)
 
-  <!-- prettier-ignore-start -->
   <!-- Badges -->
 
 [docker-server-pulls-img]: https://img.shields.io/docker/pulls/cvat/server.svg?style=flat-square&label=server%20pulls
