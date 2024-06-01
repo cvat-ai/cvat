@@ -270,9 +270,9 @@ cvat:
       # Note: if you disable defaultStorage, you will need to mount `/home/django/*`
       # volumes manually under additionalVolumes and additionalVolumeMounts
       enabled: true
-#     storageClassName: default
-#     accessModes:
-#       - ReadWriteOnce
+      # storageClassName: default
+      # accessModes:
+      #   - ReadWriteOnce
       size: 100Gi
 
 postgresql:
