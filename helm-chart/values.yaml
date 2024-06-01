@@ -267,6 +267,8 @@ cvat:
     #     name: tmp
     #     subPath: test
     defaultStorage:
+      # Note: if you disable defaultStorage, you will need to mount `/home/django/*`
+      # volumes manually under additionalVolumes and additionalVolumeMounts
       enabled: true
 #     storageClassName: default
 #     accessModes:
