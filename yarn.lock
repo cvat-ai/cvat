@@ -3556,10 +3556,10 @@ camera-controls@^1.25.3:
   resolved "https://registry.yarnpkg.com/camera-controls/-/camera-controls-1.38.2.tgz#3289013e6de05cee51dc98af87d3fc7c1a7df585"
   integrity sha512-EfzbovxLssyWpJVG9uKcazSDDIEcd1hUsPhPF/OWWnICsKY9WbLY/2S4UPW73HHbvnVeR/Z9wsWaQKtANy/2Yg==
 
-caniuse-lite@^1.0.30001538, caniuse-lite@^1.0.30001541:
-  version "1.0.30001620"
-  resolved "https://registry.npmjs.org/caniuse-lite/-/caniuse-lite-1.0.30001620.tgz"
-  integrity sha512-WJvYsOjd1/BYUY6SNGUosK9DUidBPDTnOARHp3fSmFO1ekdxaY6nKRttEVrfMmYi80ctS0kz1wiWmm14fVc3ew==
+caniuse-lite@^1.0.30001587, caniuse-lite@^1.0.30001599:
+  version "1.0.30001617"
+  resolved "https://registry.yarnpkg.com/caniuse-lite/-/caniuse-lite-1.0.30001617.tgz#809bc25f3f5027ceb33142a7d6c40759d7a901eb"
+  integrity sha512-mLyjzNI9I+Pix8zwcrpxEbGlfqOkF9kM3ptzmKNw5tizSyYwMe+nGLTqMK9cO+0E+Bh6TsBxNAaHWEM8xwSsmA==
 
 canvas@^2.8.0:
   version "2.11.2"
