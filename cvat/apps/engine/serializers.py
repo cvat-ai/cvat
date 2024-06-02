@@ -1126,13 +1126,12 @@ class TaskWriteSerializer(WriteOnceMixin, serializers.ModelSerializer):
     project_id = serializers.IntegerField(required=False, allow_null=True)
     target_storage = StorageSerializer(required=False, allow_null=True)
     source_storage = StorageSerializer(required=False, allow_null=True)
-    consensus_job_per_segment = serializers.IntegerField(required=False)
 
     class Meta:
         model = models.Task
         fields = ('url', 'id', 'name', 'project_id', 'owner_id', 'assignee_id',
             'bug_tracker', 'overlap', 'segment_size', 'labels', 'subset',
-            'target_storage', 'source_storage', 'consensus_job_per_segment'
+            'target_storage', 'source_storage',
         )
         write_once_fields = ('overlap', 'segment_size')
 
@@ -1192,7 +1191,6 @@ class TaskWriteSerializer(WriteOnceMixin, serializers.ModelSerializer):
             instance.bug_tracker)
         instance.subset = validated_data.get('subset', instance.subset)
         labels = validated_data.get('label_set', [])
-        instance.consensus_job_per_segment = validated_data.get('consensus_job_per_segment', instance.consensus_job_per_segment)
 
         if instance.project_id is None:
             LabelSerializer.update_labels(labels, parent_instance=instance)
