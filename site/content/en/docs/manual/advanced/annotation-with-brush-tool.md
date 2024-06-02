@@ -69,7 +69,7 @@ To add the next object, repeat steps 1 to 5.
 All added objects will be visible on the image and the
 {{< ilink "/docs/manual/basics/CVAT-annotation-Interface/objects-sidebar" "objects sidebar" >}}.
 
-To save the job with all added objects, on the top menu click **Save** ![Save](/images/brushing_tools_save.png).
+To save the job with all added objects, on the top menu, click **Save** ![Save](/images/brushing_tools_save.png).
 
 ## Annotation with polygon-to-mask
 
@@ -95,7 +95,7 @@ To add the next object, repeat steps 1 to 5.
 All added objects will be visible on the image and the
 {{< ilink "/docs/manual/basics/CVAT-annotation-Interface/objects-sidebar" "objects sidebar" >}}.
 
-To save the job with all added objects, on the top menu click **Save** ![Save](/images/brushing_tools_save.png).
+To save the job with all added objects, on the top menu, click **Save** ![Save](/images/brushing_tools_save.png).
 
 ## Remove underlying pixels
 
