@@ -370,7 +370,7 @@ function ImportDatasetModal(props: StateToProps): JSX.Element {
                 accept='.zip,.json,.xml'
                 beforeUpload={(_file: RcFile): boolean => {
                     if (!selectedLoader) {
-                        message.warn('Please select a format first', 3);
+                        message.warning('Please select a format first', 3);
                     } else if (isDataset() && !['application/zip', 'application/x-zip-compressed'].includes(_file.type)) {
                         message.error('Only ZIP archive is supported for import a dataset');
                     } else if (isAnnotation() &&
@@ -398,7 +398,7 @@ function ImportDatasetModal(props: StateToProps): JSX.Element {
 
     const validateFileName = (_: RuleObject, value: string): Promise<void> => {
         if (!selectedLoader) {
-            message.warn('Please select a format first', 3);
+            message.warning('Please select a format first', 3);
             return Promise.reject();
         }
         if (value) {
@@ -526,7 +526,7 @@ function ImportDatasetModal(props: StateToProps): JSX.Element {
                         }
                     </>
                 )}
-                visible={!!instance}
+                open={!!instance}
                 onCancel={closeModal}
                 onOk={() => form.submit()}
                 className='cvat-modal-import-dataset'

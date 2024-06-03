@@ -215,7 +215,8 @@ Cypress.Commands.add(
             if (advancedConfigurationParams) {
                 cy.advancedConfiguration(advancedConfigurationParams);
             }
-            cy.contains('button', 'Submit & Continue').click();
+            cy.get('.cvat-submit-continue-task-button').scrollIntoView();
+            cy.get('.cvat-submit-continue-task-button').click();
             if (expectedResult === 'success') {
                 cy.get('.cvat-notification-create-task-success').should('exist').find('[data-icon="close"]').click();
             }
@@ -262,6 +263,29 @@ Cypress.Commands.add('headlessLogin', (username = Cypress.env('user'), password 
     cy.get('#root').should('exist').and('be.visible');
     cy.window().then(async ($win) => {
         await $win.cvat.server.login(username, password);
+    });
+});
+
+Cypress.Commands.add('headlessCreateObject', (objects, jobID) => {
+    cy.window().then(async ($win) => {
+        const job = (await $win.cvat.jobs.get({ jobID }))[0];
+        await job.annotations.clear(true);
+
+        const objectStates = objects
+            .map((object) => new $win.cvat.classes
+                .ObjectState({
+                    frame: object.frame,
+                    objectType: $win.cvat.enums.ObjectType[object.objectType],
+                    shapeType: $win.cvat.enums.ShapeType[object.shapeType],
+                    points: $win.Array.from(object.points),
+                    occluded: object.occluded,
+                    label: job.labels[0],
+                    zOrder: 0,
+                }));
+
+        await job.annotations.put($win.Array.from(objectStates));
+        await job.annotations.save();
+        return cy.wrap();
     });
 });
 
@@ -1050,6 +1074,7 @@ Cypress.Commands.add('addNewLabelViaContinueButton', (additionalLabels) => {
             for (let j = 0; j < additionalLabels.length; j++) {
                 cy.get('[placeholder="Label name"]').type(additionalLabels[j]);
                 cy.contains('button', 'Continue').click();
+                cy.contains('button', 'Continue').trigger('mouseout');
             }
             cy.contains('button', 'Cancel').click();
         }

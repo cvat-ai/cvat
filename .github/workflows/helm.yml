@@ -86,6 +86,7 @@ jobs:
       # They are still tested without Helm
       run: |
         kubectl cp tests/mounted_file_share/images $(kubectl get pods -l component=server -o jsonpath='{.items[0].metadata.name}'):/home/django/share
+        kubectl cp tests/mounted_file_share/videos $(kubectl get pods -l component=server -o jsonpath='{.items[0].metadata.name}'):/home/django/share
         pytest --timeout 30 --platform=kube -m "not with_external_services" tests/python --log-cli-level DEBUG
 
     - name: Creating a log file from "cvat" container logs

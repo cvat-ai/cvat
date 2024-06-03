@@ -1,5 +1,5 @@
 // Copyright (C) 2019-2022 Intel Corporation
-// Copyright (C) 2022 CVAT.ai Corporation
+// Copyright (C) 2022-2024 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -8,18 +8,33 @@ import PluginRegistry from './plugins';
 import { EventScope } from './enums';
 import { ArgumentError } from './exceptions';
 
+export interface SerializedEvent {
+    scope: EventScope;
+    timestamp: string;
+    obj_name?: string;
+    obj_id?: number;
+    obj_val?: string;
+    count?: number;
+    duration?: number;
+    project_id?: number;
+    task_id?: number;
+    job_id?: number;
+    user_id?: number;
+    organization?: number;
+    payload: string;
+}
+
+export type JSONEventPayload = { [key: string]: number | string | boolean };
+
 export class Event {
-    public readonly id: number;
     public readonly scope: EventScope;
     public readonly timestamp: Date;
-
-    public payload: any;
+    public payload: JSONEventPayload;
 
     protected onCloseCallback: (() => void) | null;
 
-    constructor(scope: EventScope, payload: any) {
+    constructor(scope: EventScope, payload: JSONEventPayload) {
         this.onCloseCallback = null;
-
         this.scope = scope;
         this.payload = { ...payload };
         this.timestamp = new Date();
@@ -42,7 +57,7 @@ export class Event {
         }
     }
 
-    public dump(): any {
+    public dump(): SerializedEvent {
         const payload = { ...this.payload };
         const body = {
             scope: this.scope,
@@ -90,7 +105,7 @@ Object.defineProperties(Event.prototype.close, {
     implementation: {
         writable: false,
         enumerable: false,
-        value: async function implementation(this: Event, payload: any) {
+        value: async function implementation(this: Event, payload: JSONEventPayload) {
             this.payload.duration = Date.now() - this.timestamp.getTime();
             this.payload = { ...this.payload, ...payload };
             if (this.onCloseCallback) {
@@ -103,7 +118,7 @@ Object.defineProperties(Event.prototype.close, {
 class EventWithCount extends Event {
     public validatePayload(): void {
         super.validatePayload.call(this);
-        if (!Number.isInteger(this.payload.count) || this.payload.count < 1) {
+        if (!Number.isInteger(this.payload.count) || (this.payload.count as number) < 1) {
             const message = `The field "count" is required for "${this.scope}" log. It must be a positive integer`;
             throw new ArgumentError(message);
         }
@@ -154,17 +169,7 @@ class EventWithExceptionInfo extends Event {
     }
 }
 
-class EventWithControlsInfo extends Event {
-    public dump(): any {
-        this.payload = {
-            obj_val: this.payload?.text,
-            obj_name: this.payload?.classes,
-        };
-        return super.dump();
-    }
-}
-
-export default function makeEvent(scope: EventScope, payload: any): Event {
+export default function makeEvent(scope: EventScope, payload: JSONEventPayload): Event {
     const eventsWithCount = [
         EventScope.deleteObject,
         EventScope.mergeObjects,
@@ -180,10 +185,6 @@ export default function makeEvent(scope: EventScope, payload: any): Event {
 
     if (scope === EventScope.exception) {
         return new EventWithExceptionInfo(scope, payload);
-    }
-
-    if (scope === EventScope.clickElement) {
-        return new EventWithControlsInfo(scope, payload);
     }
 
     return new Event(scope, payload);

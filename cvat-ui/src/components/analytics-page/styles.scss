@@ -2,13 +2,14 @@
 //
 // SPDX-License-Identifier: MIT
 
-@import '../../base';
+@import 'base';
 
 .cvat-analytics-inner {
     background: $background-color-1;
     min-height: $grid-unit-size * 95;
     padding: $grid-unit-size * 4;
     padding-bottom: $grid-unit-size;
+    border-radius: $border-radius-base;
 
     .ant-tabs {
         height: 100%;
@@ -25,6 +26,7 @@
 
 .cvat-empty-performance-analytics-item {
     display: flex;
+    align-items: center;
     justify-content: space-between;
 }
 
@@ -128,8 +130,8 @@
 .cvat-quality-settings-switch {
     padding: 6px 8px;
     border: 1px solid lightgray;
-    margin-left: 8px;
-    border-radius: 2px;
+    margin-left: $grid-unit-size;
+    border-radius: $border-radius-base;
 }
 
 .cvat-quality-settings-title {
