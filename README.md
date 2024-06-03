@@ -1,5 +1,6 @@
 > # 📌 AI4OS fork
-> 
+> [![Build image](https://github.com/ai4os/ai4-cvat/actions/workflows/ai4os-docker.yml/badge.svg)](https://github.com/ai4os/ai4-cvat/actions/workflows/ai4os-docker.yml)
+>
 > This is a fork of [CVAT](https://github.com/cvat-ai/cvat) to make it work with the [AI4OS platform](https://docs.ai4eosc.eu/).
 >
 > The customized Docker images are built to the platform's [Harbor registry](https://registry.services.ai4os.eu/)
