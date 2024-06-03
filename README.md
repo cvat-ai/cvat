@@ -1,3 +1,14 @@
+> # 📌 AI4OS fork
+> 
+> This is a fork of [CVAT](https://github.com/cvat-ai/cvat) to make it work with the [AI4OS platform](https://docs.ai4eosc.eu/).
+>
+> The customized Docker images are built to the platform's [Harbor registry](https://registry.services.ai4os.eu/)
+> and can be used as following:
+> * `docker run registry.services.ai4os.eu/ai4os/ai4-cvat-server:v2.7.3-AI4OS`
+> * `docker run registry.services.ai4os.eu/ai4os/ai4-cvat-ui:v2.7.3-AI4OS`
+
+***
+
 ![CVAT logo](site/content/en/images/cvat_poster_with_name.png)
 
 # Computer Vision Annotation Tool (CVAT)
