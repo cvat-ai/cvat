@@ -1451,7 +1451,7 @@ class DataMetaReadSerializer(serializers.ModelSerializer):
         help_text=textwrap.dedent("""\
         A list of valid frame ids. The None value means all frames are included.
         """))
-    consensus_job_per_segment = serializers.IntegerField(default=1)
+    consensus_job_per_segment = serializers.IntegerField(default=0)
 
     class Meta:
         model = models.Data
