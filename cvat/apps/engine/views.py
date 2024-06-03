@@ -1,5 +1,5 @@
 # Copyright (C) 2018-2022 Intel Corporation
-# Copyright (C) 2022-2023 CVAT.ai Corporation
+# Copyright (C) 2022-2024 CVAT.ai Corporation
 #
 # SPDX-License-Identifier: MIT
 
@@ -2960,20 +2960,24 @@ def _export_annotations(
             f"Unexpected location {location} specified for the request"
         )
 
-    last_instance_update_time = timezone.localtime(db_instance.updated_date)
+    cache_ttl = dm.views.get_export_cache_ttl(db_instance)
+    instance_update_time = timezone.localtime(db_instance.updated_date)
     if isinstance(db_instance, Project):
         tasks_update = list(map(lambda db_task: timezone.localtime(db_task.updated_date), db_instance.tasks.all()))
-        last_instance_update_time = max(tasks_update + [last_instance_update_time])
+        instance_update_time = max(tasks_update + [instance_update_time])
 
-    timestamp = datetime.strftime(last_instance_update_time, "%Y_%m_%d_%H_%M_%S")
+    instance_timestamp = datetime.strftime(instance_update_time, "%Y_%m_%d_%H_%M_%S")
     is_annotation_file = rq_id.startswith('export:annotations')
 
     if rq_job:
         rq_request = rq_job.meta.get('request', None)
         request_time = rq_request.get('timestamp', None) if rq_request else None
-        if request_time is None or request_time < last_instance_update_time:
-            # in case the server is configured with ONE_RUNNING_JOB_IN_QUEUE_PER_USER
-            # we have to enqueue dependent jobs after canceling one
+        if request_time is None or request_time < instance_update_time:
+            # The result is outdated, need to restart the export.
+            # Cancel the current job.
+            # The new attempt will be made after the last existing job.
+            # In the case the server is configured with ONE_RUNNING_JOB_IN_QUEUE_PER_USER
+            # we have to enqueue dependent jobs after canceling one.
             rq_job.cancel(enqueue_dependents=settings.ONE_RUNNING_JOB_IN_QUEUE_PER_USER)
             rq_job.delete()
         else:
@@ -2986,35 +2990,71 @@ def _export_annotations(
                     file_path = rq_job.return_value()
 
                     if not file_path:
-                        return Response('A result for exporting job was not found for finished RQ job', status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-                    elif not osp.exists(file_path):
-                        return Response('The result file does not exist in export cache', status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+                        return Response(
+                            'A result for exporting job was not found for finished RQ job',
+                            status=status.HTTP_500_INTERNAL_SERVER_ERROR
+                        )
 
-                    if action == "download":
-                        filename = filename or \
-                            build_annotations_file_name(
-                                class_name=db_instance.__class__.__name__,
-                                identifier=db_instance.name if isinstance(db_instance, (Task, Project)) else db_instance.id,
-                                timestamp=timestamp,
-                                format_name=format_name,
-                                is_annotation_file=is_annotation_file,
-                                extension=osp.splitext(file_path)[1]
-                            )
+                    with dm.util.get_export_cache_lock(
+                        file_path, ttl=60, # request timeout
+                    ):
+                        if action == "download":
+                            if not osp.exists(file_path):
+                                return Response(
+                                    "The exported file has expired, please retry exporting",
+                                    status=status.HTTP_404_NOT_FOUND
+                                )
 
-                        rq_job.delete()
-                        return sendfile(request, file_path, attachment=True, attachment_filename=filename)
+                            filename = filename or \
+                                build_annotations_file_name(
+                                    class_name=db_instance.__class__.__name__,
+                                    identifier=db_instance.name if isinstance(db_instance, (Task, Project)) else db_instance.id,
+                                    timestamp=instance_timestamp,
+                                    format_name=format_name,
+                                    is_annotation_file=is_annotation_file,
+                                    extension=osp.splitext(file_path)[1]
+                                )
 
-                    return Response(status=status.HTTP_201_CREATED)
+                            rq_job.delete()
+                            return sendfile(request, file_path, attachment=True, attachment_filename=filename)
+                        else:
+                            if osp.exists(file_path):
+                                # Update last update time to prolong the export lifetime
+                                # as the last access time is not available on every filesystem
+                                os.utime(file_path, None)
+
+                                return Response(status=status.HTTP_201_CREATED)
+                            else:
+                                # Cancel and reenqueue the job.
+                                # The new attempt will be made after the last existing job.
+                                # In the case the server is configured with ONE_RUNNING_JOB_IN_QUEUE_PER_USER
+                                # we have to enqueue dependent jobs after canceling one.
+                                rq_job.cancel(enqueue_dependents=settings.ONE_RUNNING_JOB_IN_QUEUE_PER_USER)
+                                rq_job.delete()
                 else:
                     raise NotImplementedError(f"Export to {location} location is not implemented yet")
             elif rq_job.is_failed:
                 exc_info = rq_job.meta.get('formatted_exception', str(rq_job.exc_info))
                 rq_job.delete()
-                return Response(exc_info,
-                    status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+                return Response(exc_info, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            elif rq_job.is_deferred and rq_id not in queue.deferred_job_registry.get_job_ids():
+                # Sometimes jobs can depend on outdated jobs in the deferred jobs registry.
+                # They can be fetched by their specific ids, but are not listed by get_job_ids().
+                # Supposedly, this can happen because of the server restarts
+                # (potentially, because the redis used for the queue is inmemory).
+                # Another potential reason is canceling without enqueueing dependents.
+                # Such dependencies are never removed or finished,
+                # as there is no TTL for deferred jobs,
+                # so the current job can be blocked indefinitely.
+
+                # Cancel the current job and then reenqueue it, considering the current situation.
+                # The new attempt will be made after the last existing job.
+                # In the case the server is configured with ONE_RUNNING_JOB_IN_QUEUE_PER_USER
+                # we have to enqueue dependent jobs after canceling one.
+                rq_job.cancel(enqueue_dependents=settings.ONE_RUNNING_JOB_IN_QUEUE_PER_USER)
+                rq_job.delete()
             else:
                 return Response(status=status.HTTP_202_ACCEPTED)
-
     try:
         if request.scheme:
             server_address = request.scheme + '://'
@@ -3022,12 +3062,6 @@ def _export_annotations(
     except Exception:
         server_address = None
 
-    TTL_CONSTS = {
-        'project': dm.views.PROJECT_CACHE_TTL,
-        'task': dm.views.TASK_CACHE_TTL,
-        'job': dm.views.JOB_CACHE_TTL,
-    }
-    ttl = TTL_CONSTS[db_instance.__class__.__name__.lower()].total_seconds()
     user_id = request.user.id
 
     func = callback if location == Location.LOCAL else export_resource_to_cloud_storage
@@ -3047,7 +3081,7 @@ def _export_annotations(
         filename_pattern = build_annotations_file_name(
             class_name=db_instance.__class__.__name__,
             identifier=db_instance.name if isinstance(db_instance, (Task, Project)) else db_instance.id,
-            timestamp=timestamp,
+            timestamp=instance_timestamp,
             format_name=format_name,
             is_annotation_file=is_annotation_file,
         )
@@ -3062,8 +3096,8 @@ def _export_annotations(
             job_id=rq_id,
             meta=get_rq_job_meta(request=request, db_obj=db_instance),
             depends_on=define_dependent_job(queue, user_id, rq_id=rq_id),
-            result_ttl=ttl,
-            failure_ttl=ttl,
+            result_ttl=cache_ttl.total_seconds(),
+            failure_ttl=cache_ttl.total_seconds(),
         )
 
     handle_dataset_export(db_instance,

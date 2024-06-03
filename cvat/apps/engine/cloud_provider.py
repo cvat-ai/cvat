@@ -680,7 +680,7 @@ class AzureBlobContainer(_CloudStorage):
         if not file_name:
             file_name = os.path.basename(file_path)
         with open(file_path, 'rb') as f:
-            self.upload_fileobj(f.read(), file_name)
+            self.upload_fileobj(f, file_name)
 
     # TODO:
     # def multipart_upload(self, file_obj):

@@ -133,24 +133,31 @@ Client events:
 - `load:cvat`
 
 - `load:job`, `save:job`, `restore:job`
+
 - `upload:annotations`
+
 - `send:exception`
+
 - `send:task_info`
 
-- `draw:object`, `paste:object`, `copy:object`, `propagate:object`, `drag:object`, `resize:object`, `delete:object`, `lock:object`, `merge:objects`
+- `draw:object`, `paste:object`, `copy:object`, `propagate:object`, `drag:object`, `resize:object`, `delete:object`, `lock:object`, `merge:objects`, `split:objects`, `group:objects`, `slice:object`,
+`join:objects`
+
 - `change:attribute`
+
 - `change:label`
 
 - `change:frame`
+
 - `zoom:image`, `fit:image`, `rotate:image`
 
 - `action:undo`, `action:redo`
 
-- `press:shortcut`
-- `send:debug_info`
-
 - `run:annotations_action`
+
 - `click:element`
+
+- `debug:info`
 
 <!--lint enable maximum-line-length-->
 
