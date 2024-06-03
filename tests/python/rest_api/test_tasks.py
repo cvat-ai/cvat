@@ -1314,9 +1314,12 @@ class TestPostTaskData:
         sorting_method: str = "lexicographical",
         server_files_exclude: Optional[List[str]] = None,
         org: Optional[str] = None,
+        filenames: Optional[List[str]] = None,
     ) -> Tuple[int, Any]:
         s3_client = s3.make_client()
-        images = generate_image_files(3, prefixes=["img_"] * 3)
+        images = generate_image_files(
+            3, **({"prefixes": ["img_"] * 3} if not filenames else {"filenames": filenames})
+        )
 
         for image in images:
             for i in range(2):
@@ -1638,6 +1641,11 @@ class TestPostTaskData:
             assert "No media data found" in status.message
 
     @pytest.mark.with_external_services
+    @pytest.mark.parametrize("use_manifest", [True, False])
+    @pytest.mark.parametrize("use_cache", [True, False])
+    @pytest.mark.parametrize(
+        "sorting_method", ["natural", "predefined", "lexicographical", "random"]
+    )
     @pytest.mark.parametrize(
         "cloud_storage_id, org",
         [
@@ -1646,19 +1654,24 @@ class TestPostTaskData:
     )
     def test_create_task_with_cloud_storage_and_retrieve_data(
         self,
-        cloud_storage_id,
+        use_manifest: bool,
+        use_cache: bool,
+        sorting_method: str,
+        cloud_storage_id: int,
+        org: str,
         cloud_storages,
         request,
-        org,
     ):
         cloud_storage = cloud_storages[cloud_storage_id]
         task_id, _ = self._create_task_with_cloud_data(
             request=request,
             cloud_storage=cloud_storage,
-            use_manifest=True,
-            use_cache=True,
-            server_files=[],
+            # manifest file should not be uploaded if random sorting is used or if cache is not used
+            use_manifest=use_manifest and use_cache and (sorting_method != "random"),
+            use_cache=use_cache,
+            server_files=[f"test/sub_{i}/img_{j}.jpeg" for i in range(2) for j in range(3)],
             org=org,
+            sorting_method=sorting_method,
         )
 
         with make_api_client(self._USERNAME) as api_client:
@@ -1666,6 +1679,49 @@ class TestPostTaskData:
                 task_id, type="chunk", quality="compressed", number=0
             )
             assert response.status == HTTPStatus.OK
+
+    @pytest.mark.with_external_services
+    @pytest.mark.parametrize(
+        "filenames, sorting_method",
+        [
+            (["img_1.jpeg", "img_2.jpeg", "img_10.jpeg"], "natural"),
+            (["img_10.jpeg", "img_1.jpeg", "img_2.jpeg"], "predefined"),
+            (["img_1.jpeg", "img_10.jpeg", "img_2.jpeg"], "lexicographical"),
+        ],
+    )
+    @pytest.mark.parametrize(
+        "cloud_storage_id, org",
+        [
+            (1, ""),
+        ],
+    )
+    def test_create_task_with_cloud_storage_and_check_data_sorting(
+        self,
+        filenames: List[str],
+        sorting_method: str,
+        cloud_storage_id: int,
+        org: str,
+        cloud_storages,
+        request,
+    ):
+        cloud_storage = cloud_storages[cloud_storage_id]
+
+        task_id, _ = self._create_task_with_cloud_data(
+            request=request,
+            cloud_storage=cloud_storage,
+            use_manifest=False,
+            use_cache=True,
+            server_files=["test/sub_0/" + f for f in filenames],
+            org=org,
+            sorting_method=sorting_method,
+            filenames=filenames,
+        )
+
+        with make_api_client(self._USERNAME) as api_client:
+            data_meta, _ = api_client.tasks_api.retrieve_data_meta(task_id)
+
+            for image_name, frame in zip(filenames, data_meta.frames):
+                assert frame.name.rsplit("/", maxsplit=1)[1] == image_name
 
     def test_can_specify_file_job_mapping(self):
         task_spec = {
