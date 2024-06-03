@@ -1,0 +1,4 @@
+{% load i18n %}
+{% autoescape off %}
+{% blocktrans %} Your Audio Annotation Job Has Been Successfully Completed!{% endblocktrans %}
+{% endautoescape %}
