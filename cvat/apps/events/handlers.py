@@ -3,7 +3,6 @@
 # SPDX-License-Identifier: MIT
 
 import datetime
-import json
 import traceback
 from copy import deepcopy
 from typing import Optional, Union
@@ -30,7 +29,6 @@ from cvat.apps.organizations.serializers import (InvitationReadSerializer,
 
 from .cache import get_cache
 from .event import event_scope, record_server_event
-from .serializers import EventSerializer
 
 
 def project_id(instance):
@@ -604,32 +602,6 @@ def handle_client_events_push(request, data: dict):
             return event["timestamp"] + datetime.timedelta(milliseconds=event["duration"])
         return event["timestamp"]
 
-    def generate_wt_event(
-        ids: tuple[int | None, int | None, int | None],
-        wt: datetime.timedelta,
-        common: dict
-    ) -> EventSerializer | None:
-        job_id, task_id, project_id = ids
-        if wt.total_seconds():
-            value = wt // WORKING_TIME_RESOLUTION
-            event = EventSerializer(data={
-                **common,
-                "scope": WORKING_TIME_SCOPE,
-                "obj_name": "working_time",
-                "obj_val": value,
-                "source": "server",
-                "count": 1,
-                "project_id": project_id,
-                "task_id": task_id,
-                "job_id": job_id,
-                # keep it in payload for backward compatibility
-                # but in the future it is much better to use a dedicated field "obj_val"
-                # because parsing JSON in SQL query is very slow
-                "payload": json.dumps({ "working_time": value })
-            })
-
-            return event
-
     if previous_event := data["previous_event"]:
         previous_end_timestamp = get_end_timestamp(previous_event)
         previous_ids = read_ids(previous_event)
@@ -673,14 +645,21 @@ def handle_client_events_push(request, data: dict):
         }
 
         for ids, working_time in working_time_per_ids.items():
-            common["timestamp"] = working_time["timestamp"]
-            event = generate_wt_event(ids, working_time["value"], common)
-            if event:
-                event.is_valid(raise_exception=True)
+            job_id, task_id, project_id = ids
+            if working_time["value"].total_seconds():
+                value = working_time["value"] // WORKING_TIME_RESOLUTION
                 record_server_event(
                     scope=WORKING_TIME_SCOPE,
                     request_id=request_id(),
-                    payload=json.loads(event.validated_data['payload']),
-                    timestamp=str(event.validated_data['timestamp'].timestamp()),
-                    **{key: value for key, value in event.validated_data.items() if key not in ['scope', 'payload', 'timestamp']}
+                    # keep it in payload for backward compatibility
+                    # but in the future it is much better to use a "duration" field
+                    # because parsing JSON in SQL query is very slow
+                    payload={"working_time": value},
+                    timestamp=str(working_time["timestamp"].timestamp()),
+                    duration=value,
+                    project_id=project_id,
+                    task_id=task_id,
+                    job_id=job_id,
+                    count=1,
+                    **common,
                 )
