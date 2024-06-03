@@ -4,20 +4,24 @@
 # SPDX-License-Identifier: MIT
 
 from enum import Enum
-from io import StringIO, BytesIO
+from io import StringIO
 import av
 import json
 import os
 
 from abc import ABC, abstractmethod, abstractproperty, abstractstaticmethod
 from contextlib import closing
+from itertools import islice
 from PIL import Image
 from json.decoder import JSONDecodeError
+from inspect import isgenerator
 
 from .errors import InvalidManifestError, InvalidVideoError
 from .utils import SortingMethod, md5_hash, rotate_image, sort
+from .types import NamedBytesIO
 
-from typing import Dict, List, Union, Optional, Iterator, Tuple
+from typing import Any, Dict, List, Union, Optional, Iterator, Tuple, Callable
+
 
 class VideoStreamReader:
     def __init__(self, source_path, chunk_size, force):
@@ -139,23 +143,33 @@ class VideoStreamReader:
 
 class DatasetImagesReader:
     def __init__(self,
-                sources: Union[List[str], List[BytesIO]],
-                *,
-                start: int = 0,
-                step: int = 1,
-                stop: Optional[int] = None,
-                meta: Optional[Dict[str, List[str]]] = None,
-                sorting_method: SortingMethod =SortingMethod.PREDEFINED,
-                use_image_hash: bool = False,
-                **kwargs):
-        self._raw_data_used = not isinstance(sources[0], str)
-        func = (lambda x: x.filename) if self._raw_data_used else None
-        self._sources = sort(sources, sorting_method, func=func)
+        sources: Union[List[str], Iterator[NamedBytesIO]],
+        *,
+        start: int = 0,
+        step: int = 1,
+        stop: Optional[int] = None,
+        meta: Optional[Dict[str, List[str]]] = None,
+        sorting_method: SortingMethod = SortingMethod.PREDEFINED,
+        use_image_hash: bool = False,
+        **kwargs
+    ):
+        self._is_generator_used = isgenerator(sources)
+
+        if not self._is_generator_used:
+            raw_data_used = not isinstance(sources[0], str)
+            func: Optional[Callable[[NamedBytesIO], str]] = (lambda x: x.filename) if raw_data_used else None
+            self._sources = sort(sources, sorting_method, func=func)
+        else:
+            if sorting_method != SortingMethod.PREDEFINED:
+                raise ValueError('Only SortingMethod.PREDEFINED can be used with generator')
+            self._sources = sources
         self._meta = meta
         self._data_dir = kwargs.get('data_dir', None)
         self._use_image_hash = use_image_hash
         self._start = start
-        self._stop = stop if stop else len(sources)
+        self._stop = stop if stop or self._is_generator_used else len(sources) - 1
+        if self._stop is None:
+            raise ValueError('The stop parameter should be passed when generator is used')
         self._step = step
 
     @property
@@ -182,41 +196,47 @@ class DatasetImagesReader:
     def step(self, value):
         self._step = int(value)
 
+    def _get_img_properties(self, image: Union[str, NamedBytesIO]) -> Dict[str, Any]:
+        img = Image.open(image, mode='r')
+        if self._data_dir:
+            img_name = os.path.relpath(image, self._data_dir)
+        else:
+            img_name = os.path.basename(image) if isinstance(image, str) else image.filename
+
+        name, extension = os.path.splitext(img_name)
+        image_properties = {
+            'name': name.replace('\\', '/'),
+            'extension': extension,
+        }
+
+        width, height = img.width, img.height
+        orientation = img.getexif().get(274, 1)
+        if orientation > 4:
+            width, height = height, width
+        image_properties['width'] = width
+        image_properties['height'] = height
+
+        if self._meta and img_name in self._meta:
+            image_properties['meta'] = self._meta[img_name]
+
+        if self._use_image_hash:
+            image_properties['checksum'] = md5_hash(img)
+
+        return image_properties
+
     def __iter__(self):
-        sources = (i for i in self._sources)
-        for idx in range(self._stop):
-            if idx in self.range_:
+        sources = self._sources if self._is_generator_used else islice(self._sources, self.start, self.stop + 1, self.step)
+
+        for idx in range(self.stop + 1):
+            if idx in range(self.start, self.stop + 1, self.step):
                 image = next(sources)
-                img = Image.open(image, mode='r')
-
-                img_name = os.path.relpath(image, self._data_dir) if self._data_dir \
-                    else os.path.basename(image) if not self._raw_data_used else image.filename
-                name, extension = os.path.splitext(img_name)
-                image_properties = {
-                    'name': name.replace('\\', '/'),
-                    'extension': extension,
-                }
-
-                width, height = img.width, img.height
-                orientation = img.getexif().get(274, 1)
-                if orientation > 4:
-                    width, height = height, width
-                image_properties['width'] = width
-                image_properties['height'] = height
-
-                if self._meta and img_name in self._meta:
-                    image_properties['meta'] = self._meta[img_name]
-
-                if self._use_image_hash:
-                    image_properties['checksum'] = md5_hash(img)
-
-                yield image_properties
+                yield self._get_img_properties(image)
             else:
                 yield dict()
 
     @property
     def range_(self):
-        return range(self._start, self._stop, self._step)
+        return range(self._start, self._stop + 1, self._step)
 
     def __len__(self):
         return len(self.range_)
@@ -227,7 +247,7 @@ class Dataset3DImagesReader(DatasetImagesReader):
 
     def __iter__(self):
         sources = (i for i in self._sources)
-        for idx in range(self._stop):
+        for idx in range(self._stop + 1):
             if idx in self.range_:
                 image = next(sources)
                 img_name = os.path.relpath(image, self._data_dir) if self._data_dir \
@@ -335,7 +355,7 @@ class _Index:
 
     def __getitem__(self, number):
         if not 0 <= number < len(self):
-            raise IndexError('Invalid index number: {}\nMax: {}'.format(number, len(self) - 1))
+            raise IndexError('Invalid index number: {}, Maximum allowed index is {}'.format(number, len(self) - 1))
 
         return self._index[number]
 

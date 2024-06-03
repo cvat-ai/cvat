@@ -1,43 +1,35 @@
-# Copyright (C) 2023 CVAT.ai Corporation
+# Copyright (C) 2023-2024 CVAT.ai Corporation
 #
 # SPDX-License-Identifier: MIT
 
+import datetime
+import traceback
 from copy import deepcopy
 from typing import Optional, Union
-import traceback
+
 import rq
-
-from rest_framework.views import exception_handler
-from rest_framework.exceptions import NotAuthenticated
+from crum import get_current_request, get_current_user
 from rest_framework import status
-from crum import get_current_user, get_current_request
+from rest_framework.exceptions import NotAuthenticated
+from rest_framework.views import exception_handler
 
-from cvat.apps.engine.models import (
-    Project,
-    Task,
-    Job,
-    User,
-    CloudStorage,
-    Issue,
-    Comment,
-    Label,
-)
-from cvat.apps.engine.serializers import (
-    ProjectReadSerializer,
-    TaskReadSerializer,
-    JobReadSerializer,
-    BasicUserSerializer,
-    CloudStorageReadSerializer,
-    IssueReadSerializer,
-    CommentReadSerializer,
-    LabelSerializer,
-)
-from cvat.apps.engine.models import ShapeType
-from cvat.apps.organizations.models import Membership, Organization, Invitation
-from cvat.apps.organizations.serializers import OrganizationReadSerializer, MembershipReadSerializer, InvitationReadSerializer
+from cvat.apps.engine.models import (CloudStorage, Comment, Issue, Job, Label,
+                                     Project, ShapeType, Task, User)
+from cvat.apps.engine.serializers import (BasicUserSerializer,
+                                          CloudStorageReadSerializer,
+                                          CommentReadSerializer,
+                                          IssueReadSerializer,
+                                          JobReadSerializer, LabelSerializer,
+                                          ProjectReadSerializer,
+                                          TaskReadSerializer)
+from cvat.apps.organizations.models import Invitation, Membership, Organization
+from cvat.apps.organizations.serializers import (InvitationReadSerializer,
+                                                 MembershipReadSerializer,
+                                                 OrganizationReadSerializer)
 
-from .event import event_scope, record_server_event
 from .cache import get_cache
+from .event import event_scope, record_server_event
+
 
 def project_id(instance):
     if isinstance(instance, Project):
@@ -141,7 +133,7 @@ def user_name(instance=None):
 
 def user_email(instance=None):
     current_user = get_user(instance)
-    return _get_value(current_user, "email")
+    return _get_value(current_user, "email") or None
 
 def organization_slug(instance):
     if isinstance(instance, Organization):
@@ -594,3 +586,80 @@ def handle_viewset_exception(exc, context):
     )
 
     return response
+
+def handle_client_events_push(request, data: dict):
+    TIME_THRESHOLD = datetime.timedelta(seconds=100)
+    WORKING_TIME_SCOPE = 'send:working_time'
+    WORKING_TIME_RESOLUTION = datetime.timedelta(milliseconds=1)
+    COLLAPSED_EVENT_SCOPES = frozenset(("change:frame",))
+    org = request.iam_context["organization"]
+
+    def read_ids(event: dict) -> tuple[int | None, int | None, int | None]:
+        return event.get("job_id"), event.get("task_id"), event.get("project_id")
+
+    def get_end_timestamp(event: dict) -> datetime.datetime:
+        if event["scope"] in COLLAPSED_EVENT_SCOPES:
+            return event["timestamp"] + datetime.timedelta(milliseconds=event["duration"])
+        return event["timestamp"]
+
+    if previous_event := data["previous_event"]:
+        previous_end_timestamp = get_end_timestamp(previous_event)
+        previous_ids = read_ids(previous_event)
+    elif data["events"]:
+        previous_end_timestamp = data["events"][0]["timestamp"]
+        previous_ids = read_ids(data["events"][0])
+
+    working_time_per_ids = {}
+    for event in data["events"]:
+        working_time = datetime.timedelta()
+        timestamp = event["timestamp"]
+
+        if timestamp > previous_end_timestamp:
+            t_diff = timestamp - previous_end_timestamp
+            if t_diff < TIME_THRESHOLD:
+                working_time += t_diff
+
+            previous_end_timestamp = timestamp
+
+        end_timestamp = get_end_timestamp(event)
+        if end_timestamp > previous_end_timestamp:
+            working_time += end_timestamp - previous_end_timestamp
+            previous_end_timestamp = end_timestamp
+
+        if previous_ids not in working_time_per_ids:
+            working_time_per_ids[previous_ids] = {
+                "value": datetime.timedelta(),
+                "timestamp": timestamp,
+            }
+
+        working_time_per_ids[previous_ids]["value"] += working_time
+        previous_ids = read_ids(event)
+
+    if data["events"]:
+        common = {
+            "user_id": request.user.id,
+            "user_name": request.user.username,
+            "user_email": request.user.email or None,
+            "org_id": getattr(org, "id", None),
+            "org_slug": getattr(org, "slug", None),
+        }
+
+        for ids, working_time in working_time_per_ids.items():
+            job_id, task_id, project_id = ids
+            if working_time["value"].total_seconds():
+                value = working_time["value"] // WORKING_TIME_RESOLUTION
+                record_server_event(
+                    scope=WORKING_TIME_SCOPE,
+                    request_id=request_id(),
+                    # keep it in payload for backward compatibility
+                    # but in the future it is much better to use a "duration" field
+                    # because parsing JSON in SQL query is very slow
+                    payload={"working_time": value},
+                    timestamp=str(working_time["timestamp"].timestamp()),
+                    duration=value,
+                    project_id=project_id,
+                    task_id=task_id,
+                    job_id=job_id,
+                    count=1,
+                    **common,
+                )
