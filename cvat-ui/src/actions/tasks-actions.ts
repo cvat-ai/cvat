@@ -252,8 +252,8 @@ ThunkAction<Promise<void>, {}, {}, AnyAction> {
         if (data.cloudStorageId) {
             description.cloud_storage_id = data.cloudStorageId;
         }
-        if (data.advanced.consensusJobPerSegment) {
-            description.consensus_job_per_segment = data.advanced.consensusJobPerSegment;
+        if (data.consensus.consensusJobPerSegment) {
+            description.consensus_job_per_segment = +data.consensus.consensusJobPerSegment;
         }
 
         const taskInstance = new cvat.classes.Task(description);

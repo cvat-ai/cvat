@@ -26,6 +26,7 @@ import ProjectSearchField from './project-search-field';
 import ProjectSubsetField from './project-subset-field';
 import MultiTasksProgress from './multi-task-progress';
 import AdvancedConfigurationForm, { AdvancedConfiguration, SortingMethod } from './advanced-configuration-form';
+import ConsensusConfigurationForm, { ConsensusConfiguration } from './consensus-configuration-form';
 
 type TabName = 'local' | 'share' | 'remote' | 'cloudStorage';
 const core = getCore();
@@ -35,6 +36,7 @@ export interface CreateTaskData {
     basic: BaseConfiguration;
     subset: string;
     advanced: AdvancedConfiguration;
+    consensus: ConsensusConfiguration;
     labels: any[];
     files: Files;
     activeFileManagerTab: TabName;
@@ -83,6 +85,7 @@ const defaultState: State = {
         useProjectSourceStorage: true,
         useProjectTargetStorage: true,
     },
+    consensus: {},
     labels: [],
     files: {
         local: [],
@@ -152,6 +155,7 @@ function filterFiles(remoteFiles: RemoteFile[], many: boolean): RemoteFile[] {
 class CreateTaskContent extends React.PureComponent<Props & RouteComponentProps, State> {
     private basicConfigurationComponent: RefObject<BasicConfigurationForm>;
     private advancedConfigurationComponent: RefObject<AdvancedConfigurationForm>;
+    private consensusConfigurationComponent: RefObject<ConsensusConfigurationForm>;
     private fileManagerComponent: any;
 
     public constructor(props: Props & RouteComponentProps) {
@@ -159,6 +163,7 @@ class CreateTaskContent extends React.PureComponent<Props & RouteComponentProps,
         this.state = { ...defaultState };
         this.basicConfigurationComponent = React.createRef<BasicConfigurationForm>();
         this.advancedConfigurationComponent = React.createRef<AdvancedConfigurationForm>();
+        this.consensusConfigurationComponent = React.createRef<ConsensusConfigurationForm>();
     }
 
     public componentDidMount(): void {
@@ -185,6 +190,7 @@ class CreateTaskContent extends React.PureComponent<Props & RouteComponentProps,
     private resetState = (): void => {
         this.basicConfigurationComponent.current?.resetFields();
         this.advancedConfigurationComponent.current?.resetFields();
+        this.consensusConfigurationComponent.current?.resetFields();
 
         this.fileManagerComponent.reset();
 
@@ -250,6 +256,15 @@ class CreateTaskContent extends React.PureComponent<Props & RouteComponentProps,
         new Promise((resolve) => {
             this.setState({
                 advanced: { ...values },
+            }, resolve);
+        })
+    );
+
+    private handleSubmitConsensusConfiguration = (values: ConsensusConfiguration): Promise<void> => (
+        new Promise((resolve) => {
+            console.log(values);
+            this.setState({
+                consensus: { ...values },
             }, resolve);
         })
     );
@@ -434,6 +449,9 @@ class CreateTaskContent extends React.PureComponent<Props & RouteComponentProps,
                 if (this.advancedConfigurationComponent.current) {
                     return this.advancedConfigurationComponent.current.submit();
                 }
+                if (this.consensusConfigurationComponent.current) {
+                    return this.consensusConfigurationComponent.current.submit();
+                }
                 if (projectId) {
                     return core.projects.get({ id: projectId })
                         .then((response: any) => {
@@ -564,6 +582,7 @@ class CreateTaskContent extends React.PureComponent<Props & RouteComponentProps,
             projectId,
             subset,
             advanced,
+            consensus,
             labels,
             files: allFiles,
             activeFileManagerTab,
@@ -580,6 +599,7 @@ class CreateTaskContent extends React.PureComponent<Props & RouteComponentProps,
                 },
                 subset,
                 advanced,
+                consensus,
                 labels,
                 files: {
                     ...defaultState.files,
@@ -876,6 +896,26 @@ class CreateTaskContent extends React.PureComponent<Props & RouteComponentProps,
         );
     }
 
+    private renderConsensusBlock(): JSX.Element {
+        return (
+            <Col span={24}>
+                <Collapse
+                    className='cvat-advanced-configuration-wrapper'
+                    items={[{
+                        key: '2',
+                        label: <Text className='cvat-title'>Consensus configuration</Text>,
+                        children: (
+                            <ConsensusConfigurationForm
+                                ref={this.consensusConfigurationComponent}
+                                onSubmit={this.handleSubmitConsensusConfiguration}
+                            />
+                        ),
+                    }]}
+                />
+            </Col>
+        );
+    }
+
     private renderFooterSingleTask(): JSX.Element {
         const { uploadFileErrorMessage, loading, statusInProgressTask: status } = this.state;
 
@@ -966,6 +1006,7 @@ class CreateTaskContent extends React.PureComponent<Props & RouteComponentProps,
                 {this.renderLabelsBlock()}
                 {this.renderFilesBlock()}
                 {this.renderAdvancedBlock()}
+                {this.renderConsensusBlock()}
 
                 <Col span={24} className='cvat-create-task-content-footer'>
                     {many ? this.renderFooterMultiTasks() : this.renderFooterSingleTask() }

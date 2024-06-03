@@ -49,7 +49,6 @@ export interface AdvancedConfiguration {
     useProjectTargetStorage: boolean;
     sourceStorage: StorageData;
     targetStorage: StorageData;
-    consensusJobPerSegment?: number;
 }
 
 const initialValues: AdvancedConfiguration = {
@@ -69,7 +68,6 @@ const initialValues: AdvancedConfiguration = {
         location: StorageLocation.LOCAL,
         cloudStorageId: undefined,
     },
-    consensusJobPerSegment: 0,
 };
 
 interface Props {
