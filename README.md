@@ -108,7 +108,7 @@ presentations and covers the following topics:
 - **Speeding up your data annotation process: introduction to CVAT and Datumaro**.
   What problems do CVAT and Datumaro solve, and how they can speed up your model
   training process. Some resources you can use to learn more about how to use them.
-- **Deployment and use CVAT**. Use the app online at [app.cvat.ai](app.cvat.ai).
+- **Deployment and use CVAT**. Use the app online at [app.cvat.ai](https://app.cvat.ai).
   A local deployment. A containerized local deployment with Docker Compose (for regular use),
   and a local cluster deployment with Kubernetes (for enterprise users). A 2-minute
   tour of the interface, a breakdown of CVAT’s internals, and a demonstration of how
