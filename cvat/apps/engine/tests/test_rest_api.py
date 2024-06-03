@@ -550,25 +550,25 @@ class ServerLogsAPITestCase(ApiTestBase):
         create_db_users(cls)
         cls.data = {
             "events": [{
-                "scope": "test:scope1",
-                "timestamp": "2019-01-29T12:34:56.000000Z",
-                "task": 1,
-                "job": 1,
-                "proj": 2,
+                "scope": "debug:info",
+                "timestamp": "2024-05-30T17:05:13.776Z",
+                "task_id": 1,
+                "job_id": 1,
+                "project_id": 2,
                 "organization": 2,
                 "count": 1,
                 "payload": json.dumps({
-                    "client_id": 12321235123,
+                    "client_id": 123456,
                     "message": "just test message",
                     "name": "add point",
                     "is_active": True,
                 }),
             },
             {
-                "timestamp": "2019-02-24T12:34:56.000000Z",
-                "scope": "test:scope2",
+                "timestamp": "2024-05-30T17:05:14.776Z",
+                "scope": "debug:info",
             }],
-            "timestamp": "2019-02-24T12:34:58.000000Z",
+            "timestamp": "2024-05-30T17:05:15.776Z",
         }
 
 
