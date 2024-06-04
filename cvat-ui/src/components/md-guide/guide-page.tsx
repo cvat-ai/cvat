@@ -14,9 +14,10 @@ import Button from 'antd/lib/button';
 import Space from 'antd/lib/space';
 import MDEditor, { commands } from '@uiw/react-md-editor';
 
-import { getCore, AnnotationGuide } from 'cvat-core-wrapper';
+import { getCore, AnnotationGuide, ServerError } from 'cvat-core-wrapper';
 import CVATLoadingSpinner from 'components/common/loading-spinner';
 import GoBackButton from 'components/common/go-back-button';
+import dimensions from 'utils/dimensions';
 
 const core = getCore();
 
@@ -34,25 +35,29 @@ const handleTextItem = (textItem: string, guideId: number): Promise<string> => {
             const currentUUID = match[2];
 
             const promise = fetch(url)
-                .then((response) => response.blob())
-                .then((blob: Blob) => {
-                    const type = blob.type.split('/');
-                    if (type.length < 1) {
-                        throw new Error('Unknown file extension');
+                .then((response) => {
+                    if (response.status !== 200) {
+                        throw new Error('Failed request');
                     }
-                    return new File([blob], `file.${type[1]}`, { type: blob.type });
-                })
-                .then((file: File) => core.assets.create(file, guideId))
-                .then(({ uuid }: { uuid: string }): void => {
-                    const result = `![image](/api/assets/${uuid})`;
-                    replacements[index] = [fullMatch, result];
-                }).catch((error: unknown) => {
-                    notification.error({
-                        message: 'Could not insert asset',
-                        description: `Asset ${fullMatch} was not inserted. ${error instanceof Error ? error.message : ''}`,
-                    });
-                    const result = `<!--- ERROR: Could not update asset ${currentUUID} --->`;
-                    replacements[index] = [fullMatch, result];
+
+                    return response.blob()
+                        .then((blob: Blob) => {
+                            const type = blob.type.split('/');
+                            if (type.length < 1) {
+                                throw new Error('Unknown file extension');
+                            }
+                            return new File([blob], `file.${type[1]}`, { type: blob.type });
+                        })
+                        .then((file: File) => core.assets.create(file, guideId))
+                        .then(({ uuid }: { uuid: string }): void => {
+                            const result = `![image](/api/assets/${uuid})`;
+                            replacements[index] = [fullMatch, result];
+                        }).catch((error: unknown) => {
+                            const result = `<!--- ERROR: Could not update asset ${currentUUID}. ${error instanceof Error ? error.message : ''} --->`;
+                            replacements[index] = [fullMatch, result];
+                        });
+                }).catch(() => {
+                    replacements[index] = [fullMatch, fullMatch];
                 });
 
             promises.push(promise);
@@ -133,11 +138,8 @@ function GuidePage(): JSX.Element {
         }
     }, [guide, fetching]);
 
-    const handleInsertFiles = async (event: React.ClipboardEvent | React.DragEvent, files: FileList): Promise<void> => {
+    const handleInsertFiles = async (files: FileList): Promise<void> => {
         if (files.length && guide?.id) {
-            // files are inserted to the guide
-
-            event.preventDefault();
             const assetsToAdd = Array.from(files);
             const addedAssets: [File, string][] = [];
 
@@ -159,7 +161,10 @@ function GuidePage(): JSX.Element {
                         return `![${file.name}](Loading...)`;
                     });
 
-                    return `${value.slice(0, selectionStart)}\n${addedStrings.concat(stringsToAdd).join('\n')}\n${value.slice(selectionEnd)}`;
+                    const beforeSelection = value.slice(0, selectionStart);
+                    const selection = addedStrings.concat(stringsToAdd).join('\n');
+                    const afterSelection = value.slice(selectionEnd);
+                    return `${beforeSelection}${selection}${afterSelection}`;
                 };
 
                 setValue(computeNewValue());
@@ -178,15 +183,11 @@ function GuidePage(): JSX.Element {
                         file = assetsToAdd.shift();
                     }
                 }
-
-                const finalValue = computeNewValue();
-                setValue(finalValue);
-                submit(finalValue);
             }
         }
     };
 
-    const handleInsertText = async (event: React.ClipboardEvent, items: DataTransferItem[]): Promise<void> => {
+    const handleInsertText = async (items: DataTransferItem[]): Promise<void> => {
         const stringifiedItems: string[] = [];
 
         if (mdEditorRef.current && guide?.id) {
@@ -217,21 +218,13 @@ function GuidePage(): JSX.Element {
                 stringifiedItems[i] = updatedItem;
                 setValue(computeNewValue());
             }
-
-            const finalValue = computeNewValue();
-            setValue(finalValue);
-            submit(finalValue);
         }
     };
 
     return (
-        <Row
-            justify='center'
-            align='top'
-            className='cvat-guide-page'
-        >
+        <Row justify='center' align='top' className='cvat-guide-page'>
             { fetching && <CVATLoadingSpinner /> }
-            <Col md={22} lg={18} xl={16} xxl={14}>
+            <Col {...dimensions}>
                 <div className='cvat-guide-page-top'>
                     <GoBackButton />
                 </div>
@@ -248,16 +241,31 @@ function GuidePage(): JSX.Element {
                         onPaste={async (event: React.ClipboardEvent) => {
                             const { clipboardData } = event;
                             const { files, items } = clipboardData;
-                            if (files.length) {
-                                handleInsertFiles(event, files);
-                            } else {
-                                handleInsertText(event, items);
+                            try {
+                                setFetching(true);
+                                if (files.length) {
+                                    await handleInsertFiles(files);
+                                } else {
+                                    await handleInsertText(Array.from(items).filter((item) => item.type === 'text/plain'));
+                                }
+                            } finally {
+                                setFetching(false);
                             }
+
+                            event.preventDefault();
                         }}
                         onDrop={async (event: React.DragEvent) => {
                             const { dataTransfer } = event;
                             const { files } = dataTransfer;
-                            handleInsertFiles(event, files);
+                            try {
+                                if (files.length) {
+                                    await handleInsertFiles(files);
+                                }
+                            } finally {
+                                setFetching(false);
+                            }
+
+                            event.preventDefault();
                         }}
                         style={{ whiteSpace: 'pre-wrap' }}
                     />
@@ -265,7 +273,7 @@ function GuidePage(): JSX.Element {
                 <Space align='end' className='cvat-guide-page-bottom'>
                     <Button
                         type='primary'
-                        disabled={fetching || !guide.id}
+                        disabled={fetching || !guide?.id}
                         onClick={() => submit(value)}
                     >
                         Submit

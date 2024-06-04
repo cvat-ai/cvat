@@ -5,6 +5,7 @@
 
 from copy import copy
 from inspect import isclass
+from contextlib import suppress
 import os
 import re
 import shutil
@@ -2169,10 +2170,11 @@ class AnnotationGuideWriteSerializer(WriteOnceMixin, serializers.ModelSerializer
             results = re.findall(pattern, markdown)
 
             for asset_id in results:
-                db_asset = models.Asset.objects.get(pk=asset_id)
-                if db_asset.guide_id != guide.id:
-                    raise serializers.ValidationError('Asset is already related to another guide')
-                md_assets.append(db_asset)
+                with suppress(models.Asset.DoesNotExist):
+                    db_asset = models.Asset.objects.get(pk=asset_id)
+                    if db_asset.guide_id != guide.id:
+                        raise serializers.ValidationError('Asset is already related to another guide')
+                    md_assets.append(db_asset)
 
             for current_asset in current_assets:
                 if current_asset not in md_assets:
