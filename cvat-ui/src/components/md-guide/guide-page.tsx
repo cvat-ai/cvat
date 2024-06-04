@@ -14,7 +14,7 @@ import Button from 'antd/lib/button';
 import Space from 'antd/lib/space';
 import MDEditor, { commands } from '@uiw/react-md-editor';
 
-import { getCore, AnnotationGuide, ServerError } from 'cvat-core-wrapper';
+import { getCore, AnnotationGuide } from 'cvat-core-wrapper';
 import CVATLoadingSpinner from 'components/common/loading-spinner';
 import GoBackButton from 'components/common/go-back-button';
 import dimensions from 'utils/dimensions';
@@ -37,14 +37,14 @@ const handleTextItem = (textItem: string, guideId: number): Promise<string> => {
             const promise = fetch(url)
                 .then((response) => {
                     if (response.status !== 200) {
-                        throw new Error('Failed request');
+                        throw new Error('Asset request failed');
                     }
 
                     return response.blob()
                         .then((blob: Blob) => {
                             const type = blob.type.split('/');
                             if (type.length < 1) {
-                                throw new Error('Unknown file extension');
+                                throw new Error('Unknown asset extension received');
                             }
                             return new File([blob], `file.${type[1]}`, { type: blob.type });
                         })
@@ -53,7 +53,9 @@ const handleTextItem = (textItem: string, guideId: number): Promise<string> => {
                             const result = `![image](/api/assets/${uuid})`;
                             replacements[index] = [fullMatch, result];
                         }).catch((error: unknown) => {
-                            const result = `<!--- ERROR: Could not update asset ${currentUUID}. ${error instanceof Error ? error.message : ''} --->`;
+                            const comment = `ERROR: Could not update asset "${currentUUID}".` +
+                                ` ${error instanceof Error ? error.message : ''}`;
+                            const result = `<!--- ${comment} --->`;
                             replacements[index] = [fullMatch, result];
                         });
                 }).catch(() => {
@@ -85,7 +87,7 @@ const handleTextItem = (textItem: string, guideId: number): Promise<string> => {
     });
 };
 
-function GuidePage(): JSX.Element {
+function AnnotationGuidePage(): JSX.Element {
     const mdEditorRef = useRef<typeof MDEditor & { commandOrchestrator: commands.TextAreaCommandOrchestrator }>(null);
     const location = useLocation();
     const [value, setValue] = useState('');
@@ -284,4 +286,4 @@ function GuidePage(): JSX.Element {
     );
 }
 
-export default React.memo(GuidePage);
+export default React.memo(AnnotationGuidePage);
