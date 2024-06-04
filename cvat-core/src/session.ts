@@ -429,6 +429,7 @@ export class Job extends Session {
     public readonly updatedDate: string;
     public readonly sourceStorage: Storage;
     public readonly targetStorage: Storage;
+    public readonly parentJobId: number;
 
     constructor(initialData: Readonly<Omit<SerializedJob, 'labels'> & { labels?: SerializedLabel[] }>) {
         super();
@@ -454,7 +455,7 @@ export class Job extends Session {
             updated_date: undefined,
             source_storage: undefined,
             target_storage: undefined,
-            source_job_id: null,
+            parent_job_id: null,
         };
 
         const updateTrigger = new FieldUpdateTrigger();
@@ -589,9 +590,6 @@ export class Job extends Session {
                 bugTracker: {
                     get: () => data.bug_tracker,
                 },
-                sourceID: {
-                    get: () => data.source_job_id,
-                },
                 createdDate: {
                     get: () => data.created_date,
                 },
@@ -609,6 +607,9 @@ export class Job extends Session {
                 },
                 _initialData: {
                     get: () => initialData,
+                },
+                parentJobId: {
+                    get: () => data.parent_job_id,
                 },
             }),
         );

@@ -593,7 +593,7 @@ class JobReadSerializer(serializers.ModelSerializer):
     issues = IssuesSummarySerializer(source='*')
     target_storage = StorageSerializer(required=False, allow_null=True)
     source_storage = StorageSerializer(required=False, allow_null=True)
-    source_job_id = serializers.ReadOnlyField(allow_null=True)
+    parent_job_id = serializers.ReadOnlyField(allow_null=True)
 
     class Meta:
         model = models.Job
@@ -601,7 +601,7 @@ class JobReadSerializer(serializers.ModelSerializer):
             'dimension', 'bug_tracker', 'status', 'stage', 'state', 'mode', 'frame_count',
             'start_frame', 'stop_frame', 'data_chunk_size', 'data_compressed_chunk_type',
             'created_date', 'updated_date', 'issues', 'labels', 'type', 'organization',
-            'target_storage', 'source_storage', 'source_job_id')
+            'target_storage', 'source_storage', 'parent_job_id')
         read_only_fields = fields
 
     def to_representation(self, instance):

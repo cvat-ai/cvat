@@ -174,7 +174,7 @@ def _save_task_to_db(db_task: models.Task, *, job_file_mapping: Optional[JobFile
 
         # consensus jobs use the same `db_segment` as the normal job, thus data not duplicated in backups, exports
         for _ in range(db_task.data.consensus_job_per_segment):
-            consensus_db_job = models.Job(segment=db_segment, source_job_id=db_job.id)
+            consensus_db_job = models.Job(segment=db_segment, parent_job_id=db_job.id)
             consensus_db_job.save()
             consensus_db_job.make_dirs()
 

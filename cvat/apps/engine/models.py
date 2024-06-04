@@ -681,7 +681,7 @@ class Job(TimestampedModel):
 
     type = models.CharField(max_length=32, choices=JobType.choices(),
         default=JobType.ANNOTATION)
-    source_job_id = models.PositiveIntegerField(null=True, blank=True, default=None)
+    parent_job_id = models.PositiveIntegerField(null=True, blank=True, default=None)
 
     def get_target_storage(self) -> Optional[Storage]:
         return self.segment.task.target_storage

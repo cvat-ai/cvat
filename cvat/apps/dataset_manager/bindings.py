@@ -675,7 +675,7 @@ class JobData(CommonData):
                 ("start_frame", str(self._db_data.start_frame + db_segment.start_frame * self._frame_step)),
                 ("stop_frame", str(self._db_data.start_frame + db_segment.stop_frame * self._frame_step)),
                 ("frame_filter", self._db_data.frame_filter),
-                ("source_job_id", str(self._db_job.source_job_id)),
+                ("parent_job_id", str(self._db_job.parent_job_id)),
                 ("segments", [
                     ("segment", OrderedDict([
                         ("id", str(db_segment.id)),
