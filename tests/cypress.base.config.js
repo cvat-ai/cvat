@@ -9,6 +9,7 @@ module.exports = {
     viewportHeight: 960,
     defaultCommandTimeout: 25000,
     downloadsFolder: 'cypress/fixtures',
+    chromeWebSecurity: false,
     env: {
         user: 'admin',
         email: 'admin@localhost.company',
