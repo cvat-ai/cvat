@@ -781,6 +781,7 @@ class TaskData(CommonData):
             ("stop_frame", str(db_task.data.stop_frame)),
             ("frame_filter", db_task.data.frame_filter),
             ("consensus_job_per_segment", str(db_task.data.consensus_job_per_segment)),
+            ("agreement_score_threshold", str(db_task.data.agreement_score_threshold)),
 
             ("segments", [
                 ("segment", OrderedDict([

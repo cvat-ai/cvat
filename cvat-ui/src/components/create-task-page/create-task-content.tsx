@@ -262,7 +262,6 @@ class CreateTaskContent extends React.PureComponent<Props & RouteComponentProps,
 
     private handleSubmitConsensusConfiguration = (values: ConsensusConfiguration): Promise<void> => (
         new Promise((resolve) => {
-            console.log(values);
             this.setState({
                 consensus: { ...values },
             }, resolve);

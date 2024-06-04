@@ -236,6 +236,7 @@ class Data(models.Model):
     sorting_method = models.CharField(max_length=15, choices=SortingMethod.choices(), default=SortingMethod.LEXICOGRAPHICAL)
     deleted_frames = IntArrayField(store_sorted=True, unique_values=True)
     consensus_job_per_segment = models.IntegerField(default=0, blank=True)
+    agreement_score_threshold = models.FloatField(default=0, blank=True)
 
     class Meta:
         default_permissions = ()

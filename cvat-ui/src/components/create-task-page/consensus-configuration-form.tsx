@@ -11,21 +11,24 @@ import { Store } from 'antd/lib/form/interface';
 
 export interface ConsensusConfiguration {
     consensusJobPerSegment?: number;
+    agreementScoreThreshold?: number;
 }
 
 const initialValues: ConsensusConfiguration = {
     consensusJobPerSegment: 0,
+    agreementScoreThreshold: 0,
 };
 
 interface Props {
     onSubmit(values: ConsensusConfiguration): Promise<void>;
 }
 
-const isInteger = ({
+const isNumber = ({
     min,
     max,
     toBeSkipped,
-}: { min?: number; max?: number; toBeSkipped?: number }) => (
+    strictInt,
+}: { min?: number; max?: number; toBeSkipped?: number, strictInt?: boolean }) => (
     _: RuleObject,
     value?: number | string,
 ): Promise<void> => {
@@ -34,8 +37,12 @@ const isInteger = ({
     }
 
     const intValue = +value;
-    if (Number.isNaN(intValue) || !Number.isInteger(intValue)) {
-        return Promise.reject(new Error('Value must be a positive integer'));
+    if (Number.isFinite(intValue)) {
+        if (strictInt && !Number.isInteger(intValue)) {
+            return Promise.reject(new Error('Value must be a positive integer'));
+        }
+    } else {
+        return Promise.reject(new Error('Value must be a finite number'));
     }
 
     if (typeof min !== 'undefined' && intValue < min) {
@@ -94,10 +101,11 @@ class ConsensusConfigurationForm extends React.PureComponent<Props> {
                 label='Consensus Job Per Segment'
                 name='consensusJobPerSegment'
                 rules={[{
-                    validator: isInteger({
+                    validator: isNumber({
                         min: 0,
                         max: 10,
                         toBeSkipped: 1,
+                        strictInt: true,
                     }),
                 }]}
             >
@@ -106,12 +114,32 @@ class ConsensusConfigurationForm extends React.PureComponent<Props> {
         );
     }
 
+    private renderAgreementScoreThreshold(): JSX.Element {
+        return (
+            <Form.Item
+                label='Agreement Score Threshold'
+                name='agreementScoreThreshold'
+                rules={[{
+                    validator: isNumber({
+                        min: 0,
+                        max: 1,
+                    }),
+                }]}
+            >
+                <Input size='large' type='number' min={0} step={0.1} />
+            </Form.Item>
+        );
+    }
+
     public render(): JSX.Element {
         return (
             <Form initialValues={initialValues} ref={this.formRef} layout='vertical'>
                 <Row justify='start'>
-                    <Col span={12}>
+                    <Col span={9}>
                         {this.renderConsensusJobPerSegment()}
+                    </Col>
+                    <Col span={9} offset={1}>
+                        {this.renderAgreementScoreThreshold()}
                     </Col>
                 </Row>
             </Form>

@@ -673,6 +673,7 @@ export class Task extends Session {
     public readonly progress: { count: number; completed: number };
     public readonly jobs: Job[];
     public readonly consensusJobPerSegment: number;
+    public readonly agreementScoreThreshold: number;
 
     public readonly startFrame: number;
     public readonly stopFrame: number;
@@ -728,6 +729,7 @@ export class Task extends Session {
             sorting_method: undefined,
             files: undefined,
             consensus_job_per_segment: undefined,
+            agreement_score_threshold: undefined,
 
             quality_settings: undefined,
         };
@@ -805,7 +807,7 @@ export class Task extends Session {
                     data_chunk_size: data.data_chunk_size,
                     target_storage: initialData.target_storage,
                     source_storage: initialData.source_storage,
-                    source_job_id: job.source_job_id,
+                    parent_job_id: job.parent_job_id,
                 });
                 data.jobs.push(jobInstance);
             }
@@ -915,6 +917,9 @@ export class Task extends Session {
                 },
                 consensusJobPerSegment: {
                     get: () => data.consensus_job_per_segment,
+                },
+                agreementScoreThreshold: {
+                    get: () => data.agreement_score_threshold,
                 },
                 labels: {
                     get: () => [...data.labels],

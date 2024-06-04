@@ -965,9 +965,13 @@ class DataSerializer(serializers.ModelSerializer):
             pass the list of file names in the required order.
         """.format(models.SortingMethod.PREDEFINED))
     )
-    consensus_job_per_segment = serializers.IntegerField(default=1,
+    consensus_job_per_segment = serializers.IntegerField(default=0,
         help_text=textwrap.dedent("""\
             Number of Consensus Jobs for each Normal Job.
+        """))
+    agreement_score_threshold = serializers.FloatField(default=0,
+        help_text=textwrap.dedent("""\
+            Agreement Score Threshold, for merging consensus jobs.
         """))
 
     class Meta:
@@ -979,6 +983,7 @@ class DataSerializer(serializers.ModelSerializer):
             'cloud_storage_id', 'use_cache', 'copy_data', 'storage_method',
             'storage', 'sorting_method', 'filename_pattern',
             'job_file_mapping', 'upload_file_order', 'consensus_job_per_segment',
+            'agreement_score_threshold',
         )
         extra_kwargs = {
             'chunk_size': { 'help_text': "Maximum number of frames per chunk" },
@@ -1101,7 +1106,8 @@ class TaskReadSerializer(serializers.ModelSerializer):
     source_storage = StorageSerializer(required=False, allow_null=True)
     jobs = JobsSummarySerializer(url_filter_key='task_id', source='segment_set')
     labels = LabelsSummarySerializer(source='*')
-    consensus_job_per_segment = serializers.IntegerField(source='data.consensus_job_per_segment', required=False)
+    consensus_job_per_segment = serializers.ReadOnlyField(source='data.consensus_job_per_segment', required=False)
+    agreement_score_threshold = serializers.FloatField(source='data.agreement_score_threshold', required=False)
 
     class Meta:
         model = models.Task
@@ -1110,7 +1116,7 @@ class TaskReadSerializer(serializers.ModelSerializer):
             'status', 'data_chunk_size', 'data_compressed_chunk_type', 'guide_id',
             'data_original_chunk_type', 'size', 'image_quality', 'data', 'dimension',
             'subset', 'organization', 'target_storage', 'source_storage', 'jobs', 'labels',
-            'consensus_job_per_segment'
+            'consensus_job_per_segment', 'agreement_score_threshold'
         )
         read_only_fields = fields
         extra_kwargs = {
@@ -1126,12 +1132,13 @@ class TaskWriteSerializer(WriteOnceMixin, serializers.ModelSerializer):
     project_id = serializers.IntegerField(required=False, allow_null=True)
     target_storage = StorageSerializer(required=False, allow_null=True)
     source_storage = StorageSerializer(required=False, allow_null=True)
+    agreement_score_threshold = serializers.FloatField(required=False)
 
     class Meta:
         model = models.Task
         fields = ('url', 'id', 'name', 'project_id', 'owner_id', 'assignee_id',
             'bug_tracker', 'overlap', 'segment_size', 'labels', 'subset',
-            'target_storage', 'source_storage',
+            'target_storage', 'source_storage', 'agreement_score_threshold'
         )
         write_once_fields = ('overlap', 'segment_size')
 
@@ -1452,6 +1459,7 @@ class DataMetaReadSerializer(serializers.ModelSerializer):
         A list of valid frame ids. The None value means all frames are included.
         """))
     consensus_job_per_segment = serializers.IntegerField(default=0)
+    agreement_score_threshold = serializers.FloatField(default=0)
 
     class Meta:
         model = models.Data
@@ -1466,6 +1474,7 @@ class DataMetaReadSerializer(serializers.ModelSerializer):
             'deleted_frames',
             'included_frames',
             'consensus_job_per_segment',
+            'agreement_score_threshold',
         )
         read_only_fields = fields
         extra_kwargs = {

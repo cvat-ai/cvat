@@ -329,18 +329,6 @@ class AdvancedConfigurationForm extends React.PureComponent<Props> {
         );
     }
 
-    private renderConsensusJobPerSegment(): JSX.Element {
-        return (
-            <Form.Item
-                label='Consensus Job Per Segment'
-                name='consensusJobPerSegment'
-                rules={[{ validator: isInteger({ min: 0, max: 10, toBeSkipped: 1 }) }]}
-            >
-                <Input size='large' type='number' min={0} step={1} />
-            </Form.Item>
-        );
-    }
-
     private renderBugTracker(): JSX.Element {
         return (
             <Form.Item
@@ -498,9 +486,6 @@ class AdvancedConfigurationForm extends React.PureComponent<Props> {
 
                 <Row justify='start'>
                     <Col span={7}>{this.renderChunkSize()}</Col>
-                    <Col span={12} offset={1}>
-                        {this.renderConsensusJobPerSegment()}
-                    </Col>
                 </Row>
 
                 <Row>
