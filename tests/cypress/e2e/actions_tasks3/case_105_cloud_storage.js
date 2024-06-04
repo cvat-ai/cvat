@@ -25,6 +25,13 @@ context('Cloud storage.', () => {
         projectID: 'Some ID',
     };
 
+    const serverHost = Cypress.config('baseUrl').includes('3000') ? 'localhost' : 'minio';
+    const cloudStorageDataWithoutManifest = {
+        displayName: 'Without manifest file',
+        resource: 'public',
+        endpointUrl: `http://${serverHost}:9000`,
+    };
+
     before(() => {
         cy.visit('auth/login');
         cy.login();
@@ -184,6 +191,12 @@ context('Cloud storage.', () => {
             cy.wait('@cloudstorageRequest').its('response.statusCode').should('eq', 404);
             cy.get('.cvat-spinner').should('not.exist');
             cy.contains('Sorry, but the requested cloud storage was not found');
+        });
+
+        it('Check create cloud storage without manifest file.', () => {
+            cy.attachS3Bucket(cloudStorageDataWithoutManifest);
+            cy.visit('/cloudstorages');
+            cy.contains(cloudStorageDataWithoutManifest.displayName);
         });
     });
 });
