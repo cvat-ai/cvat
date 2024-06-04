@@ -1,4 +1,4 @@
-// Copyright (C) 2023 CVAT.ai Corporation
+// Copyright (C) 2023-2024 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -14,84 +14,129 @@ import Button from 'antd/lib/button';
 import Space from 'antd/lib/space';
 import MDEditor, { commands } from '@uiw/react-md-editor';
 
-import {
-    getCore, Task, Project, AnnotationGuide,
-} from 'cvat-core-wrapper';
-import { useIsMounted } from 'utils/hooks';
+import { getCore, AnnotationGuide } from 'cvat-core-wrapper';
 import CVATLoadingSpinner from 'components/common/loading-spinner';
 import GoBackButton from 'components/common/go-back-button';
 
 const core = getCore();
 
+const handleTextItem = (textItem: string, guideId: number): Promise<string> => {
+    const regex = /!\[image\]\((\/api\/assets\/([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}))\)/g;
+    return new Promise<string>((resolve) => {
+        const promises: Promise<void>[] = [];
+        const replacements: Record<number, [string, string]> = {};
+        let match = regex.exec(textItem);
+
+        while (match !== null) {
+            const url = match[1];
+            const { index } = match as RegExpExecArray;
+            const fullMatch = match[0];
+            const currentUUID = match[2];
+
+            const promise = fetch(url)
+                .then((response) => response.blob())
+                .then((blob: Blob) => {
+                    const type = blob.type.split('/');
+                    if (type.length < 1) {
+                        throw new Error('Unknown file extension');
+                    }
+                    return new File([blob], `file.${type[1]}`, { type: blob.type });
+                })
+                .then((file: File) => core.assets.create(file, guideId))
+                .then(({ uuid }: { uuid: string }): void => {
+                    const result = `![image](/api/assets/${uuid})`;
+                    replacements[index] = [fullMatch, result];
+                }).catch((error: unknown) => {
+                    notification.error({
+                        message: 'Could not insert asset',
+                        description: `Asset ${fullMatch} was not inserted. ${error instanceof Error ? error.message : ''}`,
+                    });
+                    const result = `<!--- ERROR: Could not update asset ${currentUUID} --->`;
+                    replacements[index] = [fullMatch, result];
+                });
+
+            promises.push(promise);
+            match = regex.exec(textItem);
+        }
+
+        Promise.allSettled(promises).then(() => {
+            const keys = Object.keys(replacements).map((key) => +key).sort((a, b) => a - b);
+            if (keys.length) {
+                let handled = textItem.slice(0, keys[0]) + replacements[keys[0]][1];
+                for (let i = 1; i < keys.length; i++) {
+                    const prevKey = keys[i - 1];
+                    const key = keys[i];
+                    handled += textItem.slice(prevKey + replacements[prevKey][0].length, key);
+                    const [, to] = replacements[key];
+                    handled += to;
+                }
+                const lastKey = keys[keys.length - 1];
+                handled += textItem.slice(lastKey + replacements[lastKey][0].length);
+                resolve(handled);
+            } else {
+                resolve(textItem);
+            }
+        });
+    });
+};
+
 function GuidePage(): JSX.Element {
     const mdEditorRef = useRef<typeof MDEditor & { commandOrchestrator: commands.TextAreaCommandOrchestrator }>(null);
     const location = useLocation();
-    const isMounted = useIsMounted();
     const [value, setValue] = useState('');
     const instanceType = location.pathname.includes('projects') ? 'project' : 'task';
     const id = +useParams<{ id: string }>().id;
-    const [guide, setGuide] = useState<AnnotationGuide>(
-        new AnnotationGuide({
-            ...(instanceType === 'project' ? { project_id: id } : { task_id: id }),
-            markdown: value,
-        }),
-    );
+    const [guide, setGuide] = useState<AnnotationGuide | null>(null);
     const [fetching, setFetching] = useState(true);
 
     useEffect(() => {
         const promise = instanceType === 'project' ? core.projects.get({ id }) : core.tasks.get({ id });
-        promise.then(([instance]: [Task | Project]) => (
-            instance.guide()
-        )).then(async (guideInstance: AnnotationGuide | null) => {
-            if (!guideInstance) {
-                const createdGuide = await guide.save();
-                return createdGuide;
-            }
+        promise.then((result) => result[0].guide())
+            .then((existingGuide: AnnotationGuide | null) => {
+                if (!existingGuide) {
+                    const newGuide = new AnnotationGuide({
+                        ...(instanceType === 'project' ? { project_id: id } : { project_id: id }),
+                        markdown: '',
+                    });
+                    return newGuide.save();
+                }
 
-            return guideInstance;
-        }).then((guideInstance: AnnotationGuide) => {
-            if (isMounted()) {
+                return existingGuide;
+            }).then((guideInstance: AnnotationGuide) => {
                 setValue(guideInstance.markdown);
                 setGuide(guideInstance);
-            }
-        }).catch((error: any) => {
-            if (isMounted()) {
+            }).catch((error: unknown) => {
                 notification.error({
                     message: `Could not receive guide for the ${instanceType} ${id}`,
-                    description: error.toString(),
+                    description: error instanceof Error ? error.message : '',
                 });
-            }
-        }).finally(() => {
-            if (isMounted()) {
+            }).finally(() => {
                 setFetching(false);
-            }
-        });
+            });
     }, []);
 
     const submit = useCallback((currentValue: string) => {
-        guide.markdown = currentValue;
-        setFetching(true);
-        guide.save().then((result: AnnotationGuide) => {
-            if (isMounted()) {
+        if (guide) {
+            guide.markdown = currentValue;
+            setFetching(true);
+            guide.save().then((result: AnnotationGuide) => {
                 setValue(result.markdown);
                 setGuide(result);
-            }
-        }).catch((error: any) => {
-            if (isMounted()) {
+            }).catch((error: unknown) => {
                 notification.error({
                     message: 'Could not save guide on the server',
-                    description: error.toString(),
+                    description: error instanceof Error ? error.message : '',
                 });
-            }
-        }).finally(() => {
-            if (isMounted()) {
+            }).finally(() => {
                 setFetching(false);
-            }
-        });
+            });
+        }
     }, [guide, fetching]);
 
-    const handleInsert = async (event: React.ClipboardEvent | React.DragEvent, files: FileList): Promise<void> => {
-        if (files.length && guide.id) {
+    const handleInsertFiles = async (event: React.ClipboardEvent | React.DragEvent, files: FileList): Promise<void> => {
+        if (files.length && guide?.id) {
+            // files are inserted to the guide
+
             event.preventDefault();
             const assetsToAdd = Array.from(files);
             const addedAssets: [File, string][] = [];
@@ -141,6 +186,44 @@ function GuidePage(): JSX.Element {
         }
     };
 
+    const handleInsertText = async (event: React.ClipboardEvent, items: DataTransferItem[]): Promise<void> => {
+        const stringifiedItems: string[] = [];
+
+        if (mdEditorRef.current && guide?.id) {
+            const { textArea } = mdEditorRef.current.commandOrchestrator;
+            const { selectionStart, selectionEnd } = textArea;
+
+            const computeNewValue = (): string => {
+                const beforeSelection = value.slice(0, selectionStart);
+                const selection = stringifiedItems.join('\n');
+                const afterSelection = value.slice(selectionEnd);
+                return `${beforeSelection}${selection}${afterSelection}`;
+            };
+
+            for await (const item of items) {
+                const originalItem = await new Promise<string>((resolve) => {
+                    item.getAsString((data: string) => {
+                        resolve(data);
+                    });
+                });
+
+                stringifiedItems.push(originalItem);
+                setValue(computeNewValue());
+            }
+
+            for (let i = 0; i < stringifiedItems.length; i++) {
+                const stringifiedItem = stringifiedItems[i];
+                const updatedItem = await handleTextItem(stringifiedItem, guide.id);
+                stringifiedItems[i] = updatedItem;
+                setValue(computeNewValue());
+            }
+
+            const finalValue = computeNewValue();
+            setValue(finalValue);
+            submit(finalValue);
+        }
+    };
+
     return (
         <Row
             justify='center'
@@ -164,13 +247,17 @@ function GuidePage(): JSX.Element {
                         }}
                         onPaste={async (event: React.ClipboardEvent) => {
                             const { clipboardData } = event;
-                            const { files } = clipboardData;
-                            handleInsert(event, files);
+                            const { files, items } = clipboardData;
+                            if (files.length) {
+                                handleInsertFiles(event, files);
+                            } else {
+                                handleInsertText(event, items);
+                            }
                         }}
                         onDrop={async (event: React.DragEvent) => {
                             const { dataTransfer } = event;
                             const { files } = dataTransfer;
-                            handleInsert(event, files);
+                            handleInsertFiles(event, files);
                         }}
                         style={{ whiteSpace: 'pre-wrap' }}
                     />
