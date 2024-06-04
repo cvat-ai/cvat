@@ -2,29 +2,21 @@
 title: 'CVAT Workspace'
 linkTitle: 'CVAT Workspace'
 weight: 12
-description: 'Overview of available functions of the CVAT workspace.'
+description: 'The main annotation area where images and videos are displayed for annotation..'
 ---
 
-In CVAT the workspace serves as the central hub where annotators
+In CVAT the Workspace serves as a work area where annotators
 interact with images, videos, and the various tools
 available to create high-quality annotations.
 
-![CVAT Workspace](/images/cvat-workspace.jpg)
+![Image quality panel](/images/workspace.png)
 
-The workspace includes the following elements:
-
-| Element | Description                                                                                         |
-| ------- | --------------------------------------------------------------------------------------------------- |
-| 1       | {{< ilink "/docs/manual/basics/top-panel" "Top Panel" >}} and {{< ilink "/docs/manual/basics/top-panel" "basic navigation" >}}. |
-| 2       | {{< ilink "/docs/manual/basics/controls-sidebar" "Controls sidebar" >}}                                           |
-| 3       | [Objects sidebar](docs/manual/basics/objects-sidebar/)                                              |
-| 4       | Image annotation area, described in this article.                                                   |
 
 See:
 
 - [Image settings in CVAT](#image-settings-in-cvat)
   - [Adding grid overlay to image in CVAT](#adding-grid-overlay-to-image-in-cvat)
-  - [Changing color settings of image is CVAT](#changing-color-settings-of-image-is-cvat)
+  - [Changing color settings of image in CVAT](#changing-color-settings-of-image-in-cvat)
 - [Adding layers and Z-axis slider](#adding-layers-and-z-axis-slider)
 - [Interacting with Objects](#interacting-with-objects)
 
