@@ -1,8 +1,8 @@
 ---
 title: 'Controls sidebar'
 linkTitle: 'Controls sidebar'
-weight: 10
-description: 'Overview of available functions on the controls sidebar of the annotation tool.'
+weight: 2
+description: 'Offers tools for navigating within the image, annotation tools, and additional options to merge, split, and group labels.'
 ---
 
 ## Navigation
@@ -58,3 +58,30 @@ description: 'Overview of available functions on the controls sidebar of the ann
 |![](/images/slicing-tool-icon.jpg)|Slices one label into several.|{{< ilink "/docs/manual/advanced/slice-and-join#slicing-cvat-labels" "**Slice mask/polygon**" >}}|
 
 ---
+
+## Move image
+
+
+Switching between user interface modes.
+
+![](/images/image145.jpg)
+
+1. Use arrows below to move to the next/previous frame.
+   Use the scroll bar slider to scroll through frames.
+   Almost every button has a shortcut.
+   To get a hint about a shortcut, just move your mouse pointer over an UI element.
+
+1. To navigate the image, use the button on the controls sidebar.
+   Another way an image can be moved/shifted is by holding the left mouse button inside
+   an area without annotated objects.
+   If the `Mouse Wheel` is pressed, then all annotated objects are ignored. Otherwise the
+   a highlighted bounding box will be moved instead of the image itself.
+
+   ![](/images/image136.jpg)
+
+1. You can use the button on the sidebar controls to zoom on a region of interest.
+   Use the button `Fit the image` to fit the image in the workspace.
+   You can also use the mouse wheel to scale the image
+   (the image will be zoomed relatively to your current cursor position).
+
+   ![](/images/image137.jpg)
