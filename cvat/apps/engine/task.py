@@ -927,7 +927,7 @@ def _create_thread(
         if not hasattr(update_progress, 'call_counter'):
             update_progress.call_counter = 0
 
-        status_message = 'CVAT is preparing data chunks'
+        status_message = 'Audino is preparing data chunks'
         if not progress:
             status_message = '{} {}'.format(status_message, progress_animation[update_progress.call_counter])
         job.meta['status'] = status_message

@@ -11,6 +11,8 @@ import uuid
 import os
 import json
 import zipfile
+import librosa
+from pydub import AudioSegment
 from scipy.io import wavfile
 import numpy as np
 from collections import OrderedDict
@@ -891,15 +893,85 @@ def jobChunkPathGetter(db_data, start, stop, task_dimension, data_quality, data_
 
     return path
 
-def chunk_annotation_audio(audio_file, output_folder, annotations):
-    # Load audio
-    # y, sr = librosa.load(audio_file, sr=None)
-    sr, y = wavfile.read(audio_file)
+# def chunk_annotation_audio(audio_file, output_folder, annotations):
+#     # Load audio
+#     # y, sr = librosa.load(audio_file, sr=None)
+#     sr, y = wavfile.read(audio_file)
+
+#     data = []
+#     # Loop over shapes
+#     for i, shape in enumerate(annotations, 1):
+#         # Extract transcript and time points
+#         start_time = min(shape['points'][:2])
+#         end_time = max(shape['points'][2:])
+
+#         # Convert time points to sample indices
+#         start_sample = int(start_time * sr)
+#         end_sample = int(end_time * sr)
+
+#         # Chunk the audio
+#         chunk = y[start_sample:end_sample]
+
+#         clip_uuid = str(uuid.uuid4())
+#         # Save the chunk with transcript as filename
+#         output_file = os.path.join(output_folder, f"{clip_uuid}.wav")
+#         soundfile.write(output_file, chunk, sr)
+
+#         data.append(output_file)
+
+#         # logger.info(f"Annotation {str(i)} Chunk saved: {output_file}")
+
+#     return data
+
+# def chunk_annotation_audio(audio_file, output_folder, annotations):
+#     # Load audio with librosa
+#     sr, y = librosa.load(audio_file, sr=None)
+
+#     data = []
+#     # Loop over shapes
+#     for i, shape in enumerate(annotations, 1):
+#         # Extract transcript and time points
+#         start_time = min(shape['points'][:2])
+#         end_time = max(shape['points'][2:])
+
+#         # Convert time points to sample indices
+#         start_sample = int(start_time * sr)
+#         end_sample = int(end_time * sr)
+
+#         # Chunk the audio
+#         chunk = y[start_sample:end_sample]
+
+#         clip_uuid = str(uuid.uuid4())
+#         # Save the chunk with transcript as filename (change extension to .mp3)
+#         output_file = os.path.join(output_folder, f"{clip_uuid}.mp3")
+#         soundfile.write(output_file, chunk, sr)
+
+#         data.append(output_file)
+
+#         # logger.info(f"Annotation {str(i)} Chunk saved: {output_file}")
+
+#     return data
+
+def chunk_annotation_audio(concat_array, output_folder, annotations):
+    # Convert NumPy array to AudioSegment (assuming constant frame rate)
+    sr = 44100  # Assuming 44100 Hz sample rate (adjust if needed)
+    audio_segment = AudioSegment(concat_array.tobytes(), frame_rate=sr, channels=1, sample_width=2)
+
+    # Use librosa to process the AudioSegment
+    try:
+        y = audio_segment.get_array_of_samples()  # Convert to NumPy array for processing
+        # ... rest of your code using librosa on the loaded audio (y) ...
+    except Exception as e:
+        # Handle potential loading errors
+        print(f"Error loading audio: {e}")
+        return None
 
     data = []
     # Loop over shapes
     for i, shape in enumerate(annotations, 1):
-        # Extract transcript and time points
+        # ... rest of your code using librosa on the processed audio (y) ...
+
+        # Saving audio chunks as MP3 directly:
         start_time = min(shape['points'][:2])
         end_time = max(shape['points'][2:])
 
@@ -911,13 +983,20 @@ def chunk_annotation_audio(audio_file, output_folder, annotations):
         chunk = y[start_sample:end_sample]
 
         clip_uuid = str(uuid.uuid4())
-        # Save the chunk with transcript as filename
-        output_file = os.path.join(output_folder, f"{clip_uuid}.wav")
-        soundfile.write(output_file, chunk, sr)
+        output_file = os.path.join(output_folder, f"{clip_uuid}.mp3")
+
+        # Temporary WAV chunk for pydub (alternative saving methods possible)
+        temp_wav_path = os.path.join(output_folder, str(uuid.uuid4()) + ".wav")
+        soundfile.write(temp_wav_path, chunk, samplerate=sr)  # Use soundfile for WAV writing
+
+        # Convert temporary WAV chunk to MP3 with pydub
+        sound = AudioSegment.from_wav(temp_wav_path)
+        sound.export(output_file, format="mp3")
+
+        # Clean up temporary WAV chunk
+        os.remove(temp_wav_path)
 
         data.append(output_file)
-
-        # logger.info(f"Annotation {str(i)} Chunk saved: {output_file}")
 
     return data
 
@@ -1017,14 +1096,14 @@ def get_audio_job_export_data(job_id, dst_file, job, temp_dir_base, temp_dir):
     slogger.glob.debug("JOB LABELS")
     slogger.glob.debug(json.dumps(labels_list))
 
-    audio_file_path = os.path.join(temp_dir, str(job_id) + ".wav")
-    with wave.open(audio_file_path, 'wb') as wave_file:
-        wave_file.setnchannels(1)
-        wave_file.setsampwidth(4)
-        wave_file.setframerate(44100)
-        wave_file.writeframes(concat_array)
+    # audio_file_path = os.path.join(temp_dir, str(job_id) + ".wav")
+    # with wave.open(audio_file_path, 'wb') as wave_file:
+    #     wave_file.setnchannels(1)
+    #     wave_file.setsampwidth(4)
+    #     wave_file.setframerate(44100)
+    #     wave_file.writeframes(concat_array)
 
-    annotation_audio_chunk_file_paths = chunk_annotation_audio(audio_file_path, temp_dir, annotations)
+    annotation_audio_chunk_file_paths = chunk_annotation_audio(concat_array, temp_dir, annotations)
 
     for i in range(0, len(annotation_audio_chunk_file_paths)):
         annotation_attribute_id = annotations[i]["attributes"][0]["spec_id"]
@@ -1033,7 +1112,7 @@ def get_audio_job_export_data(job_id, dst_file, job, temp_dir_base, temp_dir):
         attribute_name = annotation_attribute["name"]
         attribute_val = annotations[i]["attributes"][0]["value"]
 
-        final_data.append({"path" : os.path.basename(annotation_audio_chunk_file_paths[i]), "sentence" : annotations[i]["transcript"], "age" : annotations[i]["age"], "gender" : annotations[i]["gender"], "accents" : annotations[i]["accent"], "locale" : annotations[i]["locale"], "emotion" : annotations[i]["emotion"], "label" : labels_mapping[annotations[i]["label_id"]]["name"], "attribute_name" : attribute_name, "attribute_value" : attribute_val })
+        final_data.append({"path" : os.path.basename(annotation_audio_chunk_file_paths[i]), "start" : annotations[i]["points"][0],  "end" : annotations[i]["points"][3], "sentence" : annotations[i]["transcript"], "age" : annotations[i]["age"], "gender" : annotations[i]["gender"], "accents" : annotations[i]["accent"], "locale" : annotations[i]["locale"], "emotion" : annotations[i]["emotion"], "label" : labels_mapping[annotations[i]["label_id"]]["name"], "attribute_name" : attribute_name, "attribute_value" : attribute_val })
 
     slogger.glob.debug("JOB ANNOTATION DATA")
     slogger.glob.debug(json.dumps(final_data))
@@ -1107,6 +1186,9 @@ def export_audino_task(task_id, dst_file, format_name, server_url=None, save_ima
                 job.init_from_db()
 
             final_data, annotation_audio_chunk_file_paths = get_audio_job_export_data(job.db_job.id, dst_file, job, temp_dir_base, temp_dir)
+            
+            # Convert the data into a format
+            final_data = convert_annotation_data_format(final_data, format_name)
 
             final_task_data.append(final_data)
             final_annotation_chunk_paths.append(annotation_audio_chunk_file_paths)
