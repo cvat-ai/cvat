@@ -5,6 +5,10 @@
 
 import os
 import os.path as osp
+import re
+import shutil
+
+from contextlib import suppress
 from PIL import Image
 from types import SimpleNamespace
 from typing import Optional, Any, Dict, List, cast, Callable
@@ -2788,6 +2792,59 @@ class AnnotationGuidesViewSet(
     ordering = "-id"
     iam_organization_field = None
 
+    def _update_related_assets(self, request, guide: AnnotationGuide):
+        markdown_assets = []
+        current_assets = list(guide.assets.all())
+
+        # pylint: disable=anomalous-backslash-in-string
+        pattern = re.compile(r'\(/api/assets/([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12})\)')
+        results = re.findall(pattern, guide.markdown)
+
+        handled_assets = {}
+        for asset_id in results:
+            if asset_id in handled_assets:
+                continue
+
+            with suppress((models.Asset.DoesNotExist, PermissionDenied)):
+                db_asset = models.Asset.objects.select_related('guide').get(pk=asset_id)
+                if db_asset.guide.id != guide.id:
+                    current_action = self.action
+                    try:
+                        # be sure that this user may read this annotation guide
+                        self.action = 'retrieve'
+                        self.check_object_permissions(request, db_asset.guide)
+                    finally:
+                        self.action = current_action
+
+                    copied_asset = Asset(
+                        filename=db_asset.filename,
+                        owner=request.user,
+                        guide=guide,
+                    )
+                    copied_asset.save()
+
+                    guide.markdown = guide.markdown.replace(
+                        f'(/api/assets/{asset_id})',
+                        f'(/api/assets/{copied_asset.uuid})',
+                    )
+
+                    path = os.path.join(settings.ASSETS_ROOT, str(copied_asset.uuid))
+                    os.makedirs(path)
+
+                    shutil.copy(
+                        os.path.join(os.path.join(db_asset.get_asset_dir(), db_asset.filename)),
+                        os.path.join(os.path.join(path, db_asset.filename)),
+                    )
+                    markdown_assets.append(copied_asset)
+                else:
+                    markdown_assets.append(db_asset)
+
+            handled_assets[asset_id] = True
+
+        for current_asset in current_assets:
+            if current_asset not in markdown_assets:
+                current_asset.delete()
+
     def get_serializer_class(self):
         if self.request.method in SAFE_METHODS:
             return AnnotationGuideReadSerializer
@@ -2796,15 +2853,17 @@ class AnnotationGuidesViewSet(
 
     def perform_create(self, serializer):
         super().perform_create(serializer)
-        serializer.instance.target.save()
+        self._update_related_assets(self.request, serializer.instance)
+        serializer.instance.target.touch()
 
     def perform_update(self, serializer):
         super().perform_update(serializer)
-        serializer.instance.target.save()
+        self._update_related_assets(self.request, serializer.instance)
+        serializer.instance.target.touch()
 
     def perform_destroy(self, instance):
-        (instance.project or instance.task).save()
-        instance.delete()
+        super().perform_destroy(instance)
+        instance.touch()
 
 def rq_exception_handler(rq_job, exc_type, exc_value, tb):
     rq_job.meta["formatted_exception"] = "".join(

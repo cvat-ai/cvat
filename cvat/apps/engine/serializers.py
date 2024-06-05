@@ -5,7 +5,6 @@
 
 from copy import copy
 from inspect import isclass
-from contextlib import suppress
 import os
 import re
 import shutil
@@ -2160,27 +2159,6 @@ class AnnotationGuideWriteSerializer(WriteOnceMixin, serializers.ModelSerializer
     @transaction.atomic
     def save(self, **kwargs):
         instance = super().save(**kwargs)
-        def _update_assets(guide):
-            md_assets = []
-            current_assets = list(guide.assets.all())
-            markdown = guide.markdown
-
-            # pylint: disable=anomalous-backslash-in-string
-            pattern = re.compile(r'\(/api/assets/([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12})\)')
-            results = re.findall(pattern, markdown)
-
-            for asset_id in results:
-                with suppress(models.Asset.DoesNotExist):
-                    db_asset = models.Asset.objects.get(pk=asset_id)
-                    if db_asset.guide_id != guide.id:
-                        raise serializers.ValidationError('Asset is already related to another guide')
-                    md_assets.append(db_asset)
-
-            for current_asset in current_assets:
-                if current_asset not in md_assets:
-                    current_asset.delete()
-
-        _update_assets(instance)
         return instance
 
 
