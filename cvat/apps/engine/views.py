@@ -2849,6 +2849,7 @@ class AnnotationGuidesViewSet(
 
             handled_assets[asset_id] = True
 
+        guide.save()
         for current_asset in current_assets:
             if current_asset not in markdown_assets:
                 current_asset.delete()
