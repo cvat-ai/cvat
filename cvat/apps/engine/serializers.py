@@ -2156,12 +2156,6 @@ class AnnotationGuideWriteSerializer(WriteOnceMixin, serializers.ModelSerializer
         db_data = models.AnnotationGuide.objects.create(**validated_data, project = project, task = task)
         return db_data
 
-    @transaction.atomic
-    def save(self, **kwargs):
-        instance = super().save(**kwargs)
-        return instance
-
-
     class Meta:
         model = models.AnnotationGuide
         fields = ('id', 'task_id', 'project_id', 'markdown', )

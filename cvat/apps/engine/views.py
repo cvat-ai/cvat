@@ -2862,8 +2862,9 @@ class AnnotationGuidesViewSet(
         serializer.instance.target.touch()
 
     def perform_destroy(self, instance):
+        target = instance.target
         super().perform_destroy(instance)
-        instance.touch()
+        target.touch()
 
 def rq_exception_handler(rq_job, exc_type, exc_value, tb):
     rq_job.meta["formatted_exception"] = "".join(
