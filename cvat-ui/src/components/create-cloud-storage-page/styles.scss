@@ -29,6 +29,14 @@
         text-align: initial;
 
         .cvat-cloud-storage-form-item {
+            &.cvat-cloud-storage-form-item-offset-1 {
+                margin-left: $grid-unit-size * 4;
+            }
+
+            &.cvat-cloud-storage-form-item-offset-2 {
+                margin-left: $grid-unit-size * 8;
+            }
+
             justify-content: space-between;
 
             > div:first-child {
