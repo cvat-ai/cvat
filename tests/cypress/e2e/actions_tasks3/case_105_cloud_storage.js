@@ -37,6 +37,11 @@ context('Cloud storage.', () => {
         cy.login();
     });
 
+    after(() => {
+        cy.goToCloudStoragesPage();
+        cy.deleteCloudStorage(cloudStorageDataWithoutManifest.displayName);
+    });
+
     describe(`Testing case "${caseId}"`, () => {
         it('Check "Cloud Storage" page.', () => {
             cy.contains('.cvat-header-button', 'Cloud Storages').should('be.visible').click();
