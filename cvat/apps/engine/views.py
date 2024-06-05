@@ -2808,6 +2808,7 @@ class AnnotationGuidesViewSet(
             with suppress((models.Asset.DoesNotExist, PermissionDenied)):
                 db_asset = models.Asset.objects.select_related('guide').get(pk=asset_id)
                 if db_asset.guide.id != guide.id:
+                    # pylint: disable=access-member-before-definition
                     current_action = self.action
                     try:
                         # be sure that this user may read this annotation guide
