@@ -511,7 +511,7 @@ LOGGING = {
     },
 }
 
-CVAT_LOG_IMPORT_ERRORS = to_bool(os.getenv('CVAT_LOG_IMPORT_ERRORS', True))
+CVAT_LOG_IMPORT_ERRORS = to_bool(os.getenv('CVAT_LOG_IMPORT_ERRORS', False))
 
 if os.getenv('DJANGO_LOG_SERVER_HOST'):
     LOGGING['loggers']['vector']['handlers'] += ['vector']
@@ -576,6 +576,8 @@ USE_X_FORWARDED_HOST = True
 # https://github.com/moggers87/django-sendfile2
 SENDFILE_ROOT = BASE_DIR
 
+CVAT_DOCS_URL = "https://docs.cvat.ai/docs/"
+
 SPECTACULAR_SETTINGS = {
     'TITLE': 'CVAT REST API',
     'DESCRIPTION': 'REST API for Computer Vision Annotation Tool (CVAT)',
@@ -607,7 +609,7 @@ SPECTACULAR_SETTINGS = {
     'TOS': 'https://www.google.com/policies/terms/',
     'EXTERNAL_DOCS': {
         'description': 'CVAT documentation',
-        'url': 'https://docs.cvat.ai/docs/',
+        'url': CVAT_DOCS_URL,
     },
     # OTHER SETTINGS
     # https://drf-spectacular.readthedocs.io/en/latest/settings.html
@@ -717,3 +719,6 @@ CVAT_CONCURRENT_CHUNK_PROCESSING = int(os.getenv('CVAT_CONCURRENT_CHUNK_PROCESSI
 
 from cvat.rq_patching import update_started_job_registry_cleanup
 update_started_job_registry_cleanup()
+
+CLOUD_DATA_DOWNLOADING_MAX_THREADS_NUMBER = 4
+CLOUD_DATA_DOWNLOADING_NUMBER_OF_FILES_PER_THREAD = 1000

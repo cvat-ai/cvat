@@ -1,5 +1,5 @@
 // Copyright (C) 2021-2022 Intel Corporation
-// Copyright (C) 2023 CVAT.ai Corporation
+// Copyright (C) 2023-2024 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -126,7 +126,7 @@ export default function ManifestsManager(props: Props): JSX.Element {
             </Form.List>
             <Row justify='start'>
                 <Col>
-                    <Button type='ghost' onClick={onAddManifestItem} className='cvat-add-manifest-button'>
+                    <Button onClick={onAddManifestItem} className='cvat-add-manifest-button'>
                         Add manifest
                         <PlusCircleOutlined />
                     </Button>

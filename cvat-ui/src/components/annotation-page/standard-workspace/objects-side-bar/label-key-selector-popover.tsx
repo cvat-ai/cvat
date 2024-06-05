@@ -1,4 +1,5 @@
 // Copyright (C) 2021-2022 Intel Corporation
+// Copyright (C) 2024 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -69,7 +70,7 @@ function LabelKeySelectorPopover(props: LabelKeySelectorPopoverProps): JSX.Eleme
 
     return (
         <Popover
-            destroyTooltipOnHide={{ keepParent: false }}
+            destroyTooltipOnHide
             trigger='click'
             content={(
                 <MemoizedContent

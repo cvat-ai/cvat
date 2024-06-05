@@ -1,5 +1,5 @@
 // Copyright (C) 2020-2022 Intel Corporation
-// Copyright (C) 2022 CVAT.ai Corporation
+// Copyright (C) 2022-2024 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -61,7 +61,7 @@ function PropagateConfirmComponent(): JSX.Element {
             }}
             onCancel={() => dispatch(switchPropagateVisibility(false))}
             title='Confirm propagation'
-            visible={visible}
+            open={visible}
             destroyOnClose
             okButtonProps={{ disabled: !propagateFrames }}
         >

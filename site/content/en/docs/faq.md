@@ -111,12 +111,6 @@ volumes:
   - cvat_db:/var/lib/postgresql/data
 ```
 
-## How to mark job/task as completed
-
-The status is set by the user in the {{< ilink "/docs/manual/basics/top-panel#info" "Info window" >}}
-of the job annotation view.
-There are three types of status: annotation, validation or completed.
-The status of the job changes the progress bar of the task.
 
 ## How to install CVAT on Windows 10 Home
 

@@ -3,7 +3,7 @@
 //
 // SPDX-License-Identifier: MIT
 
-@import '../../base';
+@import 'base';
 
 .cvat-cloud-storages-page {
     padding-top: $grid-unit-size * 2;
@@ -30,6 +30,8 @@
 }
 
 .cvat-cloud-storages-list-top-bar {
+    margin-bottom: $grid-unit-size;
+
     > div {
         display: flex;
         justify-content: space-between;
@@ -56,10 +58,21 @@
     }
 }
 
-.cvat-cloud-storages-list,
-.cvat-empty-cloud-storages-list {
-    margin-top: $grid-unit-size;
+.cvat-cloud-storages-list {
+    display: flex;
+    flex-wrap: wrap;
 
+    > div {
+        width: 100%;
+        margin-bottom: $grid-unit-size;
+
+        > div:not(:first-child) {
+            padding-left: $grid-unit-size;
+        }
+    }
+}
+
+.cvat-empty-cloud-storages-list {
     .ant-empty {
         top: 50%;
         left: 50%;
@@ -69,8 +82,6 @@
 }
 
 .cvat-cloud-storage-item {
-    margin-bottom: $grid-unit-size;
-
     div.ant-typography {
         margin-bottom: 0;
     }

@@ -11,6 +11,7 @@ import notification from 'antd/lib/notification';
 import Button from 'antd/lib/button';
 
 import './styles.scss';
+import { Job } from 'cvat-core-wrapper';
 import AttributeAnnotationWorkspace from 'components/annotation-page/attribute-annotation-workspace/attribute-annotation-workspace';
 import SingleShapeWorkspace from 'components/annotation-page/single-shape-workspace/single-shape-workspace';
 import ReviewAnnotationsWorkspace from 'components/annotation-page/review-workspace/review-workspace';
@@ -22,10 +23,11 @@ import StatisticsModalComponent from 'components/annotation-page/top-bar/statist
 import AnnotationTopBarContainer from 'containers/annotation-page/top-bar/top-bar';
 import { Workspace } from 'reducers';
 import { usePrevious } from 'utils/hooks';
+import EventRecorder from 'utils/event-recorder';
 import { readLatestFrame } from 'utils/remember-latest-frame';
 
 interface Props {
-    job: any | null | undefined;
+    job: Job | null | undefined;
     fetching: boolean;
     annotationsInitialized: boolean;
     frameNumber: number;
@@ -53,6 +55,7 @@ export default function AnnotationPageComponent(props: Props): JSX.Element {
         return () => {
             saveLogs();
             closeJob();
+            EventRecorder.logger = null;
 
             if (root) {
                 root.style.minHeight = '';
@@ -87,7 +90,7 @@ export default function AnnotationPageComponent(props: Props): JSX.Element {
                                 type='link'
                                 onClick={() => {
                                     changeFrame(latestFrame);
-                                    notification.close(notificationKey);
+                                    notification.destroy(notificationKey);
                                 }}
                             >
                                 here
@@ -99,6 +102,8 @@ export default function AnnotationPageComponent(props: Props): JSX.Element {
                     className: 'cvat-notification-continue-job',
                 });
             }
+
+            EventRecorder.logger = job.logger;
 
             if (!job.labels.length) {
                 notification.warning({

@@ -8,6 +8,7 @@ import { Input } from 'antd';
 import { SortingComponent, ResourceFilterHOC, defaultVisibility } from 'components/resource-sorting-filtering';
 import { CombinedState, ModelsQuery } from 'reducers';
 import { usePlugins } from 'utils/hooks';
+import dimensions from 'utils/dimensions';
 import {
     localStorageRecentKeyword, localStorageRecentCapacity, config,
 } from './models-filter-configuration';
@@ -41,7 +42,7 @@ export default function TopBarComponent(props: VisibleTopBarProps): JSX.Element 
 
     return (
         <Row className='cvat-models-page-top-bar' justify='center' align='middle'>
-            <Col md={22} lg={18} xl={16} xxl={16}>
+            <Col {...dimensions}>
                 <div className='cvat-models-page-filters-wrapper'>
                     <Input.Search
                         disabled={disabled}

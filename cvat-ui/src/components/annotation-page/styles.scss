@@ -3,7 +3,7 @@
 //
 // SPDX-License-Identifier: MIT
 
-@import '../../base';
+@import 'base';
 
 .cvat-annotation-page.ant-layout {
     height: 100%;
@@ -25,53 +25,66 @@
         flex: 1;
         flex-flow: unset;
     }
-}
 
-.cvat-annotation-header-left-group {
-    display: flex;
+    .ant-btn-link.cvat-annotation-header-button {
+        padding: 0;
+        width: $grid-unit-size * 6;
+        height: $grid-unit-size * 6;
+        user-select: none;
+        color: $text-color;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        margin: 0 3px;
 
-    > button:first-child {
-        filter: invert(0.9);
-        background: $background-color-1;
-        border-radius: 0;
-        width: 70px;
+        &:hover {
+            color: $text-color;
+        }
+
+        > span:not([role='img']) {
+            margin-left: 0;
+            font-size: 10px;
+        }
+
+        > span[role='img'] {
+            font-size: 20px;
+        }
+
+        &:hover > span[role='img'] {
+            transform: scale(1.1);
+        }
+
+        &:active > span[role='img'] {
+            transform: scale(1.05);
+        }
+
+        &.filters-armed {
+            color: $info-icon-color;
+
+            path {
+                fill: $info-icon-color;
+            }
+        }
     }
-}
 
-.ant-btn.cvat-annotation-header-button {
-    padding: 0;
-    width: 48px;
-    height: 48px;
-    user-select: none;
-    color: $text-color;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    margin: 0 3px;
+    .cvat-annotation-header-left-group {
+        display: flex;
 
-    > span:not([role='img']) {
-        margin-left: 0;
-        font-size: 10px;
-    }
+        > .cvat-annotation-header-button.cvat-annotation-header-menu-button {
+            width: $grid-unit-size * 9;
+            background: black;
+            color: white;
+            border-radius: $border-radius-base;
 
-    > span[role='img'] {
-        font-size: 20px;
-    }
+            &:hover {
+                background: black;
+                color: white;
+            }
 
-    &:hover > span[role='img'] {
-        transform: scale(1.1);
-    }
-
-    &:active > span[role='img'] {
-        transform: scale(1.05);
-    }
-
-    &.filters-armed {
-        color: $info-icon-color;
-
-        path {
-            fill: $info-icon-color;
+            svg {
+                fill: white;
+            }
         }
     }
 }
@@ -132,7 +145,7 @@
 
     > .ant-slider-handle {
         z-index: 100;
-        margin-top: -3.5px;
+        margin-top: 2px;
     }
 
     > .ant-slider-track {
@@ -162,10 +175,13 @@
     max-width: $grid-unit-size * 30;
     max-height: $grid-unit-size * 3;
     line-height: $grid-unit-size * 3;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    user-select: none;
-    word-break: break-all;
+
+    > span {
+        overflow: hidden;
+        text-overflow: ellipsis;
+        user-select: none;
+        word-break: break-all;
+    }
 }
 
 .cvat-player-frame-url-icon,
@@ -255,16 +271,24 @@
     }
 }
 
-.ant-menu.cvat-annotation-menu {
+.ant-dropdown-menu.cvat-annotation-menu {
     box-shadow: $box-shadow-base;
 
-    > li:hover {
-        background-color: $hover-menu-color;
+    li.ant-dropdown-menu-item {
+        width: $grid-unit-size * 30;
+        height: $grid-unit-size * 5;
+        line-height: $grid-unit-size * 5;
     }
 
-    .ant-menu-submenu-title {
-        margin: 0;
-        width: 15em;
+    li.ant-dropdown-menu-submenu {
+        width: $grid-unit-size * 30;
+        height: $grid-unit-size * 5;
+
+        .ant-dropdown-menu-submenu-title {
+            width: $grid-unit-size * 31;
+            line-height: $grid-unit-size * 5;
+            padding-top: 0;
+        }
     }
 }
 
@@ -288,7 +312,7 @@
     position: fixed;
     z-index: 10;
     background-color: #fff;
-    border-radius: 4px;
+    border-radius: $border-radius-base;
 
     &:hover {
         opacity: 1;
@@ -301,7 +325,7 @@
     bottom: 0;
     left: 50%;
     opacity: 0.5;
-    border-radius: 6px 6px 0 0;
+    border-radius: $border-radius-base $border-radius-base 0 0;
     border: 1px solid $border-color-1;
     z-index: 100;
     padding: 4px 12px;
@@ -318,7 +342,7 @@
 .cvat-canvas-image-setups-content {
     background: $background-color-2;
     padding: 8px;
-    border-radius: 6px;
+    border-radius: $border-radius-base;
     opacity: 0.9;
 }
 
@@ -373,7 +397,7 @@
     right: 10px;
     height: 150px;
     z-index: 100;
-    border-radius: 6px;
+    border-radius: $border-radius-base;
     opacity: 0.5;
     border: 1px solid $border-color-1;
     display: flex;
@@ -473,6 +497,7 @@
 .cvat-submenu-current-job-state-item {
     &::after {
         content: ' \2713';
+        margin-left: $grid-unit-size;
         float: right;
     }
 
@@ -496,5 +521,9 @@
 .cvat-saving-job-modal {
     span.anticon {
         margin-left: $grid-unit-size * 2;
+    }
+
+    .ant-modal-footer {
+        margin: 0;
     }
 }
