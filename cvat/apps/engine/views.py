@@ -2831,7 +2831,7 @@ class AnnotationGuidesViewSet(
                     path = os.path.join(settings.ASSETS_ROOT, str(copied_asset.uuid))
                     os.makedirs(path)
 
-                    shutil.copy(
+                    shutil.copyfile(
                         os.path.join(os.path.join(db_asset.get_asset_dir(), db_asset.filename)),
                         os.path.join(os.path.join(path, db_asset.filename)),
                     )
