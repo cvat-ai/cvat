@@ -191,6 +191,7 @@ context('Cloud storage.', () => {
             cy.wait('@cloudstorageRequest').its('response.statusCode').should('eq', 404);
             cy.get('.cvat-spinner').should('not.exist');
             cy.contains('Sorry, but the requested cloud storage was not found');
+            cy.closeNotification('.ant-notification-notice-error');
         });
 
         it('Check create cloud storage without manifest file.', () => {
