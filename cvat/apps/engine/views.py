@@ -52,6 +52,7 @@ from cvat.apps.dataset_manager.bindings import CvatImportError
 from cvat.apps.dataset_manager.serializers import DatasetFormatsSerializer
 from cvat.apps.engine.frame_provider import FrameProvider
 from cvat.apps.engine.media_extractors import get_mime
+from cvat.apps.engine.permissions import AnnotationGuidePermission, get_iam_context
 from cvat.apps.engine.models import (
     ClientFile, Job, JobType, Label, SegmentType, Task, Project, Issue, Data,
     Comment, StorageMethodChoice, StorageChoice,
@@ -2808,14 +2809,16 @@ class AnnotationGuidesViewSet(
             with suppress((models.Asset.DoesNotExist, PermissionDenied)):
                 db_asset = models.Asset.objects.select_related('guide').get(pk=asset_id)
                 if db_asset.guide.id != guide.id:
-                    # pylint: disable=access-member-before-definition
-                    current_action = self.action
-                    try:
-                        # be sure that this user may read this annotation guide
-                        self.action = 'retrieve'
-                        self.check_object_permissions(request, db_asset.guide)
-                    finally:
-                        self.action = current_action
+                    perm = AnnotationGuidePermission.create_base_perm(
+                        request,
+                        self,
+                        AnnotationGuidePermission.Scopes.VIEW,
+                        get_iam_context(request, db_asset.guide),
+                        db_asset.guide
+                    )
+
+                    if not perm.check_access().allow:
+                        raise PermissionDenied()
 
                     copied_asset = Asset(
                         filename=db_asset.filename,
