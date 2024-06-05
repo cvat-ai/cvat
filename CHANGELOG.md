@@ -16,6 +16,53 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 <!-- scriv-insert-here -->
 
+<a id='changelog-2.14.1'></a>
+## \[2.14.1\] - 2024-06-05
+
+### Added
+
+- Improved message of DatasetNotFoundError
+  (<https://github.com/cvat-ai/cvat/pull/7923>)
+
+### Changed
+
+- Upgraded React and Antd dependencies, it leads to stylistic changes in the user interface
+  (<https://github.com/cvat-ai/cvat/pull/7466>)
+
+- CVAT now stores users' working time in events of a dedicated type
+  (<https://github.com/cvat-ai/cvat/pull/7958>)
+
+### Fixed
+
+- The 500 / "The result file does not exist in export cache" error
+  on dataset export request
+  (<https://github.com/cvat-ai/cvat/pull/7864>)
+
+- Fix missing serviceName field in kvrocks (issue #7741)
+  (<https://github.com/cvat-ai/cvat/pull/7924>)
+
+- UI crash on hovering conflict related to hidden objects
+  (<https://github.com/cvat-ai/cvat/pull/7917>)
+
+- Login when the domain of a user email contains capital symbols and a user was created after being invited to an org
+  (<https://github.com/cvat-ai/cvat/pull/7906>)
+
+- Exception **"Cannot set properties of undefined (setting 'serverID')"** occurs when attempting
+  to save a job after removing the first keyframe of a track (<https://github.com/cvat-ai/cvat/pull/7949>)
+
+- Spent working time for a user may not be counted in analytics
+  (<https://github.com/cvat-ai/cvat/pull/7942>)
+
+- A classifier model can not be used on annotation view (unknown object shape error)
+  (<https://github.com/cvat-ai/cvat/pull/7839>)
+
+- Optimized memory usage by not keeping all downloaded images/part of images in memory while creating a manifest file
+  (<https://github.com/cvat-ai/cvat/pull/7969>)
+- Optimized the number of requests to CS providers by downloading only images from a specified range
+  (`use_cache==False`) (<https://github.com/cvat-ai/cvat/pull/7969>)
+- Task creation with random sorting and cloud data
+  (<https://github.com/cvat-ai/cvat/pull/7969>)
+
 <a id='changelog-2.14.0'></a>
 ## \[2.14.0\] - 2024-05-21
 
