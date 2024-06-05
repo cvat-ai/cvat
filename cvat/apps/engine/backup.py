@@ -1,5 +1,5 @@
 # Copyright (C) 2021-2022 Intel Corporation
-# Copyright (C) 2022-2024 CVAT.ai Corporation
+# Copyright (C) 2022-2023 CVAT.ai Corporation
 #
 # SPDX-License-Identifier: MIT
 
@@ -15,11 +15,8 @@ import mimetypes
 from zipfile import ZipFile
 from datetime import datetime
 from tempfile import NamedTemporaryFile
-from contextlib import suppress
 
 import django_rq
-from rq.command import send_stop_job_command
-from rq.exceptions import InvalidJobOperation
 from attr.converters import to_bool
 from django.conf import settings
 from django.db import transaction
@@ -970,8 +967,6 @@ def export(db_instance, request, queue_name):
             # in case the server is configured with ONE_RUNNING_JOB_IN_QUEUE_PER_USER
             # we have to enqueue dependent jobs after canceling one
             rq_job.cancel(enqueue_dependents=settings.ONE_RUNNING_JOB_IN_QUEUE_PER_USER)
-            with suppress(InvalidJobOperation):
-                send_stop_job_command(rq_job.connection, rq_job.id)
             rq_job.delete()
         else:
             if rq_job.is_finished:

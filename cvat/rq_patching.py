@@ -1,18 +1,16 @@
-# Copyright (C) 2023-2024 CVAT.ai Corporation
+# Copyright (C) 2023 CVAT.ai Corporation
 #
 # SPDX-License-Identifier: MIT
 
 import traceback
-import sys
 from datetime import datetime
 from typing import Optional
 
 import rq.registry
 from rq.exceptions import AbandonedJobError, NoSuchJobError
 from rq.job import JobStatus
-from rq.utils import current_timestamp, utcformat
+from rq.utils import current_timestamp
 from rq.version import VERSION
-from rq.worker import StopRequested
 
 
 # NOTE: we should patch implementation of original method because
@@ -71,22 +69,7 @@ def custom_started_job_registry_cleanup(self, timestamp: Optional[float] = None)
 
     return job_ids
 
-def custom_heartbeat(self, timestamp: datetime, ttl: int, pipeline: Optional['Pipeline'] = None, xx: bool = False):
-    self.last_heartbeat = timestamp
-    connection = pipeline if pipeline is not None else self.connection
-    connection.hset(self.key, 'last_heartbeat', utcformat(self.last_heartbeat))
-
-    # the only difference with the default implementation
-    # is to avoid adding job to started job registry
-    # that is not clear why they adds a job to started_job_registry when the job has failed
-    # also, as far as I see they also commented this line in unrealeased (2.0) version
-    exc_info = sys.exc_info()
-    is_stopped_job = isinstance(exc_info[1], (StopRequested, SystemExit))
-    if not is_stopped_job:
-        self.started_job_registry.add(self, ttl, pipeline=pipeline, xx=xx)
-
 def update_started_job_registry_cleanup() -> None:
     # don't forget to check if the issue https://github.com/rq/rq/issues/2006 has been resolved in upstream
     assert VERSION == '1.16.0'
     rq.registry.StartedJobRegistry.cleanup = custom_started_job_registry_cleanup
-    rq.job.Job.heartbeat = custom_heartbeat

@@ -124,8 +124,7 @@ export enum EventScope {
     undoAction = 'action:undo',
     redoAction = 'action:redo',
 
-    pressShortcut = 'press:shortcut',
-    debugInfo = 'send:debug_info',
+    debugInfo = 'debug:info',
 
     annotationsAction = 'run:annotations_action',
     clickElement = 'click:element',

@@ -91,17 +91,18 @@ function LeftGroup(props: Props): JSX.Element {
     return (
         <>
             <GlobalHotKeys keyMap={subKeyMap} handlers={handlers} />
-            <Modal
-                destroyOnClose
-                className='cvat-saving-job-modal'
-                title='Saving changes on the server'
-                open={saving}
-                footer={[]}
-                closable={false}
-            >
-                <Text>CVAT is saving your annotations, please wait </Text>
-                <LoadingOutlined />
-            </Modal>
+            { saving && (
+                <Modal
+                    open
+                    destroyOnClose
+                    className='cvat-saving-job-modal'
+                    closable={false}
+                    footer={[]}
+                >
+                    <Text>CVAT is saving your annotations, please wait </Text>
+                    <LoadingOutlined />
+                </Modal>
+            )}
             <Col className='cvat-annotation-header-left-group'>
                 <AnnotationMenuContainer />
                 <SaveButtonComponent
