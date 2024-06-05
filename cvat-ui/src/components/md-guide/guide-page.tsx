@@ -21,20 +21,20 @@ import dimensions from 'utils/dimensions';
 
 const core = getCore();
 
-const handleTextItem = (textItem: string, guideId: number): Promise<string> => {
-    const regex = /!\[image\]\((\/api\/assets\/([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}))\)/g;
+const handleTextItem = (textItem: string, guideId: number, onRequest: () => void): Promise<string> => {
+    const regex = /\(\/api\/assets\/([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})\)/g;
     return new Promise<string>((resolve) => {
         const promises: Promise<void>[] = [];
         const replacements: Record<number, [string, string]> = {};
         let match = regex.exec(textItem);
 
         while (match !== null) {
-            const url = match[1];
+            onRequest();
             const { index } = match as RegExpExecArray;
-            const fullMatch = match[0];
-            const currentUUID = match[2];
+            const assetURL = match[0];
+            const currentUUID = match[1];
 
-            const promise = fetch(url)
+            const promise = fetch(assetURL.slice(1, -1))
                 .then((response) => {
                     if (response.status !== 200) {
                         throw new Error('Asset request failed');
@@ -50,16 +50,16 @@ const handleTextItem = (textItem: string, guideId: number): Promise<string> => {
                         })
                         .then((file: File) => core.assets.create(file, guideId))
                         .then(({ uuid }: { uuid: string }): void => {
-                            const result = `![image](/api/assets/${uuid})`;
-                            replacements[index] = [fullMatch, result];
+                            const result = `(/api/assets/${uuid})`;
+                            replacements[index] = [assetURL, result];
                         }).catch((error: unknown) => {
                             const comment = `ERROR: Could not update asset "${currentUUID}".` +
                                 ` ${error instanceof Error ? error.message : ''}`;
                             const result = `<!--- ${comment} --->`;
-                            replacements[index] = [fullMatch, result];
+                            replacements[index] = [assetURL, result];
                         });
                 }).catch(() => {
-                    replacements[index] = [fullMatch, fullMatch];
+                    replacements[index] = [assetURL, assetURL];
                 });
 
             promises.push(promise);
@@ -122,9 +122,9 @@ function AnnotationGuidePage(): JSX.Element {
             });
     }, []);
 
-    const submit = useCallback((currentValue: string) => {
+    const submit = useCallback((updatedValue: string) => {
         if (guide) {
-            guide.markdown = currentValue;
+            guide.markdown = updatedValue;
             setFetching(true);
             guide.save().then((result: AnnotationGuide) => {
                 setValue(result.markdown);
@@ -138,38 +138,38 @@ function AnnotationGuidePage(): JSX.Element {
                 setFetching(false);
             });
         }
-    }, [guide, fetching]);
+    }, [guide]);
 
-    const handleInsertFiles = async (files: FileList): Promise<void> => {
-        if (files.length && guide?.id) {
+    const handleInsertFiles = useCallback(async (files: FileList): Promise<void> => {
+        if (mdEditorRef.current && guide?.id) {
             const assetsToAdd = Array.from(files);
             const addedAssets: [File, string][] = [];
+            const { textArea } = mdEditorRef.current.commandOrchestrator;
+            const { selectionStart, selectionEnd, value: textAreaValue } = textArea;
+            const computeNewValue = (): string => {
+                const addedStrings = addedAssets.map(([file, uuid]) => {
+                    if (file.type.startsWith('image/')) {
+                        return (`![image](/api/assets/${uuid})`);
+                    }
+                    return (`[${file.name}](/api/assets/${uuid})`);
+                });
 
-            if (mdEditorRef.current) {
-                const { textArea } = mdEditorRef.current.commandOrchestrator;
-                const { selectionStart, selectionEnd } = textArea;
-                const computeNewValue = (): string => {
-                    const addedStrings = addedAssets.map(([file, uuid]) => {
-                        if (file.type.startsWith('image/')) {
-                            return (`![image](/api/assets/${uuid})`);
-                        }
-                        return (`[${file.name}](/api/assets/${uuid})`);
-                    });
+                const stringsToAdd = assetsToAdd.map((file: File) => {
+                    if (file.type.startsWith('image/')) {
+                        return '![image](Loading...)';
+                    }
+                    return `![${file.name}](Loading...)`;
+                });
 
-                    const stringsToAdd = assetsToAdd.map((file: File) => {
-                        if (file.type.startsWith('image/')) {
-                            return '![image](Loading...)';
-                        }
-                        return `![${file.name}](Loading...)`;
-                    });
+                const beforeSelection = textAreaValue.slice(0, selectionStart);
+                const selection = addedStrings.concat(stringsToAdd).join('\n');
+                const afterSelection = textAreaValue.slice(selectionEnd);
+                return `${beforeSelection}${selection}${afterSelection}`;
+            };
 
-                    const beforeSelection = value.slice(0, selectionStart);
-                    const selection = addedStrings.concat(stringsToAdd).join('\n');
-                    const afterSelection = value.slice(selectionEnd);
-                    return `${beforeSelection}${selection}${afterSelection}`;
-                };
-
-                setValue(computeNewValue());
+            setValue(computeNewValue());
+            setFetching(true);
+            try {
                 let file = assetsToAdd.shift();
                 while (file) {
                     try {
@@ -185,21 +185,24 @@ function AnnotationGuidePage(): JSX.Element {
                         file = assetsToAdd.shift();
                     }
                 }
+            } finally {
+                setFetching(false);
             }
+
+            await submit(computeNewValue());
         }
-    };
+    }, [guide, value]);
 
-    const handleInsertText = async (items: DataTransferItem[]): Promise<void> => {
-        const stringifiedItems: string[] = [];
-
+    const handleInsertText = useCallback(async (items: DataTransferItem[]): Promise<void> => {
         if (mdEditorRef.current && guide?.id) {
+            const stringifiedItems: string[] = [];
             const { textArea } = mdEditorRef.current.commandOrchestrator;
-            const { selectionStart, selectionEnd } = textArea;
+            const { selectionStart, selectionEnd, value: textAreaValue } = textArea;
 
             const computeNewValue = (): string => {
-                const beforeSelection = value.slice(0, selectionStart);
+                const beforeSelection = textAreaValue.slice(0, selectionStart);
                 const selection = stringifiedItems.join('\n');
-                const afterSelection = value.slice(selectionEnd);
+                const afterSelection = textAreaValue.slice(selectionEnd);
                 return `${beforeSelection}${selection}${afterSelection}`;
             };
 
@@ -214,14 +217,28 @@ function AnnotationGuidePage(): JSX.Element {
                 setValue(computeNewValue());
             }
 
-            for (let i = 0; i < stringifiedItems.length; i++) {
-                const stringifiedItem = stringifiedItems[i];
-                const updatedItem = await handleTextItem(stringifiedItem, guide.id);
-                stringifiedItems[i] = updatedItem;
-                setValue(computeNewValue());
+            let hasToSave = false;
+            try {
+                for (let i = 0; i < stringifiedItems.length; i++) {
+                    const stringifiedItem = stringifiedItems[i];
+                    const updatedItem = await handleTextItem(stringifiedItem, guide.id, () => setFetching(true));
+
+                    if (updatedItem !== stringifiedItem) {
+                        stringifiedItems[i] = updatedItem;
+                        setValue(computeNewValue());
+                        hasToSave = true;
+                    }
+                }
+            } finally {
+                setFetching(false);
+            }
+
+            textArea.setSelectionRange(selectionEnd, selectionEnd);
+            if (hasToSave) {
+                await submit(computeNewValue());
             }
         }
-    };
+    }, [guide]);
 
     return (
         <Row justify='center' align='top' className='cvat-guide-page'>
@@ -233,41 +250,31 @@ function AnnotationGuidePage(): JSX.Element {
                 <div className='cvat-guide-page-editor-wrapper'>
                     <MDEditor
                         visibleDragbar={false}
-                        height='100%'
                         data-color-mode='light'
                         ref={mdEditorRef}
                         value={value}
+                        height='100%'
                         onChange={(val: string | undefined) => {
                             setValue(val || '');
                         }}
                         onPaste={async (event: React.ClipboardEvent) => {
                             const { clipboardData } = event;
                             const { files, items } = clipboardData;
-                            try {
-                                setFetching(true);
-                                if (files.length) {
-                                    await handleInsertFiles(files);
-                                } else {
-                                    await handleInsertText(Array.from(items).filter((item) => item.type === 'text/plain'));
-                                }
-                            } finally {
-                                setFetching(false);
-                            }
-
                             event.preventDefault();
+
+                            if (files.length) {
+                                await handleInsertFiles(files);
+                            } else {
+                                await handleInsertText(Array.from(items).filter((item) => item.type === 'text/plain'));
+                            }
                         }}
                         onDrop={async (event: React.DragEvent) => {
                             const { dataTransfer } = event;
                             const { files } = dataTransfer;
-                            try {
-                                if (files.length) {
-                                    await handleInsertFiles(files);
-                                }
-                            } finally {
-                                setFetching(false);
-                            }
-
                             event.preventDefault();
+                            if (files.length) {
+                                await handleInsertFiles(files);
+                            }
                         }}
                         style={{ whiteSpace: 'pre-wrap' }}
                     />
