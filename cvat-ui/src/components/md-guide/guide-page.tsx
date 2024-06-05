@@ -36,7 +36,7 @@ function AnnotationGuidePage(): JSX.Element {
             .then((existingGuide: AnnotationGuide | null) => {
                 if (!existingGuide) {
                     const newGuide = new AnnotationGuide({
-                        ...(instanceType === 'project' ? { project_id: id } : { project_id: id }),
+                        ...(instanceType === 'project' ? { project_id: id } : { task_id: id }),
                         markdown: '',
                     });
                     return newGuide.save();
