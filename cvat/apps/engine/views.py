@@ -2829,13 +2829,17 @@ class AnnotationGuidesViewSet(
                         f'(/api/assets/{copied_asset.uuid})',
                     )
 
-                    path = os.path.join(settings.ASSETS_ROOT, str(copied_asset.uuid))
-                    os.makedirs(path)
-
+                    os.makedirs(copied_asset.get_asset_dir())
                     shutil.copyfile(
                         os.path.join(os.path.join(db_asset.get_asset_dir(), db_asset.filename)),
-                        os.path.join(os.path.join(path, db_asset.filename)),
+                        os.path.join(os.path.join(copied_asset.get_asset_dir(), db_asset.filename)),
                     )
+
+                    guide.markdown = guide.markdown.replace(
+                        f'(/api/assets/{asset_id})',
+                        f'(/api/assets/{copied_asset.uuid})',
+                    )
+
                     markdown_assets.append(copied_asset)
                 else:
                     markdown_assets.append(db_asset)
