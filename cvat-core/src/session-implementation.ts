@@ -476,6 +476,14 @@ export function implementTask(Task) {
             taskSpec.source_storage = this.sourceStorage.toJSON();
         }
 
+        if (this.consensusJobPerSegment) {
+            taskSpec.consensus_job_per_segment = this.consensusJobPerSegment;
+        }
+
+        if (this.agreementScoreThreshold) {
+            taskSpec.agreement_score_threshold = this.agreementScoreThreshold;
+        }
+
         const taskDataSpec = {
             client_files: this.clientFiles,
             server_files: this.serverFiles,
@@ -484,8 +492,6 @@ export function implementTask(Task) {
             use_zip_chunks: this.useZipChunks,
             use_cache: this.useCache,
             sorting_method: this.sortingMethod,
-            consensus_job_per_segment: this.consensusJobPerSegment,
-            agreement_score_threshold: this.agreementScoreThreshold,
             ...(typeof this.startFrame !== 'undefined' ? { start_frame: this.startFrame } : {}),
             ...(typeof this.stopFrame !== 'undefined' ? { stop_frame: this.stopFrame } : {}),
             ...(typeof this.frameFilter !== 'undefined' ? { frame_filter: this.frameFilter } : {}),
