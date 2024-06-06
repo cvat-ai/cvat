@@ -602,28 +602,30 @@ async function healthCheck(
     checkPeriod: number,
     requestTimeout: number,
     progressCallback?: (status: string) => void,
-    attempt = 0,
 ): Promise<void> {
     const { backendAPI } = config;
     const url = `${backendAPI}/server/health/?format=json`;
 
-    if (progressCallback) {
-        progressCallback(`${attempt}/${attempt + maxRetries}`);
+    const adjustedMaxRetries = Math.max(1, maxRetries);
+    const adjustedCheckPeriod = Math.max(100, checkPeriod);
+    const adjustedRequestTimeout = Math.max(500, requestTimeout);
+
+    let lastError: AxiosError = null;
+    for (let attempt = 1; attempt <= adjustedMaxRetries; attempt++) {
+        if (progressCallback) {
+            progressCallback(`${attempt}/${adjustedMaxRetries}`);
+        }
+
+        try {
+            const response = await Axios.get(url, { timeout: adjustedRequestTimeout });
+            return response.data;
+        } catch (error) {
+            lastError = error;
+            await new Promise((resolve) => setTimeout(resolve, adjustedCheckPeriod));
+        }
     }
 
-    return Axios.get(url, {
-        timeout: requestTimeout,
-    })
-        .then((response) => response.data)
-        .catch((error) => {
-            if (maxRetries > 0) {
-                return new Promise((resolve) => setTimeout(resolve, checkPeriod))
-                    .then(() => healthCheck(maxRetries - 1, checkPeriod,
-                        requestTimeout, progressCallback, attempt + 1));
-            }
-
-            throw generateError(error);
-        });
+    throw generateError(lastError);
 }
 
 export interface ServerRequestConfig {
