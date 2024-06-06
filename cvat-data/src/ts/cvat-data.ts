@@ -250,11 +250,6 @@ export class FrameDecoder {
                 this.videoWorker = null;
             }
 
-            if (this.zipWorker) {
-                this.zipWorker.terminate();
-                this.zipWorker = null;
-            }
-
             releaseMutex();
         };
         try {
