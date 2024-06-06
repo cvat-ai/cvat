@@ -109,6 +109,8 @@ export class FrameDecoder {
     ) {
         this.mutex = new Mutex();
         this.orderedStack = [];
+        this.zipWorker = null;
+        this.videoWorker = null;
 
         this.cachedChunksLimit = Math.max(1, cachedBlockCount);
         this.dimension = dimension;
