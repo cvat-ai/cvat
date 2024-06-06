@@ -621,7 +621,9 @@ async function healthCheck(
             return response.data;
         } catch (error) {
             lastError = error;
-            await new Promise((resolve) => setTimeout(resolve, adjustedCheckPeriod));
+            if (attempt < adjustedMaxRetries) {
+                await new Promise((resolve) => setTimeout(resolve, adjustedCheckPeriod));
+            }
         }
     }
 
