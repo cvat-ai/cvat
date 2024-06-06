@@ -1349,6 +1349,7 @@ export function pasteShapeAsync(): ThunkAction {
                 canvasInstance.draw({
                     enabled: true,
                     initialState,
+                    shapeType: initialState.shapeType,
                     ...(initialState.shapeType === ShapeType.SKELETON ?
                         { skeletonSVG: initialState.label.structure.svg } : {}),
                 });
