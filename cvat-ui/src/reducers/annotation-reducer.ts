@@ -172,7 +172,7 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
             let workspaceSelected = null;
             let activeObjectType;
             let activeShapeType;
-            if (defaultLabel.type === LabelType.TAG) {
+            if (defaultLabel?.type === LabelType.TAG) {
                 activeObjectType = ObjectType.TAG;
             } else {
                 activeShapeType = defaultLabel && defaultLabel.type !== 'any' ?
