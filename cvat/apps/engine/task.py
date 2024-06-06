@@ -908,6 +908,8 @@ def _create_thread(
         )
 
     db_task.mode = task_mode
+    db_task.consensus_job_per_segment = int(data['consensus_job_per_segment'])
+    db_task.agreement_score_threshold = float(data['agreement_score_threshold'])
     db_data.compressed_chunk_type = models.DataChoice.VIDEO if task_mode == 'interpolation' and not data['use_zip_chunks'] else models.DataChoice.IMAGESET
     db_data.original_chunk_type = models.DataChoice.VIDEO if task_mode == 'interpolation' else models.DataChoice.IMAGESET
 

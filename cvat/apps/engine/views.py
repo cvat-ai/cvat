@@ -1058,6 +1058,8 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
                 data['use_zip_chunks'] = serializer.validated_data['use_zip_chunks']
                 data['use_cache'] = serializer.validated_data['use_cache']
                 data['copy_data'] = serializer.validated_data['copy_data']
+                data['consensus_job_per_segment'] = request.data['consensus_job_per_segment']
+                data['agreement_score_threshold'] = request.data['agreement_score_threshold']
 
                 if data['use_cache']:
                     self._object.data.storage_method = StorageMethodChoice.CACHE
