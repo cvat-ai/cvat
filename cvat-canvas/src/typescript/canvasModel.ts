@@ -721,6 +721,10 @@ export class CanvasModelImpl extends MasterImpl implements CanvasModel {
         }
 
         if (drawData.enabled) {
+            if (!['rectangle', 'polygon', 'points', 'ellipse', 'cuboid', 'skeleton', 'mask'].includes(drawData.shapeType)) {
+                throw new Error(`Drawing method for type "${drawData.shapeType}" is not implemented`);
+            }
+
             if (drawData.shapeType === 'skeleton' && !drawData.skeletonSVG) {
                 throw new Error('Skeleton template must be specified when drawing a skeleton');
             }
