@@ -53,6 +53,9 @@ function setUpJobsList(jobs: Job[], query: JobsQuery): Job[] {
         result = result.filter((job, index) => jsonLogic.apply(filter, converted[index]));
     }
 
+    // primarily only normal jobs should be shown
+    result = result.filter((job) => job.parentJobId === null);
+
     return result;
 }
 

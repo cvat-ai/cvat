@@ -27,6 +27,7 @@ import {
 import { useIsMounted } from 'utils/hooks';
 import UserSelector from 'components/task-page/user-selector';
 import CVATTooltip from 'components/common/cvat-tooltip';
+import { Collapse } from 'antd';
 import JobActionsMenu from './job-actions-menu';
 
 interface Props {
@@ -117,6 +118,14 @@ function JobItem(props: Props): JSX.Element {
     if (task.consensusJobPerSegment && job.type !== JobType.GROUND_TRUTH) {
         jobName = job.parentJobId === null ? `Normal Job #${job.id}` : `Consensus Job #${job.id}`;
     }
+
+    let consensusJob: Job[] = [];
+    if (task.consensusJobPerSegment) {
+        consensusJob = task.jobs.filter((eachJob: Job) => eachJob.parentJobId === id);
+    }
+    const consensusJobView: React.JSX.Element[] = consensusJob.map((eachJob: Job) => (
+        <JobItem key={eachJob.id} job={eachJob} task={task} onJobUpdate={onJobUpdate} />
+    ));
 
     return (
         <Col span={24}>
@@ -256,6 +265,22 @@ function JobItem(props: Props): JSX.Element {
                 >
                     <MoreOutlined className='cvat-job-item-more-button' />
                 </Dropdown>
+                {consensusJob.length > 0 &&
+                    (
+                        <Collapse
+                            className='cvat-advanced-configuration-wrapper'
+                            items={[{
+                                key: '1',
+                                label:
+                                    <Text>
+                                        {`${consensusJob.length} Consensus Jobs`}
+                                    </Text>,
+                                children: (
+                                    consensusJobView
+                                ),
+                            }]}
+                        />
+                    )}
             </Card>
         </Col>
     );
