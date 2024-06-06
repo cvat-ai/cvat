@@ -965,14 +965,6 @@ class DataSerializer(serializers.ModelSerializer):
             pass the list of file names in the required order.
         """.format(models.SortingMethod.PREDEFINED))
     )
-    consensus_job_per_segment = serializers.IntegerField(default=0,
-        help_text=textwrap.dedent("""\
-            Number of Consensus Jobs for each Normal Job.
-        """))
-    agreement_score_threshold = serializers.FloatField(default=0,
-        help_text=textwrap.dedent("""\
-            Agreement Score Threshold, for merging consensus jobs.
-        """))
 
     class Meta:
         model = models.Data
@@ -982,8 +974,7 @@ class DataSerializer(serializers.ModelSerializer):
             'use_zip_chunks', 'server_files_exclude',
             'cloud_storage_id', 'use_cache', 'copy_data', 'storage_method',
             'storage', 'sorting_method', 'filename_pattern',
-            'job_file_mapping', 'upload_file_order', 'consensus_job_per_segment',
-            'agreement_score_threshold',
+            'job_file_mapping', 'upload_file_order',
         )
         extra_kwargs = {
             'chunk_size': { 'help_text': "Maximum number of frames per chunk" },
@@ -1106,8 +1097,8 @@ class TaskReadSerializer(serializers.ModelSerializer):
     source_storage = StorageSerializer(required=False, allow_null=True)
     jobs = JobsSummarySerializer(url_filter_key='task_id', source='segment_set')
     labels = LabelsSummarySerializer(source='*')
-    consensus_job_per_segment = serializers.ReadOnlyField(source='data.consensus_job_per_segment', required=False)
-    agreement_score_threshold = serializers.FloatField(source='data.agreement_score_threshold', required=False)
+    consensus_job_per_segment = serializers.ReadOnlyField(required=False)
+    agreement_score_threshold = serializers.FloatField(required=False)
 
     class Meta:
         model = models.Task
@@ -1198,7 +1189,7 @@ class TaskWriteSerializer(WriteOnceMixin, serializers.ModelSerializer):
             instance.bug_tracker)
         instance.subset = validated_data.get('subset', instance.subset)
         labels = validated_data.get('label_set', [])
-        instance.data.agreement_score_threshold = validated_data.get('agreement_score_threshold', instance.data.agreement_score_threshold)
+        instance.agreement_score_threshold = validated_data.get('agreement_score_threshold', instance.agreement_score_threshold)
 
         if instance.project_id is None:
             LabelSerializer.update_labels(labels, parent_instance=instance)
@@ -1459,8 +1450,6 @@ class DataMetaReadSerializer(serializers.ModelSerializer):
         help_text=textwrap.dedent("""\
         A list of valid frame ids. The None value means all frames are included.
         """))
-    consensus_job_per_segment = serializers.IntegerField(default=0)
-    agreement_score_threshold = serializers.FloatField(default=0)
 
     class Meta:
         model = models.Data
@@ -1474,8 +1463,6 @@ class DataMetaReadSerializer(serializers.ModelSerializer):
             'frames',
             'deleted_frames',
             'included_frames',
-            'consensus_job_per_segment',
-            'agreement_score_threshold',
         )
         read_only_fields = fields
         extra_kwargs = {

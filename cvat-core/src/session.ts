@@ -429,7 +429,7 @@ export class Job extends Session {
     public readonly updatedDate: string;
     public readonly sourceStorage: Storage;
     public readonly targetStorage: Storage;
-    public readonly parentJobId: number;
+    public readonly parentJobId: number | null;
 
     constructor(initialData: Readonly<Omit<SerializedJob, 'labels'> & { labels?: SerializedLabel[] }>) {
         super();

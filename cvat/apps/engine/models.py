@@ -232,8 +232,6 @@ class Data(models.Model):
     cloud_storage = models.ForeignKey('CloudStorage', on_delete=models.SET_NULL, null=True, related_name='data')
     sorting_method = models.CharField(max_length=15, choices=SortingMethod.choices(), default=SortingMethod.LEXICOGRAPHICAL)
     deleted_frames = IntArrayField(store_sorted=True, unique_values=True)
-    consensus_job_per_segment = models.IntegerField(default=0, blank=True)
-    agreement_score_threshold = models.FloatField(default=0, blank=True)
 
     class Meta:
         default_permissions = ()
@@ -420,6 +418,8 @@ class Task(TimestampedModel):
         blank=True, on_delete=models.SET_NULL, related_name='+')
     target_storage = models.ForeignKey('Storage', null=True, default=None,
         blank=True, on_delete=models.SET_NULL, related_name='+')
+    consensus_job_per_segment = models.IntegerField(default=0, blank=True)
+    agreement_score_threshold = models.FloatField(default=0, blank=True)
 
     # Extend default permission model
     class Meta:
