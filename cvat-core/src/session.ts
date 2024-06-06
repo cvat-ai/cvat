@@ -673,7 +673,7 @@ export class Task extends Session {
     public readonly progress: { count: number; completed: number };
     public readonly jobs: Job[];
     public readonly consensusJobPerSegment: number;
-    public readonly agreementScoreThreshold: number;
+    public agreementScoreThreshold: number;
 
     public readonly startFrame: number;
     public readonly stopFrame: number;
@@ -920,6 +920,17 @@ export class Task extends Session {
                 },
                 agreementScoreThreshold: {
                     get: () => data.agreement_score_threshold,
+                    set: (value: number) => {
+                        if (typeof value !== 'number') {
+                            throw new ArgumentError(
+                                `Agreement Score Threshold value must be a Number. But ${typeof value} has been got.`,
+                            );
+                        }
+
+                        updateTrigger.update('agreementScoreThreshold');
+                        data.agreement_score_threshold = value;
+                        console.log(data);
+                    },
                 },
                 labels: {
                     get: () => [...data.labels],

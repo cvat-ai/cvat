@@ -406,6 +406,7 @@ export function implementTask(Task) {
                 bugTracker: 'bug_tracker',
                 projectId: 'project_id',
                 assignee: 'assignee_id',
+                agreementScoreThreshold: 'agreement_score_threshold',
             });
 
             if (taskData.assignee_id) {

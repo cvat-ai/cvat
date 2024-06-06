@@ -217,9 +217,6 @@ class IntArrayField(AbstractArrayField):
     converter = int
 
 class Data(models.Model):
-    """
-    Information received about a task, through API request.
-    """
     chunk_size = models.PositiveIntegerField(null=True)
     size = models.PositiveIntegerField(default=0)
     image_quality = models.PositiveSmallIntegerField(default=50)

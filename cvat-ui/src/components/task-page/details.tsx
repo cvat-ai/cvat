@@ -19,6 +19,7 @@ import { cancelInferenceAsync } from 'actions/models-actions';
 import { CombinedState, ActiveInference } from 'reducers';
 import UserSelector from './user-selector';
 import BugTrackerEditor from './bug-tracker-editor';
+import ConsensusConfigurationEditor from './consensus-configuration-editor';
 import LabelsEditorComponent from '../labels-editor/labels-editor';
 import ProjectSubsetField from '../create-task-page/project-subset-field';
 
@@ -233,6 +234,15 @@ class DetailsComponent extends React.PureComponent<Props, State> {
                                     instance={taskInstance}
                                     onChange={(bugTracker) => {
                                         taskInstance.bugTracker = bugTracker;
+                                        onUpdateTask(taskInstance);
+                                    }}
+                                />
+                            </Col>
+                            <Col span={12}>
+                                <ConsensusConfigurationEditor
+                                    instance={taskInstance}
+                                    onChange={(value) => {
+                                        taskInstance.agreementScoreThreshold = value;
                                         onUpdateTask(taskInstance);
                                     }}
                                 />

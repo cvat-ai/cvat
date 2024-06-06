@@ -1132,7 +1132,7 @@ class TaskWriteSerializer(WriteOnceMixin, serializers.ModelSerializer):
     project_id = serializers.IntegerField(required=False, allow_null=True)
     target_storage = StorageSerializer(required=False, allow_null=True)
     source_storage = StorageSerializer(required=False, allow_null=True)
-    agreement_score_threshold = serializers.FloatField(required=False)
+    agreement_score_threshold = serializers.FloatField(required=False, allow_null=True)
 
     class Meta:
         model = models.Task
@@ -1198,6 +1198,7 @@ class TaskWriteSerializer(WriteOnceMixin, serializers.ModelSerializer):
             instance.bug_tracker)
         instance.subset = validated_data.get('subset', instance.subset)
         labels = validated_data.get('label_set', [])
+        instance.data.agreement_score_threshold = validated_data.get('agreement_score_threshold', instance.data.agreement_score_threshold)
 
         if instance.project_id is None:
             LabelSerializer.update_labels(labels, parent_instance=instance)
