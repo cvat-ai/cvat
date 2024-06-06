@@ -388,7 +388,7 @@ export class FrameDecoder {
         }
     }
 
-    public release(): void {
+    public close(): void {
         if (this.zipWorker) {
             this.zipWorker.terminate();
             this.zipWorker = null;

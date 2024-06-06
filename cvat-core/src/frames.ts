@@ -703,7 +703,7 @@ export function getCachedChunks(jobID): number[] {
 
 export function clear(jobID: number): void {
     if (jobID in frameDataCache) {
-        frameDataCache[jobID].provider.release();
+        frameDataCache[jobID].provider.close();
         for (const contextImagesByFrame of Object.values(frameDataCache[jobID].contextCache)) {
             for (const image of Object.values(contextImagesByFrame.data)) {
                 image.close();
