@@ -724,17 +724,19 @@ export class CanvasModelImpl extends MasterImpl implements CanvasModel {
         }
 
         if (drawData.enabled) {
-            if (!supportedShapes.includes(drawData.shapeType)) {
-                throw new Error(`Drawing method for type "${drawData.shapeType}" is not implemented`);
-            }
-
             if (drawData.shapeType === 'skeleton' && !drawData.skeletonSVG) {
                 throw new Error('Skeleton template must be specified when drawing a skeleton');
             }
 
             if (!drawData.shapeType && !drawData.initialState) {
                 throw new Error('A shape type is not specified');
-            } else if (typeof drawData.numberOfPoints !== 'undefined') {
+            }
+
+            if (drawData.shapeType && !supportedShapes.includes(drawData.shapeType)) {
+                throw new Error(`Drawing method for type "${drawData.shapeType}" is not implemented`);
+            }
+
+            if (typeof drawData.numberOfPoints !== 'undefined') {
                 if (drawData.shapeType === 'polygon' && drawData.numberOfPoints < 3) {
                     throw new Error('A polygon consists of at least 3 points');
                 } else if (drawData.shapeType === 'polyline' && drawData.numberOfPoints < 2) {
