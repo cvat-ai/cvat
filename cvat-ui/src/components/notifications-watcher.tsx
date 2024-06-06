@@ -12,7 +12,7 @@ import { resetErrors, resetMessages } from 'actions/notification-actions';
 import { useHistory } from 'react-router';
 import config from 'config';
 
-function Notifications(): null {
+function NotificationsWatcher(): null {
     const dispatch = useDispatch();
     const history = useHistory();
 
@@ -115,4 +115,4 @@ function Notifications(): null {
     return null;
 }
 
-export default React.memo(Notifications);
+export default React.memo(NotificationsWatcher);

@@ -14,10 +14,11 @@ import Text from 'antd/lib/typography/Text';
 import EventRecorder from 'utils/event-recorder';
 
 import CVATApplication from 'components/cvat-app';
+import InvitationWatcher from 'components/invitation-watcher/invitation-watcher';
+
 import { ShortcutsContextProvider } from 'components/shortcuts.context';
 import GlobalErrorBoundary from 'components/global-error-boundary/global-error-boundary';
-
-import Notifications from 'components/notifications';
+import NotificationsWatcher from 'components/notifications-watcher';
 import PluginsEntrypoint from 'components/plugins-entrypoint';
 import LayoutGrid from 'components/layout-grid/layout-grid';
 import logger, { EventScope } from 'cvat-logger';
@@ -44,7 +45,8 @@ root.render((
             <PluginsEntrypoint />
             <GlobalErrorBoundary>
                 <ShortcutsContextProvider>
-                    <Notifications />
+                    <NotificationsWatcher />
+                    <InvitationWatcher />
                     <CVATApplication />
                 </ShortcutsContextProvider>
             </GlobalErrorBoundary>

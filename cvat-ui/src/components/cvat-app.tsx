@@ -31,10 +31,6 @@ import IncorrectEmailConfirmationPage from 'components/email-confirmation-pages/
 import Header from 'components/header/header';
 
 import ShortcutsDialog from 'components/shortcuts-dialog/shortcuts-dialog';
-import ExportDatasetModal from 'components/export-dataset/export-dataset-modal';
-import ExportBackupModal from 'components/export-backup/export-backup-modal';
-import ImportDatasetModal from 'components/import-dataset/import-dataset-modal';
-import ImportBackupModal from 'components/import-backup/import-backup-modal';
 
 import CreateJobPage from 'components/create-job-page/create-job-page';
 import JobsPageComponent from 'components/jobs-page/jobs-page';
@@ -64,7 +60,11 @@ import UpdateWebhookPage from 'components/setup-webhook-pages/update-webhook-pag
 import GuidePage from 'components/md-guide/guide-page';
 
 import InvitationsPage from 'components/invitations-page/invitations-page';
-import InvitationWatcher from 'components/invitation-watcher/invitation-watcher';
+
+import ExportDatasetModal from 'components/export-dataset/export-dataset-modal';
+import ExportBackupModal from 'components/export-backup/export-backup-modal';
+import ImportDatasetModal from 'components/import-dataset/import-dataset-modal';
+import ImportBackupModal from 'components/import-backup/import-backup-modal';
 
 import AnnotationPageContainer from 'containers/annotation-page/annotation-page';
 import { getCore } from 'cvat-core-wrapper';
@@ -227,38 +227,35 @@ function CVATApplication(): JSX.Element {
     if (userAgreementsInitialized && serverAPISchemaInitialized && userInitialized) {
         if (user == null || !user.isVerified) {
             return (
-                <>
-                    <Switch>
-                        {isRegistrationEnabled && (
-                            <Route exact path='/auth/register' component={RegisterPageContainer} />
-                        )}
-                        <Route exact path='/auth/email-verification-sent' component={EmailVerificationSentPage} />
-                        <Route exact path='/auth/incorrect-email-confirmation' component={IncorrectEmailConfirmationPage} />
-                        <Route exact path='/auth/login' component={LoginPageContainer} />
+                <Switch>
+                    {isRegistrationEnabled && (
+                        <Route exact path='/auth/register' component={RegisterPageContainer} />
+                    )}
+                    <Route exact path='/auth/email-verification-sent' component={EmailVerificationSentPage} />
+                    <Route exact path='/auth/incorrect-email-confirmation' component={IncorrectEmailConfirmationPage} />
+                    <Route exact path='/auth/login' component={LoginPageContainer} />
+                    <Route
+                        exact
+                        path='/auth/login-with-token/:token'
+                        component={LoginWithTokenComponent}
+                    />
+                    {isPasswordResetEnabled && (
+                        <Route exact path='/auth/password/reset' component={ResetPasswordPageComponent} />
+                    )}
+                    {isPasswordResetEnabled && (
                         <Route
                             exact
-                            path='/auth/login-with-token/:token'
-                            component={LoginWithTokenComponent}
+                            path='/auth/password/reset/confirm'
+                            component={ResetPasswordPageConfirmComponent}
                         />
-                        {isPasswordResetEnabled && (
-                            <Route exact path='/auth/password/reset' component={ResetPasswordPageComponent} />
-                        )}
-                        {isPasswordResetEnabled && (
-                            <Route
-                                exact
-                                path='/auth/password/reset/confirm'
-                                component={ResetPasswordPageConfirmComponent}
-                            />
-                        )}
+                    )}
 
-                        <Route exact path='/auth/email-confirmation' component={EmailConfirmationPage} />
-                        { routesToRender }
-                        <Redirect
-                            to={history.location.pathname.length > 1 ? `/auth/login?next=${history.location.pathname}` : '/auth/login'}
-                        />
-                    </Switch>
-                    <InvitationWatcher />
-                </>
+                    <Route exact path='/auth/email-confirmation' component={EmailConfirmationPage} />
+                    { routesToRender }
+                    <Redirect
+                        to={history.location.pathname.length > 1 ? `/auth/login?next=${history.location.pathname}` : '/auth/login'}
+                    />
+                </Switch>
             );
         }
 
@@ -278,6 +275,10 @@ function CVATApplication(): JSX.Element {
                     <Header />
                     <Layout.Content style={{ height: '100%' }}>
                         <ShortcutsDialog />
+                        <ExportDatasetModal />
+                        <ExportBackupModal />
+                        <ImportDatasetModal />
+                        <ImportBackupModal />
                         <Switch>
                             <Route
                                 exact
@@ -339,11 +340,6 @@ function CVATApplication(): JSX.Element {
                                 }}
                             />
                         </Switch>
-                        <ExportDatasetModal />
-                        <ExportBackupModal />
-                        <ImportDatasetModal />
-                        <ImportBackupModal />
-                        <InvitationWatcher />
                         { loggedInModals.map((Component, idx) => (
                             <Component key={idx} targetProps={likeProps} targetState={state} />
                         ))}
@@ -361,3 +357,14 @@ function CVATApplication(): JSX.Element {
 }
 
 export default React.memo(CVATApplication);
+
+// проверить logged in modals
+// проверить не verified пользователя
+// проверить не происходит ли нигде рендеринг лишний раз
+// разобраться почему dumpers of null происходит
+// проверить authentificate with token
+// проверить случае логина/логаута разных пользователей
+// переделать нормально метод проверки user agreements
+// проверить, что роуты из плагинов нормально отрабатывают
+// проверить приглашения
+// попробовать отключить регистрацию и password reset
