@@ -86,7 +86,7 @@ import { usePlugins } from 'utils/hooks';
 import { CombinedState } from 'reducers';
 
 interface State {
-    healthIinitialized: boolean;
+    healthInitialized: boolean;
     backendIsHealthy: boolean;
 }
 
@@ -102,14 +102,14 @@ const componentReducer = (state: State, action: { type: Action }): State => {
         case Action.HEALTH_CHECK_SUCCESS: {
             return {
                 ...state,
-                healthIinitialized: true,
+                healthInitialized: true,
                 backendIsHealthy: true,
             };
         }
         case Action.HEALTH_CHECK_FAILED: {
             return {
                 ...state,
-                healthIinitialized: true,
+                healthInitialized: true,
                 backendIsHealthy: false,
             };
         }
@@ -123,13 +123,29 @@ function CVATApplication(): JSX.Element {
     const history = useHistory();
     const likeProps = useSelector((state: CombinedState) => ({
         userInitialized: state.auth.initialized,
+        userFetching: state.auth.fetching,
+
         aboutInitialized: state.about.initialized,
+        aboutFetching: state.about.fetching,
+
         pluginsInitialized: state.plugins.initialized,
+        pluginsFetching: state.plugins.fetching,
+
         formatsInitialized: state.formats.initialized,
+        formatsFetching: state.formats.fetching,
+
         modelsInitialized: state.models.initialized,
+        modelsFetching: state.models.fetching,
+
         organizationInitialized: state.organizations.initialized,
+        organizationFetching: state.organizations.fetching,
+
         userAgreementsInitialized: state.userAgreements.initialized,
+        userAgreementsFetching: state.userAgreements.fetching,
+
         serverAPISchemaInitialized: state.serverAPI.initialized,
+        serverAPISchemaFetching: state.serverAPI.fetching,
+
         pluginComponents: state.plugins.components,
         user: state.auth.user,
         isModelPluginActive: state.plugins.list.MODELS,
@@ -138,7 +154,7 @@ function CVATApplication(): JSX.Element {
     }), shallowEqual);
 
     const [state, dispatch] = useReducer(componentReducer, {
-        healthIinitialized: false,
+        healthInitialized: false,
         backendIsHealthy: false,
     });
 
@@ -148,16 +164,24 @@ function CVATApplication(): JSX.Element {
     const loggedInModals = usePlugins((_state) => _state.plugins.components.loggedInModals, likeProps, state)
         .map(({ component: Component }) => Component);
 
-    const { healthIinitialized, backendIsHealthy } = state;
+    const { healthInitialized, backendIsHealthy } = state;
     const {
         userInitialized,
+        userFetching,
         aboutInitialized,
+        aboutFetching,
         pluginsInitialized,
+        pluginsFetching,
         formatsInitialized,
+        formatsFetching,
         modelsInitialized,
+        modelsFetching,
         organizationInitialized,
+        organizationFetching,
         userAgreementsInitialized,
+        userAgreementsFetching,
         serverAPISchemaInitialized,
+        serverAPISchemaFetching,
         user,
         isModelPluginActive,
         isPasswordResetEnabled,
@@ -187,35 +211,53 @@ function CVATApplication(): JSX.Element {
                 ),
             });
         });
-
-        healthCheckPromise.then(() => {
-            appDispatch(authenticatedAsync());
-            appDispatch(getServerAPISchemaAsync());
-            appDispatch(getUserAgreementsAsync());
-        });
     }, []);
 
     useEffect(() => {
-        if (user?.id && user.isVerified) {
-            appDispatch(getFormatsAsync());
-            appDispatch(getAboutAsync());
-            appDispatch(getPluginsAsync());
-
-            if (history.location.pathname !== '/invitations') {
-                appDispatch(getInvitationsAsync({ page: 1 }, true));
+        if (state.healthInitialized && state.backendIsHealthy) {
+            if (!userInitialized && !userFetching) {
+                appDispatch(authenticatedAsync());
             }
 
-            appDispatch(activateOrganizationAsync());
+            if (!serverAPISchemaInitialized && !serverAPISchemaFetching) {
+                appDispatch(getServerAPISchemaAsync());
+            }
+
+            if (!userAgreementsInitialized && !userAgreementsFetching) {
+                appDispatch(getUserAgreementsAsync());
+            }
+
+            if (user?.id && user.isVerified) {
+                if (!formatsInitialized && !formatsFetching) {
+                    appDispatch(getFormatsAsync());
+                }
+
+                if (!aboutInitialized && !aboutFetching) {
+                    appDispatch(getAboutAsync());
+                }
+
+                if (!pluginsInitialized && !pluginsFetching) {
+                    appDispatch(getPluginsAsync());
+                }
+
+                if (!organizationInitialized && !organizationFetching) {
+                    appDispatch(activateOrganizationAsync());
+                }
+
+                if (isModelPluginActive && !modelsInitialized && !modelsFetching) {
+                    appDispatch(getModelsAsync());
+                }
+            }
+        }
+    });
+
+    useEffect(() => {
+        if (user?.id && user.isVerified && history.location.pathname !== '/invitations') {
+            appDispatch(getInvitationsAsync({ page: 1 }, true));
         }
     }, [user]);
 
-    useEffect(() => {
-        if (isModelPluginActive) {
-            appDispatch(getModelsAsync());
-        }
-    }, [isModelPluginActive]);
-
-    if (healthIinitialized && !backendIsHealthy) {
+    if (healthInitialized && !backendIsHealthy) {
         return (
             <Space align='center' direction='vertical' className='cvat-spinner'>
                 <DisconnectOutlined className='cvat-disconnected' />
@@ -265,7 +307,12 @@ function CVATApplication(): JSX.Element {
             aboutInitialized &&
             organizationInitialized &&
             (!isModelPluginActive || modelsInitialized) &&
-            user && user.isVerified
+            user && user.isVerified &&
+            // as many reducers will reset to defaults when LOGOUT_SUCCESS triggered
+            // has to unmount child components before this action triggered
+            // otherwise child mapStateToProps may failed as it often uses data, existing only for logged in users
+            // we use userFetching flag to prevent it
+            !userFetching
         ) {
             const queryParams = new URLSearchParams(history.location.search);
             const authParams = authQuery(queryParams);

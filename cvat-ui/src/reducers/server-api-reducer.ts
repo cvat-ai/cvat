@@ -2,7 +2,6 @@
 //
 // SPDX-License-Identifier: MIT
 
-import { BoundariesActions, BoundariesActionTypes } from 'actions/boundaries-actions';
 import { ServerAPIActions, ServerAPIActionTypes } from 'actions/server-actions';
 import { ServerAPIState } from '.';
 
@@ -20,7 +19,7 @@ const defaultState: ServerAPIState = {
 
 export default function (
     state: ServerAPIState = defaultState,
-    action: ServerAPIActions | BoundariesActions,
+    action: ServerAPIActions,
 ): ServerAPIState {
     switch (action.type) {
         case ServerAPIActionTypes.GET_SERVER_API_SCHEMA: {
@@ -55,11 +54,6 @@ export default function (
                 ...state,
                 fetching: false,
                 initialized: true,
-            };
-        }
-        case BoundariesActionTypes.RESET_AFTER_ERROR: {
-            return {
-                ...defaultState,
             };
         }
         default:
