@@ -176,6 +176,7 @@ Here is a short overview of how CVAT deals with the user's working time:
   - A user clicks the "Save" button on the annotation view
   - A user opens the annotation view
   - A user closes the annotation view (but not the tab/browser)
+  - A user clicks **Logout** button
 
 - When events reach the server, it calculates working time based on timestamps of the events.
 
