@@ -295,8 +295,8 @@ Object.defineProperty(FrameData.prototype.data, 'implementation', {
                     const nextChunkNumber = findTheNextNotDecodedChunk(this.number);
                     const predecodeChunksMax = Math.floor(decodedBlocksCacheSize / 2);
                     if (nextChunkNumber * chunkSize <= stopFrame &&
-                        nextChunkNumber <= chunkNumber + predecodeChunksMax) {
-                        provider.cleanup(1);
+                        nextChunkNumber <= chunkNumber + predecodeChunksMax
+                    ) {
                         frameDataCache[this.jobID].activeChunkRequest = new Promise((resolveForward) => {
                             const releasePromise = (): void => {
                                 resolveForward();
@@ -306,6 +306,14 @@ Object.defineProperty(FrameData.prototype.data, 'implementation', {
                             frameDataCache[this.jobID].getChunk(
                                 nextChunkNumber, ChunkQuality.COMPRESSED,
                             ).then((chunk: ArrayBuffer) => {
+                                if (!(this.jobID in frameDataCache)) {
+                                    // check if frameDataCache still exist
+                                    // as it may be released during chunk request
+                                    resolveForward();
+                                    return;
+                                }
+
+                                provider.cleanup(1);
                                 provider.requestDecodeBlock(
                                     chunk,
                                     nextChunkNumber * chunkSize,
@@ -339,7 +347,7 @@ Object.defineProperty(FrameData.prototype.data, 'implementation', {
                     return;
                 }
 
-                // it might appear during decoding, so, check again
+                // it might appear during previous decoding, so, check again
                 const currentFrame = provider.frame(this.number);
                 if (currentFrame) {
                     resolve({
@@ -359,6 +367,14 @@ Object.defineProperty(FrameData.prototype.data, 'implementation', {
                         chunkNumber, ChunkQuality.COMPRESSED,
                     ).then((chunk: ArrayBuffer) => {
                         try {
+                            if (!(this.jobID in frameDataCache)) {
+                                // check if frameDataCache still exist
+                                // as it may be released during chunk request
+                                resolveLoadAndDecode();
+                                reject(this.number);
+                                return;
+                            }
+
                             provider
                                 .requestDecodeBlock(
                                     chunk,
