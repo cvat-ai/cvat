@@ -326,7 +326,6 @@ export interface PluginsState {
             }
         }
         router: PluginComponent[];
-        loggedInModals: PluginComponent[];
     }
 }
 

@@ -161,9 +161,6 @@ function CVATApplication(): JSX.Element {
     const routesToRender = usePlugins((_state) => _state.plugins.components.router, likeProps, state)
         .map(({ component: Component }) => Component());
 
-    const loggedInModals = usePlugins((_state) => _state.plugins.components.loggedInModals, likeProps, state)
-        .map(({ component: Component }) => Component);
-
     const { healthInitialized, backendIsHealthy } = state;
     const {
         userInitialized,
@@ -390,9 +387,6 @@ function CVATApplication(): JSX.Element {
                                 }}
                             />
                         </Switch>
-                        { loggedInModals.map((Component, idx) => (
-                            <Component key={idx} targetProps={likeProps} targetState={state} />
-                        ))}
                         {/* eslint-disable-next-line */}
                         <a id='downloadAnchor' target='_blank' style={{ display: 'none' }} download />
                     </Layout.Content>
