@@ -119,6 +119,8 @@ cvat:
     imagePullPolicy: Always
     permissionFix:
       enabled: true
+    initSecretKey:
+      enabled: false
     service:
       annotations:
         traefik.ingress.kubernetes.io/service.sticky.cookie: "true"
