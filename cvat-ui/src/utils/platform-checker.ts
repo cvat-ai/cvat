@@ -9,7 +9,7 @@ const name = platform.name || 'unknown';
 const version = platform.version || 'unknown';
 const os = platform.os ? platform.os.toString() : 'unknown';
 let platformNotificationShown = window.localStorage.getItem('platformNotiticationShown') !== null;
-let featuresNotificationShown = window.localStorage.getItem('featuresNotificationShown') !== null;
+let featuresNotificationShown = false;
 
 interface PlatformInfo {
     engine: string;
@@ -27,13 +27,8 @@ export function platformInfo(): PlatformInfo {
     };
 }
 
-export function stopNotifications(saveInStorage: boolean): void {
-    platformNotificationShown = true;
-    featuresNotificationShown = true;
-    if (saveInStorage) {
-        window.localStorage.setItem('platformNotiticationShown', 'shown');
-        window.localStorage.setItem('featuresNotificationShown', 'shown');
-    }
+export function stopNotifications(): void {
+    window.localStorage.setItem('platformNotiticationShown', 'shown');
 }
 
 export default function showPlatformNotification(): boolean {
@@ -41,12 +36,20 @@ export default function showPlatformNotification(): boolean {
     // Gecko is engine of Firefox, supported but works worse than in Chrome (let's show the message)
     // WebKit is engine of Apple Safary, not supported
     const unsupportedPlatform = !['Blink'].includes(engine);
-    return !platformNotificationShown && unsupportedPlatform;
+    try {
+        return !platformNotificationShown && unsupportedPlatform;
+    } finally {
+        platformNotificationShown = true;
+    }
 }
 
 export function showUnsupportedNotification(): boolean {
     const necessaryFeatures = [window.ResizeObserver, Object.fromEntries];
 
     const unsupportedFeatures = necessaryFeatures.some((feature) => typeof feature === 'undefined');
-    return !featuresNotificationShown && unsupportedFeatures;
+    try {
+        return !featuresNotificationShown && unsupportedFeatures;
+    } finally {
+        featuresNotificationShown = true;
+    }
 }

@@ -8,8 +8,8 @@ import { createRoot } from 'react-dom/client';
 import { Provider } from 'react-redux';
 import { BrowserRouter } from 'react-router-dom';
 
-import { Col, Row } from 'antd/lib/grid';
 import Modal from 'antd/lib/modal';
+import Paragraph from 'antd/es/typography/Paragraph';
 import Text from 'antd/lib/typography/Text';
 import EventRecorder from 'utils/event-recorder';
 
@@ -56,47 +56,47 @@ root.render((
 ));
 
 function validatePlatform(): void {
-    const {
-        name, version, engine, os,
-    } = platformInfo();
+    const { name, version } = platformInfo();
 
-    if (showPlatformNotification()) {
-        stopNotifications(false);
+    if (showUnsupportedNotification()) {
+        Modal.error({
+            title: 'Unsupported features detected',
+            className: 'cvat-modal-unsupported-features-warning',
+            content: (
+                <>
+                    <Paragraph>
+                        <Text type='danger'>{`${name} v${version} does not support the necessary API features for CVAT. `}</Text>
+                        <Text>
+                            CVAT is compatible with the latest versions of
+                            <Text strong> Google Chrome </Text>
+                            and
+                            <Text strong> Mozilla Firefox </Text>
+                        </Text>
+                    </Paragraph>
+                    <Text type='secondary'>We recommend using Google Chrome (or another Chromium-based browser) for the best experience</Text>
+                </>
+            ),
+            onOk: () => stopNotifications(),
+        });
+    } else if (showPlatformNotification()) {
         Modal.warning({
             title: 'Unsupported platform detected',
             className: 'cvat-modal-unsupported-platform-warning',
             content: (
                 <>
-                    <Row>
-                        <Col>
-                            <Text>
-                                {`The browser you are using is ${name} ${version} based on ${engine}.` +
-                                    ' CVAT was tested in the latest versions of Chrome and Firefox.' +
-                                    ' We recommend to use Chrome (or another Chromium based browser)'}
-                            </Text>
-                        </Col>
-                    </Row>
-                    <Row>
-                        <Col>
-                            <Text type='secondary'>{`The operating system is ${os}`}</Text>
-                        </Col>
-                    </Row>
+                    <Paragraph>
+                        <Text>
+                            {`The browser you are using is ${name} ${version} may be not fully supported by CVAT. `}
+                            CVAT is compatible with the latest versions of
+                            <Text strong> Google Chrome </Text>
+                            and
+                            <Text strong> Mozilla Firefox </Text>
+                        </Text>
+                    </Paragraph>
+                    <Text type='secondary'>We recommend using Google Chrome (or another Chromium-based browser) for the best experience</Text>
                 </>
             ),
-            onOk: () => stopNotifications(true),
-        });
-    } else if (showUnsupportedNotification()) {
-        stopNotifications(false);
-        Modal.warning({
-            title: 'Unsupported features detected',
-            className: 'cvat-modal-unsupported-features-warning',
-            content: (
-                <Text>
-                    {`${name} v${version} does not support API, which is used by CVAT. `}
-                    It is strongly recommended to update your browser.
-                </Text>
-            ),
-            onOk: () => stopNotifications(true),
+            onOk: () => stopNotifications(),
         });
     }
 }
