@@ -1,12 +1,11 @@
 // Copyright (C) 2020-2022 Intel Corporation
+// Copyright (C) 2024 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
 import { getCore } from 'cvat-core-wrapper';
 import { CanvasVersion } from 'cvat-canvas-wrapper';
-import { BoundariesActions, BoundariesActionTypes } from 'actions/boundaries-actions';
 import { AboutActions, AboutActionTypes } from 'actions/about-actions';
-import { AuthActions, AuthActionTypes } from 'actions/auth-actions';
 import { AboutState } from '.';
 import pjson from '../../package.json';
 
@@ -23,7 +22,7 @@ const defaultState: AboutState = {
 
 export default function (
     state: AboutState = defaultState,
-    action: AboutActions | AuthActions | BoundariesActions,
+    action: AboutActions,
 ): AboutState {
     switch (action.type) {
         case AboutActionTypes.GET_ABOUT: {
@@ -46,12 +45,6 @@ export default function (
                 fetching: false,
                 initialized: true,
             };
-        case AuthActionTypes.LOGOUT_SUCCESS:
-        case BoundariesActionTypes.RESET_AFTER_ERROR: {
-            return {
-                ...defaultState,
-            };
-        }
         default:
             return state;
     }
