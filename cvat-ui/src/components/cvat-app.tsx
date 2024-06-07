@@ -268,6 +268,7 @@ function CVATApplication(): JSX.Element {
 
     if (userAgreementsInitialized && serverAPISchemaInitialized && userInitialized) {
         if (user == null || !user.isVerified) {
+            const { pathname } = history.location;
             return (
                 <Switch>
                     {isRegistrationEnabled && (
@@ -295,7 +296,7 @@ function CVATApplication(): JSX.Element {
                     <Route exact path='/auth/email-confirmation' component={EmailConfirmationPage} />
                     { routesToRender }
                     <Redirect
-                        to={history.location.pathname.length > 1 ? `/auth/login?next=${history.location.pathname}` : '/auth/login'}
+                        to={pathname.length > 1 ? `/auth/login?next=${pathname}` : '/auth/login'}
                     />
                 </Switch>
             );
@@ -408,10 +409,8 @@ export default React.memo(CVATApplication);
 // проверить logged in modals
 // проверить не verified пользователя
 // проверить не происходит ли нигде рендеринг лишний раз
-// разобраться почему dumpers of null происходит
 // проверить authentificate with token
 // проверить случае логина/логаута разных пользователей
-// переделать нормально метод проверки user agreements
 // проверить, что роуты из плагинов нормально отрабатывают
 // проверить приглашения
 // попробовать отключить регистрацию и password reset
