@@ -341,7 +341,7 @@ Object.defineProperty(FrameData.prototype.data, 'implementation', {
             onServerRequest();
             frameDataCache[this.jobID].latestFrameDecodeRequest = requestId;
             (frameDataCache[this.jobID].activeChunkRequest || Promise.resolve()).finally(() => {
-                if (frameDataCache[this.jobID].latestFrameDecodeRequest !== requestId) {
+                if (frameDataCache[this.jobID]?.latestFrameDecodeRequest !== requestId) {
                     // not relevant request anymore
                     reject(this.number);
                     return;
