@@ -253,7 +253,9 @@ function CVATApplication(): JSX.Element {
 
     useEffect(() => {
         if (user?.id && user.isVerified && history.location.pathname !== '/invitations') {
-            appDispatch(getInvitationsAsync({ page: 1 }, true));
+            setTimeout(() => {
+                appDispatch(getInvitationsAsync({ page: 1 }, true));
+            }, 1000);
         }
     }, [user]);
 
@@ -405,11 +407,3 @@ function CVATApplication(): JSX.Element {
 }
 
 export default React.memo(CVATApplication);
-
-// проверить приглашения
-// попробовать отключить регистрацию и password reset
-// проверить не verified пользователя
-// проверить не происходит ли нигде рендеринг лишний раз
-
-// проверить logged in modals
-// проверить, что роуты из плагинов нормально отрабатывают
