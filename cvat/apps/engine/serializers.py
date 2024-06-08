@@ -1123,14 +1123,13 @@ class TaskWriteSerializer(WriteOnceMixin, serializers.ModelSerializer):
     project_id = serializers.IntegerField(required=False, allow_null=True)
     target_storage = StorageSerializer(required=False, allow_null=True)
     source_storage = StorageSerializer(required=False, allow_null=True)
-    consensus_job_per_segment = serializers.IntegerField(required=False)
     agreement_score_threshold = serializers.FloatField(required=False, allow_null=True)
 
     class Meta:
         model = models.Task
         fields = ('url', 'id', 'name', 'project_id', 'owner_id', 'assignee_id',
             'bug_tracker', 'overlap', 'segment_size', 'labels', 'subset',
-            'target_storage', 'source_storage', 'consensus_job_per_segment', 'agreement_score_threshold'
+            'target_storage', 'source_storage', 'agreement_score_threshold'
         )
         write_once_fields = ('overlap', 'segment_size')
 
