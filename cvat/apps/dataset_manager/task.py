@@ -729,6 +729,7 @@ class TaskAnnotation:
         ).get(id=pk)
 
         # Postgres doesn't guarantee an order by default without explicit order_by
+        # Only select normal jobs, not ground truth or consensus jobs
         self.db_jobs = models.Job.objects.select_related("segment").filter(
             segment__task_id=pk, type=models.JobType.ANNOTATION.value,
         ).order_by('id')
@@ -784,7 +785,7 @@ class TaskAnnotation:
         self.reset()
 
         for db_job in self.db_jobs:
-            if db_job.type != models.JobType.ANNOTATION and db_job.parent_job_id is not None:
+            if db_job.type != models.JobType.ANNOTATION or db_job.parent_job_id is not None:
                 continue
 
             annotation = JobAnnotation(db_job.id, is_prefetched=True)
