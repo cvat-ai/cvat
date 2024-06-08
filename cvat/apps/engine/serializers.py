@@ -1195,6 +1195,9 @@ class TaskWriteSerializer(WriteOnceMixin, serializers.ModelSerializer):
         if instance.project_id is None:
             LabelSerializer.update_labels(labels, parent_instance=instance)
 
+        if instance.agreement_score_threshold < 0 or instance.agreement_score_threshold > 1:
+            raise serializers.ValidationError('Agreement score threshold must be in [0, 1]')
+
         validated_project_id = validated_data.get('project_id')
         if validated_project_id is not None and validated_project_id != instance.project_id:
             project = models.Project.objects.get(id=validated_project_id)
