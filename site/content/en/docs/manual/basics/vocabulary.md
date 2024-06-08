@@ -103,7 +103,7 @@ Related sections:
 
 ## State
 State of the job. The state can be changed by an assigned user in
-{{< ilink "/docs/manual/basics/top-panel" "the menu inside the job" >}}.
+{{< ilink "/docs/manual/basics/CVAT-annotation-Interface/navbar.md#top-panel" "the menu inside the job" >}}.
 There are several possible states: `new`, `in progress`, `rejected`, `completed`.
 
 ---

@@ -143,17 +143,12 @@ function ObjectItemComponent(props: Props): JSX.Element {
                     />
                 )}
                 {!!elements.length && (
-                    <Collapse className='cvat-objects-sidebar-state-item-elements-collapse'>
-                        <Collapse.Panel
-                            header={(
-                                <>
-                                    <Text style={{ fontSize: 10 }} type='secondary'>PARTS</Text>
-                                    <br />
-                                </>
-                            )}
-                            key='elements'
-                        >
-                            {elements.map((element: number) => (
+                    <Collapse
+                        className='cvat-objects-sidebar-state-item-elements-collapse'
+                        items={[{
+                            key: 'elements',
+                            label: <Text style={{ fontSize: 10 }} type='secondary'>PARTS</Text>,
+                            children: elements.map((element: number) => (
                                 <ObjectItemElementComponent
                                     key={element}
                                     readonly={readonly}
@@ -161,9 +156,9 @@ function ObjectItemComponent(props: Props): JSX.Element {
                                     clientID={element}
                                     onMouseLeave={activateState}
                                 />
-                            ))}
-                        </Collapse.Panel>
-                    </Collapse>
+                            )),
+                        }]}
+                    />
                 )}
             </div>
         </div>

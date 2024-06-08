@@ -8,7 +8,7 @@ from glob import glob
 
 from pyunpack import Archive
 
-from cvat.apps.dataset_manager.bindings import (GetCVATDataExtractor,
+from cvat.apps.dataset_manager.bindings import (GetCVATDataExtractor, detect_dataset,
     import_dm_annotations, match_dm_item, find_dataset_root)
 from cvat.apps.dataset_manager.util import make_zip_archive
 from datumaro.components.extractor import DatasetItem
@@ -46,6 +46,7 @@ def _import(src_file, temp_dir, instance_data, load_data_callback=None, **kwargs
         if frame_info is not None:
             image_info[frame] = (frame_info['height'], frame_info['width'])
 
+    detect_dataset(temp_dir, format_name='yolo', importer=dm_env.importers.get('yolo'))
     dataset = Dataset.import_from(temp_dir, 'yolo',
         env=dm_env, image_info=image_info)
     if load_data_callback is not None:
