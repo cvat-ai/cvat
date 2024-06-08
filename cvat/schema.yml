@@ -1891,6 +1891,11 @@ paths:
           enum:
           - annotation
           - ground_truth
+      - name: parent_job_id
+        in: query
+        description: A simple equality filter for the parent_job_id field
+        schema:
+          type: integer
       tags:
       - jobs
       security:
