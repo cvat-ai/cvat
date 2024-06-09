@@ -43,6 +43,7 @@ import { shortcutsActions } from 'actions/shortcuts-actions';
 import { AboutState, CombinedState } from 'reducers';
 import { useIsMounted, usePlugins } from 'utils/hooks';
 import GlobalHotKeys, { KeyMap } from 'utils/mousetrap-react';
+import { getCVATStore } from 'cvat-store';
 import SettingsModal from './settings-modal/settings-modal';
 import OrganizationsSearch from './organizations-search';
 
@@ -71,6 +72,16 @@ interface DispatchToProps {
 }
 
 const core = getCore();
+
+const store = getCVATStore();
+const { registerShortcut } = shortcutsActions;
+
+store.dispatch(registerShortcut('SWITCH_SHORTCUTS', {
+    name: 'Show shortcuts',
+    description: 'Open/hide the list of available shortcuts',
+    sequences: ['f1'],
+    view: 'all',
+}));
 
 function mapStateToProps(state: CombinedState): StateToProps {
     const {

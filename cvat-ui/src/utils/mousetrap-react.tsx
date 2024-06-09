@@ -11,7 +11,7 @@ export interface KeyMapItem {
     description: string;
     sequences: string[];
     displayedSequences?: string[];
-    action: 'keydown' | 'keyup' | 'keypress';
+    view: string;
 }
 
 export interface KeyMap {
@@ -32,19 +32,30 @@ const applicationKeyMap: KeyMap = {};
 
 export default function GlobalHotKeys(props: Props): JSX.Element {
     const { children, keyMap, handlers } = props;
+
     useEffect(() => {
         for (const key of Object.keys(keyMap)) {
-            const { sequences, action } = keyMap[key];
+            if (!keyMap[key]) {
+                continue;
+            }
+            const { sequences } = keyMap[key];
             const handler = handlers[key];
-            Mousetrap.bind(sequences, handler, action);
-            applicationKeyMap[key] = keyMap[key];
+            if (sequences && handler) {
+                Mousetrap.bind(sequences, handler, 'keydown');
+                applicationKeyMap[key] = keyMap[key];
+            }
         }
 
         return () => {
             for (const key of Object.keys(keyMap)) {
-                const { sequences, action } = keyMap[key];
-                Mousetrap.unbind(sequences, action);
-                delete applicationKeyMap[key];
+                if (!keyMap[key]) {
+                    continue;
+                }
+                const { sequences } = keyMap[key];
+                if (sequences) {
+                    Mousetrap.unbind(sequences, 'keydown');
+                    delete applicationKeyMap[key];
+                }
             }
         };
     });
