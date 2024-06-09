@@ -49,9 +49,7 @@ export class EditHandlerImpl implements EditHandler {
 
         circle.on('mousedown', (e: MouseEvent): void => {
             if (e.button !== 0) return;
-            this.edit({
-                enabled: false,
-            });
+            this.edit({ enabled: false });
         });
     }
 
@@ -370,7 +368,7 @@ export class EditHandlerImpl implements EditHandler {
     }
 
     private closeEditing(): void {
-        if (this.isEditing) {
+        if (this.isEditing && this.editData.state.shapeType === 'polyline') {
             const { offset } = this.geometry;
             const head = this.editedShape.attr('points').split(' ').slice(0, this.editData.pointID).join(' ');
             const stringifiedPoints = `${head} ${this.editLine.node.getAttribute('points').slice(0, -2)}`;
@@ -381,6 +379,8 @@ export class EditHandlerImpl implements EditHandler {
                 const { state } = this.editData;
                 this.onEditDone(state, points);
             }
+        } else {
+            this.onEditDone(null, null);
         }
         this.isEditing = false;
         this.release();
@@ -408,10 +408,10 @@ export class EditHandlerImpl implements EditHandler {
 
     public edit(editData: any): void {
         if (editData.enabled) {
-            if (editData.state.shapeType !== 'rectangle') {
+            if (['polygon', 'polyline', 'points'].includes(editData.state.shapeType)) {
                 this.editData = editData;
-                this.isEditing = true;
                 this.initEditing();
+                this.isEditing = true;
             } else {
                 this.cancel();
             }
