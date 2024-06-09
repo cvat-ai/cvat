@@ -3,8 +3,10 @@
 // SPDX-License-Identifier: MIT
 
 import { ActionUnion, createAction } from 'utils/redux';
-import { RequestsQuery } from 'reducers';
-import { Request, InstanceType, getCore } from 'cvat-core-wrapper';
+import { RequestsQuery, RequestsState } from 'reducers';
+import {
+    Request, ProjectOrTaskOrJob, getCore, RQStatus,
+} from 'cvat-core-wrapper';
 
 const core = getCore();
 
@@ -13,7 +15,6 @@ export enum RequestsActionsTypes {
     GET_REQUESTS_SUCCESS = 'GET_REQUESTS_SUCCESS',
     GET_REQUESTS_FAILED = 'GET_REQUESTS_FAILED',
     GET_REQUEST_STATUS_SUCCESS = 'GET_REQUEST_STATUS_SUCCESS',
-    GET_REQUEST_STATUS_FAILED = 'GET_REQUEST_STATUS_FAILED',
     REQUEST_FINISHED = 'REQUEST_FINISHED',
     REQUEST_FAILED = 'REQUEST_FAILED',
     CANCEL_REQUEST = 'CANCEL_REQUEST',
@@ -23,10 +24,12 @@ export enum RequestsActionsTypes {
 }
 
 export const requestsActions = {
-    getRequests: (query?: RequestsQuery) => createAction(RequestsActionsTypes.GET_REQUESTS, { query }),
+    getRequests: (query: RequestsQuery, fetching = true) => (
+        createAction(RequestsActionsTypes.GET_REQUESTS, { query, fetching })
+    ),
     requestFinished: (request: Request) => createAction(RequestsActionsTypes.REQUEST_FINISHED, { request }),
     requestFailed: (request: Request) => createAction(RequestsActionsTypes.REQUEST_FAILED, { request }),
-    getRequestsSuccess: (requests: Request[]) => createAction(
+    getRequestsSuccess: (requests: Awaited<ReturnType<typeof core['requests']['list']>>) => createAction(
         RequestsActionsTypes.GET_REQUESTS_SUCCESS, { requests },
     ),
     getRequestsFailed: (error: any) => createAction(RequestsActionsTypes.GET_REQUESTS_FAILED, {
@@ -35,12 +38,6 @@ export const requestsActions = {
     getRequestStatusSuccess: (request: Request) => (
         createAction(RequestsActionsTypes.GET_REQUEST_STATUS_SUCCESS, {
             request,
-        })
-    ),
-    getRequestStatusFailed: (request: Request, error: any) => (
-        createAction(RequestsActionsTypes.GET_REQUEST_STATUS_FAILED, {
-            request,
-            error,
         })
     ),
     cancelRequest: (request: Request) => createAction(RequestsActionsTypes.CANCEL_REQUEST, { request }),
@@ -56,7 +53,7 @@ export interface RequestInstanceType {
     type: 'project' | 'task' | 'job';
 }
 
-export function getInstanceType(instance: InstanceType | RequestInstanceType): 'project' | 'task' | 'job' {
+export function getInstanceType(instance: ProjectOrTaskOrJob | RequestInstanceType): 'project' | 'task' | 'job' {
     if (instance instanceof core.classes.Project) {
         return 'project';
     }
@@ -72,15 +69,16 @@ export function getInstanceType(instance: InstanceType | RequestInstanceType): '
     return instance.type;
 }
 
-export function isInstanceType(instance: any): instance is InstanceType {
-    return instance instanceof core.classes.Project ||
-            instance instanceof core.classes.Task ||
-            instance instanceof core.classes.Job;
-}
-
 export function updateRequestProgress(request: Request, dispatch: (action: RequestsActions) => void): void {
     dispatch(
         requestsActions.getRequestStatusSuccess(request),
+    );
+}
+
+export function shouldListenForProgress(rqID: string | undefined, state: RequestsState): boolean {
+    return (
+        typeof rqID === 'string' &&
+        (!state.requests[rqID] || [RQStatus.FINISHED, RQStatus.FAILED].includes(state.requests[rqID]?.status))
     );
 }
 

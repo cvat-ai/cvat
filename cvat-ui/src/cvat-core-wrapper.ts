@@ -55,7 +55,7 @@ function getCore(): typeof cvat {
     return cvat;
 }
 
-type InstanceType = Project | Task | Job;
+type ProjectOrTaskOrJob = Project | Task | Job;
 
 export {
     getCore,
@@ -114,5 +114,5 @@ export type {
     QualitySummary,
     CVATCore,
     SerializedAPISchema,
-    InstanceType,
+    ProjectOrTaskOrJob,
 };

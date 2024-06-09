@@ -116,53 +116,23 @@ export interface TasksState {
 export interface ExportState {
     projects: {
         dataset: {
-            current: {
-                [id: number]: string[];
-            };
             modalInstance: any | null;
         };
-        annotations: {
-            current: {
-                [id: number]: string[];
-            };
-        };
         backup: {
-            current: {
-                [id: number]: boolean;
-            };
             modalInstance: any | null;
         };
     };
     tasks: {
         dataset: {
-            current: {
-                [id: number]: string[];
-            };
             modalInstance: any | null;
         };
-        annotations: {
-            current: {
-                [id: number]: string[];
-            };
-        };
         backup: {
-            current: {
-                [id: number]: boolean;
-            };
             modalInstance: any | null;
         };
     };
     jobs: {
         dataset: {
-            current: {
-                [id: number]: string[];
-            };
             modalInstance: any | null;
-        };
-        annotations: {
-            current: {
-                [id: number]: string[];
-            };
         };
     };
     instanceType: 'project' | 'task' | 'job' | null;
@@ -172,12 +142,11 @@ export interface ImportState {
     projects: {
         dataset: {
             modalInstance: any | null;
-            current: {
-                [id: number]: {
-                    format: string;
-                    progress: number;
-                    status: string;
-                };
+            uploadState: {
+                id: number | null,
+                format: string;
+                progress: number;
+                status: string;
             };
         };
         backup: {
@@ -188,9 +157,6 @@ export interface ImportState {
     tasks: {
         dataset: {
             modalInstance: any | null;
-            current: {
-                [id: number]: string;
-            };
         };
         backup: {
             modalVisible: boolean;
@@ -200,9 +166,6 @@ export interface ImportState {
     jobs: {
         dataset: {
             modalInstance: any | null;
-            current: {
-                [id: number]: string;
-            };
         };
     };
     instanceType: 'project' | 'task' | 'job' | null;
@@ -985,7 +948,6 @@ export interface RequestsState {
     fetching: boolean;
     initialized: boolean;
     requests: Record<string, Request>;
-    count: number;
     urls: string[];
     query: RequestsQuery;
 }

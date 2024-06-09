@@ -10,7 +10,6 @@ import { RequestsState } from '.';
 const defaultState: RequestsState = {
     initialized: false,
     fetching: false,
-    count: 0,
     requests: {},
     urls: [],
     query: {
@@ -24,9 +23,10 @@ export default function (
 ): RequestsState {
     switch (action.type) {
         case RequestsActionsTypes.GET_REQUESTS: {
+            const { fetching } = action.payload;
             return {
                 ...state,
-                fetching: true,
+                fetching,
                 query: {
                     ...state.query,
                     ...action.payload.query,
@@ -37,7 +37,6 @@ export default function (
             return {
                 ...state,
                 requests: Object.fromEntries(action.payload.requests.map((r) => [r.id, r])),
-                count: action.payload.requests.count,
                 initialized: true,
                 fetching: false,
             };
@@ -49,8 +48,7 @@ export default function (
                 fetching: false,
             };
         }
-        case RequestsActionsTypes.GET_REQUEST_STATUS_SUCCESS:
-        case RequestsActionsTypes.GET_REQUEST_STATUS_FAILED: {
+        case RequestsActionsTypes.GET_REQUEST_STATUS_SUCCESS: {
             const { requests } = state;
 
             return {

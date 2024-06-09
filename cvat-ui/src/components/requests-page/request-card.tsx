@@ -20,16 +20,20 @@ import { RQStatus, Request } from 'cvat-core-wrapper';
 
 import moment from 'moment';
 import { cancelRequestAsync } from 'actions/requests-async-actions';
-import { StatusMessage } from './request-status';
+import StatusMessage from './request-status';
 
 export interface Props {
     request: Request;
 }
 
-function constructLink(operation: typeof Request['operation']): string | null {
+function constructLink(request: Request): string | null {
     const {
-        target, jobID, taskID, projectID,
-    } = operation;
+        type, target, jobID, taskID, projectID,
+    } = request.operation;
+
+    if (request.status === RQStatus.FAILED && type.includes('create')) {
+        return null;
+    }
 
     if (target === 'project' && projectID) {
         return `/projects/${projectID}`;
@@ -136,7 +140,7 @@ const dimensions = {
     xxl: 6,
 };
 
-export default function RequestCard(props: Props): JSX.Element {
+function RequestCard(props: Props): JSX.Element {
     const { request } = props;
     const { operation } = request;
     const { type } = operation;
@@ -144,7 +148,7 @@ export default function RequestCard(props: Props): JSX.Element {
     const dispatch = useDispatch();
     const [isActive, setIsActive] = useState(true);
 
-    const linkToEntity = constructLink(request.operation);
+    const linkToEntity = constructLink(request);
     const percent = request.status === RQStatus.FINISHED ? 100 : request.progress;
     const timestamps = constructTimestamps(request);
 
@@ -262,3 +266,5 @@ export default function RequestCard(props: Props): JSX.Element {
         </Card>
     );
 }
+
+export default React.memo(RequestCard);

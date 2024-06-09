@@ -287,6 +287,12 @@ function build(): CVATCore {
             set globalObjectsCounter(value: number) {
                 config.globalObjectsCounter = value;
             },
+            get requestsStatusDelay() {
+                return config.requestsStatusDelay;
+            },
+            set requestsStatusDelay(value) {
+                config.requestsStatusDelay = value;
+            },
         },
         client: {
             version: `${pjson.version}`,
@@ -386,8 +392,8 @@ function build(): CVATCore {
             },
             async listen(
                 rqID: string,
-                options?: {
-                    callback?: (request: Request) => void,
+                options: {
+                    callback: (request: Request) => void,
                     initialRequest?: Request,
                 },
             ) {

@@ -30,7 +30,7 @@ export interface Props {
     message: string | null;
 }
 
-export function StatusMessage(props: Props): JSX.Element {
+function StatusMessage(props: Props): JSX.Element {
     let { status, message } = props;
     message = message || '';
     status = status || RQStatus.FINISHED;
@@ -75,3 +75,5 @@ export function StatusMessage(props: Props): JSX.Element {
         </Text>
     );
 }
+
+export default React.memo(StatusMessage);

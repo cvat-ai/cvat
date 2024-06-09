@@ -2,12 +2,12 @@
 //
 // SPDX-License-Identifier: MIT
 
-@import '../../base';
+@import 'base';
 
 .cvat-requests-scrollbar {
     &::-webkit-scrollbar {
         background-color: #fff;
-        width: 16px;
+        width: $grid-unit-size * 2;
     }
 
     &::-webkit-scrollbar-track {
@@ -16,7 +16,7 @@
 
     &::-webkit-scrollbar-thumb {
         background-color: #babac0;
-        border-radius: 16px;
+        border-radius: $border-radius-base * 2;
         border: 6px solid #fff;
     }
 }
@@ -81,39 +81,6 @@
         height: 100%;
     }
 
-    .ant-collapse-header {
-        padding: 0 !important;
-        color: #ff4d4f !important;
-        font-size: 12px;
-
-        .ant-collapse-arrow {
-            margin-left: 2px !important;
-            margin-right: 2px !important;
-        };
-    }
-
-    .ant-collapse-item {
-        border: 0 !important;
-        background-color: white !important;
-    }
-
-    .ant-collapse {
-        border: 0 !important;
-    }
-
-    .ant-collapse-content {
-        border-top: 0 !important;
-    }
-
-    .ant-collapse-content-box {
-        padding: $grid-unit-size;
-
-        .ant-typography {
-            font-size: 12px;
-        }
-    }
-
-
     &:hover {
         transition: box-shadow $box-shadow-transition;
         box-shadow: $box-shadow-base;
@@ -131,7 +98,7 @@
 .cvat-requests-page-actions-button {
     border: none;
     padding: 0;
-    padding-top: 22px;
+    padding-top: $grid-unit-size * 4;
     display: flex;
     align-items: center;
     line-height: 14px;

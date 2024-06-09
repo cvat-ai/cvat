@@ -3002,7 +3002,7 @@ def _export_annotations(
     filename: Optional[str],
     location_conf: Dict[str, Any]
 ):
-    # backward compatibility to the old created RQ jobs
+    # backward compatibility for old created RQ jobs
     from cvat.apps.engine.background_operations import DatasetExportManager
     dataset_export_manager = DatasetExportManager(db_instance, request, callback, version=1)
     return dataset_export_manager.export()

@@ -5,11 +5,10 @@
 
 import { ActionUnion, createAction, ThunkAction } from 'utils/redux';
 
-import {
-    Storage, InstanceType, Job,
-} from 'cvat-core-wrapper';
+import { Storage, ProjectOrTaskOrJob, Job } from 'cvat-core-wrapper';
 import {
     getInstanceType, RequestInstanceType, listen, RequestsActions,
+    shouldListenForProgress,
 } from './requests-actions';
 
 export enum ExportActionTypes {
@@ -32,15 +31,12 @@ export const exportActions = {
     closeExportDatasetModal: (instance: any) => (
         createAction(ExportActionTypes.CLOSE_EXPORT_DATASET_MODAL, { instance })
     ),
-    exportDataset: (instance: InstanceType | RequestInstanceType, format: string, resource: 'dataset' | 'annotations') => (
-        createAction(ExportActionTypes.EXPORT_DATASET, { instance, format, resource })
-    ),
     exportDatasetSuccess: (
-        instance: InstanceType | RequestInstanceType,
+        instance: ProjectOrTaskOrJob | RequestInstanceType,
         instanceType: 'project' | 'task' | 'job',
         format: string,
         resource: 'dataset' | 'annotations',
-        target: 'local' | 'cloudstorage' | undefined,
+        target?: 'local' | 'cloudstorage',
     ) => (
         createAction(ExportActionTypes.EXPORT_DATASET_SUCCESS, {
             instance,
@@ -51,7 +47,7 @@ export const exportActions = {
         })
     ),
     exportDatasetFailed: (
-        instance: InstanceType | RequestInstanceType,
+        instance: ProjectOrTaskOrJob | RequestInstanceType,
         instanceType: 'project' | 'task' | 'job',
         format: string,
         resource: 'dataset' | 'annotations',
@@ -71,13 +67,10 @@ export const exportActions = {
     closeExportBackupModal: (instance: any) => (
         createAction(ExportActionTypes.CLOSE_EXPORT_BACKUP_MODAL, { instance })
     ),
-    exportBackup: (instance: Exclude<InstanceType, Job> | RequestInstanceType) => (
-        createAction(ExportActionTypes.EXPORT_BACKUP, { instance })
-    ),
-    exportBackupSuccess: (instance: Exclude<InstanceType, Job> | RequestInstanceType, instanceType: 'task' | 'project', target: 'local' | 'cloudstorage' | undefined) => (
+    exportBackupSuccess: (instance: Exclude<ProjectOrTaskOrJob, Job> | RequestInstanceType, instanceType: 'task' | 'project', target?: 'local' | 'cloudstorage') => (
         createAction(ExportActionTypes.EXPORT_BACKUP_SUCCESS, { instance, instanceType, target })
     ),
-    exportBackupFailed: (instance: Exclude<InstanceType, Job> | RequestInstanceType, instanceType: 'task' | 'project', error: any) => (
+    exportBackupFailed: (instance: Exclude<ProjectOrTaskOrJob, Job> | RequestInstanceType, instanceType: 'task' | 'project', error: any) => (
         createAction(ExportActionTypes.EXPORT_BACKUP_FAILED, { instance, instanceType, error })
     ),
 };
@@ -86,7 +79,7 @@ export async function listenExportDatasetAsync(
     rqID: string,
     dispatch: (action: ExportActions | RequestsActions) => void,
     params: {
-        instance: InstanceType | RequestInstanceType,
+        instance: ProjectOrTaskOrJob | RequestInstanceType,
         format: string,
         saveImages: boolean,
     },
@@ -96,12 +89,8 @@ export async function listenExportDatasetAsync(
 
     const instanceType = getInstanceType(instance);
     try {
-        let result;
-        let target: 'cloudstorage' | 'local' | undefined;
-        if (rqID) {
-            result = await listen(rqID, dispatch);
-            target = !result?.url ? 'cloudstorage' : 'local';
-        }
+        const result = await listen(rqID, dispatch);
+        const target = !result?.url ? 'cloudstorage' : 'local';
         dispatch(exportActions.exportDatasetSuccess(
             instance, instanceType, format, resource, target,
         ));
@@ -111,24 +100,31 @@ export async function listenExportDatasetAsync(
 }
 
 export const exportDatasetAsync = (
-    instance: InstanceType,
+    instance: ProjectOrTaskOrJob,
     format: string,
     saveImages: boolean,
     useDefaultSettings: boolean,
     targetStorage: Storage,
     name?: string,
-): ThunkAction => async (dispatch) => {
-    const resource = saveImages ? 'dataset' : 'annotations';
-    dispatch(exportActions.exportDataset(instance, format, resource));
+): ThunkAction => async (dispatch, getState) => {
+    const state = getState();
 
+    const resource = saveImages ? 'dataset' : 'annotations';
     const instanceType = getInstanceType(instance);
 
     try {
         const rqID = await instance.annotations
             .exportDataset(format, saveImages, useDefaultSettings, targetStorage, name);
-        await listenExportDatasetAsync(rqID, dispatch, {
-            instance, format, saveImages,
-        });
+        if (shouldListenForProgress(rqID, state.requests)) {
+            await listenExportDatasetAsync(rqID, dispatch, {
+                instance, format, saveImages,
+            });
+        }
+        if (!rqID) {
+            dispatch(exportActions.exportDatasetSuccess(
+                instance, instanceType, format, resource,
+            ));
+        }
     } catch (error) {
         dispatch(exportActions.exportDatasetFailed(instance, instanceType, format, resource, error));
     }
@@ -138,19 +134,15 @@ export async function listenExportBackupAsync(
     rqID: string,
     dispatch: (action: ExportActions | RequestsActions) => void,
     params: {
-        instance: Exclude<InstanceType, Job> | RequestInstanceType,
+        instance: Exclude<ProjectOrTaskOrJob, Job> | RequestInstanceType,
     },
 ): Promise<void> {
     const { instance } = params;
     const instanceType = getInstanceType(instance) as 'project' | 'task';
 
     try {
-        let result;
-        let target: 'cloudstorage' | 'local' | undefined;
-        if (rqID) {
-            result = await listen(rqID, dispatch);
-            target = !result?.url ? 'cloudstorage' : 'local';
-        }
+        const result = await listen(rqID, dispatch);
+        const target = !result?.url ? 'cloudstorage' : 'local';
         dispatch(exportActions.exportBackupSuccess(instance, instanceType, target));
     } catch (error) {
         dispatch(exportActions.exportBackupFailed(instance, instanceType, error as Error));
@@ -158,18 +150,24 @@ export async function listenExportBackupAsync(
 }
 
 export const exportBackupAsync = (
-    instance: Exclude<InstanceType, Job>,
+    instance: Exclude<ProjectOrTaskOrJob, Job>,
     targetStorage: Storage,
     useDefaultSetting: boolean,
     fileName: string,
-): ThunkAction => async (dispatch) => {
-    dispatch(exportActions.exportBackup(instance));
+): ThunkAction => async (dispatch, getState) => {
+    const state = getState();
+
     const instanceType = getInstanceType(instance) as 'project' | 'task';
 
     try {
         const rqID = await instance
             .backup(targetStorage, useDefaultSetting, fileName);
-        await listenExportBackupAsync(rqID, dispatch, { instance });
+        if (shouldListenForProgress(rqID, state.requests)) {
+            await listenExportBackupAsync(rqID, dispatch, { instance });
+        }
+        if (!rqID) {
+            dispatch(exportActions.exportBackupSuccess(instance, instanceType));
+        }
     } catch (error) {
         dispatch(exportActions.exportBackupFailed(instance, instanceType, error as Error));
     }

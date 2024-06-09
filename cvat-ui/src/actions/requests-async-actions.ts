@@ -7,9 +7,9 @@ import { CombinedState, RequestsQuery, StorageLocation } from 'reducers';
 import {
     getCore, RQStatus, Request, Project, Task, Job,
 } from 'cvat-core-wrapper';
-import { exportActions, listenExportBackupAsync, listenExportDatasetAsync } from './export-actions';
+import { listenExportBackupAsync, listenExportDatasetAsync } from './export-actions';
 import { RequestInstanceType, requestsActions } from './requests-actions';
-import { importActions, listenImportDatasetAsync } from './import-actions';
+import { listenImportBackupAsync, listenImportDatasetAsync } from './import-actions';
 
 const core = getCore();
 
@@ -28,7 +28,6 @@ export function getRequestsAsync(query: RequestsQuery): ThunkAction {
 
         try {
             const requests = await core.requests.list();
-            dispatch(requestsActions.getRequestsSuccess(requests));
 
             requests
                 .filter((request: Request) => [RQStatus.STARTED, RQStatus.QUEUED].includes(request.status))
@@ -52,19 +51,11 @@ export function getRequestsAsync(query: RequestsQuery): ThunkAction {
 
                     if (operationType === 'export') {
                         if (operationTarget === 'backup') {
-                            if (!(state.export.tasks.backup.current?.[(instance as RequestInstanceType).id] ||
-                                state.export.projects.backup.current?.[(instance as RequestInstanceType).id])
-                            ) {
-                                dispatch(exportActions.exportBackup(instance as RequestInstanceType));
+                            if (!state.requests.requests[rqID]) {
                                 listenExportBackupAsync(rqID, dispatch, { instance: instance as RequestInstanceType });
                             }
-                        } else if (operationTarget === 'dataset') {
-                            const field = operationTarget === 'dataset' ? 'dataset' : 'annotations';
-                            if (!(state.export.tasks[field].current?.[(instance as RequestInstanceType).id] ||
-                                state.export.projects[field].current?.[(instance as RequestInstanceType).id] ||
-                                state.export.jobs[field].current?.[(instance as RequestInstanceType).id])
-                            ) {
-                                dispatch(exportActions.exportDataset(instance as RequestInstanceType, format, field));
+                        } else if (operationTarget === 'dataset' || operationTarget === 'annotations') {
+                            if (!state.requests.requests[rqID]) {
                                 listenExportDatasetAsync(
                                     rqID,
                                     dispatch,
@@ -73,19 +64,20 @@ export function getRequestsAsync(query: RequestsQuery): ThunkAction {
                             }
                         }
                     } else if (operationType === 'import') {
-                        if (!(state.import.tasks.dataset.current?.[(instance as RequestInstanceType).id] ||
-                            state.import.projects.dataset.current?.[(instance as RequestInstanceType).id] ||
-                            state.import.jobs.dataset.current?.[(instance as RequestInstanceType).id])
-                        ) {
-                            dispatch(importActions.importDataset(instance as RequestInstanceType, format));
-                            listenImportDatasetAsync(
-                                rqID,
-                                dispatch,
-                                { instance: instance as RequestInstanceType },
-                            );
+                        if (operationTarget === 'backup') {
+                            listenImportBackupAsync(rqID, dispatch, { instanceType: (instance as RequestInstanceType).type as 'project' | 'task' });
+                        } else if (operationTarget === 'dataset' || operationTarget === 'annotations') {
+                            if (!state.requests.requests[rqID]) {
+                                listenImportDatasetAsync(
+                                    rqID,
+                                    dispatch,
+                                    { instance: instance as RequestInstanceType },
+                                );
+                            }
                         }
                     }
                 });
+            dispatch(requestsActions.getRequestsSuccess(requests));
         } catch (error) {
             dispatch(requestsActions.getRequestsFailed(error));
         }

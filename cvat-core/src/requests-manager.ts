@@ -11,6 +11,22 @@ import config from './config';
 
 const REQUESTS_COUNT = 5;
 const PROGRESS_EPS = 25;
+const REQUEST_STATUS_DELAYS = {
+    [RQStatus.STARTED]: [3000, 7000, 13000],
+    [RQStatus.QUEUED]: [7000, 13000, 19000, 29000,
+        41000, 53000, 67000, 79000,
+        101000, 113000, 139000, 163000],
+};
+
+function getRequestStatusDelays(): typeof REQUEST_STATUS_DELAYS {
+    if (config.requestsStatusDelay) {
+        return {
+            [RQStatus.STARTED]: [config.requestsStatusDelay],
+            [RQStatus.QUEUED]: [config.requestsStatusDelay],
+        };
+    }
+    return REQUEST_STATUS_DELAYS;
+}
 
 class RequestsManager {
     private listening: Record<string, {
@@ -38,8 +54,8 @@ class RequestsManager {
 
     async listen(
         requestID: string,
-        options?: {
-            callback?: (request: Request) => void,
+        options: {
+            callback: (request: Request) => void,
             initialRequest?: Request,
         },
     ): Promise<Request> {
@@ -110,6 +126,7 @@ class RequestsManager {
 
                         onUpdate
                             .forEach((update) => update(new Request({
+                                id: requestID,
                                 status: RQStatus.FAILED,
                                 message: `Could not get a status of the request ${requestID}. ${error.toString()}`,
                             })));
@@ -150,7 +167,7 @@ class RequestsManager {
         const state = this.listening[rqID];
         const { request, requestDelayIdx } = state;
 
-        // request is not checked yet, call it immideately
+        // request was not checked yet, call it immediately
         if (!request) {
             return 0;
         }
@@ -161,10 +178,10 @@ class RequestsManager {
 
         switch (request.status) {
             case RQStatus.STARTED: {
-                return addRndComponent(config.requestsStatusDelays[RQStatus.STARTED][requestDelayIdx]);
+                return addRndComponent(getRequestStatusDelays()[RQStatus.STARTED][requestDelayIdx]);
             }
             case RQStatus.QUEUED: {
-                return addRndComponent(config.requestsStatusDelays[RQStatus.QUEUED][requestDelayIdx]);
+                return addRndComponent(getRequestStatusDelays()[RQStatus.QUEUED][requestDelayIdx]);
             }
             default:
                 return 0;
@@ -182,11 +199,11 @@ class RequestsManager {
 
         switch (updatedRequest.status) {
             case RQStatus.QUEUED: {
-                return Math.min(requestDelayIdx + 1, config.requestsStatusDelays[RQStatus.QUEUED].length - 1);
+                return Math.min(requestDelayIdx + 1, getRequestStatusDelays()[RQStatus.QUEUED].length - 1);
             }
             case RQStatus.STARTED: {
                 if (Math.round(Math.abs(updatedRequest.progress - progress) * 100) < PROGRESS_EPS) {
-                    return Math.min(requestDelayIdx + 1, config.requestsStatusDelays[RQStatus.STARTED].length - 1);
+                    return Math.min(requestDelayIdx + 1, getRequestStatusDelays()[RQStatus.STARTED].length - 1);
                 }
                 return requestDelayIdx;
             }

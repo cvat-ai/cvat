@@ -19,7 +19,7 @@ import TargetStorageField from 'components/storage/target-storage-field';
 import { CombinedState, StorageLocation } from 'reducers';
 import { exportActions, exportDatasetAsync } from 'actions/export-actions';
 import {
-    Dumper, InstanceType, Job, Project, Storage, StorageData, Task,
+    Dumper, ProjectOrTaskOrJob, Job, Project, Storage, StorageData, Task,
 } from 'cvat-core-wrapper';
 import ReactMarkdown from 'react-markdown';
 
@@ -45,8 +45,6 @@ const initialValues: FormValues = {
 function ExportDatasetModal(props: StateToProps): JSX.Element {
     const {
         dumpers,
-        currentDataset,
-        currentAnnotations,
         instance,
     } = props;
 
@@ -100,29 +98,20 @@ function ExportDatasetModal(props: StateToProps): JSX.Element {
 
     const handleExport = useCallback(
         (values: FormValues): void => {
-            let inProgress = false;
-            if (values.saveImages) {
-                inProgress = currentDataset?.includes(values.selectedFormat as string);
-            } else {
-                inProgress = currentAnnotations?.includes(values.selectedFormat as string);
-            }
-
-            if (!inProgress) {
-                // have to validate format before so it would not be undefined
-                dispatch(
-                    exportDatasetAsync(
-                        instance as InstanceType,
-                        values.selectedFormat as string,
-                        values.saveImages,
-                        useDefaultTargetStorage,
-                        useDefaultTargetStorage ? new Storage({
-                            location: defaultStorageLocation,
-                            cloudStorageId: defaultStorageCloudId,
-                        }) : new Storage(targetStorage),
-                        values.customName ? `${values.customName}.zip` : undefined,
-                    ),
-                );
-            }
+            // have to validate format before so it would not be undefined
+            dispatch(
+                exportDatasetAsync(
+                    instance as ProjectOrTaskOrJob,
+                    values.selectedFormat as string,
+                    values.saveImages,
+                    useDefaultTargetStorage,
+                    useDefaultTargetStorage ? new Storage({
+                        location: defaultStorageLocation,
+                        cloudStorageId: defaultStorageCloudId,
+                    }) : new Storage(targetStorage),
+                    values.customName ? `${values.customName}.zip` : undefined,
+                ),
+            );
             closeModal();
             const resource = values.saveImages ? 'Dataset' : 'Annotations';
             const description = `${resource} export was started for ${instanceType}. ` +
@@ -136,7 +125,7 @@ function ExportDatasetModal(props: StateToProps): JSX.Element {
             });
         },
         [instance, instanceType, useDefaultTargetStorage,
-            defaultStorageLocation, defaultStorageCloudId, targetStorage, currentAnnotations, currentDataset],
+            defaultStorageLocation, defaultStorageCloudId, targetStorage],
     );
 
     return (
@@ -220,8 +209,6 @@ function ExportDatasetModal(props: StateToProps): JSX.Element {
 interface StateToProps {
     dumpers: Dumper[];
     instance: Project | Task | Job | null;
-    currentDataset: string[];
-    currentAnnotations: string[];
 }
 
 function mapStateToProps(state: CombinedState): StateToProps {
@@ -232,12 +219,6 @@ function mapStateToProps(state: CombinedState): StateToProps {
 
     return {
         instance,
-        currentDataset: !instanceType ? [] : (
-            state.export[`${instanceType}s` as 'projects' | 'tasks' | 'jobs']
-        ).dataset.current[instance.id],
-        currentAnnotations: !instanceType ? [] : (
-            state.export[`${instanceType}s` as 'projects' | 'tasks' | 'jobs']
-        ).annotations.current[instance.id],
         dumpers: state.formats.annotationFormats.dumpers,
     };
 }

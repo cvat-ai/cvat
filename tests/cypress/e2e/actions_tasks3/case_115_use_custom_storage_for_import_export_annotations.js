@@ -23,16 +23,26 @@ context('Import and export annotations: specify source and target storage in mod
     const imagesFolder = `cypress/fixtures/${imageFileName}`;
     const directoryToArchive = imagesFolder;
     const format = 'CVAT for images';
-
-    const createRectangleShape2Points = {
-        points: 'By 2 Points',
-        type: 'Shape',
-        labelName,
-        firstX: 250,
-        firstY: 350,
-        secondX: 350,
-        secondY: 450,
-    };
+    const rectangles = [
+        {
+            points: 'By 2 Points',
+            type: 'Shape',
+            labelName,
+            firstX: 250,
+            firstY: 350,
+            secondX: 350,
+            secondY: 450,
+        },
+        {
+            points: 'By 2 Points',
+            type: 'Shape',
+            labelName,
+            firstX: 150,
+            firstY: 150,
+            secondX: 250,
+            secondY: 250,
+        },
+    ];
 
     const serverHost = Cypress.config('baseUrl').includes('3000') ? 'localhost' : 'minio';
 
@@ -110,7 +120,7 @@ context('Import and export annotations: specify source and target storage in mod
             cy.openJob();
 
             // create dummy annotations and export them to "public" minio bucket
-            cy.createRectangle(createRectangleShape2Points).then(() => {
+            cy.createRectangle(rectangles[0]).then(() => {
                 Cypress.config('scrollBehavior', false);
             });
             cy.saveJob('PATCH', 200, 'saveJobDump');
@@ -129,6 +139,10 @@ context('Import and export annotations: specify source and target storage in mod
         });
 
         it('Export job annotations to custom minio bucket with folder path', () => {
+            cy.createRectangle(rectangles[1]).then(() => {
+                Cypress.config('scrollBehavior', false);
+            });
+            cy.saveJob('PATCH', 200, 'saveJobDump');
             const exportParams = {
                 type: 'annotations',
                 format,
