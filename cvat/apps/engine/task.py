@@ -482,10 +482,19 @@ def _create_task_manifest_from_cloud_data(
     sorted_media: List[str],
     manifest: ImageManifestManager,
     dimension: models.DimensionType = models.DimensionType.DIM_2D,
+    *,
+    stop_frame: Optional[int] = None,
 ) -> None:
+    if stop_frame is None:
+        stop_frame = len(sorted_media) - 1
     cloud_storage_instance = db_storage_to_storage_instance(db_storage)
-    content = cloud_storage_instance.bulk_download_to_memory(sorted_media)
-    manifest.link(sources=content, DIM_3D=dimension == models.DimensionType.DIM_3D)
+    content_generator = cloud_storage_instance.bulk_download_to_memory(sorted_media)
+
+    manifest.link(
+        sources=content_generator,
+        DIM_3D=dimension == models.DimensionType.DIM_3D,
+        stop=stop_frame,
+    )
     manifest.create()
 
 @transaction.atomic
@@ -644,6 +653,7 @@ def _create_thread(
     # count and validate uploaded files
     media = _count_files(data)
     media, task_mode = _validate_data(media, manifest_files)
+    is_media_sorted = False
 
     if is_data_in_cloud:
         # first we need to filter files and keep only supported ones
@@ -657,7 +667,20 @@ def _create_thread(
             filtered_data = []
             for files in (i for i in media.values() if i):
                 filtered_data.extend(files)
-            _download_data_from_cloud_storage(db_data.cloud_storage, filtered_data, upload_dir)
+            media_to_download = filtered_data
+
+            if media['image']:
+                start_frame = db_data.start_frame
+                stop_frame = len(filtered_data) - 1
+                if data['stop_frame'] is not None:
+                    stop_frame = min(stop_frame, data['stop_frame'])
+
+                step = db_data.get_frame_step()
+                if start_frame or step != 1 or stop_frame != len(filtered_data) - 1:
+                    media_to_download = filtered_data[start_frame : stop_frame + 1: step]
+            _download_data_from_cloud_storage(db_data.cloud_storage, media_to_download, upload_dir)
+            del media_to_download
+            del filtered_data
             is_data_in_cloud = False
             db_data.storage = models.StorageChoice.LOCAL
         else:
@@ -674,10 +697,13 @@ def _create_thread(
                 upload_dir, data.get('server_files_path'), data.get('server_files_exclude'))
             manifest_root = upload_dir
         elif is_data_in_cloud:
+            # we should sort media before sorting in the extractor because the manifest structure should match to the sorted media
             if job_file_mapping is not None:
                 sorted_media = list(itertools.chain.from_iterable(job_file_mapping))
             else:
                 sorted_media = sort(media['image'], data['sorting_method'])
+                media['image'] = sorted_media
+            is_media_sorted = True
 
             if manifest_file:
                 # Define task manifest content based on cloud storage manifest content and uploaded files
@@ -747,7 +773,8 @@ def _create_thread(
             upload_dir = db_data.get_upload_dirname()
             db_data.storage = models.StorageChoice.LOCAL
         if media_type != 'video':
-            details['sorting_method'] = data['sorting_method']
+            details['sorting_method'] = data['sorting_method'] if not is_media_sorted else models.SortingMethod.PREDEFINED
+
         extractor = MEDIA_TYPES[media_type]['extractor'](**details)
 
     if extractor is None:
@@ -910,10 +937,11 @@ def _create_thread(
     # calculate chunk size if it isn't specified
     if db_data.chunk_size is None:
         if isinstance(compressed_chunk_writer, ZipCompressedChunkWriter):
+            first_image_idx = db_data.start_frame
             if not is_data_in_cloud:
-                w, h = extractor.get_image_size(0)
+                w, h = extractor.get_image_size(first_image_idx)
             else:
-                img_properties = manifest[0]
+                img_properties = manifest[first_image_idx]
                 w, h = img_properties['width'], img_properties['height']
             area = h * w
             db_data.chunk_size = max(2, min(72, 36 * 1920 * 1080 // area))

@@ -2,7 +2,7 @@
 title: 'Objects sidebar'
 linkTitle: 'Objects sidebar'
 weight: 11
-description: 'Overview of available functions on the objects sidebar of the annotation tool.'
+description: ' Displays annotated objects and includes a label filter, lists of objects (current frame) and labels (objects on the frame), and appearance settings. '
 ---
 
 In the objects sidebar, you can see the list of available objects on the current
