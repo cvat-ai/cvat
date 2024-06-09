@@ -473,13 +473,13 @@ def handle_dataset_io(
     action: str,
     *,
     format_name: str,
-    cloud_storage: Optional[CloudStorage],
+    cloud_storage_id: Optional[int],
     **payload_fields,
 ) -> None:
     payload={"format": format_name, **payload_fields}
 
-    if cloud_storage:
-        payload["cloud_storage"] = {"id": cloud_storage.id}
+    if cloud_storage_id:
+        payload["cloud_storage"] = {"id": cloud_storage_id}
 
     record_server_event(
         scope=event_scope(action, "dataset"),
@@ -499,19 +499,19 @@ def handle_dataset_export(
     instance: Union[Project, Task, Job],
     *,
     format_name: str,
-    cloud_storage: Optional[CloudStorage],
+    cloud_storage_id: Optional[int],
     save_images: bool,
 ) -> None:
     handle_dataset_io(instance, "export",
-        format_name=format_name, cloud_storage=cloud_storage, save_images=save_images)
+        format_name=format_name, cloud_storage_id=cloud_storage_id, save_images=save_images)
 
 def handle_dataset_import(
     instance: Union[Project, Task, Job],
     *,
     format_name: str,
-    cloud_storage: Optional[CloudStorage],
+    cloud_storage_id: Optional[int],
 ) -> None:
-    handle_dataset_io(instance, "import", format_name=format_name, cloud_storage=cloud_storage)
+    handle_dataset_io(instance, "import", format_name=format_name, cloud_storage_id=cloud_storage_id)
 
 def handle_rq_exception(rq_job, exc_type, exc_value, tb):
     oid = rq_job.meta.get(RQJobMetaField.ORG_ID, None)

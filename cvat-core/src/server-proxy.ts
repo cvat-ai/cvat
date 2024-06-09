@@ -31,12 +31,12 @@ import { ServerError } from './exceptions';
 
 type Params = {
     org: number | string,
-    use_default_location?: boolean,
     location?: StorageLocation,
     cloud_storage_id?: number,
     format?: string,
     filename?: string,
     action?: string,
+    save_images?: boolean,
 };
 
 tus.defaultOptions.storeFingerprintForResuming = false;
@@ -47,6 +47,7 @@ function enableOrganization(): { org: string } {
 
 function configureStorage(storage: Storage, useDefaultLocation = false): Partial<Params> {
     return {
+        // FIXME
         use_default_location: useDefaultLocation,
         ...(!useDefaultLocation ? {
             location: storage.location,
@@ -855,16 +856,17 @@ function exportDataset(instanceType: 'projects' | 'jobs' | 'tasks') {
         name?: string,
     ) {
         const { backendAPI } = config;
-        const baseURL = `${backendAPI}/${instanceType}/${id}/${saveImages ? 'dataset' : 'annotations'}`;
+        const baseURL = `${backendAPI}/${instanceType}/${id}/dataset/export`;
         const params: Params = {
             ...enableOrganization(),
             ...configureStorage(targetStorage, useDefaultSettings),
             ...(name ? { filename: name } : {}),
             format,
+            save_images: saveImages,
         };
         return new Promise<string | void>((resolve, reject) => {
             async function request() {
-                Axios.get(baseURL, {
+                Axios.post(baseURL, {}, {
                     params,
                 })
                     .then((response) => {
@@ -952,12 +954,12 @@ async function backupTask(
         ...configureStorage(targetStorage, useDefaultSettings),
         ...(fileName ? { filename: fileName } : {}),
     };
-    const url = `${backendAPI}/tasks/${id}/backup`;
+    const url = `${backendAPI}/tasks/${id}/backup/export`;
 
     return new Promise<string | void>((resolve, reject) => {
         async function request() {
             try {
-                const response = await Axios.get(url, {
+                const response = await Axios.post(url, {}, {
                     params,
                 });
                 if (response.status === 202) {
@@ -1031,12 +1033,12 @@ async function backupProject(
         ...(fileName ? { filename: fileName } : {}),
     };
 
-    const url = `${backendAPI}/projects/${id}/backup`;
+    const url = `${backendAPI}/projects/${id}/backup/export`;
 
     return new Promise<string | void>((resolve, reject) => {
         async function request() {
             try {
-                const response = await Axios.get(url, {
+                const response = await Axios.post(url, {}, {
                     params,
                 });
                 if (response.status === 202) {

@@ -429,8 +429,13 @@ class NonModelSimpleFilter(SimpleFilter, _NestedAttributeHandler):
                     fits_filter = False
                     for field in intersection:
                         query_param = query_params[field]
+
                         if query_param.isnumeric():
                             query_param = int(query_param)
+
+                        # replace empty string with None
+                        if field == 'org' and not query_param:
+                            query_param = None
 
                         fits_filter = self.get_nested_attr(obj, lookup_fields[field]) == query_param
                         if not fits_filter:

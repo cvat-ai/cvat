@@ -11,21 +11,29 @@ import uuid
 from dataclasses import asdict, dataclass
 from pathlib import Path
 from tempfile import NamedTemporaryFile
+from typing import Any, Callable, Dict, Optional
 from unittest import mock
-from typing import Optional, Callable, Dict, Any
+from textwrap import dedent
 
 import django_rq
 from attr.converters import to_bool
 from django.conf import settings
+from django.http import HttpRequest
+from drf_spectacular.types import OpenApiTypes
+from drf_spectacular.utils import (OpenApiParameter, OpenApiResponse,
+                                   extend_schema)
 from rest_framework import mixins, status
+from rest_framework.decorators import action
 from rest_framework.response import Response
 
+from cvat.apps.engine.background_operations import (BackupExportManager,
+                                                    DatasetExportManager)
+from cvat.apps.engine.handlers import clear_import_cache
 from cvat.apps.engine.location import StorageType, get_location_configuration
 from cvat.apps.engine.log import ServerLogManager
 from cvat.apps.engine.models import Location
-from cvat.apps.engine.serializers import DataSerializer
-from cvat.apps.engine.handlers import clear_import_cache
 from cvat.apps.engine.rq_job_handler import RQIdManager
+from cvat.apps.engine.serializers import DataSerializer
 
 slogger = ServerLogManager(__name__)
 
@@ -384,46 +392,44 @@ class UploadMixin:
 
         raise NotImplementedError('Must be implemented in the derived class')
 
-class AnnotationMixin:
-    def export_annotations(
+class PartialUpdateModelMixin:
+    """
+    Update fields of a model instance.
+
+    Almost the same as UpdateModelMixin, but has no public PUT / update() method.
+    """
+
+    def _update(self, request, *args, **kwargs):
+        # This method must not be named "update" not to be matched with the PUT method
+        return mixins.UpdateModelMixin.update(self, request, *args, **kwargs)
+
+    def perform_update(self, serializer):
+        mixins.UpdateModelMixin.perform_update(self, serializer=serializer)
+
+    def partial_update(self, request, *args, **kwargs):
+        with mock.patch.object(self, 'update', new=self._update, create=True):
+            return mixins.UpdateModelMixin.partial_update(self, request=request, *args, **kwargs)
+
+
+
+class DatasetMixin:
+    def export_dataset_v1(
         self,
         request,
-        db_obj,
-        export_func,
-        callback: Callable[[int, Optional[str], Optional[str]], str],
         *,
         get_data: Optional[Callable[[int], Dict[str, Any]]]= None,
     ):
-        format_name = request.query_params.get("format", "")
-        action = request.query_params.get("action", "").lower()
-        filename = request.query_params.get("filename", "")
+        if request.query_params.get("format"):
+            save_images = request.query_params.get('save_images', False)
+            callback = self._get_export_callback(save_images)
 
-        use_default_location = request.query_params.get("use_default_location", True)
-        use_settings = to_bool(use_default_location)
-        obj = db_obj if use_settings else request.query_params
-        location_conf = get_location_configuration(
-            obj=obj,
-            use_settings=use_settings,
-            field_name=StorageType.TARGET,
-        )
+            dataset_export_manager = DatasetExportManager(self._object, request, callback, save_images=save_images, version=1)
+            response = dataset_export_manager.export()
 
-        object_name = self._object.__class__.__name__.lower()
-        rq_id = RQIdManager.build(
-            'export', object_name, self._object.pk,
-            subresource=request.path.strip('/').split('/')[-1],
-            anno_format=format_name, user_id=request.user.id
-        )
+            if request.query_params.get('action') != 'download':
+                response.headers['Deprecated'] = True
 
-        if format_name:
-            return export_func(db_instance=self._object,
-                rq_id=rq_id,
-                request=request,
-                action=action,
-                callback=callback,
-                format_name=format_name,
-                filename=filename,
-                location_conf=location_conf,
-            )
+            return response
 
         if not get_data:
             return Response("Format is not specified",status=status.HTTP_400_BAD_REQUEST)
@@ -431,19 +437,56 @@ class AnnotationMixin:
         data = get_data(self._object.pk)
         return Response(data)
 
+    @extend_schema(
+        summary='Initialize process to export resource as a dataset in a specific format',
+        description=dedent("""
+             The request POST /api/projects/id/dataset/export will initialize
+             background process to export dataset. To check status of the process
+             please, use GET /api/requests/<rq_id> where rq_id is request id returned in the response on this request.
+         """),
+        parameters=[
+            OpenApiParameter('format', location=OpenApiParameter.QUERY,
+                description='Desired output format name\nYou can get the list of supported formats at:\n/server/annotation/formats',
+                type=OpenApiTypes.STR, required=True),
+            OpenApiParameter('filename', description='Desired output file name',
+                location=OpenApiParameter.QUERY, type=OpenApiTypes.STR, required=False),
+            OpenApiParameter('location', description='Where need to save downloaded dataset',
+                location=OpenApiParameter.QUERY, type=OpenApiTypes.STR, required=False,
+                enum=Location.list()),
+            OpenApiParameter('cloud_storage_id', description='Storage id',
+                location=OpenApiParameter.QUERY, type=OpenApiTypes.INT, required=False),
+            OpenApiParameter('save_images', description='Include images or not',
+                location=OpenApiParameter.QUERY, type=OpenApiTypes.BOOL, required=False, default=False),
+        ],
+        responses={
+            '202': OpenApiResponse(description='Exporting has been started'),
+            '405': OpenApiResponse(description='Format is not available'),
+            '409': OpenApiResponse(description='Exporting is already in progress'),
+        },
+        request=OpenApiTypes.NONE,
+    )
+    # tODO: update permissions in OSS and private repo
+    @action(detail=True, methods=['POST'], serializer_class=None, url_path='dataset/export')
+    def export_dataset_v2(self, request: HttpRequest, pk: int):
+        self._object = self.get_object() # force call of check_object_permissions()
+
+        save_images = request.query_params.get('save_images', False)
+        callback = self._get_export_callback(save_images)
+
+        dataset_export_manager = DatasetExportManager(self._object, request, callback, save_images=save_images, version=2)
+        return dataset_export_manager.export()
+
+    # FUTURE-TODO: migrate to new API
     def import_annotations(self, request, db_obj, import_func, rq_func, rq_id_template):
         is_tus_request = request.headers.get('Upload-Length', None) is not None or \
             request.method == 'OPTIONS'
         if is_tus_request:
             return self.init_tus_upload(request)
 
-        use_default_location = request.query_params.get('use_default_location', True)
         conv_mask_to_poly = to_bool(request.query_params.get('conv_mask_to_poly', True))
-        use_settings = to_bool(use_default_location)
-        obj = db_obj if use_settings else request.query_params
         location_conf = get_location_configuration(
-            obj=obj,
-            use_settings=use_settings,
+            db_instance=db_obj,
+            query_params=request.query_params,
             field_name=StorageType.SOURCE,
         )
 
@@ -464,16 +507,20 @@ class AnnotationMixin:
 
         return self.upload_data(request)
 
-class SerializeMixin:
-    def serialize(self, request, export_func):
-        db_object = self.get_object() # force to call check_object_permissions
-        return export_func(
-            db_object,
-            request,
-            queue_name=settings.CVAT_QUEUES.EXPORT_DATA.value,
-        )
 
-    def deserialize(self, request, import_func):
+class BackupMixin:
+    def export_backup_v1(self, request, export_func):
+        db_object = self.get_object() # force to call check_object_permissions
+
+        export_backup_manager = BackupExportManager(db_object, request, version=1)
+        response = export_backup_manager.export()
+
+        if request.query_params.get('action') != 'download':
+            response.headers['Deprecated'] = True
+
+        return response
+
+    def import_backup_v1(self, request, import_func):
         location = request.query_params.get("location", Location.LOCAL)
         if location == Location.CLOUD_STORAGE:
             file_name = request.query_params.get("filename", "")
@@ -484,21 +531,30 @@ class SerializeMixin:
             )
         return self.upload_data(request)
 
+    @extend_schema(summary='Initiate process to backup resource',
+        parameters=[
+            OpenApiParameter('filename', description='Backup file name',
+                location=OpenApiParameter.QUERY, type=OpenApiTypes.STR, required=False),
+            OpenApiParameter('location', description='Where need to save downloaded backup',
+                location=OpenApiParameter.QUERY, type=OpenApiTypes.STR, required=False,
+                enum=Location.list()),
+            OpenApiParameter('cloud_storage_id', description='Storage id',
+                location=OpenApiParameter.QUERY, type=OpenApiTypes.INT, required=False),
+        ],
+        responses={
+            '202': OpenApiResponse(description='Creating a backup file has been started'),
+            '400': OpenApiResponse(description=''),
+            '409': OpenApiResponse(description=''),
+        },
+        request=OpenApiTypes.NONE,
+    )
+    @action(detail=True, methods=['POST'], serializer_class=None, url_path='backup/export')
+    def export_backup_v2(self, request: HttpRequest, pk: int):
 
-class PartialUpdateModelMixin:
-    """
-    Update fields of a model instance.
+        db_object = self.get_object() # force to call check_object_permissions
 
-    Almost the same as UpdateModelMixin, but has no public PUT / update() method.
-    """
+        export_backup_manager = BackupExportManager(db_object, request, version=2)
+        return export_backup_manager.export()
 
-    def _update(self, request, *args, **kwargs):
-        # This method must not be named "update" not to be matched with the PUT method
-        return mixins.UpdateModelMixin.update(self, request, *args, **kwargs)
-
-    def perform_update(self, serializer):
-        mixins.UpdateModelMixin.perform_update(self, serializer=serializer)
-
-    def partial_update(self, request, *args, **kwargs):
-        with mock.patch.object(self, 'update', new=self._update, create=True):
-            return mixins.UpdateModelMixin.partial_update(self, request=request, *args, **kwargs)
+    def import_backup_v2():
+        raise NotImplementedError("Should be implemented in the second iteration")

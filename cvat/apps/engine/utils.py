@@ -206,7 +206,7 @@ def get_rq_job_meta(
     request: HttpRequest,
     db_obj: Any,
     *,
-    include_result_url: bool = False,
+    result_url: Optional[str] = None,
 ):
     # to prevent circular import
     from cvat.apps.webhooks.signals import project_id, organization_id
@@ -235,11 +235,9 @@ def get_rq_job_meta(
         'job_id': jid,
     }
 
-    if include_result_url:
-        query_dict = request.query_params.copy()
-        if query_dict.get('action') != 'download':
-            query_dict['action'] = 'download'
-        meta['result_url'] = request.build_absolute_uri(request.path) + "?" + query_dict.urlencode()
+
+    if result_url:
+        meta['result_url'] = result_url
 
     return meta
 

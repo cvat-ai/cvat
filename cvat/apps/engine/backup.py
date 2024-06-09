@@ -9,7 +9,7 @@ from enum import Enum
 import re
 import shutil
 import tempfile
-from typing import Any, Dict, Iterable
+from typing import Any, Dict, Iterable, Union
 import uuid
 import mimetypes
 from zipfile import ZipFile
@@ -19,6 +19,7 @@ from tempfile import NamedTemporaryFile
 import django_rq
 from attr.converters import to_bool
 from django.conf import settings
+from django.http import HttpRequest
 from django.db import transaction
 from django.utils import timezone
 
@@ -46,7 +47,7 @@ from cvat.apps.engine.models import (
 from cvat.apps.engine.task import JobFileMapping, _create_thread
 from cvat.apps.engine.cloud_provider import import_resource_from_cloud_storage, export_resource_to_cloud_storage
 from cvat.apps.engine.location import StorageType, get_location_configuration
-from cvat.apps.engine.view_utils import get_cloud_storage_for_import_or_export
+from cvat.apps.engine.permissions import get_cloud_storage_for_import_or_export
 from cvat.apps.dataset_manager.views import TASK_CACHE_TTL, PROJECT_CACHE_TTL, get_export_cache_dir, clear_export_cache, log_exception
 from cvat.apps.dataset_manager.bindings import CvatImportError
 
@@ -922,130 +923,10 @@ def _create_backup(db_instance, Exporter, output_path, logger, cache_ttl):
         log_exception(logger)
         raise
 
-def export(db_instance, request, queue_name):
-    action = request.query_params.get('action', None)
-    filename = request.query_params.get('filename', None)
-
-    if action not in (None, 'download'):
-        raise serializers.ValidationError(
-            "Unexpected action specified for the request")
-
-    if isinstance(db_instance, Task):
-        obj_type = 'task'
-        logger = slogger.task[db_instance.pk]
-        Exporter = TaskExporter
-        cache_ttl = TASK_CACHE_TTL
-        use_target_storage_conf = request.query_params.get('use_default_location', True)
-    elif isinstance(db_instance, Project):
-        obj_type = 'project'
-        logger = slogger.project[db_instance.pk]
-        Exporter = ProjectExporter
-        cache_ttl = PROJECT_CACHE_TTL
-        use_target_storage_conf = request.query_params.get('use_default_location', True)
-    else:
-        raise Exception(
-            "Unexpected type of db_instance: {}".format(type(db_instance)))
-    use_settings = to_bool(use_target_storage_conf)
-    obj = db_instance if use_settings else request.query_params
-    location_conf = get_location_configuration(
-        obj=obj,
-        use_settings=use_settings,
-        field_name=StorageType.TARGET
-    )
-
-    queue = django_rq.get_queue(queue_name)
-    rq_id = RQIdManager.build('export', obj_type, db_instance.pk, subresource='backup', user_id=request.user.id)
-    rq_job = queue.fetch_job(rq_id)
-
-    last_instance_update_time = timezone.localtime(db_instance.updated_date)
-    timestamp = datetime.strftime(last_instance_update_time, "%Y_%m_%d_%H_%M_%S")
-    location = location_conf.get('location')
-
-    if rq_job:
-        if rq_job.is_finished:
-            if location == Location.LOCAL:
-                file_path = rq_job.return_value()
-
-                if not file_path:
-                    return Response('A result for exporting job was not found for finished RQ job', status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-
-                elif not os.path.exists(file_path):
-                    return Response('The result file does not exist in export cache', status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-
-                filename = filename or build_backup_file_name(
-                    class_name=obj_type,
-                    identifier=db_instance.name,
-                    timestamp=timestamp,
-                    extension=os.path.splitext(file_path)[1]
-                )
-
-                if action == "download":
-                    rq_job.delete()
-                    return sendfile(request, file_path, attachment=True,
-                        attachment_filename=filename)
-
-                return Response(status=status.HTTP_201_CREATED)
-
-            elif location == Location.CLOUD_STORAGE:
-                rq_job.delete()
-                return Response(status=status.HTTP_200_OK)
-            else:
-                raise NotImplementedError()
-        elif rq_job.is_failed:
-            exc_info = rq_job.meta.get(RQJobMetaField.FORMATTED_EXCEPTION, str(rq_job.exc_info))
-            rq_job.delete()
-            return Response(exc_info,
-                status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-        else:
-            rq_request = rq_job.meta.get(RQJobMetaField.REQUEST, None)
-            request_time = rq_request.get("timestamp", None) if rq_request else None
-            if request_time is None or request_time < last_instance_update_time:
-                # in case the server is configured with ONE_RUNNING_JOB_IN_QUEUE_PER_USER
-                # we have to enqueue dependent jobs after canceling one
-                rq_job.cancel(enqueue_dependents=settings.ONE_RUNNING_JOB_IN_QUEUE_PER_USER)
-                rq_job.delete()
-            return Response(status=status.HTTP_202_ACCEPTED)
-
-    ttl = dm.views.PROJECT_CACHE_TTL.total_seconds()
-    user_id = request.user.id
-
-    func = _create_backup if location == Location.LOCAL else export_resource_to_cloud_storage
-    func_args = (db_instance, Exporter, '{}_backup.zip'.format(obj_type), logger, cache_ttl)
-    save_result_url = True
-
-    if location == Location.CLOUD_STORAGE:
-        try:
-            storage_id = location_conf['storage_id']
-        except KeyError:
-            raise serializers.ValidationError(
-                'Cloud storage location was selected as the destination,'
-                ' but cloud storage id was not specified')
-
-        db_storage = get_cloud_storage_for_import_or_export(
-            storage_id=storage_id, request=request,
-            is_default=location_conf['is_default'])
-        filename_pattern = build_backup_file_name(
-            class_name=obj_type,
-            identifier=db_instance.name,
-            timestamp=timestamp,
-        )
-        func_args = (db_storage, filename, filename_pattern, _create_backup) + func_args
-        save_result_url = False
-
-    with get_rq_lock_by_user(queue, user_id):
-        queue.enqueue_call(
-            func=func,
-            args=func_args,
-            job_id=rq_id,
-            meta=get_rq_job_meta(request=request, db_obj=db_instance, include_result_url=save_result_url),
-            depends_on=define_dependent_job(queue, user_id, rq_id=rq_id),
-            result_ttl=ttl,
-            failure_ttl=ttl,
-        )
-    serializer = RqIdSerializer(data={'rq_id': rq_id})
-    serializer.is_valid(raise_exception=True)
-
-    return Response(serializer.data, status=status.HTTP_202_ACCEPTED)
+def export(db_instance: Union[models.Project, models.Task], request: HttpRequest, queue_name: str):
+    from cvat.apps.engine.background_operations import BackupExportManager
+    backup_export_manager = BackupExportManager(db_instance, request, version=1)
+    return backup_export_manager.export()
 
 
 def _import(importer, request, queue, rq_id, Serializer, file_field_name, location_conf, filename=None):
@@ -1145,7 +1026,7 @@ def import_project(request, queue_name, filename=None):
     file_field_name = 'project_file'
 
     location_conf = get_location_configuration(
-        obj=request.query_params,
+        query_params=request.query_params,
         field_name=StorageType.SOURCE,
     )
 
@@ -1168,7 +1049,7 @@ def import_task(request, queue_name, filename=None):
     file_field_name = 'task_file'
 
     location_conf = get_location_configuration(
-        obj=request.query_params,
+        query_params=request.query_params,
         field_name=StorageType.SOURCE
     )
 

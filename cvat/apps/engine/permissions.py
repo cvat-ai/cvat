@@ -6,6 +6,7 @@
 from collections import namedtuple
 from typing import Any, Dict, List, Optional, Sequence, Union, cast
 
+from attrs.converters import to_bool
 from django.conf import settings
 
 from rest_framework.exceptions import ValidationError, PermissionDenied
@@ -272,7 +273,9 @@ class ProjectPermission(OpenPolicyAgentPermission):
             ('append_dataset_chunk', 'PATCH'): Scopes.IMPORT_DATASET,
             ('annotations', 'GET'): Scopes.EXPORT_ANNOTATIONS,
             ('dataset', 'GET'): Scopes.IMPORT_DATASET if request.query_params.get('action') == 'import_status' else Scopes.EXPORT_DATASET,
+            ('export_dataset_v2', 'GET'): Scopes.EXPORT_ANNOTATIONS if not to_bool(request.query_params.get('save_images', False)) else Scopes.EXPORT_DATASET,
             ('export_backup', 'GET'): Scopes.EXPORT_BACKUP,
+            ('export_backup_v2', 'GET'): Scopes.EXPORT_BACKUP,
             ('import_backup', 'POST'): Scopes.IMPORT_BACKUP,
             ('append_backup_chunk', 'PATCH'): Scopes.IMPORT_BACKUP,
             ('append_backup_chunk', 'HEAD'): Scopes.IMPORT_BACKUP,
@@ -475,6 +478,7 @@ class TaskPermission(OpenPolicyAgentPermission):
             ('append_annotations_chunk', 'PATCH'): Scopes.UPDATE_ANNOTATIONS,
             ('append_annotations_chunk', 'HEAD'): Scopes.UPDATE_ANNOTATIONS,
             ('dataset_export', 'GET'): Scopes.EXPORT_DATASET,
+            ('export_dataset_v2', 'GET'): Scopes.EXPORT_ANNOTATIONS if not to_bool(request.query_params.get('save_images', False)) else Scopes.EXPORT_DATASET,
             ('metadata', 'GET'): Scopes.VIEW_METADATA,
             ('metadata', 'PATCH'): Scopes.UPDATE_METADATA,
             ('data', 'GET'): Scopes.VIEW_DATA,
@@ -486,6 +490,7 @@ class TaskPermission(OpenPolicyAgentPermission):
             ('append_backup_chunk', 'PATCH'): Scopes.IMPORT_BACKUP,
             ('append_backup_chunk', 'HEAD'): Scopes.IMPORT_BACKUP,
             ('export_backup', 'GET'): Scopes.EXPORT_BACKUP,
+            ('export_backup_v2', 'GET'): Scopes.EXPORT_BACKUP,
             ('preview', 'GET'): Scopes.VIEW,
         }.get((view.action, request.method))
 
@@ -711,6 +716,7 @@ class JobPermission(OpenPolicyAgentPermission):
             ('metadata','PATCH'): Scopes.UPDATE_METADATA,
             ('issues', 'GET'): Scopes.VIEW,
             ('dataset_export', 'GET'): Scopes.EXPORT_DATASET,
+            ('export_dataset_v2', 'GET'): Scopes.EXPORT_ANNOTATIONS if not to_bool(request.query_params.get('save_images', False)) else Scopes.EXPORT_DATASET,
             ('preview', 'GET'): Scopes.VIEW,
         }.get((view.action, request.method))
 
@@ -1267,3 +1273,24 @@ class RequestPermission(OpenPolicyAgentPermission):
 
     def get_resource(self):
         return None
+
+
+from django.shortcuts import get_object_or_404
+from rest_framework.exceptions import PermissionDenied
+from cvat.apps.engine.models import CloudStorage as CloudStorageModel
+
+def get_cloud_storage_for_import_or_export(
+    storage_id: int, *, request, is_default: bool = False
+) -> CloudStorageModel:
+    perm = CloudStoragePermission.create_scope_view(None, storage_id=storage_id, request=request)
+    result = perm.check_access()
+    if not result.allow:
+        if is_default:
+            # In this case, the user did not specify the location explicitly
+            error_message = "A cloud storage is selected as the default location. "
+        else:
+            error_message = ""
+        error_message += "You don't have access to this cloud storage"
+        raise PermissionDenied(error_message)
+
+    return get_object_or_404(CloudStorageModel, pk=storage_id)
