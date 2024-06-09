@@ -451,6 +451,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
                     results.forEach((bitmap, idx) => {
                         const [curLeft, curTop] = objects[idx].points.slice(-4, -2);
                         canvas.getContext('2d').drawImage(bitmap, curLeft - left, curTop - top);
+                        bitmap.close();
                     });
 
                     const imageData = canvas.getContext('2d')
