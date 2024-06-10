@@ -16,7 +16,7 @@ from math import ceil
 from pathlib import Path
 from tempfile import NamedTemporaryFile, TemporaryDirectory
 from time import sleep, time
-from typing import Any, List, Optional, Tuple
+from typing import Any, Dict, List, Optional, Tuple
 
 import pytest
 from cvat_sdk import Client, Config, exceptions
@@ -1312,6 +1312,7 @@ class TestPostTaskData:
         server_files: List[str],
         use_cache: bool = True,
         sorting_method: str = "lexicographical",
+        spec: Optional[Dict[str, Any]] = {},
         server_files_exclude: Optional[List[str]] = None,
         org: Optional[str] = None,
         filenames: Optional[List[str]] = None,
@@ -1336,6 +1337,21 @@ class TestPostTaskData:
                         filename=f"test/sub_{i}/{image.name}",
                     )
                 )
+
+        video = generate_video_file(10)
+
+        s3_client.create_file(
+            data=video,
+            bucket=cloud_storage["resource"],
+            filename=f"test/video/{video.name}",
+        )
+        request.addfinalizer(
+            partial(
+                s3_client.remove_file,
+                bucket=cloud_storage["resource"],
+                filename=f"test/video/{video.name}",
+            )
+        )
 
         if use_manifest:
             with TemporaryDirectory() as tmp_dir:
@@ -1371,7 +1387,7 @@ class TestPostTaskData:
             ],
         }
 
-        data_spec = {
+        data_spec = {**{
             "image_quality": 75,
             "use_cache": use_cache,
             "cloud_storage_id": cloud_storage["id"],
@@ -1379,7 +1395,7 @@ class TestPostTaskData:
                 server_files if not use_manifest else server_files + ["test/manifest.jsonl"]
             ),
             "sorting_method": sorting_method,
-        }
+        }, **spec}
         if server_files_exclude:
             data_spec["server_files_exclude"] = server_files_exclude
 
@@ -1722,6 +1738,40 @@ class TestPostTaskData:
 
             for image_name, frame in zip(filenames, data_meta.frames):
                 assert frame.name.rsplit("/", maxsplit=1)[1] == image_name
+
+    def test_create_task_with_cloud_storage_and_check_retrieve_data_by_params(
+        self,
+        filenames: List[str],
+        cloud_storage_id: int,
+        org: str,
+        cloud_storages,
+        request,
+    ):
+        cloud_storage = cloud_storages[cloud_storage_id]
+
+        data_spec = {
+            "start_frame": 2,
+            "stop_frame": 6,
+            "step": 2,
+        }
+
+        task_id, _ = self._create_task_with_cloud_data(
+            request=request,
+            cloud_storage=cloud_storage,
+            use_manifest=False,
+            use_cache=False,
+            server_files=["test/video/video.avi"],
+            org=org,
+            filenames=filenames,
+            spec=data_spec,
+        )
+
+        with make_api_client(self._USERNAME) as api_client:
+            (_, response) = api_client.tasks_api.retrieve_data(
+                task_id, type="chunk", quality="compressed", number=0
+            )
+            print(response.data)
+            assert response.status == HTTPStatus.OK
 
     def test_can_specify_file_job_mapping(self):
         task_spec = {
