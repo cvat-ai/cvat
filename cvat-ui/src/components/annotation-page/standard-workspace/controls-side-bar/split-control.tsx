@@ -12,6 +12,8 @@ import { Canvas3d } from 'cvat-canvas3d-wrapper';
 import { ActiveControl } from 'reducers';
 import CVATTooltip from 'components/common/cvat-tooltip';
 import GlobalHotKeys, { KeyMapItem } from 'utils/mousetrap-react';
+import { useRegisterShortcuts } from 'utils/hooks';
+import { ViewType } from 'utils/enums';
 
 export interface Props {
     updateActiveControl(activeControl: ActiveControl): void;
@@ -25,6 +27,17 @@ export interface Props {
         };
     };
 }
+
+const componentShortcuts = {
+    SWITCH_SPLIT_MODE: {
+        name: 'Split mode',
+        description: 'Activate or deactivate mode to splitting shapes',
+        sequences: ['alt+m'],
+        view: ViewType.ALL,
+    },
+};
+
+useRegisterShortcuts(componentShortcuts);
 
 function SplitControl(props: Props): JSX.Element {
     const {

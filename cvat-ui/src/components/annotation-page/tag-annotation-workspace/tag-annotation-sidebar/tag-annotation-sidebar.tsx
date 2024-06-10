@@ -28,6 +28,8 @@ import { filterApplicableForType } from 'utils/filter-applicable-labels';
 import LabelSelector from 'components/label-selector/label-selector';
 import isAbleToChangeFrame from 'utils/is-able-to-change-frame';
 import GlobalHotKeys, { KeyMap } from 'utils/mousetrap-react';
+import { ViewType } from 'utils/enums';
+import { useRegisterShortcuts } from 'utils/hooks';
 import ShortcutsSelect from './shortcuts-select';
 
 const cvat = getCore();
@@ -76,6 +78,18 @@ function mapStateToProps(state: CombinedState): StateToProps {
         showDeletedFrames,
     };
 }
+
+const componentShortcuts = {
+    SWITCH_DRAW_MODE: {
+        name: 'Draw mode',
+        description:
+            'Repeat the latest procedure of drawing with the same parameters (shift to redraw an existing shape)',
+        sequences: ['shift+n', 'n'],
+        view: ViewType.ALL,
+    },
+};
+
+useRegisterShortcuts(componentShortcuts);
 
 function mapDispatchToProps(dispatch: ThunkDispatch<CombinedState, {}, Action>): DispatchToProps {
     return {

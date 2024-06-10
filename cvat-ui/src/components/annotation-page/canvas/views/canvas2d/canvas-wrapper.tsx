@@ -59,6 +59,8 @@ import { reviewActions } from 'actions/review-actions';
 
 import { filterAnnotations } from 'utils/filter-annotations';
 import { ImageFilter } from 'utils/image-processing';
+import { ViewType } from 'utils/enums';
+import { useRegisterShortcuts } from 'utils/hooks';
 import ImageSetupsContent from './image-setups-content';
 import BrushTools from './brush-tools';
 import CanvasTipsComponent from './canvas-hints';
@@ -256,6 +258,17 @@ function mapStateToProps(state: CombinedState): StateToProps {
         imageFilters,
     };
 }
+
+const componentShortcuts = {
+    SWITCH_AUTOMATIC_BORDERING: {
+        name: 'Switch automatic bordering',
+        description: 'Switch automatic bordering for polygons and polylines during drawing/editing',
+        sequences: ['ctrl'],
+        view: ViewType.ALL,
+    },
+};
+
+useRegisterShortcuts(componentShortcuts);
 
 function mapDispatchToProps(dispatch: any): DispatchToProps {
     return {

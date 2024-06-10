@@ -58,21 +58,23 @@ function conflictDetector(key: string, keyMap: KeyMap): KeyMap | null {
 export default (state = defaultState, action: ShortcutsActions | BoundariesActions | AuthActions): ShortcutsState => {
     switch (action.type) {
         case ShortcutsActionsTypes.REGISTER_SHORTCUT: {
-            const { key, item } = action.payload;
-            const conflictingShortcut = conflictDetector(key, state.keyMap);
+            const { shortcuts } = action.payload;
+            const keys = Object.keys(shortcuts);
+            if (!keys.length) {
+                return state;
+            }
+            const conflictingShortcut = (keys as string[]).find((key: string) => conflictDetector(key, state.keyMap));
             if (conflictingShortcut) {
-                throw new Error(`The shortcut ${key} conflicts with the shortcut ${conflictingShortcut}.`);
+                throw new Error(`The shortcut has conflicts with this shortcut: ${conflictingShortcut}.`);
             }
             return {
                 ...state,
-                keyMap: {
-                    ...state.keyMap,
-                    [key]: item,
-                },
-                normalizedKeyMap: {
-                    ...state.normalizedKeyMap,
-                    [key]: formatShortcuts(item),
-                },
+                keyMap: { ...state.keyMap, ...shortcuts },
+                normalizedKeyMap: keys.reduce((acc: Record<string, string>, key: string) => {
+                    const normalized = formatShortcuts(shortcuts[key]);
+                    acc[key] = normalized;
+                    return acc;
+                }, { ...state.normalizedKeyMap }),
             };
         }
 

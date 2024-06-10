@@ -41,9 +41,9 @@ import { switchSettingsModalVisible as switchSettingsModalVisibleAction } from '
 import { logoutAsync, authActions } from 'actions/auth-actions';
 import { shortcutsActions } from 'actions/shortcuts-actions';
 import { AboutState, CombinedState } from 'reducers';
-import { useIsMounted, usePlugins } from 'utils/hooks';
+import { useIsMounted, usePlugins, useRegisterShortcuts } from 'utils/hooks';
 import GlobalHotKeys, { KeyMap } from 'utils/mousetrap-react';
-import { getCVATStore } from 'cvat-store';
+import { ViewType } from 'utils/enums';
 import SettingsModal from './settings-modal/settings-modal';
 import OrganizationsSearch from './organizations-search';
 
@@ -73,15 +73,22 @@ interface DispatchToProps {
 
 const core = getCore();
 
-const store = getCVATStore();
-const { registerShortcut } = shortcutsActions;
+const componentShortcuts = {
+    SWITCH_SHORTCUTS: {
+        name: 'Show shortcuts',
+        description: 'Open/hide the list of available shortcuts',
+        sequences: ['f1'],
+        view: ViewType.ALL,
+    },
+    SWITCH_SETTINGS: {
+        name: 'Show settings',
+        description: 'Open/hide settings dialog',
+        sequences: ['f2'],
+        view: ViewType.ALL,
+    },
+};
 
-store.dispatch(registerShortcut('SWITCH_SHORTCUTS', {
-    name: 'Show shortcuts',
-    description: 'Open/hide the list of available shortcuts',
-    sequences: ['f1'],
-    view: 'all',
-}));
+useRegisterShortcuts(componentShortcuts);
 
 function mapStateToProps(state: CombinedState): StateToProps {
     const {

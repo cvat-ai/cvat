@@ -15,8 +15,8 @@ export const shortcutsActions = {
     switchShortcutsModalVisible: (visible: boolean) => (
         createAction(ShortcutsActionsTypes.SWITCH_SHORTCUT_DIALOG, { visible })
     ),
-    registerShortcut: (key: string, item: KeyMapItem) => (
-        createAction(ShortcutsActionsTypes.REGISTER_SHORTCUT, { key, item })
+    registerShortcuts: (shortcuts: Record<string, KeyMapItem>) => (
+        createAction(ShortcutsActionsTypes.REGISTER_SHORTCUT, { shortcuts })
     ),
 };
 

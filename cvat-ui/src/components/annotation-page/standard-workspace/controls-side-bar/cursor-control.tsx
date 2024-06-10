@@ -12,6 +12,8 @@ import { Canvas } from 'cvat-canvas-wrapper';
 import { Canvas3d } from 'cvat-canvas3d-wrapper';
 import CVATTooltip from 'components/common/cvat-tooltip';
 import GlobalHotKeys, { KeyMapItem } from 'utils/mousetrap-react';
+import { ViewType } from 'utils/enums';
+import { useRegisterShortcuts } from 'utils/hooks';
 
 export interface Props {
     canvasInstance: Canvas | Canvas3d;
@@ -24,6 +26,17 @@ export interface Props {
         };
     }
 }
+
+const componentShortcuts = {
+    CANCEL: {
+        name: 'Cancel',
+        description: 'Cancel any active canvas mode',
+        sequences: ['esc'],
+        view: ViewType.ALL,
+    },
+};
+
+useRegisterShortcuts(componentShortcuts);
 
 function CursorControl(props: Props): JSX.Element {
     const {

@@ -24,6 +24,8 @@ import {
     ForwardJumpIcon,
     LastIcon,
 } from 'icons';
+import { ViewType } from 'utils/enums';
+import { useRegisterShortcuts } from 'utils/hooks';
 
 interface Props {
     playing: boolean;
@@ -45,6 +47,60 @@ interface Props {
     onSearchAnnotations(direction: 'forward' | 'backward'): void;
     setNavigationType(navigationType: NavigationType): void;
 }
+
+const componentShortcuts = {
+    NEXT_FRAME: {
+        name: 'Next frame',
+        description: 'Go to the next frame',
+        sequences: ['f'],
+        view: ViewType.ALL,
+    },
+    PREV_FRAME: {
+        name: 'Previous frame',
+        description: 'Go to the previous frame',
+        sequences: ['d'],
+        view: ViewType.ALL,
+    },
+    FORWARD_FRAME: {
+        name: 'Forward frame',
+        description: 'Go forward with a step',
+        sequences: ['v'],
+        view: ViewType.ALL,
+    },
+    BACKWARD_FRAME: {
+        name: 'Backward frame',
+        description: 'Go backward with a step',
+        sequences: ['c'],
+        view: ViewType.ALL,
+    },
+    SEARCH_FORWARD: {
+        name: 'Search forward',
+        description: 'Search the next frame that satisfies to the filters',
+        sequences: ['right'],
+        view: ViewType.ALL,
+    },
+    SEARCH_BACKWARD: {
+        name: 'Search backward',
+        description: 'Search the previous frame that satisfies to the filters',
+        sequences: ['left'],
+        view: ViewType.ALL,
+    },
+    PLAY_PAUSE: {
+        name: 'Play/pause',
+        description: 'Start/stop automatic changing frames',
+        sequences: ['space'],
+        view: ViewType.ALL,
+    },
+    FOCUS_INPUT_FRAME: {
+        name: 'Focus input frame',
+        description: 'Focus on the element to change the current frame',
+        sequences: ['`'],
+        displayedSequences: ['~'],
+        view: ViewType.ALL,
+    },
+};
+
+useRegisterShortcuts(componentShortcuts);
 
 function PlayerButtons(props: Props): JSX.Element {
     const {

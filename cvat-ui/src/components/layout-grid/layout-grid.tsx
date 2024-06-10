@@ -9,6 +9,19 @@ import { useSelector } from 'react-redux';
 import GlobalHotKeys from 'utils/mousetrap-react';
 import { CombinedState } from 'reducers';
 import './styles.scss';
+import { ViewType } from 'utils/enums';
+import { useRegisterShortcuts } from 'utils/hooks';
+
+const componentShortcuts = {
+    TOGGLE_LAYOUT_GRID: {
+        name: 'Toggle layout grid',
+        description: 'The grid is used to UI development',
+        sequences: ['ctrl+alt+enter'],
+        view: ViewType.ALL,
+    },
+};
+
+useRegisterShortcuts(componentShortcuts);
 
 const LayoutGrid = (): React.ReactPortal => {
     const [showGrid, setShowGrid] = useState(false);

@@ -21,6 +21,8 @@ import CVATTooltip from 'components/common/cvat-tooltip';
 import ShortcutsContext from 'components/shortcuts.context';
 import { LabelType, ShapeType } from 'cvat-core-wrapper';
 import config from 'config';
+import { ViewType } from 'utils/enums';
+import { useRegisterShortcuts } from 'utils/hooks';
 import {
     idGenerator, LabelOptColor, SkeletonConfiguration, toSVGCoord,
 } from './common';
@@ -46,6 +48,17 @@ interface State {
     image: RcFile | null;
     error: null | string;
 }
+
+const componentShortcuts = {
+    CANCEL_SKELETON_EDGE: {
+        name: 'Cancel skeleton drawing',
+        description: 'Interrupts drawing a new skeleton edge',
+        sequences: ['esc'],
+        view: ViewType.ALL,
+    },
+};
+
+useRegisterShortcuts(componentShortcuts);
 
 export default class SkeletonConfigurator extends React.PureComponent<Props, State> {
     static contextType = ShortcutsContext;

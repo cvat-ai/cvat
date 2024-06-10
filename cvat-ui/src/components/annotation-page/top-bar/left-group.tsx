@@ -16,6 +16,8 @@ import { ActiveControl, ToolsBlockerState } from 'reducers';
 import CVATTooltip from 'components/common/cvat-tooltip';
 import customizableComponents from 'components/customizable-components';
 import GlobalHotKeys, { KeyMap } from 'utils/mousetrap-react';
+import { useRegisterShortcuts } from 'utils/hooks';
+import { ViewType } from 'utils/enums';
 
 interface Props {
     saving: boolean;
@@ -34,6 +36,23 @@ interface Props {
     onFinishDraw(): void;
     onSwitchToolsBlockerState(): void;
 }
+
+const componentShortcuts = {
+    UNDO: {
+        name: 'Undo action',
+        description: 'Cancel the latest action related with objects',
+        sequences: ['ctrl+z'],
+        view: ViewType.ALL,
+    },
+    REDO: {
+        name: 'Redo action',
+        description: 'Cancel undo action',
+        sequences: ['ctrl+shift+z', 'ctrl+y'],
+        view: ViewType.ALL,
+    },
+};
+
+useRegisterShortcuts(componentShortcuts);
 
 function LeftGroup(props: Props): JSX.Element {
     const {

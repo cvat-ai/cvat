@@ -10,6 +10,19 @@ import { SaveIcon } from 'icons';
 import GlobalHotKeys from 'utils/mousetrap-react';
 import CVATTooltip from 'components/common/cvat-tooltip';
 import { CombinedState } from 'reducers';
+import { ViewType } from 'utils/enums';
+import { useRegisterShortcuts } from 'utils/hooks';
+
+const componentShortcuts = {
+    SAVE_JOB: {
+        name: 'Save the job',
+        description: 'Send all changes of annotations to the server',
+        sequences: ['ctrl+s'],
+        view: ViewType.ALL,
+    },
+};
+
+useRegisterShortcuts(componentShortcuts);
 
 const storage = {
     SAVE_ANNOTATION_BUTTON: (props: any & {

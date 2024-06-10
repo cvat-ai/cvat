@@ -13,6 +13,8 @@ import GlobalHotKeys, { KeyMap } from 'utils/mousetrap-react';
 import { Canvas, CanvasMode } from 'cvat-canvas-wrapper';
 import { LabelType } from 'cvat-core-wrapper';
 
+import { ViewType } from 'utils/enums';
+import { useRegisterShortcuts } from 'utils/hooks';
 import ControlVisibilityObserver, { ExtraControlsControl } from './control-visibility-observer';
 import RotateControl, { Props as RotateControlProps } from './rotate-control';
 import CursorControl, { Props as CursorControlProps } from './cursor-control';
@@ -53,6 +55,36 @@ interface Props {
     resetGroup(): void;
     redrawShape(): void;
 }
+
+const componentShortcuts = {
+    CLOCKWISE_ROTATION: {
+        name: 'Rotate clockwise',
+        description: 'Change image angle (add 90 degrees)',
+        sequences: ['ctrl+r'],
+        view: ViewType.ALL,
+    },
+    ANTICLOCKWISE_ROTATION: {
+        name: 'Rotate anticlockwise',
+        description: 'Change image angle (subtract 90 degrees)',
+        sequences: ['ctrl+shift+r'],
+        view: ViewType.ALL,
+    },
+    PASTE_SHAPE: {
+        name: 'Paste shape',
+        description: 'Paste a shape from internal CVAT clipboard',
+        sequences: ['ctrl+v'],
+        view: ViewType.ALL,
+    },
+    SWITCH_DRAW_MODE: {
+        name: 'Draw mode',
+        description:
+            'Repeat the latest procedure of drawing with the same parameters (shift to redraw an existing shape)',
+        sequences: ['shift+n', 'n'],
+        view: ViewType.ALL,
+    },
+};
+
+useRegisterShortcuts(componentShortcuts);
 
 // We use the observer to see if these controls are in the viewport
 // They automatically put to extra if not

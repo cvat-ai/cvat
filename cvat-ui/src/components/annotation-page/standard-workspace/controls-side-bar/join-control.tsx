@@ -10,6 +10,8 @@ import { ActiveControl } from 'reducers';
 import CVATTooltip from 'components/common/cvat-tooltip';
 import GlobalHotKeys, { KeyMapItem } from 'utils/mousetrap-react';
 import { JoinIcon } from 'icons';
+import { useRegisterShortcuts } from 'utils/hooks';
+import { ViewType } from 'utils/enums';
 
 export interface Props {
     updateActiveControl(activeControl: ActiveControl): void;
@@ -23,6 +25,17 @@ export interface Props {
         };
     }
 }
+
+const componentShortcuts = {
+    SWITCH_JOIN_MODE: {
+        name: 'Join mode',
+        description: 'Activate or deactivate a mode where you can join masks',
+        sequences: ['j'],
+        view: ViewType.ALL,
+    },
+};
+
+useRegisterShortcuts(componentShortcuts);
 
 function JoinControl(props: Props): JSX.Element {
     const {

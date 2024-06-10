@@ -136,8 +136,6 @@ export function useAuthQuery(): Record<string, string> | null {
 
 export function useRegisterShortcuts(shortcuts: Record<string, KeyMapItem>): void {
     const store = getCVATStore();
-    const { registerShortcut } = shortcutsActions;
-    for (const key of Object.keys(shortcuts)) {
-        store.dispatch(registerShortcut(key, shortcuts[key]));
-    }
+    const { registerShortcuts } = shortcutsActions;
+    store.dispatch(registerShortcuts(shortcuts));
 }
