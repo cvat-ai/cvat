@@ -64,6 +64,29 @@ export default function GlobalHotKeys(props: Props): JSX.Element {
     return children || <></>;
 }
 
+// export default function GlobalHotKeys(props: Props): JSX.Element {
+//     const { children, keyMap, handlers } = props;
+//     useEffect(() => {
+//         for (const key of Object.keys(keyMap)) {
+//             const { sequences } = keyMap[key];
+//             const handler = handlers[key];
+//             Mousetrap.bind(sequences, handler, 'keydown');
+//             applicationKeyMap[key] = keyMap[key];
+//         }
+
+//         return () => {
+//             for (const key of Object.keys(keyMap)) {
+//                 const { sequences } = keyMap[key];
+//                 Mousetrap.unbind(sequences, 'keydown');
+//                 delete applicationKeyMap[key];
+//             }
+//         };
+//     });
+
+//     // eslint-disable-next-line react/jsx-no-useless-fragment
+//     return children || <></>;
+// }
+
 Mousetrap.prototype.stopCallback = function (e: KeyboardEvent, element: Element, combo: string): boolean {
     // stop when modals are opened
     const someModalsOpened = Array.from(
