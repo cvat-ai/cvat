@@ -1739,7 +1739,7 @@ class TestPostTaskData:
             for image_name, frame in zip(filenames, data_meta.frames):
                 assert frame.name.rsplit("/", maxsplit=1)[1] == image_name
 
-    def test_create_task_with_cloud_storage_and_check_retrieve_data_by_params(
+    def test_create_task_with_cloud_storage_and_check_retrieve_data_meta(
         self,
         filenames: List[str],
         cloud_storage_id: int,
@@ -1767,11 +1767,12 @@ class TestPostTaskData:
         )
 
         with make_api_client(self._USERNAME) as api_client:
-            (_, response) = api_client.tasks_api.retrieve_data(
-                task_id, type="chunk", quality="compressed", number=0
-            )
-            print(response.data)
-            assert response.status == HTTPStatus.OK
+            data_meta, _ = api_client.tasks_api.retrieve_data_meta(task_id)
+
+        assert data_meta.start_frame == 2
+        assert data_meta.stop_frame == 6
+        assert data_meta.included_frames == [2, 4, 6]
+
 
     def test_can_specify_file_job_mapping(self):
         task_spec = {
