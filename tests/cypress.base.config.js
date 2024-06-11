@@ -20,5 +20,6 @@ module.exports = {
         },
         testIsolation: false,
         baseUrl: 'http://localhost:8080',
+        minioUrl: `${Cypress.config('baseUrl').includes('3000') ? 'localhost' : 'minio'}:9000`,
     },
 };

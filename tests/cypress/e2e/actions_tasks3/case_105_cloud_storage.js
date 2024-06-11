@@ -25,11 +25,10 @@ context('Cloud storage.', () => {
         projectID: 'Some ID',
     };
 
-    const serverHost = Cypress.config('baseUrl').includes('3000') ? 'localhost' : 'minio';
     const cloudStorageDataWithoutManifest = {
         displayName: 'Without manifest file',
         resource: 'public',
-        endpointUrl: `http://${serverHost}:9000`,
+        endpointUrl: Cypress.config('minioUrl'),
     };
 
     before(() => {
