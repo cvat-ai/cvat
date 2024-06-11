@@ -1313,45 +1313,46 @@ class TestPostTaskData:
         use_cache: bool = True,
         sorting_method: str = "lexicographical",
         spec: Optional[Dict[str, Any]] = None,
+        use_images_as_data: bool = True,
         server_files_exclude: Optional[List[str]] = None,
         org: Optional[str] = None,
         filenames: Optional[List[str]] = None,
     ) -> Tuple[int, Any]:
         s3_client = s3.make_client()
-        images = generate_image_files(
-            3, **({"prefixes": ["img_"] * 3} if not filenames else {"filenames": filenames})
-        )
+        if use_images_as_data:
+            images = generate_image_files(
+                3, **({"prefixes": ["img_"] * 3} if not filenames else {"filenames": filenames})
+            )
 
-        for image in images:
-            for i in range(2):
-                image.seek(0)
-                s3_client.create_file(
-                    data=image,
-                    bucket=cloud_storage["resource"],
-                    filename=f"test/sub_{i}/{image.name}",
-                )
-                request.addfinalizer(
-                    partial(
-                        s3_client.remove_file,
+            for image in images:
+                for i in range(2):
+                    image.seek(0)
+                    s3_client.create_file(
+                        data=image,
                         bucket=cloud_storage["resource"],
                         filename=f"test/sub_{i}/{image.name}",
                     )
-                )
-
-        video = generate_video_file(10)
-
-        s3_client.create_file(
-            data=video,
-            bucket=cloud_storage["resource"],
-            filename=f"test/video/{video.name}",
-        )
-        request.addfinalizer(
-            partial(
-                s3_client.remove_file,
+                    request.addfinalizer(
+                        partial(
+                            s3_client.remove_file,
+                            bucket=cloud_storage["resource"],
+                            filename=f"test/sub_{i}/{image.name}",
+                        )
+                    )
+        else:
+            video = generate_video_file(10)
+            s3_client.create_file(
+                data=video,
                 bucket=cloud_storage["resource"],
                 filename=f"test/video/{video.name}",
             )
-        )
+            request.addfinalizer(
+                partial(
+                    s3_client.remove_file,
+                    bucket=cloud_storage["resource"],
+                    filename=f"test/video/{video.name}",
+                )
+            )
 
         if use_manifest:
             with TemporaryDirectory() as tmp_dir:
@@ -1772,6 +1773,7 @@ class TestPostTaskData:
             server_files=["test/video/video.avi"],
             org=org,
             spec=data_spec,
+            use_images_as_data=False,
         )
 
         with make_api_client(self._USERNAME) as api_client:
