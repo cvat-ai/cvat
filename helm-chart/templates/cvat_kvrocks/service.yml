@@ -15,7 +15,7 @@ spec:
     {{- include "cvat.labels" . | nindent 4 }}
   type: ClusterIP
   ports:
-  - name: tcp-kvrocks
+  - name: redis
     port: 6666
     targetPort: kvrocks
     protocol: TCP
