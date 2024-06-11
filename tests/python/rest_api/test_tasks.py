@@ -1742,7 +1742,6 @@ class TestPostTaskData:
             for image_name, frame in zip(filenames, data_meta.frames):
                 assert frame.name.rsplit("/", maxsplit=1)[1] == image_name
 
-
     @pytest.mark.with_external_services
     @pytest.mark.parametrize("filenames", ["video.avi"])
     @pytest.mark.parametrize(
