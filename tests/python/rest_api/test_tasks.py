@@ -1761,7 +1761,7 @@ class TestPostTaskData:
         data_spec = {
             "start_frame": 2,
             "stop_frame": 6,
-            "step": 2,
+            "frame_filter": "step=2",
         }
 
         task_id, _ = self._create_task_with_cloud_data(
@@ -1780,7 +1780,6 @@ class TestPostTaskData:
         assert data_meta.start_frame == 2
         assert data_meta.stop_frame == 6
         assert data_meta.size == 3
-        print(data_meta)
 
     def test_can_specify_file_job_mapping(self):
         task_spec = {
