@@ -1312,7 +1312,7 @@ class TestPostTaskData:
         server_files: List[str],
         use_cache: bool = True,
         sorting_method: str = "lexicographical",
-        spec: Optional[Dict[str, Any]] = {},
+        spec: Optional[Dict[str, Any]] = None,
         server_files_exclude: Optional[List[str]] = None,
         org: Optional[str] = None,
         filenames: Optional[List[str]] = None,
@@ -1387,7 +1387,7 @@ class TestPostTaskData:
             ],
         }
 
-        data_spec = {**{
+        data_spec = {
             "image_quality": 75,
             "use_cache": use_cache,
             "cloud_storage_id": cloud_storage["id"],
@@ -1395,7 +1395,10 @@ class TestPostTaskData:
                 server_files if not use_manifest else server_files + ["test/manifest.jsonl"]
             ),
             "sorting_method": sorting_method,
-        }, **spec}
+        }
+        if spec is not None:
+            data_spec.update(spec)
+
         if server_files_exclude:
             data_spec["server_files_exclude"] = server_files_exclude
 
