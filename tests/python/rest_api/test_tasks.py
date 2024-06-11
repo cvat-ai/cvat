@@ -1742,6 +1742,15 @@ class TestPostTaskData:
             for image_name, frame in zip(filenames, data_meta.frames):
                 assert frame.name.rsplit("/", maxsplit=1)[1] == image_name
 
+
+    @pytest.mark.with_external_services
+    @pytest.mark.parametrize("filenames", ["video.avi"])
+    @pytest.mark.parametrize(
+        "cloud_storage_id, org",
+        [
+            (1, ""),
+        ],
+    )
     def test_create_task_with_cloud_storage_and_check_retrieve_data_meta(
         self,
         filenames: List[str],
