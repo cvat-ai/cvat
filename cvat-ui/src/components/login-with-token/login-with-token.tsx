@@ -15,12 +15,8 @@ export default function LoginWithTokenComponent(): JSX.Element {
     useEffect(
         () => {
             localStorage.setItem('token', token);
-            const next = search.get('next');
-            if (next) {
-                (window as Window).location = next;
-            } else {
-                window.location.reload();
-            }
+            const next = search.get('next') ?? '/';
+            (window as Window).location = next;
         },
         [token],
     );
