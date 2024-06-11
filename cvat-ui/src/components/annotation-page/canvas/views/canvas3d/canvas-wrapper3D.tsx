@@ -34,8 +34,75 @@ import CVATTooltip from 'components/common/cvat-tooltip';
 import { EventScope } from 'cvat-logger';
 import { getCore, ObjectState, Job } from 'cvat-core-wrapper';
 import GlobalHotKeys from 'utils/mousetrap-react';
+import { ViewType } from 'utils/enums';
+import { useRegisterShortcuts } from 'utils/hooks';
 
 const cvat = getCore();
+
+const componentShortcuts = {
+    TILT_UP: {
+        name: 'Camera Roll Angle Up',
+        description: 'Increases camera roll angle',
+        sequences: ['shift+arrowup'],
+        view: ViewType.ALL,
+    },
+    TILT_DOWN: {
+        name: 'Camera Roll Angle Down',
+        description: 'Decreases camera roll angle',
+        sequences: ['shift+arrowdown'],
+        view: ViewType.ALL,
+    },
+    ROTATE_LEFT: {
+        name: 'Camera Pitch Angle Left',
+        description: 'Decreases camera pitch angle',
+        sequences: ['shift+arrowleft'],
+        view: ViewType.ALL,
+    },
+    ROTATE_RIGHT: {
+        name: 'Camera Pitch Angle Right',
+        description: 'Increases camera pitch angle',
+        sequences: ['shift+arrowright'],
+        view: ViewType.ALL,
+    },
+    MOVE_UP: {
+        name: 'Camera Move Up',
+        description: 'Move the camera up',
+        sequences: ['alt+u'],
+        view: ViewType.ALL,
+    },
+    MOVE_DOWN: {
+        name: 'Camera Move Down',
+        description: 'Move the camera down',
+        sequences: ['alt+o'],
+        view: ViewType.ALL,
+    },
+    MOVE_LEFT: {
+        name: 'Camera Move Left',
+        description: 'Move the camera left',
+        sequences: ['alt+j'],
+        view: ViewType.ALL,
+    },
+    MOVE_RIGHT: {
+        name: 'Camera Move Right',
+        description: 'Move the camera right',
+        sequences: ['alt+l'],
+        view: ViewType.ALL,
+    },
+    ZOOM_IN: {
+        name: 'Camera Zoom In',
+        description: 'Performs zoom in',
+        sequences: ['alt+i'],
+        view: ViewType.ALL,
+    },
+    ZOOM_OUT: {
+        name: 'Camera Zoom Out',
+        description: 'Performs zoom out',
+        sequences: ['alt+k'],
+        view: ViewType.ALL,
+    },
+};
+
+useRegisterShortcuts(componentShortcuts);
 
 interface StateToProps {
     opacity: number;

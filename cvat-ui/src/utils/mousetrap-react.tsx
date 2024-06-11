@@ -32,30 +32,19 @@ const applicationKeyMap: KeyMap = {};
 
 export default function GlobalHotKeys(props: Props): JSX.Element {
     const { children, keyMap, handlers } = props;
-
     useEffect(() => {
         for (const key of Object.keys(keyMap)) {
-            if (!keyMap[key]) {
-                continue;
-            }
             const { sequences } = keyMap[key];
             const handler = handlers[key];
-            if (sequences && handler) {
-                Mousetrap.bind(sequences, handler, 'keydown');
-                applicationKeyMap[key] = keyMap[key];
-            }
+            Mousetrap.bind(sequences, handler, 'keydown');
+            applicationKeyMap[key] = keyMap[key];
         }
 
         return () => {
             for (const key of Object.keys(keyMap)) {
-                if (!keyMap[key]) {
-                    continue;
-                }
                 const { sequences } = keyMap[key];
-                if (sequences) {
-                    Mousetrap.unbind(sequences, 'keydown');
-                    delete applicationKeyMap[key];
-                }
+                Mousetrap.unbind(sequences, 'keydown');
+                delete applicationKeyMap[key];
             }
         };
     });
@@ -63,29 +52,6 @@ export default function GlobalHotKeys(props: Props): JSX.Element {
     // eslint-disable-next-line react/jsx-no-useless-fragment
     return children || <></>;
 }
-
-// export default function GlobalHotKeys(props: Props): JSX.Element {
-//     const { children, keyMap, handlers } = props;
-//     useEffect(() => {
-//         for (const key of Object.keys(keyMap)) {
-//             const { sequences } = keyMap[key];
-//             const handler = handlers[key];
-//             Mousetrap.bind(sequences, handler, 'keydown');
-//             applicationKeyMap[key] = keyMap[key];
-//         }
-
-//         return () => {
-//             for (const key of Object.keys(keyMap)) {
-//                 const { sequences } = keyMap[key];
-//                 Mousetrap.unbind(sequences, 'keydown');
-//                 delete applicationKeyMap[key];
-//             }
-//         };
-//     });
-
-//     // eslint-disable-next-line react/jsx-no-useless-fragment
-//     return children || <></>;
-// }
 
 Mousetrap.prototype.stopCallback = function (e: KeyboardEvent, element: Element, combo: string): boolean {
     // stop when modals are opened
