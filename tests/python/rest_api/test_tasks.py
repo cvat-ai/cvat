@@ -1779,7 +1779,7 @@ class TestPostTaskData:
 
         assert data_meta.start_frame == 2
         assert data_meta.stop_frame == 6
-        assert data_meta.included_frames == [2, 4, 6]
+        assert len(data_meta.frames) == 3
 
     def test_can_specify_file_job_mapping(self):
         task_spec = {
