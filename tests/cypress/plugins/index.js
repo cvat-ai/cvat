@@ -42,6 +42,12 @@ module.exports = (on, config) => {
         return launchOptions;
     });
 
+    on('before:run', () => {
+        if (config.baseUrl.includes('3000')) {
+            config.minioUrl = 'http://localhost:9000';
+        }
+    });
+
     on('after:spec', (spec, results) => {
         if (results && results.stats.failures === 0 && results.video) {
             fs.unlinkSync(results.video);
