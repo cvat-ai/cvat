@@ -61,10 +61,7 @@ context('Single object annotation mode', { scrollBehavior: false }, () => {
     }
 
     function submitJob() {
-        cy.get('.cvat-single-shape-annotation-submit-job-modal').should('exist');
-        cy.get('.cvat-single-shape-annotation-submit-job-modal').within(() => { cy.contains('Submit').click(); });
-
-        cy.intercept('PATCH', '/api/jobs/**').as('submitJob');
+        cy.intercept('PATCH', `/api/jobs/${jobID}/**`).as('submitJob');
         cy.wait('@submitJob').its('response.statusCode').should('equal', 200);
 
         cy.get('.cvat-single-shape-annotation-submit-success-modal').should('exist');
@@ -225,7 +222,7 @@ context('Single object annotation mode', { scrollBehavior: false }, () => {
                 cy.get('[type="checkbox"]').uncheck();
             });
             clickPoints(polygonShape);
-            cy.get('.cvat-single-shape-annotation-submit-job-modal').should('not.exist');
+            cy.get('.cvat-single-shape-annotation-submit-success-modal').should('not.exist');
 
             // Navigate only on empty frames
             cy.get('.cvat-player-previous-button-empty').click();
