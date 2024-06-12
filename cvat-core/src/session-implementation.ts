@@ -5,8 +5,7 @@
 
 import { omit } from 'lodash';
 import { ArgumentError } from './exceptions';
-import { HistoryActions, JobType, RQStatus } from './enums';
-import { Storage } from './storage';
+import { HistoryActions, JobType } from './enums';
 import { Task as TaskClass, Job as JobClass } from './session';
 import logger from './logger';
 import serverProxy from './server-proxy';
@@ -108,11 +107,11 @@ export function implementJob(Job: typeof JobClass): typeof JobClass {
     });
 
     Object.defineProperty(Job.prototype.issues, 'implementation', {
-        value: async function issuesImplementation(
+        value: function issuesImplementation(
             this: JobClass,
         ): ReturnType<typeof Job.prototype.issues> {
-            const result = await serverProxy.issues.get({ job_id: this.id });
-            return result.map((issue) => new Issue(issue));
+            return serverProxy.issues.get({ job_id: this.id })
+                .then((issues) => issues.map((issue) => new Issue(issue)));
         },
     });
 
@@ -186,7 +185,7 @@ export function implementJob(Job: typeof JobClass): typeof JobClass {
     });
 
     Object.defineProperty(Job.prototype.frames.delete, 'implementation', {
-        value: async function deleteFrameImplementation(
+        value: function deleteFrameImplementation(
             this: JobClass,
             frame: Parameters<typeof Job.prototype.frames.delete>[0],
         ): ReturnType<typeof Job.prototype.frames.delete> {
@@ -203,7 +202,7 @@ export function implementJob(Job: typeof JobClass): typeof JobClass {
     });
 
     Object.defineProperty(Job.prototype.frames.restore, 'implementation', {
-        value: async function restoreFrameImplementation(
+        value: function restoreFrameImplementation(
             this: JobClass,
             frame: Parameters<typeof Job.prototype.frames.restore>[0],
         ): ReturnType<typeof Job.prototype.frames.restore> {
@@ -534,7 +533,7 @@ export function implementJob(Job: typeof JobClass): typeof JobClass {
             this: JobClass,
             frozen: Parameters<typeof Job.prototype.actions.freeze>[0],
         ): ReturnType<typeof Job.prototype.actions.freeze> {
-            return getHistory(this).freeze(frozen);
+            return Promise.resolve(getHistory(this).freeze(frozen));
         },
     });
 
@@ -542,7 +541,7 @@ export function implementJob(Job: typeof JobClass): typeof JobClass {
         value: function clearActionsImplementation(
             this: JobClass,
         ): ReturnType<typeof Job.prototype.actions.clear> {
-            return getHistory(this).clear();
+            return Promise.resolve(getHistory(this).clear());
         },
     });
 
@@ -550,7 +549,7 @@ export function implementJob(Job: typeof JobClass): typeof JobClass {
         value: function getActionsImplementation(
             this: JobClass,
         ): ReturnType<typeof Job.prototype.actions.get> {
-            return getHistory(this).get();
+            return Promise.resolve(getHistory(this).get());
         },
     });
 
@@ -577,359 +576,494 @@ export function implementJob(Job: typeof JobClass): typeof JobClass {
     return Job;
 }
 
-export function implementTask(Task: typeof TaskClass) {
-    Task.prototype.close.implementation = function closeTask() {
-        for (const job of this.jobs) {
-            clearFrames(job.id);
-            clearCache(job);
-        }
-
-        clearCache(this);
-        return this;
-    };
-
-    Task.prototype.save.implementation = async function (onUpdate) {
-        if (typeof this.id !== 'undefined') {
-            // If the task has been already created, we update it
-            const taskData = this._updateTrigger.getUpdated(this, {
-                bugTracker: 'bug_tracker',
-                projectId: 'project_id',
-                assignee: 'assignee_id',
-            });
-
-            if (taskData.assignee_id) {
-                taskData.assignee_id = taskData.assignee_id.id;
+export function implementTask(Task: typeof TaskClass): typeof TaskClass {
+    Object.defineProperty(Task.prototype.close, 'implementation', {
+        value: function closeImplementation(
+            this: TaskClass,
+        ) {
+            for (const job of this.jobs) {
+                clearFrames(job.id);
+                clearCache(job);
             }
 
-            for await (const label of taskData.labels || []) {
-                if (label.deleted) {
-                    await serverProxy.labels.delete(label.id);
-                } else if (label.patched) {
-                    await serverProxy.labels.update(label.id, label.toJSON());
+            clearCache(this);
+            return this;
+        },
+    });
+
+    Object.defineProperty(Task.prototype.guide, 'implementation', {
+        value: async function guideImplementation(
+            this: TaskClass,
+        ): ReturnType<typeof TaskClass.prototype.guide> {
+            if (this.guideId === null) {
+                return null;
+            }
+
+            const result = await serverProxy.guides.get(this.guideId);
+            return new AnnotationGuide(result);
+        },
+    });
+
+    Object.defineProperty(Task.prototype.save, 'implementation', {
+        value: async function saveImplementation(
+            this: TaskClass,
+            onUpdate: Parameters<typeof TaskClass.prototype.save>[0],
+        ): ReturnType<typeof TaskClass.prototype.save> {
+            if (typeof this.id !== 'undefined') {
+                // If the task has been already created, we update it
+                const taskData = this._updateTrigger.getUpdated(this, {
+                    bugTracker: 'bug_tracker',
+                    projectId: 'project_id',
+                    assignee: 'assignee_id',
+                });
+
+                if (taskData.assignee_id) {
+                    taskData.assignee_id = taskData.assignee_id.id;
                 }
+
+                for await (const label of taskData.labels || []) {
+                    if (label.deleted) {
+                        await serverProxy.labels.delete(label.id);
+                    } else if (label.patched) {
+                        await serverProxy.labels.update(label.id, label.toJSON());
+                    }
+                }
+
+                // leave only new labels to create them via task PATCH request
+                taskData.labels = (taskData.labels || [])
+                    .filter((label: SerializedLabel) => !Number.isInteger(label.id)).map((el) => el.toJSON());
+                if (!taskData.labels.length) {
+                    delete taskData.labels;
+                }
+
+                this._updateTrigger.reset();
+
+                let serializedTask: SerializedTask = null;
+                if (Object.keys(taskData).length) {
+                    serializedTask = await serverProxy.tasks.save(this.id, taskData);
+                } else {
+                    [serializedTask] = (await serverProxy.tasks.get({ id: this.id }));
+                }
+
+                const labels = await serverProxy.labels.get({ task_id: this.id });
+                const jobs = await serverProxy.jobs.get({ task_id: this.id }, true);
+                return new Task({
+                    ...omit(serializedTask, ['jobs', 'labels']),
+                    progress: serializedTask.jobs,
+                    jobs,
+                    labels: labels.results,
+                });
             }
 
-            // leave only new labels to create them via task PATCH request
-            taskData.labels = (taskData.labels || [])
-                .filter((label: SerializedLabel) => !Number.isInteger(label.id)).map((el) => el.toJSON());
-            if (!taskData.labels.length) {
-                delete taskData.labels;
+            const taskSpec: any = {
+                name: this.name,
+                labels: this.labels.map((el) => el.toJSON()),
+            };
+
+            if (typeof this.bugTracker !== 'undefined') {
+                taskSpec.bug_tracker = this.bugTracker;
+            }
+            if (typeof this.segmentSize !== 'undefined') {
+                taskSpec.segment_size = this.segmentSize;
+            }
+            if (typeof this.overlap !== 'undefined') {
+                taskSpec.overlap = this.overlap;
+            }
+            if (typeof this.projectId !== 'undefined') {
+                taskSpec.project_id = this.projectId;
+            }
+            if (typeof this.subset !== 'undefined') {
+                taskSpec.subset = this.subset;
             }
 
-            this._updateTrigger.reset();
-
-            let serializedTask: SerializedTask = null;
-            if (Object.keys(taskData).length) {
-                serializedTask = await serverProxy.tasks.save(this.id, taskData);
-            } else {
-                [serializedTask] = (await serverProxy.tasks.get({ id: this.id }));
+            if (this.targetStorage) {
+                taskSpec.target_storage = this.targetStorage.toJSON();
             }
 
-            const labels = await serverProxy.labels.get({ task_id: this.id });
-            const jobs = await serverProxy.jobs.get({ task_id: this.id }, true);
+            if (this.sourceStorage) {
+                taskSpec.source_storage = this.sourceStorage.toJSON();
+            }
+
+            const taskDataSpec = {
+                client_files: this.clientFiles,
+                server_files: this.serverFiles,
+                remote_files: this.remoteFiles,
+                image_quality: this.imageQuality,
+                use_zip_chunks: this.useZipChunks,
+                use_cache: this.useCache,
+                sorting_method: this.sortingMethod,
+                ...(typeof this.startFrame !== 'undefined' ? { start_frame: this.startFrame } : {}),
+                ...(typeof this.stopFrame !== 'undefined' ? { stop_frame: this.stopFrame } : {}),
+                ...(typeof this.frameFilter !== 'undefined' ? { frame_filter: this.frameFilter } : {}),
+                ...(typeof this.dataChunkSize !== 'undefined' ? { chunk_size: this.dataChunkSize } : {}),
+                ...(typeof this.copyData !== 'undefined' ? { copy_data: this.copyData } : {}),
+                ...(typeof this.cloudStorageId !== 'undefined' ? { cloud_storage_id: this.cloudStorageId } : {}),
+            };
+
+            const task = await serverProxy.tasks.create(taskSpec, taskDataSpec, onUpdate);
+            const labels = await serverProxy.labels.get({ task_id: task.id });
+            const jobs = await serverProxy.jobs.get({
+                filter: JSON.stringify({ and: [{ '==': [{ var: 'task_id' }, task.id] }] }),
+            }, true);
+
             return new Task({
-                ...omit(serializedTask, ['jobs', 'labels']),
-                progress: serializedTask.jobs,
+                ...omit(task, ['jobs', 'labels']),
                 jobs,
+                progress: task.jobs,
                 labels: labels.results,
             });
-        }
+        },
+    });
 
-        const taskSpec: any = {
-            name: this.name,
-            labels: this.labels.map((el) => el.toJSON()),
-        };
+    Object.defineProperty(Task.prototype.listenToCreate, 'implementation', {
+        value: async function listenToCreateImplementation(
+            this: TaskClass,
+            onUpdate: Parameters<typeof TaskClass.prototype.listenToCreate>[0],
+        ): ReturnType<typeof TaskClass.prototype.listenToCreate> {
+            if (Number.isInteger(this.id) && this.size === 0) {
+                const serializedTask = await serverProxy.tasks.listenToCreate(this.id, onUpdate);
+                return new Task(omit(serializedTask, ['labels', 'jobs']));
+            }
 
-        if (typeof this.bugTracker !== 'undefined') {
-            taskSpec.bug_tracker = this.bugTracker;
-        }
-        if (typeof this.segmentSize !== 'undefined') {
-            taskSpec.segment_size = this.segmentSize;
-        }
-        if (typeof this.overlap !== 'undefined') {
-            taskSpec.overlap = this.overlap;
-        }
-        if (typeof this.projectId !== 'undefined') {
-            taskSpec.project_id = this.projectId;
-        }
-        if (typeof this.subset !== 'undefined') {
-            taskSpec.subset = this.subset;
-        }
+            return this;
+        },
+    });
 
-        if (this.targetStorage) {
-            taskSpec.target_storage = this.targetStorage.toJSON();
-        }
+    Object.defineProperty(Task.prototype.delete, 'implementation', {
+        value: function deleteImplementation(
+            this: TaskClass,
+        ): ReturnType<typeof TaskClass.prototype.delete> {
+            return serverProxy.tasks.delete(this.id);
+        },
+    });
 
-        if (this.sourceStorage) {
-            taskSpec.source_storage = this.sourceStorage.toJSON();
-        }
+    Object.defineProperty(Task.prototype.issues, 'implementation', {
+        value: function issuesImplementation(
+            this: TaskClass,
+        ): ReturnType<typeof TaskClass.prototype.issues> {
+            return serverProxy.issues.get({ task_id: this.id })
+                .then((issues) => issues.map((issue) => new Issue(issue)));
+        },
+    });
 
-        const taskDataSpec = {
-            client_files: this.clientFiles,
-            server_files: this.serverFiles,
-            remote_files: this.remoteFiles,
-            image_quality: this.imageQuality,
-            use_zip_chunks: this.useZipChunks,
-            use_cache: this.useCache,
-            sorting_method: this.sortingMethod,
-            ...(typeof this.startFrame !== 'undefined' ? { start_frame: this.startFrame } : {}),
-            ...(typeof this.stopFrame !== 'undefined' ? { stop_frame: this.stopFrame } : {}),
-            ...(typeof this.frameFilter !== 'undefined' ? { frame_filter: this.frameFilter } : {}),
-            ...(typeof this.dataChunkSize !== 'undefined' ? { chunk_size: this.dataChunkSize } : {}),
-            ...(typeof this.copyData !== 'undefined' ? { copy_data: this.copyData } : {}),
-            ...(typeof this.cloudStorageId !== 'undefined' ? { cloud_storage_id: this.cloudStorageId } : {}),
-        };
+    Object.defineProperty(Task.prototype.backup, 'implementation', {
+        value: function backupImplementation(
+            this: TaskClass,
+            targetStorage: Parameters<typeof TaskClass.prototype.backup>[0],
+            useDefaultSettings: Parameters<typeof TaskClass.prototype.backup>[1],
+            fileName: Parameters<typeof TaskClass.prototype.backup>[2],
+        ): ReturnType<typeof TaskClass.prototype.backup> {
+            return serverProxy.tasks.backup(this.id, targetStorage, useDefaultSettings, fileName);
+        },
+    });
 
-        const task = await serverProxy.tasks.create(taskSpec, taskDataSpec, onUpdate);
-        const labels = await serverProxy.labels.get({ task_id: task.id });
-        const jobs = await serverProxy.jobs.get({
-            filter: JSON.stringify({ and: [{ '==': [{ var: 'task_id' }, task.id] }] }),
-        }, true);
+    Object.defineProperty(Task.restore, 'implementation', {
+        value: function restoreImplementation(
+            this: TaskClass,
+            storage: Parameters<typeof TaskClass.restore>[0],
+            file: Parameters<typeof TaskClass.restore>[1],
+        ): ReturnType<typeof TaskClass.restore> {
+            return serverProxy.tasks.restore(storage, file);
+        },
+    });
 
-        return new Task({
-            ...omit(task, ['jobs', 'labels']),
-            jobs,
-            progress: task.jobs,
-            labels: labels.results,
-        });
-    };
+    Object.defineProperty(Task.prototype.frames.get, 'implementation', {
+        value: async function getFrameImplementation(
+            this: TaskClass,
+            frame: Parameters<typeof TaskClass.prototype.frames.get>[0],
+            isPlaying: Parameters<typeof TaskClass.prototype.frames.get>[1],
+            step: Parameters<typeof TaskClass.prototype.frames.get>[2],
+        ): ReturnType<typeof TaskClass.prototype.frames.get> {
+            if (!Number.isInteger(frame) || frame < 0) {
+                throw new ArgumentError(`Frame must be a positive integer. Got: "${frame}"`);
+            }
 
-    Task.prototype.listenToCreate.implementation = async function (
-        onUpdate: (state: RQStatus, progress: number, message: string) => void = () => {},
-    ): Promise<TaskClass> {
-        if (Number.isInteger(this.id) && this.size === 0) {
-            const serializedTask = await serverProxy.tasks.listenToCreate(this.id, onUpdate);
-            return new Task(omit(serializedTask, ['labels', 'jobs']));
-        }
+            if (frame >= this.size) {
+                throw new ArgumentError(`The frame with number ${frame} is out of the task`);
+            }
 
-        return this;
-    };
+            const job = this.jobs.filter((_job) => _job.startFrame <= frame && _job.stopFrame >= frame)[0];
 
-    Task.prototype.delete.implementation = async function () {
-        const result = await serverProxy.tasks.delete(this.id);
-        return result;
-    };
-
-    Task.prototype.issues.implementation = async function () {
-        const result = await serverProxy.issues.get({ task_id: this.id });
-        return result.map((issue) => new Issue(issue));
-    };
-
-    Task.prototype.backup.implementation = async function (
-        targetStorage: Storage,
-        useDefaultSettings: boolean,
-        fileName?: string,
-    ) {
-        const result = await serverProxy.tasks.backup(this.id, targetStorage, useDefaultSettings, fileName);
-        return result;
-    };
-
-    Task.restore.implementation = async function (storage: Storage, file: File | string) {
-        // eslint-disable-next-line no-unsanitized/method
-        const result = await serverProxy.tasks.restore(storage, file);
-        return result;
-    };
-
-    Task.prototype.frames.get.implementation = async function (frame, isPlaying, step) {
-        if (!Number.isInteger(frame) || frame < 0) {
-            throw new ArgumentError(`Frame must be a positive integer. Got: "${frame}"`);
-        }
-
-        if (frame >= this.size) {
-            throw new ArgumentError(`The frame with number ${frame} is out of the task`);
-        }
-
-        const job = this.jobs.filter((_job) => _job.startFrame <= frame && _job.stopFrame >= frame)[0];
-
-        const result = await getFrame(
-            job.id,
-            this.dataChunkSize,
-            this.dataChunkType,
-            this.mode,
-            frame,
-            job.startFrame,
-            job.stopFrame,
-            isPlaying,
-            step,
-            this.dimension,
-            (chunkNumber, quality) => job.frames.chunk(chunkNumber, quality),
-        );
-        return result;
-    };
-
-    Task.prototype.frames.cachedChunks.implementation = async function () {
-        let chunks = [];
-        for (const job of this.jobs) {
-            const cachedChunks = await getCachedChunks(job.id);
-            chunks = chunks.concat(cachedChunks);
-        }
-        return Array.from(new Set(chunks));
-    };
-
-    Task.prototype.frames.preview.implementation = async function (this: TaskClass): Promise<string> {
-        if (this.id === null) return '';
-        const preview = await serverProxy.tasks.getPreview(this.id);
-        if (!preview) return '';
-        return decodePreview(preview);
-    };
-
-    Task.prototype.frames.delete.implementation = async function (frame) {
-        if (!Number.isInteger(frame)) {
-            throw new Error(`Frame must be an integer. Got: "${frame}"`);
-        }
-
-        if (frame < 0 || frame >= this.size) {
-            throw new Error('The frame is out of the task');
-        }
-
-        const job = this.jobs.filter((_job) => _job.startFrame <= frame && _job.stopFrame >= frame)[0];
-        if (job) {
-            await deleteFrameWrapper.call(this, job.id, frame);
-        }
-    };
-
-    Task.prototype.frames.restore.implementation = async function (frame) {
-        if (!Number.isInteger(frame)) {
-            throw new Error(`Frame must be an integer. Got: "${frame}"`);
-        }
-
-        if (frame < 0 || frame >= this.size) {
-            throw new Error('The frame is out of the task');
-        }
-
-        const job = this.jobs.filter((_job) => _job.startFrame <= frame && _job.stopFrame >= frame)[0];
-        if (job) {
-            await restoreFrameWrapper.call(this, job.id, frame);
-        }
-    };
-
-    Task.prototype.frames.save.implementation = async function () {
-        return Promise.all(this.jobs.map((job) => patchMeta(job.id)));
-    };
-
-    Task.prototype.frames.search.implementation = async function (filters, frameFrom, frameTo) {
-        if (typeof filters !== 'object') {
-            throw new ArgumentError('Filters should be an object');
-        }
-
-        if (!Number.isInteger(frameFrom) || !Number.isInteger(frameTo)) {
-            throw new ArgumentError('The start and end frames both must be an integer');
-        }
-
-        if (frameFrom < 0 || frameFrom > this.size) {
-            throw new ArgumentError('The start frame is out of the task');
-        }
-
-        if (frameTo < 0 || frameTo > this.size) {
-            throw new ArgumentError('The stop frame is out of the task');
-        }
-
-        const jobs = this.jobs.filter((_job) => (
-            (frameFrom >= _job.startFrame && frameFrom <= _job.stopFrame) ||
-            (frameTo >= _job.startFrame && frameTo <= _job.stopFrame) ||
-            (frameFrom < _job.startFrame && frameTo > _job.stopFrame)
-        ));
-
-        for (const job of jobs) {
-            const result = await findFrame(
-                job.id, Math.max(frameFrom, job.startFrame), Math.min(frameTo, job.stopFrame), filters,
+            const result = await getFrame(
+                job.id,
+                this.dataChunkSize,
+                this.dataChunkType,
+                this.mode,
+                frame,
+                job.startFrame,
+                job.stopFrame,
+                isPlaying,
+                step,
+                this.dimension,
+                (chunkNumber, quality) => job.frames.chunk(chunkNumber, quality),
             );
+            return result;
+        },
+    });
 
-            if (result !== null) return result;
-        }
+    Object.defineProperty(Task.prototype.frames.cachedChunks, 'implementation', {
+        value: async function cachedChunksImplementation(
+            this: TaskClass,
+        ): ReturnType<typeof TaskClass.prototype.frames.cachedChunks> {
+            throw new Error('Not implemented for Task');
+        },
+    });
 
-        return null;
-    };
+    Object.defineProperty(Task.prototype.frames.preview, 'implementation', {
+        value: function previewImplementation(
+            this: TaskClass,
+        ): ReturnType<typeof TaskClass.prototype.frames.preview> {
+            if (this.id === null) {
+                return Promise.resolve('');
+            }
 
-    Task.prototype.frames.contextImage.implementation = async function () {
-        throw new Error('Not implemented');
-    };
+            return serverProxy.tasks.getPreview(this.id).then((preview) => {
+                if (!preview) {
+                    return Promise.resolve('');
+                }
+                return decodePreview(preview);
+            });
+        },
+    });
 
-    Task.prototype.frames.chunk.implementation = async function () {
-        throw new Error('Not implemented');
-    };
+    Object.defineProperty(Task.prototype.frames.delete, 'implementation', {
+        value: async function deleteFrameImplementation(
+            this: TaskClass,
+            frame: Parameters<typeof TaskClass.prototype.frames.delete>[0],
+        ): ReturnType<typeof TaskClass.prototype.frames.delete> {
+            if (!Number.isInteger(frame)) {
+                throw new Error(`Frame must be an integer. Got: "${frame}"`);
+            }
 
-    // TODO: Check filter for annotations
-    Task.prototype.annotations.get.implementation = async function (frame, allTracks, filters) {
-        if (!Array.isArray(filters) || filters.some((filter) => typeof filter !== 'string')) {
-            throw new ArgumentError('The filters argument must be an array of strings');
-        }
+            if (frame < 0 || frame >= this.size) {
+                throw new Error('The frame is out of the task');
+            }
 
-        if (!Number.isInteger(frame) || frame < 0) {
-            throw new ArgumentError(`Frame must be a positive integer. Got: "${frame}"`);
-        }
+            const job = this.jobs.filter((_job) => _job.startFrame <= frame && _job.stopFrame >= frame)[0];
+            if (job) {
+                await deleteFrameWrapper.call(this, job.id, frame);
+            }
+        },
+    });
 
-        if (frame >= this.size) {
-            throw new ArgumentError(`Frame ${frame} does not exist in the task`);
-        }
+    Object.defineProperty(Task.prototype.frames.restore, 'implementation', {
+        value: async function restoreFrameImplementation(
+            this: TaskClass,
+            frame: Parameters<typeof TaskClass.prototype.frames.restore>[0],
+        ): ReturnType<typeof TaskClass.prototype.frames.restore> {
+            if (!Number.isInteger(frame)) {
+                throw new Error(`Frame must be an integer. Got: "${frame}"`);
+            }
 
-        const result = await getAnnotations(this, frame, allTracks, filters);
-        const deletedFrames = await getDeletedFrames('task', this.id);
-        if (frame in deletedFrames) {
-            return [];
-        }
+            if (frame < 0 || frame >= this.size) {
+                throw new Error('The frame is out of the task');
+            }
 
-        return result;
-    };
+            const job = this.jobs.filter((_job) => _job.startFrame <= frame && _job.stopFrame >= frame)[0];
+            if (job) {
+                await restoreFrameWrapper.call(this, job.id, frame);
+            }
+        },
+    });
 
-    Task.prototype.annotations.search.implementation = function (frameFrom, frameTo, searchParameters) {
-        if ('annotationsFilters' in searchParameters && !Array.isArray(searchParameters.annotationsFilters)) {
-            throw new ArgumentError('Annotations filters must be an array');
-        }
+    Object.defineProperty(Task.prototype.frames.save, 'implementation', {
+        value: async function saveFramesImplementation(
+            this: TaskClass,
+        ): ReturnType<typeof TaskClass.prototype.frames.save> {
+            return Promise.all(this.jobs.map((job) => patchMeta(job.id)))
+                .then(() => Promise.resolve());
+        },
+    });
 
-        if ('generalFilters' in searchParameters && typeof searchParameters.generalFilters.isEmptyFrame !== 'boolean') {
-            throw new ArgumentError('General filter isEmptyFrame must be a boolean');
-        }
+    Object.defineProperty(Task.prototype.frames.search, 'implementation', {
+        value: async function searchFrameImplementation(
+            this: TaskClass,
+            filters: Parameters<typeof TaskClass.prototype.frames.search>[0],
+            frameFrom: Parameters<typeof TaskClass.prototype.frames.search>[0],
+            frameTo: Parameters<typeof TaskClass.prototype.frames.search>[0],
+        ): ReturnType<typeof TaskClass.prototype.frames.search> {
+            if (typeof filters !== 'object') {
+                throw new ArgumentError('Filters should be an object');
+            }
 
-        if ('annotationsFilters' in searchParameters && 'generalFilters' in searchParameters) {
-            throw new ArgumentError('Both annotations filters and general fiters could not be used together');
-        }
+            if (!Number.isInteger(frameFrom) || !Number.isInteger(frameTo)) {
+                throw new ArgumentError('The start and end frames both must be an integer');
+            }
 
-        if (!Number.isInteger(frameFrom) || !Number.isInteger(frameTo)) {
-            throw new ArgumentError('The start and end frames both must be an integer');
-        }
+            if (frameFrom < 0 || frameFrom > this.size) {
+                throw new ArgumentError('The start frame is out of the task');
+            }
 
-        if (frameFrom < 0 || frameFrom >= this.size) {
-            throw new ArgumentError('The start frame is out of the task');
-        }
+            if (frameTo < 0 || frameTo > this.size) {
+                throw new ArgumentError('The stop frame is out of the task');
+            }
 
-        if (frameTo < 0 || frameTo >= this.size) {
-            throw new ArgumentError('The stop frame is out of the task');
-        }
+            const jobs = this.jobs.filter((_job) => (
+                (frameFrom >= _job.startFrame && frameFrom <= _job.stopFrame) ||
+                (frameTo >= _job.startFrame && frameTo <= _job.stopFrame) ||
+                (frameFrom < _job.startFrame && frameTo > _job.stopFrame)
+            ));
 
-        return getCollection(this).search(frameFrom, frameTo, searchParameters);
-    };
+            for (const job of jobs) {
+                const result = await findFrame(
+                    job.id, Math.max(frameFrom, job.startFrame), Math.min(frameTo, job.stopFrame), filters,
+                );
 
-    Task.prototype.annotations.save.implementation = async function (onUpdate) {
-        return getSaver(this).save(onUpdate);
-    };
+                if (result !== null) return result;
+            }
 
-    Task.prototype.annotations.merge.implementation = async function (objectStates) {
-        return getCollection(this).merge(objectStates);
-    };
+            return null;
+        },
+    });
 
-    Task.prototype.annotations.split.implementation = async function (objectState, frame) {
-        return getCollection(this).split(objectState, frame);
-    };
+    Object.defineProperty(Task.prototype.frames.contextImage, 'implementation', {
+        value: function contextImageImplementation(
+            this: TaskClass,
+        ): ReturnType<typeof TaskClass.prototype.frames.contextImage> {
+            throw new Error('Not implemented for Task');
+        },
+    });
 
-    Task.prototype.annotations.group.implementation = async function (objectStates, reset) {
-        return getCollection(this).group(objectStates, reset);
-    };
+    Object.defineProperty(Task.prototype.frames.chunk, 'implementation', {
+        value: function chunkImplementation(
+            this: TaskClass,
+        ): ReturnType<typeof TaskClass.prototype.frames.chunk> {
+            throw new Error('Not implemented for Task');
+        },
+    });
 
-    Task.prototype.annotations.join.implementation = async function (objectStates, points) {
-        return getCollection(this).join(objectStates, points);
-    };
+    Object.defineProperty(Task.prototype.annotations.get, 'implementation', {
+        value: async function getAnnotationsImplementation(
+            this: TaskClass,
+            frame: Parameters<typeof TaskClass.prototype.annotations.get>[0],
+            allTracks: Parameters<typeof TaskClass.prototype.annotations.get>[1],
+            filters: Parameters<typeof TaskClass.prototype.annotations.get>[2],
+        ): ReturnType<typeof TaskClass.prototype.annotations.get> {
+            if (!Array.isArray(filters) || filters.some((filter) => typeof filter !== 'string')) {
+                throw new ArgumentError('The filters argument must be an array of strings');
+            }
 
-    Task.prototype.annotations.slice.implementation = async function (objectState, results) {
-        return getCollection(this).slice(objectState, results);
-    };
+            if (!Number.isInteger(frame) || frame < 0) {
+                throw new ArgumentError(`Frame must be a positive integer. Got: "${frame}"`);
+            }
 
-    Task.prototype.annotations.hasUnsavedChanges.implementation = function () {
-        return getSaver(this).hasUnsavedChanges();
-    };
+            if (frame >= this.size) {
+                throw new ArgumentError(`Frame ${frame} does not exist in the task`);
+            }
+
+            const result = await getAnnotations(this, frame, allTracks, filters);
+            const deletedFrames = await getDeletedFrames('task', this.id);
+            if (frame in deletedFrames) {
+                return [];
+            }
+
+            return result;
+        },
+    });
+
+    Object.defineProperty(Task.prototype.annotations.search, 'implementation', {
+        value: function searchAnnotationsImplementation(
+            this: TaskClass,
+            frameFrom: Parameters<typeof TaskClass.prototype.annotations.search>[0],
+            frameTo: Parameters<typeof TaskClass.prototype.annotations.search>[1],
+            searchParameters: Parameters<typeof TaskClass.prototype.annotations.search>[2],
+        ): ReturnType<typeof TaskClass.prototype.annotations.search> {
+            if ('annotationsFilters' in searchParameters && !Array.isArray(searchParameters.annotationsFilters)) {
+                throw new ArgumentError('Annotations filters must be an array');
+            }
+
+            if ('generalFilters' in searchParameters && typeof searchParameters.generalFilters.isEmptyFrame !== 'boolean') {
+                throw new ArgumentError('General filter isEmptyFrame must be a boolean');
+            }
+
+            if ('annotationsFilters' in searchParameters && 'generalFilters' in searchParameters) {
+                throw new ArgumentError('Both annotations filters and general fiters could not be used together');
+            }
+
+            if (!Number.isInteger(frameFrom) || !Number.isInteger(frameTo)) {
+                throw new ArgumentError('The start and end frames both must be an integer');
+            }
+
+            if (frameFrom < 0 || frameFrom >= this.size) {
+                throw new ArgumentError('The start frame is out of the task');
+            }
+
+            if (frameTo < 0 || frameTo >= this.size) {
+                throw new ArgumentError('The stop frame is out of the task');
+            }
+
+            return Promise.resolve(getCollection(this).search(frameFrom, frameTo, searchParameters));
+        },
+    });
+
+    Object.defineProperty(Task.prototype.annotations.save, 'implementation', {
+        value: function saveAnnotationsImplementation(
+            this: TaskClass,
+            onUpdate: Parameters<typeof TaskClass.prototype.annotations.save>[0],
+        ): ReturnType<typeof TaskClass.prototype.annotations.save> {
+            return getSaver(this).save(onUpdate);
+        },
+    });
+
+    Object.defineProperty(Task.prototype.annotations.merge, 'implementation', {
+        value: function mergeAnnotationsImplementation(
+            this: TaskClass,
+            objectStates: Parameters<typeof TaskClass.prototype.annotations.merge>[0],
+        ): ReturnType<typeof TaskClass.prototype.annotations.merge> {
+            return Promise.resolve(getCollection(this).merge(objectStates));
+        },
+    });
+
+    Object.defineProperty(Task.prototype.annotations.split, 'implementation', {
+        value: function splitAnnotationsImplementation(
+            this: TaskClass,
+            objectState: Parameters<typeof TaskClass.prototype.annotations.split>[0],
+            frame: Parameters<typeof TaskClass.prototype.annotations.split>[1],
+        ): ReturnType<typeof TaskClass.prototype.annotations.split> {
+            return Promise.resolve(getCollection(this).split(objectState, frame));
+        },
+    });
+
+    Object.defineProperty(Task.prototype.annotations.group, 'implementation', {
+        value: function groupAnnotationsImplementation(
+            this: TaskClass,
+            objectStates: Parameters<typeof TaskClass.prototype.annotations.group>[0],
+            reset: Parameters<typeof TaskClass.prototype.annotations.group>[1],
+        ): ReturnType<typeof TaskClass.prototype.annotations.group> {
+            return Promise.resolve(getCollection(this).group(objectStates, reset));
+        },
+    });
+
+    Object.defineProperty(Task.prototype.annotations.join, 'implementation', {
+        value: function joinAnnotationsImplementation(
+            this: TaskClass,
+            objectStates: Parameters<typeof TaskClass.prototype.annotations.join>[0],
+            points: Parameters<typeof TaskClass.prototype.annotations.join>[1],
+        ): ReturnType<typeof TaskClass.prototype.annotations.join> {
+            return Promise.resolve(getCollection(this).join(objectStates, points));
+        },
+    });
+
+    Object.defineProperty(Task.prototype.annotations.slice, 'implementation', {
+        value: function sliceAnnotationsImplementation(
+            this: TaskClass,
+            objectState: Parameters<typeof TaskClass.prototype.annotations.slice>[0],
+            results: Parameters<typeof TaskClass.prototype.annotations.slice>[1],
+        ): ReturnType<typeof TaskClass.prototype.annotations.slice> {
+            return Promise.resolve(getCollection(this).slice(objectState, results));
+        },
+    });
+
+    Object.defineProperty(Task.prototype.annotations.hasUnsavedChanges, 'implementation', {
+        value: function hasUnsavedChangesImplementation(
+            this: TaskClass,
+        ): ReturnType<typeof TaskClass.prototype.annotations.hasUnsavedChanges> {
+            return getSaver(this).hasUnsavedChanges();
+        },
+    });
 
     Object.defineProperty(Task.prototype.annotations.clear, 'implementation', {
-        value: async function clearAnnotationsImplementation(
+        value: function clearAnnotationsImplementation(
             this: TaskClass,
             flags: Parameters<typeof TaskClass.prototype.annotations.clear>[0],
         ): ReturnType<typeof Task.prototype.annotations.clear> {
@@ -937,89 +1071,139 @@ export function implementTask(Task: typeof TaskClass) {
         },
     });
 
-    Task.prototype.annotations.select.implementation = function (objectStates, x, y) {
-        return getCollection(this).select(objectStates, x, y);
-    };
+    Object.defineProperty(Task.prototype.annotations.select, 'implementation', {
+        value: function selectAnnotationsImplementation(
+            this: TaskClass,
+            objectStates: Parameters<typeof TaskClass.prototype.annotations.select>[0],
+            x: Parameters<typeof TaskClass.prototype.annotations.select>[1],
+            y: Parameters<typeof TaskClass.prototype.annotations.select>[2],
+        ): ReturnType<typeof TaskClass.prototype.annotations.select> {
+            return Promise.resolve(getCollection(this).select(objectStates, x, y));
+        },
+    });
 
-    Task.prototype.annotations.statistics.implementation = function () {
-        return getCollection(this).statistics();
-    };
+    Object.defineProperty(Task.prototype.annotations.statistics, 'implementation', {
+        value: function statisticsImplementation(
+            this: TaskClass,
+        ): ReturnType<typeof TaskClass.prototype.annotations.statistics> {
+            return Promise.resolve(getCollection(this).statistics());
+        },
+    });
 
-    Task.prototype.annotations.put.implementation = function (objectStates) {
-        return getCollection(this).put(objectStates);
-    };
+    Object.defineProperty(Task.prototype.annotations.put, 'implementation', {
+        value: function putAnnotationsImplementation(
+            this: TaskClass,
+            objectStates: Parameters<typeof TaskClass.prototype.annotations.put>[0],
+        ): ReturnType<typeof TaskClass.prototype.annotations.put> {
+            return Promise.resolve(getCollection(this).put(objectStates));
+        },
+    });
 
-    Task.prototype.annotations.upload.implementation = async function (
-        format: string,
-        useDefaultLocation: boolean,
-        sourceStorage: Storage,
-        file: File | string,
-        options?: { convMaskToPoly?: boolean },
-    ) {
-        const result = await importDataset(this, format, useDefaultLocation, sourceStorage, file, options);
-        return result;
-    };
+    Object.defineProperty(Task.prototype.annotations.upload, 'implementation', {
+        value: function uploadAnnotationsImplementation(
+            this: TaskClass,
+            format: Parameters<typeof TaskClass.prototype.annotations.upload>[0],
+            useDefaultLocation: Parameters<typeof TaskClass.prototype.annotations.upload>[1],
+            sourceStorage: Parameters<typeof TaskClass.prototype.annotations.upload>[2],
+            file: Parameters<typeof TaskClass.prototype.annotations.upload>[3],
+            options: Parameters<typeof TaskClass.prototype.annotations.upload>[4],
+        ): ReturnType<typeof TaskClass.prototype.annotations.upload> {
+            return importDataset(this, format, useDefaultLocation, sourceStorage, file, options);
+        },
+    });
 
-    Task.prototype.annotations.import.implementation = function (data) {
-        return getCollection(this).import(data);
-    };
+    Object.defineProperty(Task.prototype.annotations.import, 'implementation', {
+        value: function importAnnotationsImplementation(
+            this: TaskClass,
+            data: Parameters<typeof TaskClass.prototype.annotations.import>[0],
+        ): ReturnType<typeof TaskClass.prototype.annotations.import> {
+            getCollection(this).import(data);
+            return Promise.resolve();
+        },
+    });
 
-    Task.prototype.annotations.export.implementation = function () {
-        return getCollection(this).export();
-    };
+    Object.defineProperty(Task.prototype.annotations.export, 'implementation', {
+        value: function exportAnnotationsImplementation(
+            this: TaskClass,
+        ): ReturnType<typeof TaskClass.prototype.annotations.export> {
+            return Promise.resolve(getCollection(this).export());
+        },
+    });
 
-    Task.prototype.annotations.exportDataset.implementation = async function (
-        format: string,
-        saveImages: boolean,
-        useDefaultSettings: boolean,
-        targetStorage: Storage,
-        customName?: string,
-    ) {
-        const result = await exportDataset(this, format, saveImages, useDefaultSettings, targetStorage, customName);
-        return result;
-    };
+    Object.defineProperty(Task.prototype.annotations.exportDataset, 'implementation', {
+        value: function exportDatasetImplementation(
+            this: TaskClass,
+            format: Parameters<typeof TaskClass.prototype.annotations.exportDataset>[0],
+            saveImages: Parameters<typeof TaskClass.prototype.annotations.exportDataset>[1],
+            useDefaultSettings: Parameters<typeof TaskClass.prototype.annotations.exportDataset>[2],
+            targetStorage: Parameters<typeof TaskClass.prototype.annotations.exportDataset>[3],
+            customName: Parameters<typeof TaskClass.prototype.annotations.exportDataset>[4],
+        ): ReturnType<typeof TaskClass.prototype.annotations.exportDataset> {
+            return exportDataset(this, format, saveImages, useDefaultSettings, targetStorage, customName);
+        },
+    });
 
-    Task.prototype.actions.undo.implementation = async function (count) {
-        return getHistory(this).undo(count);
-    };
+    Object.defineProperty(Task.prototype.actions.undo, 'implementation', {
+        value: function undoActionImplementation(
+            this: TaskClass,
+            count: Parameters<typeof TaskClass.prototype.actions.undo>[0],
+        ): ReturnType<typeof TaskClass.prototype.actions.undo> {
+            return getHistory(this).undo(count);
+        },
+    });
 
-    Task.prototype.actions.redo.implementation = async function (count) {
-        return getHistory(this).redo(count);
-    };
+    Object.defineProperty(Task.prototype.actions.redo, 'implementation', {
+        value: function redoActionImplementation(
+            this: TaskClass,
+            count: Parameters<typeof TaskClass.prototype.actions.redo>[0],
+        ): ReturnType<typeof TaskClass.prototype.actions.redo> {
+            return getHistory(this).redo(count);
+        },
+    });
 
-    Task.prototype.actions.freeze.implementation = function (frozen) {
-        return getHistory(this).freeze(frozen);
-    };
+    Object.defineProperty(Task.prototype.actions.freeze, 'implementation', {
+        value: function freezeActionsImplementation(
+            this: TaskClass,
+            frozen: Parameters<typeof TaskClass.prototype.actions.freeze>[0],
+        ): ReturnType<typeof TaskClass.prototype.actions.freeze> {
+            return Promise.resolve(getHistory(this).freeze(frozen));
+        },
+    });
 
-    Task.prototype.actions.clear.implementation = function () {
-        return getHistory(this).clear();
-    };
+    Object.defineProperty(Task.prototype.actions.clear, 'implementation', {
+        value: function clearActionsImplementation(
+            this: TaskClass,
+        ): ReturnType<typeof TaskClass.prototype.actions.clear> {
+            return Promise.resolve(getHistory(this).clear());
+        },
+    });
 
-    Task.prototype.actions.get.implementation = function () {
-        return getHistory(this).get();
-    };
+    Object.defineProperty(Task.prototype.actions.get, 'implementation', {
+        value: function getActionsImplementation(
+            this: TaskClass,
+        ): ReturnType<typeof TaskClass.prototype.actions.get> {
+            return Promise.resolve(getHistory(this).get());
+        },
+    });
 
-    Task.prototype.logger.log.implementation = async function (scope, payload, wait) {
-        const result = await logger.log(
-            scope,
-            {
-                ...payload,
-                project_id: this.projectId,
-                task_id: this.id,
-            },
-            wait,
-        );
-        return result;
-    };
-
-    Task.prototype.guide.implementation = async function guide() {
-        if (this.guideId === null) {
-            return null;
-        }
-
-        const result = await serverProxy.guides.get(this.guideId);
-        return new AnnotationGuide(result);
-    };
+    Object.defineProperty(Task.prototype.logger.log, 'implementation', {
+        value: function logImplementation(
+            this: TaskClass,
+            scope: Parameters<typeof TaskClass.prototype.logger.log>[0],
+            payload: Parameters<typeof TaskClass.prototype.logger.log>[1],
+            wait: Parameters<typeof TaskClass.prototype.logger.log>[2],
+        ): ReturnType<typeof TaskClass.prototype.logger.log> {
+            return logger.log(
+                scope,
+                {
+                    ...payload,
+                    project_id: this.projectId,
+                    task_id: this.id,
+                },
+                wait,
+            );
+        },
+    });
 
     return Task;
 }

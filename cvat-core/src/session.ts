@@ -367,9 +367,9 @@ export class Session {
     public actions: {
         undo: (count: number) => Promise<number[]>;
         redo: (count: number) => Promise<number[]>;
-        freeze: (frozen: boolean) => void;
-        clear: () => void;
-        get: () => { undo: [HistoryActions, number][], redo: [HistoryActions, number][] };
+        freeze: (frozen: boolean) => Promise<void>;
+        clear: () => Promise<void>;
+        get: () => Promise<{ undo: [HistoryActions, number][], redo: [HistoryActions, number][] }>;
     };
 
     public frames: {
@@ -1108,12 +1108,12 @@ export class Task extends Session {
         );
     }
 
-    async close(): Promise<Task> {
+    async close(): Promise<void> {
         const result = await PluginRegistry.apiWrapper.call(this, Task.prototype.close);
         return result;
     }
 
-    async save(onUpdate = () => {}): Promise<Task> {
+    async save(onUpdate: (state: RQStatus, progress: number, message: string) => void = () => {}): Promise<Task> {
         const result = await PluginRegistry.apiWrapper.call(this, Task.prototype.save, onUpdate);
         return result;
     }
@@ -1130,7 +1130,7 @@ export class Task extends Session {
         return result;
     }
 
-    async backup(targetStorage: Storage, useDefaultSettings: boolean, fileName?: string) {
+    async backup(targetStorage: Storage, useDefaultSettings: boolean, fileName?: string): Promise<string | void> {
         const result = await PluginRegistry.apiWrapper.call(
             this,
             Task.prototype.backup,
@@ -1141,12 +1141,12 @@ export class Task extends Session {
         return result;
     }
 
-    async issues() {
+    async issues(): Promise<Issue[]> {
         const result = await PluginRegistry.apiWrapper.call(this, Task.prototype.issues);
         return result;
     }
 
-    static async restore(storage: Storage, file: File | string) {
+    static async restore(storage: Storage, file: File | string): Promise<Task> {
         const result = await PluginRegistry.apiWrapper.call(this, Task.restore, storage, file);
         return result;
     }
