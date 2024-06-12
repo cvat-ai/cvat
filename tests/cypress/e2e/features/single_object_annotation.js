@@ -206,9 +206,9 @@ context('Single object annotation mode', { scrollBehavior: false }, () => {
             openJob({ defaultLabel: 'polygon_label', defaultPointsCount: 4 });
             checkSingleShapeModeOpened();
 
-            // Skip
-            cy.get('.cvat-single-shape-annotation-sidebar-skip-wrapper').within(() => {
-                cy.contains('Skip').click();
+            // Next
+            cy.get('.cvat-single-shape-annotation-sidebar-finish-frame-wrapper').within(() => {
+                cy.contains('Next').click();
             });
             checkFrameNum(1);
 
