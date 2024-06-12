@@ -120,7 +120,7 @@ export async function clearAnnotations(
     const sessionType = session instanceof Task ? 'task' : 'job';
     const cache = getCache(sessionType);
 
-    if ('reload' in flags ?? {}) {
+    if (Object.hasOwn(flags ?? {}, 'reload')) {
         const { reload } = flags;
         checkObjectType('reload', reload, 'boolean', null);
         cache.delete(session);

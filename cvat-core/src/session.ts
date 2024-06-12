@@ -26,7 +26,6 @@ import { FrameData } from './frames';
 import Statistics from './statistics';
 import logger from './logger';
 import Issue from './issue';
-import { Camelized } from './type-utils';
 import ObjectState from './object-state';
 
 function buildDuplicatedAPI(prototype) {
