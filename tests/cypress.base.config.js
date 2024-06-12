@@ -4,7 +4,7 @@
 const plugins = require('./cypress/plugins/index');
 
 const baseUrl = 'http://localhost:8080';
-const minioUrl = `${baseUrl.includes('3000') ? 'localhost' : 'minio'}:9000`;
+const minioUrl = `http://${baseUrl.includes('3000') ? 'localhost' : 'minio'}:9000`;
 
 module.exports = {
     video: true,
