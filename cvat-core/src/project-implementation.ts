@@ -15,7 +15,7 @@ export default function implementProject(Project: typeof ProjectClass): typeof P
     Object.defineProperty(Project.prototype.save, 'implementation', {
         value: async function saveImplementation(
             this: ProjectClass,
-        ): ReturnType<typeof Project.prototype.save> {
+        ): ReturnType<typeof ProjectClass.prototype.save> {
             if (typeof this.id !== 'undefined') {
                 const projectData = this._updateTrigger.getUpdated(this, {
                     bugTracker: 'bug_tracker',
@@ -84,7 +84,7 @@ export default function implementProject(Project: typeof ProjectClass): typeof P
     Object.defineProperty(Project.prototype.delete, 'implementation', {
         value: function deleteImplementation(
             this: ProjectClass,
-        ): ReturnType<typeof Project.prototype.delete> {
+        ): ReturnType<typeof ProjectClass.prototype.delete> {
             return serverProxy.projects.delete(this.id);
         },
     });
@@ -92,7 +92,7 @@ export default function implementProject(Project: typeof ProjectClass): typeof P
     Object.defineProperty(Project.prototype.preview, 'implementation', {
         value: function previewImplementation(
             this: ProjectClass,
-        ): ReturnType<typeof Project.prototype.preview> {
+        ): ReturnType<typeof ProjectClass.prototype.preview> {
             if (this.id === null) {
                 return Promise.resolve('');
             }
@@ -114,7 +114,7 @@ export default function implementProject(Project: typeof ProjectClass): typeof P
             useDefaultSettings: Parameters<typeof ProjectClass.prototype.annotations.exportDataset>[2],
             targetStorage: Parameters<typeof ProjectClass.prototype.annotations.exportDataset>[3],
             customName: Parameters<typeof ProjectClass.prototype.annotations.exportDataset>[4],
-        ): ReturnType<typeof Project.prototype.annotations.exportDataset> {
+        ): ReturnType<typeof ProjectClass.prototype.annotations.exportDataset> {
             return exportDataset(this, format, saveImages, useDefaultSettings, targetStorage, customName);
         },
     });
@@ -127,7 +127,7 @@ export default function implementProject(Project: typeof ProjectClass): typeof P
             sourceStorage: Parameters<typeof ProjectClass.prototype.annotations.importDataset>[2],
             file: Parameters<typeof ProjectClass.prototype.annotations.importDataset>[3],
             options: Parameters<typeof ProjectClass.prototype.annotations.importDataset>[4],
-        ): ReturnType<typeof Project.prototype.annotations.importDataset> {
+        ): ReturnType<typeof ProjectClass.prototype.annotations.importDataset> {
             return importDataset(this, format, useDefaultSettings, sourceStorage, file, options);
         },
     });
@@ -138,7 +138,7 @@ export default function implementProject(Project: typeof ProjectClass): typeof P
             targetStorage: Parameters<typeof ProjectClass.prototype.backup>[0],
             useDefaultSettings: Parameters<typeof ProjectClass.prototype.backup>[1],
             fileName: Parameters<typeof ProjectClass.prototype.backup>[2],
-        ): ReturnType<typeof Project.prototype.backup> {
+        ): ReturnType<typeof ProjectClass.prototype.backup> {
             return serverProxy.projects.backup(this.id, targetStorage, useDefaultSettings, fileName);
         },
     });
@@ -148,7 +148,7 @@ export default function implementProject(Project: typeof ProjectClass): typeof P
             this: ProjectClass,
             storage: Parameters<typeof ProjectClass.restore>[0],
             file: Parameters<typeof ProjectClass.restore>[1],
-        ): ReturnType<typeof Project.restore> {
+        ): ReturnType<typeof ProjectClass.restore> {
             const serializedProject = await serverProxy.projects.restore(storage, file);
             const labels = await serverProxy.labels.get({ project_id: serializedProject.id });
             return new Project({ ...serializedProject, labels: labels.results });
@@ -158,7 +158,7 @@ export default function implementProject(Project: typeof ProjectClass): typeof P
     Object.defineProperty(Project.prototype.guide, 'implementation', {
         value: async function guideImplementation(
             this: ProjectClass,
-        ): ReturnType<typeof Project.prototype.guide> {
+        ): ReturnType<typeof ProjectClass.prototype.guide> {
             if (this.guideId === null) {
                 return null;
             }
