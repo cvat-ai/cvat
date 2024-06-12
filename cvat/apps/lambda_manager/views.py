@@ -185,14 +185,10 @@ class LambdaFunction:
                 raise ValidationError(
                     "`{}` lambda function has non-unique attributes for label {}".format(self.id, label),
                     code=status.HTTP_404_NOT_FOUND)
-        # state of the function
-        self.state = data['status']['state']
         # description of the function
         self.description = data['spec']['description']
         # http port to access the serverless function
         self.port = data["status"].get("httpPort")
-        # framework which is used for the function (e.g. tensorflow, openvino)
-        self.framework = meta_anno.get('framework')
         # display name for the function
         self.name = meta_anno.get('name', self.id)
         self.min_pos_points = int(meta_anno.get('min_pos_points', 1))
@@ -207,10 +203,8 @@ class LambdaFunction:
         response = {
             'id': self.id,
             'kind': str(self.kind),
-            'labels': [label['name'] for label in self.labels],
             'labels_v2': self.labels,
             'description': self.description,
-            'framework': self.framework,
             'name': self.name,
             'version': self.version
         }
@@ -222,15 +216,6 @@ class LambdaFunction:
                 'startswith_box': self.startswith_box,
                 'help_message': self.help_message,
                 'animated_gif': self.animated_gif
-            })
-
-        if self.kind is LambdaType.TRACKER:
-            response.update({
-                'state': self.state
-            })
-        if self.kind is LambdaType.DETECTOR:
-            response.update({
-                'attributes': self.func_attributes
             })
 
         return response

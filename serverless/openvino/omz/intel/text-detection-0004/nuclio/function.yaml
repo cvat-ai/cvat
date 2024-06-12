@@ -4,7 +4,6 @@ metadata:
   annotations:
     name: Text detection v4
     type: detector
-    framework: openvino
     spec: |
       [
         { "id": 1, "name": "text", "type": "mask" }
