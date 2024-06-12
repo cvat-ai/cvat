@@ -58,7 +58,7 @@ export function implementJob(Job: typeof JobClass): typeof JobClass {
         value: async function saveImplementation(
             this: JobClass,
             additionalData: any,
-        ): ReturnType<typeof Job.prototype.save> {
+        ): ReturnType<typeof JobClass.prototype.save> {
             if (this.id) {
                 const jobData = this._updateTrigger.getUpdated(this);
                 if (jobData.assignee) {
@@ -97,7 +97,7 @@ export function implementJob(Job: typeof JobClass): typeof JobClass {
     Object.defineProperty(Job.prototype.delete, 'implementation', {
         value: async function deleteImplementation(
             this: JobClass,
-        ): ReturnType<typeof Job.prototype.delete> {
+        ): ReturnType<typeof JobClass.prototype.delete> {
             if (this.type !== JobType.GROUND_TRUTH) {
                 throw new Error('Only ground truth job can be deleted');
             }
@@ -109,7 +109,7 @@ export function implementJob(Job: typeof JobClass): typeof JobClass {
     Object.defineProperty(Job.prototype.issues, 'implementation', {
         value: function issuesImplementation(
             this: JobClass,
-        ): ReturnType<typeof Job.prototype.issues> {
+        ): ReturnType<typeof JobClass.prototype.issues> {
             return serverProxy.issues.get({ job_id: this.id })
                 .then((issues) => issues.map((issue) => new Issue(issue)));
         },
@@ -118,9 +118,9 @@ export function implementJob(Job: typeof JobClass): typeof JobClass {
     Object.defineProperty(Job.prototype.openIssue, 'implementation', {
         value: async function openIssueImplementation(
             this: JobClass,
-            issue: Issue,
-            message: string,
-        ): ReturnType<typeof Job.prototype.openIssue> {
+            issue: Parameters<typeof JobClass.prototype.openIssue>[0],
+            message: Parameters<typeof JobClass.prototype.openIssue>[1],
+        ): ReturnType<typeof JobClass.prototype.openIssue> {
             checkObjectType('issue', issue, null, Issue);
             checkObjectType('message', message, 'string');
             const result = await serverProxy.issues.create({
@@ -143,7 +143,7 @@ export function implementJob(Job: typeof JobClass): typeof JobClass {
     Object.defineProperty(Job.prototype.guide, 'implementation', {
         value: async function guideImplementation(
             this: JobClass,
-        ): ReturnType<typeof Job.prototype.guide> {
+        ): ReturnType<typeof JobClass.prototype.guide> {
             if (this.guideId === null) {
                 return null;
             }
@@ -156,10 +156,10 @@ export function implementJob(Job: typeof JobClass): typeof JobClass {
     Object.defineProperty(Job.prototype.frames.get, 'implementation', {
         value: function getFrameImplementation(
             this: JobClass,
-            frame: Parameters<typeof Job.prototype.frames.get>[0],
-            isPlaying: Parameters<typeof Job.prototype.frames.get>[1],
-            step: Parameters<typeof Job.prototype.frames.get>[2],
-        ): ReturnType<typeof Job.prototype.frames.get> {
+            frame: Parameters<typeof JobClass.prototype.frames.get>[0],
+            isPlaying: Parameters<typeof JobClass.prototype.frames.get>[1],
+            step: Parameters<typeof JobClass.prototype.frames.get>[2],
+        ): ReturnType<typeof JobClass.prototype.frames.get> {
             if (!Number.isInteger(frame) || frame < 0) {
                 throw new ArgumentError(`Frame must be a positive integer. Got: "${frame}"`);
             }
@@ -187,8 +187,8 @@ export function implementJob(Job: typeof JobClass): typeof JobClass {
     Object.defineProperty(Job.prototype.frames.delete, 'implementation', {
         value: function deleteFrameImplementation(
             this: JobClass,
-            frame: Parameters<typeof Job.prototype.frames.delete>[0],
-        ): ReturnType<typeof Job.prototype.frames.delete> {
+            frame: Parameters<typeof JobClass.prototype.frames.delete>[0],
+        ): ReturnType<typeof JobClass.prototype.frames.delete> {
             if (!Number.isInteger(frame)) {
                 throw new Error(`Frame must be an integer. Got: "${frame}"`);
             }
@@ -204,8 +204,8 @@ export function implementJob(Job: typeof JobClass): typeof JobClass {
     Object.defineProperty(Job.prototype.frames.restore, 'implementation', {
         value: function restoreFrameImplementation(
             this: JobClass,
-            frame: Parameters<typeof Job.prototype.frames.restore>[0],
-        ): ReturnType<typeof Job.prototype.frames.restore> {
+            frame: Parameters<typeof JobClass.prototype.frames.restore>[0],
+        ): ReturnType<typeof JobClass.prototype.frames.restore> {
             if (!Number.isInteger(frame)) {
                 throw new Error(`Frame must be an integer. Got: "${frame}"`);
             }
@@ -221,7 +221,7 @@ export function implementJob(Job: typeof JobClass): typeof JobClass {
     Object.defineProperty(Job.prototype.frames.save, 'implementation', {
         value: function saveFramesImplementation(
             this: JobClass,
-        ): ReturnType<typeof Job.prototype.frames.save> {
+        ): ReturnType<typeof JobClass.prototype.frames.save> {
             return patchMeta(this.id);
         },
     });
@@ -229,7 +229,7 @@ export function implementJob(Job: typeof JobClass): typeof JobClass {
     Object.defineProperty(Job.prototype.frames.cachedChunks, 'implementation', {
         value: function cachedChunksImplementation(
             this: JobClass,
-        ): ReturnType<typeof Job.prototype.frames.cachedChunks> {
+        ): ReturnType<typeof JobClass.prototype.frames.cachedChunks> {
             return Promise.resolve(getCachedChunks(this.id));
         },
     });
@@ -237,7 +237,7 @@ export function implementJob(Job: typeof JobClass): typeof JobClass {
     Object.defineProperty(Job.prototype.frames.preview, 'implementation', {
         value: function previewImplementation(
             this: JobClass,
-        ): ReturnType<typeof Job.prototype.frames.preview> {
+        ): ReturnType<typeof JobClass.prototype.frames.preview> {
             if (this.id === null || this.taskId === null) {
                 return Promise.resolve('');
             }
@@ -254,8 +254,8 @@ export function implementJob(Job: typeof JobClass): typeof JobClass {
     Object.defineProperty(Job.prototype.frames.contextImage, 'implementation', {
         value: function contextImageImplementation(
             this: JobClass,
-            frameId: Parameters<typeof Job.prototype.frames.contextImage>[0],
-        ): ReturnType<typeof Job.prototype.frames.contextImage> {
+            frameId: Parameters<typeof JobClass.prototype.frames.contextImage>[0],
+        ): ReturnType<typeof JobClass.prototype.frames.contextImage> {
             return getContextImage(this.id, frameId);
         },
     });
@@ -263,9 +263,9 @@ export function implementJob(Job: typeof JobClass): typeof JobClass {
     Object.defineProperty(Job.prototype.frames.chunk, 'implementation', {
         value: function chunkImplementation(
             this: JobClass,
-            chunkNumber: Parameters<typeof Job.prototype.frames.chunk>[0],
-            quality: Parameters<typeof Job.prototype.frames.chunk>[1],
-        ): ReturnType<typeof Job.prototype.frames.chunk> {
+            chunkNumber: Parameters<typeof JobClass.prototype.frames.chunk>[0],
+            quality: Parameters<typeof JobClass.prototype.frames.chunk>[1],
+        ): ReturnType<typeof JobClass.prototype.frames.chunk> {
             return serverProxy.frames.getData(this.id, chunkNumber, quality);
         },
     });
@@ -273,10 +273,10 @@ export function implementJob(Job: typeof JobClass): typeof JobClass {
     Object.defineProperty(Job.prototype.frames.search, 'implementation', {
         value: function searchFrameImplementation(
             this: JobClass,
-            filters: Parameters<typeof Job.prototype.frames.search>[0],
-            frameFrom: Parameters<typeof Job.prototype.frames.search>[1],
-            frameTo: Parameters<typeof Job.prototype.frames.search>[2],
-        ): ReturnType<typeof Job.prototype.frames.search> {
+            filters: Parameters<typeof JobClass.prototype.frames.search>[0],
+            frameFrom: Parameters<typeof JobClass.prototype.frames.search>[1],
+            frameTo: Parameters<typeof JobClass.prototype.frames.search>[2],
+        ): ReturnType<typeof JobClass.prototype.frames.search> {
             if (typeof filters !== 'object') {
                 throw new ArgumentError('Filters should be an object');
             }
@@ -300,10 +300,10 @@ export function implementJob(Job: typeof JobClass): typeof JobClass {
     Object.defineProperty(Job.prototype.annotations.get, 'implementation', {
         value: async function getAnnotationsImplementation(
             this: JobClass,
-            frame: Parameters<typeof Job.prototype.annotations.get>[0],
-            allTracks: Parameters<typeof Job.prototype.annotations.get>[1],
-            filters: Parameters<typeof Job.prototype.annotations.get>[2],
-        ): Promise<ReturnType<typeof Job.prototype.annotations.get>> {
+            frame: Parameters<typeof JobClass.prototype.annotations.get>[0],
+            allTracks: Parameters<typeof JobClass.prototype.annotations.get>[1],
+            filters: Parameters<typeof JobClass.prototype.annotations.get>[2],
+        ): ReturnType<typeof JobClass.prototype.annotations.get> {
             if (!Array.isArray(filters)) {
                 throw new ArgumentError('Filters must be an array');
             }
@@ -329,10 +329,10 @@ export function implementJob(Job: typeof JobClass): typeof JobClass {
     Object.defineProperty(Job.prototype.annotations.search, 'implementation', {
         value: function searchAnnotationsImplementation(
             this: JobClass,
-            frameFrom: Parameters<typeof Job.prototype.annotations.search>[0],
-            frameTo: Parameters<typeof Job.prototype.annotations.search>[1],
-            searchParameters: Parameters<typeof Job.prototype.annotations.search>[2],
-        ): ReturnType<typeof Job.prototype.annotations.search> {
+            frameFrom: Parameters<typeof JobClass.prototype.annotations.search>[0],
+            frameTo: Parameters<typeof JobClass.prototype.annotations.search>[1],
+            searchParameters: Parameters<typeof JobClass.prototype.annotations.search>[2],
+        ): ReturnType<typeof JobClass.prototype.annotations.search> {
             if ('annotationsFilters' in searchParameters && !Array.isArray(searchParameters.annotationsFilters)) {
                 throw new ArgumentError('Annotations filters must be an array');
             }
@@ -366,8 +366,8 @@ export function implementJob(Job: typeof JobClass): typeof JobClass {
     Object.defineProperty(Job.prototype.annotations.save, 'implementation', {
         value: async function saveAnnotationsImplementation(
             this: JobClass,
-            onUpdate: Parameters<typeof Job.prototype.annotations.save>[0],
-        ): ReturnType<typeof Job.prototype.annotations.save> {
+            onUpdate: Parameters<typeof JobClass.prototype.annotations.save>[0],
+        ): ReturnType<typeof JobClass.prototype.annotations.save> {
             return getSaver(this).save(onUpdate);
         },
     });
@@ -375,8 +375,8 @@ export function implementJob(Job: typeof JobClass): typeof JobClass {
     Object.defineProperty(Job.prototype.annotations.merge, 'implementation', {
         value: function mergeAnnotationsImplementation(
             this: JobClass,
-            objectStates: Parameters<typeof Job.prototype.annotations.merge>[0],
-        ): ReturnType<typeof Job.prototype.annotations.merge> {
+            objectStates: Parameters<typeof JobClass.prototype.annotations.merge>[0],
+        ): ReturnType<typeof JobClass.prototype.annotations.merge> {
             return Promise.resolve(getCollection(this).merge(objectStates));
         },
     });
@@ -384,9 +384,9 @@ export function implementJob(Job: typeof JobClass): typeof JobClass {
     Object.defineProperty(Job.prototype.annotations.split, 'implementation', {
         value: function splitAnnotationsImplementation(
             this: JobClass,
-            objectState: Parameters<typeof Job.prototype.annotations.split>[0],
-            frame: Parameters<typeof Job.prototype.annotations.split>[1],
-        ): ReturnType<typeof Job.prototype.annotations.split> {
+            objectState: Parameters<typeof JobClass.prototype.annotations.split>[0],
+            frame: Parameters<typeof JobClass.prototype.annotations.split>[1],
+        ): ReturnType<typeof JobClass.prototype.annotations.split> {
             return Promise.resolve(getCollection(this).split(objectState, frame));
         },
     });
@@ -394,9 +394,9 @@ export function implementJob(Job: typeof JobClass): typeof JobClass {
     Object.defineProperty(Job.prototype.annotations.group, 'implementation', {
         value: function groupAnnotationsImplementation(
             this: JobClass,
-            objectStates: Parameters<typeof Job.prototype.annotations.group>[0],
-            reset: Parameters<typeof Job.prototype.annotations.group>[1],
-        ): ReturnType<typeof Job.prototype.annotations.group> {
+            objectStates: Parameters<typeof JobClass.prototype.annotations.group>[0],
+            reset: Parameters<typeof JobClass.prototype.annotations.group>[1],
+        ): ReturnType<typeof JobClass.prototype.annotations.group> {
             return Promise.resolve(getCollection(this).group(objectStates, reset));
         },
     });
@@ -404,9 +404,9 @@ export function implementJob(Job: typeof JobClass): typeof JobClass {
     Object.defineProperty(Job.prototype.annotations.join, 'implementation', {
         value: function joinAnnotationsImplementation(
             this: JobClass,
-            objectStates: Parameters<typeof Job.prototype.annotations.join>[0],
-            points: Parameters<typeof Job.prototype.annotations.join>[1],
-        ): ReturnType<typeof Job.prototype.annotations.join> {
+            objectStates: Parameters<typeof JobClass.prototype.annotations.join>[0],
+            points: Parameters<typeof JobClass.prototype.annotations.join>[1],
+        ): ReturnType<typeof JobClass.prototype.annotations.join> {
             return Promise.resolve(getCollection(this).join(objectStates, points));
         },
     });
@@ -414,9 +414,9 @@ export function implementJob(Job: typeof JobClass): typeof JobClass {
     Object.defineProperty(Job.prototype.annotations.slice, 'implementation', {
         value: function sliceAnnotationsImplementation(
             this: JobClass,
-            objectState: Parameters<typeof Job.prototype.annotations.slice>[0],
-            results: Parameters<typeof Job.prototype.annotations.slice>[1],
-        ): ReturnType<typeof Job.prototype.annotations.slice> {
+            objectState: Parameters<typeof JobClass.prototype.annotations.slice>[0],
+            results: Parameters<typeof JobClass.prototype.annotations.slice>[1],
+        ): ReturnType<typeof JobClass.prototype.annotations.slice> {
             return Promise.resolve(getCollection(this).slice(objectState, results));
         },
     });
@@ -424,7 +424,7 @@ export function implementJob(Job: typeof JobClass): typeof JobClass {
     Object.defineProperty(Job.prototype.annotations.hasUnsavedChanges, 'implementation', {
         value: function hasUnsavedChangesImplementation(
             this: JobClass,
-        ): ReturnType<typeof Job.prototype.annotations.hasUnsavedChanges> {
+        ): ReturnType<typeof JobClass.prototype.annotations.hasUnsavedChanges> {
             return getSaver(this).hasUnsavedChanges();
         },
     });
@@ -432,8 +432,8 @@ export function implementJob(Job: typeof JobClass): typeof JobClass {
     Object.defineProperty(Job.prototype.annotations.clear, 'implementation', {
         value: async function clearAnnotationsImplementation(
             this: JobClass,
-            flags: Parameters<typeof Job.prototype.annotations.clear>[0],
-        ): ReturnType<typeof Job.prototype.annotations.clear> {
+            flags: Parameters<typeof JobClass.prototype.annotations.clear>[0],
+        ): ReturnType<typeof JobClass.prototype.annotations.clear> {
             return clearAnnotations(this, flags);
         },
     });
@@ -441,10 +441,10 @@ export function implementJob(Job: typeof JobClass): typeof JobClass {
     Object.defineProperty(Job.prototype.annotations.select, 'implementation', {
         value: function selectAnnotationsImplementation(
             this: JobClass,
-            objectStates: Parameters<typeof Job.prototype.annotations.select>[0],
-            x: Parameters<typeof Job.prototype.annotations.select>[1],
-            y: Parameters<typeof Job.prototype.annotations.select>[2],
-        ): ReturnType<typeof Job.prototype.annotations.select> {
+            objectStates: Parameters<typeof JobClass.prototype.annotations.select>[0],
+            x: Parameters<typeof JobClass.prototype.annotations.select>[1],
+            y: Parameters<typeof JobClass.prototype.annotations.select>[2],
+        ): ReturnType<typeof JobClass.prototype.annotations.select> {
             return Promise.resolve(getCollection(this).select(objectStates, x, y));
         },
     });
@@ -452,7 +452,7 @@ export function implementJob(Job: typeof JobClass): typeof JobClass {
     Object.defineProperty(Job.prototype.annotations.statistics, 'implementation', {
         value: function statisticsImplementation(
             this: JobClass,
-        ): ReturnType<typeof Job.prototype.annotations.statistics> {
+        ): ReturnType<typeof JobClass.prototype.annotations.statistics> {
             return Promise.resolve(getCollection(this).statistics());
         },
     });
@@ -460,8 +460,8 @@ export function implementJob(Job: typeof JobClass): typeof JobClass {
     Object.defineProperty(Job.prototype.annotations.put, 'implementation', {
         value: function putAnnotationsImplementation(
             this: JobClass,
-            objectStates: Parameters<typeof Job.prototype.annotations.put>[0],
-        ): ReturnType<typeof Job.prototype.annotations.put> {
+            objectStates: Parameters<typeof JobClass.prototype.annotations.put>[0],
+        ): ReturnType<typeof JobClass.prototype.annotations.put> {
             return Promise.resolve(getCollection(this).put(objectStates));
         },
     });
@@ -469,8 +469,8 @@ export function implementJob(Job: typeof JobClass): typeof JobClass {
     Object.defineProperty(Job.prototype.annotations.import, 'implementation', {
         value: function importAnnotationsImplementation(
             this: JobClass,
-            data: Parameters<typeof Job.prototype.annotations.import>[0],
-        ): ReturnType<typeof Job.prototype.annotations.import> {
+            data: Parameters<typeof JobClass.prototype.annotations.import>[0],
+        ): ReturnType<typeof JobClass.prototype.annotations.import> {
             getCollection(this).import(data);
             return Promise.resolve();
         },
@@ -479,7 +479,7 @@ export function implementJob(Job: typeof JobClass): typeof JobClass {
     Object.defineProperty(Job.prototype.annotations.export, 'implementation', {
         value: function exportAnnotationsImplementation(
             this: JobClass,
-        ): ReturnType<typeof Job.prototype.annotations.export> {
+        ): ReturnType<typeof JobClass.prototype.annotations.export> {
             return Promise.resolve(getCollection(this).export());
         },
     });
@@ -487,12 +487,12 @@ export function implementJob(Job: typeof JobClass): typeof JobClass {
     Object.defineProperty(Job.prototype.annotations.upload, 'implementation', {
         value: async function uploadAnnotationsImplementation(
             this: JobClass,
-            format: Parameters<typeof Job.prototype.annotations.upload>[0],
-            useDefaultLocation: Parameters<typeof Job.prototype.annotations.upload>[1],
-            sourceStorage: Parameters<typeof Job.prototype.annotations.upload>[2],
-            file: Parameters<typeof Job.prototype.annotations.upload>[3],
-            options: Parameters<typeof Job.prototype.annotations.upload>[4],
-        ): ReturnType<typeof Job.prototype.annotations.upload> {
+            format: Parameters<typeof JobClass.prototype.annotations.upload>[0],
+            useDefaultLocation: Parameters<typeof JobClass.prototype.annotations.upload>[1],
+            sourceStorage: Parameters<typeof JobClass.prototype.annotations.upload>[2],
+            file: Parameters<typeof JobClass.prototype.annotations.upload>[3],
+            options: Parameters<typeof JobClass.prototype.annotations.upload>[4],
+        ): ReturnType<typeof JobClass.prototype.annotations.upload> {
             return importDataset(this, format, useDefaultLocation, sourceStorage, file, options);
         },
     });
@@ -500,12 +500,12 @@ export function implementJob(Job: typeof JobClass): typeof JobClass {
     Object.defineProperty(Job.prototype.annotations.exportDataset, 'implementation', {
         value: async function exportDatasetImplementation(
             this: JobClass,
-            format: Parameters<typeof Job.prototype.annotations.exportDataset>[0],
-            saveImages: Parameters<typeof Job.prototype.annotations.exportDataset>[1],
-            useDefaultSettings: Parameters<typeof Job.prototype.annotations.exportDataset>[2],
-            targetStorage: Parameters<typeof Job.prototype.annotations.exportDataset>[3],
-            customName?: Parameters<typeof Job.prototype.annotations.exportDataset>[4],
-        ): ReturnType<typeof Job.prototype.annotations.exportDataset> {
+            format: Parameters<typeof JobClass.prototype.annotations.exportDataset>[0],
+            saveImages: Parameters<typeof JobClass.prototype.annotations.exportDataset>[1],
+            useDefaultSettings: Parameters<typeof JobClass.prototype.annotations.exportDataset>[2],
+            targetStorage: Parameters<typeof JobClass.prototype.annotations.exportDataset>[3],
+            customName?: Parameters<typeof JobClass.prototype.annotations.exportDataset>[4],
+        ): ReturnType<typeof JobClass.prototype.annotations.exportDataset> {
             return exportDataset(this, format, saveImages, useDefaultSettings, targetStorage, customName);
         },
     });
@@ -513,8 +513,8 @@ export function implementJob(Job: typeof JobClass): typeof JobClass {
     Object.defineProperty(Job.prototype.actions.undo, 'implementation', {
         value: async function undoActionImplementation(
             this: JobClass,
-            count: Parameters<typeof Job.prototype.actions.undo>[0],
-        ): ReturnType<typeof Job.prototype.actions.undo> {
+            count: Parameters<typeof JobClass.prototype.actions.undo>[0],
+        ): ReturnType<typeof JobClass.prototype.actions.undo> {
             return getHistory(this).undo(count);
         },
     });
@@ -522,8 +522,8 @@ export function implementJob(Job: typeof JobClass): typeof JobClass {
     Object.defineProperty(Job.prototype.actions.redo, 'implementation', {
         value: async function redoActionImplementation(
             this: JobClass,
-            count: Parameters<typeof Job.prototype.actions.redo>[0],
-        ): ReturnType<typeof Job.prototype.actions.redo> {
+            count: Parameters<typeof JobClass.prototype.actions.redo>[0],
+        ): ReturnType<typeof JobClass.prototype.actions.redo> {
             return getHistory(this).redo(count);
         },
     });
@@ -531,8 +531,8 @@ export function implementJob(Job: typeof JobClass): typeof JobClass {
     Object.defineProperty(Job.prototype.actions.freeze, 'implementation', {
         value: function freezeActionsImplementation(
             this: JobClass,
-            frozen: Parameters<typeof Job.prototype.actions.freeze>[0],
-        ): ReturnType<typeof Job.prototype.actions.freeze> {
+            frozen: Parameters<typeof JobClass.prototype.actions.freeze>[0],
+        ): ReturnType<typeof JobClass.prototype.actions.freeze> {
             return Promise.resolve(getHistory(this).freeze(frozen));
         },
     });
@@ -540,7 +540,7 @@ export function implementJob(Job: typeof JobClass): typeof JobClass {
     Object.defineProperty(Job.prototype.actions.clear, 'implementation', {
         value: function clearActionsImplementation(
             this: JobClass,
-        ): ReturnType<typeof Job.prototype.actions.clear> {
+        ): ReturnType<typeof JobClass.prototype.actions.clear> {
             return Promise.resolve(getHistory(this).clear());
         },
     });
@@ -548,7 +548,7 @@ export function implementJob(Job: typeof JobClass): typeof JobClass {
     Object.defineProperty(Job.prototype.actions.get, 'implementation', {
         value: function getActionsImplementation(
             this: JobClass,
-        ): ReturnType<typeof Job.prototype.actions.get> {
+        ): ReturnType<typeof JobClass.prototype.actions.get> {
             return Promise.resolve(getHistory(this).get());
         },
     });
@@ -556,10 +556,10 @@ export function implementJob(Job: typeof JobClass): typeof JobClass {
     Object.defineProperty(Job.prototype.logger.log, 'implementation', {
         value: async function logImplementation(
             this: JobClass,
-            scope: Parameters<typeof Job.prototype.logger.log>[0],
-            payload: Parameters<typeof Job.prototype.logger.log>[1],
-            wait: Parameters<typeof Job.prototype.logger.log>[2],
-        ): ReturnType<typeof Job.prototype.logger.log> {
+            scope: Parameters<typeof JobClass.prototype.logger.log>[0],
+            payload: Parameters<typeof JobClass.prototype.logger.log>[1],
+            wait: Parameters<typeof JobClass.prototype.logger.log>[2],
+        ): ReturnType<typeof JobClass.prototype.logger.log> {
             return logger.log(
                 scope,
                 {
