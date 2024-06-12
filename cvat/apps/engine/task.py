@@ -367,15 +367,6 @@ def _validate_scheme(url):
     if parsed_url.scheme not in ALLOWED_SCHEMES:
         raise ValueError('Unsupported URL scheme: {}. Only http and https are supported'.format(parsed_url.scheme))
 
-def _validate_consensus_configuration(db_task: models.Task, data: Dict[str, Any]) -> None:
-    consensus_job_per_segment = data.get('consensus_job_per_segment', None)
-    agreement_score_threshold = data.get('agreement_score_threshold', None)
-
-    if agreement_score_threshold < 0 or agreement_score_threshold > 1:
-        raise ValidationError("Agreement score threshold should be in the range [0, 1]")
-
-    if consensus_job_per_segment == 1:
-        raise ValidationError("Consensus job per segment should not be 1")
 
 def _download_data(urls, upload_dir):
     job = rq.get_current_job()
@@ -528,7 +519,6 @@ def _create_thread(
 
     job_file_mapping = _validate_job_file_mapping(db_task, data)
 
-    _validate_consensus_configuration(db_task, data)
 
     db_data = db_task.data
     upload_dir = db_data.get_upload_dirname() if db_data.storage != models.StorageChoice.SHARE else settings.SHARE_ROOT
