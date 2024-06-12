@@ -123,8 +123,11 @@ export async function clearAnnotations(
     if (Object.hasOwn(flags ?? {}, 'reload')) {
         const { reload } = flags;
         checkObjectType('reload', reload, 'boolean', null);
-        cache.delete(session);
-        return getAnnotationsFromServer(session);
+
+        if (reload) {
+            cache.delete(session);
+            return getAnnotationsFromServer(session);
+        }
     }
 
     return getCollection(session).clear(flags);
