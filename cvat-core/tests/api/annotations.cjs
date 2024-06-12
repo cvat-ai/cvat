@@ -839,7 +839,7 @@ describe('Feature: clear annotations', () => {
     test('clear annotations with bad reload parameter', async () => {
         const task = (await cvat.tasks.get({ id: 100 }))[0];
         await task.annotations.clear({ reload: true });
-        expect(task.annotations.clear('reload')).rejects.toThrow(cvat.exceptions.ArgumentError);
+        expect(task.annotations.clear({ reload: 'reload' })).rejects.toThrow(cvat.exceptions.ArgumentError);
     });
 });
 

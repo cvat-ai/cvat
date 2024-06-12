@@ -950,7 +950,7 @@ export function getJobAsync({
 
             // frame query parameter does not work for GT job
             const frameNumber = Number.isInteger(initialFrame) && gtJob?.id !== job.id ?
-                initialFrame : (await job.frames.search(
+                initialFrame as number : (await job.frames.search(
                     { notDeleted: !showDeletedFrames }, job.startFrame, job.stopFrame,
                 )) || job.startFrame;
 
@@ -969,7 +969,7 @@ export function getJobAsync({
 
             let groundTruthJobFramesMeta = null;
             if (gtJob) {
-                gtJob.annotations.clear({ reload: true }); // fetch gt annotations from the server
+                await gtJob.annotations.clear({ reload: true }); // fetch gt annotations from the server
                 groundTruthJobFramesMeta = await cvat.frames.getMeta('job', gtJob.id);
             }
 

@@ -179,7 +179,7 @@ export default class Collection {
         return data;
     }
 
-    public get(frame: number, allTracks: boolean, filters: string[]): ObjectState[] {
+    public get(frame: number, allTracks: boolean, filters: object[]): ObjectState[] {
         const { tracks } = this;
         const shapes = this.shapes[frame] || [];
         const tags = this.tags[frame] || [];

@@ -310,7 +310,7 @@ function buildDuplicatedAPI(prototype) {
 
 export class Session {
     public annotations: {
-        get: (frame: number, allTracks: boolean, filters: string[]) => Promise<ObjectState[]>;
+        get: (frame: number, allTracks: boolean, filters: object[]) => Promise<ObjectState[]>;
         put: (objectStates: ObjectState[]) => Promise<number[]>;
         merge: (objectStates: ObjectState[]) => Promise<void>;
         split: (objectState: ObjectState, frame: number) => Promise<void>;
