@@ -98,6 +98,7 @@ Job **Stage** can be:
 | **Annotation** | Provides access to annotation tools. Assignees will be able to see their assigned jobs and annotate them. By default, assignees with the **Annotation** stage cannot report annotation errors or issues.             |
 | **Validation** | Grants access to QA tools. Assignees will see their assigned jobs and can validate them while also reporting issues. By default, assignees with the **Validation** stage cannot correct errors or annotate datasets. |
 | **Acceptance** | Does not grant any additional access or change the annotator’s interface. It just marks the job as done.                                                                                                             |
+| **Published**  | Publish the job and make accessible to all organization members.                                                                                                                                                     |
 
 <!--lint enable maximum-line-length-->
 

@@ -111,7 +111,7 @@ There are several possible states: `new`, `in progress`, `rejected`, `completed`
 ## Stage
 Stage of the job. The stage is specified with the drop-down list on the
 {{< ilink "/docs/manual/basics/tasks-page" "task page" >}}.
-There are three stages: `annotation`, `validation` or `acceptance`. This value affects the task progress bar.
+There are four stages: `annotation`, `validation`, `acceptance` or `published`.. This value affects the task progress bar.
 
 ---
 

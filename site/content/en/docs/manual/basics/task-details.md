@@ -27,7 +27,7 @@ and the details of the task (specified when the task was created) and the jobs s
   - Jobs name with a hyperlink to it.
   - Frames — the frame interval.
   - A stage of the job. The stage is specified by a drop-down list.
-    There are three stages: `annotation`, `validation` or `acceptance`. This value affects the task progress bar.
+    There are four stages: `annotation`, `validation`, `acceptance` or `published`. This value affects the task progress bar.
   - A state of the job. The state can be changed by an assigned user in the menu inside the job.
     There are several possible states: `new`, `in progress`, `rejected`, `completed`.
   - Started on — start date of this job.
