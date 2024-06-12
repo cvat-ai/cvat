@@ -16,6 +16,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 <!-- scriv-insert-here -->
 
+<a id='changelog-2.14.2'></a>
+## \[2.14.2\] - 2024-06-07
+
+### Fixed
+
+- Queued jobs are not considered in deferring logic
+  (<https://github.com/cvat-ai/cvat/pull/7907>)
+
+- Significant memory leak related to the frames, which did not memory after become unused
+  (<https://github.com/cvat-ai/cvat/pull/7995>)
+
 <a id='changelog-2.14.1'></a>
 ## \[2.14.1\] - 2024-06-05
 

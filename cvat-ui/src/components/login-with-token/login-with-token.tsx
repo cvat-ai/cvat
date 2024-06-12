@@ -1,5 +1,5 @@
 // Copyright (C) 2020-2022 Intel Corporation
-// Copyright (C) 2022-2023 CVAT.ai Corporation
+// Copyright (C) 2022-2024 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -15,7 +15,7 @@ export default function LoginWithTokenComponent(): JSX.Element {
     useEffect(
         () => {
             localStorage.setItem('token', token);
-            const next = search.get('next') || '/';
+            const next = search.get('next') ?? '/';
             (window as Window).location = next;
         },
         [token],
