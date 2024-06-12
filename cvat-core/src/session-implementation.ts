@@ -472,7 +472,8 @@ export function implementJob(Job: typeof JobClass): typeof JobClass {
             this: JobClass,
             data: Parameters<typeof Job.prototype.annotations.import>[0],
         ): ReturnType<typeof Job.prototype.annotations.import> {
-            return Promise.resolve(getCollection(this).import(data));
+            getCollection(this).import(data);
+            return Promise.resolve();
         },
     });
 

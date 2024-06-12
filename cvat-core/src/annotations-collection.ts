@@ -110,7 +110,11 @@ export default class Collection {
         };
     }
 
-    public import(data: Omit<SerializedCollection, 'version'>): void {
+    public import(data: Omit<SerializedCollection, 'version'>): {
+        tags: Tag[];
+        shapes: Shape[];
+        tracks: Track[];
+    } {
         const result = {
             tags: [],
             shapes: [],
@@ -149,6 +153,8 @@ export default class Collection {
                 this.objects[clientID] = trackModel;
             }
         }
+
+        return result;
     }
 
     public export(): Omit<SerializedCollection, 'version'> {
