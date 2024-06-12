@@ -31,6 +31,7 @@ export const config: Partial<Config> = {
                     { value: 'annotation', title: 'annotation' },
                     { value: 'validation', title: 'validation' },
                     { value: 'acceptance', title: 'acceptance' },
+                    { value: 'published', title: 'published' },
                 ],
             },
         },

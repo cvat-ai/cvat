@@ -25,6 +25,7 @@ export enum JobStage {
     ANNOTATION = 'annotation',
     VALIDATION = 'validation',
     ACCEPTANCE = 'acceptance',
+    PUBLISHED = 'published',
 }
 
 export enum JobState {

@@ -69,6 +69,10 @@ function JobActionsMenu(props: Props): JSX.Element {
                     job.stage = JobStage.ACCEPTANCE;
                     job.state = core.enums.JobState.COMPLETED;
                     onJobUpdate(job);
+                } else if (action.key === 'publish_job') {
+                    job.stage = JobStage.PUBLISHED;
+                    job.state = core.enums.JobState.COMPLETED;
+                    onJobUpdate(job);
                 }
             }}
         >
@@ -82,6 +86,7 @@ function JobActionsMenu(props: Props): JSX.Element {
                 <Menu.Item key='finish_job'>Finish the job</Menu.Item> : null}
             {job.stage === JobStage.ACCEPTANCE ?
                 <Menu.Item key='renew_job'>Renew the job</Menu.Item> : null}
+            <Menu.Item key='publish_job'>Publish the job</Menu.Item>
             <Menu.Divider />
             <Menu.Item
                 key='delete'

@@ -189,6 +189,9 @@ function JobItem(props: Props): JSX.Element {
                                             <Select.Option value={JobStage.ACCEPTANCE}>
                                                 {JobStage.ACCEPTANCE}
                                             </Select.Option>
+                                            <Select.Option value={JobStage.PUBLISHED}>
+                                                {JobStage.PUBLISHED}
+                                            </Select.Option>
                                         </Select>
                                     </Col>
                                 </Row>

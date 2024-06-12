@@ -119,6 +119,7 @@ function JobListComponent(props: Props): JSX.Element {
                 { text: 'annotation', value: 'annotation' },
                 { text: 'validation', value: 'validation' },
                 { text: 'acceptance', value: 'acceptance' },
+                { text: 'published', value: 'published' },
             ],
             onFilter: (value: string | number | boolean, record: any) => record.stage.stage === value,
         },
