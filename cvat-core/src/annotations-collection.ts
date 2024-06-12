@@ -24,12 +24,6 @@ import {
 import AnnotationHistory from './annotations-history';
 import { Job } from './session';
 
-interface ImportedCollection {
-    tags: Tag[],
-    shapes: Shape[],
-    tracks: Track[],
-}
-
 const validateAttributesList = (
     attributes: { spec_id: number, value: string }[],
 ): { spec_id: number, value: string }[] => {
@@ -116,7 +110,7 @@ export default class Collection {
         };
     }
 
-    public import(data: Omit<SerializedCollection, 'version'>): ImportedCollection {
+    public import(data: Omit<SerializedCollection, 'version'>): void {
         const result = {
             tags: [],
             shapes: [],
@@ -155,8 +149,6 @@ export default class Collection {
                 this.objects[clientID] = trackModel;
             }
         }
-
-        return result;
     }
 
     public export(): Omit<SerializedCollection, 'version'> {
@@ -774,19 +766,24 @@ export default class Collection {
         );
     }
 
-    public clear(startframe: number, endframe: number, delTrackKeyframesOnly: boolean): void {
-        if (startframe !== undefined && endframe !== undefined) {
+    public clear(flags?: {
+        startFrame?: number;
+        stopFrame?: number;
+        delTrackKeyframesOnly?: boolean;
+    }): void {
+        const { startFrame, stopFrame, delTrackKeyframesOnly } = flags ?? {};
+        if (startFrame !== undefined && stopFrame !== undefined) {
             // If only a range of annotations need to be cleared
-            for (let frame = startframe; frame <= endframe; frame++) {
+            for (let frame = startFrame; frame <= stopFrame; frame++) {
                 this.shapes[frame] = [];
                 this.tags[frame] = [];
             }
             const { tracks } = this;
             tracks.forEach((track) => {
-                if (track.frame <= endframe) {
+                if (track.frame <= stopFrame) {
                     if (delTrackKeyframesOnly) {
                         for (const keyframe of Object.keys(track.shapes)) {
-                            if (+keyframe >= startframe && +keyframe <= endframe) {
+                            if (+keyframe >= startFrame && +keyframe <= stopFrame) {
                                 delete track.shapes[keyframe];
                                 ((track as unknown as SkeletonTrack).elements || []).forEach((element) => {
                                     if (keyframe in element.shapes) {
@@ -797,13 +794,13 @@ export default class Collection {
                                 track.updated = Date.now();
                             }
                         }
-                    } else if (track.frame >= startframe) {
+                    } else if (track.frame >= startFrame) {
                         const index = tracks.indexOf(track);
                         if (index > -1) { tracks.splice(index, 1); }
                     }
                 }
             });
-        } else if (startframe === undefined && endframe === undefined) {
+        } else if (startFrame === undefined && stopFrame === undefined) {
             // If all annotations need to be cleared
             this.shapes = {};
             this.tags = {};

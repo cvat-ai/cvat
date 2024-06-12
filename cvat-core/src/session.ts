@@ -4,8 +4,10 @@
 // SPDX-License-Identifier: MIT
 
 import _ from 'lodash';
+
+import { ChunkQuality } from 'cvat-data';
 import {
-    ChunkType, DimensionType, JobStage,
+    ChunkType, DimensionType, HistoryActions, JobStage,
     JobState, JobType, RQStatus, StorageLocation, TaskMode, TaskStatus,
 } from './enums';
 import { Storage } from './storage';
@@ -15,11 +17,17 @@ import { ArgumentError, ScriptingError } from './exceptions';
 import { Label } from './labels';
 import User from './user';
 import { FieldUpdateTrigger } from './common';
-import { SerializedJob, SerializedLabel, SerializedTask } from './server-response-types';
+import {
+    SerializedCollection, SerializedJob,
+    SerializedLabel, SerializedTask,
+} from './server-response-types';
 import AnnotationGuide from './guide';
 import { FrameData } from './frames';
 import Statistics from './statistics';
 import logger from './logger';
+import Issue from './issue';
+import { Camelized } from './type-utils';
+import ObjectState from './object-state';
 
 function buildDuplicatedAPI(prototype) {
     Object.defineProperties(prototype, {
@@ -49,11 +57,9 @@ function buildDuplicatedAPI(prototype) {
                     return result;
                 },
 
-                async clear(
-                    reload = false, startframe = undefined, endframe = undefined, delTrackKeyframesOnly = true,
-                ) {
+                async clear(flags) {
                     const result = await PluginRegistry.apiWrapper.call(
-                        this, prototype.annotations.clear, reload, startframe, endframe, delTrackKeyframesOnly,
+                        this, prototype.annotations.clear, flags,
                     );
                     return result;
                 },
@@ -305,43 +311,86 @@ function buildDuplicatedAPI(prototype) {
 
 export class Session {
     public annotations: {
-        get: CallableFunction;
-        put: CallableFunction;
-        save: CallableFunction;
-        merge: CallableFunction;
-        split: CallableFunction;
-        group: CallableFunction;
-        join: CallableFunction;
-        slice: CallableFunction;
-        clear: CallableFunction;
-        search: CallableFunction;
-        upload: CallableFunction;
-        select: CallableFunction;
-        import: CallableFunction;
-        export: CallableFunction;
+        get: (frame: number, allTracks: boolean, filters: string[]) => Promise<ObjectState[]>;
+        put: (objectStates: ObjectState[]) => Promise<number[]>;
+        merge: (objectStates: ObjectState[]) => Promise<void>;
+        split: (objectState: ObjectState, frame: number) => Promise<void>;
+        group: (objectStates: ObjectState[], reset: boolean) => Promise<number>;
+        join: (objectStates: ObjectState[], points: number[]) => Promise<void>;
+        slice: (state: ObjectState, results: number[][]) => Promise<void>;
+        clear: (flags?: {
+            reload?: boolean;
+            startFrame?: number;
+            stopFrame?: number;
+            delTrackKeyframesOnly?: boolean;
+        }) => Promise<void>;
+        save: (
+            onUpdate ?: (message: string) => void,
+        ) => Promise<void>;
+        search: (
+            frameFrom: number,
+            frameTo: number,
+            searchParameters: {
+                allowDeletedFrames: boolean;
+                annotationsFilters?: object[];
+                generalFilters?: {
+                    isEmptyFrame?: boolean;
+                };
+            },
+        ) => Promise<number | null>;
+        upload: (
+            format: string,
+            useDefaultSettings: boolean,
+            sourceStorage: Storage,
+            file: File | string,
+            options?: {
+                convMaskToPoly?: boolean,
+                updateStatusCallback?: (s: string, n: number) => void,
+            },
+        ) => Promise<void>;
+        select: (objectStates: ObjectState[], x: number, y: number) => Promise<{
+            state: ObjectState,
+            distance: number | null,
+        }>;
+        import: (data: Omit<SerializedCollection, 'version'>) => Promise<void>;
+        export: () => Promise<Omit<SerializedCollection, 'version'>>;
         statistics: () => Promise<Statistics>;
-        hasUnsavedChanges: CallableFunction;
-        exportDataset: CallableFunction;
+        hasUnsavedChanges: () => boolean;
+        exportDataset: (
+            format: string,
+            saveImages: boolean,
+            useDefaultSettings: boolean,
+            targetStorage: Storage,
+            name?: string,
+        ) => Promise<string | void>;
     };
 
     public actions: {
-        undo: CallableFunction;
-        redo: CallableFunction;
-        freeze: CallableFunction;
-        clear: CallableFunction;
-        get: CallableFunction;
+        undo: (count: number) => Promise<number[]>;
+        redo: (count: number) => Promise<number[]>;
+        freeze: (frozen: boolean) => void;
+        clear: () => void;
+        get: () => { undo: [HistoryActions, number][], redo: [HistoryActions, number][] };
     };
 
     public frames: {
         get: (frame: number, isPlaying?: boolean, step?: number) => Promise<FrameData>;
-        delete: CallableFunction;
-        restore: CallableFunction;
-        save: CallableFunction;
-        cachedChunks: CallableFunction;
-        preview: CallableFunction;
-        contextImage: CallableFunction;
-        search: CallableFunction;
-        chunk: CallableFunction;
+        delete: (frame: number) => Promise<void>;
+        restore: (frame: number) => Promise<void>;
+        save: () => Promise<void>;
+        cachedChunks: () => Promise<number[]>;
+        preview: () => Promise<string>;
+        contextImage: (frame: number) => Promise<Record<string, ImageBitmap>>;
+        search: (
+            jobID: number,
+            frameFrom: number,
+            frameTo: number,
+            filters: {
+                offset?: number,
+                notDeleted: boolean,
+            },
+        ) => Promise<number | null>;
+        chunk: (chunk: number, quality: ChunkQuality) => Promise<ArrayBuffer>;
     };
 
     public logger: {
@@ -610,12 +659,12 @@ export class Job extends Session {
         );
     }
 
-    async save(additionalData = {}) {
+    async save(additionalData = {}): Promise<Job> {
         const result = await PluginRegistry.apiWrapper.call(this, Job.prototype.save, additionalData);
         return result;
     }
 
-    async issues() {
+    async issues(): Promise<Issue[]> {
         const result = await PluginRegistry.apiWrapper.call(this, Job.prototype.issues);
         return result;
     }
@@ -625,12 +674,12 @@ export class Job extends Session {
         return result;
     }
 
-    async openIssue(issue, message) {
+    async openIssue(issue: Issue, message: string): Promise<Issue> {
         const result = await PluginRegistry.apiWrapper.call(this, Job.prototype.openIssue, issue, message);
         return result;
     }
 
-    async close() {
+    async close(): Promise<void> {
         const result = await PluginRegistry.apiWrapper.call(this, Job.prototype.close);
         return result;
     }

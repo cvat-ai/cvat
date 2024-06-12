@@ -375,7 +375,12 @@ export function removeAnnotationsAsync(
     return async (dispatch: ActionCreator<Dispatch>, getState: () => CombinedState): Promise<void> => {
         try {
             const { jobInstance } = receiveAnnotationsParameters();
-            await jobInstance.annotations.clear(false, startFrame, endFrame, delTrackKeyframesOnly);
+            await jobInstance.annotations.clear({
+                reload: false,
+                startFrame,
+                endFrame,
+                delTrackKeyframesOnly,
+            });
             await jobInstance.actions.clear();
             dispatch(fetchAnnotationsAsync());
 
@@ -964,7 +969,7 @@ export function getJobAsync({
 
             let groundTruthJobFramesMeta = null;
             if (gtJob) {
-                gtJob.annotations.clear(true); // fetch gt annotations from the server
+                gtJob.annotations.clear({ reload: true }); // fetch gt annotations from the server
                 groundTruthJobFramesMeta = await cvat.frames.getMeta('job', gtJob.id);
             }
 

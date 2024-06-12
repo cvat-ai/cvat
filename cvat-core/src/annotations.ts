@@ -42,7 +42,7 @@ function getSession(session): WeakMapItem {
     }
 
     throw new InstanceNotInitializedError(
-        'Session has not been initialized yet. Call annotations.get() or annotations.clear(true) before',
+        'Session has not been initialized yet. Call annotations.get() or annotations.clear({ reload: true }) before',
     );
 }
 
@@ -113,17 +113,21 @@ export async function getAnnotations(session, frame, allTracks, filters): Promis
     }
 }
 
-export async function clearAnnotations(session, reload, startframe, endframe, delTrackKeyframesOnly): Promise<void> {
-    checkObjectType('reload', reload, 'boolean', null);
+export async function clearAnnotations(
+    session: Task | Job,
+    flags: Parameters<typeof Job.prototype.annotations.clear>[0],
+): Promise<void> {
     const sessionType = session instanceof Task ? 'task' : 'job';
     const cache = getCache(sessionType);
 
-    if (reload) {
+    if ('reload' in flags ?? {}) {
+        const { reload } = flags;
+        checkObjectType('reload', reload, 'boolean', null);
         cache.delete(session);
         return getAnnotationsFromServer(session);
     }
 
-    return getCollection(session).clear(startframe, endframe, delTrackKeyframesOnly);
+    return getCollection(session).clear(flags);
 }
 
 export async function exportDataset(
