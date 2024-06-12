@@ -1863,6 +1863,7 @@ paths:
           - annotation
           - validation
           - acceptance
+          - published
       - name: state
         in: query
         description: A simple equality filter for the state field
@@ -7549,11 +7550,13 @@ components:
       - annotation
       - validation
       - acceptance
+      - published
       type: string
       description: |-
         * `annotation` - ANNOTATION
         * `validation` - VALIDATION
         * `acceptance` - ACCEPTANCE
+        * `published` - PUBLISHED
     JobStatus:
       enum:
       - annotation

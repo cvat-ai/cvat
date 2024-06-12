@@ -90,6 +90,7 @@ class StageChoice(str, Enum):
     ANNOTATION = 'annotation'
     VALIDATION = 'validation'
     ACCEPTANCE = 'acceptance'
+    PUBLISHED = 'published'
 
     @classmethod
     def choices(cls):
@@ -379,8 +380,13 @@ class TaskQuerySet(models.QuerySet):
         ).annotate(
             completed_jobs_count=models.Count(
                 'segment__job',
-                filter=models.Q(segment__job__state=StateChoice.COMPLETED.value) &
-                       models.Q(segment__job__stage=StageChoice.ACCEPTANCE.value),
+                filter=(
+                    models.Q(segment__job__state=StateChoice.COMPLETED.value) &
+                    (
+                        models.Q(segment__job__stage=StageChoice.ACCEPTANCE.value) |
+                        models.Q(segment__job__stage=StageChoice.PUBLISHED.value)
+                    )
+                ),
                 distinct=True,
             ),
             validation_jobs_count=models.Count(

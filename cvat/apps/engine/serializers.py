@@ -756,6 +756,8 @@ class JobWriteSerializer(WriteOnceMixin, serializers.ModelSerializer):
                 validated_data['status'] = models.StatusChoice.ANNOTATION
             elif stage == models.StageChoice.ACCEPTANCE and state == models.StateChoice.COMPLETED:
                 validated_data['status'] = models.StatusChoice.COMPLETED
+            elif stage == models.StageChoice.PUBLISHED:
+                validated_data['status'] = models.StatusChoice.COMPLETED
             else:
                 validated_data['status'] = models.StatusChoice.VALIDATION
 
