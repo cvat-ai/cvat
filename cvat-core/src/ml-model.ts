@@ -35,10 +35,6 @@ export default class MLModel {
         return this.serialized.version;
     }
 
-    public get framework(): string {
-        return this.serialized.framework;
-    }
-
     public get description(): string {
         return this.serialized.description;
     }
