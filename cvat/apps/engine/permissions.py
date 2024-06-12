@@ -769,7 +769,8 @@ class JobPermission(OpenPolicyAgentPermission):
                 "project": {
                     "owner": { "id": getattr(self.obj.segment.task.project.owner, 'id', None) },
                     "assignee": { "id": getattr(self.obj.segment.task.project.assignee, 'id', None) }
-                } if self.obj.segment.task.project else None
+                } if self.obj.segment.task.project else None,
+                "stage": self.obj.stage,
             }
         elif self.scope == __class__.Scopes.CREATE:
             if self.task_id is None:
@@ -942,7 +943,8 @@ class IssuePermission(OpenPolicyAgentPermission):
                     "assignee": { "id": getattr(db_job.segment.task.assignee, 'id', None) }
                 },
                 "job": {
-                    "assignee": { "id": getattr(db_job.assignee, 'id', None) }
+                    "assignee": { "id": getattr(db_job.assignee, 'id', None) },
+                    "stage": db_job.stage,
                 },
                 'organization': {
                     "id": getattr(organization, 'id', None)

@@ -35,7 +35,8 @@ import data.organizations
 #         "task": {
 #             "owner": { "id": <num> },
 #             "assignee": { "id": <num> }
-#         } or null
+#         } or null,
+#         "stage" : <"annotation"|"validation"|"acceptance"|"published">,
 #     }
 # }
 
@@ -85,6 +86,10 @@ is_job_staff if {
 
 is_job_staff if {
     is_job_assignee
+}
+
+is_job_published if {
+    input.resource.stage == "published"
 }
 
 default allow := false
@@ -187,6 +192,15 @@ allow if {
     input.auth.organization.id == input.resource.organization.id
     organizations.has_perm(organizations.WORKER)
     is_job_staff
+}
+
+allow if {
+    input.scope in {
+        utils.VIEW, utils.VIEW_ANNOTATIONS, utils.VIEW_DATA, utils.VIEW_METADATA
+    }
+    input.auth.organization.id == input.resource.organization.id
+    organizations.is_member
+    is_job_published
 }
 
 allow if {

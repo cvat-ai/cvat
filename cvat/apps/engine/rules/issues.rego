@@ -36,6 +36,7 @@ import data.organizations
 #         },
 #         "job": {
 #             "assignee": { "id": <num> }
+#             "stage" : <"annotation"|"validation"|"acceptance"|"published">,
 #         },
 #         "organization": { "id": <num> } or null
 #     }
@@ -51,6 +52,10 @@ is_issue_assignee if {
 
 is_job_assignee if {
     input.resource.job.assignee.id == input.auth.user.id
+}
+
+is_job_published if {
+    input.resource.job.stage == "published"
 }
 
 is_task_owner if {
@@ -148,6 +153,13 @@ allow if {
 }
 
 allow if {
+    input.scope == utils.CREATE_IN_JOB
+    input.auth.organization.id == input.resource.organization.id
+    organizations.is_member
+    is_job_published
+}
+
+allow if {
     input.scope == utils.LIST
     utils.is_sandbox
 }
@@ -225,6 +237,13 @@ allow if {
 }
 
 allow if {
+    input.scope == utils.VIEW
+    input.auth.organization.id == input.resource.organization.id
+    organizations.is_member
+    is_job_published
+}
+
+allow if {
     input.scope == utils.UPDATE
     utils.is_sandbox
     utils.has_perm(utils.WORKER)
@@ -237,6 +256,13 @@ allow if {
     utils.has_perm(utils.WORKER)
     organizations.is_member
     is_issue_staff
+}
+
+allow if {
+    input.scope == utils.UPDATE
+    input.auth.organization.id == input.resource.organization.id
+    organizations.is_member
+    is_job_published
 }
 
 allow if {
@@ -251,6 +277,14 @@ allow if {
     input.auth.organization.id == input.resource.organization.id
     utils.has_perm(utils.WORKER)
     organizations.is_member
+    is_issue_admin
+}
+
+allow if {
+    input.scope == utils.DELETE
+    input.auth.organization.id == input.resource.organization.id
+    organizations.is_member
+    is_job_published
     is_issue_admin
 }
 
