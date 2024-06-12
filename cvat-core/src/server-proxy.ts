@@ -601,47 +601,33 @@ async function healthCheck(
     maxRetries: number,
     checkPeriod: number,
     requestTimeout: number,
-    progressCallback: (status: string) => void,
-    attempt = 0,
+    progressCallback?: (status: string) => void,
 ): Promise<void> {
     const { backendAPI } = config;
     const url = `${backendAPI}/server/health/?format=json`;
 
-    if (progressCallback) {
-        progressCallback(`${attempt}/${attempt + maxRetries}`);
+    const adjustedMaxRetries = Math.max(1, maxRetries);
+    const adjustedCheckPeriod = Math.max(100, checkPeriod);
+    const adjustedRequestTimeout = Math.max(500, requestTimeout);
+
+    let lastError: AxiosError = null;
+    for (let attempt = 1; attempt <= adjustedMaxRetries; attempt++) {
+        if (progressCallback) {
+            progressCallback(`${attempt}/${adjustedMaxRetries}`);
+        }
+
+        try {
+            const response = await Axios.get(url, { timeout: adjustedRequestTimeout });
+            return response.data;
+        } catch (error) {
+            lastError = error;
+            if (attempt < adjustedMaxRetries) {
+                await new Promise((resolve) => setTimeout(resolve, adjustedCheckPeriod));
+            }
+        }
     }
 
-    return Axios.get(url, {
-        timeout: requestTimeout,
-    })
-        .then((response) => response.data)
-        .catch((error) => {
-            let isHealthy = true;
-            let data;
-            if (typeof error?.response?.data === 'object') {
-                data = error.response.data;
-                // Temporary workaround: ignore errors with media cache for debugging purposes only
-                for (const checkName in data) {
-                    if (Object.prototype.hasOwnProperty.call(data, checkName) &&
-                        checkName !== 'Cache backend: media' &&
-                        data[checkName] !== 'working') {
-                        isHealthy = false;
-                    }
-                }
-            } else {
-                isHealthy = false;
-            }
-
-            if (!isHealthy && maxRetries > 0) {
-                return new Promise((resolve) => setTimeout(resolve, checkPeriod))
-                    .then(() => healthCheck(maxRetries - 1, checkPeriod,
-                        requestTimeout, progressCallback, attempt + 1));
-            }
-            if (isHealthy) {
-                return data;
-            }
-            throw generateError(error);
-        });
+    throw generateError(lastError);
 }
 
 export interface ServerRequestConfig {
