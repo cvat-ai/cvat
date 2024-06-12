@@ -232,7 +232,7 @@ export default class Project {
         return result;
     }
 
-    static async restore(storage: Storage, file: File | string) {
+    static async restore(storage: Storage, file: File | string): Promise<Project> {
         const result = await PluginRegistry.apiWrapper.call(this, Project.restore, storage, file);
         return result;
     }

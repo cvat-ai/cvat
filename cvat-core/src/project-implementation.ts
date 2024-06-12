@@ -123,8 +123,9 @@ export default function implementProject(projectClass) {
     };
 
     projectClass.restore.implementation = async function (storage: Storage, file: File | string) {
-        const result = await serverProxy.projects.restore(storage, file);
-        return result;
+        const serializedProject = await serverProxy.projects.restore(storage, file);
+        const labels = await serverProxy.labels.get({ project_id: serializedProject.id });
+        return new Project({ ...serializedProject, labels: labels.results });
     };
 
     projectClass.prototype.guide.implementation = async function guide() {

@@ -758,12 +758,21 @@ export function implementTask(Task: typeof TaskClass): typeof TaskClass {
     });
 
     Object.defineProperty(Task.restore, 'implementation', {
-        value: function restoreImplementation(
+        value: async function restoreImplementation(
             this: TaskClass,
             storage: Parameters<typeof TaskClass.restore>[0],
             file: Parameters<typeof TaskClass.restore>[1],
         ): ReturnType<typeof TaskClass.restore> {
-            return serverProxy.tasks.restore(storage, file);
+            const serializedTask = await serverProxy.tasks.restore(storage, file);
+            // When request task by ID we also need to add labels and jobs to work with them
+            const labels = await serverProxy.labels.get({ task_id: serializedTask.id });
+            const jobs = await serverProxy.jobs.get({ task_id: serializedTask.id }, true);
+            return new Task({
+                ...omit(serializedTask, ['jobs', 'labels']),
+                progress: serializedTask.jobs,
+                jobs,
+                labels: labels.results,
+            });
         },
     });
 
@@ -879,8 +888,8 @@ export function implementTask(Task: typeof TaskClass): typeof TaskClass {
         value: async function searchFrameImplementation(
             this: TaskClass,
             filters: Parameters<typeof TaskClass.prototype.frames.search>[0],
-            frameFrom: Parameters<typeof TaskClass.prototype.frames.search>[0],
-            frameTo: Parameters<typeof TaskClass.prototype.frames.search>[0],
+            frameFrom: Parameters<typeof TaskClass.prototype.frames.search>[1],
+            frameTo: Parameters<typeof TaskClass.prototype.frames.search>[2],
         ): ReturnType<typeof TaskClass.prototype.frames.search> {
             if (typeof filters !== 'object') {
                 throw new ArgumentError('Filters should be an object');

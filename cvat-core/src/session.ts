@@ -235,13 +235,13 @@ function buildDuplicatedAPI(prototype) {
                     const result = await PluginRegistry.apiWrapper.call(this, prototype.frames.preview);
                     return result;
                 },
-                async search(filters, frameFrom, frameTo) {
+                async search(filters, startFrame, stopFrame) {
                     const result = await PluginRegistry.apiWrapper.call(
                         this,
                         prototype.frames.search,
                         filters,
-                        frameFrom,
-                        frameTo,
+                        startFrame,
+                        stopFrame,
                     );
                     return result;
                 },
@@ -381,13 +381,12 @@ export class Session {
         preview: () => Promise<string>;
         contextImage: (frame: number) => Promise<Record<string, ImageBitmap>>;
         search: (
-            jobID: number,
-            frameFrom: number,
-            frameTo: number,
             filters: {
                 offset?: number,
                 notDeleted: boolean,
             },
+            frameFrom: number,
+            frameTo: number,
         ) => Promise<number | null>;
         chunk: (chunk: number, quality: ChunkQuality) => Promise<ArrayBuffer>;
     };
