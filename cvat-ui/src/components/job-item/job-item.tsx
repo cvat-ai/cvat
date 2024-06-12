@@ -121,7 +121,7 @@ function JobItem(props: Props): JSX.Element {
 
     let consensusJob: Job[] = [];
     if (task.consensusJobPerSegment) {
-        consensusJob = task.jobs.filter((eachJob: Job) => eachJob.parentJobId === id);
+        consensusJob = task.jobs.filter((eachJob: Job) => eachJob.parentJobId === id).reverse();
     }
     const consensusJobView: React.JSX.Element[] = consensusJob.map((eachJob: Job) => (
         <JobItem key={eachJob.id} job={eachJob} task={task} onJobUpdate={onJobUpdate} />

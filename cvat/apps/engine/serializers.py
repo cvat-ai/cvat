@@ -1123,13 +1123,14 @@ class TaskWriteSerializer(WriteOnceMixin, serializers.ModelSerializer):
     project_id = serializers.IntegerField(required=False, allow_null=True)
     target_storage = StorageSerializer(required=False, allow_null=True)
     source_storage = StorageSerializer(required=False, allow_null=True)
+    consensus_job_per_segment = serializers.IntegerField(required=False)
     agreement_score_threshold = serializers.FloatField(required=False, allow_null=True)
 
     class Meta:
         model = models.Task
         fields = ('url', 'id', 'name', 'project_id', 'owner_id', 'assignee_id',
             'bug_tracker', 'overlap', 'segment_size', 'labels', 'subset',
-            'target_storage', 'source_storage', 'agreement_score_threshold'
+            'target_storage', 'source_storage', 'consensus_job_per_segment', 'agreement_score_threshold'
         )
         write_once_fields = ('overlap', 'segment_size')
 
@@ -1313,6 +1314,21 @@ class TaskWriteSerializer(WriteOnceMixin, serializers.ModelSerializer):
             for label, sublabels in new_sublabel_names.items():
                 if sublabels != target_project_sublabel_names.get(label):
                     raise serializers.ValidationError('All task or project label names must be mapped to the target project')
+
+        consensus_job_per_segment = attrs.get('consensus_job_per_segment', None)
+        agreement_score_threshold = attrs.get('agreement_score_threshold', None)
+
+        if consensus_job_per_segment is None:
+            raise serializers.ValidationError("Consensus job per segment can't be None")
+
+        if agreement_score_threshold is None:
+            raise serializers.ValidationError("Agreement score threshold can't be None")
+
+        if agreement_score_threshold < 0 or agreement_score_threshold > 1:
+            raise serializers.ValidationError("Agreement score threshold should be in the range [0, 1]")
+
+        if consensus_job_per_segment == 1 or consensus_job_per_segment < 0:
+            raise serializers.ValidationError("Consensus job per segment should be greater than or equal to 0 and not 1")
 
         return attrs
 
