@@ -430,7 +430,7 @@ export function implementJob(Job: typeof JobClass): typeof JobClass {
     });
 
     Object.defineProperty(Job.prototype.annotations.clear, 'implementation', {
-        value: async function clearAnnotationsImplementation(
+        value: function clearAnnotationsImplementation(
             this: JobClass,
             flags: Parameters<typeof JobClass.prototype.annotations.clear>[0],
         ): ReturnType<typeof JobClass.prototype.annotations.clear> {

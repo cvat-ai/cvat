@@ -778,36 +778,8 @@ export default class Collection {
         delTrackKeyframesOnly?: boolean;
     }): void {
         const { startFrame, stopFrame, delTrackKeyframesOnly } = flags ?? {};
-        if (startFrame !== undefined && stopFrame !== undefined) {
-            // If only a range of annotations need to be cleared
-            for (let frame = startFrame; frame <= stopFrame; frame++) {
-                this.shapes[frame] = [];
-                this.tags[frame] = [];
-            }
-            const { tracks } = this;
-            tracks.forEach((track) => {
-                if (track.frame <= stopFrame) {
-                    if (delTrackKeyframesOnly) {
-                        for (const keyframe of Object.keys(track.shapes)) {
-                            if (+keyframe >= startFrame && +keyframe <= stopFrame) {
-                                delete track.shapes[keyframe];
-                                ((track as unknown as SkeletonTrack).elements || []).forEach((element) => {
-                                    if (keyframe in element.shapes) {
-                                        delete element.shapes[keyframe];
-                                        element.updated = Date.now();
-                                    }
-                                });
-                                track.updated = Date.now();
-                            }
-                        }
-                    } else if (track.frame >= startFrame) {
-                        const index = tracks.indexOf(track);
-                        if (index > -1) { tracks.splice(index, 1); }
-                    }
-                }
-            });
-        } else if (startFrame === undefined && stopFrame === undefined) {
-            // If all annotations need to be cleared
+
+        if (typeof startFrame === 'undefined' && typeof stopFrame === 'undefined') {
             this.shapes = {};
             this.tags = {};
             this.tracks = [];
@@ -815,9 +787,41 @@ export default class Collection {
 
             this.flush = true;
         } else {
-            // If inputs provided were wrong
-            throw Error('Could not remove the annotations, please provide both inputs or' +
-                ' leave the inputs below empty to remove all the annotations from this job');
+            const from = startFrame ?? 0;
+            const to = stopFrame ?? this.stopFrame;
+
+            // If only a range of annotations need to be cleared
+            for (let frame = from; frame <= to; frame++) {
+                this.shapes[frame] = [];
+                this.tags[frame] = [];
+            }
+
+            this.tracks.slice(0).forEach((track) => {
+                if (track.frame <= to) {
+                    if (delTrackKeyframesOnly) {
+                        for (const keyframe of Object.keys(track.shapes)) {
+                            if (+keyframe >= from && +keyframe <= to) {
+                                delete track.shapes[keyframe];
+                                if (track instanceof SkeletonTrack) {
+                                    track.elements.forEach((element) => {
+                                        if (keyframe in element.shapes) {
+                                            delete element.shapes[keyframe];
+                                            element.updated = Date.now();
+                                        }
+                                    });
+                                }
+                                track.updated = Date.now();
+                            }
+                        }
+
+                        if (Object.keys(track.shapes).length === 0) {
+                            this.tracks.splice(this.tracks.indexOf(track), 1);
+                        }
+                    } else if (track.frame >= from) {
+                        this.tracks.splice(this.tracks.indexOf(track), 1);
+                    }
+                }
+            });
         }
     }
 

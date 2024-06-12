@@ -50,8 +50,8 @@ function mapDispatchToProps(dispatch: any): DispatchToProps {
         showImportModal(jobInstance: Job): void {
             dispatch(importActions.openImportDatasetModal(jobInstance));
         },
-        removeAnnotations(startFrame: number, endFrame: number, delTrackKeyframesOnly: boolean) {
-            dispatch(removeAnnotationsAsyncAction(startFrame, endFrame, delTrackKeyframesOnly));
+        removeAnnotations(startFrame: number, stopFrame: number, delTrackKeyframesOnly: boolean) {
+            dispatch(removeAnnotationsAsyncAction(startFrame, stopFrame, delTrackKeyframesOnly));
         },
         setForceExitAnnotationFlag(forceExit: boolean): void {
             dispatch(setForceExitAnnotationFlagAction(forceExit));
