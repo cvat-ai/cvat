@@ -16,6 +16,36 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 <!-- scriv-insert-here -->
 
+<a id='changelog-2.14.3'></a>
+## \[2.14.3\] - 2024-06-13
+
+### Changed
+
+- Increased server healthcheck timeout 5 -> 15 seconds
+  (<https://github.com/cvat-ai/cvat/pull/7993>)
+
+### Fixed
+
+- Cannot read properties of null (reading 'draw') happens when use shortcut N in a task where first label has type "tag"
+  (<https://github.com/cvat-ai/cvat/pull/7997>)
+
+- When use route `/auth/login-with-token/<token>` without `next` query parameter
+the page reloads infinitely (<https://github.com/cvat-ai/cvat/pull/7999>)
+
+- Fixed kvrocks port naming for istio
+  (<https://github.com/cvat-ai/cvat/pull/8010>)
+
+- Exception: State cannot be updated during editing, need to finish current editing first
+  (<https://github.com/cvat-ai/cvat/pull/8019>)
+
+### Security
+
+- Mitigated a CSRF vulnerability in backup and export-related endpoints
+  (<https://github.com/cvat-ai/cvat/security/advisories/GHSA-jpf9-646h-4px7>)
+
+- Fixed an SSRF vulnerability with custom cloud storage endpoints
+  (<https://github.com/cvat-ai/cvat/security/advisories/GHSA-q684-4jjh-83g6>)
+
 <a id='changelog-2.14.2'></a>
 ## \[2.14.2\] - 2024-06-07
 
