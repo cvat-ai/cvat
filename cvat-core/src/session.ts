@@ -741,11 +741,13 @@ export class Task extends Session {
 
         data.progress = {
             completedJobs: initialData.progress?.completed || 0,
+            publishedJobs: initialData.progress?.published || 0,
             totalJobs: initialData.progress?.count || 0,
             validationJobs: initialData.progress?.validation || 0,
             annotationJobs:
                 (initialData.progress?.count || 0) -
                 (initialData.progress?.validation || 0) -
+                (initialData.progress?.published || 0) -
                 (initialData.progress?.completed || 0),
         };
 

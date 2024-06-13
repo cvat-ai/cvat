@@ -171,7 +171,8 @@ class TaskItemComponent extends React.PureComponent<TaskItemProps & RouteCompone
         }
         // Count number of jobs and performed jobs
         const numOfJobs = taskInstance.progress.totalJobs;
-        const numOfCompleted = taskInstance.progress.completedJobs;
+        const numOfCompleted = taskInstance.progress.completedJobs + taskInstance.progress.publishedJobs;
+        const numOfPublished = taskInstance.progress.publishedJobs;
         const numOfValidation = taskInstance.progress.validationJobs;
         const numOfAnnotation = taskInstance.progress.annotationJobs;
 
@@ -188,7 +189,11 @@ class TaskItemComponent extends React.PureComponent<TaskItemProps & RouteCompone
                                     {`\u2022 ${numOfCompleted} done `}
                                 </Text>
                             )}
-
+                            { numOfPublished > 0 && (
+                                <Text strong className='cvat-task-published-progress'>
+                                    {`(${numOfPublished} published) `}
+                                </Text>
+                            )}
                             { numOfValidation > 0 && (
                                 <Text strong className='cvat-task-validation-progress'>
                                     {`\u2022 ${numOfValidation} on review `}

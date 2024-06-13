@@ -154,6 +154,10 @@
     background: $completed-progress-color !important;
 }
 
+.cvat-task-published-progress {
+    color: $published-progress-color;
+}
+
 .cvat-task-validation-progress {
     color: $validation-progress-color;
 }

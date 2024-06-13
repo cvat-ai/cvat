@@ -101,6 +101,7 @@ export interface SerializedTask {
     jobs: {
         count: number;
         completed: number;
+        published: number;
         url: string;
         validation: number;
     };
