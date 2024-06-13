@@ -10,7 +10,7 @@ import { AuthActionTypes } from 'actions/auth-actions';
 import { BoundariesActionTypes } from 'actions/boundaries-actions';
 import { Canvas, CanvasMode } from 'cvat-canvas-wrapper';
 import { Canvas3d } from 'cvat-canvas3d-wrapper';
-import { DimensionType, JobStage } from 'cvat-core-wrapper';
+import { DimensionType, JobStage, LabelType } from 'cvat-core-wrapper';
 import { clamp } from 'utils/math';
 
 import {
@@ -170,8 +170,16 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
             const defaultLabel = job.labels.length ? job.labels[0] : null;
             const isReview = job.stage === JobStage.VALIDATION;
             let workspaceSelected = null;
-            let activeShapeType = defaultLabel && defaultLabel.type !== 'any' ?
-                defaultLabel.type : ShapeType.RECTANGLE;
+            let activeObjectType;
+            let activeShapeType;
+            if (defaultLabel?.type === LabelType.TAG) {
+                activeObjectType = ObjectType.TAG;
+            } else {
+                activeShapeType = defaultLabel && defaultLabel.type !== 'any' ?
+                    defaultLabel.type : ShapeType.RECTANGLE;
+                activeObjectType = job.mode === 'interpolation' ? ObjectType.TRACK : ObjectType.SHAPE;
+            }
+
             if (job.dimension === DimensionType.DIMENSION_2D) {
                 if (queryParameters.initialWorkspace !== Workspace.STANDARD3D) {
                     workspaceSelected = queryParameters.initialWorkspace;
@@ -225,7 +233,7 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                 drawing: {
                     ...state.drawing,
                     activeLabelID: defaultLabel ? defaultLabel.id : null,
-                    activeObjectType: job.mode === 'interpolation' ? ObjectType.TRACK : ObjectType.SHAPE,
+                    activeObjectType,
                     activeShapeType,
                 },
                 canvas: {
