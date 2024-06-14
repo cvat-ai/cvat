@@ -57,19 +57,21 @@ function showSubmittedInfo(): void {
 }
 
 function makeMessage(label: Label, labelType: LabelType, pointsCount: number): JSX.Element {
-    let message = '';
+    let readableShape = '';
     if (labelType === LabelType.POINTS) {
-        message = `${pointsCount === 1 ? 'one point' : `${pointsCount} points`}`;
+        readableShape = pointsCount === 1 ? 'one point' : `${pointsCount} points`;
+    } else if (labelType === LabelType.ELLIPSE) {
+        readableShape = 'an ellipse';
     } else {
-        message = `${labelType === LabelType.ELLIPSE ? 'an ellipse' : `a ${labelType}`}`;
+        readableShape = `a ${labelType}`;
     }
 
     return (
         <>
             <Text>Annotate</Text>
-            <Text strong>{` ${(label as Label).name} `}</Text>
+            <Text strong>{` ${label.name} `}</Text>
             <Text>on the image, using</Text>
-            <Text strong>{` ${message} `}</Text>
+            <Text strong>{` ${readableShape} `}</Text>
         </>
     );
 }
