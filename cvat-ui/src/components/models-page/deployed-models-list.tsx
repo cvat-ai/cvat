@@ -34,14 +34,13 @@ export default function DeployedModelsListComponent(props: Props): JSX.Element {
     const detectors = useSelector((state: CombinedState) => state.models.detectors);
     const trackers = useSelector((state: CombinedState) => state.models.trackers);
     const reid = useSelector((state: CombinedState) => state.models.reid);
-    const classifiers = useSelector((state: CombinedState) => state.models.classifiers);
     const totalCount = useSelector((state: CombinedState) => state.models.totalCount);
 
     const dispatch = useDispatch();
     const { query } = props;
     const { page } = query;
     const models = setUpModelsList(
-        [...interactors, ...detectors, ...trackers, ...reid, ...classifiers],
+        [...interactors, ...detectors, ...trackers, ...reid],
         page,
     );
 

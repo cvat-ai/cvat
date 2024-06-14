@@ -40,7 +40,17 @@ export default class MLModel {
     }
 
     public get kind(): ModelKind {
+        // compatibility alias; TODO: remove this
+        if (this.serialized.kind === 'classifier') return ModelKind.DETECTOR;
         return this.serialized.kind;
+    }
+
+    public get displayKind(): string {
+        if (this.kind === ModelKind.DETECTOR) {
+            if (this.returnType === ModelReturnType.TAG) return 'classifier';
+            if (this.returnType === ModelReturnType.MASK) return 'segmenter';
+        }
+        return this.kind;
     }
 
     public get params(): ModelParams {
