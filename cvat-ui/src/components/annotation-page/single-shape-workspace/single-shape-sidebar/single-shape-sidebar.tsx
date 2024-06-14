@@ -26,6 +26,7 @@ import {
 import { ActionUnion, createAction } from 'utils/redux';
 import {
     rememberObject, changeFrameAsync, saveAnnotationsAsync, setNavigationType,
+    removeObjectAsync,
 } from 'actions/annotation-actions';
 import LabelSelector from 'components/label-selector/label-selector';
 import GlobalHotKeys from 'utils/mousetrap-react';
@@ -183,6 +184,7 @@ function SingleShapeSidebar(): JSX.Element {
         defaultPointsCount,
         navigationType,
         annotations,
+        activatedStateID,
     } = useSelector((_state: CombinedState) => ({
         isCanvasReady: _state.annotation.canvas.ready,
         jobInstance: _state.annotation.job.instance as Job,
@@ -193,6 +195,7 @@ function SingleShapeSidebar(): JSX.Element {
         defaultPointsCount: _state.annotation.job.queryParameters.defaultPointsCount,
         navigationType: _state.annotation.player.navigationType,
         annotations: _state.annotation.annotations.states,
+        activatedStateID: _state.annotation.annotations.activatedStateID,
     }), shallowEqual);
 
     const [state, dispatch] = useReducer(reducer, {
@@ -357,6 +360,7 @@ function SingleShapeSidebar(): JSX.Element {
 
     const subKeyMap = {
         CANCEL: keyMap.CANCEL,
+        DELETE_OBJECT: keyMap.DELETE_OBJECT,
         SWITCH_DRAW_MODE: keyMap.SWITCH_DRAW_MODE,
     };
 
@@ -369,6 +373,13 @@ function SingleShapeSidebar(): JSX.Element {
             event?.preventDefault();
             const canvas = store.getState().annotation.canvas.instance as Canvas;
             canvas.draw({ enabled: false });
+        },
+        DELETE_OBJECT: (event: KeyboardEvent | undefined) => {
+            event?.preventDefault();
+            const objectStateToRemove = annotations.find((_state) => _state.clientID === activatedStateID);
+            if (objectStateToRemove) {
+                appDispatch(removeObjectAsync(objectStateToRemove, event?.shiftKey || false));
+            }
         },
     };
 
@@ -400,18 +411,11 @@ function SingleShapeSidebar(): JSX.Element {
                         <Row justify='start' className='cvat-single-shape-annotation-sidebar-finish-frame-wrapper'>
                             <Col>
                                 {typeof state.nextFrame === 'number' ? (
-                                    <Button
-                                        size='large'
-                                        onClick={finishOnThisFrame}
-                                    >
+                                    <Button size='large' onClick={finishOnThisFrame}>
                                         Skip
                                     </Button>
                                 ) : (
-                                    <Button
-                                        size='large'
-                                        type='primary'
-                                        onClick={finishOnThisFrame}
-                                    >
+                                    <Button size='large' type='primary' onClick={finishOnThisFrame}>
                                         Submit Results
                                     </Button>
                                 )}
@@ -424,42 +428,63 @@ function SingleShapeSidebar(): JSX.Element {
                                 <ul>
                                     { typeof state.nextFrame === 'number' ? (
                                         <li>
-                                            <Text>Click</Text>
-                                            <Text strong>{' Skip '}</Text>
-                                            <Text>if there is nothing to annotate</Text>
+                                            <Text>
+                                                Click
+                                                <Text strong>{' Skip '}</Text>
+                                                if there is nothing to annotate
+                                            </Text>
                                         </li>
                                     ) : (
                                         <li>
-                                            <Text>Click</Text>
-                                            <Text strong>{' Submit Results '}</Text>
-                                            <Text>to finish the job</Text>
+                                            <Text>
+                                                Click
+                                                <Text strong>{' Submit Results '}</Text>
+                                                to finish the job
+                                            </Text>
                                         </li>
                                     )}
                                     <li>
-                                        <Text>Hold</Text>
-                                        <Text strong>{' [Alt] '}</Text>
-                                        <Text>button to avoid drawing on click</Text>
+                                        <Text>
+                                            Hold
+                                            <Text strong>{' [Alt] '}</Text>
+                                            button to avoid drag the image and avoid drawing
+                                        </Text>
                                     </li>
                                     <li>
-                                        <Text>Press</Text>
-                                        <Text strong>{` ${normalizedKeyMap.UNDO} `}</Text>
-                                        <Text>to undo a created object</Text>
+                                        <Text>
+                                            Press
+                                            <Text strong>{` ${normalizedKeyMap.UNDO} `}</Text>
+                                            to undo a created object
+                                        </Text>
                                     </li>
                                     { (!isPolylabel || !state.pointsCountIsPredefined || state.pointsCount > 1) && (
                                         <li>
-                                            <Text>Press</Text>
-                                            <Text strong>{` ${normalizedKeyMap.CANCEL} `}</Text>
-                                            <Text>to reset drawing process</Text>
+                                            <Text>
+                                                Press
+                                                <Text strong>{` ${normalizedKeyMap.CANCEL} `}</Text>
+                                                to reset drawing process
+                                            </Text>
                                         </li>
                                     ) }
 
                                     { (isPolylabel && (!state.pointsCountIsPredefined || state.pointsCount > 1)) && (
                                         <li>
-                                            <Text>Press</Text>
-                                            <Text strong>{` ${normalizedKeyMap.SWITCH_DRAW_MODE} `}</Text>
-                                            <Text>to finish drawing process</Text>
+                                            <Text>
+                                                Press
+                                                <Text strong>{` ${normalizedKeyMap.SWITCH_DRAW_MODE} `}</Text>
+                                                to finish drawing process
+                                            </Text>
                                         </li>
                                     ) }
+                                    { activatedStateID !== null && (
+                                        <li>
+                                            <Text>
+                                                Press
+                                                <Text strong>{` ${normalizedKeyMap.DELETE_OBJECT} `}</Text>
+                                                to delete current object
+                                            </Text>
+                                        </li>
+                                    )}
                                 </ul>
                             )}
                         />
