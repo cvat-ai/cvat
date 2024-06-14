@@ -317,7 +317,7 @@ class _DbTestBase(ApiTestBase):
     def _download_file(self, url, data, user, file_name):
         response = self._get_request_with_data(url, data, user)
         self.assertEqual(response.status_code, status.HTTP_202_ACCEPTED)
-        response = self._get_request_with_data(url, data, user)
+        response = self._get_request_with_data(url, {**data, "action": "download"}, user)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
 
         content = BytesIO(b"".join(response.streaming_content))
@@ -659,7 +659,6 @@ class TaskDumpUploadTest(_DbTestBase):
                     file_zip_name = osp.join(test_dir, f'{test_name}_{upload_type}.zip')
                     data = {
                         "format": dump_format_name,
-                        "action": "download",
                     }
                     self._download_file(url, data, self.admin, file_zip_name)
                     self.assertEqual(osp.exists(file_zip_name), True)
@@ -700,7 +699,6 @@ class TaskDumpUploadTest(_DbTestBase):
 
                     data = {
                         "format": dump_format_name,
-                        "action": "download",
                     }
                     self._download_file(url, data, self.admin, file_zip_name)
                     self.assertEqual(osp.exists(file_zip_name), True)
@@ -732,7 +730,6 @@ class TaskDumpUploadTest(_DbTestBase):
             file_zip_name = osp.join(test_dir, f'{test_name}.zip')
             data = {
                 "format": dump_format_name,
-                "action": "download",
             }
             self._download_file(url, data, self.admin, file_zip_name)
             self.assertEqual(osp.exists(file_zip_name), True)
@@ -756,7 +753,6 @@ class TaskDumpUploadTest(_DbTestBase):
 
             data = {
                 "format": dump_format_name,
-                "action": "download",
             }
             self._download_file(url, data, self.admin, file_zip_name)
             self.assertEqual(osp.exists(file_zip_name), True)
@@ -781,7 +777,6 @@ class TaskDumpUploadTest(_DbTestBase):
             file_zip_name = osp.join(test_dir, f'{test_name}.zip')
             data = {
                 "format": dump_format_name,
-                "action": "download",
             }
             self._download_file(url, data, self.admin, file_zip_name)
             self.assertEqual(osp.exists(file_zip_name), True)
@@ -817,7 +812,6 @@ class TaskDumpUploadTest(_DbTestBase):
                     file_zip_name = osp.join(test_dir, f'{test_name}.zip')
                     data = {
                         "format": dump_format_name,
-                        "action": "download",
                     }
                     self._download_file(url, data, self.admin, file_zip_name)
                     self.assertEqual(osp.exists(file_zip_name), True)
@@ -905,7 +899,6 @@ class TaskDumpUploadTest(_DbTestBase):
                     file_zip_name = osp.join(test_dir, f'empty_{dump_format_name}.zip')
                     data = {
                         "format": dump_format_name,
-                        "action": "download",
                     }
                     self._download_file(url, data, self.admin, file_zip_name)
                     self.assertEqual(osp.exists(file_zip_name), True)
@@ -983,7 +976,6 @@ class TaskDumpUploadTest(_DbTestBase):
                     file_zip_name = osp.join(test_dir, f'{test_name}_{dump_format_name}.zip')
                     data = {
                         "format": dump_format_name,
-                        "action": "download",
                     }
                     self._download_file(url, data, self.admin, file_zip_name)
                     self.assertEqual(osp.exists(file_zip_name), True)
@@ -1027,7 +1019,6 @@ class TaskDumpUploadTest(_DbTestBase):
 
                     data = {
                         "format": dump_format_name,
-                        "action": "download",
                     }
                     self._download_file(url, data, self.admin, file_zip_name)
                     self._check_downloaded_file(file_zip_name)
@@ -1100,7 +1091,6 @@ class TaskDumpUploadTest(_DbTestBase):
                         file_zip_name = osp.join(test_dir, f'{test_name}_{dump_format_name}.zip')
                         data = {
                             "format": dump_format_name,
-                            "action": "download",
                         }
                         self._download_file(url, data, self.admin, file_zip_name)
                         self._check_downloaded_file(file_zip_name)
@@ -1128,7 +1118,6 @@ class TaskDumpUploadTest(_DbTestBase):
         task_id = task["id"]
         data = {
             "format": "CVAT for video 1.1",
-            "action": "download",
         }
         annotation_name = "CVAT for video 1.1 polygon"
         self._create_annotations(task, annotation_name, "default")
@@ -1170,7 +1159,6 @@ class TaskDumpUploadTest(_DbTestBase):
                 url = self._generate_url_dump_tasks_annotations(task_id)
                 data = {
                     "format": dump_format_name,
-                    "action": "download",
                 }
                 with TestDir() as test_dir:
                     file_zip_name = osp.join(test_dir, f'{test_name}_{dump_format_name}.zip')
@@ -1207,7 +1195,6 @@ class TaskDumpUploadTest(_DbTestBase):
                 url = self._generate_url_dump_tasks_annotations(task_id)
                 data = {
                     "format": format_name,
-                    "action": "download",
                 }
                 with TestDir() as test_dir:
                     file_zip_name = osp.join(test_dir, f'{test_name}_{format_name}.zip')
@@ -1245,7 +1232,6 @@ class TaskDumpUploadTest(_DbTestBase):
                 url = self._generate_url_dump_tasks_annotations(task_id)
                 data = {
                     "format": dump_format_name,
-                    "action": "download",
                 }
                 with TestDir() as test_dir:
                     file_zip_name = osp.join(test_dir, f'{test_name}_{dump_format_name}.zip')

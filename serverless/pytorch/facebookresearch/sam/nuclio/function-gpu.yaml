@@ -10,7 +10,6 @@ metadata:
     version: 2
     type: interactor
     spec:
-    framework: pytorch
     min_pos_points: 1
     min_neg_points: 0
     animated_gif: https://raw.githubusercontent.com/cvat-ai/cvat/develop/site/content/en/images/hrnet_example.gif
