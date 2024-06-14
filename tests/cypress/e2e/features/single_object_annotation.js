@@ -60,14 +60,6 @@ context('Single object annotation mode', { scrollBehavior: false }, () => {
         });
     }
 
-    function submitJob() {
-        cy.intercept('PATCH', `/api/jobs/${jobID}/**`).as('submitJob');
-        cy.wait('@submitJob').its('response.statusCode').should('equal', 200);
-
-        cy.get('.cvat-single-shape-annotation-submit-success-modal').should('exist');
-        cy.get('.cvat-single-shape-annotation-submit-success-modal').within(() => { cy.contains('OK').click(); });
-    }
-
     function checkSingleShapeModeOpened() {
         cy.get('.cvat-workspace-selector').should('have.text', 'Single shape');
         cy.get('.cvat-canvas-controls-sidebar').should('not.exist');
@@ -91,11 +83,16 @@ context('Single object annotation mode', { scrollBehavior: false }, () => {
     function drawObject(creatorFunction) {
         checkSingleShapeModeOpened();
 
+        cy.intercept('PATCH', `/api/jobs/${jobID}/**`).as('submitJob');
         for (let frame = 0; frame < frameCount; frame++) {
             checkFrameNum(frame);
             creatorFunction();
         }
-        submitJob();
+
+        cy.wait('@submitJob').its('response.statusCode').should('equal', 200);
+
+        cy.get('.cvat-single-shape-annotation-submit-success-modal').should('exist');
+        cy.get('.cvat-single-shape-annotation-submit-success-modal').within(() => { cy.contains('OK').click(); });
     }
 
     function changeLabel(labelName) {
@@ -203,9 +200,9 @@ context('Single object annotation mode', { scrollBehavior: false }, () => {
             openJob({ defaultLabel: 'polygon_label', defaultPointsCount: 4 });
             checkSingleShapeModeOpened();
 
-            // Next
+            // Skip
             cy.get('.cvat-single-shape-annotation-sidebar-finish-frame-wrapper').within(() => {
-                cy.contains('Next').click();
+                cy.contains('Skip').click();
             });
             checkFrameNum(1);
 
