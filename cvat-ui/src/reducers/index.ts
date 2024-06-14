@@ -496,6 +496,7 @@ export interface NotificationsState {
         annotation: {
             saving: null | ErrorState;
             jobFetching: null | ErrorState;
+            jobUpdating: null | ErrorState;
             frameFetching: null | ErrorState;
             changingLabelColor: null | ErrorState;
             updating: null | ErrorState;

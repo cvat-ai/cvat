@@ -118,6 +118,7 @@ export enum AnnotationActionTypes {
     GET_JOB = 'GET_JOB',
     GET_JOB_SUCCESS = 'GET_JOB_SUCCESS',
     GET_JOB_FAILED = 'GET_JOB_FAILED',
+    UPDATE_CURRENT_JOB_FAILED = 'UPDATE_CURRENT_JOB_FAILED',
     CLOSE_JOB = 'CLOSE_JOB',
     CHANGE_FRAME = 'CHANGE_FRAME',
     CHANGE_FRAME_SUCCESS = 'CHANGE_FRAME_SUCCESS',
@@ -1021,34 +1022,24 @@ export function updateCurrentJobAsync(
         state?: JobState;
         stage?: JobStage;
     },
-    validationParameters?: {
-        // whether to run validation before switching the job to "completed" state.
-        enabled: boolean;
-        // whether to show not available validation message
-        displayNotAvailable: boolean;
-        // whether to prevent switching status if validation rejected
-        isRejectBlocking: boolean;
-    },
 ): ThunkAction {
     return async (dispatch: ThunkDispatch) => {
         const { jobInstance } = receiveAnnotationsParameters();
         const { state, stage } = jobFieldsToUpdate;
-        const { enabled, displayNotAvailable, isRejectBlocking } = validationParameters ?? {};
 
-        if (enabled) {
-            // todo: run async validation
+        if (stage) jobInstance.stage = stage;
+        if (state) jobInstance.state = state;
+
+        try {
+            await jobInstance.save();
+        } catch (error: unknown) {
+            dispatch({
+                type: AnnotationActionTypes.UPDATE_CURRENT_JOB_FAILED,
+                payload: { error },
+            });
+
+            throw error;
         }
-
-        if (stage) {
-            jobInstance.stage = stage;
-        }
-
-        if (state) {
-            jobInstance.state = state;
-        }
-
-        // TODO: Add and show error notification
-        await jobInstance.save();
     };
 }
 
