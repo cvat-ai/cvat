@@ -26,8 +26,7 @@ import {
 import { ActionUnion, createAction } from 'utils/redux';
 import {
     rememberObject, changeFrameAsync, saveAnnotationsAsync, setNavigationType,
-    removeObjectAsync,
-    updateCurrentJobAsync,
+    removeObjectAsync, updateCurrentJobAsync,
 } from 'actions/annotation-actions';
 import LabelSelector from 'components/label-selector/label-selector';
 import GlobalHotKeys from 'utils/mousetrap-react';
@@ -259,10 +258,6 @@ function SingleShapeSidebar(): JSX.Element {
             const patchJob = (): void => {
                 appDispatch(updateCurrentJobAsync({
                     state: JobState.COMPLETED,
-                }, {
-                    enabled: true,
-                    displayNotAvailable: true,
-                    isRejectBlocking: true,
                 })).then(showSubmittedInfo).finally(() => {
                     savingRef.current = false;
                 });
@@ -297,12 +292,7 @@ function SingleShapeSidebar(): JSX.Element {
     }, []);
 
     useEffect(() => {
-        getNextFrame().then((_frame: number | null) => {
-            dispatch({
-                type: ReducerActionType.SET_NEXT_FRAME,
-                payload: { nextFrame: _frame },
-            });
-        });
+        getNextFrame().then(reducerActions.setNextFrame);
     }, [getNextFrame]);
 
     useEffect(() => {

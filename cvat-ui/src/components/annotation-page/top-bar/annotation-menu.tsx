@@ -151,8 +151,8 @@ function AnnotationMenuComponent(): JSX.Element {
         key: Actions.REMOVE_ANNOTATIONS,
         label: 'Remove annotations',
         onClick: () => {
-            let removeFrom: number | null = null;
-            let removeUpTo: number | null = null;
+            let removeFrom: number | undefined;
+            let removeUpTo: number | undefined;
             let removeOnlyKeyframes = false;
             Modal.confirm({
                 title: 'Remove Annotations',
