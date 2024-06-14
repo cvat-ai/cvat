@@ -4,6 +4,13 @@
 
 /// <reference types="cypress" />
 
+/*
+    TODO: Add new test cases
+    - After drawing with disabled "autoNext", user should be able to activate and drag/resize object
+    - User also should be able to remove activated object with shortcut
+    - After removing an object, drawing should start automatically
+*/
+
 context('Single object annotation mode', { scrollBehavior: false }, () => {
     const taskName = 'Single object annotation mode';
     const serverFiles = ['images/image_1.jpg', 'images/image_2.jpg', 'images/image_3.jpg'];
