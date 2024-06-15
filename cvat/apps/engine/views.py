@@ -2099,6 +2099,7 @@ class AIAudioAnnotationViewSet(viewsets.ModelViewSet):
     def request_ai_annotation(self, request):
         try:
             job_id = request.data.get('jobId')
+            lang = request.data.get('lang')
             authHeader = request.headers.get('Authorization')
 
             # Find labels of a particular job
@@ -2116,7 +2117,10 @@ class AIAudioAnnotationViewSet(viewsets.ModelViewSet):
             job.save()
 
             # Iterate over segments and save to the model
-            requests.post("http://35.208.178.37:8000/transcript", json={ "jobId" : job_id, "authToken" : authHeader, "background_task_id" : background_task_id})
+            ai_annotation_host = os.getenv('AI_ANNOTATION_HOST', '35.208.178.37')
+            ai_annotation_port = int(os.getenv('AI_ANNOTATION_PORT', "8000"))
+            url = f"http://{ai_annotation_host}:{ai_annotation_port}/transcript"
+            r = requests.post(url, json={ "jobId" : job_id, "lang" : lang, "authToken" : authHeader, "background_task_id" : background_task_id})
 
             return Response({'success': True}, status=status.HTTP_200_OK)
 

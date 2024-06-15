@@ -10,6 +10,7 @@ import io
 import itertools
 import struct
 from enum import IntEnum
+import chardet
 from abc import ABC, abstractmethod
 from contextlib import closing
 from typing import Iterable
@@ -516,6 +517,15 @@ class AudioReader(IMediaReader):
 
         return total_frame
 
+    def get_file_encoding(self, file_path):
+
+        with open(file_path, 'rb') as f:
+            rawdata = f.read(1024)
+        result = chardet.detect(rawdata)
+        encoding = result['encoding']
+
+        return encoding
+
     def __iter__(self):
         with self._get_av_container() as container:
             stream = container.streams.audio[0]
@@ -534,7 +544,12 @@ class AudioReader(IMediaReader):
     def _get_av_container(self):
         if isinstance(self._source_path[0], io.BytesIO):
             self._source_path[0].seek(0) # required for re-reading
-        return av.open(self._source_path[0])
+
+        encoding = self.get_file_encoding(self._source_path[0])
+        if encoding:
+            return av.open(self._source_path[0], metadata_encoding = encoding)
+        else:
+            return av.open(self._source_path[0])
 
     def _get_duration(self):
         with self._get_av_container() as container:

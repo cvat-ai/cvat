@@ -927,7 +927,7 @@ def _create_thread(
         if not hasattr(update_progress, 'call_counter'):
             update_progress.call_counter = 0
 
-        status_message = 'CVAT is preparing data chunks'
+        status_message = 'Audino is preparing data chunks'
         if not progress:
             status_message = '{} {}'.format(status_message, progress_animation[update_progress.call_counter])
         job.meta['status'] = status_message
@@ -970,7 +970,10 @@ def _create_thread(
         slogger.glob.debug("ENCODING")
         slogger.glob.debug(encoding)
         # Open the audio file
-        container = av.open(file_path)
+        if encoding:
+            container = av.open(file_path, metadata_encoding=encoding)
+        else:
+            container = av.open(file_path)
 
         # Get the first audio stream
         audio_stream = next((stream for stream in container.streams if stream.codec.type == 'audio'), None)
@@ -1000,6 +1003,7 @@ def _create_thread(
 
         segment_duration = db_task.segment_duration
         db_task.data.audio_total_duration = get_audio_duration(details['source_path'][0])
+        # db_task.data.audio_total_duration = 720000 #get_audio_duration(details['source_path'][0])
         total_audio_frames = extractor.get_total_frames()
 
         slogger.glob.debug("TOTAL AUDIO DURATION")

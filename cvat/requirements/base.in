@@ -54,3 +54,4 @@ rules>=3.3
 Shapely==1.7.1
 tensorflow==2.11.1 # Optional requirement of Datumaro. Use tensorflow-macos==2.8.0 for Mac M1
 soundfile==0.12.1
+chardet==5.2.0
