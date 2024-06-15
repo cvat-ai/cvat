@@ -712,7 +712,7 @@ class JobDataGetter(DataChunkGetter):
             raise ValidationError("The frame number doesn't belong to the job")
 
     def __call__(self, request, start, stop, db_data):
-        if self.type == 'chunk' and self.job.segment.type == SegmentType.SPECIFIC_FRAMES:
+        if self.type == 'chunk' and self.job.segment.type == SegmentType.SPECIFIC_FRAMES and self.job.segment.task.data.compressed_chunk_type != 'audio':
             frame_provider = FrameProvider(db_data, self.dimension)
 
             start_chunk = frame_provider.get_chunk_number(start)
@@ -1945,6 +1945,7 @@ class JobViewSet(viewsets.GenericViewSet, mixins.ListModelMixin, mixins.CreateMo
         data_start_frame = db_data.start_frame + start_frame * frame_step
         data_stop_frame = min(db_data.stop_frame, db_data.start_frame + stop_frame * frame_step)
         frame_set = db_job.segment.frame_set
+        segment_size = db_job.segment.task.segment_size
 
         if request.method == 'PATCH':
             serializer = DataMetaWriteSerializer(instance=db_data, data=request.data)
@@ -1986,6 +1987,7 @@ class JobViewSet(viewsets.GenericViewSet, mixins.ListModelMixin, mixins.CreateMo
         db_data.stop_frame = data_stop_frame
         db_data.size = len(frame_set)
         db_data.included_frames = db_job.segment.frames or None
+        db_data.segment_size = segment_size
 
         frame_meta = [{
             'width': item.width,

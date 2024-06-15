@@ -24,6 +24,8 @@ class AnnotationConflictType(str, Enum):
     MISMATCHING_ATTRIBUTES = "mismatching_attributes"
     MISMATCHING_GROUPS = "mismatching_groups"
     COVERED_ANNOTATION = "covered_annotation"
+    MISMATCHING_EXTRA_PARAMETERS = "mismatching_extra_parameters"
+    MISMATCHING_TRANSCRIPT = "mismatching_transcript"
 
     def __str__(self) -> str:
         return self.value
@@ -134,6 +136,8 @@ class AnnotationConflict(models.Model):
     frame = models.PositiveIntegerField()
     type = models.CharField(max_length=32, choices=AnnotationConflictType.choices())
     severity = models.CharField(max_length=32, choices=AnnotationConflictSeverity.choices())
+    word_error_rate = models.IntegerField(default=0, null=True)
+    character_error_rate = models.IntegerField(default=0, null=True)
 
     annotation_ids: Sequence[AnnotationId]
 
