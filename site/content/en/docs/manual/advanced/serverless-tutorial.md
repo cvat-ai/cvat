@@ -440,7 +440,6 @@ metadata:
   annotations:
     name: RetinaNet R101
     type: detector
-    framework: pytorch
     spec: |
       [
         { "id": 1, "name": "person" },

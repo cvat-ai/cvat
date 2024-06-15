@@ -7,7 +7,6 @@ metadata:
   annotations:
     name: Mask RCNN
     type: detector
-    framework: openvino
     spec: |
       [
         { "id": 1, "name": "person", "type": "mask" },
