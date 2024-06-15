@@ -11,7 +11,6 @@ import uuid
 import os
 import json
 import zipfile
-import librosa
 from pydub import AudioSegment
 from scipy.io import wavfile
 import numpy as np
@@ -896,7 +895,7 @@ def jobChunkPathGetter(db_data, start, stop, task_dimension, data_quality, data_
 def chunk_annotation_audio(concat_array, output_folder, annotations):
     # Convert NumPy array to AudioSegment
     sr = 44100 # sampling rate
-    audio_segment = AudioSegment(concat_array.tobytes(), frame_rate=sr, channels=1, sample_width=2)
+    audio_segment = AudioSegment(concat_array.tobytes(), frame_rate=sr, channels=1, sample_width=4)
 
     try:
         y = audio_segment.get_array_of_samples()

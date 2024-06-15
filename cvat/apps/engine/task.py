@@ -121,7 +121,7 @@ def _get_task_segment_data(
     slogger.glob.debug(segment_duration)
     if segment_duration is not None:
         # Total audio duration in milliseconds
-        audio_total_duration = (db_task.data.audio_total_duration)
+        audio_total_duration = (db_task.audio_total_duration)
 
         if audio_total_duration == 0:
             return SegmentsParams(iter([]), 0, 0)
@@ -184,7 +184,8 @@ def _get_task_segment_data(
             # Otherwise a task contains an extra segment
             segment_step = sys.maxsize
 
-        overlap = 5 if db_task.mode == 'interpolation' else 0
+        # overlap = 5 if db_task.mode == 'interpolation' else 0
+        overlap = 0
         if db_task.overlap is not None:
             overlap = min(db_task.overlap, segment_size  // 2)
 
@@ -997,30 +998,29 @@ def _create_thread(
         return duration_milliseconds
 
 
-    db_task.data.audio_total_duration = None
+    db_task.audio_total_duration = None
 
     if MEDIA_TYPE == "audio":
 
         segment_duration = db_task.segment_duration
-        db_task.data.audio_total_duration = get_audio_duration(details['source_path'][0])
-        # db_task.data.audio_total_duration = 720000 #get_audio_duration(details['source_path'][0])
+        db_task.audio_total_duration = get_audio_duration(details['source_path'][0])
         total_audio_frames = extractor.get_total_frames()
 
         slogger.glob.debug("TOTAL AUDIO DURATION")
-        slogger.glob.debug(db_task.data.audio_total_duration)
+        slogger.glob.debug(db_task.audio_total_duration)
 
-        num_frames_per_millisecond = total_audio_frames / db_task.data.audio_total_duration
+        num_frames_per_millisecond = total_audio_frames / db_task.audio_total_duration
 
         if segment_duration == 0:
-            segment_duration = db_task.data.audio_total_duration
+            segment_duration = db_task.audio_total_duration
             # db_task.segment_size = 0
-            # db_data.chunk_size = db_task.data.audio_total_duration*num_frames_per_millisecond
+            # db_data.chunk_size = db_task.audio_total_duration*num_frames_per_millisecond
         # else:
 
         num_frames_per_segment_duration = num_frames_per_millisecond*segment_duration
         db_task.segment_size = int(round(num_frames_per_segment_duration))
 
-        num_segments = max(1, int(math.ceil(db_task.data.audio_total_duration / segment_duration)))
+        num_segments = max(1, int(math.ceil(db_task.audio_total_duration / segment_duration)))
 
         slogger.glob.debug("Segment Size Before")
         slogger.glob.debug(db_task.segment_size)
@@ -1035,7 +1035,7 @@ def _create_thread(
         slogger.glob.debug(total_audio_frames)
 
         slogger.glob.debug("Audio Duration")
-        slogger.glob.debug(db_task.data.audio_total_duration)
+        slogger.glob.debug(db_task.audio_total_duration)
 
         # Default chunk size = entire frames
         db_data.chunk_size = db_task.segment_size #db_task.data.size

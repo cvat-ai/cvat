@@ -635,6 +635,7 @@ class JobWriteSerializer(WriteOnceMixin, serializers.ModelSerializer):
 
             size = task.data.size
             valid_frame_ids = task.data.get_valid_frame_indices()
+            segment_size = task.segment_size
 
             frame_selection_method = validated_data.pop("frame_selection_method", None)
             if frame_selection_method == models.JobFrameSelectionMethod.RANDOM_UNIFORM:
@@ -645,15 +646,36 @@ class JobWriteSerializer(WriteOnceMixin, serializers.ModelSerializer):
                         f"the number of the task frames ({size})"
                     )
 
-                seed = validated_data.pop("seed", None)
+                num_segments = size // segment_size
+                jobs_frame_list = []
+                for i in range(num_segments):
+                    start = i * segment_size
+                    end  = (i+1) * segment_size - 1
+                    array = [j for j in range(start,end+1)]
+                    jobs_frame_list.append(array)
+
+                #  if there's a remainder, create the  last array
+                if size % segment_size != 0:
+                    start = num_segments * segment_size
+                    end  = size - 1
+                    array = [j for j in range(start,end+1)]
+                    jobs_frame_list.append(array)
+
+                #Random select from the list
+                import math, random
+                random_jobs_no = math.ceil(frame_count / segment_size)
+                selected_jobs_frames = random.sample(jobs_frame_list, random_jobs_no)
+                frames = sorted([item for sublist in selected_jobs_frames for item in sublist])
+
+                # seed = validated_data.pop("seed", None)
 
                 # The RNG backend must not change to yield reproducible results,
                 # so here we specify it explicitly
-                from numpy import random
-                rng = random.Generator(random.MT19937(seed=seed))
-                frames = rng.choice(
-                    list(valid_frame_ids), size=frame_count, shuffle=False, replace=False
-                ).tolist()
+                # from numpy import random
+                # rng = random.Generator(random.MT19937(seed=seed))
+                # frames = rng.choice(
+                #     list(valid_frame_ids), size=frame_count, shuffle=False, replace=False
+                # ).tolist()
             elif frame_selection_method == models.JobFrameSelectionMethod.MANUAL:
                 frames = validated_data.pop("frames")
 

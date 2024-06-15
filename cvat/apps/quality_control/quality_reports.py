@@ -107,6 +107,8 @@ class AnnotationConflict(_Serializable):
     frame_id: int
     type: AnnotationConflictType
     annotation_ids: List[AnnotationId]
+    word_error_rate: Optional[float] = None
+    character_error_rate: Optional[float] = None
 
     @property
     def severity(self) -> AnnotationConflictSeverity:
@@ -114,6 +116,7 @@ class AnnotationConflict(_Serializable):
             AnnotationConflictType.MISSING_ANNOTATION,
             AnnotationConflictType.EXTRA_ANNOTATION,
             AnnotationConflictType.MISMATCHING_LABEL,
+            AnnotationConflictType.MISMATCHING_TRANSCRIPT,
         ]:
             severity = AnnotationConflictSeverity.ERROR
         elif self.type in [
@@ -122,6 +125,7 @@ class AnnotationConflict(_Serializable):
             AnnotationConflictType.MISMATCHING_DIRECTION,
             AnnotationConflictType.MISMATCHING_GROUPS,
             AnnotationConflictType.COVERED_ANNOTATION,
+            AnnotationConflictType.MISMATCHING_EXTRA_PARAMETERS,
         ]:
             severity = AnnotationConflictSeverity.WARNING
         else:
@@ -144,6 +148,8 @@ class AnnotationConflict(_Serializable):
             frame_id=d["frame_id"],
             type=AnnotationConflictType(d["type"]),
             annotation_ids=list(AnnotationId.from_dict(v) for v in d["annotation_ids"]),
+            word_error_rate=d["word_error_rate"],
+            character_error_rate =d["character_error_rate"],
         )
 
 
@@ -160,6 +166,15 @@ class ComparisonParameters(_Serializable):
 
     compare_attributes: bool = True
     "Enables or disables attribute checks"
+
+    compare_extra_parameters: bool = True
+    "Enables or disables extra parameters checks for audio data"
+
+    wer_threshold: float = 0.2
+    "Used for distinction between matched and unmatched transcript at word level"
+
+    cer_threshold: float = 0.2
+    "Used for distinction between matched and unmatched transcript at character level"
 
     ignored_attributes: List[str] = []
 
@@ -2077,6 +2092,572 @@ class DatasetComparator:
         )
 
 
+class AudioDatasetComparator:
+    DEFAULT_SETTINGS = ComparisonParameters()
+
+    def __init__(
+        self,
+        ds_data_provider: JobDataProvider,
+        gt_data_provider: JobDataProvider,
+        offset,
+        job_duration,
+        *,
+        settings: Optional[ComparisonParameters] = None,
+    ) -> None:
+        if settings is None:
+            settings = self.DEFAULT_SETTINGS
+        self.settings = settings
+
+        self._ds_data_provider = ds_data_provider
+        self._gt_data_provider = gt_data_provider
+        self._offset = offset
+        self._job_duration = job_duration
+        self._job_id = self._ds_data_provider.job_id
+
+        self._frame_results: Dict[int, ComparisonReportFrameSummary] = {}
+        self.included_frames = gt_data_provider.job_data._db_job.segment.frame_set
+
+        self.iou_threshold = settings.iou_threshold
+        self.wer_threshold = settings.wer_threshold
+        self.cer_threshold = settings.cer_threshold
+
+        self.ignored_attrs = set(settings.ignored_attributes) | {
+            "track_id",  # changes from task to task, can't be defined manually with the same name
+            "keyframe",  # indicates the way annotation obtained, meaningless to compare
+            "z_order",  # changes from frame to frame, compared by other means
+            "group",  # changes from job to job, compared by other means
+            "rotation",  # handled by other means
+            "outside",  # handled by other means
+        }
+
+    def _dm_ann_to_ann_id(self, ann):
+        if ann in self._ds_data_provider.job_annotation.data['shapes']:
+            source_data_provider = self._ds_data_provider
+        elif ann in self._gt_data_provider.job_annotation.data['shapes']:
+            source_data_provider = self._gt_data_provider
+        else:
+            assert False
+
+        source_ann_id = ann['id']
+        ann_type = AnnotationType.SHAPE
+        shape_type = ann['type']
+
+        return AnnotationId(
+            obj_id=source_ann_id, type=ann_type, shape_type=shape_type, job_id=source_data_provider.job_id
+        )
+
+    def _find_audio_gt_conflicts(self):
+        start = self._ds_data_provider.job_data.start
+        end = self._ds_data_provider.job_data.stop - 1
+        gt_frame_list =  self._gt_data_provider.job_data._db_job.segment.frames
+
+        # Check if any frame in gt_data_frame_array is in ds_data_frame_array
+        if not (start in gt_frame_list or end in gt_frame_list):
+            return # we need to compare only intersecting jobs
+
+        ds_annotations = self._ds_data_provider.job_annotation.data['shapes']
+        gt_annotations = self._gt_data_provider.job_annotation.data['shapes']
+
+        self._process_job(ds_annotations, gt_annotations)
+
+    def _process_job(self, ds_annotations, gt_annotations):
+        job_id = self._job_id
+        job_results = self.match_annotations(ds_annotations, gt_annotations)
+        self._frame_results.setdefault(job_id, {})
+
+        self._generate_job_annotation_conflicts(
+            job_results, gt_annotations, ds_annotations
+        )
+
+    def match_annotations(self, ds_annotations, gt_annotations):
+        """
+        Match annotations between two datasets.
+        This method should compare annotations based on their start and end times.
+        """
+        def _interval_iou(interval1, interval2):
+            start1, end1 = interval1
+            start2, end2 = interval2
+
+            start2 += self._offset
+            end2 += self._offset
+
+            intersection = max(0, min(end1, end2) - max(start1, start2))
+            union = max(end1, end2) - min(start1, start2)
+            return intersection / union if union > 0 else 0
+
+        job_start_time = self._offset - 0.1
+        job_end_time = job_start_time + self._job_duration + 0.1
+
+        # Filter gt_annotations to include only those within the job's time bounds
+        gt_annotations = [
+            gt_ann for gt_ann in gt_annotations
+            if job_start_time <= gt_ann['points'][0] and gt_ann['points'][3] <= job_end_time
+        ]
+
+
+        matches = []
+        mismatches = []
+        gt_unmatched = gt_annotations.copy()
+        ds_unmatched = ds_annotations.copy()
+        pairwise_distances = {}
+
+        for gt_ann in gt_annotations:
+            matched = False
+            best_mismatch_pair = None
+            best_mismatch_iou = 0  # Initial best IoU for mismatches
+
+            for ds_ann in ds_annotations:
+                gt_interval = (gt_ann['points'][0], gt_ann['points'][3])
+                ds_interval = (ds_ann['points'][0], ds_ann['points'][3])
+                iou = _interval_iou(gt_interval, ds_interval)
+
+                if gt_ann['label_id'] == ds_ann['label_id']:
+                    if iou >= self.iou_threshold:
+                        matches.append((gt_ann, ds_ann))
+                        pairwise_distances[(id(gt_ann), id(ds_ann))] = iou
+                        if gt_ann in gt_unmatched:
+                            gt_unmatched.remove(gt_ann)
+                        if ds_ann in ds_unmatched:
+                            ds_unmatched.remove(ds_ann)
+                        matched = True
+                else:
+                    # Update best mismatch if this is the highest IoU seen so far
+                    if iou > best_mismatch_iou:
+                        best_mismatch_iou = iou
+                        best_mismatch_pair = (gt_ann, ds_ann)
+
+            # If no match was found and there is a best mismatch pair
+            if not matched and best_mismatch_pair is not None and best_mismatch_iou >= self.iou_threshold:
+                mismatches.append(best_mismatch_pair)
+                pairwise_distances[(id(best_mismatch_pair[0]), id(best_mismatch_pair[1]))] = best_mismatch_iou
+
+        return [matches, mismatches, gt_unmatched, ds_unmatched, pairwise_distances]
+
+    def match_attrs(self, ann_a, ann_b):  #ann_a -> gt, ann_b -> ds
+        a_attrs = ann_a['attributes']
+        b_attrs = ann_b['attributes']
+
+        matches = []
+        a_unmatched = a_attrs.copy()
+        b_unmatched = b_attrs.copy()
+
+        for a_attr in a_attrs:
+            for b_attr in b_attrs:
+                if a_attr['spec_id'] == b_attr['spec_id'] and a_attr['value'] == b_attr['value']:
+                    matches.append((a_attr, b_attr))
+                    if a_attr in a_unmatched:
+                        a_unmatched.remove(a_attr)
+                    if b_attr in b_unmatched:
+                        b_unmatched.remove(b_attr)
+                    break  # Once matched, move to the next a_attr
+
+        return matches, a_unmatched, b_unmatched
+
+    def match_extra_parameters(self, gt_ann, ds_ann):
+        parameters = ['Gender', 'Locale', 'Accent', 'Emotion', 'Age']
+        matches = []
+        mismatches = []
+        for param in parameters:
+            if gt_ann.get(param) == ds_ann.get(param):
+                matches.append(param)
+            else:
+                mismatches.append(param)
+
+        return matches, mismatches
+
+
+    def calculate_wer(self, gt_transcript, ds_transcript):
+        """
+        Calculate the Word Error Rate (WER) between a ground truth transcript and an annotated transcript.
+        """
+
+        gt_transcript = gt_transcript.lower()
+        ds_transcript = ds_transcript.lower()
+
+        gt_words = gt_transcript.split()
+        ds_words = ds_transcript.split()
+
+        if len(gt_words) == 0:
+            if len(ds_words) == 0:
+                return 0.0  # Both transcripts are empty
+            else:
+                return 1.0  # Ground truth transcript is empty but annotation transcript is not
+
+        d = np.zeros((len(gt_words) + 1, len(ds_words) + 1), dtype=int)
+
+        for i in range(len(gt_words) + 1):
+            d[i][0] = i
+        for j in range(len(ds_words) + 1):
+            d[0][j] = j
+
+        for i in range(1, len(gt_words) + 1):
+            for j in range(1, len(ds_words) + 1):
+                if gt_words[i - 1] == ds_words[j - 1]:
+                    d[i][j] = d[i - 1][j - 1]
+                else:
+                    d[i][j] = min(d[i - 1][j] + 1,  # deletion
+                                d[i][j - 1] + 1,  # insertion
+                                d[i - 1][j - 1] + 1)  # substitution
+
+        wer = d[len(gt_words)][len(ds_words)] / float(len(gt_words))
+        return wer
+
+    def calculate_cer(self, gt_transcript, ds_transcript):
+        """
+        Calculate the Character Error Rate (CER) between a ground truth transcript and an annotated transcript.
+        """
+
+        gt_transcript = gt_transcript.lower()
+        ds_transcript = ds_transcript.lower()
+
+        gt_chars = list(gt_transcript)
+        ds_chars = list(ds_transcript)
+
+        if len(gt_chars) == 0:
+            if len(ds_chars) == 0:
+                return 0.0  # Both transcripts are empty
+            else:
+                return 1.0  # Ground truth transcript is empty but annotation transcript is not
+
+        d = np.zeros((len(gt_chars) + 1, len(ds_chars) + 1), dtype=int)
+
+        for i in range(len(gt_chars) + 1):
+            d[i][0] = i
+        for j in range(len(ds_chars) + 1):
+            d[0][j] = j
+
+        for i in range(1, len(gt_chars) + 1):
+            for j in range(1, len(ds_chars) + 1):
+                if gt_chars[i - 1] == ds_chars[j - 1]:
+                    d[i][j] = d[i - 1][j - 1]
+                else:
+                    d[i][j] = min(d[i - 1][j] + 1,  # deletion
+                                  d[i][j - 1] + 1,  # insertion
+                                  d[i - 1][j - 1] + 1)  # substitution
+
+        cer = d[len(gt_chars)][len(ds_chars)] / float(len(gt_chars))
+        return cer
+
+
+    def _generate_job_annotation_conflicts(
+        self, job_results, gt_annotations, ds_annotations
+    ) -> List[AnnotationConflict]:
+        conflicts = []
+        job_id = self._job_id
+
+        matches, mismatches, gt_unmatched, ds_unmatched, pairwise_distances = job_results
+
+        for unmatched_ann in gt_unmatched:
+            conflicts.append(
+                AnnotationConflict(
+                    frame_id=job_id,
+                    type=AnnotationConflictType.MISSING_ANNOTATION,
+                    annotation_ids=[self._dm_ann_to_ann_id(unmatched_ann)],
+                )
+            )
+
+        for unmatched_ann in ds_unmatched:
+            conflicts.append(
+                AnnotationConflict(
+                    frame_id=job_id,
+                    type=AnnotationConflictType.EXTRA_ANNOTATION,
+                    annotation_ids=[self._dm_ann_to_ann_id(unmatched_ann)],
+                )
+            )
+
+        for gt_ann, ds_ann in mismatches:
+            conflicts.append(
+                AnnotationConflict(
+                    frame_id=job_id,
+                    type=AnnotationConflictType.MISMATCHING_LABEL,
+                    annotation_ids=[
+                        self._dm_ann_to_ann_id(gt_ann),
+                        self._dm_ann_to_ann_id(ds_ann)
+                    ],
+                )
+            )
+
+        for gt_ann, ds_ann in matches:
+            gt_transcript = gt_ann['transcript']
+            ds_transcript = ds_ann['transcript']
+            wer = self.calculate_wer(gt_transcript, ds_transcript)
+            cer = self.calculate_cer(gt_transcript, ds_transcript)
+            if wer > self.wer_threshold or cer > self.cer_threshold:
+                conflicts.append(
+                    AnnotationConflict(
+                        frame_id=job_id,
+                        type=AnnotationConflictType.MISMATCHING_TRANSCRIPT,
+                        annotation_ids=[
+                            self._dm_ann_to_ann_id(gt_ann),
+                            self._dm_ann_to_ann_id(ds_ann),
+                        ],
+                        word_error_rate=wer,
+                        character_error_rate=cer,
+                    )
+                )
+
+        if self.settings.compare_attributes:
+            for gt_ann, ds_ann in matches:
+                attribute_results = self.match_attrs(gt_ann, ds_ann)
+                if any(attribute_results[1:]):
+                    conflicts.append(
+                        AnnotationConflict(
+                            frame_id=job_id,
+                            type=AnnotationConflictType.MISMATCHING_ATTRIBUTES,
+                            annotation_ids=[
+                                self._dm_ann_to_ann_id(gt_ann),
+                                self._dm_ann_to_ann_id(ds_ann),
+                            ],
+                        )
+                    )
+
+        if self.settings.compare_extra_parameters:
+            for gt_ann, ds_ann in matches:
+                extra_parameter_results = self.match_extra_parameters(gt_ann, ds_ann)
+                if any(extra_parameter_results[1:]):
+                    conflicts.append(
+                        AnnotationConflict(
+                            frame_id=job_id,
+                            type=AnnotationConflictType.MISMATCHING_EXTRA_PARAMETERS,
+                            annotation_ids=[
+                                self._dm_ann_to_ann_id(gt_ann),
+                                self._dm_ann_to_ann_id(ds_ann),
+                            ],
+                        )
+                    )
+
+        valid_shapes_count = len(matches) + len(mismatches)
+        missing_shapes_count = len(gt_unmatched)
+        extra_shapes_count = len(ds_unmatched)
+        total_shapes_count = len(matches) + len(mismatches) + len(gt_unmatched) + len(ds_unmatched)
+        ds_shapes_count = len(matches) + len(mismatches) + len(ds_unmatched)
+        gt_shapes_count = len(matches) + len(mismatches) + len(gt_unmatched)
+
+        valid_labels_count = len(matches)
+        invalid_labels_count = len(mismatches)
+        total_labels_count = valid_labels_count + invalid_labels_count
+
+        # Get labels from project returns a queryset)
+        labels_queryset = self._ds_data_provider.job_data._db_task.project.get_labels()
+
+        # Convert queryset to a dictionary of labels
+        confusion_matrix_labels = {
+            label.id: label.name
+            for i, label in enumerate(labels_queryset)
+            if not label.parent
+        }
+        confusion_matrix_labels[None] = "unmatched"
+        confusion_matrix_labels_rmap = {k: i for i, k in enumerate(confusion_matrix_labels.keys())}
+        confusion_matrix_label_count = len(confusion_matrix_labels)
+        confusion_matrix = np.zeros(
+            (confusion_matrix_label_count, confusion_matrix_label_count), dtype=int
+        )
+        for gt_ann, ds_ann in itertools.chain(
+            # fully matched annotations - shape, label, attributes
+            matches,
+            mismatches,
+            zip(itertools.repeat(None), ds_unmatched),
+            zip(gt_unmatched, itertools.repeat(None)),
+        ):
+            ds_label_idx = confusion_matrix_labels_rmap[ds_ann["label_id"] if ds_ann else None]
+            gt_label_idx = confusion_matrix_labels_rmap[gt_ann["label_id"] if gt_ann else None]
+            confusion_matrix[ds_label_idx, gt_label_idx] += 1
+
+        matched_ann_counts = np.diag(confusion_matrix)
+        ds_ann_counts = np.sum(confusion_matrix, axis=1)
+        gt_ann_counts = np.sum(confusion_matrix, axis=0)
+        label_accuracies = _arr_div(
+            matched_ann_counts, ds_ann_counts + gt_ann_counts - matched_ann_counts
+        )
+        label_precisions = _arr_div(matched_ann_counts, ds_ann_counts)
+        label_recalls = _arr_div(matched_ann_counts, gt_ann_counts)
+
+        valid_annotations_count = np.sum(matched_ann_counts)
+        missing_annotations_count = np.sum(confusion_matrix[confusion_matrix_labels_rmap[None], :])
+        extra_annotations_count = np.sum(confusion_matrix[:, confusion_matrix_labels_rmap[None]])
+        total_annotations_count = np.sum(confusion_matrix)
+        ds_annotations_count = (
+            np.sum(ds_ann_counts) - ds_ann_counts[confusion_matrix_labels_rmap[None]]
+        )
+        gt_annotations_count = (
+            np.sum(gt_ann_counts) - gt_ann_counts[confusion_matrix_labels_rmap[None]]
+        )
+
+        self._frame_results[job_id] = ComparisonReportFrameSummary(
+            annotations=ComparisonReportAnnotationsSummary(
+                valid_count=valid_annotations_count,
+                missing_count=missing_annotations_count,
+                extra_count=extra_annotations_count,
+                total_count=total_annotations_count,
+                ds_count=ds_annotations_count,
+                gt_count=gt_annotations_count,
+                confusion_matrix=ConfusionMatrix(
+                    labels=list(confusion_matrix_labels.values()),
+                    rows=confusion_matrix,
+                    precision=label_precisions,
+                    recall=label_recalls,
+                    accuracy=label_accuracies,
+                ),
+            ),
+            annotation_components=ComparisonReportAnnotationComponentsSummary(
+                shape=ComparisonReportAnnotationShapeSummary(
+                    valid_count=valid_shapes_count,
+                    missing_count=missing_shapes_count,
+                    extra_count=extra_shapes_count,
+                    total_count=total_shapes_count,
+                    ds_count=ds_shapes_count,
+                    gt_count=gt_shapes_count,
+                    mean_iou=0.7,
+                ),
+                label=ComparisonReportAnnotationLabelSummary(
+                    valid_count=valid_labels_count,
+                    invalid_count=invalid_labels_count,
+                    total_count=total_labels_count,
+                ),
+            ),
+            conflicts=conflicts,
+        )
+
+        return conflicts
+
+
+    def generate_audio_report(self) -> ComparisonReport:
+        self._find_audio_gt_conflicts()
+
+        # accumulate stats
+        intersection_frames = []
+        conflicts = []
+        annotations = ComparisonReportAnnotationsSummary(
+            valid_count=0,
+            missing_count=0,
+            extra_count=0,
+            total_count=0,
+            ds_count=0,
+            gt_count=0,
+            confusion_matrix=None,
+        )
+        annotation_components = ComparisonReportAnnotationComponentsSummary(
+            shape=ComparisonReportAnnotationShapeSummary(
+                valid_count=0,
+                missing_count=0,
+                extra_count=0,
+                total_count=0,
+                ds_count=0,
+                gt_count=0,
+                mean_iou=0,
+            ),
+            label=ComparisonReportAnnotationLabelSummary(
+                valid_count=0,
+                invalid_count=0,
+                total_count=0,
+            ),
+        )
+        mean_ious = []
+        confusion_matrices = []
+
+        for job_id, job_result in self._frame_results.items():
+            intersection_frames.append(job_id)
+            conflicts += job_result.conflicts
+
+            if annotations is None:
+                annotations = deepcopy(job_result.annotations)
+            else:
+                annotations.accumulate(job_result.annotations)
+            confusion_matrices.append(job_result.annotations.confusion_matrix.rows)
+
+            if annotation_components is None:
+                annotation_components = deepcopy(job_result.annotation_components)
+            else:
+                annotation_components.accumulate(job_result.annotation_components)
+            mean_ious.append(job_result.annotation_components.shape.mean_iou)
+
+        # Get labels from project returns a queryset)
+        labels_queryset = self._ds_data_provider.job_data._db_task.project.get_labels()
+
+        # Convert queryset to a dictionary of labels
+        confusion_matrix_labels = {
+            label.id: label.name
+            for i, label in enumerate(labels_queryset)
+            if not label.parent
+        }
+        confusion_matrix_labels[None] = "unmatched"
+        confusion_matrix_labels_rmap = {k: i for i, k in enumerate(confusion_matrix_labels.keys())}
+        if confusion_matrices:
+            confusion_matrix = np.sum(confusion_matrices, axis=0)
+        else:
+            confusion_matrix = np.zeros(
+                (len(confusion_matrix_labels), len(confusion_matrix_labels)), dtype=int
+            )
+        matched_ann_counts = np.diag(confusion_matrix)
+        ds_ann_counts = np.sum(confusion_matrix, axis=1)
+        gt_ann_counts = np.sum(confusion_matrix, axis=0)
+        label_accuracies = _arr_div(
+            matched_ann_counts, ds_ann_counts + gt_ann_counts - matched_ann_counts
+        )
+        label_precisions = _arr_div(matched_ann_counts, ds_ann_counts)
+        label_recalls = _arr_div(matched_ann_counts, gt_ann_counts)
+
+        valid_annotations_count = np.sum(matched_ann_counts)
+        missing_annotations_count = np.sum(confusion_matrix[confusion_matrix_labels_rmap[None], :])
+        extra_annotations_count = np.sum(confusion_matrix[:, confusion_matrix_labels_rmap[None]])
+        total_annotations_count = np.sum(confusion_matrix)
+        ds_annotations_count = (
+            np.sum(ds_ann_counts) - ds_ann_counts[confusion_matrix_labels_rmap[None]]
+        )
+        gt_annotations_count = (
+            np.sum(gt_ann_counts) - gt_ann_counts[confusion_matrix_labels_rmap[None]]
+        )
+
+        return ComparisonReport(
+            parameters=self.settings,
+            comparison_summary=ComparisonReportComparisonSummary(
+                frame_share=(
+                    len(intersection_frames) / (len(self._ds_data_provider.job_data.rel_range) or 1)
+                ),
+                frames=intersection_frames,
+                conflict_count=len(conflicts),
+                warning_count=len(
+                    [c for c in conflicts if c.severity == AnnotationConflictSeverity.WARNING]
+                ),
+                error_count=len(
+                    [c for c in conflicts if c.severity == AnnotationConflictSeverity.ERROR]
+                ),
+                conflicts_by_type=Counter(c.type for c in conflicts),
+                annotations=ComparisonReportAnnotationsSummary(
+                    valid_count=valid_annotations_count,
+                    missing_count=missing_annotations_count,
+                    extra_count=extra_annotations_count,
+                    total_count=total_annotations_count,
+                    ds_count=ds_annotations_count,
+                    gt_count=gt_annotations_count,
+                    confusion_matrix=ConfusionMatrix(
+                        labels=list(confusion_matrix_labels.values()),
+                        rows=confusion_matrix,
+                        precision=label_precisions,
+                        recall=label_recalls,
+                        accuracy=label_accuracies,
+                    ),
+                ),
+                annotation_components=ComparisonReportAnnotationComponentsSummary(
+                    shape=ComparisonReportAnnotationShapeSummary(
+                        valid_count=annotation_components.shape.valid_count,
+                        missing_count=annotation_components.shape.missing_count,
+                        extra_count=annotation_components.shape.extra_count,
+                        total_count=annotation_components.shape.total_count,
+                        ds_count=annotation_components.shape.ds_count,
+                        gt_count=annotation_components.shape.gt_count,
+                        mean_iou=np.mean(mean_ious),
+                    ),
+                    label=ComparisonReportAnnotationLabelSummary(
+                        valid_count=annotation_components.label.valid_count,
+                        invalid_count=annotation_components.label.invalid_count,
+                        total_count=annotation_components.label.total_count,
+                    ),
+                ),
+            ),
+            frame_results=self._frame_results,
+        )
+
 class QualityReportUpdateManager:
     _QUEUE_JOB_PREFIX = "update-quality-metrics-task-"
     _RQ_CUSTOM_QUALITY_CHECK_JOB_TYPE = "custom_quality_check"
@@ -2277,6 +2858,7 @@ class QualityReportUpdateManager:
             gt_job_frames = gt_job_data_provider.job_data.get_included_frames()
 
             jobs: List[Job] = [j for j in job_queryset if j.type == JobType.ANNOTATION]
+            jobs = sorted(jobs, key=lambda job: job.id)
             job_data_providers = {
                 job.id: JobDataProvider(
                     job.id, queryset=job_queryset, included_frames=gt_job_frames
@@ -2286,14 +2868,31 @@ class QualityReportUpdateManager:
 
             quality_params = self._get_task_quality_params(task)
 
-        job_comparison_reports: Dict[int, ComparisonReport] = {}
-        for job in jobs:
-            job_data_provider = job_data_providers[job.id]
-            comparator = DatasetComparator(
-                job_data_provider, gt_job_data_provider, settings=quality_params
-            )
-            job_comparison_reports[job.id] = comparator.generate_report()
+        job_duration = ((task.data.chunk_size) * (task.audio_total_duration) / (task.data.stop_frame+1)) / 1000 # in seconds
 
+        job_comparison_reports: Dict[int, ComparisonReport] = {}
+        ind = 0 # index count for offset in intersecting jobs
+        for job in jobs:
+            job_id = job.id
+            job_data_provider = job_data_providers[job_id]
+            # comparator = DatasetComparator(
+            #     job_data_provider, gt_job_data_provider, settings=quality_params
+            # )
+            # job_comparison_reports[job.id] = comparator.generate_report()
+            offset = ind * job_duration # required only when jobs are intersecting
+
+            start = job_data_provider.job_data.start
+            end = job_data_provider.job_data.stop - 1
+            gt_frame_list = list(gt_job_frames)
+            if not (start in gt_frame_list or end in gt_frame_list):
+                offset = 0
+                ind -= 1
+
+            comparator = AudioDatasetComparator(
+                job_data_provider, gt_job_data_provider,offset, job_duration, settings=quality_params
+            )
+            job_comparison_reports[job_id] = comparator.generate_audio_report()
+            ind += 1
             # Release resources
             del job_data_provider.dm_dataset
 
@@ -2458,6 +3057,8 @@ class QualityReportUpdateManager:
                     type=conflict["type"],
                     frame=conflict["frame_id"],
                     severity=conflict["severity"],
+                    word_error_rate=conflict["word_error_rate"],
+                    character_error_rate=conflict["character_error_rate"],
                 )
                 db_conflicts.append(db_conflict)
 
