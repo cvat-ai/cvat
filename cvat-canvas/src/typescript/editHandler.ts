@@ -17,6 +17,7 @@ export interface EditHandler {
     configurate(configuration: Configuration): void;
     cancel(): void;
     enabled: boolean;
+    shapeType: string;
 }
 
 export class EditHandlerImpl implements EditHandler {
@@ -333,6 +334,7 @@ export class EditHandlerImpl implements EditHandler {
         this.canvas.off('mousedown.edit');
         this.canvas.off('mousemove.edit');
         this.autoborderHandler.autoborder(false);
+        this.isEditing = false;
 
         if (this.editedShape) {
             this.setupPoints(false);
@@ -360,6 +362,7 @@ export class EditHandlerImpl implements EditHandler {
             .clone().attr('stroke', this.outlinedBorders);
         this.setupPoints(true);
         this.startEdit();
+        this.isEditing = true;
         // draw points for this with selected and start editing till another point is clicked
         // click one of two parts to remove (in case of polygon only)
 
@@ -379,10 +382,7 @@ export class EditHandlerImpl implements EditHandler {
                 const { state } = this.editData;
                 this.onEditDone(state, points);
             }
-        } else {
-            this.onEditDone(null, null);
         }
-        this.isEditing = false;
         this.release();
     }
 
@@ -411,7 +411,6 @@ export class EditHandlerImpl implements EditHandler {
             if (['polygon', 'polyline', 'points'].includes(editData.state.shapeType)) {
                 this.editData = editData;
                 this.initEditing();
-                this.isEditing = true;
             } else {
                 this.cancel();
             }
@@ -428,6 +427,10 @@ export class EditHandlerImpl implements EditHandler {
 
     get enabled(): boolean {
         return this.isEditing;
+    }
+
+    get shapeType(): string {
+        return this.editData.state.shapeType;
     }
 
     public configurate(configuration: Configuration): void {

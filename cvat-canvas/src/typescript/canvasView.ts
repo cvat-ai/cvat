@@ -1642,7 +1642,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
                 this.masksHandler.edit(data);
             } else if (this.masksHandler.enabled) {
                 this.masksHandler.edit(data);
-            } else if (this.editHandler.enabled) {
+            } else if (this.editHandler.enabled && this.editHandler.shapeType === 'polyline') {
                 this.editHandler.edit(data);
             }
         } else if (reason === UpdateReasons.INTERACT) {
@@ -1856,18 +1856,18 @@ export class CanvasViewImpl implements CanvasView, Listener {
                     const { points } = state;
                     const [left, top, right, bottom] = points.slice(-4);
                     const imageBitmap = expandChannels(255, 255, 255, points);
-                    imageDataToDataURL(imageBitmap, right - left + 1, bottom - top + 1,
-                        (dataURL: string) => new Promise((resolve) => {
-                            if (bitmapUpdateReqId === this.bitmapUpdateReqId) {
-                                const img = document.createElement('img');
-                                img.addEventListener('load', () => {
-                                    ctx.drawImage(img, left, top);
-                                    URL.revokeObjectURL(dataURL);
-                                    resolve();
-                                });
-                                img.src = dataURL;
-                            }
-                        }));
+                    imageDataToDataURL(imageBitmap, right - left + 1, bottom - top + 1, (dataURL: string) => new
+                    Promise((resolve) => {
+                        if (bitmapUpdateReqId === this.bitmapUpdateReqId) {
+                            const img = document.createElement('img');
+                            img.addEventListener('load', () => {
+                                ctx.drawImage(img, left, top);
+                                URL.revokeObjectURL(dataURL);
+                                resolve();
+                            });
+                            img.src = dataURL;
+                        }
+                    }));
                 }
 
                 if (state.shapeType === 'cuboid') {
