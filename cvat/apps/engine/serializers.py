@@ -1071,6 +1071,7 @@ class TaskReadSerializer(serializers.ModelSerializer):
     dimension = serializers.CharField(allow_blank=True, required=False)
     target_storage = StorageSerializer(required=False, allow_null=True)
     source_storage = StorageSerializer(required=False, allow_null=True)
+    segment_duration = serializers.IntegerField(allow_null=True)
     jobs = JobsSummarySerializer(url_filter_key='task_id', source='segment_set')
     labels = LabelsSummarySerializer(source='*')
 
@@ -1080,7 +1081,7 @@ class TaskReadSerializer(serializers.ModelSerializer):
             'bug_tracker', 'created_date', 'updated_date', 'overlap', 'segment_size',
             'status', 'data_chunk_size', 'data_compressed_chunk_type', 'guide_id',
             'data_original_chunk_type', 'size', 'image_quality', 'data', 'dimension',
-            'subset', 'organization', 'target_storage', 'source_storage', 'jobs', 'labels',
+            'subset', 'organization', 'target_storage', 'source_storage', 'segment_duration', 'jobs', 'labels',
         )
         read_only_fields = fields
         extra_kwargs = {

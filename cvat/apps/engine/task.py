@@ -1002,8 +1002,12 @@ def _create_thread(
 
     if MEDIA_TYPE == "audio":
 
-        segment_duration = db_task.segment_duration
-        db_task.audio_total_duration = get_audio_duration(details['source_path'][0])
+        slogger.glob.debug("Before segment_duration")
+        slogger.glob.debug(db_task.segment_duration)
+
+        segment_duration = db_task.segment_duration if db_task.segment_duration is not None else 600000
+        db_task.data.audio_total_duration = get_audio_duration(details['source_path'][0])
+        # db_task.data.audio_total_duration = 720000 #get_audio_duration(details['source_path'][0])
         total_audio_frames = extractor.get_total_frames()
 
         slogger.glob.debug("TOTAL AUDIO DURATION")
@@ -1016,6 +1020,12 @@ def _create_thread(
             # db_task.segment_size = 0
             # db_data.chunk_size = db_task.audio_total_duration*num_frames_per_millisecond
         # else:
+
+        slogger.glob.debug("num_frames_per_millisecond")
+        slogger.glob.debug(num_frames_per_millisecond)
+
+        slogger.glob.debug("segment_duration")
+        slogger.glob.debug(segment_duration)
 
         num_frames_per_segment_duration = num_frames_per_millisecond*segment_duration
         db_task.segment_size = int(round(num_frames_per_segment_duration))
