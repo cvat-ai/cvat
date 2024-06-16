@@ -1006,7 +1006,7 @@ def _create_thread(
         slogger.glob.debug(db_task.segment_duration)
 
         segment_duration = db_task.segment_duration if db_task.segment_duration is not None else 600000
-        db_task.data.audio_total_duration = get_audio_duration(details['source_path'][0])
+        db_task.audio_total_duration = get_audio_duration(details['source_path'][0])
         # db_task.data.audio_total_duration = 720000 #get_audio_duration(details['source_path'][0])
         total_audio_frames = extractor.get_total_frames()
 
