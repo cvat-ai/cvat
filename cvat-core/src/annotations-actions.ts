@@ -34,6 +34,11 @@ type ActionParameters = Record<string, {
     defaultValue: string;
 }>;
 
+export enum FrameSelectionType {
+    SEGMENT = 'segment',
+    CURRENT_FRAME = 'current_frame',
+}
+
 export default class BaseSingleFrameAction {
     /* eslint-disable @typescript-eslint/no-unused-vars */
     public async init(
@@ -57,6 +62,10 @@ export default class BaseSingleFrameAction {
 
     public get parameters(): ActionParameters | null {
         throw new Error('Method not implemented');
+    }
+
+    public get frameSelection(): FrameSelectionType {
+        return FrameSelectionType.SEGMENT;
     }
 }
 
@@ -82,6 +91,38 @@ class RemoveFilteredShapes extends BaseSingleFrameAction {
     }
 }
 
+class PropagateShapes extends BaseSingleFrameAction {
+    public async init(): Promise<void> {
+        // nothing to init
+    }
+
+    public async destroy(): Promise<void> {
+        // nothing to destroy
+    }
+
+    public async run(): Promise<SingleFrameActionOutput> {
+        return { collection: { shapes: [] } };
+    }
+
+    public get name(): string {
+        return 'Propagate shapes';
+    }
+
+    public get parameters(): ActionParameters | null {
+        return {
+            target_frame: {
+                type: ActionParameterType.NUMBER,
+                values: [],
+                defaultValue: '0',
+            },
+        };
+    }
+
+    public get frameSelection(): FrameSelectionType {
+        return FrameSelectionType.CURRENT_FRAME;
+    }
+}
+
 const registeredActions: BaseSingleFrameAction[] = [];
 
 export async function listActions(): Promise<BaseSingleFrameAction[]> {
@@ -102,6 +143,7 @@ export async function registerAction(action: BaseSingleFrameAction): Promise<voi
 }
 
 registerAction(new RemoveFilteredShapes());
+registerAction(new PropagateShapes());
 
 async function runSingleFrameChain(
     instance: Job | Task,
