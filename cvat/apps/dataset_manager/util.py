@@ -195,7 +195,7 @@ def parse_export_file_path(file_path: os.PathLike[str]) -> ParsedExportFilename:
         (
             r'(?P<export_mode>dataset|annotations)'
             r'(?:-instance(?P<instance_timestamp>\d+\.\d+))?' # optional for backward compatibility
-            r'-(?P<format_tag>.+)'
+            r'(?(instance_timestamp)-|_)(?P<format_tag>.+)'
             r'\.(?P<file_ext>.+)'
         ),
         basename
@@ -217,8 +217,8 @@ def parse_export_file_path(file_path: os.PathLike[str]) -> ParsedExportFilename:
         case _:
             assert False
 
-    if 'instance_timestamp' in basename_match.groupdict():
-        instance_timestamp = float(basename_match.group('instance_timestamp'))
+    if instance_timestamp_str := basename_match.groupdict().get('instance_timestamp'):
+        instance_timestamp = float(instance_timestamp_str)
     else:
         instance_timestamp = None
 
