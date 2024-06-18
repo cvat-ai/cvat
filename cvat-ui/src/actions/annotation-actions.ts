@@ -872,7 +872,11 @@ export function closeJob(): ThunkAction {
     return async (dispatch: ActionCreator<Dispatch>, getState): Promise<void> => {
         const state = getState();
         const { instance: canvasInstance } = state.annotation.canvas;
-        const { jobInstance } = receiveAnnotationsParameters();
+        const { jobInstance, groundTruthInstance } = receiveAnnotationsParameters();
+
+        if (groundTruthInstance) {
+            await groundTruthInstance.close();
+        }
 
         if (jobInstance) {
             await jobInstance.close();
