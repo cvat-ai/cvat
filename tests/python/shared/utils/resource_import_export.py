@@ -161,7 +161,6 @@ class _CloudStorageResourceTest(ABC):
                 break
                 # TODO/FIXME: add direct call to old API to remove rq job or integrate new IDs for jobs
 
-
     def _import_annotations_from_cloud_storage(
         self,
         obj_id,

@@ -391,7 +391,6 @@ export interface ModelsState {
     detectors: MLModel[];
     trackers: MLModel[];
     reid: MLModel[];
-    classifiers: MLModel[];
     totalCount: number;
     requestedInferenceIDs: {
         [index: string]: boolean;

@@ -8,7 +8,7 @@ import os.path as osp
 import functools
 from PIL import Image
 from types import SimpleNamespace
-from typing import Optional, Any, Dict, List, cast, Callable
+from typing import Optional, Any, Dict, List, cast, Callable, Mapping
 import traceback
 import textwrap
 from collections import namedtuple
@@ -87,7 +87,9 @@ from cvat.apps.engine.utils import (
 )
 from cvat.apps.engine.rq_job_handler import RQIdManager, is_rq_job_owner, RQJobMetaField
 from cvat.apps.engine import backup
-from cvat.apps.engine.mixins import PartialUpdateModelMixin, UploadMixin, DatasetMixin, BackupMixin
+from cvat.apps.engine.mixins import (
+    PartialUpdateModelMixin, UploadMixin, DatasetMixin, BackupMixin, AnnotationMixin, SerializeMixin, CsrfWorkaroundMixin
+)
 from cvat.apps.engine.location import get_location_configuration, StorageType
 
 from . import models, task
@@ -217,6 +219,12 @@ class ServerViewSet(viewsets.ViewSet):
         }
         return Response(PluginsSerializer(data).data)
 
+def csrf_workaround_is_needed_for_backup(query_params: Mapping[str, str]) -> bool:
+    return query_params.get('action') != 'download'
+
+def csrf_workaround_is_needed_for_export(query_params: Mapping[str, str]) -> bool:
+    return 'format' in query_params and query_params.get('action') != 'download'
+
 @extend_schema(tags=['projects'])
 @extend_schema_view(
     list=extend_schema(
@@ -250,7 +258,7 @@ class ServerViewSet(viewsets.ViewSet):
 )
 class ProjectViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
     mixins.RetrieveModelMixin, mixins.CreateModelMixin, mixins.DestroyModelMixin,
-    PartialUpdateModelMixin, UploadMixin, DatasetMixin, BackupMixin
+    PartialUpdateModelMixin, UploadMixin, DatasetMixin, BackupMixin, CsrfWorkaroundMixin
 ):
     queryset = models.Project.objects.select_related(
         'assignee', 'owner', 'target_storage', 'source_storage', 'annotation_guide',
@@ -367,7 +375,9 @@ class ProjectViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
             '405': OpenApiResponse(description='Format is not available'),
         })
     @action(detail=True, methods=['GET', 'POST', 'OPTIONS'], serializer_class=None,
-        url_path=r'dataset/?$', parser_classes=_UPLOAD_PARSER_CLASSES)
+        url_path=r'dataset/?$', parser_classes=_UPLOAD_PARSER_CLASSES,
+        csrf_workaround_is_needed=lambda qp:
+            csrf_workaround_is_needed_for_export(qp) and qp.get("action") != "import_status")
     def dataset(self, request, pk):
         self._object = self.get_object() # force call of check_object_permissions()
 
@@ -502,7 +512,8 @@ class ProjectViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
             '405': OpenApiResponse(description='Format is not available'),
         })
     @action(detail=True, methods=['GET'],
-        serializer_class=LabeledDataSerializer)
+        serializer_class=LabeledDataSerializer,
+        csrf_workaround_is_needed=csrf_workaround_is_needed_for_export)
     def annotations(self, request, pk):
         self._object = self.get_object() # force call of check_object_permissions()
         return self.export_dataset_v1(
@@ -538,7 +549,8 @@ class ProjectViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
             '201': OpenApiResponse(description='Output backup file is ready for downloading'),
             '202': OpenApiResponse(description='Creating a backup file has been started'),
         })
-    @action(methods=['GET'], detail=True, url_path='backup')
+    @action(methods=['GET'], detail=True, url_path='backup',
+        csrf_workaround_is_needed=csrf_workaround_is_needed_for_backup)
     def export_backup(self, request, pk=None):
         # FUTURE-TODO: mark this endpoint as deprecated when new API for result file downloading will be implemented
         response = self.export_backup_v1(request, backup.export)
@@ -797,7 +809,7 @@ class JobDataGetter(DataChunkGetter):
 
 class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
     mixins.RetrieveModelMixin, mixins.CreateModelMixin, mixins.DestroyModelMixin,
-    PartialUpdateModelMixin, UploadMixin, DatasetMixin, BackupMixin
+    PartialUpdateModelMixin, UploadMixin, DatasetMixin, BackupMixin, CsrfWorkaroundMixin
 ):
     queryset = Task.objects.select_related(
         'data', 'assignee', 'owner',
@@ -921,7 +933,8 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
             '202': OpenApiResponse(description='Creating a backup file has been started'),
             '400': OpenApiResponse(description='Backup of a task without data is not allowed'),
         })
-    @action(methods=['GET'], detail=True, url_path='backup')
+    @action(methods=['GET'], detail=True, url_path='backup',
+        csrf_workaround_is_needed=csrf_workaround_is_needed_for_backup)
     def export_backup(self, request, pk=None):
         # FUTURE-TODO: mark this endpoint as deprecated when new API for result file downloading will be implemented
         if self.get_object().data is None:
@@ -1381,7 +1394,8 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
             '204': OpenApiResponse(description='The annotation has been deleted'),
         })
     @action(detail=True, methods=['GET', 'DELETE', 'PUT', 'PATCH', 'POST', 'OPTIONS'], url_path=r'annotations/?$',
-        serializer_class=None, parser_classes=_UPLOAD_PARSER_CLASSES)
+        serializer_class=None, parser_classes=_UPLOAD_PARSER_CLASSES,
+        csrf_workaround_is_needed=csrf_workaround_is_needed_for_export)
     def annotations(self, request, pk):
         self._object = self.get_object() # force call of check_object_permissions()
         if request.method == 'GET':
@@ -1570,7 +1584,7 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
         # deprecated=True,
     )
     @action(detail=True, methods=['GET'], serializer_class=None,
-        url_path='dataset')
+        url_path='dataset', csrf_workaround_is_needed=csrf_workaround_is_needed_for_export)
     def dataset_export(self, request, pk):
         self._object = self.get_object() # force call of check_object_permissions()
 
@@ -1650,7 +1664,7 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
 )
 class JobViewSet(viewsets.GenericViewSet, mixins.ListModelMixin, mixins.CreateModelMixin,
     mixins.RetrieveModelMixin, PartialUpdateModelMixin, mixins.DestroyModelMixin,
-    UploadMixin, DatasetMixin
+    UploadMixin, DatasetMixin, CsrfWorkaroundMixin
 ):
     queryset = Job.objects.select_related('assignee', 'segment__task__data',
         'segment__task__project', 'segment__task__annotation_guide', 'segment__task__project__annotation_guide',
@@ -1844,7 +1858,8 @@ class JobViewSet(viewsets.GenericViewSet, mixins.ListModelMixin, mixins.CreateMo
             '204': OpenApiResponse(description='The annotation has been deleted'),
         })
     @action(detail=True, methods=['GET', 'DELETE', 'PUT', 'PATCH', 'POST', 'OPTIONS'], url_path=r'annotations/?$',
-        serializer_class=LabeledDataSerializer, parser_classes=_UPLOAD_PARSER_CLASSES)
+        serializer_class=LabeledDataSerializer, parser_classes=_UPLOAD_PARSER_CLASSES,
+        csrf_workaround_is_needed=csrf_workaround_is_needed_for_export)
     def annotations(self, request, pk):
         self._object = self.get_object() # force call of check_object_permissions()
         if request.method == 'GET':
@@ -1938,7 +1953,7 @@ class JobViewSet(viewsets.GenericViewSet, mixins.ListModelMixin, mixins.CreateMo
         # deprecated=True,
     )
     @action(detail=True, methods=['GET'], serializer_class=None,
-        url_path='dataset')
+        url_path='dataset', csrf_workaround_is_needed=csrf_workaround_is_needed_for_export)
     def dataset_export(self, request, pk):
         self._object = self.get_object() # force call of check_object_permissions()
 

@@ -928,7 +928,6 @@ def export(db_instance: Union[models.Project, models.Task], request: HttpRequest
     backup_export_manager = BackupExportManager(db_instance, request, version=1)
     return backup_export_manager.export()
 
-
 def _import(importer, request, queue, rq_id, Serializer, file_field_name, location_conf, filename=None):
     rq_job = queue.fetch_job(rq_id)
 
