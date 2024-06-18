@@ -2238,9 +2238,10 @@ async function getAnalyticsReports(
 
 async function getRequestsList(): Promise<PaginatedResource<SerializedRequest>> {
     const { backendAPI } = config;
+    const params = enableOrganization();
 
     try {
-        const response = await fetchAll(`${backendAPI}/requests`);
+        const response = await fetchAll(`${backendAPI}/requests`, params);
 
         return response.results;
     } catch (errorData) {

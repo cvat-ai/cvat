@@ -102,7 +102,7 @@ function mapStateToProps(state: CombinedState): StateToProps {
         invitationsFetching: invitations.fetching,
         invitationsInitialized: invitations.initialized,
         requestsFetching: requests.fetching,
-        requestsInitialized: invitations.initialized,
+        requestsInitialized: requests.initialized,
         serverAPISchemaFetching: serverAPI.fetching,
         serverAPISchemaInitialized: serverAPI.initialized,
         isPasswordResetEnabled: serverAPI.configuration.isPasswordResetEnabled,

@@ -17,7 +17,7 @@ import textwrap
 from typing import Any, Dict, Iterable, Optional, OrderedDict, Union
 
 from rq.job import Job as RQJob, JobStatus as RQJobStatus
-from datetime import timedelta
+from datetime import timedelta, timezone
 from decimal import Decimal
 
 from rest_framework import serializers, exceptions
@@ -2322,7 +2322,8 @@ class RequestSerializer(serializers.Serializer):
             delta = rq_job.failure_ttl or rq_defaults.DEFAULT_FAILURE_TTL
 
         if rq_job.ended_at and delta:
-            return rq_job.ended_at + timedelta(seconds=delta)
+            expiry_date = rq_job.ended_at + timedelta(seconds=delta)
+            return expiry_date.replace(tzinfo=timezone.utc)
 
         return None
 

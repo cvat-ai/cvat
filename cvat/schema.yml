@@ -2066,6 +2066,7 @@ paths:
           type: boolean
           default: true
         description: Use the location that was configured in the task to export annotation
+        deprecated: true
       tags:
       - jobs
       security:
@@ -2134,6 +2135,7 @@ paths:
           type: boolean
           default: true
         description: Use the location that was configured in the task to import annotation
+        deprecated: true
       tags:
       - jobs
       requestBody:
@@ -2215,6 +2217,7 @@ paths:
           type: boolean
           default: true
         description: Use the location that was configured in the task to import annotation
+        deprecated: true
       tags:
       - jobs
       requestBody:
@@ -2454,6 +2457,7 @@ paths:
           type: boolean
           default: true
         description: Use the location that was configured in the task to export dataset
+        deprecated: true
       tags:
       - jobs
       security:
@@ -2476,6 +2480,70 @@ paths:
           description: Exporting has been started
         '405':
           description: Format is not available
+  /api/jobs/{id}/dataset/export:
+    post:
+      operationId: jobs_create_dataset_export
+      description: |2
+
+        The request POST /api/projects/id/dataset/export will initialize
+        background process to export dataset. To check status of the process
+        please, use GET /api/requests/<rq_id> where rq_id is request id returned in the response on this request.
+      summary: Initialize process to export resource as a dataset in a specific format
+      parameters:
+      - in: query
+        name: cloud_storage_id
+        schema:
+          type: integer
+        description: Storage id
+      - in: query
+        name: filename
+        schema:
+          type: string
+        description: Desired output file name
+      - in: query
+        name: format
+        schema:
+          type: string
+        description: |-
+          Desired output format name
+          You can get the list of supported formats at:
+          /server/annotation/formats
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this job.
+        required: true
+      - in: query
+        name: location
+        schema:
+          type: string
+          enum:
+          - cloud_storage
+          - local
+        description: Where need to save downloaded dataset
+      - in: query
+        name: save_images
+        schema:
+          type: boolean
+          default: false
+        description: Include images or not
+      tags:
+      - jobs
+      security:
+      - sessionAuth: []
+        csrfAuth: []
+        tokenAuth: []
+      - signatureAuth: []
+      - basicAuth: []
+      responses:
+        '202':
+          description: Exporting has been started
+        '405':
+          description: Format is not available
+        '409':
+          description: Exporting is already in progress
   /api/jobs/{id}/preview:
     get:
       operationId: jobs_retrieve_preview
@@ -3455,7 +3523,7 @@ paths:
   /api/projects/{id}/annotations:
     get:
       operationId: projects_retrieve_annotations
-      summary: Get project annotations
+      summary: Get project annotations or export them as a dataset
       parameters:
       - in: query
         name: action
@@ -3504,6 +3572,7 @@ paths:
           type: boolean
           default: true
         description: Use the location that was configured in project to export annotation
+        deprecated: true
       tags:
       - projects
       security:
@@ -3530,6 +3599,12 @@ paths:
   /api/projects/{id}/backup:
     get:
       operationId: projects_retrieve_backup
+      description: "\n            Deprecation warning:\n            This endpoint\
+        \ will be deprecated in one of the next releases.\n            Please, do\
+        \ not use this method to check the status of the backup process.\n       \
+        \     Consider using a new API to check the process status: GET /api/requests/<rq_id>\n\
+        \            where rq_id is request id returned on initializing request'\n\
+        \            "
       summary: Back up a project
       parameters:
       - in: query
@@ -3570,6 +3645,7 @@ paths:
           type: boolean
           default: true
         description: Use the location that was configured in project to export backup
+        deprecated: true
       tags:
       - projects
       security:
@@ -3585,6 +3661,50 @@ paths:
           description: Output backup file is ready for downloading
         '202':
           description: Creating a backup file has been started
+  /api/projects/{id}/backup/export:
+    post:
+      operationId: projects_create_backup_export
+      summary: Initiate process to backup resource
+      parameters:
+      - in: query
+        name: cloud_storage_id
+        schema:
+          type: integer
+        description: Storage id
+      - in: query
+        name: filename
+        schema:
+          type: string
+        description: Backup file name
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this project.
+        required: true
+      - in: query
+        name: location
+        schema:
+          type: string
+          enum:
+          - cloud_storage
+          - local
+        description: Where need to save downloaded backup
+      tags:
+      - projects
+      security:
+      - sessionAuth: []
+        csrfAuth: []
+        tokenAuth: []
+      - signatureAuth: []
+      - basicAuth: []
+      responses:
+        '202':
+          description: Creating a backup file has been started
+        '400':
+          description: No response body
+        '409':
+          description: No response body
   /api/projects/{id}/dataset/:
     get:
       operationId: projects_retrieve_dataset
@@ -3596,6 +3716,9 @@ paths:
         Make sure to include this parameter as a query parameter in your subsequent
         GET /api/projects/id/dataset requests to track the status of the dataset import.
         Also you should specify action parameter: action=import_status.
+
+        Note: Using this endpoint to check the import process status is deprecated.
+        Utilize GET /api/requests/<rq_id> endpoint instead.
       summary: Export a project as a dataset / Check dataset import status
       parameters:
       - in: query
@@ -3650,6 +3773,7 @@ paths:
           type: boolean
           default: true
         description: Use the location that was configured in project to import dataset
+        deprecated: true
       tags:
       - projects
       security:
@@ -3720,6 +3844,7 @@ paths:
           default: true
         description: Use the location that was configured in the project to import
           annotations
+        deprecated: true
       tags:
       - projects
       requestBody:
@@ -3747,6 +3872,70 @@ paths:
           description: Failed to import dataset
         '405':
           description: Format is not available
+  /api/projects/{id}/dataset/export:
+    post:
+      operationId: projects_create_dataset_export
+      description: |2
+
+        The request POST /api/projects/id/dataset/export will initialize
+        background process to export dataset. To check status of the process
+        please, use GET /api/requests/<rq_id> where rq_id is request id returned in the response on this request.
+      summary: Initialize process to export resource as a dataset in a specific format
+      parameters:
+      - in: query
+        name: cloud_storage_id
+        schema:
+          type: integer
+        description: Storage id
+      - in: query
+        name: filename
+        schema:
+          type: string
+        description: Desired output file name
+      - in: query
+        name: format
+        schema:
+          type: string
+        description: |-
+          Desired output format name
+          You can get the list of supported formats at:
+          /server/annotation/formats
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this project.
+        required: true
+      - in: query
+        name: location
+        schema:
+          type: string
+          enum:
+          - cloud_storage
+          - local
+        description: Where need to save downloaded dataset
+      - in: query
+        name: save_images
+        schema:
+          type: boolean
+          default: false
+        description: Include images or not
+      tags:
+      - projects
+      security:
+      - sessionAuth: []
+        csrfAuth: []
+        tokenAuth: []
+      - signatureAuth: []
+      - basicAuth: []
+      responses:
+        '202':
+          description: Exporting has been started
+        '405':
+          description: Format is not available
+        '409':
+          description: Exporting is already in progress
   /api/projects/{id}/preview:
     get:
       operationId: projects_retrieve_preview
@@ -4317,6 +4506,11 @@ paths:
         description: A simple equality filter for the job_id field
         schema:
           type: integer
+      - name: org
+        in: query
+        description: A simple equality filter for the org field
+        schema:
+          type: string
       - name: page
         required: false
         in: query
@@ -4935,16 +5129,19 @@ paths:
           - download
         description: Used to start downloading process locally after annotation file
           has been created
+        deprecated: true
       - in: query
         name: cloud_storage_id
         schema:
           type: integer
         description: Storage id
+        deprecated: true
       - in: query
         name: filename
         schema:
           type: string
         description: Desired output file name
+        deprecated: true
       - in: query
         name: format
         schema:
@@ -4953,6 +5150,7 @@ paths:
           Desired output format name
           You can get the list of supported formats at:
           /server/annotation/formats
+        deprecated: true
       - in: path
         name: id
         schema:
@@ -4967,12 +5165,14 @@ paths:
           - cloud_storage
           - local
         description: Where need to save downloaded dataset
+        deprecated: true
       - in: query
         name: use_default_location
         schema:
           type: boolean
           default: true
         description: Use the location that was configured in the task to export annotation
+        deprecated: true
       tags:
       - tasks
       security:
@@ -5043,6 +5243,7 @@ paths:
           type: boolean
           default: true
         description: Use the location that was configured in task to import annotations
+        deprecated: true
       tags:
       - tasks
       requestBody:
@@ -5189,6 +5390,12 @@ paths:
   /api/tasks/{id}/backup:
     get:
       operationId: tasks_retrieve_backup
+      description: "\n        Deprecation warning:\n            This endpoint will\
+        \ be deprecated in one of the next releases.\n            Please, do not use\
+        \ this method to check the status of the backup process.\n            Consider\
+        \ using a new API to check the process status: GET /api/requests/<rq_id>\n\
+        \            where rq_id is request id returned on initializing request'\n\
+        \        "
       summary: Back up a task
       parameters:
       - in: query
@@ -5229,6 +5436,7 @@ paths:
           type: boolean
           default: true
         description: Use the location that was configured in the task to export backup
+        deprecated: true
       tags:
       - tasks
       security:
@@ -5246,6 +5454,50 @@ paths:
           description: Creating a backup file has been started
         '400':
           description: Backup of a task without data is not allowed
+  /api/tasks/{id}/backup/export:
+    post:
+      operationId: tasks_create_backup_export
+      summary: Initiate process to backup resource
+      parameters:
+      - in: query
+        name: cloud_storage_id
+        schema:
+          type: integer
+        description: Storage id
+      - in: query
+        name: filename
+        schema:
+          type: string
+        description: Backup file name
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this task.
+        required: true
+      - in: query
+        name: location
+        schema:
+          type: string
+          enum:
+          - cloud_storage
+          - local
+        description: Where need to save downloaded backup
+      tags:
+      - tasks
+      security:
+      - sessionAuth: []
+        csrfAuth: []
+        tokenAuth: []
+      - signatureAuth: []
+      - basicAuth: []
+      responses:
+        '202':
+          description: Creating a backup file has been started
+        '400':
+          description: No response body
+        '409':
+          description: No response body
   /api/tasks/{id}/data/:
     get:
       operationId: tasks_retrieve_data
@@ -5497,6 +5749,7 @@ paths:
           type: boolean
           default: true
         description: Use the location that was configured in task to export annotations
+        deprecated: true
       tags:
       - tasks
       security:
@@ -5521,6 +5774,70 @@ paths:
           description: Exporting without data is not allowed
         '405':
           description: Format is not available
+  /api/tasks/{id}/dataset/export:
+    post:
+      operationId: tasks_create_dataset_export
+      description: |2
+
+        The request POST /api/projects/id/dataset/export will initialize
+        background process to export dataset. To check status of the process
+        please, use GET /api/requests/<rq_id> where rq_id is request id returned in the response on this request.
+      summary: Initialize process to export resource as a dataset in a specific format
+      parameters:
+      - in: query
+        name: cloud_storage_id
+        schema:
+          type: integer
+        description: Storage id
+      - in: query
+        name: filename
+        schema:
+          type: string
+        description: Desired output file name
+      - in: query
+        name: format
+        schema:
+          type: string
+        description: |-
+          Desired output format name
+          You can get the list of supported formats at:
+          /server/annotation/formats
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this task.
+        required: true
+      - in: query
+        name: location
+        schema:
+          type: string
+          enum:
+          - cloud_storage
+          - local
+        description: Where need to save downloaded dataset
+      - in: query
+        name: save_images
+        schema:
+          type: boolean
+          default: false
+        description: Include images or not
+      tags:
+      - tasks
+      security:
+      - sessionAuth: []
+        csrfAuth: []
+        tokenAuth: []
+      - signatureAuth: []
+      - basicAuth: []
+      responses:
+        '202':
+          description: Exporting has been started
+        '405':
+          description: Format is not available
+        '409':
+          description: Exporting is already in progress
   /api/tasks/{id}/preview:
     get:
       operationId: tasks_retrieve_preview
@@ -5548,9 +5865,9 @@ paths:
   /api/tasks/{id}/status:
     get:
       operationId: tasks_retrieve_status
-      description: 'This method is deprecated and will be removed in version 2.14.0.
-        To check status of a task creation, use new common APIfor managing background
-        operations: GET /api/requests/?action=create&task_id=<task_id>'
+      description: 'This method is deprecated and will be removed in one of the next
+        releases. To check status of a task creation, use new common APIfor managing
+        background operations: GET /api/requests/?action=create&task_id=<task_id>'
       summary: Get the creation status of a task
       parameters:
       - in: path

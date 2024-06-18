@@ -88,7 +88,7 @@ from cvat.apps.engine.utils import (
 from cvat.apps.engine.rq_job_handler import RQIdManager, is_rq_job_owner, RQJobMetaField
 from cvat.apps.engine import backup
 from cvat.apps.engine.mixins import (
-    PartialUpdateModelMixin, UploadMixin, DatasetMixin, BackupMixin, AnnotationMixin, SerializeMixin, CsrfWorkaroundMixin
+    PartialUpdateModelMixin, UploadMixin, DatasetMixin, BackupMixin, CsrfWorkaroundMixin
 )
 from cvat.apps.engine.location import get_location_configuration, StorageType
 
@@ -3100,7 +3100,7 @@ def _import_project_dataset(request, rq_id_template, rq_func, db_obj, format_nam
                 failure_ttl=settings.IMPORT_CACHE_FAILED_TTL.total_seconds()
             )
 
-        handle_dataset_import(db_obj, format_name=format_name, cloud_storage_id=db_storage.id)
+        handle_dataset_import(db_obj, format_name=format_name, cloud_storage_id=db_storage.id if db_storage is not None else None)
     else:
         return Response(status=status.HTTP_409_CONFLICT, data='Import job already exists')
 

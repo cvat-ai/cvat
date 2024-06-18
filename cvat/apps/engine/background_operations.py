@@ -280,7 +280,7 @@ class DatasetExportManager:
             save_images=self.save_images,
         )
 
-        return Response(status=status.HTTP_202_ACCEPTED)
+        return Response(status=status.HTTP_202_ACCEPTED, data={"rq_id": self.rq_id})
 
     def setup_background_job(
         self,
