@@ -803,7 +803,7 @@ async function mergeConsensusJobs(id: number): Promise<void> {
     return new Promise<void>((resolve, reject) => {
         async function request() {
             try {
-                const response = await Axios.get(url);
+                const response = await Axios.put(url);
                 const { status } = response;
                 if (status === 202) {
                     setTimeout(request, 3000);

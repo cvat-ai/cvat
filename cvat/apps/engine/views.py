@@ -910,7 +910,7 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
             '400': OpenApiResponse(description='Agreegating a task without data is not allowed'),
         },
     )
-    @action(methods=['GET'], detail=True, url_path=r'agreegate/?$')
+    @action(methods=['PUT'], detail=True, url_path=r'agreegate/?$')
     def aggregate(self, request, pk=None):
         task = self.get_object()
 
