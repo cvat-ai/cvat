@@ -292,7 +292,7 @@ function SingleShapeSidebar(): JSX.Element {
     }, []);
 
     useEffect(() => {
-        getNextFrame().then(actionCreators.setNextFrame);
+        getNextFrame().then((_frame) => dispatch(actionCreators.setNextFrame(_frame)));
     }, [getNextFrame]);
 
     useEffect(() => {
