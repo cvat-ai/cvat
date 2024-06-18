@@ -19,6 +19,7 @@ from time import sleep, time
 from typing import Any, Dict, List, Optional, Tuple
 
 import pytest
+import psutil
 from cvat_sdk import Client, Config, exceptions
 from cvat_sdk.api_client import models
 from cvat_sdk.api_client.api_client import ApiClient, ApiException, Endpoint
@@ -1313,13 +1314,28 @@ class TestPostTaskData:
         use_cache: bool = True,
         sorting_method: str = "lexicographical",
         spec: Optional[Dict[str, Any]] = None,
-        use_images_as_data: bool = True,
+        data_type: str = "image",
+        video_frame_count: int = 10,
         server_files_exclude: Optional[List[str]] = None,
         org: Optional[str] = None,
         filenames: Optional[List[str]] = None,
     ) -> Tuple[int, Any]:
         s3_client = s3.make_client()
-        if use_images_as_data:
+        if data_type == "video":
+            video = generate_video_file(video_frame_count)
+            s3_client.create_file(
+                data=video,
+                bucket=cloud_storage["resource"],
+                filename=f"test/video/{video.name}",
+            )
+            request.addfinalizer(
+                partial(
+                    s3_client.remove_file,
+                    bucket=cloud_storage["resource"],
+                    filename=f"test/video/{video.name}",
+                )
+            )
+        else:
             images = generate_image_files(
                 3, **({"prefixes": ["img_"] * 3} if not filenames else {"filenames": filenames})
             )
@@ -1339,20 +1355,6 @@ class TestPostTaskData:
                             filename=f"test/sub_{i}/{image.name}",
                         )
                     )
-        else:
-            video = generate_video_file(10)
-            s3_client.create_file(
-                data=video,
-                bucket=cloud_storage["resource"],
-                filename=f"test/video/{video.name}",
-            )
-            request.addfinalizer(
-                partial(
-                    s3_client.remove_file,
-                    bucket=cloud_storage["resource"],
-                    filename=f"test/video/{video.name}",
-                )
-            )
 
         if use_manifest:
             with TemporaryDirectory() as tmp_dir:
@@ -1773,7 +1775,7 @@ class TestPostTaskData:
             server_files=["test/video/video.avi"],
             org=org,
             spec=data_spec,
-            use_images_as_data=False,
+            data_type='video',
         )
 
         with make_api_client(self._USERNAME) as api_client:
@@ -1781,6 +1783,52 @@ class TestPostTaskData:
 
         assert data_meta.start_frame == 2
         assert data_meta.stop_frame == 6
+        assert data_meta.size == 3
+
+    @pytest.mark.with_external_services
+    @pytest.mark.parametrize(
+        "cloud_storage_id, org",
+        [
+            (1, ""),
+        ],
+    )
+    def test_create_task_with_cloud_storage_using_advance_params_and_large_dataset(
+        self,
+        cloud_storage_id: int,
+        org: str,
+        cloud_storages,
+        request,
+    ):
+        cloud_storage = cloud_storages[cloud_storage_id]
+
+        data_spec = {
+            "start_frame": 10,
+            "stop_frame": 30,
+            "frame_filter": "step=10",
+        }
+        process = psutil.Process()
+        before_memory = process.memory_info().rss
+        task_id, _ = self._create_task_with_cloud_data(
+            request=request,
+            cloud_storage=cloud_storage,
+            use_manifest=False,
+            use_cache=False,
+            server_files=["test/video/video.avi"],
+            org=org,
+            spec=data_spec,
+            data_type='video',
+            video_frame_count=4000,
+        )
+        after_memory = process.memory_info().rss
+        print(before_memory, after_memory)
+        print(f"Memory usage: {after_memory - before_memory}")
+
+
+        with make_api_client(self._USERNAME) as api_client:
+            data_meta, _ = api_client.tasks_api.retrieve_data_meta(task_id)
+
+        assert data_meta.start_frame == 10
+        assert data_meta.stop_frame == 30
         assert data_meta.size == 3
 
     def test_can_specify_file_job_mapping(self):
