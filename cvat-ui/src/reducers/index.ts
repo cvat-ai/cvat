@@ -109,6 +109,9 @@ export interface TasksState {
         deletes: {
             [tid: number]: boolean; // deleted (deleting if in dictionary)
         };
+        mergingConsensus: {
+            [tid: number]: boolean;
+        };
     };
 }
 
@@ -468,6 +471,7 @@ export interface NotificationsState {
             exporting: null | ErrorState;
             importing: null | ErrorState;
             moving: null | ErrorState;
+            mergingConsensus: null | ErrorState;
         };
         jobs: {
             updating: null | ErrorState;
@@ -585,6 +589,7 @@ export interface NotificationsState {
             loadingDone: string;
             importingDone: string;
             movingDone: string;
+            mergingConsensusDone: string;
         };
         models: {
             inferenceDone: string;

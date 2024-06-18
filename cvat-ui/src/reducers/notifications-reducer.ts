@@ -679,6 +679,24 @@ export default function (state = defaultState, action: AnyAction): Notifications
                 },
             };
         }
+        case TasksActionTypes.MERGE_TASK_CONSENSUS_FAILED: {
+            const { taskID } = action.payload;
+            return {
+                ...state,
+                errors: {
+                    ...state.errors,
+                    tasks: {
+                        ...state.errors.tasks,
+                        mergingConsensus: {
+                            message: `Could not merge the [task ${taskID}](/tasks/${taskID})`,
+                            reason: action.payload.error,
+                            shouldLog: !(action.payload.error instanceof ServerError),
+                            className: 'cvat-notification-notice-merge-task-failed',
+                        },
+                    },
+                },
+            };
+        }
         case TasksActionTypes.CREATE_TASK_FAILED: {
             return {
                 ...state,

@@ -27,6 +27,9 @@ export enum TasksActionTypes {
     GET_TASK_PREVIEW_SUCCESS = 'GET_TASK_PREVIEW_SUCCESS',
     GET_TASK_PREVIEW_FAILED = 'GET_TASK_PREVIEW_FAILED',
     UPDATE_TASK_IN_STATE = 'UPDATE_TASK_IN_STATE',
+    MERGE_TASK_CONSENSUS = 'AGREEGATE_TASK_CONSENSUS',
+    MERGE_TASK_CONSENSUS_SUCCESS = 'AGREEGATE_TASK_CONSENSUS_SUCCESS',
+    MERGE_TASK_CONSENSUS_FAILED = 'AGREEGATE_TASK_CONSENSUS_FAILED',
 }
 
 function getTasks(query: Partial<TasksQuery>, updateQuery: boolean): AnyAction {
@@ -120,6 +123,40 @@ function deleteTaskFailed(taskID: number, error: any): AnyAction {
     return action;
 }
 
+function mergeTaskConsensusJobs(taskID: number): AnyAction {
+    const action = {
+        type: TasksActionTypes.MERGE_TASK_CONSENSUS,
+        payload: {
+            taskID,
+        },
+    };
+
+    return action;
+}
+
+function mergeTaskConsensusJobsSuccess(taskID: number): AnyAction {
+    const action = {
+        type: TasksActionTypes.MERGE_TASK_CONSENSUS_SUCCESS,
+        payload: {
+            taskID,
+        },
+    };
+
+    return action;
+}
+
+function mergeTaskConsensusJobsFailed(taskID: number, error: any): AnyAction {
+    const action = {
+        type: TasksActionTypes.MERGE_TASK_CONSENSUS_FAILED,
+        payload: {
+            taskID,
+            error,
+        },
+    };
+
+    return action;
+}
+
 export function deleteTaskAsync(taskInstance: any): ThunkAction<Promise<void>, {}, {}, AnyAction> {
     return async (dispatch: ActionCreator<Dispatch>): Promise<void> => {
         try {
@@ -131,6 +168,20 @@ export function deleteTaskAsync(taskInstance: any): ThunkAction<Promise<void>, {
         }
 
         dispatch(deleteTaskSuccess(taskInstance.id));
+    };
+}
+
+export function mergeTaskConsensusJobsAsync(taskInstance: any): ThunkAction<Promise<void>, {}, {}, AnyAction> {
+    return async (dispatch: ActionCreator<Dispatch>): Promise<void> => {
+        try {
+            dispatch(mergeTaskConsensusJobs(taskInstance.id));
+            await taskInstance.mergeConsensusJobs();
+        } catch (error) {
+            dispatch(mergeTaskConsensusJobsFailed(taskInstance.id, error));
+            return;
+        }
+
+        dispatch(mergeTaskConsensusJobsSuccess(taskInstance.id));
     };
 }
 
