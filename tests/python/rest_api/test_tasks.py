@@ -1775,7 +1775,7 @@ class TestPostTaskData:
             server_files=["test/video/video.avi"],
             org=org,
             spec=data_spec,
-            data_type='video',
+            data_type="video",
         )
 
         with make_api_client(self._USERNAME) as api_client:
@@ -1816,7 +1816,7 @@ class TestPostTaskData:
             server_files=["test/video/video.avi"],
             org=org,
             spec=data_spec,
-            data_type='video',
+            data_type="video",
             video_frame_count=4000,
         )
         after_memory = process.memory_info().rss
