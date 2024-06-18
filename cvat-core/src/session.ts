@@ -1109,6 +1109,11 @@ export class Task extends Session {
         return result;
     }
 
+    async mergeConsensusJobs(): Promise<void> {
+        const result = await PluginRegistry.apiWrapper.call(this, Task.prototype.mergeConsensusJobs);
+        return result;
+    }
+
     async backup(targetStorage: Storage, useDefaultSettings: boolean, fileName?: string) {
         const result = await PluginRegistry.apiWrapper.call(
             this,

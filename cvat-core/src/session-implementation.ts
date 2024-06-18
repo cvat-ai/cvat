@@ -530,6 +530,11 @@ export function implementTask(Task) {
         return result;
     };
 
+    Task.prototype.mergeConsensusJobs.implementation = async function () {
+        const result = await serverProxy.tasks.mergeConsensusJobs(this.id);
+        return result;
+    };
+
     Task.prototype.issues.implementation = async function () {
         const result = await serverProxy.issues.get({ task_id: this.id });
         return result.map((issue) => new Issue(issue));
