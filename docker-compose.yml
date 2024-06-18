@@ -347,7 +347,7 @@ services:
       - -euc
       - |
         mkdir -p /etc/grafana/provisioning/datasources
-        cat << EOF > /etc/grafana/provisioning/datasources/ds.yaml
+        cat << 'EOF' > /etc/grafana/provisioning/datasources/ds.yaml
         apiVersion: 1
         datasources:
           - name: 'ClickHouse'
