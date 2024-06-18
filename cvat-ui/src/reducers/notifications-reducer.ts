@@ -61,6 +61,7 @@ const defaultState: NotificationsState = {
             exporting: null,
             importing: null,
             moving: null,
+            mergingConsensus: null,
         },
         jobs: {
             updating: null,
@@ -178,6 +179,7 @@ const defaultState: NotificationsState = {
             loadingDone: '',
             importingDone: '',
             movingDone: '',
+            mergingConsensusDone: '',
         },
         models: {
             inferenceDone: '',
@@ -681,6 +683,9 @@ export default function (state = defaultState, action: AnyAction): Notifications
         }
         case TasksActionTypes.MERGE_TASK_CONSENSUS_FAILED: {
             const { taskID } = action.payload;
+            if (action.payload.error.code === 400) {
+                action.payload.error.message = "Consensus Jobs aren't annotated.";
+            }
             return {
                 ...state,
                 errors: {
@@ -693,6 +698,20 @@ export default function (state = defaultState, action: AnyAction): Notifications
                             shouldLog: !(action.payload.error instanceof ServerError),
                             className: 'cvat-notification-notice-merge-task-failed',
                         },
+                    },
+                },
+            };
+        }
+        case TasksActionTypes.MERGE_TASK_CONSENSUS_SUCCESS: {
+            const { taskID } = action.payload;
+            return {
+                ...state,
+                messages: {
+                    ...state.messages,
+                    tasks: {
+                        ...state.messages.tasks,
+                        mergingConsensusDone: `Consensus Jobs in the [task ${taskID}](/tasks/${taskID})\
+                            have been merged`,
                     },
                 },
             };
