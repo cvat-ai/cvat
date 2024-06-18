@@ -28,6 +28,8 @@ export enum ActionParameterType {
     NUMBER = 'number',
 }
 
+// For SELECT values should be a list of possible options
+// For NUMBER values should be a list with [min, max, step]
 type ActionParameters = Record<string, {
     type: ActionParameterType;
     values: string[];
@@ -110,9 +112,9 @@ class PropagateShapes extends BaseSingleFrameAction {
 
     public get parameters(): ActionParameters | null {
         return {
-            target_frame: {
+            'Target frame': {
                 type: ActionParameterType.NUMBER,
-                values: [],
+                values: ['0', 'frameCount', '1'],
                 defaultValue: '0',
             },
         };

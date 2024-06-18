@@ -218,6 +218,7 @@ function ActionParameterComponent(props: Props & { onChange: (value: string) => 
     const {
         defaultValue, type, values, onChange,
     } = props;
+    const store = getCVATStore();
     const [value, setValue] = useState(defaultValue);
 
     useEffect(() => {
@@ -234,7 +235,13 @@ function ActionParameterComponent(props: Props & { onChange: (value: string) => 
         );
     }
 
-    const [min, max, step] = values.map((val) => +val);
+    const [min, max, step] = values.map((val) => {
+        if (val === 'frameCount') {
+            return store.getState().annotation.job.instance?.frameCount || 0;
+        }
+        return +val;
+    });
+
     return (
         <InputNumber
             value={+value}
