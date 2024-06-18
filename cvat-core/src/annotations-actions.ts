@@ -9,6 +9,7 @@ import { Job, Task } from './session';
 import { EventScope, ObjectType } from './enums';
 import ObjectState from './object-state';
 import { getAnnotations, getCollection } from './annotations';
+import { propagateShapes } from './object-utils';
 
 export interface SingleFrameActionInput {
     collection: Omit<SerializedCollection, 'tracks' | 'tags' | 'version'>;
@@ -94,16 +95,23 @@ class RemoveFilteredShapes extends BaseSingleFrameAction {
 }
 
 class PropagateShapes extends BaseSingleFrameAction {
-    public async init(): Promise<void> {
-        // nothing to init
+    #targetFrame: number;
+
+    public async init(instance, parameters): Promise<void> {
+        this.#targetFrame = parameters['Target frame'];
     }
 
     public async destroy(): Promise<void> {
         // nothing to destroy
     }
 
-    public async run(): Promise<SingleFrameActionOutput> {
-        return { collection: { shapes: [] } };
+    public async run(
+        instance,
+        { collection: frameCollection, frameData: { number } },
+    ): Promise<SingleFrameActionOutput> {
+        const { shapes } = frameCollection;
+        const propagatedShapes = propagateShapes(shapes, number, this.#targetFrame);
+        return { collection: { shapes: [...shapes, ...propagatedShapes] } };
     }
 
     public get name(): string {

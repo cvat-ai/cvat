@@ -5,6 +5,7 @@
 import { DataError, ArgumentError } from './exceptions';
 import { Attribute } from './labels';
 import { ShapeType, AttributeType } from './enums';
+import { SerializedShape } from './server-response-types';
 
 export function checkNumberOfPoints(shapeType: ShapeType, points: number[]): void {
     if (shapeType === ShapeType.RECTANGLE) {
@@ -355,4 +356,36 @@ export function rle2Mask(rle: number[], width: number, height: number): number[]
     }
 
     return decoded;
+}
+
+export function propagateShapes(shapes: SerializedShape[], from: number, to: number): SerializedShape[] {
+    const getCopyFromShape = (shape: SerializedShape): SerializedShape => ({
+        attributes: shape.attributes,
+        points: shape.type === 'skeleton' ? null : [...shape.points],
+        occluded: shape.occluded,
+        type: shape.type,
+        label_id: shape.label_id,
+        z_order: shape.z_order,
+        rotation: shape.rotation,
+        frame: from,
+        elements: shape.type === 'skeleton' ? shape.elements
+            .map((element: any): any => getCopyFromShape(element)) : [],
+        source: shape.source,
+        group: 0,
+        outside: false,
+    });
+
+    const states = [];
+    const sign = Math.sign(to - from);
+    for (let frame = from + sign; sign > 0 ? frame <= to : frame >= to; frame += sign) {
+        for (let idx = 0; idx < shapes.length; idx++) {
+            const shape = shapes[idx];
+            const copy = getCopyFromShape(shape);
+
+            copy.frame = frame;
+            copy.elements.forEach((element: any) => { element.frame = frame; });
+            states.push(copy);
+        }
+    }
+    return states;
 }
