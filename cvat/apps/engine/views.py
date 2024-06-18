@@ -88,6 +88,7 @@ from cvat.apps.engine.permissions import (CloudStoragePermission,
     CommentPermission, IssuePermission, JobPermission, LabelPermission, ProjectPermission,
     TaskPermission, UserPermission)
 from cvat.apps.engine.view_utils import tus_chunk_action
+from cvat.apps.consensus.merge_consensus_jobs import merge_task
 
 slogger = ServerLogManager(__name__)
 
@@ -888,6 +889,22 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
                 status=status.HTTP_400_BAD_REQUEST
             )
         return self.serialize(request, backup.export)
+
+    @extend_schema(summary="Aggregate data of a task",
+        responses={
+            '201': OpenApiResponse(description='Consensus Jobs Agreegated'),
+            '202': OpenApiResponse(description='Agreegation of Consensus Jobs started'),
+            '400': OpenApiResponse(description='Agreegating a task without data is not allowed'),
+        },
+    )
+    @action(methods=['GET'], detail=True, url_path=r'agreegate/?$')
+    def aggregate(self, request, pk=None):
+        task = self.get_object()
+
+        return merge_task(
+            task,
+            request
+        )
 
     @transaction.atomic
     def perform_update(self, serializer):
