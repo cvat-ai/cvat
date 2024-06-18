@@ -56,7 +56,7 @@ function showSubmittedInfo(): void {
     });
 }
 
-function makeMessage(label: Label, labelType: LabelType, pointsCount: number): JSX.Element {
+function makeMessage(label: Label, labelType: State['labelType'], pointsCount: number): JSX.Element {
     let readableShape = '';
     if (labelType === LabelType.POINTS) {
         readableShape = pointsCount === 1 ? 'one point' : `${pointsCount} points`;
@@ -300,16 +300,14 @@ function SingleShapeSidebar(): JSX.Element {
     }, [getNextFrame]);
 
     useEffect(() => {
-        // when canvas finishes drawing object it first sends canvas.cancel
-        // then it sends canvas.drawn, we do not need both effects to be applied
-        // otherwise when drawing canceled, it will send only canvas.cancel event
-        // we do not need both effects applied, so, we introduce applied flag
-        let effectApplied = false;
+        // when canvas finishes drawing object it first sends canvas.cancel then it sends canvas.drawn,
+        // we do not need onCancel effect to be applied if object is drawn so, we introduce applied flag
+        let drawDoneEffectApplied = false;
 
         const drawnObjects = annotations.filter((_state) => _state.objectType !== ObjectType.TAG);
         const canvas = store.getState().annotation.canvas.instance as Canvas;
         const onDrawDone = (): void => {
-            effectApplied = true;
+            drawDoneEffectApplied = true;
             if (!unmountedRef.current && state.autoNextFrame) {
                 setTimeout(finishOnThisFrame, 30);
             }
@@ -321,7 +319,7 @@ function SingleShapeSidebar(): JSX.Element {
             // but there are some cases when only canvas.cancel is triggered (e.g. when drawn shape was not correct)
             // in this case need to re-run drawing process
             setTimeout(() => {
-                if (!unmountedRef.current && !effectApplied && !drawnObjects.length) {
+                if (!unmountedRef.current && !drawDoneEffectApplied && !drawnObjects.length) {
                     canvasInitializerRef.current();
                 }
             }, 50);
