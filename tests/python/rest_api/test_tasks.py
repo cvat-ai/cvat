@@ -18,8 +18,8 @@ from tempfile import NamedTemporaryFile, TemporaryDirectory
 from time import sleep, time
 from typing import Any, Dict, List, Optional, Tuple
 
-import pytest
 import psutil
+import pytest
 from cvat_sdk import Client, Config, exceptions
 from cvat_sdk.api_client import models
 from cvat_sdk.api_client.api_client import ApiClient, ApiException, Endpoint
@@ -1822,7 +1822,6 @@ class TestPostTaskData:
         after_memory = process.memory_info().rss
         print(before_memory, after_memory)
         print(f"Memory usage: {after_memory - before_memory}")
-
 
         with make_api_client(self._USERNAME) as api_client:
             data_meta, _ = api_client.tasks_api.retrieve_data_meta(task_id)
