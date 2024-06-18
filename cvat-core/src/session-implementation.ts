@@ -432,9 +432,9 @@ export function implementJob(Job: typeof JobClass): typeof JobClass {
     Object.defineProperty(Job.prototype.annotations.clear, 'implementation', {
         value: function clearAnnotationsImplementation(
             this: JobClass,
-            flags: Parameters<typeof JobClass.prototype.annotations.clear>[0],
+            options: Parameters<typeof JobClass.prototype.annotations.clear>[0],
         ): ReturnType<typeof JobClass.prototype.annotations.clear> {
-            return clearAnnotations(this, flags);
+            return clearAnnotations(this, options);
         },
     });
 
@@ -1074,9 +1074,9 @@ export function implementTask(Task: typeof TaskClass): typeof TaskClass {
     Object.defineProperty(Task.prototype.annotations.clear, 'implementation', {
         value: function clearAnnotationsImplementation(
             this: TaskClass,
-            flags: Parameters<typeof TaskClass.prototype.annotations.clear>[0],
+            options: Parameters<typeof TaskClass.prototype.annotations.clear>[0],
         ): ReturnType<typeof Task.prototype.annotations.clear> {
-            return clearAnnotations(this, flags);
+            return clearAnnotations(this, options);
         },
     });
 

@@ -115,13 +115,13 @@ export async function getAnnotations(session, frame, allTracks, filters): Promis
 
 export async function clearAnnotations(
     session: Task | Job,
-    flags: Parameters<typeof Job.prototype.annotations.clear>[0],
+    options: Parameters<typeof Job.prototype.annotations.clear>[0],
 ): Promise<void> {
     const sessionType = session instanceof Task ? 'task' : 'job';
     const cache = getCache(sessionType);
 
-    if (Object.hasOwn(flags ?? {}, 'reload')) {
-        const { reload } = flags;
+    if (Object.hasOwn(options ?? {}, 'reload')) {
+        const { reload } = options;
         checkObjectType('reload', reload, 'boolean', null);
 
         if (reload) {
@@ -130,7 +130,7 @@ export async function clearAnnotations(
         }
     }
 
-    return getCollection(session).clear(flags);
+    return getCollection(session).clear(options);
 }
 
 export async function exportDataset(

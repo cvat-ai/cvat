@@ -56,9 +56,9 @@ function buildDuplicatedAPI(prototype) {
                     return result;
                 },
 
-                async clear(flags) {
+                async clear(options) {
                     const result = await PluginRegistry.apiWrapper.call(
-                        this, prototype.annotations.clear, flags,
+                        this, prototype.annotations.clear, options,
                     );
                     return result;
                 },
@@ -317,7 +317,7 @@ export class Session {
         group: (objectStates: ObjectState[], reset: boolean) => Promise<number>;
         join: (objectStates: ObjectState[], points: number[]) => Promise<void>;
         slice: (state: ObjectState, results: number[][]) => Promise<void>;
-        clear: (flags?: {
+        clear: (options?: {
             reload?: boolean;
             startFrame?: number;
             stopFrame?: number;

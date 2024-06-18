@@ -772,12 +772,12 @@ export default class Collection {
         );
     }
 
-    public clear(flags?: {
+    public clear(options?: {
         startFrame?: number;
         stopFrame?: number;
         delTrackKeyframesOnly?: boolean;
     }): void {
-        const { startFrame, stopFrame, delTrackKeyframesOnly } = flags ?? {};
+        const { startFrame, stopFrame, delTrackKeyframesOnly } = options ?? {};
 
         if (typeof startFrame === 'undefined' && typeof stopFrame === 'undefined') {
             this.shapes = {};
