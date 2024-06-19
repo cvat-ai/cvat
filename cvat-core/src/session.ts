@@ -456,39 +456,22 @@ export class Job extends Session {
             mode: undefined,
             created_date: undefined,
             updated_date: undefined,
-            source_storage: new Storage({
-                location: initialData.source_storage?.location || StorageLocation.LOCAL,
-                cloudStorageId: initialData.source_storage?.cloud_storage_id,
-            }),
-            target_storage: new Storage({
-                location: initialData.target_storage?.location || StorageLocation.LOCAL,
-                cloudStorageId: initialData.target_storage?.cloud_storage_id,
-            }),
+            source_storage: undefined,
+            target_storage: undefined,
         };
 
         this.#data.id = initialData.id ?? this.#data.id;
-        this.#data.stage = initialData.stage ?? this.#data.stage;
-        this.#data.state = initialData.state ?? this.#data.state;
         this.#data.type = initialData.type ?? this.#data.type;
-
         this.#data.start_frame = initialData.start_frame ?? this.#data.start_frame;
         this.#data.stop_frame = initialData.stop_frame ?? this.#data.stop_frame;
         this.#data.frame_count = initialData.frame_count ?? this.#data.frame_count;
-        this.#data.project_id = initialData.project_id ?? this.#data.project_id;
-        this.#data.guide_id = initialData.guide_id ?? this.#data.guide_id;
         this.#data.task_id = initialData.task_id ?? this.#data.task_id;
         this.#data.dimension = initialData.dimension ?? this.#data.dimension;
         this.#data.data_compressed_chunk_type =
             initialData.data_compressed_chunk_type ?? this.#data.data_compressed_chunk_type;
         this.#data.data_chunk_size = initialData.data_chunk_size ?? this.#data.data_chunk_size;
-        this.#data.bug_tracker = initialData.bug_tracker ?? this.#data.bug_tracker;
         this.#data.mode = initialData.mode ?? this.#data.mode;
         this.#data.created_date = initialData.created_date ?? this.#data.created_date;
-        this.#data.updated_date = initialData.updated_date ?? this.#data.updated_date;
-
-        if (initialData.assignee) {
-            this.#data.assignee = new User(initialData.assignee);
-        }
 
         if (Array.isArray(initialData.labels)) {
             this.#data.labels = initialData.labels.map((labelData) => {
@@ -501,6 +484,9 @@ export class Job extends Session {
                 return new Label(labelData);
             }).filter((label) => !label.hasParent);
         }
+
+        // to avoid code duplication set mutable field in the dedicated method
+        this.reinit(initialData);
     }
 
     protected reinit(data: InitializerType): void {
@@ -512,11 +498,33 @@ export class Job extends Session {
             }
         }
 
+        if (
+            !this.#data.source_storage ||
+            this.#data.source_storage.location !== data.source_storage?.location ||
+            this.#data.source_storage.cloudStorageId !== data.source_storage?.cloud_storage_id
+        ) {
+            this.#data.source_storage = new Storage({
+                location: data.source_storage?.location || StorageLocation.LOCAL,
+                cloudStorageId: data.source_storage?.cloud_storage_id,
+            });
+        }
+
+        if (
+            !this.#data.target_storage ||
+            this.#data.target_storage.location !== data.target_storage?.location ||
+            this.#data.target_storage.cloudStorageId !== data.target_storage?.cloud_storage_id
+        ) {
+            this.#data.target_storage = new Storage({
+                location: data.target_storage?.location || StorageLocation.LOCAL,
+                cloudStorageId: data.target_storage?.cloud_storage_id,
+            });
+        }
+
         this.#data.stage = data.stage ?? this.#data.stage;
         this.#data.state = data.state ?? this.#data.state;
         this.#data.project_id = data.project_id ?? this.#data.project_id;
-        this.#data.updated_date = data.updated_date ?? this.#data.updated_date;
         this.#data.guide_id = data.guide_id ?? this.#data.guide_id;
+        this.#data.updated_date = data.updated_date ?? this.#data.updated_date;
         this.#data.bug_tracker = data.bug_tracker ?? this.#data.bug_tracker;
 
         // TODO: labels also may get changed, but it will affect many code within the application
