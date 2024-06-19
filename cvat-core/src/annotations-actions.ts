@@ -1,4 +1,4 @@
-// Copyright (C) 2023 CVAT.ai Corporation
+// Copyright (C) 2023-2024 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -30,7 +30,8 @@ export enum ActionParameterType {
 }
 
 // For SELECT values should be a list of possible options
-// For NUMBER values should be a list with [min, max, step]
+// For NUMBER values should be a list with [min, max, step],
+// supported special values: 'frameCount'
 type ActionParameters = Record<string, {
     type: ActionParameterType;
     values: string[];

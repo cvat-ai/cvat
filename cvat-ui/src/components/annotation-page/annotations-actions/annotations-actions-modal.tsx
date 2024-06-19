@@ -1,4 +1,4 @@
-// Copyright (C) 2023 CVAT.ai Corporation
+// Copyright (C) 2023-2024 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -298,6 +298,8 @@ function AnnotationsActionsModalContent(props: { onClose: () => void; }): JSX.El
         progress, progressMessage, frameFrom, frameTo, actionParameters, modalVisible,
     } = state;
 
+    const currentFrameAction = activeAction?.frameSelection === FrameSelectionType.CURRENT_FRAME;
+
     return (
         <Modal
             closable={false}
@@ -435,7 +437,7 @@ function AnnotationsActionsModalContent(props: { onClose: () => void; }): JSX.El
                                         value={frameFrom}
                                         min={(jobInstance as Job).startFrame}
                                         max={frameTo}
-                                        disabled={activeAction?.frameSelection === FrameSelectionType.CURRENT_FRAME}
+                                        disabled={currentFrameAction}
                                         step={1}
                                         onChange={(value) => {
                                             if (typeof value === 'number') {
@@ -450,7 +452,7 @@ function AnnotationsActionsModalContent(props: { onClose: () => void; }): JSX.El
                                         value={frameTo}
                                         min={frameFrom}
                                         max={(jobInstance as Job).stopFrame}
-                                        disabled={activeAction?.frameSelection === FrameSelectionType.CURRENT_FRAME}
+                                        disabled={currentFrameAction}
                                         step={1}
                                         onChange={(value) => {
                                             if (typeof value === 'number') {
@@ -464,7 +466,7 @@ function AnnotationsActionsModalContent(props: { onClose: () => void; }): JSX.El
                             </Row>
                         </Col>
                         {
-                            activeAction?.frameSelection !== FrameSelectionType.CURRENT_FRAME ? (
+                            !currentFrameAction ? (
                                 <Col span={24} className='cvat-action-runner-frames-predefined'>
                                     <Row>
                                         <Col span={24}>

@@ -369,7 +369,7 @@ export function propagateShapes(shapes: SerializedShape[], from: number, to: num
         rotation: shape.rotation,
         frame: from,
         elements: shape.type === 'skeleton' ? shape.elements
-            .map((element: any): any => getCopyFromShape(element)) : [],
+            .map((element: SerializedShape): SerializedShape => getCopyFromShape(element)) : [],
         source: shape.source,
         group: 0,
         outside: false,
@@ -383,7 +383,7 @@ export function propagateShapes(shapes: SerializedShape[], from: number, to: num
             const copy = getCopyFromShape(shape);
 
             copy.frame = frame;
-            copy.elements.forEach((element: any) => { element.frame = frame; });
+            copy.elements.forEach((element: SerializedShape) => { element.frame = frame; });
             states.push(copy);
         }
     }
