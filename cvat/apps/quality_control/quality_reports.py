@@ -708,7 +708,16 @@ def _match_segments(
     return matches, mispred, a_unmatched, b_unmatched
 
 
-def _OKS(a, b, sigma=0.1, bbox=None, scale=None, visibility_a=None, visibility_b=None):
+def _OKS(
+    a: dm.Points,
+    b: dm.Points,
+    *,
+    sigma: float | np.ndarray = 0.1,
+    bbox: datumaro.util.mask_tools.BboxCoords | None = None,
+    scale: None | float | np.ndarray = None,
+    visibility_a: None | bool | Sequence[bool] = None,
+    visibility_b: None | bool | Sequence[bool] = None,
+) -> float:
     """
     Object Keypoint Similarity metric.
     https://cocodataset.org/#keypoints-eval
@@ -729,15 +738,26 @@ def _OKS(a, b, sigma=0.1, bbox=None, scale=None, visibility_a=None, visibility_b
     else:
         visibility_b = np.asarray(visibility_b, dtype=bool)
 
+    total_vis = np.sum(visibility_a | visibility_b, dtype=float)
+    if not total_vis:
+        # We treat this situation as a match. It's possible to use alternative approaches,
+        # such as add weight for occluded points.
+        return 1.0
+
     if not scale:
         if bbox is None:
             bbox = dm.ops.mean_bbox([a, b])
         scale = bbox[2] * bbox[3]
 
     dists = np.linalg.norm(p1 - p2, axis=1)
-    return np.sum(
-        visibility_a * visibility_b * np.exp(-(dists**2) / (2 * scale * (2 * sigma) ** 2))
-    ) / np.sum(visibility_a | visibility_b, dtype=float)
+
+    return (
+        np.sum(
+            (visibility_a == visibility_b)
+            * np.exp((visibility_a * visibility_b) * -(dists**2) / (2 * scale * (2 * sigma) ** 2))
+        )
+        / total_vis
+    )
 
 
 @define(kw_only=True)
@@ -754,8 +774,8 @@ class _KeypointsMatcher(dm.ops.PointsMatcher):
             b,
             sigma=self.sigma,
             bbox=bbox,
-            visibility_a=[v == dm.Points.Visibility.visible for v in a.visibility],
-            visibility_b=[v == dm.Points.Visibility.visible for v in b.visibility],
+            visibility_a=[v != dm.Points.Visibility.absent for v in a.visibility],
+            visibility_b=[v != dm.Points.Visibility.absent for v in b.visibility],
         )
 
 
