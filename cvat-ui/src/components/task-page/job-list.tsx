@@ -48,7 +48,15 @@ function setUpJobsList(jobs: Job[], query: JobsQuery): Job[] {
         result = _.orderBy(result, sort, orders);
     }
     if (query.filter) {
-        const converted = result.map((job) => ({ ...job, assignee: job?.assignee?.username }));
+        const converted = result.map((job) => ({
+            assignee: job.assignee ? job.assignee.username : null,
+            stage: job.stage,
+            state: job.state,
+            dimension: job.dimension,
+            updatedDate: job.updatedDate,
+            type: job.type,
+            id: job.id,
+        }));
         const filter = JSON.parse(query.filter);
         result = result.filter((job, index) => jsonLogic.apply(filter, converted[index]));
     }
