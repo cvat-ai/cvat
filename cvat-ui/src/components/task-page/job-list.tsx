@@ -31,7 +31,7 @@ const FilteringComponent = ResourceFilterHOC(
 
 interface Props {
     task: Task;
-    onUpdateJob(jobInstance: Job): void;
+    onUpdateJob(job: Job, data: Parameters<Job['save']>[0]): void;
 }
 
 const PAGE_SIZE = 10;
@@ -57,10 +57,7 @@ function setUpJobsList(jobs: Job[], query: JobsQuery): Job[] {
 }
 
 function JobListComponent(props: Props): JSX.Element {
-    const {
-        task: taskInstance,
-        onUpdateJob,
-    } = props;
+    const { task: taskInstance, onUpdateJob } = props;
     const [visibility, setVisibility] = useState(defaultVisibility);
 
     const history = useHistory();

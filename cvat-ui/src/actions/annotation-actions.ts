@@ -1024,13 +1024,8 @@ export function updateCurrentJobAsync(
 ): ThunkAction {
     return async (dispatch: ThunkDispatch) => {
         const { jobInstance } = receiveAnnotationsParameters();
-        const { state, stage } = jobFieldsToUpdate;
-
-        if (stage) jobInstance.stage = stage;
-        if (state) jobInstance.state = state;
-
         try {
-            await jobInstance.save();
+            await jobInstance.save(jobFieldsToUpdate);
         } catch (error: unknown) {
             dispatch({
                 type: AnnotationActionTypes.UPDATE_CURRENT_JOB_FAILED,

@@ -5,7 +5,9 @@
 
 import { omit } from 'lodash';
 import { ArgumentError } from './exceptions';
-import { HistoryActions, JobType, RQStatus } from './enums';
+import {
+    HistoryActions, JobStage, JobState, JobType, RQStatus,
+} from './enums';
 import { Storage } from './storage';
 import { Task as TaskClass, Job as JobClass } from './session';
 import logger from './logger';
@@ -24,12 +26,13 @@ import {
 } from './frames';
 import Issue from './issue';
 import { SerializedLabel, SerializedTask } from './server-response-types';
-import { checkObjectType } from './common';
+import { checkInEnum, checkObjectType } from './common';
 import {
     getCollection, getSaver, clearAnnotations, getAnnotations,
     importDataset, exportDataset, clearCache, getHistory,
 } from './annotations';
 import AnnotationGuide from './guide';
+import User from './user';
 
 // must be called with task/job context
 async function deleteFrameWrapper(jobID, frame): Promise<void> {
@@ -55,27 +58,29 @@ async function restoreFrameWrapper(jobID, frame): Promise<void> {
 }
 
 export function implementJob(Job) {
-    Job.prototype.save.implementation = async function (additionalData: any) {
+    Job.prototype.save.implementation = async function (this: JobClass, fields: any) {
         if (this.id) {
-            const jobData = this._updateTrigger.getUpdated(this);
+            const jobData = {
+                ...('assignee' in fields ? { assignee: fields.assignee } : {}),
+                ...('stage' in fields ? { stage: fields.stage } : {}),
+                ...('state' in fields ? { state: fields.state } : {}),
+            };
+
             if (jobData.assignee) {
+                checkObjectType('job assignee', jobData.assignee, null, User);
                 jobData.assignee = jobData.assignee.id;
             }
 
-            let updatedJob = null;
-            try {
-                const data = await serverProxy.jobs.save(this.id, jobData);
-                updatedJob = new Job(data);
-            } catch (error) {
-                updatedJob = new Job(this._initialData);
-                throw error;
-            } finally {
-                this.stage = updatedJob.stage;
-                this.state = updatedJob.state;
-                this.assignee = updatedJob.assignee;
-                this._updateTrigger.reset();
+            if (jobData.state) {
+                checkInEnum<JobState>('job state', jobData.state, Object.values(JobState));
             }
 
+            if (jobData.stage) {
+                checkInEnum<JobStage>('job stage', jobData.stage, Object.values(JobStage));
+            }
+
+            const data = await serverProxy.jobs.save(this.id, jobData);
+            this.reinit({ ...data, labels: [] });
             return this;
         }
 
@@ -86,8 +91,9 @@ export function implementJob(Job) {
             type: this.type,
             task_id: this.taskId,
         };
-        const job = await serverProxy.jobs.create({ ...jobSpec, ...additionalData });
-        return new Job(job);
+
+        const job = await serverProxy.jobs.create({ ...jobSpec, ...fields });
+        return new JobClass({ ...job, labels: [] });
     };
 
     Job.prototype.delete.implementation = async function () {

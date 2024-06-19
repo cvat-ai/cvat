@@ -406,44 +406,48 @@ export class Session {
     }
 }
 
-export class Job extends Session {
-    public assignee: User | null;
-    public stage: JobStage;
-    public state: JobState;
-    public readonly id: number;
-    public readonly startFrame: number;
-    public readonly stopFrame: number;
-    public readonly frameCount: number;
-    public readonly projectId: number | null;
-    public readonly guideId: number | null;
-    public readonly taskId: number;
-    public readonly dimension: DimensionType;
-    public readonly dataChunkType: ChunkType;
-    public readonly dataChunkSize: number;
-    public readonly bugTracker: string | null;
-    public readonly mode: TaskMode;
-    public readonly labels: Label[];
-    public readonly type: JobType;
-    public readonly frameSelectionMethod: JobType;
-    public readonly createdDate: string;
-    public readonly updatedDate: string;
-    public readonly sourceStorage: Storage;
-    public readonly targetStorage: Storage;
+type InitializerType = Readonly<Omit<SerializedJob, 'labels'> & { labels?: SerializedLabel[] }>;
 
-    constructor(initialData: Readonly<Omit<SerializedJob, 'labels'> & { labels?: SerializedLabel[] }>) {
+export class Job extends Session {
+    #data: {
+        id?: number;
+        assignee: User | null;
+        stage?: JobStage;
+        state?: JobState;
+        type?: JobType;
+        start_frame?: number;
+        stop_frame?: number;
+        frame_count?: number;
+        project_id: number | null;
+        guide_id: number | null;
+        task_id: number | null;
+        labels: Label[];
+        dimension?: DimensionType;
+        data_compressed_chunk_type?: ChunkType;
+        data_chunk_size?: number;
+        bug_tracker: string | null;
+        mode?: TaskMode;
+        created_date?: string,
+        updated_date?: string,
+        source_storage: Storage,
+        target_storage: Storage,
+    };
+
+    constructor(initialData: InitializerType) {
         super();
-        const data = {
+
+        this.#data = {
             id: undefined,
             assignee: null,
             stage: undefined,
             state: undefined,
-            type: JobType.ANNOTATION,
+            type: undefined,
             start_frame: undefined,
             stop_frame: undefined,
             frame_count: undefined,
-            project_id: undefined,
+            project_id: null,
             guide_id: null,
-            task_id: undefined,
+            task_id: null,
             labels: [],
             dimension: undefined,
             data_compressed_chunk_type: undefined,
@@ -452,23 +456,41 @@ export class Job extends Session {
             mode: undefined,
             created_date: undefined,
             updated_date: undefined,
-            source_storage: undefined,
-            target_storage: undefined,
+            source_storage: new Storage({
+                location: initialData.source_storage?.location || StorageLocation.LOCAL,
+                cloudStorageId: initialData.source_storage?.cloud_storage_id,
+            }),
+            target_storage: new Storage({
+                location: initialData.target_storage?.location || StorageLocation.LOCAL,
+                cloudStorageId: initialData.target_storage?.cloud_storage_id,
+            }),
         };
 
-        const updateTrigger = new FieldUpdateTrigger();
+        this.#data.id = initialData.id ?? this.#data.id;
+        this.#data.stage = initialData.stage ?? this.#data.stage;
+        this.#data.state = initialData.state ?? this.#data.state;
+        this.#data.type = initialData.type ?? this.#data.type;
 
-        for (const property in data) {
-            if (Object.prototype.hasOwnProperty.call(data, property)) {
-                if (property in initialData) {
-                    data[property] = initialData[property];
-                }
-            }
+        this.#data.start_frame = initialData.start_frame ?? this.#data.start_frame;
+        this.#data.stop_frame = initialData.stop_frame ?? this.#data.stop_frame;
+        this.#data.project_id = initialData.project_id ?? this.#data.project_id;
+        this.#data.guide_id = initialData.guide_id ?? this.#data.guide_id;
+        this.#data.task_id = initialData.task_id ?? this.#data.task_id;
+        this.#data.dimension = initialData.dimension ?? this.#data.dimension;
+        this.#data.data_compressed_chunk_type =
+            initialData.data_compressed_chunk_type ?? this.#data.data_compressed_chunk_type;
+        this.#data.data_chunk_size = initialData.data_chunk_size ?? this.#data.data_chunk_size;
+        this.#data.bug_tracker = initialData.bug_tracker ?? this.#data.bug_tracker;
+        this.#data.mode = initialData.mode ?? this.#data.mode;
+        this.#data.created_date = initialData.created_date ?? this.#data.created_date;
+        this.#data.updated_date = initialData.updated_date ?? this.#data.updated_date;
+
+        if (initialData.assignee) {
+            this.#data.assignee = new User(initialData.assignee);
         }
 
-        if (data.assignee) data.assignee = new User(data.assignee);
         if (Array.isArray(initialData.labels)) {
-            data.labels = initialData.labels.map((labelData) => {
+            this.#data.labels = initialData.labels.map((labelData) => {
                 // can be already wrapped to the class
                 // when create this job from Task constructor
                 if (labelData instanceof Label) {
@@ -478,140 +500,110 @@ export class Job extends Session {
                 return new Label(labelData);
             }).filter((label) => !label.hasParent);
         }
-
-        data.source_storage = new Storage({
-            location: initialData.source_storage?.location || StorageLocation.LOCAL,
-            cloudStorageId: initialData.source_storage?.cloud_storage_id,
-        });
-
-        data.target_storage = new Storage({
-            location: initialData.target_storage?.location || StorageLocation.LOCAL,
-            cloudStorageId: initialData.target_storage?.cloud_storage_id,
-        });
-
-        Object.defineProperties(
-            this,
-            Object.freeze({
-                id: {
-                    get: () => data.id,
-                },
-                assignee: {
-                    get: () => data.assignee,
-                    set: (assignee) => {
-                        if (assignee !== null && !(assignee instanceof User)) {
-                            throw new ArgumentError('Value must be a user instance');
-                        }
-                        updateTrigger.update('assignee');
-                        data.assignee = assignee;
-                    },
-                },
-                stage: {
-                    get: () => data.stage,
-                    set: (stage) => {
-                        const type = JobStage;
-                        let valueInEnum = false;
-                        for (const value in type) {
-                            if (type[value] === stage) {
-                                valueInEnum = true;
-                                break;
-                            }
-                        }
-
-                        if (!valueInEnum) {
-                            throw new ArgumentError(
-                                'Value must be a value from the enumeration cvat.enums.JobStage',
-                            );
-                        }
-
-                        updateTrigger.update('stage');
-                        data.stage = stage;
-                    },
-                },
-                state: {
-                    get: () => data.state,
-                    set: (state) => {
-                        const type = JobState;
-                        let valueInEnum = false;
-                        for (const value in type) {
-                            if (type[value] === state) {
-                                valueInEnum = true;
-                                break;
-                            }
-                        }
-
-                        if (!valueInEnum) {
-                            throw new ArgumentError(
-                                'Value must be a value from the enumeration cvat.enums.JobState',
-                            );
-                        }
-
-                        updateTrigger.update('state');
-                        data.state = state;
-                    },
-                },
-                type: {
-                    get: () => data.type,
-                },
-                startFrame: {
-                    get: () => data.start_frame,
-                },
-                stopFrame: {
-                    get: () => data.stop_frame,
-                },
-                frameCount: {
-                    get: () => data.frame_count,
-                },
-                projectId: {
-                    get: () => data.project_id,
-                },
-                guideId: {
-                    get: () => data.guide_id,
-                },
-                taskId: {
-                    get: () => data.task_id,
-                },
-                labels: {
-                    get: () => [...data.labels],
-                },
-                dimension: {
-                    get: () => data.dimension,
-                },
-                dataChunkSize: {
-                    get: () => data.data_chunk_size,
-                },
-                dataChunkType: {
-                    get: () => data.data_compressed_chunk_type,
-                },
-                mode: {
-                    get: () => data.mode,
-                },
-                bugTracker: {
-                    get: () => data.bug_tracker,
-                },
-                createdDate: {
-                    get: () => data.created_date,
-                },
-                updatedDate: {
-                    get: () => data.updated_date,
-                },
-                sourceStorage: {
-                    get: () => data.source_storage,
-                },
-                targetStorage: {
-                    get: () => data.target_storage,
-                },
-                _updateTrigger: {
-                    get: () => updateTrigger,
-                },
-                _initialData: {
-                    get: () => initialData,
-                },
-            }),
-        );
     }
 
-    async save(additionalData = {}) {
-        const result = await PluginRegistry.apiWrapper.call(this, Job.prototype.save, additionalData);
+    protected reinit(data: InitializerType): void {
+        if (data.assignee?.id !== this.#data.assignee?.id) {
+            this.#data.assignee = new User(data.assignee);
+        }
+
+        this.#data.stage = data.stage ?? this.#data.stage;
+        this.#data.state = data.state ?? this.#data.state;
+        this.#data.project_id = data.project_id ?? this.#data.project_id;
+        this.#data.updated_date = data.updated_date ?? this.#data.updated_date;
+        this.#data.guide_id = data.guide_id ?? this.#data.guide_id;
+        this.#data.bug_tracker = data.bug_tracker ?? this.#data.bug_tracker;
+
+        // TODO: labels also may get changed, but it will affect many code within the application
+        // so, need to think on this additionally
+    }
+
+    public get assignee(): User | null {
+        return this.#data.assignee;
+    }
+
+    public get stage(): JobStage {
+        return this.#data.stage;
+    }
+
+    public get state(): JobState {
+        return this.#data.state;
+    }
+
+    public get id(): number {
+        return this.#data.id;
+    }
+
+    public get startFrame(): number {
+        return this.#data.start_frame;
+    }
+
+    public get stopFrame(): number {
+        return this.#data.stop_frame;
+    }
+
+    public get frameCount(): number {
+        return this.#data.frame_count;
+    }
+
+    public get projectId(): number | null {
+        return this.#data.project_id;
+    }
+
+    public get guideId(): number | null {
+        return this.#data.guide_id;
+    }
+
+    public get taskId(): number | null {
+        return this.#data.task_id;
+    }
+
+    public get dimension(): DimensionType {
+        return this.#data.dimension;
+    }
+
+    public get dataChunkType(): ChunkType {
+        return this.#data.data_compressed_chunk_type;
+    }
+
+    public get dataChunkSize(): number {
+        return this.#data.data_chunk_size;
+    }
+
+    public get bugTracker(): string | null {
+        return this.#data.bug_tracker;
+    }
+
+    public get mode(): TaskMode {
+        return this.#data.mode;
+    }
+
+    public get labels(): Label[] {
+        return [...this.#data.labels];
+    }
+
+    public get type(): JobType {
+        return this.#data.type;
+    }
+
+    public get createdDate(): string {
+        return this.#data.created_date;
+    }
+
+    public get updatedDate(): string {
+        return this.#data.updated_date;
+    }
+
+    public get sourceStorage(): Storage {
+        return this.#data.source_storage;
+    }
+
+    public get targetStorage(): Storage {
+        return this.#data.target_storage;
+    }
+
+    async save(fields: any) {
+        const result = await PluginRegistry.apiWrapper.call(this, Job.prototype.save, fields);
         return result;
     }
 
