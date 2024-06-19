@@ -1276,7 +1276,6 @@ class RequestPermission(OpenPolicyAgentPermission):
 
 
 from django.shortcuts import get_object_or_404
-from rest_framework.exceptions import PermissionDenied
 from cvat.apps.engine.models import CloudStorage as CloudStorageModel
 
 def get_cloud_storage_for_import_or_export(

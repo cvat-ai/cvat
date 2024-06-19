@@ -13,11 +13,9 @@ from typing import Any, Dict, Iterable, Union
 import uuid
 import mimetypes
 from zipfile import ZipFile
-from datetime import datetime
 from tempfile import NamedTemporaryFile
 
 import django_rq
-from attr.converters import to_bool
 from django.conf import settings
 from django.http import HttpRequest
 from django.db import transaction
@@ -39,16 +37,16 @@ from cvat.apps.engine.serializers import (AttributeSerializer, DataSerializer,
 from cvat.apps.engine.utils import (
     av_scan_paths, process_failed_job,
     get_rq_job_meta, import_resource_with_clean_up_after,
-    sendfile, define_dependent_job, get_rq_lock_by_user, build_backup_file_name,
+    define_dependent_job, get_rq_lock_by_user,
 )
 from cvat.apps.engine.rq_job_handler import RQIdManager, RQJobMetaField
 from cvat.apps.engine.models import (
-    StorageChoice, StorageMethodChoice, DataChoice, Task, Project, Location)
+    StorageChoice, StorageMethodChoice, DataChoice, Project, Location)
 from cvat.apps.engine.task import JobFileMapping, _create_thread
-from cvat.apps.engine.cloud_provider import import_resource_from_cloud_storage, export_resource_to_cloud_storage
+from cvat.apps.engine.cloud_provider import import_resource_from_cloud_storage
 from cvat.apps.engine.location import StorageType, get_location_configuration
 from cvat.apps.engine.permissions import get_cloud_storage_for_import_or_export
-from cvat.apps.dataset_manager.views import TASK_CACHE_TTL, PROJECT_CACHE_TTL, get_export_cache_dir, clear_export_cache, log_exception
+from cvat.apps.dataset_manager.views import get_export_cache_dir, clear_export_cache, log_exception
 from cvat.apps.dataset_manager.bindings import CvatImportError
 
 slogger = ServerLogManager(__name__)

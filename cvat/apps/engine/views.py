@@ -50,8 +50,8 @@ from rq.job import Job as RQJob, JobStatus as RQJobStatus
 
 import cvat.apps.dataset_manager as dm
 import cvat.apps.dataset_manager.views  # pylint: disable=unused-import
-from cvat.apps.engine.cloud_provider import db_storage_to_storage_instance, import_resource_from_cloud_storage, export_resource_to_cloud_storage
-from cvat.apps.events.handlers import handle_dataset_export, handle_dataset_import
+from cvat.apps.engine.cloud_provider import db_storage_to_storage_instance, import_resource_from_cloud_storage
+from cvat.apps.events.handlers import handle_dataset_import
 from cvat.apps.dataset_manager.bindings import CvatImportError
 from cvat.apps.dataset_manager.serializers import DatasetFormatsSerializer
 from cvat.apps.engine.frame_provider import FrameProvider
@@ -433,7 +433,7 @@ class ProjectViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
                         headers=common_response_headers
                     )
             else:
-                return self.export_dataset_v1(request=request)
+                return self.export_dataset_v1(request=request, save_images=True)
 
     @tus_chunk_action(detail=True, suffix_base="dataset")
     def append_dataset_chunk(self, request, pk, file_id):
@@ -1590,7 +1590,8 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
 
         if self._object.data:
             response = self.export_dataset_v1(
-                request=request
+                request=request,
+                save_images=True
             )
         else:
             response = HttpResponseBadRequest("Exporting a dataset from a task without data is not allowed")
@@ -1957,7 +1958,7 @@ class JobViewSet(viewsets.GenericViewSet, mixins.ListModelMixin, mixins.CreateMo
     def dataset_export(self, request, pk):
         self._object = self.get_object() # force call of check_object_permissions()
 
-        return self.export_dataset_v1(request=request)
+        return self.export_dataset_v1(request=request, save_images=True)
 
     def _get_export_callback(self, save_images: bool) -> Callable:
         return dm.views.export_job_as_dataset if save_images else dm.views.export_job_annotations
@@ -2984,7 +2985,7 @@ def _import_annotations(request, rq_id_template, rq_func, db_obj, format_name,
                 failure_ttl=settings.IMPORT_CACHE_FAILED_TTL.total_seconds()
             )
 
-        handle_dataset_import(db_obj, format_name=format_name, cloud_storage_id=db_storage.id)
+        handle_dataset_import(db_obj, format_name=format_name, cloud_storage_id=db_storage.id if db_storage is not None else None)
 
         serializer = RqIdSerializer(data={'rq_id': rq_id})
         serializer.is_valid(raise_exception=True)

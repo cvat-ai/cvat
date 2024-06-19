@@ -21,7 +21,6 @@ import urllib3.exceptions
 
 from cvat_sdk.api_client import ApiClient, Configuration, exceptions, models
 from cvat_sdk.core.exceptions import IncompatibleVersionException, InvalidHostException
-from cvat_sdk.core.helpers import expect_status
 from cvat_sdk.core.proxies.issues import CommentsRepo, IssuesRepo
 from cvat_sdk.core.proxies.jobs import JobsRepo
 from cvat_sdk.core.proxies.model_proxy import Repo
@@ -221,9 +220,16 @@ class Client:
 
             request, response = self.api_client.requests_api.retrieve(rq_id)
 
-            assert request.status in {"started", "queued", "finished"}, "Background job failed, unexpected status: {request.status}, message: "
-            if request.status == "finished":
+            assert request.status in {
+                "started",
+                "queued",
+                "finished",
+                "failed"
+            }, f"Background job failed, unexpected status: {request.status}, message: "
+            if "finished" == request.status:
                 break
+            elif "failed" == request.status:
+                raise exceptions.ApiException(status=request.status, reason=request.message, http_resp=response)
 
         return request, response
 

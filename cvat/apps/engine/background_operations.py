@@ -10,7 +10,6 @@ from typing import Callable, Optional, Union
 import django_rq
 from attrs.converters import to_bool
 from django.conf import settings
-from django.http import HttpRequest
 from django.http.request import HttpRequest
 from django.utils import timezone
 from django_rq.queues import DjangoRQ
@@ -26,7 +25,7 @@ from cvat.apps.engine.backup import ProjectExporter, TaskExporter, _create_backu
 from cvat.apps.engine.cloud_provider import export_resource_to_cloud_storage
 from cvat.apps.engine.location import StorageType, get_location_configuration
 from cvat.apps.engine.log import ServerLogManager
-from cvat.apps.engine.models import Job, Location, Project, Task
+from cvat.apps.engine.models import Location, Project, Task
 from cvat.apps.engine.rq_job_handler import RQIdManager, RQJobMetaField
 from cvat.apps.engine.serializers import RqIdSerializer
 from cvat.apps.engine.utils import (
@@ -122,7 +121,7 @@ class DatasetExportManager:
         rq_job: RQJob,
     ) -> Response:
         action = self.request.query_params.get("action")
-        if action not in {"", "download"}:
+        if action not in {None, "download"}:
             raise serializers.ValidationError(
                 "Unexpected action specified for the request"
             )

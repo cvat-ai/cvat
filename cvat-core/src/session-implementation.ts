@@ -501,10 +501,10 @@ export function implementTask(Task) {
         );
 
         await requestsManager.listen(rqID, {
-            callback: async (request: Request) => {
+            callback: (request: Request) => {
                 options?.requestStatusCallback(request);
                 if (request.status === RQStatus.FAILED) {
-                    await serverProxy.tasks.delete(taskID, config.organization.organizationSlug || null);
+                    serverProxy.tasks.delete(taskID, config.organization.organizationSlug || null);
                 }
             },
         });

@@ -7,7 +7,7 @@ from __future__ import annotations
 import json
 import os
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, ContextManager, Dict, List, Optional, Sequence, Tuple
+from typing import TYPE_CHECKING, Any, ContextManager, Dict, List, Optional, Tuple
 
 import requests
 import urllib3

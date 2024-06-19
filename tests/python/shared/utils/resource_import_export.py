@@ -3,8 +3,8 @@ import json
 from abc import ABC, abstractstaticmethod
 from contextlib import ExitStack
 from http import HTTPStatus
-from typing import Any, Dict, Optional, TypeVar
 from time import sleep
+from typing import Any, Dict, Optional, TypeVar
 
 import pytest
 
@@ -109,7 +109,7 @@ class _CloudStorageResourceTest(ABC):
         rq_id = json.loads(response.content).get("rq_id")
         assert rq_id, "The rq_id was not found in server request"
 
-        for i in range(number_of_checks):
+        for _ in range(number_of_checks):
             sleep(sleep_interval)
             # use new requests API for checking the status of the operation
             response = get_method(user, f"requests/{rq_id}")
@@ -124,14 +124,8 @@ class _CloudStorageResourceTest(ABC):
 
         return
 
-
     def _import_resource_from_cloud_storage(
-        self,
-        url: str,
-        *,
-        user: str,
-        _expect_status: Optional[int] = None,
-        **kwargs
+        self, url: str, *, user: str, _expect_status: Optional[int] = None, **kwargs
     ) -> None:
         _expect_status = _expect_status or HTTPStatus.ACCEPTED
 

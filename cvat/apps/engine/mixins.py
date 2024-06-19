@@ -11,7 +11,6 @@ import uuid
 from dataclasses import asdict, dataclass
 from pathlib import Path
 from tempfile import NamedTemporaryFile
-from typing import Any, Callable, Dict, Optional
 from unittest import mock
 from textwrap import dedent
 from typing import Optional, Callable, Dict, Any, Mapping
@@ -419,11 +418,11 @@ class DatasetMixin:
     def export_dataset_v1(
         self,
         request,
+        save_images=False,
         *,
         get_data: Optional[Callable[[int], Dict[str, Any]]]= None,
     ):
         if request.query_params.get("format"):
-            save_images = request.query_params.get('save_images', False)
             callback = self._get_export_callback(save_images)
 
             dataset_export_manager = DatasetExportManager(self._object, request, callback, save_images=save_images, version=1)
@@ -559,7 +558,7 @@ class BackupMixin:
         export_backup_manager = BackupExportManager(db_object, request, version=2)
         return export_backup_manager.export()
 
-    def import_backup_v2():
+    def import_backup_v2(self):
         raise NotImplementedError("Should be implemented in the second iteration")
 
 class CsrfWorkaroundMixin(APIView):

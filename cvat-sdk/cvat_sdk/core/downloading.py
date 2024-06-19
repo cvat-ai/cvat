@@ -6,15 +6,14 @@
 from __future__ import annotations
 
 import json
-
 from contextlib import closing
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Dict, Optional
 
 from cvat_sdk.api_client.api_client import Endpoint
+from cvat_sdk.core.helpers import expect_status
 from cvat_sdk.core.progress import NullProgressReporter, ProgressReporter
 from cvat_sdk.core.utils import atomic_writer
-from cvat_sdk.core.helpers import expect_status
 
 if TYPE_CHECKING:
     from cvat_sdk.core.client import Client
@@ -99,11 +98,13 @@ class Downloader:
 
         client.logger.debug("STATUS %s", response.status)
         expect_status(202, response)
-        rq_id = json.loads(response.data).get('rq_id')
+        rq_id = json.loads(response.data).get("rq_id")
         assert rq_id, "Request identifier was not found in server response"
 
         # wait until background process will be finished or failed
-        request, response = client.wait_for_completion(rq_id, status_check_period=status_check_period)
+        request, response = client.wait_for_completion(
+            rq_id, status_check_period=status_check_period
+        )
 
         downloader = Downloader(client)
         downloader.download_file(request.result_url, output_path=filename, pbar=pbar)
