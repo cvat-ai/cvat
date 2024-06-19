@@ -1,5 +1,5 @@
 av==12.0.0
-psutil==5.9.4
+memory-profiler
 pytest==6.2.5
 pytest-cases==3.6.13
 pytest-timeout==2.1.0
