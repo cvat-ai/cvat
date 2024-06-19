@@ -13,6 +13,6 @@ like a string only a parameter model
 
 or somewhat like storing report attributes.
 
-/agreegate/ => list of merge reports
+/aggregate/ => list of merge reports
 
 """

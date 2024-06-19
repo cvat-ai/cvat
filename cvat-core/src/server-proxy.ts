@@ -798,7 +798,7 @@ async function deleteTask(id: number, organizationID: string | null = null): Pro
 
 async function mergeConsensusJobs(id: number): Promise<void> {
     const { backendAPI } = config;
-    const url = `${backendAPI}/tasks/${id}/agreegate`;
+    const url = `${backendAPI}/tasks/${id}/aggregate`;
 
     return new Promise<void>((resolve, reject) => {
         async function request() {

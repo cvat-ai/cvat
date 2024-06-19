@@ -905,12 +905,12 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
 
     @extend_schema(summary="Aggregate data of a task",
         responses={
-            '201': OpenApiResponse(description='Consensus Jobs Agreegated'),
+            '201': OpenApiResponse(description='Consensus Jobs Aggregated'),
             '202': OpenApiResponse(description='Agreegation of Consensus Jobs started'),
             '400': OpenApiResponse(description='Agreegating a task without data is not allowed'),
         },
     )
-    @action(methods=['PUT'], detail=True, url_path=r'agreegate/?$')
+    @action(methods=['PUT'], detail=True, url_path=r'aggregate/?$')
     def aggregate(self, request, pk=None):
         task = self.get_object()
 
