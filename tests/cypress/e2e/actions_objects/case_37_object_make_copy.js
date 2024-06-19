@@ -134,7 +134,7 @@ context('Object make a copy.', () => {
 
         // Disabled part of the test for the Firefox browser due to possible problems
         // positioning the element and completing the trigger() construct for moving the mouse cursor over the element.
-        it('Make a copy via object context menu.', { browser: '!firefox' }, () => {
+        it('Make a copy via object context menu.', { browser: '!firefox', scrollBehavior: false }, () => {
             let coordX = 100;
             const coordY = 400;
             for (let id = 1; id < countObject; id++) {
@@ -170,7 +170,7 @@ context('Object make a copy.', () => {
             },
         );
 
-        it('Copy a shape to an another frame.', () => {
+        it('Copy a shape to an another frame.', { scrollBehavior: false }, () => {
             cy.get('#cvat_canvas_shape_1').trigger('mousemove');
             cy.get('#cvat_canvas_shape_1').should('have.class', 'cvat_canvas_shape_activated');
             cy.get('body').type('{ctrl}c');
@@ -180,7 +180,7 @@ context('Object make a copy.', () => {
             cy.get('.cvat-player-previous-button').click();
         });
 
-        it('Copy a shape to an another frame after press "Ctrl+V" on the first frame.', () => {
+        it('Copy a shape to an another frame after press "Ctrl+V" on the first frame.', { scrollBehavior: false }, () => {
             cy.get('#cvat_canvas_shape_1').trigger('mousemove');
             cy.get('#cvat_canvas_shape_1').should('have.class', 'cvat_canvas_shape_activated');
             cy.get('body').type('{ctrl}c');
@@ -192,7 +192,7 @@ context('Object make a copy.', () => {
             });
         });
 
-        it('Copy a shape with holding "Ctrl".', () => {
+        it('Copy a shape with holding "Ctrl".', { scrollBehavior: false }, () => {
             const keyCodeC = 67;
             const keyCodeV = 86;
             cy.get('.cvat_canvas_shape').first().trigger('mousemove');
