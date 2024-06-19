@@ -19,7 +19,6 @@ from typing import (Any, Callable, DefaultDict, Dict, Iterable, List, Literal, M
 from attrs.converters import to_bool
 import datumaro as dm
 import defusedxml.ElementTree as ET
-import numpy as np
 import rq
 from attr import attrib, attrs
 from datumaro.components.media import PointCloud
