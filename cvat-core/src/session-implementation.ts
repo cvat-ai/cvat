@@ -587,7 +587,6 @@ export function implementTask(Task: typeof TaskClass): typeof TaskClass {
             }
 
             clearCache(this);
-            return this;
         },
     });
 
