@@ -153,7 +153,7 @@ class _DbTestBase(ApiTestBase):
     def _download_file(self, url, data, user, file_name):
         response = self._get_request_with_data(url, data, user)
         self.assertEqual(response.status_code, status.HTTP_202_ACCEPTED)
-        response = self._get_request_with_data(url, data, user)
+        response = self._get_request_with_data(url, {**data, "action": "download"}, user)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
 
         content = BytesIO(b"".join(response.streaming_content))
@@ -583,7 +583,6 @@ class Task3DTest(_DbTestBase):
                     file_name = osp.join(test_dir, f"{format_name}.zip")
                     data = {
                         "format": format_name,
-                        "action": "download",
                     }
                     self._download_file(url, data, self.admin, file_name)
                     self.assertTrue(osp.exists(file_name))
@@ -622,7 +621,6 @@ class Task3DTest(_DbTestBase):
                     file_name = osp.join(test_dir, f"{format_name}.zip")
                     data = {
                         "format": format_name,
-                        "action": "download",
                     }
                     self._download_file(url, data, self.admin, file_name)
                     self.assertTrue(osp.exists(file_name))
@@ -663,7 +661,6 @@ class Task3DTest(_DbTestBase):
                     file_name = osp.join(test_dir, f"{format_name}.zip")
                     data = {
                         "format": format_name,
-                        "action": "download",
                     }
                     self._download_file(url, data, self.admin, file_name)
 
@@ -687,7 +684,6 @@ class Task3DTest(_DbTestBase):
                     file_name = osp.join(test_dir, f"{format_name}.zip")
                     data = {
                         "format": format_name,
-                        "action": "download",
                     }
                     self._download_file(url, data, self.admin, file_name)
                     self.assertTrue(osp.exists(file_name))

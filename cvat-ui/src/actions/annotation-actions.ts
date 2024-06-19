@@ -516,14 +516,14 @@ export function propagateObjectAsync(from: number, to: number): ThunkAction {
     };
 }
 
-export function removeObjectAsync(sessionInstance: NonNullable<CombinedState['annotation']['job']['instance']>, objectState: any, force: boolean): ThunkAction {
+export function removeObjectAsync(objectState: ObjectState, force: boolean): ThunkAction {
     return async (dispatch: ActionCreator<Dispatch>): Promise<void> => {
         try {
-            await sessionInstance.logger.log(EventScope.deleteObject, { count: 1 });
-            const { frame } = receiveAnnotationsParameters();
+            const { frame, jobInstance } = receiveAnnotationsParameters();
+            await jobInstance.logger.log(EventScope.deleteObject, { count: 1 });
 
             const removed = await objectState.delete(frame, force);
-            const history = await sessionInstance.actions.get();
+            const history = await jobInstance.actions.get();
 
             if (removed) {
                 dispatch({
