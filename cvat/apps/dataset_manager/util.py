@@ -195,7 +195,7 @@ def parse_export_file_path(file_path: os.PathLike[str]) -> ParsedExportFilename:
         (
             r'(?P<export_mode>dataset|annotations)'
             # optional for backward compatibility
-            r'(?:-instance(?P<instance_timestamp>\d+\.\d+)-|_)?'
+            r'(?:-instance(?P<instance_timestamp>\d+\.\d+)-|_)'
             r'(?P<format_tag>.+)'
             r'\.(?P<file_ext>.+)'
         ),
