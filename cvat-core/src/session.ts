@@ -473,6 +473,7 @@ export class Job extends Session {
 
         this.#data.start_frame = initialData.start_frame ?? this.#data.start_frame;
         this.#data.stop_frame = initialData.stop_frame ?? this.#data.stop_frame;
+        this.#data.frame_count = initialData.frame_count ?? this.#data.frame_count;
         this.#data.project_id = initialData.project_id ?? this.#data.project_id;
         this.#data.guide_id = initialData.guide_id ?? this.#data.guide_id;
         this.#data.task_id = initialData.task_id ?? this.#data.task_id;
