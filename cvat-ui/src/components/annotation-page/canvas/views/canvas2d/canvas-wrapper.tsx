@@ -802,7 +802,7 @@ class CanvasWrapperComponent extends React.PureComponent<Props> {
             jobInstance, activatedStateID, activatedElementID, workspace, onActivateObject,
         } = this.props;
 
-        if (![Workspace.STANDARD, Workspace.REVIEW].includes(workspace)) {
+        if (![Workspace.STANDARD, Workspace.REVIEW, Workspace.SINGLE_SHAPE].includes(workspace)) {
             return;
         }
 
