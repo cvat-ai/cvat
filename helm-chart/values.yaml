@@ -326,6 +326,7 @@ analytics:
   clickhouseUser: user
   clickhousePassword: user
   clickhouseHost: "{{ .Release.Name }}-clickhouse"
+  clickhousePort: 8123
 
 vector:
   envFrom:
@@ -360,6 +361,7 @@ clickhouse:
     enabled: false
 
 grafana:
+  envFromSecret: cvat-analytics-secret
   datasources:
     datasources.yaml:
       apiVersion: 1
@@ -368,13 +370,14 @@ grafana:
         type: 'grafana-clickhouse-datasource'
         isDefault: true
         jsonData:
-          defaultDatabase: cvat
-          port: 9000
-          server: "{{ .Release.Name }}-clickhouse"
-          username: user
+          defaultDatabase: ${CLICKHOUSE_DB}
+          port: ${CLICKHOUSE_PORT}
+          server: ${CLICKHOUSE_HOST}
+          username: ${CLICKHOUSE_USER}
           tlsSkipVerify: false
+          protocol: http
         secureJsonData:
-          password: user
+          password: ${CLICKHOUSE_PASSWORD}
         editable: false
   dashboardProviders:
     dashboardproviders.yaml:
