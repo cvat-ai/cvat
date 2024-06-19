@@ -1,7 +1,8 @@
-# Copyright (C) 2023 CVAT.ai Corporation
+# Copyright (C) 2023-2024 CVAT.ai Corporation
 #
 # SPDX-License-Identifier: MIT
 
+from logging import Logger
 import os
 import csv
 from datetime import datetime, timedelta, timezone
@@ -16,7 +17,7 @@ import clickhouse_connect
 from rest_framework import serializers, status
 from rest_framework.response import Response
 
-from cvat.apps.dataset_manager.views import clear_export_cache, log_exception
+from cvat.apps.dataset_manager.views import log_exception
 from cvat.apps.engine.log import ServerLogManager
 from cvat.apps.engine.utils import sendfile
 from cvat.apps.engine.rq_job_handler import RQJobMetaField
@@ -73,7 +74,7 @@ def _create_csv(query_params, output_filename, cache_ttl):
         archive_ctime = os.path.getctime(output_filename)
         scheduler = django_rq.get_scheduler(settings.CVAT_QUEUES.EXPORT_DATA.value)
         cleaning_job = scheduler.enqueue_in(time_delta=cache_ttl,
-            func=clear_export_cache,
+            func=_clear_export_cache,
             file_path=output_filename,
             file_ctime=archive_ctime,
             logger=slogger.glob,
@@ -169,3 +170,15 @@ def export(request, filter_query, queue_name):
         result_ttl=ttl, failure_ttl=ttl)
 
     return Response(data=response_data, status=status.HTTP_202_ACCEPTED)
+
+def _clear_export_cache(file_path: str, file_ctime: float, logger: Logger) -> None:
+    try:
+        if os.path.exists(file_path) and os.path.getctime(file_path) == file_ctime:
+            os.remove(file_path)
+
+            logger.info(
+                "Export cache file '{}' successfully removed" \
+                .format(file_path))
+    except Exception:
+        log_exception(logger)
+        raise
