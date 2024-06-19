@@ -504,7 +504,11 @@ export class Job extends Session {
 
     protected reinit(data: InitializerType): void {
         if (data.assignee?.id !== this.#data.assignee?.id) {
-            this.#data.assignee = new User(data.assignee);
+            if (data.assignee) {
+                this.#data.assignee = new User(data.assignee);
+            } else {
+                this.#data.assignee = null;
+            }
         }
 
         this.#data.stage = data.stage ?? this.#data.stage;
