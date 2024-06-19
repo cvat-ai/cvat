@@ -147,8 +147,8 @@ export interface InteractionResult {
 
 export interface PolyEditData {
     enabled: boolean;
-    state: any;
-    pointID: number;
+    state?: any;
+    pointID?: number;
 }
 
 export interface MasksEditData {
@@ -249,7 +249,7 @@ export interface CanvasModel {
     readonly activeElement: ActiveElement;
     readonly highlightedElements: HighlightedElements;
     readonly drawData: DrawData;
-    readonly editData: MasksEditData;
+    readonly editData: MasksEditData | PolyEditData;
     readonly interactionData: InteractionData;
     readonly mergeData: MergeData;
     readonly splitData: SplitData;
@@ -275,7 +275,7 @@ export interface CanvasModel {
     grid(stepX: number, stepY: number): void;
 
     draw(drawData: DrawData): void;
-    edit(editData: MasksEditData): void;
+    edit(editData: MasksEditData | PolyEditData): void;
     group(groupData: GroupData): void;
     join(joinData: JoinData): void;
     slice(sliceData: SliceData): void;
@@ -369,7 +369,7 @@ export class CanvasModelImpl extends MasterImpl implements CanvasModel {
         fittedScale: number;
         zLayer: number | null;
         drawData: DrawData;
-        editData: MasksEditData;
+        editData: MasksEditData | PolyEditData;
         interactionData: InteractionData;
         mergeData: MergeData;
         groupData: GroupData;
@@ -780,7 +780,7 @@ export class CanvasModelImpl extends MasterImpl implements CanvasModel {
         this.notify(UpdateReasons.DRAW);
     }
 
-    public edit(editData: MasksEditData): void {
+    public edit(editData: MasksEditData | PolyEditData): void {
         if (![Mode.IDLE, Mode.EDIT].includes(this.data.mode)) {
             throw Error(`Canvas is busy. Action: ${this.data.mode}`);
         }
@@ -1083,7 +1083,7 @@ export class CanvasModelImpl extends MasterImpl implements CanvasModel {
         return { ...this.data.drawData };
     }
 
-    public get editData(): MasksEditData {
+    public get editData(): MasksEditData | PolyEditData {
         return { ...this.data.editData };
     }
 
