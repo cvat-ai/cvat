@@ -136,8 +136,8 @@ class AnnotationConflict(models.Model):
     frame = models.PositiveIntegerField()
     type = models.CharField(max_length=32, choices=AnnotationConflictType.choices())
     severity = models.CharField(max_length=32, choices=AnnotationConflictSeverity.choices())
-    word_error_rate = models.IntegerField(default=0, null=True)
-    character_error_rate = models.IntegerField(default=0, null=True)
+    word_error_rate = models.FloatField(default=0.0, null=True)
+    character_error_rate = models.FloatField(default=0.0, null=True)
 
     annotation_ids: Sequence[AnnotationId]
 

@@ -2894,7 +2894,7 @@ class QualityReportUpdateManager:
             job_comparison_reports[job_id] = comparator.generate_audio_report()
             ind += 1
             # Release resources
-            del job_data_provider.dm_dataset
+            # del job_data_provider.dm_dataset
 
         task_comparison_report = self._compute_task_report(task, job_comparison_reports)
 
