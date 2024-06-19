@@ -1315,8 +1315,8 @@ class TaskWriteSerializer(WriteOnceMixin, serializers.ModelSerializer):
                 if sublabels != target_project_sublabel_names.get(label):
                     raise serializers.ValidationError('All task or project label names must be mapped to the target project')
 
-        consensus_job_per_segment = attrs.get('consensus_job_per_segment', None)
-        agreement_score_threshold = attrs.get('agreement_score_threshold', None)
+        consensus_job_per_segment = attrs.get('consensus_job_per_segment', self.instance.consensus_job_per_segment if self.instance else None)
+        agreement_score_threshold = attrs.get('agreement_score_threshold', self.instance.agreement_score_threshold if self.instance else None)
 
         if consensus_job_per_segment is None:
             raise serializers.ValidationError("Consensus job per segment can't be None")
