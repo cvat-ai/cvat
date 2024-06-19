@@ -13,8 +13,9 @@ Cypress.Commands.add('assignTaskToUser', (user) => {
             cy.get('.cvat-user-search-field').find('input').clear();
             cy.get('.cvat-user-search-field').find('input').type('{Enter}');
         }
-        cy.get('.cvat-spinner').should('not.exist');
     });
+
+    cy.get('.cvat-spinner').should('not.exist');
 });
 
 Cypress.Commands.add('assignJobToUser', (jobID, user) => {
