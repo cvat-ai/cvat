@@ -18,7 +18,6 @@ from tempfile import NamedTemporaryFile, TemporaryDirectory
 from time import sleep, time
 from typing import Any, Dict, List, Optional, Tuple
 
-from memory_profiler import memory_usage
 import pytest
 from cvat_sdk import Client, Config, exceptions
 from cvat_sdk.api_client import models
@@ -28,6 +27,7 @@ from cvat_sdk.core.progress import NullProgressReporter
 from cvat_sdk.core.proxies.tasks import ResourceType, Task
 from cvat_sdk.core.uploading import Uploader
 from deepdiff import DeepDiff
+from memory_profiler import memory_usage
 from PIL import Image
 
 import shared.utils.s3 as s3
