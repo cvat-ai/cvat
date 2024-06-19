@@ -194,8 +194,9 @@ def parse_export_file_path(file_path: os.PathLike[str]) -> ParsedExportFilename:
     basename_match = re.fullmatch(
         (
             r'(?P<export_mode>dataset|annotations)'
-            r'(?:-instance(?P<instance_timestamp>\d+\.\d+))?' # optional for backward compatibility
-            r'(?(instance_timestamp)-|_)(?P<format_tag>.+)'
+            # optional for backward compatibility
+            r'(?:-instance(?P<instance_timestamp>\d+\.\d+)-|_)?'
+            r'(?P<format_tag>.+)'
             r'\.(?P<file_ext>.+)'
         ),
         basename
