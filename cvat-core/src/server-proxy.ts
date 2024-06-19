@@ -47,8 +47,6 @@ function enableOrganization(): { org: string } {
 
 function configureStorage(storage: Storage, useDefaultLocation = false): Partial<Params> {
     return {
-        // FIXME
-        use_default_location: useDefaultLocation,
         ...(!useDefaultLocation ? {
             location: storage.location,
             ...(storage.cloudStorageId ? {

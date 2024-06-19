@@ -22,16 +22,12 @@ def _make_custom_resource_params(resource: str, obj: str, cloud_storage_id: int)
         "filename": FILENAME_TEMPLATE.format(obj, resource),
         "location": "cloud_storage",
         "cloud_storage_id": cloud_storage_id,
-        # FIXME
-        # "use_default_location": False,
     }
 
 
 def _make_default_resource_params(resource: str, obj: str) -> Dict[str, Any]:
     return {
         "filename": FILENAME_TEMPLATE.format(obj, resource),
-        # FIXME
-        # "use_default_location": True,
     }
 
 
