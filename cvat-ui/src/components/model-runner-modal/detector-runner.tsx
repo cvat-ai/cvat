@@ -76,15 +76,10 @@ function DetectorRunner(props: Props): JSX.Element {
     const model = models.find((_model): boolean => _model.id === modelID);
     const isDetector = model?.kind === ModelKind.DETECTOR;
     const isReId = model?.kind === ModelKind.REID;
-    const isClassifier = model?.kind === ModelKind.CLASSIFIER;
     const convertMasks2PolygonVisible = isDetector &&
         (!model.returnType || model.returnType === ModelReturnType.MASK);
-    const labelsMappingVisible = isDetector || isClassifier;
 
-    const buttonEnabled =
-        model && (model.kind === ModelKind.REID ||
-            (model.kind === ModelKind.DETECTOR && mapping.length) ||
-            (model.kind === ModelKind.CLASSIFIER && mapping.length));
+    const buttonEnabled = model && (isReId || (isDetector && mapping.length));
 
     useEffect(() => {
         const converted = labels.map((label) => ({
@@ -142,7 +137,7 @@ function DetectorRunner(props: Props): JSX.Element {
                     </Select>
                 </Col>
             </Row>
-            {labelsMappingVisible && (
+            {isDetector && (
                 <Row justify='start' align='middle'>
                     <LabelsMapperComponent
                         key={modelID} // rerender when model switched
@@ -232,8 +227,6 @@ function DetectorRunner(props: Props): JSX.Element {
                                 });
                             } else if (model.kind === ModelKind.REID) {
                                 runInference(model, { threshold, max_distance: distance });
-                            } else if (model.kind === ModelKind.CLASSIFIER) {
-                                runInference(model, { cleanup, mapping: serverMapping });
                             }
                         }}
                     >
