@@ -12,6 +12,7 @@ from cvat.apps.dataset_manager.task import patch_job_data, PatchAction
 from cvat.apps.engine.utils import get_rq_lock_by_user, get_rq_job_meta, define_dependent_job, process_failed_job
 from cvat.apps.engine.serializers import RqIdSerializer
 from django.utils import timezone
+from django.db import transaction
 
 def get_consensus_jobs(task_id: int):
     jobs = {} # parent_job_id -> [consensus_job_id]
@@ -25,6 +26,8 @@ def get_consensus_jobs(task_id: int):
 def get_annotations(job_id: int):
     return JobDataProvider(job_id).dm_dataset
 
+
+@transaction.atomic
 def _merge_consensus_jobs(task_id: int):
     jobs = get_consensus_jobs(task_id)
     merger = IntersectMerge()
@@ -50,7 +53,7 @@ def _merge_consensus_jobs(task_id: int):
 
         parent_job = JobDataProvider(parent_job_id)
 
-        # imports the annotations in the this `parent_job.job_data` instance
+        # imports the annotations in the `parent_job.job_data` instance
         import_dm_annotations(merged_dataset, parent_job.job_data)
 
         # updates the annotations in the job
