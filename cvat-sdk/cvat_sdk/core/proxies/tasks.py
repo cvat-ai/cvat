@@ -78,7 +78,7 @@ class Task(
         """
         params = params or {}
 
-        data = {"image_quality": 70, "consensus_job_per_segment": 0, "agreement_score_threshold": 0}
+        data = {"image_quality": 70}
 
         data.update(
             filter_dict(

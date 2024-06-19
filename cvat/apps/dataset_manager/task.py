@@ -731,7 +731,7 @@ class TaskAnnotation:
         # Postgres doesn't guarantee an order by default without explicit order_by
         # Only select normal jobs, not ground truth or consensus jobs
         self.db_jobs = models.Job.objects.select_related("segment").filter(
-            segment__task_id=pk, type=models.JobType.ANNOTATION.value,
+            segment__task_id=pk, type=models.JobType.ANNOTATION.value, parent_job_id=None,
         ).order_by('id')
         self.ir_data = AnnotationIR(self.db_task.dimension)
 
@@ -743,8 +743,6 @@ class TaskAnnotation:
         splitted_data = {}
         jobs = {}
         for db_job in self.db_jobs:
-            if db_job.parent_job_id is not None:
-                continue
             jid = db_job.id
             start = db_job.segment.start_frame
             stop = db_job.segment.stop_frame
@@ -785,7 +783,7 @@ class TaskAnnotation:
         self.reset()
 
         for db_job in self.db_jobs:
-            if db_job.type != models.JobType.ANNOTATION or db_job.parent_job_id is not None:
+            if db_job.type != models.JobType.ANNOTATION:
                 continue
 
             annotation = JobAnnotation(db_job.id, is_prefetched=True)
