@@ -224,12 +224,14 @@ class Client:
                 "started",
                 "queued",
                 "finished",
-                "failed"
+                "failed",
             }, f"Background job failed, unexpected status: {request.status}, message: "
             if "finished" == request.status:
                 break
             elif "failed" == request.status:
-                raise exceptions.ApiException(status=request.status, reason=request.message, http_resp=response)
+                raise exceptions.ApiException(
+                    status=request.status, reason=request.message, http_resp=response
+                )
 
         return request, response
 

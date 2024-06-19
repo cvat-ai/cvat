@@ -8,7 +8,6 @@ import io
 import json
 import mimetypes
 import shutil
-
 from enum import Enum
 from pathlib import Path
 from time import sleep

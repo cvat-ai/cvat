@@ -173,7 +173,7 @@ class RequestsManager {
         }
 
         const addRndComponent = (val: number): number => (
-            val + Math.floor(Math.random() * Math.floor(val / 2))
+            val + Math.floor(Math.random() * Math.floor(val / 2)) // NOSONAR
         );
 
         switch (request.status) {

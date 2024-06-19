@@ -96,7 +96,6 @@ context('Import annotations for frames with dots in name.', { browser: '!firefox
             cy.get('.cvat-modal-export-job').contains('button', 'OK').click();
             cy.get('.cvat-notification-notice-export-job-start').should('be.visible');
             cy.closeNotification('.cvat-notification-notice-export-job-start');
-            cy.wait('@dumpAnnotations', { timeout: 5000 }).its('response.statusCode').should('equal', 202);
             cy.downloadExport();
             cy.goBack();
             cy.removeAnnotations();

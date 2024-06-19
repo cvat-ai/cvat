@@ -199,7 +199,6 @@ class Uploader:
             total=total_size, desc="Uploading data", unit_scale=True, unit="B", unit_divisor=1024
         )
 
-
     @staticmethod
     def _make_tus_uploader(api_client: ApiClient, url: str, **kwargs):
         # Add headers required by CVAT server
