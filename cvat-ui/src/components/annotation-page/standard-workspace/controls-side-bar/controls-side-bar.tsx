@@ -165,7 +165,7 @@ export default function ControlsSideBarComponent(props: Props): JSX.Element {
                 if (!drawing) {
                     if (editing) {
                         // users probably will press N as they are used to do when they want to finish editing
-                        // in this case, if a mask is being edited we probably want to finish editing first
+                        // in this case, if a mask or polyline is being edited we probably want to finish editing first
                         canvasInstance.edit({ enabled: false });
                         return;
                     }
