@@ -8,7 +8,7 @@ import {
     getCore, RQStatus, Request, Project, Task, Job,
 } from 'cvat-core-wrapper';
 import { listenExportBackupAsync, listenExportDatasetAsync } from './export-actions';
-import { RequestInstanceType, requestsActions } from './requests-actions';
+import { RequestInstanceType, listen, requestsActions } from './requests-actions';
 import { listenImportBackupAsync, listenImportDatasetAsync } from './import-actions';
 
 const core = getCore();
@@ -38,6 +38,11 @@ export function getRequestsAsync(query: RequestsQuery): ThunkAction {
                             type, target, format, taskID, projectID, jobID,
                         },
                     } = request;
+
+                    if (state.requests.requests[rqID]) {
+                        return;
+                    }
+
                     let instance: RequestInstanceType | null = null;
 
                     const [operationType, operationTarget] = type.split(':');
@@ -51,29 +56,27 @@ export function getRequestsAsync(query: RequestsQuery): ThunkAction {
 
                     if (operationType === 'export') {
                         if (operationTarget === 'backup') {
-                            if (!state.requests.requests[rqID]) {
-                                listenExportBackupAsync(rqID, dispatch, { instance: instance as RequestInstanceType });
-                            }
+                            listenExportBackupAsync(rqID, dispatch, { instance: instance as RequestInstanceType });
                         } else if (operationTarget === 'dataset' || operationTarget === 'annotations') {
-                            if (!state.requests.requests[rqID]) {
-                                listenExportDatasetAsync(
-                                    rqID,
-                                    dispatch,
-                                    { instance: instance as RequestInstanceType, format, saveImages: type.includes('dataset') },
-                                );
-                            }
+                            listenExportDatasetAsync(
+                                rqID,
+                                dispatch,
+                                { instance: instance as RequestInstanceType, format, saveImages: type.includes('dataset') },
+                            );
                         }
                     } else if (operationType === 'import') {
                         if (operationTarget === 'backup') {
                             listenImportBackupAsync(rqID, dispatch, { instanceType: (instance as RequestInstanceType).type as 'project' | 'task' });
                         } else if (operationTarget === 'dataset' || operationTarget === 'annotations') {
-                            if (!state.requests.requests[rqID]) {
-                                listenImportDatasetAsync(
-                                    rqID,
-                                    dispatch,
-                                    { instance: instance as RequestInstanceType },
-                                );
-                            }
+                            listenImportDatasetAsync(
+                                rqID,
+                                dispatch,
+                                { instance: instance as RequestInstanceType },
+                            );
+                        }
+                    } else if (operationType === 'create') {
+                        if (operationTarget === 'task') {
+                            listen(rqID, dispatch);
                         }
                     }
                 });
