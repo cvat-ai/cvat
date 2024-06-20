@@ -8,7 +8,9 @@
 Cypress.Commands.add('assignTaskToUser', (user) => {
     cy.get('.cvat-task-details-user-block').within(() => {
         if (user !== '') {
+            cy.intercept('GET', `/api/users?**search=${user}**`).as('searchUsers');
             cy.get('.cvat-user-search-field').find('input').type(`${user}{Enter}`);
+            cy.wait('@searchUsers').its('response.statusCode').should('equal', 200);
         } else {
             cy.get('.cvat-user-search-field').find('input').clear();
             cy.get('.cvat-user-search-field').find('input').type('{Enter}');

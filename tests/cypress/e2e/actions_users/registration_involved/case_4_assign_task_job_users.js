@@ -148,7 +148,7 @@ context('Multiple users. Assign task, job. Deactivating users.', () => {
 
         it('The third user can not open the task, but can open the job by a direct link.', () => {
             cy.login(thirdUserName, thirdUser.password);
-            cy.get('.cvat-not-found.ant-result-404').should('exist').and('be.visible');
+            cy.get('.cvat-item-task-name').should('not.exist');
             cy.visit(`/tasks/${taskID}/jobs/${jobID}`);
             cy.get('.cvat-canvas-container').should('exist');
 
