@@ -12,13 +12,15 @@ from dataclasses import asdict, dataclass
 from pathlib import Path
 from tempfile import NamedTemporaryFile
 from unittest import mock
-from typing import Optional, Callable, Dict, Any
+from typing import Optional, Callable, Dict, Any, Mapping
 
 import django_rq
 from attr.converters import to_bool
 from django.conf import settings
 from rest_framework import mixins, status
+from rest_framework.authentication import SessionAuthentication
 from rest_framework.response import Response
+from rest_framework.views import APIView
 
 from cvat.apps.engine.location import StorageType, get_location_configuration
 from cvat.apps.engine.log import ServerLogManager
@@ -498,3 +500,36 @@ class PartialUpdateModelMixin:
     def partial_update(self, request, *args, **kwargs):
         with mock.patch.object(self, 'update', new=self._update, create=True):
             return mixins.UpdateModelMixin.partial_update(self, request=request, *args, **kwargs)
+
+class CsrfWorkaroundMixin(APIView):
+    """
+    Disables session authentication for GET/HEAD requests
+    for which csrf_workaround_is_needed returns True.
+
+    csrf_workaround_is_needed is supposed to be overridden by each view.
+
+    This only exists to mitigate CSRF attacks on several known endpoints that
+    perform side effects in response to GET requests. Do not use this in
+    new code: instead, make sure that all endpoints with side effects use
+    a method other than GET/HEAD. Then Django's built-in CSRF protection
+    will cover them.
+    """
+
+    @staticmethod
+    def csrf_workaround_is_needed(query_params: Mapping[str, str]) -> bool:
+        return False
+
+    def get_authenticators(self):
+        authenticators = super().get_authenticators()
+
+        if (
+            self.request and
+            # Don't apply the workaround for requests from unit tests, since
+            # they can only use session authentication.
+            not getattr(self.request, "_dont_enforce_csrf_checks", False) and
+            self.request.method in ("GET", "HEAD") and
+            self.csrf_workaround_is_needed(self.request.GET)
+        ):
+            authenticators = [a for a in authenticators if not isinstance(a, SessionAuthentication)]
+
+        return authenticators

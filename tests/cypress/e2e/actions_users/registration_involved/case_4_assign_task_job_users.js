@@ -133,7 +133,7 @@ context('Multiple users. Assign task, job. Deactivating users.', () => {
             cy.logout();
         });
 
-        it('Third user login. The task not exist. Logout', () => {
+        it('Third user login. The task does not exist. Logout', () => {
             cy.login(thirdUserName, thirdUser.password);
             cy.contains('strong', taskName).should('not.exist');
             cy.logout();
@@ -146,7 +146,7 @@ context('Multiple users. Assign task, job. Deactivating users.', () => {
             cy.logout();
         });
 
-        it('The third user can open a job by a direct link.', () => {
+        it('The third user can not open the task, but can open the job by a direct link.', () => {
             cy.login(thirdUserName, thirdUser.password);
             cy.get('.cvat-item-task-name').should('not.exist');
             cy.visit(`/tasks/${taskID}/jobs/${jobID}`);

@@ -6,7 +6,6 @@ metadata:
     version: 2
     type: interactor
     spec:
-    framework: pytorch
     min_pos_points: 1
     min_neg_points: 0
     animated_gif: https://raw.githubusercontent.com/cvat-ai/cvat/0fbb19ae3846a017853d52e187f0ce149adced7d/site/content/en/images/fbrs_example.gif
