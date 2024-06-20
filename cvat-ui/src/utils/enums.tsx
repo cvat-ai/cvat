@@ -23,5 +23,6 @@ export enum StorageStatuses {
 }
 
 export enum ViewType {
+    TASKS = 'tasks',
     ALL = 'all',
 }

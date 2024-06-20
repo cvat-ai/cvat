@@ -18,12 +18,18 @@
 
 .cvat-workspace-settings,
 .cvat-player-settings,
+.cvat-shortcuts-settings,
 .cvat-organizations-settings {
     width: calc(100% - 24px);
     height: max-content;
     background: white;
     padding-top: 24px;
     padding-left: 24px;
+}
+
+.cvat-shortcuts-settings {
+    width: calc(100% - 48px);
+    padding-right: 24px;
 }
 
 .cvat-workspace-settings-text-content {
@@ -34,6 +40,7 @@
     user-select: none;
 }
 
+.cvat-shortcuts-setting,
 .cvat-player-setting {
     margin-bottom: $grid-unit-size * 3;
 }
@@ -88,4 +95,29 @@
     div {
         width: 100%;
     }
+}
+
+.cvat-shortcuts-settings-search {
+    width: 100%;
+}
+
+.cvat-shortcuts-settings-label {
+    text-transform: capitalize;
+    font-size: large;
+    font-weight: 600;
+}
+
+.cvat-shortcuts-settings-select {
+    max-width: 300px;
+    min-width: 100px;
+}
+
+.cvat-shortcuts-settings-item-title {
+    font-size: 14px;
+    font-weight: 600;
+}
+
+.cvat-shortcuts-settings-item-description {
+    font-size: 12px;
+    font-weight: 600;
 }

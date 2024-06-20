@@ -84,6 +84,17 @@ export default (state = defaultState, action: ShortcutsActions | BoundariesActio
                 visibleShortcutsHelp: action.payload.visible,
             };
         }
+        case ShortcutsActionsTypes.UPDATE_SEQUNCE: {
+            const { keyMapId, updatedSequence } = action.payload;
+            const keyMap = { ...state.keyMap };
+            keyMap[keyMapId] = { ...keyMap[keyMapId], sequences: updatedSequence };
+            const normalized = formatShortcuts(keyMap[keyMapId]);
+            return {
+                ...state,
+                keyMap,
+                normalizedKeyMap: { ...state.normalizedKeyMap, [keyMapId]: normalized },
+            };
+        }
         case BoundariesActionTypes.RESET_AFTER_ERROR:
         case AuthActionTypes.LOGOUT_SUCCESS: {
             return { ...defaultState };

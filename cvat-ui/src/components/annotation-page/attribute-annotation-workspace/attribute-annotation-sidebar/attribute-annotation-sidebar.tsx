@@ -69,7 +69,7 @@ const componentShortcuts = {
         name: 'Next object',
         description: 'Go to the next object',
         sequences: ['tab'],
-        view: ViewType.ALL,
+        view: ViewType.TASKS,
     },
     PREVIOUS_OBJECT: {
         name: 'Previous object',

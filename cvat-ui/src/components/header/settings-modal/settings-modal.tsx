@@ -13,11 +13,12 @@ import Modal from 'antd/lib/modal/Modal';
 import Button from 'antd/lib/button';
 import notification from 'antd/lib/notification';
 import Tooltip from 'antd/lib/tooltip';
-import { PlayCircleOutlined, LaptopOutlined } from '@ant-design/icons';
+import { PlayCircleOutlined, LaptopOutlined, BuildOutlined } from '@ant-design/icons';
 
 import { setSettings } from 'actions/settings-actions';
 import WorkspaceSettingsContainer from 'containers/header/settings-modal/workspace-settings';
 import PlayerSettingsContainer from 'containers/header/settings-modal/player-settings';
+import ShortcutsSettingsContainer from 'containers/header/settings-modal/shortcuts-settings';
 import { CombinedState } from 'reducers';
 
 interface SettingsModalProps {
@@ -114,6 +115,15 @@ function SettingsModal(props: SettingsModalProps): JSX.Element {
                             </span>
                         ),
                         children: <WorkspaceSettingsContainer />,
+                    }, {
+                        key: 'shortcuts',
+                        label: (
+                            <span>
+                                <BuildOutlined />
+                                <Text>Shortcuts</Text>
+                            </span>
+                        ),
+                        children: <ShortcutsSettingsContainer />,
                     }]}
                 />
             </div>

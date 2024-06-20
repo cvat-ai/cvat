@@ -9,6 +9,7 @@ import { ActionUnion, createAction } from 'utils/redux';
 export enum ShortcutsActionsTypes {
     SWITCH_SHORTCUT_DIALOG = 'SWITCH_SHORTCUT_DIALOG',
     REGISTER_SHORTCUT = 'REGISTER_SHORTCUT',
+    UPDATE_SEQUNCE = 'UPDATE_SEQUNCE',
 }
 
 export const shortcutsActions = {
@@ -17,6 +18,9 @@ export const shortcutsActions = {
     ),
     registerShortcuts: (shortcuts: Record<string, KeyMapItem>) => (
         createAction(ShortcutsActionsTypes.REGISTER_SHORTCUT, { shortcuts })
+    ),
+    updateSequence: (keyMapId: string, updatedSequence: string[]) => (
+        createAction(ShortcutsActionsTypes.UPDATE_SEQUNCE, { keyMapId, updatedSequence })
     ),
 };
 
