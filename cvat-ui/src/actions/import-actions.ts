@@ -112,7 +112,7 @@ export const importDatasetAsync = (
 
                 await instance.annotations.upload(format, useDefaultSettings, sourceStorage, file, { convMaskToPoly });
                 await instance.logger.log(EventScope.uploadAnnotations);
-                await instance.annotations.clear(true);
+                await instance.annotations.clear({ reload: true });
                 await instance.actions.clear();
 
                 // first set empty objects list
