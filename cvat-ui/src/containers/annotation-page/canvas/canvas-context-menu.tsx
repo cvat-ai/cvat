@@ -19,7 +19,7 @@ import { Canvas } from 'cvat-canvas-wrapper';
 import { ObjectState, QualityConflict } from 'cvat-core-wrapper';
 
 interface OwnProps {
-    readonly: boolean;
+    readonly?: boolean;
 }
 
 interface StateToProps {
