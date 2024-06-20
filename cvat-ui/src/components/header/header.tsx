@@ -489,7 +489,7 @@ function HeaderComponent(props: Props): JSX.Element {
                 ) : null}
                 {isAnalyticsPluginActive && user.isSuperuser ? (
                     <Button
-                        className={getButtonClassName('analytics')}
+                        className='cvat-header-analytics-button cvat-header-button'
                         type='link'
                         href='/analytics'
                         onClick={(event: React.MouseEvent): void => {
