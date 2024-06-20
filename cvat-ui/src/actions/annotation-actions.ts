@@ -370,12 +370,17 @@ export function updateCanvasBrushTools(config: {
 }
 
 export function removeAnnotationsAsync(
-    startFrame: number, endFrame: number, delTrackKeyframesOnly: boolean,
+    startFrame: number, stopFrame: number, delTrackKeyframesOnly: boolean,
 ): ThunkAction {
     return async (dispatch: ActionCreator<Dispatch>, getState: () => CombinedState): Promise<void> => {
         try {
             const { jobInstance } = receiveAnnotationsParameters();
-            await jobInstance.annotations.clear(false, startFrame, endFrame, delTrackKeyframesOnly);
+            await jobInstance.annotations.clear({
+                reload: false,
+                startFrame,
+                stopFrame,
+                delTrackKeyframesOnly,
+            });
             await jobInstance.actions.clear();
             dispatch(fetchAnnotationsAsync());
 
@@ -511,14 +516,14 @@ export function propagateObjectAsync(from: number, to: number): ThunkAction {
     };
 }
 
-export function removeObjectAsync(sessionInstance: NonNullable<CombinedState['annotation']['job']['instance']>, objectState: any, force: boolean): ThunkAction {
+export function removeObjectAsync(objectState: ObjectState, force: boolean): ThunkAction {
     return async (dispatch: ActionCreator<Dispatch>): Promise<void> => {
         try {
-            await sessionInstance.logger.log(EventScope.deleteObject, { count: 1 });
-            const { frame } = receiveAnnotationsParameters();
+            const { frame, jobInstance } = receiveAnnotationsParameters();
+            await jobInstance.logger.log(EventScope.deleteObject, { count: 1 });
 
             const removed = await objectState.delete(frame, force);
-            const history = await sessionInstance.actions.get();
+            const history = await jobInstance.actions.get();
 
             if (removed) {
                 dispatch({
@@ -945,7 +950,7 @@ export function getJobAsync({
 
             // frame query parameter does not work for GT job
             const frameNumber = Number.isInteger(initialFrame) && gtJob?.id !== job.id ?
-                initialFrame : (await job.frames.search(
+                initialFrame as number : (await job.frames.search(
                     { notDeleted: !showDeletedFrames }, job.startFrame, job.stopFrame,
                 )) || job.startFrame;
 
@@ -964,7 +969,7 @@ export function getJobAsync({
 
             let groundTruthJobFramesMeta = null;
             if (gtJob) {
-                gtJob.annotations.clear(true); // fetch gt annotations from the server
+                await gtJob.annotations.clear({ reload: true }); // fetch gt annotations from the server
                 groundTruthJobFramesMeta = await cvat.frames.getMeta('job', gtJob.id);
             }
 
