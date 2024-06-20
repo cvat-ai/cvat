@@ -273,6 +273,7 @@ class CVAT_QUEUES(Enum):
     QUALITY_REPORTS = 'quality_reports'
     ANALYTICS_REPORTS = 'analytics_reports'
     CLEANING = 'cleaning'
+    CONSENSUS = 'consensus'
 
 redis_inmem_host = os.getenv('CVAT_REDIS_INMEM_HOST', 'localhost')
 redis_inmem_port = os.getenv('CVAT_REDIS_INMEM_PORT', 6379)
@@ -315,6 +316,10 @@ RQ_QUEUES = {
         'DEFAULT_TIMEOUT': '1h',
     },
     CVAT_QUEUES.CLEANING.value: {
+        **shared_queue_settings,
+        'DEFAULT_TIMEOUT': '1h',
+    },
+    CVAT_QUEUES.CONSENSUS.value: {
         **shared_queue_settings,
         'DEFAULT_TIMEOUT': '1h',
     },

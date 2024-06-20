@@ -593,6 +593,7 @@ class JobReadSerializer(serializers.ModelSerializer):
     issues = IssuesSummarySerializer(source='*')
     target_storage = StorageSerializer(required=False, allow_null=True)
     source_storage = StorageSerializer(required=False, allow_null=True)
+    parent_job_id = serializers.ReadOnlyField(allow_null=True)
 
     class Meta:
         model = models.Job
@@ -600,7 +601,7 @@ class JobReadSerializer(serializers.ModelSerializer):
             'dimension', 'bug_tracker', 'status', 'stage', 'state', 'mode', 'frame_count',
             'start_frame', 'stop_frame', 'data_chunk_size', 'data_compressed_chunk_type',
             'created_date', 'updated_date', 'issues', 'labels', 'type', 'organization',
-            'target_storage', 'source_storage')
+            'target_storage', 'source_storage', 'parent_job_id')
         read_only_fields = fields
 
     def to_representation(self, instance):
@@ -1096,6 +1097,8 @@ class TaskReadSerializer(serializers.ModelSerializer):
     source_storage = StorageSerializer(required=False, allow_null=True)
     jobs = JobsSummarySerializer(url_filter_key='task_id', source='segment_set')
     labels = LabelsSummarySerializer(source='*')
+    consensus_job_per_segment = serializers.ReadOnlyField(required=False)
+    agreement_score_threshold = serializers.FloatField(required=False)
 
     class Meta:
         model = models.Task
@@ -1104,6 +1107,7 @@ class TaskReadSerializer(serializers.ModelSerializer):
             'status', 'data_chunk_size', 'data_compressed_chunk_type', 'guide_id',
             'data_original_chunk_type', 'size', 'image_quality', 'data', 'dimension',
             'subset', 'organization', 'target_storage', 'source_storage', 'jobs', 'labels',
+            'consensus_job_per_segment', 'agreement_score_threshold'
         )
         read_only_fields = fields
         extra_kwargs = {
@@ -1119,12 +1123,14 @@ class TaskWriteSerializer(WriteOnceMixin, serializers.ModelSerializer):
     project_id = serializers.IntegerField(required=False, allow_null=True)
     target_storage = StorageSerializer(required=False, allow_null=True)
     source_storage = StorageSerializer(required=False, allow_null=True)
+    consensus_job_per_segment = serializers.IntegerField(required=False)
+    agreement_score_threshold = serializers.FloatField(required=False, allow_null=True)
 
     class Meta:
         model = models.Task
         fields = ('url', 'id', 'name', 'project_id', 'owner_id', 'assignee_id',
             'bug_tracker', 'overlap', 'segment_size', 'labels', 'subset',
-            'target_storage', 'source_storage',
+            'target_storage', 'source_storage', 'consensus_job_per_segment', 'agreement_score_threshold'
         )
         write_once_fields = ('overlap', 'segment_size')
 
@@ -1184,9 +1190,13 @@ class TaskWriteSerializer(WriteOnceMixin, serializers.ModelSerializer):
             instance.bug_tracker)
         instance.subset = validated_data.get('subset', instance.subset)
         labels = validated_data.get('label_set', [])
+        instance.agreement_score_threshold = validated_data.get('agreement_score_threshold', instance.agreement_score_threshold)
 
         if instance.project_id is None:
             LabelSerializer.update_labels(labels, parent_instance=instance)
+
+        if instance.agreement_score_threshold < 0 or instance.agreement_score_threshold > 1:
+            raise serializers.ValidationError('Agreement score threshold must be in [0, 1]')
 
         validated_project_id = validated_data.get('project_id')
         if validated_project_id is not None and validated_project_id != instance.project_id:
@@ -1304,6 +1314,21 @@ class TaskWriteSerializer(WriteOnceMixin, serializers.ModelSerializer):
             for label, sublabels in new_sublabel_names.items():
                 if sublabels != target_project_sublabel_names.get(label):
                     raise serializers.ValidationError('All task or project label names must be mapped to the target project')
+
+        consensus_job_per_segment = attrs.get('consensus_job_per_segment', self.instance.consensus_job_per_segment if self.instance else None)
+        agreement_score_threshold = attrs.get('agreement_score_threshold', self.instance.agreement_score_threshold if self.instance else None)
+
+        if consensus_job_per_segment is None:
+            raise serializers.ValidationError("Consensus job per segment can't be None")
+
+        if agreement_score_threshold is None:
+            raise serializers.ValidationError("Agreement score threshold can't be None")
+
+        if agreement_score_threshold < 0 or agreement_score_threshold > 1:
+            raise serializers.ValidationError("Agreement score threshold should be in the range [0, 1]")
+
+        if consensus_job_per_segment == 1 or consensus_job_per_segment < 0:
+            raise serializers.ValidationError("Consensus job per segment should be greater than or equal to 0 and not 1")
 
         return attrs
 

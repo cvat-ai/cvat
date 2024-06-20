@@ -31,6 +31,7 @@ const defaultState: TasksState = {
     },
     activities: {
         deletes: {},
+        mergingConsensus: {},
     },
 };
 
@@ -129,6 +130,54 @@ export default (state: TasksState = defaultState, action: AnyAction): TasksState
                     ...state.activities,
                     deletes: {
                         ...deletes,
+                    },
+                },
+            };
+        }
+        case TasksActionTypes.MERGE_TASK_CONSENSUS: {
+            const { taskID } = action.payload;
+            const { mergingConsensus } = state.activities;
+
+            mergingConsensus[taskID] = true;
+
+            return {
+                ...state,
+                activities: {
+                    ...state.activities,
+                    mergingConsensus: {
+                        ...mergingConsensus,
+                    },
+                },
+            };
+        }
+        case TasksActionTypes.MERGE_TASK_CONSENSUS_SUCCESS: {
+            const { taskID } = action.payload;
+            const { mergingConsensus } = state.activities;
+
+            mergingConsensus[taskID] = false;
+
+            return {
+                ...state,
+                activities: {
+                    ...state.activities,
+                    mergingConsensus: {
+                        ...mergingConsensus,
+                    },
+                },
+            };
+        }
+        case TasksActionTypes.MERGE_TASK_CONSENSUS_FAILED: {
+            const { taskID } = action.payload;
+            const { mergingConsensus } = state.activities;
+
+            delete mergingConsensus[taskID];
+
+            return {
+                ...state,
+                activities: {
+                    ...state.activities,
+                    mergingConsensus: {
+                        ...mergingConsensus,
                     },
                 },
             };

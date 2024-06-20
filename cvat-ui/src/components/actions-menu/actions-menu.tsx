@@ -24,6 +24,8 @@ interface Props {
     inferenceIsActive: boolean;
     taskDimension: DimensionType;
     backupIsActive: boolean;
+    mergingIsActive: boolean;
+    consensusJobPerSegment: number;
     onClickMenu: (params: MenuInfo) => void;
 }
 
@@ -36,6 +38,7 @@ export enum Actions {
     OPEN_BUG_TRACKER = 'open_bug_tracker',
     BACKUP_TASK = 'backup_task',
     VIEW_ANALYTICS = 'view_analytics',
+    MERGE_TASK_CONSENSUS_JOBS = 'merge_task_consensus_jobs',
 }
 
 function ActionsMenuComponent(props: Props): JSX.Element {
@@ -45,6 +48,8 @@ function ActionsMenuComponent(props: Props): JSX.Element {
         bugTracker,
         inferenceIsActive,
         backupIsActive,
+        mergingIsActive,
+        consensusJobPerSegment,
         onClickMenu,
     } = props;
 
@@ -69,6 +74,19 @@ function ActionsMenuComponent(props: Props): JSX.Element {
                         danger: true,
                     },
                     okText: 'Delete',
+                });
+            } else if (params.key === Actions.MERGE_TASK_CONSENSUS_JOBS) {
+                Modal.confirm({
+                    title: `The consensus jobs in task ${taskID} will be merged`,
+                    content: 'Exisitng annotations in normal jobs will be lost. Continue?',
+                    className: 'cvat-modal-confirm-delete-task',
+                    onOk: () => {
+                        onClickMenu(params);
+                    },
+                    okButtonProps: {
+                        type: 'primary',
+                    },
+                    okText: 'Merge',
                 });
             } else {
                 onClickMenu(params);
@@ -115,6 +133,20 @@ function ActionsMenuComponent(props: Props): JSX.Element {
             View analytics
         </Menu.Item>
     ), 50]);
+
+    if (consensusJobPerSegment) {
+        menuItems.push([(
+            <React.Fragment key={Actions.MERGE_TASK_CONSENSUS_JOBS}>
+                <Menu.Item
+                    key={Actions.MERGE_TASK_CONSENSUS_JOBS}
+                    disabled={mergingIsActive}
+                    icon={mergingIsActive && <LoadingOutlined id='cvat-backup-task-loading' />}
+                >
+                    Merge consensus jobs
+                </Menu.Item>
+            </React.Fragment>
+        ), 55]);
+    }
 
     if (projectID === null) {
         menuItems.push([(

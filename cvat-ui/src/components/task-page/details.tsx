@@ -19,6 +19,7 @@ import { cancelInferenceAsync } from 'actions/models-actions';
 import { CombinedState, ActiveInference } from 'reducers';
 import UserSelector from './user-selector';
 import BugTrackerEditor from './bug-tracker-editor';
+import ConsensusConfigurationEditor from './consensus-configuration-editor';
 import LabelsEditorComponent from '../labels-editor/labels-editor';
 import ProjectSubsetField from '../create-task-page/project-subset-field';
 
@@ -67,6 +68,7 @@ const core = getCore();
 interface State {
     name: string;
     subset: string;
+    consensusJobPerSegment: number;
 }
 
 type Props = DispatchToProps & StateToProps & OwnProps;
@@ -78,6 +80,7 @@ class DetailsComponent extends React.PureComponent<Props, State> {
         this.state = {
             name: taskInstance.name,
             subset: taskInstance.subset,
+            consensusJobPerSegment: taskInstance.consensusJobPerSegment,
         };
     }
 
@@ -92,8 +95,9 @@ class DetailsComponent extends React.PureComponent<Props, State> {
     }
 
     private renderTaskName(): JSX.Element {
-        const { name } = this.state;
+        const { name, consensusJobPerSegment } = this.state;
         const { task: taskInstance, onUpdateTask } = this.props;
+        const taskName = name + (consensusJobPerSegment > 0 ? ' (Consensus Based Annotation)' : '');
 
         return (
             <Title
@@ -110,7 +114,7 @@ class DetailsComponent extends React.PureComponent<Props, State> {
                 }}
                 className='cvat-text-color cvat-task-name'
             >
-                {name}
+                { taskName }
             </Title>
         );
     }
@@ -237,6 +241,20 @@ class DetailsComponent extends React.PureComponent<Props, State> {
                                     }}
                                 />
                             </Col>
+                            {
+                                taskInstance.consensusJobPerSegment > 0 && (
+                                    <Col span={12}>
+                                        <ConsensusConfigurationEditor
+                                            instance={taskInstance}
+                                            onChange={(value) => {
+                                                taskInstance.agreementScoreThreshold = value;
+                                                onUpdateTask(taskInstance);
+                                            }}
+                                        />
+                                    </Col>
+                                )
+                            }
+
                             <Col span={10}>
                                 <AutomaticAnnotationProgress
                                     activeInference={activeInference}

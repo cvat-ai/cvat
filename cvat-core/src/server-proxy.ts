@@ -796,6 +796,30 @@ async function deleteTask(id: number, organizationID: string | null = null): Pro
     }
 }
 
+async function mergeConsensusJobs(id: number): Promise<void> {
+    const { backendAPI } = config;
+    const url = `${backendAPI}/tasks/${id}/aggregate`;
+
+    return new Promise<void>((resolve, reject) => {
+        async function request() {
+            try {
+                const response = await Axios.put(url);
+                const { status } = response;
+                if (status === 202) {
+                    setTimeout(request, 3000);
+                } else if (status === 201) {
+                    resolve();
+                } else {
+                    reject(generateError(response));
+                }
+            } catch (errorData) {
+                reject(generateError(errorData));
+            }
+        }
+        setTimeout(request);
+    });
+}
+
 async function getLabels(filter: {
     job_id?: number,
     task_id?: number,
@@ -2548,6 +2572,7 @@ export default Object.freeze({
         getPreview: getPreview('tasks'),
         backup: backupTask,
         restore: restoreTask,
+        mergeConsensusJobs,
     }),
 
     labels: Object.freeze({

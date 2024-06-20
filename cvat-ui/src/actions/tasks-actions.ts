@@ -27,6 +27,9 @@ export enum TasksActionTypes {
     GET_TASK_PREVIEW_SUCCESS = 'GET_TASK_PREVIEW_SUCCESS',
     GET_TASK_PREVIEW_FAILED = 'GET_TASK_PREVIEW_FAILED',
     UPDATE_TASK_IN_STATE = 'UPDATE_TASK_IN_STATE',
+    MERGE_TASK_CONSENSUS = 'AGGREGATE_TASK_CONSENSUS',
+    MERGE_TASK_CONSENSUS_SUCCESS = 'AGGREGATE_TASK_CONSENSUS_SUCCESS',
+    MERGE_TASK_CONSENSUS_FAILED = 'AGGREGATE_TASK_CONSENSUS_FAILED',
 }
 
 function getTasks(query: Partial<TasksQuery>, updateQuery: boolean): AnyAction {
@@ -120,6 +123,40 @@ function deleteTaskFailed(taskID: number, error: any): AnyAction {
     return action;
 }
 
+function mergeTaskConsensusJobs(taskID: number): AnyAction {
+    const action = {
+        type: TasksActionTypes.MERGE_TASK_CONSENSUS,
+        payload: {
+            taskID,
+        },
+    };
+
+    return action;
+}
+
+function mergeTaskConsensusJobsSuccess(taskID: number): AnyAction {
+    const action = {
+        type: TasksActionTypes.MERGE_TASK_CONSENSUS_SUCCESS,
+        payload: {
+            taskID,
+        },
+    };
+
+    return action;
+}
+
+function mergeTaskConsensusJobsFailed(taskID: number, error: any): AnyAction {
+    const action = {
+        type: TasksActionTypes.MERGE_TASK_CONSENSUS_FAILED,
+        payload: {
+            taskID,
+            error,
+        },
+    };
+
+    return action;
+}
+
 export function deleteTaskAsync(taskInstance: any): ThunkAction<Promise<void>, {}, {}, AnyAction> {
     return async (dispatch: ActionCreator<Dispatch>): Promise<void> => {
         try {
@@ -131,6 +168,20 @@ export function deleteTaskAsync(taskInstance: any): ThunkAction<Promise<void>, {
         }
 
         dispatch(deleteTaskSuccess(taskInstance.id));
+    };
+}
+
+export function mergeTaskConsensusJobsAsync(taskInstance: any): ThunkAction<Promise<void>, {}, {}, AnyAction> {
+    return async (dispatch: ActionCreator<Dispatch>): Promise<void> => {
+        try {
+            dispatch(mergeTaskConsensusJobs(taskInstance.id));
+            await taskInstance.mergeConsensusJobs();
+        } catch (error) {
+            dispatch(mergeTaskConsensusJobsFailed(taskInstance.id, error));
+            return;
+        }
+
+        dispatch(mergeTaskConsensusJobsSuccess(taskInstance.id));
     };
 }
 
@@ -213,6 +264,8 @@ ThunkAction<Promise<void>, {}, {}, AnyAction> {
             sorting_method: data.advanced.sortingMethod,
             source_storage: new Storage(data.advanced.sourceStorage || { location: StorageLocation.LOCAL }).toJSON(),
             target_storage: new Storage(data.advanced.targetStorage || { location: StorageLocation.LOCAL }).toJSON(),
+            consensus_job_per_segment: 0,
+            agreement_score_threshold: 0,
         };
 
         if (data.projectId) {
@@ -251,7 +304,12 @@ ThunkAction<Promise<void>, {}, {}, AnyAction> {
         if (data.cloudStorageId) {
             description.cloud_storage_id = data.cloudStorageId;
         }
-
+        if (data.consensus.consensusJobPerSegment) {
+            description.consensus_job_per_segment = +data.consensus.consensusJobPerSegment;
+        }
+        if (data.consensus.agreementScoreThreshold) {
+            description.agreement_score_threshold = data.consensus.agreementScoreThreshold;
+        }
         const taskInstance = new cvat.classes.Task(description);
         taskInstance.clientFiles = data.files.local;
         taskInstance.serverFiles = data.files.share.concat(data.files.cloudStorage);

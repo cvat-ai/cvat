@@ -90,6 +90,7 @@ from cvat.apps.engine.permissions import (CloudStoragePermission,
     CommentPermission, IssuePermission, JobPermission, LabelPermission, ProjectPermission,
     TaskPermission, UserPermission)
 from cvat.apps.engine.view_utils import tus_chunk_action
+from cvat.apps.consensus.merge_consensus_jobs import merge_task
 
 slogger = ServerLogManager(__name__)
 
@@ -902,6 +903,22 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
             )
         return self.serialize(request, backup.export)
 
+    @extend_schema(summary="Aggregate data of a task",
+        responses={
+            '201': OpenApiResponse(description='Consensus Jobs Aggregated'),
+            '202': OpenApiResponse(description='Agreegation of Consensus Jobs started'),
+            '400': OpenApiResponse(description='Agreegating a task without data is not allowed'),
+        },
+    )
+    @action(methods=['PUT'], detail=True, url_path=r'aggregate/?$')
+    def aggregate(self, request, pk=None):
+        task = self.get_object()
+
+        return merge_task(
+            task,
+            request
+        )
+
     @transaction.atomic
     def perform_update(self, serializer):
         instance = serializer.instance
@@ -1609,7 +1626,7 @@ class JobViewSet(viewsets.GenericViewSet, mixins.ListModelMixin, mixins.CreateMo
     iam_organization_field = 'segment__task__organization'
     search_fields = ('task_name', 'project_name', 'assignee', 'state', 'stage')
     filter_fields = list(search_fields) + [
-        'id', 'task_id', 'project_id', 'updated_date', 'dimension', 'type'
+        'id', 'task_id', 'project_id', 'updated_date', 'dimension', 'type', 'parent_job_id',
     ]
     simple_filters = list(set(filter_fields) - {'id', 'updated_date'})
     ordering_fields = list(filter_fields)

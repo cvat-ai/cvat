@@ -13,6 +13,7 @@ import { CombinedState } from 'reducers';
 import { modelsActions } from 'actions/models-actions';
 import {
     deleteTaskAsync,
+    mergeTaskConsensusJobsAsync,
     switchMoveTaskModalVisible,
 } from 'actions/tasks-actions';
 import { exportActions } from 'actions/export-actions';
@@ -27,6 +28,7 @@ interface StateToProps {
     annotationFormats: any;
     inferenceIsActive: boolean;
     backupIsActive: boolean;
+    mergingIsActive: boolean;
 }
 
 interface DispatchToProps {
@@ -35,6 +37,7 @@ interface DispatchToProps {
     openRunModelWindow: (taskInstance: any) => void;
     deleteTask: (taskInstance: any) => void;
     openMoveTaskToProjectWindow: (taskInstance: any) => void;
+    onMergeTaskConsensusJobs: (taskInstance: any) => void;
 }
 
 function mapStateToProps(state: CombinedState, own: OwnProps): StateToProps {
@@ -50,6 +53,7 @@ function mapStateToProps(state: CombinedState, own: OwnProps): StateToProps {
         annotationFormats,
         inferenceIsActive: tid in state.models.inferences,
         backupIsActive: state.export.tasks.backup.current[tid],
+        mergingIsActive: state.tasks.activities.mergingConsensus[tid],
     };
 }
 
@@ -74,6 +78,9 @@ function mapDispatchToProps(dispatch: any): DispatchToProps {
         openMoveTaskToProjectWindow: (taskId: number): void => {
             dispatch(switchMoveTaskModalVisible(true, taskId));
         },
+        onMergeTaskConsensusJobs: (taskInstance: any): void => {
+            dispatch(mergeTaskConsensusJobsAsync(taskInstance));
+        },
     };
 }
 
@@ -83,12 +90,14 @@ function ActionsMenuContainer(props: OwnProps & StateToProps & DispatchToProps):
         annotationFormats: { loaders, dumpers },
         inferenceIsActive,
         backupIsActive,
+        mergingIsActive,
         showExportModal,
         showImportModal,
         deleteTask,
         openRunModelWindow,
         openMoveTaskToProjectWindow,
         onViewAnalytics,
+        onMergeTaskConsensusJobs,
     } = props;
     const onClickMenu = (params: MenuInfo): void | JSX.Element => {
         const [action] = params.keyPath;
@@ -108,6 +117,8 @@ function ActionsMenuContainer(props: OwnProps & StateToProps & DispatchToProps):
             showImportModal(taskInstance);
         } else if (action === Actions.VIEW_ANALYTICS) {
             onViewAnalytics();
+        } else if (action === Actions.MERGE_TASK_CONSENSUS_JOBS) {
+            onMergeTaskConsensusJobs(taskInstance);
         }
     };
 
@@ -123,6 +134,8 @@ function ActionsMenuContainer(props: OwnProps & StateToProps & DispatchToProps):
             onClickMenu={onClickMenu}
             taskDimension={taskInstance.dimension}
             backupIsActive={backupIsActive}
+            mergingIsActive={mergingIsActive}
+            consensusJobPerSegment={taskInstance.consensusJobPerSegment}
         />
     );
 }
