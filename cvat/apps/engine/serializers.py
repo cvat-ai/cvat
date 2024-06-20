@@ -2254,21 +2254,6 @@ class RequestDataOperationSerializer(serializers.Serializer):
             "format": parsed_rq_id.format,
         }
 
-
-# class RequestResultSerializer(serializers.Serializer):
-#     url = serializers.URLField(required=False, allow_null=True, read_only=True)
-#     id = serializers.IntegerField(required=False, allow_null=True, read_only=True)
-
-#     def to_representation(self, rq_job: RQJob) -> Dict[str, Any]:
-#         representation = dict()
-#         if rq_job.get_status() == RQJobStatus.FINISHED:
-#             if result_url := rq_job.meta.get(RQJobMetaField.RESULT_URL):
-#                 representation["url"] = result_url
-#             if rq_job.parsed_rq_id.action == ActionChoices.IMPORT and rq_job.parsed_rq_id.subresource == SubresourceChoices.BACKUP:
-#                 representation["id"] = rq_job.return_value()
-
-#         return representation
-
 class RequestSerializer(serializers.Serializer):
     status = serializers.SerializerMethodField()
     message = serializers.SerializerMethodField()
@@ -2287,7 +2272,6 @@ class RequestSerializer(serializers.Serializer):
     owner = serializers.SerializerMethodField()
     result_url = serializers.URLField(required=False, allow_null=True, read_only=True)
     result_id = serializers.IntegerField(required=False, allow_null=True, read_only=True)
-    # result = RequestResultSerializer(source='*', read_only=True)
 
     @extend_schema_field(UserIdentifiersSerializer(read_only=True))
     def get_owner(self, rq_job: RQJob) -> Dict[str, Any]:

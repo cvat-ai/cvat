@@ -467,7 +467,7 @@ class DatasetMixin:
         },
         request=OpenApiTypes.NONE,
     )
-    # tODO: update permissions in OSS and private repo
+    # TODO: update permissions in OSS and private repo
     @action(detail=True, methods=['POST'], serializer_class=None, url_path='dataset/export')
     def export_dataset_v2(self, request: HttpRequest, pk: int):
         self._object = self.get_object() # force call of check_object_permissions()

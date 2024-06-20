@@ -71,13 +71,6 @@ function constructTimestamps(request: Request): JSX.Element {
     const expired = moment(request.expiryDate).format('MMM Do YY, H:mm');
     const { operation: { type } } = request;
     switch (request.status) {
-        case RQStatus.QUEUED: {
-            return (
-                <Row>
-                    <Text type='secondary'>{`Enqueued by ${request.owner.username} on ${enqueued}`}</Text>
-                </Row>
-            );
-        }
         case RQStatus.FINISHED: {
             if (request.expiryDate && !type.includes('create') && !type.includes('import')) {
                 return (

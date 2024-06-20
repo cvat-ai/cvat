@@ -116,9 +116,6 @@ class _CloudStorageResourceTest(ABC):
             assert status in {"started", "queued", "finished", "failed"}
             if status in {"finished", "failed"}:
                 break
-                # TODO/FIXME: add direct call to old API to remove rq job or integrate new IDs for jobs
-
-        return
 
     def _import_resource_from_cloud_storage(
         self, url: str, *, user: str, _expect_status: Optional[int] = None, **kwargs
@@ -149,7 +146,6 @@ class _CloudStorageResourceTest(ABC):
             assert status in {"started", "queued", "finished", "failed"}
             if status in {"finished", "failed"}:
                 break
-                # TODO/FIXME: add direct call to old API to remove rq job or integrate new IDs for jobs
 
     def _import_annotations_from_cloud_storage(
         self,
@@ -169,7 +165,6 @@ class _CloudStorageResourceTest(ABC):
 
         # Only the first POST request contains rq_id in response.
         # Exclude cases with 403 expected status.
-        # fIXME
         rq_id = None
         if status == HTTPStatus.ACCEPTED:
             rq_id = response.json().get("rq_id")
@@ -197,7 +192,6 @@ class _CloudStorageResourceTest(ABC):
         response = post_method(user, url, data=None, **kwargs)
         status = response.status_code
 
-        # FIXME
         while status != _expect_status:
             assert status == HTTPStatus.ACCEPTED
             data = json.loads(response.content.decode("utf8"))
@@ -216,7 +210,6 @@ class _CloudStorageResourceTest(ABC):
         # Only the first POST request contains rq_id in response.
         # Exclude cases with 403 expected status.
         rq_id = None
-        # FIXME
         if status == HTTPStatus.ACCEPTED:
             rq_id = response.json().get("rq_id")
             assert rq_id, "The rq_id was not found in the response"

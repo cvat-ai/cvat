@@ -73,7 +73,6 @@ class DatasetExportManager:
             else to_bool(request.query_params.get("save_images", False))
         )
 
-        # cache_ttl = dm.views.get_export_cache_ttl(db_instance)
         self.instance_update_time = timezone.localtime(db_instance.updated_date)
         if isinstance(db_instance, Project):
             tasks_update = list(

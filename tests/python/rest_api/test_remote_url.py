@@ -22,7 +22,7 @@ def _post_task_remote_data(username, task_id, resources):
 
 
 def _wait_until_task_is_created(username: str, task_id: int) -> Dict[str, Any]:
-    url = f"requests"
+    url = "requests"
 
     for _ in range(100):
         response = get_method(username, url, action="create", task_id=task_id)

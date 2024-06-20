@@ -92,12 +92,17 @@ with ApiClient(configuration) as api_client:
 
     # Wait till task data is processed
     for _ in range(100):
-        # fixme
-        (status, _) = api_client.tasks_api.retrieve_status(task.id)
-        if status.state.value in ['Finished', 'Failed']:
+        requests, response = api_client.requests_api.list(
+            action="create", task_id=task.id
+        )
+
+        request_details = requests.results[0]
+        status, message = request_details.status, request_details.message
+
+        if status in ['finished', 'failed']:
             break
         sleep(0.1)
-    assert status.state.value == 'Finished', status.message
+    assert status == 'finished', status.message
 
     # Update the task object and check the task size
     (task, _) = api_client.tasks_api.retrieve(task.id)
