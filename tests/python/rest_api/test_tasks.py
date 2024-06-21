@@ -1821,7 +1821,7 @@ class TestPostTaskData:
         )
         mem_usage_after = memory_usage(pid, interval=0.1, timeout=1)
         max_mem_usage = max(mem_usage_after) - min(mem_usage_before)
-        assert max_mem_usage < 6 # 6(MB) ~ videofile size with 4000 frames
+        assert max_mem_usage < 6  # 6(MB) ~ videofile size with 4000 frames
 
         with make_api_client(self._USERNAME) as api_client:
             data_meta, _ = api_client.tasks_api.retrieve_data_meta(task_id)
