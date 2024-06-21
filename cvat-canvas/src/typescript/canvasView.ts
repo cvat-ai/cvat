@@ -1076,6 +1076,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
 
         if (state) {
             let aborted = false;
+            let skeletonSVGTemplate: SVG.G = null;
             shape.addClass('cvat_canvas_shape_draggable');
             (draggableInstance as any).draggable({
                 ...(state.shapeType === 'mask' ? { snapToGrid: 1 } : {}),
@@ -1107,7 +1108,8 @@ export class CanvasViewImpl implements CanvasView, Listener {
                     draggableInstance.attr('data-xbr', x + instance.width());
                     draggableInstance.attr('data-ybr', y + instance.height());
 
-                    setupSkeletonEdges(shape as SVG.G, makeSVGFromTemplate(state.label.structure.svg));
+                    skeletonSVGTemplate = skeletonSVGTemplate ?? makeSVGFromTemplate(state.label.structure.svg);
+                    setupSkeletonEdges(shape as SVG.G, skeletonSVGTemplate);
                 }
             }).on('dragend', (e: CustomEvent): void => {
                 if (aborted) {
@@ -1193,6 +1195,8 @@ export class CanvasViewImpl implements CanvasView, Listener {
         onResizeEnd: () => void = () => {},
     ): void {
         let resizableInstance = shape;
+        let skeletonSVGTemplate: SVG.G = null;
+
         if (shape.type === 'g') {
             // for skeletons we use wrapping rectangle to resize the skeleton itself
             resizableInstance = (shape as any).children().find((child: SVG.Element) => child.type === 'rect');
@@ -1223,7 +1227,8 @@ export class CanvasViewImpl implements CanvasView, Listener {
                         this.mode = Mode.DRAG;
                         hideElementText();
                     }, () => {
-                        setupSkeletonEdges(shape as SVG.G, makeSVGFromTemplate(state.label.structure.svg));
+                        skeletonSVGTemplate = skeletonSVGTemplate ?? makeSVGFromTemplate(state.label.structure.svg);
+                        setupSkeletonEdges(shape as SVG.G, skeletonSVGTemplate);
                     }, () => {
                         this.mode = Mode.IDLE;
                         showElementText();
@@ -1286,7 +1291,8 @@ export class CanvasViewImpl implements CanvasView, Listener {
                         resizableInstance.attr('data-ybr', y + instance.height());
 
                         resized = true;
-                        setupSkeletonEdges(shape as SVG.G, makeSVGFromTemplate(state.label.structure.svg));
+                        skeletonSVGTemplate = skeletonSVGTemplate ?? makeSVGFromTemplate(state.label.structure.svg);
+                        setupSkeletonEdges(shape as SVG.G, skeletonSVGTemplate);
                     }
                 })
                 .on('resizedone', (): void => {
