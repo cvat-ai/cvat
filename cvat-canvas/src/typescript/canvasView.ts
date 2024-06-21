@@ -1262,7 +1262,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
 
                         // rotate skeleton instead of wrapping bounding box
                         const { rotation } = resizableInstance.transform();
-                        (shape as SVG.G).rotate(rotation);
+                        shape.rotate(rotation);
 
                         const [x, y] = [instance.x(), instance.y()];
                         const prevXtl = +resizableInstance.attr('data-xtl');
@@ -1302,19 +1302,18 @@ export class CanvasViewImpl implements CanvasView, Listener {
 
                     onResizeEnd();
                     this.resizableShape = null;
-                    if (state.shapeType === 'skeleton') {
-                        let { rotation } = (shape as SVG.G).transform();
-                        // be sure, that rotation in range [0; 360]
-                        while (rotation < 0) rotation += 360;
-                        rotation %= 360;
-                        this.mode = Mode.IDLE;
 
-                        if (resized) {
+                    // be sure, that rotation in range [0; 360]
+                    let rotation = shape.transform().rotation || 0;
+                    while (rotation < 0) rotation += 360;
+                    rotation %= 360;
+
+                    if (resized) {
+                        if (state.shapeType === 'skeleton') {
                             if (rotation) {
                                 this.onEditDone(state, state.points, rotation);
                             } else {
                                 const points: number[] = [];
-
                                 state.elements.forEach((element: any) => {
                                     const elementShape = (shape as SVG.G).children()
                                         .find((child: SVG.Shape) => (
@@ -1327,43 +1326,18 @@ export class CanvasViewImpl implements CanvasView, Listener {
                                         ));
                                     }
                                 });
-
-                                this.onEditDone(state, points, rotation);
+                                this.onEditDone(state, points, 0);
                             }
-
-                            this.canvas.dispatchEvent(
-                                new CustomEvent('canvas.resizeshape', {
-                                    bubbles: false,
-                                    cancelable: true,
-                                    detail: {
-                                        id: state.clientID,
-                                    },
-                                }),
-                            );
+                        } else {
+                            // these points does not take into account possible transformations, applied on the element
+                            // so, if any (like rotation) we need to map them to canvas coordinate space
+                            let points = readPointsFromShape(shape);
+                            if (rotation) {
+                                points = this.translatePointsFromRotatedShape(shape, points);
+                            }
+                            this.onEditDone(state, this.translateFromCanvas(points), rotation);
                         }
 
-                        return;
-                    }
-
-                    if (resized) {
-                        let rotation = shape.transform().rotation || 0;
-
-                        // be sure, that rotation in range [0; 360]
-                        while (rotation < 0) rotation += 360;
-                        rotation %= 360;
-
-                        // these points does not take into account possible transformations, applied on the element
-                        // so, if any (like rotation) we need to map them to canvas coordinate space
-                        let points = readPointsFromShape(shape);
-
-                        // let's keep current points, but they could be rewritten in updateObjects
-                        this.drawnStates[state.clientID].points = this.translateFromCanvas(points);
-                        this.drawnStates[state.clientID].rotation = rotation;
-                        if (rotation) {
-                            points = this.translatePointsFromRotatedShape(shape, points);
-                        }
-
-                        this.onEditDone(state, this.translateFromCanvas(points), rotation);
                         this.canvas.dispatchEvent(
                             new CustomEvent('canvas.resizeshape', {
                                 bubbles: false,
@@ -1770,7 +1744,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
                     if (clientID in this.svgTexts) {
                         this.deleteText(+clientID);
                         if (state) {
-                            this.svgTexts[clientID] = this.addText(state);
+                            this.addText(state);
                         }
                     }
                 }
@@ -2419,7 +2393,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
                 // remove created text and create it again
                 if (text) {
                     text.remove();
-                    this.svgTexts[state.clientID] = this.addText(state);
+                    this.addText(state);
                 }
             } else {
                 // check if there are updates in attributes
@@ -2529,7 +2503,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
             });
 
             if (displayAllText) {
-                this.svgTexts[state.clientID] = this.addText(state);
+                this.addText(state);
                 this.updateTextPosition(this.svgTexts[state.clientID]);
             }
 
