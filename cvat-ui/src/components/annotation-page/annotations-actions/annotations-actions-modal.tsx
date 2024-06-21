@@ -221,26 +221,27 @@ function ActionParameterComponent(props: Props & { onChange: (value: string) => 
     const store = getCVATStore();
     const [value, setValue] = useState(defaultValue);
 
+    const job = store.getState().annotation.job.instance as Job;
     useEffect(() => {
         onChange(value);
     }, [value]);
 
+    let computedValues = values as string[];
+    if (typeof values === 'function') {
+        computedValues = values({ job });
+    }
+
     if (type === 'select') {
         return (
             <Select value={value} onChange={setValue}>
-                {values.map((_value: string) => (
+                {computedValues.map((_value: string) => (
                     <Select.Option key={_value} value={_value}>{_value}</Select.Option>
                 ))}
             </Select>
         );
     }
 
-    const [min, max, step] = values.map((val) => {
-        if (val === 'frameCount') {
-            return store.getState().annotation.job.instance?.frameCount || 0;
-        }
-        return +val;
-    });
+    const [min, max, step] = computedValues.map((val) => +val);
 
     return (
         <InputNumber

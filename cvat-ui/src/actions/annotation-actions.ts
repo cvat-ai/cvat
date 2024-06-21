@@ -469,31 +469,8 @@ export function propagateObjectAsync(from: number, to: number): ThunkAction {
                 throw new Error('There is not an activated object state to be propagated');
             }
 
-            const getCopyFromState = (_objectState: any): any => ({
-                attributes: _objectState.attributes,
-                points: _objectState.shapeType === 'skeleton' ? null : _objectState.points,
-                occluded: _objectState.occluded,
-                objectType: _objectState.objectType !== ObjectType.TRACK ? _objectState.objectType : ObjectType.SHAPE,
-                shapeType: _objectState.shapeType,
-                label: _objectState.label,
-                zOrder: _objectState.zOrder,
-                rotation: _objectState.rotation,
-                frame: from,
-                elements: _objectState.shapeType === 'skeleton' ? _objectState.elements
-                    .map((element: any): any => getCopyFromState(element)) : [],
-                source: _objectState.source,
-            });
-
-            const copy = getCopyFromState(objectState);
             await sessionInstance.logger.log(EventScope.propagateObject, { count: Math.abs(to - from) });
-            const states = [];
-            const sign = Math.sign(to - from);
-            for (let frame = from + sign; sign > 0 ? frame <= to : frame >= to; frame += sign) {
-                copy.frame = frame;
-                copy.elements.forEach((element: any) => { element.frame = frame; });
-                const newState = new cvat.classes.ObjectState(copy);
-                states.push(newState);
-            }
+            const states = cvat.utils.propagateShapes<ObjectState>([objectState], from, to);
 
             await sessionInstance.annotations.put(states);
             const history = await sessionInstance.actions.get();

@@ -4,7 +4,7 @@
 
 import { omit, throttle } from 'lodash';
 import { ArgumentError } from './exceptions';
-import { SerializedCollection } from './server-response-types';
+import { SerializedCollection, SerializedShape } from './server-response-types';
 import { Job, Task } from './session';
 import { EventScope, ObjectType } from './enums';
 import ObjectState from './object-state';
@@ -31,10 +31,10 @@ export enum ActionParameterType {
 
 // For SELECT values should be a list of possible options
 // For NUMBER values should be a list with [min, max, step],
-// supported special values: 'frameCount'
+// or a callback ({ job }) => [min, max, step]
 type ActionParameters = Record<string, {
     type: ActionParameterType;
-    values: string[];
+    values: string[] | (({ job }: { job: Job }) => string[]);
     defaultValue: string;
 }>;
 
@@ -108,10 +108,9 @@ class PropagateShapes extends BaseSingleFrameAction {
 
     public async run(
         instance,
-        { collection: frameCollection, frameData: { number } },
+        { collection: { shapes }, frameData: { number } },
     ): Promise<SingleFrameActionOutput> {
-        const { shapes } = frameCollection;
-        const propagatedShapes = propagateShapes(shapes, number, this.#targetFrame);
+        const propagatedShapes = propagateShapes<SerializedShape>(shapes, number, this.#targetFrame);
         return { collection: { shapes: [...shapes, ...propagatedShapes] } };
     }
 
@@ -123,7 +122,7 @@ class PropagateShapes extends BaseSingleFrameAction {
         return {
             'Target frame': {
                 type: ActionParameterType.NUMBER,
-                values: ['0', 'frameCount', '1'],
+                values: ({ job }) => [job.startFrame, job.stopFrame, 1].map((val) => val.toString()),
                 defaultValue: '0',
             },
         };

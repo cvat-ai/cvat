@@ -4,8 +4,9 @@
 
 import { DataError, ArgumentError } from './exceptions';
 import { Attribute } from './labels';
-import { ShapeType, AttributeType } from './enums';
+import { ShapeType, AttributeType, ObjectType } from './enums';
 import { SerializedShape } from './server-response-types';
+import ObjectState from './object-state';
 
 export function checkNumberOfPoints(shapeType: ShapeType, points: number[]): void {
     if (shapeType === ShapeType.RECTANGLE) {
@@ -358,34 +359,59 @@ export function rle2Mask(rle: number[], width: number, height: number): number[]
     return decoded;
 }
 
-export function propagateShapes(shapes: SerializedShape[], from: number, to: number): SerializedShape[] {
-    const getCopyFromShape = (shape: SerializedShape): SerializedShape => ({
-        attributes: shape.attributes,
-        points: shape.type === 'skeleton' ? null : [...shape.points],
-        occluded: shape.occluded,
-        type: shape.type,
-        label_id: shape.label_id,
-        z_order: shape.z_order,
-        rotation: shape.rotation,
-        frame: from,
-        elements: shape.type === 'skeleton' ? shape.elements
-            .map((element: SerializedShape): SerializedShape => getCopyFromShape(element)) : [],
-        source: shape.source,
-        group: 0,
-        outside: false,
-    });
+export function propagateShapes<T extends SerializedShape | ObjectState>(
+    shapes: T[], from: number, to: number,
+): T[] {
+    const getCopy = (shape: T): any => {
+        if (shape instanceof ObjectState) {
+            return {
+                attributes: shape.attributes,
+                points: shape.shapeType === 'skeleton' ? null : shape.points,
+                occluded: shape.occluded,
+                objectType: shape.objectType !== ObjectType.TRACK ? shape.objectType : ObjectType.SHAPE,
+                shapeType: shape.shapeType,
+                label: shape.label,
+                zOrder: shape.zOrder,
+                rotation: shape.rotation,
+                frame: from,
+                elements: shape.shapeType === 'skeleton' ? shape.elements
+                    .map((element: ObjectState): any => getCopy(element as T)) : [],
+                source: shape.source,
+            };
+        }
+        return {
+            attributes: [...shape.attributes.map((attribute) => ({ ...attribute }))],
+            points: shape.type === 'skeleton' ? null : [...shape.points],
+            occluded: shape.occluded,
+            type: shape.type,
+            label_id: shape.label_id,
+            z_order: shape.z_order,
+            rotation: shape.rotation,
+            frame: from,
+            elements: shape.type === 'skeleton' ? shape.elements
+                .map((element: SerializedShape): SerializedShape => getCopy(element as T)) : [],
+            source: shape.source,
+            group: 0,
+            outside: false,
+        };
+    };
 
-    const states = [];
+    const states: T[] = [];
     const sign = Math.sign(to - from);
     for (let frame = from + sign; sign > 0 ? frame <= to : frame >= to; frame += sign) {
-        for (let idx = 0; idx < shapes.length; idx++) {
-            const shape = shapes[idx];
-            const copy = getCopyFromShape(shape);
+        for (const shape of shapes) {
+            const copy = getCopy(shape);
 
             copy.frame = frame;
             copy.elements.forEach((element: SerializedShape) => { element.frame = frame; });
-            states.push(copy);
+
+            if (shape instanceof ObjectState) {
+                states.push(new ObjectState(copy) as T);
+            } else {
+                states.push(copy as T);
+            }
         }
     }
+
     return states;
 }
