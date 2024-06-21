@@ -1069,7 +1069,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
         onDragEnd: () => void = () => {},
     ): void {
         let draggableInstance = shape;
-        if (shape.type === 'g') {
+        if (shape.classes().includes('cvat_canvas_shape_skeleton')) {
             // for skeletons we use wrapping rectangle to drag the skeleton itself
             draggableInstance = (shape as any).children().find((child: SVG.Element) => child.type === 'rect');
         }
@@ -1197,7 +1197,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
         let resizableInstance = shape;
         let skeletonSVGTemplate: SVG.G = null;
 
-        if (shape.type === 'g') {
+        if (shape.classes().includes('cvat_canvas_shape_skeleton')) {
             // for skeletons we use wrapping rectangle to resize the skeleton itself
             resizableInstance = (shape as any).children().find((child: SVG.Element) => child.type === 'rect');
 
@@ -3213,7 +3213,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
                 'data-z-order': state.zOrder,
                 'pointer-events': 'all',
                 ...this.getShapeColorization(state),
-            }).addClass('cvat_canvas_shape') as SVG.G;
+            }).addClass('cvat_canvas_shape cvat_canvas_shape_skeleton') as SVG.G;
 
         const SVGElement = makeSVGFromTemplate(state.label.structure.svg);
 
