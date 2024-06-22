@@ -92,7 +92,7 @@ function validateURL(_: RuleObject, value: string): Promise<void> {
     return Promise.resolve();
 }
 
-const isInteger = ({ min, max }: { min?: number; max?: number }) => (
+const isInteger = ({ min, max, toBeSkipped }: { min?: number; max?: number; toBeSkipped?: number }) => (
     _: RuleObject,
     value?: number | string,
 ): Promise<void> => {
@@ -111,6 +111,10 @@ const isInteger = ({ min, max }: { min?: number; max?: number }) => (
 
     if (typeof max !== 'undefined' && intValue > max) {
         return Promise.reject(new Error(`Value must be less than ${max}`));
+    }
+
+    if (typeof toBeSkipped !== 'undefined' && intValue === toBeSkipped) {
+        return Promise.reject(new Error(`Value shouldn't be equal to ${toBeSkipped}`));
     }
 
     return Promise.resolve();

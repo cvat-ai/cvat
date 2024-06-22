@@ -67,6 +67,7 @@ const core = getCore();
 interface State {
     name: string;
     subset: string;
+    consensusJobsPerSegment: number;
 }
 
 type Props = DispatchToProps & StateToProps & OwnProps;
@@ -78,6 +79,7 @@ class DetailsComponent extends React.PureComponent<Props, State> {
         this.state = {
             name: taskInstance.name,
             subset: taskInstance.subset,
+            consensusJobsPerSegment: taskInstance.consensusJobsPerSegment,
         };
     }
 
@@ -92,8 +94,9 @@ class DetailsComponent extends React.PureComponent<Props, State> {
     }
 
     private renderTaskName(): JSX.Element {
-        const { name } = this.state;
+        const { name, consensusJobsPerSegment } = this.state;
         const { task: taskInstance, onUpdateTask } = this.props;
+        const taskName = name + (consensusJobsPerSegment > 0 ? ' (Consensus Based Annotation)' : '');
 
         return (
             <Title
@@ -110,7 +113,7 @@ class DetailsComponent extends React.PureComponent<Props, State> {
                 }}
                 className='cvat-text-color cvat-task-name'
             >
-                {name}
+                { taskName }
             </Title>
         );
     }

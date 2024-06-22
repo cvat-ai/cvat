@@ -412,11 +412,11 @@ function HeaderComponent(props: Props): JSX.Element {
         .map(({ component, weight }): typeof menuItems[0] => [component({ targetProps: props }), weight]),
     );
 
-    const getButtonClassName = (value: string): string => {
+    const getButtonClassName = (value: string, highlightable = true): string => {
         // eslint-disable-next-line security/detect-non-literal-regexp
         const regex = new RegExp(`${value}$`);
         const baseClass = `cvat-header-${value}-button cvat-header-button`;
-        return location.pathname.match(regex) ?
+        return highlightable && location.pathname.match(regex) ?
             `${baseClass} cvat-active-header-button` : baseClass;
     };
 
@@ -489,7 +489,7 @@ function HeaderComponent(props: Props): JSX.Element {
                 ) : null}
                 {isAnalyticsPluginActive && user.isSuperuser ? (
                     <Button
-                        className={getButtonClassName('analytics')}
+                        className={getButtonClassName('analytics', false)}
                         type='link'
                         href='/analytics'
                         onClick={(event: React.MouseEvent): void => {

@@ -476,6 +476,7 @@ export class Job extends Session {
     public readonly updatedDate: string;
     public readonly sourceStorage: Storage;
     public readonly targetStorage: Storage;
+    public readonly parentJobId: number | null;
 
     constructor(initialData: Readonly<Omit<SerializedJob, 'labels'> & { labels?: SerializedLabel[] }>) {
         super();
@@ -501,6 +502,7 @@ export class Job extends Session {
             updated_date: undefined,
             source_storage: undefined,
             target_storage: undefined,
+            parent_job_id: null,
         };
 
         const updateTrigger = new FieldUpdateTrigger();
@@ -653,6 +655,9 @@ export class Job extends Session {
                 _initialData: {
                     get: () => initialData,
                 },
+                parentJobId: {
+                    get: () => data.parent_job_id,
+                },
             }),
         );
     }
@@ -714,6 +719,7 @@ export class Task extends Session {
     public readonly organization: number | null;
     public readonly progress: { count: number; completed: number };
     public readonly jobs: Job[];
+    public readonly consensusJobsPerSegment: number;
 
     public readonly startFrame: number;
     public readonly stopFrame: number;
@@ -768,7 +774,7 @@ export class Task extends Session {
             cloud_storage_id: undefined,
             sorting_method: undefined,
             files: undefined,
-
+            consensus_jobs_per_segment: undefined,
             quality_settings: undefined,
         };
 
@@ -845,6 +851,7 @@ export class Task extends Session {
                     data_chunk_size: data.data_chunk_size,
                     target_storage: initialData.target_storage,
                     source_storage: initialData.source_storage,
+                    parent_job_id: job.parent_job_id,
                 });
                 data.jobs.push(jobInstance);
             }
@@ -951,6 +958,9 @@ export class Task extends Session {
                 },
                 copyData: {
                     get: () => data.copy_data,
+                },
+                consensusJobsPerSegment: {
+                    get: () => data.consensus_jobs_per_segment,
                 },
                 labels: {
                     get: () => [...data.labels],

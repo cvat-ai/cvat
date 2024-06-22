@@ -184,6 +184,7 @@ class _TaskBackupBase(_BackupBase):
             'status',
             'subset',
             'labels',
+            'consensus_jobs_per_segment',
         }
 
         return self._prepare_meta(allowed_fields, task)

@@ -418,6 +418,7 @@ class Task(TimestampedModel):
         blank=True, on_delete=models.SET_NULL, related_name='+')
     target_storage = models.ForeignKey('Storage', null=True, default=None,
         blank=True, on_delete=models.SET_NULL, related_name='+')
+    consensus_jobs_per_segment = models.IntegerField(default=0, blank=True)
 
     # Extend default permission model
     class Meta:
@@ -677,6 +678,7 @@ class Job(TimestampedModel):
 
     type = models.CharField(max_length=32, choices=JobType.choices(),
         default=JobType.ANNOTATION)
+    parent_job_id = models.PositiveIntegerField(null=True, blank=True, default=None)
 
     def get_target_storage(self) -> Optional[Storage]:
         return self.segment.task.target_storage
