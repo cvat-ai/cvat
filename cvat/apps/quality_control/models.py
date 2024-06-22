@@ -186,8 +186,6 @@ class QualitySettings(models.Model):
     task = models.OneToOneField(Task, on_delete=models.CASCADE, related_name="quality_settings")
 
     iou_threshold = models.FloatField()
-    wer_threshold = models.FloatField()
-    cer_threshold = models.FloatField()
     oks_sigma = models.FloatField()
     line_thickness = models.FloatField()
 
