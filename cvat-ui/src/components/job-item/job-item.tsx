@@ -115,12 +115,12 @@ function JobItem(props: Props): JSX.Element {
     const frameCountPercent = ((job.frameCount / (task.size || 1)) * 100).toFixed(0);
     const frameCountPercentRepresentation = frameCountPercent === '0' ? '<1' : frameCountPercent;
     let jobName = `Job #${job.id}`;
-    if (task.consensusJobPerSegment && job.type !== JobType.GROUND_TRUTH) {
+    if (task.consensusJobsPerSegment && job.type !== JobType.GROUND_TRUTH) {
         jobName = job.parentJobId === null ? `Normal Job #${job.id}` : `Consensus Job #${job.id}`;
     }
 
     let consensusJob: Job[] = [];
-    if (task.consensusJobPerSegment) {
+    if (task.consensusJobsPerSegment) {
         consensusJob = task.jobs.filter((eachJob: Job) => eachJob.parentJobId === id).reverse();
     }
     const consensusJobView: React.JSX.Element[] = consensusJob.map((eachJob: Job) => (

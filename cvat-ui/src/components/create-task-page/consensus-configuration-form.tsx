@@ -10,13 +10,11 @@ import Form, { FormInstance, RuleObject } from 'antd/lib/form';
 import { Store } from 'antd/lib/form/interface';
 
 export interface ConsensusConfiguration {
-    consensusJobPerSegment?: number;
-    agreementScoreThreshold?: number;
+    consensusJobsPerSegment: number;
 }
 
 const initialValues: ConsensusConfiguration = {
-    consensusJobPerSegment: 0,
-    agreementScoreThreshold: 0,
+    consensusJobsPerSegment: 0,
 };
 
 interface Props {
@@ -95,11 +93,11 @@ class ConsensusConfigurationForm extends React.PureComponent<Props> {
     }
 
     /* eslint-disable class-methods-use-this */
-    private renderConsensusJobPerSegment(): JSX.Element {
+    private renderConsensusJobsPerSegment(): JSX.Element {
         return (
             <Form.Item
                 label='Consensus Job Per Segment'
-                name='consensusJobPerSegment'
+                name='consensusJobsPerSegment'
                 rules={[{
                     validator: isNumber({
                         min: 0,
@@ -114,32 +112,12 @@ class ConsensusConfigurationForm extends React.PureComponent<Props> {
         );
     }
 
-    private renderAgreementScoreThreshold(): JSX.Element {
-        return (
-            <Form.Item
-                label='Agreement Score Threshold'
-                name='agreementScoreThreshold'
-                rules={[{
-                    validator: isNumber({
-                        min: 0,
-                        max: 1,
-                    }),
-                }]}
-            >
-                <Input size='large' type='number' min={0} step={0.1} />
-            </Form.Item>
-        );
-    }
-
     public render(): JSX.Element {
         return (
             <Form initialValues={initialValues} ref={this.formRef} layout='vertical'>
                 <Row justify='start'>
-                    <Col span={9}>
-                        {this.renderConsensusJobPerSegment()}
-                    </Col>
-                    <Col span={9} offset={1}>
-                        {this.renderAgreementScoreThreshold()}
+                    <Col span={24}>
+                        {this.renderConsensusJobsPerSegment()}
                     </Col>
                 </Row>
             </Form>

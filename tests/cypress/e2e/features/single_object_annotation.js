@@ -4,6 +4,13 @@
 
 /// <reference types="cypress" />
 
+/*
+    TODO: Add new test cases
+    - After drawing with disabled "autoNext", user should be able to activate and drag/resize object
+    - User also should be able to remove activated object with shortcut
+    - After removing an object, drawing should start automatically
+*/
+
 context('Single object annotation mode', { scrollBehavior: false }, () => {
     const taskName = 'Single object annotation mode';
     const serverFiles = ['images/image_1.jpg', 'images/image_2.jpg', 'images/image_3.jpg'];
@@ -60,17 +67,6 @@ context('Single object annotation mode', { scrollBehavior: false }, () => {
         });
     }
 
-    function submitJob() {
-        cy.get('.cvat-single-shape-annotation-submit-job-modal').should('exist');
-        cy.get('.cvat-single-shape-annotation-submit-job-modal').within(() => { cy.contains('Submit').click(); });
-
-        cy.intercept('PATCH', '/api/jobs/**').as('submitJob');
-        cy.wait('@submitJob').its('response.statusCode').should('equal', 200);
-
-        cy.get('.cvat-single-shape-annotation-submit-success-modal').should('exist');
-        cy.get('.cvat-single-shape-annotation-submit-success-modal').within(() => { cy.contains('OK').click(); });
-    }
-
     function checkSingleShapeModeOpened() {
         cy.get('.cvat-workspace-selector').should('have.text', 'Single shape');
         cy.get('.cvat-canvas-controls-sidebar').should('not.exist');
@@ -94,11 +90,16 @@ context('Single object annotation mode', { scrollBehavior: false }, () => {
     function drawObject(creatorFunction) {
         checkSingleShapeModeOpened();
 
+        cy.intercept('PATCH', `/api/jobs/${jobID}/**`).as('submitJob');
         for (let frame = 0; frame < frameCount; frame++) {
             checkFrameNum(frame);
             creatorFunction();
         }
-        submitJob();
+
+        cy.wait('@submitJob').its('response.statusCode').should('equal', 200);
+
+        cy.get('.cvat-single-shape-annotation-submit-success-modal').should('exist');
+        cy.get('.cvat-single-shape-annotation-submit-success-modal').within(() => { cy.contains('OK').click(); });
     }
 
     function changeLabel(labelName) {
@@ -207,7 +208,7 @@ context('Single object annotation mode', { scrollBehavior: false }, () => {
             checkSingleShapeModeOpened();
 
             // Skip
-            cy.get('.cvat-single-shape-annotation-sidebar-skip-wrapper').within(() => {
+            cy.get('.cvat-single-shape-annotation-sidebar-finish-frame-wrapper').within(() => {
                 cy.contains('Skip').click();
             });
             checkFrameNum(1);
@@ -225,7 +226,7 @@ context('Single object annotation mode', { scrollBehavior: false }, () => {
                 cy.get('[type="checkbox"]').uncheck();
             });
             clickPoints(polygonShape);
-            cy.get('.cvat-single-shape-annotation-submit-job-modal').should('not.exist');
+            cy.get('.cvat-single-shape-annotation-submit-success-modal').should('not.exist');
 
             // Navigate only on empty frames
             cy.get('.cvat-player-previous-button-empty').click();

@@ -1028,7 +1028,7 @@ async function backupTask(id: number, targetStorage: Storage, useDefaultSettings
     });
 }
 
-async function restoreTask(storage: Storage, file: File | string) {
+async function restoreTask(storage: Storage, file: File | string): Promise<SerializedTask> {
     const { backendAPI } = config;
     // keep current default params to 'freeze" them during this request
     const params: Params = {
@@ -1134,7 +1134,7 @@ async function backupProject(
     });
 }
 
-async function restoreProject(storage: Storage, file: File | string) {
+async function restoreProject(storage: Storage, file: File | string): Promise<SerializedProject> {
     const { backendAPI } = config;
     // keep current default params to 'freeze" them during this request
     const params: Params = {

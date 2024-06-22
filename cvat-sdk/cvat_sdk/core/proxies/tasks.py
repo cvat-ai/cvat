@@ -96,8 +96,6 @@ class Task(
                     "filename_pattern",
                     "cloud_storage_id",
                     "server_files_exclude",
-                    "consensus_job_per_segment",
-                    "agreement_score_threshold",
                 ],
             )
         )
