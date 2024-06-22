@@ -186,8 +186,8 @@ class QualitySettings(models.Model):
     task = models.OneToOneField(Task, on_delete=models.CASCADE, related_name="quality_settings")
 
     iou_threshold = models.FloatField()
-    wer_threshold = models.FloatField()
-    cer_threshold = models.FloatField()
+    wer_threshold = models.FloatField(default=0.2)
+    cer_threshold = models.FloatField(default=0.2)
     oks_sigma = models.FloatField()
     line_thickness = models.FloatField()
 
@@ -205,6 +205,7 @@ class QualitySettings(models.Model):
     panoptic_comparison = models.BooleanField()
 
     compare_attributes = models.BooleanField()
+    compare_extra_parameters = models.BooleanField(default=True)
 
     def __init__(self, *args: Any, **kwargs: Any) -> None:
         defaults = deepcopy(self.get_defaults())

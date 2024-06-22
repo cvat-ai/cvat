@@ -86,6 +86,7 @@ class QualitySettingsSerializer(serializers.ModelSerializer):
             "compare_attributes",
             "wer_threshold",
             "cer_threshold",
+            "compare_extra_parameters",
         )
         read_only_fields = (
             "id",
@@ -135,6 +136,7 @@ class QualitySettingsSerializer(serializers.ModelSerializer):
                 Use only the visible part of the masks and polygons in comparisons
             """,
             "compare_attributes": "Enables or disables annotation attribute comparison",
+            "compare_extra_parameters": "Enables or disables annotation extra parameters comparison like Locale, Gender etc",
         }.items():
             extra_kwargs.setdefault(field_name, {}).setdefault(
                 "help_text", textwrap.dedent(help_text.lstrip("\n"))
