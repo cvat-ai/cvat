@@ -406,7 +406,6 @@ export function implementTask(Task) {
                 bugTracker: 'bug_tracker',
                 projectId: 'project_id',
                 assignee: 'assignee_id',
-                agreementScoreThreshold: 'agreement_score_threshold',
             });
 
             if (taskData.assignee_id) {
@@ -476,12 +475,8 @@ export function implementTask(Task) {
             taskSpec.source_storage = this.sourceStorage.toJSON();
         }
 
-        if (this.consensusJobPerSegment) {
-            taskSpec.consensus_job_per_segment = this.consensusJobPerSegment;
-        }
-
-        if (this.agreementScoreThreshold) {
-            taskSpec.agreement_score_threshold = this.agreementScoreThreshold;
+        if (this.consensusJobsPerSegment) {
+            taskSpec.consensus_jobs_per_segment = this.consensusJobsPerSegment;
         }
 
         const taskDataSpec = {

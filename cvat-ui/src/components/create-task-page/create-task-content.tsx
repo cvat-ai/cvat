@@ -85,7 +85,9 @@ const defaultState: State = {
         useProjectSourceStorage: true,
         useProjectTargetStorage: true,
     },
-    consensus: {},
+    consensus: {
+        consensusJobsPerSegment: 0,
+    },
     labels: [],
     files: {
         local: [],
@@ -757,6 +759,17 @@ class CreateTaskContent extends React.PureComponent<Props & RouteComponentProps,
         );
     }
 
+    private renderConsensusBlock(): JSX.Element {
+        return (
+            <Col span={24}>
+                <ConsensusConfigurationForm
+                    ref={this.consensusConfigurationComponent}
+                    onSubmit={this.handleSubmitConsensusConfiguration}
+                />
+            </Col>
+        );
+    }
+
     private renderSubsetBlock(): JSX.Element | null {
         const { projectId, subset } = this.state;
 
@@ -895,26 +908,6 @@ class CreateTaskContent extends React.PureComponent<Props & RouteComponentProps,
         );
     }
 
-    private renderConsensusBlock(): JSX.Element {
-        return (
-            <Col span={24}>
-                <Collapse
-                    className='cvat-advanced-configuration-wrapper'
-                    items={[{
-                        key: '2',
-                        label: <Text className='cvat-title'>Consensus configuration</Text>,
-                        children: (
-                            <ConsensusConfigurationForm
-                                ref={this.consensusConfigurationComponent}
-                                onSubmit={this.handleSubmitConsensusConfiguration}
-                            />
-                        ),
-                    }]}
-                />
-            </Col>
-        );
-    }
-
     private renderFooterSingleTask(): JSX.Element {
         const { uploadFileErrorMessage, loading, statusInProgressTask: status } = this.state;
 
@@ -1004,9 +997,8 @@ class CreateTaskContent extends React.PureComponent<Props & RouteComponentProps,
                 {this.renderSubsetBlock()}
                 {this.renderLabelsBlock()}
                 {this.renderFilesBlock()}
-                {this.renderAdvancedBlock()}
                 {this.renderConsensusBlock()}
-
+                {this.renderAdvancedBlock()}
                 <Col span={24} className='cvat-create-task-content-footer'>
                     {many ? this.renderFooterMultiTasks() : this.renderFooterSingleTask() }
                 </Col>

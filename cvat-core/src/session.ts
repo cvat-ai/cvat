@@ -672,8 +672,7 @@ export class Task extends Session {
     public readonly organization: number | null;
     public readonly progress: { count: number; completed: number };
     public readonly jobs: Job[];
-    public readonly consensusJobPerSegment: number;
-    public agreementScoreThreshold: number;
+    public readonly consensusJobsPerSegment: number;
 
     public readonly startFrame: number;
     public readonly stopFrame: number;
@@ -728,9 +727,7 @@ export class Task extends Session {
             cloud_storage_id: undefined,
             sorting_method: undefined,
             files: undefined,
-            consensus_job_per_segment: undefined,
-            agreement_score_threshold: undefined,
-
+            consensus_jobs_per_segment: undefined,
             quality_settings: undefined,
         };
 
@@ -915,22 +912,8 @@ export class Task extends Session {
                 copyData: {
                     get: () => data.copy_data,
                 },
-                consensusJobPerSegment: {
-                    get: () => data.consensus_job_per_segment,
-                },
-                agreementScoreThreshold: {
-                    get: () => data.agreement_score_threshold,
-                    set: (value: number) => {
-                        if (typeof value !== 'number') {
-                            throw new ArgumentError(
-                                `Agreement Score Threshold value must be a Number. But ${typeof value} has been got.`,
-                            );
-                        }
-
-                        updateTrigger.update('agreementScoreThreshold');
-                        data.agreement_score_threshold = value;
-                        console.log(data);
-                    },
+                consensusJobsPerSegment: {
+                    get: () => data.consensus_jobs_per_segment,
                 },
                 labels: {
                     get: () => [...data.labels],

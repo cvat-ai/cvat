@@ -213,8 +213,7 @@ ThunkAction<Promise<void>, {}, {}, AnyAction> {
             sorting_method: data.advanced.sortingMethod,
             source_storage: new Storage(data.advanced.sourceStorage || { location: StorageLocation.LOCAL }).toJSON(),
             target_storage: new Storage(data.advanced.targetStorage || { location: StorageLocation.LOCAL }).toJSON(),
-            consensus_job_per_segment: 0,
-            agreement_score_threshold: 0,
+            consensus_jobs_per_segment: 0,
         };
 
         if (data.projectId) {
@@ -253,12 +252,10 @@ ThunkAction<Promise<void>, {}, {}, AnyAction> {
         if (data.cloudStorageId) {
             description.cloud_storage_id = data.cloudStorageId;
         }
-        if (data.consensus.consensusJobPerSegment) {
-            description.consensus_job_per_segment = +data.consensus.consensusJobPerSegment;
+        if (data.consensus.consensusJobsPerSegment) {
+            description.consensus_jobs_per_segment = +data.consensus.consensusJobsPerSegment;
         }
-        if (data.consensus.agreementScoreThreshold) {
-            description.agreement_score_threshold = data.consensus.agreementScoreThreshold;
-        }
+
         const taskInstance = new cvat.classes.Task(description);
         taskInstance.clientFiles = data.files.local;
         taskInstance.serverFiles = data.files.share.concat(data.files.cloudStorage);

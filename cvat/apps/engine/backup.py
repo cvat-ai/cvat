@@ -183,8 +183,7 @@ class _TaskBackupBase(_BackupBase):
             'status',
             'subset',
             'labels',
-            'consensus_job_per_segment',
-            'agreement_score_threshold',
+            'consensus_jobs_per_segment',
         }
 
         return self._prepare_meta(allowed_fields, task)
