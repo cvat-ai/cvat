@@ -118,7 +118,7 @@ function PlayerNavigation(props: Props): JSX.Element {
         FOCUS_INPUT_FRAME: keyMap.FOCUS_INPUT_FRAME,
     };
 
-    const handlers = {
+    const handlers: Record<keyof typeof componentShortcuts, (event?: KeyboardEvent) => void> = {
         DELETE_FRAME: (event: KeyboardEvent | undefined) => {
             event?.preventDefault();
             onDeleteFrame();

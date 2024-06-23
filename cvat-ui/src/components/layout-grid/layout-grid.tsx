@@ -34,7 +34,7 @@ const LayoutGrid = (): React.ReactPortal => {
         setShowGrid((prevState: boolean) => !prevState);
     }, [showGrid]);
 
-    const handlers = {
+    const handlers: Record<keyof typeof componentShortcuts, (event?: KeyboardEvent) => void> = {
         TOGGLE_LAYOUT_GRID: toggleLayoutGrid,
     };
 

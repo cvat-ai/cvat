@@ -476,7 +476,7 @@ class ObjectsListContainer extends React.PureComponent<Props, State> {
             return null;
         };
 
-        const handlers = {
+        const handlers: Record<keyof typeof componentShortcuts, (event?: KeyboardEvent) => void> = {
             SWITCH_ALL_LOCK: (event: KeyboardEvent | undefined) => {
                 preventDefault(event);
                 this.lockAllStates(!statesLocked);

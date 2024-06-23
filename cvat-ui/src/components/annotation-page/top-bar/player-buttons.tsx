@@ -137,7 +137,7 @@ function PlayerButtons(props: Props): JSX.Element {
         } : {}),
     };
 
-    const handlers = {
+    const handlers: Record<keyof typeof componentShortcuts, (event?: KeyboardEvent) => void> = {
         NEXT_FRAME: (event: KeyboardEvent | undefined) => {
             event?.preventDefault();
             onNextFrame();

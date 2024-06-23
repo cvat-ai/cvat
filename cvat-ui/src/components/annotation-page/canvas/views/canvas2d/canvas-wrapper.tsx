@@ -1100,7 +1100,7 @@ class CanvasWrapperComponent extends React.PureComponent<Props> {
             SWITCH_AUTOMATIC_BORDERING: keyMap.SWITCH_AUTOMATIC_BORDERING,
         };
 
-        const handlers = {
+        const handlers: Record<keyof typeof componentShortcuts, (event?: KeyboardEvent) => void> = {
             SWITCH_AUTOMATIC_BORDERING: (event: KeyboardEvent | undefined) => {
                 if (switchableAutomaticBordering) {
                     preventDefault(event);

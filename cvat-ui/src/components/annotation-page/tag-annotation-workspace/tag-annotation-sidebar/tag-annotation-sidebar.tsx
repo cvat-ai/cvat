@@ -232,7 +232,7 @@ function TagAnnotationSidebar(props: StateToProps & DispatchToProps): JSX.Elemen
         SWITCH_DRAW_MODE: keyMap.SWITCH_DRAW_MODE,
     };
 
-    const handlers = {
+    const handlers: Record<keyof typeof componentShortcuts, (event?: KeyboardEvent) => void> = {
         SWITCH_DRAW_MODE: (event: KeyboardEvent | undefined) => {
             preventDefault(event);
             if (selectedLabelID !== null) {

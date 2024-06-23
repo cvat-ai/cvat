@@ -329,7 +329,7 @@ function SingleShapeSidebar(): JSX.Element {
         SWITCH_DRAW_MODE: keyMap.SWITCH_DRAW_MODE,
     };
 
-    const handlers = {
+    const handlers: Record<keyof typeof componentShortcuts, (event?: KeyboardEvent) => void> = {
         CANCEL: (event: KeyboardEvent | undefined) => {
             event?.preventDefault();
             (store.getState().annotation.canvas.instance as Canvas).cancel();

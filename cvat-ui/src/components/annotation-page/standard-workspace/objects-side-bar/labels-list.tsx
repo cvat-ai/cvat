@@ -81,7 +81,7 @@ function LabelsListComponent(): JSX.Element {
         SWITCH_LABEL: keyMap.SWITCH_LABEL,
     };
 
-    const handlers = {
+    const handlers: Record<keyof typeof componentShortcuts, (event: KeyboardEvent, shortcut: string) => void> = {
         SWITCH_LABEL: (event: KeyboardEvent | undefined, shortcut: string) => {
             if (event) event.preventDefault();
             const labelID = keyToLabelMapping[shortcut.split('+')[1].trim()];

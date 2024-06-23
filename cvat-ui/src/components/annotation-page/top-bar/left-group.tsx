@@ -92,7 +92,7 @@ function LeftGroup(props: Props): JSX.Element {
         REDO: keyMap.REDO,
     };
 
-    const handlers = {
+    const handlers: Record<keyof typeof componentShortcuts, (event?: KeyboardEvent) => void> = {
         UNDO: (event: KeyboardEvent | undefined) => {
             event?.preventDefault();
             if (undoAction) {

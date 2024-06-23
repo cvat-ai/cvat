@@ -210,14 +210,14 @@ function HeaderComponent(props: Props): JSX.Element {
         SWITCH_SETTINGS: keyMap.SWITCH_SETTINGS,
     };
 
-    const handlers = {
-        SWITCH_SHORTCUTS: (event: KeyboardEvent) => {
+    const handlers: Record<keyof typeof componentShortcuts, (event?: KeyboardEvent) => void> = {
+        SWITCH_SHORTCUTS: (event: KeyboardEvent | undefined) => {
             if (event) event.preventDefault();
             if (!settingsModalVisible) {
                 switchShortcutsModalVisible(!shortcutsModalVisible);
             }
         },
-        SWITCH_SETTINGS: (event: KeyboardEvent) => {
+        SWITCH_SETTINGS: (event: KeyboardEvent | undefined) => {
             if (event) event.preventDefault();
             if (!shortcutsModalVisible) {
                 switchSettingsModalVisible(!settingsModalVisible);

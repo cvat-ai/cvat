@@ -263,7 +263,7 @@ export const PerspectiveViewComponent = React.memo(
             ZOOM_OUT: keyMap.ZOOM_OUT,
         };
 
-        const handlers = {
+        const handlers: Record<keyof typeof componentShortcuts, (event?: KeyboardEvent) => void> = {
             TILT_UP: () => {}, // Handled by CVAT 3D Independently
             TILT_DOWN: () => {},
             ROTATE_LEFT: () => {},

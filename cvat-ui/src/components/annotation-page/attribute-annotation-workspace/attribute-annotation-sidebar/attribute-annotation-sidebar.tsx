@@ -288,7 +288,7 @@ function AttributeAnnotationSidebar(props: StateToProps & DispatchToProps): JSX.
         PREV_KEY_FRAME: keyMap.PREV_KEY_FRAME,
     };
 
-    const handlers = {
+    const handlers: Record<keyof typeof componentShortcuts, (event?: KeyboardEvent) => void> = {
         NEXT_ATTRIBUTE: (event: KeyboardEvent | undefined) => {
             preventDefault(event);
             nextAttribute(1);

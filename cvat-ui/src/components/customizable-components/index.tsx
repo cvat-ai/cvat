@@ -36,7 +36,7 @@ const storage = {
             SAVE_JOB: keyMap.SAVE_JOB,
         };
 
-        const handlers = {
+        const handlers: Record<keyof typeof componentShortcuts, (event?: KeyboardEvent) => void> = {
             SAVE_JOB: (event: KeyboardEvent | undefined) => {
                 const { onClick } = props;
                 if (event) event.preventDefault();
