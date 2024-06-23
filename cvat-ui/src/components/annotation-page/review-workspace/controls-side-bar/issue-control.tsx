@@ -32,7 +32,7 @@ const componentShortcuts = {
         name: 'Open an issue',
         description: 'Create a new issues in the review workspace',
         sequences: ['n'],
-        view: ShortcutScope.ALL,
+        scope: ShortcutScope.ALL,
     },
 };
 

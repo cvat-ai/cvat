@@ -51,14 +51,14 @@ const componentShortcuts = {
         name: 'Paste shape',
         description: 'Paste a shape from internal CVAT clipboard',
         sequences: ['ctrl+v'],
-        view: ShortcutScope.ALL,
+        scope: ShortcutScope.ALL,
     },
     SWITCH_DRAW_MODE: {
         name: 'Draw mode',
         description:
             'Repeat the latest procedure of drawing with the same parameters (shift to redraw an existing shape)',
         sequences: ['shift+n', 'n'],
-        view: ShortcutScope.ALL,
+        scope: ShortcutScope.ALL,
     },
 };
 

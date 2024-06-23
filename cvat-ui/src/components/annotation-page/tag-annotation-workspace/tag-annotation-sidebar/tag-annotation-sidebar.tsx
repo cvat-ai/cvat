@@ -85,7 +85,7 @@ const componentShortcuts = {
         description:
             'Repeat the latest procedure of drawing with the same parameters (shift to redraw an existing shape)',
         sequences: ['shift+n', 'n'],
-        view: ShortcutScope.ALL,
+        scope: ShortcutScope.ALL,
     },
 };
 

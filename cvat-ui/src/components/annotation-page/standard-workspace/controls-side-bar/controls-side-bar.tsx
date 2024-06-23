@@ -61,32 +61,32 @@ const componentShortcuts = {
         name: 'Rotate clockwise',
         description: 'Change image angle (add 90 degrees)',
         sequences: ['ctrl+r'],
-        view: ShortcutScope.ALL,
+        scope: ShortcutScope.ALL,
     },
     ANTICLOCKWISE_ROTATION: {
         name: 'Rotate anticlockwise',
         description: 'Change image angle (subtract 90 degrees)',
         sequences: ['ctrl+shift+r'],
-        view: ShortcutScope.ALL,
+        scope: ShortcutScope.ALL,
     },
     PASTE_SHAPE: {
         name: 'Paste shape',
         description: 'Paste a shape from internal CVAT clipboard',
         sequences: ['ctrl+v'],
-        view: ShortcutScope.ALL,
+        scope: ShortcutScope.ALL,
     },
     SWITCH_DRAW_MODE: {
         name: 'Draw mode',
         description:
             'Repeat the latest procedure of drawing with the same parameters (shift to redraw an existing shape)',
         sequences: ['shift+n', 'n'],
-        view: ShortcutScope.ALL,
+        scope: ShortcutScope.ALL,
     },
 };
 
 useRegisterShortcuts(componentShortcuts);
 
-// We use the observer to see if these controls are in the viewport
+// We use the observer to see if these controls are in the scopeport
 // They automatically put to extra if not
 const ObservedCursorControl = ControlVisibilityObserver<CursorControlProps>(CursorControl);
 const ObservedMoveControl = ControlVisibilityObserver<MoveControlProps>(MoveControl);

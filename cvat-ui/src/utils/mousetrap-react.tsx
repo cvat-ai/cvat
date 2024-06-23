@@ -5,13 +5,14 @@
 
 import React, { useEffect } from 'react';
 import Mousetrap from 'mousetrap';
+import { ShortcutScope } from './enums';
 
 export interface KeyMapItem {
     name: string;
     description: string;
     sequences: string[];
     displayedSequences?: string[];
-    view: string;
+    scope: ShortcutScope;
 }
 
 export interface KeyMap {

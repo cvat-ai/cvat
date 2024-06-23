@@ -106,7 +106,7 @@ const componentShortcuts = {
         name: 'Switch algorithm blocker',
         description: 'Postpone running the algorithm for interaction tools',
         sequences: ['ctrl'],
-        view: ShortcutScope.ALL,
+        scope: ShortcutScope.ALL,
     },
 };
 

@@ -33,7 +33,7 @@ const componentShortcuts = {
         name: 'Slice mode',
         description: 'Activate or deactivate a mode to slice a polygon/mask',
         sequences: ['alt+j'],
-        view: ShortcutScope.ALL,
+        scope: ShortcutScope.ALL,
     },
 };
 

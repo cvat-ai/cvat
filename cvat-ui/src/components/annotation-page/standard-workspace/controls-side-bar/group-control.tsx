@@ -38,13 +38,13 @@ const componentShortcuts = {
         name: 'Group mode',
         description: 'Activate or deactivate mode to grouping shapes',
         sequences: ['g'],
-        view: ShortcutScope.ALL,
+        scope: ShortcutScope.ALL,
     },
     RESET_GROUP: {
         name: 'Reset group',
         description: 'Reset group for selected shapes (in group mode)',
         sequences: ['shift+g'],
-        view: ShortcutScope.ALL,
+        scope: ShortcutScope.ALL,
     },
 };
 

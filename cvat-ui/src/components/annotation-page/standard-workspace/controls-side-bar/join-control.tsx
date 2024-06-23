@@ -31,7 +31,7 @@ const componentShortcuts = {
         name: 'Join mode',
         description: 'Activate or deactivate a mode where you can join masks',
         sequences: ['j'],
-        view: ShortcutScope.ALL,
+        scope: ShortcutScope.ALL,
     },
 };
 

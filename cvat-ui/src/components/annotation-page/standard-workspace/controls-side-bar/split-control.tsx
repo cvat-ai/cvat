@@ -33,7 +33,7 @@ const componentShortcuts = {
         name: 'Split mode',
         description: 'Activate or deactivate mode to splitting shapes',
         sequences: ['alt+m'],
-        view: ShortcutScope.ALL,
+        scope: ShortcutScope.ALL,
     },
 };
 
