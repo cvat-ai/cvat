@@ -12,7 +12,7 @@ import { RectangleIcon } from 'icons';
 import CVATTooltip from 'components/common/cvat-tooltip';
 import GlobalHotKeys, { KeyMapItem } from 'utils/mousetrap-react';
 import { ShortcutScope } from 'utils/enums';
-import { useRegisterShortcuts } from 'utils/hooks';
+import { registerComponentShortcuts } from 'actions/shortcuts-actions';
 
 interface Props {
     canvasInstance: Canvas;
@@ -36,7 +36,7 @@ const componentShortcuts = {
     },
 };
 
-useRegisterShortcuts(componentShortcuts);
+registerComponentShortcuts(componentShortcuts);
 
 function CreateIssueControl(props: Props): JSX.Element {
     const {

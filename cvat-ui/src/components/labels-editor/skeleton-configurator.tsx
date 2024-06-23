@@ -22,7 +22,7 @@ import ShortcutsContext from 'components/shortcuts.context';
 import { LabelType, ShapeType } from 'cvat-core-wrapper';
 import config from 'config';
 import { ShortcutScope } from 'utils/enums';
-import { useRegisterShortcuts } from 'utils/hooks';
+import { registerComponentShortcuts } from 'actions/shortcuts-actions';
 import {
     idGenerator, LabelOptColor, SkeletonConfiguration, toSVGCoord,
 } from './common';
@@ -58,7 +58,7 @@ const componentShortcuts = {
     },
 };
 
-useRegisterShortcuts(componentShortcuts);
+registerComponentShortcuts(componentShortcuts);
 
 export default class SkeletonConfigurator extends React.PureComponent<Props, State> {
     static contextType = ShortcutsContext;

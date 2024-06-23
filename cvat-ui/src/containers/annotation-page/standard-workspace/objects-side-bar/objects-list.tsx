@@ -29,7 +29,7 @@ import {
 } from 'reducers';
 import { FramesMetaData, ObjectState, ShapeType } from 'cvat-core-wrapper';
 import { filterAnnotations } from 'utils/filter-annotations';
-import { useRegisterShortcuts } from 'utils/hooks';
+import { registerComponentShortcuts } from 'actions/shortcuts-actions';
 import { ShortcutScope } from 'utils/enums';
 
 interface OwnProps {
@@ -168,7 +168,7 @@ const componentShortcuts = {
     },
 };
 
-useRegisterShortcuts(componentShortcuts);
+registerComponentShortcuts(componentShortcuts);
 
 function mapStateToProps(state: CombinedState): StateToProps {
     const {

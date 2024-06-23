@@ -20,7 +20,7 @@ import { clamp } from 'utils/math';
 import GlobalHotKeys, { KeyMap } from 'utils/mousetrap-react';
 import { Workspace } from 'reducers';
 import { ShortcutScope } from 'utils/enums';
-import { useRegisterShortcuts } from 'utils/hooks';
+import { registerComponentShortcuts } from 'actions/shortcuts-actions';
 
 interface Props {
     startFrame: number;
@@ -60,7 +60,7 @@ const componentShortcuts = {
     },
 };
 
-useRegisterShortcuts(componentShortcuts);
+registerComponentShortcuts(componentShortcuts);
 
 function PlayerNavigation(props: Props): JSX.Element {
     const {

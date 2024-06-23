@@ -16,7 +16,7 @@ import { ActiveControl, ToolsBlockerState } from 'reducers';
 import CVATTooltip from 'components/common/cvat-tooltip';
 import customizableComponents from 'components/customizable-components';
 import GlobalHotKeys, { KeyMap } from 'utils/mousetrap-react';
-import { useRegisterShortcuts } from 'utils/hooks';
+import { registerComponentShortcuts } from 'actions/shortcuts-actions';
 import { ShortcutScope } from 'utils/enums';
 
 interface Props {
@@ -52,7 +52,7 @@ const componentShortcuts = {
     },
 };
 
-useRegisterShortcuts(componentShortcuts);
+registerComponentShortcuts(componentShortcuts);
 
 function LeftGroup(props: Props): JSX.Element {
     const {

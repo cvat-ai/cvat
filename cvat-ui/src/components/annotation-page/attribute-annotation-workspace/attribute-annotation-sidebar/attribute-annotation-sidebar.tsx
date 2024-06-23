@@ -23,7 +23,7 @@ import { ThunkDispatch } from 'utils/redux';
 import AppearanceBlock from 'components/annotation-page/appearance-block';
 import ObjectButtonsContainer from 'containers/annotation-page/standard-workspace/objects-side-bar/object-buttons';
 import { CombinedState, ObjectType } from 'reducers';
-import { useRegisterShortcuts } from 'utils/hooks';
+import { registerComponentShortcuts } from 'actions/shortcuts-actions';
 import { ShortcutScope } from 'utils/enums';
 import AttributeEditor from './attribute-editor';
 import AttributeSwitcher from './attribute-switcher';
@@ -109,7 +109,7 @@ const componentShortcuts = {
     },
 };
 
-useRegisterShortcuts(componentShortcuts);
+registerComponentShortcuts(componentShortcuts);
 
 function mapStateToProps(state: CombinedState): StateToProps {
     const {

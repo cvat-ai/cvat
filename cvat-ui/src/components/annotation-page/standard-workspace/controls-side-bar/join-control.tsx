@@ -10,7 +10,7 @@ import { ActiveControl } from 'reducers';
 import CVATTooltip from 'components/common/cvat-tooltip';
 import GlobalHotKeys, { KeyMapItem } from 'utils/mousetrap-react';
 import { JoinIcon } from 'icons';
-import { useRegisterShortcuts } from 'utils/hooks';
+import { registerComponentShortcuts } from 'actions/shortcuts-actions';
 import { ShortcutScope } from 'utils/enums';
 
 export interface Props {
@@ -35,7 +35,7 @@ const componentShortcuts = {
     },
 };
 
-useRegisterShortcuts(componentShortcuts);
+registerComponentShortcuts(componentShortcuts);
 
 function JoinControl(props: Props): JSX.Element {
     const {

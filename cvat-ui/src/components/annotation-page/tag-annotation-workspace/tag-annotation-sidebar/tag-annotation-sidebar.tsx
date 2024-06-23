@@ -29,7 +29,7 @@ import LabelSelector from 'components/label-selector/label-selector';
 import isAbleToChangeFrame from 'utils/is-able-to-change-frame';
 import GlobalHotKeys, { KeyMap } from 'utils/mousetrap-react';
 import { ShortcutScope } from 'utils/enums';
-import { useRegisterShortcuts } from 'utils/hooks';
+import { registerComponentShortcuts } from 'actions/shortcuts-actions';
 import ShortcutsSelect from './shortcuts-select';
 
 const cvat = getCore();
@@ -89,7 +89,7 @@ const componentShortcuts = {
     },
 };
 
-useRegisterShortcuts(componentShortcuts);
+registerComponentShortcuts(componentShortcuts);
 
 function mapDispatchToProps(dispatch: ThunkDispatch<CombinedState, {}, Action>): DispatchToProps {
     return {

@@ -13,7 +13,7 @@ import GlobalHotKeys, { KeyMapItem } from 'utils/mousetrap-react';
 import opencvWrapper from 'utils/opencv-wrapper/opencv-wrapper';
 import { SliceIcon } from 'icons';
 import { ShortcutScope } from 'utils/enums';
-import { useRegisterShortcuts } from 'utils/hooks';
+import { registerComponentShortcuts } from 'actions/shortcuts-actions';
 
 export interface Props {
     updateActiveControl(activeControl: ActiveControl): void;
@@ -37,7 +37,7 @@ const componentShortcuts = {
     },
 };
 
-useRegisterShortcuts(componentShortcuts);
+registerComponentShortcuts(componentShortcuts);
 
 function SliceControl(props: Props): JSX.Element {
     const {

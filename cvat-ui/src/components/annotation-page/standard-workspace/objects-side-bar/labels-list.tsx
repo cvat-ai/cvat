@@ -14,7 +14,7 @@ import LabelItemContainer from 'containers/annotation-page/standard-workspace/ob
 import GlobalHotKeys from 'utils/mousetrap-react';
 import Text from 'antd/lib/typography/Text';
 import { ShortcutScope } from 'utils/enums';
-import { useRegisterShortcuts } from 'utils/hooks';
+import { registerComponentShortcuts } from 'actions/shortcuts-actions';
 
 const componentShortcuts = {
     SWITCH_LABEL: {
@@ -25,7 +25,7 @@ const componentShortcuts = {
     },
 };
 
-useRegisterShortcuts(componentShortcuts);
+registerComponentShortcuts(componentShortcuts);
 
 function LabelsListComponent(): JSX.Element {
     const dispatch = useDispatch();

@@ -25,7 +25,7 @@ import {
     LastIcon,
 } from 'icons';
 import { ShortcutScope } from 'utils/enums';
-import { useRegisterShortcuts } from 'utils/hooks';
+import { registerComponentShortcuts } from 'actions/shortcuts-actions';
 
 interface Props {
     playing: boolean;
@@ -100,7 +100,7 @@ const componentShortcuts = {
     },
 };
 
-useRegisterShortcuts(componentShortcuts);
+registerComponentShortcuts(componentShortcuts);
 
 function PlayerButtons(props: Props): JSX.Element {
     const {

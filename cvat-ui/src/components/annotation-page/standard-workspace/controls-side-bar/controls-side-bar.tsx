@@ -14,7 +14,7 @@ import { Canvas, CanvasMode } from 'cvat-canvas-wrapper';
 import { LabelType } from 'cvat-core-wrapper';
 
 import { ShortcutScope } from 'utils/enums';
-import { useRegisterShortcuts } from 'utils/hooks';
+import { registerComponentShortcuts } from 'actions/shortcuts-actions';
 import ControlVisibilityObserver, { ExtraControlsControl } from './control-visibility-observer';
 import RotateControl, { Props as RotateControlProps } from './rotate-control';
 import CursorControl, { Props as CursorControlProps } from './cursor-control';
@@ -84,7 +84,7 @@ const componentShortcuts = {
     },
 };
 
-useRegisterShortcuts(componentShortcuts);
+registerComponentShortcuts(componentShortcuts);
 
 // We use the observer to see if these controls are in the scopeport
 // They automatically put to extra if not

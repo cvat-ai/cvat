@@ -13,7 +13,7 @@ import { Canvas3d } from 'cvat-canvas3d-wrapper';
 import CVATTooltip from 'components/common/cvat-tooltip';
 import GlobalHotKeys, { KeyMapItem } from 'utils/mousetrap-react';
 import { ShortcutScope } from 'utils/enums';
-import { useRegisterShortcuts } from 'utils/hooks';
+import { registerComponentShortcuts } from 'actions/shortcuts-actions';
 
 export interface Props {
     canvasInstance: Canvas | Canvas3d;
@@ -36,7 +36,7 @@ const componentShortcuts = {
     },
 };
 
-useRegisterShortcuts(componentShortcuts);
+registerComponentShortcuts(componentShortcuts);
 
 function CursorControl(props: Props): JSX.Element {
     const {

@@ -30,7 +30,7 @@ import GlobalHotKeys, { KeyMap } from 'utils/mousetrap-react';
 import ControlVisibilityObserver from 'components/annotation-page/standard-workspace/controls-side-bar/control-visibility-observer';
 import { filterApplicableForType } from 'utils/filter-applicable-labels';
 import { ShortcutScope } from 'utils/enums';
-import { useRegisterShortcuts } from 'utils/hooks';
+import { registerComponentShortcuts } from 'actions/shortcuts-actions';
 
 interface Props {
     keyMap: KeyMap;
@@ -62,7 +62,7 @@ const componentShortcuts = {
     },
 };
 
-useRegisterShortcuts(componentShortcuts);
+registerComponentShortcuts(componentShortcuts);
 
 const ObservedCursorControl = ControlVisibilityObserver<CursorControlProps>(CursorControl);
 const ObservedMoveControl = ControlVisibilityObserver<MoveControlProps>(MoveControl);

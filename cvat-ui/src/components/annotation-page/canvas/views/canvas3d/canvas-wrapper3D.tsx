@@ -35,7 +35,7 @@ import { EventScope } from 'cvat-logger';
 import { getCore, ObjectState, Job } from 'cvat-core-wrapper';
 import GlobalHotKeys from 'utils/mousetrap-react';
 import { ShortcutScope } from 'utils/enums';
-import { useRegisterShortcuts } from 'utils/hooks';
+import { registerComponentShortcuts } from 'actions/shortcuts-actions';
 
 const cvat = getCore();
 
@@ -102,7 +102,7 @@ const componentShortcuts = {
     },
 };
 
-useRegisterShortcuts(componentShortcuts);
+registerComponentShortcuts(componentShortcuts);
 
 interface StateToProps {
     opacity: number;

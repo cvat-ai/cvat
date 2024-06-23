@@ -10,10 +10,7 @@ import {
 import { useSelector } from 'react-redux';
 import { useHistory } from 'react-router';
 import { CombinedState, PluginComponent } from 'reducers';
-import { getCVATStore } from 'cvat-store';
-import { shortcutsActions } from 'actions/shortcuts-actions';
 import { authQuery } from './auth-query';
-import { KeyMapItem } from './mousetrap-react';
 
 // eslint-disable-next-line import/prefer-default-export
 export function usePrevious<T>(value: T): T | undefined {
@@ -132,10 +129,4 @@ export function useAuthQuery(): Record<string, string> | null {
 
     const queryParams = new URLSearchParams(history.location.search);
     return authQuery(queryParams);
-}
-
-export function useRegisterShortcuts(shortcuts: Record<string, KeyMapItem>): void {
-    const store = getCVATStore();
-    const { registerShortcuts } = shortcutsActions;
-    store.dispatch(registerShortcuts(shortcuts));
 }

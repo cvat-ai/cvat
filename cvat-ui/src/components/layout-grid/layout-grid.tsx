@@ -10,7 +10,7 @@ import GlobalHotKeys from 'utils/mousetrap-react';
 import { CombinedState } from 'reducers';
 import './styles.scss';
 import { ShortcutScope } from 'utils/enums';
-import { useRegisterShortcuts } from 'utils/hooks';
+import { registerComponentShortcuts } from 'actions/shortcuts-actions';
 
 const componentShortcuts = {
     TOGGLE_LAYOUT_GRID: {
@@ -21,7 +21,7 @@ const componentShortcuts = {
     },
 };
 
-useRegisterShortcuts(componentShortcuts);
+registerComponentShortcuts(componentShortcuts);
 
 const LayoutGrid = (): React.ReactPortal => {
     const [showGrid, setShowGrid] = useState(false);

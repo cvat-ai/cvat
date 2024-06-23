@@ -39,9 +39,9 @@ import ChangePasswordDialog from 'components/change-password-modal/change-passwo
 import CVATTooltip from 'components/common/cvat-tooltip';
 import { switchSettingsModalVisible as switchSettingsModalVisibleAction } from 'actions/settings-actions';
 import { logoutAsync, authActions } from 'actions/auth-actions';
-import { shortcutsActions } from 'actions/shortcuts-actions';
+import { shortcutsActions, registerComponentShortcuts } from 'actions/shortcuts-actions';
 import { AboutState, CombinedState } from 'reducers';
-import { useIsMounted, usePlugins, useRegisterShortcuts } from 'utils/hooks';
+import { useIsMounted, usePlugins } from 'utils/hooks';
 import GlobalHotKeys, { KeyMap } from 'utils/mousetrap-react';
 import { ShortcutScope } from 'utils/enums';
 import SettingsModal from './settings-modal/settings-modal';
@@ -88,7 +88,7 @@ const componentShortcuts = {
     },
 };
 
-useRegisterShortcuts(componentShortcuts);
+registerComponentShortcuts(componentShortcuts);
 
 function mapStateToProps(state: CombinedState): StateToProps {
     const {

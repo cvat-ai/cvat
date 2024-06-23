@@ -60,7 +60,7 @@ import { reviewActions } from 'actions/review-actions';
 import { filterAnnotations } from 'utils/filter-annotations';
 import { ImageFilter } from 'utils/image-processing';
 import { ShortcutScope } from 'utils/enums';
-import { useRegisterShortcuts } from 'utils/hooks';
+import { registerComponentShortcuts } from 'actions/shortcuts-actions';
 import ImageSetupsContent from './image-setups-content';
 import BrushTools from './brush-tools';
 import CanvasTipsComponent from './canvas-hints';
@@ -268,7 +268,7 @@ const componentShortcuts = {
     },
 };
 
-useRegisterShortcuts(componentShortcuts);
+registerComponentShortcuts(componentShortcuts);
 
 function mapDispatchToProps(dispatch: any): DispatchToProps {
     return {
