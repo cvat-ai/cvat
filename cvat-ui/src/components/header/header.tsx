@@ -43,7 +43,7 @@ import { shortcutsActions } from 'actions/shortcuts-actions';
 import { AboutState, CombinedState } from 'reducers';
 import { useIsMounted, usePlugins, useRegisterShortcuts } from 'utils/hooks';
 import GlobalHotKeys, { KeyMap } from 'utils/mousetrap-react';
-import { ViewType } from 'utils/enums';
+import { ShortcutScope } from 'utils/enums';
 import SettingsModal from './settings-modal/settings-modal';
 import OrganizationsSearch from './organizations-search';
 
@@ -78,13 +78,13 @@ const componentShortcuts = {
         name: 'Show shortcuts',
         description: 'Open/hide the list of available shortcuts',
         sequences: ['f1'],
-        view: ViewType.ALL,
+        view: ShortcutScope.ALL,
     },
     SWITCH_SETTINGS: {
         name: 'Show settings',
         description: 'Open/hide settings dialog',
         sequences: ['f2'],
-        view: ViewType.ALL,
+        view: ShortcutScope.ALL,
     },
 };
 

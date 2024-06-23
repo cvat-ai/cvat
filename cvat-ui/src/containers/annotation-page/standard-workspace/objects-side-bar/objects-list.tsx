@@ -30,7 +30,7 @@ import {
 import { FramesMetaData, ObjectState, ShapeType } from 'cvat-core-wrapper';
 import { filterAnnotations } from 'utils/filter-annotations';
 import { useRegisterShortcuts } from 'utils/hooks';
-import { ViewType } from 'utils/enums';
+import { ShortcutScope } from 'utils/enums';
 
 interface OwnProps {
     readonly: boolean;
@@ -74,97 +74,97 @@ const componentShortcuts = {
         name: 'Lock/unlock all objects',
         description: 'Change locked state for all objects in the side bar',
         sequences: ['t l'],
-        view: ViewType.ALL,
+        view: ShortcutScope.ALL,
     },
     SWITCH_LOCK: {
         name: 'Lock/unlock an object',
         description: 'Change locked state for an active object',
         sequences: ['l'],
-        view: ViewType.ALL,
+        view: ShortcutScope.ALL,
     },
     SWITCH_ALL_HIDDEN: {
         name: 'Hide/show all objects',
         description: 'Change hidden state for objects in the side bar',
         sequences: ['t h'],
-        view: ViewType.ALL,
+        view: ShortcutScope.ALL,
     },
     SWITCH_HIDDEN: {
         name: 'Hide/show an object',
         description: 'Change hidden state for an active object',
         sequences: ['h'],
-        view: ViewType.ALL,
+        view: ShortcutScope.ALL,
     },
     SWITCH_OCCLUDED: {
         name: 'Switch occluded',
         description: 'Change occluded property for an active object',
         sequences: ['q', '/'],
-        view: ViewType.ALL,
+        view: ShortcutScope.ALL,
     },
     SWITCH_PINNED: {
         name: 'Switch pinned property',
         description: 'Change pinned property for an active object',
         sequences: ['p'],
-        view: ViewType.ALL,
+        view: ShortcutScope.ALL,
     },
     SWITCH_KEYFRAME: {
         name: 'Switch keyframe',
         description: 'Change keyframe property for an active track',
         sequences: ['k'],
-        view: ViewType.ALL,
+        view: ShortcutScope.ALL,
     },
     SWITCH_OUTSIDE: {
         name: 'Switch outside',
         description: 'Change outside property for an active track',
         sequences: ['o'],
-        view: ViewType.ALL,
+        view: ShortcutScope.ALL,
     },
     DELETE_OBJECT: {
         name: 'Delete object',
         description: 'Delete an active object. Use shift to force delete of locked objects',
         sequences: ['del', 'shift+del'],
-        view: ViewType.ALL,
+        view: ShortcutScope.ALL,
     },
     TO_BACKGROUND: {
         name: 'To background',
         description: 'Put an active object "farther" from the user (decrease z axis value)',
         sequences: ['-', '_'],
-        view: ViewType.ALL,
+        view: ShortcutScope.ALL,
     },
     TO_FOREGROUND: {
         name: 'To foreground',
         description: 'Put an active object "closer" to the user (increase z axis value)',
         sequences: ['+', '='],
-        view: ViewType.ALL,
+        view: ShortcutScope.ALL,
     },
     COPY_SHAPE: {
         name: 'Copy shape',
         description: 'Copy shape to CVAT internal clipboard',
         sequences: ['ctrl+c'],
-        view: ViewType.ALL,
+        view: ShortcutScope.ALL,
     },
     PROPAGATE_OBJECT: {
         name: 'Propagate object',
         description: 'Make a copy of the object on the following frames',
         sequences: ['ctrl+b'],
-        view: ViewType.ALL,
+        view: ShortcutScope.ALL,
     },
     NEXT_KEY_FRAME: {
         name: 'Next keyframe',
         description: 'Go to the next keyframe of an active track',
         sequences: ['r'],
-        view: ViewType.ALL,
+        view: ShortcutScope.ALL,
     },
     PREV_KEY_FRAME: {
         name: 'Previous keyframe',
         description: 'Go to the previous keyframe of an active track',
         sequences: ['e'],
-        view: ViewType.ALL,
+        view: ShortcutScope.ALL,
     },
     CHANGE_OBJECT_COLOR: {
         name: 'Change color',
         description: 'Set the next color for an activated shape',
         sequences: ['enter'],
-        view: ViewType.ALL,
+        view: ShortcutScope.ALL,
     },
 };
 

@@ -12,7 +12,7 @@ import { Canvas } from 'cvat-canvas-wrapper';
 import { Canvas3d } from 'cvat-canvas3d-wrapper';
 import CVATTooltip from 'components/common/cvat-tooltip';
 import GlobalHotKeys, { KeyMapItem } from 'utils/mousetrap-react';
-import { ViewType } from 'utils/enums';
+import { ShortcutScope } from 'utils/enums';
 import { useRegisterShortcuts } from 'utils/hooks';
 
 export interface Props {
@@ -32,7 +32,7 @@ const componentShortcuts = {
         name: 'Cancel',
         description: 'Cancel any active canvas mode',
         sequences: ['esc'],
-        view: ViewType.ALL,
+        view: ShortcutScope.ALL,
     },
 };
 

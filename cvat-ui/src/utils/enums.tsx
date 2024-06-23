@@ -22,6 +22,6 @@ export enum StorageStatuses {
     NOT_FOUND = 'NOT_FOUND',
 }
 
-export enum ViewType {
+export enum ShortcutScope {
     ALL = 'all',
 }

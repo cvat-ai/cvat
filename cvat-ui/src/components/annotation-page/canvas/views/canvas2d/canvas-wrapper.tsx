@@ -59,7 +59,7 @@ import { reviewActions } from 'actions/review-actions';
 
 import { filterAnnotations } from 'utils/filter-annotations';
 import { ImageFilter } from 'utils/image-processing';
-import { ViewType } from 'utils/enums';
+import { ShortcutScope } from 'utils/enums';
 import { useRegisterShortcuts } from 'utils/hooks';
 import ImageSetupsContent from './image-setups-content';
 import BrushTools from './brush-tools';
@@ -264,7 +264,7 @@ const componentShortcuts = {
         name: 'Switch automatic bordering',
         description: 'Switch automatic bordering for polygons and polylines during drawing/editing',
         sequences: ['ctrl'],
-        view: ViewType.ALL,
+        view: ShortcutScope.ALL,
     },
 };
 

@@ -29,7 +29,7 @@ import {
 } from 'actions/annotation-actions';
 import LabelSelector from 'components/label-selector/label-selector';
 import GlobalHotKeys from 'utils/mousetrap-react';
-import { ViewType } from 'utils/enums';
+import { ShortcutScope } from 'utils/enums';
 import { useRegisterShortcuts } from 'utils/hooks';
 
 enum ReducerActionType {
@@ -137,13 +137,13 @@ const componentShortcuts = {
         description:
             'Repeat the latest procedure of drawing with the same parameters (shift to redraw an existing shape)',
         sequences: ['shift+n', 'n'],
-        view: ViewType.ALL,
+        view: ShortcutScope.ALL,
     },
     CANCEL: {
         name: 'Cancel',
         description: 'Cancel any active canvas mode',
         sequences: ['esc'],
-        view: ViewType.ALL,
+        view: ShortcutScope.ALL,
     },
 };
 

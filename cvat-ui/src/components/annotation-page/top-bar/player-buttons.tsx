@@ -24,7 +24,7 @@ import {
     ForwardJumpIcon,
     LastIcon,
 } from 'icons';
-import { ViewType } from 'utils/enums';
+import { ShortcutScope } from 'utils/enums';
 import { useRegisterShortcuts } from 'utils/hooks';
 
 interface Props {
@@ -53,50 +53,50 @@ const componentShortcuts = {
         name: 'Next frame',
         description: 'Go to the next frame',
         sequences: ['f'],
-        view: ViewType.ALL,
+        view: ShortcutScope.ALL,
     },
     PREV_FRAME: {
         name: 'Previous frame',
         description: 'Go to the previous frame',
         sequences: ['d'],
-        view: ViewType.ALL,
+        view: ShortcutScope.ALL,
     },
     FORWARD_FRAME: {
         name: 'Forward frame',
         description: 'Go forward with a step',
         sequences: ['v'],
-        view: ViewType.ALL,
+        view: ShortcutScope.ALL,
     },
     BACKWARD_FRAME: {
         name: 'Backward frame',
         description: 'Go backward with a step',
         sequences: ['c'],
-        view: ViewType.ALL,
+        view: ShortcutScope.ALL,
     },
     SEARCH_FORWARD: {
         name: 'Search forward',
         description: 'Search the next frame that satisfies to the filters',
         sequences: ['right'],
-        view: ViewType.ALL,
+        view: ShortcutScope.ALL,
     },
     SEARCH_BACKWARD: {
         name: 'Search backward',
         description: 'Search the previous frame that satisfies to the filters',
         sequences: ['left'],
-        view: ViewType.ALL,
+        view: ShortcutScope.ALL,
     },
     PLAY_PAUSE: {
         name: 'Play/pause',
         description: 'Start/stop automatic changing frames',
         sequences: ['space'],
-        view: ViewType.ALL,
+        view: ShortcutScope.ALL,
     },
     FOCUS_INPUT_FRAME: {
         name: 'Focus input frame',
         description: 'Focus on the element to change the current frame',
         sequences: ['`'],
         displayedSequences: ['~'],
-        view: ViewType.ALL,
+        view: ShortcutScope.ALL,
     },
 };
 

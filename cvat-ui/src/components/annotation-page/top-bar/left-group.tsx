@@ -17,7 +17,7 @@ import CVATTooltip from 'components/common/cvat-tooltip';
 import customizableComponents from 'components/customizable-components';
 import GlobalHotKeys, { KeyMap } from 'utils/mousetrap-react';
 import { useRegisterShortcuts } from 'utils/hooks';
-import { ViewType } from 'utils/enums';
+import { ShortcutScope } from 'utils/enums';
 
 interface Props {
     saving: boolean;
@@ -42,13 +42,13 @@ const componentShortcuts = {
         name: 'Undo action',
         description: 'Cancel the latest action related with objects',
         sequences: ['ctrl+z'],
-        view: ViewType.ALL,
+        view: ShortcutScope.ALL,
     },
     REDO: {
         name: 'Redo action',
         description: 'Cancel undo action',
         sequences: ['ctrl+shift+z', 'ctrl+y'],
-        view: ViewType.ALL,
+        view: ShortcutScope.ALL,
     },
 };
 

@@ -11,7 +11,7 @@ import { Canvas } from 'cvat-canvas-wrapper';
 import { RectangleIcon } from 'icons';
 import CVATTooltip from 'components/common/cvat-tooltip';
 import GlobalHotKeys, { KeyMapItem } from 'utils/mousetrap-react';
-import { ViewType } from 'utils/enums';
+import { ShortcutScope } from 'utils/enums';
 import { useRegisterShortcuts } from 'utils/hooks';
 
 interface Props {
@@ -32,7 +32,7 @@ const componentShortcuts = {
         name: 'Open an issue',
         description: 'Create a new issues in the review workspace',
         sequences: ['n'],
-        view: ViewType.ALL,
+        view: ShortcutScope.ALL,
     },
 };
 

@@ -13,7 +13,7 @@ import { rememberObject, updateAnnotationsAsync } from 'actions/annotation-actio
 import LabelItemContainer from 'containers/annotation-page/standard-workspace/objects-side-bar/label-item';
 import GlobalHotKeys from 'utils/mousetrap-react';
 import Text from 'antd/lib/typography/Text';
-import { ViewType } from 'utils/enums';
+import { ShortcutScope } from 'utils/enums';
 import { useRegisterShortcuts } from 'utils/hooks';
 
 const componentShortcuts = {
@@ -21,7 +21,7 @@ const componentShortcuts = {
         name: 'Switch label',
         description: 'Changes a label for an activated object or for the next drawn object if no objects are activated',
         sequences: ['1', '2', '3', '4', '5', '6', '7', '8', '9', '0'].map((val: string): string => `ctrl+${val}`),
-        view: ViewType.ALL,
+        view: ShortcutScope.ALL,
     },
 };
 

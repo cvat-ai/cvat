@@ -12,7 +12,7 @@ import CVATTooltip from 'components/common/cvat-tooltip';
 import GlobalHotKeys, { KeyMapItem } from 'utils/mousetrap-react';
 import opencvWrapper from 'utils/opencv-wrapper/opencv-wrapper';
 import { SliceIcon } from 'icons';
-import { ViewType } from 'utils/enums';
+import { ShortcutScope } from 'utils/enums';
 import { useRegisterShortcuts } from 'utils/hooks';
 
 export interface Props {
@@ -33,7 +33,7 @@ const componentShortcuts = {
         name: 'Slice mode',
         description: 'Activate or deactivate a mode to slice a polygon/mask',
         sequences: ['alt+j'],
-        view: ViewType.ALL,
+        view: ShortcutScope.ALL,
     },
 };
 

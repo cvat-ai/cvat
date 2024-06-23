@@ -12,7 +12,7 @@ import { Canvas3d } from 'cvat-canvas3d-wrapper';
 import { ActiveControl } from 'reducers';
 import CVATTooltip from 'components/common/cvat-tooltip';
 import GlobalHotKeys, { KeyMapItem } from 'utils/mousetrap-react';
-import { ViewType } from 'utils/enums';
+import { ShortcutScope } from 'utils/enums';
 import { useRegisterShortcuts } from 'utils/hooks';
 
 export interface Props {
@@ -38,13 +38,13 @@ const componentShortcuts = {
         name: 'Group mode',
         description: 'Activate or deactivate mode to grouping shapes',
         sequences: ['g'],
-        view: ViewType.ALL,
+        view: ShortcutScope.ALL,
     },
     RESET_GROUP: {
         name: 'Reset group',
         description: 'Reset group for selected shapes (in group mode)',
         sequences: ['shift+g'],
-        view: ViewType.ALL,
+        view: ShortcutScope.ALL,
     },
 };
 

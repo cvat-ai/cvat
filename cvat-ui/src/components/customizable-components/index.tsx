@@ -10,7 +10,7 @@ import { SaveIcon } from 'icons';
 import GlobalHotKeys from 'utils/mousetrap-react';
 import CVATTooltip from 'components/common/cvat-tooltip';
 import { CombinedState } from 'reducers';
-import { ViewType } from 'utils/enums';
+import { ShortcutScope } from 'utils/enums';
 import { useRegisterShortcuts } from 'utils/hooks';
 
 const componentShortcuts = {
@@ -18,7 +18,7 @@ const componentShortcuts = {
         name: 'Save the job',
         description: 'Send all changes of annotations to the server',
         sequences: ['ctrl+s'],
-        view: ViewType.ALL,
+        view: ShortcutScope.ALL,
     },
 };
 

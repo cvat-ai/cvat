@@ -42,7 +42,7 @@ import isAbleToChangeFrame from 'utils/is-able-to-change-frame';
 import { KeyMap } from 'utils/mousetrap-react';
 import { switchToolsBlockerState } from 'actions/settings-actions';
 import { writeLatestFrame } from 'utils/remember-latest-frame';
-import { ViewType } from 'utils/enums';
+import { ShortcutScope } from 'utils/enums';
 import { useRegisterShortcuts } from 'utils/hooks';
 
 interface StateToProps {
@@ -106,7 +106,7 @@ const componentShortcuts = {
         name: 'Switch algorithm blocker',
         description: 'Postpone running the algorithm for interaction tools',
         sequences: ['ctrl'],
-        view: ViewType.ALL,
+        view: ShortcutScope.ALL,
     },
 };
 

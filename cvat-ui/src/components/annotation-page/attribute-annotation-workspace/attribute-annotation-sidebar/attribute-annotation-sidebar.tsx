@@ -24,7 +24,7 @@ import AppearanceBlock from 'components/annotation-page/appearance-block';
 import ObjectButtonsContainer from 'containers/annotation-page/standard-workspace/objects-side-bar/object-buttons';
 import { CombinedState, ObjectType } from 'reducers';
 import { useRegisterShortcuts } from 'utils/hooks';
-import { ViewType } from 'utils/enums';
+import { ShortcutScope } from 'utils/enums';
 import AttributeEditor from './attribute-editor';
 import AttributeSwitcher from './attribute-switcher';
 import ObjectBasicsEditor from './object-basics-edtior';
@@ -57,55 +57,55 @@ const componentShortcuts = {
         name: 'Next attribute',
         description: 'Go to the next attribute',
         sequences: ['down'],
-        view: ViewType.ALL,
+        view: ShortcutScope.ALL,
     },
     PREVIOUS_ATTRIBUTE: {
         name: 'Previous attribute',
         description: 'Go to the previous attribute',
         sequences: ['up'],
-        view: ViewType.ALL,
+        view: ShortcutScope.ALL,
     },
     NEXT_OBJECT: {
         name: 'Next object',
         description: 'Go to the next object',
         sequences: ['tab'],
-        view: ViewType.ALL,
+        view: ShortcutScope.ALL,
     },
     PREVIOUS_OBJECT: {
         name: 'Previous object',
         description: 'Go to the previous object',
         sequences: ['shift+tab'],
-        view: ViewType.ALL,
+        view: ShortcutScope.ALL,
     },
     SWITCH_LOCK: {
         name: 'Lock/unlock an object',
         description: 'Change locked state for an active object',
         sequences: ['l'],
-        view: ViewType.ALL,
+        view: ShortcutScope.ALL,
     },
     SWITCH_OCCLUDED: {
         name: 'Switch occluded',
         description: 'Change occluded property for an active object',
         sequences: ['q', '/'],
-        view: ViewType.ALL,
+        view: ShortcutScope.ALL,
     },
     SWITCH_PINNED: {
         name: 'Switch pinned property',
         description: 'Change pinned property for an active object',
         sequences: ['p'],
-        view: ViewType.ALL,
+        view: ShortcutScope.ALL,
     },
     NEXT_KEY_FRAME: {
         name: 'Next keyframe',
         description: 'Go to the next keyframe of an active track',
         sequences: ['r'],
-        view: ViewType.ALL,
+        view: ShortcutScope.ALL,
     },
     PREV_KEY_FRAME: {
         name: 'Previous keyframe',
         description: 'Go to the previous keyframe of an active track',
         sequences: ['e'],
-        view: ViewType.ALL,
+        view: ShortcutScope.ALL,
     },
 };
 

@@ -9,7 +9,7 @@ import { useSelector } from 'react-redux';
 import GlobalHotKeys from 'utils/mousetrap-react';
 import { CombinedState } from 'reducers';
 import './styles.scss';
-import { ViewType } from 'utils/enums';
+import { ShortcutScope } from 'utils/enums';
 import { useRegisterShortcuts } from 'utils/hooks';
 
 const componentShortcuts = {
@@ -17,7 +17,7 @@ const componentShortcuts = {
         name: 'Toggle layout grid',
         description: 'The grid is used to UI development',
         sequences: ['ctrl+alt+enter'],
-        view: ViewType.ALL,
+        view: ShortcutScope.ALL,
     },
 };
 
