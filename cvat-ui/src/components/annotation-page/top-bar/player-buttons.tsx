@@ -26,6 +26,7 @@ import {
 } from 'icons';
 import { ShortcutScope } from 'utils/enums';
 import { registerComponentShortcuts } from 'actions/shortcuts-actions';
+import { subKeyMap } from 'utils/component-subkeymap';
 
 interface Props {
     playing: boolean;
@@ -124,19 +125,6 @@ function PlayerButtons(props: Props): JSX.Element {
         onSearchAnnotations,
     } = props;
 
-    const subKeyMap = {
-        NEXT_FRAME: keyMap.NEXT_FRAME,
-        PREV_FRAME: keyMap.PREV_FRAME,
-        ...(workspace !== Workspace.SINGLE_SHAPE ? {
-            FORWARD_FRAME: keyMap.FORWARD_FRAME,
-            BACKWARD_FRAME: keyMap.BACKWARD_FRAME,
-            SEARCH_FORWARD: keyMap.SEARCH_FORWARD,
-            SEARCH_BACKWARD: keyMap.SEARCH_BACKWARD,
-            PLAY_PAUSE: keyMap.PLAY_PAUSE,
-            FOCUS_INPUT_FRAME: keyMap.FOCUS_INPUT_FRAME,
-        } : {}),
-    };
-
     const handlers: Record<keyof typeof componentShortcuts, (event?: KeyboardEvent) => void> = {
         NEXT_FRAME: (event: KeyboardEvent | undefined) => {
             event?.preventDefault();
@@ -214,7 +202,7 @@ function PlayerButtons(props: Props): JSX.Element {
 
     return (
         <Col className='cvat-player-buttons'>
-            <GlobalHotKeys keyMap={subKeyMap} handlers={handlers} />
+            <GlobalHotKeys keyMap={subKeyMap(componentShortcuts, keyMap)} handlers={handlers} />
             <CVATTooltip title='Go to the first frame'>
                 <Icon
                     style={navIconStyle}

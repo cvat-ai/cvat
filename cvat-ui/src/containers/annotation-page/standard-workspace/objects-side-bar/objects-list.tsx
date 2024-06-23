@@ -31,6 +31,7 @@ import { FramesMetaData, ObjectState, ShapeType } from 'cvat-core-wrapper';
 import { filterAnnotations } from 'utils/filter-annotations';
 import { registerComponentShortcuts } from 'actions/shortcuts-actions';
 import { ShortcutScope } from 'utils/enums';
+import { subKeyMap } from 'utils/component-subkeymap';
 
 interface OwnProps {
     readonly: boolean;
@@ -434,25 +435,6 @@ class ObjectsListContainer extends React.PureComponent<Props, State> {
             objectStates, sortedStatesID, statesOrdering, filteredStates,
         } = this.state;
 
-        const subKeyMap = {
-            SWITCH_ALL_LOCK: keyMap.SWITCH_ALL_LOCK,
-            SWITCH_LOCK: keyMap.SWITCH_LOCK,
-            SWITCH_ALL_HIDDEN: keyMap.SWITCH_ALL_HIDDEN,
-            SWITCH_HIDDEN: keyMap.SWITCH_HIDDEN,
-            SWITCH_OCCLUDED: keyMap.SWITCH_OCCLUDED,
-            SWITCH_PINNED: keyMap.SWITCH_PINNED,
-            SWITCH_KEYFRAME: keyMap.SWITCH_KEYFRAME,
-            SWITCH_OUTSIDE: keyMap.SWITCH_OUTSIDE,
-            DELETE_OBJECT: keyMap.DELETE_OBJECT,
-            TO_BACKGROUND: keyMap.TO_BACKGROUND,
-            TO_FOREGROUND: keyMap.TO_FOREGROUND,
-            COPY_SHAPE: keyMap.COPY_SHAPE,
-            PROPAGATE_OBJECT: keyMap.PROPAGATE_OBJECT,
-            NEXT_KEY_FRAME: keyMap.NEXT_KEY_FRAME,
-            PREV_KEY_FRAME: keyMap.PREV_KEY_FRAME,
-            CHANGE_OBJECT_COLOR: keyMap.CHANGE_OBJECT_COLOR,
-        };
-
         const preventDefault = (event: KeyboardEvent | undefined): void => {
             if (event) {
                 event.preventDefault();
@@ -613,7 +595,7 @@ class ObjectsListContainer extends React.PureComponent<Props, State> {
 
         return (
             <>
-                <GlobalHotKeys keyMap={subKeyMap} handlers={handlers} />
+                <GlobalHotKeys keyMap={subKeyMap(componentShortcuts, keyMap)} handlers={handlers} />
                 <ObjectsListComponent
                     statesHidden={statesHidden}
                     statesLocked={statesLocked}

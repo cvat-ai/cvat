@@ -44,6 +44,7 @@ import { AboutState, CombinedState } from 'reducers';
 import { useIsMounted, usePlugins } from 'utils/hooks';
 import GlobalHotKeys, { KeyMap } from 'utils/mousetrap-react';
 import { ShortcutScope } from 'utils/enums';
+import { subKeyMap } from 'utils/component-subkeymap';
 import SettingsModal from './settings-modal/settings-modal';
 import OrganizationsSearch from './organizations-search';
 
@@ -204,11 +205,6 @@ function HeaderComponent(props: Props): JSX.Element {
 
     const history = useHistory();
     const location = useLocation();
-
-    const subKeyMap = {
-        SWITCH_SHORTCUTS: keyMap.SWITCH_SHORTCUTS,
-        SWITCH_SETTINGS: keyMap.SWITCH_SETTINGS,
-    };
 
     const handlers: Record<keyof typeof componentShortcuts, (event?: KeyboardEvent) => void> = {
         SWITCH_SHORTCUTS: (event: KeyboardEvent | undefined) => {
@@ -440,7 +436,7 @@ function HeaderComponent(props: Props): JSX.Element {
 
     return (
         <Layout.Header className='cvat-header'>
-            <GlobalHotKeys keyMap={subKeyMap} handlers={handlers} />
+            <GlobalHotKeys keyMap={subKeyMap(componentShortcuts, keyMap)} handlers={handlers} />
             <div className='cvat-left-header'>
                 <Icon className='cvat-logo-icon' component={CVATLogo} />
                 <Button

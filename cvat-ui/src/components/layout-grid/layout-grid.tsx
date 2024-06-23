@@ -11,6 +11,7 @@ import { CombinedState } from 'reducers';
 import './styles.scss';
 import { ShortcutScope } from 'utils/enums';
 import { registerComponentShortcuts } from 'actions/shortcuts-actions';
+import { subKeyMap } from 'utils/component-subkeymap';
 
 const componentShortcuts = {
     TOGGLE_LAYOUT_GRID: {
@@ -26,10 +27,6 @@ registerComponentShortcuts(componentShortcuts);
 const LayoutGrid = (): React.ReactPortal => {
     const [showGrid, setShowGrid] = useState(false);
     const keyMap = useSelector((state: CombinedState) => state.shortcuts.keyMap);
-    const subKeyMap = {
-        TOGGLE_LAYOUT_GRID: keyMap.TOGGLE_LAYOUT_GRID,
-    };
-
     const toggleLayoutGrid = useCallback((): void => {
         setShowGrid((prevState: boolean) => !prevState);
     }, [showGrid]);
@@ -39,7 +36,7 @@ const LayoutGrid = (): React.ReactPortal => {
     };
 
     const portalContent: JSX.Element = (
-        <GlobalHotKeys keyMap={subKeyMap} handlers={handlers}>
+        <GlobalHotKeys keyMap={subKeyMap(componentShortcuts, keyMap)} handlers={handlers}>
             <>
                 {showGrid && <div className='grid sm' />}
                 {showGrid && <div className='grid lg' />}

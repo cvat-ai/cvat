@@ -18,6 +18,7 @@ import customizableComponents from 'components/customizable-components';
 import GlobalHotKeys, { KeyMap } from 'utils/mousetrap-react';
 import { registerComponentShortcuts } from 'actions/shortcuts-actions';
 import { ShortcutScope } from 'utils/enums';
+import { subKeyMap } from 'utils/component-subkeymap';
 
 interface Props {
     saving: boolean;
@@ -87,11 +88,6 @@ function LeftGroup(props: Props): JSX.Element {
     const shouldEnableToolsBlockerOnClick = [ActiveControl.OPENCV_TOOLS].includes(activeControl);
     const SaveButtonComponent = customizableComponents.SAVE_ANNOTATION_BUTTON;
 
-    const subKeyMap = {
-        UNDO: keyMap.UNDO,
-        REDO: keyMap.REDO,
-    };
-
     const handlers: Record<keyof typeof componentShortcuts, (event?: KeyboardEvent) => void> = {
         UNDO: (event: KeyboardEvent | undefined) => {
             event?.preventDefault();
@@ -109,7 +105,7 @@ function LeftGroup(props: Props): JSX.Element {
 
     return (
         <>
-            <GlobalHotKeys keyMap={subKeyMap} handlers={handlers} />
+            <GlobalHotKeys keyMap={subKeyMap(componentShortcuts, keyMap)} handlers={handlers} />
             { saving && (
                 <Modal
                     open

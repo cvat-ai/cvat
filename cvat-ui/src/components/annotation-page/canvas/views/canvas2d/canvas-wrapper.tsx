@@ -61,6 +61,7 @@ import { filterAnnotations } from 'utils/filter-annotations';
 import { ImageFilter } from 'utils/image-processing';
 import { ShortcutScope } from 'utils/enums';
 import { registerComponentShortcuts } from 'actions/shortcuts-actions';
+import { subKeyMap } from 'utils/component-subkeymap';
 import ImageSetupsContent from './image-setups-content';
 import BrushTools from './brush-tools';
 import CanvasTipsComponent from './canvas-hints';
@@ -1096,10 +1097,6 @@ class CanvasWrapperComponent extends React.PureComponent<Props> {
             }
         };
 
-        const subKeyMap = {
-            SWITCH_AUTOMATIC_BORDERING: keyMap.SWITCH_AUTOMATIC_BORDERING,
-        };
-
         const handlers: Record<keyof typeof componentShortcuts, (event?: KeyboardEvent) => void> = {
             SWITCH_AUTOMATIC_BORDERING: (event: KeyboardEvent | undefined) => {
                 if (switchableAutomaticBordering) {
@@ -1111,7 +1108,7 @@ class CanvasWrapperComponent extends React.PureComponent<Props> {
 
         return (
             <>
-                <GlobalHotKeys keyMap={subKeyMap} handlers={handlers} />
+                <GlobalHotKeys keyMap={subKeyMap(componentShortcuts, keyMap)} handlers={handlers} />
                 <CanvasTipsComponent ref={this.canvasTipsRef} />
                 {
                     !canvasIsReady && (

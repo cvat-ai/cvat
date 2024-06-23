@@ -25,6 +25,7 @@ import ObjectButtonsContainer from 'containers/annotation-page/standard-workspac
 import { CombinedState, ObjectType } from 'reducers';
 import { registerComponentShortcuts } from 'actions/shortcuts-actions';
 import { ShortcutScope } from 'utils/enums';
+import { subKeyMap } from 'utils/component-subkeymap';
 import AttributeEditor from './attribute-editor';
 import AttributeSwitcher from './attribute-switcher';
 import ObjectBasicsEditor from './object-basics-edtior';
@@ -276,18 +277,6 @@ function AttributeAnnotationSidebar(props: StateToProps & DispatchToProps): JSX.
         }
     };
 
-    const subKeyMap = {
-        NEXT_ATTRIBUTE: keyMap.NEXT_ATTRIBUTE,
-        PREVIOUS_ATTRIBUTE: keyMap.PREVIOUS_ATTRIBUTE,
-        NEXT_OBJECT: keyMap.NEXT_OBJECT,
-        PREVIOUS_OBJECT: keyMap.PREVIOUS_OBJECT,
-        SWITCH_LOCK: keyMap.SWITCH_LOCK,
-        SWITCH_OCCLUDED: keyMap.SWITCH_OCCLUDED,
-        SWITCH_PINNED: keyMap.SWITCH_PINNED,
-        NEXT_KEY_FRAME: keyMap.NEXT_KEY_FRAME,
-        PREV_KEY_FRAME: keyMap.PREV_KEY_FRAME,
-    };
-
     const handlers: Record<keyof typeof componentShortcuts, (event?: KeyboardEvent) => void> = {
         NEXT_ATTRIBUTE: (event: KeyboardEvent | undefined) => {
             preventDefault(event);
@@ -358,7 +347,7 @@ function AttributeAnnotationSidebar(props: StateToProps & DispatchToProps): JSX.
                 >
                     {sidebarCollapsed ? <MenuFoldOutlined title='Show' /> : <MenuUnfoldOutlined title='Hide' />}
                 </span>
-                <GlobalHotKeys keyMap={subKeyMap} handlers={handlers} />
+                <GlobalHotKeys keyMap={subKeyMap(componentShortcuts, keyMap)} handlers={handlers} />
                 <div className='cvat-sidebar-collapse-button-spacer' />
                 <ObjectSwitcher
                     currentLabel={activeObjectState.label.name}

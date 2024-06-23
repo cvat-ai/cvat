@@ -36,6 +36,7 @@ import { getCore, ObjectState, Job } from 'cvat-core-wrapper';
 import GlobalHotKeys from 'utils/mousetrap-react';
 import { ShortcutScope } from 'utils/enums';
 import { registerComponentShortcuts } from 'actions/shortcuts-actions';
+import { subKeyMap } from 'utils/component-subkeymap';
 
 const cvat = getCore();
 
@@ -250,19 +251,6 @@ export const PerspectiveViewComponent = React.memo(
             canvas.keyControls(new KeyboardEvent('keydown', { code, altKey, shiftKey }));
         };
 
-        const subKeyMap = {
-            TILT_UP: keyMap.TILT_UP,
-            TILT_DOWN: keyMap.TILT_DOWN,
-            ROTATE_LEFT: keyMap.ROTATE_LEFT,
-            ROTATE_RIGHT: keyMap.ROTATE_RIGHT,
-            MOVE_UP: keyMap.MOVE_UP,
-            MOVE_DOWN: keyMap.MOVE_DOWN,
-            MOVE_LEFT: keyMap.MOVE_LEFT,
-            MOVE_RIGHT: keyMap.MOVE_RIGHT,
-            ZOOM_IN: keyMap.ZOOM_IN,
-            ZOOM_OUT: keyMap.ZOOM_OUT,
-        };
-
         const handlers: Record<keyof typeof componentShortcuts, (event?: KeyboardEvent) => void> = {
             TILT_UP: () => {}, // Handled by CVAT 3D Independently
             TILT_DOWN: () => {},
@@ -398,7 +386,7 @@ export const PerspectiveViewComponent = React.memo(
                     className='cvat-canvas-container cvat-canvas-container-overflow'
                     ref={ref}
                 />
-                <GlobalHotKeys handlers={handlers} keyMap={subKeyMap} />
+                <GlobalHotKeys handlers={handlers} keyMap={subKeyMap(componentShortcuts, keyMap)} />
                 <ArrowGroup />
                 <ControlGroup />
             </div>

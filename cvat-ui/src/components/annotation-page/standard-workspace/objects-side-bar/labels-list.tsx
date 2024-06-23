@@ -15,6 +15,7 @@ import GlobalHotKeys from 'utils/mousetrap-react';
 import Text from 'antd/lib/typography/Text';
 import { ShortcutScope } from 'utils/enums';
 import { registerComponentShortcuts } from 'actions/shortcuts-actions';
+import { subKeyMap } from 'utils/component-subkeymap';
 
 const componentShortcuts = {
     SWITCH_LABEL: {
@@ -77,10 +78,6 @@ function LabelsListComponent(): JSX.Element {
         [keyToLabelMapping],
     );
 
-    const subKeyMap = {
-        SWITCH_LABEL: keyMap.SWITCH_LABEL,
-    };
-
     const handlers: Record<keyof typeof componentShortcuts, (event: KeyboardEvent, shortcut: string) => void> = {
         SWITCH_LABEL: (event: KeyboardEvent | undefined, shortcut: string) => {
             if (event) event.preventDefault();
@@ -112,7 +109,7 @@ function LabelsListComponent(): JSX.Element {
 
     return (
         <div className='cvat-objects-sidebar-labels-list'>
-            <GlobalHotKeys keyMap={subKeyMap} handlers={handlers} />
+            <GlobalHotKeys keyMap={subKeyMap(componentShortcuts, keyMap)} handlers={handlers} />
             <div className='cvat-objects-sidebar-labels-list-header'>
                 <Text>{`Items: ${labels.length}`}</Text>
             </div>

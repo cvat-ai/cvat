@@ -31,6 +31,7 @@ import LabelSelector from 'components/label-selector/label-selector';
 import GlobalHotKeys from 'utils/mousetrap-react';
 import { ShortcutScope } from 'utils/enums';
 import { registerComponentShortcuts } from 'actions/shortcuts-actions';
+import { subKeyMap } from 'utils/component-subkeymap';
 
 enum ReducerActionType {
     SWITCH_AUTO_NEXT_FRAME = 'SWITCH_AUTO_NEXT_FRAME',
@@ -324,11 +325,6 @@ function SingleShapeSidebar(): JSX.Element {
         trigger: null,
     };
 
-    const subKeyMap = {
-        CANCEL: keyMap.CANCEL,
-        SWITCH_DRAW_MODE: keyMap.SWITCH_DRAW_MODE,
-    };
-
     const handlers: Record<keyof typeof componentShortcuts, (event?: KeyboardEvent) => void> = {
         CANCEL: (event: KeyboardEvent | undefined) => {
             event?.preventDefault();
@@ -357,7 +353,7 @@ function SingleShapeSidebar(): JSX.Element {
 
     return (
         <Layout.Sider {...siderProps}>
-            <GlobalHotKeys keyMap={subKeyMap} handlers={handlers} />
+            <GlobalHotKeys keyMap={subKeyMap(componentShortcuts, keyMap)} handlers={handlers} />
             { state.label !== null && state.labelType !== LabelType.ANY && (
                 <Row>
                     <Col>
