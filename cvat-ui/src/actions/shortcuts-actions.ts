@@ -8,7 +8,7 @@ import { ActionUnion, createAction } from 'utils/redux';
 
 export enum ShortcutsActionsTypes {
     SWITCH_SHORTCUT_DIALOG = 'SWITCH_SHORTCUT_DIALOG',
-    REGISTER_SHORTCUT = 'REGISTER_SHORTCUT',
+    REGISTER_SHORTCUTS = 'REGISTER_SHORTCUTS',
 }
 
 export const shortcutsActions = {
@@ -16,7 +16,7 @@ export const shortcutsActions = {
         createAction(ShortcutsActionsTypes.SWITCH_SHORTCUT_DIALOG, { visible })
     ),
     registerShortcuts: (shortcuts: Record<string, KeyMapItem>) => (
-        createAction(ShortcutsActionsTypes.REGISTER_SHORTCUT, { shortcuts })
+        createAction(ShortcutsActionsTypes.REGISTER_SHORTCUTS, { shortcuts })
     ),
 };
 

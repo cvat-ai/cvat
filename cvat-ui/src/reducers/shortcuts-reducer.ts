@@ -57,7 +57,7 @@ function conflictDetector(key: string, keyMap: KeyMap): KeyMap | null {
 
 export default (state = defaultState, action: ShortcutsActions | BoundariesActions | AuthActions): ShortcutsState => {
     switch (action.type) {
-        case ShortcutsActionsTypes.REGISTER_SHORTCUT: {
+        case ShortcutsActionsTypes.REGISTER_SHORTCUTS: {
             const { shortcuts } = action.payload;
             const keys = Object.keys(shortcuts);
             if (!keys.length) {
