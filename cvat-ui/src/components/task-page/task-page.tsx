@@ -13,6 +13,7 @@ import Result from 'antd/lib/result';
 import notification from 'antd/lib/notification';
 
 import { getInferenceStatusAsync } from 'actions/models-actions';
+import { updateJobAsync } from 'actions/jobs-actions';
 import { getCore, Task, Job } from 'cvat-core-wrapper';
 import JobListComponent from 'components/task-page/job-list';
 import ModelRunnerModal from 'components/model-runner-modal/model-runner-dialog';
@@ -106,9 +107,9 @@ function TaskPageComponent(): JSX.Element {
         })
     );
 
-    const onJobUpdate = (job: Job): void => {
+    const onJobUpdate = (job: Job, data: Parameters<Job['save']>[0]): void => {
         setUpdatingTask(true);
-        job.save().then(() => {
+        dispatch(updateJobAsync(job, data)).then(() => {
             receieveTask().finally(() => {
                 setUpdatingTask(false);
             });
