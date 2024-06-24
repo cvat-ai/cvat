@@ -95,6 +95,7 @@ const defaultState: NotificationsState = {
         annotation: {
             saving: null,
             jobFetching: null,
+            jobUpdating: null,
             frameFetching: null,
             changingLabelColor: null,
             updating: null,
@@ -982,6 +983,23 @@ export default function (state = defaultState, action: AnyAction): Notifications
                             reason: action.payload.error,
                             shouldLog: shouldLog(action.payload.error),
                             className: 'cvat-notification-notice-save-annotations-failed',
+                        },
+                    },
+                },
+            };
+        }
+        case AnnotationActionTypes.UPDATE_CURRENT_JOB_FAILED: {
+            return {
+                ...state,
+                errors: {
+                    ...state.errors,
+                    annotation: {
+                        ...state.errors.annotation,
+                        saving: {
+                            message: 'Could not update annotation job',
+                            reason: action.payload.error,
+                            shouldLog: !(action.payload.error instanceof ServerError),
+                            className: 'cvat-notification-notice-update-current-job-failed',
                         },
                     },
                 },
