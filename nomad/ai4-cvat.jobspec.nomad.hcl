@@ -7,7 +7,7 @@ job "{###CVAT_NOMAD_JOB_NAME###}" {
     force_pull_img_cvat_server         = false
     force_pull_img_cvat_ui             = false
     cvat_version                       = "v2.7.3"
-    cvat_version_custom                = "-AI4EOSC"
+    cvat_version_custom                = "-AI4OS"
     cvat_instance                      = "{###CVAT_INSTANCE_NAME###}"
     cvat_hostname                      = "ifca-deployments.cloud.ai4eosc.eu"
     grafana_clickhouse_plugin_version  = "3.3.0"
@@ -16,10 +16,10 @@ job "{###CVAT_NOMAD_JOB_NAME###}" {
     db_image                           = "postgres:16-alpine"
     grafana_image                      = "grafana/grafana-oss:9.3.6"
     redis_image                        = "eqalpha/keydb:x86_64_v6.3.2"
-    ui_image                           = "ai4oshub/ai4eosc-cvat-ui"
+    ui_image                           = "registry.services.ai4os.eu/ai4os/ai4-cvat-ui"
     opa_image                          = "openpolicyagent/opa:0.45.0-rootless"
     vector_image                       = "timberio/vector:0.26.0-alpine"
-    server_image                       = "ai4oshub/ai4eosc-cvat-server"
+    server_image                       = "registry.services.ai4os.eu/ai4os/ai4-cvat-server"
     su_username                        = "admin"
     su_password                        = "{###CVAT_SU_PASSWORD###}"
     su_email                           = "{###CVAT_SU_EMAIL###}"
@@ -31,7 +31,6 @@ job "{###CVAT_NOMAD_JOB_NAME###}" {
     RCLONE_CONFIG_RSHARE_VENDOR        = "nextcloud"
     RCLONE_CONFIG_RSHARE_USER          = "{###CVAT_NEXTCLOUD_USER###}"
     RCLONE_CONFIG_RSHARE_PASS          = "{###CVAT_NEXTCLOUD_PASSWORD###}"
-    RCLONE_CONFIG_RSHARE_PASS_OBSCURED = "{###CVAT_NEXTCLOUD_PASSWORD_OBSCURED###}"
   }
 
   group "cvat" {
@@ -198,7 +197,7 @@ job "{###CVAT_NOMAD_JOB_NAME###}" {
         url = https://share.services.ai4os.eu/remote.php/dav
         vendor = nextcloud
         user = ${NOMAD_META_RCLONE_CONFIG_RSHARE_USER}
-        pass = ${NOMAD_META_RCLONE_CONFIG_RSHARE_PASS_OBSCURED}
+        pass = ${NOMAD_META_RCLONE_CONFIG_RSHARE_PASS}
         EOF
         destination = "local/rclone.conf"
       }
