@@ -438,7 +438,7 @@ function AnnotationsActionsModalContent(props: { onClose: () => void; }): JSX.El
                                                 <Text> Starting from frame </Text>
                                                 <InputNumber
                                                     value={frameFrom}
-                                                    min={(jobInstance as Job).startFrame}
+                                                    min={jobInstance.startFrame}
                                                     max={frameTo}
                                                     step={1}
                                                     onChange={(value) => {
@@ -446,7 +446,7 @@ function AnnotationsActionsModalContent(props: { onClose: () => void; }): JSX.El
                                                             dispatch(reducerActions.updateFrameFrom(
                                                                 clamp(
                                                                     Math.round(value),
-                                                                    (jobInstance as Job).startFrame,
+                                                                    jobInstance.startFrame,
                                                                     frameTo,
                                                                 ),
                                                             ));
@@ -457,7 +457,7 @@ function AnnotationsActionsModalContent(props: { onClose: () => void; }): JSX.El
                                                 <InputNumber
                                                     value={frameTo}
                                                     min={frameFrom}
-                                                    max={(jobInstance as Job).stopFrame}
+                                                    max={jobInstance.stopFrame}
                                                     step={1}
                                                     onChange={(value) => {
                                                         if (typeof value === 'number') {
@@ -465,7 +465,7 @@ function AnnotationsActionsModalContent(props: { onClose: () => void; }): JSX.El
                                                                 clamp(
                                                                     Math.round(value),
                                                                     frameFrom,
-                                                                    (jobInstance as Job).stopFrame,
+                                                                    jobInstance.stopFrame,
                                                                 ),
                                                             ));
                                                         }
