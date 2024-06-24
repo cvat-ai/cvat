@@ -31,10 +31,10 @@ export enum ActionParameterType {
 
 // For SELECT values should be a list of possible options
 // For NUMBER values should be a list with [min, max, step],
-// or a callback ({ job }) => [min, max, step]
+// or a callback ({ instance }: { instance: Job | Task }) => [min, max, step]
 type ActionParameters = Record<string, {
     type: ActionParameterType;
-    values: string[] | (({ job }: { job: Job }) => string[]);
+    values: string[] | (({ instance }: { instance: Job | Task }) => string[]);
     defaultValue: string;
 }>;
 
@@ -122,7 +122,12 @@ class PropagateShapes extends BaseSingleFrameAction {
         return {
             'Target frame': {
                 type: ActionParameterType.NUMBER,
-                values: ({ job }) => [job.startFrame, job.stopFrame, 1].map((val) => val.toString()),
+                values: ({ instance }) => {
+                    if (instance instanceof Job) {
+                        return [instance.startFrame, instance.stopFrame, 1].map((val) => val.toString());
+                    }
+                    return [0, instance.size - 1, 1].map((val) => val.toString());
+                },
                 defaultValue: '0',
             },
         };

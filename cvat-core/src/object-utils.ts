@@ -6,7 +6,7 @@ import { DataError, ArgumentError } from './exceptions';
 import { Attribute } from './labels';
 import { ShapeType, AttributeType, ObjectType } from './enums';
 import { SerializedShape } from './server-response-types';
-import ObjectState from './object-state';
+import ObjectState, { SerializedData } from './object-state';
 
 export function checkNumberOfPoints(shapeType: ShapeType, points: number[]): void {
     if (shapeType === ShapeType.RECTANGLE) {
@@ -362,7 +362,7 @@ export function rle2Mask(rle: number[], width: number, height: number): number[]
 export function propagateShapes<T extends SerializedShape | ObjectState>(
     shapes: T[], from: number, to: number,
 ): T[] {
-    const getCopy = (shape: T): any => {
+    const getCopy = (shape: T): SerializedShape | SerializedData => {
         if (shape instanceof ObjectState) {
             return {
                 attributes: shape.attributes,
@@ -389,7 +389,7 @@ export function propagateShapes<T extends SerializedShape | ObjectState>(
             rotation: shape.rotation,
             frame: from,
             elements: shape.type === 'skeleton' ? shape.elements
-                .map((element: SerializedShape): SerializedShape => getCopy(element as T)) : [],
+                .map((element: SerializedShape): SerializedShape => getCopy(element as T) as SerializedShape) : [],
             source: shape.source,
             group: 0,
             outside: false,
@@ -403,10 +403,12 @@ export function propagateShapes<T extends SerializedShape | ObjectState>(
             const copy = getCopy(shape);
 
             copy.frame = frame;
-            copy.elements.forEach((element: SerializedShape) => { element.frame = frame; });
+            copy.elements?.forEach((element: Omit<SerializedShape, 'elements'> | SerializedData): void => {
+                element.frame = frame;
+            });
 
             if (shape instanceof ObjectState) {
-                states.push(new ObjectState(copy) as T);
+                states.push(new ObjectState(copy as SerializedData) as T);
             } else {
                 states.push(copy as T);
             }

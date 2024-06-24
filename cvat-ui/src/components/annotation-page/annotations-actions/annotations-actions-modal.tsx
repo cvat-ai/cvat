@@ -226,10 +226,7 @@ function ActionParameterComponent(props: Props & { onChange: (value: string) => 
         onChange(value);
     }, [value]);
 
-    let computedValues = values as string[];
-    if (typeof values === 'function') {
-        computedValues = values({ job });
-    }
+    const computedValues = typeof values === 'function' ? values({ instance: job }) : values;
 
     if (type === 'select') {
         return (
@@ -433,36 +430,51 @@ function AnnotationsActionsModalContent(props: { onClose: () => void; }): JSX.El
                                     <hr />
                                 </Col>
                                 <Col span={24}>
-                                    <Text> Starting from frame </Text>
-                                    <InputNumber
-                                        value={frameFrom}
-                                        min={(jobInstance as Job).startFrame}
-                                        max={frameTo}
-                                        disabled={currentFrameAction}
-                                        step={1}
-                                        onChange={(value) => {
-                                            if (typeof value === 'number') {
-                                                dispatch(reducerActions.updateFrameFrom(
-                                                    clamp(Math.round(value), (jobInstance as Job).startFrame, frameTo),
-                                                ));
-                                            }
-                                        }}
-                                    />
-                                    <Text> up to frame </Text>
-                                    <InputNumber
-                                        value={frameTo}
-                                        min={frameFrom}
-                                        max={(jobInstance as Job).stopFrame}
-                                        disabled={currentFrameAction}
-                                        step={1}
-                                        onChange={(value) => {
-                                            if (typeof value === 'number') {
-                                                dispatch(reducerActions.updateFrameTo(
-                                                    clamp(Math.round(value), frameFrom, (jobInstance as Job).stopFrame),
-                                                ));
-                                            }
-                                        }}
-                                    />
+                                    {
+                                        currentFrameAction ? (
+                                            <Text>Running the action is only allowed on current frame</Text>
+                                        ) : (
+                                            <>
+                                                <Text> Starting from frame </Text>
+                                                <InputNumber
+                                                    value={frameFrom}
+                                                    min={(jobInstance as Job).startFrame}
+                                                    max={frameTo}
+                                                    step={1}
+                                                    onChange={(value) => {
+                                                        if (typeof value === 'number') {
+                                                            dispatch(reducerActions.updateFrameFrom(
+                                                                clamp(
+                                                                    Math.round(value),
+                                                                    (jobInstance as Job).startFrame,
+                                                                    frameTo,
+                                                                ),
+                                                            ));
+                                                        }
+                                                    }}
+                                                />
+                                                <Text> up to frame </Text>
+                                                <InputNumber
+                                                    value={frameTo}
+                                                    min={frameFrom}
+                                                    max={(jobInstance as Job).stopFrame}
+                                                    step={1}
+                                                    onChange={(value) => {
+                                                        if (typeof value === 'number') {
+                                                            dispatch(reducerActions.updateFrameTo(
+                                                                clamp(
+                                                                    Math.round(value),
+                                                                    frameFrom,
+                                                                    (jobInstance as Job).stopFrame,
+                                                                ),
+                                                            ));
+                                                        }
+                                                    }}
+                                                />
+
+                                            </>
+                                        )
+                                    }
                                 </Col>
                             </Row>
                         </Col>
