@@ -1087,7 +1087,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
                 this.draggableShape = shape;
             }).on('dragmove', (e: CustomEvent): void => {
                 onDragMove();
-                if (state.shapeType === 'skeleton') {
+                if (state.shapeType === 'skeleton' && e.target) {
                     const { instance } = e.target as any;
                     const [x, y] = [instance.x(), instance.y()];
                     const prevXtl = +draggableInstance.attr('data-xtl');
@@ -1257,7 +1257,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
                     resized = true;
                     onResizing();
 
-                    if (state.shapeType === 'skeleton') {
+                    if (state.shapeType === 'skeleton' && e.target) {
                         const { instance } = e.target as any;
 
                         // rotate skeleton instead of wrapping bounding box
