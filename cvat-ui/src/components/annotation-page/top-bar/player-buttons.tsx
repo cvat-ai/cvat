@@ -92,13 +92,6 @@ const componentShortcuts = {
         sequences: ['space'],
         scope: ShortcutScope.ALL,
     },
-    FOCUS_INPUT_FRAME: {
-        name: 'Focus input frame',
-        description: 'Focus on the element to change the current frame',
-        sequences: ['`'],
-        displayedSequences: ['~'],
-        scope: ShortcutScope.ALL,
-    },
 };
 
 registerComponentShortcuts(componentShortcuts);
@@ -125,7 +118,7 @@ function PlayerButtons(props: Props): JSX.Element {
         onSearchAnnotations,
     } = props;
 
-    const handlers: Record<keyof typeof componentShortcuts, (event?: KeyboardEvent) => void> = {
+    const handlers: Record<keyof typeof componentShortcuts, ((event?: KeyboardEvent) => void)> = {
         NEXT_FRAME: (event: KeyboardEvent | undefined) => {
             event?.preventDefault();
             onNextFrame();
