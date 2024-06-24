@@ -877,7 +877,7 @@ async function importDataset(
     file: File | string,
     options: {
         convMaskToPoly: boolean,
-        uploadStatusCallback: (s: string, n: number) => void,
+        updateStatusCallback: (message: string, progress: number) => void,
     },
 ): Promise<string> {
     const { backendAPI, origin } = config;
@@ -906,7 +906,7 @@ async function importDataset(
             totalSentSize: 0,
             totalSize: (file as File).size,
             onUpdate: (percentage) => {
-                options.uploadStatusCallback('The dataset is being uploaded to the server', percentage);
+                options.updateStatusCallback('The dataset is being uploaded to the server', percentage);
             },
         };
         await Axios.post(url,

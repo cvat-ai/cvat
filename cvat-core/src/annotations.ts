@@ -168,20 +168,20 @@ export function importDataset(
     file: File | string,
     options: {
         convMaskToPoly?: boolean,
-        uploadStatusCallback?: (s: string, n: number) => void,
+        updateStatusCallback?: (message: string, progress: number) => void,
     } = {},
 ): Promise<string> {
-    const uploadStatusCallback = options.uploadStatusCallback || (() => {});
+    const updateStatusCallback = options.updateStatusCallback || (() => {});
     const convMaskToPoly = 'convMaskToPoly' in options ? options.convMaskToPoly : true;
     const adjustedOptions = {
-        uploadStatusCallback,
+        updateStatusCallback,
         convMaskToPoly,
     };
 
     if (!(instance instanceof Project || instance instanceof Task || instance instanceof Job)) {
         throw new ArgumentError('Instance must be a Project || Task || Job instance');
     }
-    if (!(typeof uploadStatusCallback === 'function')) {
+    if (!(typeof updateStatusCallback === 'function')) {
         throw new ArgumentError('Callback must be a function');
     }
     if (!(typeof convMaskToPoly === 'boolean')) {

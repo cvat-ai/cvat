@@ -42,7 +42,7 @@ function constructLink(request: Request): string | null {
         return `/tasks/${taskID}`;
     }
     if (target === 'job' && jobID) {
-        return `/jobs/${jobID}`;
+        return `/tasks/${taskID}/jobs/${jobID}`;
     }
     return null;
 }
