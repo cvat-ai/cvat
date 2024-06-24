@@ -12,8 +12,7 @@ import Title from 'antd/lib/typography/Title';
 import moment from 'moment';
 
 import {
-    Dumper, User,
-    getCore, Project, Task,
+    User, getCore, Project, Task,
 } from 'cvat-core-wrapper';
 import AutomaticAnnotationProgress from 'components/tasks-page/automatic-annotation-progress';
 import MdGuideControl from 'components/md-guide/md-guide-control';
@@ -33,8 +32,6 @@ interface OwnProps {
 interface StateToProps {
     activeInference: ActiveInference | null;
     project?: Project;
-    dumpers: Dumper[];
-    user: User;
 }
 
 interface DispatchToProps {
@@ -44,8 +41,6 @@ interface DispatchToProps {
 function mapStateToProps(state: CombinedState, own: OwnProps): StateToProps & OwnProps {
     return {
         ...own,
-        dumpers: state.formats.annotationFormats.dumpers,
-        user: state.auth.user as User,
         activeInference: state.models.inferences[own.task.id] || null,
         project: state.projects.current.find((project) => project.id === own.task.projectId),
     };
