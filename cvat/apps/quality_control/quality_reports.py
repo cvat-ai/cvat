@@ -2127,9 +2127,9 @@ class AudioDatasetComparator:
         self._frame_results: Dict[int, ComparisonReportFrameSummary] = {}
         self.included_frames = gt_data_provider.job_data._db_job.segment.frame_set
 
-        self.iou_threshold = settings.iou_threshold
-        self.wer_threshold = settings.wer_threshold
-        self.cer_threshold = settings.cer_threshold
+        self.iou_threshold = self.settings.iou_threshold
+        self.wer_threshold = self.settings.wer_threshold
+        self.cer_threshold = self.settings.cer_threshold
 
         self.ignored_attrs = set(settings.ignored_attributes) | {
             "track_id",  # changes from task to task, can't be defined manually with the same name

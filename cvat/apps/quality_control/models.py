@@ -219,7 +219,7 @@ class QualitySettings(models.Model):
     def get_defaults(cls) -> dict:
         import cvat.apps.quality_control.quality_reports as qc
 
-        default_settings = qc.DatasetComparator.DEFAULT_SETTINGS.to_dict()
+        default_settings = qc.AudioDatasetComparator.DEFAULT_SETTINGS.to_dict()
 
         existing_fields = {f.name for f in cls._meta.fields}
         return {k: v for k, v in default_settings.items() if k in existing_fields}
