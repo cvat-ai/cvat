@@ -118,7 +118,7 @@ function PlayerButtons(props: Props): JSX.Element {
         onSearchAnnotations,
     } = props;
 
-    const handlers: Record<keyof typeof componentShortcuts, ((event?: KeyboardEvent) => void)> = {
+    const handlers: Partial<Record<keyof typeof componentShortcuts, ((event?: KeyboardEvent) => void)>> = {
         NEXT_FRAME: (event: KeyboardEvent | undefined) => {
             event?.preventDefault();
             onNextFrame();
