@@ -43,7 +43,7 @@ class MaskConverter:
         "Converts a CVAT RLE to a Datumaro / COCO mask"
 
         # use COCO representation of CVAT RLE to avoid python loops
-        left, top, right, bottom = list(math.trunc(v) for v in shape.points[-4:])
+        left, top, right, bottom = [math.trunc(v) for v in shape.points[-4:]]
         h = bottom - top + 1
         w = right - left + 1
         cvat_as_coco_rle_uncompressed = {
@@ -97,7 +97,7 @@ class MaskConverter:
             return np.array([])
 
         pairwise_unequal = arr[1:] != arr[:-1]
-        return np.diff(np.where(pairwise_unequal)[0], prepend=-1, append=n - 1)
+        return np.diff(np.nonzero(pairwise_unequal)[0], prepend=-1, append=n - 1)
 
 class EllipsesToMasks:
     @staticmethod
