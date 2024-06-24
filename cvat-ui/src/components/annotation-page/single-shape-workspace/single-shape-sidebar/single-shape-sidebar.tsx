@@ -249,10 +249,10 @@ function SingleShapeSidebar(): JSX.Element {
         }) as Promise<number | null>;
     }, [jobInstance, navigationType, frame]);
 
-    const finishOnThisFrame = useCallback((): void => {
+    const finishOnThisFrame = useCallback((forceSave = false): void => {
         if (typeof state.nextFrame === 'number') {
             appDispatch(changeFrameAsync(state.nextFrame));
-        } else if (state.saveOnFinish && !savingRef.current) {
+        } else if ((forceSave || state.saveOnFinish) && !savingRef.current) {
             savingRef.current = true;
 
             const patchJob = (): void => {
@@ -409,11 +409,11 @@ function SingleShapeSidebar(): JSX.Element {
                         <Row justify='start' className='cvat-single-shape-annotation-sidebar-finish-frame-wrapper'>
                             <Col>
                                 {typeof state.nextFrame === 'number' ? (
-                                    <Button size='large' onClick={finishOnThisFrame}>
+                                    <Button size='large' onClick={() => finishOnThisFrame(false)}>
                                         Skip
                                     </Button>
                                 ) : (
-                                    <Button size='large' type='primary' onClick={finishOnThisFrame}>
+                                    <Button size='large' type='primary' onClick={() => finishOnThisFrame(true)}>
                                         Submit Results
                                     </Button>
                                 )}
