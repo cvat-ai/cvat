@@ -110,8 +110,10 @@ function AnnotationMenuComponent(): JSX.Element {
 
     const changeState = useCallback((state: JobState) => {
         dispatch(updateCurrentJobAsync({ state })).then(() => {
-            message.info('Job state updated', 2);
-            setJobState(jobInstance.state);
+            if (jobInstance.state === state) {
+                message.info('Job state updated', 2);
+                setJobState(jobInstance.state);
+            }
         });
     }, [jobInstance]);
 

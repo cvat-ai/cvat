@@ -9,6 +9,7 @@ import { useDispatch } from 'react-redux';
 import { PluginsActionTypes, pluginActions } from 'actions/plugins-actions';
 import { getCore, CVATCore, APIWrapperEnterOptions } from 'cvat-core-wrapper';
 import { modelsActions } from 'actions/models-actions';
+import { getCVATStore } from 'cvat-store';
 
 const core = getCore();
 
@@ -22,12 +23,14 @@ export type ComponentBuilder = ({
     REMOVE_ACTION,
     actionCreators,
     core,
+    store,
 }: {
     dispatch: Dispatch<AnyAction>,
     REGISTER_ACTION: PluginsActionTypes.ADD_UI_COMPONENT,
     REMOVE_ACTION: PluginsActionTypes.REMOVE_UI_COMPONENT,
     actionCreators: PluginActionCreators,
     core: CVATCore,
+    store: ReturnType<typeof getCVATStore>
 }) => {
     name: string;
     destructor: CallableFunction;
@@ -54,6 +57,7 @@ function PluginEntrypoint(): null {
                             getModelsSuccess: modelsActions.getModelsSuccess,
                         },
                         core,
+                        store: getCVATStore(),
                     });
 
                     dispatch(pluginActions.addPlugin(name, destructor, globalStateDidUpdate));
