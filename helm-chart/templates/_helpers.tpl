@@ -141,7 +141,7 @@ The name of the service account to use for backend pods
 {{- end }}
 
 {{- define "cvat.sharedClickhouseEnv" }}
-{{- if .Values.analytics.enabled}}
+{{- if .Values.analytics.enabled }}
 - name: CLICKHOUSE_HOST
   valueFrom:
     secretKeyRef:

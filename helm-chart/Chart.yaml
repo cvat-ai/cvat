@@ -44,7 +44,7 @@ dependencies:
   - name: clickhouse
     version: "4.1.*"
     repository: https://charts.bitnami.com/bitnami
-    condition: analytics.enabled
+    condition: clickhouse.enabled
 
   - name: grafana
     version: "6.60.*"

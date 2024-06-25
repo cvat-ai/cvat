@@ -321,6 +321,7 @@ nuclio:
 #      password: somepass
 
 analytics:
+  # Set clickhouse.enabled to false if you disable analytics or use an external database
   enabled: true
   clickhouseDb: cvat
   clickhouseUser: user
@@ -348,6 +349,8 @@ vector:
     tag: "0.26.0-alpine"
 
 clickhouse:
+  # Set to false in case of external db usage
+  enabled: true
   shards: 1
   replicaCount: 1
   extraEnvVarsSecret: cvat-analytics-secret
