@@ -78,26 +78,27 @@ class MaskConverter:
 
         # obtain RLE
         cvat_rle = cls.rle(tight_binary_mask.reshape(-1))
-        cvat_rle = cvat_rle.tolist()
-
-        # CVAT RLE starts from 0
-        if tight_binary_mask[0][0] != 0:
-            cvat_rle.insert(0, 0)
-
         cvat_rle += [left, top, right, bottom]
         return cvat_rle
 
     @classmethod
-    def rle(cls, arr: np.ndarray) -> np.ndarray:
+    def rle(cls, arr: np.ndarray) -> list[int]:
         "Computes RLE for a flat array"
         # adapted from https://stackoverflow.com/a/32681075
 
         n = len(arr)
         if n == 0:
-            return np.array([])
+            return []
 
         pairwise_unequal = arr[1:] != arr[:-1]
-        return np.diff(np.nonzero(pairwise_unequal)[0], prepend=-1, append=n - 1)
+        rle = np.diff(np.nonzero(pairwise_unequal)[0], prepend=-1, append=n - 1)
+
+        # CVAT RLE starts from 0
+        cvat_rle = rle.tolist()
+        if arr[0] != 0:
+            cvat_rle.insert(0, 0)
+
+        return cvat_rle
 
 class EllipsesToMasks:
     @staticmethod
