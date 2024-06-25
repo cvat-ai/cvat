@@ -19,14 +19,13 @@
 
     &:has(.cvat-runner-label-mapper) {
         max-height: $grid-unit-size * 64;
-        overflow-y: auto;
+        overflow: hidden auto;
     }
 
     > .cvat-runner-label-mapper {
         margin-top: $grid-unit-size * 2;
         margin-bottom: $grid-unit-size * 2;
-        padding-left: $grid-unit-size * 4;
-        padding-right: $grid-unit-size * 4;
+        margin-left: $grid-unit-size * 2;
     }
 
     .cvat-runner-attribute-mapper {
@@ -42,8 +41,7 @@
         width: 100%;
         margin-top: $grid-unit-size * 2;
         margin-bottom: $grid-unit-size * 2;
-        padding-left: $grid-unit-size * 4;
-        padding-right: $grid-unit-size * 4;
+        margin-left: $grid-unit-size * 2;
     }
 }
 

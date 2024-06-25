@@ -78,13 +78,13 @@ function ObjectMapperComponent(props: Props): JSX.Element {
                 return (
                     <React.Fragment key={`${leftName}:${rightName}`}>
                         <Row className={rowClassName} key={`${leftName}:${rightName}`}>
-                            <Col span={10}>
+                            <Col span={9}>
                                 <Tag style={{ color: textColor }} color={color} key={leftName}>{leftName}</Tag>
                             </Col>
-                            <Col span={10} offset={1}>
+                            <Col span={9} offset={1}>
                                 <Tag style={{ color: textColor }} color={color} key={rightName}>{rightName}</Tag>
                             </Col>
-                            <Col span={1} offset={1}>
+                            <Col span={2} offset={1}>
                                 <CVATTooltip title={deleteMappingLabel}>
                                     <DeleteOutlined
                                         className='cvat-danger-circle-icon'
@@ -103,7 +103,7 @@ function ObjectMapperComponent(props: Props): JSX.Element {
 
             { (leftValue === null || rightValue === null) && !!notMappedLeft.length && (
                 <Row className={rowClassName}>
-                    <Col span={10}>
+                    <Col span={9}>
                         <Select
                             virtual
                             showSearch
@@ -124,7 +124,7 @@ function ObjectMapperComponent(props: Props): JSX.Element {
                             ))}
                         </Select>
                     </Col>
-                    <Col span={10} offset={1}>
+                    <Col span={9} offset={1}>
                         <Select
                             virtual
                             showSearch
@@ -145,7 +145,7 @@ function ObjectMapperComponent(props: Props): JSX.Element {
                             ))}
                         </Select>
                     </Col>
-                    <Col span={1} offset={1}>
+                    <Col span={2} offset={1}>
                         { (leftValue === null && rightValue === null) ? (
                             <Col span={1} offset={1}>
                                 <CVATTooltip title={infoMappingLabel}>
