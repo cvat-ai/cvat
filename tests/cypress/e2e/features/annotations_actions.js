@@ -379,6 +379,7 @@ context('Testing annotations actions workflow', () => {
                 as: 'exportAnnotations',
                 type: 'annotations',
                 format: FORMAT_NAME,
+                scrollList: true,
             };
             cy.exportJob(exportAnnotation);
             cy.getDownloadFileName().then((file) => {
