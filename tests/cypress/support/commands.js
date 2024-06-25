@@ -1236,6 +1236,7 @@ Cypress.Commands.add('exportJob', ({
 }) => {
     cy.interactMenu('Export job dataset');
     cy.get('.cvat-modal-export-job').should('be.visible').find('.cvat-modal-export-select').click();
+    cy.contains('.cvat-modal-export-option-item', format).scrollIntoView();
     cy.contains('.cvat-modal-export-option-item', format).should('be.visible').click();
     cy.get('.cvat-modal-export-job').find('.cvat-modal-export-select').should('contain.text', format);
     if (type === 'dataset') {
