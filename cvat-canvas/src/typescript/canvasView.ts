@@ -1223,16 +1223,18 @@ export class CanvasViewImpl implements CanvasView, Listener {
                         }
                     };
 
-                    this.draggable(elementState, element, () => {
-                        this.mode = Mode.DRAG;
-                        hideElementText();
-                    }, () => {
-                        skeletonSVGTemplate = skeletonSVGTemplate ?? makeSVGFromTemplate(state.label.structure.svg);
-                        setupSkeletonEdges(shape as SVG.G, skeletonSVGTemplate);
-                    }, () => {
-                        this.mode = Mode.IDLE;
-                        showElementText();
-                    });
+                    if (!elementState.lock) {
+                        this.draggable(elementState, element, () => {
+                            this.mode = Mode.DRAG;
+                            hideElementText();
+                        }, () => {
+                            skeletonSVGTemplate = skeletonSVGTemplate ?? makeSVGFromTemplate(state.label.structure.svg);
+                            setupSkeletonEdges(shape as SVG.G, skeletonSVGTemplate);
+                        }, () => {
+                            this.mode = Mode.IDLE;
+                            showElementText();
+                        });
+                    }
                 } else {
                     this.draggable(null, element);
                 }
