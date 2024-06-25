@@ -35,7 +35,7 @@ export enum ActionParameterType {
 type ActionParameters = Record<string, {
     type: ActionParameterType;
     values: string[] | (({ instance }: { instance: Job | Task }) => string[]);
-    defaultValue: string;
+    defaultValue: string | (({ instance }: { instance: Job | Task }) => string);
 }>;
 
 export enum FrameSelectionType {
@@ -110,6 +110,9 @@ class PropagateShapes extends BaseSingleFrameAction {
         instance,
         { collection: { shapes }, frameData: { number } },
     ): Promise<SingleFrameActionOutput> {
+        if (number === this.#targetFrame) {
+            return { collection: { shapes } };
+        }
         const propagatedShapes = propagateShapes<SerializedShape>(shapes, number, this.#targetFrame);
         return { collection: { shapes: [...shapes, ...propagatedShapes] } };
     }
@@ -128,7 +131,12 @@ class PropagateShapes extends BaseSingleFrameAction {
                     }
                     return [0, instance.size - 1, 1].map((val) => val.toString());
                 },
-                defaultValue: '0',
+                defaultValue: ({ instance }) => {
+                    if (instance instanceof Job) {
+                        return instance.stopFrame.toString();
+                    }
+                    return (instance.size - 1).toString();
+                },
             },
         };
     }

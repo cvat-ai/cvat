@@ -219,9 +219,10 @@ function ActionParameterComponent(props: Props & { onChange: (value: string) => 
         defaultValue, type, values, onChange,
     } = props;
     const store = getCVATStore();
-    const [value, setValue] = useState(defaultValue);
 
     const job = store.getState().annotation.job.instance as Job;
+    const computedDefaultValue = typeof defaultValue === 'function' ? defaultValue({ instance: job }) : defaultValue;
+    const [value, setValue] = useState(computedDefaultValue);
     useEffect(() => {
         onChange(value);
     }, [value]);
