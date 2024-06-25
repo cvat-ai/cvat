@@ -31,7 +31,7 @@ const FilteringComponent = ResourceFilterHOC(
 
 interface Props {
     task: Task;
-    onUpdateJob(jobInstance: Job): void;
+    onUpdateJob(job: Job, data: Parameters<Job['save']>[0]): void;
 }
 
 const PAGE_SIZE = 10;
@@ -48,7 +48,15 @@ function setUpJobsList(jobs: Job[], query: JobsQuery): Job[] {
         result = _.orderBy(result, sort, orders);
     }
     if (query.filter) {
-        const converted = result.map((job) => ({ ...job, assignee: job?.assignee?.username }));
+        const converted = result.map((job) => ({
+            assignee: job.assignee ? job.assignee.username : null,
+            stage: job.stage,
+            state: job.state,
+            dimension: job.dimension,
+            updatedDate: job.updatedDate,
+            type: job.type,
+            id: job.id,
+        }));
         const filter = JSON.parse(query.filter);
         result = result.filter((job, index) => jsonLogic.apply(filter, converted[index]));
     }
@@ -57,10 +65,7 @@ function setUpJobsList(jobs: Job[], query: JobsQuery): Job[] {
 }
 
 function JobListComponent(props: Props): JSX.Element {
-    const {
-        task: taskInstance,
-        onUpdateJob,
-    } = props;
+    const { task: taskInstance, onUpdateJob } = props;
     const [visibility, setVisibility] = useState(defaultVisibility);
 
     const history = useHistory();
