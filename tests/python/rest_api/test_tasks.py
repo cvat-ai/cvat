@@ -239,7 +239,6 @@ class TestGetTasks:
         assert server_task.status == "completed"
 
 
-
 class TestListTasksFilters(CollectionSimpleFilterTestBase):
     field_lookups = {
         "owner": ["owner", "username"],
