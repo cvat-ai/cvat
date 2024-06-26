@@ -2018,7 +2018,18 @@ paths:
       description: |
         If format is specified, a ZIP archive will be returned. Otherwise,
         the annotations will be returned as a JSON document.
-      summary: Get job annotations
+
+        Deprecation warning:
+
+        Utilizing this endpoint to export annotations as a dataset in
+        a specific format will be deprecated in one of the next releases.
+
+        Consider using new API:
+        - POST /api/jobs/<job_id>/dataset/export?save_images=False to initiate export process
+        - GET /api/requests/<rq_id> to check process status,
+            where rq_id is request id returned on initializing request
+      summary: Get job annotations or export job annotations as a dataset in a specific
+        format
       parameters:
       - in: query
         name: action
@@ -2408,6 +2419,13 @@ paths:
   /api/jobs/{id}/dataset:
     get:
       operationId: jobs_retrieve_dataset
+      description: |
+        Deprecation warning:
+            This endpoint will be deprecated in one of the next releases.
+            Consider using new API:
+            - POST /api/jobs/<job_id>/dataset/export?save_images=True to initiate export process
+            - GET /api/requests/<rq_id> to check process status,
+                where rq_id is request id returned on initializing request
       summary: Export job as a dataset in a specific format
       parameters:
       - in: query
@@ -2487,7 +2505,7 @@ paths:
 
         The request POST /api/projects/id/dataset/export will initialize
         background process to export dataset. To check status of the process
-        please, use GET /api/requests/<rq_id> where rq_id is request id returned in the response on this request.
+        please, use GET /api/requests/<rq_id> where rq_id is request ID returned in the response for this endpoint.
       summary: Initialize process to export resource as a dataset in a specific format
       parameters:
       - in: query
@@ -3523,6 +3541,14 @@ paths:
   /api/projects/{id}/annotations:
     get:
       operationId: projects_retrieve_annotations
+      description: |
+        Deprecation warning:
+
+        Using this endpoint to initiate export of annotations as a dataset or to check export status is deprecated.
+        Consider using new API:
+        - POST /api/projects/<project_id>/dataset/export?save_images=False to initiate exporting process
+        - GET /api/requests/<rq_id> to check export status,
+            where rq_id is request id returned on initializing request'
       summary: Get project annotations or export them as a dataset
       parameters:
       - in: query
@@ -3599,12 +3625,14 @@ paths:
   /api/projects/{id}/backup:
     get:
       operationId: projects_retrieve_backup
-      description: "\n            Deprecation warning:\n            This endpoint\
-        \ will be deprecated in one of the next releases.\n            Please, do\
-        \ not use this method to check the status of the backup process.\n       \
-        \     Consider using a new API to check the process status: GET /api/requests/<rq_id>\n\
-        \            where rq_id is request id returned on initializing request'\n\
-        \            "
+      description: |
+        Deprecation warning:
+
+        This endpoint will be deprecated in one of the next releases.
+        Consider using new API:
+        - POST /api/projects/<project_id>/backup/export to initiate backup process
+        - GET /api/requests/<rq_id> to check process status,
+            where rq_id is request id returned on initializing request
       summary: Back up a project
       parameters:
       - in: query
@@ -3702,9 +3730,10 @@ paths:
         '202':
           description: Creating a backup file has been started
         '400':
-          description: No response body
+          description: Wrong query parameters were passed
         '409':
-          description: No response body
+          description: The backup process has already been initiated and is not yet
+            finished
   /api/projects/{id}/dataset/:
     get:
       operationId: projects_retrieve_dataset
@@ -3717,8 +3746,13 @@ paths:
         GET /api/projects/id/dataset requests to track the status of the dataset import.
         Also you should specify action parameter: action=import_status.
 
-        Note: Using this endpoint to check the import process status is deprecated.
-        Utilize GET /api/requests/<rq_id> endpoint instead.
+        Deprecation warning:
+        Utilizing this endpoint to export project dataset in
+        a specific format will be deprecated in one of the next releases.
+        Consider using new API:
+        - POST /api/projects/<project_id>/dataset/export/?save_images=True to initiate export process
+        - GET /api/requests/<rq_id> to check process status,
+            where rq_id is request id returned on initializing request
       summary: Export a project as a dataset / Check dataset import status
       parameters:
       - in: query
@@ -3879,7 +3913,7 @@ paths:
 
         The request POST /api/projects/id/dataset/export will initialize
         background process to export dataset. To check status of the process
-        please, use GET /api/requests/<rq_id> where rq_id is request id returned in the response on this request.
+        please, use GET /api/requests/<rq_id> where rq_id is request ID returned in the response for this endpoint.
       summary: Initialize process to export resource as a dataset in a specific format
       parameters:
       - in: query
@@ -5119,7 +5153,17 @@ paths:
   /api/tasks/{id}/annotations/:
     get:
       operationId: tasks_retrieve_annotations
-      summary: Get task annotations
+      description: |
+        Deprecation warning:
+
+        Utilizing this endpoint ot export annotations as a dataset in
+        a specific format will be deprecated in one of the next releases.
+
+        Consider using new API:
+        - POST /api/tasks/<task_id>/dataset/export?save_images=False to initiate export process
+        - GET /api/requests/<rq_id> to check process status,
+            where rq_id is request id returned on initializing request
+      summary: Get task annotations or export them as a dataset in a specific format
       parameters:
       - in: query
         name: action
@@ -5129,19 +5173,16 @@ paths:
           - download
         description: Used to start downloading process locally after annotation file
           has been created
-        deprecated: true
       - in: query
         name: cloud_storage_id
         schema:
           type: integer
         description: Storage id
-        deprecated: true
       - in: query
         name: filename
         schema:
           type: string
         description: Desired output file name
-        deprecated: true
       - in: query
         name: format
         schema:
@@ -5150,7 +5191,6 @@ paths:
           Desired output format name
           You can get the list of supported formats at:
           /server/annotation/formats
-        deprecated: true
       - in: path
         name: id
         schema:
@@ -5165,7 +5205,6 @@ paths:
           - cloud_storage
           - local
         description: Where need to save downloaded dataset
-        deprecated: true
       - in: query
         name: use_default_location
         schema:
@@ -5390,12 +5429,13 @@ paths:
   /api/tasks/{id}/backup:
     get:
       operationId: tasks_retrieve_backup
-      description: "\n        Deprecation warning:\n            This endpoint will\
-        \ be deprecated in one of the next releases.\n            Please, do not use\
-        \ this method to check the status of the backup process.\n            Consider\
-        \ using a new API to check the process status: GET /api/requests/<rq_id>\n\
-        \            where rq_id is request id returned on initializing request'\n\
-        \        "
+      description: |
+        Deprecation warning:
+            This endpoint will be deprecated in one of the next releases.
+            Consider using new API:
+            - POST /api/tasks/<task_id>/backup/export to initiate backup process
+            - GET /api/requests/<rq_id> to check process status,
+                where rq_id is request id returned on initializing request'
       summary: Back up a task
       parameters:
       - in: query
@@ -5495,9 +5535,10 @@ paths:
         '202':
           description: Creating a backup file has been started
         '400':
-          description: No response body
+          description: Wrong query parameters were passed
         '409':
-          description: No response body
+          description: The backup process has already been initiated and is not yet
+            finished
   /api/tasks/{id}/data/:
     get:
       operationId: tasks_retrieve_data
@@ -5700,6 +5741,16 @@ paths:
   /api/tasks/{id}/dataset:
     get:
       operationId: tasks_retrieve_dataset
+      description: |
+        Deprecation warning:
+
+        Utilizing this endpoint to export task dataset in
+        a specific format will be deprecated in one of the next releases.
+
+        Consider using new API:
+        - POST /api/tasks/<task_id>/dataset/export?save_images=True to initiate export process
+        - GET /api/requests/<rq_id> to check process status,
+            where rq_id is request id returned on initializing request
       summary: Export task as a dataset in a specific format
       parameters:
       - in: query
@@ -5781,7 +5832,7 @@ paths:
 
         The request POST /api/projects/id/dataset/export will initialize
         background process to export dataset. To check status of the process
-        please, use GET /api/requests/<rq_id> where rq_id is request id returned in the response on this request.
+        please, use GET /api/requests/<rq_id> where rq_id is request ID returned in the response for this endpoint.
       summary: Initialize process to export resource as a dataset in a specific format
       parameters:
       - in: query
@@ -5866,7 +5917,7 @@ paths:
     get:
       operationId: tasks_retrieve_status
       description: 'This method is deprecated and will be removed in one of the next
-        releases. To check status of a task creation, use new common APIfor managing
+        releases. To check status of task creation, use new common API for managing
         background operations: GET /api/requests/?action=create&task_id=<task_id>'
       summary: Get the creation status of a task
       parameters:
