@@ -2189,7 +2189,7 @@ export class MaskShape extends Shape {
         super(data, clientID, color, injection);
         const [left, top, right, bottom] = this.points.slice(-4);
         const { width, height } = this.frameMeta[this.frame];
-        if (left > width || top > height || right > width || bottom > height) {
+        if (left >= width || top >= height || right >= width || bottom >= height) {
             this.points = cropMask(this.points, width, height);
         }
         [this.left, this.top, this.right, this.bottom] = this.points.splice(-4, 4);
