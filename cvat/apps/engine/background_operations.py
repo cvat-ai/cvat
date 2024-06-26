@@ -75,7 +75,11 @@ class _ResourceExportManager(ABC):
         pass
 
     @abstractmethod
-    def _handle_rq_job_v1(self, rq_job: RQJob) -> Response:
+    def setup_background_job(self, queue: DjangoRQ, rq_id: str) -> None:
+        pass
+
+    @abstractmethod
+    def _handle_rq_job_v1(self, rq_job: RQJob, queue: DjangoRQ) -> Response:
         pass
 
     def _handle_rq_job_v2(self, rq_job: RQJob, *args, **kwargs) -> Optional[Response]:
@@ -482,6 +486,7 @@ class BackupExportManager(_ResourceExportManager):
     def _handle_rq_job_v1(
         self,
         rq_job: RQJob,
+        queue: DjangoRQ,
     ) -> Response:
         last_instance_update_time = timezone.localtime(self.db_instance.updated_date)
         timestamp = self.get_timestamp(last_instance_update_time)
@@ -544,6 +549,25 @@ class BackupExportManager(_ResourceExportManager):
             exc_info = rq_job.meta.get("formatted_exception", str(rq_job.exc_info))
             rq_job.delete()
             return Response(exc_info, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        elif (
+            rq_job.is_deferred
+            and rq_job.id not in queue.deferred_job_registry.get_job_ids()
+        ):
+            # Sometimes jobs can depend on outdated jobs in the deferred jobs registry.
+            # They can be fetched by their specific ids, but are not listed by get_job_ids().
+            # Supposedly, this can happen because of the server restarts
+            # (potentially, because the redis used for the queue is in memory).
+            # Another potential reason is canceling without enqueueing dependents.
+            # Such dependencies are never removed or finished,
+            # as there is no TTL for deferred jobs,
+            # so the current job can be blocked indefinitely.
+
+            # Cancel the current job and then reenqueue it, considering the current situation.
+            # The new attempt will be made after the last existing job.
+            # In the case the server is configured with ONE_RUNNING_JOB_IN_QUEUE_PER_USER
+            # we have to enqueue dependent jobs after canceling one.
+            rq_job.cancel(enqueue_dependents=settings.ONE_RUNNING_JOB_IN_QUEUE_PER_USER)
+            rq_job.delete()
         else:
             return Response(status=status.HTTP_202_ACCEPTED)
 
@@ -563,13 +587,13 @@ class BackupExportManager(_ResourceExportManager):
             if response:
                 return response
 
-        self._setup_backup_job(queue, rq_id)
+        self.setup_background_job(queue, rq_id)
         serializer = RqIdSerializer(data={"rq_id": rq_id})
         serializer.is_valid(raise_exception=True)
 
         return Response(serializer.data, status=status.HTTP_202_ACCEPTED)
 
-    def _setup_backup_job(
+    def setup_background_job(
         self,
         queue: DjangoRQ,
         rq_id: str,

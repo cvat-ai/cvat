@@ -10,7 +10,7 @@ from enum import Enum
 import re
 import shutil
 import tempfile
-from typing import Any, Dict, Iterable, Union
+from typing import Any, Dict, Iterable
 import uuid
 import mimetypes
 from zipfile import ZipFile
@@ -18,7 +18,6 @@ from tempfile import NamedTemporaryFile
 
 import django_rq
 from django.conf import settings
-from django.http import HttpRequest
 from django.db import transaction
 from django.utils import timezone
 
