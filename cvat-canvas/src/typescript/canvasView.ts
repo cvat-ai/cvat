@@ -1223,16 +1223,18 @@ export class CanvasViewImpl implements CanvasView, Listener {
                         }
                     };
 
-                    this.draggable(elementState, element, () => {
-                        this.mode = Mode.DRAG;
-                        hideElementText();
-                    }, () => {
-                        skeletonSVGTemplate = skeletonSVGTemplate ?? makeSVGFromTemplate(state.label.structure.svg);
-                        setupSkeletonEdges(shape as SVG.G, skeletonSVGTemplate);
-                    }, () => {
-                        this.mode = Mode.IDLE;
-                        showElementText();
-                    });
+                    if (!elementState.lock) {
+                        this.draggable(elementState, element, () => {
+                            this.mode = Mode.DRAG;
+                            hideElementText();
+                        }, () => {
+                            skeletonSVGTemplate = skeletonSVGTemplate ?? makeSVGFromTemplate(state.label.structure.svg);
+                            setupSkeletonEdges(shape as SVG.G, skeletonSVGTemplate);
+                        }, () => {
+                            this.mode = Mode.IDLE;
+                            showElementText();
+                        });
+                    }
                 } else {
                     this.draggable(null, element);
                 }
@@ -2423,6 +2425,10 @@ export class CanvasViewImpl implements CanvasView, Listener {
                         this.deleteObjects([this.drawnStates[+clientID]]);
                         this.addObjects([state]);
                         continue;
+                    } else if (state.shapeType === 'points') {
+                        const colorization = { ...this.getShapeColorization(state) };
+                        shape.remember('_selectHandler').nested.attr(colorization);
+                        shape.attr(colorization);
                     } else {
                         shape.attr({ ...this.getShapeColorization(state) });
                     }
