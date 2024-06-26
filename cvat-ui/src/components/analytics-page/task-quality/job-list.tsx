@@ -39,7 +39,6 @@ function JobListComponent(props: Props): JSX.Element {
 
     function sorter(path: string) {
         return (obj1: any, obj2: any): number => {
-            console.log(path, obj1, obj2);
             let currentObj1 = obj1;
             let currentObj2 = obj2;
             let field1: string | number | null = null;
