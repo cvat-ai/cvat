@@ -258,7 +258,11 @@ function SingleShapeSidebar(): JSX.Element {
             const patchJob = (): void => {
                 appDispatch(updateCurrentJobAsync({
                     state: JobState.COMPLETED,
-                })).then(showSubmittedInfo).finally(() => {
+                })).then(() => {
+                    if (jobInstance.state === JobState.COMPLETED) {
+                        showSubmittedInfo();
+                    }
+                }).finally(() => {
                     savingRef.current = false;
                 });
             };

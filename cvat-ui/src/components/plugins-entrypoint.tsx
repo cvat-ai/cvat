@@ -9,12 +9,14 @@ import { useDispatch } from 'react-redux';
 import { PluginsActionTypes, pluginActions } from 'actions/plugins-actions';
 import { getCore, CVATCore, APIWrapperEnterOptions } from 'cvat-core-wrapper';
 import { modelsActions } from 'actions/models-actions';
+import { changeFrameAsync } from 'actions/annotation-actions';
 import { getCVATStore } from 'cvat-store';
 
 const core = getCore();
 
 export type PluginActionCreators = {
     getModelsSuccess: typeof modelsActions['getModelsSuccess'],
+    changeFrameAsync: typeof changeFrameAsync,
 };
 
 export type ComponentBuilder = ({
@@ -55,6 +57,7 @@ function PluginEntrypoint(): null {
                         REMOVE_ACTION: PluginsActionTypes.REMOVE_UI_COMPONENT,
                         actionCreators: {
                             getModelsSuccess: modelsActions.getModelsSuccess,
+                            changeFrameAsync,
                         },
                         core,
                         store: getCVATStore(),
