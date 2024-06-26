@@ -421,28 +421,27 @@ class NonModelSimpleFilter(SimpleFilter, _NestedAttributeHandler):
         simple_filters = getattr(view, self.filter_fields_attr, None)
         lookup_fields = self.get_lookup_fields(view)
 
-        if simple_filters and lookup_fields:
-            if (intersection := filters_to_use & set(simple_filters)):
-                filtered_queryset = []
+        if simple_filters and lookup_fields and (intersection := filters_to_use & set(simple_filters)):
+            filtered_queryset = []
 
-                for obj in queryset:
-                    fits_filter = False
-                    for field in intersection:
-                        query_param = query_params[field]
+            for obj in queryset:
+                fits_filter = False
+                for field in intersection:
+                    query_param = query_params[field]
 
-                        if query_param.isnumeric():
-                            query_param = int(query_param)
+                    if query_param.isdigit():
+                        query_param = int(query_param)
 
-                        # replace empty string with None
-                        if field == 'org' and not query_param:
-                            query_param = None
+                    # replace empty string with None
+                    if field == 'org' and not query_param:
+                        query_param = None
 
-                        fits_filter = self.get_nested_attr(obj, lookup_fields[field]) == query_param
-                        if not fits_filter:
-                            break
+                    fits_filter = self.get_nested_attr(obj, lookup_fields[field]) == query_param
+                    if not fits_filter:
+                        break
 
-                    if fits_filter:
-                        filtered_queryset.append(obj)
+                if fits_filter:
+                    filtered_queryset.append(obj)
 
         return filtered_queryset
 
@@ -457,20 +456,20 @@ class NonModelOrderingFilter(OrderingFilter, _NestedAttributeHandler):
 
     def get_ordering(self, request, queryset, view) -> Tuple[List[str], bool]:
         ordering = super().get_ordering(request, queryset, view)
-        result, reverse_frag = [], False
+        result, reverse = [], False
         for field in ordering:
             if field.startswith(self.reverse_flag):
-                reverse_frag = True
+                reverse = True
                 field = field[len(self.reverse_flag):]
             result.append(field)
 
-        return result, reverse_frag
+        return result, reverse
 
-    def filter_queryset(self, request, queryset, view):
-        ordering, reverse_flag = self.get_ordering(request, queryset, view)
+    def filter_queryset(self, request: HttpRequest, queryset: Iterable, view) -> Iterable:
+        ordering, reverse = self.get_ordering(request, queryset, view)
 
         if ordering:
-            return sorted(queryset, key=lambda obj: [self.get_nested_attr(obj, field) for field in ordering], reverse=reverse_flag)
+            return sorted(queryset, key=lambda obj: [self.get_nested_attr(obj, field) for field in ordering], reverse=reverse)
 
         return queryset
 
@@ -521,7 +520,7 @@ class NonModelJsonLogicFilter(JsonLogicFilter, _NestedAttributeHandler):
         else:
             raise ValidationError(f'filter: {op} operation with {args} arguments is not implemented')
 
-    def filter_queryset(self, request, queryset, view):
+    def filter_queryset(self, request: HttpRequest, queryset: Iterable, view) -> Iterable:
         filtered_queryset = queryset
         json_rules = request.query_params.get(self.filter_param)
         if json_rules:
@@ -530,11 +529,8 @@ class NonModelJsonLogicFilter(JsonLogicFilter, _NestedAttributeHandler):
             lookup_fields = self._get_lookup_fields(view)
 
             for obj in queryset:
-                allow = self._apply_filter(parsed_rules, lookup_fields, obj)
-                if allow:
+                fits_filter = self._apply_filter(parsed_rules, lookup_fields, obj)
+                if fits_filter:
                     filtered_queryset.append(obj)
 
         return filtered_queryset
-
-    def _get_lookup_fields(self, view):
-        return get_lookup_fields(view)

@@ -17,7 +17,7 @@ import textwrap
 from typing import Any, Dict, Iterable, Optional, OrderedDict, Union
 
 from rq.job import Job as RQJob, JobStatus as RQJobStatus
-from datetime import timedelta, timezone
+from datetime import timezone, timedelta
 from decimal import Decimal
 
 from rest_framework import serializers, exceptions
@@ -2207,31 +2207,30 @@ class UserIdentifiersSerializer(BasicUserSerializer):
             "username",
         )
 
-
-class StatusChoices(TextChoices):
+class RQJobStatuses(TextChoices):
     QUEUED = "queued"
     STARTED = "started"
     FAILED = "failed"
     FINISHED = "finished"
 
-class ActionChoices(TextChoices):
+class RQJobActions(TextChoices):
     CREATE = "create"
     IMPORT = "import"
     EXPORT = "export"
 
-class TargetChoices(TextChoices):
-    PROJECT = 'project'
-    TASK = 'task'
-    JOB = 'job'
+class RQJobTargets(TextChoices):
+    PROJECT = "project"
+    TASK = "task"
+    JOB = "job"
 
-class SubresourceChoices(TextChoices):
-    ANNOTATIONS = 'annotations'
-    DATASET = 'dataset'
-    BACKUP = 'backup'
+class RQJobSubresources(TextChoices):
+    ANNOTATIONS = "annotations"
+    DATASET = "dataset"
+    BACKUP = "backup"
 
 class RequestDataOperationSerializer(serializers.Serializer):
     type = serializers.CharField(read_only=True)
-    target = serializers.ChoiceField(choices=TargetChoices.choices, read_only=True)
+    target = serializers.ChoiceField(choices=RQJobTargets.choices, read_only=True)
     project_id = serializers.IntegerField(required=False, allow_null=True, read_only=True)
     task_id = serializers.IntegerField(required=False, allow_null=True, read_only=True)
     job_id = serializers.IntegerField(required=False, allow_null=True, read_only=True)
@@ -2284,7 +2283,7 @@ class RequestSerializer(serializers.Serializer):
             if result_url := rq_job.meta.get(RQJobMetaField.RESULT_URL):
                 representation["result_url"] = result_url
 
-            if rq_job.parsed_rq_id.action == ActionChoices.IMPORT and rq_job.parsed_rq_id.subresource == SubresourceChoices.BACKUP:
+            if rq_job.parsed_rq_id.action == RQJobActions.IMPORT and rq_job.parsed_rq_id.subresource == RQJobSubresources.BACKUP:
                 representation["result_id"] = rq_job.return_value()
 
         return representation
@@ -2312,7 +2311,7 @@ class RequestSerializer(serializers.Serializer):
         return None
 
     @extend_schema_field(
-        serializers.ChoiceField(choices=StatusChoices.choices, required=True)
+        serializers.ChoiceField(choices=RQJobStatuses.choices, required=True)
     )
     def get_status(self, rq_job: RQJob) -> RQJobStatus:
         status = rq_job.get_status()

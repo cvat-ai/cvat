@@ -36,6 +36,7 @@ from cvat.apps.engine.log import ServerLogManager
 from cvat.apps.engine.models import Location
 from cvat.apps.engine.rq_job_handler import RQIdManager
 from cvat.apps.engine.serializers import DataSerializer
+from cvat.apps.engine.utils import is_dataset_export
 
 slogger = ServerLogManager(__name__)
 
@@ -418,23 +419,18 @@ class DatasetMixin:
     def export_dataset_v1(
         self,
         request,
-        save_images=False,
+        save_images: bool,
         *,
-        get_data: Optional[Callable[[int], Dict[str, Any]]]= None,
-    ):
+        get_data: Optional[Callable[[int], Dict[str, Any]]] = None,
+    ) -> Response:
         if request.query_params.get("format"):
-            callback = self._get_export_callback(save_images)
+            callback = self.get_export_callback(save_images)
 
             dataset_export_manager = DatasetExportManager(self._object, request, callback, save_images=save_images, version=1)
-            response = dataset_export_manager.export()
-
-            if request.query_params.get('action') != 'download':
-                response.headers['Deprecated'] = True
-
-            return response
+            return dataset_export_manager.export()
 
         if not get_data:
-            return Response("Format is not specified",status=status.HTTP_400_BAD_REQUEST)
+            return Response("Format is not specified", status=status.HTTP_400_BAD_REQUEST)
 
         data = get_data(self._object.pk)
         return Response(data)
@@ -444,7 +440,7 @@ class DatasetMixin:
         description=dedent("""
              The request POST /api/projects/id/dataset/export will initialize
              background process to export dataset. To check status of the process
-             please, use GET /api/requests/<rq_id> where rq_id is request id returned in the response on this request.
+             please, use GET /api/requests/<rq_id> where rq_id is request ID returned in the response for this endpoint.
          """),
         parameters=[
             OpenApiParameter('format', location=OpenApiParameter.QUERY,
@@ -467,13 +463,12 @@ class DatasetMixin:
         },
         request=OpenApiTypes.NONE,
     )
-    # TODO: update permissions in OSS and private repo
     @action(detail=True, methods=['POST'], serializer_class=None, url_path='dataset/export')
     def export_dataset_v2(self, request: HttpRequest, pk: int):
         self._object = self.get_object() # force call of check_object_permissions()
 
-        save_images = request.query_params.get('save_images', False)
-        callback = self._get_export_callback(save_images)
+        save_images = is_dataset_export(request)
+        callback = self.get_export_callback(save_images)
 
         dataset_export_manager = DatasetExportManager(self._object, request, callback, save_images=save_images, version=2)
         return dataset_export_manager.export()
@@ -511,7 +506,7 @@ class DatasetMixin:
 
 
 class BackupMixin:
-    def export_backup_v1(self, request, export_func):
+    def export_backup_v1(self, request: HttpRequest) -> Response:
         db_object = self.get_object() # force to call check_object_permissions
 
         export_backup_manager = BackupExportManager(db_object, request, version=1)
@@ -522,7 +517,7 @@ class BackupMixin:
 
         return response
 
-    def import_backup_v1(self, request, import_func):
+    def import_backup_v1(self, request: HttpRequest, import_func: Callable) -> Response:
         location = request.query_params.get("location", Location.LOCAL)
         if location == Location.CLOUD_STORAGE:
             file_name = request.query_params.get("filename", "")
@@ -545,8 +540,8 @@ class BackupMixin:
         ],
         responses={
             '202': OpenApiResponse(description='Creating a backup file has been started'),
-            '400': OpenApiResponse(description=''),
-            '409': OpenApiResponse(description=''),
+            '400': OpenApiResponse(description='Wrong query parameters were passed'),
+            '409': OpenApiResponse(description='The backup process has already been initiated and is not yet finished'),
         },
         request=OpenApiTypes.NONE,
     )

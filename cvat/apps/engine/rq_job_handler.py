@@ -7,9 +7,10 @@ import attrs
 from typing import Optional, Union
 from uuid import UUID
 from rq.job import Job as RQJob
-from django.db.models import TextChoices
 
-class RQJobMetaField(TextChoices):
+class RQJobMetaField:
+    # common fields
+    FORMATTED_EXCEPTION = "formatted_exception"
     REQUEST = 'request'
     USER = 'user'
     PROJECT_ID = 'project_id'
@@ -17,22 +18,15 @@ class RQJobMetaField(TextChoices):
     JOB_ID = 'job_id'
     ORG_ID = 'org_id'
     ORG_SLUG = 'org_slug'
-    RESULT_URL = 'result_url'
     STATUS = 'status'
     PROGRESS = 'progress'
     TASK_PROGRESS = 'task_progress'
-    FORMATTED_EXCEPTION = "formatted_exception"
+    # export specific fields
+    RESULT_URL = 'result_url'
 
-    # lambda fields
-    # LAMBDA = 'lambda'
-    # quality control fields
-    # JOB_TYPE = 'job_type'
-    # USER_ID = 'user_id'
 
 def is_rq_job_owner(rq_job: RQJob, user_id: int) -> bool:
     return rq_job.meta.get(RQJobMetaField.USER, {}).get('id') == user_id
-
-
 
 @attrs.define(kw_only=True)
 class RQId:
@@ -101,14 +95,13 @@ class RQIdManager:
 
         try:
             action_and_resource, unparsed = rq_id.split("-", maxsplit=1)
-
             action, resource = action_and_resource.split(":")
 
             if "create" == action:
                 identifier = unparsed
             elif "import" == action:
                 identifier, subresource = unparsed.rsplit("-", maxsplit=1)
-            else:  # export
+            else: # action == export
                 identifier, subresource, unparsed = unparsed.split("-", maxsplit=2)
                 if "backup" == subresource:
                     _, user_id = unparsed.split("-")
@@ -138,4 +131,3 @@ class RQIdManager:
 
         except Exception as ex:
             raise ValueError(f"The {rq_id!r} RQ ID cannot be parsed: {str(ex)}") from ex
-

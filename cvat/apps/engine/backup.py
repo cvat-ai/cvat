@@ -887,7 +887,7 @@ def _import_project(filename, user, org_id):
     db_project = project_importer.import_project()
     return db_project.id
 
-def _create_backup(db_instance, Exporter, output_path, logger, cache_ttl):
+def create_backup(db_instance, Exporter, output_path, logger, cache_ttl):
     try:
         cache_dir = get_export_cache_dir(db_instance)
         output_path = os.path.join(cache_dir, output_path)
@@ -921,11 +921,6 @@ def _create_backup(db_instance, Exporter, output_path, logger, cache_ttl):
     except Exception:
         log_exception(logger)
         raise
-
-def export(db_instance: Union[models.Project, models.Task], request: HttpRequest, queue_name: str):
-    from cvat.apps.engine.background_operations import BackupExportManager
-    backup_export_manager = BackupExportManager(db_instance, request, version=1)
-    return backup_export_manager.export()
 
 def _import(importer, request, queue, rq_id, Serializer, file_field_name, location_conf, filename=None):
     rq_job = queue.fetch_job(rq_id)

@@ -8,7 +8,7 @@ import os.path as osp
 import functools
 from PIL import Image
 from types import SimpleNamespace
-from typing import Optional, Any, Dict, List, cast, Callable, Mapping
+from typing import Optional, Any, Dict, List, cast, Callable, Mapping, Iterable
 import traceback
 import textwrap
 from collections import namedtuple
@@ -29,6 +29,7 @@ from django.http import HttpResponse, HttpRequest, HttpResponseNotFound, HttpRes
 from django.utils import timezone
 from django.utils.decorators import method_decorator
 from django.views.decorators.cache import never_cache
+from django_rq.queues import DjangoRQ
 
 from drf_spectacular.types import OpenApiTypes
 from drf_spectacular.utils import (
@@ -45,7 +46,6 @@ from rest_framework.permissions import SAFE_METHODS
 from rest_framework.response import Response
 from rest_framework.settings import api_settings
 
-from rq.queue import Queue as RQQueue
 from rq.job import Job as RQJob, JobStatus as RQJobStatus
 
 import cvat.apps.dataset_manager as dm
@@ -75,7 +75,7 @@ from cvat.apps.engine.serializers import (
     IssueWriteSerializer, CommentReadSerializer, CommentWriteSerializer, CloudStorageWriteSerializer,
     CloudStorageReadSerializer, DatasetFileSerializer,
     ProjectFileSerializer, TaskFileSerializer, RqIdSerializer, CloudStorageContentSerializer,
-    RequestSerializer, StatusChoices, ActionChoices, SubresourceChoices,
+    RequestSerializer, RQJobStatuses, RQJobActions, RQJobSubresources,
 )
 from cvat.apps.engine.permissions import get_cloud_storage_for_import_or_export
 
@@ -301,7 +301,7 @@ class ProjectViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
         # Required for the extra summary information added in the queryset
         serializer.instance = self.get_queryset().get(pk=serializer.instance.pk)
 
-    def _get_export_callback(self, save_images: bool) -> Callable:
+    def get_export_callback(self, save_images: bool) -> Callable:
         return dm.views.export_project_as_dataset if save_images else dm.views.export_project_annotations
 
     @extend_schema(methods=['GET'], summary='Export a project as a dataset / Check dataset import status',
@@ -313,8 +313,13 @@ class ProjectViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
             GET /api/projects/id/dataset requests to track the status of the dataset import.
             Also you should specify action parameter: action=import_status.
 
-            Note: Using this endpoint to check the import process status is deprecated.
-            Utilize GET /api/requests/<rq_id> endpoint instead.
+            Deprecation warning:
+            Utilizing this endpoint to export project dataset in
+            a specific format will be deprecated in one of the next releases.
+            Consider using new API:
+            - POST /api/projects/<project_id>/dataset/export/?save_images=True to initiate export process
+            - GET /api/requests/<rq_id> to check process status,
+                where rq_id is request id returned on initializing request
         """),
         parameters=[
             OpenApiParameter('format', description='Desired output format name\n'
@@ -392,36 +397,31 @@ class ProjectViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
         else:
             action = request.query_params.get("action", "").lower()
             if action in ("import_status",):
-                common_response_headers = {
-                    'Deprecation': True,
-                }
                 queue = django_rq.get_queue(settings.CVAT_QUEUES.IMPORT_DATA.value)
                 rq_id = request.query_params.get('rq_id')
                 if not rq_id:
                     return Response(
                         'The rq_id param should be specified in the query parameters',
                         status=status.HTTP_400_BAD_REQUEST,
-                        headers=common_response_headers
                     )
 
                 rq_job = queue.fetch_job(rq_id)
 
                 if rq_job is None:
-                    return Response(status=status.HTTP_404_NOT_FOUND, headers=common_response_headers)
+                    return Response(status=status.HTTP_404_NOT_FOUND)
                 # check that the user has access to the current rq_job
                 elif not is_rq_job_owner(rq_job, request.user.id):
-                    return Response(status=status.HTTP_403_FORBIDDEN, headers=common_response_headers)
+                    return Response(status=status.HTTP_403_FORBIDDEN)
 
                 if rq_job.is_finished:
                     rq_job.delete()
-                    return Response(status=status.HTTP_201_CREATED, headers=common_response_headers)
+                    return Response(status=status.HTTP_201_CREATED)
                 elif rq_job.is_failed:
                     exc_info = process_failed_job(rq_job)
 
                     return Response(
                         data=str(exc_info),
                         status=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                        headers=common_response_headers
                     )
                 else:
                     return Response(
@@ -430,7 +430,6 @@ class ProjectViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
                             rq_id,
                         ),
                         status=status.HTTP_202_ACCEPTED,
-                        headers=common_response_headers
                     )
             else:
                 return self.export_dataset_v1(request=request, save_images=True)
@@ -483,6 +482,15 @@ class ProjectViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
                         status=status.HTTP_400_BAD_REQUEST)
 
     @extend_schema(summary='Get project annotations or export them as a dataset',
+        description=textwrap.dedent("""\
+            Deprecation warning:
+
+            Using this endpoint to initiate export of annotations as a dataset or to check export status is deprecated.
+            Consider using new API:
+            - POST /api/projects/<project_id>/dataset/export?save_images=False to initiate exporting process
+            - GET /api/requests/<rq_id> to check export status,
+                where rq_id is request id returned on initializing request'
+        """),
         parameters=[
             OpenApiParameter('format', description='Desired output format name\n'
                 'You can get the list of supported formats at:\n/server/annotation/formats',
@@ -515,20 +523,24 @@ class ProjectViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
         serializer_class=LabeledDataSerializer,
         csrf_workaround_is_needed=csrf_workaround_is_needed_for_export)
     def annotations(self, request, pk):
+        # FUTURE-TODO: mark exporting dataset using this endpoint as deprecated when new API for result file downloading will be implemented
         self._object = self.get_object() # force call of check_object_permissions()
         return self.export_dataset_v1(
             request=request,
+            save_images=False,
             get_data=dm.task.get_job_data,
         )
 
     @extend_schema(summary='Back up a project',
-        description="""
-            Deprecation warning:
-            This endpoint will be deprecated in one of the next releases.
-            Please, do not use this method to check the status of the backup process.
-            Consider using a new API to check the process status: GET /api/requests/<rq_id>
-            where rq_id is request id returned on initializing request'
-            """,
+        description=textwrap.dedent("""\
+        Deprecation warning:
+
+        This endpoint will be deprecated in one of the next releases.
+        Consider using new API:
+        - POST /api/projects/<project_id>/backup/export to initiate backup process
+        - GET /api/requests/<rq_id> to check process status,
+            where rq_id is request id returned on initializing request
+        """),
         parameters=[
             OpenApiParameter('action', location=OpenApiParameter.QUERY,
                 description='Used to start downloading process after backup file had been created',
@@ -553,11 +565,7 @@ class ProjectViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
         csrf_workaround_is_needed=csrf_workaround_is_needed_for_backup)
     def export_backup(self, request, pk=None):
         # FUTURE-TODO: mark this endpoint as deprecated when new API for result file downloading will be implemented
-        response = self.export_backup_v1(request, backup.export)
-        if request.query_params.get('action') != 'download':
-            response.headers['Deprecation'] = True
-
-        return response
+        return self.export_backup_v1(request)
 
     @extend_schema(methods=['POST'], summary='Recreate a project from a backup',
         description=textwrap.dedent("""
@@ -905,13 +913,14 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
         return self.append_tus_chunk(request, file_id)
 
     @extend_schema(summary='Back up a task',
-        description="""
+        description=textwrap.dedent("""\
         Deprecation warning:
             This endpoint will be deprecated in one of the next releases.
-            Please, do not use this method to check the status of the backup process.
-            Consider using a new API to check the process status: GET /api/requests/<rq_id>
-            where rq_id is request id returned on initializing request'
-        """,
+            Consider using new API:
+            - POST /api/tasks/<task_id>/backup/export to initiate backup process
+            - GET /api/requests/<rq_id> to check process status,
+                where rq_id is request id returned on initializing request'
+        """),
         parameters=[
             OpenApiParameter('action', location=OpenApiParameter.QUERY,
                 description='Used to start downloading process after backup file had been created',
@@ -942,11 +951,7 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
                 data='Backup of a task without data is not allowed',
                 status=status.HTTP_400_BAD_REQUEST
             )
-        response = self.export_backup_v1(request, backup.export)
-        if request.query_params.get('action') != 'download':
-            response.headers['Deprecated'] = True
-
-        return response
+        return self.export_backup_v1(request)
 
     @transaction.atomic
     def perform_update(self, serializer):
@@ -1291,25 +1296,36 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
         self._object = self.get_object()
         return self.append_tus_chunk(request, file_id)
 
-    def _get_export_callback(self, save_images: bool) -> Callable:
+    def get_export_callback(self, save_images: bool) -> Callable:
         return dm.views.export_task_as_dataset if save_images else dm.views.export_task_annotations
 
     # TODO: mark this endpoint as deprecated when new endpoint for downloading results will be implemented
-    @extend_schema(methods=['GET'], summary='Get task annotations',
+    @extend_schema(methods=['GET'], summary='Get task annotations or export them as a dataset in a specific format',
+        description=textwrap.dedent("""\
+            Deprecation warning:
+
+            Utilizing this endpoint ot export annotations as a dataset in
+            a specific format will be deprecated in one of the next releases.
+
+            Consider using new API:
+            - POST /api/tasks/<task_id>/dataset/export?save_images=False to initiate export process
+            - GET /api/requests/<rq_id> to check process status,
+                where rq_id is request id returned on initializing request
+        """),
         parameters=[
             OpenApiParameter('format', location=OpenApiParameter.QUERY, type=OpenApiTypes.STR, required=False,
                 description="Desired output format name\nYou can get the list of supported formats at:\n/server/annotation/formats",
-                deprecated=True),
+            ),
             OpenApiParameter('filename', description='Desired output file name',
-                location=OpenApiParameter.QUERY, type=OpenApiTypes.STR, required=False, deprecated=True),
+                location=OpenApiParameter.QUERY, type=OpenApiTypes.STR, required=False),
             OpenApiParameter('action', location=OpenApiParameter.QUERY,
                 description='Used to start downloading process locally after annotation file has been created',
-                type=OpenApiTypes.STR, required=False, enum=['download'], deprecated=True),
+                type=OpenApiTypes.STR, required=False, enum=['download']),
             OpenApiParameter('location', description='Where need to save downloaded dataset',
                 location=OpenApiParameter.QUERY, type=OpenApiTypes.STR, required=False,
-                enum=Location.list(), deprecated=True),
+                enum=Location.list()),
             OpenApiParameter('cloud_storage_id', description='Storage id',
-                location=OpenApiParameter.QUERY, type=OpenApiTypes.INT, required=False, deprecated=True),
+                location=OpenApiParameter.QUERY, type=OpenApiTypes.INT, required=False),
             OpenApiParameter('use_default_location', description='Use the location that was configured in the task to export annotation',
                 location=OpenApiParameter.QUERY, type=OpenApiTypes.BOOL, required=False,
                 default=True, deprecated=True),
@@ -1400,18 +1416,13 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
         self._object = self.get_object() # force call of check_object_permissions()
         if request.method == 'GET':
             if self._object.data:
-                response = self.export_dataset_v1(
+                return self.export_dataset_v1(
                     request=request,
+                    save_images=False,
                     get_data=dm.task.get_task_data,
                 )
             else:
-                response = HttpResponseBadRequest("Exporting annotations from a task without data is not allowed")
-
-            # exporting annotations using this endpoint is deprecated
-            if request.query_params.get("format"):
-                response.headers['Deprecation'] = True
-
-            return response
+                return HttpResponseBadRequest("Exporting annotations from a task without data is not allowed")
 
         elif request.method == 'POST' or request.method == 'OPTIONS':
             # NOTE: initialization process of annotations import
@@ -1474,7 +1485,7 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
         },
         deprecated=True,
         description="This method is deprecated and will be removed in one of the next releases. "
-                    "To check status of a task creation, use new common API"
+                    "To check status of task creation, use new common API "
                     "for managing background operations: GET /api/requests/?action=create&task_id=<task_id>",
     )
     @action(detail=True, methods=['GET'], serializer_class=RqStatusSerializer)
@@ -1556,6 +1567,17 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
         return Response(serializer.data)
 
     @extend_schema(summary='Export task as a dataset in a specific format',
+        description=textwrap.dedent("""\
+            Deprecation warning:
+
+            Utilizing this endpoint to export task dataset in
+            a specific format will be deprecated in one of the next releases.
+
+            Consider using new API:
+            - POST /api/tasks/<task_id>/dataset/export?save_images=True to initiate export process
+            - GET /api/requests/<rq_id> to check process status,
+                where rq_id is request id returned on initializing request
+        """),
         parameters=[
             OpenApiParameter('format', location=OpenApiParameter.QUERY,
                 description='Desired output format name\nYou can get the list of supported formats at:\n/server/annotation/formats',
@@ -1581,28 +1603,20 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
             '400': OpenApiResponse(description='Exporting without data is not allowed'),
             '405': OpenApiResponse(description='Format is not available'),
         },
-        # deprecated=True,
     )
     @action(detail=True, methods=['GET'], serializer_class=None,
         url_path='dataset', csrf_workaround_is_needed=csrf_workaround_is_needed_for_export)
     def dataset_export(self, request, pk):
+        # FUTURE-TODO: mark this endpoint as deprecated when new API for result file downloading will be implemented
         self._object = self.get_object() # force call of check_object_permissions()
 
         if self._object.data:
-            response = self.export_dataset_v1(
+            return self.export_dataset_v1(
                 request=request,
                 save_images=True
             )
-        else:
-            response = HttpResponseBadRequest("Exporting a dataset from a task without data is not allowed")
 
-        # TODO: change Deprecation: True to deprecation date
-        response.headers.setdefault('Deprecation', True)
-        return response
-
-    def _get_dataset_export_callback(self) -> Callable:
-        save_images = self.request.query_params.get('save_images', False)
-        return dm.views.export_task_as_dataset if save_images else dm.views.export_task_annotations
+        return HttpResponseBadRequest("Exporting a dataset from a task without data is not allowed")
 
     @extend_schema(summary='Get a preview image for a task',
         responses={
@@ -1750,10 +1764,20 @@ class JobViewSet(viewsets.GenericViewSet, mixins.ListModelMixin, mixins.CreateMo
                         status=status.HTTP_400_BAD_REQUEST)
 
     @extend_schema(methods=['GET'],
-        summary="Get job annotations",
+        summary="Get job annotations or export job annotations as a dataset in a specific format",
         description=textwrap.dedent("""\
             If format is specified, a ZIP archive will be returned. Otherwise,
             the annotations will be returned as a JSON document.
+
+            Deprecation warning:
+
+            Utilizing this endpoint to export annotations as a dataset in
+            a specific format will be deprecated in one of the next releases.
+
+            Consider using new API:
+            - POST /api/jobs/<job_id>/dataset/export?save_images=False to initiate export process
+            - GET /api/requests/<rq_id> to check process status,
+                where rq_id is request id returned on initializing request
         """),
         parameters=[
             OpenApiParameter('format', location=OpenApiParameter.QUERY,
@@ -1864,8 +1888,10 @@ class JobViewSet(viewsets.GenericViewSet, mixins.ListModelMixin, mixins.CreateMo
     def annotations(self, request, pk):
         self._object = self.get_object() # force call of check_object_permissions()
         if request.method == 'GET':
+            # FUTURE-TODO: mark as deprecated using this endpoint to export annotations when new API for result file downloading will be implemented
             return self.export_dataset_v1(
                 request=request,
+                save_images=False,
                 get_data=dm.task.get_job_data,
             )
 
@@ -1927,6 +1953,14 @@ class JobViewSet(viewsets.GenericViewSet, mixins.ListModelMixin, mixins.CreateMo
 
 
     @extend_schema(summary='Export job as a dataset in a specific format',
+        description=textwrap.dedent("""\
+            Deprecation warning:
+                This endpoint will be deprecated in one of the next releases.
+                Consider using new API:
+                - POST /api/jobs/<job_id>/dataset/export?save_images=True to initiate export process
+                - GET /api/requests/<rq_id> to check process status,
+                    where rq_id is request id returned on initializing request
+        """),
         parameters=[
             OpenApiParameter('format', location=OpenApiParameter.QUERY,
                 description='Desired output format name\nYou can get the list of supported formats at:\n/server/annotation/formats',
@@ -1951,16 +1985,16 @@ class JobViewSet(viewsets.GenericViewSet, mixins.ListModelMixin, mixins.CreateMo
             '202': OpenApiResponse(description='Exporting has been started'),
             '405': OpenApiResponse(description='Format is not available'),
         },
-        # deprecated=True,
     )
     @action(detail=True, methods=['GET'], serializer_class=None,
         url_path='dataset', csrf_workaround_is_needed=csrf_workaround_is_needed_for_export)
     def dataset_export(self, request, pk):
+        # FUTURE-TODO: mark this endpoint as deprecated when new API for result file downloading will be implemented
         self._object = self.get_object() # force call of check_object_permissions()
 
         return self.export_dataset_v1(request=request, save_images=True)
 
-    def _get_export_callback(self, save_images: bool) -> Callable:
+    def get_export_callback(self, save_images: bool) -> Callable:
         return dm.views.export_job_as_dataset if save_images else dm.views.export_job_annotations
 
     @extend_schema(summary='Get data of a job',
@@ -2985,7 +3019,7 @@ def _import_annotations(request, rq_id_template, rq_func, db_obj, format_name,
                 failure_ttl=settings.IMPORT_CACHE_FAILED_TTL.total_seconds()
             )
 
-        handle_dataset_import(db_obj, format_name=format_name, cloud_storage_id=db_storage.id if db_storage is not None else None)
+        handle_dataset_import(db_obj, format_name=format_name, cloud_storage_id=location_conf.get('storage_id'))
 
         serializer = RqIdSerializer(data={'rq_id': rq_id})
         serializer.is_valid(raise_exception=True)
@@ -3007,21 +3041,6 @@ def _import_annotations(request, rq_id_template, rq_func, db_obj, format_name,
                     status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
     return Response(status=status.HTTP_202_ACCEPTED)
-
-def _export_annotations(
-    db_instance: models.Project | models.Task | models.Job,
-    rq_id: str,
-    request: HttpRequest,
-    format_name: str,
-    action: str,
-    callback: Callable[[int, Optional[str], Optional[str]], str],
-    filename: Optional[str],
-    location_conf: Dict[str, Any]
-):
-    # backward compatibility for old created RQ jobs
-    from cvat.apps.engine.background_operations import DatasetExportManager
-    dataset_export_manager = DatasetExportManager(db_instance, request, callback, version=1)
-    return dataset_export_manager.export()
 
 def _import_project_dataset(request, rq_id_template, rq_func, db_obj, format_name, filename=None, conv_mask_to_poly=True, location_conf=None):
     format_desc = {f.DISPLAY_NAME: f
@@ -3101,7 +3120,7 @@ def _import_project_dataset(request, rq_id_template, rq_func, db_obj, format_nam
                 failure_ttl=settings.IMPORT_CACHE_FAILED_TTL.total_seconds()
             )
 
-        handle_dataset_import(db_obj, format_name=format_name, cloud_storage_id=db_storage.id if db_storage is not None else None)
+        handle_dataset_import(db_obj, format_name=format_name, cloud_storage_id=db_storage.id if db_storage else None)
     else:
         return Response(status=status.HTTP_409_CONFLICT, data='Import job already exists')
 
@@ -3180,12 +3199,12 @@ class RequestViewSet(viewsets.GenericViewSet):
     SchemaField = namedtuple('SchemaField', ['type', 'choices'], defaults=(None,))
 
     simple_filters_schema = {
-        'status': SchemaField('string', StatusChoices.choices),
+        'status': SchemaField('string', RQJobStatuses.choices),
         'project_id': SchemaField('integer'),
         'task_id': SchemaField('integer'),
         'job_id': SchemaField('integer'),
-        'action': SchemaField('string', ActionChoices.choices),
-        'subresource': SchemaField('string', SubresourceChoices.choices),
+        'action': SchemaField('string', RQJobActions.choices),
+        'subresource': SchemaField('string', RQJobSubresources.choices),
         'format': SchemaField('string'),
         'org': SchemaField('string'),
     }
@@ -3194,10 +3213,10 @@ class RequestViewSet(viewsets.GenericViewSet):
         return None
 
     @property
-    def queues(self):
+    def queues(self) -> Iterable[DjangoRQ]:
         return (django_rq.get_queue(queue_name) for queue_name in self.SUPPORTED_QUEUES)
 
-    def _get_rq_jobs_from_queue(self, queue: RQQueue, user_id: int) -> List[RQJob]:
+    def _get_rq_jobs_from_queue(self, queue: DjangoRQ, user_id: int) -> List[RQJob]:
         job_ids = set(queue.get_job_ids() +
             queue.started_job_registry.get_job_ids() +
             queue.finished_job_registry.get_job_ids() +
@@ -3261,9 +3280,9 @@ class RequestViewSet(viewsets.GenericViewSet):
 
     def _handle_redis_exceptions(func):
         @functools.wraps(func)
-        def wrapper(*args, **kwarggs):
+        def wrapper(*args, **kwargs):
             try:
-                return func(*args, **kwarggs)
+                return func(*args, **kwargs)
             except RedisConnectionError as ex:
                 msg = 'Redis service is not available'
                 slogger.glob.exception(f'{msg}: {str(ex)}')
@@ -3272,7 +3291,7 @@ class RequestViewSet(viewsets.GenericViewSet):
 
     @method_decorator(never_cache)
     @_handle_redis_exceptions
-    def retrieve(self, request, pk: str):
+    def retrieve(self, request: HttpRequest, pk: str):
         job = self._get_rq_job_by_id(pk)
 
         if not job:
@@ -3285,7 +3304,7 @@ class RequestViewSet(viewsets.GenericViewSet):
 
     @method_decorator(never_cache)
     @_handle_redis_exceptions
-    def list(self, request):
+    def list(self, request: HttpRequest):
         user_id = request.user.id
         user_jobs = self._get_rq_jobs(user_id)
 
@@ -3309,7 +3328,7 @@ class RequestViewSet(viewsets.GenericViewSet):
     @method_decorator(never_cache)
     @action(detail=True, methods=['POST'], url_path='cancel')
     @_handle_redis_exceptions
-    def cancel(self, request, pk: str):
+    def cancel(self, request: HttpRequest, pk: str):
         rq_job = self._get_rq_job_by_id(pk)
 
         if not rq_job:
@@ -3320,7 +3339,8 @@ class RequestViewSet(viewsets.GenericViewSet):
         if rq_job.get_status(refresh=False) not in {RQJobStatus.QUEUED, RQJobStatus.DEFERRED}:
             return HttpResponseBadRequest("Only requests that have not yet been started can be cancelled")
 
-        # tODO: race condition is possible here
+        # FUTURE-TODO: race condition is possible here
         rq_job.cancel(enqueue_dependents=settings.ONE_RUNNING_JOB_IN_QUEUE_PER_USER)
+        rq_job.delete()
 
         return Response(status=status.HTTP_200_OK)

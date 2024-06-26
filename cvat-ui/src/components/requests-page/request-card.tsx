@@ -169,10 +169,11 @@ function RequestCard(props: Props): JSX.Element {
         });
     }
 
-    if (request.status === RQStatus.STARTED) {
+    // only queued requests can be canceled now
+    if (request.status === RQStatus.QUEUED) {
         menuItems.push({
             key: 'cancel',
-            label: 'Download',
+            label: 'Cancel',
             onClick: () => {
                 dispatch(cancelRequestAsync(request, () => {
                     setIsActive(false);

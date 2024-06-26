@@ -19,6 +19,7 @@ import re
 import logging
 import platform
 
+from attr.converters import to_bool
 from datumaro.util.os_util import walk
 from rq.job import Job, Dependency
 from django_rq.queues import DjangoRQ
@@ -408,3 +409,6 @@ def directory_tree(path, max_depth=None) -> str:
         for file in files:
             tree += f"{indent}-{file}\n"
     return tree
+
+def is_dataset_export(request: HttpRequest) -> bool:
+    return to_bool(request.query_params.get('save_images', False))

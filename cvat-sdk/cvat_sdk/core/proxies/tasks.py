@@ -430,7 +430,7 @@ class TasksRepo(
         )
 
         rq_id = json.loads(response.data).get("rq_id")
-        assert rq_id, "Request ID was not found in server response"
+        assert rq_id, "The rq_id was not found in server response"
 
         request, response = self._client.wait_for_completion(
             rq_id, status_check_period=status_check_period
