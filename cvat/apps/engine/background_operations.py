@@ -98,11 +98,11 @@ class _ResourceExportManager(ABC):
             return self._handle_rq_job_v1(*args, **kwargs)
         elif self.version == 2:
             return self._handle_rq_job_v2(*args, **kwargs)
-        else:
-            raise ValueError("Unsupported version")
+
+        raise ValueError("Unsupported version")
 
     @abstractmethod
-    def get_v1_endpoint_view_name(self):
+    def get_v1_endpoint_view_name(self) -> str:
         pass
 
     def make_result_url(self) -> str:
@@ -437,7 +437,7 @@ class DatasetExportManager(_ResourceExportManager):
                 failure_ttl=cache_ttl.total_seconds(),
             )
 
-    def get_v1_endpoint_view_name(self):
+    def get_v1_endpoint_view_name(self) -> str:
         return (
             (
                 f"{self.obj_type}-dataset"
@@ -662,5 +662,5 @@ class BackupExportManager(_ResourceExportManager):
                 failure_ttl=cache_ttl.total_seconds(),
             )
 
-    def get_v1_endpoint_view_name(self):
+    def get_v1_endpoint_view_name(self) -> str:
         return f"{self.obj_type}-export-backup"

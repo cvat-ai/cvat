@@ -35,7 +35,7 @@ from cvat.apps.engine.location import StorageType, get_location_configuration
 from cvat.apps.engine.log import ServerLogManager
 from cvat.apps.engine.models import Location
 from cvat.apps.engine.rq_job_handler import RQIdManager
-from cvat.apps.engine.serializers import DataSerializer
+from cvat.apps.engine.serializers import DataSerializer, RqIdSerializer
 from cvat.apps.engine.utils import is_dataset_export
 
 slogger = ServerLogManager(__name__)
@@ -414,7 +414,6 @@ class PartialUpdateModelMixin:
             return mixins.UpdateModelMixin.partial_update(self, request=request, *args, **kwargs)
 
 
-
 class DatasetMixin:
     def export_dataset_v1(
         self,
@@ -457,7 +456,7 @@ class DatasetMixin:
                 location=OpenApiParameter.QUERY, type=OpenApiTypes.BOOL, required=False, default=False),
         ],
         responses={
-            '202': OpenApiResponse(description='Exporting has been started'),
+            '202': OpenApiResponse(response=RqIdSerializer, description='Exporting has been started'),
             '405': OpenApiResponse(description='Format is not available'),
             '409': OpenApiResponse(description='Exporting is already in progress'),
         },
@@ -517,6 +516,7 @@ class BackupMixin:
 
         return response
 
+    # FUTURE-TODO: migrate to new API
     def import_backup_v1(self, request: HttpRequest, import_func: Callable) -> Response:
         location = request.query_params.get("location", Location.LOCAL)
         if location == Location.CLOUD_STORAGE:
@@ -539,7 +539,7 @@ class BackupMixin:
                 location=OpenApiParameter.QUERY, type=OpenApiTypes.INT, required=False),
         ],
         responses={
-            '202': OpenApiResponse(description='Creating a backup file has been started'),
+            '202': OpenApiResponse(response=RqIdSerializer, description='Creating a backup file has been started'),
             '400': OpenApiResponse(description='Wrong query parameters were passed'),
             '409': OpenApiResponse(description='The backup process has already been initiated and is not yet finished'),
         },
@@ -547,14 +547,11 @@ class BackupMixin:
     )
     @action(detail=True, methods=['POST'], serializer_class=None, url_path='backup/export')
     def export_backup_v2(self, request: HttpRequest, pk: int):
-
         db_object = self.get_object() # force to call check_object_permissions
 
         export_backup_manager = BackupExportManager(db_object, request, version=2)
         return export_backup_manager.export()
 
-    def import_backup_v2(self):
-        raise NotImplementedError("Should be implemented in the second iteration")
 
 class CsrfWorkaroundMixin(APIView):
     """

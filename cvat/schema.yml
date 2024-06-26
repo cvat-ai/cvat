@@ -2557,6 +2557,10 @@ paths:
       - basicAuth: []
       responses:
         '202':
+          content:
+            application/vnd.cvat+json:
+              schema:
+                $ref: '#/components/schemas/RqId'
           description: Exporting has been started
         '405':
           description: Format is not available
@@ -3728,6 +3732,10 @@ paths:
       - basicAuth: []
       responses:
         '202':
+          content:
+            application/vnd.cvat+json:
+              schema:
+                $ref: '#/components/schemas/RqId'
           description: Creating a backup file has been started
         '400':
           description: Wrong query parameters were passed
@@ -3965,6 +3973,10 @@ paths:
       - basicAuth: []
       responses:
         '202':
+          content:
+            application/vnd.cvat+json:
+              schema:
+                $ref: '#/components/schemas/RqId'
           description: Exporting has been started
         '405':
           description: Format is not available
@@ -5533,6 +5545,10 @@ paths:
       - basicAuth: []
       responses:
         '202':
+          content:
+            application/vnd.cvat+json:
+              schema:
+                $ref: '#/components/schemas/RqId'
           description: Creating a backup file has been started
         '400':
           description: Wrong query parameters were passed
@@ -5884,6 +5900,10 @@ paths:
       - basicAuth: []
       responses:
         '202':
+          content:
+            application/vnd.cvat+json:
+              schema:
+                $ref: '#/components/schemas/RqId'
           description: Exporting has been started
         '405':
           description: Format is not available
