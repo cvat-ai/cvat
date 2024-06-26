@@ -2187,11 +2187,12 @@ export class MaskShape extends Shape {
 
     constructor(data: SerializedShape, clientID: number, color: string, injection: AnnotationInjection) {
         super(data, clientID, color, injection);
-        [this.left, this.top, this.right, this.bottom] = this.points.splice(-4, 4);
+        const [left, top, right, bottom] = this.points.slice(-4);
         const { width, height } = this.frameMeta[this.frame];
-        if (this.left > width || this.top > height || this.right > width || this.bottom > height) {
-            this.points = cropMask(data.points, width, height);
+        if (left > width || top > height || right > width || bottom > height) {
+            this.points = cropMask(this.points, width, height);
         }
+        [this.left, this.top, this.right, this.bottom] = this.points.splice(-4, 4);
         this.getMasksOnFrame = injection.getMasksOnFrame;
         this.pinned = true;
         this.shapeType = ShapeType.MASK;
