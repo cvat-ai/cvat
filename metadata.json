@@ -1,0 +1,35 @@
+{
+    "title": "CVAT Image Annotation",
+    "summary": "Image annotation tools that uses the Computer Vision Annotation Tool (CVAT)",
+    "description": [
+        "Annotate and label your images with the [Computer Vision Annotation Tool (CVAT)](https://www.cvat.ai/).\n",
+        "<img class='fit', src='https://github.com/ai4os/ai4-cvat/blob/v2.7.3-AI4OS/site/content/en/images/cvat-ai-screencast.gif'/>"
+        ],
+    "keywords": [
+        "docker"
+    ],
+    "license": "MIT",
+    "date_creation": "2024-07-01",
+    "sources": {
+		"dockerfile_repo": "https://github.com/ai4os/ai4-cvat",
+		"docker_registry_repo": "registry.services.ai4os.eu/ai4os/ai4-cvat-ui",
+		"code": "https://github.com/ai4os/ai4-cvat"
+	},
+    "continuous_integration": {
+        "build_status_badge": "https://jenkins.indigo-datacloud.eu/buildStatus/icon?job=Pipeline-as-code/DEEP-OC-org/00000000000000000000000000000000/main",
+        "build_status_url": "https://jenkins.indigo-datacloud.eu/job/Pipeline-as-code/job/DEEP-OC-org/job/00000000000000000000000000000000/job/main"
+    },
+    "tosca": [
+        {
+            "title": "Mesos (CPU)",
+            "url": "https://raw.githubusercontent.com/indigo-dc/tosca-templates/master/deep-oc/deep-oc-marathon-webdav.yml",
+            "inputs": [
+                "rclone_conf",
+                "rclone_url",
+                "rclone_vendor",
+                "rclone_user",
+                "rclone_pass"
+            ]
+        }
+    ]
+}
