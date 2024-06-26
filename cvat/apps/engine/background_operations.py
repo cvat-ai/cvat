@@ -4,6 +4,8 @@
 
 import os
 import os.path as osp
+import cvat.apps.dataset_manager as dm
+
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from datetime import datetime
@@ -21,13 +23,6 @@ from rest_framework.reverse import reverse
 from rq.job import Job as RQJob
 from rq.job import JobStatus as RQJobStatus
 
-from cvat.apps.dataset_manager.util import get_export_cache_lock
-from cvat.apps.dataset_manager.views import (
-    PROJECT_CACHE_TTL,
-    TASK_CACHE_TTL,
-    get_export_cache_ttl,
-    get_export_formats,
-)
 from cvat.apps.engine import models
 from cvat.apps.engine.backup import ProjectExporter, TaskExporter, create_backup
 from cvat.apps.engine.cloud_provider import export_resource_to_cloud_storage
@@ -241,7 +236,7 @@ class DatasetExportManager(_ResourceExportManager):
                     status=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 )
 
-            with get_export_cache_lock(file_path, ttl=REQUEST_TIMEOUT):
+            with dm.util.get_export_cache_lock(file_path, ttl=REQUEST_TIMEOUT):
                 if not osp.exists(file_path):
                     return Response(
                         "The exported file has expired, please retry exporting",
@@ -283,7 +278,7 @@ class DatasetExportManager(_ResourceExportManager):
                         status=status.HTTP_500_INTERNAL_SERVER_ERROR,
                     )
 
-                with get_export_cache_lock(file_path, ttl=REQUEST_TIMEOUT):
+                with dm.util.get_export_cache_lock(file_path, ttl=REQUEST_TIMEOUT):
                     if osp.exists(file_path):
                         # Update last update time to prolong the export lifetime
                         # as the last access time is not available on every filesystem
@@ -330,7 +325,7 @@ class DatasetExportManager(_ResourceExportManager):
             return Response(status=status.HTTP_202_ACCEPTED)
 
     def export(self):
-        format_desc = {f.DISPLAY_NAME: f for f in get_export_formats()}.get(
+        format_desc = {f.DISPLAY_NAME: f for f in dm.views.get_export_formats()}.get(
             self.export_args.format
         )
         if format_desc is None:
@@ -383,7 +378,7 @@ class DatasetExportManager(_ResourceExportManager):
         except Exception:
             server_address = None
 
-        cache_ttl = get_export_cache_ttl(self.db_instance)
+        cache_ttl = dm.views.get_export_cache_ttl(self.db_instance)
 
         user_id = self.request.user.id
 
@@ -583,7 +578,7 @@ class BackupExportManager(_ResourceExportManager):
         rq_job = queue.fetch_job(rq_id)
 
         if rq_job:
-            response = self.handle_rq_job(rq_job)
+            response = self.handle_rq_job(rq_job, queue)
             if response:
                 return response
 
@@ -601,11 +596,11 @@ class BackupExportManager(_ResourceExportManager):
         if isinstance(self.db_instance, Task):
             logger = slogger.task[self.db_instance.pk]
             Exporter = TaskExporter
-            cache_ttl = TASK_CACHE_TTL
+            cache_ttl = dm.views.TASK_CACHE_TTL
         else:
             logger = slogger.project[self.db_instance.pk]
             Exporter = ProjectExporter
-            cache_ttl = PROJECT_CACHE_TTL
+            cache_ttl = dm.views.PROJECT_CACHE_TTL
 
         func = self.callback
         func_args = (

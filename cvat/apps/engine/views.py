@@ -3019,7 +3019,7 @@ def _import_annotations(request, rq_id_template, rq_func, db_obj, format_name,
                 failure_ttl=settings.IMPORT_CACHE_FAILED_TTL.total_seconds()
             )
 
-        handle_dataset_import(db_obj, format_name=format_name, cloud_storage_id=location_conf.get('storage_id'))
+        handle_dataset_import(db_obj, format_name=format_name, cloud_storage_id=db_storage.id if db_storage else None)
 
         serializer = RqIdSerializer(data={'rq_id': rq_id})
         serializer.is_valid(raise_exception=True)
