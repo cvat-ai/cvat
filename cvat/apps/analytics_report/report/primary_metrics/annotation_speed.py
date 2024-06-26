@@ -111,18 +111,20 @@ class JobAnnotationSpeed(PrimaryMetricBase):
 
             count = 0
             for track in db_tracks:
+                # Skip processing if no shapes are associated with the track
                 if not track["shapes"]:
                     continue
 
+                # Skip skeleton shapes as their points are already counted
                 if track["shapes"] and track["shapes"][0]["type"] == ShapeType.SKELETON:
-                    # skeleton's points are already counted as objects
                     continue
 
+                # If only one shape exists, calculate the frames from the first frame to the stop frame of the segment
                 if len(track["shapes"]) == 1:
                     count += self._db_obj.segment.stop_frame - track["shapes"][0]["frame"] + 1
                     continue
 
-                # add initial frame here since only diff is added in the following loop
+                # Add the initial frame count and then iterate through shapes to count non-outside frames
                 count += 1
                 for prev_shape, cur_shape in zip(track["shapes"], track["shapes"][1:]):
                     if not prev_shape["outside"]:
