@@ -128,6 +128,9 @@ class JobAnnotationSpeed(PrimaryMetricBase):
                     if not prev_shape["outside"]:
                         count += cur_shape["frame"] - prev_shape["frame"]
 
+                if not cur_shape["outside"] and cur_shape["frame"] < self._db_obj.segment.stop_frame:
+                    count += self._db_obj.segment.stop_frame - cur_shape["frame"]
+
             return count
 
         # Calculate object count
