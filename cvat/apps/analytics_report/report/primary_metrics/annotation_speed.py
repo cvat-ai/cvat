@@ -111,16 +111,22 @@ class JobAnnotationSpeed(PrimaryMetricBase):
 
             count = 0
             for track in db_tracks:
+                if not track["shapes"]:
+                    continue
+
                 if track["shapes"] and track["shapes"][0]["type"] == ShapeType.SKELETON:
                     # skeleton's points are already counted as objects
                     continue
 
                 if len(track["shapes"]) == 1:
                     count += self._db_obj.segment.stop_frame - track["shapes"][0]["frame"] + 1
+                    continue
 
+                # add initial frame here since only diff is added in the following loop
+                count += 1
                 for prev_shape, cur_shape in zip(track["shapes"], track["shapes"][1:]):
                     if not prev_shape["outside"]:
-                        count += cur_shape["frame"] - prev_shape["frame"] + 1
+                        count += cur_shape["frame"] - prev_shape["frame"]
 
             return count
 
