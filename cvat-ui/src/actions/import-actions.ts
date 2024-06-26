@@ -109,7 +109,7 @@ export const importDatasetAsync = (
                 const rqID = await (instance as Project).annotations
                     .importDataset(format, useDefaultSettings, sourceStorage, file, {
                         convMaskToPoly,
-                        uploadStatusCallback: (message: string, progress: number) => (
+                        updateStatusCallback: (message: string, progress: number) => (
                             dispatch(importActions.importDatasetUpdateStatus(
                                 instance, Math.floor(progress * 100), message,
                             ))
@@ -137,7 +137,7 @@ export const importDatasetAsync = (
                     await listen(rqID, dispatch);
 
                     await (instance as Job).logger.log(EventScope.uploadAnnotations);
-                    await (instance as Job).annotations.clear(true);
+                    await (instance as Job).annotations.clear({ reload: true });
                     await (instance as Job).actions.clear();
 
                     // first set empty objects list

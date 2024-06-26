@@ -42,7 +42,7 @@ function getSession(session): WeakMapItem {
     }
 
     throw new InstanceNotInitializedError(
-        'Session has not been initialized yet. Call annotations.get() or annotations.clear(true) before',
+        'Session has not been initialized yet. Call annotations.get() or annotations.clear({ reload: true }) before',
     );
 }
 
@@ -113,17 +113,24 @@ export async function getAnnotations(session, frame, allTracks, filters): Promis
     }
 }
 
-export async function clearAnnotations(session, reload, startframe, endframe, delTrackKeyframesOnly): Promise<void> {
-    checkObjectType('reload', reload, 'boolean', null);
+export async function clearAnnotations(
+    session: Task | Job,
+    options: Parameters<typeof Job.prototype.annotations.clear>[0],
+): Promise<void> {
     const sessionType = session instanceof Task ? 'task' : 'job';
     const cache = getCache(sessionType);
 
-    if (reload) {
-        cache.delete(session);
-        return getAnnotationsFromServer(session);
+    if (Object.hasOwn(options ?? {}, 'reload')) {
+        const { reload } = options;
+        checkObjectType('reload', reload, 'boolean', null);
+
+        if (reload) {
+            cache.delete(session);
+            return getAnnotationsFromServer(session);
+        }
     }
 
-    return getCollection(session).clear(startframe, endframe, delTrackKeyframesOnly);
+    return getCollection(session).clear(options);
 }
 
 export async function exportDataset(
@@ -161,20 +168,20 @@ export function importDataset(
     file: File | string,
     options: {
         convMaskToPoly?: boolean,
-        uploadStatusCallback?: (s: string, n: number) => void,
+        updateStatusCallback?: (message: string, progress: number) => void,
     } = {},
 ): Promise<string> {
-    const uploadStatusCallback = options.uploadStatusCallback || (() => {});
+    const updateStatusCallback = options.updateStatusCallback || (() => {});
     const convMaskToPoly = 'convMaskToPoly' in options ? options.convMaskToPoly : true;
     const adjustedOptions = {
-        uploadStatusCallback,
+        updateStatusCallback,
         convMaskToPoly,
     };
 
     if (!(instance instanceof Project || instance instanceof Task || instance instanceof Job)) {
         throw new ArgumentError('Instance must be a Project || Task || Job instance');
     }
-    if (!(typeof uploadStatusCallback === 'function')) {
+    if (!(typeof updateStatusCallback === 'function')) {
         throw new ArgumentError('Callback must be a function');
     }
     if (!(typeof convMaskToPoly === 'boolean')) {

@@ -3,13 +3,14 @@
 //
 // SPDX-License-Identifier: MIT
 
-import { AnyAction, Dispatch, ActionCreator } from 'redux';
-import { ThunkAction } from 'redux-thunk';
+import { AnyAction } from 'redux';
 import { TasksQuery, StorageLocation } from 'reducers';
 import {
     getCore, RQStatus, Storage, Task,
 } from 'cvat-core-wrapper';
 import { filterNull } from 'utils/filter-null';
+import { ThunkDispatch, ThunkAction } from 'utils/redux';
+
 import { getInferenceStatusAsync } from './models-actions';
 import { updateRequestProgress } from './requests-actions';
 
@@ -66,8 +67,8 @@ function getTasksFailed(error: any): AnyAction {
 export function getTasksAsync(
     query: Partial<TasksQuery>,
     updateQuery = true,
-): ThunkAction<Promise<void>, {}, {}, AnyAction> {
-    return async (dispatch: ActionCreator<Dispatch>): Promise<void> => {
+): ThunkAction {
+    return async (dispatch: ThunkDispatch): Promise<void> => {
         dispatch(getTasks(query, updateQuery));
 
         const filteredQuery = filterNull(query);
@@ -121,8 +122,8 @@ function deleteTaskFailed(taskID: number, error: any): AnyAction {
     return action;
 }
 
-export function deleteTaskAsync(taskInstance: any): ThunkAction<Promise<void>, {}, {}, AnyAction> {
-    return async (dispatch: ActionCreator<Dispatch>): Promise<void> => {
+export function deleteTaskAsync(taskInstance: any): ThunkAction {
+    return async (dispatch: ThunkDispatch): Promise<void> => {
         try {
             dispatch(deleteTask(taskInstance.id));
             await taskInstance.delete();
@@ -181,8 +182,8 @@ function getTaskPreviewFailed(taskID: number, error: any): AnyAction {
     return action;
 }
 
-export function getTaskPreviewAsync(taskInstance: any): ThunkAction<Promise<void>, {}, {}, AnyAction> {
-    return async (dispatch: ActionCreator<Dispatch>): Promise<void> => {
+export function getTaskPreviewAsync(taskInstance: any): ThunkAction {
+    return async (dispatch: ThunkDispatch): Promise<void> => {
         try {
             dispatch(getTaskPreview(taskInstance.id));
             const result = await taskInstance.frames.preview();
@@ -203,7 +204,7 @@ export function updateTaskInState(task: Task): AnyAction {
 }
 
 export function createTaskAsync(data: any, onProgress?: (status: string) => void):
-ThunkAction<Promise<void>, {}, {}, AnyAction> {
+ThunkAction {
     return async (dispatch): Promise<any> => {
         const description: any = {
             name: data.basic.name,
