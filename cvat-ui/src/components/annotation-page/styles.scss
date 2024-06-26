@@ -38,6 +38,10 @@
         justify-content: center;
         margin: 0 3px;
 
+        &.cvat-button-active {
+            color: $border-color-hover;
+        }
+
         &:hover {
             color: $text-color;
         }
@@ -94,10 +98,6 @@
 
     opacity: 0.5;
     pointer-events: none;
-}
-
-.cvat-button-active.ant-btn {
-    color: $border-color-hover;
 }
 
 .cvat-annotation-header-player-group > div {

@@ -1,4 +1,5 @@
 # Copyright (C) 2021-2022 Intel Corporation
+# Copyright (C) 2024 CVAT.ai Corporation
 #
 # SPDX-License-Identifier: MIT
 
@@ -8,10 +9,10 @@ import numpy as np
 from itertools import chain
 from pycocotools import mask as mask_utils
 
-from datumaro.components.extractor import ItemTransform
-import datumaro.components.annotation as dm
+import datumaro as dm
 
-class RotatedBoxesToPolygons(ItemTransform):
+
+class RotatedBoxesToPolygons(dm.ItemTransform):
     def _rotate_point(self, p, angle, cx, cy):
         [x, y] = p
         rx = cx + math.cos(angle) * (x - cx) - math.sin(angle) * (y - cy)
@@ -36,27 +37,68 @@ class RotatedBoxesToPolygons(ItemTransform):
 
         return item.wrap(annotations=annotations)
 
-class CVATRleToCOCORle(ItemTransform):
+class MaskConverter:
     @staticmethod
-    def convert_mask(shape, img_h, img_w):
-        rle = shape.points[:-4]
-        left, top, right = list(math.trunc(v) for v in shape.points[-4:-1])
-        mat = np.zeros((img_h, img_w), dtype=np.uint8)
-        width = right - left + 1
-        value = 0
-        offset = 0
-        for rleCount in rle:
-            rleCount = math.trunc(rleCount)
-            while rleCount > 0:
-                x, y = offset % width, offset // width
-                mat[y + top][x + left] = value
-                rleCount -= 1
-                offset += 1
-            value = abs(value - 1)
+    def cvat_rle_to_dm_rle(shape, img_h: int, img_w: int) -> dm.RleMask:
+        "Converts a CVAT RLE to a Datumaro / COCO mask"
 
-        rle = mask_utils.encode(np.asfortranarray(mat))
-        return dm.RleMask(rle=rle, label=shape.label, z_order=shape.z_order,
+        # use COCO representation of CVAT RLE to avoid python loops
+        left, top, right, bottom = [math.trunc(v) for v in shape.points[-4:]]
+        h = bottom - top + 1
+        w = right - left + 1
+        cvat_as_coco_rle_uncompressed = {
+            "counts": shape.points[:-4],
+            "size": [w, h],
+        }
+        cvat_as_coco_rle_compressed = mask_utils.frPyObjects(
+            [cvat_as_coco_rle_uncompressed], h=h, w=w
+        )[0]
+
+        # expand the mask to the full image size
+        tight_mask = mask_utils.decode(cvat_as_coco_rle_compressed).transpose()
+        full_mask = np.zeros((img_h, img_w), dtype=np.uint8)
+        full_mask[top : bottom + 1, left : right + 1] = tight_mask
+
+        # obtain RLE
+        coco_rle = mask_utils.encode(np.asfortranarray(full_mask))
+        return dm.RleMask(rle=coco_rle, label=shape.label, z_order=shape.z_order,
             attributes=shape.attributes, group=shape.group)
+
+    @classmethod
+    def dm_mask_to_cvat_rle(cls, dm_mask: dm.Mask) -> list[int]:
+        "Converts a Datumaro mask to a CVAT RLE"
+
+        # get tight mask
+        x, y, w, h = dm_mask.get_bbox()
+        top = int(y)
+        left = int(x)
+        bottom = int(max(y, y + h - 1))
+        right = int(max(x, x + w - 1))
+        tight_binary_mask = dm_mask.image[top : bottom + 1, left : right + 1]
+
+        # obtain RLE
+        cvat_rle = cls.rle(tight_binary_mask.reshape(-1))
+        cvat_rle += [left, top, right, bottom]
+        return cvat_rle
+
+    @classmethod
+    def rle(cls, arr: np.ndarray) -> list[int]:
+        "Computes RLE for a flat array"
+        # adapted from https://stackoverflow.com/a/32681075
+
+        n = len(arr)
+        if n == 0:
+            return []
+
+        pairwise_unequal = arr[1:] != arr[:-1]
+        rle = np.diff(np.nonzero(pairwise_unequal)[0], prepend=-1, append=n - 1)
+
+        # CVAT RLE starts from 0
+        cvat_rle = rle.tolist()
+        if arr[0] != 0:
+            cvat_rle.insert(0, 0)
+
+        return cvat_rle
 
 class EllipsesToMasks:
     @staticmethod
