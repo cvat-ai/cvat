@@ -131,7 +131,10 @@ class JobAnnotationSpeed(PrimaryMetricBase):
                         count += cur_shape["frame"] - prev_shape["frame"]
 
                 # Add frames until the end of segment if the latest shape was not outside
-                if not cur_shape["outside"] and cur_shape["frame"] < self._db_obj.segment.stop_frame:
+                if (
+                    not cur_shape["outside"]
+                    and cur_shape["frame"] < self._db_obj.segment.stop_frame
+                ):
                     count += self._db_obj.segment.stop_frame - cur_shape["frame"]
 
             return count
