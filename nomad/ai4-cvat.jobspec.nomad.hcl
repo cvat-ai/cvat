@@ -1,4 +1,4 @@
-job "{###CVAT_NOMAD_JOB_NAME###}" {
+job "{###JOB_UUID###}" {
   datacenters = ["ifca-ai4eosc"]
   namespace = "ai4eosc"
   type = "service"
@@ -8,8 +8,12 @@ job "{###CVAT_NOMAD_JOB_NAME###}" {
     force_pull_img_cvat_ui             = false
     cvat_version                       = "v2.7.3"
     cvat_version_custom                = "-AI4OS"
-    cvat_instance                      = "{###CVAT_INSTANCE_NAME###}"
+    #
     cvat_hostname                      = "ifca-deployments.cloud.ai4eosc.eu"
+    #
+    # CVAT instance name so that '${META_job_uuid}.${META_cvat_hostname}' is unique.
+    job_uuid                           = "{###JOB_UUID###}"
+    #
     grafana_clickhouse_plugin_version  = "3.3.0"
     smokescreen_opts                   = ""
     clickhouse_image                   = "clickhouse/clickhouse-server:22.3-alpine"
@@ -31,6 +35,9 @@ job "{###CVAT_NOMAD_JOB_NAME###}" {
     RCLONE_CONFIG_RSHARE_VENDOR        = "nextcloud"
     RCLONE_CONFIG_RSHARE_USER          = "{###CVAT_NEXTCLOUD_USER###}"
     RCLONE_CONFIG_RSHARE_PASS          = "{###CVAT_NEXTCLOUD_PASSWORD###}"
+    #
+    # remote path common for CVAT instances, without trailing /
+    RCLONE_REMOTE_PATH                 = "/.cvat-instances"
   }
 
   group "cvat" {
@@ -51,8 +58,8 @@ job "{###CVAT_NOMAD_JOB_NAME###}" {
     
     restart {
       attempts = 3
-      interval = "60m"
-      delay = "15m"
+      interval = "5m"
+      delay = "30s"
       mode = "delay"
     }
     
@@ -119,9 +126,9 @@ job "{###CVAT_NOMAD_JOB_NAME###}" {
       port = "ui"
       tags = [
         "traefik.enable=true",
-        "traefik.http.routers.${NOMAD_META_cvat_instance}-ui.tls=true",
-        "traefik.http.routers.${NOMAD_META_cvat_instance}-ui.entrypoints=websecure",
-        "traefik.http.routers.${NOMAD_META_cvat_instance}-ui.rule=Host(`${NOMAD_META_cvat_instance}.${NOMAD_META_cvat_hostname}`)"
+        "traefik.http.routers.${NOMAD_META_job_uuid}-ui.tls=true",
+        "traefik.http.routers.${NOMAD_META_job_uuid}-ui.entrypoints=websecure",
+        "traefik.http.routers.${NOMAD_META_job_uuid}-ui.rule=Host(`${NOMAD_META_job_uuid}.${NOMAD_META_cvat_hostname}`)"
       ]
     }
     
@@ -130,9 +137,9 @@ job "{###CVAT_NOMAD_JOB_NAME###}" {
       port = "server"
       tags = [
         "traefik.enable=true",
-        "traefik.http.routers.${NOMAD_META_cvat_instance}-server.tls=true",
-        "traefik.http.routers.${NOMAD_META_cvat_instance}-server.entrypoints=websecure",
-        "traefik.http.routers.${NOMAD_META_cvat_instance}-server.rule=Host(`${NOMAD_META_cvat_instance}.${NOMAD_META_cvat_hostname}`) && PathPrefix(`/api/`, `/static/`, `/admin`, `/documentation/`, `/django-rq`)"
+        "traefik.http.routers.${NOMAD_META_job_uuid}-server.tls=true",
+        "traefik.http.routers.${NOMAD_META_job_uuid}-server.entrypoints=websecure",
+        "traefik.http.routers.${NOMAD_META_job_uuid}-server.rule=Host(`${NOMAD_META_job_uuid}.${NOMAD_META_cvat_hostname}`) && PathPrefix(`/api/`, `/static/`, `/admin`, `/documentation/`, `/django-rq`)"
       ]
     }
     
@@ -141,15 +148,15 @@ job "{###CVAT_NOMAD_JOB_NAME###}" {
       port = "grafana"
       tags = [
         "traefik.enable=true",
-        "traefik.http.routers.${NOMAD_META_cvat_instance}-grafana.tls=true",
-        "traefik.http.routers.${NOMAD_META_cvat_instance}-grafana.entrypoints=websecure",
-        "traefik.http.routers.${NOMAD_META_cvat_instance}-grafana.rule=Host(`${NOMAD_META_cvat_instance}.${NOMAD_META_cvat_hostname}`) && PathPrefix(`/analytics`)",
-        "traefik.http.middlewares.${NOMAD_META_cvat_instance}-grafana-analytics-auth.forwardauth.address=http://${NOMAD_HOST_ADDR_server}/analytics",
-        "traefik.http.middlewares.${NOMAD_META_cvat_instance}-grafana-analytics-auth.forwardauth.authRequestHeaders=Cookie,Authorization",
-        "traefik.http.middlewares.${NOMAD_META_cvat_instance}-grafana-analytics-strip-prefix.stripprefix.prefixes=/analytics",
-        "traefik.http.routers.${NOMAD_META_cvat_instance}-grafana.middlewares=${NOMAD_META_cvat_instance}-grafana-analytics-auth@consulcatalog,${NOMAD_META_cvat_instance}-grafana-analytics-strip-prefix@consulcatalog",
-        "traefik.services.${NOMAD_META_cvat_instance}-grafana.loadbalancer.servers.url=${NOMAD_HOST_ADDR_grafana}",
-        "traefik.services.${NOMAD_META_cvat_instance}-grafana.loadbalancer.passHostHeader=false"
+        "traefik.http.routers.${NOMAD_META_job_uuid}-grafana.tls=true",
+        "traefik.http.routers.${NOMAD_META_job_uuid}-grafana.entrypoints=websecure",
+        "traefik.http.routers.${NOMAD_META_job_uuid}-grafana.rule=Host(`${NOMAD_META_job_uuid}.${NOMAD_META_cvat_hostname}`) && PathPrefix(`/analytics`)",
+        "traefik.http.middlewares.${NOMAD_META_job_uuid}-grafana-analytics-auth.forwardauth.address=http://${NOMAD_HOST_ADDR_server}/analytics",
+        "traefik.http.middlewares.${NOMAD_META_job_uuid}-grafana-analytics-auth.forwardauth.authRequestHeaders=Cookie,Authorization",
+        "traefik.http.middlewares.${NOMAD_META_job_uuid}-grafana-analytics-strip-prefix.stripprefix.prefixes=/analytics",
+        "traefik.http.routers.${NOMAD_META_job_uuid}-grafana.middlewares=${NOMAD_META_job_uuid}-grafana-analytics-auth@consulcatalog,${NOMAD_META_job_uuid}-grafana-analytics-strip-prefix@consulcatalog",
+        "traefik.services.${NOMAD_META_job_uuid}-grafana.loadbalancer.servers.url=${NOMAD_HOST_ADDR_grafana}",
+        "traefik.services.${NOMAD_META_job_uuid}-grafana.loadbalancer.passHostHeader=false"
       ]
     }
     
@@ -166,16 +173,16 @@ job "{###CVAT_NOMAD_JOB_NAME###}" {
         RCLONE_CONFIG_RSHARE_VENDOR = "${NOMAD_META_RCLONE_CONFIG_RSHARE_VENDOR}"
         RCLONE_CONFIG_RSHARE_USER   = "${NOMAD_META_RCLONE_CONFIG_RSHARE_USER}"
         RCLONE_CONFIG_RSHARE_PASS   = "${NOMAD_META_RCLONE_CONFIG_RSHARE_PASS}"
-        REMOTE_PATH                 = "rshare:/cvat-instances/${NOMAD_META_cvat_instance}.${NOMAD_META_cvat_hostname}"
+        REMOTE_PATH                 = "rshare:${NOMAD_META_RCLONE_REMOTE_PATH}/${NOMAD_META_job_uuid}"
         LOCAL_PATH                  = "/storage"
       }
       config {
         image   = "ignacioheredia/ai4-docker-storage"
         privileged = true
         volumes = [
-          "/nomad-storage/${NOMAD_META_cvat_instance}.${NOMAD_META_cvat_hostname}/data:/storage/data:shared",
-          "/nomad-storage/${NOMAD_META_cvat_instance}.${NOMAD_META_cvat_hostname}/db:/storage/db:shared",
-          "/nomad-storage/${NOMAD_META_cvat_instance}.${NOMAD_META_cvat_hostname}/share:/storage/share:shared",
+          "/nomad-storage/${NOMAD_META_job_uuid}/data:/storage/data:shared",
+          "/nomad-storage/${NOMAD_META_job_uuid}/db:/storage/db:shared",
+          "/nomad-storage/${NOMAD_META_job_uuid}/share:/storage/share:shared",
         ]
         mount {
           type = "bind"
@@ -206,9 +213,10 @@ job "{###CVAT_NOMAD_JOB_NAME###}" {
         export RCLONE_CONFIG_RSHARE_PASS=$(rclone obscure $RCLONE_CONFIG_RSHARE_PASS)
         rclone mkdir $REMOTE_PATH/data
         rclone mkdir $REMOTE_PATH/db
-        rclone mount $REMOTE_PATH/data $LOCAL_PATH/data --uid 1000 --gid 1000 --dir-perms 0700 --allow-non-empty --allow-other --vfs-cache-mode full &
+        rclone mkdir $REMOTE_PATH/share
+        rclone mount $REMOTE_PATH/data $LOCAL_PATH/data --uid 1000 --gid 1000 --dir-perms 0750 --allow-non-empty --allow-other --vfs-cache-mode full &
         rclone mount $REMOTE_PATH/db $LOCAL_PATH/db --uid 70 --gid 70 --dir-perms 0700 --allow-non-empty --allow-other --vfs-cache-mode full &
-        rclone mount $REMOTE_PATH/share $LOCAL_PATH/share --uid 1000 --gid 1000 --dir-perms 0700 --allow-non-empty --allow-other --vfs-cache-mode full
+        rclone mount $REMOTE_PATH/share $LOCAL_PATH/share --uid 1000 --gid 1000 --dir-perms 0750 --allow-non-empty --allow-other --vfs-cache-mode full
         EOF
         destination = "local/mount_storage.sh"
       }
@@ -227,7 +235,7 @@ job "{###CVAT_NOMAD_JOB_NAME###}" {
         command = "/bin/bash"
         args = [
           "-c", 
-          "sudo umount /nomad-storage/${NOMAD_META_cvat_instance}.${NOMAD_META_cvat_hostname}/data && sudo rmdir /nomad-storage/${NOMAD_META_cvat_instance}.${NOMAD_META_cvat_hostname}/data && sudo umount /nomad-storage/${NOMAD_META_cvat_instance}.${NOMAD_META_cvat_hostname}/db && sudo rmdir /nomad-storage/${NOMAD_META_cvat_instance}.${NOMAD_META_cvat_hostname}/db && sudo umount /nomad-storage/${NOMAD_META_cvat_instance}.${NOMAD_META_cvat_hostname}/share && sudo rmdir /nomad-storage/${NOMAD_META_cvat_instance}.${NOMAD_META_cvat_hostname}/share"
+          "sudo umount /nomad-storage/${NOMAD_META_job_uuid}/data && sudo rmdir /nomad-storage/${NOMAD_META_job_uuid}/data && sudo umount /nomad-storage/${NOMAD_META_job_uuid}/db && sudo rmdir /nomad-storage/${NOMAD_META_job_uuid}/db && sudo umount /nomad-storage/${NOMAD_META_job_uuid}/share && sudo rmdir /nomad-storage/${NOMAD_META_job_uuid}/share"
         ]
       }
     }
@@ -248,7 +256,7 @@ job "{###CVAT_NOMAD_JOB_NAME###}" {
         mount {
           type = "volume"
           target = "/var/lib/clickhouse"
-          source = "${NOMAD_META_cvat_instance}-events-db"
+          source = "${NOMAD_META_job_uuid}-events-db"
           readonly = false
         }
         mount {
@@ -303,7 +311,7 @@ job "{###CVAT_NOMAD_JOB_NAME###}" {
         GF_AUTH_ANONYMOUS_ORG_ROLE = "Admin"
         GF_AUTH_DISABLE_LOGIN_FORM = true
         GF_PLUGINS_ALLOW_LOADING_UNSIGNED_PLUGINS = "grafana-clickhouse-datasource"
-        GF_SERVER_ROOT_URL = "http://${NOMAD_META_cvat_instance}.${NOMAD_META_cvat_hostname}/analytics"
+        GF_SERVER_ROOT_URL = "http://${NOMAD_META_job_uuid}.${NOMAD_META_cvat_hostname}/analytics"
         GF_INSTALL_PLUGINS = "https://github.com/grafana/clickhouse-datasource/releases/download/v${NOMAD_META_grafana_clickhouse_plugin_version}/grafana-clickhouse-datasource-${NOMAD_META_grafana_clickhouse_plugin_version}.linux_amd64.zip;grafana-clickhouse-datasource"
         GF_DASHBOARDS_DEFAULT_HOME_DASHBOARD_PATH = "/var/lib/grafana/dashboards/all_events.json"
       }
@@ -346,15 +354,15 @@ job "{###CVAT_NOMAD_JOB_NAME###}" {
         ]
       }
       artifact {
-        source = "https://github.com/Stifo/ai4eosc-cvat/raw/${NOMAD_META_cvat_version}-AI4EOSC/components/analytics/grafana/dashboards/all_events.json"
+        source = "https://github.com/ai4os/ai4-cvat/raw/${NOMAD_META_cvat_version}${NOMAD_META_cvat_version_custom}/components/analytics/grafana/dashboards/all_events.json"
         destination = "local/var/lib/grafana/dashboards/"
       }
       artifact {
-        source = "https://github.com/Stifo/ai4eosc-cvat/raw/${NOMAD_META_cvat_version}-AI4EOSC/components/analytics/grafana/dashboards/management.json"
+        source = "https://github.com/ai4os/ai4-cvat/raw/${NOMAD_META_cvat_version}${NOMAD_META_cvat_version_custom}/components/analytics/grafana/dashboards/management.json"
         destination = "local/var/lib/grafana/dashboards/"
       }
       artifact {
-        source = "https://github.com/Stifo/ai4eosc-cvat/raw/${NOMAD_META_cvat_version}-AI4EOSC/components/analytics/grafana/dashboards/monitoring.json"
+        source = "https://github.com/ai4os/ai4-cvat/raw/${NOMAD_META_cvat_version}${NOMAD_META_cvat_version_custom}/components/analytics/grafana/dashboards/monitoring.json"
         destination = "local/var/lib/grafana/dashboards/"
       }
       template {
@@ -404,7 +412,7 @@ job "{###CVAT_NOMAD_JOB_NAME###}" {
         force_pull = "false"
         ports = ["db"]
         volumes = [
-          "/nomad-storage/${NOMAD_META_cvat_instance}.${NOMAD_META_cvat_hostname}/db:/home/postgresql:shared",
+          "/nomad-storage/${NOMAD_META_job_uuid}/db:/home/postgresql:shared",
         ]
       }
     }
@@ -412,6 +420,7 @@ job "{###CVAT_NOMAD_JOB_NAME###}" {
     task "redis" {
       driver = "docker"
       resources {
+        cores = 1
         memory = 5120
       }
       config {
@@ -420,7 +429,7 @@ job "{###CVAT_NOMAD_JOB_NAME###}" {
         mount {
           type = "volume"
           target = "/data"
-          source = "${NOMAD_META_cvat_instance}-redis"
+          source = "${NOMAD_META_job_uuid}-redis"
           readonly = false
         }
         command = "keydb-server"
@@ -456,7 +465,7 @@ job "{###CVAT_NOMAD_JOB_NAME###}" {
         }
       }
       artifact {
-        source = "https://github.com/Stifo/ai4eosc-cvat/raw/${NOMAD_META_cvat_version}-AI4EOSC/components/analytics/vector/vector.toml"
+        source = "https://github.com/ai4os/ai4-cvat/raw/${NOMAD_META_cvat_version}${NOMAD_META_cvat_version_custom}/components/analytics/vector/vector.toml"
         destination = "local/etc/vector/"
       }
     }
@@ -468,6 +477,7 @@ job "{###CVAT_NOMAD_JOB_NAME###}" {
       }
       driver = "docker"
       resources {
+        cores = 1
         memory = 4096
       }
       env {
@@ -493,7 +503,7 @@ job "{###CVAT_NOMAD_JOB_NAME###}" {
         CLICKHOUSE_PORT = "${NOMAD_HOST_PORT_clickhouse_http}"
         CVAT_ANALYTICS = "1"
         CVAT_BASE_URL = ""
-        CVAT_HOST = "${NOMAD_META_cvat_instance}.${NOMAD_META_cvat_hostname}"
+        CVAT_HOST = "${NOMAD_META_job_uuid}.${NOMAD_META_cvat_hostname}"
         SMOKESCREEN_OPTS = "${NOMAD_META_smokescreen_opts}"
       }
       config {
@@ -501,8 +511,8 @@ job "{###CVAT_NOMAD_JOB_NAME###}" {
         force_pull = "${NOMAD_META_force_pull_img_cvat_server}"
         ports = ["server"]
         volumes = [
-          "/nomad-storage/${NOMAD_META_cvat_instance}.${NOMAD_META_cvat_hostname}/data:/home/django/data:shared",
-          "/nomad-storage/${NOMAD_META_cvat_instance}.${NOMAD_META_cvat_hostname}/share:/home/django/share:shared",
+          "/nomad-storage/${NOMAD_META_job_uuid}/data:/home/django/data:shared",
+          "/nomad-storage/${NOMAD_META_job_uuid}/share:/home/django/share:shared",
         ]
         command = "init"
         args = [
@@ -519,6 +529,10 @@ job "{###CVAT_NOMAD_JOB_NAME###}" {
         sidecar = "true"
       }
       driver = "docker"
+      resources {
+        cores = 1
+        memory = 1024
+      }
       env {
         CVAT_REDIS_HOST = "${NOMAD_HOST_IP_redis}"
         CVAT_REDIS_PORT = "${NOMAD_HOST_PORT_redis}"
@@ -536,8 +550,8 @@ job "{###CVAT_NOMAD_JOB_NAME###}" {
         force_pull = "${NOMAD_META_force_pull_img_cvat_server}"
         ports = ["utils"]
         volumes = [
-          "/nomad-storage/${NOMAD_META_cvat_instance}.${NOMAD_META_cvat_hostname}/data:/home/django/data:shared",
-          "/nomad-storage/${NOMAD_META_cvat_instance}.${NOMAD_META_cvat_hostname}/share:/home/django/share:shared",
+          "/nomad-storage/${NOMAD_META_job_uuid}/data:/home/django/data:shared",
+          "/nomad-storage/${NOMAD_META_job_uuid}/share:/home/django/share:shared",
         ]
         command = "run"
         args = [
@@ -552,6 +566,10 @@ job "{###CVAT_NOMAD_JOB_NAME###}" {
         sidecar = "true"
       }
       driver = "docker"
+      resources {
+        cores = 1
+        memory = 1024
+      }
       env {
         CVAT_REDIS_HOST = "${NOMAD_HOST_IP_redis}"
         CVAT_REDIS_PORT = "${NOMAD_HOST_PORT_redis}"
@@ -568,8 +586,8 @@ job "{###CVAT_NOMAD_JOB_NAME###}" {
         force_pull = "${NOMAD_META_force_pull_img_cvat_server}"
         ports = ["worker-import"]
         volumes = [
-          "/nomad-storage/${NOMAD_META_cvat_instance}.${NOMAD_META_cvat_hostname}/data:/home/django/data:shared",
-          "/nomad-storage/${NOMAD_META_cvat_instance}.${NOMAD_META_cvat_hostname}/share:/home/django/share:shared",
+          "/nomad-storage/${NOMAD_META_job_uuid}/data:/home/django/data:shared",
+          "/nomad-storage/${NOMAD_META_job_uuid}/share:/home/django/share:shared",
         ]
         command = "run"
         args = [
@@ -584,6 +602,10 @@ job "{###CVAT_NOMAD_JOB_NAME###}" {
         sidecar = "true"
       }
       driver = "docker"
+      resources {
+        cores = 1
+        memory = 1024
+      }
       env {
         CVAT_REDIS_HOST = "${NOMAD_HOST_IP_redis}"
         CVAT_REDIS_PORT = "${NOMAD_HOST_PORT_redis}"
@@ -599,8 +621,8 @@ job "{###CVAT_NOMAD_JOB_NAME###}" {
         force_pull = "${NOMAD_META_force_pull_img_cvat_server}"
         ports = ["worker-export"]
         volumes = [
-          "/nomad-storage/${NOMAD_META_cvat_instance}.${NOMAD_META_cvat_hostname}/data:/home/django/data:shared",
-          "/nomad-storage/${NOMAD_META_cvat_instance}.${NOMAD_META_cvat_hostname}/share:/home/django/share:shared",
+          "/nomad-storage/${NOMAD_META_job_uuid}/data:/home/django/data:shared",
+          "/nomad-storage/${NOMAD_META_job_uuid}/share:/home/django/share:shared",
         ]
         command = "run"
         args = [
@@ -615,6 +637,10 @@ job "{###CVAT_NOMAD_JOB_NAME###}" {
         sidecar = "true"
       }
       driver = "docker"
+      resources {
+        cores = 1
+        memory = 1024
+      }
       env {
         CVAT_REDIS_HOST = "${NOMAD_HOST_IP_redis}"
         CVAT_REDIS_PORT = "${NOMAD_HOST_PORT_redis}"
@@ -630,8 +656,8 @@ job "{###CVAT_NOMAD_JOB_NAME###}" {
         force_pull = "${NOMAD_META_force_pull_img_cvat_server}"
         ports = ["worker-annotation"]
         volumes = [
-          "/nomad-storage/${NOMAD_META_cvat_instance}.${NOMAD_META_cvat_hostname}/data:/home/django/data:shared",
-          "/nomad-storage/${NOMAD_META_cvat_instance}.${NOMAD_META_cvat_hostname}/share:/home/django/share:shared",
+          "/nomad-storage/${NOMAD_META_job_uuid}/data:/home/django/data:shared",
+          "/nomad-storage/${NOMAD_META_job_uuid}/share:/home/django/share:shared",
         ]
         command = "run"
         args = [
@@ -662,7 +688,7 @@ job "{###CVAT_NOMAD_JOB_NAME###}" {
         force_pull = "${NOMAD_META_force_pull_img_cvat_server}"
         ports = ["worker-webhooks"]
         volumes = [
-          "/nomad-storage/${NOMAD_META_cvat_instance}.${NOMAD_META_cvat_hostname}/data:/home/django/data:shared",
+          "/nomad-storage/${NOMAD_META_job_uuid}/data:/home/django/data:shared",
         ]
         command = "run"
         args = [
@@ -692,7 +718,7 @@ job "{###CVAT_NOMAD_JOB_NAME###}" {
         force_pull = "${NOMAD_META_force_pull_img_cvat_server}"
         ports = ["worker-quality-reports"]
         volumes = [
-          "/nomad-storage/${NOMAD_META_cvat_instance}.${NOMAD_META_cvat_hostname}/data:/home/django/data:shared",
+          "/nomad-storage/${NOMAD_META_job_uuid}/data:/home/django/data:shared",
         ]
         command = "run"
         args = [
@@ -707,6 +733,10 @@ job "{###CVAT_NOMAD_JOB_NAME###}" {
         sidecar = "true"
       }
       driver = "docker"
+      resources {
+        cores = 1
+        memory = 1024
+      }
       env {
         CVAT_REDIS_HOST = "${NOMAD_HOST_IP_redis}"
         CVAT_REDIS_PORT = "${NOMAD_HOST_PORT_redis}"
@@ -722,7 +752,7 @@ job "{###CVAT_NOMAD_JOB_NAME###}" {
         force_pull = "${NOMAD_META_force_pull_img_cvat_server}"
         ports = ["worker-analytics-reports"]
         volumes = [
-          "/nomad-storage/${NOMAD_META_cvat_instance}.${NOMAD_META_cvat_hostname}/data:/home/django/data:shared",
+          "/nomad-storage/${NOMAD_META_job_uuid}/data:/home/django/data:shared",
         ]
         command = "run"
         args = [
