@@ -35,25 +35,20 @@ export default function GlobalHotKeys(props: Props): JSX.Element {
     const { children, keyMap, handlers } = props;
     useEffect(() => {
         for (const key of Object.keys(keyMap)) {
-            if (keyMap[key] && keyMap[key].sequences) {
-                const { sequences } = keyMap[key];
-                const handler = handlers[key];
-                Mousetrap.bind(sequences, handler, 'keydown');
-                applicationKeyMap[key] = keyMap[key];
-            }
+            const { sequences } = keyMap[key];
+            const handler = handlers[key];
+            Mousetrap.bind(sequences, handler, 'keydown');
+            applicationKeyMap[key] = keyMap[key];
         }
 
         return () => {
             for (const key of Object.keys(keyMap)) {
-                if (keyMap[key] && keyMap[key].sequences) {
-                    const { sequences } = keyMap[key];
-                    Mousetrap.unbind(sequences, 'keydown');
-                    delete applicationKeyMap[key];
-                }
+                const { sequences } = keyMap[key];
+                Mousetrap.unbind(sequences, 'keydown');
+                delete applicationKeyMap[key];
             }
         };
     });
-
     // eslint-disable-next-line react/jsx-no-useless-fragment
     return children || <></>;
 }
