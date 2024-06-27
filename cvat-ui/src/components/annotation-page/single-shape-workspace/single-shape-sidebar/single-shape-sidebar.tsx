@@ -77,8 +77,8 @@ function makeMessage(label: Label, labelType: State['labelType'], pointsCount: n
 }
 
 export const actionCreators = {
-    switchAutoNextFrame: () => (
-        createAction(ReducerActionType.SWITCH_AUTO_NEXT_FRAME)
+    switchAutoNextFrame: (autoNextFrame: boolean) => (
+        createAction(ReducerActionType.SWITCH_AUTO_NEXT_FRAME, { autoNextFrame })
     ),
     switchAutoSaveOnFinish: () => (
         createAction(ReducerActionType.SWITCH_AUTOSAVE_ON_FINISH)
@@ -129,7 +129,7 @@ const reducer = (state: State, action: ActionUnion<typeof actionCreators>): Stat
     if (action.type === ReducerActionType.SWITCH_AUTO_NEXT_FRAME) {
         return {
             ...state,
-            autoNextFrame: !state.autoNextFrame,
+            autoNextFrame: action.payload.autoNextFrame,
         };
     }
 
@@ -259,6 +259,8 @@ function SingleShapeSidebar(): JSX.Element {
                 appDispatch(updateCurrentJobAsync({
                     state: JobState.COMPLETED,
                 })).then(() => {
+                    appDispatch(setNavigationType(NavigationType.REGULAR));
+                    dispatch(actionCreators.switchAutoNextFrame(false));
                     if (jobInstance.state === JobState.COMPLETED) {
                         showSubmittedInfo();
                     }
@@ -544,7 +546,7 @@ function SingleShapeSidebar(): JSX.Element {
                         checked={state.autoNextFrame}
                         onChange={(): void => {
                             (window.document.activeElement as HTMLInputElement)?.blur();
-                            dispatch(actionCreators.switchAutoNextFrame());
+                            dispatch(actionCreators.switchAutoNextFrame(!state.autoNextFrame));
                         }}
                     >
                         Automatically go to the next frame
