@@ -584,7 +584,7 @@ class TestPatchLabels(_TestLabelsPermissionsBase):
         return response
 
     def _get_patch_data(
-        self, original_data: Dict[str, Any],attribute_rename=False, **overrides
+        self, original_data: Dict[str, Any], **overrides
     ) -> Tuple[Dict[str, Any], Dict[str, Any]]:
         result = deepcopy(original_data)
         result.update(overrides)
@@ -593,25 +593,25 @@ class TestPatchLabels(_TestLabelsPermissionsBase):
         if overrides:
             payload = deepcopy(overrides)
 
-            if overrides.get("attributes"):
-                attributes = deepcopy(original_data.get("attributes", []))
+            if overridden_attributes := deepcopy(overrides.get("attributes", [])):
+                combined_attributes = deepcopy(original_data.get("attributes", []))
 
-                if attribute_rename is False:
+                mapping = {attr["id"]: attr for attr in overridden_attributes if "id" in attr}
+
+                # no attributes to update
+                if not mapping:
                     ignore_fields.append("attributes.id")
 
-                updates_list = deepcopy(overrides["attributes"])
-                updates_dict = {update['id']: update for update in updates_list if 'id' in update}
+                for attr in combined_attributes:
+                    if attr["id"] in mapping:
+                        attr.update(mapping[attr["id"]])
 
-                for sub_array in attributes:
-                    if sub_array.get('id') in updates_dict:
-                        sub_array.update(updates_dict[sub_array['id']])
+                for attr in overridden_attributes:
+                    if attr not in combined_attributes:
+                        combined_attributes.append(attr)
 
-                for sub_array in updates_list:
-                    if sub_array.get('id') is None:
-                        attributes.append(sub_array)
-
-                payload["attributes"] = attributes
-                result["attributes"] = deepcopy(payload["attributes"])
+                payload["attributes"] = deepcopy(combined_attributes)
+                result["attributes"] = deepcopy(combined_attributes)
 
             # Changing skeletons is not supported
             if overrides.get("type") == "skeleton":
@@ -676,24 +676,32 @@ class TestPatchLabels(_TestLabelsPermissionsBase):
             user, label["id"], patch_data, expected_data=expected_data, ignore_fields=ignore_fields
         )
 
-    def test_can_patch_attribute_name(self, admin_user):
-        user = admin_user
-        labels = []
-        for label in self.labels:
-            if label.get("attributes"):
-                labels.append(label)
+    @parametrize("source", _TestLabelsPermissionsBase.source_types)
+    def test_can_patch_attribute_name(self, source: str, admin_user: str):
+        source_key = self._get_source_info(source).label_source_key
+        label = next(
+            (
+                l
+                for l in self.labels
+                if l.get(source_key) and not l["has_parent"] and l.get("attributes")
+            )
+        )
 
-        label = next(iter(labels))
-
-        attributes = label['attributes']
+        attributes = deepcopy(label["attributes"])
 
         for attribute in attributes:
-            attribute['name'] += "_updated"
+            attribute["name"] += "_updated"
 
-        expected_data, patch_data, ignore_fields = self._get_patch_data(label, attribute_rename=True, attributes=attributes)
+        expected_data, patch_data, ignore_fields = self._get_patch_data(
+            label, attributes=attributes
+        )
 
         self._test_update_ok(
-            user, label["id"], patch_data, expected_data=expected_data, ignore_fields=ignore_fields
+            admin_user,
+            label["id"],
+            patch_data,
+            expected_data=expected_data,
+            ignore_fields=ignore_fields,
         )
 
     @parametrize("source", _TestLabelsPermissionsBase.source_types)
