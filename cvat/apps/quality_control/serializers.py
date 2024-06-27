@@ -32,6 +32,8 @@ class QualityReportSummarySerializer(serializers.Serializer):
     warning_count = serializers.IntegerField()
     error_count = serializers.IntegerField()
     conflicts_by_type = serializers.DictField(child=serializers.IntegerField())
+    word_error_rate = serializers.FloatField()
+    character_error_rate = serializers.FloatField()
 
     # This set is enough for basic characteristics, such as
     # DS_unmatched, GT_unmatched, accuracy, precision and recall
@@ -82,6 +84,9 @@ class QualitySettingsSerializer(serializers.ModelSerializer):
             "object_visibility_threshold",
             "panoptic_comparison",
             "compare_attributes",
+            "wer_threshold",
+            "cer_threshold",
+            "compare_extra_parameters",
         )
         read_only_fields = (
             "id",
@@ -92,6 +97,8 @@ class QualitySettingsSerializer(serializers.ModelSerializer):
 
         for field_name, help_text in {
             "iou_threshold": "Used for distinction between matched / unmatched shapes",
+            "wer_threshold": "Used for evaluating the Word Error Rate (WER) in transcripts of annotations",
+            "cer_threshold": "Used for evaluating the Character Error Rate (CER) in transcripts of annotations",
             "low_overlap_threshold": """
                 Used for distinction between strong / weak (low_overlap) matches
             """,
@@ -129,6 +136,7 @@ class QualitySettingsSerializer(serializers.ModelSerializer):
                 Use only the visible part of the masks and polygons in comparisons
             """,
             "compare_attributes": "Enables or disables annotation attribute comparison",
+            "compare_extra_parameters": "Enables or disables annotation extra parameters comparison like Locale, Gender etc",
         }.items():
             extra_kwargs.setdefault(field_name, {}).setdefault(
                 "help_text", textwrap.dedent(help_text.lstrip("\n"))

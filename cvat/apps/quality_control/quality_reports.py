@@ -17,7 +17,7 @@ import datumaro as dm
 import datumaro.util.mask_tools
 import django_rq
 import numpy as np
-from attrs import asdict, define, fields_dict
+from attrs import asdict, define, fields_dict, field
 from datumaro.util import dump_json, parse_json
 from django.conf import settings
 from django.db import transaction
@@ -409,6 +409,8 @@ class ComparisonReportComparisonSummary(_Serializable):
 
     annotations: ComparisonReportAnnotationsSummary
     annotation_components: ComparisonReportAnnotationComponentsSummary
+    word_error_rate: float
+    character_error_rate: float
 
     @property
     def frame_count(self) -> int:
@@ -429,6 +431,8 @@ class ComparisonReportComparisonSummary(_Serializable):
                 "warning_count",
                 "error_count",
                 "conflicts_by_type",
+                "word_error_rate",
+                "character_error_rate",
             ]
         )
 
@@ -447,12 +451,16 @@ class ComparisonReportComparisonSummary(_Serializable):
             annotation_components=ComparisonReportAnnotationComponentsSummary.from_dict(
                 d["annotation_components"]
             ),
+            word_error_rate=d.get("word_error_rate", 0.0),
+            character_error_rate=d.get("character_error_rate", 0.0),
         )
 
 
 @define(kw_only=True, init=False)
 class ComparisonReportFrameSummary(_Serializable):
     conflicts: List[AnnotationConflict]
+    word_error_rate: float
+    character_error_rate: float
 
     @cached_property
     def conflict_count(self) -> int:
@@ -511,6 +519,8 @@ class ComparisonReportFrameSummary(_Serializable):
             annotation_components=ComparisonReportAnnotationComponentsSummary.from_dict(
                 d["annotation_components"]
             ),
+            word_error_rate=d["word_error_rate"],
+            character_error_rate=d["character_error_rate"],
         )
 
 
@@ -2117,9 +2127,9 @@ class AudioDatasetComparator:
         self._frame_results: Dict[int, ComparisonReportFrameSummary] = {}
         self.included_frames = gt_data_provider.job_data._db_job.segment.frame_set
 
-        self.iou_threshold = settings.iou_threshold
-        self.wer_threshold = settings.wer_threshold
-        self.cer_threshold = settings.cer_threshold
+        self.iou_threshold = self.settings.iou_threshold
+        self.wer_threshold = self.settings.wer_threshold
+        self.cer_threshold = self.settings.cer_threshold
 
         self.ignored_attrs = set(settings.ignored_attributes) | {
             "track_id",  # changes from task to task, can't be defined manually with the same name
@@ -2344,6 +2354,8 @@ class AudioDatasetComparator:
     ) -> List[AnnotationConflict]:
         conflicts = []
         job_id = self._job_id
+        word_error_rate = 0
+        character_error_rate = 0
 
         matches, mismatches, gt_unmatched, ds_unmatched, pairwise_distances = job_results
 
@@ -2382,6 +2394,8 @@ class AudioDatasetComparator:
             ds_transcript = ds_ann['transcript']
             wer = self.calculate_wer(gt_transcript, ds_transcript)
             cer = self.calculate_cer(gt_transcript, ds_transcript)
+            word_error_rate += wer
+            character_error_rate += cer
             if wer > self.wer_threshold or cer > self.cer_threshold:
                 conflicts.append(
                     AnnotationConflict(
@@ -2516,6 +2530,8 @@ class AudioDatasetComparator:
                 ),
             ),
             conflicts=conflicts,
+            word_error_rate=word_error_rate / len(matches) if len(matches) > 0 else 0.0,
+            character_error_rate=character_error_rate / len(matches) if len(matches) > 0 else 0.0,
         )
 
         return conflicts
@@ -2654,6 +2670,8 @@ class AudioDatasetComparator:
                         total_count=annotation_components.label.total_count,
                     ),
                 ),
+                word_error_rate=self._frame_results[self._job_id].word_error_rate,
+                character_error_rate=self._frame_results[self._job_id].character_error_rate,
             ),
             frame_results=self._frame_results,
         )
@@ -2896,7 +2914,8 @@ class QualityReportUpdateManager:
             # Release resources
             # del job_data_provider.dm_dataset
 
-        task_comparison_report = self._compute_task_report(task, job_comparison_reports)
+        gt_job_count = math.ceil(len(gt_job_frames) / task.data.chunk_size)
+        task_comparison_report = self._compute_task_report(task, job_comparison_reports, gt_job_count)
 
         with transaction.atomic():
             # The task could have been deleted during processing
@@ -2946,7 +2965,7 @@ class QualityReportUpdateManager:
         return get_current_job()
 
     def _compute_task_report(
-        self, task: Task, job_reports: Dict[int, ComparisonReport]
+        self, task: Task, job_reports: Dict[int, ComparisonReport], gt_job_count: int
     ) -> ComparisonReport:
         # The task dataset can be different from any jobs' dataset because of frame overlaps
         # between jobs, from which annotations are merged to get the task annotations.
@@ -2959,6 +2978,9 @@ class QualityReportUpdateManager:
         task_mean_shape_ious = []
         task_frame_results = {}
         task_frame_results_counts = {}
+        task_word_error_rate = 0.0
+        task_character_error_rate = 0.0
+
         for r in job_reports.values():
             task_intersection_frames.update(r.comparison_summary.frames)
             task_conflicts.extend(r.conflicts)
@@ -2995,6 +3017,8 @@ class QualityReportUpdateManager:
                         + job_frame_result.annotation_components.shape.mean_iou
                     ) / (frame_results_count + 1)
 
+                task_word_error_rate += job_frame_result.word_error_rate
+                task_character_error_rate += job_frame_result.character_error_rate
                 task_frame_results_counts[frame_id] = 1 + frame_results_count
                 task_frame_results[frame_id] = task_frame_result
 
@@ -3015,6 +3039,8 @@ class QualityReportUpdateManager:
                 conflicts_by_type=Counter(c.type for c in task_conflicts),
                 annotations=task_annotations_summary,
                 annotation_components=task_ann_components_summary,
+                word_error_rate=task_word_error_rate / gt_job_count if gt_job_count > 0 else 0.0,
+                character_error_rate=task_character_error_rate / gt_job_count if gt_job_count > 0 else 0.0,
             ),
             frame_results=task_frame_results,
         )
