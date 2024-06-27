@@ -11,7 +11,7 @@ env:
 
 jobs:
   check_updates:
-    runs-on: ubuntu-latest-big
+    runs-on: ubuntu-latest
     env:
       REPO: ${{ github.repository }}
       GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -44,7 +44,7 @@ jobs:
 
   build:
     needs: search_cache
-    runs-on: ubuntu-latest-big
+    runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
 
@@ -107,7 +107,7 @@ jobs:
 
   unit_testing:
     needs: build
-    runs-on: ubuntu-latest-big
+    runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
 
@@ -153,9 +153,10 @@ jobs:
 
       - name: OPA tests
         run: |
-          curl -L -o opa https://openpolicyagent.org/downloads/v0.45.0/opa_linux_amd64_static
-          chmod +x ./opa
-          ./opa test cvat/apps/iam/rules
+          python cvat/apps/iam/rules/tests/generate_tests.py
+
+          docker compose run --rm -v "$PWD:/mnt/src:ro" -w /mnt/src \
+            cvat_opa test cvat/apps/*/rules
 
       - name: REST API and SDK tests
         run: |
@@ -188,7 +189,7 @@ jobs:
 
   e2e_testing:
     needs: build
-    runs-on: ubuntu-latest-big
+    runs-on: ubuntu-latest
     strategy:
       fail-fast: false
       matrix:
@@ -311,6 +312,13 @@ jobs:
         with:
           name: cypress_screenshots
           path: ${{ github.workspace }}/tests/cypress/screenshots
+
+      - name: Uploading cypress videos as an artifact
+        if: failure()
+        uses: actions/upload-artifact@v3.1.1
+        with:
+          name: cypress_videos_${{ matrix.specs }}
+          path: ${{ github.workspace }}/tests/cypress/videos
 
       - name: Uploading "cvat" container logs as an artifact
         if: failure()

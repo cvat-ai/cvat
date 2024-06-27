@@ -9,17 +9,15 @@ import Modal from 'antd/lib/modal';
 import { exportActions } from 'actions/export-actions';
 
 import {
-    Job, JobStage, JobType, getCore,
+    Job, JobStage, JobState, JobType,
 } from 'cvat-core-wrapper';
 import { deleteJobAsync } from 'actions/jobs-actions';
 import { importActions } from 'actions/import-actions';
 import Menu, { MenuInfo } from 'components/dropdown-menu';
 
-const core = getCore();
-
 interface Props {
     job: Job;
-    onJobUpdate: (job: Job) => void;
+    onJobUpdate: (job: Job, fields: Parameters<Job['save']>[0]) => void;
 }
 
 function JobActionsMenu(props: Props): JSX.Element {
@@ -62,13 +60,15 @@ function JobActionsMenu(props: Props): JSX.Element {
                 } else if (action.key === 'view_analytics') {
                     history.push(`/tasks/${job.taskId}/jobs/${job.id}/analytics`);
                 } else if (action.key === 'renew_job') {
-                    job.state = core.enums.JobState.NEW;
-                    job.stage = JobStage.ANNOTATION;
-                    onJobUpdate(job);
+                    onJobUpdate(job, {
+                        state: JobState.NEW,
+                        stage: JobStage.ANNOTATION,
+                    });
                 } else if (action.key === 'finish_job') {
-                    job.stage = JobStage.ACCEPTANCE;
-                    job.state = core.enums.JobState.COMPLETED;
-                    onJobUpdate(job);
+                    onJobUpdate(job, {
+                        state: JobState.COMPLETED,
+                        stage: JobStage.ACCEPTANCE,
+                    });
                 }
             }}
         >

@@ -22,7 +22,7 @@ jobs:
 
   build:
     needs: search_cache
-    runs-on: ubuntu-latest-big
+    runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
         with:
@@ -94,7 +94,7 @@ jobs:
 
   rest_api_testing:
     needs: build
-    runs-on: ubuntu-latest-big
+    runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
         with:
@@ -160,7 +160,8 @@ jobs:
       - name: Install SDK
         run: |
           pip3 install -r ./tests/python/requirements.txt \
-            -e './cvat-sdk[pytorch]' -e ./cvat-cli
+            -e './cvat-sdk[pytorch]' -e ./cvat-cli \
+            --extra-index-url https://download.pytorch.org/whl/cpu
 
       - name: Running REST API and SDK tests
         id: run_tests
@@ -187,7 +188,7 @@ jobs:
 
   unit_testing:
     needs: build
-    runs-on: ubuntu-latest-big
+    runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
         with:
@@ -207,11 +208,10 @@ jobs:
 
       - name: Running OPA tests
         run: |
-          python cvat/apps/iam/rules/tests/generate_tests.py \
-            --output-dir cvat/apps/iam/rules/
+          python cvat/apps/iam/rules/tests/generate_tests.py
 
-          docker compose run --rm -v "$PWD/cvat/apps/iam/rules/:/mnt/rules" \
-            cvat_opa test /mnt/rules
+          docker compose run --rm -v "$PWD:/mnt/src:ro" -w /mnt/src \
+            cvat_opa test cvat/apps/*/rules
 
       - name: Running unit tests
         env:
@@ -247,7 +247,7 @@ jobs:
 
   e2e_testing:
     needs: build
-    runs-on: ubuntu-latest-big
+    runs-on: ubuntu-latest
     strategy:
       fail-fast: false
       matrix:

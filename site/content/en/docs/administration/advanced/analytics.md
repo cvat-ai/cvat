@@ -29,6 +29,7 @@ See:
   - [Ports settings](#ports-settings)
   - [Events log structure](#events-log-structure)
   - [Types of supported events](#types-of-supported-events)
+  - [Working time calculation](#working-time-calculation)
   - [Request `id` for tracking](#request-id-for-tracking)
   - [Fetching event data as CSV from the `/api/events` endpoint](#fetching-event-data-as-csv-from-the-apievents-endpoint)
 - [Dashboards](#dashboards)
@@ -133,26 +134,62 @@ Client events:
 - `load:cvat`
 
 - `load:job`, `save:job`, `restore:job`
+
 - `upload:annotations`
+
 - `send:exception`
+
 - `send:task_info`
 
-- `draw:object`, `paste:object`, `copy:object`, `propagate:object`, `drag:object`, `resize:object`, `delete:object`, `lock:object`, `merge:objects`
+- `draw:object`, `paste:object`, `copy:object`, `propagate:object`, `drag:object`, `resize:object`, `delete:object`, `lock:object`, `merge:objects`, `split:objects`, `group:objects`, `slice:object`,
+`join:objects`
+
 - `change:attribute`
+
 - `change:label`
 
 - `change:frame`
+
 - `zoom:image`, `fit:image`, `rotate:image`
 
 - `action:undo`, `action:redo`
 
-- `press:shortcut`
-- `send:debug_info`
-
 - `run:annotations_action`
+
 - `click:element`
 
+- `debug:info`
+
 <!--lint enable maximum-line-length-->
+
+### Working time calculation
+
+Here is a short overview of how CVAT deals with the user's working time:
+
+- The user interface collects events when a user interacts with the interface
+  (resizing canvas, drawing objects, clicking buttons, etc)
+  The structure of one single event is described [here](#events-log-structure).
+
+- The user interface sends these events in bulk to the server.
+  Currently, it uses the following triggers to send events:
+  - Periodical timer (~90 seconds)
+  - A user clicks the "Save" button on the annotation view
+  - A user opens the annotation view
+  - A user closes the annotation view (but not the tab/browser)
+  - A user clicks **Logout** button
+
+- When events reach the server, it calculates working time based on timestamps of the events.
+
+- The working time for an event is computed as the sum of the following:
+  - The difference between the start time of the event and the end time of
+    the previous event, if it is not more than 100 seconds.
+  - The duration of the event, for events of type `change:frame`.
+
+- After calculation, the server generates `send:working_time` events with time value in payload.
+  These events may or may not be bound to a certain job/task/project,
+  depending on the client-side events that were used to generate them.
+
+- CVAT saves the event in the database and later these events are used to compute metrics for analytics.
 
 ### Request `id` for tracking
 

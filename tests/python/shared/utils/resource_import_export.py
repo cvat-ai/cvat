@@ -97,8 +97,8 @@ class _CloudStorageResourceTest(ABC):
         status = response.status_code
 
         while status != _expect_status:
-            assert status in (HTTPStatus.CREATED, HTTPStatus.ACCEPTED)
-            response = get_method(user, f"{obj}/{obj_id}/{resource}", action="download", **kwargs)
+            assert status == HTTPStatus.ACCEPTED
+            response = get_method(user, f"{obj}/{obj_id}/{resource}", **kwargs)
             status = response.status_code
 
     def _import_annotations_from_cloud_storage(

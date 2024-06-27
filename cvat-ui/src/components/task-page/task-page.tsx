@@ -1,10 +1,10 @@
 // Copyright (C) 2020-2022 Intel Corporation
-// Copyright (C) 2022-2023 CVAT.ai Corporation
+// Copyright (C) 2022-2024 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
 import './styles.scss';
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useHistory, useParams } from 'react-router';
 import { useDispatch, useSelector } from 'react-redux';
 import { Row, Col } from 'antd/lib/grid';
@@ -13,6 +13,7 @@ import Result from 'antd/lib/result';
 import notification from 'antd/lib/notification';
 
 import { getInferenceStatusAsync } from 'actions/models-actions';
+import { updateJobAsync } from 'actions/jobs-actions';
 import { getCore, Task, Job } from 'cvat-core-wrapper';
 import JobListComponent from 'components/task-page/job-list';
 import ModelRunnerModal from 'components/model-runner-modal/model-runner-dialog';
@@ -31,45 +32,39 @@ function TaskPageComponent(): JSX.Element {
     const [taskInstance, setTaskInstance] = useState<Task | null>(null);
     const [fetchingTask, setFetchingTask] = useState(true);
     const [updatingTask, setUpdatingTask] = useState(false);
-    const mounted = useRef(false);
 
     const deletes = useSelector((state: CombinedState) => state.tasks.activities.deletes);
 
-    const receieveTask = (): void => {
+    const receieveTask = (): Promise<Task[]> => {
         if (Number.isInteger(id)) {
-            core.tasks.get({ id })
-                .then(([task]: Task[]) => {
-                    if (task && mounted.current) {
-                        setTaskInstance(task);
-                    }
-                }).catch((error: Error) => {
-                    if (mounted.current) {
-                        notification.error({
-                            message: 'Could not receive the requested task from the server',
-                            description: error.toString(),
-                        });
-                    }
-                }).finally(() => {
-                    if (mounted.current) {
-                        setFetchingTask(false);
-                    }
+            const promise = core.tasks.get({ id });
+            promise.then(([task]: Task[]) => {
+                if (task) {
+                    setTaskInstance(task);
+                }
+            }).catch((error: Error) => {
+                notification.error({
+                    message: 'Could not receive the requested task from the server',
+                    description: error.toString(),
                 });
-        } else {
-            notification.error({
-                message: 'Could not receive the requested task from the server',
-                description: `Requested task id "${id}" is not valid`,
             });
-            setFetchingTask(false);
+
+            return promise;
         }
+
+        notification.error({
+            message: 'Could not receive the requested task from the server',
+            description: `Requested task id "${id}" is not valid`,
+        });
+
+        return Promise.reject();
     };
 
     useEffect(() => {
-        receieveTask();
+        receieveTask().finally(() => {
+            setFetchingTask(false);
+        });
         dispatch(getInferenceStatusAsync());
-        mounted.current = true;
-        return () => {
-            mounted.current = false;
-        };
     }, []);
 
     useEffect(() => {
@@ -97,9 +92,7 @@ function TaskPageComponent(): JSX.Element {
         new Promise((resolve, reject) => {
             setUpdatingTask(true);
             task.save().then((updatedTask: Task) => {
-                if (mounted.current) {
-                    setTaskInstance(updatedTask);
-                }
+                setTaskInstance(updatedTask);
                 resolve();
             }).catch((error: Error) => {
                 notification.error({
@@ -109,28 +102,23 @@ function TaskPageComponent(): JSX.Element {
                 });
                 reject();
             }).finally(() => {
-                if (mounted.current) {
-                    setUpdatingTask(false);
-                }
+                setUpdatingTask(false);
             });
         })
     );
 
-    const onJobUpdate = (job: Job): void => {
+    const onJobUpdate = (job: Job, data: Parameters<Job['save']>[0]): void => {
         setUpdatingTask(true);
-        job.save().then(() => {
-            if (mounted.current) {
-                receieveTask();
-            }
+        dispatch(updateJobAsync(job, data)).then(() => {
+            receieveTask().finally(() => {
+                setUpdatingTask(false);
+            });
         }).catch((error: Error) => {
+            setUpdatingTask(false);
             notification.error({
                 message: 'Could not update the job',
                 description: error.toString(),
             });
-        }).finally(() => {
-            if (mounted.current) {
-                setUpdatingTask(false);
-            }
         });
     };
 

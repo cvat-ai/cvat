@@ -6,6 +6,7 @@
 from __future__ import annotations
 
 import os.path as osp
+import re
 import sys
 from collections import namedtuple
 from functools import reduce
@@ -15,14 +16,18 @@ from types import SimpleNamespace
 from typing import (Any, Callable, DefaultDict, Dict, Iterable, List, Literal, Mapping,
                     NamedTuple, Optional, OrderedDict, Sequence, Set, Tuple, Union)
 
+from attrs.converters import to_bool
 import datumaro as dm
 import defusedxml.ElementTree as ET
-import numpy as np
 import rq
 from attr import attrib, attrs
 from datumaro.components.media import PointCloud
+from datumaro.components.environment import Environment
+from datumaro.components.extractor import Importer
+from datumaro.components.format_detection import RejectionReason
 from django.db.models import QuerySet
 from django.utils import timezone
+from django.conf import settings
 
 from cvat.apps.dataset_manager.formats.utils import get_label_color
 from cvat.apps.dataset_manager.util import add_prefetch_fields
@@ -32,7 +37,7 @@ from cvat.apps.engine.models import (AttributeSpec, AttributeType, Data, Dimensi
                                      Task)
 
 from .annotation import AnnotationIR, AnnotationManager, TrackManager
-from .formats.transformations import CVATRleToCOCORle, EllipsesToMasks
+from .formats.transformations import MaskConverter, EllipsesToMasks
 
 CVAT_INTERNAL_ATTRIBUTES = {'occluded', 'outside', 'keyframe', 'track_id', 'rotation'}
 
@@ -1663,6 +1668,33 @@ def GetCVATDataExtractor(
 class CvatImportError(Exception):
     pass
 
+@attrs
+class CvatDatasetNotFoundError(CvatImportError):
+    message: str = ""
+    reason: str = ""
+    format_name: str = ""
+    _docs_base_url = f"{settings.CVAT_DOCS_URL}/manual/advanced/formats/"
+
+    def __str__(self) -> str:
+        formatted_format_name = self._format_name_for_docs()
+        docs_message = self._docs_message(formatted_format_name)
+        display_message = self._clean_display_message()
+        return f"{docs_message}. {display_message}"
+
+    def _format_name_for_docs(self) -> str:
+        return self.format_name.replace("_", "-")
+
+    def _docs_message(self, formatted_format_name: str) -> str:
+        return f"Check [format docs]({self._docs_base_url}format-{formatted_format_name})"
+
+    def _clean_display_message(self) -> str:
+        message = re.sub(r'^.*?:', "", self.message)
+        if "dataset must contain a file matching pattern" in message:
+            message = message.replace("dataset must contain a file matching pattern", "")
+            message = message.replace("\n", "")
+            message = "Dataset must contain a file:" + message
+        return re.sub(r' +', " ", message)
+
 def mangle_image_name(name: str, subset: str, names: DefaultDict[Tuple[str, str], int]) -> str:
     name, ext = name.rsplit(osp.extsep, maxsplit=1)
 
@@ -1782,7 +1814,7 @@ class CvatToDmAnnotationConverter:
                 "attributes": dm_attr,
             }), self.cvat_frame_anno.height, self.cvat_frame_anno.width)
         elif shape.type == ShapeType.MASK:
-            anno = CVATRleToCOCORle.convert_mask(SimpleNamespace(**{
+            anno = MaskConverter.cvat_rle_to_dm_rle(SimpleNamespace(**{
                 "points": shape.points,
                 "label": dm_label,
                 "z_order": shape.z_order,
@@ -1953,7 +1985,8 @@ def import_dm_annotations(dm_dataset: dm.Dataset, instance_data: Union[ProjectDa
         'sly_pointcloud',
         'coco',
         'coco_instances',
-        'coco_person_keypoints'
+        'coco_person_keypoints',
+        'voc'
     ]
 
     label_cat = dm_dataset.categories()[dm.AnnotationType.label]
@@ -2007,22 +2040,7 @@ def import_dm_annotations(dm_dataset: dm.Dataset, instance_data: Union[ProjectDa
                     if ann.type == dm.AnnotationType.cuboid_3d:
                         points = [*ann.position, *ann.rotation, *ann.scale, 0, 0, 0, 0, 0, 0, 0]
                     elif ann.type == dm.AnnotationType.mask:
-                        istrue = np.argwhere(ann.image == 1).transpose()
-                        top = int(istrue[0].min())
-                        left = int(istrue[1].min())
-                        bottom = int(istrue[0].max())
-                        right = int(istrue[1].max())
-                        points = ann.image[top:bottom + 1, left:right + 1]
-
-                        def reduce_fn(acc, v):
-                            if v == acc['val']:
-                                acc['res'][-1] += 1
-                            else:
-                                acc['val'] = v
-                                acc['res'].append(1)
-                            return acc
-                        points = reduce(reduce_fn, points.reshape(np.prod(points.shape)), { 'res': [0], 'val': False })['res']
-                        points.extend([int(left), int(top), int(right), int(bottom)])
+                        points = MaskConverter.dm_mask_to_cvat_rle(ann)
                     elif ann.type != dm.AnnotationType.skeleton:
                         points = ann.points
 
@@ -2031,9 +2049,9 @@ def import_dm_annotations(dm_dataset: dm.Dataset, instance_data: Union[ProjectDa
                     # because in some formats return type can be different
                     # from bool / None
                     # https://github.com/openvinotoolkit/datumaro/issues/719
-                    occluded = dm.util.cast(ann.attributes.pop('occluded', None), bool) is True
-                    keyframe = dm.util.cast(ann.attributes.get('keyframe', None), bool) is True
-                    outside = dm.util.cast(ann.attributes.pop('outside', None), bool) is True
+                    occluded = dm.util.cast(ann.attributes.pop('occluded', None), to_bool) is True
+                    keyframe = dm.util.cast(ann.attributes.get('keyframe', None), to_bool) is True
+                    outside = dm.util.cast(ann.attributes.pop('outside', None), to_bool) is True
 
                     track_id = ann.attributes.pop('track_id', None)
                     source = ann.attributes.pop('source').lower() \
@@ -2080,7 +2098,7 @@ def import_dm_annotations(dm_dataset: dm.Dataset, instance_data: Union[ProjectDa
                         ))
                         continue
 
-                    if keyframe or outside:
+                    if dm_dataset.format in track_formats:
                         if track_id not in tracks:
                             tracks[track_id] = {
                                 'label': label_cat.items[ann.label].name,
@@ -2107,11 +2125,8 @@ def import_dm_annotations(dm_dataset: dm.Dataset, instance_data: Union[ProjectDa
 
                         if ann.type == dm.AnnotationType.skeleton:
                             for element in ann.elements:
-                                element_keyframe = dm.util.cast(element.attributes.get('keyframe', None), bool, True)
                                 element_occluded = element.visibility[0] == dm.Points.Visibility.hidden
                                 element_outside = element.visibility[0] == dm.Points.Visibility.absent
-                                if not element_keyframe and not element_outside:
-                                    continue
 
                                 if element.label not in tracks[track_id]['elements']:
                                     tracks[track_id]['elements'][element.label] = instance_data.Track(
@@ -2120,6 +2135,7 @@ def import_dm_annotations(dm_dataset: dm.Dataset, instance_data: Union[ProjectDa
                                         source=source,
                                         shapes=[],
                                     )
+
                                 element_attributes = [
                                     instance_data.Attribute(name=n, value=str(v))
                                     for n, v in element.attributes.items()
@@ -2151,10 +2167,54 @@ def import_dm_annotations(dm_dataset: dm.Dataset, instance_data: Union[ProjectDa
                 raise CvatImportError("Image {}: can't import annotation "
                     "#{} ({}): {}".format(item.id, idx, ann.type.name, e)) from e
 
-    for track in tracks.values():
-        track['elements'] = list(track['elements'].values())
-        instance_data.add_track(instance_data.Track(**track))
+    def _validate_track_shapes(shapes):
+        shapes = sorted(shapes, key=lambda t: t.frame)
+        new_shapes = []
+        prev_shape = None
+        # infer the keyframe shapes and keep only them
+        for shape in shapes:
+            prev_is_visible = prev_shape and not prev_shape.outside
+            cur_is_visible = shape and not shape.outside
 
+            has_gap = False
+            if prev_is_visible:
+                has_gap = prev_shape.frame + instance_data.frame_step < shape.frame
+
+            if has_gap:
+                prev_shape = prev_shape._replace(outside=True, keyframe=True,
+                    frame=prev_shape.frame + instance_data.frame_step)
+                new_shapes.append(prev_shape)
+
+            if prev_is_visible != cur_is_visible or cur_is_visible and (has_gap or shape.keyframe):
+                shape = shape._replace(keyframe=True)
+                new_shapes.append(shape)
+
+            prev_shape = shape
+
+        if prev_shape and not prev_shape.outside and (
+            prev_shape.frame + instance_data.frame_step <= stop_frame
+            # has a gap before the current instance segment end
+        ):
+            prev_shape = prev_shape._replace(outside=True, keyframe=True,
+                frame=prev_shape.frame + instance_data.frame_step)
+            new_shapes.append(prev_shape)
+
+        return new_shapes
+
+    stop_frame = int(instance_data.meta[instance_data.META_FIELD]['stop_frame'])
+    for track_id, track in tracks.items():
+        track['shapes'] = _validate_track_shapes(track['shapes'])
+
+        if ann.type == dm.AnnotationType.skeleton:
+            new_elements = {}
+            for element_id, element in track['elements'].items():
+                new_element_shapes = _validate_track_shapes(element.shapes)
+                new_elements[element_id] = element._replace(shapes=new_element_shapes)
+            track['elements'] = new_elements
+
+        if track['shapes'] or track['elements']:
+            track['elements'] = list(track['elements'].values())
+            instance_data.add_track(instance_data.Track(**track))
 
 def import_labels_to_project(project_annotation, dataset: dm.Dataset):
     labels = []
@@ -2221,3 +2281,19 @@ def load_dataset_data(project_annotation, dataset: dm.Dataset, project_data):
             dataset_files['data_root'] = osp.commonpath(root_paths) + osp.sep
 
         project_annotation.add_task(task_fields, dataset_files, project_data)
+
+def detect_dataset(dataset_dir: str, format_name: str, importer: Importer) -> None:
+    not_found_error_instance = CvatDatasetNotFoundError()
+
+    def not_found_error(_, reason, human_message):
+        not_found_error_instance.format_name = format_name
+        not_found_error_instance.reason = reason
+        not_found_error_instance.message = human_message
+
+    detection_env = Environment()
+    detection_env.importers.items.clear()
+    detection_env.importers.register(format_name, importer)
+    detected = detection_env.detect_dataset(dataset_dir, depth=4, rejection_callback=not_found_error)
+
+    if not detected and not_found_error_instance.reason != RejectionReason.detection_unsupported:
+        raise not_found_error_instance

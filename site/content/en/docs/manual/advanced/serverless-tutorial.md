@@ -110,19 +110,21 @@ nuctl create project cvat
 nuctl deploy --project-name cvat --path "./serverless/pytorch/foolwood/siammask/nuclio" --platform local
 ```
 ```
-21.05.07 13:00:22.233                     nuctl (I) Deploying function {"name": ""}
-21.05.07 13:00:22.233                     nuctl (I) Building {"versionInfo": "Label: 1.5.16, Git commit: ae43a6a560c2bec42d7ccfdf6e8e11a1e3cc3774, OS: linux, Arch: amd64, Go version: go1.14.3", "name": ""}
-21.05.07 13:00:22.652                     nuctl (I) Cleaning up before deployment {"functionName": "pth-foolwood-siammask"}
-21.05.07 13:00:22.705                     nuctl (I) Staging files and preparing base images
-21.05.07 13:00:22.706                     nuctl (I) Building processor image {"imageName": "cvat/pth.foolwood.siammask:latest"}
-21.05.07 13:00:22.706     nuctl.platform.docker (I) Pulling image {"imageName": "quay.io/nuclio/handler-builder-python-onbuild:1.5.16-amd64"}
-21.05.07 13:00:26.351     nuctl.platform.docker (I) Pulling image {"imageName": "quay.io/nuclio/uhttpc:0.0.1-amd64"}
-21.05.07 13:00:29.819            nuctl.platform (I) Building docker image {"image": "cvat/pth.foolwood.siammask:latest"}
-21.05.07 13:00:30.103            nuctl.platform (I) Pushing docker image into registry {"image": "cvat/pth.foolwood.siammask:latest", "registry": ""}
-21.05.07 13:00:30.103            nuctl.platform (I) Docker image was successfully built and pushed into docker registry {"image": "cvat/pth.foolwood.siammask:latest"}
-21.05.07 13:00:30.104                     nuctl (I) Build complete {"result": {"Image":"cvat/pth.foolwood.siammask:latest","UpdatedFunctionConfig":{"metadata":{"name":"pth-foolwood-siammask","namespace":"nuclio","labels":{"nuclio.io/project-name":"cvat"},"annotations":{"framework":"pytorch","name":"SiamMask","spec":"","type":"tracker"}},"spec":{"description":"Fast Online Object Tracking and Segmentation","handler":"main:handler","runtime":"python:3.6","env":[{"name":"PYTHONPATH","value":"/opt/nuclio/SiamMask:/opt/nuclio/SiamMask/experiments/siammask_sharp"}],"resources":{},"image":"cvat/pth.foolwood.siammask:latest","targetCPU":75,"triggers":{"myHttpTrigger":{"class":"","kind":"http","name":"myHttpTrigger","maxWorkers":2,"workerAvailabilityTimeoutMilliseconds":10000,"attributes":{"maxRequestBodySize":33554432}}},"build":{"image":"cvat/pth.foolwood.siammask","baseImage":"continuumio/miniconda3","directives":{"preCopy":[{"kind":"WORKDIR","value":"/opt/nuclio"},{"kind":"RUN","value":"conda create -y -n siammask python=3.6"},{"kind":"SHELL","value":"[\"conda\", \"run\", \"-n\", \"siammask\", \"/bin/bash\", \"-c\"]"},{"kind":"RUN","value":"git clone https://github.com/foolwood/SiamMask.git"},{"kind":"RUN","value":"pip install -r SiamMask/requirements.txt jsonpickle"},{"kind":"RUN","value":"conda install -y gcc_linux-64"},{"kind":"RUN","value":"cd SiamMask \u0026\u0026 bash make.sh \u0026\u0026 cd -"},{"kind":"RUN","value":"wget -P SiamMask/experiments/siammask_sharp http://www.robots.ox.ac.uk/~qwang/SiamMask_DAVIS.pth"},{"kind":"ENTRYPOINT","value":"[\"conda\", \"run\", \"-n\", \"siammask\"]"}]},"codeEntryType":"image"},"platform":{"attributes":{"mountMode":"volume","restartPolicy":{"maximumRetryCount":3,"name":"always"}}},"readinessTimeoutSeconds":60,"securityContext":{},"eventTimeout":"30s"}}}}
-21.05.07 13:00:31.387            nuctl.platform (I) Waiting for function to be ready {"timeout": 60}
-21.05.07 13:00:32.796                     nuctl (I) Function deploy complete {"functionName": "pth-foolwood-siammask", "httpPort": 49155}
+24.04.18 20:52:47.910 (I)                     nuctl Deploying function {"name": "pth-foolwood-siammask"}
+24.04.18 20:52:47.910 (I)                     nuctl Building {"builderKind": "docker", "versionInfo": "Label: 1.13.0, Git commit: c4422eb772781fb50fbf017698aae96199d81388, OS: linux, Arch: amd64, Go version: go1.21.7", "name": "pth-foolwood-siammask"}
+24.04.18 20:52:47.929 (W)            nuctl.platform MaxWorkers is deprecated and will be removed in v1.15.x, use NumWorkers instead
+24.04.18 20:52:48.044 (I)                     nuctl Staging files and preparing base images
+24.04.18 20:52:48.044 (W)                     nuctl Using user provided base image, runtime interpreter version is provided by the base image {"baseImage": "ubuntu:20.04"}
+24.04.18 20:52:48.044 (I)                     nuctl Building processor image {"registryURL": "", "taggedImageName": "cvat.pth.foolwood.siammask:latest"}
+24.04.18 20:52:48.044 (I)     nuctl.platform.docker Pulling image {"imageName": "quay.io/nuclio/handler-builder-python-onbuild:1.13.0-amd64"}
+24.04.18 20:52:49.717 (I)     nuctl.platform.docker Pulling image {"imageName": "quay.io/nuclio/uhttpc:0.0.1-amd64"}
+24.04.18 20:52:51.363 (I)            nuctl.platform Building docker image {"image": "cvat.pth.foolwood.siammask:latest"}
+24.04.18 20:55:58.853 (I)            nuctl.platform Pushing docker image into registry {"image": "cvat.pth.foolwood.siammask:latest", "registry": ""}
+24.04.18 20:55:58.853 (I)            nuctl.platform Docker image was successfully built and pushed into docker registry {"image": "cvat.pth.foolwood.siammask:latest"}
+24.04.18 20:55:58.853 (I)                     nuctl Build complete {"image": "cvat.pth.foolwood.siammask:latest"}
+24.04.18 20:55:58.861 (I)                     nuctl Cleaning up before deployment {"functionName": "pth-foolwood-siammask"}
+24.04.18 20:55:59.593 (I)            nuctl.platform Waiting for function to be ready {"timeout": 120}
+24.04.18 20:56:01.315 (I)                     nuctl Function deploy complete {"functionName": "pth-foolwood-siammask", "httpPort": 33453, "internalInvocationURLs": ["172.17.0.5:8080"], "externalInvocationURLs": ["0.0.0.0:33453"]}
 ```
 
 ```bash
@@ -438,7 +440,6 @@ metadata:
   annotations:
     name: RetinaNet R101
     type: detector
-    framework: pytorch
     spec: |
       [
         { "id": 1, "name": "person" },

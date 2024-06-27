@@ -12,7 +12,7 @@ dj-pagination==2.5.0
 # to avoid possible further versions conflicts (we use registration functionality)
 # https://dj-rest-auth.readthedocs.io/en/latest/installation.html#registration-optional
 dj-rest-auth[with_social]==5.0.2
-django-allauth==0.57.2
+django-allauth[saml]==0.57.2
 
 django-auth-ldap==2.2.0
 django-compressor==4.3.1
@@ -22,11 +22,12 @@ django-filter==2.4.0
 django-health-check>=3.18.1,<4
 django-rq==2.8.1
 django-sendfile2==0.7.0
-Django~=4.2.1
+Django~=4.2.7
 djangorestframework~=3.14.0
 drf-spectacular==0.26.2
 furl==2.1.0
 google-cloud-storage==1.42.0
+lxml>=5.2.1,<6
 natsort==8.0.0
 numpy~=1.22.2
 opencv-python-headless~=4.8
@@ -36,15 +37,17 @@ opencv-python-headless~=4.8
 patool==1.12
 
 pdf2image==1.14.0
-Pillow>=10.1.0
+Pillow>=10.3.0
+pottery~=3.0
 psutil==5.9.4
 psycopg2-binary==2.9.5
 python-ldap==3.4.3
 python-logstash-async==2.5.0
 pyunpack==0.2.1
-redis==4.5.4
+redis==4.6.0
 requests~=2.26
 rq-scheduler==0.13.1
 rq==1.16.0
 rules>=3.3
 Shapely==1.7.1
+xmlsec>=1.3.14,<2

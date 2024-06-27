@@ -4,12 +4,12 @@
 // SPDX-License-Identifier: MIT
 
 import React from 'react';
-import ReactDOM from 'react-dom';
+import { createRoot } from 'react-dom/client';
 import { connect, Provider } from 'react-redux';
 import { BrowserRouter } from 'react-router-dom';
 
 import { getAboutAsync } from 'actions/about-actions';
-import { authorizedAsync } from 'actions/auth-actions';
+import { authenticatedAsync } from 'actions/auth-actions';
 import { getFormatsAsync } from 'actions/formats-actions';
 import { getModelsAsync } from 'actions/models-actions';
 import { getPluginsAsync } from 'actions/plugins-actions';
@@ -59,7 +59,7 @@ interface StateToProps {
 
 interface DispatchToProps {
     loadFormats: () => void;
-    verifyAuthorized: () => void;
+    verifyAuthenticated: () => void;
     loadAbout: () => void;
     initModels: () => void;
     initPlugins: () => void;
@@ -107,7 +107,7 @@ function mapStateToProps(state: CombinedState): StateToProps {
 function mapDispatchToProps(dispatch: any): DispatchToProps {
     return {
         loadFormats: (): void => dispatch(getFormatsAsync()),
-        verifyAuthorized: (): void => dispatch(authorizedAsync()),
+        verifyAuthenticated: (): void => dispatch(authenticatedAsync()),
         loadUserAgreements: (): void => dispatch(getUserAgreementsAsync()),
         initPlugins: (): void => dispatch(getPluginsAsync()),
         initModels: (): void => dispatch(getModelsAsync()),
@@ -122,16 +122,16 @@ function mapDispatchToProps(dispatch: any): DispatchToProps {
 
 const ReduxAppWrapper = connect(mapStateToProps, mapDispatchToProps)(CVATApplication);
 
-ReactDOM.render(
+const root = createRoot(document.getElementById('root') as HTMLDivElement);
+root.render((
     <Provider store={cvatStore}>
         <BrowserRouter>
             <PluginsEntrypoint />
             <ReduxAppWrapper />
         </BrowserRouter>
         <LayoutGrid />
-    </Provider>,
-    document.getElementById('root'),
-);
+    </Provider>
+));
 
 window.addEventListener('error', (errorEvent: ErrorEvent): boolean => {
     const {

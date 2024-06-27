@@ -17,20 +17,20 @@ const defaultState: AuthState = {
 
 export default function (state = defaultState, action: AuthActions | BoundariesActions): AuthState {
     switch (action.type) {
-        case AuthActionTypes.AUTHORIZED_REQUEST:
+        case AuthActionTypes.AUTHENTICATED_REQUEST:
             return {
                 ...state,
                 fetching: true,
                 initialized: false,
             };
-        case AuthActionTypes.AUTHORIZED_SUCCESS:
+        case AuthActionTypes.AUTHENTICATED_SUCCESS:
             return {
                 ...state,
                 initialized: true,
                 fetching: false,
                 user: action.payload.user,
             };
-        case AuthActionTypes.AUTHORIZED_FAILED:
+        case AuthActionTypes.AUTHENTICATED_FAILED:
             return {
                 ...state,
                 fetching: false,

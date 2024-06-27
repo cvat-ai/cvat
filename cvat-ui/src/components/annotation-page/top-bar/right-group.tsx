@@ -5,15 +5,13 @@
 
 import React, { useEffect, useCallback } from 'react';
 import { Col } from 'antd/lib/grid';
-import Icon from '@ant-design/icons';
+import Icon, { InfoCircleOutlined } from '@ant-design/icons';
 import Select from 'antd/lib/select';
 import Button from 'antd/lib/button';
 import Modal from 'antd/lib/modal';
 import notification from 'antd/lib/notification';
 
-import {
-    FilterIcon, FullscreenIcon, GuideIcon, InfoIcon,
-} from 'icons';
+import { FilterIcon, FullscreenIcon, GuideIcon } from 'icons';
 import config from 'config';
 import {
     DimensionType, Job, JobStage, JobState,
@@ -138,7 +136,7 @@ function RightGroup(props: Props): JSX.Element {
                 className='cvat-annotation-header-info-button cvat-annotation-header-button'
                 onClick={showStatistics}
             >
-                <Icon component={InfoIcon} />
+                <InfoCircleOutlined />
                 Info
             </Button>
             <Button
@@ -153,7 +151,7 @@ function RightGroup(props: Props): JSX.Element {
             </Button>
             <div>
                 <Select
-                    dropdownClassName='cvat-workspace-selector-dropdown'
+                    popupClassName='cvat-workspace-selector-dropdown'
                     className='cvat-workspace-selector'
                     onChange={changeWorkspace}
                     value={workspace}

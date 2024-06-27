@@ -48,16 +48,13 @@ context('Register user, change password, login with new password', () => {
             cy.userRegistration(firstName, lastName, userName, emailAddr, password);
             changePassword(userName, password, newPassword);
             cy.contains('New password has been saved.').should('exist');
-        });
-        it('Logout', () => {
             cy.logout();
-        });
-        it('Login with the new password', () => {
+
             cy.login(userName, newPassword);
-        });
-        it('Change password with incorrect current password', () => {
+
             changePassword(userName, incorrectCurrentPassword, secondNewPassword);
             cy.get('.cvat-notification-notice-change-password-failed').should('exist');
+            cy.closeNotification('.cvat-notification-notice-change-password-failed');
         });
     });
 });

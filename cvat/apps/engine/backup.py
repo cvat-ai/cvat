@@ -1,8 +1,9 @@
 # Copyright (C) 2021-2022 Intel Corporation
-# Copyright (C) 2022-2023 CVAT.ai Corporation
+# Copyright (C) 2022-2024 CVAT.ai Corporation
 #
 # SPDX-License-Identifier: MIT
 
+from logging import Logger
 import io
 import os
 from enum import Enum
@@ -46,7 +47,7 @@ from cvat.apps.engine.task import JobFileMapping, _create_thread
 from cvat.apps.engine.cloud_provider import import_resource_from_cloud_storage, export_resource_to_cloud_storage
 from cvat.apps.engine.location import StorageType, get_location_configuration
 from cvat.apps.engine.view_utils import get_cloud_storage_for_import_or_export
-from cvat.apps.dataset_manager.views import TASK_CACHE_TTL, PROJECT_CACHE_TTL, get_export_cache_dir, clear_export_cache, log_exception
+from cvat.apps.dataset_manager.views import TASK_CACHE_TTL, PROJECT_CACHE_TTL, get_export_cache_dir, log_exception
 from cvat.apps.dataset_manager.bindings import CvatImportError
 
 slogger = ServerLogManager(__name__)
@@ -904,7 +905,7 @@ def _create_backup(db_instance, Exporter, output_path, logger, cache_ttl):
             archive_ctime = os.path.getctime(output_path)
             scheduler = django_rq.get_scheduler(settings.CVAT_QUEUES.IMPORT_DATA.value)
             cleaning_job = scheduler.enqueue_in(time_delta=cache_ttl,
-                func=clear_export_cache,
+                func=_clear_export_cache,
                 file_path=output_path,
                 file_ctime=archive_ctime,
                 logger=logger)
@@ -952,13 +953,11 @@ def export(db_instance, request, queue_name):
         field_name=StorageType.TARGET
     )
 
+    last_instance_update_time = timezone.localtime(db_instance.updated_date)
+
     queue = django_rq.get_queue(queue_name)
     rq_id = f"export:{obj_type}.id{db_instance.pk}-by-{request.user}"
     rq_job = queue.fetch_job(rq_id)
-
-    last_instance_update_time = timezone.localtime(db_instance.updated_date)
-    timestamp = datetime.strftime(last_instance_update_time, "%Y_%m_%d_%H_%M_%S")
-    location = location_conf.get('location')
 
     if rq_job:
         rq_request = rq_job.meta.get('request', None)
@@ -968,43 +967,54 @@ def export(db_instance, request, queue_name):
             # we have to enqueue dependent jobs after canceling one
             rq_job.cancel(enqueue_dependents=settings.ONE_RUNNING_JOB_IN_QUEUE_PER_USER)
             rq_job.delete()
-        else:
-            if rq_job.is_finished:
-                if location == Location.LOCAL:
-                    file_path = rq_job.return_value()
+            rq_job = None
 
-                    if not file_path:
-                        return Response('A result for exporting job was not found for finished RQ job', status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+    timestamp = datetime.strftime(last_instance_update_time, "%Y_%m_%d_%H_%M_%S")
+    location = location_conf.get('location')
 
-                    elif not os.path.exists(file_path):
-                        return Response('The result file does not exist in export cache', status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+    if action == "download":
+        if location != Location.LOCAL:
+            return Response('Action "download" is only supported for a local backup location', status=status.HTTP_400_BAD_REQUEST)
 
-                    filename = filename or build_backup_file_name(
-                        class_name=obj_type,
-                        identifier=db_instance.name,
-                        timestamp=timestamp,
-                        extension=os.path.splitext(file_path)[1]
-                    )
+        if not rq_job or not rq_job.is_finished:
+            return Response('Backup has not finished', status=status.HTTP_400_BAD_REQUEST)
 
-                    if action == "download":
-                        rq_job.delete()
-                        return sendfile(request, file_path, attachment=True,
-                            attachment_filename=filename)
+        file_path = rq_job.return_value()
 
-                    return Response(status=status.HTTP_201_CREATED)
+        if not file_path:
+            return Response('A result for exporting job was not found for finished RQ job', status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
-                elif location == Location.CLOUD_STORAGE:
-                    rq_job.delete()
-                    return Response(status=status.HTTP_200_OK)
-                else:
-                    raise NotImplementedError()
-            elif rq_job.is_failed:
-                exc_info = rq_job.meta.get('formatted_exception', str(rq_job.exc_info))
+        elif not os.path.exists(file_path):
+            return Response('The result file does not exist in export cache', status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+        filename = filename or build_backup_file_name(
+            class_name=obj_type,
+            identifier=db_instance.name,
+            timestamp=timestamp,
+            extension=os.path.splitext(file_path)[1]
+        )
+
+        rq_job.delete()
+        return sendfile(request, file_path, attachment=True,
+            attachment_filename=filename)
+
+    if rq_job:
+        if rq_job.is_finished:
+            if location == Location.LOCAL:
+                return Response(status=status.HTTP_201_CREATED)
+
+            elif location == Location.CLOUD_STORAGE:
                 rq_job.delete()
-                return Response(exc_info,
-                    status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+                return Response(status=status.HTTP_200_OK)
             else:
-                return Response(status=status.HTTP_202_ACCEPTED)
+                raise NotImplementedError()
+        elif rq_job.is_failed:
+            exc_info = rq_job.meta.get('formatted_exception', str(rq_job.exc_info))
+            rq_job.delete()
+            return Response(exc_info,
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        else:
+            return Response(status=status.HTTP_202_ACCEPTED)
 
     ttl = dm.views.PROJECT_CACHE_TTL.total_seconds()
     user_id = request.user.id
@@ -1180,3 +1190,15 @@ def import_task(request, queue_name, filename=None):
         location_conf=location_conf,
         filename=filename
     )
+
+def _clear_export_cache(file_path: str, file_ctime: float, logger: Logger) -> None:
+    try:
+        if os.path.exists(file_path) and os.path.getctime(file_path) == file_ctime:
+            os.remove(file_path)
+
+            logger.info(
+                "Export cache file '{}' successfully removed" \
+                .format(file_path))
+    except Exception:
+        log_exception(logger)
+        raise

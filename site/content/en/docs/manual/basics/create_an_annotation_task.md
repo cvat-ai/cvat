@@ -49,7 +49,7 @@ And specify the following parameters:
 
 4. In the **Label name** field, enter the name of the label.
 5. (Optional) To limit the use of the label to a certain
-   {{< ilink "/docs/manual/basics/controls-sidebar#shapes" "shape tool" >}},
+   {{< ilink "/docs/manual/basics/CVAT-annotation-Interface/controls-sidebar#shapes" "shape tool" >}},
    from the [**Label shape**](#label-shape) drop-down select the shape.
 6. (Optional) Select the color for the label.
 
@@ -67,7 +67,7 @@ And specify the following parameters:
 Labels (or classes) are categories of objects that you can annotate.
 
 **Label shape** limits the use of the label to certain
-{{< ilink "/docs/manual/basics/controls-sidebar#shapes" "shape tool" >}}.
+{{< ilink "/docs/manual/basics/CVAT-annotation-Interface/controls-sidebar#shapes" "shape tool" >}}.
 
 `Any` is the default setting that does not limit the use of the
 label to any particular shape tool.
@@ -84,8 +84,9 @@ As a result:
 
   ![Label shape](/images/label_shape.gif)
 
-The tools on the {{< ilink "/docs/manual/basics/controls-sidebar" "Controls sidebar" >}}
+The tools on the {{< ilink "/docs/manual/basics/CVAT-annotation-Interface/controls-sidebar" "Controls sidebar" >}}
 will be limited to the selected types of shapes.
+
 
 For example, if you select `Any`,
 all tools will be available,

@@ -11,7 +11,7 @@ import Spin from 'antd/lib/spin';
 import { Row, Col } from 'antd/lib/grid';
 import Result from 'antd/lib/result';
 import Button from 'antd/lib/button';
-import Dropdown from 'antd/lib/dropdown';
+import Popover from 'antd/lib/popover';
 import Title from 'antd/lib/typography/Title';
 import Pagination from 'antd/lib/pagination';
 import { MultiPlusIcon } from 'icons';
@@ -288,37 +288,38 @@ export default function ProjectPageComponent(): JSX.Element {
                                     }}
                                 />
                             </div>
-                            <Dropdown
-                                trigger={['click']}
-                                destroyPopupOnHide
-                                overlay={(
-                                    <CvatDropdownMenuPaper>
-                                        <Button
-                                            type='primary'
-                                            icon={<PlusOutlined />}
-                                            className='cvat-create-task-button'
-                                            onClick={() => history.push(`/tasks/create?projectId=${id}`)}
-                                        >
-                                            Create a new task
-                                        </Button>
-                                        <Button
-                                            type='primary'
-                                            icon={<span className='anticon'><MultiPlusIcon /></span>}
-                                            className='cvat-create-multi-tasks-button'
-                                            onClick={() => history.push(`/tasks/create?projectId=${id}&many=true`)}
-                                        >
-                                            Create multi tasks
-                                        </Button>
-                                    </CvatDropdownMenuPaper>
-                                )}
-                            >
-                                <Button
-                                    type='primary'
-                                    className='cvat-create-task-dropdown'
-                                    icon={<PlusOutlined />}
-                                />
-                            </Dropdown>
                         </div>
+                        <Popover
+                            trigger={['click']}
+                            destroyTooltipOnHide
+                            overlayInnerStyle={{ padding: 0 }}
+                            content={(
+                                <CvatDropdownMenuPaper>
+                                    <Button
+                                        type='primary'
+                                        icon={<PlusOutlined />}
+                                        className='cvat-create-task-button'
+                                        onClick={() => history.push(`/tasks/create?projectId=${id}`)}
+                                    >
+                                        Create a new task
+                                    </Button>
+                                    <Button
+                                        type='primary'
+                                        icon={<span className='anticon'><MultiPlusIcon /></span>}
+                                        className='cvat-create-multi-tasks-button'
+                                        onClick={() => history.push(`/tasks/create?projectId=${id}&many=true`)}
+                                    >
+                                        Create multi tasks
+                                    </Button>
+                                </CvatDropdownMenuPaper>
+                            )}
+                        >
+                            <Button
+                                type='primary'
+                                className='cvat-create-task-dropdown'
+                                icon={<PlusOutlined />}
+                            />
+                        </Popover>
                     </Col>
                 </Row>
                 { tasksFetching ? (

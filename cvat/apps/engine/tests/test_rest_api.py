@@ -1,9 +1,10 @@
 # Copyright (C) 2020-2022 Intel Corporation
-# Copyright (C) 2023 CVAT.ai Corporation
+# Copyright (C) 2023-2024 CVAT.ai Corporation
 #
 # SPDX-License-Identifier: MIT
 
 from contextlib import ExitStack
+from datetime import timedelta
 import io
 from itertools import product
 import os
@@ -24,6 +25,7 @@ import copy
 import json
 
 import av
+import django_rq
 import numpy as np
 from pdf2image import convert_from_bytes
 from pyunpack import Archive
@@ -550,25 +552,25 @@ class ServerLogsAPITestCase(ApiTestBase):
         create_db_users(cls)
         cls.data = {
             "events": [{
-                "scope": "test:scope1",
-                "timestamp": "2019-01-29T12:34:56.000000Z",
-                "task": 1,
-                "job": 1,
-                "proj": 2,
+                "scope": "debug:info",
+                "timestamp": "2024-05-30T17:05:13.776Z",
+                "task_id": 1,
+                "job_id": 1,
+                "project_id": 2,
                 "organization": 2,
                 "count": 1,
                 "payload": json.dumps({
-                    "client_id": 12321235123,
+                    "client_id": 123456,
                     "message": "just test message",
                     "name": "add point",
                     "is_active": True,
                 }),
             },
             {
-                "timestamp": "2019-02-24T12:34:56.000000Z",
-                "scope": "test:scope2",
+                "timestamp": "2024-05-30T17:05:14.776Z",
+                "scope": "debug:info",
             }],
-            "timestamp": "2019-02-24T12:34:58.000000Z",
+            "timestamp": "2024-05-30T17:05:15.776Z",
         }
 
 
@@ -3031,6 +3033,33 @@ class TaskImportExportAPITestCase(ApiTestBase):
 
     def test_api_v2_tasks_id_export_no_auth(self):
         self._run_api_v2_tasks_id_export_import(None)
+
+    def test_can_remove_export_cache_automatically_after_successful_export(self):
+        self._create_tasks()
+        task_id = self.tasks[0]["id"]
+        user = self.admin
+
+        with mock.patch('cvat.apps.engine.backup.TASK_CACHE_TTL', new=timedelta(hours=10)):
+            response = self._run_api_v2_tasks_id_export(task_id, user)
+            self.assertEqual(response.status_code, status.HTTP_202_ACCEPTED)
+
+            response = self._run_api_v2_tasks_id_export(task_id, user)
+            self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+
+        scheduler = django_rq.get_scheduler(settings.CVAT_QUEUES.IMPORT_DATA.value)
+        scheduled_jobs = list(scheduler.get_jobs())
+        cleanup_job = next(
+            j for j in scheduled_jobs if j.func_name.endswith('.engine.backup._clear_export_cache')
+        )
+
+        export_path = cleanup_job.kwargs['file_path']
+        self.assertTrue(os.path.isfile(export_path))
+
+        from cvat.apps.engine.backup import _clear_export_cache
+        _clear_export_cache(**cleanup_job.kwargs)
+
+        self.assertFalse(os.path.isfile(export_path))
+
 
 def generate_random_image_file(filename):
     gen = random.SystemRandom()

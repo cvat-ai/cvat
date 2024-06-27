@@ -19,39 +19,19 @@ import itertools
 
 from django.contrib.auth.models import Group, User
 from rest_framework import status
-from rest_framework.test import APIClient, APITestCase
 
 from cvat.apps.engine.media_extractors import ValidateDimension
 from cvat.apps.dataset_manager.task import TaskAnnotation
 from datumaro.util.test_utils import TestDir
 
-from cvat.apps.engine.tests.utils import get_paginated_collection
+from cvat.apps.engine.tests.utils import get_paginated_collection, ApiTestBase, ForceLogin
 
 CREATE_ACTION = "create"
 UPDATE_ACTION = "update"
 DELETE_ACTION = "delete"
 
 
-class ForceLogin:
-    def __init__(self, user, client):
-        self.user = user
-        self.client = client
-
-    def __enter__(self):
-        if self.user:
-            self.client.force_login(self.user,
-                backend='django.contrib.auth.backends.ModelBackend')
-
-        return self
-
-    def __exit__(self, exception_type, exception_value, traceback):
-        if self.user:
-            self.client.logout()
-
-class _DbTestBase(APITestCase):
-    def setUp(self):
-        self.client = APIClient()
-
+class _DbTestBase(ApiTestBase):
     @classmethod
     def setUpTestData(cls):
         cls.create_db_users()
@@ -173,7 +153,7 @@ class _DbTestBase(APITestCase):
     def _download_file(self, url, data, user, file_name):
         response = self._get_request_with_data(url, data, user)
         self.assertEqual(response.status_code, status.HTTP_202_ACCEPTED)
-        response = self._get_request_with_data(url, data, user)
+        response = self._get_request_with_data(url, {**data, "action": "download"}, user)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
 
         content = BytesIO(b"".join(response.streaming_content))
@@ -547,6 +527,8 @@ class Task3DTest(_DbTestBase):
 
                 for user, edata in list(self.expected_dump_upload.items()):
                     with self.subTest(format=f"{format_name}_{edata['name']}_dump"):
+                        self._clear_rq_jobs() # clean up from previous tests and iterations
+
                         url = self._generate_url_dump_tasks_annotations(task_id)
                         file_name = osp.join(test_dir, f"{format_name}_{edata['name']}.zip")
 
@@ -601,7 +583,6 @@ class Task3DTest(_DbTestBase):
                     file_name = osp.join(test_dir, f"{format_name}.zip")
                     data = {
                         "format": format_name,
-                        "action": "download",
                     }
                     self._download_file(url, data, self.admin, file_name)
                     self.assertTrue(osp.exists(file_name))
@@ -640,7 +621,6 @@ class Task3DTest(_DbTestBase):
                     file_name = osp.join(test_dir, f"{format_name}.zip")
                     data = {
                         "format": format_name,
-                        "action": "download",
                     }
                     self._download_file(url, data, self.admin, file_name)
                     self.assertTrue(osp.exists(file_name))
@@ -681,7 +661,6 @@ class Task3DTest(_DbTestBase):
                     file_name = osp.join(test_dir, f"{format_name}.zip")
                     data = {
                         "format": format_name,
-                        "action": "download",
                     }
                     self._download_file(url, data, self.admin, file_name)
 
@@ -705,7 +684,6 @@ class Task3DTest(_DbTestBase):
                     file_name = osp.join(test_dir, f"{format_name}.zip")
                     data = {
                         "format": format_name,
-                        "action": "download",
                     }
                     self._download_file(url, data, self.admin, file_name)
                     self.assertTrue(osp.exists(file_name))
@@ -740,6 +718,8 @@ class Task3DTest(_DbTestBase):
 
                 for user, edata in list(self.expected_dump_upload.items()):
                     with self.subTest(format=f"{format_name}_{edata['name']}_export"):
+                        self._clear_rq_jobs() # clean up from previous tests and iterations
+
                         url = self._generate_url_dump_dataset(task_id)
                         file_name = osp.join(test_dir, f"{format_name}_{edata['name']}.zip")
 

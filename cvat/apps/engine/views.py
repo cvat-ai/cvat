@@ -1,5 +1,5 @@
 # Copyright (C) 2018-2022 Intel Corporation
-# Copyright (C) 2022-2023 CVAT.ai Corporation
+# Copyright (C) 2022-2024 CVAT.ai Corporation
 #
 # SPDX-License-Identifier: MIT
 
@@ -7,7 +7,7 @@ import os
 import os.path as osp
 from PIL import Image
 from types import SimpleNamespace
-from typing import Optional, Any, Dict, List, cast, Callable
+from typing import Optional, Any, Dict, List, cast, Callable, Mapping
 import traceback
 import textwrap
 from copy import copy
@@ -76,16 +76,19 @@ from cvat.apps.engine.utils import (
     build_annotations_file_name,
 )
 from cvat.apps.engine import backup
-from cvat.apps.engine.mixins import PartialUpdateModelMixin, UploadMixin, AnnotationMixin, SerializeMixin
+from cvat.apps.engine.mixins import (
+    PartialUpdateModelMixin, UploadMixin, AnnotationMixin, SerializeMixin, CsrfWorkaroundMixin
+)
 from cvat.apps.engine.location import get_location_configuration, StorageType
 
 from . import models, task
 from .log import ServerLogManager
-from cvat.apps.iam.permissions import (CloudStoragePermission,
-    CommentPermission, IssuePermission, JobPermission, LabelPermission, ProjectPermission,
-    TaskPermission, UserPermission, PolicyEnforcer, IsAuthenticatedOrReadPublicResource)
 from cvat.apps.iam.filters import ORGANIZATION_OPEN_API_PARAMETERS
+from cvat.apps.iam.permissions import PolicyEnforcer, IsAuthenticatedOrReadPublicResource
 from cvat.apps.engine.cache import MediaCache
+from cvat.apps.engine.permissions import (CloudStoragePermission,
+    CommentPermission, IssuePermission, JobPermission, LabelPermission, ProjectPermission,
+    TaskPermission, UserPermission)
 from cvat.apps.engine.view_utils import tus_chunk_action
 
 slogger = ServerLogManager(__name__)
@@ -205,6 +208,12 @@ class ServerViewSet(viewsets.ViewSet):
         }
         return Response(PluginsSerializer(data).data)
 
+def csrf_workaround_is_needed_for_backup(query_params: Mapping[str, str]) -> bool:
+    return query_params.get('action') != 'download'
+
+def csrf_workaround_is_needed_for_export(query_params: Mapping[str, str]) -> bool:
+    return 'format' in query_params and query_params.get('action') != 'download'
+
 @extend_schema(tags=['projects'])
 @extend_schema_view(
     list=extend_schema(
@@ -238,7 +247,7 @@ class ServerViewSet(viewsets.ViewSet):
 )
 class ProjectViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
     mixins.RetrieveModelMixin, mixins.CreateModelMixin, mixins.DestroyModelMixin,
-    PartialUpdateModelMixin, UploadMixin, AnnotationMixin, SerializeMixin
+    PartialUpdateModelMixin, UploadMixin, AnnotationMixin, SerializeMixin, CsrfWorkaroundMixin
 ):
     queryset = models.Project.objects.select_related(
         'assignee', 'owner', 'target_storage', 'source_storage', 'annotation_guide',
@@ -346,7 +355,9 @@ class ProjectViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
             '405': OpenApiResponse(description='Format is not available'),
         })
     @action(detail=True, methods=['GET', 'POST', 'OPTIONS'], serializer_class=None,
-        url_path=r'dataset/?$', parser_classes=_UPLOAD_PARSER_CLASSES)
+        url_path=r'dataset/?$', parser_classes=_UPLOAD_PARSER_CLASSES,
+        csrf_workaround_is_needed=lambda qp:
+            csrf_workaround_is_needed_for_export(qp) and qp.get("action") != "import_status")
     def dataset(self, request, pk):
         self._object = self.get_object() # force call of check_object_permissions()
 
@@ -478,7 +489,8 @@ class ProjectViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
             '405': OpenApiResponse(description='Format is not available'),
         })
     @action(detail=True, methods=['GET'],
-        serializer_class=LabeledDataSerializer)
+        serializer_class=LabeledDataSerializer,
+        csrf_workaround_is_needed=csrf_workaround_is_needed_for_export)
     def annotations(self, request, pk):
         self._object = self.get_object() # force call of check_object_permissions()
         return self.export_annotations(
@@ -510,7 +522,8 @@ class ProjectViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
             '201': OpenApiResponse(description='Output backup file is ready for downloading'),
             '202': OpenApiResponse(description='Creating a backup file has been started'),
         })
-    @action(methods=['GET'], detail=True, url_path='backup')
+    @action(methods=['GET'], detail=True, url_path='backup',
+        csrf_workaround_is_needed=csrf_workaround_is_needed_for_backup)
     def export_backup(self, request, pk=None):
         return self.serialize(request, backup.export)
 
@@ -764,7 +777,7 @@ class JobDataGetter(DataChunkGetter):
 
 class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
     mixins.RetrieveModelMixin, mixins.CreateModelMixin, mixins.DestroyModelMixin,
-    PartialUpdateModelMixin, UploadMixin, AnnotationMixin, SerializeMixin
+    PartialUpdateModelMixin, UploadMixin, AnnotationMixin, SerializeMixin, CsrfWorkaroundMixin
 ):
     queryset = Task.objects.select_related(
         'data', 'assignee', 'owner',
@@ -879,7 +892,8 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
             '202': OpenApiResponse(description='Creating a backup file has been started'),
             '400': OpenApiResponse(description='Backup of a task without data is not allowed'),
         })
-    @action(methods=['GET'], detail=True, url_path='backup')
+    @action(methods=['GET'], detail=True, url_path='backup',
+        csrf_workaround_is_needed=csrf_workaround_is_needed_for_backup)
     def export_backup(self, request, pk=None):
         if self.get_object().data is None:
             return Response(
@@ -1329,7 +1343,8 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
             '204': OpenApiResponse(description='The annotation has been deleted'),
         })
     @action(detail=True, methods=['GET', 'DELETE', 'PUT', 'PATCH', 'POST', 'OPTIONS'], url_path=r'annotations/?$',
-        serializer_class=None, parser_classes=_UPLOAD_PARSER_CLASSES)
+        serializer_class=None, parser_classes=_UPLOAD_PARSER_CLASSES,
+        csrf_workaround_is_needed=csrf_workaround_is_needed_for_export)
     def annotations(self, request, pk):
         self._object = self.get_object() # force call of check_object_permissions()
         if request.method == 'GET':
@@ -1508,7 +1523,7 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
             '405': OpenApiResponse(description='Format is not available'),
         })
     @action(detail=True, methods=['GET'], serializer_class=None,
-        url_path='dataset')
+        url_path='dataset', csrf_workaround_is_needed=csrf_workaround_is_needed_for_export)
     def dataset_export(self, request, pk):
         self._object = self.get_object() # force call of check_object_permissions()
 
@@ -1583,7 +1598,7 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
 )
 class JobViewSet(viewsets.GenericViewSet, mixins.ListModelMixin, mixins.CreateModelMixin,
     mixins.RetrieveModelMixin, PartialUpdateModelMixin, mixins.DestroyModelMixin,
-    UploadMixin, AnnotationMixin
+    UploadMixin, AnnotationMixin, CsrfWorkaroundMixin
 ):
     queryset = Job.objects.select_related('assignee', 'segment__task__data',
         'segment__task__project', 'segment__task__annotation_guide', 'segment__task__project__annotation_guide',
@@ -1775,7 +1790,8 @@ class JobViewSet(viewsets.GenericViewSet, mixins.ListModelMixin, mixins.CreateMo
             '204': OpenApiResponse(description='The annotation has been deleted'),
         })
     @action(detail=True, methods=['GET', 'DELETE', 'PUT', 'PATCH', 'POST', 'OPTIONS'], url_path=r'annotations/?$',
-        serializer_class=LabeledDataSerializer, parser_classes=_UPLOAD_PARSER_CLASSES)
+        serializer_class=LabeledDataSerializer, parser_classes=_UPLOAD_PARSER_CLASSES,
+        csrf_workaround_is_needed=csrf_workaround_is_needed_for_export)
     def annotations(self, request, pk):
         self._object = self.get_object() # force call of check_object_permissions()
         if request.method == 'GET':
@@ -1872,7 +1888,7 @@ class JobViewSet(viewsets.GenericViewSet, mixins.ListModelMixin, mixins.CreateMo
             '405': OpenApiResponse(description='Format is not available'),
         })
     @action(detail=True, methods=['GET'], serializer_class=None,
-        url_path='dataset')
+        url_path='dataset', csrf_workaround_is_needed=csrf_workaround_is_needed_for_export)
     def dataset_export(self, request, pk):
         self._object = self.get_object() # force call of check_object_permissions()
 
@@ -2393,7 +2409,7 @@ class UserViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
     @action(detail=False, methods=['GET'])
     def self(self, request):
         """
-        Method returns an instance of a user who is currently authorized
+        Method returns an instance of a user who is currently authenticated
         """
         serializer_class = self.get_serializer_class()
         serializer = serializer_class(request.user, context={ "request": request })
@@ -2950,8 +2966,26 @@ def _export_annotations(
     elif not format_desc.ENABLED:
         return Response(status=status.HTTP_405_METHOD_NOT_ALLOWED)
 
+    instance_update_time = timezone.localtime(db_instance.updated_date)
+    if isinstance(db_instance, Project):
+        tasks_update = list(map(lambda db_task: timezone.localtime(db_task.updated_date), db_instance.tasks.all()))
+        instance_update_time = max(tasks_update + [instance_update_time])
+
     queue = django_rq.get_queue(settings.CVAT_QUEUES.EXPORT_DATA.value)
     rq_job = queue.fetch_job(rq_id)
+
+    if rq_job:
+        rq_request = rq_job.meta.get('request', None)
+        request_time = rq_request.get('timestamp', None) if rq_request else None
+        if request_time is None or request_time < instance_update_time:
+            # The result is outdated, need to restart the export.
+            # Cancel the current job.
+            # The new attempt will be made after the last existing job.
+            # In the case the server is configured with ONE_RUNNING_JOB_IN_QUEUE_PER_USER
+            # we have to enqueue dependent jobs after canceling one.
+            rq_job.cancel(enqueue_dependents=settings.ONE_RUNNING_JOB_IN_QUEUE_PER_USER)
+            rq_job.delete()
+            rq_job = None
 
     location = location_conf.get('location')
     if location not in Location.list():
@@ -2959,61 +2993,103 @@ def _export_annotations(
             f"Unexpected location {location} specified for the request"
         )
 
-    last_instance_update_time = timezone.localtime(db_instance.updated_date)
-    if isinstance(db_instance, Project):
-        tasks_update = list(map(lambda db_task: timezone.localtime(db_task.updated_date), db_instance.tasks.all()))
-        last_instance_update_time = max(tasks_update + [last_instance_update_time])
+    cache_ttl = dm.views.get_export_cache_ttl(db_instance)
 
-    timestamp = datetime.strftime(last_instance_update_time, "%Y_%m_%d_%H_%M_%S")
+    instance_timestamp = datetime.strftime(instance_update_time, "%Y_%m_%d_%H_%M_%S")
     is_annotation_file = rq_id.startswith('export:annotations')
 
+    REQUEST_TIMEOUT = 60
+
+    if action == "download":
+        if location != Location.LOCAL:
+            return Response('Action "download" is only supported for a local export location',
+                status=status.HTTP_400_BAD_REQUEST)
+
+        if not rq_job or not rq_job.is_finished:
+            return Response('Export has not finished', status=status.HTTP_400_BAD_REQUEST)
+
+        file_path = rq_job.return_value()
+
+        if not file_path:
+            return Response(
+                'A result for exporting job was not found for finished RQ job',
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+
+        with dm.util.get_export_cache_lock(file_path, ttl=REQUEST_TIMEOUT):
+            if not osp.exists(file_path):
+                return Response(
+                    "The exported file has expired, please retry exporting",
+                    status=status.HTTP_404_NOT_FOUND
+                )
+
+            filename = filename or \
+                build_annotations_file_name(
+                    class_name=db_instance.__class__.__name__,
+                    identifier=db_instance.name if isinstance(db_instance, (Task, Project)) else db_instance.id,
+                    timestamp=instance_timestamp,
+                    format_name=format_name,
+                    is_annotation_file=is_annotation_file,
+                    extension=osp.splitext(file_path)[1]
+                )
+
+            rq_job.delete()
+            return sendfile(request, file_path, attachment=True, attachment_filename=filename)
+
+
     if rq_job:
-        rq_request = rq_job.meta.get('request', None)
-        request_time = rq_request.get('timestamp', None) if rq_request else None
-        if request_time is None or request_time < last_instance_update_time:
-            # in case the server is configured with ONE_RUNNING_JOB_IN_QUEUE_PER_USER
-            # we have to enqueue dependent jobs after canceling one
+        if rq_job.is_finished:
+            if location == Location.CLOUD_STORAGE:
+                rq_job.delete()
+                return Response(status=status.HTTP_200_OK)
+
+            elif location == Location.LOCAL:
+                file_path = rq_job.return_value()
+
+                if not file_path:
+                    return Response(
+                        'A result for exporting job was not found for finished RQ job',
+                        status=status.HTTP_500_INTERNAL_SERVER_ERROR
+                    )
+
+                with dm.util.get_export_cache_lock(file_path, ttl=REQUEST_TIMEOUT):
+                    if osp.exists(file_path):
+                        # Update last update time to prolong the export lifetime
+                        # as the last access time is not available on every filesystem
+                        os.utime(file_path, None)
+
+                        return Response(status=status.HTTP_201_CREATED)
+                    else:
+                        # Cancel and reenqueue the job.
+                        # The new attempt will be made after the last existing job.
+                        # In the case the server is configured with ONE_RUNNING_JOB_IN_QUEUE_PER_USER
+                        # we have to enqueue dependent jobs after canceling one.
+                        rq_job.cancel(enqueue_dependents=settings.ONE_RUNNING_JOB_IN_QUEUE_PER_USER)
+                        rq_job.delete()
+            else:
+                raise NotImplementedError(f"Export to {location} location is not implemented yet")
+        elif rq_job.is_failed:
+            exc_info = rq_job.meta.get('formatted_exception', str(rq_job.exc_info))
+            rq_job.delete()
+            return Response(exc_info, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        elif rq_job.is_deferred and rq_id not in queue.deferred_job_registry.get_job_ids():
+            # Sometimes jobs can depend on outdated jobs in the deferred jobs registry.
+            # They can be fetched by their specific ids, but are not listed by get_job_ids().
+            # Supposedly, this can happen because of the server restarts
+            # (potentially, because the redis used for the queue is inmemory).
+            # Another potential reason is canceling without enqueueing dependents.
+            # Such dependencies are never removed or finished,
+            # as there is no TTL for deferred jobs,
+            # so the current job can be blocked indefinitely.
+
+            # Cancel the current job and then reenqueue it, considering the current situation.
+            # The new attempt will be made after the last existing job.
+            # In the case the server is configured with ONE_RUNNING_JOB_IN_QUEUE_PER_USER
+            # we have to enqueue dependent jobs after canceling one.
             rq_job.cancel(enqueue_dependents=settings.ONE_RUNNING_JOB_IN_QUEUE_PER_USER)
             rq_job.delete()
         else:
-            if rq_job.is_finished:
-                if location == Location.CLOUD_STORAGE:
-                    rq_job.delete()
-                    return Response(status=status.HTTP_200_OK)
-
-                elif location == Location.LOCAL:
-                    file_path = rq_job.return_value()
-
-                    if not file_path:
-                        return Response('A result for exporting job was not found for finished RQ job', status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-                    elif not osp.exists(file_path):
-                        return Response('The result file does not exist in export cache', status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-
-                    if action == "download":
-                        filename = filename or \
-                            build_annotations_file_name(
-                                class_name=db_instance.__class__.__name__,
-                                identifier=db_instance.name if isinstance(db_instance, (Task, Project)) else db_instance.id,
-                                timestamp=timestamp,
-                                format_name=format_name,
-                                is_annotation_file=is_annotation_file,
-                                extension=osp.splitext(file_path)[1]
-                            )
-
-                        rq_job.delete()
-                        return sendfile(request, file_path, attachment=True, attachment_filename=filename)
-
-                    return Response(status=status.HTTP_201_CREATED)
-                else:
-                    raise NotImplementedError(f"Export to {location} location is not implemented yet")
-            elif rq_job.is_failed:
-                exc_info = rq_job.meta.get('formatted_exception', str(rq_job.exc_info))
-                rq_job.delete()
-                return Response(exc_info,
-                    status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-            else:
-                return Response(status=status.HTTP_202_ACCEPTED)
-
+            return Response(status=status.HTTP_202_ACCEPTED)
     try:
         if request.scheme:
             server_address = request.scheme + '://'
@@ -3021,12 +3097,6 @@ def _export_annotations(
     except Exception:
         server_address = None
 
-    TTL_CONSTS = {
-        'project': dm.views.PROJECT_CACHE_TTL,
-        'task': dm.views.TASK_CACHE_TTL,
-        'job': dm.views.JOB_CACHE_TTL,
-    }
-    ttl = TTL_CONSTS[db_instance.__class__.__name__.lower()].total_seconds()
     user_id = request.user.id
 
     func = callback if location == Location.LOCAL else export_resource_to_cloud_storage
@@ -3046,7 +3116,7 @@ def _export_annotations(
         filename_pattern = build_annotations_file_name(
             class_name=db_instance.__class__.__name__,
             identifier=db_instance.name if isinstance(db_instance, (Task, Project)) else db_instance.id,
-            timestamp=timestamp,
+            timestamp=instance_timestamp,
             format_name=format_name,
             is_annotation_file=is_annotation_file,
         )
@@ -3061,8 +3131,8 @@ def _export_annotations(
             job_id=rq_id,
             meta=get_rq_job_meta(request=request, db_obj=db_instance),
             depends_on=define_dependent_job(queue, user_id, rq_id=rq_id),
-            result_ttl=ttl,
-            failure_ttl=ttl,
+            result_ttl=cache_ttl.total_seconds(),
+            failure_ttl=cache_ttl.total_seconds(),
         )
 
     handle_dataset_export(db_instance,

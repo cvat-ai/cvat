@@ -412,7 +412,6 @@ export interface ModelsState {
     detectors: MLModel[];
     trackers: MLModel[];
     reid: MLModel[];
-    classifiers: MLModel[];
     totalCount: number;
     requestedInferenceIDs: {
         [index: string]: boolean;
@@ -438,7 +437,7 @@ export interface ErrorState {
 export interface NotificationsState {
     errors: {
         auth: {
-            authorized: null | ErrorState;
+            authenticated: null | ErrorState;
             login: null | ErrorState;
             logout: null | ErrorState;
             register: null | ErrorState;
@@ -496,6 +495,7 @@ export interface NotificationsState {
         annotation: {
             saving: null | ErrorState;
             jobFetching: null | ErrorState;
+            jobUpdating: null | ErrorState;
             frameFetching: null | ErrorState;
             changingLabelColor: null | ErrorState;
             updating: null | ErrorState;
@@ -760,6 +760,7 @@ export interface AnnotationState {
         states: any[];
         filters: object[];
         resetGroupFlag: boolean;
+        initialized: boolean;
         history: {
             undo: [string, number][];
             redo: [string, number][];

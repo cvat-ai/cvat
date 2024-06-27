@@ -6,11 +6,12 @@
 #    pip-compile-multi
 #
 -r base.txt
+
 astroid==2.11.7
     # via pylint
 autopep8==2.1.0
     # via django-silk
-black==24.3.0
+black==24.4.2
     # via -r cvat/requirements/development.in
 dill==0.3.8
     # via pylint
@@ -30,7 +31,7 @@ mypy-extensions==1.0.0
     # via black
 pathspec==0.12.1
     # via black
-platformdirs==4.2.0
+platformdirs==4.2.2
     # via
     #   black
     #   pylint
@@ -56,11 +57,11 @@ tomli==2.0.1
     #   autopep8
     #   black
     #   pylint
-tomlkit==0.12.4
+tomlkit==0.12.5
     # via pylint
 tornado==6.4
     # via snakeviz
 
 # The following packages are considered to be unsafe in a requirements file:
-setuptools==69.2.0
+setuptools==70.0.0
     # via astroid

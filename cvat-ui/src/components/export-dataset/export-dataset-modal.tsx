@@ -1,5 +1,5 @@
 // Copyright (C) 2021-2022 Intel Corporation
-// Copyright (C) 2022-2023 CVAT.ai Corporation
+// Copyright (C) 2022-2024 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -128,7 +128,7 @@ function ExportDatasetModal(props: StateToProps): JSX.Element {
     return (
         <Modal
             title={<Text strong>{`Export ${instanceType} as a dataset`}</Text>}
-            visible={!!instance}
+            open={!!instance}
             onCancel={closeModal}
             onOk={() => form.submit()}
             className={`cvat-modal-export-${instanceType.split(' ')[0]}`}

@@ -4,7 +4,6 @@
 // SPDX-License-Identifier: MIT
 
 import React, { useEffect } from 'react';
-import { useHistory } from 'react-router';
 import Layout from 'antd/lib/layout';
 import Result from 'antd/lib/result';
 import Spin from 'antd/lib/spin';
@@ -12,6 +11,7 @@ import notification from 'antd/lib/notification';
 import Button from 'antd/lib/button';
 
 import './styles.scss';
+import { Job } from 'cvat-core-wrapper';
 import AttributeAnnotationWorkspace from 'components/annotation-page/attribute-annotation-workspace/attribute-annotation-workspace';
 import SingleShapeWorkspace from 'components/annotation-page/single-shape-workspace/single-shape-workspace';
 import ReviewAnnotationsWorkspace from 'components/annotation-page/review-workspace/review-workspace';
@@ -23,11 +23,13 @@ import StatisticsModalComponent from 'components/annotation-page/top-bar/statist
 import AnnotationTopBarContainer from 'containers/annotation-page/top-bar/top-bar';
 import { Workspace } from 'reducers';
 import { usePrevious } from 'utils/hooks';
+import EventRecorder from 'utils/event-recorder';
 import { readLatestFrame } from 'utils/remember-latest-frame';
 
 interface Props {
-    job: any | null | undefined;
+    job: Job | null | undefined;
     fetching: boolean;
+    annotationsInitialized: boolean;
     frameNumber: number;
     workspace: Workspace;
     getJob(): void;
@@ -38,12 +40,11 @@ interface Props {
 
 export default function AnnotationPageComponent(props: Props): JSX.Element {
     const {
-        job, fetching, workspace, frameNumber, getJob, closeJob, saveLogs, changeFrame,
+        job, fetching, annotationsInitialized, workspace, frameNumber, getJob, closeJob, saveLogs, changeFrame,
     } = props;
     const prevJob = usePrevious(job);
     const prevFetching = usePrevious(fetching);
 
-    const history = useHistory();
     useEffect(() => {
         saveLogs();
         const root = window.document.getElementById('root');
@@ -53,12 +54,11 @@ export default function AnnotationPageComponent(props: Props): JSX.Element {
 
         return () => {
             saveLogs();
+            closeJob();
+            EventRecorder.logger = null;
+
             if (root) {
                 root.style.minHeight = '';
-            }
-
-            if (!history.location.pathname.includes('/jobs')) {
-                closeJob();
             }
         };
     }, []);
@@ -90,7 +90,7 @@ export default function AnnotationPageComponent(props: Props): JSX.Element {
                                 type='link'
                                 onClick={() => {
                                     changeFrame(latestFrame);
-                                    notification.close(notificationKey);
+                                    notification.destroy(notificationKey);
                                 }}
                             >
                                 here
@@ -102,6 +102,8 @@ export default function AnnotationPageComponent(props: Props): JSX.Element {
                     className: 'cvat-notification-continue-job',
                 });
             }
+
+            EventRecorder.logger = job.logger;
 
             if (!job.labels.length) {
                 notification.warning({
@@ -124,7 +126,7 @@ export default function AnnotationPageComponent(props: Props): JSX.Element {
         }
     }, [job, fetching, prevJob, prevFetching]);
 
-    if (job === null) {
+    if (job === null || !annotationsInitialized) {
         return <Spin size='large' className='cvat-spinner' />;
     }
 
