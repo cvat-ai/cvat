@@ -236,18 +236,21 @@ function SingleShapeSidebar(): JSX.Element {
 
     const getNextFrame = useCallback(() => {
         if (frame + 1 > jobInstance.stopFrame) {
-            return Promise.resolve(null);
+            dispatch(actionCreators.setNextFrame(null));
         }
 
-        return jobInstance.annotations.search(frame + 1, jobInstance.stopFrame, {
+        jobInstance.annotations.search(frame + 1, jobInstance.stopFrame, {
             allowDeletedFrames: false,
             ...(navigationType === NavigationType.EMPTY ? {
                 generalFilters: {
                     isEmptyFrame: true,
                 },
             } : {}),
-        }) as Promise<number | null>;
-    }, [jobInstance, navigationType, frame]);
+        }).then((_frame: number | null) => {
+            dispatch(actionCreators.setNextFrame(_frame));
+        });
+        // implicitly depends on annotations because may use notEmpty filter
+    }, [jobInstance, navigationType, frame, annotations]);
 
     const finishOnThisFrame = useCallback((forceSave = false): void => {
         if (typeof state.nextFrame === 'number') {
@@ -298,9 +301,7 @@ function SingleShapeSidebar(): JSX.Element {
     }, []);
 
     useEffect(() => {
-        getNextFrame().then((_frame: number | null) => {
-            dispatch(actionCreators.setNextFrame(_frame));
-        });
+        getNextFrame();
     }, [getNextFrame]);
 
     useEffect(() => {
