@@ -66,7 +66,7 @@ class _ResourceExportManager(ABC):
         self.callback = callback
 
     @abstractmethod
-    def export(self):
+    def export(self) -> Response:
         pass
 
     @abstractmethod
@@ -74,7 +74,7 @@ class _ResourceExportManager(ABC):
         pass
 
     @abstractmethod
-    def _handle_rq_job_v1(self, rq_job: RQJob, queue: DjangoRQ) -> Response:
+    def _handle_rq_job_v1(self, rq_job: RQJob, queue: DjangoRQ) -> Optional[Response]:
         pass
 
     def _handle_rq_job_v2(self, rq_job: RQJob, *args, **kwargs) -> Optional[Response]:
@@ -193,7 +193,7 @@ class DatasetExportManager(_ResourceExportManager):
         self,
         rq_job: RQJob,
         queue: DjangoRQ,
-    ) -> Response:
+    ) -> Optional[Response]:
         action = self.request.query_params.get("action")
         if action not in {None, "download"}:
             raise serializers.ValidationError(
@@ -324,7 +324,7 @@ class DatasetExportManager(_ResourceExportManager):
         else:
             return Response(status=status.HTTP_202_ACCEPTED)
 
-    def export(self):
+    def export(self) -> Response:
         format_desc = {f.DISPLAY_NAME: f for f in dm.views.get_export_formats()}.get(
             self.export_args.format
         )
@@ -482,7 +482,7 @@ class BackupExportManager(_ResourceExportManager):
         self,
         rq_job: RQJob,
         queue: DjangoRQ,
-    ) -> Response:
+    ) -> Optional[Response]:
         last_instance_update_time = timezone.localtime(self.db_instance.updated_date)
         timestamp = self.get_timestamp(last_instance_update_time)
 
@@ -566,7 +566,7 @@ class BackupExportManager(_ResourceExportManager):
         else:
             return Response(status=status.HTTP_202_ACCEPTED)
 
-    def export(self):
+    def export(self) -> Response:
         queue: DjangoRQ = django_rq.get_queue(self.QUEUE_NAME)
         rq_id = RQIdManager.build(
             "export",
