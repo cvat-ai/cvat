@@ -83,6 +83,8 @@ export class CanvasViewImpl implements CanvasView, Listener {
     private highlightedElements: HighlightedElements;
     private configuration: Configuration;
     private snapToAngleResize: number;
+    private draggableShape: SVG.Shape | null;
+    private resizableShape: SVG.Shape | null;
     private innerObjectsFlags: {
         drawHidden: Record<number, boolean>;
         editHidden: Record<number, boolean>;
@@ -1059,6 +1061,315 @@ export class CanvasViewImpl implements CanvasView, Listener {
         }
     }
 
+    private draggable(
+        state: any,
+        shape: SVG.Shape,
+        onDragStart: () => void = () => {},
+        onDragMove: () => void = () => {},
+        onDragEnd: () => void = () => {},
+    ): void {
+        let draggableInstance = shape;
+        if (shape.classes().includes('cvat_canvas_shape_skeleton')) {
+            // for skeletons we use wrapping rectangle to drag the skeleton itself
+            draggableInstance = (shape as any).children().find((child: SVG.Element) => child.type === 'rect');
+        }
+
+        if (state) {
+            let aborted = false;
+            let skeletonSVGTemplate: SVG.G = null;
+            shape.addClass('cvat_canvas_shape_draggable');
+            (draggableInstance as any).draggable({
+                ...(state.shapeType === 'mask' ? { snapToGrid: 1 } : {}),
+            });
+
+            draggableInstance.on('dragstart', (): void => {
+                onDragStart();
+                this.draggableShape = shape;
+            }).on('dragmove', (e: CustomEvent): void => {
+                onDragMove();
+                if (state.shapeType === 'skeleton' && e.target) {
+                    const { instance } = e.target as any;
+                    const [x, y] = [instance.x(), instance.y()];
+                    const prevXtl = +draggableInstance.attr('data-xtl');
+                    const prevYtl = +draggableInstance.attr('data-ytl');
+
+                    for (const child of (shape as SVG.G).children()) {
+                        if (child.type === 'circle') {
+                            const childClientID = child.attr('data-client-id');
+                            if (state.elements.find((el: any) => el.clientID === childClientID).lock || false) {
+                                continue;
+                            }
+                            child.center(child.cx() - prevXtl + x, child.cy() - prevYtl + y);
+                        }
+                    }
+
+                    draggableInstance.attr('data-xtl', x);
+                    draggableInstance.attr('data-ytl', y);
+                    draggableInstance.attr('data-xbr', x + instance.width());
+                    draggableInstance.attr('data-ybr', y + instance.height());
+
+                    skeletonSVGTemplate = skeletonSVGTemplate ?? makeSVGFromTemplate(state.label.structure.svg);
+                    setupSkeletonEdges(shape as SVG.G, skeletonSVGTemplate);
+                }
+            }).on('dragend', (e: CustomEvent): void => {
+                if (aborted) {
+                    return;
+                }
+
+                onDragEnd();
+                this.draggableShape = null;
+                const p1 = e.detail.handler.startPoints.point;
+                const p2 = e.detail.p;
+                const dx2 = (p1.x - p2.x) ** 2;
+                const dy2 = (p1.y - p2.y) ** 2;
+                if (Math.sqrt(dx2 + dy2) > 0) {
+                    if (state.shapeType === 'mask') {
+                        const { points } = state;
+                        const x = Math.trunc(shape.x()) - this.geometry.offset;
+                        const y = Math.trunc(shape.y()) - this.geometry.offset;
+                        points.splice(-4);
+                        points.push(x, y, x + shape.width() - 1, y + shape.height() - 1);
+                        this.onEditDone(state, points);
+                    } else if (state.shapeType === 'skeleton') {
+                        const points = [];
+                        state.elements.forEach((element: any) => {
+                            const elementShape = (shape as SVG.G).children()
+                                .find((child: SVG.Shape) => (
+                                    child.id() === `cvat_canvas_shape_${element.clientID}`
+                                ));
+
+                            if (elementShape) {
+                                points.push(...this.translateFromCanvas(readPointsFromShape(elementShape)));
+                            }
+                        });
+                        this.onEditDone(state, points);
+                    } else {
+                        // these points does not take into account possible transformations, applied on the element
+                        // so, if any (like rotation) we need to map them to canvas coordinate space
+                        let points = readPointsFromShape(shape);
+                        const { rotation } = shape.transform();
+                        if (rotation) {
+                            points = this.translatePointsFromRotatedShape(shape, points);
+                        }
+
+                        this.onEditDone(state, this.translateFromCanvas(points));
+                    }
+
+                    this.canvas.dispatchEvent(
+                        new CustomEvent('canvas.dragshape', {
+                            bubbles: false,
+                            cancelable: true,
+                            detail: {
+                                id: state.clientID,
+                            },
+                        }),
+                    );
+                }
+            }).on('dragabort', (): void => {
+                onDragEnd();
+                this.draggableShape = null;
+                aborted = true;
+                // disable internal drag events of SVG.js
+                window.dispatchEvent(new MouseEvent('mouseup'));
+            });
+        } else {
+            shape.removeClass('cvat_canvas_shape_draggable');
+
+            if (this.draggableShape === shape) {
+                draggableInstance.fire('dragabort');
+            }
+
+            draggableInstance.off('dragstart');
+            draggableInstance.off('dragmove');
+            draggableInstance.off('dragend');
+            draggableInstance.off('dragabort');
+            (draggableInstance as any).draggable(false);
+        }
+    }
+
+    private resizable(
+        state: any,
+        shape: SVG.Shape,
+        onResizeStart: () => void = () => {},
+        onResizing: () => void = () => {},
+        onResizeEnd: () => void = () => {},
+    ): void {
+        let resizableInstance = shape;
+        let skeletonSVGTemplate: SVG.G = null;
+
+        if (shape.classes().includes('cvat_canvas_shape_skeleton')) {
+            // for skeletons we use wrapping rectangle to resize the skeleton itself
+            resizableInstance = (shape as any).children().find((child: SVG.Element) => child.type === 'rect');
+
+            const circles = (shape as any).children().filter((child: SVG.Element) => child.type === 'circle');
+            const svgElements = Object.fromEntries(circles.map((circle: SVG.Circle) => [circle.attr('data-client-id'), circle]));
+
+            Object.entries(svgElements).forEach(([key, element]) => {
+                if (state) {
+                    const clientID = +key;
+                    const elementState = state.elements
+                        .find((_element: any) => _element.clientID === clientID);
+                    const text = this.svgTexts[clientID];
+                    const hideElementText = (): void => {
+                        if (text) {
+                            text.addClass('cvat_canvas_hidden');
+                        }
+                    };
+
+                    const showElementText = (): void => {
+                        if (text) {
+                            text.removeClass('cvat_canvas_hidden');
+                            this.updateTextPosition(text);
+                        }
+                    };
+
+                    if (!elementState.lock) {
+                        this.draggable(elementState, element, () => {
+                            this.mode = Mode.DRAG;
+                            hideElementText();
+                        }, () => {
+                            skeletonSVGTemplate = skeletonSVGTemplate ?? makeSVGFromTemplate(state.label.structure.svg);
+                            setupSkeletonEdges(shape as SVG.G, skeletonSVGTemplate);
+                        }, () => {
+                            this.mode = Mode.IDLE;
+                            showElementText();
+                        });
+                    }
+                } else {
+                    this.draggable(null, element);
+                }
+            });
+        }
+
+        if (state) {
+            let resized = false;
+            let aborted = false;
+
+            (resizableInstance as any)
+                .resize({
+                    snapToGrid: 0.1,
+                    snapToAngle: this.snapToAngleResize,
+                })
+                .on('resizestart', (): void => {
+                    onResizeStart();
+                    resized = false;
+                    this.resizableShape = shape;
+                })
+                .on('resizing', (e: CustomEvent): void => {
+                    resized = true;
+                    onResizing();
+
+                    if (state.shapeType === 'skeleton' && e.target) {
+                        const { instance } = e.target as any;
+
+                        // rotate skeleton instead of wrapping bounding box
+                        const { rotation } = resizableInstance.transform();
+                        shape.rotate(rotation);
+
+                        const [x, y] = [instance.x(), instance.y()];
+                        const prevXtl = +resizableInstance.attr('data-xtl');
+                        const prevYtl = +resizableInstance.attr('data-ytl');
+                        const prevXbr = +resizableInstance.attr('data-xbr');
+                        const prevYbr = +resizableInstance.attr('data-ybr');
+
+                        if (prevXbr - prevXtl < 0.1) return;
+                        if (prevYbr - prevYtl < 0.1) return;
+
+                        for (const child of (shape as SVG.G).children()) {
+                            if (child.type === 'circle') {
+                                const childClientID = child.attr('data-client-id');
+                                if (state.elements.find((el: any) => el.clientID === childClientID).lock || false) {
+                                    continue;
+                                }
+                                const offsetX = (child.cx() - prevXtl) / (prevXbr - prevXtl);
+                                const offsetY = (child.cy() - prevYtl) / (prevYbr - prevYtl);
+                                child.center(offsetX * instance.width() + x, offsetY * instance.height() + y);
+                            }
+                        }
+
+                        resizableInstance.attr('data-xtl', x);
+                        resizableInstance.attr('data-ytl', y);
+                        resizableInstance.attr('data-xbr', x + instance.width());
+                        resizableInstance.attr('data-ybr', y + instance.height());
+
+                        resized = true;
+                        skeletonSVGTemplate = skeletonSVGTemplate ?? makeSVGFromTemplate(state.label.structure.svg);
+                        setupSkeletonEdges(shape as SVG.G, skeletonSVGTemplate);
+                    }
+                })
+                .on('resizedone', (): void => {
+                    if (aborted) {
+                        return;
+                    }
+
+                    onResizeEnd();
+                    this.resizableShape = null;
+
+                    // be sure, that rotation in range [0; 360]
+                    let rotation = shape.transform().rotation || 0;
+                    while (rotation < 0) rotation += 360;
+                    rotation %= 360;
+
+                    if (resized) {
+                        if (state.shapeType === 'skeleton') {
+                            if (rotation) {
+                                this.onEditDone(state, state.points, rotation);
+                            } else {
+                                const points: number[] = [];
+                                state.elements.forEach((element: any) => {
+                                    const elementShape = (shape as SVG.G).children()
+                                        .find((child: SVG.Shape) => (
+                                            child.id() === `cvat_canvas_shape_${element.clientID}`
+                                        ));
+
+                                    if (elementShape) {
+                                        points.push(...this.translateFromCanvas(
+                                            readPointsFromShape(elementShape),
+                                        ));
+                                    }
+                                });
+                                this.onEditDone(state, points, 0);
+                            }
+                        } else {
+                            // these points does not take into account possible transformations, applied on the element
+                            // so, if any (like rotation) we need to map them to canvas coordinate space
+                            let points = readPointsFromShape(shape);
+                            if (rotation) {
+                                points = this.translatePointsFromRotatedShape(shape, points);
+                            }
+                            this.onEditDone(state, this.translateFromCanvas(points), rotation);
+                        }
+
+                        this.canvas.dispatchEvent(
+                            new CustomEvent('canvas.resizeshape', {
+                                bubbles: false,
+                                cancelable: true,
+                                detail: {
+                                    id: state.clientID,
+                                },
+                            }),
+                        );
+                    }
+                }).on('resizeabort', () => {
+                    onResizeEnd();
+                    aborted = true;
+                    this.resizableShape = null;
+                    // disable internal drag events of SVG.js
+                    window.dispatchEvent(new MouseEvent('mouseup'));
+                });
+        } else {
+            if (this.resizableShape === shape) {
+                resizableInstance.fire('resizeabort');
+            }
+
+            (shape as any).off('resizestart');
+            (shape as any).off('resizing');
+            (shape as any).off('resizedone');
+            (shape as any).off('resizeabort');
+            (shape as any).resize('stop');
+        }
+    }
+
     private onShiftKeyDown = (e: KeyboardEvent): void => {
         if (!e.repeat && (e.code || '').toLowerCase().includes('shift')) {
             this.snapToAngleResize = consts.SNAP_TO_ANGLE_RESIZE_SHIFT;
@@ -1126,6 +1437,8 @@ export class CanvasViewImpl implements CanvasView, Listener {
             editHidden: {},
             sliceHidden: {},
         };
+        this.draggableShape = null;
+        this.resizableShape = null;
 
         // Create HTML elements
         this.text = window.document.createElementNS('http://www.w3.org/2000/svg', 'svg');
@@ -1433,7 +1746,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
                     if (clientID in this.svgTexts) {
                         this.deleteText(+clientID);
                         if (state) {
-                            this.svgTexts[clientID] = this.addText(state);
+                            this.addText(state);
                         }
                     }
                 }
@@ -2082,7 +2395,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
                 // remove created text and create it again
                 if (text) {
                     text.remove();
-                    this.svgTexts[state.clientID] = this.addText(state);
+                    this.addText(state);
                 }
             } else {
                 // check if there are updates in attributes
@@ -2112,6 +2425,10 @@ export class CanvasViewImpl implements CanvasView, Listener {
                         this.deleteObjects([this.drawnStates[+clientID]]);
                         this.addObjects([state]);
                         continue;
+                    } else if (state.shapeType === 'points') {
+                        const colorization = { ...this.getShapeColorization(state) };
+                        shape.remember('_selectHandler').nested.attr(colorization);
+                        shape.attr(colorization);
                     } else {
                         shape.attr({ ...this.getShapeColorization(state) });
                     }
@@ -2192,7 +2509,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
             });
 
             if (displayAllText) {
-                this.svgTexts[state.clientID] = this.addText(state);
+                this.addText(state);
                 this.updateTextPosition(this.svgTexts[state.clientID]);
             }
 
@@ -2257,7 +2574,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
             } else {
                 shape.removeClass('cvat_canvas_shape_activated');
             }
-            shape.removeClass('cvat_canvas_shape_draggable');
+
             if (drawnState.shapeType === 'mask') {
                 shape.attr('opacity', `${this.configuration.shapeOpacity}`);
             } else {
@@ -2265,9 +2582,14 @@ export class CanvasViewImpl implements CanvasView, Listener {
             }
 
             if (!drawnState.pinned) {
-                (shape as any).off('dragstart');
-                (shape as any).off('dragend');
-                (shape as any).draggable(false);
+                // as resizable for skeletons uses "draggable" inside, it is important first to disable draggable
+                this.draggable(null, shape);
+            }
+
+            if (drawnState.shapeType !== 'mask') {
+                this.resizable(null, shape);
+            } else {
+                (shape as any).off('dblclick');
             }
 
             if (drawnState.shapeType !== 'points') {
@@ -2277,15 +2599,6 @@ export class CanvasViewImpl implements CanvasView, Listener {
             if (drawnState.shapeType === 'cuboid') {
                 (shape as any).attr('projections', false);
             }
-
-            if (drawnState.shapeType === 'mask') {
-                (shape as any).off('mousedown');
-            }
-
-            (shape as any).off('resizestart');
-            (shape as any).off('resizing');
-            (shape as any).off('resizedone');
-            (shape as any).resize('stop');
 
             // TODO: Hide text only if it is hidden by settings
             const text = this.svgTexts[clientID];
@@ -2335,13 +2648,10 @@ export class CanvasViewImpl implements CanvasView, Listener {
         }
 
         const shape = this.svgShapes[clientID];
-
-        let text = this.svgTexts[clientID];
-        if (!text) {
-            text = this.addText(state);
-            this.svgTexts[state.clientID] = text;
+        if (!this.svgTexts[clientID]) {
+            this.addText(state);
         }
-        this.updateTextPosition(text);
+        this.updateTextPosition(this.svgTexts[clientID]);
 
         if (this.stateIsLocked(state)) {
             return;
@@ -2372,186 +2682,82 @@ export class CanvasViewImpl implements CanvasView, Listener {
             (shape as any).attr('projections', true);
         }
 
-        const hideText = (): void => {
-            if (text) {
-                text.addClass('cvat_canvas_hidden');
-            }
-        };
-
-        const showText = (): void => {
-            if (text) {
-                text.removeClass('cvat_canvas_hidden');
-                this.updateTextPosition(text);
-            }
-        };
-
-        if (!state.pinned) {
-            shape.addClass('cvat_canvas_shape_draggable');
-            (shape as any)
-                .draggable({
-                    ...(state.shapeType === 'mask' ? { snapToGrid: 1 } : {}),
-                })
-                .on('dragstart', (): void => {
-                    this.mode = Mode.DRAG;
-                    hideText();
-                    (shape as any).on('remove.drag', (): void => {
-                        this.mode = Mode.IDLE;
-                        // disable internal drag events of SVG.js
-                        window.dispatchEvent(new MouseEvent('mouseup'));
-                    });
-                })
-                .on('dragend', (e: CustomEvent): void => {
-                    (shape as any).off('remove.drag');
-                    this.mode = Mode.IDLE;
-                    showText();
-                    const p1 = e.detail.handler.startPoints.point;
-                    const p2 = e.detail.p;
-                    const dx2 = (p1.x - p2.x) ** 2;
-                    const dy2 = (p1.y - p2.y) ** 2;
-                    if (Math.sqrt(dx2 + dy2) > 0) {
-                        if (shape.type === 'image') {
-                            const { points } = state;
-                            const x = Math.trunc(shape.x()) - this.geometry.offset;
-                            const y = Math.trunc(shape.y()) - this.geometry.offset;
-                            points.splice(-4);
-                            points.push(x, y, x + shape.width() - 1, y + shape.height() - 1);
-                            this.drawnStates[state.clientID].points = points;
-                            this.onEditDone(state, points);
-                            this.canvas.dispatchEvent(
-                                new CustomEvent('canvas.dragshape', {
-                                    bubbles: false,
-                                    cancelable: true,
-                                    detail: {
-                                        id: state.clientID,
-                                    },
-                                }),
-                            );
-
-                            return;
-                        }
-                        // these points does not take into account possible transformations, applied on the element
-                        // so, if any (like rotation) we need to map them to canvas coordinate space
-                        let points = readPointsFromShape(shape);
-
-                        // let's keep current points, but they could be rewritten in updateObjects
-                        this.drawnStates[clientID].points = this.translateFromCanvas(points);
-
-                        const { rotation } = shape.transform();
-                        if (rotation) {
-                            points = this.translatePointsFromRotatedShape(shape, points);
-                        }
-
-                        points = this.translateFromCanvas(points);
-                        this.onEditDone(state, points);
-                        this.canvas.dispatchEvent(
-                            new CustomEvent('canvas.dragshape', {
-                                bubbles: false,
-                                cancelable: true,
-                                detail: {
-                                    id: state.clientID,
-                                },
-                            }),
-                        );
-                    }
-                });
-        }
-
         if (state.shapeType !== 'points') {
             this.selectize(true, shape);
         }
 
-        const showDirection = (): void => {
-            if (['polygon', 'polyline'].includes(state.shapeType)) {
-                this.showDirection(state, shape as SVG.Polygon | SVG.PolyLine);
-            }
+        const textList = [
+            state.clientID, ...state.elements.map((element: any): number => element.clientID),
+        ].map((id: number) => this.svgTexts[id]).filter((text: SVG.Text | undefined) => (
+            typeof text !== 'undefined'
+        ));
+
+        const hideText = (): void => {
+            textList.forEach((text: SVG.Text) => {
+                text.addClass('cvat_canvas_hidden');
+            });
         };
 
-        const hideDirection = (): void => {
-            if (['polygon', 'polyline'].includes(state.shapeType)) {
-                this.hideDirection(shape as SVG.Polygon | SVG.PolyLine);
-            }
-        };
-
-        showDirection();
-
-        let shapeSizeElement: ShapeSizeElement | null = null;
-        let resized = false;
-
-        const resizeFinally = (): void => {
-            if (shapeSizeElement) {
-                shapeSizeElement.rm();
-                shapeSizeElement = null;
-            }
-            this.mode = Mode.IDLE;
+        const showText = (): void => {
+            textList.forEach((text: SVG.Text) => {
+                text.removeClass('cvat_canvas_hidden');
+                this.updateTextPosition(text);
+            });
         };
 
         if (state.shapeType !== 'mask') {
-            (shape as any)
-                .resize({
-                    snapToGrid: 0.1,
-                    snapToAngle: this.snapToAngleResize,
-                })
-                .on('resizestart', (): void => {
-                    this.mode = Mode.RESIZE;
-                    resized = false;
-                    hideDirection();
-                    hideText();
-                    if (state.shapeType === 'rectangle' || state.shapeType === 'ellipse') {
-                        shapeSizeElement = displayShapeSize(this.adoptedContent, this.adoptedText);
-                    }
-                    (shape as any).on('remove.resize', () => {
-                        // disable internal resize events of SVG.js
-                        window.dispatchEvent(new MouseEvent('mouseup'));
-                        resizeFinally();
-                    });
-                })
-                .on('resizing', (): void => {
-                    resized = true;
-                    if (shapeSizeElement) {
-                        shapeSizeElement.update(shape);
-                    }
-                })
-                .on('resizedone', (): void => {
-                    (shape as any).off('remove.resize');
-                    resizeFinally();
-                    showDirection();
-                    showText();
-                    if (resized) {
-                        let rotation = shape.transform().rotation || 0;
+            const showDirection = (): void => {
+                if (['polygon', 'polyline'].includes(state.shapeType)) {
+                    this.showDirection(state, shape as SVG.Polygon | SVG.PolyLine);
+                }
+            };
 
-                        // be sure, that rotation in range [0; 360]
-                        while (rotation < 0) rotation += 360;
-                        rotation %= 360;
+            const hideDirection = (): void => {
+                if (['polygon', 'polyline'].includes(state.shapeType)) {
+                    this.hideDirection(shape as SVG.Polygon | SVG.PolyLine);
+                }
+            };
 
-                        // these points does not take into account possible transformations, applied on the element
-                        // so, if any (like rotation) we need to map them to canvas coordinate space
-                        let points = readPointsFromShape(shape);
+            let shapeSizeElement: ShapeSizeElement | null = null;
+            this.resizable(state, shape, () => {
+                this.mode = Mode.RESIZE;
+                hideDirection();
+                hideText();
+                if (state.shapeType === 'rectangle' || state.shapeType === 'ellipse') {
+                    shapeSizeElement = displayShapeSize(this.adoptedContent, this.adoptedText);
+                }
+            }, () => {
+                if (shapeSizeElement) {
+                    shapeSizeElement.update(shape);
+                }
+            }, () => {
+                this.mode = Mode.IDLE;
+                if (shapeSizeElement) {
+                    shapeSizeElement.rm();
+                    shapeSizeElement = null;
+                }
 
-                        // let's keep current points, but they could be rewritten in updateObjects
-                        this.drawnStates[clientID].points = this.translateFromCanvas(points);
-                        this.drawnStates[clientID].rotation = rotation;
-                        if (rotation) {
-                            points = this.translatePointsFromRotatedShape(shape, points);
-                        }
+                showDirection();
+                showText();
+            });
 
-                        this.onEditDone(state, this.translateFromCanvas(points), rotation);
-                        this.canvas.dispatchEvent(
-                            new CustomEvent('canvas.resizeshape', {
-                                bubbles: false,
-                                cancelable: true,
-                                detail: {
-                                    id: state.clientID,
-                                },
-                            }),
-                        );
-                    }
-                });
+            showDirection();
         } else {
             (shape as any).on('dblclick', (e: MouseEvent) => {
                 if (e.shiftKey) {
                     this.controller.edit({ enabled: true, state });
                     e.stopPropagation();
                 }
+            });
+        }
+
+        if (!state.pinned) {
+            this.draggable(state, shape, () => {
+                this.mode = Mode.DRAG;
+                hideText();
+            }, () => {}, () => {
+                this.mode = Mode.IDLE;
+                showText();
             });
         }
 
@@ -2794,7 +3000,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
             });
         }
 
-        return this.adoptedText
+        this.svgTexts[state.clientID] = this.adoptedText
             .text((block): void => {
                 block.tspan(`${withLabel ? label.name : ''} ` +
                 `${withID ? clientID : ''} ` +
@@ -2831,6 +3037,8 @@ export class CanvasViewImpl implements CanvasView, Listener {
             .attr({ 'data-client-id': state.clientID })
             .style({ 'font-size': textFontSize })
             .addClass('cvat_canvas_text');
+
+        return this.svgTexts[state.clientID];
     }
 
     private addRect(points: number[], state: any): SVG.Rect {
@@ -3011,7 +3219,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
                 'data-z-order': state.zOrder,
                 'pointer-events': 'all',
                 ...this.getShapeColorization(state),
-            }).addClass('cvat_canvas_shape') as SVG.G;
+            }).addClass('cvat_canvas_shape cvat_canvas_shape_skeleton') as SVG.G;
 
         const SVGElement = makeSVGFromTemplate(state.label.structure.svg);
 
@@ -3174,311 +3382,6 @@ export class CanvasViewImpl implements CanvasView, Listener {
             if (enabled && handler) {
                 this.adoptedContent.node.append(handler.nested.node);
                 handler.nested.attr('fill', skeleton.attr('fill'));
-            }
-
-            return skeleton;
-        };
-
-        (skeleton as any).draggable = (enabled = true) => {
-            const textList = [
-                state.clientID, ...state.elements.map((element: any): number => element.clientID),
-            ].map((clientID: number) => this.svgTexts[clientID]).filter((text: SVG.Text | undefined) => (
-                typeof text !== 'undefined'
-            ));
-
-            const hideText = (): void => {
-                textList.forEach((text: SVG.Text) => {
-                    text.addClass('cvat_canvas_hidden');
-                });
-            };
-
-            const showText = (): void => {
-                textList.forEach((text: SVG.Text) => {
-                    text.removeClass('cvat_canvas_hidden');
-                    this.updateTextPosition(text);
-                });
-            };
-
-            if (enabled) {
-                (wrappingRect as any).draggable()
-                    .on('dragstart', (): void => {
-                        this.mode = Mode.DRAG;
-                        hideText();
-                        skeleton.on('remove.drag', (): void => {
-                            this.mode = Mode.IDLE;
-                            showText();
-                            // disable internal drag events of SVG.js
-                            window.dispatchEvent(new MouseEvent('mouseup'));
-                            skeleton.off('remove.drag');
-                        });
-                    })
-                    .on('dragmove', (e: CustomEvent): void => {
-                        // skeleton elements itself are not updated yet, need to run as macrotask
-                        setTimeout(() => {
-                            const { instance } = e.target as any;
-                            const [x, y] = [instance.x(), instance.y()];
-                            const prevXtl = +wrappingRect.attr('data-xtl');
-                            const prevYtl = +wrappingRect.attr('data-ytl');
-
-                            for (const child of skeleton.children()) {
-                                if (child.type === 'circle') {
-                                    const childClientID = child.attr('data-client-id');
-                                    if (state.elements.find((el: any) => el.clientID === childClientID).lock || false) {
-                                        continue;
-                                    }
-                                    child.center(
-                                        child.cx() - prevXtl + x,
-                                        child.cy() - prevYtl + y,
-                                    );
-                                }
-                            }
-
-                            wrappingRect.attr('data-xtl', x);
-                            wrappingRect.attr('data-ytl', y);
-                            wrappingRect.attr('data-xbr', x + instance.width());
-                            wrappingRect.attr('data-ybr', y + instance.height());
-
-                            setupSkeletonEdges(skeleton, SVGElement);
-                        });
-                    })
-                    .on('dragend', (e: CustomEvent): void => {
-                        setTimeout(() => {
-                            skeleton.off('remove.drag');
-                            this.mode = Mode.IDLE;
-                            showText();
-                            const p1 = e.detail.handler.startPoints.point;
-                            const p2 = e.detail.p;
-                            const delta = 1;
-                            const dx2 = (p1.x - p2.x) ** 2;
-                            const dy2 = (p1.y - p2.y) ** 2;
-                            if (Math.sqrt(dx2 + dy2) >= delta) {
-                                state.elements.forEach((element: any) => {
-                                    const elementShape = skeleton.children()
-                                        .find((child: SVG.Shape) => (
-                                            child.id() === `cvat_canvas_shape_${element.clientID}`
-                                        ));
-
-                                    if (elementShape) {
-                                        const points = readPointsFromShape(elementShape);
-                                        element.points = this.translateFromCanvas(points);
-                                    }
-                                });
-
-                                this.canvas.dispatchEvent(
-                                    new CustomEvent('canvas.dragshape', {
-                                        bubbles: false,
-                                        cancelable: true,
-                                        detail: {
-                                            id: state.clientID,
-                                        },
-                                    }),
-                                );
-                                this.onEditDone(state, state.points);
-                            }
-                        });
-                    });
-            } else {
-                (wrappingRect as any).off('dragstart');
-                (wrappingRect as any).off('dragend');
-                (wrappingRect as any).draggable(false);
-            }
-
-            return skeleton;
-        };
-
-        (skeleton as any).resize = (action: any) => {
-            const textList = [
-                state.clientID, ...state.elements.map((element: any): number => element.clientID),
-            ].map((clientID: number) => this.svgTexts[clientID]).filter((text: SVG.Text | undefined) => (
-                typeof text !== 'undefined'
-            ));
-
-            const hideText = (): void => {
-                textList.forEach((text: SVG.Text) => {
-                    text.addClass('cvat_canvas_hidden');
-                });
-            };
-
-            const showText = (): void => {
-                textList.forEach((text: SVG.Text) => {
-                    text.removeClass('cvat_canvas_hidden');
-                    this.updateTextPosition(text);
-                });
-            };
-
-            Object.entries(svgElements).forEach(([key, element]) => {
-                const clientID = +key;
-                const elementState = state.elements
-                    .find((_element: any) => _element.clientID === clientID);
-                const text = this.svgTexts[clientID];
-                const hideElementText = (): void => {
-                    if (text) {
-                        text.addClass('cvat_canvas_hidden');
-                    }
-                };
-
-                const showElementText = (): void => {
-                    if (text) {
-                        text.removeClass('cvat_canvas_hidden');
-                        this.updateTextPosition(text);
-                    }
-                };
-
-                if (action !== 'stop' && !elementState.lock) {
-                    (element as any).draggable()
-                        .on('dragstart', (): void => {
-                            this.mode = Mode.RESIZE;
-                            hideElementText();
-                            element.on('remove.drag', (): void => {
-                                this.mode = Mode.IDLE;
-                                // disable internal drag events of SVG.js
-                                window.dispatchEvent(new MouseEvent('mouseup'));
-                                element.off('remove.drag');
-                            });
-                        })
-                        .on('dragmove', (): void => {
-                            // element itself is not updated yet, need to run as macrotask
-                            setTimeout(() => {
-                                setupSkeletonEdges(skeleton, SVGElement);
-                            });
-                        })
-                        .on('dragend', (e: CustomEvent): void => {
-                            setTimeout(() => {
-                                element.off('remove.drag');
-                                this.mode = Mode.IDLE;
-                                const p1 = e.detail.handler.startPoints.point;
-                                const p2 = e.detail.p;
-                                const delta = 1;
-                                const dx2 = (p1.x - p2.x) ** 2;
-                                const dy2 = (p1.y - p2.y) ** 2;
-                                if (Math.sqrt(dx2 + dy2) >= delta) {
-                                    const elementShape = skeleton.children()
-                                        .find((child: SVG.Shape) => child.id() === `cvat_canvas_shape_${clientID}`);
-
-                                    if (elementShape) {
-                                        const points = readPointsFromShape(elementShape);
-                                        this.canvas.dispatchEvent(
-                                            new CustomEvent('canvas.resizeshape', {
-                                                bubbles: false,
-                                                cancelable: true,
-                                                detail: {
-                                                    id: elementState.clientID,
-                                                },
-                                            }),
-                                        );
-                                        this.onEditDone(elementState, this.translateFromCanvas(points));
-                                    }
-                                }
-
-                                showElementText();
-                            });
-                        });
-                } else {
-                    (element as any).off('dragstart');
-                    (element as any).off('dragend');
-                    (element as any).draggable(false);
-                }
-            });
-
-            let resized = false;
-            if (action !== 'stop') {
-                (wrappingRect as any).resize(action).on('resizestart', (): void => {
-                    this.mode = Mode.RESIZE;
-                    resized = false;
-                    hideText();
-                    (wrappingRect as any).on('remove.resize', () => {
-                        this.mode = Mode.IDLE;
-                        showText();
-
-                        // disable internal resize events of SVG.js
-                        window.dispatchEvent(new MouseEvent('mouseup'));
-                        this.mode = Mode.IDLE;
-                    });
-                }).on('resizing', (e: CustomEvent): void => {
-                    setTimeout(() => {
-                        const { instance } = e.target as any;
-
-                        // rotate skeleton instead of wrapping bounding box
-                        const { rotation } = wrappingRect.transform();
-                        skeleton.rotate(rotation);
-
-                        const [x, y] = [instance.x(), instance.y()];
-                        const prevXtl = +wrappingRect.attr('data-xtl');
-                        const prevYtl = +wrappingRect.attr('data-ytl');
-                        const prevXbr = +wrappingRect.attr('data-xbr');
-                        const prevYbr = +wrappingRect.attr('data-ybr');
-
-                        if (prevXbr - prevXtl < 0.1) return;
-                        if (prevYbr - prevYtl < 0.1) return;
-
-                        for (const child of skeleton.children()) {
-                            if (child.type === 'circle') {
-                                const childClientID = child.attr('data-client-id');
-                                if (state.elements.find((el: any) => el.clientID === childClientID).lock || false) {
-                                    continue;
-                                }
-                                const offsetX = (child.cx() - prevXtl) / (prevXbr - prevXtl);
-                                const offsetY = (child.cy() - prevYtl) / (prevYbr - prevYtl);
-                                child.center(offsetX * instance.width() + x, offsetY * instance.height() + y);
-                            }
-                        }
-
-                        wrappingRect.attr('data-xtl', x);
-                        wrappingRect.attr('data-ytl', y);
-                        wrappingRect.attr('data-xbr', x + instance.width());
-                        wrappingRect.attr('data-ybr', y + instance.height());
-
-                        resized = true;
-                        setupSkeletonEdges(skeleton, SVGElement);
-                    });
-                }).on('resizedone', (): void => {
-                    setTimeout(() => {
-                        let { rotation } = skeleton.transform();
-                        // be sure, that rotation in range [0; 360]
-                        while (rotation < 0) rotation += 360;
-                        rotation %= 360;
-                        showText();
-                        this.mode = Mode.IDLE;
-                        (wrappingRect as any).off('remove.resize');
-                        if (resized) {
-                            if (rotation) {
-                                this.onEditDone(state, state.points, rotation);
-                            } else {
-                                const points: number[] = [];
-
-                                state.elements.forEach((element: any) => {
-                                    const elementShape = skeleton.children()
-                                        .find((child: SVG.Shape) => (
-                                            child.id() === `cvat_canvas_shape_${element.clientID}`
-                                        ));
-
-                                    if (elementShape) {
-                                        points.push(...this.translateFromCanvas(
-                                            readPointsFromShape(elementShape),
-                                        ));
-                                    }
-                                });
-
-                                this.onEditDone(state, points, rotation);
-                            }
-
-                            this.canvas.dispatchEvent(
-                                new CustomEvent('canvas.resizeshape', {
-                                    bubbles: false,
-                                    cancelable: true,
-                                    detail: {
-                                        id: state.clientID,
-                                    },
-                                }),
-                            );
-                        }
-                    });
-                });
-            } else if (action === 'stop') {
-                (wrappingRect as any).off('resizestart');
-                (wrappingRect as any).off('resizing');
-                (wrappingRect as any).off('resizedone');
-                (wrappingRect as any).resize('stop');
             }
 
             return skeleton;
