@@ -1930,7 +1930,9 @@ class DatasetComparator:
         invalid_labels_count = len(mismatches)
         total_labels_count = valid_labels_count + invalid_labels_count
 
-        confusion_matrix_labels, confusion_matrix = self._make_zero_confusion_matrix()
+        confusion_matrix_labels, confusion_matrix, label_id_mapper = (
+            self._make_zero_confusion_matrix()
+        )
         for gt_ann, ds_ann in itertools.chain(
             # fully matched annotations - shape, label, attributes
             matches,
@@ -1938,8 +1940,8 @@ class DatasetComparator:
             zip(itertools.repeat(None), ds_unmatched),
             zip(gt_unmatched, itertools.repeat(None)),
         ):
-            ds_label_idx = ds_ann.label if ds_ann else self._UNMATCHED_IDX
-            gt_label_idx = gt_ann.label if gt_ann else self._UNMATCHED_IDX
+            ds_label_idx = label_id_mapper(ds_ann.label) if ds_ann else self._UNMATCHED_IDX
+            gt_label_idx = label_id_mapper(gt_ann.label) if gt_ann else self._UNMATCHED_IDX
             confusion_matrix[ds_label_idx, gt_label_idx] += 1
 
         self._frame_results[frame_id] = ComparisonReportFrameSummary(
@@ -1971,17 +1973,23 @@ class DatasetComparator:
     _UNMATCHED_IDX = -1
 
     def _make_zero_confusion_matrix(self) -> Tuple[List[str], np.ndarray]:
-        label_names = [
-            label.name
-            for label in self._gt_dataset.categories()[dm.AnnotationType.label]
+        label_id_name_map = {
+            label_id: label.name
+            for label_id, label in enumerate(self._gt_dataset.categories()[dm.AnnotationType.label])
             if not label.parent
-        ]
-        label_names.append("unmatched")
-        num_labels = len(label_names)
+        }
+        label_id_name_map[len(label_id_name_map)] = "unmatched"
 
+        label_names = list(label_id_name_map.values())
+        label_id_idx_map = {
+            label_id: label_idx for label_idx, label_id in enumerate(label_id_name_map)
+        }
+        label_id_mapper = label_id_idx_map.__getitem__
+
+        num_labels = len(label_names)
         confusion_matrix = np.zeros((num_labels, num_labels), dtype=int)
 
-        return label_names, confusion_matrix
+        return label_names, confusion_matrix, label_id_mapper
 
     @classmethod
     def _generate_annotations_summary(
@@ -2050,7 +2058,7 @@ class DatasetComparator:
             ),
         )
         mean_ious = []
-        confusion_matrix_labels, confusion_matrix = self._make_zero_confusion_matrix()
+        confusion_matrix_labels, confusion_matrix, _ = self._make_zero_confusion_matrix()
 
         for frame_id, frame_result in self._frame_results.items():
             intersection_frames.append(frame_id)
