@@ -229,16 +229,12 @@ class TestGetTasks:
         with make_api_client(admin_user) as api_client:
             api_client.jobs_api.partial_update(
                 job["id"],
-                patched_job_write_request=models.PatchedJobWriteRequest(
-                    stage="acceptance"
-                ),
+                patched_job_write_request=models.PatchedJobWriteRequest(stage="acceptance"),
             )
 
             api_client.jobs_api.partial_update(
                 job["id"],
-                patched_job_write_request=models.PatchedJobWriteRequest(
-                    state="completed"
-                )
+                patched_job_write_request=models.PatchedJobWriteRequest(state="completed"),
             )
 
             (server_task, _) = api_client.tasks_api.retrieve(task["id"])
