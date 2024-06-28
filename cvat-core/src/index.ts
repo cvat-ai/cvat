@@ -12,7 +12,7 @@ import { AnnotationFormats } from './annotation-formats';
 import logger from './logger';
 import * as enums from './enums';
 import config from './config';
-import { mask2Rle, rle2Mask } from './object-utils';
+import { mask2Rle, rle2Mask, propagateShapes } from './object-utils';
 import User from './user';
 import Project from './project';
 import { Job, Task } from './session';
@@ -214,5 +214,6 @@ export default interface CVATCore {
     utils: {
         mask2Rle: typeof mask2Rle;
         rle2Mask: typeof rle2Mask;
+        propagateShapes: typeof propagateShapes;
     };
 }
