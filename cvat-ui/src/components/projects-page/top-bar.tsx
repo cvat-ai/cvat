@@ -10,7 +10,7 @@ import { Row, Col } from 'antd/lib/grid';
 import Button from 'antd/lib/button';
 import Popover from 'antd/lib/popover';
 import Input from 'antd/lib/input';
-import { PlusOutlined, UploadOutlined, LoadingOutlined } from '@ant-design/icons';
+import { PlusOutlined, UploadOutlined } from '@ant-design/icons';
 import { importActions } from 'actions/import-actions';
 import { usePrevious } from 'utils/hooks';
 import { ProjectsQuery } from 'reducers';
@@ -113,7 +113,6 @@ function TopBarComponent(props: Props): JSX.Element {
                                     onClick={() => dispatch(importActions.openImportBackupModal('project'))}
                                 >
                                     Create from backup
-                                    {importing && <LoadingOutlined className='cvat-import-project-button-loading' />}
                                 </Button>
                             </div>
                         )}

@@ -22,6 +22,7 @@ import Organization from './organization';
 import Webhook from './webhook';
 import AnnotationGuide from './guide';
 import BaseSingleFrameAction from './annotations-actions';
+import { Request } from './request';
 
 import * as enums from './enums';
 
@@ -286,6 +287,12 @@ function build(): CVATCore {
             set globalObjectsCounter(value: number) {
                 config.globalObjectsCounter = value;
             },
+            get requestsStatusDelay() {
+                return config.requestsStatusDelay;
+            },
+            set requestsStatusDelay(value) {
+                config.requestsStatusDelay = value;
+            },
         },
         client: {
             version: `${pjson.version}`,
@@ -372,6 +379,26 @@ function build(): CVATCore {
                         return result;
                     },
                 },
+            },
+        },
+        requests: {
+            async list() {
+                const result = await PluginRegistry.apiWrapper(cvat.requests.list);
+                return result;
+            },
+            async cancel(rqID: string) {
+                const result = await PluginRegistry.apiWrapper(cvat.requests.cancel, rqID);
+                return result;
+            },
+            async listen(
+                rqID: string,
+                options: {
+                    callback: (request: Request) => void,
+                    initialRequest?: Request,
+                },
+            ) {
+                const result = await PluginRegistry.apiWrapper(cvat.requests.listen, rqID, options);
+                return result;
             },
         },
         classes: {

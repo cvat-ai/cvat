@@ -11,6 +11,7 @@ module.exports = {
     viewportWidth: 1300,
     viewportHeight: 960,
     defaultCommandTimeout: 25000,
+    requestTimeout: 15000,
     downloadsFolder: 'cypress/fixtures',
     env: {
         user: 'admin',

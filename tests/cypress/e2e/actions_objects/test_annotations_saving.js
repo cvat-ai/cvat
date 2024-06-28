@@ -50,7 +50,7 @@ context('Test annotations saving works correctly', () => {
             expect(interception.response.statusCode).to.equal(201);
             taskID = interception.response.body.id;
         });
-        cy.wait('@getJobsRequest', { requestTimeout: 10000 }).then((interception) => {
+        cy.wait('@getJobsRequest').then((interception) => {
             expect(interception.response.statusCode).to.equal(200);
             jobID = interception.response.body.results[0].id;
 

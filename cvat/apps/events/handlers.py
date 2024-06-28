@@ -26,6 +26,7 @@ from cvat.apps.organizations.models import Invitation, Membership, Organization
 from cvat.apps.organizations.serializers import (InvitationReadSerializer,
                                                  MembershipReadSerializer,
                                                  OrganizationReadSerializer)
+from cvat.apps.engine.rq_job_handler import RQJobMetaField
 
 from .cache import get_cache
 from .event import event_scope, record_server_event
@@ -86,11 +87,11 @@ def get_user(instance=None):
 
     # Try to get user from rq_job
     if isinstance(instance, rq.job.Job):
-        return instance.meta.get("user", None)
+        return instance.meta.get(RQJobMetaField.USER, None)
     else:
         rq_job = rq.get_current_job()
         if rq_job:
-            return rq_job.meta.get("user", None)
+            return rq_job.meta.get(RQJobMetaField.USER, None)
 
     if isinstance(instance, User):
         return instance
@@ -103,11 +104,11 @@ def get_request(instance=None):
         return request
 
     if isinstance(instance, rq.job.Job):
-        return instance.meta.get("request", None)
+        return instance.meta.get(RQJobMetaField.REQUEST, None)
     else:
         rq_job = rq.get_current_job()
         if rq_job:
-            return rq_job.meta.get("request", None)
+            return rq_job.meta.get(RQJobMetaField.REQUEST, None)
 
     return None
 
@@ -472,13 +473,13 @@ def handle_dataset_io(
     action: str,
     *,
     format_name: str,
-    cloud_storage: Optional[CloudStorage],
+    cloud_storage_id: Optional[int],
     **payload_fields,
 ) -> None:
     payload={"format": format_name, **payload_fields}
 
-    if cloud_storage:
-        payload["cloud_storage"] = {"id": cloud_storage.id}
+    if cloud_storage_id:
+        payload["cloud_storage"] = {"id": cloud_storage_id}
 
     record_server_event(
         scope=event_scope(action, "dataset"),
@@ -498,26 +499,26 @@ def handle_dataset_export(
     instance: Union[Project, Task, Job],
     *,
     format_name: str,
-    cloud_storage: Optional[CloudStorage],
+    cloud_storage_id: Optional[int],
     save_images: bool,
 ) -> None:
     handle_dataset_io(instance, "export",
-        format_name=format_name, cloud_storage=cloud_storage, save_images=save_images)
+        format_name=format_name, cloud_storage_id=cloud_storage_id, save_images=save_images)
 
 def handle_dataset_import(
     instance: Union[Project, Task, Job],
     *,
     format_name: str,
-    cloud_storage: Optional[CloudStorage],
+    cloud_storage_id: Optional[int],
 ) -> None:
-    handle_dataset_io(instance, "import", format_name=format_name, cloud_storage=cloud_storage)
+    handle_dataset_io(instance, "import", format_name=format_name, cloud_storage_id=cloud_storage_id)
 
 def handle_rq_exception(rq_job, exc_type, exc_value, tb):
-    oid = rq_job.meta.get("org_id", None)
-    oslug = rq_job.meta.get("org_slug", None)
-    pid = rq_job.meta.get("project_id", None)
-    tid = rq_job.meta.get("task_id", None)
-    jid = rq_job.meta.get("job_id", None)
+    oid = rq_job.meta.get(RQJobMetaField.ORG_ID, None)
+    oslug = rq_job.meta.get(RQJobMetaField.ORG_SLUG, None)
+    pid = rq_job.meta.get(RQJobMetaField.PROJECT_ID, None)
+    tid = rq_job.meta.get(RQJobMetaField.TASK_ID, None)
+    jid = rq_job.meta.get(RQJobMetaField.JOB_ID, None)
     uid = user_id(rq_job)
     uname = user_name(rq_job)
     uemail = user_email(rq_job)

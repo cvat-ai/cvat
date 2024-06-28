@@ -1265,6 +1265,33 @@ Cypress.Commands.add('exportJob', ({
     cy.closeNotification('.cvat-notification-notice-export-job-start');
 });
 
+Cypress.Commands.add('downloadExport', () => {
+    cy.verifyNotification();
+    cy.get('.cvat-header-requests-button').click();
+    cy.get('.cvat-spinner').should('not.exist');
+    cy.get('.cvat-requests-list').should('be.visible');
+    cy.get('.cvat-requests-card').first().within(() => {
+        cy.get('.cvat-requests-page-actions-button').click();
+    });
+    cy.intercept('GET', '**=download').as('download');
+    cy.get('.ant-dropdown')
+        .not('.ant-dropdown-hidden')
+        .within(() => {
+            cy.contains('[role="menuitem"]', 'Download').click();
+        });
+    cy.wait('@download')
+        .then((download) => {
+            const filename = download.response.headers['content-disposition'].split(';')[1].split('filename=')[1];
+            // need to remove quotes
+            return filename.substring(1, filename.length - 1);
+        });
+});
+
+Cypress.Commands.add('goBack', () => {
+    cy.go('back');
+    cy.get('.cvat-spinner').should('not.exist');
+});
+
 Cypress.Commands.add('renameTask', (oldName, newName) => {
     cy.get('.cvat-task-details-task-name').within(() => {
         cy.get('[aria-label="edit"]').click();

@@ -8,7 +8,7 @@ import _ from 'lodash';
 import { ChunkQuality } from 'cvat-data';
 import {
     ChunkType, DimensionType, HistoryActions, JobStage,
-    JobState, JobType, RQStatus, StorageLocation, TaskMode, TaskStatus,
+    JobState, JobType, StorageLocation, TaskMode, TaskStatus,
 } from './enums';
 import { Storage } from './storage';
 
@@ -24,6 +24,7 @@ import {
 import AnnotationGuide from './guide';
 import { FrameData } from './frames';
 import Statistics from './statistics';
+import { Request } from './request';
 import logger from './logger';
 import Issue from './issue';
 import ObjectState from './object-state';
@@ -346,7 +347,7 @@ export class Session {
                 convMaskToPoly?: boolean,
                 updateStatusCallback?: (s: string, n: number) => void,
             },
-        ) => Promise<void>;
+        ) => Promise<string>;
         select: (objectStates: ObjectState[], x: number, y: number) => Promise<{
             state: ObjectState,
             distance: number | null,
@@ -1117,15 +1118,16 @@ export class Task extends Session {
         return result;
     }
 
-    async save(onUpdate: (state: RQStatus, progress: number, message: string) => void = () => {}): Promise<Task> {
-        const result = await PluginRegistry.apiWrapper.call(this, Task.prototype.save, onUpdate);
+    async save(options?: { requestStatusCallback?: (request: Request) => void }): Promise<Task> {
+        const result = await PluginRegistry.apiWrapper.call(this, Task.prototype.save, options);
         return result;
     }
 
     async listenToCreate(
-        onUpdate: (state: RQStatus, progress: number, message: string) => void = () => {},
+        rqID,
+        options,
     ): Promise<Task> {
-        const result = await PluginRegistry.apiWrapper.call(this, Task.prototype.listenToCreate, onUpdate);
+        const result = await PluginRegistry.apiWrapper.call(this, Task.prototype.listenToCreate, rqID, options);
         return result;
     }
 
@@ -1150,7 +1152,7 @@ export class Task extends Session {
         return result;
     }
 
-    static async restore(storage: Storage, file: File | string): Promise<Task> {
+    static async restore(storage: Storage, file: File | string): Promise<string> {
         const result = await PluginRegistry.apiWrapper.call(this, Task.restore, storage, file);
         return result;
     }

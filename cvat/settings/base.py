@@ -239,7 +239,7 @@ IAM_OPA_DATA_URL = f'{IAM_OPA_HOST}/v1/data'
 LOGIN_URL = 'rest_login'
 LOGIN_REDIRECT_URL = '/'
 
-OBJECTS_NOT_RELATED_WITH_ORG = ['user', 'function', 'request', 'server',]
+OBJECTS_NOT_RELATED_WITH_ORG = ['user', 'lambda_function', 'lambda_request', 'server', 'request']
 
 # ORG settings
 ORG_INVITATION_CONFIRM = 'No'

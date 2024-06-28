@@ -1,5 +1,5 @@
 // Copyright (C) 2019-2022 Intel Corporation
-// Copyright (C) 2022-2023 CVAT.ai Corporation
+// Copyright (C) 2022-2024 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -132,6 +132,8 @@ const OPENCV_PATH = '/assets/opencv_4.8.0.js';
 const LOCAL_STORAGE_SEEN_GUIDES_MEMORY_LIMIT = 10;
 const LOCAL_STORAGE_LAST_FRAME_MEMORY_LIMIT = 20;
 
+const REQUEST_SUCCESS_NOTIFICATION_DURATION = 5; // seconds
+
 export default {
     UNDEFINED_ATTRIBUTE_VALUE,
     NO_BREAK_SPACE,
@@ -171,4 +173,5 @@ export default {
     OPENCV_PATH,
     LOCAL_STORAGE_SEEN_GUIDES_MEMORY_LIMIT,
     LOCAL_STORAGE_LAST_FRAME_MEMORY_LIMIT,
+    REQUEST_SUCCESS_NOTIFICATION_DURATION,
 };

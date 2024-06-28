@@ -3,6 +3,7 @@ import json
 from abc import ABC, abstractstaticmethod
 from contextlib import ExitStack
 from http import HTTPStatus
+from time import sleep
 from typing import Any, Dict, Optional, TypeVar
 
 import pytest
@@ -21,14 +22,12 @@ def _make_custom_resource_params(resource: str, obj: str, cloud_storage_id: int)
         "filename": FILENAME_TEMPLATE.format(obj, resource),
         "location": "cloud_storage",
         "cloud_storage_id": cloud_storage_id,
-        "use_default_location": False,
     }
 
 
 def _make_default_resource_params(resource: str, obj: str) -> Dict[str, Any]:
     return {
         "filename": FILENAME_TEMPLATE.format(obj, resource),
-        "use_default_location": True,
     }
 
 
@@ -91,15 +90,62 @@ class _CloudStorageResourceTest(ABC):
         _expect_status: Optional[int] = None,
         **kwargs,
     ):
-        _expect_status = _expect_status or HTTPStatus.OK
+        _expect_status = _expect_status or HTTPStatus.ACCEPTED
 
+        sleep_interval = 0.1
+        number_of_checks = 100
+
+        # initialize the export process
         response = get_method(user, f"{obj}/{obj_id}/{resource}", **kwargs)
+        assert response.status_code == _expect_status
+
+        if _expect_status == HTTPStatus.FORBIDDEN:
+            return
+
+        rq_id = json.loads(response.content).get("rq_id")
+        assert rq_id, "The rq_id was not found in server request"
+
+        for _ in range(number_of_checks):
+            sleep(sleep_interval)
+            # use new requests API for checking the status of the operation
+            response = get_method(user, f"requests/{rq_id}")
+            assert response.status_code == HTTPStatus.OK
+
+            request_details = json.loads(response.content)
+            status = request_details["status"]
+            assert status in {"started", "queued", "finished", "failed"}
+            if status in {"finished", "failed"}:
+                break
+
+    def _import_resource_from_cloud_storage(
+        self, url: str, *, user: str, _expect_status: Optional[int] = None, **kwargs
+    ) -> None:
+        _expect_status = _expect_status or HTTPStatus.ACCEPTED
+
+        response = post_method(user, url, data=None, **kwargs)
         status = response.status_code
 
-        while status != _expect_status:
-            assert status == HTTPStatus.ACCEPTED
-            response = get_method(user, f"{obj}/{obj_id}/{resource}", **kwargs)
-            status = response.status_code
+        assert status == _expect_status
+        if status == HTTPStatus.FORBIDDEN:
+            return
+
+        rq_id = response.json().get("rq_id")
+        assert rq_id, "The rq_id parameter was not found in the server response"
+
+        number_of_checks = 100
+        sleep_interval = 0.1
+
+        for _ in range(number_of_checks):
+            sleep(sleep_interval)
+            # use new requests API for checking the status of the operation
+            response = get_method(user, f"requests/{rq_id}")
+            assert response.status_code == HTTPStatus.OK
+
+            request_details = json.loads(response.content)
+            status = request_details["status"]
+            assert status in {"started", "queued", "finished", "failed"}
+            if status in {"finished", "failed"}:
+                break
 
     def _import_annotations_from_cloud_storage(
         self,

@@ -4,9 +4,8 @@
 // SPDX-License-Identifier: MIT
 
 import React, { useCallback } from 'react';
-import { useDispatch, useSelector } from 'react-redux';
+import { useDispatch } from 'react-redux';
 import Modal from 'antd/lib/modal';
-import { LoadingOutlined } from '@ant-design/icons';
 import { CombinedState } from 'reducers';
 import { deleteProjectAsync } from 'actions/projects-actions';
 import { exportActions } from 'actions/export-actions';
@@ -26,9 +25,6 @@ function ProjectActionsMenuComponent(props: Props): JSX.Element {
     const history = useHistory();
     const dispatch = useDispatch();
     const plugins = usePlugins((state: CombinedState) => state.plugins.components.projectActions.items, props);
-    const exportBackupIsActive = useSelector((state: CombinedState) => (
-        state.export.projects.backup.current[projectInstance.id]
-    ));
 
     const onDeleteProject = useCallback((): void => {
         Modal.confirm({
@@ -62,9 +58,7 @@ function ProjectActionsMenuComponent(props: Props): JSX.Element {
     menuItems.push([(
         <Menu.Item
             key='backup-project'
-            disabled={exportBackupIsActive}
             onClick={() => dispatch(exportActions.openExportBackupModal(projectInstance))}
-            icon={exportBackupIsActive && <LoadingOutlined id='cvat-export-project-loading' />}
         >
             Backup Project
         </Menu.Item>

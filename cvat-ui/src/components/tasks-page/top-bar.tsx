@@ -9,7 +9,7 @@ import { useHistory } from 'react-router';
 
 import { Row, Col } from 'antd/lib/grid';
 import Popover from 'antd/lib/popover';
-import { PlusOutlined, UploadOutlined, LoadingOutlined } from '@ant-design/icons';
+import { PlusOutlined, UploadOutlined } from '@ant-design/icons';
 import Button from 'antd/lib/button';
 import Input from 'antd/lib/input';
 import { importActions } from 'actions/import-actions';
@@ -117,12 +117,10 @@ export default function TopBarComponent(props: VisibleTopBarProps): JSX.Element 
                                 <Button
                                     className='cvat-import-task-button'
                                     type='primary'
-                                    disabled={importing}
                                     icon={<UploadOutlined />}
                                     onClick={() => dispatch(importActions.openImportBackupModal('task'))}
                                 >
                                     Create from backup
-                                    {importing && <LoadingOutlined />}
                                 </Button>
                             </CvatDropdownMenuPaper>
                         )}

@@ -17,6 +17,8 @@ const config = {
     },
     onOrganizationChange: null,
     globalObjectsCounter: 0,
+
+    requestsStatusDelay: null,
 };
 
 export default config;

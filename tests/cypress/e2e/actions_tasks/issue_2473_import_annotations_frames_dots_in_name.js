@@ -1,4 +1,5 @@
 // Copyright (C) 2021-2022 Intel Corporation
+// Copyright (C) 2024 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -95,9 +96,8 @@ context('Import annotations for frames with dots in name.', { browser: '!firefox
             cy.get('.cvat-modal-export-job').contains('button', 'OK').click();
             cy.get('.cvat-notification-notice-export-job-start').should('be.visible');
             cy.closeNotification('.cvat-notification-notice-export-job-start');
-            cy.wait('@dumpAnnotations', { timeout: 5000 }).its('response.statusCode').should('equal', 202);
-            cy.wait('@dumpAnnotations').its('response.statusCode').should('equal', 201);
-            cy.verifyNotification();
+            cy.downloadExport();
+            cy.goBack();
             cy.removeAnnotations();
             cy.saveJob('PUT');
             cy.get('#cvat_canvas_shape_1').should('not.exist');

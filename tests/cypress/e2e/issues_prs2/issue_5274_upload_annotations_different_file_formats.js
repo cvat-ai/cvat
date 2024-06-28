@@ -39,7 +39,10 @@ context('Upload annotations in different file formats', () => {
         cy.saveJob('PATCH', 200, 'saveJobDump');
         for (const archive of archives) {
             cy.exportJob(archive);
-            cy.waitForDownload();
+            cy.downloadExport().then((file) => {
+                cy.verifyDownload(file);
+            });
+            cy.goBack();
             cy.unpackZipArchive(`cypress/fixtures/${archive.archiveCustomName}.zip`, archive.archiveCustomName);
         }
     });

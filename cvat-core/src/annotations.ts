@@ -1,5 +1,5 @@
 // Copyright (C) 2019-2022 Intel Corporation
-// Copyright (C) 2022-2023 CVAT.ai Corporation
+// Copyright (C) 2022-2024 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -168,9 +168,9 @@ export function importDataset(
     file: File | string,
     options: {
         convMaskToPoly?: boolean,
-        updateStatusCallback?: (s: string, n: number) => void,
+        updateStatusCallback?: (message: string, progress: number) => void,
     } = {},
-): Promise<void> {
+): Promise<string> {
     const updateStatusCallback = options.updateStatusCallback || (() => {});
     const convMaskToPoly = 'convMaskToPoly' in options ? options.convMaskToPoly : true;
     const adjustedOptions = {

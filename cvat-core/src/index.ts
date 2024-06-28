@@ -32,6 +32,7 @@ import QualityConflict from './quality-conflict';
 import QualitySettings from './quality-settings';
 import AnalyticsReport from './analytics-report';
 import AnnotationGuide from './guide';
+import { Request } from './request';
 import BaseSingleFrameAction, { listActions, registerAction, runActions } from './annotations-actions';
 import {
     ArgumentError, DataError, Exception, ScriptingError, ServerError,
@@ -150,6 +151,17 @@ export default interface CVATCore {
     frames: {
         getMeta: any;
     };
+    requests: {
+        list: () => Promise<PaginatedResource<Request>>;
+        listen: (
+            rqID: string,
+            options: {
+                callback: (request: Request) => void,
+                initialRequest?: Request,
+            }
+        ) => Promise<Request>;
+        cancel: (rqID: string) => Promise<void>;
+    };
     actions: {
         list: typeof listActions;
         register: typeof registerAction;
@@ -166,6 +178,7 @@ export default interface CVATCore {
         };
         onOrganizationChange: (newOrgId: number | null) => void | null;
         globalObjectsCounter: typeof config.globalObjectsCounter;
+        requestsStatusDelay: typeof config.requestsStatusDelay;
     },
     client: {
         version: string;

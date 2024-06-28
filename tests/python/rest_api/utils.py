@@ -141,11 +141,15 @@ def build_exclude_paths_expr(ignore_fields: Iterator[str]) -> List[str]:
     return exclude_expr_parts
 
 
-def wait_until_task_is_created(api: apis.TasksApi, task_id: int) -> models.RqStatus:
+def wait_until_task_is_created(api: apis.RequestsApi, task_id: int) -> Any:
     for _ in range(100):
-        (status, _) = api.retrieve_status(task_id)
-        if status.state.value in ["Finished", "Failed"]:
-            return status
+        (requests, _) = api.list(task_id=task_id, action="create")
+        results = requests["results"]
+        assert 1 == len(results)
+        details = results[0]
+
+        if details.status in ("finished", "failed"):
+            return details
         sleep(1)
     raise Exception("Cannot create task")
 
@@ -201,8 +205,8 @@ def create_task(username, spec, data, content_type="application/json", **kwargs)
         )
         assert response.status == HTTPStatus.ACCEPTED
 
-        status = wait_until_task_is_created(api_client.tasks_api, task.id)
-        assert status.state.value == "Finished", status.message
+        rq_job_details = wait_until_task_is_created(api_client.requests_api, task.id)
+        assert rq_job_details.status == "finished", rq_job_details.message
 
     return task.id, response_.headers.get("X-Request-Id")
 

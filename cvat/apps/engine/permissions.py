@@ -6,16 +6,20 @@
 from collections import namedtuple
 from typing import Any, Dict, List, Optional, Sequence, Union, cast
 
+from django.shortcuts import get_object_or_404
 from django.conf import settings
 
-from rest_framework.exceptions import ValidationError
+from rest_framework.exceptions import ValidationError, PermissionDenied, NotFound
+from rq.job import Job as RQJob
 
+from cvat.apps.engine.rq_job_handler import is_rq_job_owner
 from cvat.apps.iam.permissions import (
     OpenPolicyAgentPermission, StrEnum, get_iam_context, get_membership
 )
 from cvat.apps.organizations.models import Organization
 
 from .models import AnnotationGuide, CloudStorage, Issue, Job, Label, Project, Task
+from cvat.apps.engine.utils import is_dataset_export
 
 def _get_key(d: Dict[str, Any], key_path: Union[str, Sequence[str]]) -> Optional[Any]:
     """
@@ -270,7 +274,9 @@ class ProjectPermission(OpenPolicyAgentPermission):
             ('append_dataset_chunk', 'PATCH'): Scopes.IMPORT_DATASET,
             ('annotations', 'GET'): Scopes.EXPORT_ANNOTATIONS,
             ('dataset', 'GET'): Scopes.IMPORT_DATASET if request.query_params.get('action') == 'import_status' else Scopes.EXPORT_DATASET,
+            ('export_dataset_v2', 'GET'): Scopes.EXPORT_DATASET if is_dataset_export(request) else Scopes.EXPORT_ANNOTATIONS,
             ('export_backup', 'GET'): Scopes.EXPORT_BACKUP,
+            ('export_backup_v2', 'GET'): Scopes.EXPORT_BACKUP,
             ('import_backup', 'POST'): Scopes.IMPORT_BACKUP,
             ('append_backup_chunk', 'PATCH'): Scopes.IMPORT_BACKUP,
             ('append_backup_chunk', 'HEAD'): Scopes.IMPORT_BACKUP,
@@ -473,6 +479,7 @@ class TaskPermission(OpenPolicyAgentPermission):
             ('append_annotations_chunk', 'PATCH'): Scopes.UPDATE_ANNOTATIONS,
             ('append_annotations_chunk', 'HEAD'): Scopes.UPDATE_ANNOTATIONS,
             ('dataset_export', 'GET'): Scopes.EXPORT_DATASET,
+            ('export_dataset_v2', 'GET'): Scopes.EXPORT_DATASET if is_dataset_export(request) else Scopes.EXPORT_ANNOTATIONS,
             ('metadata', 'GET'): Scopes.VIEW_METADATA,
             ('metadata', 'PATCH'): Scopes.UPDATE_METADATA,
             ('data', 'GET'): Scopes.VIEW_DATA,
@@ -484,6 +491,7 @@ class TaskPermission(OpenPolicyAgentPermission):
             ('append_backup_chunk', 'PATCH'): Scopes.IMPORT_BACKUP,
             ('append_backup_chunk', 'HEAD'): Scopes.IMPORT_BACKUP,
             ('export_backup', 'GET'): Scopes.EXPORT_BACKUP,
+            ('export_backup_v2', 'GET'): Scopes.EXPORT_BACKUP,
             ('preview', 'GET'): Scopes.VIEW,
         }.get((view.action, request.method))
 
@@ -709,6 +717,7 @@ class JobPermission(OpenPolicyAgentPermission):
             ('metadata','PATCH'): Scopes.UPDATE_METADATA,
             ('issues', 'GET'): Scopes.VIEW,
             ('dataset_export', 'GET'): Scopes.EXPORT_DATASET,
+            ('export_dataset_v2', 'GET'): Scopes.EXPORT_DATASET if is_dataset_export(request) else Scopes.EXPORT_ANNOTATIONS,
             ('preview', 'GET'): Scopes.VIEW,
         }.get((view.action, request.method))
 
@@ -1193,3 +1202,91 @@ class GuideAssetPermission(OpenPolicyAgentPermission):
             'destroy': Scopes.DELETE,
             'retrieve': Scopes.VIEW,
         }.get(view.action, None)]
+
+
+class RequestPermission(OpenPolicyAgentPermission):
+    class Scopes(StrEnum):
+        LIST = 'list'
+        VIEW = 'view'
+        CANCEL = 'cancel'
+
+    @classmethod
+    def create(cls, request, view, obj: Optional[RQJob], iam_context: Dict):
+        permissions = []
+        if view.basename == 'request':
+            for scope in cls.get_scopes(request, view, obj):
+                if scope == cls.Scopes.CANCEL:
+                    parsed_rq_id = obj.parsed_rq_id
+
+                    permission_class, resource_scope = {
+                        ('import', 'project', 'dataset'): (ProjectPermission, ProjectPermission.Scopes.IMPORT_DATASET),
+                        ('import', 'project', 'backup'): (ProjectPermission, ProjectPermission.Scopes.IMPORT_BACKUP),
+                        ('import', 'task', 'annotations'): (TaskPermission, TaskPermission.Scopes.IMPORT_ANNOTATIONS),
+                        ('import', 'task', 'backup'): (TaskPermission, TaskPermission.Scopes.IMPORT_BACKUP),
+                        ('import', 'job', 'annotations'): (JobPermission, JobPermission.Scopes.IMPORT_ANNOTATIONS),
+                        ('create', 'task', None): (TaskPermission, TaskPermission.Scopes.VIEW),
+                        ('export', 'project', 'annotations'): (ProjectPermission, ProjectPermission.Scopes.EXPORT_ANNOTATIONS),
+                        ('export', 'project', 'dataset'): (ProjectPermission, ProjectPermission.Scopes.EXPORT_DATASET),
+                        ('export', 'project', 'backup'): (ProjectPermission, ProjectPermission.Scopes.EXPORT_BACKUP),
+                        ('export', 'task', 'annotations'): (TaskPermission, TaskPermission.Scopes.EXPORT_ANNOTATIONS),
+                        ('export', 'task', 'dataset'): (TaskPermission, TaskPermission.Scopes.EXPORT_DATASET),
+                        ('export', 'task', 'backup'): (TaskPermission, TaskPermission.Scopes.EXPORT_BACKUP),
+                        ('export', 'job', 'annotations'): (JobPermission, JobPermission.Scopes.EXPORT_ANNOTATIONS),
+                        ('export', 'job', 'dataset'): (JobPermission, JobPermission.Scopes.EXPORT_DATASET),
+                    }[(parsed_rq_id.action, parsed_rq_id.resource, parsed_rq_id.subresource)]
+
+
+                    resource = None
+                    if (resource_id := parsed_rq_id.identifier) and isinstance(resource_id, int):
+                        resource_model = {
+                            'project': Project,
+                            'task': Task,
+                            'job': Job,
+                        }[parsed_rq_id.resource]
+
+                        try:
+                            resource = resource_model.objects.get(id=resource_id)
+                        except resource_model.DoesNotExist as ex:
+                            raise NotFound(f'The {parsed_rq_id.resource!r} with specified id#{resource_id} does not exist') from ex
+
+                    permissions.append(permission_class.create_base_perm(request, view, scope=resource_scope, iam_context=iam_context, obj=resource))
+
+                if scope != cls.Scopes.LIST:
+                    user_id = request.user.id
+                    if not is_rq_job_owner(obj, user_id):
+                        raise PermissionDenied('You don\'t have permission to perform this action')
+
+        return permissions
+
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        self.url = settings.IAM_OPA_DATA_URL + '/requests/allow'
+
+    @staticmethod
+    def get_scopes(request, view, obj) -> List[Scopes]:
+        Scopes = __class__.Scopes
+        return [{
+            ('list', 'GET'): Scopes.LIST,
+            ('retrieve', 'GET'): Scopes.VIEW,
+            ('cancel', 'POST'): Scopes.CANCEL,
+        }.get((view.action, request.method))]
+
+
+    def get_resource(self):
+        return None
+
+def get_cloud_storage_for_import_or_export(
+    storage_id: int, *, request, is_default: bool = False
+) -> CloudStorage:
+    perm = CloudStoragePermission.create_scope_view(None, storage_id=storage_id, request=request)
+    result = perm.check_access()
+    if not result.allow:
+        if is_default:
+            # In this case, the user did not specify the location explicitly
+            error_message = "A cloud storage is selected as the default location. "
+        else:
+            error_message = ""
+        error_message += "You don't have access to this cloud storage"
+        raise PermissionDenied(error_message)
+
+    return get_object_or_404(CloudStorage, pk=storage_id)

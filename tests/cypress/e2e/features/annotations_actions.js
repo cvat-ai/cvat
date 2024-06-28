@@ -382,10 +382,9 @@ context('Testing annotations actions workflow', () => {
                 scrollList: true,
             };
             cy.exportJob(exportAnnotation);
-            cy.getDownloadFileName().then((file) => {
+            cy.downloadExport().then((file) => {
                 cy.verifyDownload(file);
             });
-            cy.verifyNotification();
         });
     });
 

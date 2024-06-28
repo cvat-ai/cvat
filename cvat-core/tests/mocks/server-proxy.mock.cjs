@@ -1,5 +1,5 @@
 // Copyright (C) 2020-2022 Intel Corporation
-// Copyright (C) 2022-2023 CVAT.ai Corporation
+// Copyright (C) 2022-2024 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -19,6 +19,7 @@ const {
     webhooksDummyData,
     webhooksEventsDummyData,
     jobsDummyData,
+    requestsDummyData,
 } = require('./dummy-data.mock.cjs');
 
 function QueryStringToJSON(query, ignoreList = []) {
@@ -228,8 +229,7 @@ class ServerProxy {
                 labels: JSON.parse(JSON.stringify(taskData.labels)),
             });
 
-            const createdTask = await getTasks(`?id=${id}`);
-            return createdTask[0];
+            return { taskID: id, rqID: `create:task-${id}` };
         }
 
         async function deleteTask(id) {
@@ -591,6 +591,11 @@ class ServerProxy {
             return;
         }
 
+        async function getImportRequestStatus() {
+            const requests = requestsDummyData.results;
+            return requests[0];
+        }
+
         Object.defineProperties(
             this,
             Object.freeze({
@@ -695,6 +700,13 @@ class ServerProxy {
                     value: Object.freeze({
                         acceptInvitation: acceptInvitation,
                         declineInvitation: declineInvitation,
+                    }),
+                    writable: false,
+                },
+
+                requests: {
+                    value: Object.freeze({
+                        status: getImportRequestStatus,
                     }),
                     writable: false,
                 },

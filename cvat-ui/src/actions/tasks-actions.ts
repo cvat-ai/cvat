@@ -1,5 +1,5 @@
 // Copyright (C) 2019-2022 Intel Corporation
-// Copyright (C) 2022-2023 CVAT.ai Corporation
+// Copyright (C) 2022-2024 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -12,6 +12,7 @@ import { filterNull } from 'utils/filter-null';
 import { ThunkDispatch, ThunkAction } from 'utils/redux';
 
 import { getInferenceStatusAsync } from './models-actions';
+import { updateRequestProgress } from './requests-actions';
 
 const cvat = getCore();
 
@@ -259,16 +260,28 @@ ThunkAction {
         taskInstance.remoteFiles = data.files.remote;
 
         try {
-            const savedTask = await taskInstance.save((status: RQStatus, progress: number, message: string): void => {
-                if (status === RQStatus.UNKNOWN) {
-                    onProgress?.(`${message} ${progress ? `${Math.floor(progress * 100)}%` : ''}`);
-                } else if ([RQStatus.QUEUED, RQStatus.STARTED].includes(status)) {
-                    const helperMessage = 'You may close the window.';
+            const savedTask = await taskInstance.save({
+                requestStatusCallback(request) {
+                    let { message } = request;
+                    let helperMessage = '';
+                    const { status, progress } = request;
+                    if (!message) {
+                        if ([RQStatus.QUEUED, RQStatus.STARTED].includes(status)) {
+                            message = 'CVAT queued the task to import';
+                            helperMessage = 'You may close the window.';
+                        } else if (status === RQStatus.FAILED) {
+                            message = 'Images processing failed';
+                        } else if (status === RQStatus.FINISHED) {
+                            message = 'Task creation finished';
+                        } else {
+                            message = 'Unknown status received';
+                        }
+                    }
                     onProgress?.(`${message} ${progress ? `${Math.floor(progress * 100)}%` : ''}. ${helperMessage}`);
-                } else {
-                    onProgress?.(`${status}: ${message}`);
-                }
+                    if (request.id) updateRequestProgress(request, dispatch);
+                },
             });
+
             dispatch(updateTaskInState(savedTask));
             dispatch(getTaskPreviewAsync(savedTask));
             return savedTask;

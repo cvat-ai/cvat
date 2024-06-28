@@ -1,5 +1,5 @@
 // Copyright (C) 2019-2022 Intel Corporation
-// Copyright (C) 2022 CVAT.ai Corporation
+// Copyright (C) 2022-2024 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -98,6 +98,8 @@ export class ArgumentError extends Exception {}
 export class DataError extends Exception {}
 
 export class ScriptingError extends Exception {}
+
+export class RequestError extends Exception {}
 
 export class ServerError extends Exception {
     public code: number;

@@ -26,7 +26,6 @@ interface OwnProps {
 interface StateToProps {
     annotationFormats: any;
     inferenceIsActive: boolean;
-    backupIsActive: boolean;
 }
 
 interface DispatchToProps {
@@ -49,7 +48,6 @@ function mapStateToProps(state: CombinedState, own: OwnProps): StateToProps {
     return {
         annotationFormats,
         inferenceIsActive: tid in state.models.inferences,
-        backupIsActive: state.export.tasks.backup.current[tid],
     };
 }
 
@@ -82,7 +80,6 @@ function ActionsMenuContainer(props: OwnProps & StateToProps & DispatchToProps):
         taskInstance,
         annotationFormats: { loaders, dumpers },
         inferenceIsActive,
-        backupIsActive,
         showExportModal,
         showImportModal,
         deleteTask,
@@ -122,7 +119,6 @@ function ActionsMenuContainer(props: OwnProps & StateToProps & DispatchToProps):
             inferenceIsActive={inferenceIsActive}
             onClickMenu={onClickMenu}
             taskDimension={taskInstance.dimension}
-            backupIsActive={backupIsActive}
         />
     );
 }
