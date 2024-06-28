@@ -23,7 +23,7 @@ export class Request {
     #progress: number;
     #resultUrl: string;
     #resultID: number;
-    #enqueuedDate: string;
+    #createdDate: string;
     #startedDate: string;
     #finishedDate: string;
     #expiryDate: string;
@@ -38,7 +38,7 @@ export class Request {
         this.#resultUrl = initialData.result_url;
         this.#resultID = initialData.result_id;
 
-        this.#enqueuedDate = initialData.enqueued_date;
+        this.#createdDate = initialData.created_date;
         this.#startedDate = initialData.started_date;
         this.#finishedDate = initialData.finished_date;
         this.#expiryDate = initialData.expiry_date;
@@ -83,8 +83,8 @@ export class Request {
         return this.#resultID;
     }
 
-    get enqueuedDate(): string {
-        return this.#enqueuedDate;
+    get createdDate(): string {
+        return this.#createdDate;
     }
 
     get startedDate(): string {

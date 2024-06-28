@@ -2260,7 +2260,6 @@ class RequestSerializer(serializers.Serializer):
     operation = RequestDataOperationSerializer(source="*", read_only=True)
     progress = serializers.SerializerMethodField()
     created_date = serializers.DateTimeField(source="created_at", read_only=True)
-    enqueued_date = serializers.DateTimeField(source="enqueued_at", read_only=True, allow_null=True)
     started_date = serializers.DateTimeField(
         required=False, allow_null=True, source="started_at", read_only=True,
     )

@@ -67,7 +67,7 @@ function constructName(operation: typeof Request['operation']): string | null {
 function constructTimestamps(request: Request): JSX.Element {
     const started = moment(request.startedDate).format('MMM Do YY, H:mm');
     const finished = moment(request.finishedDate).format('MMM Do YY, H:mm');
-    const enqueued = moment(request.enqueuedDate).format('MMM Do YY, H:mm');
+    const created = moment(request.createdDate).format('MMM Do YY, H:mm');
     const expired = moment(request.expiryDate).format('MMM Do YY, H:mm');
     const { operation: { type } } = request;
     switch (request.status) {
@@ -106,7 +106,7 @@ function constructTimestamps(request: Request): JSX.Element {
             return (
                 <>
                     <Row>
-                        <Text type='secondary'>{`Enqueued by ${request.owner.username} on ${enqueued}`}</Text>
+                        <Text type='secondary'>{`Enqueued by ${request.owner.username} on ${created}`}</Text>
                     </Row>
                     <Row>
                         <Text type='secondary'>{`Started on ${started}`}</Text>
@@ -117,7 +117,7 @@ function constructTimestamps(request: Request): JSX.Element {
         default: {
             return (
                 <Row>
-                    <Text type='secondary'>{`Enqueued by ${request.owner.username} on ${enqueued}`}</Text>
+                    <Text type='secondary'>{`Enqueued by ${request.owner.username} on ${created}`}</Text>
                 </Row>
             );
         }

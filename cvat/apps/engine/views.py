@@ -3166,7 +3166,7 @@ class RequestViewSet(viewsets.GenericViewSet):
         NonModelOrderingFilter,
     ]
 
-    ordering_fields = ['created_date', 'enqueued_date', 'status', 'action']
+    ordering_fields = ['created_date', 'status', 'action']
     ordering = '-created_date'
 
     filter_fields = [
@@ -3186,7 +3186,6 @@ class RequestViewSet(viewsets.GenericViewSet):
 
     lookup_fields = {
         'created_date': 'created_at',
-        'enqueued_date': 'enqueued_at',
         'action': 'parsed_rq_id.action',
         'subresource': 'parsed_rq_id.subresource',
         'status': 'get_status',

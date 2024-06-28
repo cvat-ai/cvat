@@ -4578,7 +4578,7 @@ paths:
         required: false
         in: query
         description: 'Which field to use when ordering the results. Available ordering_fields:
-          [''created_date'', ''enqueued_date'', ''status'', ''action'']'
+          [''created_date'', ''status'', ''action'']'
         schema:
           type: string
       - name: status
@@ -9859,11 +9859,6 @@ components:
           type: string
           format: date-time
           readOnly: true
-        enqueued_date:
-          type: string
-          format: date-time
-          readOnly: true
-          nullable: true
         started_date:
           type: string
           format: date-time

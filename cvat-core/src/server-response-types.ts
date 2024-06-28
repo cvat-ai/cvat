@@ -512,7 +512,6 @@ export interface SerializedRequest {
     result_url?: string;
     result_id?: number;
     created_date?: string;
-    enqueued_date?: string;
     started_date?: string;
     finished_date?: string;
     expiry_date?: string;

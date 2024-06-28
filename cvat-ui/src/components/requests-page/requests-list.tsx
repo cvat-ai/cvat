@@ -25,7 +25,7 @@ interface Props {
 
 function setUpRequestsList(requests: Request[], newPage: number): Request[] {
     const displayRequests = [...requests];
-    displayRequests.sort((a, b) => moment(b.enqueuedDate).valueOf() - moment(a.enqueuedDate).valueOf());
+    displayRequests.sort((a, b) => moment(b.createdDate).valueOf() - moment(a.createdDate).valueOf());
     return displayRequests.slice((newPage - 1) * PAGE_SIZE, newPage * PAGE_SIZE);
 }
 
