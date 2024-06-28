@@ -221,6 +221,26 @@ class TestGetTasks:
         source_task["owner"] = None
         assert DeepDiff(source_task, fetched_task, ignore_order=True) == {}
 
+    @pytest.mark.usefixtures("restore_db_per_function")
+    def test_check_task_status_after_changing_job_state(self, admin_user, tasks, jobs):
+        task = next(t for t in tasks if t["jobs"]["count"] == 1 if t["jobs"]["completed"] == 0)
+        job = next(j for j in jobs if j["task_id"] == task["id"])
+
+        with make_api_client(admin_user) as api_client:
+            api_client.jobs_api.partial_update(
+                job["id"],
+                patched_job_write_request=models.PatchedJobWriteRequest(stage="acceptance"),
+            )
+
+            api_client.jobs_api.partial_update(
+                job["id"],
+                patched_job_write_request=models.PatchedJobWriteRequest(state="completed"),
+            )
+
+            (server_task, _) = api_client.tasks_api.retrieve(task["id"])
+
+        assert server_task.status == "completed"
+
 
 class TestListTasksFilters(CollectionSimpleFilterTestBase):
     field_lookups = {
