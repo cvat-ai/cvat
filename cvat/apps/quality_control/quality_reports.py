@@ -519,8 +519,8 @@ class ComparisonReportFrameSummary(_Serializable):
             annotation_components=ComparisonReportAnnotationComponentsSummary.from_dict(
                 d["annotation_components"]
             ),
-            word_error_rate=d["word_error_rate"],
-            character_error_rate=d["character_error_rate"],
+            word_error_rate=d.get("word_error_rate", 0.0),
+            character_error_rate=d.get("character_error_rate", 0.0),
         )
 
 
