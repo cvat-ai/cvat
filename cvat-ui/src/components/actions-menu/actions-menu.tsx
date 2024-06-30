@@ -25,7 +25,7 @@ interface Props {
     taskDimension: DimensionType;
     backupIsActive: boolean;
     mergingIsActive: boolean;
-    consensusJobPerSegment: number;
+    consensusJobsPerSegment: number;
     onClickMenu: (params: MenuInfo) => void;
 }
 
@@ -49,7 +49,7 @@ function ActionsMenuComponent(props: Props): JSX.Element {
         inferenceIsActive,
         backupIsActive,
         mergingIsActive,
-        consensusJobPerSegment,
+        consensusJobsPerSegment,
         onClickMenu,
     } = props;
 
@@ -134,7 +134,7 @@ function ActionsMenuComponent(props: Props): JSX.Element {
         </Menu.Item>
     ), 50]);
 
-    if (consensusJobPerSegment) {
+    if (consensusJobsPerSegment) {
         menuItems.push([(
             <React.Fragment key={Actions.MERGE_TASK_CONSENSUS_JOBS}>
                 <Menu.Item

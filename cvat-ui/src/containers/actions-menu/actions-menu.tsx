@@ -135,7 +135,7 @@ function ActionsMenuContainer(props: OwnProps & StateToProps & DispatchToProps):
             taskDimension={taskInstance.dimension}
             backupIsActive={backupIsActive}
             mergingIsActive={mergingIsActive}
-            consensusJobPerSegment={taskInstance.consensusJobPerSegment}
+            consensusJobsPerSegment={taskInstance.consensusJobsPerSegment}
         />
     );
 }
