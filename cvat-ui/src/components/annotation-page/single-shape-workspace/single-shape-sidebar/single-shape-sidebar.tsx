@@ -15,7 +15,6 @@ import Checkbox, { CheckboxChangeEvent } from 'antd/lib/checkbox';
 import InputNumber from 'antd/lib/input-number';
 import Select from 'antd/lib/select';
 import Alert from 'antd/lib/alert';
-import Modal from 'antd/lib/modal';
 import Button from 'antd/lib/button';
 
 import { CombinedState, NavigationType, ObjectType } from 'reducers';
@@ -43,15 +42,6 @@ function cancelCurrentCanvasOp(state: CombinedState): void {
     if (canvas.mode() !== CanvasMode.IDLE) {
         canvas.cancel();
     }
-}
-
-function showSubmittedInfo(): void {
-    Modal.info({
-        closable: false,
-        title: 'Annotations submitted',
-        content: 'You may close the window',
-        className: 'cvat-single-shape-annotation-submit-success-modal',
-    });
 }
 
 function makeMessage(label: Label, labelType: State['labelType'], pointsCount: number): JSX.Element {
@@ -256,9 +246,7 @@ function SingleShapeSidebar(): JSX.Element {
         } else if ((forceSave || state.saveOnFinish) && !savingRef.current) {
             savingRef.current = true;
 
-            appDispatch(finishCurrentJobAsync()).then(() => {
-                showSubmittedInfo();
-            }).finally(() => {
+            appDispatch(finishCurrentJobAsync()).finally(() => {
                 appDispatch(setNavigationType(NavigationType.REGULAR));
                 dispatch(actionCreators.switchAutoNextFrame(false));
                 savingRef.current = false;
