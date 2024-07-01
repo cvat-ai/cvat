@@ -13,6 +13,7 @@ export interface KeyMapItem {
     sequences: string[];
     displayedSequences?: string[];
     scope: ShortcutScope;
+    applicable?: string[];
 }
 
 export interface KeyMap {
