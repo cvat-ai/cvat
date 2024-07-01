@@ -72,6 +72,7 @@ class LabelType(str, Enum):
     CUBOID = 'cuboid'
     CUBOID_3D = 'cuboid_3d'
     SKELETON = 'skeleton'
+    MASK = 'mask'
     TAG = 'tag'
     ANY = 'any'
 
