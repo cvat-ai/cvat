@@ -12,7 +12,7 @@ from contextlib import contextmanager
 from copy import deepcopy
 from datetime import timedelta
 from threading import Lock
-from typing import Any, Generator, Optional, Sequence
+from typing import Any, Callable, Generator, Optional, ParamSpec, Sequence, TypeVar
 
 import attrs
 import django_rq
@@ -230,3 +230,12 @@ def parse_export_file_path(file_path: os.PathLike[str]) -> ParsedExportFilename:
         format_repr=basename_match.group('format_tag'),
         file_ext=basename_match.group('file_ext'),
     )
+
+
+
+_P = ParamSpec("_P")
+_R = TypeVar("_R")
+
+def with_signature_of(prototype: Callable[_P, _R]) -> Callable[[Callable], Callable[_P, _R]]:
+    "Overrides the input function signature to match the prototype"
+    return lambda target_fn: target_fn

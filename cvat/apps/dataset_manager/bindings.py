@@ -14,7 +14,7 @@ from operator import add
 from pathlib import Path
 from types import SimpleNamespace
 from typing import (Any, Callable, DefaultDict, Dict, Iterable, List, Literal, Mapping,
-                    NamedTuple, Optional, OrderedDict, Sequence, Set, Tuple, Union)
+                    NamedTuple, Optional, OrderedDict, Protocol, Sequence, Set, Tuple, Union)
 
 from attrs.converters import to_bool
 import datumaro as dm
@@ -38,6 +38,8 @@ from cvat.apps.engine.models import (AttributeSpec, AttributeType, Data, Dimensi
 
 from .annotation import AnnotationIR, AnnotationManager, TrackManager
 from .formats.transformations import MaskConverter, EllipsesToMasks
+from .util import with_signature_of
+
 
 CVAT_INTERNAL_ATTRIBUTES = {'occluded', 'outside', 'keyframe', 'track_id', 'rotation'}
 
@@ -1413,7 +1415,9 @@ class CVATDataExtractorMixin:
     def __init__(self, *,
         convert_annotations: Callable = None
     ):
-        self.convert_annotations = convert_annotations or convert_cvat_anno_to_dm
+        self.convert_annotations = with_signature_of(convert_cvat_anno_to_dm)(
+            convert_annotations or convert_cvat_anno_to_dm
+        )
 
         self._image_provider: Optional[ImageProvider] = None
 
@@ -1466,10 +1470,13 @@ class CVATDataExtractorMixin:
 
     def _read_cvat_anno(self, cvat_frame_anno: Union[ProjectData.Frame, CommonData.Frame], labels: list):
         categories = self.categories()
-        label_cat = categories[dm.AnnotationType.label]
-        def map_label(name, parent=''): return label_cat.find(name, parent)[0]
+        label_cat: dm.LabelCategories = categories[dm.AnnotationType.label]
+
+        def map_label(name: str, parent: str = "") -> Optional[int]:
+            return label_cat.find(name, parent)[0]
+
         label_attrs = {
-            label.get('parent', '') + label['name']: label['attributes']
+            (label['name'], label.get('parent', '')): label['attributes']
             for _, label in labels
         }
 
@@ -1551,15 +1558,22 @@ class CvatTaskOrJobDataExtractor(dm.SourceExtractor, CVATDataExtractorMixin):
 
     def _read_cvat_anno(self, cvat_frame_anno: CommonData.Frame, labels: list):
         categories = self.categories()
-        label_cat = categories[dm.AnnotationType.label]
-        def map_label(name, parent=''): return label_cat.find(name, parent)[0]
+        label_cat: dm.LabelCategories = categories[dm.AnnotationType.label]
+        def map_label(name: str, parent: str = '') -> Optional[int]:
+            return label_cat.find(name, parent)[0]
+
         label_attrs = {
-            label.get('parent', '') + label['name']: label['attributes']
+            (label['name'], label.get('parent', '')): label['attributes']
             for _, label in labels
         }
 
-        return self.convert_annotations(cvat_frame_anno,
-            label_attrs, map_label, self._format_type, self._dimension)
+        return self.convert_annotations(
+            cvat_frame_anno,
+            label_attrs,
+            map_label,
+            format_name=self._format_type,
+            dimension=self._dimension
+        )
 
 class CVATProjectDataExtractor(dm.Extractor, CVATDataExtractorMixin):
     def __init__(
@@ -1732,11 +1746,20 @@ def get_defaulted_subset(subset: str, subsets: List[str]) -> str:
 
 
 class CvatToDmAnnotationConverter:
+    class CvatDmLabelMapper(Protocol):
+        """
+        Maps a CVAT label to Datumaro label id.
+        If the result is None, the label is considered excluded.
+        """
+
+        def __call__(self, __name: str, __parent: str = "") -> Optional[int]: ...
+
+
     def __init__(self,
         cvat_frame_anno: CommonData.Frame,
-        label_attrs,
-        map_label,
-        format_name=None,
+        label_attrs: Dict[Tuple[str, str], Sequence[str]],
+        map_label: CvatDmLabelMapper,
+        format_name: Optional[str] = None,
         dimension: DimensionType = DimensionType.DIM_2D
     ) -> None:
         self.cvat_frame_anno = cvat_frame_anno
@@ -1747,11 +1770,13 @@ class CvatToDmAnnotationConverter:
         self.item_anno = []
         self.num_of_tracks = None
 
-    def _convert_attrs(self, label: CommonData.Label, cvat_attrs: CommonData.Attribute):
+    def _convert_attrs(
+        self, label: str, cvat_attrs: CommonData.Attribute, *, parent_label: str = ""
+    ) -> Dict[str, Any]:
         cvat_attrs = {a.name: a.value for a in cvat_attrs}
 
         dm_attr = dict()
-        for _, a_desc in self.label_attrs[label]:
+        for _, a_desc in self.label_attrs[(label, parent_label or "")]:
             a_name = a_desc['name']
 
             a_value = cvat_attrs.get(a_name, a_desc['default_value'])
@@ -1769,10 +1794,13 @@ class CvatToDmAnnotationConverter:
         return dm_attr
 
     def _convert_tag(self, tag: CommonData.Tag) -> Iterable[dm.Annotation]:
-        anno_group = tag.group or 0
-        anno_label = self.map_label(tag.label)
-        anno_attr = self._convert_attrs(tag.label, tag.attributes)
-        return [dm.Label(label=anno_label, attributes=anno_attr, group=anno_group)]
+        dm_label = self.map_label(tag.label)
+        if dm_label is None:
+            return []
+
+        dm_attr = self._convert_attrs(tag.label, tag.attributes)
+        dm_group = tag.group or 0
+        return [dm.Label(label=dm_label, attributes=dm_attr, group=dm_group)]
 
     def _convert_tags(self, tags) -> Iterable[dm.Annotation]:
         return reduce(add, map(self._convert_tag, tags), [])
@@ -1780,8 +1808,11 @@ class CvatToDmAnnotationConverter:
     def _convert_shape(self,
         shape: CommonData.LabeledShape, *, index: int
     ) -> Iterable[dm.Annotation]:
-        dm_group = shape.group or 0
         dm_label = self.map_label(shape.label)
+        if dm_label is None:
+            return []
+
+        dm_group = shape.group or 0
 
         dm_attr = self._convert_attrs(shape.label, shape.attributes)
         dm_attr['occluded'] = shape.occluded
@@ -1848,24 +1879,30 @@ class CvatToDmAnnotationConverter:
         elif shape.type == ShapeType.SKELETON:
             elements = []
             for element in shape.elements:
-                element_attr = self._convert_attrs(
-                    shape.label + element.label, element.attributes)
+                element_dm_label = self.map_label(element.label, shape.label)
+                if element_dm_label is None:
+                    continue
+
+                element_dm_attr = self._convert_attrs(
+                    element.label, element.attributes, parent_label=shape.label
+                )
 
                 if hasattr(element, 'track_id'):
-                    element_attr['track_id'] = element.track_id
-                    element_attr['keyframe'] = element.keyframe
+                    element_dm_attr['track_id'] = element.track_id
+                    element_dm_attr['keyframe'] = element.keyframe
 
-                element_vis = dm.Points.Visibility.visible
+                element_dm_visibility = dm.Points.Visibility.visible
                 if element.outside:
-                    element_vis = dm.Points.Visibility.absent
+                    element_dm_visibility = dm.Points.Visibility.absent
                 elif element.occluded:
-                    element_vis = dm.Points.Visibility.hidden
+                    element_dm_visibility = dm.Points.Visibility.hidden
 
-                elements.append(dm.Points(element.points, [element_vis],
-                    label=self.map_label(element.label, shape.label),
-                    attributes=element_attr))
+                elements.append(dm.Points(
+                    element.points, [element_dm_visibility],
+                    label=element_dm_label, attributes=element_dm_attr
+                ))
 
-            dm_attr["keyframe"] = any([element.attributes.get("keyframe") for element in elements])
+            dm_attr["keyframe"] = any(element.attributes.get("keyframe") for element in elements)
             anno = dm.Skeleton(elements, label=dm_label,
                 attributes=dm_attr, group=dm_group, z_order=shape.z_order)
         else:
@@ -1900,11 +1937,11 @@ class CvatToDmAnnotationConverter:
 
 
 def convert_cvat_anno_to_dm(
-    cvat_frame_anno,
-    label_attrs,
-    map_label,
-    format_name=None,
-    dimension=DimensionType.DIM_2D
+    cvat_frame_anno: CommonData.Frame,
+    label_attrs: Dict[Tuple[str, str], Sequence[str]],
+    map_label: CvatToDmAnnotationConverter.CvatDmLabelMapper,
+    format_name: Optional[str] = None,
+    dimension: DimensionType = DimensionType.DIM_2D,
 ) -> List[dm.Annotation]:
     converter = CvatToDmAnnotationConverter(
         cvat_frame_anno=cvat_frame_anno,
