@@ -326,9 +326,7 @@ function AnnotationsActionsModalContent(props: { onClose: () => void; }): JSX.El
                                         className='cvat-action-runner-save-job-recommendation'
                                         type='link'
                                         onClick={() => {
-                                            storage.dispatch(
-                                                saveAnnotationsAsync(),
-                                            ).then(() => {
+                                            storage.dispatch(saveAnnotationsAsync()).then(() => {
                                                 dispatch(reducerActions.setJobSavedFlag(true));
                                             });
                                         }}

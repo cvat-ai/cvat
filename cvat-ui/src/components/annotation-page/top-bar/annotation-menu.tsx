@@ -52,7 +52,14 @@ function AnnotationMenuComponent(): JSX.Element {
     }, [jobInstance]);
 
     const finishJob = useCallback(() => {
-        dispatch(finishCurrentJobAsync());
+        dispatch(finishCurrentJobAsync()).then(() => {
+            message.open({
+                duration: 1,
+                type: 'success',
+                content: 'You tagged the job as completed',
+                className: 'cvat-annotation-job-finished-success',
+            });
+        });
     }, []);
 
     const openTask = useCallback(() => {

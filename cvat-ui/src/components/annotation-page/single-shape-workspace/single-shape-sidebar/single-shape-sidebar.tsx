@@ -16,6 +16,7 @@ import InputNumber from 'antd/lib/input-number';
 import Select from 'antd/lib/select';
 import Alert from 'antd/lib/alert';
 import Button from 'antd/lib/button';
+import message from 'antd/lib/message';
 
 import { CombinedState, NavigationType, ObjectType } from 'reducers';
 import { Canvas, CanvasMode } from 'cvat-canvas-wrapper';
@@ -225,6 +226,7 @@ function SingleShapeSidebar(): JSX.Element {
     const getNextFrame = useCallback(() => {
         if (frame + 1 > jobInstance.stopFrame) {
             dispatch(actionCreators.setNextFrame(null));
+            return;
         }
 
         jobInstance.annotations.search(frame + 1, jobInstance.stopFrame, {
@@ -246,7 +248,14 @@ function SingleShapeSidebar(): JSX.Element {
         } else if ((forceSave || state.saveOnFinish) && !savingRef.current) {
             savingRef.current = true;
 
-            appDispatch(finishCurrentJobAsync()).finally(() => {
+            appDispatch(finishCurrentJobAsync()).then(() => {
+                message.open({
+                    duration: 1,
+                    type: 'success',
+                    content: 'You tagged the job as completed',
+                    className: 'cvat-annotation-job-finished-success',
+                });
+            }).finally(() => {
                 appDispatch(setNavigationType(NavigationType.REGULAR));
                 dispatch(actionCreators.switchAutoNextFrame(false));
                 savingRef.current = false;
