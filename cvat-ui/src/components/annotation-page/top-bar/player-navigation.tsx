@@ -19,6 +19,9 @@ import CVATTooltip from 'components/common/cvat-tooltip';
 import { clamp } from 'utils/math';
 import GlobalHotKeys, { KeyMap } from 'utils/mousetrap-react';
 import { Workspace } from 'reducers';
+import { ShortcutScope } from 'utils/enums';
+import { registerComponentShortcuts } from 'actions/shortcuts-actions';
+import { subKeyMap } from 'utils/component-subkeymap';
 
 interface Props {
     startFrame: number;
@@ -41,6 +44,24 @@ interface Props {
     onRestoreFrame(): void;
     switchNavigationBlocked(blocked: boolean): void;
 }
+
+const componentShortcuts = {
+    DELETE_FRAME: {
+        name: 'Delete frame',
+        description: 'Delete frame',
+        sequences: ['alt+del'],
+        scope: ShortcutScope.ALL,
+    },
+    FOCUS_INPUT_FRAME: {
+        name: 'Focus input frame',
+        description: 'Focus on the element to change the current frame',
+        sequences: ['`'],
+        displayedSequences: ['~'],
+        scope: ShortcutScope.ALL,
+    },
+};
+
+registerComponentShortcuts(componentShortcuts);
 
 function PlayerNavigation(props: Props): JSX.Element {
     const {
@@ -93,12 +114,7 @@ function PlayerNavigation(props: Props): JSX.Element {
         }
     }, [playing, frameNumber]);
 
-    const subKeyMap = {
-        DELETE_FRAME: keyMap.DELETE_FRAME,
-        FOCUS_INPUT_FRAME: keyMap.FOCUS_INPUT_FRAME,
-    };
-
-    const handlers = {
+    const handlers: Record<keyof typeof componentShortcuts, (event?: KeyboardEvent) => void> = {
         DELETE_FRAME: (event: KeyboardEvent | undefined) => {
             event?.preventDefault();
             onDeleteFrame();
@@ -137,7 +153,9 @@ function PlayerNavigation(props: Props): JSX.Element {
 
     return (
         <>
-            { workspace !== Workspace.SINGLE_SHAPE && <GlobalHotKeys keyMap={subKeyMap} handlers={handlers} />}
+            { workspace !== Workspace.SINGLE_SHAPE && (
+                <GlobalHotKeys keyMap={subKeyMap(componentShortcuts, keyMap)} handlers={handlers} />
+            )}
             <Col className='cvat-player-controls'>
                 <Row align='bottom'>
                     <Col>

@@ -24,6 +24,9 @@ import {
     ForwardJumpIcon,
     LastIcon,
 } from 'icons';
+import { ShortcutScope } from 'utils/enums';
+import { registerComponentShortcuts } from 'actions/shortcuts-actions';
+import { subKeyMap } from 'utils/component-subkeymap';
 
 interface Props {
     playing: boolean;
@@ -45,6 +48,53 @@ interface Props {
     onSearchAnnotations(direction: 'forward' | 'backward'): void;
     setNavigationType(navigationType: NavigationType): void;
 }
+
+const componentShortcuts = {
+    NEXT_FRAME: {
+        name: 'Next frame',
+        description: 'Go to the next frame',
+        sequences: ['f'],
+        scope: ShortcutScope.ALL,
+    },
+    PREV_FRAME: {
+        name: 'Previous frame',
+        description: 'Go to the previous frame',
+        sequences: ['d'],
+        scope: ShortcutScope.ALL,
+    },
+    FORWARD_FRAME: {
+        name: 'Forward frame',
+        description: 'Go forward with a step',
+        sequences: ['v'],
+        scope: ShortcutScope.ALL,
+    },
+    BACKWARD_FRAME: {
+        name: 'Backward frame',
+        description: 'Go backward with a step',
+        sequences: ['c'],
+        scope: ShortcutScope.ALL,
+    },
+    SEARCH_FORWARD: {
+        name: 'Search forward',
+        description: 'Search the next frame that satisfies to the filters',
+        sequences: ['right'],
+        scope: ShortcutScope.ALL,
+    },
+    SEARCH_BACKWARD: {
+        name: 'Search backward',
+        description: 'Search the previous frame that satisfies to the filters',
+        sequences: ['left'],
+        scope: ShortcutScope.ALL,
+    },
+    PLAY_PAUSE: {
+        name: 'Play/pause',
+        description: 'Start/stop automatic changing frames',
+        sequences: ['space'],
+        scope: ShortcutScope.ALL,
+    },
+};
+
+registerComponentShortcuts(componentShortcuts);
 
 function PlayerButtons(props: Props): JSX.Element {
     const {
@@ -68,20 +118,7 @@ function PlayerButtons(props: Props): JSX.Element {
         onSearchAnnotations,
     } = props;
 
-    const subKeyMap = {
-        NEXT_FRAME: keyMap.NEXT_FRAME,
-        PREV_FRAME: keyMap.PREV_FRAME,
-        ...(workspace !== Workspace.SINGLE_SHAPE ? {
-            FORWARD_FRAME: keyMap.FORWARD_FRAME,
-            BACKWARD_FRAME: keyMap.BACKWARD_FRAME,
-            SEARCH_FORWARD: keyMap.SEARCH_FORWARD,
-            SEARCH_BACKWARD: keyMap.SEARCH_BACKWARD,
-            PLAY_PAUSE: keyMap.PLAY_PAUSE,
-            FOCUS_INPUT_FRAME: keyMap.FOCUS_INPUT_FRAME,
-        } : {}),
-    };
-
-    const handlers = {
+    const handlers: Partial<Record<keyof typeof componentShortcuts, ((event?: KeyboardEvent) => void)>> = {
         NEXT_FRAME: (event: KeyboardEvent | undefined) => {
             event?.preventDefault();
             onNextFrame();
@@ -158,7 +195,7 @@ function PlayerButtons(props: Props): JSX.Element {
 
     return (
         <Col className='cvat-player-buttons'>
-            <GlobalHotKeys keyMap={subKeyMap} handlers={handlers} />
+            <GlobalHotKeys keyMap={subKeyMap(componentShortcuts, keyMap)} handlers={handlers} />
             <CVATTooltip title='Go to the first frame'>
                 <Icon
                     style={navIconStyle}

@@ -10,6 +10,20 @@ import { SaveIcon } from 'icons';
 import GlobalHotKeys from 'utils/mousetrap-react';
 import CVATTooltip from 'components/common/cvat-tooltip';
 import { CombinedState } from 'reducers';
+import { ShortcutScope } from 'utils/enums';
+import { registerComponentShortcuts } from 'actions/shortcuts-actions';
+import { subKeyMap } from 'utils/component-subkeymap';
+
+const componentShortcuts = {
+    SAVE_JOB: {
+        name: 'Save the job',
+        description: 'Send all changes of annotations to the server',
+        sequences: ['ctrl+s'],
+        scope: ShortcutScope.ALL,
+    },
+};
+
+registerComponentShortcuts(componentShortcuts);
 
 const storage = {
     SAVE_ANNOTATION_BUTTON: (props: any & {
@@ -19,11 +33,7 @@ const storage = {
         const normKeyMap = useSelector((state: CombinedState) => state.shortcuts.normalizedKeyMap);
         const { isSaving, shortcut, ...rest } = props;
 
-        const subKeyMap = {
-            SAVE_JOB: keyMap.SAVE_JOB,
-        };
-
-        const handlers = {
+        const handlers: Record<keyof typeof componentShortcuts, (event?: KeyboardEvent) => void> = {
             SAVE_JOB: (event: KeyboardEvent | undefined) => {
                 const { onClick } = props;
                 if (event) event.preventDefault();
@@ -33,7 +43,7 @@ const storage = {
 
         return (
             <>
-                <GlobalHotKeys keyMap={subKeyMap} handlers={handlers} />
+                <GlobalHotKeys keyMap={subKeyMap(componentShortcuts, keyMap)} handlers={handlers} />
                 <CVATTooltip overlay={`Save current changes ${normKeyMap.SAVE_JOB}`}>
                     <Button
                         {...rest}

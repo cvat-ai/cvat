@@ -7,28 +7,39 @@ import React from 'react';
 import Icon from '@ant-design/icons';
 
 import { CursorIcon } from 'icons';
-import { ActiveControl } from 'reducers';
+import { ActiveControl, CombinedState } from 'reducers';
 import { Canvas } from 'cvat-canvas-wrapper';
 import { Canvas3d } from 'cvat-canvas3d-wrapper';
 import CVATTooltip from 'components/common/cvat-tooltip';
-import GlobalHotKeys, { KeyMapItem } from 'utils/mousetrap-react';
+import GlobalHotKeys from 'utils/mousetrap-react';
+import { ShortcutScope } from 'utils/enums';
+import { registerComponentShortcuts } from 'actions/shortcuts-actions';
+import { subKeyMap } from 'utils/component-subkeymap';
+import { useSelector } from 'react-redux';
 
 export interface Props {
     canvasInstance: Canvas | Canvas3d;
     cursorShortkey: string;
     activeControl: ActiveControl;
-    shortcuts: {
-        CANCEL: {
-            details: KeyMapItem;
-            displayValue: string;
-        };
-    }
 }
+
+const componentShortcuts = {
+    CANCEL: {
+        name: 'Cancel',
+        description: 'Cancel any active canvas mode',
+        sequences: ['esc'],
+        scope: ShortcutScope.ALL,
+    },
+};
+
+registerComponentShortcuts(componentShortcuts);
 
 function CursorControl(props: Props): JSX.Element {
     const {
-        canvasInstance, activeControl, cursorShortkey, shortcuts,
+        canvasInstance, activeControl, cursorShortkey,
     } = props;
+
+    const { keyMap } = useSelector((state: CombinedState) => state.shortcuts);
 
     const handler = (): void => {
         if (activeControl !== ActiveControl.CURSOR) {
@@ -36,16 +47,18 @@ function CursorControl(props: Props): JSX.Element {
         }
     };
 
+    const handlers: Record<keyof typeof componentShortcuts, (event?: KeyboardEvent) => void> = {
+        CANCEL: (event: KeyboardEvent | undefined) => {
+            if (event) event.preventDefault();
+            handler();
+        },
+    };
+
     return (
         <>
             <GlobalHotKeys
-                keyMap={{ CANCEL: shortcuts.CANCEL.details }}
-                handlers={{
-                    CANCEL: (event: KeyboardEvent | undefined) => {
-                        if (event) event.preventDefault();
-                        handler();
-                    },
-                }}
+                keyMap={subKeyMap(componentShortcuts, keyMap)}
+                handlers={handlers}
             />
             <CVATTooltip title={`Cursor ${cursorShortkey}`} placement='right'>
                 <Icon

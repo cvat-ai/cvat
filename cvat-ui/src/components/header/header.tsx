@@ -39,10 +39,12 @@ import ChangePasswordDialog from 'components/change-password-modal/change-passwo
 import CVATTooltip from 'components/common/cvat-tooltip';
 import { switchSettingsModalVisible as switchSettingsModalVisibleAction } from 'actions/settings-actions';
 import { logoutAsync, authActions } from 'actions/auth-actions';
-import { shortcutsActions } from 'actions/shortcuts-actions';
+import { shortcutsActions, registerComponentShortcuts } from 'actions/shortcuts-actions';
 import { AboutState, CombinedState } from 'reducers';
 import { useIsMounted, usePlugins } from 'utils/hooks';
 import GlobalHotKeys, { KeyMap } from 'utils/mousetrap-react';
+import { ShortcutScope } from 'utils/enums';
+import { subKeyMap } from 'utils/component-subkeymap';
 import SettingsModal from './settings-modal/settings-modal';
 import OrganizationsSearch from './organizations-search';
 
@@ -71,6 +73,23 @@ interface DispatchToProps {
 }
 
 const core = getCore();
+
+const componentShortcuts = {
+    SWITCH_SHORTCUTS: {
+        name: 'Show shortcuts',
+        description: 'Open/hide the list of available shortcuts',
+        sequences: ['f1'],
+        scope: ShortcutScope.ALL,
+    },
+    SWITCH_SETTINGS: {
+        name: 'Show settings',
+        description: 'Open/hide settings dialog',
+        sequences: ['f2'],
+        scope: ShortcutScope.ALL,
+    },
+};
+
+registerComponentShortcuts(componentShortcuts);
 
 function mapStateToProps(state: CombinedState): StateToProps {
     const {
@@ -187,19 +206,14 @@ function HeaderComponent(props: Props): JSX.Element {
     const history = useHistory();
     const location = useLocation();
 
-    const subKeyMap = {
-        SWITCH_SHORTCUTS: keyMap.SWITCH_SHORTCUTS,
-        SWITCH_SETTINGS: keyMap.SWITCH_SETTINGS,
-    };
-
-    const handlers = {
-        SWITCH_SHORTCUTS: (event: KeyboardEvent) => {
+    const handlers: Record<keyof typeof componentShortcuts, (event?: KeyboardEvent) => void> = {
+        SWITCH_SHORTCUTS: (event: KeyboardEvent | undefined) => {
             if (event) event.preventDefault();
             if (!settingsModalVisible) {
                 switchShortcutsModalVisible(!shortcutsModalVisible);
             }
         },
-        SWITCH_SETTINGS: (event: KeyboardEvent) => {
+        SWITCH_SETTINGS: (event: KeyboardEvent | undefined) => {
             if (event) event.preventDefault();
             if (!shortcutsModalVisible) {
                 switchSettingsModalVisible(!settingsModalVisible);
@@ -422,7 +436,7 @@ function HeaderComponent(props: Props): JSX.Element {
 
     return (
         <Layout.Header className='cvat-header'>
-            <GlobalHotKeys keyMap={subKeyMap} handlers={handlers} />
+            <GlobalHotKeys keyMap={subKeyMap(componentShortcuts, keyMap)} handlers={handlers} />
             <div className='cvat-left-header'>
                 <Icon className='cvat-logo-icon' component={CVATLogo} />
                 <Button

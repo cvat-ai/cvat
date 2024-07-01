@@ -34,8 +34,76 @@ import CVATTooltip from 'components/common/cvat-tooltip';
 import { EventScope } from 'cvat-logger';
 import { getCore, ObjectState, Job } from 'cvat-core-wrapper';
 import GlobalHotKeys from 'utils/mousetrap-react';
+import { ShortcutScope } from 'utils/enums';
+import { registerComponentShortcuts } from 'actions/shortcuts-actions';
+import { subKeyMap } from 'utils/component-subkeymap';
 
 const cvat = getCore();
+
+const componentShortcuts = {
+    TILT_UP: {
+        name: 'Camera Roll Angle Up',
+        description: 'Increases camera roll angle',
+        sequences: ['shift+arrowup'],
+        scope: ShortcutScope.ALL,
+    },
+    TILT_DOWN: {
+        name: 'Camera Roll Angle Down',
+        description: 'Decreases camera roll angle',
+        sequences: ['shift+arrowdown'],
+        scope: ShortcutScope.ALL,
+    },
+    ROTATE_LEFT: {
+        name: 'Camera Pitch Angle Left',
+        description: 'Decreases camera pitch angle',
+        sequences: ['shift+arrowleft'],
+        scope: ShortcutScope.ALL,
+    },
+    ROTATE_RIGHT: {
+        name: 'Camera Pitch Angle Right',
+        description: 'Increases camera pitch angle',
+        sequences: ['shift+arrowright'],
+        scope: ShortcutScope.ALL,
+    },
+    MOVE_UP: {
+        name: 'Camera Move Up',
+        description: 'Move the camera up',
+        sequences: ['alt+u'],
+        scope: ShortcutScope.ALL,
+    },
+    MOVE_DOWN: {
+        name: 'Camera Move Down',
+        description: 'Move the camera down',
+        sequences: ['alt+o'],
+        scope: ShortcutScope.ALL,
+    },
+    MOVE_LEFT: {
+        name: 'Camera Move Left',
+        description: 'Move the camera left',
+        sequences: ['alt+j'],
+        scope: ShortcutScope.ALL,
+    },
+    MOVE_RIGHT: {
+        name: 'Camera Move Right',
+        description: 'Move the camera right',
+        sequences: ['alt+l'],
+        scope: ShortcutScope.ALL,
+    },
+    ZOOM_IN: {
+        name: 'Camera Zoom In',
+        description: 'Performs zoom in',
+        sequences: ['alt+i'],
+        scope: ShortcutScope.ALL,
+    },
+    ZOOM_OUT: {
+        name: 'Camera Zoom Out',
+        description: 'Performs zoom out',
+        sequences: ['alt+k'],
+        scope: ShortcutScope.ALL,
+    },
+};
+
+registerComponentShortcuts(componentShortcuts);
 
 interface StateToProps {
     opacity: number;
@@ -183,20 +251,7 @@ export const PerspectiveViewComponent = React.memo(
             canvas.keyControls(new KeyboardEvent('keydown', { code, altKey, shiftKey }));
         };
 
-        const subKeyMap = {
-            TILT_UP: keyMap.TILT_UP,
-            TILT_DOWN: keyMap.TILT_DOWN,
-            ROTATE_LEFT: keyMap.ROTATE_LEFT,
-            ROTATE_RIGHT: keyMap.ROTATE_RIGHT,
-            MOVE_UP: keyMap.MOVE_UP,
-            MOVE_DOWN: keyMap.MOVE_DOWN,
-            MOVE_LEFT: keyMap.MOVE_LEFT,
-            MOVE_RIGHT: keyMap.MOVE_RIGHT,
-            ZOOM_IN: keyMap.ZOOM_IN,
-            ZOOM_OUT: keyMap.ZOOM_OUT,
-        };
-
-        const handlers = {
+        const handlers: Record<keyof typeof componentShortcuts, (event?: KeyboardEvent) => void> = {
             TILT_UP: () => {}, // Handled by CVAT 3D Independently
             TILT_DOWN: () => {},
             ROTATE_LEFT: () => {},
@@ -331,7 +386,7 @@ export const PerspectiveViewComponent = React.memo(
                     className='cvat-canvas-container cvat-canvas-container-overflow'
                     ref={ref}
                 />
-                <GlobalHotKeys handlers={handlers} keyMap={subKeyMap} />
+                <GlobalHotKeys handlers={handlers} keyMap={subKeyMap(componentShortcuts, keyMap)} />
                 <ArrowGroup />
                 <ControlGroup />
             </div>

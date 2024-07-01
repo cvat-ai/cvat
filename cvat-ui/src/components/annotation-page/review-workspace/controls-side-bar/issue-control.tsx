@@ -6,29 +6,40 @@
 import React from 'react';
 import Icon from '@ant-design/icons';
 
-import { ActiveControl } from 'reducers';
+import { ActiveControl, CombinedState } from 'reducers';
 import { Canvas } from 'cvat-canvas-wrapper';
 import { RectangleIcon } from 'icons';
 import CVATTooltip from 'components/common/cvat-tooltip';
-import GlobalHotKeys, { KeyMapItem } from 'utils/mousetrap-react';
+import GlobalHotKeys from 'utils/mousetrap-react';
+import { ShortcutScope } from 'utils/enums';
+import { registerComponentShortcuts } from 'actions/shortcuts-actions';
+import { subKeyMap } from 'utils/component-subkeymap';
+import { useSelector } from 'react-redux';
 
 interface Props {
     canvasInstance: Canvas;
     activeControl: ActiveControl;
     disabled: boolean;
-    shortcuts: {
-        OPEN_REVIEW_ISSUE: {
-            details: KeyMapItem;
-            displayValue: string;
-        };
-    }
     updateActiveControl(activeControl: ActiveControl): void;
 }
 
+const componentShortcuts = {
+    OPEN_REVIEW_ISSUE: {
+        name: 'Open an issue',
+        description: 'Create a new issues in the review workspace',
+        sequences: ['n'],
+        scope: ShortcutScope.ALL,
+    },
+};
+
+registerComponentShortcuts(componentShortcuts);
+
 function CreateIssueControl(props: Props): JSX.Element {
     const {
-        activeControl, canvasInstance, updateActiveControl, disabled, shortcuts,
+        activeControl, canvasInstance, updateActiveControl, disabled,
     } = props;
+
+    const { keyMap } = useSelector((state: CombinedState) => state.shortcuts);
 
     const handler = (): void => {
         if (activeControl === ActiveControl.OPEN_ISSUE) {
@@ -41,7 +52,7 @@ function CreateIssueControl(props: Props): JSX.Element {
         }
     };
 
-    const shortcutHandlers = {
+    const handlers: Record<keyof typeof componentShortcuts, (event?: KeyboardEvent) => void> = {
         OPEN_REVIEW_ISSUE: (event: KeyboardEvent | undefined) => {
             if (event) event.preventDefault();
             handler();
@@ -54,8 +65,8 @@ function CreateIssueControl(props: Props): JSX.Element {
         ) : (
             <>
                 <GlobalHotKeys
-                    keyMap={{ OPEN_REVIEW_ISSUE: shortcuts.OPEN_REVIEW_ISSUE.details }}
-                    handlers={shortcutHandlers}
+                    keyMap={subKeyMap(componentShortcuts, keyMap)}
+                    handlers={handlers}
                 />
                 <CVATTooltip title='Open an issue' placement='right'>
                     <Icon
