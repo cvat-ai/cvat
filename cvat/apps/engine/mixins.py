@@ -436,10 +436,10 @@ class DatasetMixin:
 
     @extend_schema(
         summary='Initialize process to export resource as a dataset in a specific format',
-        description=dedent("""
-             The request POST /api/projects/id/dataset/export will initialize
-             background process to export dataset. To check status of the process
-             please, use GET /api/requests/<rq_id> where rq_id is request ID returned in the response for this endpoint.
+        description=dedent("""\
+             The request `POST /api/<projects|tasks|jobs>/id/dataset/export` will initialize
+             a background process to export a dataset. To check status of the process
+             please, use `GET /api/requests/<rq_id>` where **rq_id** is request ID returned in the response for this endpoint.
          """),
         parameters=[
             OpenApiParameter('format', location=OpenApiParameter.QUERY,
@@ -455,12 +455,12 @@ class DatasetMixin:
             OpenApiParameter('save_images', description='Include images or not',
                 location=OpenApiParameter.QUERY, type=OpenApiTypes.BOOL, required=False, default=False),
         ],
+        request=OpenApiTypes.NONE,
         responses={
             '202': OpenApiResponse(response=RqIdSerializer, description='Exporting has been started'),
             '405': OpenApiResponse(description='Format is not available'),
             '409': OpenApiResponse(description='Exporting is already in progress'),
         },
-        request=OpenApiTypes.NONE,
     )
     @action(detail=True, methods=['POST'], serializer_class=None, url_path='dataset/export')
     def export_dataset_v2(self, request: HttpRequest, pk: int):
@@ -529,6 +529,11 @@ class BackupMixin:
         return self.upload_data(request)
 
     @extend_schema(summary='Initiate process to backup resource',
+        description=dedent("""\
+             The request `POST /api/<projects|tasks>/id/backup/export` will initialize
+             a background process to backup a resource. To check status of the process
+             please, use `GET /api/requests/<rq_id>` where **rq_id** is request ID returned in the response for this endpoint.
+         """),
         parameters=[
             OpenApiParameter('filename', description='Backup file name',
                 location=OpenApiParameter.QUERY, type=OpenApiTypes.STR, required=False),
@@ -538,12 +543,12 @@ class BackupMixin:
             OpenApiParameter('cloud_storage_id', description='Storage id',
                 location=OpenApiParameter.QUERY, type=OpenApiTypes.INT, required=False),
         ],
+        request=OpenApiTypes.NONE,
         responses={
             '202': OpenApiResponse(response=RqIdSerializer, description='Creating a backup file has been started'),
             '400': OpenApiResponse(description='Wrong query parameters were passed'),
             '409': OpenApiResponse(description='The backup process has already been initiated and is not yet finished'),
         },
-        request=OpenApiTypes.NONE,
     )
     @action(detail=True, methods=['POST'], serializer_class=None, url_path='backup/export')
     def export_backup_v2(self, request: HttpRequest, pk: int):

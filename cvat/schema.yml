@@ -2501,11 +2501,10 @@ paths:
   /api/jobs/{id}/dataset/export:
     post:
       operationId: jobs_create_dataset_export
-      description: |2
-
-        The request POST /api/projects/id/dataset/export will initialize
-        background process to export dataset. To check status of the process
-        please, use GET /api/requests/<rq_id> where rq_id is request ID returned in the response for this endpoint.
+      description: |
+        The request `POST /api/<projects|tasks|jobs>/id/dataset/export` will initialize
+        a background process to export a dataset. To check status of the process
+        please, use `GET /api/requests/<rq_id>` where **rq_id** is request ID returned in the response for this endpoint.
       summary: Initialize process to export resource as a dataset in a specific format
       parameters:
       - in: query
@@ -3696,6 +3695,10 @@ paths:
   /api/projects/{id}/backup/export:
     post:
       operationId: projects_create_backup_export
+      description: |
+        The request `POST /api/<projects|tasks>/id/backup/export` will initialize
+        a background process to backup a resource. To check status of the process
+        please, use `GET /api/requests/<rq_id>` where **rq_id** is request ID returned in the response for this endpoint.
       summary: Initiate process to backup resource
       parameters:
       - in: query
@@ -3917,11 +3920,10 @@ paths:
   /api/projects/{id}/dataset/export:
     post:
       operationId: projects_create_dataset_export
-      description: |2
-
-        The request POST /api/projects/id/dataset/export will initialize
-        background process to export dataset. To check status of the process
-        please, use GET /api/requests/<rq_id> where rq_id is request ID returned in the response for this endpoint.
+      description: |
+        The request `POST /api/<projects|tasks|jobs>/id/dataset/export` will initialize
+        a background process to export a dataset. To check status of the process
+        please, use `GET /api/requests/<rq_id>` where **rq_id** is request ID returned in the response for this endpoint.
       summary: Initialize process to export resource as a dataset in a specific format
       parameters:
       - in: query
@@ -5509,6 +5511,10 @@ paths:
   /api/tasks/{id}/backup/export:
     post:
       operationId: tasks_create_backup_export
+      description: |
+        The request `POST /api/<projects|tasks>/id/backup/export` will initialize
+        a background process to backup a resource. To check status of the process
+        please, use `GET /api/requests/<rq_id>` where **rq_id** is request ID returned in the response for this endpoint.
       summary: Initiate process to backup resource
       parameters:
       - in: query
@@ -5848,11 +5854,10 @@ paths:
   /api/tasks/{id}/dataset/export:
     post:
       operationId: tasks_create_dataset_export
-      description: |2
-
-        The request POST /api/projects/id/dataset/export will initialize
-        background process to export dataset. To check status of the process
-        please, use GET /api/requests/<rq_id> where rq_id is request ID returned in the response for this endpoint.
+      description: |
+        The request `POST /api/<projects|tasks|jobs>/id/dataset/export` will initialize
+        a background process to export a dataset. To check status of the process
+        please, use `GET /api/requests/<rq_id>` where **rq_id** is request ID returned in the response for this endpoint.
       summary: Initialize process to export resource as a dataset in a specific format
       parameters:
       - in: query
