@@ -20,13 +20,11 @@ import Button from 'antd/lib/button';
 
 import { CombinedState, NavigationType, ObjectType } from 'reducers';
 import { Canvas, CanvasMode } from 'cvat-canvas-wrapper';
-import {
-    Job, JobState, Label, LabelType,
-} from 'cvat-core-wrapper';
+import { Job, Label, LabelType } from 'cvat-core-wrapper';
 import { ActionUnion, createAction } from 'utils/redux';
 import {
-    rememberObject, changeFrameAsync, saveAnnotationsAsync, setNavigationType,
-    removeObjectAsync, updateCurrentJobAsync,
+    rememberObject, changeFrameAsync, setNavigationType,
+    removeObjectAsync, finishCurrentJobAsync,
 } from 'actions/annotation-actions';
 import LabelSelector from 'components/label-selector/label-selector';
 import GlobalHotKeys from 'utils/mousetrap-react';
@@ -258,27 +256,13 @@ function SingleShapeSidebar(): JSX.Element {
         } else if ((forceSave || state.saveOnFinish) && !savingRef.current) {
             savingRef.current = true;
 
-            const patchJob = (): void => {
-                appDispatch(updateCurrentJobAsync({
-                    state: JobState.COMPLETED,
-                })).then(() => {
-                    appDispatch(setNavigationType(NavigationType.REGULAR));
-                    dispatch(actionCreators.switchAutoNextFrame(false));
-                    if (jobInstance.state === JobState.COMPLETED) {
-                        showSubmittedInfo();
-                    }
-                }).finally(() => {
-                    savingRef.current = false;
-                });
-            };
-
-            if (jobInstance.annotations.hasUnsavedChanges()) {
-                appDispatch(saveAnnotationsAsync(patchJob)).catch(() => {
-                    savingRef.current = false;
-                });
-            } else {
-                patchJob();
-            }
+            appDispatch(finishCurrentJobAsync()).then(() => {
+                showSubmittedInfo();
+            }).finally(() => {
+                appDispatch(setNavigationType(NavigationType.REGULAR));
+                dispatch(actionCreators.switchAutoNextFrame(false));
+                savingRef.current = false;
+            });
         }
     }, [state.saveOnFinish, state.nextFrame, jobInstance]);
 

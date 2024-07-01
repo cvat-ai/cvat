@@ -327,10 +327,10 @@ function AnnotationsActionsModalContent(props: { onClose: () => void; }): JSX.El
                                         type='link'
                                         onClick={() => {
                                             storage.dispatch(
-                                                saveAnnotationsAsync(() => {
-                                                    dispatch(reducerActions.setJobSavedFlag(true));
-                                                }),
-                                            );
+                                                saveAnnotationsAsync(),
+                                            ).then(() => {
+                                                dispatch(reducerActions.setJobSavedFlag(true));
+                                            });
                                         }}
                                     >
                                         Click to save the job
