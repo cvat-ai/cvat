@@ -11,8 +11,8 @@ import {
     RectDrawingMethod, CuboidDrawingMethod, Canvas, CanvasMode as Canvas2DMode,
 } from 'cvat-canvas-wrapper';
 import {
-    getCore, MLModel, JobType, Job, QualityConflict, ObjectState,
-    JobState, JobStage,
+    getCore, MLModel, JobType, Job,
+    QualityConflict, ObjectState, JobState,
 } from 'cvat-core-wrapper';
 import logger, { EventScope } from 'cvat-logger';
 import { getCVATStore } from 'cvat-store';
@@ -1001,7 +1001,6 @@ export function getJobAsync({
 export function updateCurrentJobAsync(
     jobFieldsToUpdate: {
         state?: JobState;
-        stage?: JobStage;
     },
 ): ThunkAction {
     return async (dispatch: ThunkDispatch) => {
@@ -1019,7 +1018,7 @@ export function updateCurrentJobAsync(
     };
 }
 
-export function saveAnnotationsAsync(afterSave?: () => void): ThunkAction {
+export function saveAnnotationsAsync(): ThunkAction {
     return async (dispatch: ThunkDispatch): Promise<void> => {
         const { jobInstance } = receiveAnnotationsParameters();
 
@@ -1045,10 +1044,6 @@ export function saveAnnotationsAsync(afterSave?: () => void): ThunkAction {
                 payload: {},
             });
 
-            if (typeof afterSave === 'function') {
-                afterSave();
-            }
-
             dispatch(fetchAnnotationsAsync());
         } catch (error) {
             dispatch({
@@ -1057,6 +1052,26 @@ export function saveAnnotationsAsync(afterSave?: () => void): ThunkAction {
                     error,
                 },
             });
+
+            throw error;
+        }
+    };
+}
+
+export function finishCurrentJobAsync(): ThunkAction {
+    return async (dispatch: ThunkDispatch, getState) => {
+        const state = getState();
+        const beforeCallbacks = state.plugins.callbacks.annotationPage.header.menu.beforeJobFinish;
+        const { jobInstance } = receiveAnnotationsParameters();
+
+        await dispatch(saveAnnotationsAsync());
+
+        for await (const callback of beforeCallbacks) {
+            await callback();
+        }
+
+        if (jobInstance.state !== JobState.COMPLETED) {
+            await dispatch(updateCurrentJobAsync({ state: JobState.COMPLETED }));
         }
     };
 }

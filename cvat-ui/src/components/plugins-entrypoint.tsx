@@ -1,4 +1,4 @@
-// Copyright (C) 2023 CVAT.ai Corporation
+// Copyright (C) 2023-2024 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -9,11 +9,19 @@ import { useDispatch } from 'react-redux';
 import { PluginsActionTypes, pluginActions } from 'actions/plugins-actions';
 import { getCore, CVATCore, APIWrapperEnterOptions } from 'cvat-core-wrapper';
 import { modelsActions } from 'actions/models-actions';
+import { changeFrameAsync, updateCurrentJobAsync } from 'actions/annotation-actions';
+import { getCVATStore } from 'cvat-store';
 
 const core = getCore();
 
 export type PluginActionCreators = {
     getModelsSuccess: typeof modelsActions['getModelsSuccess'],
+    changeFrameAsync: typeof changeFrameAsync,
+    addUIComponent: typeof pluginActions['addUIComponent'],
+    removeUIComponent: typeof pluginActions['removeUIComponent'],
+    addUICallback: typeof pluginActions['addUICallback'],
+    removeUICallback: typeof pluginActions['removeUICallback'],
+    updateCurrentJobAsync: typeof updateCurrentJobAsync,
 };
 
 export type ComponentBuilder = ({
@@ -22,12 +30,20 @@ export type ComponentBuilder = ({
     REMOVE_ACTION,
     actionCreators,
     core,
+    store,
 }: {
     dispatch: Dispatch<AnyAction>,
+    /**
+     * @deprecated Please, use actionCreators.addUIComponent instead
+    */
     REGISTER_ACTION: PluginsActionTypes.ADD_UI_COMPONENT,
+    /**
+     * @deprecated Please, use actionCreators.removeUIComponent instead
+    */
     REMOVE_ACTION: PluginsActionTypes.REMOVE_UI_COMPONENT,
     actionCreators: PluginActionCreators,
     core: CVATCore,
+    store: ReturnType<typeof getCVATStore>
 }) => {
     name: string;
     destructor: CallableFunction;
@@ -51,9 +67,16 @@ function PluginEntrypoint(): null {
                         REGISTER_ACTION: PluginsActionTypes.ADD_UI_COMPONENT,
                         REMOVE_ACTION: PluginsActionTypes.REMOVE_UI_COMPONENT,
                         actionCreators: {
+                            changeFrameAsync,
+                            updateCurrentJobAsync,
                             getModelsSuccess: modelsActions.getModelsSuccess,
+                            addUICallback: pluginActions.addUICallback,
+                            removeUICallback: pluginActions.removeUICallback,
+                            addUIComponent: pluginActions.addUIComponent,
+                            removeUIComponent: pluginActions.removeUIComponent,
                         },
                         core,
+                        store: getCVATStore(),
                     });
 
                     dispatch(pluginActions.addPlugin(name, destructor, globalStateDidUpdate));

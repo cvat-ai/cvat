@@ -51,7 +51,7 @@ context('Filtering, sorting jobs.', () => {
                 .contains('a', `Job #${$job}`)
                 .parents('.cvat-job-item').within(() => {
                     cy.get('.cvat-job-item-stage .ant-select-selection-item').should('have.text', stage);
-                    cy.get('.cvat-job-item-state').should('have.text', state);
+                    cy.get('.cvat-job-item-state .ant-select-selection-item').should('have.text', state);
                     cy.get('.cvat-job-assignee-selector')
                         .find('input')
                         .invoke('val')
@@ -137,9 +137,7 @@ context('Filtering, sorting jobs.', () => {
         cy.getJobIDFromIdx(0).then((jobID) => cy.setJobStage(jobID, 'validation'));
 
         // The second job - status "completed"
-        cy.openJob(1);
-        cy.setJobState('completed');
-        cy.interactMenu('Open the task');
+        cy.getJobIDFromIdx(1).then((jobID) => cy.setJobState(jobID, 'completed'));
     });
 
     after(() => {
@@ -153,9 +151,9 @@ context('Filtering, sorting jobs.', () => {
     describe(`Testing "${labelName}".`, () => {
         it('Check all statuses.', () => {
             checkJobsTableRowCount(3);
-            checkContentsRow(0, 'validation', 'New', secondUserName); // The 1st job
-            checkContentsRow(1, 'annotation', 'Completed', secondUserName); // The 2nd job
-            checkContentsRow(2, 'annotation', 'New', ''); // The 3th job
+            checkContentsRow(0, 'validation', 'new', secondUserName); // The 1st job
+            checkContentsRow(1, 'annotation', 'completed', secondUserName); // The 2nd job
+            checkContentsRow(2, 'annotation', 'new', ''); // The 3th job
         });
 
         it('Filtering jobs by stage (annotation, validation, acceptance).', () => {
@@ -200,7 +198,7 @@ context('Filtering, sorting jobs.', () => {
             checkJobsTableRowCount(1);
             testSetJobFilter({ column: 'Assignee', menuItem: secondUserName });
             checkJobsTableRowCount(1);
-            checkContentsRow(0, 'validation', 'New', secondUserName);
+            checkContentsRow(0, 'validation', 'new', secondUserName);
             testSetJobFilter({ reset: true });
             checkJobsTableRowCount(3);
         });
@@ -224,7 +222,7 @@ context('Filtering, sorting jobs.', () => {
                 sortState.push(element.text());
             });
             cy.get('.cvat-job-item-state').then(() => {
-                expect(sortState).to.deep.equal(['Completed', 'New', 'New']);
+                expect(sortState).to.deep.equal(['completed', 'new', 'new']);
             });
             testSetJobSorting({ column: 'State', reset: true });
         });

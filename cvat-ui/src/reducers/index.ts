@@ -276,10 +276,19 @@ export interface PluginsState {
             globalStateDidUpdate?: CallableFunction;
         };
     };
+    callbacks: {
+        annotationPage: {
+            header: {
+                menu: {
+                    beforeJobFinish: (() => Promise<void>)[];
+                };
+            };
+        };
+    };
     components: {
         header: {
             userMenu: {
-                items: PluginComponent[],
+                items: PluginComponent[];
             };
         };
         loginPage: {
@@ -287,18 +296,18 @@ export interface PluginsState {
         };
         modelsPage: {
             topBar: {
-                items: PluginComponent[],
-            },
+                items: PluginComponent[];
+            };
             modelItem: {
                 menu: {
-                    items: PluginComponent[],
-                },
+                    items: PluginComponent[];
+                };
                 topBar:{
                     menu: {
-                        items: PluginComponent[],
-                    }
-                },
-            }
+                        items: PluginComponent[];
+                    };
+                };
+            };
         };
         projectActions: {
             items: PluginComponent[];
@@ -319,12 +328,12 @@ export interface PluginsState {
         };
         settings: {
             player: PluginComponent[];
-        }
+        };
         about: {
             links: {
                 items: PluginComponent[];
-            }
-        }
+            };
+        };
         router: PluginComponent[];
         loggedInModals: PluginComponent[];
     }
