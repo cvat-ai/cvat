@@ -1180,6 +1180,7 @@ async function createTask(
         }
     }
 
+    let rqID = null;
     try {
         await Axios.post(`${backendAPI}/tasks/${response.data.id}/data`,
             taskData, {
@@ -1206,11 +1207,12 @@ async function createTask(
         if (bulkFiles.length > 0) {
             await bulkUpload(response.data.id, bulkFiles);
         }
-        await Axios.post(`${backendAPI}/tasks/${response.data.id}/data`,
+        const dataResponse = await Axios.post(`${backendAPI}/tasks/${response.data.id}/data`,
             taskData, {
                 ...params,
                 headers: { 'Upload-Finish': true },
             });
+        rqID = dataResponse.data.rq_id;
     } catch (errorData) {
         try {
             await deleteTask(response.data.id, params.org || null);
@@ -1220,7 +1222,6 @@ async function createTask(
         throw generateError(errorData);
     }
 
-    const rqID = `create:task-${response.data.id}`;
     return { taskID: response.data.id, rqID };
 }
 

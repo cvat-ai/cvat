@@ -21,17 +21,14 @@ def _post_task_remote_data(username, task_id, resources):
     return post_method(username, f"tasks/{task_id}/data", data)
 
 
-def _wait_until_task_is_created(username: str, task_id: int) -> Dict[str, Any]:
-    url = "requests"
+def _wait_until_task_is_created(username: str, rq_id: str) -> Dict[str, Any]:
+    url = f"requests/{rq_id}"
 
     for _ in range(100):
-        response = get_method(username, url, action="create", task_id=task_id)
-        response_json = response.json()
-        rq_jobs = response_json["results"]
-        assert 1 == len(rq_jobs), "The newly created RQ job must be returned by API"
-        rq_job_details = rq_jobs[0]
-        if rq_job_details["status"] in ("finished", "failed"):
-            return rq_job_details
+        response = get_method(username, url)
+        request_details = response.json()
+        if request_details["status"] in ("finished", "failed"):
+            return request_details
         sleep(1)
     raise Exception("Cannot create task")
 
@@ -43,15 +40,21 @@ class TestCreateFromRemote:
     def _test_can_create(self, user, task_id, resources):
         response = _post_task_remote_data(user, task_id, resources)
         assert response.status_code == HTTPStatus.ACCEPTED
+        response = response.json()
+        rq_id = response.get("rq_id")
+        assert rq_id, "The rq_id param was not found in the server response"
 
-        response_json = _wait_until_task_is_created(user, task_id)
+        response_json = _wait_until_task_is_created(user, rq_id)
         assert response_json["status"] == "finished"
 
     def _test_cannot_create(self, user, task_id, resources):
         response = _post_task_remote_data(user, task_id, resources)
         assert response.status_code == HTTPStatus.ACCEPTED
+        response = response.json()
+        rq_id = response.get("rq_id")
+        assert rq_id, "The rq_id param was not found in the server response"
 
-        response_json = _wait_until_task_is_created(user, task_id)
+        response_json = _wait_until_task_is_created(user, rq_id)
         assert response_json["status"] == "failed"
 
     def test_cannot_create(self, find_users):

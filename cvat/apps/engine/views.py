@@ -1138,9 +1138,11 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
                     data['stop_frame'] = None
 
             # Need to process task data when the transaction is committed
-            task.create(self._object, data, request)
+            rq_id = task.create(self._object, data, request)
+            rq_id_serializer = RqIdSerializer(data={'rq_id': rq_id})
+            rq_id_serializer.is_valid(raise_exception=True)
 
-            return Response(serializer.data, status=status.HTTP_202_ACCEPTED)
+            return Response(rq_id_serializer.data, status=status.HTTP_202_ACCEPTED)
 
         @transaction.atomic
         def _handle_upload_backup(request):
@@ -1222,7 +1224,7 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
             https://docs.cvat.ai/docs/manual/advanced/dataset_manifest/
 
             After all data is sent, the operation status can be retrieved via
-            the /api/requests endpoint.
+            the `GET /api/requests/<rq_id>`, where **rq_id** is request ID returned for this request.
 
             Once data is attached to a task, it cannot be detached or replaced.
         """.format_map(
@@ -1239,7 +1241,10 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
                 description='Finishes data upload. Can be combined with Upload-Start header to create task data with one request'),
         ],
         responses={
-            '202': OpenApiResponse(description=''),
+            '202': OpenApiResponse(
+                response=RqIdSerializer,
+                description='Request to attach a data to a task has been accepted'
+            ),
         })
     @extend_schema(methods=['GET'],
         summary='Get data of a task',

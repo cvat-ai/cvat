@@ -5650,7 +5650,7 @@ paths:
         https://docs.cvat.ai/docs/manual/advanced/dataset_manifest/
 
         After all data is sent, the operation status can be retrieved via
-        the /api/requests endpoint.
+        the `GET /api/requests/<rq_id>`, where **rq_id** is request ID returned for this request.
 
         Once data is attached to a task, it cannot be detached or replaced.
       summary: Attach data to a task
@@ -5697,7 +5697,11 @@ paths:
       - basicAuth: []
       responses:
         '202':
-          description: No response body
+          content:
+            application/vnd.cvat+json:
+              schema:
+                $ref: '#/components/schemas/RqId'
+          description: Request to attach a data to a task has been accepted
   /api/tasks/{id}/data/meta:
     get:
       operationId: tasks_retrieve_data_meta

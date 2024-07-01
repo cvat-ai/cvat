@@ -112,18 +112,22 @@ class Task(
             elif resource_type is ResourceType.SHARE:
                 data["server_files"] = resources
 
-            self.api.create_data(
+            result, _ = self.api.create_data(
                 self.id,
                 data_request=models.DataRequest(**data),
             )
+            rq_id = result.rq_id
         elif resource_type == ResourceType.LOCAL:
             url = self._client.api_map.make_endpoint_url(
                 self.api.create_data_endpoint.path, kwsub={"id": self.id}
             )
 
-            DataUploader(self._client).upload_files(
+            response = DataUploader(self._client).upload_files(
                 url, list(map(Path, resources)), pbar=pbar, **data
             )
+            response = json.loads(response.data)
+            rq_id = response.get('rq_id')
+            assert rq_id, "The rq_id param was not found in the response"
 
         if wait_for_completion:
             if status_check_period is None:
@@ -132,12 +136,7 @@ class Task(
             self._client.logger.info("Awaiting for task %s creation...", self.id)
             while True:
                 sleep(status_check_period)
-                requests, response = self._client.api_client.requests_api.list(
-                    action="create", task_id=self.id
-                )
-                assert response.status == 200
-                assert 1 == len(requests.results)
-                request_details = requests.results[0]
+                request_details, response = self._client.api_client.requests_api.retrieve(rq_id)
                 status, message = request_details.status, request_details.message
 
                 self._client.logger.info(

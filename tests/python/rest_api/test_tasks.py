@@ -780,15 +780,15 @@ class TestPostTaskData:
             (task, response) = api_client.tasks_api.create(spec, **kwargs)
             assert response.status == HTTPStatus.CREATED
 
-            (_, response) = api_client.tasks_api.create_data(
+            (result, response) = api_client.tasks_api.create_data(
                 task.id, data_request=deepcopy(data), _content_type="application/json", **kwargs
             )
             assert response.status == HTTPStatus.ACCEPTED
 
-            rq_job_details = wait_until_task_is_created(api_client.requests_api, task.id)
-            assert rq_job_details.status == "failed"
+            request_details = wait_until_task_is_created(api_client.requests_api, result.rq_id)
+            assert request_details.status == "failed"
 
-        return rq_job_details
+        return request_details
 
     def test_can_create_task_with_defined_start_and_stop_frames(self):
         task_spec = {

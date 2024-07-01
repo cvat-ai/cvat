@@ -348,7 +348,7 @@ class DataUploader(Uploader):
                     logger=self._client.logger.debug,
                 )
 
-        self._tus_finish_upload(url, fields=kwargs)
+        return self._tus_finish_upload(url, fields=kwargs)
 
     def _split_files_by_requests(
         self, filenames: List[Path]

@@ -79,8 +79,7 @@ with ApiClient(configuration) as api_client:
     )
 
     # If we pass binary file objects, we need to specify content type.
-    # For this endpoint, we don't have response data
-    (_, response) = api_client.tasks_api.create_data(task.id,
+    (result, response) = api_client.tasks_api.create_data(task.id,
         data_request=task_data,
         _content_type="multipart/form-data",
 
@@ -92,11 +91,7 @@ with ApiClient(configuration) as api_client:
 
     # Wait till task data is processed
     for _ in range(100):
-        requests, response = api_client.requests_api.list(
-            action="create", task_id=task.id
-        )
-
-        request_details = requests.results[0]
+        request_details, response = api_client.requests_api.retrieve(result.rq_id)
         status, message = request_details.status, request_details.message
 
         if status in ['finished', 'failed']:
@@ -399,7 +394,7 @@ please specify `_content_type="multipart/form-data"` in the request parameters:
 Example:
 
 ```python
-(_, response) = api_client.tasks_api.create_data(
+(result, response) = api_client.tasks_api.create_data(
     id=42,
     data_request=models.DataRequest(
         client_files=[

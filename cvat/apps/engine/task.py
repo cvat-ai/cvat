@@ -45,20 +45,23 @@ def create(
     db_task: models.Task,
     data: models.Data,
     request: HttpRequest,
-) -> None:
-    """Schedule the task"""
+) -> str:
+    """Schedule a background job to create a task and return that job's identifier"""
     q = django_rq.get_queue(settings.CVAT_QUEUES.IMPORT_DATA.value)
     user_id = request.user.id
+    rq_id = RQIdManager.build('create', 'task', db_task.pk)
 
     with get_rq_lock_by_user(q, user_id):
         q.enqueue_call(
             func=_create_thread,
             args=(db_task.pk, data),
-            job_id=RQIdManager.build('create', 'task', db_task.pk),
+            job_id=rq_id,
             meta=get_rq_job_meta(request=request, db_obj=db_task),
             depends_on=define_dependent_job(q, user_id),
             failure_ttl=settings.IMPORT_CACHE_FAILED_TTL.total_seconds(),
         )
+
+    return rq_id
 
 ############################# Internal implementation for server API
 
