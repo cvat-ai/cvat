@@ -249,7 +249,8 @@ class SublabelSerializer(serializers.ModelSerializer):
     color = serializers.CharField(allow_blank=True, required=False,
         help_text="The hex value for the RGB color. "
         "Will be generated automatically, unless specified explicitly.")
-    type = serializers.CharField(allow_blank=True, required=False,
+    type = serializers.ChoiceField(
+        choices=models.LabelType.choices(), allow_blank=True, required=False,
         help_text="Associated annotation type for this label")
     has_parent = serializers.BooleanField(source='has_parent_label', required=False)
 
