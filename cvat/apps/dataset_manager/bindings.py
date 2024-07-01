@@ -1432,14 +1432,28 @@ class CVATDataExtractorMixin:
         raise NotImplementedError()
 
     @staticmethod
-    def _load_categories(labels: list):
-        categories: Dict[dm.AnnotationType,
-            dm.Categories] = {}
+    def _load_categories(
+        labels: list[tuple[str, dict]],
+        *,
+        included_types: Optional[LabelType | Sequence[LabelType]] = LabelType.ANY,
+    ) -> dm.Categories:
+        if isinstance(included_types, LabelType):
+            included_types = [included_types]
+        if not included_types or LabelType.ANY in included_types:
+            included_types = None
+
+        categories: Dict[dm.AnnotationType, dm.Categories] = {}
 
         label_categories = dm.LabelCategories(attributes=['occluded'])
         point_categories = dm.PointsCategories()
 
         for _, label in labels:
+            if (
+                label['type'] != LabelType.ANY and
+                included_types and label['type'] not in included_types
+            ):
+                continue
+
             label_id = label_categories.add(label['name'], label.get('parent'))
             for _, attr in label['attributes']:
                 label_categories.attributes.add(attr['name'])
@@ -1491,7 +1505,8 @@ class CvatTaskOrJobDataExtractor(dm.SourceExtractor, CVATDataExtractorMixin):
         include_images: bool = False,
         format_type: str = None,
         dimension: DimensionType = DimensionType.DIM_2D,
-        **kwargs
+        included_label_types: Optional[LabelType | Sequence[LabelType]] = LabelType.ANY,
+        **kwargs,
     ):
         dm.SourceExtractor.__init__(
             self, media_type=dm.Image if dimension == DimensionType.DIM_2D else PointCloud
@@ -1499,7 +1514,9 @@ class CvatTaskOrJobDataExtractor(dm.SourceExtractor, CVATDataExtractorMixin):
         CVATDataExtractorMixin.__init__(self, **kwargs)
 
         instance_meta = instance_data.meta[instance_data.META_FIELD]
-        self._categories = self._load_categories(instance_meta['labels'])
+        self._categories = self._load_categories(
+            instance_meta['labels'], included_types=included_label_types
+        )
         self._user = self._load_user_info(instance_meta) if dimension == DimensionType.DIM_3D else {}
         self._dimension = dimension
         self._format_type = format_type
@@ -1583,6 +1600,7 @@ class CVATProjectDataExtractor(dm.Extractor, CVATDataExtractorMixin):
         include_images: bool = False,
         format_type: str = None,
         dimension: DimensionType = DimensionType.DIM_2D,
+        included_label_types: Optional[LabelType | Sequence[LabelType]] = LabelType.ANY,
         **kwargs
     ):
         dm.Extractor.__init__(
@@ -1590,7 +1608,10 @@ class CVATProjectDataExtractor(dm.Extractor, CVATDataExtractorMixin):
         )
         CVATDataExtractorMixin.__init__(self, **kwargs)
 
-        self._categories = self._load_categories(project_data.meta[project_data.META_FIELD]['labels'])
+        self._categories = self._load_categories(
+            project_data.meta[project_data.META_FIELD]['labels'],
+            included_types=included_label_types
+        )
         self._user = self._load_user_info(project_data.meta[project_data.META_FIELD]) if dimension == DimensionType.DIM_3D else {}
         self._dimension = dimension
         self._format_type = format_type
@@ -1667,12 +1688,14 @@ def GetCVATDataExtractor(
     include_images: bool = False,
     format_type: str = None,
     dimension: DimensionType = DimensionType.DIM_2D,
+    included_label_types: Optional[LabelType | Sequence[LabelType]] = None,
     **kwargs
 ):
     kwargs.update({
         'include_images': include_images,
         'format_type': format_type,
         'dimension': dimension,
+        'included_label_types': included_label_types,
     })
     if isinstance(instance_data, ProjectData):
         return CVATProjectDataExtractor(instance_data, **kwargs)
