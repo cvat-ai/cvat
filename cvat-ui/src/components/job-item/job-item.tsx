@@ -116,7 +116,7 @@ function JobItem(props: Props): JSX.Element {
     const frameCountPercentRepresentation = frameCountPercent === '0' ? '<1' : frameCountPercent;
     let jobName = `Job #${job.id}`;
     if (task.consensusJobsPerSegment && job.type !== JobType.GROUND_TRUTH) {
-        jobName = job.parentJobId === null ? `Normal Job #${job.id}` : `Consensus Job #${job.id}`;
+        jobName = job.type === JobType.CONSENSUS ? `Consensus Job #${job.id}` : `Normal Job #${job.id}`;
     }
 
     let consensusJob: Job[] = [];
