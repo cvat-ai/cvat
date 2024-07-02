@@ -145,8 +145,8 @@
             "type": "node",
             "request": "launch",
             "name": "ui.js: test",
-            "cwd": "${workspaceRoot}/tests",
-            "runtimeExecutable": "${workspaceRoot}/tests/node_modules/.bin/cypress",
+            "cwd": "${workspaceFolder}/tests",
+            "runtimeExecutable": "${workspaceFolder}/tests/node_modules/.bin/cypress",
             "args": [
                 "run",
                 "--headless",
@@ -163,7 +163,7 @@
             "stopOnEntry": false,
             "justMyCode": false,
             "python": "${command:python.interpreterPath}",
-            "program": "${workspaceRoot}/manage.py",
+            "program": "${workspaceFolder}/manage.py",
             "env": {
                 "CVAT_SERVERLESS": "1",
                 "ALLOWED_HOSTS": "*",
@@ -200,7 +200,7 @@
             "stopOnEntry": false,
             "justMyCode": false,
             "python": "${command:python.interpreterPath}",
-            "program": "${workspaceRoot}/manage.py",
+            "program": "${workspaceFolder}/manage.py",
             "args": [
                 "rqworker",
                 "import",
@@ -222,7 +222,7 @@
             "stopOnEntry": false,
             "justMyCode": false,
             "python": "${command:python.interpreterPath}",
-            "program": "${workspaceRoot}/manage.py",
+            "program": "${workspaceFolder}/manage.py",
             "args": [
                 "rqworker",
                 "export",
@@ -244,7 +244,7 @@
             "stopOnEntry": false,
             "justMyCode": false,
             "python": "${command:python.interpreterPath}",
-            "program": "${workspaceRoot}/manage.py",
+            "program": "${workspaceFolder}/manage.py",
             "args": [
                 "rqworker",
                 "quality_reports",
@@ -266,7 +266,7 @@
             "stopOnEntry": false,
             "justMyCode": false,
             "python": "${command:python.interpreterPath}",
-            "program": "${workspaceRoot}/manage.py",
+            "program": "${workspaceFolder}/manage.py",
             "args": [
                 "rqworker",
                 "analytics_reports",
@@ -288,7 +288,7 @@
             "stopOnEntry": false,
             "justMyCode": false,
             "python": "${command:python.interpreterPath}",
-            "program": "${workspaceRoot}/rqscheduler.py",
+            "program": "${workspaceFolder}/rqscheduler.py",
             "django": true,
             "cwd": "${workspaceFolder}",
             "args": [
@@ -307,7 +307,7 @@
             "justMyCode": false,
             "stopOnEntry": false,
             "python": "${command:python.interpreterPath}",
-            "program": "${workspaceRoot}/manage.py",
+            "program": "${workspaceFolder}/manage.py",
             "args": [
                 "rqworker",
                 "annotation",
@@ -326,7 +326,7 @@
             "justMyCode": false,
             "stopOnEntry": false,
             "python": "${command:python.interpreterPath}",
-            "program": "${workspaceRoot}/manage.py",
+            "program": "${workspaceFolder}/manage.py",
             "args": [
                 "rqworker",
                 "webhooks",
@@ -345,7 +345,7 @@
             "stopOnEntry": false,
             "justMyCode": false,
             "python": "${command:python.interpreterPath}",
-            "program": "${workspaceRoot}/manage.py",
+            "program": "${workspaceFolder}/manage.py",
             "args": [
                 "rqworker",
                 "cleaning",
@@ -367,7 +367,7 @@
             "justMyCode": false,
             "stopOnEntry": false,
             "python": "${command:python.interpreterPath}",
-            "program": "${workspaceRoot}/manage.py",
+            "program": "${workspaceFolder}/manage.py",
             "args": [
                 "migrate"
             ],
@@ -383,7 +383,7 @@
             "justMyCode": false,
             "stopOnEntry": false,
             "python": "${command:python.interpreterPath}",
-            "program": "${workspaceRoot}/manage.py",
+            "program": "${workspaceFolder}/manage.py",
             "args": [
                 "test",
                 "--settings",
@@ -486,7 +486,7 @@
             "justMyCode": false,
             "stopOnEntry": false,
             "python": "${command:python.interpreterPath}",
-            "program": "${workspaceRoot}/manage.py",
+            "program": "${workspaceFolder}/manage.py",
             "args": [
                 "spectacular",
                 "--file",

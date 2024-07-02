@@ -38,7 +38,7 @@ export interface SerializedModel {
     labels_v2?: MLModelLabel[];
     version?: number;
     description?: string;
-    kind?: ModelKind | 'classifier';
+    kind?: ModelKind;
     type?: string;
     return_type?: ModelReturnType;
     owner?: any;

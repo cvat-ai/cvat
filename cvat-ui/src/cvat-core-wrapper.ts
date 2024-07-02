@@ -39,7 +39,7 @@ import AnalyticsReport, { AnalyticsEntryViewType, AnalyticsEntry } from 'cvat-co
 import { Dumper } from 'cvat-core/src/annotation-formats';
 import { Event } from 'cvat-core/src/event';
 import { APIWrapperEnterOptions } from 'cvat-core/src/plugins';
-import BaseSingleFrameAction, { ActionParameterType } from 'cvat-core/src/annotations-actions';
+import BaseSingleFrameAction, { ActionParameterType, FrameSelectionType } from 'cvat-core/src/annotations-actions';
 import { Request } from 'cvat-core/src/request';
 
 const cvat: CVATCore = _cvat;
@@ -102,6 +102,7 @@ export {
     Event,
     FrameData,
     ActionParameterType,
+    FrameSelectionType,
     Request,
 };
 

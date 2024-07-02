@@ -69,10 +69,12 @@ function constructTimestamps(request: Request): JSX.Element {
     const finished = moment(request.finishedDate).format('MMM Do YY, H:mm');
     const created = moment(request.createdDate).format('MMM Do YY, H:mm');
     const expired = moment(request.expiryDate).format('MMM Do YY, H:mm');
-    const { operation: { type } } = request;
+    const { operation: { type }, url } = request;
+
     switch (request.status) {
         case RQStatus.FINISHED: {
-            if (request.expiryDate && !type.includes('create') && !type.includes('import')) {
+            const exportToCloudStorage = type.includes('export') && !url;
+            if (request.expiryDate && !type.includes('create') && !type.includes('import') && !exportToCloudStorage) {
                 return (
                     <>
                         <Row>
