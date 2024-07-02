@@ -25,7 +25,7 @@ export default class Project {
     public readonly owner: User;
     public readonly createdDate: string;
     public readonly updatedDate: string;
-    public readonly taskSubsets: string[];
+    public readonly subsets: string[];
     public readonly dimension: DimensionType;
     public readonly sourceStorage: Storage;
     public readonly targetStorage: Storage;
