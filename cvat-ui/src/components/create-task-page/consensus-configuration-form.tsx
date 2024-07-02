@@ -25,8 +25,7 @@ const isNumber = ({
     min,
     max,
     toBeSkipped,
-    strictInt,
-}: { min?: number; max?: number; toBeSkipped?: number, strictInt?: boolean }) => (
+}: { min?: number; max?: number; toBeSkipped?: number }) => (
     _: RuleObject,
     value?: number | string,
 ): Promise<void> => {
@@ -35,12 +34,8 @@ const isNumber = ({
     }
 
     const intValue = +value;
-    if (Number.isFinite(intValue)) {
-        if (strictInt && !Number.isInteger(intValue)) {
-            return Promise.reject(new Error('Value must be a positive integer'));
-        }
-    } else {
-        return Promise.reject(new Error('Value must be a finite number'));
+    if (!Number.isFinite(intValue) && !Number.isInteger(intValue)) {
+        return Promise.reject(new Error('Value must be a positive integer'));
     }
 
     if (typeof min !== 'undefined' && intValue < min) {
@@ -98,14 +93,15 @@ class ConsensusConfigurationForm extends React.PureComponent<Props> {
             <Form.Item
                 label='Consensus Job Per Segment'
                 name='consensusJobsPerSegment'
-                rules={[{
-                    validator: isNumber({
-                        min: 0,
-                        max: 10,
-                        toBeSkipped: 1,
-                        strictInt: true,
-                    }),
-                }]}
+                rules={[
+                    {
+                        validator: isNumber({
+                            min: 0,
+                            max: 10,
+                            toBeSkipped: 1,
+                        }),
+                    },
+                ]}
             >
                 <Input size='large' type='number' min={0} step={1} />
             </Form.Item>
