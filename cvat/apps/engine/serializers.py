@@ -1311,10 +1311,7 @@ class TaskWriteSerializer(WriteOnceMixin, serializers.ModelSerializer):
 
         consensus_jobs_per_segment = attrs.get('consensus_jobs_per_segment', self.instance.consensus_jobs_per_segment if self.instance else None)
 
-        if consensus_jobs_per_segment is None:
-            raise serializers.ValidationError("Consensus job per segment can't be None")
-
-        if consensus_jobs_per_segment == 1 or consensus_jobs_per_segment < 0:
+        if consensus_jobs_per_segment and (consensus_jobs_per_segment == 1 or consensus_jobs_per_segment < 0):
             raise serializers.ValidationError("Consensus job per segment should be greater than or equal to 0 and not 1")
 
         return attrs
