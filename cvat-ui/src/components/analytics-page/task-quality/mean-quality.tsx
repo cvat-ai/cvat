@@ -5,6 +5,7 @@
 import React from 'react';
 import moment from 'moment';
 import { DownloadOutlined, SettingOutlined } from '@ant-design/icons';
+import { Col, Row } from 'antd/lib/grid';
 import Text from 'antd/lib/typography/Text';
 import Button from 'antd/lib/button';
 
@@ -56,32 +57,49 @@ function MeanQuality(props: Props): JSX.Element {
 
     const downloadReportButton = (
         <div className='cvat-quality-summary-controls'>
-            {
-                taskReport?.id ? (
-                    <Button type='primary' icon={<DownloadOutlined />} className='cvat-analytics-download-report-button'>
-                        <a
-                            href={`${getCore().config.backendAPI}/quality/reports/${taskReport?.id}/data`}
-                            download={`quality-report-task_${taskID}-${taskReport?.id}.json`}
-                        >
-                            Quality Report
-                        </a>
-                    </Button>
-                ) : null
-            }
-            <SettingOutlined
-                className='cvat-quality-settings-switch ant-btn ant-btn-default'
-                onClick={() => setQualitySettingsVisible(true)}
-            />
-            {
-                taskReport?.id ? (
-                    <div className='cvat-analytics-time-hint'>
-                        <Text type='secondary'>{taskReport?.createdDate ? moment(taskReport?.createdDate).fromNow() : ''}</Text>
-                    </div>
-                ) : null
-            }
-        </div>
+            <Row>
+                <Col>
+                    <Row>
+                        <Col>
+                            {
+                                taskReport?.id ? (
+                                    <Button type='primary' icon={<DownloadOutlined />} className='cvat-analytics-download-report-button'>
+                                        <a
+                                            href={
+                                                `${getCore().config.backendAPI}/quality/reports/${taskReport?.id}/data`
+                                            }
+                                            download={`quality-report-task_${taskID}-${taskReport?.id}.json`}
+                                        >
+                                            Quality Report
+                                        </a>
+                                    </Button>
+                                ) : null
+                            }
+                        </Col>
+                    </Row>
+                    <Row justify='end'>
+                        <Col>
+                            {
+                                taskReport?.id ? (
+                                    <div className='cvat-analytics-time-hint'>
+                                        <Text type='secondary'>{taskReport?.createdDate ? moment(taskReport?.createdDate).fromNow() : ''}</Text>
+                                    </div>
+                                ) : null
+                            }
+                        </Col>
+                    </Row>
 
+                </Col>
+                <Col>
+                    <SettingOutlined
+                        className='cvat-quality-settings-switch ant-btn ant-btn-default'
+                        onClick={() => setQualitySettingsVisible(true)}
+                    />
+                </Col>
+            </Row>
+        </div>
     );
+
     return (
         <AnalyticsCard
             title='Mean annotation quality'

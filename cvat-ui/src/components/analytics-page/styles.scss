@@ -96,9 +96,6 @@
 
 .cvat-analytics-time-hint {
     font-size: 10px;
-    position: absolute;
-    bottom: -$grid-unit-size * 3;
-    right: $grid-unit-size * 4;
 }
 
 .cvat-analytics-page {
@@ -154,10 +151,5 @@
 .cvat-job-list-item-conflicts {
     display: flex;
     justify-content: space-between;
-    align-items: center;
-}
-
-.cvat-quality-summary-controls {
-    display: flex;
     align-items: center;
 }
