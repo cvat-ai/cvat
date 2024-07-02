@@ -369,9 +369,10 @@ context('Review pipeline feature', () => {
             cy.interactMenu('Open the task');
             cy.get('.cvat-job-item').first().within(() => {
                 cy.get('.cvat-job-item-state .ant-select-selection-item').should('have.text', 'completed');
-                cy.setJobStage(jobIDs[0], 'acceptance');
-                cy.setJobState(jobIDs[0], 'completed');
             });
+
+            cy.setJobStage(jobIDs[0], 'acceptance');
+            cy.setJobState(jobIDs[0], 'completed');
         });
     });
 });
