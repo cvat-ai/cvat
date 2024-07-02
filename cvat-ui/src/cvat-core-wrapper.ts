@@ -1,5 +1,5 @@
 // Copyright (C) 2020-2022 Intel Corporation
-// Copyright (C) 2023 CVAT.ai Corporation
+// Copyright (C) 2023-2024 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -37,7 +37,7 @@ import AnalyticsReport, { AnalyticsEntryViewType, AnalyticsEntry } from 'cvat-co
 import { Dumper } from 'cvat-core/src/annotation-formats';
 import { Event } from 'cvat-core/src/event';
 import { APIWrapperEnterOptions } from 'cvat-core/src/plugins';
-import BaseSingleFrameAction, { ActionParameterType } from 'cvat-core/src/annotations-actions';
+import BaseSingleFrameAction, { ActionParameterType, FrameSelectionType } from 'cvat-core/src/annotations-actions';
 
 const cvat: CVATCore = _cvat;
 
@@ -96,6 +96,7 @@ export {
     Event,
     FrameData,
     ActionParameterType,
+    FrameSelectionType,
 };
 
 export type {
