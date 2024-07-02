@@ -2,8 +2,9 @@
 //
 // SPDX-License-Identifier: MIT
 
+import ConsensusSettings from 'consensus-settings';
 import {
-    AnalyticsReportFilter, QualityConflictsFilter, QualityReportsFilter, QualitySettingsFilter,
+    AnalyticsReportFilter, QualityConflictsFilter, QualityReportsFilter, SettingsFilter,
 } from './server-response-types';
 import PluginRegistry from './plugins';
 import serverProxy from './server-proxy';
@@ -131,12 +132,17 @@ export default interface CVATCore {
     webhooks: {
         get: any;
     };
+    consensus: {
+        settings: {
+            get: (filter: SettingsFilter) => Promise<ConsensusSettings>;
+        };
+    }
     analytics: {
         quality: {
             reports: (filter: QualityReportsFilter) => Promise<PaginatedResource<QualityReport>>;
             conflicts: (filter: QualityConflictsFilter) => Promise<QualityConflict[]>;
             settings: {
-                get: (filter: QualitySettingsFilter) => Promise<QualitySettings>;
+                get: (filter: SettingsFilter) => Promise<QualitySettings>;
             };
         };
         performance: {

@@ -25,6 +25,7 @@ import { JobsActionTypes } from 'actions/jobs-actions';
 import { WebhooksActionsTypes } from 'actions/webhooks-actions';
 import { InvitationsActionTypes } from 'actions/invitations-actions';
 import { ServerAPIActionTypes } from 'actions/server-actions';
+import { ConsensusActionTypes } from 'actions/consensus-actions';
 
 import { NotificationsState } from '.';
 
@@ -681,7 +682,7 @@ export default function (state = defaultState, action: AnyAction): Notifications
                 },
             };
         }
-        case TasksActionTypes.MERGE_TASK_CONSENSUS_FAILED: {
+        case ConsensusActionTypes.MERGE_CONSENSUS_JOBS_FAILED: {
             const { taskID } = action.payload;
             if (action.payload.error.code === 400) {
                 action.payload.error.message = "Consensus Jobs aren't annotated.";
@@ -702,7 +703,7 @@ export default function (state = defaultState, action: AnyAction): Notifications
                 },
             };
         }
-        case TasksActionTypes.MERGE_TASK_CONSENSUS_SUCCESS: {
+        case ConsensusActionTypes.MERGE_CONSENSUS_JOBS_SUCCESS: {
             const { taskID } = action.payload;
             return {
                 ...state,

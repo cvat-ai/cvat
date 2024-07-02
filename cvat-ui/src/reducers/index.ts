@@ -109,9 +109,6 @@ export interface TasksState {
         deletes: {
             [tid: number]: boolean; // deleted (deleting if in dictionary)
         };
-        mergingConsensus: {
-            [tid: number]: boolean;
-        };
     };
 }
 
@@ -193,6 +190,15 @@ export interface ImportState {
         };
     };
     instanceType: 'project' | 'task' | 'job' | null;
+}
+
+export interface ConsensusState {
+    fetching: boolean;
+    consensusSettings: any | null;
+    taskInstance: any | null;
+    mergingConsensus: {
+        [tid: number]: boolean;
+    };
 }
 
 export interface FormatsState {
@@ -971,6 +977,7 @@ export interface CombinedState {
     review: ReviewState;
     export: ExportState;
     import: ImportState;
+    consensus: ConsensusState;
     cloudStorages: CloudStoragesState;
     organizations: OrganizationState;
     invitations: InvitationsState;

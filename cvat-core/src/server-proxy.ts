@@ -16,8 +16,9 @@ import {
     SerializedAbout, SerializedRemoteFile, SerializedUserAgreement,
     SerializedRegister, JobsFilter, SerializedJob, SerializedGuide, SerializedAsset, SerializedAPISchema,
     SerializedInvitationData, SerializedCloudStorage, SerializedFramesMetaData, SerializedCollection,
-    SerializedQualitySettingsData, APIQualitySettingsFilter, SerializedQualityConflictData, APIQualityConflictsFilter,
+    SerializedQualitySettingsData, APISettingsFilter, SerializedQualityConflictData, APIQualityConflictsFilter,
     SerializedQualityReportData, APIQualityReportsFilter, SerializedAnalyticsReport, APIAnalyticsReportFilter,
+    SerializedConsensusSettingsData,
 } from './server-response-types';
 import { PaginatedResource } from './core-types';
 import { Storage } from './storage';
@@ -2358,7 +2359,7 @@ async function createAsset(file: File, guideId: number): Promise<SerializedAsset
 }
 
 async function getQualitySettings(
-    filter: APIQualitySettingsFilter,
+    filter: APISettingsFilter,
 ): Promise<SerializedQualitySettingsData> {
     const { backendAPI } = config;
 
@@ -2384,6 +2385,44 @@ async function updateQualitySettings(
 
     try {
         const response = await Axios.patch(`${backendAPI}/quality/settings/${settingsID}`, settingsData, {
+            params,
+        });
+
+        return response.data;
+    } catch (errorData) {
+        throw generateError(errorData);
+    }
+}
+
+async function getConsensusSettings(
+    filter: APISettingsFilter,
+): Promise<SerializedConsensusSettingsData> {
+    const { backendAPI } = config;
+
+    try {
+        const response = await Axios.get(`${backendAPI}/consensus/settings`, {
+            params: {
+                ...filter,
+            },
+        });
+
+        return response.data.results[0];
+    } catch (errorData) {
+        throw generateError(errorData);
+    }
+}
+
+async function updateConsensusSettings(
+    settingsID: number,
+    settingsData: SerializedConsensusSettingsData,
+): Promise<SerializedConsensusSettingsData> {
+    const params = enableOrganization();
+    const { backendAPI } = config;
+
+    console.log(settingsData);
+
+    try {
+        const response = await Axios.patch(`${backendAPI}/consensus/settings/${settingsID}`, settingsData, {
             params,
         });
 
@@ -2689,6 +2728,13 @@ export default Object.freeze({
                 get: getQualitySettings,
                 update: updateQualitySettings,
             }),
+        }),
+    }),
+
+    consensus: Object.freeze({
+        settings: Object.freeze({
+            get: getConsensusSettings,
+            update: updateConsensusSettings,
         }),
     }),
 });

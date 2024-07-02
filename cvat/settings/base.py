@@ -117,6 +117,7 @@ INSTALLED_APPS = [
     'cvat.apps.events',
     'cvat.apps.quality_control',
     'cvat.apps.analytics_report',
+    'cvat.apps.consensus',
 ]
 
 SITE_ID = 1

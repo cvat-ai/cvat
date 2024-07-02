@@ -31,6 +31,7 @@ import ExportDatasetModal from 'components/export-dataset/export-dataset-modal';
 import ExportBackupModal from 'components/export-backup/export-backup-modal';
 import ImportDatasetModal from 'components/import-dataset/import-dataset-modal';
 import ImportBackupModal from 'components/import-backup/import-backup-modal';
+import ConsensusModal from 'components/consensus/consensus-modal';
 
 import JobsPageComponent from 'components/jobs-page/jobs-page';
 import ModelsPageComponent from 'components/models-page/models-page';
@@ -542,6 +543,7 @@ class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentP
                                     </Switch>
                                     <ExportDatasetModal />
                                     <ExportBackupModal />
+                                    <ConsensusModal />
                                     <ImportDatasetModal />
                                     <ImportBackupModal />
                                     <InvitationWatcher />

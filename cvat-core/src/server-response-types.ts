@@ -235,10 +235,10 @@ export interface SerializedOrganization {
     contact?: SerializedOrganizationContact,
 }
 
-export interface APIQualitySettingsFilter extends APICommonFilterParams {
+export interface APISettingsFilter extends APICommonFilterParams {
     task_id?: number;
 }
-export type QualitySettingsFilter = Camelized<APIQualitySettingsFilter>;
+export type SettingsFilter = Camelized<APISettingsFilter>;
 
 export interface SerializedQualitySettingsData {
     id?: number;
@@ -255,6 +255,14 @@ export interface SerializedQualitySettingsData {
     object_visibility_threshold?: number;
     panoptic_comparison?: boolean;
     compare_attributes?: boolean;
+}
+
+export interface SerializedConsensusSettingsData {
+    id?: number;
+    task?: number;
+    agreement_score_threshold?: number;
+    quorum?: number;
+    iou_threshold?: number;
 }
 
 export interface APIQualityConflictsFilter extends APICommonFilterParams {
