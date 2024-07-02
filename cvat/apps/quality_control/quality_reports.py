@@ -170,10 +170,10 @@ class ComparisonParameters(_Serializable):
     compare_extra_parameters: bool = True
     "Enables or disables extra parameters checks for audio data"
 
-    wer_threshold: float = 0.2
+    wer_threshold: float = 0.3
     "Used for distinction between matched and unmatched transcript at word level"
 
-    cer_threshold: float = 0.2
+    cer_threshold: float = 0.3
     "Used for distinction between matched and unmatched transcript at character level"
 
     ignored_attributes: List[str] = []
@@ -2238,8 +2238,19 @@ class AudioDatasetComparator:
 
             # If no match was found and there is a best mismatch pair
             if not matched and best_mismatch_pair is not None and best_mismatch_iou >= self.iou_threshold:
-                mismatches.append(best_mismatch_pair)
-                pairwise_distances[(id(best_mismatch_pair[0]), id(best_mismatch_pair[1]))] = best_mismatch_iou
+                # Check if the mismatch pair has acceptable WER and CER
+                gt_transcript = best_mismatch_pair[0]['transcript']
+                ds_transcript = best_mismatch_pair[1]['transcript']
+                wer = self.calculate_wer(gt_transcript, ds_transcript)
+                cer = self.calculate_cer(gt_transcript, ds_transcript)
+
+                if wer < self.wer_threshold and cer < self.cer_threshold:
+                    mismatches.append(best_mismatch_pair)
+                    pairwise_distances[(id(best_mismatch_pair[0]), id(best_mismatch_pair[1]))] = best_mismatch_iou
+                    if best_mismatch_pair[0] in gt_unmatched:
+                        gt_unmatched.remove(best_mismatch_pair[0])
+                    if best_mismatch_pair[1] in ds_unmatched:
+                        ds_unmatched.remove(best_mismatch_pair[1])
 
         return [matches, mismatches, gt_unmatched, ds_unmatched, pairwise_distances]
 
@@ -2624,6 +2635,14 @@ class AudioDatasetComparator:
             np.sum(gt_ann_counts) - gt_ann_counts[confusion_matrix_labels_rmap[None]]
         )
 
+        frame_result = self._frame_results.get(self._job_id, None)
+        if frame_result:
+            word_error_rate = frame_result.word_error_rate
+            character_error_rate = frame_result.character_error_rate
+        else:
+            word_error_rate = 0.0
+            character_error_rate = 0.0
+
         return ComparisonReport(
             parameters=self.settings,
             comparison_summary=ComparisonReportComparisonSummary(
@@ -2670,8 +2689,8 @@ class AudioDatasetComparator:
                         total_count=annotation_components.label.total_count,
                     ),
                 ),
-                word_error_rate=self._frame_results[self._job_id].word_error_rate,
-                character_error_rate=self._frame_results[self._job_id].character_error_rate,
+                word_error_rate=word_error_rate,
+                character_error_rate=character_error_rate,
             ),
             frame_results=self._frame_results,
         )
