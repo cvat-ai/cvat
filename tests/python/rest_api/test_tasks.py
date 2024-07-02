@@ -786,7 +786,7 @@ class TestPostTaskData:
             assert response.status == HTTPStatus.ACCEPTED
 
             request_details = wait_until_task_is_created(api_client.requests_api, result.rq_id)
-            assert request_details.status == "failed"
+            assert request_details.status.value == "failed"
 
         return request_details
 

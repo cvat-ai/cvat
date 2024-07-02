@@ -145,7 +145,7 @@ def wait_until_task_is_created(api: apis.RequestsApi, rq_id: str) -> models.Requ
     for _ in range(100):
         (request_details, _) = api.retrieve(rq_id)
 
-        if request_details.status in ("finished", "failed"):
+        if request_details.status.value in ("finished", "failed"):
             return request_details
         sleep(1)
     raise Exception("Cannot create task")
@@ -203,7 +203,7 @@ def create_task(username, spec, data, content_type="application/json", **kwargs)
         assert response.status == HTTPStatus.ACCEPTED
 
         request_details = wait_until_task_is_created(api_client.requests_api, result.rq_id)
-        assert request_details.status == "finished", request_details.message
+        assert request_details.status.value == "finished", request_details.message
 
     return task.id, response_.headers.get("X-Request-Id")
 
