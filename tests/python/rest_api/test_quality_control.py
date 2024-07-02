@@ -1252,11 +1252,13 @@ class TestQualityReportMetrics(_PermissionTestBase):
         new_label_name = "non_skeleton"
         with make_api_client(admin_user) as api_client:
             task_labels = [label for label in labels if label.get("task_id") == task_id]
+            assert any(label["type"] == "skeleton" for label in task_labels)
             task_labels += [{"name": new_label_name, "type": "any"}]
             api_client.tasks_api.partial_update(
                 task_id,
                 patched_task_write_request=models.PatchedTaskWriteRequest(labels=task_labels),
             )
+
             new_label_obj, _ = api_client.labels_api.list(task_id=task_id, name=new_label_name)
             new_label_id = new_label_obj.results[0].id
             api_client.tasks_api.update_annotations(
