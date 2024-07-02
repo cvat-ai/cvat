@@ -1973,15 +1973,11 @@ class DatasetComparator:
     def _make_zero_confusion_matrix(self) -> Tuple[List[str], np.ndarray, Dict[int, int]]:
         label_id_idx_map = {}
         label_names = []
-        max_label_id = -1
         for label_id, label in enumerate(self._gt_dataset.categories()[dm.AnnotationType.label]):
             if not label.parent:
                 label_id_idx_map[label_id] = len(label_names)
                 label_names.append(label.name)
 
-            max_label_id = label_id
-
-        label_id_idx_map[max_label_id + 1] = len(label_names)
         label_names.append("unmatched")
 
         num_labels = len(label_names)
