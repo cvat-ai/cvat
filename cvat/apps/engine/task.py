@@ -174,7 +174,7 @@ def _save_task_to_db(db_task: models.Task, *, job_file_mapping: Optional[JobFile
 
         # consensus jobs use the same `db_segment` as the normal job, thus data not duplicated in backups, exports
         for _ in range(db_task.consensus_jobs_per_segment):
-            consensus_db_job = models.Job(segment=db_segment, parent_job_id=db_job.id)
+            consensus_db_job = models.Job(segment=db_segment, parent_job_id=db_job.id, type=models.JobType.CONSENSUS)
             consensus_db_job.save()
             consensus_db_job.make_dirs()
 
@@ -367,7 +367,6 @@ def _validate_scheme(url):
     if parsed_url.scheme not in ALLOWED_SCHEMES:
         raise ValueError('Unsupported URL scheme: {}. Only http and https are supported'.format(parsed_url.scheme))
 
-
 def _download_data(urls, upload_dir):
     job = rq.get_current_job()
     local_files = {}
@@ -518,7 +517,6 @@ def _create_thread(
     slogger.glob.info("create task #{}".format(db_task.id))
 
     job_file_mapping = _validate_job_file_mapping(db_task, data)
-
 
     db_data = db_task.data
     upload_dir = db_data.get_upload_dirname() if db_data.storage != models.StorageChoice.SHARE else settings.SHARE_ROOT
