@@ -1097,7 +1097,7 @@ class TaskReadSerializer(serializers.ModelSerializer):
     source_storage = StorageSerializer(required=False, allow_null=True)
     jobs = JobsSummarySerializer(url_filter_key='task_id', source='segment_set')
     labels = LabelsSummarySerializer(source='*')
-    consensus_jobs_per_segment = serializers.ReadOnlyField(required=False)
+    consensus_jobs_per_segment = serializers.ReadOnlyField(required=False, allow_null=True)
 
     class Meta:
         model = models.Task
@@ -1122,7 +1122,7 @@ class TaskWriteSerializer(WriteOnceMixin, serializers.ModelSerializer):
     project_id = serializers.IntegerField(required=False, allow_null=True)
     target_storage = StorageSerializer(required=False, allow_null=True)
     source_storage = StorageSerializer(required=False, allow_null=True)
-    consensus_jobs_per_segment = serializers.IntegerField(required=False)
+    consensus_jobs_per_segment = serializers.IntegerField(required=False, allow_null=True)
 
     class Meta:
         model = models.Task
