@@ -1242,7 +1242,15 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
         ],
         responses={
             '202': OpenApiResponse(
-                response=RqIdSerializer,
+                response=PolymorphicProxySerializer(
+                    component_name='DataResponse',
+                    # FUTURE-FIXME: endpoint should return RqIdSerializer or OpenApiTypes.NONE
+                    # but SDK generated from a schema with nullable RqIdSerializer
+                    # throws an error when tried to convert empty response to a specific type
+                    serializers=[RqIdSerializer, OpenApiTypes.BINARY],
+                    resource_type_field_name=None
+                ),
+
                 description='Request to attach a data to a task has been accepted'
             ),
         })

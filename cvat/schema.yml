@@ -5706,7 +5706,7 @@ paths:
           content:
             application/vnd.cvat+json:
               schema:
-                $ref: '#/components/schemas/RqId'
+                $ref: '#/components/schemas/DataResponse'
           description: Request to attach a data to a task has been accepted
   /api/tasks/{id}/data/meta:
     get:
@@ -7445,6 +7445,11 @@ components:
             pass the list of file names in the required order.
       required:
       - image_quality
+    DataResponse:
+      oneOf:
+      - $ref: '#/components/schemas/RqId'
+      - type: string
+        format: binary
     DatasetFileRequest:
       type: object
       properties:
