@@ -92,6 +92,10 @@
             color: white;
         }
     }
+
+    .ant-btn-icon {
+        margin-inline-end: 0;
+    }
 }
 
 .cvat-analytics-time-hint {
@@ -125,7 +129,7 @@
 }
 
 .cvat-quality-settings-switch {
-    padding: 6px 8px;
+    padding: $grid-unit-size $grid-unit-size * 1.25;
     border: 1px solid lightgray;
     margin-left: $grid-unit-size;
     border-radius: $border-radius-base;
