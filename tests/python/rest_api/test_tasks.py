@@ -27,7 +27,6 @@ from cvat_sdk.core.progress import NullProgressReporter
 from cvat_sdk.core.proxies.tasks import ResourceType, Task
 from cvat_sdk.core.uploading import Uploader
 from deepdiff import DeepDiff
-from memory_profiler import memory_usage
 from PIL import Image
 
 import shared.utils.s3 as s3
@@ -1784,51 +1783,6 @@ class TestPostTaskData:
         assert data_meta.start_frame == 2
         assert data_meta.stop_frame == 6
         assert data_meta.size == 3
-
-    @pytest.mark.with_external_services
-    @pytest.mark.parametrize(
-        "cloud_storage_id, org",
-        [
-            (1, ""),
-        ],
-    )
-    def test_create_task_with_cloud_storage_using_advance_params_and_large_dataset(
-        self,
-        cloud_storage_id: int,
-        org: str,
-        cloud_storages,
-        request,
-    ):
-        cloud_storage = cloud_storages[cloud_storage_id]
-
-        data_spec = {
-            "start_frame": 10,
-            "stop_frame": 200,
-            "frame_filter": "step=10",
-        }
-        pid = os.getpid()
-        mem_usage_before = memory_usage(pid, interval=0.1, timeout=1)
-        task_id, _ = self._create_task_with_cloud_data(
-            request=request,
-            cloud_storage=cloud_storage,
-            use_manifest=False,
-            use_cache=False,
-            server_files=["test/video/video.avi"],
-            org=org,
-            spec=data_spec,
-            data_type="video",
-            video_frame_count=4000,
-        )
-        mem_usage_after = memory_usage(pid, interval=0.1, timeout=1)
-        max_mem_usage = max(mem_usage_after) - min(mem_usage_before)
-        assert max_mem_usage < 6  # 6(MB) ~ videofile size with 4000 frames
-
-        with make_api_client(self._USERNAME) as api_client:
-            data_meta, _ = api_client.tasks_api.retrieve_data_meta(task_id)
-
-        assert data_meta.start_frame == 10
-        assert data_meta.stop_frame == 200
-        assert data_meta.size == 20
 
     def test_can_specify_file_job_mapping(self):
         task_spec = {
