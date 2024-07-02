@@ -8,6 +8,7 @@ import { RouteComponentProps } from 'react-router';
 import { withRouter } from 'react-router-dom';
 import Text from 'antd/lib/typography/Text';
 import { Row, Col } from 'antd/lib/grid';
+import Tag from 'antd/lib/tag';
 import Button from 'antd/lib/button';
 import { LoadingOutlined, MoreOutlined } from '@ant-design/icons';
 import Dropdown from 'antd/lib/dropdown';
@@ -121,6 +122,13 @@ class TaskItemComponent extends React.PureComponent<TaskItemProps & RouteCompone
                     <Text strong type='secondary' className='cvat-item-task-id'>{`#${id}: `}</Text>
                     <Text strong className='cvat-item-task-name'>
                         {taskInstance.name}
+                        {
+                            taskInstance.consensusJobsPerSegment > 0 && (
+                                <Col>
+                                    <Tag color='#ED9C00'>Consensus Based Annotation</Tag>
+                                </Col>
+                            )
+                        }
                     </Text>
                 </Text>
                 <br />
