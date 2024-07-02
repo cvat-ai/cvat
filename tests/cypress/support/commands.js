@@ -269,7 +269,7 @@ Cypress.Commands.add('headlessLogin', (username = Cypress.env('user'), password 
 Cypress.Commands.add('headlessCreateObject', (objects, jobID) => {
     cy.window().then(async ($win) => {
         const job = (await $win.cvat.jobs.get({ jobID }))[0];
-        await job.annotations.clear(true);
+        await job.annotations.clear({ reload: true });
 
         const objectStates = objects
             .map((object) => new $win.cvat.classes
@@ -1233,9 +1233,13 @@ Cypress.Commands.add('exportTask', ({
 Cypress.Commands.add('exportJob', ({
     type, format, archiveCustomName,
     targetStorage = null, useDefaultLocation = true,
+    scrollList = false,
 }) => {
     cy.interactMenu('Export job dataset');
     cy.get('.cvat-modal-export-job').should('be.visible').find('.cvat-modal-export-select').click();
+    if (scrollList) {
+        cy.contains('.cvat-modal-export-option-item', format).scrollIntoView();
+    }
     cy.contains('.cvat-modal-export-option-item', format).should('be.visible').click();
     cy.get('.cvat-modal-export-job').find('.cvat-modal-export-select').should('contain.text', format);
     if (type === 'dataset') {

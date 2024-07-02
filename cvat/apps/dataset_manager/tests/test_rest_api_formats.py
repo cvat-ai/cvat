@@ -12,6 +12,7 @@ import multiprocessing
 import av
 import numpy as np
 import random
+import shutil
 import xml.etree.ElementTree as ET
 import zipfile
 from contextlib import ExitStack, contextmanager
@@ -317,7 +318,7 @@ class _DbTestBase(ApiTestBase):
     def _download_file(self, url, data, user, file_name):
         response = self._get_request_with_data(url, data, user)
         self.assertEqual(response.status_code, status.HTTP_202_ACCEPTED)
-        response = self._get_request_with_data(url, data, user)
+        response = self._get_request_with_data(url, {**data, "action": "download"}, user)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
 
         content = BytesIO(b"".join(response.streaming_content))
@@ -659,7 +660,6 @@ class TaskDumpUploadTest(_DbTestBase):
                     file_zip_name = osp.join(test_dir, f'{test_name}_{upload_type}.zip')
                     data = {
                         "format": dump_format_name,
-                        "action": "download",
                     }
                     self._download_file(url, data, self.admin, file_zip_name)
                     self.assertEqual(osp.exists(file_zip_name), True)
@@ -700,7 +700,6 @@ class TaskDumpUploadTest(_DbTestBase):
 
                     data = {
                         "format": dump_format_name,
-                        "action": "download",
                     }
                     self._download_file(url, data, self.admin, file_zip_name)
                     self.assertEqual(osp.exists(file_zip_name), True)
@@ -732,7 +731,6 @@ class TaskDumpUploadTest(_DbTestBase):
             file_zip_name = osp.join(test_dir, f'{test_name}.zip')
             data = {
                 "format": dump_format_name,
-                "action": "download",
             }
             self._download_file(url, data, self.admin, file_zip_name)
             self.assertEqual(osp.exists(file_zip_name), True)
@@ -756,7 +754,6 @@ class TaskDumpUploadTest(_DbTestBase):
 
             data = {
                 "format": dump_format_name,
-                "action": "download",
             }
             self._download_file(url, data, self.admin, file_zip_name)
             self.assertEqual(osp.exists(file_zip_name), True)
@@ -781,7 +778,6 @@ class TaskDumpUploadTest(_DbTestBase):
             file_zip_name = osp.join(test_dir, f'{test_name}.zip')
             data = {
                 "format": dump_format_name,
-                "action": "download",
             }
             self._download_file(url, data, self.admin, file_zip_name)
             self.assertEqual(osp.exists(file_zip_name), True)
@@ -817,7 +813,6 @@ class TaskDumpUploadTest(_DbTestBase):
                     file_zip_name = osp.join(test_dir, f'{test_name}.zip')
                     data = {
                         "format": dump_format_name,
-                        "action": "download",
                     }
                     self._download_file(url, data, self.admin, file_zip_name)
                     self.assertEqual(osp.exists(file_zip_name), True)
@@ -905,7 +900,6 @@ class TaskDumpUploadTest(_DbTestBase):
                     file_zip_name = osp.join(test_dir, f'empty_{dump_format_name}.zip')
                     data = {
                         "format": dump_format_name,
-                        "action": "download",
                     }
                     self._download_file(url, data, self.admin, file_zip_name)
                     self.assertEqual(osp.exists(file_zip_name), True)
@@ -983,7 +977,6 @@ class TaskDumpUploadTest(_DbTestBase):
                     file_zip_name = osp.join(test_dir, f'{test_name}_{dump_format_name}.zip')
                     data = {
                         "format": dump_format_name,
-                        "action": "download",
                     }
                     self._download_file(url, data, self.admin, file_zip_name)
                     self.assertEqual(osp.exists(file_zip_name), True)
@@ -1027,7 +1020,6 @@ class TaskDumpUploadTest(_DbTestBase):
 
                     data = {
                         "format": dump_format_name,
-                        "action": "download",
                     }
                     self._download_file(url, data, self.admin, file_zip_name)
                     self._check_downloaded_file(file_zip_name)
@@ -1100,7 +1092,6 @@ class TaskDumpUploadTest(_DbTestBase):
                         file_zip_name = osp.join(test_dir, f'{test_name}_{dump_format_name}.zip')
                         data = {
                             "format": dump_format_name,
-                            "action": "download",
                         }
                         self._download_file(url, data, self.admin, file_zip_name)
                         self._check_downloaded_file(file_zip_name)
@@ -1128,7 +1119,6 @@ class TaskDumpUploadTest(_DbTestBase):
         task_id = task["id"]
         data = {
             "format": "CVAT for video 1.1",
-            "action": "download",
         }
         annotation_name = "CVAT for video 1.1 polygon"
         self._create_annotations(task, annotation_name, "default")
@@ -1170,7 +1160,6 @@ class TaskDumpUploadTest(_DbTestBase):
                 url = self._generate_url_dump_tasks_annotations(task_id)
                 data = {
                     "format": dump_format_name,
-                    "action": "download",
                 }
                 with TestDir() as test_dir:
                     file_zip_name = osp.join(test_dir, f'{test_name}_{dump_format_name}.zip')
@@ -1207,7 +1196,6 @@ class TaskDumpUploadTest(_DbTestBase):
                 url = self._generate_url_dump_tasks_annotations(task_id)
                 data = {
                     "format": format_name,
-                    "action": "download",
                 }
                 with TestDir() as test_dir:
                     file_zip_name = osp.join(test_dir, f'{test_name}_{format_name}.zip')
@@ -1245,7 +1233,6 @@ class TaskDumpUploadTest(_DbTestBase):
                 url = self._generate_url_dump_tasks_annotations(task_id)
                 data = {
                     "format": dump_format_name,
-                    "action": "download",
                 }
                 with TestDir() as test_dir:
                     file_zip_name = osp.join(test_dir, f'{test_name}_{dump_format_name}.zip')
@@ -1985,7 +1972,7 @@ class ExportBehaviorTest(_DbTestBase):
         self.assertEqual(len(mock_rq_job.retry_intervals), 1)
         self.assertTrue(osp.isfile(export_path))
 
-    def test_cleanup_can_be_called_with_old_signature(self):
+    def test_cleanup_can_be_called_with_old_signature_and_values(self):
         # Test RQ jobs for backward compatibility of API prior to the PR
         # https://github.com/cvat-ai/cvat/pull/7864
         # Jobs referring to the old API can exist in the redis queues after the server is updated
@@ -2002,11 +1989,17 @@ class ExportBehaviorTest(_DbTestBase):
         ):
             mock_rq_get_current_job.return_value = MagicMock(timeout=5)
 
-            export_path = export(dst_format=format_name, task_id=task_id)
+            new_export_path = export(dst_format=format_name, task_id=task_id)
 
-        file_ctime = parse_export_file_path(export_path).instance_timestamp
+        file_ctime = parse_export_file_path(new_export_path).instance_timestamp
+
+        old_export_path = osp.join(
+            osp.dirname(new_export_path), "annotations_cvat-for-images-11.ZIP"
+        )
+        shutil.move(new_export_path, old_export_path)
+
         old_kwargs = {
-            'file_path': export_path,
+            'file_path': old_export_path,
             'file_ctime': file_ctime,
             'logger': MagicMock(),
         }
@@ -2019,7 +2012,7 @@ class ExportBehaviorTest(_DbTestBase):
 
             clear_export_cache(**old_kwargs)
 
-        self.assertFalse(osp.isfile(export_path))
+        self.assertFalse(osp.isfile(old_export_path))
 
 
 class ProjectDumpUpload(_DbTestBase):

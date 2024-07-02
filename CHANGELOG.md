@@ -16,6 +16,68 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 <!-- scriv-insert-here -->
 
+<a id='changelog-2.14.4'></a>
+## \[2.14.4\] - 2024-06-20
+
+### Added
+
+- Polyline editing may be finished using corresponding shortcut
+  (<https://github.com/cvat-ai/cvat/pull/7922>)
+
+### Changed
+
+- Single shape annotation mode allows to modify/delete objects
+  (<https://github.com/cvat-ai/cvat/pull/8017>)
+
+### Fixed
+
+- Invalid server cache cleanup for backups and events (after #7864)
+  (<https://github.com/cvat-ai/cvat/pull/8040>)
+
+- Filters by created date, updated date do not work on different pages (e.g. list of tasks or jobs)
+  (<https://github.com/cvat-ai/cvat/pull/8055>)
+
+<a id='changelog-2.14.3'></a>
+## \[2.14.3\] - 2024-06-13
+
+### Changed
+
+- Increased server healthcheck timeout 5 -> 15 seconds
+  (<https://github.com/cvat-ai/cvat/pull/7993>)
+
+### Fixed
+
+- Cannot read properties of null (reading 'draw') happens when use shortcut N in a task where first label has type "tag"
+  (<https://github.com/cvat-ai/cvat/pull/7997>)
+
+- When use route `/auth/login-with-token/<token>` without `next` query parameter
+the page reloads infinitely (<https://github.com/cvat-ai/cvat/pull/7999>)
+
+- Fixed kvrocks port naming for istio
+  (<https://github.com/cvat-ai/cvat/pull/8010>)
+
+- Exception: State cannot be updated during editing, need to finish current editing first
+  (<https://github.com/cvat-ai/cvat/pull/8019>)
+
+### Security
+
+- Mitigated a CSRF vulnerability in backup and export-related endpoints
+  (<https://github.com/cvat-ai/cvat/security/advisories/GHSA-jpf9-646h-4px7>)
+
+- Fixed an SSRF vulnerability with custom cloud storage endpoints
+  (<https://github.com/cvat-ai/cvat/security/advisories/GHSA-q684-4jjh-83g6>)
+
+<a id='changelog-2.14.2'></a>
+## \[2.14.2\] - 2024-06-07
+
+### Fixed
+
+- Queued jobs are not considered in deferring logic
+  (<https://github.com/cvat-ai/cvat/pull/7907>)
+
+- Significant memory leak related to the frames, which did not memory after become unused
+  (<https://github.com/cvat-ai/cvat/pull/7995>)
+
 <a id='changelog-2.14.1'></a>
 ## \[2.14.1\] - 2024-06-05
 

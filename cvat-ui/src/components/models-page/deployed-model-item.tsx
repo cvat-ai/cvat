@@ -119,7 +119,7 @@ export default function DeployedModelItem(props: Props): JSX.Element {
                                 {model.provider}
                             </Col>
                             <Col>
-                                {model.kind}
+                                {model.displayKind}
                             </Col>
                         </Row>
                     </Col>

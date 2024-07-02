@@ -4,7 +4,6 @@ metadata:
   annotations:
     name: Person reidentification
     type: reid
-    framework: openvino
     spec:
 
 spec:
