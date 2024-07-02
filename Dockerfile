@@ -184,7 +184,6 @@ RUN if [ "${CVAT_DEBUG_ENABLED}" = 'yes' ]; then \
 
 # Removing pip due to security reasons. See: https://scout.docker.com/vulnerabilities/id/CVE-2018-20225
 RUN /bin/bash -c "source /opt/venv/bin/activate && pip uninstall pip -y"
-RUN apt-get remove -y python3-pip
 
 # Install and initialize CVAT, copy all necessary files
 COPY cvat/nginx.conf /etc/nginx/nginx.conf
