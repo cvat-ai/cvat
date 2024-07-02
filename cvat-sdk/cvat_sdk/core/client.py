@@ -220,15 +220,9 @@ class Client:
 
             request, response = self.api_client.requests_api.retrieve(rq_id)
 
-            assert request.status in {
-                "started",
-                "queued",
-                "finished",
-                "failed",
-            }, f"Background job failed, unexpected status: {request.status}, message: "
-            if "finished" == request.status:
+            if request.status.value == models.RequestStatus.allowed_values[("value",)]["FINISHED"]:
                 break
-            elif "failed" == request.status:
+            elif request.status.value == models.RequestStatus.allowed_values[("value",)]["FAILED"]:
                 raise exceptions.ApiException(
                     status=request.status, reason=request.message, http_resp=response
                 )

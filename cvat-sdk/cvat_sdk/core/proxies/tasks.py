@@ -126,7 +126,7 @@ class Task(
                 url, list(map(Path, resources)), pbar=pbar, **data
             )
             response = json.loads(response.data)
-            rq_id = response.get('rq_id')
+            rq_id = response.get("rq_id")
             assert rq_id, "The rq_id param was not found in the response"
 
         if wait_for_completion:
@@ -146,9 +146,10 @@ class Task(
                     message,
                 )
 
-                if "finished" == status.lower():
+                if status.value == models.RequestStatus.allowed_values[("value",)]["FINISHED"]:
                     break
-                elif "failed" == status.lower():
+
+                elif status.value == models.RequestStatus.allowed_values[("value",)]["FAILED"]:
                     raise exceptions.ApiException(status=status, reason=message, http_resp=response)
 
             self.fetch()

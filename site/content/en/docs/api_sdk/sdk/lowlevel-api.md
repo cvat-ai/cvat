@@ -94,10 +94,10 @@ with ApiClient(configuration) as api_client:
         request_details, response = api_client.requests_api.retrieve(result.rq_id)
         status, message = request_details.status, request_details.message
 
-        if status in ['finished', 'failed']:
+        if status.value in {'finished', 'failed'}:
             break
         sleep(0.1)
-    assert status == 'finished', status.message
+    assert status.value == 'finished', status.message
 
     # Update the task object and check the task size
     (task, _) = api_client.tasks_api.retrieve(task.id)

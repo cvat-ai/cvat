@@ -75,7 +75,7 @@ from cvat.apps.engine.serializers import (
     IssueWriteSerializer, CommentReadSerializer, CommentWriteSerializer, CloudStorageWriteSerializer,
     CloudStorageReadSerializer, DatasetFileSerializer,
     ProjectFileSerializer, TaskFileSerializer, RqIdSerializer, CloudStorageContentSerializer,
-    RequestSerializer, RQJobStatuses, RQJobActions, RQJobSubresources,
+    RequestSerializer, RequestStatus, RequestAction, RequestSubresource,
 )
 from cvat.apps.engine.permissions import get_cloud_storage_for_import_or_export
 
@@ -3148,12 +3148,6 @@ def _import_project_dataset(request, rq_id_template, rq_func, db_obj, format_nam
             '200': RequestSerializer,
         }
     ),
-    destroy=extend_schema(
-        summary='Delete request',
-        responses={
-            '204': OpenApiResponse(description='The request has been deleted'),
-        }
-    ),
 )
 class RequestViewSet(viewsets.GenericViewSet):
     # FUTURE-TODO: support re-enqueue action
@@ -3203,12 +3197,12 @@ class RequestViewSet(viewsets.GenericViewSet):
     SchemaField = namedtuple('SchemaField', ['type', 'choices'], defaults=(None,))
 
     simple_filters_schema = {
-        'status': SchemaField('string', RQJobStatuses.choices),
+        'status': SchemaField('string', RequestStatus.choices),
         'project_id': SchemaField('integer'),
         'task_id': SchemaField('integer'),
         'job_id': SchemaField('integer'),
-        'action': SchemaField('string', RQJobActions.choices),
-        'subresource': SchemaField('string', RQJobSubresources.choices),
+        'action': SchemaField('string', RequestAction.choices),
+        'subresource': SchemaField('string', RequestSubresource.choices),
         'format': SchemaField('string'),
         'org': SchemaField('string'),
     }

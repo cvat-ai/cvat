@@ -9844,45 +9844,37 @@ components:
       type: object
       properties:
         status:
-          allOf:
-          - $ref: '#/components/schemas/RequestStatusEnum'
-          readOnly: true
+          $ref: '#/components/schemas/RequestStatus'
         message:
           type: string
           readOnly: true
         id:
           type: string
-          readOnly: true
         operation:
-          allOf:
-          - $ref: '#/components/schemas/RequestDataOperation'
-          readOnly: true
+          $ref: '#/components/schemas/RequestDataOperation'
         progress:
           type: number
           format: double
           maximum: 1
           minimum: 0
-          readOnly: true
           nullable: true
+          readOnly: true
         created_date:
           type: string
           format: date-time
-          readOnly: true
         started_date:
           type: string
           format: date-time
-          readOnly: true
           nullable: true
         finished_date:
           type: string
           format: date-time
-          readOnly: true
           nullable: true
         expiry_date:
           type: string
           format: date-time
-          readOnly: true
           nullable: true
+          readOnly: true
         owner:
           allOf:
           - $ref: '#/components/schemas/UserIdentifiers'
@@ -9890,38 +9882,37 @@ components:
         result_url:
           type: string
           format: uri
-          readOnly: true
           nullable: true
         result_id:
           type: integer
-          readOnly: true
           nullable: true
+      required:
+      - created_date
+      - id
+      - operation
+      - status
     RequestDataOperation:
       type: object
       properties:
         type:
           type: string
-          readOnly: true
         target:
-          allOf:
-          - $ref: '#/components/schemas/RequestDataOperationTargetEnum'
-          readOnly: true
+          $ref: '#/components/schemas/RequestDataOperationTargetEnum'
         project_id:
           type: integer
-          readOnly: true
           nullable: true
         task_id:
           type: integer
-          readOnly: true
           nullable: true
         job_id:
           type: integer
-          readOnly: true
           nullable: true
         format:
           type: string
-          readOnly: true
           nullable: true
+      required:
+      - target
+      - type
     RequestDataOperationTargetEnum:
       enum:
       - project
@@ -9932,7 +9923,7 @@ components:
         * `project` - Project
         * `task` - Task
         * `job` - Job
-    RequestStatusEnum:
+    RequestStatus:
       enum:
       - queued
       - started
