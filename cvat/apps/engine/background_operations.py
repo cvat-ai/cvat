@@ -53,17 +53,23 @@ class _ResourceExportManager(ABC):
         version: int,
         db_instance: Union[models.Project, models.Task, models.Job],
         *,
-        callback: Callable,
+        export_callback: Callable,
     ) -> None:
+        """
+        Args:
+            version (int): API endpoint version to use. Possible options: 1 or 2
+            db_instance (Union[models.Project, models.Task, models.Job]): Model instance
+            export_callback (Callable): Main function that will be executed in the background
+        """
         self.version = version
         self.db_instance = db_instance
-        self.obj_type = db_instance.__class__.__name__.lower()
-        if self.obj_type not in self.SUPPORTED_RESOURCES:
+        self.resource = db_instance.__class__.__name__.lower()
+        if self.resource not in self.SUPPORTED_RESOURCES:
             raise ValueError(
                 "Unexpected type of db_instance: {}".format(type(db_instance))
             )
 
-        self.callback = callback
+        self.export_callback = export_callback
 
     @abstractmethod
     def export(self) -> Response:
@@ -106,9 +112,9 @@ class _ResourceExportManager(ABC):
         pass
 
     def make_result_url(self) -> str:
-        v1_endpoint = self.get_v1_endpoint_view_name()
+        view_name = self.get_v1_endpoint_view_name()
         result_url = reverse(
-            v1_endpoint, args=[self.db_instance.pk], request=self.request
+            view_name, args=[self.db_instance.pk], request=self.request
         )
         query_dict = self.request.query_params.copy()
         query_dict["action"] = "download"
@@ -149,12 +155,12 @@ class DatasetExportManager(_ResourceExportManager):
         self,
         db_instance: Union[models.Project, models.Task, models.Job],
         request: HttpRequest,
-        callback: Callable,
+        export_callback: Callable,
         save_images: Optional[bool] = None,
         *,
         version: int = 2,
     ) -> None:
-        super().__init__(version, db_instance, callback=callback)
+        super().__init__(version, db_instance, export_callback=export_callback)
         self.request = request
 
         format_name = request.query_params.get("format", "")
@@ -244,7 +250,7 @@ class DatasetExportManager(_ResourceExportManager):
                     )
 
                 filename = self.export_args.filename or build_annotations_file_name(
-                    class_name=self.obj_type,
+                    class_name=self.resource,
                     identifier=(
                         self.db_instance.name
                         if isinstance(self.db_instance, (Task, Project))
@@ -338,7 +344,7 @@ class DatasetExportManager(_ResourceExportManager):
         queue: DjangoRQ = django_rq.get_queue(self.QUEUE_NAME)
         rq_id = RQIdManager.build(
             "export",
-            self.obj_type,
+            self.resource,
             self.db_instance.pk,
             subresource="dataset" if self.export_args.save_images else "annotations",
             anno_format=self.export_args.format,
@@ -382,7 +388,7 @@ class DatasetExportManager(_ResourceExportManager):
 
         user_id = self.request.user.id
 
-        func = self.callback
+        func = self.export_callback
         func_args = (self.db_instance.id, self.export_args.format, server_address)
         result_url = None
 
@@ -418,7 +424,7 @@ class DatasetExportManager(_ResourceExportManager):
                 db_storage,
                 self.export_args.filename,
                 filename_pattern,
-                self.callback,
+                self.export_callback,
             ) + func_args
         else:
             db_storage = None
@@ -438,14 +444,20 @@ class DatasetExportManager(_ResourceExportManager):
             )
 
     def get_v1_endpoint_view_name(self) -> str:
-        return (
-            (
-                f"{self.obj_type}-dataset"
-                + ("-export" if self.obj_type != "project" else "")
-            )
-            if self.export_args.save_images
-            else f"{self.obj_type}-annotations"
-        )
+        """
+        Get view name of the endpoint for the first API version
+
+        Possible view names:
+            - project-dataset
+            - task|job-dataset-export
+            - project|task|job-annotations
+        """
+        if self.export_args.save_images:
+            template = "{}-dataset" + ("-export" if self.resource != "project" else "")
+        else:
+            template = "{}-annotations"
+
+        return template.format(self.resource)
 
 
 class BackupExportManager(_ResourceExportManager):
@@ -467,7 +479,7 @@ class BackupExportManager(_ResourceExportManager):
         *,
         version: int = 2,
     ) -> None:
-        super().__init__(version, db_instance, callback=create_backup)
+        super().__init__(version, db_instance, export_callback=create_backup)
         self.request = request
 
         filename = request.query_params.get("filename", "")
@@ -520,7 +532,7 @@ class BackupExportManager(_ResourceExportManager):
                 )
 
             filename = self.export_args.filename or build_backup_file_name(
-                class_name=self.obj_type,
+                class_name=self.resource,
                 identifier=self.db_instance.name,
                 timestamp=timestamp,
                 extension=os.path.splitext(file_path)[1],
@@ -570,7 +582,7 @@ class BackupExportManager(_ResourceExportManager):
         queue: DjangoRQ = django_rq.get_queue(self.QUEUE_NAME)
         rq_id = RQIdManager.build(
             "export",
-            self.obj_type,
+            self.resource,
             self.db_instance.pk,
             subresource="backup",
             user_id=self.request.user.id,
@@ -602,11 +614,11 @@ class BackupExportManager(_ResourceExportManager):
             Exporter = ProjectExporter
             cache_ttl = dm.views.PROJECT_CACHE_TTL
 
-        func = self.callback
+        func = self.export_callback
         func_args = (
             self.db_instance,
             Exporter,
-            "{}_backup.zip".format(self.obj_type),
+            "{}_backup.zip".format(self.resource),
             logger,
             cache_ttl,
         )
@@ -633,7 +645,7 @@ class BackupExportManager(_ResourceExportManager):
             timestamp = self.get_timestamp(last_instance_update_time)
 
             filename_pattern = build_backup_file_name(
-                class_name=self.obj_type,
+                class_name=self.resource,
                 identifier=self.db_instance.name,
                 timestamp=timestamp,
             )
@@ -642,7 +654,7 @@ class BackupExportManager(_ResourceExportManager):
                 db_storage,
                 self.export_args.filename,
                 filename_pattern,
-                self.callback,
+                self.export_callback,
             ) + func_args
         else:
             result_url = self.make_result_url()
@@ -663,4 +675,6 @@ class BackupExportManager(_ResourceExportManager):
             )
 
     def get_v1_endpoint_view_name(self) -> str:
-        return f"{self.obj_type}-export-backup"
+        """Get view name of the endpoint for the first API version"""
+
+        return f"{self.resource}-export-backup"
