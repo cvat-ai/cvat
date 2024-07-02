@@ -368,6 +368,7 @@ export function propagateShapes<T extends SerializedShape | ObjectState>(
                 attributes: shape.attributes,
                 points: shape.shapeType === 'skeleton' ? null : shape.points,
                 occluded: shape.occluded,
+                outside: shape.outside,
                 objectType: shape.objectType !== ObjectType.TRACK ? shape.objectType : ObjectType.SHAPE,
                 shapeType: shape.shapeType,
                 label: shape.label,
@@ -392,7 +393,7 @@ export function propagateShapes<T extends SerializedShape | ObjectState>(
                 .map((element: SerializedShape): SerializedShape => getCopy(element as T) as SerializedShape) : [],
             source: shape.source,
             group: 0,
-            outside: false,
+            outside: shape.outside,
         };
     };
 
