@@ -6,7 +6,7 @@
   align-items: center;
 
   .ant-btn-default {
-    background-color: #0059ff;
+    background-color: #1890ff;
     border: none;
   }
 }
@@ -22,38 +22,3 @@
   }
 }
 
-.consensus-settings-form {
-  .ant-form-item {
-    display: flex;
-    justify-content: space-between;
-
-    .ant-col {
-      display: flex;
-      justify-content: center;
-
-      .ant-btn {
-        padding: 10px 0;
-
-        &.reset-button {
-          background-color: #f5f5f5;
-          color: #000;
-          border: 1px solid #d9d9d9;
-
-          &:hover {
-            background-color: #e6e6e6;
-          }
-        }
-
-        &.save-button {
-          background-color: #1890ff;
-          color: #fff;
-          border: none;
-
-          &:hover {
-            background-color: #40a9ff;
-          }
-        }
-      }
-    }
-  }
-}
