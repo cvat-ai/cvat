@@ -84,7 +84,7 @@ django==4.2.13
     #   django-sendfile2
     #   djangorestframework
     #   drf-spectacular
-django-allauth[saml]==0.57.2
+django-allauth[saml]==0.63.3
     # via
     #   -r cvat/requirements/base.in
     #   dj-rest-auth
