@@ -104,7 +104,7 @@ export default function ConsensusSettingsForm(props: Props): JSX.Element | null 
                 <Col span={12}>
                     <Form.Item
                         name='iouThreshold'
-                        label='Min overlap threshold (%)'
+                        label='Min Overlap Threshold (%)'
                         rules={[{ required: true }]}
                     >
                         <InputNumber min={0} max={100} precision={0} />
@@ -113,43 +113,43 @@ export default function ConsensusSettingsForm(props: Props): JSX.Element | null 
                 <Col span={12}>
                     <Form.Item
                         name='agreementScoreThreshold'
-                        label='Agreement Score threshold (%)'
+                        label='Agreement Score Threshold (%)'
                         rules={[{ required: true }]}
                     >
                         <InputNumber min={0} max={100} precision={0} />
                     </Form.Item>
                 </Col>
+            </Row>
+            <Row>
                 <Col span={12}>
                     <Form.Item
                         name='quorum'
                         label='Quorum'
                         rules={[{ required: true }]}
                     >
-                        <InputNumber min={0} max={10} precision={0} />
+                        <InputNumber min={0} max={10} precision={0} step={1} />
                     </Form.Item>
                 </Col>
             </Row>
             <Row>
-                <Form.Item className='consensus-settings-form-reset-button'>
-                    <Col span={9}>
-                        <Button
-                            type='default' // or any other type according to your design
-                            onClick={() => {
-                                form.resetFields();
-                            }}
-                        >
-                            Reset Settings
-                        </Button>
-                    </Col>
-                    <Col span={9}>
-                        <Button
-                            type='default'
-                            onClick={onSave}
-                        >
-                            Save
-                        </Button>
-                    </Col>
-                </Form.Item>
+                <Col span={7} offset={5}>
+                    <Button
+                        type='default'
+                        onClick={() => {
+                            form.resetFields();
+                        }}
+                    >
+                        Reset Settings
+                    </Button>
+                </Col>
+                <Col span={11} offset={1}>
+                    <Button
+                        type='default'
+                        onClick={onSave}
+                    >
+                        Save
+                    </Button>
+                </Col>
             </Row>
         </Form>
     );
