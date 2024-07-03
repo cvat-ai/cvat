@@ -2419,8 +2419,6 @@ async function updateConsensusSettings(
     const params = enableOrganization();
     const { backendAPI } = config;
 
-    console.log(settingsData);
-
     try {
         const response = await Axios.patch(`${backendAPI}/consensus/settings/${settingsID}`, settingsData, {
             params,

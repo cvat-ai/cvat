@@ -38,7 +38,6 @@ export default (state: ConsensusState = defaultState, action: ConsensusActions):
         }
 
         case ConsensusActionTypes.SET_CONSENSUS_SETTINGS: {
-            console.log(state.consensusSettings);
             return {
                 ...state,
                 consensusSettings: action.payload.consensusSettings,
