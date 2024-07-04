@@ -21,11 +21,11 @@ from django.db import transaction
 
 def get_consensus_jobs(task_id: int) -> Dict[int, List[int]]:
     jobs = {} # parent_job_id -> [consensus_job_id]
-    for job in Job.objects.select_related("segment").filter(segment__task_id=task_id, type=JobType.ANNOTATION.value).order_by('id'):
-        if job.parent_job_id is not None:
-            if job.parent_job_id not in jobs:
-                jobs[job.parent_job_id] = []
-            jobs[job.parent_job_id].append(job.id)
+
+    for job in Job.objects.select_related("segment").filter(segment__task_id=task_id, type=JobType.CONSENSUS.value):
+            assert job.parent_job_id
+            jobs.setdefault(job.parent_job_id, []).append(job.id)
+
     return jobs
 
 def get_annotations(job_id: int) -> dm.Dataset:
