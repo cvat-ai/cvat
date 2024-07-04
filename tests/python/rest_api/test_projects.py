@@ -496,7 +496,7 @@ class TestPostProjects:
             assert DeepDiff(project, json.loads(response.data), ignore_order=True) == {}
 
     @pytest.mark.parametrize("assignee", [None, "admin1"])
-    def test_can_create_with_assignee(self, admin_user, users_by_name, assignee: str):
+    def test_can_create_with_assignee(self, admin_user, users_by_name, assignee):
         spec = {
             "name": f"test project creation with assignee",
             "labels": [{"name": "car"}],
@@ -1170,7 +1170,7 @@ class TestPatchProject:
     @pytest.mark.parametrize("has_old_assignee", [False, True])
     @pytest.mark.parametrize("new_assignee", [None, "same", "different"])
     def test_can_update_assignee_updated_date_on_assignee_updates(
-        self, admin_user, projects, users, has_old_assignee, new_assignee: str
+        self, admin_user, projects, users, has_old_assignee, new_assignee
     ):
         project = next(p for p in projects if bool(p.get("assignee")) == has_old_assignee)
 

@@ -43,6 +43,7 @@ from cvat.apps.engine.models import (
     StageChoice,
     StatusChoice,
     Task,
+    User,
 )
 from cvat.apps.profiler import silk_profile
 from cvat.apps.quality_control import models
@@ -2484,6 +2485,16 @@ def prepare_report_for_downloading(db_report: models.QualityReport, *, host: str
     # - convert some fractions to percents
     # - add common report info
 
+    def _serialize_assignee(assignee: Optional[User]) -> Optional[dict]:
+        if not db_report.assignee:
+            return None
+
+        reported_keys = ["id", "username", "first_name", "last_name"]
+        assert set(reported_keys).issubset(engine_serializers.BasicUserSerializer.Meta.fields)
+        # check that only safe fields are reported
+
+        return {k: getattr(assignee, k) for k in reported_keys}
+
     task_id = db_report.get_task().id
     serialized_data = dict(
         job_id=db_report.job.id if db_report.job is not None else None,
@@ -2492,7 +2503,7 @@ def prepare_report_for_downloading(db_report: models.QualityReport, *, host: str
         created_date=str(db_report.created_date),
         target_last_updated=str(db_report.target_last_updated),
         gt_last_updated=str(db_report.gt_last_updated),
-        assignee=engine_serializers.BasicUserSerializer(instance=db_report.assignee).data,
+        assignee=_serialize_assignee(db_report.assignee),
     )
 
     comparison_report = ComparisonReport.from_json(db_report.get_json_report())

@@ -312,7 +312,7 @@ class TestPostJobs:
             assert DeepDiff(job, json.loads(response.data), ignore_order=True) == {}
 
     @pytest.mark.parametrize("assignee", [None, "admin1"])
-    def test_can_create_with_assignee(self, admin_user, tasks, jobs, users_by_name, assignee: str):
+    def test_can_create_with_assignee(self, admin_user, tasks, jobs, users_by_name, assignee):
         task = next(
             t
             for t in tasks
@@ -1241,7 +1241,7 @@ class TestPatchJob:
     @pytest.mark.parametrize("has_old_assignee", [False, True])
     @pytest.mark.parametrize("new_assignee", [None, "same", "different"])
     def test_can_update_assignee_updated_date_on_assignee_updates(
-        self, admin_user, jobs, users, has_old_assignee, new_assignee: str
+        self, admin_user, jobs, users, has_old_assignee, new_assignee
     ):
         job = next(j for j in jobs if bool(j.get("assignee")) == has_old_assignee)
 
