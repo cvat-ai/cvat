@@ -17,7 +17,7 @@ import textwrap
 from typing import Any, Dict, Iterable, Optional, OrderedDict, Union
 
 from rq.job import Job as RQJob, JobStatus as RQJobStatus
-from datetime import timezone, timedelta
+from datetime import timedelta
 from decimal import Decimal
 
 from rest_framework import serializers, exceptions
