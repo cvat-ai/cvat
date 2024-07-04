@@ -49,12 +49,10 @@ def _merge_consensus_jobs(task_id: int) -> None:
 
         # delete the existing annotations in the job
         patch_job_data(parent_job_id, None, PatchAction.DELETE)
-        """
-        if we don't delete exising annotations, the imported annotations
-        will be appended to the existing annotations, and thus updated annotation
-        would have both exisiting + imported annotations, but we only want the
-        imported annotations
-        """
+        # if we don't delete exising annotations, the imported annotations
+        # will be appended to the existing annotations, and thus updated annotation
+        # would have both exisiting + imported annotations, but we only want the
+        # imported annotations
 
         parent_job = JobDataProvider(parent_job_id)
 
@@ -73,11 +71,10 @@ def merge_task(task: Task, request) -> Response:
     rq_id = request.data.get('rq_id', f"merge_consensus:task.id{task.id}-by-{request.user}")
     rq_job = queue.fetch_job(rq_id)
     user_id = request.user.id
-    last_instance_update_time = timezone.localtime(task.updated_date)
 
     if rq_job:
         if rq_job.is_finished:
-            returned_data = rq_job.return_value()
+            # returned_data = rq_job.return_value()
             rq_job.delete()
             return Response(status=status.HTTP_201_CREATED) if returned_data == 201 else Response(status=status.HTTP_400_BAD_REQUEST)
         elif rq_job.is_failed:
