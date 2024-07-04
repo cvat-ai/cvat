@@ -415,7 +415,7 @@ class TestPostTasks:
     @pytest.mark.parametrize("assignee", [None, "admin1"])
     def test_can_create_with_assignee(self, admin_user, users_by_name, assignee):
         task_spec = {
-            "name": f"test task creation with assignee",
+            "name": "test task creation with assignee",
             "labels": [{"name": "car"}],
             "assignee_id": users_by_name[assignee]["id"] if assignee else None,
         }
