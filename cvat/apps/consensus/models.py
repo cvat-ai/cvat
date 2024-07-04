@@ -17,7 +17,7 @@ class ConsensusSettings(models.Model):
     )
     agreement_score_threshold = models.FloatField(default=0)
     quorum = models.IntegerField(default=0)
-    iou_threshold = models.FloatField(default=0)
+    iou_threshold = models.FloatField(default=0.5)
 
     def to_dict(self):
         return model_to_dict(self)

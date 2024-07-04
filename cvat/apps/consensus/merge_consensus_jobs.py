@@ -41,7 +41,14 @@ def get_annotations(job_id: int) -> dm.Dataset:
 @transaction.atomic
 def _merge_consensus_jobs(task_id: int) -> None:
     jobs = get_consensus_jobs(task_id)
-    merger = IntersectMerge()
+    consensus_settings = ConsensusSettings.objects.filter(task=task_id).first()
+    merger = IntersectMerge(
+        conf=IntersectMerge.Conf(
+            pairwise_dist=consensus_settings.iou_threshold,
+            output_conf_thresh=consensus_settings.agreement_score_threshold,
+            quorum=consensus_settings.quorum,
+        )
+    )
 
     for parent_job_id, job_ids in jobs.items():
         consensus_dataset = list(map(get_annotations, job_ids))
