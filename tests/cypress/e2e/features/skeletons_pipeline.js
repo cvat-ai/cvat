@@ -223,5 +223,18 @@ context('Manipulations with skeletons', { scrollBehavior: false }, () => {
 
             cy.removeAnnotations();
         });
+
+        it('Copy/paste a skeleton shape', () => {
+            cy.on('window:console:error', (error) => {
+                throw new Error(`Console error detected: ${error}`);
+            });
+
+            createSkeletonObject('shape');
+            cy.interactAnnotationObjectMenu('#cvat-objects-sidebar-state-item-1', 'Make a copy');
+            cy.get('.cvat-canvas-container').click();
+            cy.get('#cvat_canvas_shape_5').should('exist').and('be.visible');
+
+            cy.removeAnnotations();
+        });
     });
 });
