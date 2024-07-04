@@ -1,4 +1,4 @@
-# Copyright (C) 2023 CVAT.ai Corporation
+# Copyright (C) 2023-2024 CVAT.ai Corporation
 #
 # SPDX-License-Identifier: MIT
 
@@ -85,6 +85,10 @@ class QualityReport(models.Model):
     created_date = models.DateTimeField(auto_now_add=True)
     target_last_updated = models.DateTimeField()
     gt_last_updated = models.DateTimeField()
+
+    assignee = models.ForeignKey(
+        Job, on_delete=models.SET_NULL, related_name="quality_report", null=True, blank=True
+    )
 
     data = models.JSONField()
 

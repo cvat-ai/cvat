@@ -1,4 +1,4 @@
-# Copyright (C) 2023 CVAT.ai Corporation
+# Copyright (C) 2023-2024 CVAT.ai Corporation
 #
 # SPDX-License-Identifier: MIT
 
@@ -34,6 +34,7 @@ from cvat.apps.dataset_manager.bindings import (
 from cvat.apps.dataset_manager.formats.registry import dm_env
 from cvat.apps.dataset_manager.task import JobAnnotation
 from cvat.apps.dataset_manager.util import bulk_create
+from cvat.apps.engine import serializers as engine_serializers
 from cvat.apps.engine.models import (
     DimensionType,
     Job,
@@ -2297,6 +2298,7 @@ class QualityReportUpdateManager:
                     job=job,
                     target_last_updated=job.updated_date,
                     gt_last_updated=gt_job.updated_date,
+                    assignee_id=job.assignee_id,
                     data=job_comparison_report.to_json(),
                     conflicts=[c.to_dict() for c in job_comparison_report.conflicts],
                 )
@@ -2308,6 +2310,7 @@ class QualityReportUpdateManager:
                     task=task,
                     target_last_updated=task.updated_date,
                     gt_last_updated=gt_job.updated_date,
+                    assignee_id=task.assignee_id,
                     data=task_comparison_report.to_json(),
                     conflicts=[],  # the task doesn't have own conflicts
                 ),
@@ -2413,6 +2416,7 @@ class QualityReportUpdateManager:
             task=task_report["task"],
             target_last_updated=task_report["target_last_updated"],
             gt_last_updated=task_report["gt_last_updated"],
+            assignee_id=task_report["assignee_id"],
             data=task_report["data"],
         )
         db_task_report.save()
@@ -2424,6 +2428,7 @@ class QualityReportUpdateManager:
                 job=job_report["job"],
                 target_last_updated=job_report["target_last_updated"],
                 gt_last_updated=job_report["gt_last_updated"],
+                assignee_id=job_report["assignee_id"],
                 data=job_report["data"],
             )
             db_job_reports.append(db_job_report)
@@ -2487,6 +2492,7 @@ def prepare_report_for_downloading(db_report: models.QualityReport, *, host: str
         created_date=str(db_report.created_date),
         target_last_updated=str(db_report.target_last_updated),
         gt_last_updated=str(db_report.gt_last_updated),
+        assignee=engine_serializers.BasicUserSerializer(instance=db_report.assignee).data,
     )
 
     comparison_report = ComparisonReport.from_json(db_report.get_json_report())

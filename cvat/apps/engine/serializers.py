@@ -1,5 +1,5 @@
 # Copyright (C) 2019-2022 Intel Corporation
-# Copyright (C) 2022-2023 CVAT.ai Corporation
+# Copyright (C) 2022-2024 CVAT.ai Corporation
 #
 # SPDX-License-Identifier: MIT
 
@@ -17,6 +17,7 @@ from typing import Any, Dict, Iterable, Optional, OrderedDict, Union
 from rest_framework import serializers, exceptions
 from django.contrib.auth.models import User, Group
 from django.db import transaction
+from django.utils import timezone
 
 from cvat.apps.dataset_manager.formats.utils import get_label_color
 from cvat.apps.engine import models
@@ -582,6 +583,7 @@ class JobReadSerializer(serializers.ModelSerializer):
     stop_frame = serializers.ReadOnlyField(source="segment.stop_frame")
     frame_count = serializers.ReadOnlyField(source="segment.frame_count")
     assignee = BasicUserSerializer(allow_null=True, read_only=True)
+    assignee_updated_date = serializers.DateTimeField(allow_null=True, required=False)
     dimension = serializers.CharField(max_length=2, source='segment.task.dimension', read_only=True)
     data_chunk_size = serializers.ReadOnlyField(source='segment.task.data.chunk_size')
     organization = serializers.ReadOnlyField(source='segment.task.organization.id', allow_null=True)
@@ -600,7 +602,7 @@ class JobReadSerializer(serializers.ModelSerializer):
             'dimension', 'bug_tracker', 'status', 'stage', 'state', 'mode', 'frame_count',
             'start_frame', 'stop_frame', 'data_chunk_size', 'data_compressed_chunk_type',
             'created_date', 'updated_date', 'issues', 'labels', 'type', 'organization',
-            'target_storage', 'source_storage')
+            'target_storage', 'source_storage', 'assignee_updated_date')
         read_only_fields = fields
 
     def to_representation(self, instance):
@@ -744,6 +746,10 @@ class JobWriteSerializer(WriteOnceMixin, serializers.ModelSerializer):
         except models.TaskGroundTruthJobsLimitError as ex:
             raise serializers.ValidationError(ex.message) from ex
 
+        if validated_data.get("assignee"):
+            job.assignee_updated_date = job.updated_date
+            job.save(update_fields=["assignee_updated_date"])
+
         job.make_dirs()
         return job
 
@@ -762,12 +768,11 @@ class JobWriteSerializer(WriteOnceMixin, serializers.ModelSerializer):
         if state != instance.state:
             validated_data['state'] = state
 
-        assignee = validated_data.get('assignee')
-        if assignee is not None:
-            validated_data['assignee'] = User.objects.get(id=assignee)
+        if "assignee" in validated_data and validated_data["assignee"] != instance.assignee_id:
+            instance.assignee_id = validated_data.pop('assignee')
+            instance.assignee_updated_date = timezone.now()
 
         instance = super().update(instance, validated_data)
-
         return instance
 
 class SimpleJobSerializer(serializers.ModelSerializer):
@@ -1089,6 +1094,7 @@ class TaskReadSerializer(serializers.ModelSerializer):
     data = serializers.ReadOnlyField(source='data.id', required=False)
     owner = BasicUserSerializer(required=False, allow_null=True)
     assignee = BasicUserSerializer(allow_null=True, required=False)
+    assignee_updated_date = serializers.DateTimeField(allow_null=True, required=False)
     project_id = serializers.IntegerField(required=False, allow_null=True)
     guide_id = serializers.IntegerField(source='annotation_guide.id', required=False, allow_null=True)
     dimension = serializers.CharField(allow_blank=True, required=False)
@@ -1104,6 +1110,7 @@ class TaskReadSerializer(serializers.ModelSerializer):
             'status', 'data_chunk_size', 'data_compressed_chunk_type', 'guide_id',
             'data_original_chunk_type', 'size', 'image_quality', 'data', 'dimension',
             'subset', 'organization', 'target_storage', 'source_storage', 'jobs', 'labels',
+            'assignee_updated_date'
         )
         read_only_fields = fields
         extra_kwargs = {
@@ -1171,6 +1178,9 @@ class TaskWriteSerializer(WriteOnceMixin, serializers.ModelSerializer):
 
         LabelSerializer.create_labels(labels, parent_instance=db_task)
 
+        if validated_data.get('assignee_id'):
+            db_task.assignee_updated_date = db_task.updated_date
+
         db_task.save()
         return db_task
 
@@ -1179,11 +1189,16 @@ class TaskWriteSerializer(WriteOnceMixin, serializers.ModelSerializer):
     def update(self, instance, validated_data):
         instance.name = validated_data.get('name', instance.name)
         instance.owner_id = validated_data.get('owner_id', instance.owner_id)
-        instance.assignee_id = validated_data.get('assignee_id', instance.assignee_id)
-        instance.bug_tracker = validated_data.get('bug_tracker',
-            instance.bug_tracker)
+        instance.bug_tracker = validated_data.get('bug_tracker', instance.bug_tracker)
         instance.subset = validated_data.get('subset', instance.subset)
         labels = validated_data.get('label_set', [])
+
+        if (
+            "assignee_id" in validated_data and
+            validated_data["assignee_id"] != instance.assignee_id
+        ):
+            instance.assignee_id = validated_data.pop('assignee_id')
+            instance.assignee_updated_date = timezone.now()
 
         if instance.project_id is None:
             LabelSerializer.update_labels(labels, parent_instance=instance)
@@ -1310,6 +1325,7 @@ class TaskWriteSerializer(WriteOnceMixin, serializers.ModelSerializer):
 class ProjectReadSerializer(serializers.ModelSerializer):
     owner = BasicUserSerializer(allow_null=True, required=False, read_only=True)
     assignee = BasicUserSerializer(allow_null=True, required=False, read_only=True)
+    assignee_updated_date = serializers.DateTimeField(allow_null=True, required=False)
     guide_id = serializers.IntegerField(source='annotation_guide.id', required=False, allow_null=True)
     task_subsets = serializers.ListField(child=serializers.CharField(), required=False, read_only=True)
     dimension = serializers.CharField(max_length=16, required=False, read_only=True, allow_null=True)
@@ -1323,7 +1339,7 @@ class ProjectReadSerializer(serializers.ModelSerializer):
         fields = ('url', 'id', 'name', 'owner', 'assignee', 'guide_id',
             'bug_tracker', 'task_subsets', 'created_date', 'updated_date', 'status',
             'dimension', 'organization', 'target_storage', 'source_storage',
-            'tasks', 'labels',
+            'tasks', 'labels', 'assignee_updated_date'
         )
         read_only_fields = fields
         extra_kwargs = { 'organization': { 'allow_null': True } }
@@ -1377,6 +1393,10 @@ class ProjectWriteSerializer(serializers.ModelSerializer):
 
         LabelSerializer.create_labels(labels, parent_instance=db_project)
 
+        if validated_data.get("assignee_id"):
+            db_project.assignee_updated_date = db_project.updated_date
+            db_project.save(update_fields=["assignee_updated_date"])
+
         return db_project
 
     # pylint: disable=no-self-use
@@ -1384,10 +1404,16 @@ class ProjectWriteSerializer(serializers.ModelSerializer):
     def update(self, instance, validated_data):
         instance.name = validated_data.get('name', instance.name)
         instance.owner_id = validated_data.get('owner_id', instance.owner_id)
-        instance.assignee_id = validated_data.get('assignee_id', instance.assignee_id)
         instance.bug_tracker = validated_data.get('bug_tracker', instance.bug_tracker)
-        labels = validated_data.get('label_set', [])
 
+        if (
+            "assignee_id" in validated_data and
+            validated_data['assignee_id'] != instance.assignee_id
+        ):
+            instance.assignee_id = validated_data.pop('assignee_id')
+            instance.assignee_updated_date = timezone.now()
+
+        labels = validated_data.get('label_set', [])
         LabelSerializer.update_labels(labels, parent_instance=instance)
 
         # update source and target storages
