@@ -7541,6 +7541,10 @@ components:
           allOf:
           - $ref: '#/components/schemas/Storage'
           nullable: true
+        assignee_updated_date:
+          type: string
+          format: date-time
+          nullable: true
       required:
       - issues
       - labels
@@ -8999,6 +9003,10 @@ components:
           $ref: '#/components/schemas/TasksSummary'
         labels:
           $ref: '#/components/schemas/LabelsSummary'
+        assignee_updated_date:
+          type: string
+          format: date-time
+          nullable: true
       required:
       - labels
       - tasks
@@ -9096,6 +9104,11 @@ components:
           type: string
           format: date-time
           readOnly: true
+        assignee:
+          allOf:
+          - $ref: '#/components/schemas/BasicUser'
+          readOnly: true
+          nullable: true
       required:
       - summary
       - target
@@ -9761,6 +9774,10 @@ components:
           $ref: '#/components/schemas/JobsSummary'
         labels:
           $ref: '#/components/schemas/LabelsSummary'
+        assignee_updated_date:
+          type: string
+          format: date-time
+          nullable: true
       required:
       - jobs
       - labels

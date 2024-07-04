@@ -740,13 +740,14 @@ class JobWriteSerializer(WriteOnceMixin, serializers.ModelSerializer):
             raise serializers.ValidationError(f"Unexpected job type '{validated_data['type']}'")
 
         validated_data['segment'] = segment
+        validated_data["assignee_id"] = validated_data.pop("assignee", None)
 
         try:
             job = super().create(validated_data)
         except models.TaskGroundTruthJobsLimitError as ex:
             raise serializers.ValidationError(ex.message) from ex
 
-        if validated_data.get("assignee"):
+        if validated_data.get("assignee_id"):
             job.assignee_updated_date = job.updated_date
             job.save(update_fields=["assignee_updated_date"])
 
@@ -768,9 +769,11 @@ class JobWriteSerializer(WriteOnceMixin, serializers.ModelSerializer):
         if state != instance.state:
             validated_data['state'] = state
 
-        if "assignee" in validated_data and validated_data["assignee"] != instance.assignee_id:
-            instance.assignee_id = validated_data.pop('assignee')
-            instance.assignee_updated_date = timezone.now()
+        if "assignee" in validated_data and (
+            (assignee_id := validated_data.pop("assignee")) != instance.assignee_id
+        ):
+            validated_data["assignee_id"] = assignee_id
+            validated_data["assignee_updated_date"] = timezone.now()
 
         instance = super().update(instance, validated_data)
         return instance
