@@ -47,7 +47,7 @@ export default class Project {
                 convMaskToPoly?: boolean,
                 updateStatusCallback?: (s: string, n: number) => void,
             },
-        ) => Promise<void>;
+        ) => Promise<string>;
     };
 
     constructor(initialData: Readonly<SerializedProject & { labels?: SerializedLabel[] }>) {
@@ -246,7 +246,7 @@ export default class Project {
         return result;
     }
 
-    static async restore(storage: Storage, file: File | string): Promise<Project> {
+    static async restore(storage: Storage, file: File | string): Promise<string> {
         const result = await PluginRegistry.apiWrapper.call(this, Project.restore, storage, file);
         return result;
     }

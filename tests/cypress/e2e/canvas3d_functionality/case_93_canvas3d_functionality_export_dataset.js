@@ -36,7 +36,10 @@ context('Canvas 3D functionality. Export as a dataset.', () => {
                 format: dumpTypePC,
             };
             cy.exportJob(exportDatasetPCFormat);
-            cy.waitForDownload();
+            cy.downloadExport().then((file) => {
+                cy.verifyDownload(file);
+            });
+            cy.goBack();
         });
 
         it('Export as a dataset with "Velodyne Points" format.', () => {
@@ -46,7 +49,10 @@ context('Canvas 3D functionality. Export as a dataset.', () => {
                 format: dumpTypeVC,
             };
             cy.exportJob(exportDatasetVCFormat);
-            cy.waitForDownload();
+            cy.downloadExport().then((file) => {
+                cy.verifyDownload(file);
+            });
+            cy.goBack();
         });
 
         it('Export as a dataset with renaming the archive.', () => {
@@ -57,7 +63,10 @@ context('Canvas 3D functionality. Export as a dataset.', () => {
                 archiveCustomName: 'job_export_3d_dataset_custome_name_vc_format',
             };
             cy.exportJob(exportDatasetVCFormatRenameArchive);
-            cy.waitForDownload();
+            cy.downloadExport().then((file) => {
+                cy.verifyDownload(file);
+            });
+            cy.goBack();
             cy.removeAnnotations();
             cy.saveJob('PUT');
         });
