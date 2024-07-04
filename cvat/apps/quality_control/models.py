@@ -12,7 +12,7 @@ from django.core.exceptions import ValidationError
 from django.db import models
 from django.forms.models import model_to_dict
 
-from cvat.apps.engine.models import Job, ShapeType, Task
+from cvat.apps.engine.models import Job, ShapeType, Task, User
 
 
 class AnnotationConflictType(str, Enum):
@@ -87,7 +87,7 @@ class QualityReport(models.Model):
     gt_last_updated = models.DateTimeField()
 
     assignee = models.ForeignKey(
-        Job, on_delete=models.SET_NULL, related_name="quality_report", null=True, blank=True
+        User, on_delete=models.SET_NULL, related_name="quality_report", null=True, blank=True
     )
 
     data = models.JSONField()
