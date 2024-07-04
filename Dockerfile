@@ -183,7 +183,9 @@ RUN if [ "${CVAT_DEBUG_ENABLED}" = 'yes' ]; then \
     fi
 
 # Removing pip due to security reasons. See: https://scout.docker.com/vulnerabilities/id/CVE-2018-20225
-RUN /bin/bash -c "source /opt/venv/bin/activate && pip uninstall pip -y"
+# The vulnerability is dubious and we don't use pip at runtime, but some vulnerability scanners mark it as a high vulnerability,
+# and it was decided to remove pip from the final image
+RUN python -m pip uninstall -y pip
 
 # Install and initialize CVAT, copy all necessary files
 COPY cvat/nginx.conf /etc/nginx/nginx.conf
