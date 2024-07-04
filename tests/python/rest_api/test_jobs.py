@@ -1230,7 +1230,7 @@ class TestPatchJob:
                     DeepDiff(
                         expected_data(jid, assignee),
                         json.loads(response.data),
-                        exclude_paths="root['updated_date']",
+                        exclude_paths=["root['updated_date']", "root['assignee_updated_date']"],
                         ignore_order=True,
                     )
                     == {}
