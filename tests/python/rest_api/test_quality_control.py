@@ -1,4 +1,4 @@
-# Copyright (C) 2023 CVAT.ai Corporation
+# Copyright (C) 2023-2024 CVAT.ai Corporation
 #
 # SPDX-License-Identifier: MIT
 
@@ -452,15 +452,14 @@ class TestPostQualityReports(_PermissionTestBase):
             and j["stage"] == "acceptance"
             and j["state"] == "completed"
         )
-        normal_job = next(
-            j
-            for j in jobs
-            if j["type"] == "annotation"
-        )
+        normal_job = next(j for j in jobs if j["type"] == "annotation")
         task_id = gt_job["task_id"]
 
         with make_api_client(admin_user) as api_client:
-            api_client.jobs_api.partial_update(normal_job["id"], patched_job_write_request={"assignee": users_by_name[admin_user]["id"]})
+            api_client.jobs_api.partial_update(
+                normal_job["id"],
+                patched_job_write_request={"assignee": users_by_name[admin_user]["id"]},
+            )
 
         report = self.create_quality_report(admin_user, task_id)
         assert models.QualityReport._from_openapi_data(**report)
