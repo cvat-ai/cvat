@@ -1,10 +1,14 @@
+# Copyright (C) 2024 CVAT.ai Corporation
+#
+# SPDX-License-Identifier: MIT
+
 from typing import List, Dict
 import datumaro as dm
 import django_rq
 from django.conf import settings
 from datumaro.components.operations import IntersectMerge
 from cvat.apps.quality_control.quality_reports import JobDataProvider
-from cvat.apps.engine.models import Job, JobType
+from cvat.apps.engine.models import Task, Job, JobType
 from cvat.apps.dataset_manager.bindings import import_dm_annotations
 from rest_framework import status
 from rest_framework.response import Response
@@ -14,7 +18,8 @@ from cvat.apps.engine.serializers import RqIdSerializer
 from django.utils import timezone
 from django.db import transaction
 
-def get_consensus_jobs(task_id: int):
+
+def get_consensus_jobs(task_id: int) -> Dict[int, List[int]]:
     jobs = {} # parent_job_id -> [consensus_job_id]
     for job in Job.objects.select_related("segment").filter(segment__task_id=task_id, type=JobType.ANNOTATION.value).order_by('id'):
         if job.parent_job_id is not None:
@@ -23,12 +28,12 @@ def get_consensus_jobs(task_id: int):
             jobs[job.parent_job_id].append(job.id)
     return jobs
 
-def get_annotations(job_id: int):
+def get_annotations(job_id: int) -> dm.Dataset:
     return JobDataProvider(job_id).dm_dataset
 
 
 @transaction.atomic
-def _merge_consensus_jobs(task_id: int):
+def _merge_consensus_jobs(task_id: int) -> None:
     jobs = get_consensus_jobs(task_id)
     merger = IntersectMerge()
 
@@ -61,11 +66,11 @@ def _merge_consensus_jobs(task_id: int):
         return 201
 
 
-def merge_task(task, request):
+def merge_task(task: Task, request) -> Response:
     queue_name=settings.CVAT_QUEUES.CONSENSUS.value
     queue = django_rq.get_queue(queue_name)
     # so a user doesn't create requests to merge same task multiple times
-    rq_id = rq_id = request.data.get('rq_id', f"merge_consensus:task.id{task.id}-by-{request.user}")
+    rq_id = request.data.get('rq_id', f"merge_consensus:task.id{task.id}-by-{request.user}")
     rq_job = queue.fetch_job(rq_id)
     user_id = request.user.id
     last_instance_update_time = timezone.localtime(task.updated_date)
