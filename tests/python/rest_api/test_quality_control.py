@@ -444,6 +444,27 @@ class TestPostQualityReports(_PermissionTestBase):
         report = self.create_quality_report(admin_user, task_id)
         assert models.QualityReport._from_openapi_data(**report)
 
+    def test_can_create_report_with_job_assignees(self, admin_user, jobs, users_by_name):
+        gt_job = next(
+            j
+            for j in jobs
+            if j["type"] == "ground_truth"
+            and j["stage"] == "acceptance"
+            and j["state"] == "completed"
+        )
+        normal_job = next(
+            j
+            for j in jobs
+            if j["type"] == "annotation"
+        )
+        task_id = gt_job["task_id"]
+
+        with make_api_client(admin_user) as api_client:
+            api_client.jobs_api.partial_update(normal_job["id"], patched_job_write_request={"assignee": users_by_name[admin_user]["id"]})
+
+        report = self.create_quality_report(admin_user, task_id)
+        assert models.QualityReport._from_openapi_data(**report)
+
     def test_cannot_create_report_without_gt_job(self, admin_user, tasks):
         task_id = next(t["id"] for t in tasks if t["jobs"]["count"] == 1)
 
