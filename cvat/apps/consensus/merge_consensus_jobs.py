@@ -40,12 +40,7 @@ def _merge_consensus_jobs(task_id: int) -> None:
     for parent_job_id, job_ids in jobs.items():
         consensus_dataset = list(map(get_annotations, job_ids))
 
-        merged_dataset: dm.Dataset = merger(consensus_dataset)
-
-        # check if the merged dataset has annotations
-        for item in merged_dataset:
-            if not item.annotations:
-                return 400
+        merged_dataset = merger(consensus_dataset)
 
         # delete the existing annotations in the job
         patch_job_data(parent_job_id, None, PatchAction.DELETE)
@@ -61,7 +56,6 @@ def _merge_consensus_jobs(task_id: int) -> None:
 
         # updates the annotations in the job
         patch_job_data(parent_job_id, parent_job.job_data.data.serialize(), PatchAction.UPDATE)
-        return 201
 
 
 def merge_task(task: Task, request) -> Response:
@@ -76,7 +70,7 @@ def merge_task(task: Task, request) -> Response:
         if rq_job.is_finished:
             # returned_data = rq_job.return_value()
             rq_job.delete()
-            return Response(status=status.HTTP_201_CREATED) if returned_data == 201 else Response(status=status.HTTP_400_BAD_REQUEST)
+            return Response(status=status.HTTP_201_CREATED) #if returned_data == 201 else Response(status=status.HTTP_400_BAD_REQUEST)
         elif rq_job.is_failed:
             exc_info = process_failed_job(rq_job)
             return Response(data=exc_info,
