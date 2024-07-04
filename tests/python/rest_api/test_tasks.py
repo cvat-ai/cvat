@@ -800,15 +800,15 @@ class TestPostTaskData:
             (task, response) = api_client.tasks_api.create(spec, **kwargs)
             assert response.status == HTTPStatus.CREATED
 
-            (_, response) = api_client.tasks_api.create_data(
+            (result, response) = api_client.tasks_api.create_data(
                 task.id, data_request=deepcopy(data), _content_type="application/json", **kwargs
             )
             assert response.status == HTTPStatus.ACCEPTED
 
-            status = wait_until_task_is_created(api_client.tasks_api, task.id)
-            assert status.state.value == "Failed"
+            request_details = wait_until_task_is_created(api_client.requests_api, result.rq_id)
+            assert request_details.status.value == "failed"
 
-        return status
+        return request_details
 
     def test_can_create_task_with_defined_start_and_stop_frames(self):
         task_spec = {
@@ -1678,8 +1678,8 @@ class TestPostTaskData:
                 assert response.status == HTTPStatus.OK
                 assert task.size == task_size
         else:
-            status = self._test_cannot_create_task(self._USERNAME, task_spec, data_spec)
-            assert "No media data found" in status.message
+            rq_job_details = self._test_cannot_create_task(self._USERNAME, task_spec, data_spec)
+            assert "No media data found" in rq_job_details.message
 
     @pytest.mark.with_external_services
     @pytest.mark.parametrize("use_manifest", [True, False])

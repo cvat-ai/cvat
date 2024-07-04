@@ -35,6 +35,7 @@ from cvat.apps.engine.frame_provider import FrameProvider
 from cvat.apps.engine.models import (AttributeSpec, AttributeType, Data, DimensionType, Job,
                                      JobType, Label, LabelType, Project, SegmentType, ShapeType,
                                      Task)
+from cvat.apps.engine.rq_job_handler import RQJobMetaField
 
 from .annotation import AnnotationIR, AnnotationManager, TrackManager
 from .formats.transformations import MaskConverter, EllipsesToMasks
@@ -2241,8 +2242,8 @@ def load_dataset_data(project_annotation, dataset: dm.Dataset, project_data):
                 raise CvatImportError(f'Target project does not have label with name "{label.name}"')
     for subset_id, subset in enumerate(dataset.subsets().values()):
         job = rq.get_current_job()
-        job.meta['status'] = 'Task from dataset is being created...'
-        job.meta['progress'] = (subset_id + job.meta.get('task_progress', 0.)) / len(dataset.subsets().keys())
+        job.meta[RQJobMetaField.STATUS] = 'Task from dataset is being created...'
+        job.meta[RQJobMetaField.PROGRESS] = (subset_id + job.meta.get(RQJobMetaField.TASK_PROGRESS, 0.)) / len(dataset.subsets().keys())
         job.save_meta()
 
         task_fields = {

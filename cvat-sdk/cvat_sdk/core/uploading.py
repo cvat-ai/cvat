@@ -7,7 +7,7 @@ from __future__ import annotations
 import json
 import os
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, ContextManager, Dict, List, Optional, Sequence, Tuple
+from typing import TYPE_CHECKING, Any, ContextManager, Dict, List, Optional, Tuple
 
 import requests
 import urllib3
@@ -199,27 +199,6 @@ class Uploader:
             total=total_size, desc="Uploading data", unit_scale=True, unit="B", unit_divisor=1024
         )
 
-    def _wait_for_completion(
-        self,
-        url: str,
-        *,
-        success_status: int,
-        status_check_period: Optional[int] = None,
-        query_params: Optional[Dict[str, Any]] = None,
-        post_params: Optional[Dict[str, Any]] = None,
-        method: str = "POST",
-        positive_statuses: Optional[Sequence[int]] = None,
-    ) -> urllib3.HTTPResponse:
-        return self._client.wait_for_completion(
-            url,
-            success_status=success_status,
-            status_check_period=status_check_period,
-            query_params=query_params,
-            post_params=post_params,
-            method=method,
-            positive_statuses=positive_statuses,
-        )
-
     @staticmethod
     def _make_tus_uploader(api_client: ApiClient, url: str, **kwargs):
         # Add headers required by CVAT server
@@ -289,23 +268,14 @@ class AnnotationUploader(Uploader):
 
         rq_id = json.loads(response.data).get("rq_id")
         assert rq_id, "The rq_id was not found in the response"
-        params["rq_id"] = rq_id
 
-        self._wait_for_completion(
-            url,
-            success_status=201,
-            positive_statuses=[202],
-            status_check_period=status_check_period,
-            query_params=params,
-            method="PUT",
-        )
+        self._client.wait_for_completion(rq_id, status_check_period=status_check_period)
 
 
 class DatasetUploader(Uploader):
     def upload_file_and_wait(
         self,
         upload_endpoint: Endpoint,
-        retrieve_endpoint: Endpoint,
         filename: Path,
         format_name: str,
         *,
@@ -321,19 +291,7 @@ class DatasetUploader(Uploader):
         rq_id = json.loads(response.data).get("rq_id")
         assert rq_id, "The rq_id was not found in the response"
 
-        url = self._client.api_map.make_endpoint_url(retrieve_endpoint.path, kwsub=url_params)
-        params = {
-            "action": "import_status",
-            "rq_id": rq_id,
-        }
-        self._wait_for_completion(
-            url,
-            success_status=201,
-            positive_statuses=[202],
-            status_check_period=status_check_period,
-            query_params=params,
-            method="GET",
-        )
+        self._client.wait_for_completion(rq_id, status_check_period=status_check_period)
 
 
 class DataUploader(Uploader):
@@ -390,7 +348,7 @@ class DataUploader(Uploader):
                     logger=self._client.logger.debug,
                 )
 
-        self._tus_finish_upload(url, fields=kwargs)
+        return self._tus_finish_upload(url, fields=kwargs)
 
     def _split_files_by_requests(
         self, filenames: List[Path]

@@ -139,7 +139,7 @@ context('Object make a copy.', () => {
             const coordY = 400;
             for (let id = 1; id < countObject; id++) {
                 // Point doesn't have a context menu
-                cy.get(`#cvat-objects-sidebar-state-item-${id}`).trigger('mouseover');
+                cy.get(`#cvat-objects-sidebar-state-item-${id}`).click();
                 cy.get(`#cvat_canvas_shape_${id}`).should('have.class', 'cvat_canvas_shape_activated');
                 cy.get(`#cvat_canvas_shape_${id}`).rightclick({ force: true });
                 cy.get('.cvat-canvas-context-menu').should('be.visible');
