@@ -1,8 +1,11 @@
+import textwrap
+
+from django.db import IntegrityError, models, transaction
 from rest_framework import serializers
+
 from cvat.apps.consensus.models import ConsensusSettings
 from cvat.apps.engine.models import Task
-from django.db import IntegrityError, models, transaction
-import textwrap
+
 
 class ConsensusSettingsSerializer(serializers.ModelSerializer):
     class Meta:
@@ -38,9 +41,13 @@ class ConsensusSettingsSerializer(serializers.ModelSerializer):
         for k, v in attrs.items():
             if k.endswith("_threshold"):
                 if not 0 <= v <= 1:
-                    raise serializers.ValidationError(f"{k} must be in the range [0; 1]")
+                    raise serializers.ValidationError(
+                        f"{k} must be in the range [0; 1]"
+                    )
             elif k == "quorum":
                 if not 0 <= v <= 10:
-                    raise serializers.ValidationError(f"{k} must be in the range [0; 10]")
+                    raise serializers.ValidationError(
+                        f"{k} must be in the range [0; 10]"
+                    )
 
         return super().validate(attrs)

@@ -9,7 +9,9 @@ from cvat.apps.consensus import views
 
 router = routers.DefaultRouter(trailing_slash=False)
 # router.register("reports", views.ConsensusReportViewSet, basename="consensus_reports")
-router.register("settings", views.ConsensusSettingsViewSet, basename="consensus_settings")
+router.register(
+    "settings", views.ConsensusSettingsViewSet, basename="consensus_settings"
+)
 
 urlpatterns = [
     # entry point for API

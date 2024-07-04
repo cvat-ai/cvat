@@ -10,7 +10,8 @@ from rest_framework.exceptions import ValidationError
 
 from cvat.apps.engine.models import Task
 from cvat.apps.engine.permissions import TaskPermission
-from cvat.apps.iam.permissions import OpenPolicyAgentPermission, StrEnum, get_iam_context
+from cvat.apps.iam.permissions import (OpenPolicyAgentPermission, StrEnum,
+                                       get_iam_context)
 
 from .models import ConsensusSettings
 
@@ -44,7 +45,11 @@ class ConsensusSettingPermission(OpenPolicyAgentPermission):
                     # This component doesn't define its own rules in this case
                     permissions.append(
                         TaskPermission.create_base_perm(
-                            request, view, iam_context=iam_context, scope=task_scope, obj=obj.task
+                            request,
+                            view,
+                            iam_context=iam_context,
+                            scope=task_scope,
+                            obj=obj.task,
                         )
                     )
                 elif scope == cls.Scopes.LIST:
@@ -59,7 +64,9 @@ class ConsensusSettingPermission(OpenPolicyAgentPermission):
 
                     permissions.append(cls.create_scope_list(request, iam_context))
                 else:
-                    permissions.append(cls.create_base_perm(request, view, scope, iam_context, obj))
+                    permissions.append(
+                        cls.create_base_perm(request, view, scope, iam_context, obj)
+                    )
 
         return permissions
 

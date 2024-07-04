@@ -7,49 +7,32 @@ import textwrap
 from django.db.models import Q
 from django.http import HttpResponse
 from drf_spectacular.types import OpenApiTypes
-from drf_spectacular.utils import (
-    OpenApiParameter,
-    OpenApiResponse,
-    extend_schema,
-    extend_schema_view,
-)
+from drf_spectacular.utils import (OpenApiParameter, OpenApiResponse,
+                                   extend_schema, extend_schema_view)
 from rest_framework import mixins, status, viewsets
 from rest_framework.decorators import action
 from rest_framework.exceptions import NotFound, ValidationError
 from rest_framework.response import Response
 
+from cvat.apps.consensus.models import ConsensusSettings
+from cvat.apps.consensus.permissions import ConsensusSettingPermission
+from cvat.apps.consensus.serializers import ConsensusSettingsSerializer
 from cvat.apps.engine.mixins import PartialUpdateModelMixin
 from cvat.apps.engine.models import Task
 from cvat.apps.engine.serializers import RqIdSerializer
 from cvat.apps.engine.utils import get_server_url
 from cvat.apps.quality_control import quality_reports as qc
-from cvat.apps.quality_control.models import (
-    AnnotationConflict,
-    QualityReport,
-    QualityReportTarget,
-    QualitySettings,
-)
+from cvat.apps.quality_control.models import (AnnotationConflict,
+                                              QualityReport,
+                                              QualityReportTarget,
+                                              QualitySettings)
 from cvat.apps.quality_control.permissions import (
-    AnnotationConflictPermission,
-    QualityReportPermission,
-    QualitySettingPermission,
-)
+    AnnotationConflictPermission, QualityReportPermission,
+    QualitySettingPermission)
 from cvat.apps.quality_control.serializers import (
-    AnnotationConflictSerializer,
-    QualityReportCreateSerializer,
-    QualityReportSerializer,
-    QualitySettingsSerializer,
-)
+    AnnotationConflictSerializer, QualityReportCreateSerializer,
+    QualityReportSerializer, QualitySettingsSerializer)
 
-from cvat.apps.consensus.serializers import (
-    ConsensusSettingsSerializer
-)
-from cvat.apps.consensus.models import (
-    ConsensusSettings
-)
-from cvat.apps.consensus.permissions import (
-    ConsensusSettingPermission
-)
 """
 engine> views.py> TaskViewSet
 
@@ -112,7 +95,9 @@ class ConsensusSettingsViewSet(
     mixins.RetrieveModelMixin,
     PartialUpdateModelMixin,
 ):
-    queryset = ConsensusSettings.objects.select_related("task", "task__organization").all()
+    queryset = ConsensusSettings.objects.select_related(
+        "task", "task__organization"
+    ).all()
 
     iam_organization_field = "task__organization"
 
