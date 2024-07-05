@@ -3,7 +3,9 @@
 //
 // SPDX-License-Identifier: MIT
 
-import { ActionUnion, createAction, ThunkAction } from 'utils/redux';
+import {
+    ActionUnion, createAction, ThunkAction, ThunkDispatch,
+} from 'utils/redux';
 import { getCore, Job } from 'cvat-core-wrapper';
 import { JobsQuery } from 'reducers';
 import { filterNull } from 'utils/filter-null';
@@ -105,18 +107,19 @@ export const createJobAsync = (data: JobData): ThunkAction => async (dispatch) =
     }
 };
 
-export function updateJobAsync(jobInstance: Job): ThunkAction<Promise<boolean>> {
-    return async (dispatch): Promise<boolean> => {
+export function updateJobAsync(
+    jobInstance: Job,
+    fields: Parameters<Job['save']>[0],
+): ThunkAction<Promise<void>> {
+    return async (dispatch: ThunkDispatch): Promise<void> => {
         try {
             dispatch(jobsActions.updateJob());
-            const updated = await jobInstance.save();
+            const updated = await jobInstance.save(fields);
             dispatch(jobsActions.updateJobSuccess(updated));
         } catch (error) {
             dispatch(jobsActions.updateJobFailed(jobInstance.id, error));
-            return false;
+            throw error;
         }
-
-        return true;
     };
 }
 

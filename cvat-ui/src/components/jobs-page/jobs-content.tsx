@@ -12,7 +12,7 @@ import dimensions from 'utils/dimensions';
 import JobCard from './job-card';
 
 interface Props {
-    onJobUpdate(job: Job): void;
+    onJobUpdate(job: Job, data: Parameters<Job['save']>[0]): void;
 }
 
 function JobsContentComponent(props: Props): JSX.Element {

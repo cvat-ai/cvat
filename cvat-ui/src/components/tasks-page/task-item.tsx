@@ -9,21 +9,23 @@ import { withRouter } from 'react-router-dom';
 import Text from 'antd/lib/typography/Text';
 import { Row, Col } from 'antd/lib/grid';
 import Button from 'antd/lib/button';
-import { LoadingOutlined, MoreOutlined } from '@ant-design/icons';
+import { MoreOutlined } from '@ant-design/icons';
 import Dropdown from 'antd/lib/dropdown';
 import Progress from 'antd/lib/progress';
 import Badge from 'antd/lib/badge';
 import moment from 'moment';
-import { Task, RQStatus } from 'cvat-core-wrapper';
+import { Task, RQStatus, Request } from 'cvat-core-wrapper';
 import ActionsMenuContainer from 'containers/actions-menu/actions-menu';
 import Preview from 'components/common/preview';
 import { ActiveInference, PluginComponent } from 'reducers';
+import StatusMessage from 'components/requests-page/request-status';
 import AutomaticAnnotationProgress from './automatic-annotation-progress';
 
 export interface TaskItemProps {
     taskInstance: any;
     deleted: boolean;
     activeInference: ActiveInference | null;
+    activeRequest: Request | null;
     ribbonPlugins: PluginComponent[];
     cancelAutoAnnotation(): void;
     updateTaskInState(task: Task): void;
@@ -54,21 +56,34 @@ class TaskItemComponent extends React.PureComponent<TaskItemProps & RouteCompone
     }
 
     public componentDidMount(): void {
-        const { taskInstance, updateTaskInState } = this.props;
+        const { taskInstance, updateTaskInState, activeRequest } = this.props;
         const { importingState } = this.state;
 
-        if (importingState !== null) {
-            taskInstance.listenToCreate((state: RQStatus, progress: number, message: string) => {
-                if (!this.#isUnmounted) {
-                    this.setState({
-                        importingState: {
-                            message,
-                            progress: Math.floor(progress * 100),
-                            state,
-                        },
-                    });
-                }
-            }).then((createdTask: Task) => {
+        if (importingState !== null && activeRequest !== null) {
+            if (!this.#isUnmounted) {
+                this.setState({
+                    importingState: {
+                        message: activeRequest.message,
+                        progress: Math.floor(activeRequest.progress * 100),
+                        state: activeRequest.status,
+                    },
+                });
+            }
+            taskInstance.listenToCreate(activeRequest.id, {
+                callback: (request: Request) => {
+                    if (!this.#isUnmounted) {
+                        this.setState({
+                            importingState: {
+                                message: request.message,
+                                progress: Math.floor(request.progress * 100),
+                                state: request.status,
+                            },
+                        });
+                    }
+                },
+                initialRequest: activeRequest,
+            },
+            ).then((createdTask: Task) => {
                 if (!this.#isUnmounted) {
                     this.setState({ importingState: null });
 
@@ -84,7 +99,7 @@ class TaskItemComponent extends React.PureComponent<TaskItemProps & RouteCompone
                         }
                     }, 1000);
                 }
-            });
+            }).catch(() => {});
         }
     }
 
@@ -140,30 +155,22 @@ class TaskItemComponent extends React.PureComponent<TaskItemProps & RouteCompone
         const { importingState } = this.state;
 
         if (importingState) {
-            let textType: 'success' | 'danger' = 'success';
-            if (!!importingState.state && [RQStatus.FAILED, RQStatus.UNKNOWN].includes(importingState.state)) {
-                textType = 'danger';
-            }
-
             return (
                 <Col span={7}>
                     <Row>
                         <Col span={24} className='cvat-task-item-progress-wrapper'>
                             <div>
-                                <Text
-                                    strong
-                                    type={[RQStatus.QUEUED, null].includes(importingState.state) ? undefined : textType}
-                                >
-                                    {`\u2022 ${importingState.message || importingState.state}`}
-                                    { !!importingState.state && [RQStatus.QUEUED, RQStatus.STARTED]
-                                        .includes(importingState.state) && <LoadingOutlined /> }
-                                </Text>
+                                <StatusMessage status={importingState.state} message={importingState.message} />
                             </div>
-                            <Progress
-                                percent={importingState.progress}
-                                strokeColor='#1890FF'
-                                size='small'
-                            />
+                            {
+                                importingState.state !== RQStatus.FAILED ? (
+                                    <Progress
+                                        percent={importingState.progress}
+                                        strokeColor='#1890FF'
+                                        size='small'
+                                    />
+                                ) : null
+                            }
                         </Col>
                     </Row>
                 </Col>

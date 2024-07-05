@@ -367,7 +367,7 @@
             }
           },
           "queryType": "sql",
-          "rawSql": "SELECT\r\n  user_id as User,\r\n  project_id as Project,\r\n  task_id as Task,\r\n  job_id as Job, sum(JSONExtractUInt(payload, 'working_time')) / 1000 / 3600 as \"Working time(h)\",\r\n  count() as Activity\r\nFROM events\r\nWHERE JSONHas(payload, 'working_time')\r\n  AND $__timeFilter(timestamp)\r\n  AND user_id IN (${users})\r\n  AND (-1 IN (${projects}) OR project_id IN (${projects}))\r\n  AND task_id IN (${tasks})\r\n  AND job_id IN (${jobs})\r\n  AND source = 'client'\r\nGROUP BY user_id, project_id, task_id, job_id",
+          "rawSql": "SELECT\r\n  user_id as User,\r\n  project_id as Project,\r\n  task_id as Task,\r\n  job_id as Job, sum(JSONExtractUInt(payload, 'working_time')) / 1000 / 3600 as \"Working time(h)\",\r\n  count() as Activity\r\nFROM events\r\nWHERE JSONHas(payload, 'working_time')\r\n  AND $__timeFilter(timestamp)\r\n  AND user_id IN (${users})\r\n  AND (-1 IN (${projects}) OR project_id IN (${projects}))\r\n  AND task_id IN (${tasks})\r\n  AND job_id IN (${jobs})\r\nGROUP BY user_id, project_id, task_id, job_id",
           "refId": "A"
         }
       ],

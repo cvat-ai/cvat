@@ -6,7 +6,7 @@ import React, { useState } from 'react';
 import { useHistory } from 'react-router';
 import { Row, Col } from 'antd/lib/grid';
 import { DownloadOutlined, QuestionCircleOutlined } from '@ant-design/icons';
-import { ColumnFilterItem } from 'antd/lib/table/interface';
+import { ColumnFilterItem, Key } from 'antd/lib/table/interface';
 import Table from 'antd/lib/table';
 import Button from 'antd/lib/button';
 import Text from 'antd/lib/typography/Text';
@@ -121,7 +121,7 @@ function JobListComponent(props: Props): JSX.Element {
                 { text: 'acceptance', value: 'acceptance' },
                 { text: 'published', value: 'published' },
             ],
-            onFilter: (value: string | number | boolean, record: any) => record.stage.stage === value,
+            onFilter: (value: boolean | Key, record: any) => record.stage.stage === value,
         },
         {
             title: 'Assignee',
@@ -133,7 +133,7 @@ function JobListComponent(props: Props): JSX.Element {
             ),
             sorter: sorter('assignee.assignee.username'),
             filters: collectUsers('assignee'),
-            onFilter: (value: string | number | boolean, record: any) => (
+            onFilter: (value: boolean | Key, record: any) => (
                 record.assignee.assignee?.username || false
             ) === value,
         },
@@ -142,7 +142,7 @@ function JobListComponent(props: Props): JSX.Element {
             dataIndex: 'frame_intersection',
             key: 'frame_intersection',
             className: 'cvat-job-item-frame-intersection',
-            sorter: sorter('frame_intersection'),
+            sorter: sorter('frame_intersection.summary.frameCount'),
             render: (report?: QualityReport): JSX.Element => {
                 const frames = report?.summary.frameCount;
                 const frameSharePercent = report?.summary?.frameSharePercent;

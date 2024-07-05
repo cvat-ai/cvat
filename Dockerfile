@@ -83,7 +83,7 @@ RUN --mount=type=cache,target=/root/.cache/pip/http-v2 \
     -r /tmp/cvat/requirements/${CVAT_CONFIGURATION}.txt \
     -w /tmp/wheelhouse
 
-FROM golang:1.22.3 AS build-smokescreen
+FROM golang:1.22.4 AS build-smokescreen
 
 RUN git clone --depth=1 https://github.com/stripe/smokescreen.git
 RUN cd smokescreen && git checkout eb1ac09 && go build -o /tmp/smokescreen
@@ -181,6 +181,11 @@ ARG CVAT_DEBUG_ENABLED
 RUN if [ "${CVAT_DEBUG_ENABLED}" = 'yes' ]; then \
         python3 -m pip install --no-cache-dir debugpy; \
     fi
+
+# Removing pip due to security reasons. See: https://scout.docker.com/vulnerabilities/id/CVE-2018-20225
+# The vulnerability is dubious and we don't use pip at runtime, but some vulnerability scanners mark it as a high vulnerability,
+# and it was decided to remove pip from the final image
+RUN python -m pip uninstall -y pip
 
 # Install and initialize CVAT, copy all necessary files
 COPY cvat/nginx.conf /etc/nginx/nginx.conf

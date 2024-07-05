@@ -32,7 +32,7 @@ import JobActionsMenu from './job-actions-menu';
 interface Props {
     job: Job;
     task: Task;
-    onJobUpdate: (job: Job) => void;
+    onJobUpdate: (job: Job, fields: Parameters<Job['save']>[0]) => void;
 }
 
 function ReviewSummaryComponent({ jobInstance }: { jobInstance: any }): JSX.Element {
@@ -156,8 +156,7 @@ function JobItem(props: Props): JSX.Element {
                                             value={job.assignee}
                                             onSelect={(user: User | null): void => {
                                                 if (job?.assignee?.id === user?.id) return;
-                                                job.assignee = user;
-                                                onJobUpdate(job);
+                                                onJobUpdate(job, { assignee: user });
                                             }}
                                         />
                                     </Col>
@@ -176,8 +175,7 @@ function JobItem(props: Props): JSX.Element {
                                             className='cvat-job-item-stage'
                                             value={stage}
                                             onChange={(newValue: JobStage) => {
-                                                job.stage = newValue;
-                                                onJobUpdate(job);
+                                                onJobUpdate(job, { stage: newValue });
                                             }}
                                         >
                                             <Select.Option value={JobStage.ANNOTATION}>

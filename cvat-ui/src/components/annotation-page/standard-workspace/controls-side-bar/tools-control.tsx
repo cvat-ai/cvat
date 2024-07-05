@@ -1231,8 +1231,12 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
 
                     try {
                         this.setState({ mode: 'detection', fetching: true });
+
+                        // The function call endpoint doesn't support the cleanup and convMaskToPoly parameters.
+                        const { cleanup, convMaskToPoly, ...restOfBody } = body;
+
                         const result = await core.lambda.call(jobInstance.taskId, model, {
-                            ...body, frame, job: jobInstance.id,
+                            ...restOfBody, frame, job: jobInstance.id,
                         }) as DetectedShapes;
 
                         const states = result.map(
@@ -1307,7 +1311,7 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
                                     });
                                 }
 
-                                if (data.type === 'mask' && data.points && body.convMaskToPoly) {
+                                if (data.type === 'mask' && data.points && convMaskToPoly) {
                                     return new core.classes.ObjectState({
                                         ...objectData,
                                         shapeType: ShapeType.POLYGON,
