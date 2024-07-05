@@ -1,5 +1,5 @@
 // Copyright (C) 2019-2022 Intel Corporation
-// Copyright (C) 2022-2023 CVAT.ai Corporation
+// Copyright (C) 2022-2024 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -110,7 +110,7 @@ const DEFAULT_GOOGLE_CLOUD_STORAGE_LOCATIONS: string[][] = [
 
 const HEALTH_CHECK_RETRIES = 10;
 const HEALTH_CHECK_PERIOD = 3000; // ms
-const HEALTH_CHECK_REQUEST_TIMEOUT = 5000; // ms
+const HEALTH_CHECK_REQUEST_TIMEOUT = 15000; // ms
 
 const CONTROLS_LOGS_INTERVAL = 90000; // 1.5 min in ms
 
@@ -131,6 +131,8 @@ const OPENCV_PATH = '/assets/opencv_4.8.0.js';
 
 const LOCAL_STORAGE_SEEN_GUIDES_MEMORY_LIMIT = 10;
 const LOCAL_STORAGE_LAST_FRAME_MEMORY_LIMIT = 20;
+
+const REQUEST_SUCCESS_NOTIFICATION_DURATION = 5; // seconds
 
 export default {
     UNDEFINED_ATTRIBUTE_VALUE,
@@ -171,4 +173,5 @@ export default {
     OPENCV_PATH,
     LOCAL_STORAGE_SEEN_GUIDES_MEMORY_LIMIT,
     LOCAL_STORAGE_LAST_FRAME_MEMORY_LIMIT,
+    REQUEST_SUCCESS_NOTIFICATION_DURATION,
 };

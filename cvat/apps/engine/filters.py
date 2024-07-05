@@ -3,7 +3,7 @@
 #
 # SPDX-License-Identifier: MIT
 
-from typing import Any, Dict, Iterator, Optional
+from typing import Any, Dict, Tuple, List, Iterator, Optional, Iterable
 from functools import reduce
 import operator
 import json
@@ -16,6 +16,7 @@ from django.db.models import Q
 from django.db.models.query import QuerySet
 from django.utils.translation import gettext_lazy as _
 from django.utils.encoding import force_str
+from django.http import HttpRequest
 from rest_framework import filters
 from rest_framework.compat import coreapi, coreschema
 from rest_framework.exceptions import ValidationError
@@ -78,15 +79,16 @@ class SearchFilter(filters.SearchFilter):
 
 class OrderingFilter(filters.OrderingFilter):
     ordering_param = 'sort'
+    reverse_flag = "-"
 
     def get_ordering(self, request, queryset, view):
         ordering = []
         lookup_fields = self._get_lookup_fields(request, queryset, view)
         for term in super().get_ordering(request, queryset, view):
             flag = ''
-            if term.startswith("-"):
-                flag = '-'
-                term = term[1:]
+            if term.startswith(self.reverse_flag):
+                flag = self.reverse_flag
+                term = term[len(flag):]
             ordering.append(flag + lookup_fields[term])
 
         return ordering
@@ -349,3 +351,186 @@ class SimpleFilter(DjangoFilterBackend):
                 parameter['schema']['enum'] = [c[0] for c in filter_.extra['choices']]
             parameters.append(parameter)
         return parameters
+
+
+class _NestedAttributeHandler:
+    nested_attribute_separator = '.'
+
+    class DotDict(dict):
+        """recursive dot.notation access to dictionary attributes"""
+        __getattr__ = dict.get
+        __setattr__ = dict.__setitem__
+        __delattr__ = dict.__delitem__
+
+        def __init__(self, dct: Dict):
+            for key, value in dct.items():
+                if isinstance(value, dict):
+                    value = self.__class__(value)
+                self[key] = value
+
+    def get_nested_attr(self, obj: Any, nested_attr_path: str) -> Any:
+        result = obj
+        for attribute in nested_attr_path.split(self.nested_attribute_separator):
+            if isinstance(result, dict):
+                result = self.DotDict(result)
+            result = getattr(result, attribute)
+
+        if callable(result):
+            result = result()
+
+        return result
+
+class NonModelSimpleFilter(SimpleFilter, _NestedAttributeHandler):
+    """
+    A simple filter backend for non-model views, useful for small search queries and manually-edited
+    requests.
+
+    Argument types are numbers and strings. The only available check is equality.
+    Operators are not supported (e.g. or, less, greater, not etc.).
+    """
+
+    def get_schema_operation_parameters(self, view):
+        simple_filters = getattr(view, self.filter_fields_attr, None)
+        simple_filters_schema = getattr(view, 'simple_filters_schema', None)
+
+        parameters = []
+        if simple_filters and simple_filters_schema:
+            for filter_name in simple_filters:
+                filter_type, filter_choices = simple_filters_schema[filter_name]
+                parameter = {
+                    'name': filter_name,
+                    'in': 'query',
+                    'description': force_str(self.filter_desc.format_map({
+                        'field_name': filter_name
+                    })),
+                    'schema': {
+                        'type': filter_type
+                    },
+                }
+                if filter_choices:
+                    parameter['schema']['enum'] = [c[0] for c in filter_choices]
+                parameters.append(parameter)
+        return parameters
+
+    def filter_queryset(self, request: HttpRequest, queryset: Iterable, view):
+        filtered_queryset = queryset
+
+        query_params = request.query_params
+        filters_to_use = set(query_params)
+
+        simple_filters = getattr(view, self.filter_fields_attr, None)
+        lookup_fields = self.get_lookup_fields(view)
+
+        if simple_filters and lookup_fields and (intersection := filters_to_use & set(simple_filters)):
+            filtered_queryset = []
+
+            for obj in queryset:
+                fits_filter = False
+                for field in intersection:
+                    query_param = query_params[field]
+
+                    if query_param.isdigit():
+                        query_param = int(query_param)
+
+                    # replace empty string with None
+                    if field == 'org' and not query_param:
+                        query_param = None
+
+                    fits_filter = self.get_nested_attr(obj, lookup_fields[field]) == query_param
+                    if not fits_filter:
+                        break
+
+                if fits_filter:
+                    filtered_queryset.append(obj)
+
+        return filtered_queryset
+
+class NonModelOrderingFilter(OrderingFilter, _NestedAttributeHandler):
+    """Ordering filter for non-model views.
+    This filter backend supports the following syntaxes:
+    ?sort=field
+    ?sort=-field
+    ?sort=field1,field2
+    ?sort=-field1,-field2
+    """
+
+    def get_ordering(self, request, queryset, view) -> Tuple[List[str], bool]:
+        ordering = super().get_ordering(request, queryset, view)
+        result, reverse = [], False
+        for field in ordering:
+            if field.startswith(self.reverse_flag):
+                reverse = True
+                field = field[len(self.reverse_flag):]
+            result.append(field)
+
+        return result, reverse
+
+    def filter_queryset(self, request: HttpRequest, queryset: Iterable, view) -> Iterable:
+        ordering, reverse = self.get_ordering(request, queryset, view)
+
+        if ordering:
+            return sorted(queryset, key=lambda obj: [self.get_nested_attr(obj, field) for field in ordering], reverse=reverse)
+
+        return queryset
+
+
+class NonModelJsonLogicFilter(JsonLogicFilter, _NestedAttributeHandler):
+    filter_description = _(dedent("""
+        JSON Logic filter. This filter can be used to perform complex filtering by grouping rules.\n
+        Details about the syntax used can be found at the link: https://jsonlogic.com/\n
+    """))
+
+    def _apply_filter(self, rules, lookup_fields, obj):
+        op, args = next(iter(rules.items()))
+        if op in ['or', 'and']:
+            return reduce({
+                'or': any,
+                'and': all,
+            }[op], [self._apply_filter(arg, lookup_fields, obj) for arg in args])
+        elif op == '!':
+            return not self._apply_filter(args, lookup_fields, obj)
+        elif op == 'var':
+            var = lookup_fields[args]
+            var_value = self.get_nested_attr(obj, var)
+            return var_value is not None
+        elif op in ['!=', '==', '<', '>', '<=', '>='] and len(args) == 2:
+            var = lookup_fields[args[0]['var']]
+            var_value = self.get_nested_attr(obj, var)
+            return {
+                '!=': operator.ne,
+                '==': operator.eq,
+                '<': operator.lt,
+                '<=': operator.le,
+                '>': operator.gt,
+                '>=': operator.ge,
+            }[op](var_value, args[1])
+        elif op == 'in':
+            if isinstance(args[0], dict):
+                var = lookup_fields[args[0]['var']]
+                var_value = self.get_nested_attr(obj, var)
+                return operator.contains(args[1], var_value)
+            else:
+                var = lookup_fields[args[1]['var']]
+                var_value = self.get_nested_attr(obj, var)
+                return operator.contains(args[0], var_value)
+        elif op == '<=' and len(args) == 3:
+            var = lookup_fields[args[1]['var']]
+            var_value = self.get_nested_attr(obj, var)
+            return var_value >= args[0] and var_value <= args[2]
+        else:
+            raise ValidationError(f'filter: {op} operation with {args} arguments is not implemented')
+
+    def filter_queryset(self, request: HttpRequest, queryset: Iterable, view) -> Iterable:
+        filtered_queryset = queryset
+        json_rules = request.query_params.get(self.filter_param)
+        if json_rules:
+            filtered_queryset = []
+            parsed_rules = self._parse_query(json_rules)
+            lookup_fields = self._get_lookup_fields(view)
+
+            for obj in queryset:
+                fits_filter = self._apply_filter(parsed_rules, lookup_fields, obj)
+                if fits_filter:
+                    filtered_queryset.append(obj)
+
+        return filtered_queryset

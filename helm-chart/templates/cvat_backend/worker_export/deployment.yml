@@ -57,6 +57,7 @@ spec:
           args: ["run", "worker.export"]
           env:
           {{ include "cvat.sharedBackendEnv" . | indent 10 }}
+          {{ include "cvat.sharedClickhouseEnv" . | indent 10 }}
           {{- with concat .Values.cvat.backend.additionalEnv $localValues.additionalEnv }}
           {{- toYaml . | nindent 10 }}
           {{- end }}

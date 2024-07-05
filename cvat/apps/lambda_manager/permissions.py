@@ -19,7 +19,7 @@ class LambdaPermission(OpenPolicyAgentPermission):
     @classmethod
     def create(cls, request, view, obj, iam_context):
         permissions = []
-        if view.basename == 'function' or view.basename == 'request':
+        if view.basename == 'lambda_function' or view.basename == 'lambda_request':
             scopes = cls.get_scopes(request, view, obj)
             for scope in scopes:
                 self = cls.create_base_perm(request, view, scope, iam_context, obj)
@@ -42,13 +42,13 @@ class LambdaPermission(OpenPolicyAgentPermission):
     def get_scopes(request, view, obj):
         Scopes = __class__.Scopes
         return [{
-            ('function', 'list'): Scopes.LIST,
-            ('function', 'retrieve'): Scopes.VIEW,
-            ('function', 'call'): Scopes.CALL_ONLINE,
-            ('request', 'create'): Scopes.CALL_OFFLINE,
-            ('request', 'list'): Scopes.LIST_OFFLINE,
-            ('request', 'retrieve'): Scopes.CALL_OFFLINE,
-            ('request', 'destroy'): Scopes.CALL_OFFLINE,
+            ('lambda_function', 'list'): Scopes.LIST,
+            ('lambda_function', 'retrieve'): Scopes.VIEW,
+            ('lambda_function', 'call'): Scopes.CALL_ONLINE,
+            ('lambda_request', 'create'): Scopes.CALL_OFFLINE,
+            ('lambda_request', 'list'): Scopes.LIST_OFFLINE,
+            ('lambda_request', 'retrieve'): Scopes.CALL_OFFLINE,
+            ('lambda_request', 'destroy'): Scopes.CALL_OFFLINE,
         }.get((view.basename, view.action), None)]
 
     def get_resource(self):

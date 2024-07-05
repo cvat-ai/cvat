@@ -223,7 +223,7 @@ function FiltersModalComponent(): JSX.Element {
 
     const isModalConfirmable = (): boolean => (
         (QbUtils.queryString(immutableTree, config) || '')
-            .trim().length > 0 && QbUtils.isValidTree(immutableTree)
+            .trim().length > 0 && QbUtils.isValidTree(immutableTree, config)
     );
 
     const renderBuilder = (builderProps: any): JSX.Element => (

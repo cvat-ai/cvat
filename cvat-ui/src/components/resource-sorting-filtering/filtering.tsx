@@ -88,7 +88,7 @@ export default function ResourceFilterHOC(
     };
 
     function isValidTree(tree: ImmutableTree): boolean {
-        return (QbUtils.queryString(tree, config) || '').trim().length > 0 && QbUtils.isValidTree(tree);
+        return (QbUtils.queryString(tree, config) || '').trim().length > 0 && QbUtils.isValidTree(tree, config);
     }
 
     function unite(filters: string[]): string {
