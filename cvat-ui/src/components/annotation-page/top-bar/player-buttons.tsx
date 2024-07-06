@@ -24,8 +24,9 @@ import {
     ForwardJumpIcon,
     LastIcon,
 } from 'icons';
-import { ViewType } from 'utils/enums';
-import { useRegisterShortcuts } from 'utils/hooks';
+import { ShortcutScope } from 'utils/enums';
+import { registerComponentShortcuts } from 'actions/shortcuts-actions';
+import { subKeyMap } from 'utils/component-subkeymap';
 
 interface Props {
     playing: boolean;
@@ -53,54 +54,47 @@ const componentShortcuts = {
         name: 'Next frame',
         description: 'Go to the next frame',
         sequences: ['f'],
-        view: ViewType.ALL,
+        scope: ShortcutScope.ALL,
     },
     PREV_FRAME: {
         name: 'Previous frame',
         description: 'Go to the previous frame',
         sequences: ['d'],
-        view: ViewType.ALL,
+        scope: ShortcutScope.ALL,
     },
     FORWARD_FRAME: {
         name: 'Forward frame',
         description: 'Go forward with a step',
         sequences: ['v'],
-        view: ViewType.ALL,
+        scope: ShortcutScope.ALL,
     },
     BACKWARD_FRAME: {
         name: 'Backward frame',
         description: 'Go backward with a step',
         sequences: ['c'],
-        view: ViewType.ALL,
+        scope: ShortcutScope.ALL,
     },
     SEARCH_FORWARD: {
         name: 'Search forward',
         description: 'Search the next frame that satisfies to the filters',
         sequences: ['right'],
-        view: ViewType.ALL,
+        scope: ShortcutScope.ALL,
     },
     SEARCH_BACKWARD: {
         name: 'Search backward',
         description: 'Search the previous frame that satisfies to the filters',
         sequences: ['left'],
-        view: ViewType.ALL,
+        scope: ShortcutScope.ALL,
     },
     PLAY_PAUSE: {
         name: 'Play/pause',
         description: 'Start/stop automatic changing frames',
         sequences: ['space'],
-        view: ViewType.ALL,
-    },
-    FOCUS_INPUT_FRAME: {
-        name: 'Focus input frame',
-        description: 'Focus on the element to change the current frame',
-        sequences: ['`'],
-        displayedSequences: ['~'],
-        view: ViewType.ALL,
+        scope: ShortcutScope.ALL,
     },
 };
 
-useRegisterShortcuts(componentShortcuts);
+registerComponentShortcuts(componentShortcuts);
 
 function PlayerButtons(props: Props): JSX.Element {
     const {
@@ -124,20 +118,7 @@ function PlayerButtons(props: Props): JSX.Element {
         onSearchAnnotations,
     } = props;
 
-    const subKeyMap = {
-        NEXT_FRAME: keyMap.NEXT_FRAME,
-        PREV_FRAME: keyMap.PREV_FRAME,
-        ...(workspace !== Workspace.SINGLE_SHAPE ? {
-            FORWARD_FRAME: keyMap.FORWARD_FRAME,
-            BACKWARD_FRAME: keyMap.BACKWARD_FRAME,
-            SEARCH_FORWARD: keyMap.SEARCH_FORWARD,
-            SEARCH_BACKWARD: keyMap.SEARCH_BACKWARD,
-            PLAY_PAUSE: keyMap.PLAY_PAUSE,
-            FOCUS_INPUT_FRAME: keyMap.FOCUS_INPUT_FRAME,
-        } : {}),
-    };
-
-    const handlers = {
+    const handlers: Partial<Record<keyof typeof componentShortcuts, ((event?: KeyboardEvent) => void)>> = {
         NEXT_FRAME: (event: KeyboardEvent | undefined) => {
             event?.preventDefault();
             onNextFrame();
@@ -214,7 +195,7 @@ function PlayerButtons(props: Props): JSX.Element {
 
     return (
         <Col className='cvat-player-buttons'>
-            <GlobalHotKeys keyMap={subKeyMap} handlers={handlers} />
+            <GlobalHotKeys keyMap={subKeyMap(componentShortcuts, keyMap)} handlers={handlers} />
             <CVATTooltip title='Go to the first frame'>
                 <Icon
                     style={navIconStyle}

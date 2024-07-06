@@ -39,11 +39,12 @@ import ChangePasswordDialog from 'components/change-password-modal/change-passwo
 import CVATTooltip from 'components/common/cvat-tooltip';
 import { switchSettingsModalVisible as switchSettingsModalVisibleAction } from 'actions/settings-actions';
 import { logoutAsync, authActions } from 'actions/auth-actions';
-import { shortcutsActions } from 'actions/shortcuts-actions';
+import { shortcutsActions, registerComponentShortcuts } from 'actions/shortcuts-actions';
 import { AboutState, CombinedState } from 'reducers';
-import { useIsMounted, usePlugins, useRegisterShortcuts } from 'utils/hooks';
+import { useIsMounted, usePlugins } from 'utils/hooks';
 import GlobalHotKeys, { KeyMap } from 'utils/mousetrap-react';
-import { ViewType } from 'utils/enums';
+import { ShortcutScope } from 'utils/enums';
+import { subKeyMap } from 'utils/component-subkeymap';
 import SettingsModal from './settings-modal/settings-modal';
 import OrganizationsSearch from './organizations-search';
 
@@ -78,17 +79,17 @@ const componentShortcuts = {
         name: 'Show shortcuts',
         description: 'Open/hide the list of available shortcuts',
         sequences: ['f1'],
-        view: ViewType.ALL,
+        scope: ShortcutScope.ALL,
     },
     SWITCH_SETTINGS: {
         name: 'Show settings',
         description: 'Open/hide settings dialog',
         sequences: ['f2'],
-        view: ViewType.ALL,
+        scope: ShortcutScope.ALL,
     },
 };
 
-useRegisterShortcuts(componentShortcuts);
+registerComponentShortcuts(componentShortcuts);
 
 function mapStateToProps(state: CombinedState): StateToProps {
     const {
@@ -205,19 +206,14 @@ function HeaderComponent(props: Props): JSX.Element {
     const history = useHistory();
     const location = useLocation();
 
-    const subKeyMap = {
-        SWITCH_SHORTCUTS: keyMap.SWITCH_SHORTCUTS,
-        SWITCH_SETTINGS: keyMap.SWITCH_SETTINGS,
-    };
-
-    const handlers = {
-        SWITCH_SHORTCUTS: (event: KeyboardEvent) => {
+    const handlers: Record<keyof typeof componentShortcuts, (event?: KeyboardEvent) => void> = {
+        SWITCH_SHORTCUTS: (event: KeyboardEvent | undefined) => {
             if (event) event.preventDefault();
             if (!settingsModalVisible) {
                 switchShortcutsModalVisible(!shortcutsModalVisible);
             }
         },
-        SWITCH_SETTINGS: (event: KeyboardEvent) => {
+        SWITCH_SETTINGS: (event: KeyboardEvent | undefined) => {
             if (event) event.preventDefault();
             if (!shortcutsModalVisible) {
                 switchSettingsModalVisible(!settingsModalVisible);
@@ -430,17 +426,17 @@ function HeaderComponent(props: Props): JSX.Element {
         .map(({ component, weight }): typeof menuItems[0] => [component({ targetProps: props }), weight]),
     );
 
-    const getButtonClassName = (value: string): string => {
+    const getButtonClassName = (value: string, highlightable = true): string => {
         // eslint-disable-next-line security/detect-non-literal-regexp
         const regex = new RegExp(`${value}$`);
         const baseClass = `cvat-header-${value}-button cvat-header-button`;
-        return location.pathname.match(regex) ?
+        return highlightable && location.pathname.match(regex) ?
             `${baseClass} cvat-active-header-button` : baseClass;
     };
 
     return (
         <Layout.Header className='cvat-header'>
-            <GlobalHotKeys keyMap={subKeyMap} handlers={handlers} />
+            <GlobalHotKeys keyMap={subKeyMap(componentShortcuts, keyMap)} handlers={handlers} />
             <div className='cvat-left-header'>
                 <Icon className='cvat-logo-icon' component={CVATLogo} />
                 <Button
@@ -491,6 +487,18 @@ function HeaderComponent(props: Props): JSX.Element {
                 >
                     Cloud Storages
                 </Button>
+                <Button
+                    className={getButtonClassName('requests')}
+                    type='link'
+                    value='requests'
+                    href='/requests?page=1'
+                    onClick={(event: React.MouseEvent): void => {
+                        event.preventDefault();
+                        history.push('/requests');
+                    }}
+                >
+                    Requests
+                </Button>
                 {isModelsPluginActive ? (
                     <Button
                         className={getButtonClassName('models')}
@@ -507,7 +515,7 @@ function HeaderComponent(props: Props): JSX.Element {
                 ) : null}
                 {isAnalyticsPluginActive && user.isSuperuser ? (
                     <Button
-                        className={getButtonClassName('analytics')}
+                        className={getButtonClassName('analytics', false)}
                         type='link'
                         href='/analytics'
                         onClick={(event: React.MouseEvent): void => {

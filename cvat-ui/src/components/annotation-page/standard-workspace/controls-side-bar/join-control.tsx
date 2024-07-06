@@ -6,12 +6,14 @@ import React from 'react';
 import Icon from '@ant-design/icons';
 
 import { Canvas } from 'cvat-canvas-wrapper';
-import { ActiveControl } from 'reducers';
+import { ActiveControl, CombinedState } from 'reducers';
 import CVATTooltip from 'components/common/cvat-tooltip';
 import GlobalHotKeys, { KeyMapItem } from 'utils/mousetrap-react';
 import { JoinIcon } from 'icons';
-import { useRegisterShortcuts } from 'utils/hooks';
-import { ViewType } from 'utils/enums';
+import { registerComponentShortcuts } from 'actions/shortcuts-actions';
+import { ShortcutScope } from 'utils/enums';
+import { subKeyMap } from 'utils/component-subkeymap';
+import { useSelector } from 'react-redux';
 
 export interface Props {
     updateActiveControl(activeControl: ActiveControl): void;
@@ -31,11 +33,11 @@ const componentShortcuts = {
         name: 'Join mode',
         description: 'Activate or deactivate a mode where you can join masks',
         sequences: ['j'],
-        view: ViewType.ALL,
+        scope: ShortcutScope.ALL,
     },
 };
 
-useRegisterShortcuts(componentShortcuts);
+registerComponentShortcuts(componentShortcuts);
 
 function JoinControl(props: Props): JSX.Element {
     const {
@@ -45,6 +47,8 @@ function JoinControl(props: Props): JSX.Element {
         disabled,
         shortcuts,
     } = props;
+
+    const { keyMap } = useSelector((state: CombinedState) => state.shortcuts);
 
     const dynamicIconProps =
         activeControl === ActiveControl.JOIN ?
@@ -63,18 +67,20 @@ function JoinControl(props: Props): JSX.Element {
                 },
             };
 
+    const handlers: Record<keyof typeof componentShortcuts, (event?: KeyboardEvent) => void> = {
+        SWITCH_JOIN_MODE: (event: KeyboardEvent | undefined) => {
+            if (event) event.preventDefault();
+            dynamicIconProps.onClick();
+        },
+    };
+
     return disabled ? (
         <Icon className='cvat-join-control cvat-disabled-canvas-control' component={JoinIcon} />
     ) : (
         <>
             <GlobalHotKeys
-                keyMap={{ SWITCH_JOIN_MODE: shortcuts.SWITCH_JOIN_MODE.details }}
-                handlers={{
-                    SWITCH_JOIN_MODE: (event: KeyboardEvent | undefined) => {
-                        if (event) event.preventDefault();
-                        dynamicIconProps.onClick();
-                    },
-                }}
+                keyMap={subKeyMap(componentShortcuts, keyMap)}
+                handlers={handlers}
             />
             <CVATTooltip title={`Join masks ${shortcuts.SWITCH_JOIN_MODE.displayValue}`} placement='right'>
                 <Icon {...dynamicIconProps} component={JoinIcon} />

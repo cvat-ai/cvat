@@ -22,7 +22,6 @@ export enum StorageStatuses {
     NOT_FOUND = 'NOT_FOUND',
 }
 
-export enum ViewType {
-    TASKS = 'tasks',
+export enum ShortcutScope {
     ALL = 'all',
 }

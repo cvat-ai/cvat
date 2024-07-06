@@ -5,13 +5,15 @@
 
 import React, { useEffect } from 'react';
 import Mousetrap from 'mousetrap';
+import { ShortcutScope } from './enums';
 
 export interface KeyMapItem {
     name: string;
     description: string;
     sequences: string[];
     displayedSequences?: string[];
-    view: string;
+    scope: ShortcutScope;
+    applicable?: string[];
 }
 
 export interface KeyMap {
@@ -48,7 +50,6 @@ export default function GlobalHotKeys(props: Props): JSX.Element {
             }
         };
     });
-
     // eslint-disable-next-line react/jsx-no-useless-fragment
     return children || <></>;
 }

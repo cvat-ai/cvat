@@ -16,7 +16,7 @@ from math import ceil
 from pathlib import Path
 from tempfile import NamedTemporaryFile, TemporaryDirectory
 from time import sleep, time
-from typing import Any, List, Optional, Tuple
+from typing import Any, Dict, List, Optional, Tuple
 
 import pytest
 from cvat_sdk import Client, Config, exceptions
@@ -220,6 +220,26 @@ class TestGetTasks:
 
         source_task["owner"] = None
         assert DeepDiff(source_task, fetched_task, ignore_order=True) == {}
+
+    @pytest.mark.usefixtures("restore_db_per_function")
+    def test_check_task_status_after_changing_job_state(self, admin_user, tasks, jobs):
+        task = next(t for t in tasks if t["jobs"]["count"] == 1 if t["jobs"]["completed"] == 0)
+        job = next(j for j in jobs if j["task_id"] == task["id"])
+
+        with make_api_client(admin_user) as api_client:
+            api_client.jobs_api.partial_update(
+                job["id"],
+                patched_job_write_request=models.PatchedJobWriteRequest(stage="acceptance"),
+            )
+
+            api_client.jobs_api.partial_update(
+                job["id"],
+                patched_job_write_request=models.PatchedJobWriteRequest(state="completed"),
+            )
+
+            (server_task, _) = api_client.tasks_api.retrieve(task["id"])
+
+        assert server_task.status == "completed"
 
 
 class TestListTasksFilters(CollectionSimpleFilterTestBase):
@@ -780,15 +800,15 @@ class TestPostTaskData:
             (task, response) = api_client.tasks_api.create(spec, **kwargs)
             assert response.status == HTTPStatus.CREATED
 
-            (_, response) = api_client.tasks_api.create_data(
+            (result, response) = api_client.tasks_api.create_data(
                 task.id, data_request=deepcopy(data), _content_type="application/json", **kwargs
             )
             assert response.status == HTTPStatus.ACCEPTED
 
-            status = wait_until_task_is_created(api_client.tasks_api, task.id)
-            assert status.state.value == "Failed"
+            request_details = wait_until_task_is_created(api_client.requests_api, result.rq_id)
+            assert request_details.status.value == "failed"
 
-        return status
+        return request_details
 
     def test_can_create_task_with_defined_start_and_stop_frames(self):
         task_spec = {
@@ -1312,30 +1332,48 @@ class TestPostTaskData:
         server_files: List[str],
         use_cache: bool = True,
         sorting_method: str = "lexicographical",
+        spec: Optional[Dict[str, Any]] = None,
+        data_type: str = "image",
+        video_frame_count: int = 10,
         server_files_exclude: Optional[List[str]] = None,
         org: Optional[str] = None,
         filenames: Optional[List[str]] = None,
     ) -> Tuple[int, Any]:
         s3_client = s3.make_client()
-        images = generate_image_files(
-            3, **({"prefixes": ["img_"] * 3} if not filenames else {"filenames": filenames})
-        )
-
-        for image in images:
-            for i in range(2):
-                image.seek(0)
-                s3_client.create_file(
-                    data=image,
+        if data_type == "video":
+            video = generate_video_file(video_frame_count)
+            s3_client.create_file(
+                data=video,
+                bucket=cloud_storage["resource"],
+                filename=f"test/video/{video.name}",
+            )
+            request.addfinalizer(
+                partial(
+                    s3_client.remove_file,
                     bucket=cloud_storage["resource"],
-                    filename=f"test/sub_{i}/{image.name}",
+                    filename=f"test/video/{video.name}",
                 )
-                request.addfinalizer(
-                    partial(
-                        s3_client.remove_file,
+            )
+        else:
+            images = generate_image_files(
+                3, **({"prefixes": ["img_"] * 3} if not filenames else {"filenames": filenames})
+            )
+
+            for image in images:
+                for i in range(2):
+                    image.seek(0)
+                    s3_client.create_file(
+                        data=image,
                         bucket=cloud_storage["resource"],
                         filename=f"test/sub_{i}/{image.name}",
                     )
-                )
+                    request.addfinalizer(
+                        partial(
+                            s3_client.remove_file,
+                            bucket=cloud_storage["resource"],
+                            filename=f"test/sub_{i}/{image.name}",
+                        )
+                    )
 
         if use_manifest:
             with TemporaryDirectory() as tmp_dir:
@@ -1380,6 +1418,9 @@ class TestPostTaskData:
             ),
             "sorting_method": sorting_method,
         }
+        if spec is not None:
+            data_spec.update(spec)
+
         if server_files_exclude:
             data_spec["server_files_exclude"] = server_files_exclude
 
@@ -1637,8 +1678,8 @@ class TestPostTaskData:
                 assert response.status == HTTPStatus.OK
                 assert task.size == task_size
         else:
-            status = self._test_cannot_create_task(self._USERNAME, task_spec, data_spec)
-            assert "No media data found" in status.message
+            rq_job_details = self._test_cannot_create_task(self._USERNAME, task_spec, data_spec)
+            assert "No media data found" in rq_job_details.message
 
     @pytest.mark.with_external_services
     @pytest.mark.parametrize("use_manifest", [True, False])
@@ -1722,6 +1763,46 @@ class TestPostTaskData:
 
             for image_name, frame in zip(filenames, data_meta.frames):
                 assert frame.name.rsplit("/", maxsplit=1)[1] == image_name
+
+    @pytest.mark.with_external_services
+    @pytest.mark.parametrize(
+        "cloud_storage_id, org",
+        [
+            (1, ""),
+        ],
+    )
+    def test_create_task_with_cloud_storage_and_check_retrieve_data_meta(
+        self,
+        cloud_storage_id: int,
+        org: str,
+        cloud_storages,
+        request,
+    ):
+        cloud_storage = cloud_storages[cloud_storage_id]
+
+        data_spec = {
+            "start_frame": 2,
+            "stop_frame": 6,
+            "frame_filter": "step=2",
+        }
+
+        task_id, _ = self._create_task_with_cloud_data(
+            request=request,
+            cloud_storage=cloud_storage,
+            use_manifest=False,
+            use_cache=False,
+            server_files=["test/video/video.avi"],
+            org=org,
+            spec=data_spec,
+            data_type="video",
+        )
+
+        with make_api_client(self._USERNAME) as api_client:
+            data_meta, _ = api_client.tasks_api.retrieve_data_meta(task_id)
+
+        assert data_meta.start_frame == 2
+        assert data_meta.stop_frame == 6
+        assert data_meta.size == 3
 
     def test_can_specify_file_job_mapping(self):
         task_spec = {
