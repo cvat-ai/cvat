@@ -19,7 +19,6 @@ from typing import (Any, Callable, DefaultDict, Dict, Iterable, List, Literal, M
 from attrs.converters import to_bool
 import datumaro as dm
 import defusedxml.ElementTree as ET
-import numpy as np
 import rq
 from attr import attrib, attrs
 from datumaro.components.media import PointCloud
@@ -36,9 +35,10 @@ from cvat.apps.engine.frame_provider import FrameProvider
 from cvat.apps.engine.models import (AttributeSpec, AttributeType, Data, DimensionType, Job,
                                      JobType, Label, LabelType, Project, SegmentType, ShapeType,
                                      Task)
+from cvat.apps.engine.rq_job_handler import RQJobMetaField
 
 from .annotation import AnnotationIR, AnnotationManager, TrackManager
-from .formats.transformations import CVATRleToCOCORle, EllipsesToMasks
+from .formats.transformations import MaskConverter, EllipsesToMasks
 
 CVAT_INTERNAL_ATTRIBUTES = {'occluded', 'outside', 'keyframe', 'track_id', 'rotation'}
 
@@ -1815,7 +1815,7 @@ class CvatToDmAnnotationConverter:
                 "attributes": dm_attr,
             }), self.cvat_frame_anno.height, self.cvat_frame_anno.width)
         elif shape.type == ShapeType.MASK:
-            anno = CVATRleToCOCORle.convert_mask(SimpleNamespace(**{
+            anno = MaskConverter.cvat_rle_to_dm_rle(SimpleNamespace(**{
                 "points": shape.points,
                 "label": dm_label,
                 "z_order": shape.z_order,
@@ -2041,22 +2041,7 @@ def import_dm_annotations(dm_dataset: dm.Dataset, instance_data: Union[ProjectDa
                     if ann.type == dm.AnnotationType.cuboid_3d:
                         points = [*ann.position, *ann.rotation, *ann.scale, 0, 0, 0, 0, 0, 0, 0]
                     elif ann.type == dm.AnnotationType.mask:
-                        istrue = np.argwhere(ann.image == 1).transpose()
-                        top = int(istrue[0].min())
-                        left = int(istrue[1].min())
-                        bottom = int(istrue[0].max())
-                        right = int(istrue[1].max())
-                        points = ann.image[top:bottom + 1, left:right + 1]
-
-                        def reduce_fn(acc, v):
-                            if v == acc['val']:
-                                acc['res'][-1] += 1
-                            else:
-                                acc['val'] = v
-                                acc['res'].append(1)
-                            return acc
-                        points = reduce(reduce_fn, points.reshape(np.prod(points.shape)), { 'res': [0], 'val': False })['res']
-                        points.extend([int(left), int(top), int(right), int(bottom)])
+                        points = MaskConverter.dm_mask_to_cvat_rle(ann)
                     elif ann.type != dm.AnnotationType.skeleton:
                         points = ann.points
 
@@ -2257,8 +2242,8 @@ def load_dataset_data(project_annotation, dataset: dm.Dataset, project_data):
                 raise CvatImportError(f'Target project does not have label with name "{label.name}"')
     for subset_id, subset in enumerate(dataset.subsets().values()):
         job = rq.get_current_job()
-        job.meta['status'] = 'Task from dataset is being created...'
-        job.meta['progress'] = (subset_id + job.meta.get('task_progress', 0.)) / len(dataset.subsets().keys())
+        job.meta[RQJobMetaField.STATUS] = 'Task from dataset is being created...'
+        job.meta[RQJobMetaField.PROGRESS] = (subset_id + job.meta.get(RQJobMetaField.TASK_PROGRESS, 0.)) / len(dataset.subsets().keys())
         job.save_meta()
 
         task_fields = {

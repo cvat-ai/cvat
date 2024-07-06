@@ -12,6 +12,7 @@ import multiprocessing
 import av
 import numpy as np
 import random
+import shutil
 import xml.etree.ElementTree as ET
 import zipfile
 from contextlib import ExitStack, contextmanager
@@ -1971,7 +1972,7 @@ class ExportBehaviorTest(_DbTestBase):
         self.assertEqual(len(mock_rq_job.retry_intervals), 1)
         self.assertTrue(osp.isfile(export_path))
 
-    def test_cleanup_can_be_called_with_old_signature(self):
+    def test_cleanup_can_be_called_with_old_signature_and_values(self):
         # Test RQ jobs for backward compatibility of API prior to the PR
         # https://github.com/cvat-ai/cvat/pull/7864
         # Jobs referring to the old API can exist in the redis queues after the server is updated
@@ -1988,11 +1989,17 @@ class ExportBehaviorTest(_DbTestBase):
         ):
             mock_rq_get_current_job.return_value = MagicMock(timeout=5)
 
-            export_path = export(dst_format=format_name, task_id=task_id)
+            new_export_path = export(dst_format=format_name, task_id=task_id)
 
-        file_ctime = parse_export_file_path(export_path).instance_timestamp
+        file_ctime = parse_export_file_path(new_export_path).instance_timestamp
+
+        old_export_path = osp.join(
+            osp.dirname(new_export_path), "annotations_cvat-for-images-11.ZIP"
+        )
+        shutil.move(new_export_path, old_export_path)
+
         old_kwargs = {
-            'file_path': export_path,
+            'file_path': old_export_path,
             'file_ctime': file_ctime,
             'logger': MagicMock(),
         }
@@ -2005,7 +2012,7 @@ class ExportBehaviorTest(_DbTestBase):
 
             clear_export_cache(**old_kwargs)
 
-        self.assertFalse(osp.isfile(export_path))
+        self.assertFalse(osp.isfile(old_export_path))
 
 
 class ProjectDumpUpload(_DbTestBase):

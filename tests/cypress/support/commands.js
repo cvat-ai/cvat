@@ -1233,9 +1233,13 @@ Cypress.Commands.add('exportTask', ({
 Cypress.Commands.add('exportJob', ({
     type, format, archiveCustomName,
     targetStorage = null, useDefaultLocation = true,
+    scrollList = false,
 }) => {
     cy.interactMenu('Export job dataset');
     cy.get('.cvat-modal-export-job').should('be.visible').find('.cvat-modal-export-select').click();
+    if (scrollList) {
+        cy.contains('.cvat-modal-export-option-item', format).scrollIntoView();
+    }
     cy.contains('.cvat-modal-export-option-item', format).should('be.visible').click();
     cy.get('.cvat-modal-export-job').find('.cvat-modal-export-select').should('contain.text', format);
     if (type === 'dataset') {
@@ -1259,6 +1263,33 @@ Cypress.Commands.add('exportJob', ({
     cy.contains('button', 'OK').click();
     cy.get('.cvat-notification-notice-export-job-start').should('be.visible');
     cy.closeNotification('.cvat-notification-notice-export-job-start');
+});
+
+Cypress.Commands.add('downloadExport', () => {
+    cy.verifyNotification();
+    cy.get('.cvat-header-requests-button').click();
+    cy.get('.cvat-spinner').should('not.exist');
+    cy.get('.cvat-requests-list').should('be.visible');
+    cy.get('.cvat-requests-card').first().within(() => {
+        cy.get('.cvat-requests-page-actions-button').click();
+    });
+    cy.intercept('GET', '**=download').as('download');
+    cy.get('.ant-dropdown')
+        .not('.ant-dropdown-hidden')
+        .within(() => {
+            cy.contains('[role="menuitem"]', 'Download').click();
+        });
+    cy.wait('@download')
+        .then((download) => {
+            const filename = download.response.headers['content-disposition'].split(';')[1].split('filename=')[1];
+            // need to remove quotes
+            return filename.substring(1, filename.length - 1);
+        });
+});
+
+Cypress.Commands.add('goBack', () => {
+    cy.go('back');
+    cy.get('.cvat-spinner').should('not.exist');
 });
 
 Cypress.Commands.add('renameTask', (oldName, newName) => {
