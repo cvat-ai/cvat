@@ -182,19 +182,19 @@ const componentShortcuts = {
         description:
             'Repeat the latest procedure of drawing with the same parameters (shift to redraw an existing shape)',
         sequences: ['shift+n', 'n'],
-        scope: ShortcutScope.ALL,
+        scope: ShortcutScope.ANNOTATION_PAGE_SINGLE_SHAPE_WORKSPACE,
     },
     CANCEL: {
         name: 'Cancel',
         description: 'Cancel any active canvas mode',
         sequences: ['esc'],
-        scope: ShortcutScope.ALL,
+        scope: ShortcutScope.ANNOTATION_PAGE_SINGLE_SHAPE_WORKSPACE,
     },
     DELETE_OBJECT: {
         name: 'Delete object',
         description: 'Delete an active object. Use shift to force delete of locked objects',
         sequences: ['del', 'shift+del'],
-        scope: ShortcutScope.ALL,
+        scope: ShortcutScope.ANNOTATION_PAGE_SINGLE_SHAPE_WORKSPACE,
     },
 };
 

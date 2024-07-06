@@ -35,9 +35,9 @@ function ShortcutsSettingsComponent(props: Props): JSX.Element {
         ),
     ), [keyMap, searchValue]);
 
-    const items: any = useMemo(() => Object.values(ShortcutScope).map((viewType: string) => {
+    const items: any = useMemo(() => Object.values(ShortcutScope).map((scope: string) => {
         const viewFilteredItems = filteredKeyMap.filter(
-            ([, item]) => item.scope === viewType,
+            ([, item]) => item.scope === scope,
         );
 
         if (viewFilteredItems.length === 0) {
@@ -45,8 +45,8 @@ function ShortcutsSettingsComponent(props: Props): JSX.Element {
         }
 
         return {
-            label: <span className='cvat-shortcuts-settings-label'>{`${viewType} Shortcuts`}</span>,
-            key: viewType,
+            label: <span className='cvat-shortcuts-settings-label'>{`${scope.split('_').join(' ').toLowerCase()} Shortcuts`}</span>,
+            key: scope,
             children: (
                 <List
                     dataSource={viewFilteredItems}
