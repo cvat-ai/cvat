@@ -3,7 +3,7 @@ import React, { useEffect, useRef, useState } from 'react';
 
 interface Props {
     id: string;
-    item: { sequences: string[]; name: string; description: string; view: string };
+    item: { sequences: string[]; name: string; description: string; scope: string };
     onKeySequenceUpdate: (keyMapId: string, updatedSequence: string[]) => void;
 }
 

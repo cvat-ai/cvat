@@ -10,7 +10,7 @@ import Search from 'antd/lib/input/Search';
 import React, {
     useState, useMemo,
 } from 'react';
-import { ViewType } from 'utils/enums';
+import { ShortcutScope } from 'utils/enums';
 import { KeyMap } from 'utils/mousetrap-react';
 import MultipleShortcutsDisplay from './multiple-shortcuts-display';
 
@@ -35,9 +35,9 @@ function ShortcutsSettingsComponent(props: Props): JSX.Element {
         ),
     ), [keyMap, searchValue]);
 
-    const items: any = useMemo(() => Object.values(ViewType).map((viewType: string) => {
+    const items: any = useMemo(() => Object.values(ShortcutScope).map((viewType: string) => {
         const viewFilteredItems = filteredKeyMap.filter(
-            ([, item]) => item.view === viewType,
+            ([, item]) => item.scope === viewType,
         );
 
         if (viewFilteredItems.length === 0) {
@@ -86,7 +86,7 @@ function ShortcutsSettingsComponent(props: Props): JSX.Element {
                     <Collapse
                         items={items}
                         bordered={false}
-                        defaultActiveKey={Object.values(ViewType).map((viewType: string) => viewType)}
+                        defaultActiveKey={Object.values(ShortcutScope).map((scope: string) => scope)}
                     />
                 </Col>
             </Row>
