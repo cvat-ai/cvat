@@ -427,7 +427,7 @@ class LabelSerializer(SublabelSerializer):
         except models.InvalidLabel as exc:
             raise exceptions.ValidationError(str(exc)) from exc
 
-        display_order = 0
+        display_order = models.AttributeSpec._meta.get_field('display_order').get_default()
         for attr in attributes:
             attr_id = attr.get('id', None)
             if attr_id is not None:

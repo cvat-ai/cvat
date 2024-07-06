@@ -252,5 +252,18 @@ textarea.ant-input.cvat-raw-labels-viewer {
 }
 
 .cvat-drag-drop {
-    cursor: pointer
+    cursor: pointer;
+    height: 2rem;
+    width: 0.5rem;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.cvat-attribute-inputs-wrapper {
+    height: '2rem';
+}
+
+.cvat-save-cancel-btn {
+    padding-top: 0.1rem;
 }
