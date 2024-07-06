@@ -766,7 +766,7 @@ export class Shape extends Drawn {
             this.saveRotation(rotation, frame);
         }
 
-        if (updated.points && fittedPoints.length) {
+        if (updated.points && fittedPoints.length && !updated.rotation) {
             this.savePoints(fittedPoints, frame);
         }
 
@@ -2349,12 +2349,16 @@ export class MaskShape extends Shape {
                     redoWithUnderlyingPixels();
                     redo();
                 },
-                [this.clientID, ...clientIDs], frame,
+                [this.clientID, ...clientIDs],
+                frame,
             );
         } else {
             this.history.do(
                 HistoryActions.CHANGED_POINTS,
-                undo, redo, [this.clientID], frame,
+                undo,
+                redo,
+                [this.clientID],
+                frame,
             );
         }
     }
