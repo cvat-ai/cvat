@@ -4,6 +4,7 @@
 // SPDX-License-Identifier: MIT
 
 import React, { useCallback, useState } from 'react';
+import { useSelector, useDispatch } from 'react-redux';
 import { useHistory } from 'react-router';
 import { createRoot } from 'react-dom/client';
 import Modal from 'antd/lib/modal';
@@ -18,23 +19,18 @@ import Icon from '@ant-design/icons';
 import { MenuProps } from 'antd/lib/menu';
 
 import { MainMenuIcon } from 'icons';
+import { Job, JobStage, JobState } from 'cvat-core-wrapper';
+
 import CVATTooltip from 'components/common/cvat-tooltip';
+import AnnotationsActionsModalContent from 'components/annotation-page/annotations-actions/annotations-actions-modal';
+import { CombinedState } from 'reducers';
 import {
-    Job, JobStage, JobState, getCore,
-} from 'cvat-core-wrapper';
-import AnnotationsActionsModalContent from '../annotations-actions/annotations-actions-modal';
-
-const core = getCore();
-
-interface Props {
-    jobInstance: Job;
-    showExportModal: (jobInstance: Job) => void;
-    showImportModal: (jobInstance: Job) => void;
-    removeAnnotations(startnumber: number, endnumber: number, delTrackKeyframesOnly: boolean): void;
-    setForceExitAnnotationFlag(forceExit: boolean): void;
-    saveAnnotations(afterSave?: () => void): void;
-    updateJob(jobInstance: Job): Promise<boolean>;
-}
+    saveAnnotationsAsync, updateCurrentJobAsync,
+    setForceExitAnnotationFlag as setForceExitAnnotationFlagAction,
+    removeAnnotationsAsync as removeAnnotationsAsyncAction,
+} from 'actions/annotation-actions';
+import { exportActions } from 'actions/export-actions';
+import { importActions } from 'actions/import-actions';
 
 export enum Actions {
     LOAD_JOB_ANNO = 'load_job_anno',
@@ -46,18 +42,10 @@ export enum Actions {
     RENEW_JOB = 'renew_job',
 }
 
-function AnnotationMenuComponent(props: Props): JSX.Element {
-    const {
-        jobInstance,
-        showExportModal,
-        showImportModal,
-        removeAnnotations,
-        setForceExitAnnotationFlag,
-        saveAnnotations,
-        updateJob,
-    } = props;
-
+function AnnotationMenuComponent(): JSX.Element {
+    const dispatch = useDispatch();
     const history = useHistory();
+    const jobInstance = useSelector((state: CombinedState) => state.annotation.job.instance as Job);
     const [jobState, setJobState] = useState(jobInstance.state);
     const { stage: jobStage, stopFrame } = jobInstance;
 
@@ -74,11 +62,11 @@ function AnnotationMenuComponent(props: Props): JSX.Element {
                     children: 'No',
                 },
                 onOk: () => {
-                    saveAnnotations(() => callback);
+                    dispatch(saveAnnotationsAsync(callback));
                 },
                 onCancel: () => {
                     // do not ask leave confirmation
-                    setForceExitAnnotationFlag(true);
+                    dispatch(setForceExitAnnotationFlagAction(true));
                     setTimeout(() => {
                         callback();
                     });
@@ -90,27 +78,25 @@ function AnnotationMenuComponent(props: Props): JSX.Element {
     }, [jobInstance]);
 
     const exportDataset = useCallback(() => {
-        showExportModal(jobInstance);
+        dispatch(exportActions.openExportDatasetModal(jobInstance));
     }, [jobInstance]);
 
     const renewJob = useCallback(() => {
-        jobInstance.state = core.enums.JobState.NEW;
-        jobInstance.stage = JobStage.ANNOTATION;
-        updateJob(jobInstance).then((success) => {
-            if (success) {
-                message.info('Job renewed', 2);
-                setJobState(jobInstance.state);
-            }
+        dispatch(updateCurrentJobAsync({
+            state: JobState.NEW,
+            stage: JobStage.ANNOTATION,
+        })).then(() => {
+            message.info('Job renewed', 2);
+            setJobState(jobInstance.state);
         });
     }, [jobInstance]);
 
     const finishJob = useCallback(() => {
-        jobInstance.stage = JobStage.ACCEPTANCE;
-        jobInstance.state = core.enums.JobState.COMPLETED;
-        updateJob(jobInstance).then((success) => {
-            if (success) {
-                history.push(`/tasks/${jobInstance.taskId}`);
-            }
+        dispatch(updateCurrentJobAsync({
+            state: JobState.COMPLETED,
+            stage: JobStage.ACCEPTANCE,
+        })).then(() => {
+            history.push(`/tasks/${jobInstance.taskId}`);
         });
     }, [jobInstance]);
 
@@ -119,16 +105,13 @@ function AnnotationMenuComponent(props: Props): JSX.Element {
     }, [jobInstance.taskId]);
 
     const uploadAnnotations = useCallback(() => {
-        showImportModal(jobInstance);
+        dispatch(importActions.openImportDatasetModal(jobInstance));
     }, [jobInstance]);
 
     const changeState = useCallback((state: JobState) => {
-        jobInstance.state = state;
-        updateJob(jobInstance).then((success) => {
-            if (success) {
-                message.info('Job state updated', 2);
-                setJobState(jobInstance.state);
-            }
+        dispatch(updateCurrentJobAsync({ state })).then(() => {
+            message.info('Job state updated', 2);
+            setJobState(jobInstance.state);
         });
     }, [jobInstance]);
 
@@ -168,8 +151,8 @@ function AnnotationMenuComponent(props: Props): JSX.Element {
         key: Actions.REMOVE_ANNOTATIONS,
         label: 'Remove annotations',
         onClick: () => {
-            let removeFrom: number | null;
-            let removeUpTo: number | null;
+            let removeFrom: number | undefined;
+            let removeUpTo: number | undefined;
             let removeOnlyKeyframes = false;
             Modal.confirm({
                 title: 'Remove Annotations',
@@ -221,7 +204,7 @@ function AnnotationMenuComponent(props: Props): JSX.Element {
                 ),
                 className: 'cvat-modal-confirm-remove-annotation',
                 onOk: () => {
-                    removeAnnotations(removeFrom, removeUpTo, removeOnlyKeyframes);
+                    dispatch(removeAnnotationsAsyncAction(removeFrom, removeUpTo, removeOnlyKeyframes));
                 },
                 okButtonProps: {
                     type: 'primary',

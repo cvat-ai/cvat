@@ -26,7 +26,7 @@ import {
 import { ActionUnion, createAction } from 'utils/redux';
 import {
     rememberObject, changeFrameAsync, saveAnnotationsAsync, setNavigationType,
-    removeObjectAsync,
+    removeObjectAsync, updateCurrentJobAsync,
 } from 'actions/annotation-actions';
 import LabelSelector from 'components/label-selector/label-selector';
 import GlobalHotKeys from 'utils/mousetrap-react';
@@ -79,7 +79,7 @@ function makeMessage(label: Label, labelType: State['labelType'], pointsCount: n
     );
 }
 
-export const reducerActions = {
+export const actionCreators = {
     switchAutoNextFrame: () => (
         createAction(ReducerActionType.SWITCH_AUTO_NEXT_FRAME)
     ),
@@ -117,7 +117,7 @@ interface State {
     initialNavigationType: NavigationType;
 }
 
-const reducer = (state: State, action: ActionUnion<typeof reducerActions>): State => {
+const reducer = (state: State, action: ActionUnion<typeof actionCreators>): State => {
     const getMinimalPoints = (labelType: LabelType): number => {
         let minimalPoints = 3;
         if (labelType === LabelType.POLYLINE) {
@@ -276,25 +276,26 @@ function SingleShapeSidebar(): JSX.Element {
         }) as Promise<number | null>;
     }, [jobInstance, navigationType, frame]);
 
-    const finishOnThisFrame = useCallback((): void => {
+    const finishOnThisFrame = useCallback((forceSave = false): void => {
         if (typeof state.nextFrame === 'number') {
             appDispatch(changeFrameAsync(state.nextFrame));
-        } else if (state.saveOnFinish && !savingRef.current) {
+        } else if ((forceSave || state.saveOnFinish) && !savingRef.current) {
             savingRef.current = true;
+
+            const patchJob = (): void => {
+                appDispatch(updateCurrentJobAsync({
+                    state: JobState.COMPLETED,
+                })).then(showSubmittedInfo).finally(() => {
+                    savingRef.current = false;
+                });
+            };
+
             if (jobInstance.annotations.hasUnsavedChanges()) {
-                appDispatch(saveAnnotationsAsync(() => {
-                    jobInstance.state = JobState.COMPLETED;
-                    jobInstance.save().then(showSubmittedInfo).finally(() => {
-                        savingRef.current = false;
-                    });
-                })).catch(() => {
+                appDispatch(saveAnnotationsAsync(patchJob)).catch(() => {
                     savingRef.current = false;
                 });
             } else {
-                jobInstance.state = JobState.COMPLETED;
-                jobInstance.save().then(showSubmittedInfo).finally(() => {
-                    savingRef.current = false;
-                });
+                patchJob();
             }
         }
     }, [state.saveOnFinish, state.nextFrame, jobInstance]);
@@ -305,7 +306,7 @@ function SingleShapeSidebar(): JSX.Element {
 
         const labelInstance = defaultLabelInstance ?? state.labels[0];
         if (labelInstance) {
-            dispatch(reducerActions.setActiveLabel(labelInstance, labelInstance.type as State['labelType']));
+            dispatch(actionCreators.setActiveLabel(labelInstance, labelInstance.type as State['labelType']));
         }
 
         appDispatch(setNavigationType(NavigationType.EMPTY));
@@ -319,10 +320,7 @@ function SingleShapeSidebar(): JSX.Element {
 
     useEffect(() => {
         getNextFrame().then((_frame: number | null) => {
-            dispatch({
-                type: ReducerActionType.SET_NEXT_FRAME,
-                payload: { nextFrame: _frame },
-            });
+            dispatch(actionCreators.setNextFrame(_frame));
         });
     }, [getNextFrame]);
 
@@ -432,11 +430,11 @@ function SingleShapeSidebar(): JSX.Element {
                         <Row justify='start' className='cvat-single-shape-annotation-sidebar-finish-frame-wrapper'>
                             <Col>
                                 {typeof state.nextFrame === 'number' ? (
-                                    <Button size='large' onClick={finishOnThisFrame}>
+                                    <Button size='large' onClick={() => finishOnThisFrame(false)}>
                                         Skip
                                     </Button>
                                 ) : (
-                                    <Button size='large' type='primary' onClick={finishOnThisFrame}>
+                                    <Button size='large' type='primary' onClick={() => finishOnThisFrame(true)}>
                                         Submit Results
                                     </Button>
                                 )}
@@ -524,7 +522,7 @@ function SingleShapeSidebar(): JSX.Element {
                             <LabelSelector
                                 labels={state.labels}
                                 value={state.label}
-                                onChange={(label) => dispatch(reducerActions.setActiveLabel(label, label.type as State['labelType']))}
+                                onChange={(label) => dispatch(actionCreators.setActiveLabel(label, label.type as State['labelType']))}
                             />
                         </Col>
                     </Row>
@@ -542,7 +540,7 @@ function SingleShapeSidebar(): JSX.Element {
                             <Select
                                 value={state.labelType}
                                 onChange={(labelType: State['labelType']) => dispatch(
-                                    reducerActions.setActiveLabel(state.label as Label, labelType),
+                                    actionCreators.setActiveLabel(state.label as Label, labelType),
                                 )}
                             >
                                 <Select.Option value={LabelType.RECTANGLE}>{LabelType.RECTANGLE}</Select.Option>
@@ -563,7 +561,7 @@ function SingleShapeSidebar(): JSX.Element {
                         checked={state.autoNextFrame}
                         onChange={(): void => {
                             (window.document.activeElement as HTMLInputElement)?.blur();
-                            dispatch(reducerActions.switchAutoNextFrame());
+                            dispatch(actionCreators.switchAutoNextFrame());
                         }}
                     >
                         Automatically go to the next frame
@@ -576,7 +574,7 @@ function SingleShapeSidebar(): JSX.Element {
                         checked={state.saveOnFinish}
                         onChange={(): void => {
                             (window.document.activeElement as HTMLInputElement)?.blur();
-                            dispatch(reducerActions.switchAutoSaveOnFinish());
+                            dispatch(actionCreators.switchAutoSaveOnFinish());
                         }}
                     >
                         Automatically save when finish
@@ -607,7 +605,7 @@ function SingleShapeSidebar(): JSX.Element {
                             checked={state.pointsCountIsPredefined}
                             onChange={(): void => {
                                 (window.document.activeElement as HTMLInputElement)?.blur();
-                                dispatch(reducerActions.switchCountOfPointsIsPredefined());
+                                dispatch(actionCreators.switchCountOfPointsIsPredefined());
                             }}
                         >
                             Predefined number of points
@@ -630,7 +628,7 @@ function SingleShapeSidebar(): JSX.Element {
                                 step={1}
                                 onChange={(value: number | null) => {
                                     if (value !== null) {
-                                        dispatch(reducerActions.setPointsCount(value));
+                                        dispatch(actionCreators.setPointsCount(value));
                                     }
                                 }}
                             />

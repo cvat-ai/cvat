@@ -1,5 +1,5 @@
 // Copyright (C) 2020-2022 Intel Corporation
-// Copyright (C) 2022-2023 CVAT.ai Corporation
+// Copyright (C) 2022-2024 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -24,6 +24,7 @@ import cloudStoragesReducer from './cloud-storages-reducer';
 import organizationsReducer from './organizations-reducer';
 import webhooksReducer from './webhooks-reducer';
 import invitationsReducer from './invitations-reducer';
+import requestsReducer from './requests-reducer';
 import serverAPIReducer from './server-api-reducer';
 
 export default function createRootReducer(): Reducer {
@@ -48,6 +49,7 @@ export default function createRootReducer(): Reducer {
         organizations: organizationsReducer,
         webhooks: webhooksReducer,
         invitations: invitationsReducer,
+        requests: requestsReducer,
         serverAPI: serverAPIReducer,
     });
 }

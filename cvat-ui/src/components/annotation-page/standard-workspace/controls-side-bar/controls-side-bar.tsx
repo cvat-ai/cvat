@@ -15,6 +15,7 @@ import { LabelType } from 'cvat-core-wrapper';
 
 import { ShortcutScope } from 'utils/enums';
 import { registerComponentShortcuts } from 'actions/shortcuts-actions';
+import { subKeyMap } from 'utils/component-subkeymap';
 import ControlVisibilityObserver, { ExtraControlsControl } from './control-visibility-observer';
 import RotateControl, { Props as RotateControlProps } from './rotate-control';
 import CursorControl, { Props as CursorControlProps } from './cursor-control';
@@ -154,12 +155,7 @@ export default function ControlsSideBarComponent(props: Props): JSX.Element {
         }
     };
 
-    let subKeyMap: any = {
-        CLOCKWISE_ROTATION: keyMap.CLOCKWISE_ROTATION,
-        ANTICLOCKWISE_ROTATION: keyMap.ANTICLOCKWISE_ROTATION,
-    };
-
-    let handlers: any = {
+    let handlers: Partial<Record<keyof typeof componentShortcuts, (event?: KeyboardEvent) => void>> = {
         CLOCKWISE_ROTATION: (event: KeyboardEvent | undefined) => {
             preventDefault(event);
             rotateFrame(Rotation.CLOCKWISE90);
@@ -222,26 +218,15 @@ export default function ControlsSideBarComponent(props: Props): JSX.Element {
                 }
             },
         };
-        subKeyMap = {
-            ...subKeyMap,
-            PASTE_SHAPE: keyMap.PASTE_SHAPE,
-            SWITCH_DRAW_MODE: keyMap.SWITCH_DRAW_MODE,
-        };
     }
 
     return (
         <Layout.Sider className='cvat-canvas-controls-sidebar' theme='light' width={44}>
-            <GlobalHotKeys keyMap={subKeyMap} handlers={handlers} />
+            <GlobalHotKeys keyMap={subKeyMap(componentShortcuts, keyMap)} handlers={handlers} />
             <ObservedCursorControl
                 cursorShortkey={normalizedKeyMap.CANCEL}
                 canvasInstance={canvasInstance}
                 activeControl={activeControl}
-                shortcuts={{
-                    CANCEL: {
-                        details: keyMap.CANCEL,
-                        displayValue: normalizedKeyMap.CANCEL,
-                    },
-                }}
             />
             <ObservedMoveControl canvasInstance={canvasInstance} activeControl={activeControl} />
             <ObservedRotateControl
