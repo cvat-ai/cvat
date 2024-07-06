@@ -992,9 +992,6 @@ def get_audio_job_export_data(job_id, dst_file, job, temp_dir_base, temp_dir):
     # All Annotations
     annotations = job.data["shapes"]
 
-    # Job detail
-
-    # Find labels of a particular job
     job_details = Job.objects.get(id=job_id)
     labels_queryset = job_details.get_labels()
     labels_list = list(labels_queryset.values())
@@ -1029,14 +1026,32 @@ def get_audio_job_export_data(job_id, dst_file, job, temp_dir_base, temp_dir):
 
     annotation_audio_chunk_file_paths = chunk_annotation_audio(concat_array, temp_dir, annotations)
 
-    for i in range(0, len(annotation_audio_chunk_file_paths)):
-        annotation_attribute_id = annotations[i]["attributes"][0]["spec_id"]
-        label_attributes = labels_mapping[annotations[i]["label_id"]]["attributes"]
-        annotation_attribute = label_attributes[annotation_attribute_id]
-        attribute_name = annotation_attribute["name"]
-        attribute_val = annotations[i]["attributes"][0]["value"]
+    for i in range(0, len(annotations)):
+        entry = {
+            "path": os.path.basename(annotation_audio_chunk_file_paths[i]),
+            "sentence": annotations[i].get("transcript", ""),
+            "age": annotations[i].get("age", ""),
+            "gender": annotations[i].get("gender", ""),
+            "accents": annotations[i].get("accent", ""),
+            "locale": annotations[i].get("locale", ""),
+            "emotion": annotations[i].get("emotion", ""),
+            "label": labels_mapping[annotations[i]["label_id"]]["name"],
+            "start": annotations[i]["points"][0],
+            "end": annotations[i]["points"][3]
+        }
 
-        final_data.append({"path" : os.path.basename(annotation_audio_chunk_file_paths[i]), "sentence" : annotations[i]["transcript"], "age" : annotations[i]["age"], "gender" : annotations[i]["gender"], "accents" : annotations[i]["accent"], "locale" : annotations[i]["locale"], "emotion" : annotations[i]["emotion"], "label" : labels_mapping[annotations[i]["label_id"]]["name"], "attribute_name" : attribute_name, "attribute_value" : attribute_val, "start" : annotations[i]["points"][0],  "end" : annotations[i]["points"][3]})
+        attributes = annotations[i].get("attributes", [])
+        for idx, attr in enumerate(attributes):
+            annotation_attribute_id = attr.get("spec_id", "")
+            label_attributes = labels_mapping[annotations[i]["label_id"]].get("attributes", {})
+            annotation_attribute = label_attributes.get(annotation_attribute_id, {})
+            attribute_name = annotation_attribute.get("name", f"attribute_{idx}_name")
+            attribute_val = attr.get("value", "")
+
+            entry[f"attribute_{idx+1}_name"] = attribute_name
+            entry[f"attribute_{idx+1}_value"] = attribute_val
+
+        final_data.append(entry)
 
     slogger.glob.debug("JOB ANNOTATION DATA")
     slogger.glob.debug(json.dumps(final_data))
@@ -1048,14 +1063,66 @@ def convert_annotation_data_format(data, format_name):
     if format_name == "Common Voice":
         return data
     elif format_name == "Librispeech":
-        data = list(map(lambda x: {"chapter_id" : "", "file" : x["path"], "id" : str(uuid.uuid4()), "speaker_id" : "", "text" : x["sentence"], "label" : x["label"], "attribute_name" : x["attribute_name"], "attribute_value" : x["attribute_value"], "start" : x["start"], "end" : x["end"]}, data))
+        formatted_data = []
+        for entry in data:
+            formatted_entry = {
+                "chapter_id": "",
+                "file": entry["path"],
+                "id": str(uuid.uuid4()),
+                "speaker_id": "",
+                "text": entry["sentence"],
+                "label": entry["label"],
+                "start": entry["start"],
+                "end": entry["end"]
+            }
+            attribute_keys = [key for key in entry.keys() if key.startswith("attribute_")]
+            for key in attribute_keys:
+                formatted_entry[key] = entry[key]
+            formatted_data.append(formatted_entry)
+        return formatted_data
     elif format_name == "VoxPopuli":
-        language_id_mapping = {"en" : 0}
-        data = list(map(lambda x: {"audio_id" : str(uuid.uuid4()), "language" : language_id_mapping[x["locale"]] if language_id_mapping.get(x["locale"]) else None, "audio_path" : x["path"], "raw_text" : x["sentence"], "normalized_text" : x["sentence"], "gender" : x["gender"], "speaker_id" : "", "is_gold_transcript" : False, "accent" : x["accents"], "label" : x["label"], "attribute_name" : x["attribute_name"], "attribute_value" : x["attribute_value"], "start" : x["start"], "end" : x["end"]}, data))
+        language_id_mapping = {"en": 0}
+        formatted_data = []
+        for entry in data:
+            formatted_entry = {
+                "audio_id": str(uuid.uuid4()),
+                "language": language_id_mapping.get(entry["locale"], None),
+                "audio_path": entry["path"],
+                "raw_text": entry["sentence"],
+                "normalized_text": entry["sentence"],
+                "gender": entry["gender"],
+                "speaker_id": "",
+                "is_gold_transcript": False,
+                "accent": entry["accents"],
+                "label": entry["label"],
+                "start": entry["start"],
+                "end": entry["end"]
+            }
+            attribute_keys = [key for key in entry.keys() if key.startswith("attribute_")]
+            for key in attribute_keys:
+                formatted_entry[key] = entry[key]
+            formatted_data.append(formatted_entry)
+        return formatted_data
     elif format_name == "Ted-Lium":
-        data = list(map(lambda x: {"file" : x["path"], "text" : x["sentence"], "gender" : x["gender"], "id" : str(uuid.uuid4()), "speaker_id" : "", "label" : x["label"], "attribute_name" : x["attribute_name"], "attribute_value" : x["attribute_value"], "start" : x["start"], "end" : x["end"]}, data))
-
+        formatted_data = []
+        for entry in data:
+            formatted_entry = {
+                "file": entry["path"],
+                "text": entry["sentence"],
+                "gender": entry["gender"],
+                "id": str(uuid.uuid4()),
+                "speaker_id": "",
+                "label": entry["label"],
+                "start": entry["start"],
+                "end": entry["end"]
+            }
+            attribute_keys = [key for key in entry.keys() if key.startswith("attribute_")]
+            for key in attribute_keys:
+                formatted_entry[key] = entry[key]
+            formatted_data.append(formatted_entry)
+        return formatted_data
     return data
+
 def export_audino_job(job_id, dst_file, format_name, server_url=None, save_images=False):
 
     # For big tasks dump function may run for a long time and
