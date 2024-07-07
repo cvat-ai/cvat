@@ -22,6 +22,7 @@ import Organization from './organization';
 import Webhook from './webhook';
 import AnnotationGuide from './guide';
 import BaseSingleFrameAction from './annotations-actions';
+import { Request } from './request';
 
 import * as enums from './enums';
 
@@ -29,7 +30,7 @@ import {
     Exception, ArgumentError, DataError, ScriptingError, ServerError,
 } from './exceptions';
 
-import { mask2Rle, rle2Mask } from './object-utils';
+import { mask2Rle, rle2Mask, propagateShapes } from './object-utils';
 import User from './user';
 import pjson from '../package.json';
 import config from './config';
@@ -286,6 +287,12 @@ function build(): CVATCore {
             set globalObjectsCounter(value: number) {
                 config.globalObjectsCounter = value;
             },
+            get requestsStatusDelay() {
+                return config.requestsStatusDelay;
+            },
+            set requestsStatusDelay(value) {
+                config.requestsStatusDelay = value;
+            },
         },
         client: {
             version: `${pjson.version}`,
@@ -374,6 +381,26 @@ function build(): CVATCore {
                 },
             },
         },
+        requests: {
+            async list() {
+                const result = await PluginRegistry.apiWrapper(cvat.requests.list);
+                return result;
+            },
+            async cancel(rqID: string) {
+                const result = await PluginRegistry.apiWrapper(cvat.requests.cancel, rqID);
+                return result;
+            },
+            async listen(
+                rqID: string,
+                options: {
+                    callback: (request: Request) => void,
+                    initialRequest?: Request,
+                },
+            ) {
+                const result = await PluginRegistry.apiWrapper(cvat.requests.listen, rqID, options);
+                return result;
+            },
+        },
         classes: {
             User,
             Project: implementProject(Project),
@@ -397,6 +424,7 @@ function build(): CVATCore {
         utils: {
             mask2Rle,
             rle2Mask,
+            propagateShapes,
         },
     };
 

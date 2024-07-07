@@ -4,8 +4,12 @@
 // SPDX-License-Identifier: MIT
 
 import { omit } from 'lodash';
+import config from './config';
 import { ArgumentError } from './exceptions';
-import { HistoryActions, JobType } from './enums';
+import {
+    HistoryActions, JobStage, JobState, JobType,
+    RQStatus,
+} from './enums';
 import { Task as TaskClass, Job as JobClass } from './session';
 import logger from './logger';
 import serverProxy from './server-proxy';
@@ -23,12 +27,15 @@ import {
 } from './frames';
 import Issue from './issue';
 import { SerializedLabel, SerializedTask } from './server-response-types';
-import { checkObjectType } from './common';
+import { checkInEnum, checkObjectType } from './common';
 import {
     getCollection, getSaver, clearAnnotations, getAnnotations,
     importDataset, exportDataset, clearCache, getHistory,
 } from './annotations';
 import AnnotationGuide from './guide';
+import requestsManager from './requests-manager';
+import { Request } from './request';
+import User from './user';
 
 // must be called with task/job context
 async function deleteFrameWrapper(jobID, frame): Promise<void> {
@@ -57,28 +64,30 @@ export function implementJob(Job: typeof JobClass): typeof JobClass {
     Object.defineProperty(Job.prototype.save, 'implementation', {
         value: async function saveImplementation(
             this: JobClass,
-            additionalData: any,
+            fields: any,
         ): ReturnType<typeof JobClass.prototype.save> {
             if (this.id) {
-                const jobData = this._updateTrigger.getUpdated(this);
+                const jobData = {
+                    ...('assignee' in fields ? { assignee: fields.assignee } : {}),
+                    ...('stage' in fields ? { stage: fields.stage } : {}),
+                    ...('state' in fields ? { state: fields.state } : {}),
+                };
+
                 if (jobData.assignee) {
+                    checkObjectType('job assignee', jobData.assignee, null, User);
                     jobData.assignee = jobData.assignee.id;
                 }
 
-                let updatedJob = null;
-                try {
-                    const data = await serverProxy.jobs.save(this.id, jobData);
-                    updatedJob = new Job(data);
-                } catch (error) {
-                    updatedJob = new Job(this._initialData);
-                    throw error;
-                } finally {
-                    this.stage = updatedJob.stage;
-                    this.state = updatedJob.state;
-                    this.assignee = updatedJob.assignee;
-                    this._updateTrigger.reset();
+                if (jobData.state) {
+                    checkInEnum<JobState>('job state', jobData.state, Object.values(JobState));
                 }
 
+                if (jobData.stage) {
+                    checkInEnum<JobStage>('job stage', jobData.stage, Object.values(JobStage));
+                }
+
+                const data = await serverProxy.jobs.save(this.id, jobData);
+                this.reinit({ ...data, labels: [] });
                 return this;
             }
 
@@ -89,8 +98,9 @@ export function implementJob(Job: typeof JobClass): typeof JobClass {
                 type: this.type,
                 task_id: this.taskId,
             };
-            const job = await serverProxy.jobs.create({ ...jobSpec, ...additionalData });
-            return new Job(job);
+
+            const job = await serverProxy.jobs.create({ ...jobSpec, ...fields });
+            return new JobClass({ ...job, labels: [] });
         },
     });
 
@@ -493,7 +503,8 @@ export function implementJob(Job: typeof JobClass): typeof JobClass {
             file: Parameters<typeof JobClass.prototype.annotations.upload>[3],
             options: Parameters<typeof JobClass.prototype.annotations.upload>[4],
         ): ReturnType<typeof JobClass.prototype.annotations.upload> {
-            return importDataset(this, format, useDefaultLocation, sourceStorage, file, options);
+            const rqID = await importDataset(this, format, useDefaultLocation, sourceStorage, file, options);
+            return rqID;
         },
     });
 
@@ -506,7 +517,8 @@ export function implementJob(Job: typeof JobClass): typeof JobClass {
             targetStorage: Parameters<typeof JobClass.prototype.annotations.exportDataset>[3],
             customName?: Parameters<typeof JobClass.prototype.annotations.exportDataset>[4],
         ): ReturnType<typeof JobClass.prototype.annotations.exportDataset> {
-            return exportDataset(this, format, saveImages, useDefaultSettings, targetStorage, customName);
+            const rqID = await exportDataset(this, format, saveImages, useDefaultSettings, targetStorage, customName);
+            return rqID;
         },
     });
 
@@ -606,7 +618,7 @@ export function implementTask(Task: typeof TaskClass): typeof TaskClass {
     Object.defineProperty(Task.prototype.save, 'implementation', {
         value: async function saveImplementation(
             this: TaskClass,
-            onUpdate: Parameters<typeof TaskClass.prototype.save>[0],
+            options: Parameters<typeof TaskClass.prototype.save>[0],
         ): ReturnType<typeof TaskClass.prototype.save> {
             if (typeof this.id !== 'undefined') {
                 // If the task has been already created, we update it
@@ -703,7 +715,22 @@ export function implementTask(Task: typeof TaskClass): typeof TaskClass {
                 ...(typeof this.cloudStorageId !== 'undefined' ? { cloud_storage_id: this.cloudStorageId } : {}),
             };
 
-            const task = await serverProxy.tasks.create(taskSpec, taskDataSpec, onUpdate);
+            const { taskID, rqID } = await serverProxy.tasks.create(
+                taskSpec,
+                taskDataSpec,
+                options?.requestStatusCallback || (() => {}),
+            );
+
+            await requestsManager.listen(rqID, {
+                callback: (request: Request) => {
+                    options?.requestStatusCallback(request);
+                    if (request.status === RQStatus.FAILED) {
+                        serverProxy.tasks.delete(taskID, config.organization.organizationSlug || null);
+                    }
+                },
+            });
+
+            const [task] = await serverProxy.tasks.get({ id: taskID });
             const labels = await serverProxy.labels.get({ task_id: task.id });
             const jobs = await serverProxy.jobs.get({
                 filter: JSON.stringify({ and: [{ '==': [{ var: 'task_id' }, task.id] }] }),
@@ -721,10 +748,12 @@ export function implementTask(Task: typeof TaskClass): typeof TaskClass {
     Object.defineProperty(Task.prototype.listenToCreate, 'implementation', {
         value: async function listenToCreateImplementation(
             this: TaskClass,
-            onUpdate: Parameters<typeof TaskClass.prototype.listenToCreate>[0],
+            rqID: Parameters<typeof TaskClass.prototype.listenToCreate>[0],
+            options: Parameters<typeof TaskClass.prototype.listenToCreate>[1],
         ): ReturnType<typeof TaskClass.prototype.listenToCreate> {
             if (Number.isInteger(this.id) && this.size === 0) {
-                const serializedTask = await serverProxy.tasks.listenToCreate(this.id, onUpdate);
+                const request = await requestsManager.listen(rqID, options);
+                const [serializedTask] = await serverProxy.tasks.get({ id: request.operation.taskID });
                 return new Task(omit(serializedTask, ['labels', 'jobs']));
             }
 
@@ -750,13 +779,14 @@ export function implementTask(Task: typeof TaskClass): typeof TaskClass {
     });
 
     Object.defineProperty(Task.prototype.backup, 'implementation', {
-        value: function backupImplementation(
+        value: async function backupImplementation(
             this: TaskClass,
             targetStorage: Parameters<typeof TaskClass.prototype.backup>[0],
             useDefaultSettings: Parameters<typeof TaskClass.prototype.backup>[1],
             fileName: Parameters<typeof TaskClass.prototype.backup>[2],
         ): ReturnType<typeof TaskClass.prototype.backup> {
-            return serverProxy.tasks.backup(this.id, targetStorage, useDefaultSettings, fileName);
+            const rqID = await serverProxy.tasks.backup(this.id, targetStorage, useDefaultSettings, fileName);
+            return rqID;
         },
     });
 
@@ -766,16 +796,8 @@ export function implementTask(Task: typeof TaskClass): typeof TaskClass {
             storage: Parameters<typeof TaskClass.restore>[0],
             file: Parameters<typeof TaskClass.restore>[1],
         ): ReturnType<typeof TaskClass.restore> {
-            const serializedTask = await serverProxy.tasks.restore(storage, file);
-            // When request task by ID we also need to add labels and jobs to work with them
-            const labels = await serverProxy.labels.get({ task_id: serializedTask.id });
-            const jobs = await serverProxy.jobs.get({ task_id: serializedTask.id }, true);
-            return new Task({
-                ...omit(serializedTask, ['jobs', 'labels']),
-                progress: serializedTask.jobs,
-                jobs,
-                labels: labels.results,
-            });
+            const rqID = await serverProxy.tasks.restore(storage, file);
+            return rqID;
         },
     });
 
@@ -795,7 +817,6 @@ export function implementTask(Task: typeof TaskClass): typeof TaskClass {
             }
 
             const job = this.jobs.filter((_job) => _job.startFrame <= frame && _job.stopFrame >= frame)[0];
-
             const result = await getFrame(
                 job.id,
                 this.dataChunkSize,
@@ -1112,7 +1133,7 @@ export function implementTask(Task: typeof TaskClass): typeof TaskClass {
     });
 
     Object.defineProperty(Task.prototype.annotations.upload, 'implementation', {
-        value: function uploadAnnotationsImplementation(
+        value: async function uploadAnnotationsImplementation(
             this: TaskClass,
             format: Parameters<typeof TaskClass.prototype.annotations.upload>[0],
             useDefaultLocation: Parameters<typeof TaskClass.prototype.annotations.upload>[1],
@@ -1120,7 +1141,8 @@ export function implementTask(Task: typeof TaskClass): typeof TaskClass {
             file: Parameters<typeof TaskClass.prototype.annotations.upload>[3],
             options: Parameters<typeof TaskClass.prototype.annotations.upload>[4],
         ): ReturnType<typeof TaskClass.prototype.annotations.upload> {
-            return importDataset(this, format, useDefaultLocation, sourceStorage, file, options);
+            const rqID = await importDataset(this, format, useDefaultLocation, sourceStorage, file, options);
+            return rqID;
         },
     });
 
@@ -1143,7 +1165,7 @@ export function implementTask(Task: typeof TaskClass): typeof TaskClass {
     });
 
     Object.defineProperty(Task.prototype.annotations.exportDataset, 'implementation', {
-        value: function exportDatasetImplementation(
+        value: async function exportDatasetImplementation(
             this: TaskClass,
             format: Parameters<typeof TaskClass.prototype.annotations.exportDataset>[0],
             saveImages: Parameters<typeof TaskClass.prototype.annotations.exportDataset>[1],
@@ -1151,7 +1173,8 @@ export function implementTask(Task: typeof TaskClass): typeof TaskClass {
             targetStorage: Parameters<typeof TaskClass.prototype.annotations.exportDataset>[3],
             customName: Parameters<typeof TaskClass.prototype.annotations.exportDataset>[4],
         ): ReturnType<typeof TaskClass.prototype.annotations.exportDataset> {
-            return exportDataset(this, format, saveImages, useDefaultSettings, targetStorage, customName);
+            const rqID = await exportDataset(this, format, saveImages, useDefaultSettings, targetStorage, customName);
+            return rqID;
         },
     });
 

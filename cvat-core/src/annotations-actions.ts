@@ -1,14 +1,15 @@
-// Copyright (C) 2023 CVAT.ai Corporation
+// Copyright (C) 2023-2024 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
 import { omit, throttle } from 'lodash';
 import { ArgumentError } from './exceptions';
-import { SerializedCollection } from './server-response-types';
+import { SerializedCollection, SerializedShape } from './server-response-types';
 import { Job, Task } from './session';
 import { EventScope, ObjectType } from './enums';
 import ObjectState from './object-state';
 import { getAnnotations, getCollection } from './annotations';
+import { propagateShapes } from './object-utils';
 
 export interface SingleFrameActionInput {
     collection: Omit<SerializedCollection, 'tracks' | 'tags' | 'version'>;
@@ -28,11 +29,19 @@ export enum ActionParameterType {
     NUMBER = 'number',
 }
 
+// For SELECT values should be a list of possible options
+// For NUMBER values should be a list with [min, max, step],
+// or a callback ({ instance }: { instance: Job | Task }) => [min, max, step]
 type ActionParameters = Record<string, {
     type: ActionParameterType;
-    values: string[];
-    defaultValue: string;
+    values: string[] | (({ instance }: { instance: Job | Task }) => string[]);
+    defaultValue: string | (({ instance }: { instance: Job | Task }) => string);
 }>;
+
+export enum FrameSelectionType {
+    SEGMENT = 'segment',
+    CURRENT_FRAME = 'current_frame',
+}
 
 export default class BaseSingleFrameAction {
     /* eslint-disable @typescript-eslint/no-unused-vars */
@@ -58,6 +67,10 @@ export default class BaseSingleFrameAction {
     public get parameters(): ActionParameters | null {
         throw new Error('Method not implemented');
     }
+
+    public get frameSelection(): FrameSelectionType {
+        return FrameSelectionType.SEGMENT;
+    }
 }
 
 class RemoveFilteredShapes extends BaseSingleFrameAction {
@@ -82,6 +95,57 @@ class RemoveFilteredShapes extends BaseSingleFrameAction {
     }
 }
 
+class PropagateShapes extends BaseSingleFrameAction {
+    #targetFrame: number;
+
+    public async init(instance, parameters): Promise<void> {
+        this.#targetFrame = parameters['Target frame'];
+    }
+
+    public async destroy(): Promise<void> {
+        // nothing to destroy
+    }
+
+    public async run(
+        instance,
+        { collection: { shapes }, frameData: { number } },
+    ): Promise<SingleFrameActionOutput> {
+        if (number === this.#targetFrame) {
+            return { collection: { shapes } };
+        }
+        const propagatedShapes = propagateShapes<SerializedShape>(shapes, number, this.#targetFrame);
+        return { collection: { shapes: [...shapes, ...propagatedShapes] } };
+    }
+
+    public get name(): string {
+        return 'Propagate shapes';
+    }
+
+    public get parameters(): ActionParameters | null {
+        return {
+            'Target frame': {
+                type: ActionParameterType.NUMBER,
+                values: ({ instance }) => {
+                    if (instance instanceof Job) {
+                        return [instance.startFrame, instance.stopFrame, 1].map((val) => val.toString());
+                    }
+                    return [0, instance.size - 1, 1].map((val) => val.toString());
+                },
+                defaultValue: ({ instance }) => {
+                    if (instance instanceof Job) {
+                        return instance.stopFrame.toString();
+                    }
+                    return (instance.size - 1).toString();
+                },
+            },
+        };
+    }
+
+    public get frameSelection(): FrameSelectionType {
+        return FrameSelectionType.CURRENT_FRAME;
+    }
+}
+
 const registeredActions: BaseSingleFrameAction[] = [];
 
 export async function listActions(): Promise<BaseSingleFrameAction[]> {
@@ -102,6 +166,7 @@ export async function registerAction(action: BaseSingleFrameAction): Promise<voi
 }
 
 registerAction(new RemoveFilteredShapes());
+registerAction(new PropagateShapes());
 
 async function runSingleFrameChain(
     instance: Job | Task,

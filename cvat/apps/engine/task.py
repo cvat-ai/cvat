@@ -19,6 +19,7 @@ import queue
 
 from django.conf import settings
 from django.db import transaction
+from django.http import HttpRequest
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -26,7 +27,10 @@ from cvat.apps.engine import models
 from cvat.apps.engine.log import ServerLogManager
 from cvat.apps.engine.media_extractors import (MEDIA_TYPES, ImageListReader, Mpeg4ChunkWriter, Mpeg4CompressedChunkWriter,
     ValidateDimension, ZipChunkWriter, ZipCompressedChunkWriter, get_mime, sort)
-from cvat.apps.engine.utils import av_scan_paths,get_rq_job_meta, define_dependent_job, get_rq_lock_by_user, preload_images
+from cvat.apps.engine.utils import (
+    av_scan_paths,get_rq_job_meta, define_dependent_job, get_rq_lock_by_user, preload_images
+)
+from cvat.apps.engine.rq_job_handler import RQIdManager
 from cvat.utils.http import make_requests_session, PROXIES_FOR_UNTRUSTED_URLS
 from utils.dataset_manifest import ImageManifestManager, VideoManifestManager, is_manifest
 from utils.dataset_manifest.core import VideoManifestValidator, is_dataset_manifest
@@ -37,20 +41,27 @@ slogger = ServerLogManager(__name__)
 
 ############################# Low Level server API
 
-def create(db_task, data, request):
-    """Schedule the task"""
+def create(
+    db_task: models.Task,
+    data: models.Data,
+    request: HttpRequest,
+) -> str:
+    """Schedule a background job to create a task and return that job's identifier"""
     q = django_rq.get_queue(settings.CVAT_QUEUES.IMPORT_DATA.value)
     user_id = request.user.id
+    rq_id = RQIdManager.build('create', 'task', db_task.pk)
 
     with get_rq_lock_by_user(q, user_id):
         q.enqueue_call(
             func=_create_thread,
             args=(db_task.pk, data),
-            job_id=f"create:task.id{db_task.pk}",
+            job_id=rq_id,
             meta=get_rq_job_meta(request=request, db_obj=db_task),
             depends_on=define_dependent_job(q, user_id),
             failure_ttl=settings.IMPORT_CACHE_FAILED_TTL.total_seconds(),
         )
+
+    return rq_id
 
 ############################# Internal implementation for server API
 
