@@ -5,7 +5,8 @@
 import React, { RefObject } from 'react';
 import { Row, Col } from 'antd/lib/grid';
 import Input from 'antd/lib/input';
-import Form, { FormInstance, RuleObject } from 'antd/lib/form';
+import Form, { FormInstance } from 'antd/lib/form';
+import { isInteger } from 'utils/validate-integer';
 
 export interface ConsensusConfiguration {
     consensusJobsPerNormalJob: number;
@@ -18,38 +19,6 @@ const initialValues: ConsensusConfiguration = {
 interface Props {
     onChange(values: ConsensusConfiguration): void;
 }
-
-const isNumber = ({
-    min,
-    max,
-    toBeSkipped,
-}: { min?: number; max?: number; toBeSkipped?: number }) => (
-    _: RuleObject,
-    value?: number | string,
-): Promise<void> => {
-    if (typeof value === 'undefined' || value === '') {
-        return Promise.resolve();
-    }
-
-    const intValue = +value;
-    if (!Number.isFinite(intValue) && !Number.isInteger(intValue)) {
-        return Promise.reject(new Error('Value must be a positive integer'));
-    }
-
-    if (typeof min !== 'undefined' && intValue < min) {
-        return Promise.reject(new Error(`Value must be more than ${min}`));
-    }
-
-    if (typeof max !== 'undefined' && intValue > max) {
-        return Promise.reject(new Error(`Value must be less than ${max}`));
-    }
-
-    if (typeof toBeSkipped !== 'undefined' && intValue === toBeSkipped) {
-        return Promise.reject(new Error(`Value shouldn't be equal to ${toBeSkipped}`));
-    }
-
-    return Promise.resolve();
-};
 
 class ConsensusConfigurationForm extends React.PureComponent<Props> {
     private formRef: RefObject<FormInstance>;
@@ -88,10 +57,10 @@ class ConsensusConfigurationForm extends React.PureComponent<Props> {
                 name='consensusJobsPerNormalJob'
                 rules={[
                     {
-                        validator: isNumber({
+                        validator: isInteger({
                             min: 0,
                             max: 10,
-                            toBeSkipped: 1,
+                            filter: (intValue: number): boolean => intValue !== 1,
                         }),
                     },
                 ]}
