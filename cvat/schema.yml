@@ -1804,7 +1804,7 @@ paths:
 
           Details about the syntax used can be found at the link: https://jsonlogic.com/
 
-           Available filter_fields: ['task_name', 'project_name', 'assignee', 'state', 'stage', 'id', 'task_id', 'project_id', 'updated_date', 'dimension', 'type'].
+           Available filter_fields: ['task_name', 'project_name', 'assignee', 'state', 'stage', 'id', 'task_id', 'project_id', 'updated_date', 'dimension', 'type', 'parent_job_id'].
         schema:
           type: string
       - name: org
@@ -1829,6 +1829,11 @@ paths:
         description: Number of results to return per page.
         schema:
           type: integer
+      - name: parent_job_id
+        in: query
+        description: A simple equality filter for the parent_job_id field
+        schema:
+          type: integer
       - name: project_id
         in: query
         description: A simple equality filter for the project_id field
@@ -1851,7 +1856,8 @@ paths:
         in: query
         description: 'Which field to use when ordering the results. Available ordering_fields:
           [''task_name'', ''project_name'', ''assignee'', ''state'', ''stage'', ''id'',
-          ''task_id'', ''project_id'', ''updated_date'', ''dimension'', ''type'']'
+          ''task_id'', ''project_id'', ''updated_date'', ''dimension'', ''type'',
+          ''parent_job_id'']'
         schema:
           type: string
       - name: stage
@@ -1891,11 +1897,7 @@ paths:
           enum:
           - annotation
           - ground_truth
-      - name: parent_job_id
-        in: query
-        description: A simple equality filter for the parent_job_id field
-        schema:
-          type: integer
+          - consensus
       tags:
       - jobs
       security:
@@ -8097,6 +8099,12 @@ components:
           allOf:
           - $ref: '#/components/schemas/Storage'
           nullable: true
+        parent_job_id:
+          type: integer
+          maximum: 2147483647
+          minimum: 0
+          nullable: true
+          readOnly: true
       required:
       - issues
       - labels
@@ -8124,10 +8132,12 @@ components:
       enum:
       - annotation
       - ground_truth
+      - consensus
       type: string
       description: |-
         * `annotation` - ANNOTATION
         * `ground_truth` - GROUND_TRUTH
+        * `consensus` - CONSENSUS
     JobWriteRequest:
       type: object
       properties:
@@ -9417,6 +9427,9 @@ components:
           allOf:
           - $ref: '#/components/schemas/StorageRequest'
           nullable: true
+        consensus_jobs_per_segment:
+          type: integer
+          nullable: true
     PatchedUserRequest:
       type: object
       properties:
@@ -10432,6 +10445,12 @@ components:
           $ref: '#/components/schemas/JobsSummary'
         labels:
           $ref: '#/components/schemas/LabelsSummary'
+        consensus_jobs_per_segment:
+          type: integer
+          maximum: 2147483647
+          minimum: -2147483648
+          readOnly: true
+          nullable: true
       required:
       - jobs
       - labels
@@ -10479,6 +10498,9 @@ components:
         source_storage:
           allOf:
           - $ref: '#/components/schemas/StorageRequest'
+          nullable: true
+        consensus_jobs_per_segment:
+          type: integer
           nullable: true
       required:
       - name
