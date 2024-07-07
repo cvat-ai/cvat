@@ -7,7 +7,6 @@ import { BoundariesActions, BoundariesActionTypes } from 'actions/boundaries-act
 import { AuthActions, AuthActionTypes } from 'actions/auth-actions';
 import { ShortcutsActions, ShortcutsActionsTypes } from 'actions/shortcuts-actions';
 import { KeyMap, KeyMapItem } from 'utils/mousetrap-react';
-import { ShortcutScope } from 'utils/enums';
 import { ShortcutsState } from '.';
 
 const capitalize = (text: string): string => text.slice(0, 1).toUpperCase() + text.slice(1);
@@ -51,11 +50,14 @@ const defaultState: ShortcutsState = {
     }, {}),
 };
 
-function conflictDetector(shortcuts: Record<string, KeyMapItem>, keyMap: KeyMap): KeyMapItem | null {
+export function conflictDetector(
+    shortcuts: Record<string, KeyMapItem>,
+    keyMap: KeyMap): Record<string, KeyMapItem> | null {
     const flatKeyMap: { [scope: string]: { sequences: string[], items: Record<string, KeyMapItem> } } = {};
+    const conlictingItems: Record<string, KeyMapItem> = {};
 
     for (const [action, keyMapItem] of Object.entries(keyMap)) {
-        const scope = keyMapItem.scope || ShortcutScope.ALL;
+        const { scope } = keyMapItem;
         if (!flatKeyMap[scope]) {
             flatKeyMap[scope] = { sequences: [], items: {} };
         }
@@ -64,24 +66,31 @@ function conflictDetector(shortcuts: Record<string, KeyMapItem>, keyMap: KeyMap)
     }
 
     for (const [action, keyMapItem] of Object.entries(shortcuts)) {
-        const scope = keyMapItem.scope || ShortcutScope.ALL;
+        const { scope } = keyMapItem;
         const { sequences } = keyMapItem;
 
         if (!flatKeyMap[scope]) {
             flatKeyMap[scope] = { sequences: [], items: {} };
         }
+        const flatKeyMapUpdated = structuredClone(flatKeyMap[scope]);
+
+        if (flatKeyMapUpdated.items[action]) {
+            const currentSequences = flatKeyMapUpdated.items[action].sequences;
+            delete flatKeyMapUpdated.items[action];
+            flatKeyMapUpdated.sequences = flatKeyMapUpdated.sequences.filter(
+                (s) => !currentSequences.includes(s),
+            );
+        }
 
         for (const sequence of sequences) {
-            if (flatKeyMap[scope].sequences.includes(sequence)) {
-                const conflictingAction = Object.keys(flatKeyMap[scope].items)
-                    .find((a) => flatKeyMap[scope].items[a].sequences.includes(sequence));
-                const conflictingItem = flatKeyMap[scope].items[conflictingAction!];
-                console.error(`Conflict detected for scope '${scope}' with sequence '${sequence}'`);
-                console.error('  - Current KeyMapItem:');
-                console.error(keyMapItem);
-                console.error('  - Conflicting KeyMapItem:');
-                console.error(conflictingItem);
-                return conflictingItem;
+            if (flatKeyMapUpdated.sequences.includes(sequence)) {
+                const conflictingAction = Object.keys(flatKeyMapUpdated.items)
+                    .find((a) => flatKeyMapUpdated.items[a].sequences.includes(sequence));
+                const conflictingItem = flatKeyMapUpdated.items[conflictingAction!];
+                conflictingItem.sequences = conflictingItem.sequences.filter((s) => s !== sequence);
+                if (conflictingAction) {
+                    conlictingItems[conflictingAction] = conflictingItem;
+                }
             }
         }
 
@@ -89,8 +98,9 @@ function conflictDetector(shortcuts: Record<string, KeyMapItem>, keyMap: KeyMap)
         flatKeyMap[scope].items[action] = keyMapItem;
     }
 
-    return null;
+    return Object.keys(conlictingItems).length ? conlictingItems : null;
 }
+
 export default (state = defaultState, action: ShortcutsActions | BoundariesActions | AuthActions): ShortcutsState => {
     switch (action.type) {
         case ShortcutsActionsTypes.REGISTER_SHORTCUTS: {
@@ -122,7 +132,14 @@ export default (state = defaultState, action: ShortcutsActions | BoundariesActio
         }
         case ShortcutsActionsTypes.UPDATE_SEQUNCE: {
             const { keyMapId, updatedSequence } = action.payload;
-            const keyMap = { ...state.keyMap };
+            let keyMap = { ...state.keyMap };
+            const shortcut = {
+                [keyMapId]: { ...keyMap[keyMapId], sequences: updatedSequence },
+            };
+            const conflictingShortcuts = conflictDetector(shortcut, keyMap);
+            if (conflictingShortcuts) {
+                keyMap = { ...keyMap, ...conflictingShortcuts };
+            }
             keyMap[keyMapId] = { ...keyMap[keyMapId], sequences: updatedSequence };
             const normalized = formatShortcuts(keyMap[keyMapId]);
             return {

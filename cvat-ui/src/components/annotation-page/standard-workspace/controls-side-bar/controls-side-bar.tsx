@@ -61,19 +61,19 @@ const componentShortcuts = {
     CLOCKWISE_ROTATION: {
         name: 'Rotate clockwise',
         description: 'Change image angle (add 90 degrees)',
-        sequences: ['ctrl+r'],
+        sequences: ['control+r'],
         scope: ShortcutScope.ANNOTATION_PAGE_STANDARD_WORKSPACE,
     },
     ANTICLOCKWISE_ROTATION: {
         name: 'Rotate anticlockwise',
         description: 'Change image angle (subtract 90 degrees)',
-        sequences: ['ctrl+shift+r'],
+        sequences: ['control+shift+r'],
         scope: ShortcutScope.ANNOTATION_PAGE_STANDARD_WORKSPACE,
     },
     PASTE_SHAPE: {
         name: 'Paste shape',
         description: 'Paste a shape from internal CVAT clipboard',
-        sequences: ['ctrl+v'],
+        sequences: ['control+v'],
         scope: ShortcutScope.ANNOTATION_PAGE_STANDARD_WORKSPACE,
     },
     SWITCH_DRAW_MODE: {

@@ -20,7 +20,6 @@ interface DispatchToProps {
     onKeySequenceUpdate(keyMapId: string, updatedSequence: string[]): void;
 }
 
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
 function mapStateToProps(state: CombinedState): StateToProps {
     const {
         shortcuts: { keyMap, normalizedKeyMap },

@@ -56,7 +56,12 @@ function ShortcutsSettingsComponent(props: Props): JSX.Element {
                                 title={<p className='cvat-shortcuts-settings-item-title'>{item.name}</p>}
                                 description={<span className='cvat-shortcuts-settings-item-description'>{item.description}</span>}
                             />
-                            <MultipleShortcutsDisplay id={id} item={item} onKeySequenceUpdate={onKeySequenceUpdate} />
+                            <MultipleShortcutsDisplay
+                                id={id}
+                                keyMap={keyMap}
+                                item={item}
+                                onKeySequenceUpdate={onKeySequenceUpdate}
+                            />
                         </List.Item>
                     )}
                     style={{ paddingLeft: 5 }}
