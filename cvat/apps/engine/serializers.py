@@ -1111,7 +1111,7 @@ class TaskReadSerializer(serializers.ModelSerializer):
     source_storage = StorageSerializer(required=False, allow_null=True)
     jobs = JobsSummarySerializer(url_filter_key='task_id', source='segment_set')
     labels = LabelsSummarySerializer(source='*')
-    consensus_jobs_per_segment = serializers.ReadOnlyField(required=False, allow_null=True)
+    consensus_jobs_per_normal_job = serializers.ReadOnlyField(required=False, allow_null=True)
 
     class Meta:
         model = models.Task
@@ -1120,7 +1120,7 @@ class TaskReadSerializer(serializers.ModelSerializer):
             'status', 'data_chunk_size', 'data_compressed_chunk_type', 'guide_id',
             'data_original_chunk_type', 'size', 'image_quality', 'data', 'dimension',
             'subset', 'organization', 'target_storage', 'source_storage', 'jobs', 'labels',
-            'consensus_jobs_per_segment',
+            'consensus_jobs_per_normal_job',
         )
         read_only_fields = fields
         extra_kwargs = {
@@ -1136,13 +1136,13 @@ class TaskWriteSerializer(WriteOnceMixin, serializers.ModelSerializer):
     project_id = serializers.IntegerField(required=False, allow_null=True)
     target_storage = StorageSerializer(required=False, allow_null=True)
     source_storage = StorageSerializer(required=False, allow_null=True)
-    consensus_jobs_per_segment = serializers.IntegerField(required=False, allow_null=True)
+    consensus_jobs_per_normal_job = serializers.IntegerField(required=False, allow_null=True)
 
     class Meta:
         model = models.Task
         fields = ('url', 'id', 'name', 'project_id', 'owner_id', 'assignee_id',
             'bug_tracker', 'overlap', 'segment_size', 'labels', 'subset',
-            'target_storage', 'source_storage', 'consensus_jobs_per_segment',
+            'target_storage', 'source_storage', 'consensus_jobs_per_normal_job',
         )
         write_once_fields = ('overlap', 'segment_size')
 
@@ -1323,10 +1323,10 @@ class TaskWriteSerializer(WriteOnceMixin, serializers.ModelSerializer):
                 if sublabels != target_project_sublabel_names.get(label):
                     raise serializers.ValidationError('All task or project label names must be mapped to the target project')
 
-        consensus_jobs_per_segment = attrs.get('consensus_jobs_per_segment', self.instance.consensus_jobs_per_segment if self.instance else None)
+        consensus_jobs_per_normal_job = attrs.get('consensus_jobs_per_normal_job', self.instance.consensus_jobs_per_normal_job if self.instance else None)
 
-        if consensus_jobs_per_segment and (consensus_jobs_per_segment == 1 or consensus_jobs_per_segment < 0):
-            raise serializers.ValidationError("Consensus job per segment should be greater than or equal to 0 and not 1")
+        if consensus_jobs_per_normal_job and (consensus_jobs_per_normal_job == 1 or consensus_jobs_per_normal_job < 0):
+            raise serializers.ValidationError("Consensus jobs per normal job should be greater than or equal to 0 and not 1")
 
         return attrs
 

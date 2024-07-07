@@ -725,7 +725,7 @@ export class Task extends Session {
     public readonly organization: number | null;
     public readonly progress: { count: number; completed: number };
     public readonly jobs: Job[];
-    public readonly consensusJobsPerSegment: number;
+    public readonly consensusJobsPerNormalJob: number;
 
     public readonly startFrame: number;
     public readonly stopFrame: number;
@@ -780,7 +780,7 @@ export class Task extends Session {
             cloud_storage_id: undefined,
             sorting_method: undefined,
             files: undefined,
-            consensus_jobs_per_segment: undefined,
+            consensus_jobs_per_normal_job: undefined,
             quality_settings: undefined,
         };
 
@@ -965,8 +965,8 @@ export class Task extends Session {
                 copyData: {
                     get: () => data.copy_data,
                 },
-                consensusJobsPerSegment: {
-                    get: () => data.consensus_jobs_per_segment,
+                consensusJobsPerNormalJob: {
+                    get: () => data.consensus_jobs_per_normal_job,
                 },
                 labels: {
                     get: () => [...data.labels],

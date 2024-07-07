@@ -10,11 +10,11 @@ import Form, { FormInstance, RuleObject } from 'antd/lib/form';
 import { Store } from 'antd/lib/form/interface';
 
 export interface ConsensusConfiguration {
-    consensusJobsPerSegment: number;
+    consensusJobsPerNormalJob: number;
 }
 
 const initialValues: ConsensusConfiguration = {
-    consensusJobsPerSegment: 0,
+    consensusJobsPerNormalJob: 0,
 };
 
 interface Props {
@@ -88,11 +88,11 @@ class ConsensusConfigurationForm extends React.PureComponent<Props> {
     }
 
     /* eslint-disable class-methods-use-this */
-    private renderConsensusJobsPerSegment(): JSX.Element {
+    private renderconsensusJobsPerNormalJob(): JSX.Element {
         return (
             <Form.Item
-                label='Consensus Job Per Segment'
-                name='consensusJobsPerSegment'
+                label='Consensus Jobs Per Normal Job'
+                name='consensusJobsPerNormalJob'
                 rules={[
                     {
                         validator: isNumber({
@@ -113,7 +113,7 @@ class ConsensusConfigurationForm extends React.PureComponent<Props> {
             <Form initialValues={initialValues} ref={this.formRef} layout='vertical'>
                 <Row justify='start'>
                     <Col span={24}>
-                        {this.renderConsensusJobsPerSegment()}
+                        {this.renderconsensusJobsPerNormalJob()}
                     </Col>
                 </Row>
             </Form>

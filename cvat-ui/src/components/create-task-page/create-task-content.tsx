@@ -86,7 +86,7 @@ const defaultState: State = {
         useProjectTargetStorage: true,
     },
     consensus: {
-        consensusJobsPerSegment: 0,
+        consensusJobsPerNormalJob: 0,
     },
     labels: [],
     files: {

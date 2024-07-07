@@ -60,7 +60,7 @@ const core = getCore();
 interface State {
     name: string;
     subset: string;
-    consensusJobsPerSegment: number;
+    consensusJobsPerNormalJob: number;
 }
 
 type Props = DispatchToProps & StateToProps & OwnProps;
@@ -72,7 +72,7 @@ class DetailsComponent extends React.PureComponent<Props, State> {
         this.state = {
             name: taskInstance.name,
             subset: taskInstance.subset,
-            consensusJobsPerSegment: taskInstance.consensusJobsPerSegment,
+            consensusJobsPerNormalJob: taskInstance.consensusJobsPerNormalJob,
         };
     }
 
@@ -87,7 +87,7 @@ class DetailsComponent extends React.PureComponent<Props, State> {
     }
 
     private renderTaskName(): JSX.Element {
-        const { name, consensusJobsPerSegment } = this.state;
+        const { name, consensusJobsPerNormalJob } = this.state;
         const { task: taskInstance, onUpdateTask } = this.props;
         const taskName = name;
 
@@ -112,7 +112,7 @@ class DetailsComponent extends React.PureComponent<Props, State> {
                     </Title>
                 </Col>
                 {
-                    consensusJobsPerSegment > 0 && (
+                    consensusJobsPerNormalJob > 0 && (
                         <Col>
                             <Tag color='#1890ff'>Consensus Based Annotation</Tag>
                         </Col>
