@@ -266,7 +266,7 @@ function JobItem(props: Props): JSX.Element {
                 {consensusJobs.length > 0 &&
                     (
                         <Collapse
-                            className='cvat-advanced-configuration-wrapper'
+                            className='cvat-consensus-job-collapse'
                             items={[{
                                 key: '1',
                                 label:
