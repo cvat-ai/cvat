@@ -1,5 +1,4 @@
-// Copyright (C) 2020-2022 Intel Corporation
-// Copyright (C) 2022-2024 CVAT.ai Corporation
+// Copyright (C) 2024 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -7,7 +6,6 @@ import React, { RefObject } from 'react';
 import { Row, Col } from 'antd/lib/grid';
 import Input from 'antd/lib/input';
 import Form, { FormInstance, RuleObject } from 'antd/lib/form';
-import { Store } from 'antd/lib/form/interface';
 
 export interface ConsensusConfiguration {
     consensusJobsPerNormalJob: number;
@@ -18,7 +16,7 @@ const initialValues: ConsensusConfiguration = {
 };
 
 interface Props {
-    onSubmit(values: ConsensusConfiguration): Promise<void>;
+    onChange(values: ConsensusConfiguration): void;
 }
 
 const isNumber = ({
@@ -61,21 +59,16 @@ class ConsensusConfigurationForm extends React.PureComponent<Props> {
         this.formRef = React.createRef<FormInstance>();
     }
 
-    public submit(): Promise<void> {
-        const {
-            onSubmit,
-        } = this.props;
+    private handleChangeName(e: React.ChangeEvent<HTMLInputElement>): void {
+        const { onChange } = this.props;
+        onChange({
+            consensusJobsPerNormalJob: parseInt(e.target.value, 10),
+        });
+    }
 
+    public submit(): Promise<void> {
         if (this.formRef.current) {
-            return this.formRef.current.validateFields()
-                .then(
-                    (values: Store): Promise<void> => {
-                        const entries = Object.entries(values);
-                        return onSubmit({
-                            ...((Object.fromEntries(entries) as any) as ConsensusConfiguration),
-                        });
-                    },
-                );
+            return this.formRef.current.validateFields();
         }
 
         return Promise.reject(new Error('Form ref is empty'));
@@ -103,7 +96,13 @@ class ConsensusConfigurationForm extends React.PureComponent<Props> {
                     },
                 ]}
             >
-                <Input size='large' type='number' min={0} step={1} />
+                <Input
+                    size='large'
+                    type='number'
+                    min={0}
+                    step={1}
+                    onChange={(e) => this.handleChangeName(e)}
+                />
             </Form.Item>
         );
     }

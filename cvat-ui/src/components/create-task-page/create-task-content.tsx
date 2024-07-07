@@ -764,7 +764,7 @@ class CreateTaskContent extends React.PureComponent<Props & RouteComponentProps,
             <Col span={24}>
                 <ConsensusConfigurationForm
                     ref={this.consensusConfigurationComponent}
-                    onSubmit={this.handleSubmitConsensusConfiguration}
+                    onChange={this.handleSubmitConsensusConfiguration}
                 />
             </Col>
         );

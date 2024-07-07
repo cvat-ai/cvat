@@ -521,6 +521,7 @@ export class Job extends Session {
         this.#data.data_chunk_size = initialData.data_chunk_size ?? this.#data.data_chunk_size;
         this.#data.mode = initialData.mode ?? this.#data.mode;
         this.#data.created_date = initialData.created_date ?? this.#data.created_date;
+        this.#data.parent_job_id = initialData.parent_job_id ?? this.#data.parent_job_id;
 
         if (Array.isArray(initialData.labels)) {
             this.#data.labels = initialData.labels.map((labelData) => {
