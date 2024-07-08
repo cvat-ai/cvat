@@ -761,8 +761,10 @@ export default function (state = defaultState, action: AnyAction): Notifications
                     ...state.messages,
                     tasks: {
                         ...state.messages.tasks,
-                        mergingConsensusDone: `Consensus Jobs in the [task ${taskID}](/tasks/${taskID})\
-                            have been merged`,
+                        mergingConsensusDone: {
+                            message: `Consensus Jobs in the [task ${taskID}](/tasks/${taskID}) \
+                                have been merged`,
+                        },
                     },
                 },
             };
