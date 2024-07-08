@@ -120,7 +120,7 @@ export interface SerializedTask {
     subset: string;
     updated_date: string;
     url: string;
-    consensus_jobs_per_segment: number;
+    consensus_jobs_per_normal_job: number;
 }
 
 export interface SerializedJob {
@@ -504,4 +504,26 @@ export interface SerializedAPISchema {
         description: string;
         url: string;
     };
+}
+
+export interface SerializedRequest {
+    id?: string;
+    status: string;
+    operation?: {
+        target: string;
+        type: string;
+        format: string;
+        job_id: number | null;
+        task_id: number | null;
+        project_id: number | null;
+    };
+    progress?: number;
+    message: string;
+    result_url?: string;
+    result_id?: number;
+    created_date?: string;
+    started_date?: string;
+    finished_date?: string;
+    expiry_date?: string;
+    owner?: any;
 }

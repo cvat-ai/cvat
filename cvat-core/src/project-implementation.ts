@@ -107,7 +107,7 @@ export default function implementProject(Project: typeof ProjectClass): typeof P
     });
 
     Object.defineProperty(Project.prototype.annotations.exportDataset, 'implementation', {
-        value: function exportDatasetImplementation(
+        value: async function exportDatasetImplementation(
             this: ProjectClass,
             format: Parameters<typeof ProjectClass.prototype.annotations.exportDataset>[0],
             saveImages: Parameters<typeof ProjectClass.prototype.annotations.exportDataset>[1],
@@ -115,12 +115,13 @@ export default function implementProject(Project: typeof ProjectClass): typeof P
             targetStorage: Parameters<typeof ProjectClass.prototype.annotations.exportDataset>[3],
             customName: Parameters<typeof ProjectClass.prototype.annotations.exportDataset>[4],
         ): ReturnType<typeof ProjectClass.prototype.annotations.exportDataset> {
-            return exportDataset(this, format, saveImages, useDefaultSettings, targetStorage, customName);
+            const rqID = await exportDataset(this, format, saveImages, useDefaultSettings, targetStorage, customName);
+            return rqID;
         },
     });
 
     Object.defineProperty(Project.prototype.annotations.importDataset, 'implementation', {
-        value: function importDatasetImplementation(
+        value: async function importDatasetImplementation(
             this: ProjectClass,
             format: Parameters<typeof ProjectClass.prototype.annotations.importDataset>[0],
             useDefaultSettings: Parameters<typeof ProjectClass.prototype.annotations.importDataset>[1],
@@ -128,18 +129,20 @@ export default function implementProject(Project: typeof ProjectClass): typeof P
             file: Parameters<typeof ProjectClass.prototype.annotations.importDataset>[3],
             options: Parameters<typeof ProjectClass.prototype.annotations.importDataset>[4],
         ): ReturnType<typeof ProjectClass.prototype.annotations.importDataset> {
-            return importDataset(this, format, useDefaultSettings, sourceStorage, file, options);
+            const rqID = await importDataset(this, format, useDefaultSettings, sourceStorage, file, options);
+            return rqID;
         },
     });
 
     Object.defineProperty(Project.prototype.backup, 'implementation', {
-        value: function backupImplementation(
+        value: async function backupImplementation(
             this: ProjectClass,
             targetStorage: Parameters<typeof ProjectClass.prototype.backup>[0],
             useDefaultSettings: Parameters<typeof ProjectClass.prototype.backup>[1],
             fileName: Parameters<typeof ProjectClass.prototype.backup>[2],
         ): ReturnType<typeof ProjectClass.prototype.backup> {
-            return serverProxy.projects.backup(this.id, targetStorage, useDefaultSettings, fileName);
+            const rqID = await serverProxy.projects.backup(this.id, targetStorage, useDefaultSettings, fileName);
+            return rqID;
         },
     });
 
@@ -149,9 +152,8 @@ export default function implementProject(Project: typeof ProjectClass): typeof P
             storage: Parameters<typeof ProjectClass.restore>[0],
             file: Parameters<typeof ProjectClass.restore>[1],
         ): ReturnType<typeof ProjectClass.restore> {
-            const serializedProject = await serverProxy.projects.restore(storage, file);
-            const labels = await serverProxy.labels.get({ project_id: serializedProject.id });
-            return new Project({ ...serializedProject, labels: labels.results });
+            const rqID = await serverProxy.projects.restore(storage, file);
+            return rqID;
         },
     });
 

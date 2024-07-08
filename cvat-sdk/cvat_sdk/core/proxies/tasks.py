@@ -112,18 +112,22 @@ class Task(
             elif resource_type is ResourceType.SHARE:
                 data["server_files"] = resources
 
-            self.api.create_data(
+            result, _ = self.api.create_data(
                 self.id,
                 data_request=models.DataRequest(**data),
             )
+            rq_id = result.rq_id
         elif resource_type == ResourceType.LOCAL:
             url = self._client.api_map.make_endpoint_url(
                 self.api.create_data_endpoint.path, kwsub={"id": self.id}
             )
 
-            DataUploader(self._client).upload_files(
+            response = DataUploader(self._client).upload_files(
                 url, list(map(Path, resources)), pbar=pbar, **data
             )
+            response = json.loads(response.data)
+            rq_id = response.get("rq_id")
+            assert rq_id, "The rq_id param was not found in the response"
 
         if wait_for_completion:
             if status_check_period is None:
@@ -132,27 +136,21 @@ class Task(
             self._client.logger.info("Awaiting for task %s creation...", self.id)
             while True:
                 sleep(status_check_period)
-                (status, response) = self.api.retrieve_status(self.id)
+                request_details, response = self._client.api_client.requests_api.retrieve(rq_id)
+                status, message = request_details.status, request_details.message
 
                 self._client.logger.info(
                     "Task %s creation status: %s (message=%s)",
                     self.id,
-                    status.state.value,
-                    status.message,
+                    status,
+                    message,
                 )
 
-                if (
-                    status.state.value
-                    == models.RqStatusStateEnum.allowed_values[("value",)]["FINISHED"]
-                ):
+                if status.value == models.RequestStatus.allowed_values[("value",)]["FINISHED"]:
                     break
-                elif (
-                    status.state.value
-                    == models.RqStatusStateEnum.allowed_values[("value",)]["FAILED"]
-                ):
-                    raise exceptions.ApiException(
-                        status=status.state.value, reason=status.message, http_resp=response
-                    )
+
+                elif status.value == models.RequestStatus.allowed_values[("value",)]["FAILED"]:
+                    raise exceptions.ApiException(status=status, reason=message, http_resp=response)
 
             self.fetch()
 
@@ -431,16 +429,14 @@ class TasksRepo(
             logger=self._client.logger.debug,
         )
 
-        rq_id = json.loads(response.data)["rq_id"]
-        response = self._client.wait_for_completion(
-            url,
-            success_status=201,
-            positive_statuses=[202],
-            post_params={"rq_id": rq_id},
-            status_check_period=status_check_period,
+        rq_id = json.loads(response.data).get("rq_id")
+        assert rq_id, "The rq_id was not found in server response"
+
+        request, response = self._client.wait_for_completion(
+            rq_id, status_check_period=status_check_period
         )
 
-        task_id = json.loads(response.data)["id"]
+        task_id = request.result_id
         self._client.logger.info(f"Task has been imported successfully. Task ID: {task_id}")
 
         return self.retrieve(task_id)

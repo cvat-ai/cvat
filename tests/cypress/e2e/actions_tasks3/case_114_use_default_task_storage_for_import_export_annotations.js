@@ -153,11 +153,11 @@ context('Tests for source and target storage.', () => {
                 targetStorage: project.advancedConfiguration.targetStorage,
             };
             cy.exportJob(exportParams);
-            cy.getDownloadFileName().then((file) => {
+            cy.downloadExport().then((file) => {
                 annotationsArchiveName = file;
                 cy.verifyDownload(annotationsArchiveName);
             });
-            cy.verifyNotification();
+            cy.goBack();
 
             // remove annotations
             cy.removeAnnotations();

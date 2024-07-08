@@ -27,13 +27,13 @@ import {
 import { useIsMounted } from 'utils/hooks';
 import UserSelector from 'components/task-page/user-selector';
 import CVATTooltip from 'components/common/cvat-tooltip';
-import { Collapse } from 'antd';
+import Collapse from 'antd/lib/collapse';
 import JobActionsMenu from './job-actions-menu';
 
 interface Props {
     job: Job;
     task: Task;
-    onJobUpdate: (job: Job) => void;
+    onJobUpdate: (job: Job, fields: Parameters<Job['save']>[0]) => void;
 }
 
 function ReviewSummaryComponent({ jobInstance }: { jobInstance: any }): JSX.Element {
@@ -115,15 +115,15 @@ function JobItem(props: Props): JSX.Element {
     const frameCountPercent = ((job.frameCount / (task.size || 1)) * 100).toFixed(0);
     const frameCountPercentRepresentation = frameCountPercent === '0' ? '<1' : frameCountPercent;
     let jobName = `Job #${job.id}`;
-    if (task.consensusJobsPerSegment && job.type !== JobType.GROUND_TRUTH) {
+    if (task.consensusJobsPerNormalJob && job.type !== JobType.GROUND_TRUTH) {
         jobName = job.type === JobType.CONSENSUS ? `Consensus Job #${job.id}` : `Normal Job #${job.id}`;
     }
 
-    let consensusJob: Job[] = [];
-    if (task.consensusJobsPerSegment) {
-        consensusJob = task.jobs.filter((eachJob: Job) => eachJob.parentJobId === id).reverse();
+    let consensusJobs: Job[] = [];
+    if (task.consensusJobsPerNormalJob) {
+        consensusJobs = task.jobs.filter((eachJob: Job) => eachJob.parent_job_id === id).reverse();
     }
-    const consensusJobView: React.JSX.Element[] = consensusJob.map((eachJob: Job) => (
+    const consensusJobViews: React.JSX.Element[] = consensusJobs.map((eachJob: Job) => (
         <JobItem key={eachJob.id} job={eachJob} task={task} onJobUpdate={onJobUpdate} />
     ));
 
@@ -172,8 +172,7 @@ function JobItem(props: Props): JSX.Element {
                                             value={job.assignee}
                                             onSelect={(user: User | null): void => {
                                                 if (job?.assignee?.id === user?.id) return;
-                                                job.assignee = user;
-                                                onJobUpdate(job);
+                                                onJobUpdate(job, { assignee: user });
                                             }}
                                         />
                                     </Col>
@@ -192,8 +191,7 @@ function JobItem(props: Props): JSX.Element {
                                             className='cvat-job-item-stage'
                                             value={stage}
                                             onChange={(newValue: JobStage) => {
-                                                job.stage = newValue;
-                                                onJobUpdate(job);
+                                                onJobUpdate(job, { stage: newValue });
                                             }}
                                         >
                                             <Select.Option value={JobStage.ANNOTATION}>
@@ -265,18 +263,18 @@ function JobItem(props: Props): JSX.Element {
                 >
                     <MoreOutlined className='cvat-job-item-more-button' />
                 </Dropdown>
-                {consensusJob.length > 0 &&
+                {consensusJobs.length > 0 &&
                     (
                         <Collapse
-                            className='cvat-advanced-configuration-wrapper'
+                            className='cvat-consensus-job-collapse'
                             items={[{
                                 key: '1',
                                 label:
                                     <Text>
-                                        {`${consensusJob.length} Consensus Jobs`}
+                                        {`${consensusJobs.length} Consensus Jobs`}
                                     </Text>,
                                 children: (
-                                    consensusJobView
+                                    consensusJobViews
                                 ),
                             }]}
                         />

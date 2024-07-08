@@ -20,7 +20,7 @@ table = "events"
 auth.strategy = "basic"
 auth.user = "${CLICKHOUSE_USER}"
 auth.password = "${CLICKHOUSE_PASSWORD}"
-endpoint = "http://${CLICKHOUSE_HOST}:8123"
+endpoint = "http://${CLICKHOUSE_HOST}:${CLICKHOUSE_PORT}"
 request.concurrency = "adaptive"
 encoding.only_fields = [
     "scope",

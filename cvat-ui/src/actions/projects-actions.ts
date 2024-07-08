@@ -3,9 +3,9 @@
 //
 // SPDX-License-Identifier: MIT
 
-import { Dispatch, ActionCreator } from 'redux';
-
-import { ActionUnion, createAction, ThunkAction } from 'utils/redux';
+import {
+    ActionUnion, createAction, ThunkAction, ThunkDispatch,
+} from 'utils/redux';
 import {
     ProjectsQuery, TasksQuery, CombinedState,
 } from 'reducers';
@@ -67,7 +67,7 @@ const projectActions = {
 export type ProjectActions = ActionUnion<typeof projectActions>;
 
 export function getProjectTasksAsync(tasksQuery: Partial<TasksQuery> = {}): ThunkAction<void> {
-    return (dispatch: ActionCreator<Dispatch>, getState: () => CombinedState): void => {
+    return (dispatch: ThunkDispatch, getState: () => CombinedState): void => {
         const store = getCVATStore();
         const state: CombinedState = store.getState();
         dispatch(projectActions.updateProjectsGettingQuery(
@@ -86,7 +86,7 @@ export function getProjectTasksAsync(tasksQuery: Partial<TasksQuery> = {}): Thun
 export function getProjectsAsync(
     query: Partial<ProjectsQuery>, tasksQuery: Partial<TasksQuery> = {},
 ): ThunkAction {
-    return async (dispatch: ActionCreator<Dispatch>): Promise<void> => {
+    return async (dispatch: ThunkDispatch): Promise<void> => {
         dispatch(projectActions.getProjects());
         dispatch(projectActions.updateProjectsGettingQuery(query, tasksQuery));
 
@@ -119,7 +119,7 @@ export function getProjectsAsync(
 }
 
 export function createProjectAsync(data: any): ThunkAction {
-    return async (dispatch: ActionCreator<Dispatch>): Promise<void> => {
+    return async (dispatch: ThunkDispatch): Promise<void> => {
         const projectInstance = new cvat.classes.Project(data);
 
         dispatch(projectActions.createProject());
@@ -135,7 +135,7 @@ export function createProjectAsync(data: any): ThunkAction {
 }
 
 export function deleteProjectAsync(projectInstance: any): ThunkAction {
-    return async (dispatch: ActionCreator<Dispatch>): Promise<void> => {
+    return async (dispatch: ThunkDispatch): Promise<void> => {
         dispatch(projectActions.deleteProject(projectInstance.id));
         try {
             await projectInstance.delete();

@@ -419,7 +419,7 @@ class Task(TimestampedModel):
         blank=True, on_delete=models.SET_NULL, related_name='+')
     target_storage = models.ForeignKey('Storage', null=True, default=None,
         blank=True, on_delete=models.SET_NULL, related_name='+')
-    consensus_jobs_per_segment = models.IntegerField(default=0, blank=True)
+    consensus_jobs_per_normal_job = models.IntegerField(default=0, blank=True)
 
     # Extend default permission model
     class Meta:

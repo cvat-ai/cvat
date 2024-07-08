@@ -24,7 +24,7 @@ const core = getCore();
 
 interface Props {
     task: Task;
-    onJobUpdate: (job: Job) => void;
+    onJobUpdate: (job: Job, data: Parameters<Job['save']>[0]) => void;
 }
 
 interface State {

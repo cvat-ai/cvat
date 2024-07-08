@@ -86,7 +86,7 @@ const defaultState: State = {
         useProjectTargetStorage: true,
     },
     consensus: {
-        consensusJobsPerSegment: 0,
+        consensusJobsPerNormalJob: 0,
     },
     labels: [],
     files: {
@@ -764,7 +764,7 @@ class CreateTaskContent extends React.PureComponent<Props & RouteComponentProps,
             <Col span={24}>
                 <ConsensusConfigurationForm
                     ref={this.consensusConfigurationComponent}
-                    onSubmit={this.handleSubmitConsensusConfiguration}
+                    onChange={this.handleSubmitConsensusConfiguration}
                 />
             </Col>
         );
@@ -782,6 +782,7 @@ class CreateTaskContent extends React.PureComponent<Props & RouteComponentProps,
                     <Col span={24}>
                         <ProjectSubsetField
                             value={subset}
+                            projectSubsets={null}
                             onChange={this.handleTaskSubsetChange}
                             projectId={projectId}
                         />

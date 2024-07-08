@@ -71,6 +71,20 @@
             max-width: $grid-unit-size * 12;
         }
     }
+
+    .cvat-consensus-job-collapse {
+        margin-top: 12px;
+
+        .ant-collapse-item > .ant-collapse-header {
+            align-items: center;
+        }
+    }
+
+    .job-actions-menu {
+        position: absolute;
+        top: $grid-unit-size * 6.5;
+    }
+
 }
 
 .ant-menu.cvat-job-item-menu {

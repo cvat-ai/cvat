@@ -32,6 +32,7 @@ import ExportBackupModal from 'components/export-backup/export-backup-modal';
 import ImportDatasetModal from 'components/import-dataset/import-dataset-modal';
 import ImportBackupModal from 'components/import-backup/import-backup-modal';
 import ConsensusModal from 'components/consensus/consensus-modal';
+import UploadFileStatusModal from 'components/common/upload-file-status-modal';
 
 import JobsPageComponent from 'components/jobs-page/jobs-page';
 import ModelsPageComponent from 'components/models-page/models-page';
@@ -60,9 +61,13 @@ import GuidePage from 'components/md-guide/guide-page';
 
 import InvitationsPage from 'components/invitations-page/invitations-page';
 
+import RequestsPage from 'components/requests-page/requests-page';
+
 import AnnotationPageContainer from 'containers/annotation-page/annotation-page';
 import { Organization, getCore } from 'cvat-core-wrapper';
-import { ErrorState, NotificationsState, PluginsState } from 'reducers';
+import {
+    ErrorState, NotificationState, NotificationsState, PluginsState,
+} from 'reducers';
 import { customWaViewHit } from 'utils/environment';
 import showPlatformNotification, {
     platformInfo,
@@ -91,6 +96,7 @@ interface CVATAppProps {
     resetMessages: () => void;
     loadOrganization: () => void;
     initInvitations: () => void;
+    initRequests: () => void;
     loadServerAPISchema: () => void;
     userInitialized: boolean;
     userFetching: boolean;
@@ -112,6 +118,8 @@ interface CVATAppProps {
     pluginComponents: PluginsState['components'];
     invitationsFetching: boolean;
     invitationsInitialized: boolean;
+    requestsFetching: boolean;
+    requestsInitialized: boolean;
     serverAPISchemaFetching: boolean;
     serverAPISchemaInitialized: boolean;
     isPasswordResetEnabled: boolean;
@@ -122,7 +130,6 @@ interface CVATAppState {
     healthIinitialized: boolean;
     backendIsHealthy: boolean;
 }
-
 class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentProps, CVATAppState> {
     constructor(props: CVATAppProps & RouteComponentProps) {
         super(props);
@@ -279,6 +286,9 @@ class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentP
             invitationsInitialized,
             invitationsFetching,
             initInvitations,
+            requestsFetching,
+            requestsInitialized,
+            initRequests,
             history,
             serverAPISchemaFetching,
             serverAPISchemaInitialized,
@@ -331,6 +341,10 @@ class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentP
             loadAbout();
         }
 
+        if (organizationInitialized && !requestsInitialized && !requestsFetching) {
+            initRequests();
+        }
+
         if (isModelPluginActive && !modelsInitialized && !modelsFetching) {
             initModels();
         }
@@ -345,12 +359,15 @@ class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentP
     }
 
     private showMessages(): void {
-        function showMessage(title: string): void {
+        function showMessage(notificationState: NotificationState): void {
             notification.info({
                 message: (
-                    <ReactMarkdown>{title}</ReactMarkdown>
+                    <ReactMarkdown>{notificationState.message}</ReactMarkdown>
                 ),
-                duration: null,
+                description: notificationState?.description && (
+                    <ReactMarkdown>{notificationState?.description}</ReactMarkdown>
+                ),
+                duration: notificationState.duration || null,
             });
         }
 
@@ -359,10 +376,10 @@ class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentP
         let shown = false;
         for (const where of Object.keys(notifications.messages)) {
             for (const what of Object.keys((notifications as any).messages[where])) {
-                const message = (notifications as any).messages[where][what];
-                shown = shown || !!message;
-                if (message) {
-                    showMessage(message);
+                const notificationState = (notifications as any).messages[where][what] as NotificationState;
+                shown = shown || !!notificationState;
+                if (notificationState) {
+                    showMessage(notificationState);
                 }
             }
         }
@@ -523,6 +540,7 @@ class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentP
                                         <Route exact path='/webhooks/update/:id' component={UpdateWebhookPage} />
                                         <Route exact path='/invitations' component={InvitationsPage} />
                                         <Route exact path='/organization' component={OrganizationPage} />
+                                        <Route exact path='/requests' component={RequestsPage} />
                                         { routesToRender }
                                         {isModelPluginActive && (
                                             <Route
@@ -547,6 +565,7 @@ class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentP
                                     <ImportDatasetModal />
                                     <ImportBackupModal />
                                     <InvitationWatcher />
+                                    <UploadFileStatusModal />
                                     { loggedInModals.map((Component, idx) => (
                                         <Component key={idx} targetProps={this.props} targetState={this.state} />
                                     ))}
