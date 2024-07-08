@@ -324,11 +324,11 @@ context('Ground truth jobs', () => {
             });
 
             cy.saveJob();
-            cy.interactMenu('Finish the job');
-            cy.get('.cvat-modal-content-finish-job').within(() => {
-                cy.contains('button', 'Continue').click();
-            });
+            cy.interactMenu('Open the task');
 
+            // job index is 2 because one gt job has been removed
+            cy.getJobIDFromIdx(2).then((gtJobID) => cy.setJobStage(gtJobID, 'acceptance'));
+            cy.getJobIDFromIdx(2).then((gtJobID) => cy.setJobState(gtJobID, 'completed'));
             cy.get('.cvat-job-item').contains('a', `Job #${jobID}`).click();
             cy.changeWorkspace('Review');
 
