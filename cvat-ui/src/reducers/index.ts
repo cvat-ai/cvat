@@ -6,8 +6,9 @@
 import { Canvas3d } from 'cvat-canvas3d/src/typescript/canvas3d';
 import { Canvas, RectDrawingMethod, CuboidDrawingMethod } from 'cvat-canvas-wrapper';
 import {
-    Webhook, MLModel, Organization, Job, Label, User,
+    Webhook, MLModel, Organization, Job, Task, Project, Label, User,
     QualityConflict, FramesMetaData, RQStatus, Event, Invitation, SerializedAPISchema,
+    Request,
 } from 'cvat-core-wrapper';
 import { IntelligentScissors } from 'utils/opencv-wrapper/intelligent-scissors';
 import { KeyMap } from 'utils/mousetrap-react';
@@ -35,8 +36,6 @@ interface Preview {
     initialized: boolean;
     preview: string;
 }
-
-export type Project = any;
 
 export interface ProjectsState {
     initialized: boolean;
@@ -67,8 +66,6 @@ export interface TasksQuery {
     sort: string | null;
     projectId: number | null;
 }
-
-export type Task = any; // cvat-core instance
 
 export interface JobsQuery {
     page: number;
@@ -115,38 +112,23 @@ export interface TasksState {
 export interface ExportState {
     projects: {
         dataset: {
-            current: {
-                [id: number]: string[];
-            };
-            modalInstance: any | null;
+            modalInstance: Project | null;
         };
         backup: {
-            current: {
-                [id: number]: boolean;
-            };
-            modalInstance: any | null;
+            modalInstance: Project | null;
         };
     };
     tasks: {
         dataset: {
-            current: {
-                [id: number]: string[];
-            };
-            modalInstance: any | null;
+            modalInstance: Task | null;
         };
         backup: {
-            current: {
-                [id: number]: boolean;
-            };
-            modalInstance: any | null;
+            modalInstance: Task | null;
         };
     };
     jobs: {
         dataset: {
-            current: {
-                [id: number]: string[];
-            };
-            modalInstance: any | null;
+            modalInstance: Job | null;
         };
     };
     instanceType: 'project' | 'task' | 'job' | null;
@@ -155,13 +137,12 @@ export interface ExportState {
 export interface ImportState {
     projects: {
         dataset: {
-            modalInstance: any | null;
-            current: {
-                [id: number]: {
-                    format: string;
-                    progress: number;
-                    status: string;
-                };
+            modalInstance: Project | null;
+            uploadState: {
+                id: number | null,
+                format: string;
+                progress: number;
+                status: string;
             };
         };
         backup: {
@@ -171,10 +152,7 @@ export interface ImportState {
     };
     tasks: {
         dataset: {
-            modalInstance: any | null;
-            current: {
-                [id: number]: string;
-            };
+            modalInstance: Task | null;
         };
         backup: {
             modalVisible: boolean;
@@ -183,10 +161,7 @@ export interface ImportState {
     };
     jobs: {
         dataset: {
-            modalInstance: any | null;
-            current: {
-                [id: number]: string;
-            };
+            modalInstance: Job | null;
         };
     };
     instanceType: 'project' | 'task' | 'job' | null;
@@ -443,6 +418,12 @@ export interface ErrorState {
     className?: string;
 }
 
+export interface NotificationState {
+    message: string;
+    description?: string;
+    duration?: number;
+}
+
 export interface NotificationsState {
     errors: {
         auth: {
@@ -587,41 +568,46 @@ export interface NotificationsState {
             acceptingInvitation: null | ErrorState;
             decliningInvitation: null | ErrorState;
             resendingInvitation: null | ErrorState;
+        };
+        requests: {
+            fetching: null | ErrorState;
+            canceling: null | ErrorState;
+            deleting: null | ErrorState;
         }
     };
     messages: {
         tasks: {
-            loadingDone: string;
-            importingDone: string;
-            movingDone: string;
+            loadingDone: null | NotificationState;
+            importingDone: null | NotificationState;
+            movingDone: null | NotificationState;
         };
         models: {
-            inferenceDone: string;
+            inferenceDone: null | NotificationState;
         };
         auth: {
-            changePasswordDone: string;
-            registerDone: string;
-            requestPasswordResetDone: string;
-            resetPasswordDone: string;
+            changePasswordDone: null | NotificationState;
+            registerDone: null | NotificationState;
+            requestPasswordResetDone: null | NotificationState;
+            resetPasswordDone: null | NotificationState;
         };
         projects: {
-            restoringDone: string;
+            restoringDone: null | NotificationState;
         };
         exporting: {
-            dataset: string;
-            annotation: string;
-            backup: string;
+            dataset: null | NotificationState;
+            annotation: null | NotificationState;
+            backup: null | NotificationState;
         };
         importing: {
-            dataset: string;
-            annotation: string;
-            backup: string;
+            dataset: null | NotificationState;
+            annotation: null | NotificationState;
+            backup: null | NotificationState;
         };
         invitations: {
-            newInvitations: string;
-            acceptInvitationDone: string;
-            declineInvitationDone: string;
-            resendingInvitation: string;
+            newInvitations: null | NotificationState;
+            acceptInvitationDone: null | NotificationState;
+            declineInvitationDone: null | NotificationState;
+            resendingInvitation: null | NotificationState;
         }
     };
 }
@@ -959,6 +945,18 @@ export interface InvitationsState {
     query: InvitationsQuery;
 }
 
+export interface RequestsQuery {
+    page: number;
+}
+
+export interface RequestsState {
+    fetching: boolean;
+    initialized: boolean;
+    requests: Record<string, Request>;
+    urls: string[];
+    query: RequestsQuery;
+}
+
 export interface CombinedState {
     auth: AuthState;
     projects: ProjectsState;
@@ -980,6 +978,7 @@ export interface CombinedState {
     organizations: OrganizationState;
     invitations: InvitationsState;
     webhooks: WebhooksState;
+    requests: RequestsState;
     serverAPI: ServerAPIState;
 }
 

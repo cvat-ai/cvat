@@ -56,7 +56,6 @@ class Project(
 
         DatasetUploader(self._client).upload_file_and_wait(
             self.api.create_dataset_endpoint,
-            self.api.retrieve_dataset_endpoint,
             filename,
             format_name,
             url_params={"id": self.id},
@@ -210,16 +209,13 @@ class ProjectsRepo(
             logger=self._client.logger.debug,
         )
 
-        rq_id = json.loads(response.data)["rq_id"]
-        response = self._client.wait_for_completion(
-            url,
-            success_status=201,
-            positive_statuses=[202],
-            post_params={"rq_id": rq_id},
-            status_check_period=status_check_period,
+        rq_id = json.loads(response.data).get("rq_id")
+        assert rq_id, "The rq_id was not found in server response"
+        request, response = self._client.wait_for_completion(
+            rq_id, status_check_period=status_check_period
         )
 
-        project_id = json.loads(response.data)["id"]
+        project_id = request.result_id
         self._client.logger.info(
             f"Project has been imported successfully. Project ID: {project_id}"
         )
