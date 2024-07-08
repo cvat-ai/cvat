@@ -1049,6 +1049,414 @@ paths:
       responses:
         '204':
           description: The comment has been deleted
+  /api/consensus/conflicts:
+    get:
+      operationId: consensus_list_conflicts
+      summary: List annotation conflicts in a consensus report
+      parameters:
+      - name: X-Organization
+        in: header
+        description: Organization unique slug
+        schema:
+          type: string
+      - name: filter
+        required: false
+        in: query
+        description: |2-
+
+          JSON Logic filter. This filter can be used to perform complex filtering by grouping rules.
+
+          For example, using such a filter you can get all resources created by you:
+
+              - {"and":[{"==":[{"var":"owner"},"<user>"]}]}
+
+          Details about the syntax used can be found at the link: https://jsonlogic.com/
+
+           Available filter_fields: ['id', 'frame', 'type', 'job_id', 'task_id'].
+        schema:
+          type: string
+      - name: frame
+        in: query
+        description: A simple equality filter for the frame field
+        schema:
+          type: integer
+      - name: job_id
+        in: query
+        description: A simple equality filter for the job_id field
+        schema:
+          type: integer
+      - name: org
+        in: query
+        description: Organization unique slug
+        schema:
+          type: string
+      - name: org_id
+        in: query
+        description: Organization identifier
+        schema:
+          type: integer
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      - name: page_size
+        required: false
+        in: query
+        description: Number of results to return per page.
+        schema:
+          type: integer
+      - in: query
+        name: report_id
+        schema:
+          type: integer
+        description: A simple equality filter for report id
+      - name: sort
+        required: false
+        in: query
+        description: 'Which field to use when ordering the results. Available ordering_fields:
+          [''id'', ''frame'', ''type'', ''job_id'', ''task_id'']'
+        schema:
+          type: string
+      - name: task_id
+        in: query
+        description: A simple equality filter for the task_id field
+        schema:
+          type: integer
+      - name: type
+        in: query
+        description: A simple equality filter for the type field
+        schema:
+          type: string
+          enum:
+          - NO_MATCHING_ITEM
+          - FAILED_ATTRIBUTE_VOTING
+          - NO_MATCHING_ANNOTATION
+          - ANNOTATION_TOO_CLOSE
+          - WRONG_GROUP
+          - FAILED_LABEL_VOTING
+      tags:
+      - consensus
+      security:
+      - sessionAuth: []
+        csrfAuth: []
+        tokenAuth: []
+      - signatureAuth: []
+      - basicAuth: []
+      responses:
+        '200':
+          content:
+            application/vnd.cvat+json:
+              schema:
+                $ref: '#/components/schemas/PaginatedConsensusConflictList'
+          description: ''
+  /api/consensus/reports:
+    get:
+      operationId: consensus_list_reports
+      summary: List consensus reports
+      parameters:
+      - name: X-Organization
+        in: header
+        description: Organization unique slug
+        schema:
+          type: string
+      - name: filter
+        required: false
+        in: query
+        description: |2-
+
+          JSON Logic filter. This filter can be used to perform complex filtering by grouping rules.
+
+          For example, using such a filter you can get all resources created by you:
+
+              - {"and":[{"==":[{"var":"owner"},"<user>"]}]}
+
+          Details about the syntax used can be found at the link: https://jsonlogic.com/
+
+           Available filter_fields: ['id', 'job_id', 'created_date', 'target_last_updated'].
+        schema:
+          type: string
+      - name: job_id
+        in: query
+        description: A simple equality filter for the job_id field
+        schema:
+          type: integer
+      - name: org
+        in: query
+        description: Organization unique slug
+        schema:
+          type: string
+      - name: org_id
+        in: query
+        description: Organization identifier
+        schema:
+          type: integer
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      - name: page_size
+        required: false
+        in: query
+        description: Number of results to return per page.
+        schema:
+          type: integer
+      - name: sort
+        required: false
+        in: query
+        description: 'Which field to use when ordering the results. Available ordering_fields:
+          [''id'', ''job_id'', ''created_date'', ''target_last_updated'']'
+        schema:
+          type: string
+      - in: query
+        name: task_id
+        schema:
+          type: integer
+        description: A simple equality filter for task id
+      tags:
+      - consensus
+      security:
+      - sessionAuth: []
+        csrfAuth: []
+        tokenAuth: []
+      - signatureAuth: []
+      - basicAuth: []
+      responses:
+        '200':
+          content:
+            application/vnd.cvat+json:
+              schema:
+                $ref: '#/components/schemas/PaginatedConsensusReportList'
+          description: ''
+    post:
+      operationId: consensus_create_report
+      summary: Create a consensus report
+      parameters:
+      - in: query
+        name: rq_id
+        schema:
+          type: string
+        description: |
+          The report creation request id. Can be specified to check the report
+          creation status.
+      tags:
+      - consensus
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ConsensusReportCreateRequest'
+      security:
+      - sessionAuth: []
+        csrfAuth: []
+        tokenAuth: []
+      - signatureAuth: []
+      - basicAuth: []
+      responses:
+        '201':
+          content:
+            application/vnd.cvat+json:
+              schema:
+                $ref: '#/components/schemas/ConsensusReport'
+          description: ''
+        '202':
+          content:
+            application/vnd.cvat+json:
+              schema:
+                $ref: '#/components/schemas/RqId'
+          description: |
+            A consensus report request has been enqueued, the request id is returned.
+            The request status can be checked at this endpoint by passing the rq_id
+            as the query parameter. If the request id is specified, this response
+            means the consensus report request is queued or is being processed.
+        '400':
+          description: Invalid or failed request, check the response data for details
+  /api/consensus/reports/{id}:
+    get:
+      operationId: consensus_retrieve_report
+      summary: Get consensus report details
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this consensus report.
+        required: true
+      tags:
+      - consensus
+      security:
+      - sessionAuth: []
+        csrfAuth: []
+        tokenAuth: []
+      - signatureAuth: []
+      - basicAuth: []
+      responses:
+        '200':
+          content:
+            application/vnd.cvat+json:
+              schema:
+                $ref: '#/components/schemas/ConsensusReport'
+          description: ''
+  /api/consensus/reports/{id}/data:
+    get:
+      operationId: consensus_retrieve_report_data
+      summary: Get consensus report contents
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this consensus report.
+        required: true
+      tags:
+      - consensus
+      security:
+      - sessionAuth: []
+        csrfAuth: []
+        tokenAuth: []
+      - signatureAuth: []
+      - basicAuth: []
+      responses:
+        '200':
+          content:
+            application/vnd.cvat+json:
+              schema:
+                type: object
+          description: ''
+  /api/consensus/settings:
+    get:
+      operationId: consensus_list_settings
+      summary: List consensus settings instances
+      parameters:
+      - name: X-Organization
+        in: header
+        description: Organization unique slug
+        schema:
+          type: string
+      - name: filter
+        required: false
+        in: query
+        description: |2-
+
+          JSON Logic filter. This filter can be used to perform complex filtering by grouping rules.
+
+          For example, using such a filter you can get all resources created by you:
+
+              - {"and":[{"==":[{"var":"owner"},"<user>"]}]}
+
+          Details about the syntax used can be found at the link: https://jsonlogic.com/
+
+           Available filter_fields: ['id', 'task_id'].
+        schema:
+          type: string
+      - name: org
+        in: query
+        description: Organization unique slug
+        schema:
+          type: string
+      - name: org_id
+        in: query
+        description: Organization identifier
+        schema:
+          type: integer
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      - name: page_size
+        required: false
+        in: query
+        description: Number of results to return per page.
+        schema:
+          type: integer
+      - name: sort
+        required: false
+        in: query
+        description: 'Which field to use when ordering the results. Available ordering_fields:
+          [''id'']'
+        schema:
+          type: string
+      - name: task_id
+        in: query
+        description: A simple equality filter for the task_id field
+        schema:
+          type: integer
+      tags:
+      - consensus
+      security:
+      - sessionAuth: []
+        csrfAuth: []
+        tokenAuth: []
+      - signatureAuth: []
+      - basicAuth: []
+      responses:
+        '200':
+          content:
+            application/vnd.cvat+json:
+              schema:
+                $ref: '#/components/schemas/PaginatedConsensusSettingsList'
+          description: ''
+  /api/consensus/settings/{id}:
+    get:
+      operationId: consensus_retrieve_settings
+      summary: Get consensus settings instance details
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: An id of a consensus settings instance
+        required: true
+      tags:
+      - consensus
+      security:
+      - sessionAuth: []
+        csrfAuth: []
+        tokenAuth: []
+      - signatureAuth: []
+      - basicAuth: []
+      responses:
+        '200':
+          content:
+            application/vnd.cvat+json:
+              schema:
+                $ref: '#/components/schemas/ConsensusSettings'
+          description: ''
+    patch:
+      operationId: consensus_partial_update_settings
+      summary: Update a consensus settings instance
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: An id of a consensus settings instance
+        required: true
+      tags:
+      - consensus
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedConsensusSettingsRequest'
+      security:
+      - sessionAuth: []
+        csrfAuth: []
+        tokenAuth: []
+      - signatureAuth: []
+      - basicAuth: []
+      responses:
+        '200':
+          content:
+            application/vnd.cvat+json:
+              schema:
+                $ref: '#/components/schemas/ConsensusSettings'
+          description: ''
   /api/events:
     get:
       operationId: events_list
@@ -5171,6 +5579,38 @@ paths:
       responses:
         '204':
           description: The task has been deleted
+  /api/tasks/{id}/aggregate/:
+    put:
+      operationId: tasks_update_aggregate
+      summary: Aggregate data of a task
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this task.
+        required: true
+      tags:
+      - tasks
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TaskWriteRequest'
+        required: true
+      security:
+      - sessionAuth: []
+        csrfAuth: []
+        tokenAuth: []
+      - signatureAuth: []
+      - basicAuth: []
+      responses:
+        '201':
+          description: Consensus Jobs Aggregated
+        '202':
+          description: Agreegation of Consensus Jobs started
+        '400':
+          description: Agreegating a task without data is not allowed
   /api/tasks/{id}/annotations/:
     get:
       operationId: tasks_retrieve_annotations
@@ -6819,7 +7259,7 @@ components:
           readOnly: true
         type:
           allOf:
-          - $ref: '#/components/schemas/AnnotationIdTypeEnum'
+          - $ref: '#/components/schemas/Type457Enum'
           readOnly: true
         shape_type:
           readOnly: true
@@ -6827,16 +7267,6 @@ components:
           oneOf:
           - $ref: '#/components/schemas/ShapeType'
           - $ref: '#/components/schemas/NullEnum'
-    AnnotationIdTypeEnum:
-      enum:
-      - tag
-      - shape
-      - track
-      type: string
-      description: |-
-        * `tag` - TAG
-        * `shape` - SHAPE
-        * `track` - TRACK
     AnnotationsRead:
       oneOf:
       - $ref: '#/components/schemas/LabeledData'
@@ -7207,6 +7637,137 @@ components:
           type: string
           format: uri
           readOnly: true
+    ConsensusAnnotationId:
+      type: object
+      properties:
+        obj_id:
+          type: integer
+          readOnly: true
+        job_id:
+          type: integer
+          readOnly: true
+        type:
+          allOf:
+          - $ref: '#/components/schemas/Type457Enum'
+          readOnly: true
+        shape_type:
+          readOnly: true
+          nullable: true
+          oneOf:
+          - $ref: '#/components/schemas/ShapeType'
+          - $ref: '#/components/schemas/NullEnum'
+    ConsensusConflict:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        frame:
+          type: integer
+          readOnly: true
+        type:
+          allOf:
+          - $ref: '#/components/schemas/ConsensusConflictTypeEnum'
+          readOnly: true
+        annotation_ids:
+          type: array
+          items:
+            $ref: '#/components/schemas/ConsensusAnnotationId'
+        report_id:
+          type: integer
+          readOnly: true
+      required:
+      - annotation_ids
+    ConsensusConflictTypeEnum:
+      enum:
+      - NO_MATCHING_ITEM
+      - FAILED_ATTRIBUTE_VOTING
+      - NO_MATCHING_ANNOTATION
+      - ANNOTATION_TOO_CLOSE
+      - WRONG_GROUP
+      - FAILED_LABEL_VOTING
+      type: string
+      description: |-
+        * `NO_MATCHING_ITEM` - NoMatchingItemError
+        * `FAILED_ATTRIBUTE_VOTING` - FailedAttrVotingError
+        * `NO_MATCHING_ANNOTATION` - NoMatchingAnnError
+        * `ANNOTATION_TOO_CLOSE` - AnnotationsTooCloseError
+        * `WRONG_GROUP` - WrongGroupError
+        * `FAILED_LABEL_VOTING` - FailedLabelVotingError
+    ConsensusReport:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        job_id:
+          type: integer
+          nullable: true
+          readOnly: true
+        task_id:
+          type: integer
+          nullable: true
+          readOnly: true
+        summary:
+          $ref: '#/components/schemas/ConsensusReportSummary'
+        created_date:
+          type: string
+          format: date-time
+          readOnly: true
+        target_last_updated:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - summary
+    ConsensusReportCreateRequest:
+      type: object
+      properties:
+        task_id:
+          type: integer
+          writeOnly: true
+      required:
+      - task_id
+    ConsensusReportSummary:
+      type: object
+      properties:
+        frame_count:
+          type: integer
+        conflict_count:
+          type: integer
+        conflicts_by_type:
+          type: object
+          additionalProperties:
+            type: integer
+      required:
+      - conflict_count
+      - conflicts_by_type
+      - frame_count
+    ConsensusSettings:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        task_id:
+          type: integer
+          nullable: true
+          readOnly: true
+        iou_threshold:
+          type: number
+          format: double
+          description: Used for distinction between matched / unmatched shapes
+        agreement_score_threshold:
+          type: number
+          format: double
+          description: |
+            Confidence threshold for output annotations
+        quorum:
+          type: integer
+          maximum: 2147483647
+          minimum: -2147483648
+          description: |
+            Minimum count for a label and attribute voting results to be counted
     CredentialsTypeEnum:
       enum:
       - KEY_SECRET_KEY_PAIR
@@ -8778,6 +9339,66 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/CommentRead'
+    PaginatedConsensusConflictList:
+      type: object
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/ConsensusConflict'
+    PaginatedConsensusReportList:
+      type: object
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/ConsensusReport'
+    PaginatedConsensusSettingsList:
+      type: object
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/ConsensusSettings'
     PaginatedInvitationReadList:
       type: object
       properties:
@@ -9174,6 +9795,24 @@ components:
         message:
           type: string
           minLength: 1
+    PatchedConsensusSettingsRequest:
+      type: object
+      properties:
+        iou_threshold:
+          type: number
+          format: double
+          description: Used for distinction between matched / unmatched shapes
+        agreement_score_threshold:
+          type: number
+          format: double
+          description: |
+            Confidence threshold for output annotations
+        quorum:
+          type: integer
+          maximum: 2147483647
+          minimum: -2147483648
+          description: |
+            Minimum count for a label and attribute voting results to be counted
     PatchedDataMetaWriteRequest:
       type: object
       properties:
@@ -10612,6 +11251,16 @@ components:
           nullable: true
       required:
       - name
+    Type457Enum:
+      enum:
+      - tag
+      - shape
+      - track
+      type: string
+      description: |-
+        * `tag` - TAG
+        * `shape` - SHAPE
+        * `track` - TRACK
     User:
       type: object
       properties:
