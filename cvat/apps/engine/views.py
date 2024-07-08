@@ -965,10 +965,14 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
     def aggregate(self, request, pk=None):
         task = self.get_object()
 
-        return merge_task(
+        merged_response = merge_task(
             task,
             request
         )
+        if isinstance(merged_response, str):
+            return Response(status=status.HTTP_202_ACCEPTED)
+        else:
+            return merged_response
 
     @transaction.atomic
     def perform_update(self, serializer):
