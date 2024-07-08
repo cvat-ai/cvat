@@ -1,4 +1,5 @@
 @import '../export-backup/styles';
+@use 'sass:color';
 
 .consensus-modal-form {
   display: flex;
@@ -7,7 +8,12 @@
 
   .ant-btn-default {
     background-color: #1890ff;
-    border: none;
+    color: white !important;
+
+    &:hover {
+      background-color: color.adjust(#1890ff, $lightness: 7%) !important;
+      color: white !important;
+    }
   }
 }
 
@@ -22,3 +28,12 @@
   }
 }
 
+.cvat-button-reset-settings {
+  background-color: red;
+  color: white;
+
+  &:hover {
+    background-color: color.adjust(red, $lightness: 7%) !important;
+    color: white !important;
+  }
+}

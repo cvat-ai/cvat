@@ -138,6 +138,7 @@ export default function ConsensusSettingsForm(props: Props): JSX.Element | null 
                         onClick={() => {
                             form.resetFields();
                         }}
+                        className='cvat-button-reset-settings'
                     >
                         Reset Settings
                     </Button>
