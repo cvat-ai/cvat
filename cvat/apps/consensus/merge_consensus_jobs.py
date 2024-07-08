@@ -6,6 +6,7 @@ from typing import Dict, List
 from uuid import uuid4
 
 import datumaro as dm
+from rest_framework.exceptions import ValidationError
 import django_rq
 from datumaro.components.operations import IntersectMerge
 from django.conf import settings
@@ -23,7 +24,7 @@ from cvat.apps.consensus.consensus_reports import (
 from cvat.apps.consensus.models import ConsensusSettings
 from cvat.apps.dataset_manager.bindings import import_dm_annotations
 from cvat.apps.dataset_manager.task import PatchAction, patch_job_data
-from cvat.apps.engine.models import Job, JobType, Task
+from cvat.apps.engine.models import Job, JobType, Task, StateChoice
 from cvat.apps.engine.serializers import RqIdSerializer
 from cvat.apps.engine.utils import (
     define_dependent_job,
@@ -41,6 +42,10 @@ def get_consensus_jobs(task_id: int) -> Dict[int, List[int]]:
         segment__task_id=task_id, type=JobType.CONSENSUS.value
     ):
         assert job.parent_job_id
+
+        # if the job is in NEW state, it means that the job isn't annotated
+        if job.state == StateChoice.NEW.value:
+            continue
         jobs.setdefault(job.parent_job_id, []).append(job.id)
 
     return jobs
@@ -53,6 +58,9 @@ def get_annotations(job_id: int) -> dm.Dataset:
 @transaction.atomic
 def _merge_consensus_jobs(task_id: int) -> None:
     jobs = get_consensus_jobs(task_id)
+    if not jobs:
+        raise ValidationError("No annotated consensus jobs found")
+
     consensus_settings = ConsensusSettings.objects.filter(task=task_id).first()
     merger = IntersectMerge(
         conf=IntersectMerge.Conf(
