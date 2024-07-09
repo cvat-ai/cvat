@@ -3,7 +3,7 @@
 // SPDX-License-Identifier: MIT
 
 import { ActionUnion, createAction, ThunkAction } from 'utils/redux';
-import { ConsensusSettings } from 'cvat-core-wrapper';
+import { ConsensusSettings, Task } from 'cvat-core-wrapper';
 
 export enum ConsensusActionTypes {
     OPEN_CONSENSUS_MODAL = 'OPEN_CONSENSUS_MODAL',
@@ -40,7 +40,7 @@ export const consensusActions = {
 };
 
 export const mergeTaskConsensusJobsAsync = (
-    taskInstance: any,
+    taskInstance: Task,
 ): ThunkAction => async (dispatch) => {
     try {
         dispatch(consensusActions.mergeTaskConsensusJobs(taskInstance.id));
