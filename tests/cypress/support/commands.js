@@ -1305,7 +1305,7 @@ Cypress.Commands.add('downloadExport', () => {
         .within(() => {
             cy.contains('[role="menuitem"]', 'Download').click();
         });
-    cy.wait('@download')
+    cy.wait('@download', { requestTimeout: 10000 })
         .then((download) => {
             const filename = download.response.headers['content-disposition'].split(';')[1].split('filename=')[1];
             // need to remove quotes
