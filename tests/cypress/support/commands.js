@@ -1307,6 +1307,7 @@ Cypress.Commands.add('downloadExport', () => {
         });
     cy.wait('@download', { requestTimeout: 10000 })
         .then((download) => {
+            console.log(JSON.stringify(download));
             const filename = download.response.headers['content-disposition'].split(';')[1].split('filename=')[1];
             // need to remove quotes
             return filename.substring(1, filename.length - 1);
