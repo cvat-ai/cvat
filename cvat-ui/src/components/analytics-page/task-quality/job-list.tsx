@@ -67,7 +67,7 @@ function JobListComponent(props: Props): JSX.Element {
     function collectUsers(path: string): ColumnFilterItem[] {
         return Array.from<string | null>(
             new Set(
-                Object.values(jobsReports).map((report: any) => {
+                Object.values(jobsReports).map((report: QualityReport) => {
                     if (report[path] === null) {
                         return null;
                     }
