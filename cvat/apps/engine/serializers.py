@@ -1195,8 +1195,8 @@ class TaskWriteSerializer(WriteOnceMixin, serializers.ModelSerializer):
 
         if validated_data.get('assignee_id'):
             db_task.assignee_updated_date = db_task.updated_date
+            db_task.save(update_fields=["assignee_updated_date"])
 
-        db_task.save()
         return db_task
 
     # pylint: disable=no-self-use
