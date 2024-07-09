@@ -1102,7 +1102,7 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
                 # Create a temporary copy of the parameters we will try to create the task with
                 data = copy(serializer.data)
 
-                for optional_field in ['job_file_mapping', 'server_files_exclude']:
+                for optional_field in ['job_file_mapping', 'server_files_exclude', 'validation_params']:
                     if optional_field in serializer.validated_data:
                         data[optional_field] = serializer.validated_data[optional_field]
 

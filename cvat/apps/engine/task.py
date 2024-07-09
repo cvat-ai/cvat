@@ -1,16 +1,17 @@
 # Copyright (C) 2018-2022 Intel Corporation
-# Copyright (C) 2022-2023 CVAT.ai Corporation
+# Copyright (C) 2022-2024 CVAT.ai Corporation
 #
 # SPDX-License-Identifier: MIT
 
 import itertools
 import fnmatch
 import os
-from typing import Any, Dict, Iterator, List, NamedTuple, Optional, Union, Iterable
-from rest_framework.serializers import ValidationError
 import rq
 import re
 import shutil
+from copy import deepcopy
+from rest_framework.serializers import ValidationError
+from typing import Any, Dict, Iterator, List, NamedTuple, Optional, Sequence, Union, Iterable
 from urllib import parse as urlparse
 from urllib import request as urlrequest
 import django_rq
@@ -19,6 +20,7 @@ import queue
 
 from django.conf import settings
 from django.db import transaction
+from django.forms.models import model_to_dict
 from django.http import HttpRequest
 from datetime import datetime, timezone
 from pathlib import Path
@@ -70,6 +72,8 @@ JobFileMapping = List[List[str]]
 class SegmentParams(NamedTuple):
     start_frame: int
     stop_frame: int
+    type: models.SegmentType = models.SegmentType.RANGE
+    frames: Optional[Sequence[int]] = []
 
 class SegmentsParams(NamedTuple):
     segments: Iterator[SegmentParams]
@@ -126,10 +130,14 @@ def _get_task_segment_data(
             # It is assumed here that files are already saved ordered in the task
             # Here we just need to create segments by the job sizes
             start_frame = 0
-            for jf in job_file_mapping:
-                segment_size = len(jf)
+            for job_files in job_file_mapping:
+                segment_size = len(job_files)
                 stop_frame = start_frame + segment_size - 1
-                yield SegmentParams(start_frame, stop_frame)
+                yield SegmentParams(
+                    start_frame=start_frame,
+                    stop_frame=stop_frame,
+                    type=models.SegmentType.RANGE,
+                )
 
                 start_frame = stop_frame + 1
 
@@ -152,31 +160,39 @@ def _get_task_segment_data(
         )
 
         segments = (
-            SegmentParams(start_frame, min(start_frame + segment_size - 1, data_size - 1))
+            SegmentParams(
+                start_frame=start_frame,
+                stop_frame=min(start_frame + segment_size - 1, data_size - 1),
+                type=models.SegmentType.RANGE
+            )
             for start_frame in range(0, data_size - overlap, segment_size - overlap)
         )
 
     return SegmentsParams(segments, segment_size, overlap)
 
-def _save_task_to_db(db_task: models.Task, *, job_file_mapping: Optional[JobFileMapping] = None):
-    job = rq.get_current_job()
-    job.meta['status'] = 'Task is being saved in database'
-    job.save_meta()
+def _save_task_to_db(
+    db_task: models.Task,
+    *,
+    job_file_mapping: Optional[JobFileMapping] = None,
+):
+    rq_job = rq.get_current_job()
+    rq_job.meta['status'] = 'Task is being saved in database'
+    rq_job.save_meta()
 
     segments, segment_size, overlap = _get_task_segment_data(
-        db_task=db_task, job_file_mapping=job_file_mapping
+        db_task=db_task, job_file_mapping=job_file_mapping,
     )
     db_task.segment_size = segment_size
     db_task.overlap = overlap
 
-    for segment_idx, (start_frame, stop_frame) in enumerate(segments):
-        slogger.glob.info("New segment for task #{}: idx = {}, start_frame = {}, \
-            stop_frame = {}".format(db_task.id, segment_idx, start_frame, stop_frame))
+    for segment_idx, segment_params in enumerate(segments):
+        slogger.glob.info(
+            "New segment for task #{task_id}: idx = {segment_idx}, start_frame = {start_frame}, \
+            stop_frame = {stop_frame}".format(
+                task_id=db_task.id, segment_idx=segment_idx, **segment_params._asdict()
+            ))
 
-        db_segment = models.Segment()
-        db_segment.task = db_task
-        db_segment.start_frame = start_frame
-        db_segment.stop_frame = stop_frame
+        db_segment = models.Segment(task=db_task, **segment_params._asdict())
         db_segment.save()
 
         db_job = models.Job(segment=db_segment)
@@ -314,6 +330,31 @@ def _validate_job_file_mapping(
         raise ValidationError("job_file_mapping cannot be used with server_files_exclude")
 
     return job_file_mapping
+
+def _validate_validation_params(
+    db_task: models.Task, data: Dict[str, Any]
+) -> Optional[dict[str, Any]]:
+    validation_params = data.get('validation_params', {})
+    if not validation_params:
+        return None
+
+    if validation_params['mode'] != models.ValidationMode.GT_POOL:
+        return validation_params
+
+    if data.get('sorting_method', db_task.data.sorting_method) != models.SortingMethod.RANDOM:
+        raise ValidationError("validation mode '{}' can only be used with '{}' sorting".format(
+            models.ValidationMode.GT_POOL.value,
+            models.SortingMethod.RANDOM.value,
+        ))
+
+    for incompatible_key in ['job_file_mapping', 'overlap']:
+        if data.get(incompatible_key):
+            raise ValidationError("validation mode '{}' cannot be used with '{}'".format(
+                models.ValidationMode.GT_POOL.value,
+                incompatible_key,
+            ))
+
+    return validation_params
 
 def _validate_manifest(
     manifests: List[str],
@@ -522,6 +563,7 @@ def _create_thread(
     slogger.glob.info("create task #{}".format(db_task.id))
 
     job_file_mapping = _validate_job_file_mapping(db_task, data)
+    validation_params = _validate_validation_params(db_task, data)
 
     db_data = db_task.data
     upload_dir = db_data.get_upload_dirname() if db_data.storage != models.StorageChoice.SHARE else settings.SHARE_ROOT
@@ -962,7 +1004,7 @@ def _create_thread(
     video_path = ""
     video_size = (0, 0)
 
-    db_images = []
+    db_images: list[models.Image] = []
 
     if settings.USE_CACHE and db_data.storage_method == models.StorageMethodChoice.CACHE:
         for media_type, media_files in media.items():
@@ -1136,6 +1178,55 @@ def _create_thread(
             while not futures.empty():
                 process_results(futures.get().result())
 
+    if validation_params and validation_params['mode'] == models.ValidationMode.GT_POOL:
+        if db_task.mode != 'annotation':
+            raise ValidationError("gt pool can only be used with 'annotation' mode tasks")
+
+        # TODO: handle other input variants
+        seed = validation_params["random_seed"]
+        frames_count = validation_params["frames_count"]
+        frames_per_job_count = validation_params["frames_per_job_count"]
+
+        # 1. select pool frames
+        # The RNG backend must not change to yield reproducible results,
+        # so here we specify it explicitly
+        from numpy import random
+        rng = random.Generator(random.MT19937(seed=seed))
+
+        all_frames = range(len(db_images))
+        pool_frames: list[int] = rng.choice(
+            all_frames, size=frames_count, shuffle=False, replace=False
+        ).tolist()
+        non_pool_frames = set(all_frames).difference(pool_frames)
+
+        # 2. distribute pool frames
+        from datumaro.util import take_by
+
+        job_file_mapping = []
+        new_db_images = []
+        frame_id_map = {}
+        for job_frames in take_by(non_pool_frames, count=frames_per_job_count):
+            job_validation_frames = rng.choice(pool_frames, size=frames_per_job_count, replace=False)
+            job_frames += job_validation_frames.tolist()
+
+            random.shuffle(job_frames) # don't use the same rng
+
+            job_images = []
+            for job_frame in job_frames:
+                # Insert placeholder frames into the frame sequence and shift frame ids
+                image = models.Image(data=db_data, **deepcopy(model_to_dict(db_images[job_frame], exclude=["data"])))
+                image.frame = frame_id_map.setdefault(job_frame, len(new_db_images))
+
+                if job_frame in job_validation_frames:
+                    image.is_placeholder = True
+
+                job_images.append(image)
+                new_db_images.append(image)
+
+            job_file_mapping.append(job_images)
+
+        pool_frames = [frame_id_map[i] for i in pool_frames if i in frame_id_map]
+
     if db_task.mode == 'annotation':
         models.Image.objects.bulk_create(db_images)
         created_images = models.Image.objects.filter(data_id=db_data.id)
@@ -1162,3 +1253,17 @@ def _create_thread(
 
     slogger.glob.info("Found frames {} for Data #{}".format(db_data.size, db_data.id))
     _save_task_to_db(db_task, job_file_mapping=job_file_mapping)
+
+    if validation_params:
+        db_gt_segment = models.Segment(
+            task=db_task,
+            start_frame=0,
+            stop_frame=db_data.stop_frame,
+            frames=pool_frames,
+            type=models.SegmentType.SPECIFIC_FRAMES,
+        )
+        db_gt_segment.save()
+
+        db_gt_job = models.Job(segment=db_gt_segment, type=models.JobType.GROUND_TRUTH)
+        db_gt_job.save()
+        db_gt_job.make_dirs()

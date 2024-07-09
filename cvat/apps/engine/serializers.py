@@ -1,5 +1,5 @@
 # Copyright (C) 2019-2022 Intel Corporation
-# Copyright (C) 2022-2023 CVAT.ai Corporation
+# Copyright (C) 2022-2024 CVAT.ai Corporation
 #
 # SPDX-License-Identifier: MIT
 
@@ -891,6 +891,75 @@ class JobFileMapping(serializers.ListField):
         kwargs.setdefault('help_text', textwrap.dedent(__class__.__doc__))
         super().__init__(*args, **kwargs)
 
+class ValidationParamsSerializer(serializers.Serializer):
+    mode = serializers.ChoiceField(choices=models.ValidationMode.choices(), required=True)
+    frame_selection_method = serializers.ChoiceField(choices=models.JobFrameSelectionMethod.choices(), required=True)
+    frames = serializers.ListSerializer(
+        child=serializers.CharField(max_length=1024), default=[], required=False, allow_null=True
+    )
+    frames_count = serializers.IntegerField(required=False, allow_null=True)
+    frames_percent = serializers.FloatField(required=False, allow_null=True)
+    random_seed = serializers.IntegerField(required=False, allow_null=True)
+    frames_per_job_count = serializers.IntegerField(required=False, allow_null=True)
+    frames_per_job_percent = serializers.FloatField(required=False, allow_null=True)
+
+
+    # def validate(self, attrs):
+    #     if attrs['mode'] == models.ValidationMode.GT:
+    #         if not (
+    #             (
+    #                 attrs['frame_selection_method'] == models.JobFrameSelectionMethod.RANDOM_UNIFORM
+    #                 and (
+    #                     attrs.get('frames_count') is not None
+    #                     or attrs.get('frames_percent') is not None
+    #                 )
+    #                 and not attrs.get('frames')
+    #             )
+    #             ^
+    #             (
+    #                 ['frame_selection_method'] == models.JobFrameSelectionMethod.MANUAL
+    #                 and not attrs.get('frames')
+    #                 and attrs.get('frames_count') is None
+    #                 and attrs.get('frames_percent') is None
+    #             )
+    #         ):
+    #     return super().validate(attrs)
+
+
+    @transaction.atomic
+    def create(self, validated_data):
+        frames = validated_data.pop('frames', None)
+
+        instance = models.ValidationParams(**validated_data)
+        instance.save()
+
+        if frames:
+            models.ValidationImage.objects.bulk_create(
+                { "validation_params_id": instance.id, "path": frame }
+                for frame in frames
+            )
+
+        return instance
+
+    @transaction.atomic
+    def update(self, instance, validated_data):
+        frames = validated_data.pop('frames', None)
+
+        for k, v in validated_data.items():
+            setattr(instance, k, v)
+        instance.save()
+
+        if frames:
+            if instance.frames.count():
+                for db_frame in instance.frames.all():
+                    db_frame.delete()
+
+            models.ValidationImage.objects.bulk_create(
+                { "validation_params_id": instance.id, "path": frame }
+                for frame in frames
+            )
+
+        return instance
 
 class DataSerializer(serializers.ModelSerializer):
     """
@@ -978,6 +1047,7 @@ class DataSerializer(serializers.ModelSerializer):
             pass the list of file names in the required order.
         """.format(models.SortingMethod.PREDEFINED))
     )
+    validation_params = ValidationParamsSerializer(allow_null=True, required=False)
 
     class Meta:
         model = models.Data
@@ -987,7 +1057,7 @@ class DataSerializer(serializers.ModelSerializer):
             'use_zip_chunks', 'server_files_exclude',
             'cloud_storage_id', 'use_cache', 'copy_data', 'storage_method',
             'storage', 'sorting_method', 'filename_pattern',
-            'job_file_mapping', 'upload_file_order',
+            'job_file_mapping', 'upload_file_order', 'validation_params'
         )
         extra_kwargs = {
             'chunk_size': { 'help_text': "Maximum number of frames per chunk" },
@@ -1059,9 +1129,27 @@ class DataSerializer(serializers.ModelSerializer):
 
     def update(self, instance, validated_data):
         files = self._pop_data(validated_data)
+        validation_params = validated_data.pop('validation_params', None)
         for key, value in validated_data.items():
             setattr(instance, key, value)
         self._create_files(instance, files)
+
+        if validation_params:
+            db_validation_params = instance.validation_params
+            validation_params_serializer = ValidationParamsSerializer(
+                instance=db_validation_params, data=validation_params
+            )
+            if not db_validation_params:
+                db_validation_params = validation_params_serializer.create(
+                    validation_params
+                )
+            else:
+                db_validation_params = validation_params_serializer.update(
+                    db_validation_params, validation_params
+                )
+
+            instance.validation_params = db_validation_params
+
         instance.save()
         return instance
 
@@ -1110,6 +1198,7 @@ class TaskReadSerializer(serializers.ModelSerializer):
     source_storage = StorageSerializer(required=False, allow_null=True)
     jobs = JobsSummarySerializer(url_filter_key='task_id', source='segment_set')
     labels = LabelsSummarySerializer(source='*')
+    validation_mode = serializers.CharField(source='validation_params.mode', required=False, allow_null=True)
 
     class Meta:
         model = models.Task
@@ -1118,6 +1207,7 @@ class TaskReadSerializer(serializers.ModelSerializer):
             'status', 'data_chunk_size', 'data_compressed_chunk_type', 'guide_id',
             'data_original_chunk_type', 'size', 'image_quality', 'data', 'dimension',
             'subset', 'organization', 'target_storage', 'source_storage', 'jobs', 'labels',
+            'validation_mode'
         )
         read_only_fields = fields
         extra_kwargs = {
@@ -1138,7 +1228,7 @@ class TaskWriteSerializer(WriteOnceMixin, serializers.ModelSerializer):
         model = models.Task
         fields = ('url', 'id', 'name', 'project_id', 'owner_id', 'assignee_id',
             'bug_tracker', 'overlap', 'segment_size', 'labels', 'subset',
-            'target_storage', 'source_storage',
+            'target_storage', 'source_storage'
         )
         write_once_fields = ('overlap', 'segment_size')
 

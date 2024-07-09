@@ -1,5 +1,5 @@
 # Copyright (C) 2018-2022 Intel Corporation
-# Copyright (C) 2022-2023 CVAT.ai Corporation
+# Copyright (C) 2022-2024 CVAT.ai Corporation
 #
 # SPDX-License-Identifier: MIT
 
@@ -216,6 +216,36 @@ class FloatArrayField(AbstractArrayField):
 class IntArrayField(AbstractArrayField):
     converter = int
 
+class ValidationMode(str, Enum):
+    GT = "gt"
+    GT_POOL = "gt_pool"
+
+    @classmethod
+    def choices(cls):
+        return tuple((x.value, x.name) for x in cls)
+
+    def __str__(self):
+        return self.value
+
+class ValidationParams(models.Model):
+    mode = models.CharField(max_length=32, choices=ValidationMode.choices())
+
+    # TODO: consider other storage options and ways to pass the parameters
+    frame_selection_method = models.CharField(
+        max_length=32, choices=JobFrameSelectionMethod.choices()
+    )
+    random_seed = models.IntegerField(null=True)
+
+    frames: list[ValidationImage]
+    frames_count = models.IntegerField(null=True)
+    frames_percent = models.FloatField(null=True)
+    frames_per_job_count = models.IntegerField(null=True)
+    frames_per_job_percent = models.FloatField(null=True)
+
+class ValidationImage(models.Model):
+    validation_params = models.ForeignKey(ValidationParams, on_delete=models.CASCADE)
+    path = models.CharField(max_length=1024, default='')
+
 class Data(models.Model):
     chunk_size = models.PositiveIntegerField(null=True)
     size = models.PositiveIntegerField(default=0)
@@ -232,6 +262,9 @@ class Data(models.Model):
     cloud_storage = models.ForeignKey('CloudStorage', on_delete=models.SET_NULL, null=True, related_name='data')
     sorting_method = models.CharField(max_length=15, choices=SortingMethod.choices(), default=SortingMethod.LEXICOGRAPHICAL)
     deleted_frames = IntArrayField(store_sorted=True, unique_values=True)
+    validation_params = models.OneToOneField(
+        'ValidationParams', on_delete=models.CASCADE, null=True, related_name="task_data"
+    )
 
     class Meta:
         default_permissions = ()
@@ -311,6 +344,7 @@ class Image(models.Model):
     frame = models.PositiveIntegerField()
     width = models.PositiveIntegerField()
     height = models.PositiveIntegerField()
+    is_placeholder = models.BooleanField(default=False)
 
     class Meta:
         default_permissions = ()
