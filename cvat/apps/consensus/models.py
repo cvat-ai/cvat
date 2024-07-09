@@ -61,8 +61,14 @@ class ConsensusSettings(models.Model):
         blank=True,
     )
     agreement_score_threshold = models.FloatField(default=0)
-    quorum = models.IntegerField(default=0)
+    quorum = models.IntegerField(default=-1)
     iou_threshold = models.FloatField(default=0.5)
+
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
+        super().__init__(*args, **kwargs)
+
+        if self.quorum == -1:
+            self.quorum = self.task.consensus_jobs_per_normal_job // 2
 
     def to_dict(self):
         return model_to_dict(self)
