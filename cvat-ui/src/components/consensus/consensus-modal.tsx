@@ -74,7 +74,7 @@ function ConsensusModal(): JSX.Element {
 
     return (
         <Modal
-            title={<Text> Consensus Configurations </Text>}
+            title={<Text> Consensus Configuration </Text>}
             open={!!instance}
             className='cvat-modal-export-task custom-modal-center-title'
             destroyOnClose

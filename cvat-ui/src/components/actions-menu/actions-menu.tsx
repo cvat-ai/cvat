@@ -119,7 +119,7 @@ function ActionsMenuComponent(props: Props): JSX.Element {
             <Menu.Item
                 key={Actions.SHOW_TASK_CONSENSUS_CONFIGURATION}
             >
-                Consensus Configuration
+                Consensus configuration
             </Menu.Item>
         ), 55]);
     }
