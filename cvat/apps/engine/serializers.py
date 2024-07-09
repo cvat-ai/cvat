@@ -592,7 +592,6 @@ class JobReadSerializer(serializers.ModelSerializer):
     stop_frame = serializers.ReadOnlyField(source="segment.stop_frame")
     frame_count = serializers.ReadOnlyField(source="segment.frame_count")
     assignee = BasicUserSerializer(allow_null=True, read_only=True)
-    assignee_updated_date = serializers.DateTimeField(allow_null=True, required=False)
     dimension = serializers.CharField(max_length=2, source='segment.task.dimension', read_only=True)
     data_chunk_size = serializers.ReadOnlyField(source='segment.task.data.chunk_size')
     organization = serializers.ReadOnlyField(source='segment.task.organization.id', allow_null=True)
@@ -1111,7 +1110,6 @@ class TaskReadSerializer(serializers.ModelSerializer):
     data = serializers.ReadOnlyField(source='data.id', required=False)
     owner = BasicUserSerializer(required=False, allow_null=True)
     assignee = BasicUserSerializer(allow_null=True, required=False)
-    assignee_updated_date = serializers.DateTimeField(allow_null=True, required=False)
     project_id = serializers.IntegerField(required=False, allow_null=True)
     guide_id = serializers.IntegerField(source='annotation_guide.id', required=False, allow_null=True)
     dimension = serializers.CharField(allow_blank=True, required=False)
@@ -1342,7 +1340,6 @@ class TaskWriteSerializer(WriteOnceMixin, serializers.ModelSerializer):
 class ProjectReadSerializer(serializers.ModelSerializer):
     owner = BasicUserSerializer(allow_null=True, required=False, read_only=True)
     assignee = BasicUserSerializer(allow_null=True, required=False, read_only=True)
-    assignee_updated_date = serializers.DateTimeField(allow_null=True, required=False)
     guide_id = serializers.IntegerField(source='annotation_guide.id', required=False, allow_null=True)
     task_subsets = serializers.ListField(child=serializers.CharField(), required=False, read_only=True)
     dimension = serializers.CharField(max_length=16, required=False, read_only=True, allow_null=True)
