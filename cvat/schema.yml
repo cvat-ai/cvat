@@ -7443,6 +7443,11 @@ components:
             If you want to send files in an arbitrary order
             and reorder them afterwards on the server,
             pass the list of file names in the required order.
+        validation_params:
+          allOf:
+          - $ref: '#/components/schemas/ValidationParamsRequest'
+          writeOnly: true
+          nullable: true
       required:
       - image_quality
     DataResponse:
@@ -7730,7 +7735,7 @@ components:
       - name
       - related_files
       - width
-    FrameSelectionMethodEnum:
+    FrameSelectionMethod:
       enum:
       - random_uniform
       - manual
@@ -8138,7 +8143,7 @@ components:
         task_id:
           type: integer
         frame_selection_method:
-          $ref: '#/components/schemas/FrameSelectionMethodEnum'
+          $ref: '#/components/schemas/FrameSelectionMethod'
         frame_count:
           type: integer
           minimum: 0
@@ -10427,6 +10432,9 @@ components:
           $ref: '#/components/schemas/JobsSummary'
         labels:
           $ref: '#/components/schemas/LabelsSummary'
+        validation_mode:
+          type: string
+          nullable: true
       required:
       - jobs
       - labels
@@ -10656,6 +10664,48 @@ components:
           maxLength: 150
       required:
       - username
+    ValidationMode:
+      enum:
+      - gt
+      - gt_pool
+      type: string
+      description: |-
+        * `gt` - GT
+        * `gt_pool` - GT_POOL
+    ValidationParamsRequest:
+      type: object
+      properties:
+        mode:
+          $ref: '#/components/schemas/ValidationMode'
+        frame_selection_method:
+          $ref: '#/components/schemas/FrameSelectionMethod'
+        frames:
+          type: array
+          items:
+            type: string
+            minLength: 1
+          nullable: true
+          default: []
+        frames_count:
+          type: integer
+          nullable: true
+        frames_percent:
+          type: number
+          format: double
+          nullable: true
+        random_seed:
+          type: integer
+          nullable: true
+        frames_per_job_count:
+          type: integer
+          nullable: true
+        frames_per_job_percent:
+          type: number
+          format: double
+          nullable: true
+      required:
+      - frame_selection_method
+      - mode
     WebhookContentType:
       enum:
       - application/json
