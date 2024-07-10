@@ -2398,14 +2398,14 @@ export class CanvasViewImpl implements CanvasView, Listener {
                     this.addText(state);
                 }
             } else {
+                const attrNames = Object.fromEntries(state.label.attributes.map((attr) => [attr.id, attr.name]));
                 // check if there are updates in attributes
                 for (const attrID of Object.keys(state.attributes)) {
                     if (state.attributes[attrID] !== drawnState.attributes[+attrID]) {
                         if (text) {
                             const [span] = text.node.querySelectorAll<SVGTSpanElement>(`[attrID="${attrID}"]`);
                             if (span && span.textContent) {
-                                const prefix = span.textContent.split(':').slice(0, -1).join(':');
-                                span.textContent = `${prefix}: ${state.attributes[attrID]}`;
+                                span.textContent = `${attrNames[attrID]}: ${state.attributes[attrID]}`;
                             }
                         }
                     }
@@ -2982,11 +2982,8 @@ export class CanvasViewImpl implements CanvasView, Listener {
         const {
             label, clientID, attributes, source, descriptions,
         } = state;
-        const attrNames = label.attributes.reduce((acc: any, val: any): void => {
-            acc[val.id] = val.name;
-            return acc;
-        }, {});
 
+        const attrNames = Object.fromEntries(state.label.attributes.map((attr) => [attr.id, attr.name]));
         if (state.shapeType === 'skeleton') {
             state.elements.forEach((element: any) => {
                 if (!(element.clientID in this.svgTexts)) {

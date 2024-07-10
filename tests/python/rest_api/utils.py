@@ -141,11 +141,12 @@ def build_exclude_paths_expr(ignore_fields: Iterator[str]) -> List[str]:
     return exclude_expr_parts
 
 
-def wait_until_task_is_created(api: apis.TasksApi, task_id: int) -> models.RqStatus:
+def wait_until_task_is_created(api: apis.RequestsApi, rq_id: str) -> models.Request:
     for _ in range(100):
-        (status, _) = api.retrieve_status(task_id)
-        if status.state.value in ["Finished", "Failed"]:
-            return status
+        (request_details, _) = api.retrieve(rq_id)
+
+        if request_details.status.value in ("finished", "failed"):
+            return request_details
         sleep(1)
     raise Exception("Cannot create task")
 
@@ -192,7 +193,7 @@ def create_task(username, spec, data, content_type="application/json", **kwargs)
         if sent_upload_start:
             last_kwargs["upload_finish"] = True
 
-        (_, response) = api_client.tasks_api.create_data(
+        (result, response) = api_client.tasks_api.create_data(
             task.id,
             data_request=deepcopy(data),
             _content_type=content_type,
@@ -201,8 +202,8 @@ def create_task(username, spec, data, content_type="application/json", **kwargs)
         )
         assert response.status == HTTPStatus.ACCEPTED
 
-        status = wait_until_task_is_created(api_client.tasks_api, task.id)
-        assert status.state.value == "Finished", status.message
+        request_details = wait_until_task_is_created(api_client.requests_api, result.rq_id)
+        assert request_details.status.value == "finished", request_details.message
 
     return task.id, response_.headers.get("X-Request-Id")
 

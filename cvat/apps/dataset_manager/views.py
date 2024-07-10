@@ -39,7 +39,7 @@ def log_exception(logger=None, exc_info=True):
         exc_info=exc_info)
 
 DEFAULT_CACHE_TTL = timedelta(seconds=settings.DATASET_CACHE_TTL)
-PROJECT_CACHE_TTL = DEFAULT_CACHE_TTL / 3
+PROJECT_CACHE_TTL = DEFAULT_CACHE_TTL
 TASK_CACHE_TTL = DEFAULT_CACHE_TTL
 JOB_CACHE_TTL = DEFAULT_CACHE_TTL
 TTL_CONSTS = {
