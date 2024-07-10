@@ -1291,7 +1291,7 @@ Cypress.Commands.add('exportJob', ({
     cy.closeNotification('.cvat-notification-notice-export-job-start');
 });
 
-Cypress.Commands.add('downloadExport', (verifyNotification) => {
+Cypress.Commands.add('downloadExport', (verifyNotification = true) => {
     if (verifyNotification) {
         cy.verifyNotification();
     }

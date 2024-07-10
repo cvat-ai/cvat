@@ -57,9 +57,15 @@ context('Requests page', () => {
     });
 
     describe('Requests page', () => {
-        it('Check export', () => {
-            cy.visit(`/tasks/${data.taskID}/jobs/${data.jobID}`);
+        it('Check created task and export job', () => {
+            cy.visit('/requests');
+            cy.contains(`Task #${data.taskID}`).should('exist');
+            cy.get('.cvat-requests-card').first().then((element) => {
+                cy.wrap(element).find('.cvat-requests-progress').should('exist');
+                cy.wrap(element).find('.cvat-request-item-progress-message').should('contain', 'Finished');
+            });
 
+            cy.visit(`/tasks/${data.taskID}/jobs/${data.jobID}`);
             const exportAnnotation = {
                 as: 'exportAnnotations',
                 type: 'annotations',
@@ -70,6 +76,7 @@ context('Requests page', () => {
             cy.contains(`Job #${data.jobID}`).should('exist');
             cy.get('.cvat-requests-card').first().then((element) => {
                 cy.wrap(element).find('.cvat-requests-progress').should('exist');
+                cy.wrap(element).find('.cvat-request-item-progress-message').should('contain', 'Finished');
             });
 
             cy.reload();
