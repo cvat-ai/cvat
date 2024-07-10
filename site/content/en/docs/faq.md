@@ -122,7 +122,7 @@ You should build CVAT images with ['Analytics' component](https://github.com/cva
 
 ## How to upload annotations to an entire task from UI when there are multiple jobs in the task
 
-You can upload annotation for a multi-job task from the Dasboard view or the Task view.
+You can upload annotation for a multi-job task from the Dashboard view or the Task view.
 Uploading of annotation from the Annotation view only affects the current job.
 
 ## How to specify multiple hostnames

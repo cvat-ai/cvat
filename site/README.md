@@ -13,7 +13,7 @@ click on the `Fork this repository` button.
 Read how to edit files for github ([GitHub docs](https://docs.github.com/en/github/managing-files-in-a-repository/editing-files-in-another-users-repository)).
 
 Please note that files have a markup for correct display on the site: the title, the title of the link,
-the weight (affects the order of files display on the sidebar) and description (optional):
+the weight (affects the order of files displayed on the sidebar) and description (optional):
 
 ```
 ---
@@ -33,7 +33,7 @@ description: >
 1. Install Hugo
 
 Get the [v110.0-extended release of hugo](https://github.com/gohugoio/hugo/releases/tag/v0.110.0).
-Expand the Assets section of the release on GitHub and and scroll down
+Expand the Assets section of the release on GitHub and scroll down
 until you find a list of **Extended** versions.
 [Read more](https://gohugo.io/getting-started/installing/#quick-install)
 
