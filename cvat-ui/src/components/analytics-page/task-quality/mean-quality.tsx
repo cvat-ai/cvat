@@ -3,7 +3,6 @@
 // SPDX-License-Identifier: MIT
 
 import React from 'react';
-import moment from 'moment';
 import { DownloadOutlined, SettingOutlined } from '@ant-design/icons';
 import { Col, Row } from 'antd/lib/grid';
 import Text from 'antd/lib/typography/Text';
@@ -59,36 +58,20 @@ function MeanQuality(props: Props): JSX.Element {
         <div className='cvat-quality-summary-controls'>
             <Row>
                 <Col>
-                    <Row>
-                        <Col>
-                            {
-                                taskReport?.id ? (
-                                    <Button type='primary' icon={<DownloadOutlined />} className='cvat-analytics-download-report-button'>
-                                        <a
-                                            href={
-                                                `${getCore().config.backendAPI}/quality/reports/${taskReport?.id}/data`
-                                            }
-                                            download={`quality-report-task_${taskID}-${taskReport?.id}.json`}
-                                        >
-                                            Quality Report
-                                        </a>
-                                    </Button>
-                                ) : null
-                            }
-                        </Col>
-                    </Row>
-                    <Row justify='end'>
-                        <Col>
-                            {
-                                taskReport?.id ? (
-                                    <div className='cvat-analytics-time-hint'>
-                                        <Text type='secondary'>{taskReport?.createdDate ? moment(taskReport?.createdDate).fromNow() : ''}</Text>
-                                    </div>
-                                ) : null
-                            }
-                        </Col>
-                    </Row>
-
+                    {
+                        taskReport?.id ? (
+                            <Button type='primary' icon={<DownloadOutlined />} className='cvat-analytics-download-report-button'>
+                                <a
+                                    href={
+                                        `${getCore().config.backendAPI}/quality/reports/${taskReport?.id}/data`
+                                    }
+                                    download={`quality-report-task_${taskID}-${taskReport?.id}.json`}
+                                >
+                                    Quality Report
+                                </a>
+                            </Button>
+                        ) : null
+                    }
                 </Col>
                 <Col>
                     <SettingOutlined
