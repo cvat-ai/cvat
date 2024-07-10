@@ -1291,8 +1291,10 @@ Cypress.Commands.add('exportJob', ({
     cy.closeNotification('.cvat-notification-notice-export-job-start');
 });
 
-Cypress.Commands.add('downloadExport', () => {
-    cy.verifyNotification();
+Cypress.Commands.add('downloadExport', (verifyNotification) => {
+    if (verifyNotification) {
+        cy.verifyNotification();
+    }
     cy.get('.cvat-header-requests-button').click();
     cy.get('.cvat-spinner').should('not.exist');
     cy.get('.cvat-requests-list').should('be.visible');
