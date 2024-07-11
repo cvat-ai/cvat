@@ -1170,7 +1170,7 @@ def _create_thread(
         new_db_images: list[models.Image] = []
         validation_frames: list[int] = []
         frame_idx_map: dict[int, int] = {} # new to original id
-        for job_frames in take_by(non_pool_frames, count=frames_per_job_count):
+        for job_frames in take_by(non_pool_frames, count=db_task.segment_size or db_data.size):
             job_validation_frames = rng.choice(pool_frames, size=frames_per_job_count, replace=False)
             job_frames += job_validation_frames.tolist()
 
@@ -1218,7 +1218,7 @@ def _create_thread(
         for validation_frame in validation_frames:
             image = new_db_images[validation_frame]
             assert image.is_placeholder
-            image.real_frame_id = frame_id_map[image.real_frame_id]
+            image.real_frame_id = frame_id_map[image.real_frame_id] # TODO: maybe not needed
 
         db_data.size = len(new_db_images)
         images = new_db_images
