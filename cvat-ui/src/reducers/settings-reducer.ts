@@ -5,7 +5,6 @@
 
 import { AnyAction } from 'redux';
 
-import { BoundariesActionTypes } from 'actions/boundaries-actions';
 import { AuthActionTypes } from 'actions/auth-actions';
 import { SettingsActionTypes } from 'actions/settings-actions';
 import { AnnotationActionTypes } from 'actions/annotation-actions';
@@ -438,8 +437,6 @@ export default (state = defaultState, action: AnyAction): SettingsState => {
                 imageFilters: [],
             };
         }
-        case AnnotationActionTypes.FETCH_ANNOTATIONS_SUCCESS:
-        case BoundariesActionTypes.RESET_AFTER_ERROR:
         case AnnotationActionTypes.GET_JOB_SUCCESS: {
             const { annotationsIncludeMasks } = action.payload;
             const { shapes } = state;
