@@ -2979,7 +2979,7 @@ class AnnotationGuidesViewSet(
                     )
 
                     new_assets.append(copied_asset)
-        except:
+        except Exception:
             # in case of any errors, remove copied assets
             for asset_id in assets_mapping:
                 assets_mapping[asset_id].delete()
