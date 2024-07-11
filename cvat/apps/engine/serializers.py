@@ -154,6 +154,9 @@ class JobsSummarySerializer(_CollectionSummarySerializer):
         super().__init__(model=model, url_filter_key=url_filter_key, **kwargs)
 
 
+MAX_FILENAME_LENGTH = 1024
+
+
 class TasksSummarySerializer(_CollectionSummarySerializer):
     pass
 
@@ -787,6 +790,31 @@ class SimpleJobSerializer(serializers.ModelSerializer):
         fields = ('url', 'id', 'assignee', 'status', 'stage', 'state', 'type')
         read_only_fields = fields
 
+class JobHoneypotWriteSerializer(serializers.Serializer):
+    frame_selection_method = serializers.ChoiceField(
+        choices=models.JobFrameSelectionMethod.choices(), required=True
+    )
+    frames = serializers.ListSerializer(
+        child=serializers.CharField(max_length=MAX_FILENAME_LENGTH),
+        default=[], required=False, allow_null=True
+    )
+
+    def validate(self, attrs):
+        frame_selection_method = attrs["frame_selection_method"]
+        if frame_selection_method == models.JobFrameSelectionMethod.MANUAL:
+            required_field_name = "frames"
+            if required_field_name not in attrs:
+                raise serializers.ValidationError("'{}' must be set".format(required_field_name))
+        elif frame_selection_method == models.JobFrameSelectionMethod.RANDOM_UNIFORM:
+            pass
+        else:
+            assert False
+
+        return super().validate(attrs)
+
+class JobHoneypotReadSerializer(serializers.Serializer):
+    frames = serializers.ListSerializer(child=serializers.IntegerField(), allow_empty=True)
+
 class SegmentSerializer(serializers.ModelSerializer):
     jobs = SimpleJobSerializer(many=True, source='job_set')
     frames = serializers.ListSerializer(child=serializers.IntegerField(), allow_empty=True)
@@ -860,7 +888,9 @@ class JobFiles(serializers.ListField):
     """
 
     def __init__(self, *args, **kwargs):
-        kwargs.setdefault('child', serializers.CharField(allow_blank=False, max_length=1024))
+        kwargs.setdefault('child', serializers.CharField(
+            allow_blank=False, max_length=MAX_FILENAME_LENGTH
+        ))
         kwargs.setdefault('allow_empty', False)
         super().__init__(*args, **kwargs)
 
@@ -895,7 +925,8 @@ class ValidationParamsSerializer(serializers.Serializer):
     mode = serializers.ChoiceField(choices=models.ValidationMode.choices(), required=True)
     frame_selection_method = serializers.ChoiceField(choices=models.JobFrameSelectionMethod.choices(), required=True)
     frames = serializers.ListSerializer(
-        child=serializers.CharField(max_length=1024), default=[], required=False, allow_null=True
+        child=serializers.CharField(max_length=MAX_FILENAME_LENGTH),
+        default=[], required=False, allow_null=True
     )
     frames_count = serializers.IntegerField(required=False, allow_null=True)
     frames_percent = serializers.FloatField(required=False, allow_null=True)
@@ -985,7 +1016,7 @@ class DataSerializer(serializers.ModelSerializer):
             Must contain all files from job_file_mapping if job_file_mapping is not empty.
         """))
     server_files_exclude = serializers.ListField(required=False, default=[],
-        child=serializers.CharField(max_length=1024),
+        child=serializers.CharField(max_length=MAX_FILENAME_LENGTH),
         help_text=textwrap.dedent("""\
             Paths to files and directories from a file share mounted on the server, or from a cloud storage
             that should be excluded from the directories specified in server_files.
@@ -1033,7 +1064,7 @@ class DataSerializer(serializers.ModelSerializer):
     job_file_mapping = JobFileMapping(required=False, write_only=True)
 
     upload_file_order = serializers.ListField(
-        child=serializers.CharField(max_length=1024),
+        child=serializers.CharField(max_length=MAX_FILENAME_LENGTH),
         default=list, allow_empty=True, write_only=True,
         help_text=textwrap.dedent("""\
             Allows to specify file order for client_file uploads.
@@ -1523,7 +1554,7 @@ class AboutSerializer(serializers.Serializer):
 class FrameMetaSerializer(serializers.Serializer):
     width = serializers.IntegerField()
     height = serializers.IntegerField()
-    name = serializers.CharField(max_length=1024)
+    name = serializers.CharField(max_length=MAX_FILENAME_LENGTH)
     related_files = serializers.IntegerField()
 
     # for compatibility with version 2.3.0
@@ -1716,7 +1747,7 @@ class LabeledDataSerializer(serializers.Serializer):
     tracks = LabeledTrackSerializer(many=True, default=[])
 
 class FileInfoSerializer(serializers.Serializer):
-    name = serializers.CharField(max_length=1024)
+    name = serializers.CharField(max_length=MAX_FILENAME_LENGTH)
     type = serializers.ChoiceField(choices=["REG", "DIR"])
     mime_type = serializers.CharField(max_length=255)
 
@@ -2207,7 +2238,7 @@ def _configure_related_storages(validated_data: Dict[str, Any]) -> Dict[str, Opt
     return storages
 
 class AssetReadSerializer(WriteOnceMixin, serializers.ModelSerializer):
-    filename = serializers.CharField(required=True, max_length=1024)
+    filename = serializers.CharField(required=True, max_length=MAX_FILENAME_LENGTH)
     owner = BasicUserSerializer(required=False)
 
     class Meta:
@@ -2217,7 +2248,7 @@ class AssetReadSerializer(WriteOnceMixin, serializers.ModelSerializer):
 
 class AssetWriteSerializer(WriteOnceMixin, serializers.ModelSerializer):
     uuid = serializers.CharField(required=False)
-    filename = serializers.CharField(required=True, max_length=1024)
+    filename = serializers.CharField(required=True, max_length=MAX_FILENAME_LENGTH)
     guide_id = serializers.IntegerField(required=True)
 
     class Meta:

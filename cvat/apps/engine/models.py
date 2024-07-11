@@ -11,7 +11,7 @@ import shutil
 import uuid
 from enum import Enum
 from functools import cached_property
-from typing import Any, Dict, Optional, Sequence
+from typing import Any, Collection, Dict, Optional
 
 from django.conf import settings
 from django.contrib.auth.models import User
@@ -262,7 +262,7 @@ class Data(models.Model):
     cloud_storage = models.ForeignKey('CloudStorage', on_delete=models.SET_NULL, null=True, related_name='data')
     sorting_method = models.CharField(max_length=15, choices=SortingMethod.choices(), default=SortingMethod.LEXICOGRAPHICAL)
     deleted_frames = IntArrayField(store_sorted=True, unique_values=True)
-    validation_params = models.OneToOneField(
+    validation_params: Optional[ValidationParams] = models.OneToOneField(
         'ValidationParams', on_delete=models.CASCADE, null=True, related_name="task_data"
     )
 
@@ -345,6 +345,7 @@ class Image(models.Model):
     width = models.PositiveIntegerField()
     height = models.PositiveIntegerField()
     is_placeholder = models.BooleanField(default=False)
+    real_frame_id = models.PositiveIntegerField(default=0)
 
     class Meta:
         default_permissions = ()
@@ -606,7 +607,7 @@ class Segment(models.Model):
         return len(self.frame_set)
 
     @property
-    def frame_set(self) -> Sequence[int]:
+    def frame_set(self) -> Collection[int]:
         data = self.task.data
         data_start_frame = data.start_frame
         data_stop_frame = data.stop_frame

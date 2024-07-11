@@ -1,5 +1,5 @@
 # Copyright (C) 2020-2022 Intel Corporation
-# Copyright (C) 2022-2023 CVAT.ai Corporation
+# Copyright (C) 2022-2024 CVAT.ai Corporation
 #
 # SPDX-License-Identifier: MIT
 
@@ -33,7 +33,7 @@ from cvat.apps.engine.media_extractors import (ImageDatasetManifestReader,
                                                ZipCompressedChunkWriter)
 from cvat.apps.engine.mime_types import mimetypes
 from cvat.apps.engine.models import (DataChoice, DimensionType, Job, Image,
-                                     StorageChoice, CloudStorage)
+                                     StorageChoice, CloudStorage, Data)
 from cvat.apps.engine.utils import md5_hash, preload_images
 from utils.dataset_manifest import ImageManifestManager
 
@@ -76,13 +76,30 @@ class MediaCache:
 
         return item[0], item[1]
 
+    def _delete_cache_item(self, key: str):
+        try:
+            self._cache.delete(key)
+            slogger.glob.info(f'Removed chunk from the cache: key {key}')
+        except pickle.UnpicklingError:
+            slogger.glob.error(f'Failed to remove item from the cache: key {key}', exc_info=True)
+
+    def _make_task_chunk_key(self, chunk_number: int, quality: str, db_data: Data) -> str:
+        return f'{db_data.id}_{chunk_number}_{quality}'
+
     def get_task_chunk_data_with_mime(self, chunk_number, quality, db_data):
         item = self._get_or_set_cache_item(
-            key=f'{db_data.id}_{chunk_number}_{quality}',
+            key=self._make_task_chunk_key(
+                chunk_number=chunk_number, quality=quality, db_data=db_data
+            ),
             create_function=lambda: self._prepare_task_chunk(db_data, quality, chunk_number),
         )
 
         return item
+
+    def remove_task_chunk(self, chunk_number: str, quality: str, db_data: Data):
+        self._delete_cache_item(self._make_task_chunk_key(
+            chunk_number=chunk_number, quality=quality, db_data=db_data
+        ))
 
     def get_selective_job_chunk_data_with_mime(self, chunk_number, quality, job):
         item = self._get_or_set_cache_item(
