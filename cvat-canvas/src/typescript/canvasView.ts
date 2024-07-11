@@ -2666,7 +2666,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
         }
 
         if (state.shapeType === 'mask') {
-            shape.attr('opacity', `${this.configuration.selectedShapeOpacity}`);
+            shape.attr('opacity', `${Math.sqrt(this.configuration.selectedShapeOpacity)}`);
         } else {
             shape.attr('fill-opacity', `${this.configuration.selectedShapeOpacity}`);
         }
