@@ -87,12 +87,12 @@ class JobAnnotationSpeed(PrimaryMetricBase):
                 self._db_obj.labeledtrack_set.exclude(source=SourceType.FILE)
                 .values(
                     "id",
-                    "trackedshape__id",
-                    "trackedshape__frame",
-                    "trackedshape__type",
-                    "trackedshape__outside",
+                    "shape__id",
+                    "shape__frame",
+                    "shape__type",
+                    "shape__outside",
                 )
-                .order_by("id", "trackedshape__frame")
+                .order_by("id", "shape__frame")
                 .iterator(chunk_size=2000)
             )
 
@@ -100,10 +100,10 @@ class JobAnnotationSpeed(PrimaryMetricBase):
                 rows=db_tracks,
                 keys_for_merge={
                     "shapes": [
-                        "trackedshape__id",
-                        "trackedshape__frame",
-                        "trackedshape__type",
-                        "trackedshape__outside",
+                        "shape__id",
+                        "shape__frame",
+                        "shape__type",
+                        "shape__outside",
                     ],
                 },
                 field_id="id",
@@ -111,16 +111,31 @@ class JobAnnotationSpeed(PrimaryMetricBase):
 
             count = 0
             for track in db_tracks:
-                if track["shapes"] and track["shapes"][0]["type"] == ShapeType.SKELETON:
-                    # skeleton's points are already counted as objects
+                # Skip processing if no shapes are associated with the track
+                if not track["shapes"]:
                     continue
 
+                # Skip skeleton shapes as their points are already counted
+                if track["shapes"] and track["shapes"][0]["type"] == ShapeType.SKELETON:
+                    continue
+
+                # If only one shape exists, calculate the frames from the first frame to the stop frame of the segment
                 if len(track["shapes"]) == 1:
                     count += self._db_obj.segment.stop_frame - track["shapes"][0]["frame"] + 1
+                    continue
 
+                # Add the initial frame count and then iterate through shapes to count non-outside frames
+                count += 1
                 for prev_shape, cur_shape in zip(track["shapes"], track["shapes"][1:]):
                     if not prev_shape["outside"]:
-                        count += cur_shape["frame"] - prev_shape["frame"] + 1
+                        count += cur_shape["frame"] - prev_shape["frame"]
+
+                # Add frames until the end of segment if the latest shape was not outside
+                if (
+                    not cur_shape["outside"]
+                    and cur_shape["frame"] < self._db_obj.segment.stop_frame
+                ):
+                    count += self._db_obj.segment.stop_frame - cur_shape["frame"]
 
             return count
 

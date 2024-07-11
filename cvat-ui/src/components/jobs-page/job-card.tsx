@@ -25,7 +25,7 @@ const useCardHeight = useCardHeightHOC({
 
 interface Props {
     job: Job;
-    onJobUpdate: (job: Job) => void;
+    onJobUpdate: (job: Job, fields: Parameters<Job['save']>[0]) => void;
 }
 
 function JobCardComponent(props: Props): JSX.Element {

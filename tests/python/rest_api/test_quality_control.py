@@ -1,4 +1,4 @@
-# Copyright (C) 2023 CVAT.ai Corporation
+# Copyright (C) 2024 CVAT.ai Corporation
 #
 # SPDX-License-Identifier: MIT
 
@@ -1244,3 +1244,40 @@ class TestQualityReportMetrics(_PermissionTestBase):
             )
 
         assert task_confusion_matrix == [[2, 0, 1], [0, 0, 0], [1, 0, 0]]
+
+    @pytest.mark.parametrize("task_id", [8])
+    def test_can_compute_quality_if_non_skeleton_label_follows_skeleton_label(
+        self, admin_user, labels, task_id
+    ):
+        new_label_name = "non_skeleton"
+        with make_api_client(admin_user) as api_client:
+            task_labels = [label for label in labels if label.get("task_id") == task_id]
+            assert any(label["type"] == "skeleton" for label in task_labels)
+            task_labels += [{"name": new_label_name, "type": "any"}]
+            api_client.tasks_api.partial_update(
+                task_id,
+                patched_task_write_request=models.PatchedTaskWriteRequest(labels=task_labels),
+            )
+
+            new_label_obj, _ = api_client.labels_api.list(task_id=task_id, name=new_label_name)
+            new_label_id = new_label_obj.results[0].id
+            api_client.tasks_api.update_annotations(
+                task_id,
+                task_annotations_update_request={
+                    "shapes": [
+                        models.LabeledShapeRequest(
+                            type="rectangle",
+                            frame=0,
+                            label_id=new_label_id,
+                            points=[0, 0, 1, 1],
+                        )
+                    ]
+                },
+            )
+
+        self.create_gt_job(admin_user, task_id)
+
+        report = self.create_quality_report(admin_user, task_id)
+        with make_api_client(admin_user) as api_client:
+            (_, response) = api_client.quality_api.retrieve_report_data(report["id"])
+            assert response.status == HTTPStatus.OK

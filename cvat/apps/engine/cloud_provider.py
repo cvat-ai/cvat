@@ -18,6 +18,7 @@ from azure.core.exceptions import HttpResponseError, ResourceExistsError
 from azure.storage.blob import BlobServiceClient, ContainerClient, PublicAccess
 from azure.storage.blob._list_blobs_helper import BlobPrefix
 from boto3.s3.transfer import TransferConfig
+from botocore.client import Config
 from botocore.exceptions import ClientError
 from botocore.handlers import disable_signing
 from datumaro.util import take_by # can be changed to itertools.batched after migration to python3.12
@@ -32,6 +33,7 @@ from rest_framework.exceptions import (NotFound, PermissionDenied,
 from cvat.apps.engine.log import ServerLogManager
 from cvat.apps.engine.models import CloudProviderChoice, CredentialsTypeChoice
 from cvat.apps.engine.utils import get_cpu_number
+from cvat.utils.http import PROXIES_FOR_UNTRUSTED_URLS
 
 class NamedBytesIO(BytesIO):
     @property
@@ -442,7 +444,9 @@ class AWS_S3(_CloudStorage):
                 kwargs[key] = arg_v
 
         session = boto3.Session(**kwargs)
-        self._s3 = session.resource("s3", endpoint_url=endpoint_url)
+        self._s3 = session.resource("s3", endpoint_url=endpoint_url,
+            config=Config(proxies=PROXIES_FOR_UNTRUSTED_URLS or {}),
+        )
 
         # anonymous access
         if not any([access_key_id, secret_key, session_token]):
@@ -644,11 +648,14 @@ class AzureBlobContainer(_CloudStorage):
         super().__init__(prefix=prefix)
         self._account_name = account_name
         if connection_string:
-            self._blob_service_client = BlobServiceClient.from_connection_string(connection_string)
+            self._blob_service_client = BlobServiceClient.from_connection_string(
+                connection_string, proxies=PROXIES_FOR_UNTRUSTED_URLS)
         elif sas_token:
-            self._blob_service_client = BlobServiceClient(account_url=self.account_url, credential=sas_token)
+            self._blob_service_client = BlobServiceClient(
+                account_url=self.account_url, credential=sas_token, proxies=PROXIES_FOR_UNTRUSTED_URLS)
         else:
-            self._blob_service_client = BlobServiceClient(account_url=self.account_url)
+            self._blob_service_client = BlobServiceClient(
+                account_url=self.account_url, proxies=PROXIES_FOR_UNTRUSTED_URLS)
         self._client = self._blob_service_client.get_container_client(container)
 
     @property

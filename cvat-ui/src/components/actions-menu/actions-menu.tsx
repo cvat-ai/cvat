@@ -6,7 +6,6 @@
 import './styles.scss';
 import React, { useCallback } from 'react';
 import Modal from 'antd/lib/modal';
-import { LoadingOutlined } from '@ant-design/icons';
 import { DimensionType, CVATCore } from 'cvat-core-wrapper';
 import Menu, { MenuInfo } from 'components/dropdown-menu';
 import { usePlugins } from 'utils/hooks';
@@ -23,7 +22,6 @@ interface Props {
     dumpers: AnnotationFormats['dumpers'];
     inferenceIsActive: boolean;
     taskDimension: DimensionType;
-    backupIsActive: boolean;
     onClickMenu: (params: MenuInfo) => void;
 }
 
@@ -44,7 +42,6 @@ function ActionsMenuComponent(props: Props): JSX.Element {
         projectID,
         bugTracker,
         inferenceIsActive,
-        backupIsActive,
         onClickMenu,
     } = props;
 
@@ -101,8 +98,6 @@ function ActionsMenuComponent(props: Props): JSX.Element {
     menuItems.push([(
         <Menu.Item
             key={Actions.BACKUP_TASK}
-            disabled={backupIsActive}
-            icon={backupIsActive && <LoadingOutlined id='cvat-backup-task-loading' />}
         >
             Backup Task
         </Menu.Item>

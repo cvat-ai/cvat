@@ -1,4 +1,4 @@
-// Copyright (C) 2023 CVAT.ai Corporation
+// Copyright (C) 2023-2024 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -19,7 +19,9 @@ import config from 'config';
 import { useIsMounted } from 'utils/hooks';
 import { createAction, ActionUnion } from 'utils/redux';
 import { getCVATStore } from 'cvat-store';
-import { BaseSingleFrameAction, Job, getCore } from 'cvat-core-wrapper';
+import {
+    BaseSingleFrameAction, FrameSelectionType, Job, getCore,
+} from 'cvat-core-wrapper';
 import { Canvas } from 'cvat-canvas-wrapper';
 import { fetchAnnotationsAsync, saveAnnotationsAsync } from 'actions/annotation-actions';
 import { switchAutoSave } from 'actions/settings-actions';
@@ -108,6 +110,18 @@ const reducer = (state: State, action: ActionUnion<typeof reducerActions>): Stat
     }
 
     if (action.type === ReducerActionType.SET_ACTIVE_ANNOTATIONS_ACTION) {
+        const { frameSelection } = action.payload.activeAction;
+        if (frameSelection === FrameSelectionType.CURRENT_FRAME) {
+            const storage = getCVATStore();
+            const currentFrame = storage.getState().annotation.player.frame.number;
+            return {
+                ...state,
+                frameFrom: currentFrame,
+                frameTo: currentFrame,
+                activeAction: action.payload.activeAction,
+                actionParameters: {},
+            };
+        }
         return {
             ...state,
             activeAction: action.payload.activeAction,
@@ -204,23 +218,29 @@ function ActionParameterComponent(props: Props & { onChange: (value: string) => 
     const {
         defaultValue, type, values, onChange,
     } = props;
-    const [value, setValue] = useState(defaultValue);
+    const store = getCVATStore();
 
+    const job = store.getState().annotation.job.instance as Job;
+    const computedDefaultValue = typeof defaultValue === 'function' ? defaultValue({ instance: job }) : defaultValue;
+    const [value, setValue] = useState(computedDefaultValue);
     useEffect(() => {
         onChange(value);
     }, [value]);
 
+    const computedValues = typeof values === 'function' ? values({ instance: job }) : values;
+
     if (type === 'select') {
         return (
             <Select value={value} onChange={setValue}>
-                {values.map((_value: string) => (
+                {computedValues.map((_value: string) => (
                     <Select.Option key={_value} value={_value}>{_value}</Select.Option>
                 ))}
             </Select>
         );
     }
 
-    const [min, max, step] = values.map((val) => +val);
+    const [min, max, step] = computedValues.map((val) => +val);
+
     return (
         <InputNumber
             value={+value}
@@ -277,6 +297,8 @@ function AnnotationsActionsModalContent(props: { onClose: () => void; }): JSX.El
         progress, progressMessage, frameFrom, frameTo, actionParameters, modalVisible,
     } = state;
 
+    const currentFrameAction = activeAction?.frameSelection === FrameSelectionType.CURRENT_FRAME;
+
     return (
         <Modal
             closable={false}
@@ -326,11 +348,9 @@ function AnnotationsActionsModalContent(props: { onClose: () => void; }): JSX.El
                                         className='cvat-action-runner-save-job-recommendation'
                                         type='link'
                                         onClick={() => {
-                                            storage.dispatch(
-                                                saveAnnotationsAsync(() => {
-                                                    dispatch(reducerActions.setJobSavedFlag(true));
-                                                }),
-                                            );
+                                            storage.dispatch(saveAnnotationsAsync()).then(() => {
+                                                dispatch(reducerActions.setJobSavedFlag(true));
+                                            });
                                         }}
                                     >
                                         Click to save the job
@@ -409,82 +429,103 @@ function AnnotationsActionsModalContent(props: { onClose: () => void; }): JSX.El
                                     <hr />
                                 </Col>
                                 <Col span={24}>
-                                    <Text> Starting from frame </Text>
-                                    <InputNumber
-                                        value={frameFrom}
-                                        min={(jobInstance as Job).startFrame}
-                                        max={frameTo}
-                                        step={1}
-                                        onChange={(value) => {
-                                            if (typeof value === 'number') {
-                                                dispatch(reducerActions.updateFrameFrom(
-                                                    clamp(Math.round(value), (jobInstance as Job).startFrame, frameTo),
-                                                ));
-                                            }
-                                        }}
-                                    />
-                                    <Text> up to frame </Text>
-                                    <InputNumber
-                                        value={frameTo}
-                                        min={frameFrom}
-                                        max={(jobInstance as Job).stopFrame}
-                                        step={1}
-                                        onChange={(value) => {
-                                            if (typeof value === 'number') {
-                                                dispatch(reducerActions.updateFrameTo(
-                                                    clamp(Math.round(value), frameFrom, (jobInstance as Job).stopFrame),
-                                                ));
-                                            }
-                                        }}
-                                    />
+                                    {
+                                        currentFrameAction ? (
+                                            <Text>Running the action is only allowed on current frame</Text>
+                                        ) : (
+                                            <>
+                                                <Text> Starting from frame </Text>
+                                                <InputNumber
+                                                    value={frameFrom}
+                                                    min={jobInstance.startFrame}
+                                                    max={frameTo}
+                                                    step={1}
+                                                    onChange={(value) => {
+                                                        if (typeof value === 'number') {
+                                                            dispatch(reducerActions.updateFrameFrom(
+                                                                clamp(
+                                                                    Math.round(value),
+                                                                    jobInstance.startFrame,
+                                                                    frameTo,
+                                                                ),
+                                                            ));
+                                                        }
+                                                    }}
+                                                />
+                                                <Text> up to frame </Text>
+                                                <InputNumber
+                                                    value={frameTo}
+                                                    min={frameFrom}
+                                                    max={jobInstance.stopFrame}
+                                                    step={1}
+                                                    onChange={(value) => {
+                                                        if (typeof value === 'number') {
+                                                            dispatch(reducerActions.updateFrameTo(
+                                                                clamp(
+                                                                    Math.round(value),
+                                                                    frameFrom,
+                                                                    jobInstance.stopFrame,
+                                                                ),
+                                                            ));
+                                                        }
+                                                    }}
+                                                />
+
+                                            </>
+                                        )
+                                    }
                                 </Col>
                             </Row>
                         </Col>
-                        <Col span={24} className='cvat-action-runner-frames-predefined'>
-                            <Row>
-                                <Col span={24}>
-                                    <Text strong>Or choose one of predefined options </Text>
-                                    <hr />
+                        {
+                            !currentFrameAction ? (
+                                <Col span={24} className='cvat-action-runner-frames-predefined'>
+                                    <Row>
+                                        <Col span={24}>
+                                            <Text strong>Or choose one of predefined options </Text>
+                                            <hr />
+                                        </Col>
+                                        <Col span={24}>
+                                            <Button
+                                                onClick={() => {
+                                                    const current = storage.getState().annotation.player.frame.number;
+                                                    dispatch(reducerActions.updateFrameFrom(current));
+                                                    dispatch(reducerActions.updateFrameTo(current));
+                                                }}
+                                            >
+                                                Current frame
+                                            </Button>
+                                            <Button
+                                                onClick={() => {
+                                                    dispatch(reducerActions.updateFrameFrom(jobInstance.startFrame));
+                                                    dispatch(reducerActions.updateFrameTo(jobInstance.stopFrame));
+                                                }}
+                                            >
+                                                All frames
+                                            </Button>
+                                            <Button
+                                                onClick={() => {
+                                                    const current = storage.getState().annotation.player.frame.number;
+                                                    dispatch(reducerActions.updateFrameFrom(current));
+                                                    dispatch(reducerActions.updateFrameTo(jobInstance.stopFrame));
+                                                }}
+                                            >
+                                                From current
+                                            </Button>
+                                            <Button
+                                                onClick={() => {
+                                                    const current = storage.getState().annotation.player.frame.number;
+                                                    dispatch(reducerActions.updateFrameFrom(jobInstance.startFrame));
+                                                    dispatch(reducerActions.updateFrameTo(current));
+                                                }}
+                                            >
+                                                Up to current
+                                            </Button>
+                                        </Col>
+                                    </Row>
                                 </Col>
-                                <Col span={24}>
-                                    <Button
-                                        onClick={() => {
-                                            const current = storage.getState().annotation.player.frame.number;
-                                            dispatch(reducerActions.updateFrameFrom(current));
-                                            dispatch(reducerActions.updateFrameTo(current));
-                                        }}
-                                    >
-                                        Current frame
-                                    </Button>
-                                    <Button
-                                        onClick={() => {
-                                            dispatch(reducerActions.updateFrameFrom(jobInstance.startFrame));
-                                            dispatch(reducerActions.updateFrameTo(jobInstance.stopFrame));
-                                        }}
-                                    >
-                                        All frames
-                                    </Button>
-                                    <Button
-                                        onClick={() => {
-                                            const current = storage.getState().annotation.player.frame.number;
-                                            dispatch(reducerActions.updateFrameFrom(current));
-                                            dispatch(reducerActions.updateFrameTo(jobInstance.stopFrame));
-                                        }}
-                                    >
-                                        From current
-                                    </Button>
-                                    <Button
-                                        onClick={() => {
-                                            const current = storage.getState().annotation.player.frame.number;
-                                            dispatch(reducerActions.updateFrameFrom(jobInstance.startFrame));
-                                            dispatch(reducerActions.updateFrameTo(current));
-                                        }}
-                                    >
-                                        Up to current
-                                    </Button>
-                                </Col>
-                            </Row>
-                        </Col>
+                            ) : null
+                        }
                     </>
                 ) : null}
 

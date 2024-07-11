@@ -5,6 +5,7 @@
 import './styles.scss';
 import React, { useState, useEffect, useCallback } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
+import ReactMarkdown from 'react-markdown';
 import Modal from 'antd/lib/modal';
 import Notification from 'antd/lib/notification';
 import Text from 'antd/lib/typography/Text';
@@ -98,11 +99,13 @@ function ExportBackupModal(): JSX.Element {
                 ),
             );
             closeModal();
+
+            const description = 'Backup export was started. You can check progress [here](/requests)';
             Notification.info({
                 message: 'Backup export started',
-                description:
-                    'Backup export was started. ' +
-                    'Download will start automatically as soon as the file is ready.',
+                description: (
+                    <ReactMarkdown>{description}</ReactMarkdown>
+                ),
                 className: 'cvat-notification-notice-export-backup-start',
             });
         },

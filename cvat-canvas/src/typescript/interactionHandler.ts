@@ -39,6 +39,7 @@ export class InteractionHandlerImpl implements InteractionHandler {
     private thresholdWasModified: boolean;
     private controlPointsSize: number;
     private selectedShapeOpacity: number;
+    private cancelled: boolean;
 
     private prepareResult(): InteractionResult[] {
         return this.interactionShapes.map(
@@ -193,6 +194,10 @@ export class InteractionHandlerImpl implements InteractionHandler {
         this.canvas.on('mousedown.interaction', eventListener);
         this.currentInteractionShape
             .on('drawstop', (): void => {
+                if (this.cancelled) {
+                    return;
+                }
+
                 this.canvas.off('mousedown.interaction', eventListener);
                 this.interactionShapes.push(this.currentInteractionShape);
                 this.shapesWereUpdated = true;
@@ -239,6 +244,11 @@ export class InteractionHandlerImpl implements InteractionHandler {
     }
 
     private release(): void {
+        if (this.currentInteractionShape && this.currentInteractionShape.remember('_paintHandler')) {
+            // Cancel active drawing first
+            (this.currentInteractionShape as any).draw('cancel');
+        }
+
         if (this.drawnIntermediateShape) {
             this.selectize(false, this.drawnIntermediateShape);
             this.drawnIntermediateShape.remove();
@@ -529,20 +539,28 @@ export class InteractionHandlerImpl implements InteractionHandler {
     }
 
     public interact(interactionData: InteractionData): void {
-        if (interactionData.intermediateShape) {
-            this.intermediateShape = interactionData.intermediateShape;
-            this.updateIntermediateShape();
-            if (this.interactionData.startWithBox) {
-                this.interactionShapes[0].style({ visibility: 'hidden' });
+        if (interactionData.enabled) {
+            this.cancelled = false;
+            if (interactionData.intermediateShape) {
+                this.intermediateShape = interactionData.intermediateShape;
+                this.updateIntermediateShape();
+                if (this.interactionData.startWithBox) {
+                    this.interactionShapes[0].style({ visibility: 'hidden' });
+                }
+            } else if (this.visualComponentsChanged(interactionData)) {
+                this.interactionData = { ...this.interactionData, ...interactionData };
+                this.initInteraction();
+            } else if (interactionData.enabled) {
+                this.interactionData = interactionData;
+                this.initInteraction();
+                this.startInteraction();
             }
-        } else if (interactionData.enabled && this.visualComponentsChanged(interactionData)) {
-            this.interactionData = { ...this.interactionData, ...interactionData };
-            this.initInteraction();
-        } else if (interactionData.enabled) {
-            this.interactionData = interactionData;
-            this.initInteraction();
-            this.startInteraction();
         } else {
+            if (this.currentInteractionShape && this.currentInteractionShape.remember('_paintHandler')) {
+                // Finish active drawing first if possible
+                (this.currentInteractionShape as any).draw('stop');
+            }
+
             this.onInteraction(this.prepareResult(), this.shouldRaiseEvent(false), true);
             this.release();
             this.interactionData = interactionData;
@@ -571,6 +589,7 @@ export class InteractionHandlerImpl implements InteractionHandler {
     }
 
     public cancel(): void {
+        this.cancelled = true;
         this.release();
         this.onInteraction(null);
     }

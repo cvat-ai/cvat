@@ -28,8 +28,8 @@ function JobsPageComponent(): JSX.Element {
     const query = useSelector((state: CombinedState) => state.jobs.query);
     const fetching = useSelector((state: CombinedState) => state.jobs.fetching);
     const count = useSelector((state: CombinedState) => state.jobs.count);
-    const onJobUpdate = useCallback((job: Job) => {
-        dispatch(updateJobAsync(job));
+    const onJobUpdate = useCallback((job: Job, data: Parameters<Job['save']>[0]) => {
+        dispatch(updateJobAsync(job, data));
     }, []);
 
     const queryParams = new URLSearchParams(history.location.search);
