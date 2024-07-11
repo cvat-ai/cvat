@@ -167,6 +167,7 @@ class MediaCache:
             if hasattr(db_data, 'video'):
                 source_path = os.path.join(upload_dir, db_data.video.path)
 
+                # TODO: refactor to allow non-manifest videos
                 reader = VideoDatasetManifestReader(manifest_path=db_data.get_manifest_path(),
                     source_path=source_path, chunk_number=chunk_number,
                     chunk_size=db_data.chunk_size, start=db_data.start_frame,
@@ -297,7 +298,7 @@ class MediaCache:
 
         buff = BytesIO()
         writer.save_as_chunk(chunk_frames, buff, compress_frames=False,
-            zip_compress_level=1 # these are likely to be many skips in SPECIFIC_FRAMES segments
+            zip_compress_level=1 # there are likely to be many skips in SPECIFIC_FRAMES segments
         )
         buff.seek(0)
 

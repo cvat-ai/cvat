@@ -1140,6 +1140,7 @@ def _create_thread(
                 )
 
     # Prepare jobs
+    frame_idx_map = None
     if validation_params and validation_params['mode'] == models.ValidationMode.GT_POOL:
         if db_task.mode != 'annotation':
             raise ValidationError("gt pool can only be used with 'annotation' mode tasks")
@@ -1168,6 +1169,7 @@ def _create_thread(
         job_file_mapping: JobFileMapping = []
         new_db_images: list[models.Image] = []
         validation_frames: list[int] = []
+        frame_idx_map: dict[int, int] = {} # new to original id
         for job_frames in take_by(non_pool_frames, count=frames_per_job_count):
             job_validation_frames = rng.choice(pool_frames, size=frames_per_job_count, replace=False)
             job_frames += job_validation_frames.tolist()
@@ -1190,6 +1192,7 @@ def _create_thread(
 
                 job_images.append(image.path)
                 new_db_images.append(image)
+                frame_idx_map[image.frame] = job_frame
 
             job_file_mapping.append(job_images)
 
@@ -1207,6 +1210,7 @@ def _create_thread(
             frame_id_map[pool_frame] = new_frame_id
 
             new_db_images.append(image)
+            frame_idx_map[image.frame] = pool_frame
 
         pool_frames = [frame_id_map[i] for i in pool_frames if i in frame_id_map]
 
@@ -1221,11 +1225,11 @@ def _create_thread(
 
     if db_task.mode == 'annotation':
         models.Image.objects.bulk_create(images)
-        created_images = models.Image.objects.filter(data_id=db_data.id)
+        images = models.Image.objects.filter(data_id=db_data.id)
 
         db_related_files = [
             models.RelatedFile(data=image.data, primary_image=image, path=os.path.join(upload_dir, related_file_path))
-            for image in created_images
+            for image in images
             for related_file_path in related_images.get(image.path, [])
             if not image.is_placeholder # TODO
         ]
@@ -1261,11 +1265,28 @@ def _create_thread(
         db_gt_job.save()
         db_gt_job.make_dirs()
 
+    # Update manifest
+    if (
+        settings.USE_CACHE and db_data.storage_method == models.StorageMethodChoice.CACHE
+    ) and task_mode == "annotation" and frame_idx_map:
+        manifest = ImageManifestManager(db_data.get_manifest_path())
+        manifest.link(
+            sources=[extractor.get_path(frame_idx_map[image.frame]) for image in images],
+            meta={
+                k: {'related_images': related_images[k] }
+                for k in related_images
+            },
+            data_dir=upload_dir,
+            DIM_3D=(db_task.dimension == models.DimensionType.DIM_3D),
+        )
+        manifest.create()
+
     # Save chunks
     # TODO: refactor
     # TODO: save chunks per job
     if db_data.storage_method == models.StorageMethodChoice.FILE_SYSTEM or not settings.USE_CACHE:
         def update_progress(progress):
+            # TODO: refactor this function into a class
             progress_animation = '|/-\\'
             if not hasattr(update_progress, 'call_counter'):
                 update_progress.call_counter = 0
@@ -1278,22 +1299,37 @@ def _create_thread(
             job.save_meta()
             update_progress.call_counter = (update_progress.call_counter + 1) % len(progress_animation)
 
+
+        if db_task.mode == "annotation" and frame_idx_map:
+            generator = (
+                (
+                    extractor.get_image(frame_idx_map[image.frame]),
+                    extractor.get_path(frame_idx_map[image.frame]),
+                    image.frame,
+                )
+                for image in images
+            )
+        else:
+            generator = extractor
+
         counter = itertools.count()
-        generator = itertools.groupby(extractor, lambda _: next(counter) // db_data.chunk_size)
-        generator = ((idx, list(chunk_data)) for idx, chunk_data in generator)
+        generator = itertools.groupby(generator, lambda _: next(counter) // db_data.chunk_size)
+        generator = ((chunk_idx, list(chunk_data)) for chunk_idx, chunk_data in generator)
 
         def save_chunks(
             executor: concurrent.futures.ThreadPoolExecutor,
             chunk_idx: int,
             chunk_data: Iterable[tuple[str, str, str]]
         ) -> list[tuple[str, int, tuple[int, int]]]:
-            if (db_task.dimension == models.DimensionType.DIM_2D and
+            if (
+                db_task.dimension == models.DimensionType.DIM_2D and
                 isinstance(extractor, (
                     MEDIA_TYPES['image']['extractor'],
                     MEDIA_TYPES['zip']['extractor'],
                     MEDIA_TYPES['pdf']['extractor'],
                     MEDIA_TYPES['archive']['extractor'],
-                ))):
+                ))
+            ):
                 chunk_data = preload_images(chunk_data)
 
             fs_original = executor.submit(
@@ -1306,6 +1342,7 @@ def _create_thread(
                 images=chunk_data,
                 chunk_path=db_data.get_compressed_chunk_path(chunk_idx),
             )
+            # TODO: convert to async for proper concurrency
             fs_original.result()
             image_sizes = fs_compressed.result()
 
@@ -1313,18 +1350,17 @@ def _create_thread(
             return list((i[0][1], i[0][2], i[1]) for i in zip(chunk_data, image_sizes))
 
         def process_results(img_meta: list[tuple[str, int, tuple[int, int]]]):
-            progress = extractor.get_progress(img_meta[-1][1])
+            progress = img_meta[-1][1] / db_data.size
             update_progress(progress)
 
-        queue = queue.Queue(maxsize=settings.CVAT_CONCURRENT_CHUNK_PROCESSING)
+        futures = queue.Queue(maxsize=settings.CVAT_CONCURRENT_CHUNK_PROCESSING)
         with concurrent.futures.ThreadPoolExecutor(
             max_workers=2 * settings.CVAT_CONCURRENT_CHUNK_PROCESSING
         ) as executor:
             for chunk_idx, chunk_data in generator:
-                db_data.size += len(chunk_data)
-                if queue.full():
-                    process_results(queue.get().result())
-                queue.put(executor.submit(save_chunks, executor, chunk_idx, chunk_data))
+                if futures.full():
+                    process_results(futures.get().result())
+                futures.put(executor.submit(save_chunks, executor, chunk_idx, chunk_data))
 
-            while not queue.empty():
-                process_results(queue.get().result())
+            while not futures.empty():
+                process_results(futures.get().result())
