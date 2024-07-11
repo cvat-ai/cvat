@@ -1,4 +1,4 @@
-// Copyright (C) 2023 CVAT.ai Corporation
+// Copyright (C) 2023-2024 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -19,10 +19,6 @@ context('Opacity and Selected opacity reset on each frame change', { scrollBehav
         secondX: 200,
         secondY: 450,
     };
-    const drawingActions = [{
-        method: 'brush',
-        coordinates: [[300, 300], [700, 300], [700, 700], [300, 700]],
-    }];
 
     let taskID = null;
     let jobID = null;
@@ -66,15 +62,18 @@ context('Opacity and Selected opacity reset on each frame change', { scrollBehav
         }).then((response) => {
             taskID = response.taskID;
             [jobID] = response.jobIDs;
+
+            cy.headlessCreateObjects([{
+                frame: 2,
+                objectType: 'SHAPE',
+                shapeType: 'MASK',
+                points: [0, 10000, 100, 100, 199, 199],
+                occluded: false,
+            }], jobID);
         }).then(() => {
             cy.visit(`/tasks/${taskID}/jobs/${jobID}`);
             cy.get('.cvat-canvas-container').should('exist').and('be.visible');
         });
-
-        cy.goCheckFrameNumber(2);
-        cy.startMaskDrawing();
-        cy.drawMask(drawingActions);
-        cy.get('.cvat-brush-tools-finish').click();
     });
 
     after(() => {
@@ -92,8 +91,11 @@ context('Opacity and Selected opacity reset on each frame change', { scrollBehav
     });
 
     describe(`Testing issue "${issueId}"`, () => {
-        it('Set low opacity value, draw a rectangle.', () => {
-            cy.goCheckFrameNumber(0);
+        it('Annotation view opened with increased opacity level as there are masks in the job', () => {
+            checkOpacitySliders(30, 60);
+        });
+
+        it('Set lower opacity value, draw a rectangle.', () => {
             setSliderValue('.cvat-appearance-opacity-slider', 20);
             setSliderValue('.cvat-appearance-selected-opacity-slider', 40);
             cy.createRectangle(createRectangleShape2Points);
@@ -106,29 +108,9 @@ context('Opacity and Selected opacity reset on each frame change', { scrollBehav
             checkOpacitySliders(20, 40);
         });
 
-        it('Go to the next frame with mask. Opacity resets.', () => {
+        it('Go to the next frame with mask. Opacity level keeps lower', () => {
             cy.goCheckFrameNumber(2);
-            checkOpacitySliders(30, 60);
-        });
-
-        it('Decrease opacity. Opacity does not reset on frames without masks. Opacity resets on frames with masks', () => {
-            setSliderValue('.cvat-appearance-opacity-slider', 20);
-            setSliderValue('.cvat-appearance-selected-opacity-slider', 50);
-            cy.goCheckFrameNumber(0);
-            checkOpacitySliders(20, 50);
-            cy.goCheckFrameNumber(1);
-            checkOpacitySliders(20, 50);
-            cy.goCheckFrameNumber(2);
-            checkOpacitySliders(30, 60);
-        });
-
-        it('Increase opacity. Opacity does not reset on high values', () => {
-            setSliderValue('.cvat-appearance-opacity-slider', 40);
-            setSliderValue('.cvat-appearance-selected-opacity-slider', 70);
-            for (let i = 0; i < 3; i++) {
-                cy.goCheckFrameNumber(0);
-                checkOpacitySliders(40, 70);
-            }
+            checkOpacitySliders(20, 40);
         });
     });
 });
