@@ -939,7 +939,6 @@ export function getJobAsync({
             }
 
             await job.annotations.clear({ reload: true });
-            const statistics = await job.annotations.statistics();
 
             const issues = await job.issues();
             const colors = [...cvat.enums.colors];
@@ -979,7 +978,6 @@ export function getJobAsync({
                     frameNumber,
                     frameFilename: frameData.filename,
                     relatedFiles: frameData.relatedFiles,
-                    annotationsIncludeMasks: statistics.total.mask.shape > 0,
                     frameData,
                     colors,
                     filters,

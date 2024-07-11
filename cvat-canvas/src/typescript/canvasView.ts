@@ -2576,7 +2576,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
             }
 
             if (drawnState.shapeType === 'mask') {
-                shape.attr('opacity', `${this.configuration.shapeOpacity}`);
+                shape.attr('opacity', `${Math.sqrt(this.configuration.shapeOpacity)}`);
             } else {
                 shape.attr('fill-opacity', `${this.configuration.shapeOpacity}`);
             }
@@ -3169,7 +3169,8 @@ export class CanvasViewImpl implements CanvasView, Listener {
             id: `cvat_canvas_shape_${state.clientID}`,
             'shape-rendering': 'geometricprecision',
             'data-z-order': state.zOrder,
-            opacity: colorization['fill-opacity'],
+            // apply sqrt function to colorization to enhance displaying the mask on the canvas
+            opacity: Math.sqrt(colorization['fill-opacity']),
             stroke: colorization.stroke,
         }).addClass('cvat_canvas_shape');
         image.move(this.geometry.offset + left, this.geometry.offset + top);

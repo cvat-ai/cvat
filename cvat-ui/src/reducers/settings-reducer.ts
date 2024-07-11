@@ -11,7 +11,6 @@ import { AnnotationActionTypes } from 'actions/annotation-actions';
 import {
     SettingsState, GridColor, FrameSpeed, ColorBy,
 } from 'reducers';
-import { clampOpacity } from 'utils/clamp-opacity';
 
 const defaultState: SettingsState = {
     shapes: {
@@ -438,22 +437,14 @@ export default (state = defaultState, action: AnyAction): SettingsState => {
             };
         }
         case AnnotationActionTypes.GET_JOB_SUCCESS: {
-            const { annotationsIncludeMasks } = action.payload;
-            const { shapes } = state;
             const filters = [...state.imageFilters];
             filters.forEach((imageFilter) => {
                 imageFilter.modifier.currentProcessedImage = null;
             });
 
-            const [clampedOpacity, clampedSelectedOpacity] = clampOpacity(annotationsIncludeMasks, shapes);
-
             return {
                 ...state,
-                shapes: {
-                    ...defaultState.shapes,
-                    opacity: clampedOpacity,
-                    selectedOpacity: clampedSelectedOpacity,
-                },
+
                 imageFilters: filters,
             };
         }
