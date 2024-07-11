@@ -15,12 +15,12 @@ export function clampOpacity(
         return [shapes.opacity, shapes.selectedOpacity];
     }
 
-    if (!annotationsIncludeMasks) {
-        return [shapes.opacity, shapes.selectedOpacity];
+    if (annotationsIncludeMasks) {
+        const opacity = Math.max(shapes.opacity, ENHANCED_DEFAULT_OPACITY);
+        const selectedOpacity = Math.max(shapes.selectedOpacity, ENHANCED_DEFAULT_SELECTED_OPACITY);
+
+        return [opacity, selectedOpacity];
     }
 
-    const opacity = Math.max(shapes.opacity, ENHANCED_DEFAULT_OPACITY);
-    const selectedOpacity = Math.max(shapes.selectedOpacity, ENHANCED_DEFAULT_SELECTED_OPACITY);
-
-    return [opacity, selectedOpacity];
+    return [shapes.opacity, shapes.selectedOpacity];
 }
