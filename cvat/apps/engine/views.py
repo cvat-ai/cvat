@@ -2920,19 +2920,16 @@ class AnnotationGuidesViewSet(
     iam_organization_field = None
 
     def _update_related_assets(self, request, guide: AnnotationGuide):
-        markdown_assets = []
-        current_assets = list(guide.assets.all())
+        existing_assets = list(guide.assets.all())
+        new_assets = []
 
         # pylint: disable=anomalous-backslash-in-string
         pattern = re.compile(r'\(/api/assets/([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12})\)')
-        results = re.findall(pattern, guide.markdown)
+        results = set(re.findall(pattern, guide.markdown))
 
-        handled_assets = {}
+        db_assets_to_copy = {}
         for asset_id in results:
-            if asset_id in handled_assets:
-                continue
-
-            with suppress((models.Asset.DoesNotExist, PermissionDenied)):
+            with suppress(models.Asset.DoesNotExist):
                 db_asset = models.Asset.objects.select_related('guide').get(pk=asset_id)
                 if db_asset.guide.id != guide.id:
                     perm = AnnotationGuidePermission.create_base_perm(
@@ -2943,42 +2940,49 @@ class AnnotationGuidesViewSet(
                         db_asset.guide
                     )
 
-                    if not perm.check_access().allow:
-                        raise PermissionDenied()
+                    if perm.check_access().allow:
+                        db_assets_to_copy[asset_id] = db_asset
+                else:
+                    new_assets.append(db_asset)
 
+        assets_mapping = {}
+        with transaction.atomic():
+            for asset_id in results:
+                db_asset = db_assets_to_copy.get(asset_id)
+                if db_asset is not None:
                     copied_asset = Asset(
                         filename=db_asset.filename,
                         owner=request.user,
                         guide=guide,
                     )
                     copied_asset.save()
+                    assets_mapping[asset_id] = copied_asset
 
-                    guide.markdown = guide.markdown.replace(
-                        f'(/api/assets/{asset_id})',
-                        f'(/api/assets/{copied_asset.uuid})',
-                    )
-
+        try:
+            for asset_id in results:
+                copied_asset = assets_mapping.get(asset_id)
+                if copied_asset is not None:
+                    db_asset = db_assets_to_copy.get(asset_id)
                     os.makedirs(copied_asset.get_asset_dir())
                     shutil.copyfile(
-                        os.path.join(os.path.join(db_asset.get_asset_dir(), db_asset.filename)),
-                        os.path.join(os.path.join(copied_asset.get_asset_dir(), db_asset.filename)),
+                        os.path.join(db_asset.get_asset_dir(), db_asset.filename),
+                        os.path.join(copied_asset.get_asset_dir(), db_asset.filename),
                     )
 
                     guide.markdown = guide.markdown.replace(
                         f'(/api/assets/{asset_id})',
-                        f'(/api/assets/{copied_asset.uuid})',
+                        f'(/api/assets/{assets_mapping[asset_id].uuid})',
                     )
 
-                    markdown_assets.append(copied_asset)
-                else:
-                    markdown_assets.append(db_asset)
-
-            handled_assets[asset_id] = True
+                    new_assets.append(copied_asset)
+        except:
+            for asset_id in assets_mapping:
+                assets_mapping[asset_id].delete()
 
         guide.save()
-        for current_asset in current_assets:
-            if current_asset not in markdown_assets:
-                current_asset.delete()
+        for existing_asset in existing_assets:
+            if existing_asset not in new_assets:
+                existing_asset.delete()
 
     def get_serializer_class(self):
         if self.request.method in SAFE_METHODS:
