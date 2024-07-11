@@ -2928,6 +2928,8 @@ class AnnotationGuidesViewSet(
         results = set(re.findall(pattern, guide.markdown))
 
         db_assets_to_copy = {}
+
+        # first check if we need to copy some assets and if user has permissions to access them
         for asset_id in results:
             with suppress(models.Asset.DoesNotExist):
                 db_asset = models.Asset.objects.select_related('guide').get(pk=asset_id)
@@ -2945,6 +2947,7 @@ class AnnotationGuidesViewSet(
                 else:
                     new_assets.append(db_asset)
 
+        # then copy those assets, where user has permissions
         assets_mapping = {}
         with transaction.atomic():
             for asset_id in results:
@@ -2958,6 +2961,7 @@ class AnnotationGuidesViewSet(
                     copied_asset.save()
                     assets_mapping[asset_id] = copied_asset
 
+        # finally apply changes on filesystem out of transaction
         try:
             for asset_id in results:
                 copied_asset = assets_mapping.get(asset_id)
@@ -2976,6 +2980,7 @@ class AnnotationGuidesViewSet(
 
                     new_assets.append(copied_asset)
         except:
+            # in case of any errors, remove copied assets
             for asset_id in assets_mapping:
                 assets_mapping[asset_id].delete()
 
