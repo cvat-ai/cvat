@@ -289,6 +289,8 @@ class ProjectViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
         if self.action == 'list':
             perm = ProjectPermission.create_scope_list(self.request)
             queryset = perm.filter(queryset)
+        elif self.action == 'preview':
+            queryset = Project.objects.filter(**self.kwargs)
         return queryset
 
     @transaction.atomic
@@ -625,7 +627,7 @@ class ProjectViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
     def preview(self, request, pk):
         self._object = self.get_object() # call check_object_permissions as well
 
-        first_task = self._object.tasks.order_by('-id').first()
+        first_task = self._object.tasks.select_related('data').order_by('-id').first()
         if not first_task:
             return HttpResponseNotFound('Project image preview not found')
 
@@ -864,6 +866,8 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
         if self.action == 'list':
             perm = TaskPermission.create_scope_list(self.request)
             queryset = perm.filter(queryset)
+        elif self.action == 'preview':
+            queryset = Task.objects.filter(**self.kwargs).select_related('data')
 
         return queryset
 
