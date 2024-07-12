@@ -400,8 +400,8 @@ class AdvancedConfigurationForm extends React.PureComponent<Props> {
                     size='large'
                     type='number'
                     min={0}
+                    max={10}
                     step={1}
-                    // onChange={(e) => this.handleChangeName(e)}
                 />
             </Form.Item>
         );

@@ -87,7 +87,7 @@ class DetailsComponent extends React.PureComponent<Props, State> {
     }
 
     private renderTaskName(): JSX.Element {
-        const { name, consensusJobsPerNormalJob } = this.state;
+        const { name } = this.state;
         const { task: taskInstance, onUpdateTask } = this.props;
         const taskName = name;
 
@@ -111,19 +111,13 @@ class DetailsComponent extends React.PureComponent<Props, State> {
                         {taskName}
                     </Title>
                 </Col>
-                {
-                    consensusJobsPerNormalJob > 0 && (
-                        <Col>
-                            <Tag color='#1890ff'>Consensus Based Annotation</Tag>
-                        </Col>
-                    )
-                }
             </Row>
         );
     }
 
     private renderDescription(): JSX.Element {
         const { task: taskInstance, onUpdateTask } = this.props;
+        const { consensusJobsPerNormalJob } = this.state;
         const owner = taskInstance.owner ? taskInstance.owner.username : null;
         const assignee = taskInstance.assignee ? taskInstance.assignee : null;
         const created = moment(taskInstance.createdDate).format('MMMM Do YYYY');
@@ -137,12 +131,18 @@ class DetailsComponent extends React.PureComponent<Props, State> {
                 }}
             />
         );
+        const consensusTag = consensusJobsPerNormalJob > 0 && <Tag color='#1890ff'>Consensus Based Annotation</Tag>;
 
         return (
             <Row className='cvat-task-details-user-block' justify='space-between' align='middle'>
                 <Col span={12}>
                     {owner && (
-                        <Text type='secondary'>{`Task #${taskInstance.id} Created by ${owner} on ${created}`}</Text>
+                        <div>
+                            {consensusTag}
+                            <Text type='secondary'>
+                                {`Task #${taskInstance.id} Created by ${owner} on ${created}`}
+                            </Text>
+                        </div>
                     )}
                 </Col>
                 <Col>

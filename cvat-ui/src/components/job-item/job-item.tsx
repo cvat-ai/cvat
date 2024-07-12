@@ -259,6 +259,7 @@ function JobItem(props: Props): JSX.Element {
                 <Dropdown
                     trigger={['click']}
                     destroyPopupOnHide
+                    className='job-actions-menu'
                     overlay={<JobActionsMenu job={job} onJobUpdate={onJobUpdate} />}
                 >
                     <MoreOutlined className='cvat-job-item-more-button' />
