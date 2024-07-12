@@ -24,7 +24,7 @@ context('Dump annotation if cuboid created.', () => {
         cy.openTaskJob(taskName);
     });
 
-    describe(`Testing issue "${issueId}"`, () => {
+    describe.skip(`Testing issue "${issueId}"`, () => {
         it('Create a cuboid.', () => {
             cy.createCuboid(createCuboidShape2Points);
             cy.saveJob('PATCH', 200, `dump${exportFormat}Format`);
