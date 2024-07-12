@@ -18,7 +18,8 @@ context('Dump annotation if cuboid created.', () => {
         secondX: 350,
         secondY: 450,
     };
-    const exportFormat = 'Datumaro';
+    // const exportFormat = 'Datumaro';
+    const exportFormat = 'CVAT for images';
 
     before(() => {
         cy.openTaskJob(taskName);
@@ -38,8 +39,7 @@ context('Dump annotation if cuboid created.', () => {
             };
             cy.exportJob(exportAnnotation);
             cy.downloadExport().then((file) => {
-                const fileName = file;
-                cy.verifyDownload(fileName);
+                cy.verifyDownload(file);
             });
             cy.goBack();
         });
