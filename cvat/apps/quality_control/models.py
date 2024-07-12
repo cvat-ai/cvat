@@ -87,7 +87,7 @@ class QualityReport(models.Model):
     gt_last_updated = models.DateTimeField()
 
     assignee = models.ForeignKey(
-        User, on_delete=models.SET_NULL, related_name="quality_report", null=True, blank=True
+        User, on_delete=models.SET_NULL, related_name="quality_reports", null=True, blank=True
     )
 
     data = models.JSONField()

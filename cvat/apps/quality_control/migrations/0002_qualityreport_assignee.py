@@ -20,7 +20,7 @@ class Migration(migrations.Migration):
                 blank=True,
                 null=True,
                 on_delete=django.db.models.deletion.SET_NULL,
-                related_name="quality_report",
+                related_name="quality_reports",
                 to=settings.AUTH_USER_MODEL,
             ),
         ),
