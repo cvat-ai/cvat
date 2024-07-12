@@ -1307,9 +1307,17 @@ Cypress.Commands.add('downloadExport', () => {
         });
     cy.wait('@download')
         .then((download) => {
-            const filename = download.response.headers['content-disposition'].split(';')[1].split('filename=')[1];
-            // need to remove quotes
-            return filename.substring(1, filename.length - 1);
+            // const filename = download.response.headers['content-disposition'].split(';')[1].split('filename=')[1];
+            // // need to remove quotes
+            // return filename.substring(1, filename.length - 1);
+
+            if (download && download.response && download.response.headers['content-disposition']) {
+                const filename = download.response.headers['content-disposition'].split(';')[1].split('filename=')[1];
+                // need to remove quotes
+                return filename.substring(1, filename.length - 1);
+            }
+
+            throw new Error(JSON.stringify(download));
         });
 });
 
