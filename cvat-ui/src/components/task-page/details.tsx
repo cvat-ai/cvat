@@ -140,16 +140,7 @@ class DetailsComponent extends React.PureComponent<Props, State> {
                         <div>
                             {consensusTag}
                             <Text type='secondary'>
-                                Task #
-                                {taskInstance.id}
-                                {' '}
-Created by
-                                {' '}
-                                {owner}
-                                {' '}
-on
-                                {' '}
-                                {created}
+                                {`Task #${taskInstance.id} Created by ${owner} on ${created}`}
                             </Text>
                         </div>
                     )}
