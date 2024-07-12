@@ -1504,8 +1504,7 @@ class AnnotationSerializer(serializers.Serializer):
     source = serializers.CharField(default='manual')
 
 class LabeledImageSerializer(AnnotationSerializer):
-    attributes = AttributeValSerializer(many=True,
-        source="labeledimageattributeval_set", default=[])
+    attributes = AttributeValSerializer(many=True, default=[])
 
 class OptimizedFloatListField(serializers.ListField):
     '''Default ListField is extremely slow when try to process long lists of points'''
@@ -1541,8 +1540,7 @@ class ShapeSerializer(serializers.Serializer):
     )
 
 class SubLabeledShapeSerializer(ShapeSerializer, AnnotationSerializer):
-    attributes = AttributeValSerializer(many=True,
-        source="labeledshapeattributeval_set", default=[])
+    attributes = AttributeValSerializer(many=True, default=[])
 
 class LabeledShapeSerializer(SubLabeledShapeSerializer):
     elements = SubLabeledShapeSerializer(many=True, required=False)
@@ -1562,7 +1560,7 @@ class LabeledImageSerializerFromDB(serializers.BaseSerializer):
     def to_representation(self, instance):
         def convert_tag(tag):
             result = _convert_annotation(tag, ['id', 'label_id', 'frame', 'group', 'source'])
-            result['attributes'] = _convert_attributes(tag['labeledimageattributeval_set'])
+            result['attributes'] = _convert_attributes(tag['attributes'])
             return result
 
         return convert_tag(instance)
@@ -1576,7 +1574,7 @@ class LabeledShapeSerializerFromDB(serializers.BaseSerializer):
                 'id', 'label_id', 'type', 'frame', 'group', 'source',
                 'occluded', 'outside', 'z_order', 'rotation', 'points',
             ])
-            result['attributes'] = _convert_attributes(shape['labeledshapeattributeval_set'])
+            result['attributes'] = _convert_attributes(shape['attributes'])
             if shape.get('elements', None) is not None and shape['parent'] is None:
                 result['elements'] = [convert_shape(element) for element in shape['elements']]
             return result
@@ -1590,14 +1588,13 @@ class LabeledTrackSerializerFromDB(serializers.BaseSerializer):
         def convert_track(track):
             shape_keys = [
                 'id', 'type', 'frame', 'occluded', 'outside', 'z_order',
-                'rotation', 'points', 'trackedshapeattributeval_set',
+                'rotation', 'points', 'attributes',
             ]
             result = _convert_annotation(track, ['id', 'label_id', 'frame', 'group', 'source'])
-            result['shapes'] = [_convert_annotation(shape, shape_keys) for shape in track['trackedshape_set']]
-            result['attributes'] = _convert_attributes(track['labeledtrackattributeval_set'])
+            result['shapes'] = [_convert_annotation(shape, shape_keys) for shape in track['shapes']]
+            result['attributes'] = _convert_attributes(track['attributes'])
             for shape in result['shapes']:
-                shape['attributes'] = _convert_attributes(shape['trackedshapeattributeval_set'])
-                shape.pop('trackedshapeattributeval_set', None)
+                shape['attributes'] = _convert_attributes(shape['attributes'])
             if track.get('elements', None) is not None and track['parent'] is None:
                 result['elements'] = [convert_track(element) for element in track['elements']]
             return result
@@ -1607,14 +1604,11 @@ class LabeledTrackSerializerFromDB(serializers.BaseSerializer):
 class TrackedShapeSerializer(ShapeSerializer):
     id = serializers.IntegerField(default=None, allow_null=True)
     frame = serializers.IntegerField(min_value=0)
-    attributes = AttributeValSerializer(many=True,
-        source="trackedshapeattributeval_set", default=[])
+    attributes = AttributeValSerializer(many=True, default=[])
 
 class SubLabeledTrackSerializer(AnnotationSerializer):
-    shapes = TrackedShapeSerializer(many=True, allow_empty=True,
-        source="trackedshape_set")
-    attributes = AttributeValSerializer(many=True,
-        source="labeledtrackattributeval_set", default=[])
+    shapes = TrackedShapeSerializer(many=True, allow_empty=True)
+    attributes = AttributeValSerializer(many=True, default=[])
 
 class LabeledTrackSerializer(SubLabeledTrackSerializer):
     elements = SubLabeledTrackSerializer(many=True, required=False)
