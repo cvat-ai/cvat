@@ -1305,22 +1305,11 @@ Cypress.Commands.add('downloadExport', () => {
         .within(() => {
             cy.contains('[role="menuitem"]', 'Download').click();
         });
-    cy.wait('@download', { requestTimeout: 10000 })
+    cy.wait('@download')
         .then((download) => {
-            const disposition = download.response.headers['content-disposition'];
-            if (disposition) {
-                const filename = disposition.split(';')[1].split('filename=')[1];
-                // Remove quotes and return filename
-                return filename.substring(1, filename.length - 1);
-            }
-            cy.document().then((doc) => {
-                // eslint-disable-next-line no-unsanitized/property
-                doc.body.innerHTML = JSON.stringify(download.response.body);
-            });
-            throw new Error('Content-Disposition header is missing');
-        })
-        .then((filename) => {
-            console.log(`Processed filename: ${filename}`);
+            const filename = download.response.headers['content-disposition'].split(';')[1].split('filename=')[1];
+            // need to remove quotes
+            return filename.substring(1, filename.length - 1);
         });
 });
 
