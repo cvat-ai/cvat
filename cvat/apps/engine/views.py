@@ -1729,12 +1729,17 @@ class JobViewSet(viewsets.GenericViewSet, mixins.ListModelMixin, mixins.CreateMo
     )
 
     def get_queryset(self):
-        if self.action in ('list', 'retrieve') :
-            queryset = Job.objects.select_related(
+        def iam_fields():
+            return (
                 'assignee', 'segment',
                 'segment__task', 'segment__task__owner', 'segment__task__assignee', 'segment__task__organization',
                 'segment__task__project', 'segment__task__project__owner',
                 'segment__task__project__assignee', 'segment__task__project__organization',
+            )
+
+        if self.action in ('list', 'retrieve', 'update', 'partial_update') :
+            queryset = Job.objects.select_related(
+                *iam_fields(),
                 'segment__task__data', 'segment__task__source_storage', 'segment__task__target_storage',
                 'segment__task__annotation_guide', 'segment__task__project__annotation_guide',
             ).annotate(
@@ -1744,13 +1749,10 @@ class JobViewSet(viewsets.GenericViewSet, mixins.ListModelMixin, mixins.CreateMo
             if self.action == 'list':
                 perm = JobPermission.create_scope_list(self.request)
                 queryset = perm.filter(queryset)
+            else:
+                queryset = queryset.filter(**self.kwargs)
         else:
-            queryset = Job.objects.filter(**self.kwargs).select_related(
-                'assignee', 'segment',
-                'segment__task', 'segment__task__owner', 'segment__task__assignee', 'segment__task__organization',
-                'segment__task__project', 'segment__task__project__owner',
-                'segment__task__project__assignee', 'segment__task__project__organization',
-            )
+            queryset = Job.objects.filter(**self.kwargs).select_related(*iam_fields(), )
 
         return queryset
 
