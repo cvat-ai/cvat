@@ -78,7 +78,6 @@ class ConsensusConflictsViewSet(viewsets.GenericViewSet, mixins.ListModelMixin):
     queryset = (
         ConsensusConflict.objects.select_related(
             "report",
-            "report__parent",
             "report__job",
             "report__job__segment",
             "report__job__segment__task",
