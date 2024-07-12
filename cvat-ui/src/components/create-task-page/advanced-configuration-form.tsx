@@ -48,6 +48,7 @@ export interface AdvancedConfiguration {
     sortingMethod: SortingMethod;
     useProjectSourceStorage: boolean;
     useProjectTargetStorage: boolean;
+    consensusJobsPerNormalJob: number;
     sourceStorage: StorageData;
     targetStorage: StorageData;
 }
@@ -60,6 +61,7 @@ const initialValues: AdvancedConfiguration = {
     sortingMethod: SortingMethod.LEXICOGRAPHICAL,
     useProjectSourceStorage: true,
     useProjectTargetStorage: true,
+    consensusJobsPerNormalJob: 0,
 
     sourceStorage: {
         location: StorageLocation.LOCAL,
@@ -379,6 +381,32 @@ class AdvancedConfigurationForm extends React.PureComponent<Props> {
         );
     }
 
+    private renderconsensusJobsPerNormalJob(): JSX.Element {
+        return (
+            <Form.Item
+                label='Consensus Jobs Per Normal Job'
+                name='consensusJobsPerNormalJob'
+                rules={[
+                    {
+                        validator: isInteger({
+                            min: 0,
+                            max: 10,
+                            filter: (intValue: number): boolean => intValue !== 1,
+                        }),
+                    },
+                ]}
+            >
+                <Input
+                    size='large'
+                    type='number'
+                    min={0}
+                    step={1}
+                    // onChange={(e) => this.handleChangeName(e)}
+                />
+            </Form.Item>
+        );
+    }
+
     private renderSourceStorage(): JSX.Element {
         const {
             projectId,
@@ -459,6 +487,11 @@ class AdvancedConfigurationForm extends React.PureComponent<Props> {
 
                 <Row justify='start'>
                     <Col span={7}>{this.renderChunkSize()}</Col>
+                </Row>
+                <Row justify='start'>
+                    <Col span={24}>
+                        {this.renderconsensusJobsPerNormalJob()}
+                    </Col>
                 </Row>
 
                 <Row>
