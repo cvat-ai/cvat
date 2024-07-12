@@ -282,9 +282,12 @@ class ProjectViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
             return ProjectWriteSerializer
 
     def get_queryset(self):
-        if self.action in ('list', 'retrieve') :
+        def iam_fields():
+            return ('owner', 'assignee', 'organization')
+
+        if self.action in ('list', 'retrieve', 'partial_update', 'update') :
             queryset = models.Project.objects.select_related(
-                'owner', 'assignee', 'organization',
+                *iam_fields(),
                 'annotation_guide', 'source_storage', 'target_storage',
             ).prefetch_related('tasks')
 
@@ -292,7 +295,7 @@ class ProjectViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
                 perm = ProjectPermission.create_scope_list(self.request)
                 queryset = perm.filter(queryset)
         else:
-            queryset = Project.objects.filter(**self.kwargs).select_related('owner', 'assignee', 'organization')
+            queryset = Project.objects.filter(**self.kwargs).select_related(*iam_fields(), )
 
         return queryset
 
