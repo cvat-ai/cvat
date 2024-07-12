@@ -293,8 +293,6 @@ class ProjectViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
                 queryset = perm.filter(queryset)
         else:
             queryset = Project.objects.filter(**self.kwargs).select_related('owner', 'assignee', 'organization')
-            if self.action == 'preview':
-                queryset.select_related('tasks', 'tasks__data')
 
         return queryset
 
