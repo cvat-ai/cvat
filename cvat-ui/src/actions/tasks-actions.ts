@@ -254,7 +254,7 @@ ThunkAction {
         if (data.cloudStorageId) {
             description.cloud_storage_id = data.cloudStorageId;
         }
-        if (data.consensus.consensusJobsPerNormalJob) {
+        if (data.advanced.consensusJobsPerNormalJob) {
             description.consensus_jobs_per_normal_job = +data.advanced.consensusJobsPerNormalJob;
         }
 
