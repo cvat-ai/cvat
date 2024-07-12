@@ -1745,7 +1745,12 @@ class JobViewSet(viewsets.GenericViewSet, mixins.ListModelMixin, mixins.CreateMo
                 perm = JobPermission.create_scope_list(self.request)
                 queryset = perm.filter(queryset)
         else:
-            queryset = Job.objects.filter(**self.kwargs)
+            queryset = Job.objects.filter(**self.kwargs).select_related(
+                'assignee', 'segment',
+                'segment__task', 'segment__task__owner', 'segment__task__assignee', 'segment__task__organization',
+                'segment__task__project', 'segment__task__project__owner',
+                'segment__task__project__assignee', 'segment__task__project__organization',
+            )
 
         return queryset
 
