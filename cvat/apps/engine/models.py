@@ -342,7 +342,9 @@ class Project(TimestampedModel):
         blank=True, on_delete=models.SET_NULL, related_name='+')
 
     def get_labels(self):
-        return self.label_set.filter(parent__isnull=True)
+        return self.label_set.prefetch_related(
+            'sublabels', 'attributespec_set'
+        ).filter(parent__isnull=True)
 
     def get_dirname(self):
         return os.path.join(settings.PROJECTS_ROOT, str(self.id))
@@ -427,7 +429,10 @@ class Task(TimestampedModel):
         project = self.project
         if project:
             return project.get_labels()
-        return self.label_set.filter(parent__isnull=True)
+
+        return self.label_set.prefetch_related(
+            'sublabels', 'attributespec_set'
+        ).filter(parent__isnull=True)
 
     def get_dirname(self):
         return os.path.join(settings.TASKS_ROOT, str(self.id))

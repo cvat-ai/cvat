@@ -260,12 +260,10 @@ class ProjectViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
     mixins.RetrieveModelMixin, mixins.CreateModelMixin, mixins.DestroyModelMixin,
     PartialUpdateModelMixin, UploadMixin, DatasetMixin, BackupMixin, CsrfWorkaroundMixin
 ):
-    queryset = models.Project.objects.select_related(
-        'assignee', 'owner', 'target_storage', 'source_storage', 'annotation_guide',
-    ).prefetch_related('tasks').all()
-
     # NOTE: The search_fields attribute should be a list of names of text
     # type fields on the model,such as CharField or TextField
+    queryset = models.Project.objects
+
     search_fields = ('name', 'owner', 'assignee', 'status')
     filter_fields = list(search_fields) + ['id', 'updated_date']
     simple_filters = list(search_fields)
@@ -284,13 +282,20 @@ class ProjectViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
             return ProjectWriteSerializer
 
     def get_queryset(self):
-        queryset = super().get_queryset()
+        if self.action in ('list', 'retrieve') :
+            queryset = models.Project.objects.select_related(
+                'owner', 'assignee', 'organization',
+                'annotation_guide', 'source_storage', 'target_storage',
+            ).prefetch_related('tasks')
 
-        if self.action == 'list':
-            perm = ProjectPermission.create_scope_list(self.request)
-            queryset = perm.filter(queryset)
-        elif self.action == 'preview':
-            queryset = Project.objects.filter(**self.kwargs)
+            if self.action == 'list':
+                perm = ProjectPermission.create_scope_list(self.request)
+                queryset = perm.filter(queryset)
+        else:
+            queryset = Project.objects.filter(**self.kwargs).select_related('owner', 'assignee', 'organization')
+            if self.action == 'preview':
+                queryset.select_related('tasks', 'tasks__data')
+
         return queryset
 
     @transaction.atomic
@@ -2380,12 +2385,16 @@ class LabelViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
                 #  OR
                 #  task_id = task_id
                 # )
-                task = Task.objects.get(id=task_id)
+                task = Task.objects.select_related(
+                    'owner', 'assignee', 'organization',
+                ).get(id=task_id)
                 self.check_object_permissions(self.request, task)
                 queryset = task.get_labels()
             elif project_id:
                 # NOTE: this check is to make behavior consistent with other source filters
-                project = Project.objects.get(id=project_id)
+                project = Project.objects.select_related(
+                    'owner', 'assignee', 'organization',
+                ).get(id=project_id)
                 self.check_object_permissions(self.request, project)
                 queryset = project.get_labels()
             else:
