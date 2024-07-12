@@ -294,6 +294,8 @@ class ProjectViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
             if self.action == 'list':
                 perm = ProjectPermission.create_scope_list(self.request)
                 queryset = perm.filter(queryset)
+            else:
+                queryset = queryset.filter(**self.kwargs)
         else:
             queryset = Project.objects.filter(**self.kwargs).select_related(*iam_fields(), )
 
