@@ -87,12 +87,12 @@ class JobAnnotationSpeed(PrimaryMetricBase):
                 self._db_obj.labeledtrack_set.exclude(source=SourceType.FILE)
                 .values(
                     "id",
-                    "trackedshape__id",
-                    "trackedshape__frame",
-                    "trackedshape__type",
-                    "trackedshape__outside",
+                    "shape__id",
+                    "shape__frame",
+                    "shape__type",
+                    "shape__outside",
                 )
-                .order_by("id", "trackedshape__frame")
+                .order_by("id", "shape__frame")
                 .iterator(chunk_size=2000)
             )
 
@@ -100,10 +100,10 @@ class JobAnnotationSpeed(PrimaryMetricBase):
                 rows=db_tracks,
                 keys_for_merge={
                     "shapes": [
-                        "trackedshape__id",
-                        "trackedshape__frame",
-                        "trackedshape__type",
-                        "trackedshape__outside",
+                        "shape__id",
+                        "shape__frame",
+                        "shape__type",
+                        "shape__outside",
                     ],
                 },
                 field_id="id",
