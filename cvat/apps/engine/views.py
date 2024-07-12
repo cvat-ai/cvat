@@ -1706,11 +1706,7 @@ class JobViewSet(viewsets.GenericViewSet, mixins.ListModelMixin, mixins.CreateMo
     mixins.RetrieveModelMixin, PartialUpdateModelMixin, mixins.DestroyModelMixin,
     UploadMixin, DatasetMixin, CsrfWorkaroundMixin
 ):
-    queryset = Job.objects.select_related('assignee', 'segment__task__data',
-        'segment__task__project', 'segment__task__annotation_guide', 'segment__task__project__annotation_guide',
-    ).annotate(
-        Count('issues', distinct=True),
-    ).all()
+    queryset = Job.objects
 
     iam_organization_field = 'segment__task__organization'
     search_fields = ('task_name', 'project_name', 'assignee', 'state', 'stage')
@@ -1733,11 +1729,23 @@ class JobViewSet(viewsets.GenericViewSet, mixins.ListModelMixin, mixins.CreateMo
     )
 
     def get_queryset(self):
-        queryset = super().get_queryset()
+        if self.action in ('list', 'retrieve') :
+            queryset = Job.objects.select_related(
+                'assignee', 'segment',
+                'segment__task', 'segment__task__owner', 'segment__task__assignee', 'segment__task__organization',
+                'segment__task__project', 'segment__task__project__owner',
+                'segment__task__project__assignee', 'segment__task__project__organization',
+                'segment__task__data', 'segment__task__source_storage', 'segment__task__target_storage',
+                'segment__task__annotation_guide', 'segment__task__project__annotation_guide',
+            ).annotate(
+                Count('issues', distinct=True),
+            ).all()
 
-        if self.action == 'list':
-            perm = JobPermission.create_scope_list(self.request)
-            queryset = perm.filter(queryset)
+            if self.action == 'list':
+                perm = JobPermission.create_scope_list(self.request)
+                queryset = perm.filter(queryset)
+        else:
+            queryset = Job.objects.filter(**self.kwargs)
 
         return queryset
 
@@ -2390,6 +2398,7 @@ class LabelViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
                 # )
                 task = Task.objects.select_related(
                     'owner', 'assignee', 'organization',
+                    'project', 'project__owner', 'project__assignee',
                 ).get(id=task_id)
                 self.check_object_permissions(self.request, task)
                 queryset = task.get_labels()
