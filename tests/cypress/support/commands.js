@@ -266,7 +266,7 @@ Cypress.Commands.add('headlessLogin', (username = Cypress.env('user'), password 
     });
 });
 
-Cypress.Commands.add('headlessCreateObject', (objects, jobID) => {
+Cypress.Commands.add('headlessCreateObjects', (objects, jobID) => {
     cy.window().then(async ($win) => {
         const job = (await $win.cvat.jobs.get({ jobID }))[0];
         await job.annotations.clear({ reload: true });

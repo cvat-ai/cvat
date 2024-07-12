@@ -894,7 +894,6 @@ export function getJobAsync({
 
             const {
                 settings: {
-                    workspace: { showAllInterpolationTracks },
                     player: { showDeletedFrames },
                 },
             } = state;
@@ -939,7 +938,8 @@ export function getJobAsync({
                 // do nothing, user will be notified when data request is done
             }
 
-            const states = await job.annotations.get(frameNumber, showAllInterpolationTracks, filters);
+            await job.annotations.clear({ reload: true });
+
             const issues = await job.issues();
             const colors = [...cvat.enums.colors];
 
@@ -974,7 +974,6 @@ export function getJobAsync({
                     groundTruthInstance: gtJob || null,
                     groundTruthJobFramesMeta,
                     issues,
-                    states,
                     conflicts,
                     frameNumber,
                     frameFilename: frameData.filename,
