@@ -114,6 +114,10 @@ def _merge_consensus_jobs(task_id: int) -> None:
             errors=merger.errors,
             consensus_job_data_providers=consensus_job_data_providers,
         )
+        parent_job = Job.objects.filter(id=parent_job_id, type=JobType.ANNOTATION.value).first()
+        parent_job.stage = StageChoice.VALIDATION.value
+        parent_job.state = StateChoice.IN_PROGRESS.value
+        parent_job.save()
 
     task_report_data = generate_task_consensus_report(job_comparison_reports)
     return save_report(task_id, jobs, task_report_data, job_comparison_reports)
