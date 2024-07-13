@@ -766,7 +766,7 @@ export class Shape extends Drawn {
             this.saveRotation(rotation, frame);
         }
 
-        if (updated.points && fittedPoints.length && !updated.rotation) {
+        if (updated.points && fittedPoints.length) {
             this.savePoints(fittedPoints, frame);
         }
 
