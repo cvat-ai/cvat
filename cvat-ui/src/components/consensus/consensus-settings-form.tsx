@@ -3,7 +3,7 @@
 // SPDX-License-Identifier: MIT
 
 import './styles.scss';
-import React, { useCallback } from 'react';
+import React, { useCallback, useState } from 'react';
 import { QuestionCircleOutlined } from '@ant-design/icons/lib/icons';
 import Text from 'antd/lib/typography/Text';
 import InputNumber from 'antd/lib/input-number';
@@ -13,6 +13,7 @@ import CVATTooltip from 'components/common/cvat-tooltip';
 import { ConsensusSettings } from 'cvat-core-wrapper';
 import { Button } from 'antd/lib';
 import notification from 'antd/lib/notification';
+import { LoadingOutlined } from '@ant-design/icons';
 
 interface Props {
     settings: ConsensusSettings | null;
@@ -21,6 +22,8 @@ interface Props {
 
 export default function ConsensusSettingsForm(props: Props): JSX.Element | null {
     const { settings, setConsensusSettings } = props;
+
+    const [updatingConsensusSetting, setUpdatingConsensusSetting] = useState<boolean>(false);
 
     if (!settings) {
         return (
@@ -46,10 +49,8 @@ export default function ConsensusSettingsForm(props: Props): JSX.Element | null 
                 settings.agreementScoreThreshold = values.agreementScoreThreshold / 100;
 
                 try {
-                    notification.info({
-                        message: 'Updating Consensus Settings',
-                    });
                     const responseSettings = await settings.save();
+                    setUpdatingConsensusSetting(true);
                     setConsensusSettings(responseSettings);
                 } catch (error: unknown) {
                     notification.error({
@@ -59,14 +60,13 @@ export default function ConsensusSettingsForm(props: Props): JSX.Element | null 
                     throw error;
                 }
                 await settings.save();
-                notification.info({
-                    message: 'Consensus Settings have been updated',
-                });
             }
 
             return settings;
         } catch (e) {
             return false;
+        } finally {
+            setUpdatingConsensusSetting(false);
         }
     }, [settings]);
 
@@ -145,7 +145,9 @@ export default function ConsensusSettingsForm(props: Props): JSX.Element | null 
                 </Col>
                 <Col span={11} offset={1}>
                     <Button
-                        type='default'
+                        type='primary'
+                        disabled={updatingConsensusSetting}
+                        icon={updatingConsensusSetting && <LoadingOutlined />}
                         onClick={onSave}
                     >
                         Save
