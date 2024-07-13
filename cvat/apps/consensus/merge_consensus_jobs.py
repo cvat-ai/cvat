@@ -6,13 +6,13 @@ from typing import Dict, List
 from uuid import uuid4
 
 import datumaro as dm
-from rest_framework.exceptions import ValidationError
 import django_rq
 from datumaro.components.operations import IntersectMerge
 from django.conf import settings
 from django.db import transaction
 from django.utils import timezone
 from rest_framework import status
+from rest_framework.exceptions import ValidationError
 from rest_framework.response import Response
 
 from cvat.apps.consensus.consensus_reports import (
@@ -24,7 +24,7 @@ from cvat.apps.consensus.consensus_reports import (
 from cvat.apps.consensus.models import ConsensusSettings
 from cvat.apps.dataset_manager.bindings import import_dm_annotations
 from cvat.apps.dataset_manager.task import PatchAction, patch_job_data
-from cvat.apps.engine.models import Job, JobType, Task, StateChoice
+from cvat.apps.engine.models import Job, JobType, StageChoice, StateChoice, Task
 from cvat.apps.engine.serializers import RqIdSerializer
 from cvat.apps.engine.utils import (
     define_dependent_job,
@@ -48,6 +48,17 @@ def get_consensus_jobs(task_id: int) -> Dict[int, List[int]]:
             continue
         jobs.setdefault(job.parent_job_id, []).append(job.id)
 
+    parent_job_ids = list(jobs.keys())
+
+    for parent_job_id in parent_job_ids:
+        if (
+            Job.objects.filter(id=parent_job_id, type=JobType.ANNOTATION.value).first().stage
+            == StageChoice.ANNOTATION.value
+        ):
+            continue
+        else:
+            jobs.pop(parent_job_id)
+
     return jobs
 
 
@@ -59,7 +70,9 @@ def get_annotations(job_id: int) -> dm.Dataset:
 def _merge_consensus_jobs(task_id: int) -> None:
     jobs = get_consensus_jobs(task_id)
     if not jobs:
-        raise ValidationError("No annotated consensus jobs found")
+        raise ValidationError(
+            "No annotated consensus jobs found or no normal jobs in annotation stage"
+        )
 
     consensus_settings = ConsensusSettings.objects.filter(task=task_id).first()
     merger = IntersectMerge(
