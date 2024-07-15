@@ -2401,8 +2401,7 @@ class LabelViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
                 # In other cases permissions are checked already
                 queryset = super().get_queryset()
                 perm = LabelPermission.create_scope_list(self.request)
-                # Include only 1st level labels in list responses
-                queryset = perm.filter(parent__isnull=True).filter(queryset)
+                queryset = perm.filter(queryset).filter(parent__isnull=True)
         else:
             queryset = super().get_queryset()
 
