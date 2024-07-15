@@ -1,8 +1,50 @@
 {
-  "count": 12,
+  "count": 13,
   "next": null,
   "previous": null,
   "results": [
+    {
+      "assignee": null,
+      "assignee_updated_date": null,
+      "bug_tracker": "",
+      "created_date": "2024-07-15T15:29:04.426000Z",
+      "dimension": "2d",
+      "guide_id": null,
+      "id": 14,
+      "labels": {
+        "url": "http://localhost:8080/api/labels?project_id=14"
+      },
+      "name": "project with subsets",
+      "organization": null,
+      "owner": {
+        "first_name": "Admin",
+        "id": 1,
+        "last_name": "First",
+        "url": "http://localhost:8080/api/users/1",
+        "username": "admin1"
+      },
+      "source_storage": {
+        "cloud_storage_id": null,
+        "id": 35,
+        "location": "local"
+      },
+      "status": "annotation",
+      "target_storage": {
+        "cloud_storage_id": null,
+        "id": 36,
+        "location": "local"
+      },
+      "task_subsets": [
+        "Train",
+        "Validation"
+      ],
+      "tasks": {
+        "count": 2,
+        "url": "http://localhost:8080/api/tasks?project_id=14"
+      },
+      "updated_date": "2024-07-15T15:34:53.175000Z",
+      "url": "http://localhost:8080/api/projects/14"
+    },
     {
       "assignee": null,
       "assignee_updated_date": null,
