@@ -2343,9 +2343,7 @@ class LabelViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
         'project',
         'project__owner',
         'project__assignee',
-        'project__organization'.prefetch_related(
-            'sublabels', 'attributespec_set', 'sublabels__attributespec_set',
-        )
+        'project__organization'
     ).all()
 
     iam_organization_field = ('task__organization', 'project__organization')
