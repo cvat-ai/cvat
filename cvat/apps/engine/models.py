@@ -935,27 +935,32 @@ class LabeledImage(Annotation):
     pass
 
 class LabeledImageAttributeVal(AttributeVal):
-    image = models.ForeignKey(LabeledImage, on_delete=models.CASCADE)
+    image = models.ForeignKey(LabeledImage, on_delete=models.CASCADE,
+        related_name='attributes', related_query_name='attribute')
 
 class LabeledShape(Annotation, Shape):
     parent = models.ForeignKey('self', on_delete=models.CASCADE, null=True, related_name='elements')
 
 class LabeledShapeAttributeVal(AttributeVal):
-    shape = models.ForeignKey(LabeledShape, on_delete=models.CASCADE)
+    shape = models.ForeignKey(LabeledShape, on_delete=models.CASCADE,
+        related_name='attributes', related_query_name='attribute')
 
 class LabeledTrack(Annotation):
     parent = models.ForeignKey('self', on_delete=models.CASCADE, null=True, related_name='elements')
 
 class LabeledTrackAttributeVal(AttributeVal):
-    track = models.ForeignKey(LabeledTrack, on_delete=models.CASCADE)
+    track = models.ForeignKey(LabeledTrack, on_delete=models.CASCADE,
+        related_name='attributes', related_query_name='attribute')
 
 class TrackedShape(Shape):
     id = models.BigAutoField(primary_key=True)
-    track = models.ForeignKey(LabeledTrack, on_delete=models.CASCADE)
+    track = models.ForeignKey(LabeledTrack, on_delete=models.CASCADE,
+        related_name='shapes', related_query_name='shape')
     frame = models.PositiveIntegerField()
 
 class TrackedShapeAttributeVal(AttributeVal):
-    shape = models.ForeignKey(TrackedShape, on_delete=models.CASCADE)
+    shape = models.ForeignKey(TrackedShape, on_delete=models.CASCADE,
+        related_name='attributes', related_query_name='attribute')
 
 class Profile(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE)
