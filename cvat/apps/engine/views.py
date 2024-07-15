@@ -2371,7 +2371,13 @@ class LabelViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
 
             if job_id or task_id or project_id:
                 if job_id:
-                    instance = Job.objects.get(id=job_id)
+                    instance = Job.objects.select_related(
+                        'assignee', 'segment__task__organization',
+                        'segment__task__owner', 'segment__task__assignee',
+                        'segment__task__project__organization',
+                        'segment__task__project__owner',
+                        'segment__task__project__assignee',
+                    ).get(id=job_id)
                 elif task_id:
                     instance = Task.objects.select_related(
                         'owner', 'assignee', 'organization',
@@ -2391,8 +2397,7 @@ class LabelViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
                 #  project__task__id = task_id
                 # )
                 self.check_object_permissions(self.request, instance)
-                queryset = instance.get_labels()
-                queryset = queryset.prefetch_related(
+                queryset = instance.get_labels().prefetch_related(
                     'attributespec_set', 'sublabels__attributespec_set',
                 )
             else:
