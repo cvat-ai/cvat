@@ -2343,7 +2343,9 @@ class LabelViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
         'project',
         'project__owner',
         'project__assignee',
-        'project__organization'
+        'project__organization'.prefetch_related(
+            'sublabels', 'attributespec_set', 'sublabels__attributespec_set',
+        )
     ).all()
 
     iam_organization_field = ('task__organization', 'project__organization')
@@ -2369,37 +2371,32 @@ class LabelViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
                     code=status.HTTP_400_BAD_REQUEST
                 )
 
-            if job_id:
+            if job_id or task_id or project_id:
+                if job_id:
+                    instance = Job.objects.get(id=job_id)
+                elif task_id:
+                    instance = Task.objects.select_related(
+                        'owner', 'assignee', 'organization',
+                    ).get(id=task_id)
+                elif project_id:
+                    instance = Project.objects.select_related(
+                        'owner', 'assignee', 'organization',
+                    ).get(id=project_id)
+
                 # NOTE: This filter is too complex to be implemented by other means
                 # It requires the following filter query:
                 # (
                 #  project__task__segment__job__id = job_id
                 #  OR
                 #  task__segment__job__id = job_id
-                # )
-                job = Job.objects.get(id=job_id)
-                self.check_object_permissions(self.request, job)
-                queryset = job.get_labels()
-            elif task_id:
-                # NOTE: This filter is too complex to be implemented by other means
-                # It requires the following filter query:
-                # (
-                #  project__task__id = task_id
                 #  OR
-                #  task_id = task_id
+                #  project__task__id = task_id
                 # )
-                task = Task.objects.select_related(
-                    'owner', 'assignee', 'organization',
-                ).get(id=task_id)
-                self.check_object_permissions(self.request, task)
-                queryset = task.get_labels()
-            elif project_id:
-                # NOTE: this check is to make behavior consistent with other source filters
-                project = Project.objects.select_related(
-                    'owner', 'assignee', 'organization',
-                ).get(id=project_id)
-                self.check_object_permissions(self.request, project)
-                queryset = project.get_labels()
+                self.check_object_permissions(self.request, instance)
+                queryset = instance.get_labels()
+                queryset = queryset.prefetch_related(
+                    'attributespec_set', 'sublabels__attributespec_set',
+                )
             else:
                 # In other cases permissions are checked already
                 queryset = super().get_queryset()
