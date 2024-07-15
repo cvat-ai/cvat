@@ -5,6 +5,7 @@
   "results": [
     {
       "assignee": null,
+      "assignee_updated_date": null,
       "bug_tracker": null,
       "created_date": "2024-03-21T20:50:05.838000Z",
       "data_chunk_size": 72,
@@ -37,6 +38,7 @@
     },
     {
       "assignee": null,
+      "assignee_updated_date": null,
       "bug_tracker": null,
       "created_date": "2024-03-21T20:50:05.815000Z",
       "data_chunk_size": 72,
@@ -69,6 +71,7 @@
     },
     {
       "assignee": null,
+      "assignee_updated_date": null,
       "bug_tracker": null,
       "created_date": "2024-03-21T20:50:05.811000Z",
       "data_chunk_size": 72,
@@ -101,6 +104,7 @@
     },
     {
       "assignee": null,
+      "assignee_updated_date": null,
       "bug_tracker": null,
       "created_date": "2024-03-21T20:50:05.805000Z",
       "data_chunk_size": 72,
@@ -133,6 +137,7 @@
     },
     {
       "assignee": null,
+      "assignee_updated_date": null,
       "bug_tracker": null,
       "created_date": "2023-05-26T16:11:23.946000Z",
       "data_chunk_size": 72,
@@ -165,6 +170,7 @@
     },
     {
       "assignee": null,
+      "assignee_updated_date": null,
       "bug_tracker": null,
       "created_date": "2023-05-26T16:11:23.880000Z",
       "data_chunk_size": 72,
@@ -197,6 +203,7 @@
     },
     {
       "assignee": null,
+      "assignee_updated_date": null,
       "bug_tracker": null,
       "created_date": "2023-03-27T19:08:07.649000Z",
       "data_chunk_size": 72,
@@ -237,6 +244,7 @@
     },
     {
       "assignee": null,
+      "assignee_updated_date": null,
       "bug_tracker": null,
       "created_date": "2023-03-27T19:08:07.649000Z",
       "data_chunk_size": 72,
@@ -277,6 +285,7 @@
     },
     {
       "assignee": null,
+      "assignee_updated_date": null,
       "bug_tracker": "",
       "created_date": "2023-03-10T11:57:31.614000Z",
       "data_chunk_size": 72,
@@ -317,6 +326,7 @@
     },
     {
       "assignee": null,
+      "assignee_updated_date": null,
       "bug_tracker": null,
       "created_date": "2023-03-10T11:56:33.757000Z",
       "data_chunk_size": 72,
@@ -357,6 +367,7 @@
     },
     {
       "assignee": null,
+      "assignee_updated_date": null,
       "bug_tracker": "",
       "created_date": "2023-03-01T15:36:26.668000Z",
       "data_chunk_size": 72,
@@ -397,6 +408,7 @@
     },
     {
       "assignee": null,
+      "assignee_updated_date": null,
       "bug_tracker": null,
       "created_date": "2023-02-10T14:05:25.947000Z",
       "data_chunk_size": 72,
@@ -429,6 +441,7 @@
     },
     {
       "assignee": null,
+      "assignee_updated_date": null,
       "bug_tracker": "",
       "created_date": "2022-12-01T12:53:10.425000Z",
       "data_chunk_size": 72,
@@ -469,6 +482,7 @@
     },
     {
       "assignee": null,
+      "assignee_updated_date": null,
       "bug_tracker": "https://bugtracker.localhost/task/12345",
       "created_date": "2022-09-22T14:22:25.820000Z",
       "data_chunk_size": 72,
@@ -509,6 +523,7 @@
     },
     {
       "assignee": null,
+      "assignee_updated_date": null,
       "bug_tracker": "",
       "created_date": "2022-06-08T08:33:06.505000Z",
       "data_chunk_size": 72,
@@ -547,6 +562,7 @@
         "url": "http://localhost:8080/api/users/7",
         "username": "worker2"
       },
+      "assignee_updated_date": null,
       "bug_tracker": "",
       "created_date": "2022-03-05T10:32:19.149000Z",
       "data_chunk_size": 72,
@@ -587,6 +603,7 @@
     },
     {
       "assignee": null,
+      "assignee_updated_date": null,
       "bug_tracker": "",
       "created_date": "2022-03-05T09:33:10.420000Z",
       "data_chunk_size": 72,
@@ -619,6 +636,7 @@
     },
     {
       "assignee": null,
+      "assignee_updated_date": null,
       "bug_tracker": "",
       "created_date": "2022-03-05T09:33:10.420000Z",
       "data_chunk_size": 72,
@@ -651,6 +669,7 @@
     },
     {
       "assignee": null,
+      "assignee_updated_date": null,
       "bug_tracker": "",
       "created_date": "2022-03-05T09:33:10.420000Z",
       "data_chunk_size": 72,
@@ -689,6 +708,7 @@
         "url": "http://localhost:8080/api/users/9",
         "username": "worker4"
       },
+      "assignee_updated_date": null,
       "bug_tracker": "",
       "created_date": "2022-03-05T09:33:10.420000Z",
       "data_chunk_size": 72,
@@ -727,6 +747,7 @@
         "url": "http://localhost:8080/api/users/1",
         "username": "admin1"
       },
+      "assignee_updated_date": null,
       "bug_tracker": null,
       "created_date": "2022-03-05T08:30:48.612000Z",
       "data_chunk_size": 72,
@@ -759,6 +780,7 @@
     },
     {
       "assignee": null,
+      "assignee_updated_date": null,
       "bug_tracker": null,
       "created_date": "2022-02-21T10:31:52.429000Z",
       "data_chunk_size": 72,
@@ -791,6 +813,7 @@
     },
     {
       "assignee": null,
+      "assignee_updated_date": null,
       "bug_tracker": null,
       "created_date": "2022-02-16T06:26:54.631000Z",
       "data_chunk_size": 72,
@@ -829,6 +852,7 @@
         "url": "http://localhost:8080/api/users/9",
         "username": "worker4"
       },
+      "assignee_updated_date": null,
       "bug_tracker": null,
       "created_date": "2022-02-16T06:25:48.168000Z",
       "data_chunk_size": 72,
@@ -867,6 +891,7 @@
         "url": "http://localhost:8080/api/users/6",
         "username": "worker1"
       },
+      "assignee_updated_date": null,
       "bug_tracker": null,
       "created_date": "2021-12-14T18:50:29.458000Z",
       "data_chunk_size": 72,
