@@ -1,4 +1,4 @@
-# Copyright (C) 2023 CVAT.ai Corporation
+# Copyright (C) 2023-2024 CVAT.ai Corporation
 #
 # SPDX-License-Identifier: MIT
 
@@ -6,6 +6,7 @@ import textwrap
 
 from rest_framework import serializers
 
+from cvat.apps.engine import serializers as engine_serializers
 from cvat.apps.quality_control import models
 
 
@@ -43,6 +44,7 @@ class QualityReportSummarySerializer(serializers.Serializer):
 
 class QualityReportSerializer(serializers.ModelSerializer):
     target = serializers.ChoiceField(models.QualityReportTarget.choices())
+    assignee = engine_serializers.BasicUserSerializer(allow_null=True, read_only=True)
     summary = QualityReportSummarySerializer()
 
     class Meta:
@@ -57,6 +59,7 @@ class QualityReportSerializer(serializers.ModelSerializer):
             "created_date",
             "target_last_updated",
             "gt_last_updated",
+            "assignee",
         )
         read_only_fields = fields
 

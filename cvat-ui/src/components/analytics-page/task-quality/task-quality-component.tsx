@@ -2,6 +2,7 @@
 //
 // SPDX-License-Identifier: MIT
 
+import moment from 'moment';
 import { Row } from 'antd/lib/grid';
 import Text from 'antd/lib/typography/Text';
 import notification from 'antd/lib/notification';
@@ -192,6 +193,11 @@ function TaskQualityComponent(props: Props): JSX.Element {
                         {
                             gtJob ? (
                                 <>
+                                    <Row>
+                                        <Text type='secondary'>
+                                            { `Created ${taskReport?.id ? moment(taskReport.createdDate).fromNow() : ''}`}
+                                        </Text>
+                                    </Row>
                                     <Row>
                                         <MeanQuality
                                             taskReport={taskReport}

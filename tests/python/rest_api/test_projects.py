@@ -1,5 +1,5 @@
 # Copyright (C) 2022 Intel Corporation
-# Copyright (C) 2022-2023 CVAT.ai Corporation
+# Copyright (C) 2022-2024 CVAT.ai Corporation
 #
 # SPDX-License-Identifier: MIT
 
@@ -494,6 +494,24 @@ class TestPostProjects:
         with make_api_client(username) as api_client:
             (_, response) = api_client.projects_api.retrieve(project["id"])
             assert DeepDiff(project, json.loads(response.data), ignore_order=True) == {}
+
+    @pytest.mark.parametrize("assignee", [None, "admin1"])
+    def test_can_create_with_assignee(self, admin_user, users_by_name, assignee):
+        spec = {
+            "name": "test project creation with assignee",
+            "labels": [{"name": "car"}],
+            "assignee_id": users_by_name[assignee]["id"] if assignee else None,
+        }
+
+        with make_api_client(admin_user) as api_client:
+            (project, _) = api_client.projects_api.create(project_write_request=spec)
+
+            if assignee:
+                assert project.assignee.username == assignee
+                assert project.assignee_updated_date
+            else:
+                assert project.assignee is None
+                assert project.assignee_updated_date is None
 
 
 def _check_cvat_for_video_project_annotations_meta(content, values_to_be_checked):
@@ -1148,3 +1166,33 @@ class TestPatchProject:
 
         response = patch_method(user, f"projects/{project_id}", updated_fields)
         assert response.status_code == HTTPStatus.FORBIDDEN
+
+    @pytest.mark.parametrize("has_old_assignee", [False, True])
+    @pytest.mark.parametrize("new_assignee", [None, "same", "different"])
+    def test_can_update_assignee_updated_date_on_assignee_updates(
+        self, admin_user, projects, users, has_old_assignee, new_assignee
+    ):
+        project = next(p for p in projects if bool(p.get("assignee")) == has_old_assignee)
+
+        old_assignee_id = (project.get("assignee") or {}).get("id")
+
+        new_assignee_id = None
+        if new_assignee == "same":
+            new_assignee_id = old_assignee_id
+        elif new_assignee == "different":
+            new_assignee_id = next(u for u in users if u["id"] != old_assignee_id)["id"]
+
+        with make_api_client(admin_user) as api_client:
+            (updated_project, _) = api_client.projects_api.partial_update(
+                project["id"], patched_project_write_request={"assignee_id": new_assignee_id}
+            )
+
+            if new_assignee_id == old_assignee_id:
+                assert updated_project.assignee_updated_date == project["assignee_updated_date"]
+            else:
+                assert updated_project.assignee_updated_date != project["assignee_updated_date"]
+
+            if new_assignee_id:
+                assert updated_project.assignee.id == new_assignee_id
+            else:
+                assert updated_project.assignee is None
