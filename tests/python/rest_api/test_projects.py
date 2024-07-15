@@ -578,9 +578,19 @@ class TestImportExportDatasetProject:
         ),
     )
     def test_can_export_and_import_dataset_with_skeletons(
-        self, admin_user, export_format, import_format
+        self, annotations, tasks, admin_user, export_format, import_format
     ):
-        project_id = 5
+        tasks_with_skeletons = [
+            int(task_id)
+            for task_id in annotations["task"]
+            for element in annotations["task"][task_id]["shapes"]
+            if element["type"] == "skeleton"
+        ]
+        project_id = next(
+            task["project_id"]
+            for task in tasks
+            if task["id"] in tasks_with_skeletons and task["project_id"] is not None
+        )
 
         response = self._test_export_project(admin_user, project_id, format=export_format)
 
