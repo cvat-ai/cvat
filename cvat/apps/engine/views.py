@@ -2981,9 +2981,8 @@ class AnnotationGuidesViewSet(
                     new_assets.append(copied_asset)
         except Exception as ex:
             # in case of any errors, remove copied assets
-            with transaction.atomic():
-                for asset_id in assets_mapping:
-                    assets_mapping[asset_id].delete()
+            for asset_id in assets_mapping:
+                assets_mapping[asset_id].delete()
             raise ex
 
         guide.save()
