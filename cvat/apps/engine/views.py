@@ -2154,7 +2154,15 @@ class JobViewSet(viewsets.GenericViewSet, mixins.ListModelMixin, mixins.CreateMo
         })
     @action(detail=True, methods=["GET", "PATCH"], url_path='honeypot')
     def honeypot(self, request, pk):
-        db_job: models.Job = self.get_object() # call check_object_permissions as well
+        self.get_object() # call check_object_permissions as well
+
+        db_job = models.Job.objects.prefetch_related(
+            'segment',
+            'segment__task',
+            Prefetch('segment__task__data', queryset=models.Data.objects.select_related('video').prefetch_related(
+                Prefetch('images', queryset=models.Image.objects.prefetch_related('related_files').order_by('frame'))
+            ))
+        ).get(pk=pk)
 
         if (
             not db_job.segment.task.data.validation_params or
@@ -2164,7 +2172,15 @@ class JobViewSet(viewsets.GenericViewSet, mixins.ListModelMixin, mixins.CreateMo
 
         db_segment = db_job.segment
         task_all_honeypots = set(db_segment.task.gt_job.segment.frame_set)
-        segment_honeypots = set(db_segment.frame_set) & task_all_honeypots
+
+        db_task_frames: dict[int, models.Image] = {
+            frame.frame: frame for frame in db_segment.task.data.images.all()
+        }
+        task_placeholder_frames = set(
+            frame_id for frame_id, frame in db_task_frames.items()
+            if frame.is_placeholder
+        )
+        segment_honeypots = set(db_segment.frame_set) & task_placeholder_frames
 
         if request.method == "PATCH":
             request_serializer = JobHoneypotWriteSerializer(data=request.data)
@@ -2175,10 +2191,6 @@ class JobViewSet(viewsets.GenericViewSet, mixins.ListModelMixin, mixins.CreateMo
             task_active_honeypots = task_all_honeypots.difference(deleted_task_frames)
 
             segment_honeypots_count = len(segment_honeypots)
-
-            db_task_frames: dict[int, models.Image] = {
-                frame.frame: frame for frame in db_segment.task.data.images.all()
-            }
 
             frame_selection_method = input_data['frame_selection_method']
             if frame_selection_method == models.JobFrameSelectionMethod.MANUAL:
@@ -2268,9 +2280,8 @@ class JobViewSet(viewsets.GenericViewSet, mixins.ListModelMixin, mixins.CreateMo
                 for updated_segment_frame_id in requested_frame_ids
             )
 
-            # TODO: maybe there is better way to regenerate chunks
-            # (e.g. replace specific files directly)
-            media_cache = MediaCache()
+            # TODO: replace specific files directly in chunks
+            media_cache = MediaCache(dimension=models.DimensionType(db_segment.task.dimension))
             for chunk_id in updated_segment_chunk_ids:
                 for quality in FrameProvider.Quality.__members__.values():
                     media_cache.remove_task_chunk(
