@@ -282,22 +282,18 @@ class ProjectViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
             return ProjectWriteSerializer
 
     def get_queryset(self):
-        def iam_fields():
-            return ('owner', 'assignee', 'organization')
-
+        queryset = models.Project.objects.select_related('owner', 'assignee', 'organization')
         if self.action in ('list', 'retrieve', 'partial_update', 'update') :
-            queryset = models.Project.objects.select_related(
-                *iam_fields(),
+            queryset = queryset.select_related(
                 'annotation_guide', 'source_storage', 'target_storage',
             ).prefetch_related('tasks')
 
             if self.action == 'list':
                 perm = ProjectPermission.create_scope_list(self.request)
-                queryset = perm.filter(queryset)
-            else:
-                queryset = queryset.filter(**self.kwargs)
-        else:
-            queryset = Project.objects.filter(**self.kwargs).select_related(*iam_fields(), )
+                return perm.filter(queryset)
+
+        if 'pk' in self.kwargs:
+            queryset = queryset.filter(pk=self.kwargs['pk'])
 
         return queryset
 
@@ -2381,6 +2377,7 @@ class LabelViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
                 elif task_id:
                     instance = Task.objects.select_related(
                         'owner', 'assignee', 'organization',
+                        'project__owner', 'project__assignee', 'project__organization',
                     ).get(id=task_id)
                 elif project_id:
                     instance = Project.objects.select_related(
