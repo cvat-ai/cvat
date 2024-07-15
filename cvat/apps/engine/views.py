@@ -635,7 +635,7 @@ class ProjectViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
     def preview(self, request, pk):
         self._object = self.get_object() # call check_object_permissions as well
 
-        first_task = self._object.tasks.select_related('data').order_by('-id').first()
+        first_task = self._object.tasks.select_related('data__video').order_by('-id').first()
         if not first_task:
             return HttpResponseNotFound('Project image preview not found')
 
