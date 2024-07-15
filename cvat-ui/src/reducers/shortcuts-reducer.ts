@@ -95,6 +95,13 @@ export default (state = defaultState, action: ShortcutsActions | BoundariesActio
                 normalizedKeyMap: { ...state.normalizedKeyMap, [keyMapId]: normalized },
             };
         }
+        case ShortcutsActionsTypes.SET_SHORTCUTS: {
+            const { shortcuts } = action.payload;
+            return {
+                ...state,
+                ...shortcuts,
+            };
+        }
         case BoundariesActionTypes.RESET_AFTER_ERROR:
         case AuthActionTypes.LOGOUT_SUCCESS: {
             return { ...defaultState };

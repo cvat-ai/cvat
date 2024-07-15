@@ -16,6 +16,7 @@ import Tooltip from 'antd/lib/tooltip';
 import { PlayCircleOutlined, LaptopOutlined, BuildOutlined } from '@ant-design/icons';
 
 import { setSettings } from 'actions/settings-actions';
+import { shortcutsActions } from 'actions/shortcuts-actions';
 import WorkspaceSettingsContainer from 'containers/header/settings-modal/workspace-settings';
 import PlayerSettingsContainer from 'containers/header/settings-modal/player-settings';
 import ShortcutsSettingsContainer from 'containers/header/settings-modal/shortcuts-settings';
@@ -30,6 +31,7 @@ function SettingsModal(props: SettingsModalProps): JSX.Element {
     const { visible, onClose } = props;
 
     const settings = useSelector((state: CombinedState) => state.settings);
+    const shortcuts = useSelector((state: CombinedState) => state.shortcuts);
     const dispatch = useDispatch();
 
     const onSaveSettings = useCallback(() => {
@@ -39,6 +41,7 @@ function SettingsModal(props: SettingsModalProps): JSX.Element {
                 settingsForSaving[key] = value;
             }
         }
+        settingsForSaving.shortcuts = { ...shortcuts };
 
         localStorage.setItem('clientSettings', JSON.stringify(settingsForSaving));
         notification.success({
@@ -47,7 +50,7 @@ function SettingsModal(props: SettingsModalProps): JSX.Element {
         });
 
         onClose();
-    }, [onClose, settings]);
+    }, [onClose, settings, shortcuts]);
 
     useEffect(() => {
         try {
@@ -65,6 +68,9 @@ function SettingsModal(props: SettingsModalProps): JSX.Element {
                 }
             }
             dispatch(setSettings(newSettings));
+            if ('shortcuts' in loadedSettings) {
+                dispatch(shortcutsActions.setShortcuts(loadedSettings.shortcuts));
+            }
         } catch {
             notification.error({
                 message: 'Failed to load settings from local storage',
