@@ -1,5 +1,5 @@
 import { Select } from 'antd/lib';
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useRef, useState } from 'react';
 
 interface Props {
     id: string;
@@ -14,39 +14,32 @@ function MultipleShortcutsDisplay(props: Props): JSX.Element {
     const [focus, setFocus] = useState(false);
     const [pressedKeys, setPressedKeys] = useState<string[]>([]);
 
-    useEffect(() => {
-        const handleKeyDown = (event: KeyboardEvent): void => {
-            if (focus) {
-                event.preventDefault();
-                setPressedKeys((prevKeys) => {
-                    if (!prevKeys.includes(event.key)) {
-                        return [...prevKeys, (event.key).toLowerCase()];
-                    }
-                    return prevKeys;
-                });
-            }
-        };
-
-        const handleKeyUp = (event: KeyboardEvent): void => {
-            if (focus) {
-                event.preventDefault();
-                const newKeyCombination = pressedKeys.join('+');
-                if (!sequences.includes(newKeyCombination)) {
-                    onKeySequenceUpdate(id, [...sequences, newKeyCombination]);
+    const handleKeyDown = (event: React.KeyboardEvent): void => {
+        event.stopPropagation();
+        event.preventDefault();
+        if (focus) {
+            setPressedKeys((prevKeys) => {
+                const key = event.key.toLowerCase();
+                if (!prevKeys.includes(key)) {
+                    return [...prevKeys, key];
                 }
-                setPressedKeys([]);
-                selectRef.current.blur();
+                return prevKeys;
+            });
+        }
+    };
+
+    const handleKeyUp = (event: React.KeyboardEvent): void => {
+        event.stopPropagation();
+        event.preventDefault();
+        if (focus) {
+            const newKeyCombination = pressedKeys.join('+');
+            if (!sequences.includes(newKeyCombination)) {
+                onKeySequenceUpdate(id, [...sequences, newKeyCombination]);
             }
-        };
-
-        window.addEventListener('keydown', handleKeyDown);
-        window.addEventListener('keyup', handleKeyUp);
-
-        return () => {
-            window.removeEventListener('keydown', handleKeyDown);
-            window.removeEventListener('keyup', handleKeyUp);
-        };
-    }, [focus, pressedKeys]);
+            setPressedKeys([]);
+            selectRef.current.blur();
+        }
+    };
 
     return (
         <Select
@@ -63,6 +56,9 @@ function MultipleShortcutsDisplay(props: Props): JSX.Element {
             placeholder='Register shortcut...'
             value={sequences}
             className='cvat-shortcuts-settings-select'
+            onKeyDown={handleKeyDown}
+            onKeyUp={handleKeyUp}
+            onInputKeyDown={handleKeyDown}
         />
     );
 }
