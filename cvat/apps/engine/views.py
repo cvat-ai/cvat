@@ -2394,9 +2394,7 @@ class LabelViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
                 #  project__task__id = task_id
                 # )
                 self.check_object_permissions(self.request, instance)
-                queryset = instance.get_labels().select_related('skeleton').prefetch_related(
-                    'attributespec_set', 'sublabels__attributespec_set',
-                )
+                queryset = instance.get_labels(prefetch=True)
             else:
                 # In other cases permissions are checked already
                 queryset = super().get_queryset()
