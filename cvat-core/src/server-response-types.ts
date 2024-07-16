@@ -296,6 +296,7 @@ export interface SerializedQualityReportData {
     target: string;
     created_date?: string;
     gt_last_updated?: string;
+    assignee?: SerializedUser | null;
     summary?: {
         frame_count: number;
         frame_share: number;
