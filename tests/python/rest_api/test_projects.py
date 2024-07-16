@@ -586,36 +586,31 @@ class TestImportExportDatasetProject:
 
         self._test_import_project(admin_user, project_id, "CVAT 1.1", import_data)
 
-    def test_can_export_and_import_dataset_with_skeletons_coco_keypoints(self, admin_user):
-        project_id = 5
+    @pytest.mark.parametrize(
+        "export_format, import_format",
+        (
+            ("COCO Keypoints 1.0", "COCO Keypoints 1.0"),
+            ("CVAT for images 1.1", "CVAT 1.1"),
+            ("CVAT for video 1.1", "CVAT 1.1"),
+            ("Datumaro 1.0", "Datumaro 1.0"),
+        ),
+    )
+    def test_can_export_and_import_dataset_with_skeletons(
+        self, annotations, tasks, admin_user, export_format, import_format
+    ):
+        tasks_with_skeletons = [
+            int(task_id)
+            for task_id in annotations["task"]
+            for element in annotations["task"][task_id]["shapes"]
+            if element["type"] == "skeleton"
+        ]
+        project_id = next(
+            task["project_id"]
+            for task in tasks
+            if task["id"] in tasks_with_skeletons and task["project_id"] is not None
+        )
 
-        response = self._test_export_project(admin_user, project_id, format="COCO Keypoints 1.0")
-
-        tmp_file = io.BytesIO(response.data)
-        tmp_file.name = "dataset.zip"
-        import_data = {
-            "dataset_file": tmp_file,
-        }
-
-        self._test_import_project(admin_user, project_id, "COCO Keypoints 1.0", import_data)
-
-    def test_can_export_and_import_dataset_with_skeletons_cvat_for_images(self, admin_user):
-        project_id = 5
-
-        response = self._test_export_project(admin_user, project_id)
-
-        tmp_file = io.BytesIO(response.data)
-        tmp_file.name = "dataset.zip"
-        import_data = {
-            "dataset_file": tmp_file,
-        }
-
-        self._test_import_project(admin_user, project_id, "CVAT 1.1", import_data)
-
-    def test_can_export_and_import_dataset_with_skeletons_cvat_for_video(self, admin_user):
-        project_id = 5
-
-        response = self._test_export_project(admin_user, project_id, format="CVAT for video 1.1")
+        response = self._test_export_project(admin_user, project_id, format=export_format)
 
         tmp_file = io.BytesIO(response.data)
         tmp_file.name = "dataset.zip"
@@ -623,7 +618,7 @@ class TestImportExportDatasetProject:
             "dataset_file": tmp_file,
         }
 
-        self._test_import_project(admin_user, project_id, "CVAT 1.1", import_data)
+        self._test_import_project(admin_user, project_id, import_format, import_data)
 
     def _test_can_get_project_backup(self, username, pid, **kwargs):
         for _ in range(30):
