@@ -26,6 +26,7 @@ import ProjectSearchField from './project-search-field';
 import ProjectSubsetField from './project-subset-field';
 import MultiTasksProgress from './multi-task-progress';
 import AdvancedConfigurationForm, { AdvancedConfiguration, SortingMethod } from './advanced-configuration-form';
+import QualityConfigurationForm, { QualityConfiguration } from './quality-configuration-form';
 
 type TabName = 'local' | 'share' | 'remote' | 'cloudStorage';
 const core = getCore();
@@ -35,6 +36,7 @@ export interface CreateTaskData {
     basic: BaseConfiguration;
     subset: string;
     advanced: AdvancedConfiguration;
+    quality: QualityConfiguration;
     labels: any[];
     files: Files;
     activeFileManagerTab: TabName;
@@ -82,6 +84,8 @@ const defaultState: State = {
         },
         useProjectSourceStorage: true,
         useProjectTargetStorage: true,
+    },
+    quality: {
     },
     labels: [],
     files: {
@@ -152,6 +156,7 @@ function filterFiles(remoteFiles: RemoteFile[], many: boolean): RemoteFile[] {
 class CreateTaskContent extends React.PureComponent<Props & RouteComponentProps, State> {
     private basicConfigurationComponent: RefObject<BasicConfigurationForm>;
     private advancedConfigurationComponent: RefObject<AdvancedConfigurationForm>;
+    private qualityConfigurationComponent: RefObject<QualityConfigurationForm>;
     private fileManagerComponent: any;
 
     public constructor(props: Props & RouteComponentProps) {
@@ -159,6 +164,7 @@ class CreateTaskContent extends React.PureComponent<Props & RouteComponentProps,
         this.state = { ...defaultState };
         this.basicConfigurationComponent = React.createRef<BasicConfigurationForm>();
         this.advancedConfigurationComponent = React.createRef<AdvancedConfigurationForm>();
+        this.qualityConfigurationComponent = React.createRef<QualityConfigurationForm>();
     }
 
     public componentDidMount(): void {
@@ -243,6 +249,14 @@ class CreateTaskContent extends React.PureComponent<Props & RouteComponentProps,
     private handleChangeBasicConfiguration = (values: BaseConfiguration): void => {
         this.setState({
             basic: { ...values },
+        });
+    };
+
+    private handleChangeQualityConfiguration = (values: QualityConfiguration): void => {
+        console.log(values);
+        const { quality } = this.state;
+        this.setState({
+            quality: { ...quality, ...values },
         });
     };
 
@@ -877,6 +891,26 @@ class CreateTaskContent extends React.PureComponent<Props & RouteComponentProps,
         );
     }
 
+    private renderQualityBlock(): JSX.Element {
+        return (
+            <Col span={24}>
+                <Collapse
+                    className='cvat-quality-configuration-wrapper'
+                    items={[{
+                        key: '1',
+                        label: <Text className='cvat-title'>Quality</Text>,
+                        children: (
+                            <QualityConfigurationForm
+                                ref={this.qualityConfigurationComponent}
+                                onChange={this.handleChangeQualityConfiguration}
+                            />
+                        ),
+                    }]}
+                />
+            </Col>
+        );
+    }
+
     private renderFooterSingleTask(): JSX.Element {
         const { uploadFileErrorMessage, loading, statusInProgressTask: status } = this.state;
 
@@ -967,6 +1001,7 @@ class CreateTaskContent extends React.PureComponent<Props & RouteComponentProps,
                 {this.renderLabelsBlock()}
                 {this.renderFilesBlock()}
                 {this.renderAdvancedBlock()}
+                {this.renderQualityBlock()}
 
                 <Col span={24} className='cvat-create-task-content-footer'>
                     {many ? this.renderFooterMultiTasks() : this.renderFooterSingleTask() }

@@ -47,6 +47,14 @@ const defaultState: PluginsState = {
                 },
             },
         },
+        createTaskPage: {
+            qualityForm: {
+                validationMethods: {
+                    items: [],
+                    params: [],
+                },
+            },
+        },
         projectActions: {
             items: [],
         },

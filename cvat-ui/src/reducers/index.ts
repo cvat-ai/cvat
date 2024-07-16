@@ -284,6 +284,14 @@ export interface PluginsState {
                 };
             };
         };
+        createTaskPage: {
+            qualityForm: {
+                validationMethods: {
+                    items: PluginComponent[];
+                    params: PluginComponent[];
+                }
+            },
+        }
         projectActions: {
             items: PluginComponent[];
         };

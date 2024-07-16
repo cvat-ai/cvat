@@ -258,7 +258,6 @@ ThunkAction {
         taskInstance.clientFiles = data.files.local;
         taskInstance.serverFiles = data.files.share.concat(data.files.cloudStorage);
         taskInstance.remoteFiles = data.files.remote;
-
         try {
             const savedTask = await taskInstance.save({
                 requestStatusCallback(request) {
@@ -280,6 +279,7 @@ ThunkAction {
                     onProgress?.(`${message} ${progress ? `${Math.floor(progress * 100)}%` : ''}. ${helperMessage}`);
                     if (request.id) updateRequestProgress(request, dispatch);
                 },
+                fields: { ...data.quality },
             });
 
             dispatch(updateTaskInState(savedTask));

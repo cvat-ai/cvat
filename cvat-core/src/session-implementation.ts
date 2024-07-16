@@ -666,7 +666,7 @@ export function implementTask(Task: typeof TaskClass): typeof TaskClass {
                 });
             }
 
-            const taskSpec: any = {
+            let taskSpec: any = {
                 name: this.name,
                 labels: this.labels.map((el) => el.toJSON()),
             };
@@ -694,6 +694,9 @@ export function implementTask(Task: typeof TaskClass): typeof TaskClass {
             if (this.sourceStorage) {
                 taskSpec.source_storage = this.sourceStorage.toJSON();
             }
+
+            const { fields } = options;
+            taskSpec = { ...taskSpec, ...fields };
 
             const taskDataSpec = {
                 client_files: this.clientFiles,
