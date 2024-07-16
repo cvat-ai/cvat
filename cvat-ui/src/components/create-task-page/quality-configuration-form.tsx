@@ -9,6 +9,8 @@ import { usePlugins } from 'utils/hooks';
 import { CombinedState } from 'reducers';
 import { PercentageOutlined } from '@ant-design/icons';
 import Radio from 'antd/lib/radio';
+import { groundTruthFrameSelect } from 'components/create-job-page/job-form';
+import { Col } from 'antd/lib/grid';
 
 export interface QualityConfiguration {
 }
@@ -29,12 +31,24 @@ export default function QualityConfigurationForm(props: Props): React.JSX.Elemen
     let paramsBlock: JSX.Element | null = null;
     if (currentValidationMethod === ValidationMethod.GT) {
         paramsBlock = (
-            <Form.Item
-                label='Quantity (%)'
-                name='validation_frames_percent'
-            >
-                <Input name='validation_frames_percent' size='large' type='number' min={5} max={100} suffix={<PercentageOutlined />} />
-            </Form.Item>
+            <>
+                {groundTruthFrameSelect()}
+                <Col span={7}>
+                    <Form.Item
+                        label='Quantity (%)'
+                        name='validation_frames_percent'
+                        rules={[
+                            {
+                                required: true,
+                                message: 'The field is required.',
+                            },
+                        ]}
+                    >
+                        <Input name='validation_frames_percent' size='large' type='number' min={0} max={100} suffix={<PercentageOutlined />} />
+                    </Form.Item>
+                </Col>
+            </>
+
         );
     }
 

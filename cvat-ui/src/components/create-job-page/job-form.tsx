@@ -22,6 +22,7 @@ import { createJobAsync } from 'actions/jobs-actions';
 
 export enum FrameSelectionMethod {
     RANDOM = 'random_uniform',
+    RANDOM_PER_JOB = 'random_per_job',
 }
 
 interface JobDataMutual {
@@ -45,6 +46,28 @@ interface Props {
 }
 
 const defaultQuantity = 5;
+
+export function groundTruthFrameSelect(): JSX.Element {
+    return (
+        <Form.Item
+            name='frame_selection_method'
+            label='Frame selection method'
+            rules={[{ required: true, message: 'Please, specify frame selection method' }]}
+        >
+            <Select
+                virtual={false}
+                className='cvat-select-frame-selection-method'
+            >
+                <Select.Option value={FrameSelectionMethod.RANDOM}>
+                    Random
+                </Select.Option>
+                <Select.Option value={FrameSelectionMethod.RANDOM_PER_JOB}>
+                    Random per job
+                </Select.Option>
+            </Select>
+        </Form.Item>
+    );
+}
 
 function JobForm(props: Props): JSX.Element {
     const { task } = props;
@@ -132,20 +155,7 @@ function JobForm(props: Props): JSX.Element {
                                 </Select.Option>
                             </Select>
                         </Form.Item>
-                        <Form.Item
-                            name='frame_selection_method'
-                            label='Frame selection method'
-                            rules={[{ required: true, message: 'Please, specify frame selection method' }]}
-                        >
-                            <Select
-                                virtual={false}
-                                className='cvat-select-frame-selection-method'
-                            >
-                                <Select.Option value={FrameSelectionMethod.RANDOM}>
-                                    Random
-                                </Select.Option>
-                            </Select>
-                        </Form.Item>
+                        {groundTruthFrameSelect()}
                     </Col>
                     <Col>
                         <Row justify='space-between'>
