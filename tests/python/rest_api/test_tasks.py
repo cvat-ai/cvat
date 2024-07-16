@@ -1,5 +1,5 @@
 # Copyright (C) 2022 Intel Corporation
-# Copyright (C) 2022-2023 CVAT.ai Corporation
+# Copyright (C) 2022-2024 CVAT.ai Corporation
 #
 # SPDX-License-Identifier: MIT
 
@@ -412,6 +412,24 @@ class TestPostTasks:
 
         self._test_create_task_201(username, spec)
 
+    @pytest.mark.parametrize("assignee", [None, "admin1"])
+    def test_can_create_with_assignee(self, admin_user, users_by_name, assignee):
+        task_spec = {
+            "name": "test task creation with assignee",
+            "labels": [{"name": "car"}],
+            "assignee_id": users_by_name[assignee]["id"] if assignee else None,
+        }
+
+        with make_api_client(admin_user) as api_client:
+            (task, _) = api_client.tasks_api.create(task_write_request=task_spec)
+
+            if assignee:
+                assert task.assignee.username == assignee
+                assert task.assignee_updated_date
+            else:
+                assert task.assignee is None
+                assert task.assignee_updated_date is None
+
 
 @pytest.mark.usefixtures("restore_db_per_class")
 class TestGetData:
@@ -800,15 +818,15 @@ class TestPostTaskData:
             (task, response) = api_client.tasks_api.create(spec, **kwargs)
             assert response.status == HTTPStatus.CREATED
 
-            (_, response) = api_client.tasks_api.create_data(
+            (result, response) = api_client.tasks_api.create_data(
                 task.id, data_request=deepcopy(data), _content_type="application/json", **kwargs
             )
             assert response.status == HTTPStatus.ACCEPTED
 
-            status = wait_until_task_is_created(api_client.tasks_api, task.id)
-            assert status.state.value == "Failed"
+            request_details = wait_until_task_is_created(api_client.requests_api, result.rq_id)
+            assert request_details.status.value == "failed"
 
-        return status
+        return request_details
 
     def test_can_create_task_with_defined_start_and_stop_frames(self):
         task_spec = {
@@ -1678,8 +1696,8 @@ class TestPostTaskData:
                 assert response.status == HTTPStatus.OK
                 assert task.size == task_size
         else:
-            status = self._test_cannot_create_task(self._USERNAME, task_spec, data_spec)
-            assert "No media data found" in status.message
+            rq_job_details = self._test_cannot_create_task(self._USERNAME, task_spec, data_spec)
+            assert "No media data found" in rq_job_details.message
 
     @pytest.mark.with_external_services
     @pytest.mark.parametrize("use_manifest", [True, False])
@@ -2655,6 +2673,36 @@ class TestPatchTask:
                 _check_status=False,
             )
         assert response.status == HTTPStatus.FORBIDDEN
+
+    @pytest.mark.parametrize("has_old_assignee", [False, True])
+    @pytest.mark.parametrize("new_assignee", [None, "same", "different"])
+    def test_can_update_assignee_updated_date_on_assignee_updates(
+        self, admin_user, tasks, users, has_old_assignee, new_assignee
+    ):
+        task = next(t for t in tasks if bool(t.get("assignee")) == has_old_assignee)
+
+        old_assignee_id = (task.get("assignee") or {}).get("id")
+
+        new_assignee_id = None
+        if new_assignee == "same":
+            new_assignee_id = old_assignee_id
+        elif new_assignee == "different":
+            new_assignee_id = next(u for u in users if u["id"] != old_assignee_id)["id"]
+
+        with make_api_client(admin_user) as api_client:
+            (updated_task, _) = api_client.tasks_api.partial_update(
+                task["id"], patched_task_write_request={"assignee_id": new_assignee_id}
+            )
+
+            if new_assignee_id == old_assignee_id:
+                assert updated_task.assignee_updated_date == task["assignee_updated_date"]
+            else:
+                assert updated_task.assignee_updated_date != task["assignee_updated_date"]
+
+            if new_assignee_id:
+                assert updated_task.assignee.id == new_assignee_id
+            else:
+                assert updated_task.assignee is None
 
 
 @pytest.mark.usefixtures("restore_db_per_function")

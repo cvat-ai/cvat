@@ -9,18 +9,14 @@ from typing import Optional, Type
 from django.db.models.query import QuerySet
 from django.http.request import HttpRequest
 from django.http.response import HttpResponse
-from django.shortcuts import get_object_or_404
 from rest_framework.decorators import action
-from rest_framework.exceptions import PermissionDenied
 from rest_framework.response import Response
 from rest_framework.serializers import Serializer
 from rest_framework.viewsets import GenericViewSet
 from drf_spectacular.utils import extend_schema
 
 from cvat.apps.engine.mixins import UploadMixin
-from cvat.apps.engine.models import CloudStorage as CloudStorageModel
 from cvat.apps.engine.parsers import TusUploadParser
-from cvat.apps.engine.permissions import CloudStoragePermission
 
 
 def make_paginated_response(
@@ -76,21 +72,6 @@ def list_action(serializer_class: Type[Serializer], **kwargs):
 
     return action(**params)
 
-def get_cloud_storage_for_import_or_export(
-    storage_id: int, *, request, is_default: bool = False
-) -> CloudStorageModel:
-    perm = CloudStoragePermission.create_scope_view(None, storage_id=storage_id, request=request)
-    result = perm.check_access()
-    if not result.allow:
-        if is_default:
-            # In this case, the user did not specify the location explicitly
-            error_message = "A cloud storage is selected as the default location. "
-        else:
-            error_message = ""
-        error_message += "You don't have access to this cloud storage"
-        raise PermissionDenied(error_message)
-
-    return get_object_or_404(CloudStorageModel, pk=storage_id)
 
 def tus_chunk_action(*, detail: bool, suffix_base: str):
     def decorator(f):

@@ -3010,6 +3010,7 @@ class TaskImportExportAPITestCase(ApiTestBase):
                             "owner",
                             "project_id",
                             "assignee",
+                            "assignee_updated_date",
                             "created_date",
                             "updated_date",
                             "data",
@@ -3039,7 +3040,7 @@ class TaskImportExportAPITestCase(ApiTestBase):
         task_id = self.tasks[0]["id"]
         user = self.admin
 
-        with mock.patch('cvat.apps.engine.backup.TASK_CACHE_TTL', new=timedelta(hours=10)):
+        with mock.patch('cvat.apps.dataset_manager.views.TASK_CACHE_TTL', new=timedelta(hours=10)):
             response = self._run_api_v2_tasks_id_export(task_id, user)
             self.assertEqual(response.status_code, status.HTTP_202_ACCEPTED)
 

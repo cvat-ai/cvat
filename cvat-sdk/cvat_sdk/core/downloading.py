@@ -5,11 +5,13 @@
 
 from __future__ import annotations
 
+import json
 from contextlib import closing
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Dict, Optional
 
 from cvat_sdk.api_client.api_client import Endpoint
+from cvat_sdk.core.helpers import expect_status
 from cvat_sdk.core.progress import NullProgressReporter, ProgressReporter
 from cvat_sdk.core.utils import atomic_writer
 
@@ -86,18 +88,23 @@ class Downloader:
         url = client.api_map.make_endpoint_url(
             endpoint.path, kwsub=url_params, query_params=query_params
         )
-        client.wait_for_completion(
-            url,
+
+        # initialize background process
+        response = client.api_client.rest_client.request(
             method="GET",
-            positive_statuses=[202],
-            success_status=201,
-            status_check_period=status_check_period,
+            url=url,
+            headers=client.api_client.get_common_headers(),
         )
 
-        query_params = dict(query_params or {})
-        query_params["action"] = "download"
-        url = client.api_map.make_endpoint_url(
-            endpoint.path, kwsub=url_params, query_params=query_params
+        client.logger.debug("STATUS %s", response.status)
+        expect_status(202, response)
+        rq_id = json.loads(response.data).get("rq_id")
+        assert rq_id, "Request identifier was not found in server response"
+
+        # wait until background process will be finished or failed
+        request, response = client.wait_for_completion(
+            rq_id, status_check_period=status_check_period
         )
+
         downloader = Downloader(client)
-        downloader.download_file(url, output_path=filename, pbar=pbar)
+        downloader.download_file(request.result_url, output_path=filename, pbar=pbar)

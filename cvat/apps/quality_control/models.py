@@ -1,4 +1,4 @@
-# Copyright (C) 2023 CVAT.ai Corporation
+# Copyright (C) 2023-2024 CVAT.ai Corporation
 #
 # SPDX-License-Identifier: MIT
 
@@ -12,7 +12,7 @@ from django.core.exceptions import ValidationError
 from django.db import models
 from django.forms.models import model_to_dict
 
-from cvat.apps.engine.models import Job, ShapeType, Task
+from cvat.apps.engine.models import Job, ShapeType, Task, User
 
 
 class AnnotationConflictType(str, Enum):
@@ -85,6 +85,10 @@ class QualityReport(models.Model):
     created_date = models.DateTimeField(auto_now_add=True)
     target_last_updated = models.DateTimeField()
     gt_last_updated = models.DateTimeField()
+
+    assignee = models.ForeignKey(
+        User, on_delete=models.SET_NULL, related_name="quality_reports", null=True, blank=True
+    )
 
     data = models.JSONField()
 
