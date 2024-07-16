@@ -4,6 +4,7 @@
 # SPDX-License-Identifier: MIT
 
 import io
+import itertools
 import json
 import xml.etree.ElementTree as ET
 import zipfile
@@ -11,6 +12,7 @@ from copy import deepcopy
 from http import HTTPStatus
 from io import BytesIO
 from itertools import product
+from operator import itemgetter
 from time import sleep
 from typing import Dict, List, Optional
 
@@ -813,6 +815,25 @@ class TestImportExportDatasetProject:
             }
 
             self._test_import_project(admin_user, project_id, "CVAT 1.1", import_data)
+
+    @pytest.mark.parametrize("export_format", ["COCO 1.0", "COCO Keypoints 1.0"])
+    def test_creates_subfolders_in_coco_export(self, tasks, admin_user, export_format):
+        group_key_func = itemgetter("project_id")
+        subsets = ["Train", "Validation"]
+        project_id = next(
+            project_id
+            for project_id, group in itertools.groupby(
+                sorted(filter(group_key_func, tasks), key=group_key_func),
+                key=group_key_func,
+            )
+            if sorted(task["subset"] for task in group) == subsets
+        )
+        response = self._test_export_project(admin_user, project_id, format=export_format)
+        with zipfile.ZipFile(io.BytesIO(response.data)) as zip_file:
+            for subset in subsets:
+                assert (
+                    len([f for f in zip_file.namelist() if f.startswith(f"images/{subset}/")]) > 0
+                )
 
 
 @pytest.mark.usefixtures("restore_db_per_function")
