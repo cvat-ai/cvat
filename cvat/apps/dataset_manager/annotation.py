@@ -118,13 +118,6 @@ class AnnotationIR:
             cls._slice_track(element, start, stop, dimension)
             for element in track.get('elements', [])
         ]
-        if track["elements"]:
-            if all(len(t["shapes"]) == 0 for t in track["elements"]):
-                # when all skeleton elements do not have shapes
-                # the skeleton must not have any shapes likewise
-                # thus, the skeleton is incorrect and will not be appended to the collection
-                track["shapes"] = []
-                return track
 
         if len(segment_shapes) < len(track['shapes']):
             interpolated_shapes = TrackManager.get_interpolated_shapes(
