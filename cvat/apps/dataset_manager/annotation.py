@@ -80,14 +80,18 @@ class AnnotationIR:
 
         prev_shape = None
         for shape in track['shapes']:
+            if shape['frame'] == start and shape['outside']:
+                # corner case when the only shape on segment is outside frame on start frame
+                prev_shape = shape
+                continue
+
             if prev_shape and not prev_shape['outside'] and \
-                    has_overlap(prev_shape['frame'], shape['frame']):
+                   has_overlap(prev_shape['frame'], shape['frame']):
                 return True
 
-            if shape['frame'] >= start:
-                prev_shape = shape
+            prev_shape = shape
 
-        if prev_shape and not prev_shape['outside'] and prev_shape['frame'] <= stop:
+        if not prev_shape['outside'] and prev_shape['frame'] <= stop:
             return True
 
         return False
@@ -114,6 +118,13 @@ class AnnotationIR:
             cls._slice_track(element, start, stop, dimension)
             for element in track.get('elements', [])
         ]
+        if track["elements"]:
+            if all(len(t["shapes"]) == 0 for t in track["elements"]):
+                # when all skeleton elements do not have shapes
+                # the skeleton must not have any shapes likewise
+                # thus, the skeleton is incorrect and will not be appended to the collection
+                track["shapes"] = []
+                return track
 
         if len(segment_shapes) < len(track['shapes']):
             interpolated_shapes = TrackManager.get_interpolated_shapes(
