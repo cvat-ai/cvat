@@ -564,6 +564,8 @@ class JobAnnotation:
             self._extend_attributes(db_shape.attributes,
                 self.db_attributes[db_shape.label_id]["all"].values())
             if db_shape['type'] == str(models.ShapeType.SKELETON):
+                # skeletons themselves should not have points as they consist of other elements
+                # here we ensure that it was initialized correctly
                 db_shape['points'] = []
 
             if db_shape.parent is None:
@@ -655,6 +657,8 @@ class JobAnnotation:
                 # by previous shape attribute values (not default values)
                 self._extend_attributes(db_shape["attributes"], default_attribute_values)
                 if db_shape['type'] == str(models.ShapeType.SKELETON):
+                    # skeletons themselves should not have points as they consist of other elements
+                    # here we ensure that it was initialized correctly
                     db_shape['points'] = []
                 default_attribute_values = db_shape["attributes"]
 
