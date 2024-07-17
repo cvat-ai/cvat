@@ -37,13 +37,9 @@ function ShortcutsSettingsComponent(props: Props): JSX.Element {
     ), [keyMap, searchValue]);
 
     const items: any = useMemo(() => {
-        console.log(Object.values(ShortcutScope));
-        console.log(filteredKeyMap);
-
         const scopeItems = Object.values(ShortcutScope).map((scope: string) => {
-            console.log('scope', scope);
             const viewFilteredItems = filteredKeyMap.filter(
-                ([, item]) => item.scope === scope.toLowerCase(),
+                ([, item]) => item.scope === scope,
             );
             if (viewFilteredItems.length === 0) {
                 return null;
