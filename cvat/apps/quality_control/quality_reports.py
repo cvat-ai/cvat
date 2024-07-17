@@ -1,4 +1,4 @@
-# Copyright (C) 2023 CVAT.ai Corporation
+# Copyright (C) 2023-2024 CVAT.ai Corporation
 #
 # SPDX-License-Identifier: MIT
 
@@ -34,6 +34,7 @@ from cvat.apps.dataset_manager.bindings import (
 from cvat.apps.dataset_manager.formats.registry import dm_env
 from cvat.apps.dataset_manager.task import JobAnnotation
 from cvat.apps.dataset_manager.util import bulk_create
+from cvat.apps.engine import serializers as engine_serializers
 from cvat.apps.engine.models import (
     DimensionType,
     Job,
@@ -42,6 +43,7 @@ from cvat.apps.engine.models import (
     StageChoice,
     StatusChoice,
     Task,
+    User,
 )
 from cvat.apps.profiler import silk_profile
 from cvat.apps.quality_control import models
@@ -1699,7 +1701,7 @@ class DatasetComparator:
         gt_job_dataset = self._gt_dataset
 
         for gt_item in gt_job_dataset:
-            ds_item = ds_job_dataset.get(gt_item.id)
+            ds_item = ds_job_dataset.get(id=gt_item.id, subset=gt_item.subset)
             if not ds_item:
                 continue  # we need to compare only intersecting frames
 
@@ -2299,6 +2301,7 @@ class QualityReportUpdateManager:
                     job=job,
                     target_last_updated=job.updated_date,
                     gt_last_updated=gt_job.updated_date,
+                    assignee_id=job.assignee_id,
                     data=job_comparison_report.to_json(),
                     conflicts=[c.to_dict() for c in job_comparison_report.conflicts],
                 )
@@ -2310,6 +2313,7 @@ class QualityReportUpdateManager:
                     task=task,
                     target_last_updated=task.updated_date,
                     gt_last_updated=gt_job.updated_date,
+                    assignee_id=task.assignee_id,
                     data=task_comparison_report.to_json(),
                     conflicts=[],  # the task doesn't have own conflicts
                 ),
@@ -2415,6 +2419,7 @@ class QualityReportUpdateManager:
             task=task_report["task"],
             target_last_updated=task_report["target_last_updated"],
             gt_last_updated=task_report["gt_last_updated"],
+            assignee_id=task_report["assignee_id"],
             data=task_report["data"],
         )
         db_task_report.save()
@@ -2426,6 +2431,7 @@ class QualityReportUpdateManager:
                 job=job_report["job"],
                 target_last_updated=job_report["target_last_updated"],
                 gt_last_updated=job_report["gt_last_updated"],
+                assignee_id=job_report["assignee_id"],
                 data=job_report["data"],
             )
             db_job_reports.append(db_job_report)
@@ -2481,6 +2487,16 @@ def prepare_report_for_downloading(db_report: models.QualityReport, *, host: str
     # - convert some fractions to percents
     # - add common report info
 
+    def _serialize_assignee(assignee: Optional[User]) -> Optional[dict]:
+        if not db_report.assignee:
+            return None
+
+        reported_keys = ["id", "username", "first_name", "last_name"]
+        assert set(reported_keys).issubset(engine_serializers.BasicUserSerializer.Meta.fields)
+        # check that only safe fields are reported
+
+        return {k: getattr(assignee, k) for k in reported_keys}
+
     task_id = db_report.get_task().id
     serialized_data = dict(
         job_id=db_report.job.id if db_report.job is not None else None,
@@ -2489,6 +2505,7 @@ def prepare_report_for_downloading(db_report: models.QualityReport, *, host: str
         created_date=str(db_report.created_date),
         target_last_updated=str(db_report.target_last_updated),
         gt_last_updated=str(db_report.gt_last_updated),
+        assignee=_serialize_assignee(db_report.assignee),
     )
 
     comparison_report = ComparisonReport.from_json(db_report.get_json_report())

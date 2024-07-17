@@ -1,5 +1,5 @@
 {
-  "count": 18,
+  "count": 20,
   "next": null,
   "previous": null,
   "results": [
@@ -290,6 +290,38 @@
       "oks_sigma": 0.09,
       "panoptic_comparison": true,
       "task_id": 23
+    },
+    {
+      "check_covered_annotations": true,
+      "compare_attributes": true,
+      "compare_groups": true,
+      "compare_line_orientation": true,
+      "group_match_threshold": 0.5,
+      "id": 19,
+      "iou_threshold": 0.4,
+      "line_orientation_threshold": 0.1,
+      "line_thickness": 0.01,
+      "low_overlap_threshold": 0.8,
+      "object_visibility_threshold": 0.05,
+      "oks_sigma": 0.09,
+      "panoptic_comparison": true,
+      "task_id": 24
+    },
+    {
+      "check_covered_annotations": true,
+      "compare_attributes": true,
+      "compare_groups": true,
+      "compare_line_orientation": true,
+      "group_match_threshold": 0.5,
+      "id": 20,
+      "iou_threshold": 0.4,
+      "line_orientation_threshold": 0.1,
+      "line_thickness": 0.01,
+      "low_overlap_threshold": 0.8,
+      "object_visibility_threshold": 0.05,
+      "oks_sigma": 0.09,
+      "panoptic_comparison": true,
+      "task_id": 25
     }
   ]
 }

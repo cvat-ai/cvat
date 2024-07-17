@@ -193,6 +193,7 @@ const samPlugin: SAMPlugin = {
                     return new Promise((resolve, reject) => {
                         if (model.id !== plugin.data.modelID) {
                             resolve(result);
+                            return;
                         }
 
                         const job = Object.values(plugin.data.jobs).find((_job) => (

@@ -1,7 +1,7 @@
 openapi: 3.0.3
 info:
   title: CVAT REST API
-  version: 2.16.0
+  version: 2.17.0
   description: REST API for Computer Vision Annotation Tool (CVAT)
   termsOfService: https://www.google.com/policies/terms/
   contact:
@@ -8096,6 +8096,11 @@ components:
           allOf:
           - $ref: '#/components/schemas/Storage'
           nullable: true
+        assignee_updated_date:
+          type: string
+          format: date-time
+          readOnly: true
+          nullable: true
       required:
       - issues
       - labels
@@ -9574,6 +9579,11 @@ components:
           $ref: '#/components/schemas/TasksSummary'
         labels:
           $ref: '#/components/schemas/LabelsSummary'
+        assignee_updated_date:
+          type: string
+          format: date-time
+          readOnly: true
+          nullable: true
       required:
       - labels
       - tasks
@@ -9671,6 +9681,11 @@ components:
           type: string
           format: date-time
           readOnly: true
+        assignee:
+          allOf:
+          - $ref: '#/components/schemas/BasicUser'
+          readOnly: true
+          nullable: true
       required:
       - summary
       - target
@@ -10431,6 +10446,11 @@ components:
           $ref: '#/components/schemas/JobsSummary'
         labels:
           $ref: '#/components/schemas/LabelsSummary'
+        assignee_updated_date:
+          type: string
+          format: date-time
+          readOnly: true
+          nullable: true
       required:
       - jobs
       - labels
