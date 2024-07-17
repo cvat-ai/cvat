@@ -55,6 +55,11 @@ const defaultState: PluginsState = {
                 },
             },
         },
+        qualityControlPage: {
+            tabs: {
+                items: [],
+            },
+        },
         projectActions: {
             items: [],
         },

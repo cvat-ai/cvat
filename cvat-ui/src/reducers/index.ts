@@ -291,7 +291,12 @@ export interface PluginsState {
                     params: PluginComponent[];
                 }
             },
-        }
+        };
+        qualityControlPage:{
+            tabs: {
+                items: PluginComponent[];
+            },
+        };
         projectActions: {
             items: PluginComponent[];
         };

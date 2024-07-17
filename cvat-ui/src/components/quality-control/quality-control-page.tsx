@@ -12,13 +12,14 @@ import { Row, Col } from 'antd/lib/grid';
 import Tabs from 'antd/lib/tabs';
 import Title from 'antd/lib/typography/Title';
 import notification from 'antd/lib/notification';
-import { useIsMounted } from 'utils/hooks';
+import { useIsMounted, usePlugins } from 'utils/hooks';
 import {
     Job, Task, getCore,
 } from 'cvat-core-wrapper';
 import { updateJobAsync } from 'actions/jobs-actions';
 import CVATLoadingSpinner from 'components/common/loading-spinner';
 import GoBackButton from 'components/common/go-back-button';
+import { CombinedState } from 'reducers';
 import TaskQualityComponent from './task-quality/task-quality-component';
 
 const core = getCore();
@@ -55,6 +56,7 @@ function QualityControlPage(): JSX.Element {
     const [fetching, setFetching] = useState(true);
     const isMounted = useIsMounted();
 
+    const pluginTabs = usePlugins((state: CombinedState) => state.plugins.components.qualityControlPage.tabs.items, {});
     const receiveInstance = async (type: InstanceType, id: number): Promise<void> => {
         let receivedInstance: Task | null = null;
 
@@ -111,9 +113,9 @@ function QualityControlPage(): JSX.Element {
         });
     }, []);
 
-    useEffect(() => {
-        window.location.hash = activeTab;
-    }, [activeTab]);
+    // useEffect(() => {
+    //     window.location.hash = activeTab;
+    // }, [activeTab]);
 
     const onJobUpdate = useCallback((job: Job, data: Parameters<Job['save']>[0]): void => {
         setFetching(true);
@@ -149,6 +151,22 @@ function QualityControlPage(): JSX.Element {
             </Col>
         );
 
+        const tabsItems = [];
+        tabsItems.push([{
+            key: QualityControlTabs.OVERVIEW,
+            label: 'Performance',
+            children: (
+                <TaskQualityComponent task={instance} onJobUpdate={onJobUpdate} />
+            ),
+        }, 10]);
+        tabsItems.push(...pluginTabs.map(({ component: Component, weight }, index: number) => [{
+            key: Component.name,
+            label: Component.name,
+            children: (
+                <Component key={index} />
+            ),
+        }, weight]));
+
         tabs = (
             <Tabs
                 type='card'
@@ -156,13 +174,8 @@ function QualityControlPage(): JSX.Element {
                 defaultActiveKey={QualityControlTabs.OVERVIEW}
                 onChange={onTabKeyChange}
                 className='cvat-task-analytics-tabs'
-                items={[{
-                    key: QualityControlTabs.OVERVIEW,
-                    label: 'Performance',
-                    children: (
-                        <TaskQualityComponent task={instance} onJobUpdate={onJobUpdate} />
-                    ),
-                }]}
+                items={tabsItems.sort((item1, item2) => item1[1] - item2[1])
+                    .map((item) => item[0])}
             />
         );
     }
