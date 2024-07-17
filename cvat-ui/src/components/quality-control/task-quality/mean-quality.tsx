@@ -9,7 +9,7 @@ import Text from 'antd/lib/typography/Text';
 import Button from 'antd/lib/button';
 
 import { QualityReport, getCore } from 'cvat-core-wrapper';
-import AnalyticsCard from '../views/analytics-card';
+import AnalyticsCard from '../../analytics-page/views/analytics-card';
 import { toRepresentation } from '../utils/text-formatting';
 
 interface Props {

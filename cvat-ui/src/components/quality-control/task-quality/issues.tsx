@@ -9,7 +9,7 @@ import Text from 'antd/lib/typography/Text';
 import notification from 'antd/lib/notification';
 import { Task } from 'cvat-core-wrapper';
 import { useIsMounted } from 'utils/hooks';
-import AnalyticsCard from '../views/analytics-card';
+import AnalyticsCard from '../../analytics-page/views/analytics-card';
 import { percent, clampValue } from '../utils/text-formatting';
 
 interface Props {
