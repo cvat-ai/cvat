@@ -4,6 +4,7 @@
 # SPDX-License-Identifier: MIT
 
 import io
+import itertools
 import json
 import os
 import os.path as osp
@@ -13,6 +14,7 @@ from functools import partial
 from http import HTTPStatus
 from itertools import chain, product
 from math import ceil
+from operator import itemgetter
 from pathlib import Path
 from tempfile import NamedTemporaryFile, TemporaryDirectory
 from time import sleep, time
@@ -806,6 +808,32 @@ class TestGetTaskDataset:
 
             response = export_dataset(api_client.tasks_api.retrieve_dataset_endpoint, id=task["id"])
             assert response.data
+
+    @pytest.mark.parametrize(
+        "export_format, default_subset_name, subset_path_template",
+        [
+            ("Datumaro 1.0", "", "images/{subset}"),
+            ("YOLO 1.1", "train", "obj_{subset}_data"),
+        ],
+    )
+    def test_uses_subset_name(
+        self, tasks, admin_user, export_format, default_subset_name, subset_path_template
+    ):
+        group_key_func = itemgetter("subset")
+        subsets_and_tasks = [
+            (subset, next(group))
+            for subset, group in itertools.groupby(
+                sorted(tasks, key=group_key_func),
+                key=group_key_func,
+            )
+        ]
+        for subset_name, task in subsets_and_tasks:
+            response = self._test_export_task(admin_user, tid=task["id"], format=export_format)
+            with zipfile.ZipFile(io.BytesIO(response.data)) as zip_file:
+                subset_path = subset_path_template.format(subset=subset_name or default_subset_name)
+                assert any(
+                    subset_path in path for path in zip_file.namelist()
+                ), f"No {subset_path} in {zip_file.namelist()}"
 
 
 @pytest.mark.usefixtures("restore_db_per_function")
