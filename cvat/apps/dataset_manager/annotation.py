@@ -86,7 +86,7 @@ class AnnotationIR:
                 continue
 
             if prev_shape and not prev_shape['outside'] and \
-                   has_overlap(prev_shape['frame'], shape['frame']):
+                    has_overlap(prev_shape['frame'], shape['frame']):
                 return True
 
             prev_shape = shape
