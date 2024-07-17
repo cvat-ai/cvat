@@ -19,7 +19,7 @@ from django.core.files.storage import FileSystemStorage
 from django.core.exceptions import ValidationError
 from django.db import IntegrityError, models, transaction
 from django.db.models.fields import FloatField
-from django.db.models import Q
+from django.db.models import Q, prefetch_related_objects
 from drf_spectacular.types import OpenApiTypes
 from drf_spectacular.utils import extend_schema_field
 
@@ -344,7 +344,7 @@ class Project(TimestampedModel):
         blank=True, on_delete=models.SET_NULL, related_name='+')
 
     def get_labels(self):
-        return self.label_set.filter(parent__isnull=True)
+        return self.label_set
 
     def get_dirname(self):
         return os.path.join(settings.PROJECTS_ROOT, str(self.id))
@@ -363,8 +363,18 @@ class Project(TimestampedModel):
             Q(owner=user_id) | Q(assignee=user_id) | Q(segment__job__assignee=user_id)
         ).count() > 0
 
+    @transaction.atomic(savepoint=False)
+    def delete_related_resources(self):
+        # OPTIMIZATION: it will remove all labels
+        # attributes and corresponding annotations using django on_delete=CASCADE
+        # Optimization
+        self.label_set.exclude(parent_id=None).all().delete()
+        self.label_set.filter(parent_id=None).all().delete()
+
     @cache_deleted
+    @transaction.atomic(savepoint=False)
     def delete(self, using=None, keep_parents=False):
+        self.delete_related_resources()
         super().delete(using, keep_parents)
 
     # Extend default permission model
@@ -430,7 +440,7 @@ class Task(TimestampedModel):
         project = self.project
         if project:
             return project.get_labels()
-        return self.label_set.filter(parent__isnull=True)
+        return self.label_set
 
     def get_dirname(self):
         return os.path.join(settings.TASKS_ROOT, str(self.id))
@@ -469,8 +479,37 @@ class Task(TimestampedModel):
     def __str__(self):
         return self.name
 
+    @transaction.atomic(savepoint=False)
+    def delete_related_resources(self):
+        if not self.project:
+            # Optimization
+            self.label_set.exclude(parent_id=None).all().delete()
+            self.label_set.filter(parent_id=None).all().delete()
+        else:
+            TrackedShapeAttributeVal.objects.filter(shape__track__job__segment__task_id=self.id).delete()
+            LabeledTrackAttributeVal.objects.filter(track__job__segment__task_id=self.id).delete()
+            LabeledShapeAttributeVal.objects.filter(shape__job__segment__task_id=self.id).delete()
+            LabeledImageAttributeVal.objects.filter(image__job__segment__task_id=self.id).delete()
+
+            if any(label.type == LabelType.SKELETON for label in self.get_labels().all()):
+                LabeledTrack.objects.exclude(parent_id=None).filter(job__segment__task_id=self.id).delete()
+                LabeledShape.objects.exclude(parent_id=None).filter(job__segment__task_id=self.id).delete()
+
+            LabeledTrack.objects.filter(job__segment__task_id=self.id).delete()
+            LabeledShape.objects.filter(job__segment__task_id=self.id).delete()
+            LabeledImage.objects.filter(job__segment__task_id=self.id).delete()
+
+            # OR
+
+            # prefetch_related_objects([self], 'segment_set__job_set')
+            # for segment in self.segment_set.all():
+            #     for job in segment.job_set.all():
+            #         job.delete_related_resources()
+
     @cache_deleted
+    @transaction.atomic(savepoint=False)
     def delete(self, using=None, keep_parents=False):
+        self.delete_related_resources()
         super().delete(using, keep_parents)
 
 # Redefined a couple of operation for FileSystemStorage to avoid renaming
@@ -748,19 +787,26 @@ class Job(TimestampedModel):
 
         return super().clean()
 
+    @transaction.atomic(savepoint=False)
+    def delete_related_resources(self):
+        TrackedShapeAttributeVal.objects.filter(shape__track__job_id=self.id).delete()
+        LabeledTrackAttributeVal.objects.filter(track__job_id=self.id).delete()
+        LabeledShapeAttributeVal.objects.filter(shape__job_id=self.id).delete()
+        LabeledImageAttributeVal.objects.filter(image__job_id=self.id).delete()
+
+        if any(label.type == LabelType.SKELETON for label in self.get_labels().all()):
+            LabeledTrack.objects.exclude(parent_id=None).filter(job_id=self.id).delete()
+            LabeledShape.objects.exclude(parent_id=None).filter(job_id=self.id).delete()
+
+        LabeledTrack.objects.filter(job_id=self.id).delete()
+        LabeledShape.objects.filter(job_id=self.id).delete()
+        LabeledImage.objects.filter(job_id=self.id).delete()
+
     @cache_deleted
+    @transaction.atomic(savepoint=False)
     def delete(self, using=None, keep_parents=False):
-        if self.segment:
-            self.segment.delete(using=using, keep_parents=keep_parents)
-
+        self.delete_related_resources()
         super().delete(using, keep_parents)
-
-        self.delete_dirs()
-
-    def delete_dirs(self):
-        job_path = self.get_dirname()
-        if os.path.isdir(job_path):
-            shutil.rmtree(job_path)
 
     def make_dirs(self):
         job_path = self.get_dirname()
@@ -939,21 +985,21 @@ class LabeledImage(Annotation):
     pass
 
 class LabeledImageAttributeVal(AttributeVal):
-    image = models.ForeignKey(LabeledImage, on_delete=models.CASCADE,
+    image = models.ForeignKey(LabeledImage, on_delete=models.DO_NOTHING,
         related_name='attributes', related_query_name='attribute')
 
 class LabeledShape(Annotation, Shape):
-    parent = models.ForeignKey('self', on_delete=models.CASCADE, null=True, related_name='elements')
+    parent = models.ForeignKey('self', on_delete=models.DO_NOTHING, null=True, related_name='elements')
 
 class LabeledShapeAttributeVal(AttributeVal):
-    shape = models.ForeignKey(LabeledShape, on_delete=models.CASCADE,
+    shape = models.ForeignKey(LabeledShape, on_delete=models.DO_NOTHING,
         related_name='attributes', related_query_name='attribute')
 
 class LabeledTrack(Annotation):
-    parent = models.ForeignKey('self', on_delete=models.CASCADE, null=True, related_name='elements')
+    parent = models.ForeignKey('self', on_delete=models.DO_NOTHING, null=True, related_name='elements')
 
 class LabeledTrackAttributeVal(AttributeVal):
-    track = models.ForeignKey(LabeledTrack, on_delete=models.CASCADE,
+    track = models.ForeignKey(LabeledTrack, on_delete=models.DO_NOTHING,
         related_name='attributes', related_query_name='attribute')
 
 class TrackedShape(Shape):
@@ -963,7 +1009,7 @@ class TrackedShape(Shape):
     frame = models.PositiveIntegerField()
 
 class TrackedShapeAttributeVal(AttributeVal):
-    shape = models.ForeignKey(TrackedShape, on_delete=models.CASCADE,
+    shape = models.ForeignKey(TrackedShape, on_delete=models.DO_NOTHING,
         related_name='attributes', related_query_name='attribute')
 
 class Profile(models.Model):
