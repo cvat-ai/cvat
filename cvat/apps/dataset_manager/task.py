@@ -563,6 +563,8 @@ class JobAnnotation:
         for db_shape in db_shapes:
             self._extend_attributes(db_shape.attributes,
                 self.db_attributes[db_shape.label_id]["all"].values())
+            if db_shape['type'] == str(models.ShapeType.SKELETON):
+                db_shape['points'] = []
 
             if db_shape.parent is None:
                 db_shape.elements = []
@@ -649,9 +651,11 @@ class JobAnnotation:
             default_attribute_values = self.db_attributes[db_track.label_id]["mutable"].values()
             for db_shape in db_track["shapes"]:
                 db_shape["attributes"] = list(set(db_shape["attributes"]))
-                # in case of trackedshapes need to interpolate attriute values and extend it
+                # in case of trackedshapes need to interpolate attribute values and extend it
                 # by previous shape attribute values (not default values)
                 self._extend_attributes(db_shape["attributes"], default_attribute_values)
+                if db_shape['type'] == str(models.ShapeType.SKELETON):
+                    db_shape['points'] = []
                 default_attribute_values = db_shape["attributes"]
 
             if db_track.parent is None:
