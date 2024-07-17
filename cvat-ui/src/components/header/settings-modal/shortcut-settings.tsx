@@ -36,19 +36,19 @@ function ShortcutsSettingsComponent(props: Props): JSX.Element {
         ),
     ), [keyMap, searchValue]);
 
-    const items: any = useMemo(() => Object.values(ShortcutScope).map((scope: string) => {
-        const scopeItems = Object.values(ShortcutScope).map((viewType: string) => {
+    const items: any = useMemo(() => {
+        const scopeItems = Object.values(ShortcutScope).map((scope: string) => {
             const viewFilteredItems = filteredKeyMap.filter(
-                ([, item]) => item.scope === scope,
+                ([, item]) => item.scope === scope.toLowerCase(),
             );
-
+            console.log(viewFilteredItems);
             if (viewFilteredItems.length === 0) {
                 return null;
             }
 
             return {
-                label: <span className='cvat-shortcuts-settings-label'>{`${viewType} Shortcuts`}</span>,
-                key: viewType,
+                label: <span className='cvat-shortcuts-settings-label'>{`${scope} Shortcuts`}</span>,
+                key: scope,
                 children: (
                     <List
                         dataSource={viewFilteredItems}
@@ -60,6 +60,7 @@ function ShortcutsSettingsComponent(props: Props): JSX.Element {
                                 />
                                 <MultipleShortcutsDisplay
                                     id={id}
+                                    keyMap={keyMap}
                                     item={item}
                                     onKeySequenceUpdate={onKeySequenceUpdate}
                                 />
@@ -74,8 +75,9 @@ function ShortcutsSettingsComponent(props: Props): JSX.Element {
         if (scopeItems.length === 0) {
             return null;
         }
+
         return scopeItems;
-    }), [filteredKeyMap]);
+    }, [filteredKeyMap]);
 
     return (
         <div className='cvat-shortcuts-settings'>
