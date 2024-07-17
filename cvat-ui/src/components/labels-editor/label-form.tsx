@@ -79,11 +79,11 @@ export default class LabelForm extends React.Component<Props, State> {
         if (layout) {
             // Updating attributes based on layout before sending it to server
             const attr = values.attributes;
-            layout.forEach((obj: any, index: number) => {
+            layout.forEach((obj: Layout, index: number) => {
                 orderedAttr[obj.y] = attr[index];
             });
         }
-        values.attributes = orderedAttr;
+        values.attributes = orderedAttr.filter((item) => item != null);
 
         if (!values.name) {
             onCancel();
@@ -139,9 +139,24 @@ export default class LabelForm extends React.Component<Props, State> {
         }
     };
 
+    private handleResize = (textAreaHeight: number, key: number): void => {
+        const { layout } = this.state;
+        const newLayout = layout.map((item, index) => {
+            if (index === key) {
+                return {
+                    ...item,
+                    h: Math.ceil(textAreaHeight / 25) * 2, // Adjust the height factor as needed
+                };
+            }
+            return item;
+        });
+        this.setState({ layout: newLayout });
+    };
+
     private addAttribute = (): void => {
         if (this.formRef.current) {
             const attributes = this.formRef.current.getFieldValue('attributes');
+            const { layout } = this.state;
             this.formRef.current.setFieldsValue({
                 attributes: [
                     ...(attributes || []),
@@ -154,6 +169,15 @@ export default class LabelForm extends React.Component<Props, State> {
                     },
                 ],
             });
+            // push an external element for the new attribute in the layout
+            const extendedLayout = layout.concat({
+                i: layout.length.toString(),
+                x: 0,
+                y: Infinity,
+                h: 4,
+                w: 1,
+            });
+            this.setState({ layout: extendedLayout });
         }
     };
 
@@ -166,12 +190,23 @@ export default class LabelForm extends React.Component<Props, State> {
         }
     };
 
+    private createLayout(height: number, key: number): Layout[] {
+        const { layout } = this.state;
+        console.log(key, 'key');
+        return layout.map((item, index) => {
+            if (index === key) {
+                return { ...item, h: height };
+            }
+            return item;
+        });
+    }
+
     /* eslint-disable class-methods-use-this */
     private renderAttributeNameInput(fieldInstance: any, attr: any): JSX.Element {
         const { key } = fieldInstance;
         const attrNames = this.formRef.current?.getFieldValue('attributes')
             .filter((_attr: any) => _attr.id !== attr.id).map((_attr: any) => _attr.name);
-        const height = window.innerWidth < 1404 ? 2 : 1;
+
         return (
             <Form.Item
                 hasFeedback
@@ -187,24 +222,16 @@ export default class LabelForm extends React.Component<Props, State> {
                     },
                     {
                         validator: (_rule: any, attrName: string) => {
-                            const { layout } = this.state;
+                            const defaultHeight = window.innerWidth < 1404 && attrName.trim() === '' ? 6 : 4;
+                            const errorHeight = window.innerWidth < 1384 ? 8 : 6;
+                            const defaultLayout = this.createLayout(defaultHeight, key);
+                            const errorLayout = this.createLayout(errorHeight, key);
+
                             if (attrNames.includes(attrName) && attr.name !== attrName) {
-                                const updatedLayout = layout.map((item, index) => {
-                                    if (index === key) {
-                                        return { ...item, h: 2 };
-                                    }
-                                    return item;
-                                });
-                                this.setState({ layout: updatedLayout });
+                                this.setState({ layout: errorLayout });
                                 return Promise.reject(new Error('Attribute name must be unique for the label'));
                             }
-                            const updatedLayout = layout.map((item, index) => {
-                                if (index === key) {
-                                    return { ...item, h: height };
-                                }
-                                return item;
-                            });
-                            this.setState({ layout: updatedLayout });
+                            this.setState({ layout: defaultLayout });
                             return Promise.resolve();
                         },
                     },
@@ -264,34 +291,26 @@ export default class LabelForm extends React.Component<Props, State> {
         const { key } = fieldInstance;
         const locked = attr.id as number >= 0;
         const existingValues = attr.values;
-        const { layout } = this.state;
-        const updatedLayout = layout.map((item, index) => {
-            if (index === key) {
-                return { ...item, h: 2 };
-            }
-            return item;
-        });
+        const defaultLayout = this.createLayout(4, key);
         const validator = (_: any, values: string[]): Promise<void> => {
             if (locked && existingValues) {
                 if (!equalArrayHead(existingValues, values)) {
-                    this.setState({ layout: updatedLayout });
+                    const errorHeight = values.length === 0 ? 8 : 6;
+                    const errorLayout = this.createLayout(errorHeight, key);
+
+                    this.setState({ layout: errorLayout });
                     return Promise.reject(new Error('You can only append new values'));
                 }
             }
 
             for (const value of values) {
                 if (!patterns.validateAttributeValue.pattern.test(value)) {
-                    this.setState({ layout: updatedLayout });
+                    const errorLayout = this.createLayout(6, key);
+                    this.setState({ layout: errorLayout });
                     return Promise.reject(new Error(`Invalid attribute value: "${value}"`));
                 }
             }
-            const updatedLayout1 = layout.map((item, index) => {
-                if (index === key) {
-                    return { ...item, h: 1 };
-                }
-                return item;
-            });
-            this.setState({ layout: updatedLayout1 });
+            this.setState({ layout: defaultLayout });
             return Promise.resolve();
         };
 
@@ -381,23 +400,29 @@ export default class LabelForm extends React.Component<Props, State> {
     private renderNumberRangeInput(fieldInstance: any, attr: any): JSX.Element {
         const { key } = fieldInstance;
         const locked = attr.id as number >= 0;
-
+        const defaultLayout = this.createLayout(4, key);
         const validator = (_: any, strNumbers: string): Promise<void> => {
             if (typeof strNumbers !== 'string') return Promise.resolve();
 
             const numbers = strNumbers.split(';').map((number): number => Number.parseFloat(number));
             if (numbers.length !== 3) {
+                const errorLayout = window.innerWidth < 1485 ?
+                    this.createLayout(strNumbers ? 6 : 8, key) : this.createLayout(strNumbers ? 4 : 6, key);
+                this.setState({ layout: errorLayout });
                 return Promise.reject(new Error('Three numbers are expected'));
             }
 
             for (const number of numbers) {
                 if (Number.isNaN(number)) {
+                    this.setState({ layout: defaultLayout });
                     return Promise.reject(new Error(`"${number}" is not a number`));
                 }
             }
 
             const [min, max, step] = numbers;
+            const errorLayout = this.createLayout(6, key);
 
+            this.setState({ layout: errorLayout });
             if (min >= max) {
                 return Promise.reject(new Error('Minimum must be less than maximum'));
             }
@@ -409,7 +434,7 @@ export default class LabelForm extends React.Component<Props, State> {
             if (step <= 0) {
                 return Promise.reject(new Error('Step must be a positive number'));
             }
-
+            this.setState({ layout: defaultLayout });
             return Promise.resolve();
         };
 
@@ -436,7 +461,13 @@ export default class LabelForm extends React.Component<Props, State> {
 
         return (
             <Form.Item name={[key, 'values']}>
-                <Input.TextArea className='cvat-attribute-values-input' placeholder='Default value' />
+                <Input.TextArea
+                    className='cvat-attribute-values-input'
+                    placeholder='Default value'
+                    onResize={(e) => {
+                        this.handleResize(e.height, key);
+                    }}
+                />
             </Form.Item>
         );
     }
@@ -701,7 +732,7 @@ export default class LabelForm extends React.Component<Props, State> {
                 i: index.toString(),
                 x: 0,
                 y: index,
-                h: 1,
+                h: 4,
                 w: 1,
             }));
             this.setState({
@@ -755,7 +786,7 @@ export default class LabelForm extends React.Component<Props, State> {
                                 return (
                                     <ReactGridLayout
                                         layout={layout}
-                                        rowHeight={42}
+                                        rowHeight={3}
                                         cols={1}
                                         width={600}
                                         onLayoutChange={(updatedLayout) => {

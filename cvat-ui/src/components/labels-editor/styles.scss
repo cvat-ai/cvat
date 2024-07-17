@@ -253,17 +253,26 @@ textarea.ant-input.cvat-raw-labels-viewer {
 
 .cvat-drag-drop {
     cursor: pointer;
-    height: 2rem;
-    width: 0.5rem;
+    height: 4 * $grid-unit-size;
+    width: $grid-unit-size;
+    padding: 2 * $grid-unit-size;
     display: flex;
     justify-content: center;
     align-items: center;
 }
 
 .cvat-attribute-inputs-wrapper {
-    height: '2rem';
+    height: 4 * $grid-unit-size;
 }
 
 .cvat-save-cancel-btn {
     padding-top: 0.1rem;
+}
+
+.react-grid-layout {
+    overflow-x: clip;
+}
+
+.anticon-holder > svg {
+    height: 3 / 2 * $grid-unit-size;
 }
