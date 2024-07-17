@@ -442,9 +442,7 @@ class JobAnnotation:
         if data is None:
             self.init_from_db()
             deleted_data = self.data
-            self.db_job.labeledimage_set.all().delete()
-            self.db_job.labeledshape_set.all().delete()
-            self.db_job.labeledtrack_set.all().delete()
+            self.db_job.delete_related_resources()
         else:
             labeledimage_ids = [image["id"] for image in data["tags"]]
             labeledshape_ids = [shape["id"] for shape in data["shapes"]]

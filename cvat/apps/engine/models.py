@@ -365,9 +365,10 @@ class Project(TimestampedModel):
 
     @transaction.atomic(savepoint=False)
     def delete_related_resources(self):
-        # OPTIMIZATION: it will remove all labels
-        # attributes and corresponding annotations using django on_delete=CASCADE
-        # Optimization
+        # Requests optimization:
+        # Objects and attributes will be cascadely deleted if corresponding labels and attributes deleted
+        # Generally it will be more efficient, especially in case with a large number of jobs
+        # We do not need to remove annotations additionally
         self.label_set.exclude(parent_id=None).all().delete()
         self.label_set.filter(parent_id=None).all().delete()
 
@@ -480,31 +481,26 @@ class Task(TimestampedModel):
         return self.name
 
     @transaction.atomic(savepoint=False)
+    def delete_related_annotations(self):
+        job_ids = list(self.segment_set.values_list('job__id', flat=True))
+        TrackedShapeAttributeVal.objects.filter(shape__track__job_id__in=job_ids).delete()
+        LabeledTrackAttributeVal.objects.filter(track__job_id__in=job_ids).delete()
+        LabeledShapeAttributeVal.objects.filter(shape__job_id__in=job_ids).delete()
+        LabeledImageAttributeVal.objects.filter(image__job_id__in=job_ids).delete()
+        LabeledTrack.objects.filter(job_id__in=job_ids).delete()
+        LabeledShape.objects.filter(job_id__in=job_ids).delete()
+        LabeledImage.objects.filter(job_id__in=job_ids).delete()
+
+    @transaction.atomic(savepoint=False)
     def delete_related_resources(self):
         if not self.project:
-            # Optimization
+            # Requests optimization:
+            # Objects and attributes will be cascadely deleted if corresponding labels and attributes deleted
+            # Generally it will be more efficient, especially in case with a large number of jobs
             self.label_set.exclude(parent_id=None).all().delete()
             self.label_set.filter(parent_id=None).all().delete()
         else:
-            TrackedShapeAttributeVal.objects.filter(shape__track__job__segment__task_id=self.id).delete()
-            LabeledTrackAttributeVal.objects.filter(track__job__segment__task_id=self.id).delete()
-            LabeledShapeAttributeVal.objects.filter(shape__job__segment__task_id=self.id).delete()
-            LabeledImageAttributeVal.objects.filter(image__job__segment__task_id=self.id).delete()
-
-            if any(label.type == LabelType.SKELETON for label in self.get_labels().all()):
-                LabeledTrack.objects.exclude(parent_id=None).filter(job__segment__task_id=self.id).delete()
-                LabeledShape.objects.exclude(parent_id=None).filter(job__segment__task_id=self.id).delete()
-
-            LabeledTrack.objects.filter(job__segment__task_id=self.id).delete()
-            LabeledShape.objects.filter(job__segment__task_id=self.id).delete()
-            LabeledImage.objects.filter(job__segment__task_id=self.id).delete()
-
-            # OR
-
-            # prefetch_related_objects([self], 'segment_set__job_set')
-            # for segment in self.segment_set.all():
-            #     for job in segment.job_set.all():
-            #         job.delete_related_resources()
+            self.delete_related_annotations()
 
     @cache_deleted
     @transaction.atomic(savepoint=False)
@@ -788,19 +784,18 @@ class Job(TimestampedModel):
         return super().clean()
 
     @transaction.atomic(savepoint=False)
-    def delete_related_resources(self):
+    def delete_related_annotations(self):
         TrackedShapeAttributeVal.objects.filter(shape__track__job_id=self.id).delete()
         LabeledTrackAttributeVal.objects.filter(track__job_id=self.id).delete()
         LabeledShapeAttributeVal.objects.filter(shape__job_id=self.id).delete()
         LabeledImageAttributeVal.objects.filter(image__job_id=self.id).delete()
-
-        if any(label.type == LabelType.SKELETON for label in self.get_labels().all()):
-            LabeledTrack.objects.exclude(parent_id=None).filter(job_id=self.id).delete()
-            LabeledShape.objects.exclude(parent_id=None).filter(job_id=self.id).delete()
-
         LabeledTrack.objects.filter(job_id=self.id).delete()
         LabeledShape.objects.filter(job_id=self.id).delete()
         LabeledImage.objects.filter(job_id=self.id).delete()
+
+    @transaction.atomic(savepoint=False)
+    def delete_related_resources(self):
+        self.delete_related_annotations()
 
     @cache_deleted
     @transaction.atomic(savepoint=False)
