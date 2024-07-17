@@ -206,6 +206,7 @@ class TestGetTasks:
 
         assert server_task.jobs.completed == 1
 
+    @pytest.mark.usefixtures("restore_db_per_function")
     def test_can_remove_owner_and_fetch_with_sdk(self, admin_user, tasks):
         # test for API schema regressions
         source_task = next(

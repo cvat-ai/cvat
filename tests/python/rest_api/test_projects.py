@@ -4,6 +4,7 @@
 # SPDX-License-Identifier: MIT
 
 import io
+import itertools
 import json
 import xml.etree.ElementTree as ET
 import zipfile
@@ -11,6 +12,7 @@ from copy import deepcopy
 from http import HTTPStatus
 from io import BytesIO
 from itertools import product
+from operator import itemgetter
 from time import sleep
 from typing import Dict, List, Optional
 
@@ -808,6 +810,52 @@ class TestImportExportDatasetProject:
             }
 
             self._test_import_project(admin_user, project_id, "CVAT 1.1", import_data)
+
+    @pytest.mark.parametrize(
+        "export_format, subset_path_template",
+        [
+            ("COCO 1.0", "images/{subset}/"),
+            ("COCO Keypoints 1.0", "images/{subset}/"),
+            ("CVAT for images 1.1", "images/{subset}/"),
+            ("CVAT for video 1.1", "images/{subset}/"),
+            ("Datumaro 1.0", "images/{subset}/"),
+            ("Datumaro 3D 1.0", "point_clouds/{subset}/"),
+            ("LabelMe 3.0", "{subset}/"),
+            ("MOTS PNG 1.0", "{subset}/images/"),
+            ("YOLO 1.1", "obj_{subset}_data/"),
+            ("CamVid 1.0", "{subset}/"),
+            ("WiderFace 1.0", "WIDER_{subset}/images/"),
+            ("VGGFace2 1.0", "{subset}/"),
+            ("Market-1501 1.0", "bounding_box_{subset}/"),
+            ("ICDAR Recognition 1.0", "{subset}/images/"),
+            ("ICDAR Localization 1.0", "{subset}/images/"),
+            ("ICDAR Segmentation 1.0", "{subset}/images/"),
+            ("KITTI 1.0", "{subset}/image_2/"),
+            ("LFW 1.0", "{subset}/images/"),
+            ("Cityscapes 1.0", "imgsFine/leftImg8bit/{subset}/"),
+            ("Open Images V6 1.0", "images/{subset}/"),
+        ],
+    )
+    def test_creates_subfolders_for_subsets_on_export(
+        self, tasks, admin_user, export_format, subset_path_template
+    ):
+        group_key_func = itemgetter("project_id")
+        subsets = ["Train", "Validation"]
+        project_id = next(
+            project_id
+            for project_id, group in itertools.groupby(
+                sorted(filter(group_key_func, tasks), key=group_key_func),
+                key=group_key_func,
+            )
+            if sorted(task["subset"] for task in group) == subsets
+        )
+        response = self._test_export_project(admin_user, project_id, format=export_format)
+        with zipfile.ZipFile(io.BytesIO(response.data)) as zip_file:
+            for subset in subsets:
+                folder_prefix = subset_path_template.format(subset=subset)
+                assert (
+                    len([f for f in zip_file.namelist() if f.startswith(folder_prefix)]) > 0
+                ), f"No {folder_prefix} in {zip_file.namelist()}"
 
 
 @pytest.mark.usefixtures("restore_db_per_function")
