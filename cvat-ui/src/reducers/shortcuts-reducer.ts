@@ -50,9 +50,55 @@ const defaultState: ShortcutsState = {
     }, {}),
 };
 
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-function conflictDetector(key: string, keyMap: KeyMap): KeyMap | null {
-    return null;
+export function conflictDetector(
+    shortcuts: Record<string, KeyMapItem>,
+    keyMap: KeyMap): Record<string, KeyMapItem> | null {
+    const flatKeyMap: { [scope: string]: { sequences: string[], items: Record<string, KeyMapItem> } } = {};
+    const conlictingItems: Record<string, KeyMapItem> = {};
+
+    for (const [action, keyMapItem] of Object.entries(keyMap)) {
+        const { scope } = keyMapItem;
+        if (!flatKeyMap[scope]) {
+            flatKeyMap[scope] = { sequences: [], items: {} };
+        }
+        flatKeyMap[scope].sequences.push(...keyMapItem.sequences);
+        flatKeyMap[scope].items[action] = keyMapItem;
+    }
+
+    for (const [action, keyMapItem] of Object.entries(shortcuts)) {
+        const { scope } = keyMapItem;
+        const { sequences } = keyMapItem;
+
+        if (!flatKeyMap[scope]) {
+            flatKeyMap[scope] = { sequences: [], items: {} };
+        }
+        const flatKeyMapUpdated = structuredClone(flatKeyMap[scope]);
+
+        if (flatKeyMapUpdated.items[action]) {
+            const currentSequences = flatKeyMapUpdated.items[action].sequences;
+            delete flatKeyMapUpdated.items[action];
+            flatKeyMapUpdated.sequences = flatKeyMapUpdated.sequences.filter(
+                (s) => !currentSequences.includes(s),
+            );
+        }
+
+        for (const sequence of sequences) {
+            if (flatKeyMapUpdated.sequences.includes(sequence)) {
+                const conflictingAction = Object.keys(flatKeyMapUpdated.items)
+                    .find((a) => flatKeyMapUpdated.items[a].sequences.includes(sequence));
+                const conflictingItem = flatKeyMapUpdated.items[conflictingAction!];
+                conflictingItem.sequences = conflictingItem.sequences.filter((s) => s !== sequence);
+                if (conflictingAction) {
+                    conlictingItems[conflictingAction] = conflictingItem;
+                }
+            }
+        }
+
+        flatKeyMap[scope].sequences.push(...sequences);
+        flatKeyMap[scope].items[action] = keyMapItem;
+    }
+
+    return Object.keys(conlictingItems).length ? conlictingItems : null;
 }
 
 export default (state = defaultState, action: ShortcutsActions | BoundariesActions | AuthActions): ShortcutsState => {
@@ -63,7 +109,7 @@ export default (state = defaultState, action: ShortcutsActions | BoundariesActio
             if (!keys.length) {
                 return state;
             }
-            const conflictingShortcut = (keys as string[]).find((key: string) => conflictDetector(key, state.keyMap));
+            const conflictingShortcut = conflictDetector(shortcuts, state.keyMap);
             if (conflictingShortcut) {
                 throw new Error(`The shortcut has conflicts with this shortcut: ${conflictingShortcut}.`);
             }
@@ -86,7 +132,14 @@ export default (state = defaultState, action: ShortcutsActions | BoundariesActio
         }
         case ShortcutsActionsTypes.UPDATE_SEQUNCE: {
             const { keyMapId, updatedSequence } = action.payload;
-            const keyMap = { ...state.keyMap };
+            let keyMap = { ...state.keyMap };
+            const shortcut = {
+                [keyMapId]: { ...keyMap[keyMapId], sequences: updatedSequence },
+            };
+            const conflictingShortcuts = conflictDetector(shortcut, keyMap);
+            if (conflictingShortcuts) {
+                keyMap = { ...keyMap, ...conflictingShortcuts };
+            }
             keyMap[keyMapId] = { ...keyMap[keyMapId], sequences: updatedSequence };
             const normalized = formatShortcuts(keyMap[keyMapId]);
             return {

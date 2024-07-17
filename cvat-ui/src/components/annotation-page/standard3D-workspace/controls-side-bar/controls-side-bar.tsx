@@ -51,15 +51,15 @@ const componentShortcuts = {
     PASTE_SHAPE: {
         name: 'Paste shape',
         description: 'Paste a shape from internal CVAT clipboard',
-        sequences: ['ctrl+v'],
-        scope: ShortcutScope.ALL,
+        sequences: ['control+v'],
+        scope: ShortcutScope.ANNOTATION_PAGE,
     },
     SWITCH_DRAW_MODE: {
         name: 'Draw mode',
         description:
             'Repeat the latest procedure of drawing with the same parameters (shift to redraw an existing shape)',
         sequences: ['shift+n', 'n'],
-        scope: ShortcutScope.ALL,
+        scope: ShortcutScope.ANNOTATION_PAGE,
     },
 };
 
@@ -127,12 +127,6 @@ export default function ControlsSideBarComponent(props: Props): JSX.Element {
                 cursorShortkey={normalizedKeyMap.CANCEL}
                 canvasInstance={canvasInstance}
                 activeControl={activeControl}
-                shortcuts={{
-                    CANCEL: {
-                        details: keyMap.CANCEL,
-                        displayValue: normalizedKeyMap.CANCEL,
-                    },
-                }}
             />
             <ObservedMoveControl canvasInstance={canvasInstance} activeControl={activeControl} />
             <ObservedDrawCuboidControl

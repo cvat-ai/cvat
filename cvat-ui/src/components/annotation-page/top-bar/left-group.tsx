@@ -42,14 +42,14 @@ const componentShortcuts = {
     UNDO: {
         name: 'Undo action',
         description: 'Cancel the latest action related with objects',
-        sequences: ['ctrl+z'],
-        scope: ShortcutScope.ALL,
+        sequences: ['control+z'],
+        scope: ShortcutScope.ANNOTATION_PAGE,
     },
     REDO: {
         name: 'Redo action',
         description: 'Cancel undo action',
-        sequences: ['ctrl+shift+z', 'ctrl+y'],
-        scope: ShortcutScope.ALL,
+        sequences: ['control+shift+z', 'control+y'],
+        scope: ShortcutScope.ANNOTATION_PAGE,
     },
 };
 
