@@ -41,7 +41,6 @@ function ShortcutsSettingsComponent(props: Props): JSX.Element {
             const viewFilteredItems = filteredKeyMap.filter(
                 ([, item]) => item.scope === scope.toLowerCase(),
             );
-            console.log(viewFilteredItems);
             if (viewFilteredItems.length === 0) {
                 return null;
             }
