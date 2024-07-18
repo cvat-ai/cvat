@@ -116,12 +116,12 @@ export default function ProjectPageComponent(): JSX.Element {
     }, [tasksQuery]);
 
     useEffect(() => {
-        if (projectInstance && id in deletes && deletes[id]) {
+        if (deletes[id]) {
             history.push('/projects');
         }
     }, [deletes]);
 
-    if (fechingProject) {
+    if (fechingProject || id in deletes) {
         return <Spin size='large' className='cvat-spinner' />;
     }
 
