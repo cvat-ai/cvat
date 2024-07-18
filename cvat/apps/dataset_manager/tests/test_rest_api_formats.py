@@ -24,13 +24,10 @@ from time import sleep
 from typing import Any, Callable, ClassVar, Optional, overload
 from unittest.mock import MagicMock, patch, DEFAULT as MOCK_DEFAULT
 
-import django_rq
 from attr import define, field
 from datumaro.components.dataset import Dataset
 from datumaro.util.test_utils import compare_datasets, TestDir
-from django.conf import settings
 from django.contrib.auth.models import Group, User
-from django.utils import timezone
 from PIL import Image
 from rest_framework import status
 
