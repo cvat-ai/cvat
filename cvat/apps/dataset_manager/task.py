@@ -438,6 +438,10 @@ class JobAnnotation:
             self._set_updated_date()
 
     def _delete(self, data=None):
+        def chunked_list(lst, size):
+            for i in range(0, len(lst), size):
+                yield lst[i:i + size]
+
         deleted_data = {}
         if data is None:
             self.init_from_db()
@@ -455,9 +459,15 @@ class JobAnnotation:
             self.ir_data.shapes = data['shapes']
             self.ir_data.tracks = data['tracks']
 
-            self._delete_job_labeledimages(labeledimage_ids)
-            self._delete_job_labeledshapes(labeledshape_ids)
-            self._delete_job_labeledtracks(labeledtrack_ids)
+            CHUNK_SIZE = 10000
+            for labeledimage_ids_chunk in chunked_list(labeledimage_ids, CHUNK_SIZE):
+                self._delete_job_labeledimages(labeledimage_ids_chunk)
+
+            for labeledshape_ids_chunk in chunked_list(labeledshape_ids, CHUNK_SIZE):
+                self._delete_job_labeledshapes(labeledshape_ids_chunk)
+
+            for labeledtrack_ids_chunk in chunked_list(labeledtrack_ids, CHUNK_SIZE):
+                self._delete_job_labeledtracks(labeledtrack_ids_chunk)
 
             deleted_data = {
                 "tags": data["tags"],
