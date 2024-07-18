@@ -7,7 +7,7 @@ import React from 'react';
 import { useSelector } from 'react-redux';
 import { Col, Row } from 'antd/lib/grid';
 import { CombinedState } from 'reducers';
-import { Job, JobType } from 'cvat-core-wrapper';
+import { Job } from 'cvat-core-wrapper';
 import dimensions from 'utils/dimensions';
 import JobCard from './job-card';
 
@@ -19,7 +19,7 @@ function JobsContentComponent(props: Props): JSX.Element {
     const { onJobUpdate } = props;
     const jobs = useSelector((state: CombinedState) => state.jobs.current);
 
-    const groupedJobs = jobs.filter((job: Job) => job.type === JobType.ANNOTATION).reduce(
+    const groupedJobs = jobs.reduce(
         (acc: Job[][], storage: Job, index: number): Job[][] => {
             if (index && index % 4) {
                 acc[acc.length - 1].push(storage);
