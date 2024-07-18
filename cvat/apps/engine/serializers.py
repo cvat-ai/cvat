@@ -245,10 +245,11 @@ class AttributeSerializer(serializers.ModelSerializer):
     values = DelimitedStringListField(allow_empty=True,
         child=serializers.CharField(allow_blank=True, max_length=200),
     )
+    display_order = serializers.IntegerField(required=False)
 
     class Meta:
         model = models.AttributeSpec
-        fields = ('id', 'name', 'mutable', 'input_type', 'default_value', 'values')
+        fields = ('id', 'name', 'mutable', 'input_type', 'default_value', 'values', 'display_order')
 
 class SublabelSerializer(serializers.ModelSerializer):
     id = serializers.IntegerField(required=False)
@@ -427,6 +428,7 @@ class LabelSerializer(SublabelSerializer):
         except models.InvalidLabel as exc:
             raise exceptions.ValidationError(str(exc)) from exc
 
+        display_order = models.AttributeSpec._meta.get_field('display_order').get_default()
         for attr in attributes:
             attr_id = attr.get('id', None)
             if attr_id is not None:
@@ -449,11 +451,13 @@ class LabelSerializer(SublabelSerializer):
                     .format(db_attr.name, db_label.name))
 
                 # FIXME: need to update only "safe" fields
+                db_attr.display_order = display_order
                 db_attr.name = attr.get('name', db_attr.name)
                 db_attr.default_value = attr.get('default_value', db_attr.default_value)
                 db_attr.mutable = attr.get('mutable', db_attr.mutable)
                 db_attr.input_type = attr.get('input_type', db_attr.input_type)
                 db_attr.values = attr.get('values', db_attr.values)
+                display_order += 1
                 db_attr.save()
 
         return db_label
@@ -504,10 +508,14 @@ class LabelSerializer(SublabelSerializer):
                 db_skeleton = models.Skeleton.objects.create(root=db_label, svg=svg)
                 logger.info(f'label:create Skeleton id:{db_skeleton.id} for label_id:{db_label.id}')
 
+            display_order = 0
             for attr in attributes:
                 if attr.get('id', None):
                     del attr['id']
+                    
+                attr['display_order'] = display_order
                 models.AttributeSpec.objects.create(label=db_label, **attr)
+                display_order += 1
 
     @classmethod
     @transaction.atomic

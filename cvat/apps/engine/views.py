@@ -58,7 +58,7 @@ from cvat.apps.engine.frame_provider import FrameProvider
 from cvat.apps.engine.filters import NonModelSimpleFilter, NonModelOrderingFilter, NonModelJsonLogicFilter
 from cvat.apps.engine.media_extractors import get_mime
 from cvat.apps.engine.models import (
-    ClientFile, Job, JobType, Label, SegmentType, Task, Project, Issue, Data,
+    ClientFile, Job, JobType, Label, AttributeSpec, SegmentType, Task, Project, Issue, Data,
     Comment, StorageMethodChoice, StorageChoice,
     CloudProviderChoice, Location, CloudStorage as CloudStorageModel,
     Asset, AnnotationGuide)
@@ -2322,7 +2322,7 @@ class LabelViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
     mixins.RetrieveModelMixin, mixins.DestroyModelMixin, PartialUpdateModelMixin
 ):
     queryset = Label.objects.prefetch_related(
-        'attributespec_set',
+        Prefetch('attributespec_set', queryset=AttributeSpec.objects.order_by('display_order')),
         'sublabels__attributespec_set',
         'task',
         'task__owner',

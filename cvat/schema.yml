@@ -6876,6 +6876,8 @@ components:
           items:
             type: string
             maxLength: 200
+        display_order:
+          type: integer
       required:
       - input_type
       - mutable
@@ -6902,6 +6904,8 @@ components:
           items:
             type: string
             maxLength: 200
+        display_order:
+          type: integer
       required:
       - input_type
       - mutable

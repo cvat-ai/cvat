@@ -862,10 +862,12 @@ class AttributeSpec(models.Model):
         choices=AttributeType.choices())
     default_value = models.CharField(blank=True, max_length=128)
     values = models.CharField(blank=True, max_length=4096)
+    display_order = models.IntegerField(default=0)
 
     class Meta:
         default_permissions = ()
         unique_together = ('label', 'name')
+        ordering = ['display_order']
 
     def __str__(self):
         return self.name
