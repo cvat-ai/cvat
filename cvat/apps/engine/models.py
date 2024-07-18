@@ -23,7 +23,7 @@ from django.db.models import Q
 from drf_spectacular.types import OpenApiTypes
 from drf_spectacular.utils import extend_schema_field
 
-from cvat.apps.engine.utils import parse_specific_attributes
+from cvat.apps.engine.utils import parse_specific_attributes, chunked_list
 from cvat.apps.events.utils import cache_deleted
 
 class SafeCharField(models.CharField):
@@ -326,11 +326,7 @@ class TimestampedModel(models.Model):
         self.save(update_fields=["updated_date"])
 
 def clear_annotations_in_jobs(job_ids):
-    def chunked_list(lst, size):
-        for i in range(0, len(lst), size):
-            yield lst[i:i + size]
-
-    for job_ids_chunk in chunked_list(job_ids, 10000):
+    for job_ids_chunk in chunked_list(job_ids, chunk_size=10000):
         TrackedShapeAttributeVal.objects.filter(shape__track__job_id__in=job_ids_chunk).delete()
         TrackedShape.objects.filter(track__job_id__in=job_ids_chunk).delete()
         LabeledTrackAttributeVal.objects.filter(track__job_id__in=job_ids_chunk).delete()
