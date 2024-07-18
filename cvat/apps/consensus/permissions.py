@@ -118,8 +118,6 @@ class ConsensusReportPermission(OpenPolicyAgentPermission):
                     else None
                 ),
             }
-        elif self.scope == self.Scopes.VIEW_STATUS:
-            data = {"owner": self.job_owner_id}
 
         return data
 
