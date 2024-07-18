@@ -11,7 +11,7 @@ const defaultState: RequestsState = {
     initialized: false,
     fetching: false,
     requests: {},
-    urls: [],
+    disabled: [],
     query: {
         page: 1,
     },
@@ -31,6 +31,13 @@ export default function (
                     ...state.query,
                     ...action.payload.query,
                 },
+            };
+        }
+        case RequestsActionsTypes.DISABLE_REQUEST: {
+            const { request } = action.payload;
+            return {
+                ...state,
+                disabled: [...state.disabled, request.id],
             };
         }
         case RequestsActionsTypes.GET_REQUESTS_SUCCESS: {

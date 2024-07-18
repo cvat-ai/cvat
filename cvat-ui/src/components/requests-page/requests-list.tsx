@@ -33,10 +33,17 @@ function RequestsList(props: Props): JSX.Element {
     const dispatch = useDispatch();
     const { query, count } = props;
     const { page } = query;
-    const { requests } = useSelector((state: CombinedState) => state.requests);
+    const { requests, disabled } = useSelector((state: CombinedState) => state.requests);
 
     const requestViews = setUpRequestsList(Object.values(requests), page)
-        .map((request: Request): JSX.Element => <RequestCard request={request} key={request.id} />);
+        .map((request: Request): JSX.Element => (
+            <RequestCard
+                request={request}
+                key={request.id}
+                disabled={disabled.includes(request.id)}
+            />
+        ),
+        );
 
     return (
         <>

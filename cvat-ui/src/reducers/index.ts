@@ -953,7 +953,7 @@ export interface RequestsState {
     fetching: boolean;
     initialized: boolean;
     requests: Record<string, Request>;
-    urls: string[];
+    disabled: string[];
     query: RequestsQuery;
 }
 
