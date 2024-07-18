@@ -5,7 +5,7 @@
 
 import React, { RefObject } from 'react';
 import { Row, Col } from 'antd/lib/grid';
-import Icon, { DeleteOutlined, PlusCircleOutlined } from '@ant-design/icons';
+import Icon, { DeleteOutlined, PlusCircleOutlined, ExclamationCircleOutlined } from '@ant-design/icons';
 import Input from 'antd/lib/input';
 import Button from 'antd/lib/button';
 import Checkbox from 'antd/lib/checkbox';
@@ -416,14 +416,17 @@ export default class LabelForm extends React.Component<Props> {
             <CVATTooltip title='Delete the attribute'>
                 <Form.Item>
                     <Button
-                        disabled={attr.id >= 0} // temporary disabled, does not work on the server
                         type='link'
                         className='cvat-delete-attribute-button'
                         onClick={(): void => {
                             if (attr.id >= 0) {
                                 Modal.confirm({
+                                    className: 'cvat-modal-delete-label-attribute',
+                                    icon: <ExclamationCircleOutlined />,
                                     title: `Do you want to remove the "${attr.name}" attribute?`,
-                                    content: 'This action is irreversible. It will remove corresponding annotations.',
+                                    content: 'This action is undone. All annotations associated to the attribute will be removed',
+                                    type: 'warning',
+                                    okButtonProps: { type: 'primary', danger: true },
                                     onOk: () => {
                                         this.removeAttribute(key);
                                         setTimeout(() => {
