@@ -446,7 +446,7 @@ class JobAnnotation:
         if data is None:
             self.init_from_db()
             deleted_data = self.data
-            self.db_job.delete_related_resources()
+            models.clear_annotations_in_jobs([self.db_job.id])
         else:
             labeledimage_ids = [image["id"] for image in data["tags"]]
             labeledshape_ids = [shape["id"] for shape in data["shapes"]]

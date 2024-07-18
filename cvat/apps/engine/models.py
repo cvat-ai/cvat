@@ -325,6 +325,21 @@ class TimestampedModel(models.Model):
     def touch(self) -> None:
         self.save(update_fields=["updated_date"])
 
+def clear_annotations_in_jobs(job_ids):
+    def chunked_list(lst, size):
+        for i in range(0, len(lst), size):
+            yield lst[i:i + size]
+
+    for job_ids_chunk in chunked_list(job_ids, 10000):
+        TrackedShapeAttributeVal.objects.filter(shape__track__job_id__in=job_ids_chunk).delete()
+        TrackedShape.objects.filter(track__job_id__in=job_ids_chunk).delete()
+        LabeledTrackAttributeVal.objects.filter(track__job_id__in=job_ids_chunk).delete()
+        LabeledTrack.objects.filter(job_id__in=job_ids_chunk).delete()
+        LabeledShapeAttributeVal.objects.filter(shape__job_id__in=job_ids_chunk).delete()
+        LabeledShape.objects.filter(job_id__in=job_ids_chunk).delete()
+        LabeledImageAttributeVal.objects.filter(image__job_id__in=job_ids_chunk).delete()
+        LabeledImage.objects.filter(job_id__in=job_ids_chunk).delete()
+
 class Project(TimestampedModel):
     name = SafeCharField(max_length=256)
     owner = models.ForeignKey(User, null=True, blank=True,
@@ -363,19 +378,11 @@ class Project(TimestampedModel):
             Q(owner=user_id) | Q(assignee=user_id) | Q(segment__job__assignee=user_id)
         ).count() > 0
 
-    @transaction.atomic(savepoint=False)
-    def delete_related_resources(self):
-        # Requests optimization:
-        # Objects and attributes will be cascadely deleted if corresponding labels and attributes deleted
-        # Generally it will be more efficient, especially in case with a large number of jobs
-        # We do not need to remove annotations additionally
-        self.label_set.exclude(parent_id=None).all().delete()
-        self.label_set.filter(parent_id=None).all().delete()
-
     @cache_deleted
     @transaction.atomic(savepoint=False)
     def delete(self, using=None, keep_parents=False):
-        self.delete_related_resources()
+        job_ids = self.tasks_set.values_list('segment_set__job_id', flat=True)
+        clear_annotations_in_jobs(job_ids)
         super().delete(using, keep_parents)
 
     # Extend default permission model
@@ -480,33 +487,11 @@ class Task(TimestampedModel):
     def __str__(self):
         return self.name
 
-    @transaction.atomic(savepoint=False)
-    def delete_related_annotations(self):
-        job_ids = list(self.segment_set.values_list('job__id', flat=True))
-        TrackedShapeAttributeVal.objects.filter(shape__track__job_id__in=job_ids).delete()
-        TrackedShape.objects.filter(track__job_id__in=job_ids).delete()
-        LabeledTrackAttributeVal.objects.filter(track__job_id__in=job_ids).delete()
-        LabeledTrack.objects.filter(job_id__in=job_ids).delete()
-        LabeledShapeAttributeVal.objects.filter(shape__job_id__in=job_ids).delete()
-        LabeledShape.objects.filter(job_id__in=job_ids).delete()
-        LabeledImageAttributeVal.objects.filter(image__job_id__in=job_ids).delete()
-        LabeledImage.objects.filter(job_id__in=job_ids).delete()
-
-    @transaction.atomic(savepoint=False)
-    def delete_related_resources(self):
-        if not self.project:
-            # Requests optimization:
-            # Objects and attributes will be cascadely deleted if corresponding labels and attributes deleted
-            # Generally it will be more efficient, especially in case with a large number of jobs
-            self.label_set.exclude(parent_id=None).all().delete()
-            self.label_set.filter(parent_id=None).all().delete()
-        else:
-            self.delete_related_annotations()
-
     @cache_deleted
     @transaction.atomic(savepoint=False)
     def delete(self, using=None, keep_parents=False):
-        self.delete_related_resources()
+        job_ids = list(self.segment_set.values_list('job__id', flat=True))
+        clear_annotations_in_jobs(job_ids)
         super().delete(using, keep_parents)
 
 # Redefined a couple of operation for FileSystemStorage to avoid renaming
@@ -784,25 +769,10 @@ class Job(TimestampedModel):
 
         return super().clean()
 
-    @transaction.atomic(savepoint=False)
-    def delete_related_annotations(self):
-        TrackedShapeAttributeVal.objects.filter(shape__track__job_id=self.id).delete()
-        TrackedShape.objects.filter(track__job_id=self.id).delete()
-        LabeledTrackAttributeVal.objects.filter(track__job_id=self.id).delete()
-        LabeledTrack.objects.filter(job_id=self.id).delete()
-        LabeledShapeAttributeVal.objects.filter(shape__job_id=self.id).delete()
-        LabeledShape.objects.filter(job_id=self.id).delete()
-        LabeledImageAttributeVal.objects.filter(image__job_id=self.id).delete()
-        LabeledImage.objects.filter(job_id=self.id).delete()
-
-    @transaction.atomic(savepoint=False)
-    def delete_related_resources(self):
-        self.delete_related_annotations()
-
     @cache_deleted
     @transaction.atomic(savepoint=False)
     def delete(self, using=None, keep_parents=False):
-        self.delete_related_resources()
+        clear_annotations_in_jobs([self.id])
         super().delete(using, keep_parents)
 
     def make_dirs(self):
