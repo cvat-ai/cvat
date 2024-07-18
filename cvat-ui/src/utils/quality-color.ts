@@ -1,10 +1,10 @@
-// Copyright (C) 2023 CVAT.ai Corporation
+// Copyright (C) 2023-2024 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
-enum QualityColors {
+export enum QualityColors {
     GREEN = '#237804',
-    YELLOW = '#ffec3d',
+    YELLOW = '#ed9c00',
     RED = '#ff4d4f',
     GRAY = '#8c8c8c',
 }

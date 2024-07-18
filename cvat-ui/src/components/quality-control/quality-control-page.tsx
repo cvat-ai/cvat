@@ -56,7 +56,11 @@ function QualityControlPage(): JSX.Element {
     const [fetching, setFetching] = useState(true);
     const isMounted = useIsMounted();
 
-    const pluginTabs = usePlugins((state: CombinedState) => state.plugins.components.qualityControlPage.tabs.items, {});
+    const pluginTabs = usePlugins(
+        (state: CombinedState) => state.plugins.components.qualityControlPage.tabs.items,
+        {},
+        { task: instance },
+    );
     const receiveInstance = async (type: InstanceType, id: number): Promise<void> => {
         let receivedInstance: Task | null = null;
 
@@ -163,7 +167,7 @@ function QualityControlPage(): JSX.Element {
             key: Component.name,
             label: Component.name,
             children: (
-                <Component key={index} />
+                <Component key={index} targetState={{ task: instance }} />
             ),
         }, weight]));
 
