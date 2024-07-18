@@ -105,7 +105,7 @@ function ConsensusModal(): JSX.Element {
                     icon={mergingIsActive && <LoadingOutlined />}
                 >
                     {' '}
-                    Merge Consensus Task
+                    Merge Consensus Jobs
                 </Button>
             </Form>
         </Modal>
