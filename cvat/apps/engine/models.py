@@ -381,7 +381,7 @@ class Project(TimestampedModel):
     @cache_deleted
     @transaction.atomic(savepoint=False)
     def delete(self, using=None, keep_parents=False):
-        job_ids = self.tasks.values_list('segment_set__job_id', flat=True)
+        job_ids = Job.objects.filter(segment__task__project_id=self.id).values_list('id', flat=True)
         clear_annotations_in_jobs(job_ids)
         super().delete(using, keep_parents)
 
