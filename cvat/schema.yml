@@ -10066,7 +10066,7 @@ components:
           allOf:
           - $ref: '#/components/schemas/StorageRequest'
           nullable: true
-        consensus_jobs_per_normal_job:
+        consensus_jobs_per_regular_job:
           type: integer
           nullable: true
     PatchedUserRequest:
@@ -11084,7 +11084,7 @@ components:
           $ref: '#/components/schemas/JobsSummary'
         labels:
           $ref: '#/components/schemas/LabelsSummary'
-        consensus_jobs_per_normal_job:
+        consensus_jobs_per_regular_job:
           type: integer
           maximum: 2147483647
           minimum: -2147483648
@@ -11138,7 +11138,7 @@ components:
           allOf:
           - $ref: '#/components/schemas/StorageRequest'
           nullable: true
-        consensus_jobs_per_normal_job:
+        consensus_jobs_per_regular_job:
           type: integer
           nullable: true
       required:
