@@ -22,7 +22,7 @@ interface Props {
     dumpers: AnnotationFormats['dumpers'];
     inferenceIsActive: boolean;
     taskDimension: DimensionType;
-    consensusJobsPerNormalJob: number;
+    consensusJobsPerRegularJob: number;
     onClickMenu: (params: MenuInfo) => void;
 }
 
@@ -44,7 +44,7 @@ function ActionsMenuComponent(props: Props): JSX.Element {
         projectID,
         bugTracker,
         inferenceIsActive,
-        consensusJobsPerNormalJob,
+        consensusJobsPerRegularJob,
         onClickMenu,
     } = props;
 
@@ -114,7 +114,7 @@ function ActionsMenuComponent(props: Props): JSX.Element {
         </Menu.Item>
     ), 50]);
 
-    if (consensusJobsPerNormalJob) {
+    if (consensusJobsPerRegularJob) {
         menuItems.push([(
             <Menu.Item
                 key={Actions.SHOW_TASK_CONSENSUS_CONFIGURATION}

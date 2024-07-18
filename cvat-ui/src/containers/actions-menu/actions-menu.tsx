@@ -127,7 +127,7 @@ function ActionsMenuContainer(props: OwnProps & StateToProps & DispatchToProps):
             inferenceIsActive={inferenceIsActive}
             onClickMenu={onClickMenu}
             taskDimension={taskInstance.dimension}
-            consensusJobsPerNormalJob={taskInstance.consensusJobsPerNormalJob}
+            consensusJobsPerRegularJob={taskInstance.consensusJobsPerRegularJob}
         />
     );
 }

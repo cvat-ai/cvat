@@ -290,7 +290,7 @@ function AnalyticsPage(): JSX.Element {
                     label: 'Quality',
                     children: <TaskQualityComponent task={instance} onJobUpdate={onJobUpdate} />,
                 }] : []),
-                ...((instanceType === 'task' && instance.consensusJobsPerNormalJob) ? [{
+                ...((instanceType === 'task' && instance.consensusJobsPerRegularJob) ? [{
                     key: AnalyticsTabs.CONSENSUS,
                     label: 'Consensus',
                     children: <TaskConsensusAnalyticsComponent task={instance} onJobUpdate={onJobUpdate} />,
