@@ -71,7 +71,7 @@ def _merge_consensus_jobs(task_id: int) -> None:
     jobs = get_consensus_jobs(task_id)
     if not jobs:
         raise ValidationError(
-            "No annotated consensus jobs found or no normal jobs in annotation stage"
+            "No annotated consensus jobs found or no regular jobs in annotation stage"
         )
 
     consensus_settings = ConsensusSettings.objects.filter(task=task_id).first()

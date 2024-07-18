@@ -384,7 +384,7 @@ class AdvancedConfigurationForm extends React.PureComponent<Props> {
     private renderconsensusJobsPerNormalJob(): JSX.Element {
         return (
             <Form.Item
-                label='Consensus Jobs Per Normal Job'
+                label='Consensus Jobs Per Regular Job'
                 name='consensusJobsPerNormalJob'
                 rules={[
                     {

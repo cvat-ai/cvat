@@ -1326,7 +1326,7 @@ class TaskWriteSerializer(WriteOnceMixin, serializers.ModelSerializer):
         consensus_jobs_per_normal_job = attrs.get('consensus_jobs_per_normal_job', self.instance.consensus_jobs_per_normal_job if self.instance else None)
 
         if consensus_jobs_per_normal_job and (consensus_jobs_per_normal_job == 1 or consensus_jobs_per_normal_job < 0):
-            raise serializers.ValidationError("Consensus jobs per normal job should be greater than or equal to 0 and not 1")
+            raise serializers.ValidationError("Consensus jobs per regular job should be greater than or equal to 0 and not 1")
 
         return attrs
 

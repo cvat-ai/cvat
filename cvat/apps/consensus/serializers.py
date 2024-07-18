@@ -97,7 +97,7 @@ class ConsensusSettingsSerializer(serializers.ModelSerializer):
                 if not 0 <= v <= 1:
                     raise serializers.ValidationError(f"{k} must be in the range [0; 1]")
             elif k == "quorum":
-                # since we have constrained max. consensus jobs per normal job to 10
+                # since we have constrained max. consensus jobs per regular job to 10
                 if not 0 <= v <= 10:
                     raise serializers.ValidationError(f"{k} must be in the range [0; 10]")
 
