@@ -447,12 +447,6 @@ class JobAnnotation:
             labeledimage_ids = [image["id"] for image in data["tags"]]
             labeledshape_ids = [shape["id"] for shape in data["shapes"]]
             labeledtrack_ids = [track["id"] for track in data["tracks"]]
-            labeledimage_set = self.db_job.labeledimage_set
-            labeledimage_set = labeledimage_set.filter(pk__in=labeledimage_ids)
-            labeledshape_set = self.db_job.labeledshape_set
-            labeledshape_set = labeledshape_set.filter(pk__in=labeledshape_ids)
-            labeledtrack_set = self.db_job.labeledtrack_set
-            labeledtrack_set = labeledtrack_set.filter(pk__in=labeledtrack_ids)
 
             # It is not important for us that data had some "invalid" objects
             # which were skipped (not actually deleted). The main idea is to
@@ -461,9 +455,9 @@ class JobAnnotation:
             self.ir_data.shapes = data['shapes']
             self.ir_data.tracks = data['tracks']
 
-            labeledimage_set.delete()
-            labeledshape_set.delete()
-            labeledtrack_set.delete()
+            self._delete_job_labeledimages(labeledimage_ids)
+            self._delete_job_labeledshapes(labeledshape_ids)
+            self._delete_job_labeledtracks(labeledtrack_ids)
 
             deleted_data = {
                 "tags": data["tags"],
@@ -472,6 +466,46 @@ class JobAnnotation:
             }
 
         return deleted_data
+
+    @transaction.atomic(savepoint=False)
+    def _delete_job_labeledimages(self, ids__UNSAFE):
+        # ids__UNSAFE is a list, received from the user
+        # we MUST filter it by job_id additionally before applying to any queries
+        ids = self.db_job.labeledimage_set.filter(pk__in=ids__UNSAFE).values_list('id', flat=True)
+        models.LabeledImageAttributeVal.objects.filter(image_id__in=ids).delete()
+        self.db_job.labeledimage_set.filter(pk__in=ids).delete()
+
+    @transaction.atomic(savepoint=False)
+    def _delete_job_labeledshapes(self, ids__UNSAFE, is_subcall=False):
+        # ids__UNSAFE is a list, received from the user
+        # we MUST filter it by job_id additionally before applying to any queries
+        if is_subcall:
+            ids = ids__UNSAFE
+        else:
+            ids = self.db_job.labeledshape_set.filter(pk__in=ids__UNSAFE).values_list('id', flat=True)
+            child_ids = self.db_job.labeledshape_set.filter(parent_id__in=ids).values_list('id', flat=True)
+            if len(child_ids):
+                self._delete_job_labeledshapes(child_ids, True)
+
+        models.LabeledShapeAttributeVal.objects.filter(shape_id__in=ids).delete()
+        self.db_job.labeledshape_set.filter(pk__in=ids).delete()
+
+    @transaction.atomic(savepoint=False)
+    def _delete_job_labeledtracks(self, ids__UNSAFE, is_subcall=False):
+        # ids__UNSAFE is a list, received from the user
+        # we MUST filter it by job_id additionally before applying to any queries
+        if is_subcall:
+            ids = ids__UNSAFE
+        else:
+            ids = self.db_job.labeledtrack_set.filter(pk__in=ids__UNSAFE).values_list('id', flat=True)
+            child_ids = self.db_job.labeledtrack_set.filter(parent_id__in=ids).values_list('id', flat=True)
+            if len(child_ids):
+                self._delete_job_labeledtracks(child_ids, True)
+
+        models.TrackedShapeAttributeVal.objects.filter(shape__track_id__in=ids).delete()
+        models.TrackedShape.objects.filter(track_id__in=ids).delete()
+        models.LabeledTrackAttributeVal.objects.filter(track_id__in=ids).delete()
+        self.db_job.labeledtrack_set.filter(pk__in=ids).delete()
 
     def delete(self, data=None):
         deleted_data = self._delete(data)
