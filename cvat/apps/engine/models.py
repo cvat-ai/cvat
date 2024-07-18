@@ -377,8 +377,21 @@ class Project(TimestampedModel):
     @cache_deleted
     @transaction.atomic(savepoint=False)
     def delete(self, using=None, keep_parents=False):
-        job_ids = Job.objects.filter(segment__task__project_id=self.id).values_list('id', flat=True)
-        clear_annotations_in_jobs(job_ids)
+        job_ids = self.tasks.values_list('segment__job__id', flat=True)
+        if not self.project:
+            # quicker way to remove annotations and a way to reduce number of queries
+            # is to remove labels and attributes first, it will remove annotations cascadely
+            # hovewer it will not remove TrackedShape, so, we need to do it additionally
+            # additionally to remove tracked_shapes we have to remove TrackedShapeAttributeVal first
+            for job_ids_chunk in chunked_list(job_ids, chunk_size=10000):
+                TrackedShapeAttributeVal.objects.filter(shape__track__job_id__in=job_ids_chunk).delete()
+                TrackedShape.objects.filter(track__job_id__in=job_ids_chunk).delete()
+
+            # it is important to remove first children and then parents
+            self.label_set.exclude(parent=None).delete()
+            self.label_set.filter(parent=None).delete()
+        else:
+            clear_annotations_in_jobs(job_ids)
         super().delete(using, keep_parents)
 
     # Extend default permission model
@@ -487,7 +500,20 @@ class Task(TimestampedModel):
     @transaction.atomic(savepoint=False)
     def delete(self, using=None, keep_parents=False):
         job_ids = list(self.segment_set.values_list('job__id', flat=True))
-        clear_annotations_in_jobs(job_ids)
+        if not self.project:
+            # quicker way to remove annotations and a way to reduce number of queries
+            # is to remove labels and attributes first, it will remove annotations cascadely
+            # hovewer it will not remove TrackedShape, so, we need to do it additionally
+            # additionally to remove tracked_shapes we have to remove TrackedShapeAttributeVal first
+            for job_ids_chunk in chunked_list(job_ids, chunk_size=10000):
+                TrackedShapeAttributeVal.objects.filter(shape__track__job_id__in=job_ids_chunk).delete()
+                TrackedShape.objects.filter(track__job_id__in=job_ids_chunk).delete()
+
+            # it is important to remove first children and then parents
+            self.label_set.exclude(parent=None).delete()
+            self.label_set.filter(parent=None).delete()
+        else:
+            clear_annotations_in_jobs(job_ids)
         super().delete(using, keep_parents)
 
 # Redefined a couple of operation for FileSystemStorage to avoid renaming
