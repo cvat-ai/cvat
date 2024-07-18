@@ -824,6 +824,20 @@ class Label(models.Model):
         except IntegrityError:
             raise InvalidLabel("All label names must be unique")
 
+    @transaction.atomic(savepoint=False)
+    def delete(self):
+        sublabel_ids = self.sublabels.values_list('id', flat=True)
+        ids = list(LabeledTrack.objects.filter(label_id=self.id).values_list('id', flat=True))
+        if sublabel_ids:
+            child_ids = list(LabeledTrack.objects.filter(label_id__in=sublabel_ids).values_list('id', flat=True))
+            ids.extend(child_ids)
+
+        for ids_chunk in chunked_list(ids, 10000):
+            TrackedShapeAttributeVal.objects.filter(track_id__in=ids_chunk).delete()
+            TrackedShape.objects.filter(track_id__in=ids_chunk).delete()
+
+        super().delete()
+
     @classmethod
     def create(cls, **kwargs):
         try:
