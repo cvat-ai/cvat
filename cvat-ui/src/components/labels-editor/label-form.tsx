@@ -416,6 +416,7 @@ export default class LabelForm extends React.Component<Props> {
             <CVATTooltip title='Delete the attribute'>
                 <Form.Item>
                     <Button
+                        disabled={attr.id >= 0} // temporary disabled, does not work on the server
                         type='link'
                         className='cvat-delete-attribute-button'
                         onClick={(): void => {
