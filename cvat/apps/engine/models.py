@@ -483,10 +483,6 @@ class Task(TimestampedModel):
     @transaction.atomic(savepoint=False)
     def delete_related_annotations(self):
         job_ids = list(self.segment_set.values_list('job__id', flat=True))
-        TrackedShapeAttributeVal.objects.filter(shape__track__job_id__in=job_ids).delete()
-        LabeledTrackAttributeVal.objects.filter(track__job_id__in=job_ids).delete()
-        LabeledShapeAttributeVal.objects.filter(shape__job_id__in=job_ids).delete()
-        LabeledImageAttributeVal.objects.filter(image__job_id__in=job_ids).delete()
         LabeledTrack.objects.filter(job_id__in=job_ids).delete()
         LabeledShape.objects.filter(job_id__in=job_ids).delete()
         LabeledImage.objects.filter(job_id__in=job_ids).delete()
@@ -785,10 +781,6 @@ class Job(TimestampedModel):
 
     @transaction.atomic(savepoint=False)
     def delete_related_annotations(self):
-        TrackedShapeAttributeVal.objects.filter(shape__track__job_id=self.id).delete()
-        LabeledTrackAttributeVal.objects.filter(track__job_id=self.id).delete()
-        LabeledShapeAttributeVal.objects.filter(shape__job_id=self.id).delete()
-        LabeledImageAttributeVal.objects.filter(image__job_id=self.id).delete()
         LabeledTrack.objects.filter(job_id=self.id).delete()
         LabeledShape.objects.filter(job_id=self.id).delete()
         LabeledImage.objects.filter(job_id=self.id).delete()
@@ -953,7 +945,7 @@ class SourceType(str, Enum):
 
 class Annotation(models.Model):
     id = models.BigAutoField(primary_key=True)
-    job = models.ForeignKey(Job, on_delete=models.CASCADE)
+    job = models.ForeignKey(Job, on_delete=models.DO_NOTHING)
     label = models.ForeignKey(Label, on_delete=models.CASCADE)
     frame = models.PositiveIntegerField()
     group = models.PositiveIntegerField(null=True)
@@ -980,21 +972,21 @@ class LabeledImage(Annotation):
     pass
 
 class LabeledImageAttributeVal(AttributeVal):
-    image = models.ForeignKey(LabeledImage, on_delete=models.DO_NOTHING,
+    image = models.ForeignKey(LabeledImage, on_delete=models.CASCADE,
         related_name='attributes', related_query_name='attribute')
 
 class LabeledShape(Annotation, Shape):
     parent = models.ForeignKey('self', on_delete=models.DO_NOTHING, null=True, related_name='elements')
 
 class LabeledShapeAttributeVal(AttributeVal):
-    shape = models.ForeignKey(LabeledShape, on_delete=models.DO_NOTHING,
+    shape = models.ForeignKey(LabeledShape, on_delete=models.CASCADE,
         related_name='attributes', related_query_name='attribute')
 
 class LabeledTrack(Annotation):
     parent = models.ForeignKey('self', on_delete=models.DO_NOTHING, null=True, related_name='elements')
 
 class LabeledTrackAttributeVal(AttributeVal):
-    track = models.ForeignKey(LabeledTrack, on_delete=models.DO_NOTHING,
+    track = models.ForeignKey(LabeledTrack, on_delete=models.CASCADE,
         related_name='attributes', related_query_name='attribute')
 
 class TrackedShape(Shape):
@@ -1004,7 +996,7 @@ class TrackedShape(Shape):
     frame = models.PositiveIntegerField()
 
 class TrackedShapeAttributeVal(AttributeVal):
-    shape = models.ForeignKey(TrackedShape, on_delete=models.DO_NOTHING,
+    shape = models.ForeignKey(TrackedShape, on_delete=models.CASCADE,
         related_name='attributes', related_query_name='attribute')
 
 class Profile(models.Model):
