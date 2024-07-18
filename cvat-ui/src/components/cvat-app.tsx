@@ -14,7 +14,6 @@ import Spin from 'antd/lib/spin';
 import { DisconnectOutlined } from '@ant-design/icons';
 import Space from 'antd/lib/space';
 import Text from 'antd/lib/typography/Text';
-import ReactMarkdown from 'react-markdown';
 
 import LogoutComponent from 'components/logout-component';
 import LoginPageContainer from 'containers/login-page/login-page';
@@ -77,6 +76,7 @@ import '../styles.scss';
 import appConfig from 'config';
 import EventRecorder from 'utils/event-recorder';
 import { authQuery } from 'utils/auth-query';
+import CVATMarkdown from './common/cvat-markdown';
 import EmailConfirmationPage from './email-confirmation-pages/email-confirmed';
 import EmailVerificationSentPage from './email-confirmation-pages/email-verification-sent';
 import IncorrectEmailConfirmationPage from './email-confirmation-pages/incorrect-email-confirmation';
@@ -358,19 +358,19 @@ class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentP
     }
 
     private showMessages(): void {
+        const { notifications, resetMessages, history } = this.props;
+
         function showMessage(notificationState: NotificationState): void {
             notification.info({
                 message: (
-                    <ReactMarkdown>{notificationState.message}</ReactMarkdown>
+                    <CVATMarkdown history={history}>{notificationState.message}</CVATMarkdown>
                 ),
                 description: notificationState?.description && (
-                    <ReactMarkdown>{notificationState?.description}</ReactMarkdown>
+                    <CVATMarkdown history={history}>{notificationState?.description}</CVATMarkdown>
                 ),
                 duration: notificationState.duration || null,
             });
         }
-
-        const { notifications, resetMessages } = this.props;
 
         let shown = false;
         for (const where of Object.keys(notifications.messages)) {
@@ -389,6 +389,8 @@ class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentP
     }
 
     private showErrors(): void {
+        const { notifications, resetErrors, history } = this.props;
+
         function showError(title: string, _error: Error, shouldLog?: boolean, className?: string): void {
             const error = _error?.message || _error.toString();
             const dynamicProps = typeof className === 'undefined' ? {} : { className };
@@ -400,10 +402,10 @@ class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentP
             notification.error({
                 ...dynamicProps,
                 message: (
-                    <ReactMarkdown>{title}</ReactMarkdown>
+                    <CVATMarkdown history={history}>{title}</CVATMarkdown>
                 ),
                 duration: null,
-                description: errorLength > 300 ? 'Open the Browser Console to get details' : <ReactMarkdown>{error}</ReactMarkdown>,
+                description: errorLength > 300 ? 'Open the Browser Console to get details' : <CVATMarkdown history={history}>{error}</CVATMarkdown>,
             });
 
             if (shouldLog) {
@@ -415,8 +417,6 @@ class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentP
                 console.error(error);
             }
         }
-
-        const { notifications, resetErrors } = this.props;
 
         let shown = false;
         for (const where of Object.keys(notifications.errors)) {
