@@ -60,7 +60,7 @@ const core = getCore();
 interface State {
     name: string;
     subset: string;
-    consensusJobsPerNormalJob: number;
+    consensusJobsPerRegularJob: number;
 }
 
 type Props = DispatchToProps & StateToProps & OwnProps;
@@ -72,7 +72,7 @@ class DetailsComponent extends React.PureComponent<Props, State> {
         this.state = {
             name: taskInstance.name,
             subset: taskInstance.subset,
-            consensusJobsPerNormalJob: taskInstance.consensusJobsPerNormalJob,
+            consensusJobsPerRegularJob: taskInstance.consensusJobsPerRegularJob,
         };
     }
 
@@ -117,7 +117,7 @@ class DetailsComponent extends React.PureComponent<Props, State> {
 
     private renderDescription(): JSX.Element {
         const { task: taskInstance, onUpdateTask } = this.props;
-        const { consensusJobsPerNormalJob } = this.state;
+        const { consensusJobsPerRegularJob } = this.state;
         const owner = taskInstance.owner ? taskInstance.owner.username : null;
         const assignee = taskInstance.assignee ? taskInstance.assignee : null;
         const created = moment(taskInstance.createdDate).format('MMMM Do YYYY');
@@ -131,19 +131,18 @@ class DetailsComponent extends React.PureComponent<Props, State> {
                 }}
             />
         );
-        const consensusTag = consensusJobsPerNormalJob > 0 && <Tag color='#1890ff'>Consensus Based Annotation</Tag>;
 
         return (
             <Row className='cvat-task-details-user-block' justify='space-between' align='middle'>
                 <Col span={12}>
                     {owner && (
                         <div>
-                            {consensusTag}
                             <Text type='secondary'>
                                 {`Task #${taskInstance.id} Created by ${owner} on ${created}`}
                             </Text>
                         </div>
                     )}
+                    {consensusJobsPerRegularJob > 0 && <Tag color='#1890ff'>Consensus Based Annotation</Tag>}
                 </Col>
                 <Col>
                     <Text type='secondary'>Assigned to</Text>

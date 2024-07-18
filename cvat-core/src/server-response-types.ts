@@ -120,7 +120,7 @@ export interface SerializedTask {
     subset: string;
     updated_date: string;
     url: string;
-    consensus_jobs_per_normal_job: number;
+    consensus_jobs_per_regular_job: number;
 }
 
 export interface SerializedJob {
