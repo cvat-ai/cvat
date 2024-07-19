@@ -184,3 +184,33 @@ The name of the service account to use for backend pods
   {{- end }}
 {{- end }}
 {{- end }}
+
+{{- define "cvat.sharedClickhouseEnv" }}
+{{- if .Values.analytics.enabled }}
+- name: CLICKHOUSE_HOST
+  valueFrom:
+    secretKeyRef:
+      name: cvat-analytics-secret
+      key: CLICKHOUSE_HOST
+- name: CLICKHOUSE_PORT
+  valueFrom:
+    secretKeyRef:
+      name: cvat-analytics-secret
+      key: CLICKHOUSE_PORT
+- name: CLICKHOUSE_DB
+  valueFrom:
+    secretKeyRef:
+      name: cvat-analytics-secret
+      key: CLICKHOUSE_DB
+- name: CLICKHOUSE_USER
+  valueFrom:
+    secretKeyRef:
+      name: cvat-analytics-secret
+      key: CLICKHOUSE_USER
+- name: CLICKHOUSE_PASSWORD
+  valueFrom:
+    secretKeyRef:
+      name: cvat-analytics-secret
+      key: CLICKHOUSE_PASSWORD
+{{- end }}
+{{- end }}

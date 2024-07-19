@@ -4,6 +4,7 @@
 // SPDX-License-Identifier: MIT
 
 import React, { useCallback, useState } from 'react';
+import { useSelector, useDispatch } from 'react-redux';
 import { useHistory } from 'react-router';
 import { createRoot } from 'react-dom/client';
 import Modal from 'antd/lib/modal';
@@ -18,23 +19,17 @@ import Icon from '@ant-design/icons';
 import { MenuProps } from 'antd/lib/menu';
 
 import { MainMenuIcon } from 'icons';
+import { Job, JobState } from 'cvat-core-wrapper';
+
 import CVATTooltip from 'components/common/cvat-tooltip';
+import AnnotationsActionsModalContent from 'components/annotation-page/annotations-actions/annotations-actions-modal';
+import { CombinedState } from 'reducers';
 import {
-    Job, JobStage, JobState, getCore,
-} from 'cvat-core-wrapper';
-import AnnotationsActionsModalContent from '../annotations-actions/annotations-actions-modal';
-
-const core = getCore();
-
-interface Props {
-    jobInstance: Job;
-    showExportModal: (jobInstance: Job) => void;
-    showImportModal: (jobInstance: Job) => void;
-    removeAnnotations(startnumber: number, endnumber: number, delTrackKeyframesOnly: boolean): void;
-    setForceExitAnnotationFlag(forceExit: boolean): void;
-    saveAnnotations(afterSave?: () => void): void;
-    updateJob(jobInstance: Job): Promise<boolean>;
-}
+    updateCurrentJobAsync, finishCurrentJobAsync,
+    removeAnnotationsAsync as removeAnnotationsAsyncAction,
+} from 'actions/annotation-actions';
+import { exportActions } from 'actions/export-actions';
+import { importActions } from 'actions/import-actions';
 
 export enum Actions {
     LOAD_JOB_ANNO = 'load_job_anno',
@@ -43,105 +38,53 @@ export enum Actions {
     RUN_ACTIONS = 'run_actions',
     OPEN_TASK = 'open_task',
     FINISH_JOB = 'finish_job',
-    RENEW_JOB = 'renew_job',
 }
 
-function AnnotationMenuComponent(props: Props): JSX.Element {
-    const {
-        jobInstance,
-        showExportModal,
-        showImportModal,
-        removeAnnotations,
-        setForceExitAnnotationFlag,
-        saveAnnotations,
-        updateJob,
-    } = props;
-
+function AnnotationMenuComponent(): JSX.Element {
+    const dispatch = useDispatch();
     const history = useHistory();
+    const jobInstance = useSelector((state: CombinedState) => state.annotation.job.instance as Job);
     const [jobState, setJobState] = useState(jobInstance.state);
-    const { stage: jobStage, stopFrame } = jobInstance;
-
-    const checkUnsavedChanges = useCallback((callback: () => void) => {
-        if (jobInstance.annotations.hasUnsavedChanges()) {
-            Modal.confirm({
-                title: 'The job has unsaved annotations',
-                content: 'Would you like to save changes before continue?',
-                className: 'cvat-modal-content-save-job',
-                okButtonProps: {
-                    children: 'Save',
-                },
-                cancelButtonProps: {
-                    children: 'No',
-                },
-                onOk: () => {
-                    saveAnnotations(() => callback);
-                },
-                onCancel: () => {
-                    // do not ask leave confirmation
-                    setForceExitAnnotationFlag(true);
-                    setTimeout(() => {
-                        callback();
-                    });
-                },
-            });
-        } else {
-            callback();
-        }
-    }, [jobInstance]);
+    const { stopFrame } = jobInstance;
 
     const exportDataset = useCallback(() => {
-        showExportModal(jobInstance);
-    }, [jobInstance]);
-
-    const renewJob = useCallback(() => {
-        jobInstance.state = core.enums.JobState.NEW;
-        jobInstance.stage = JobStage.ANNOTATION;
-        updateJob(jobInstance).then((success) => {
-            if (success) {
-                message.info('Job renewed', 2);
-                setJobState(jobInstance.state);
-            }
-        });
+        dispatch(exportActions.openExportDatasetModal(jobInstance));
     }, [jobInstance]);
 
     const finishJob = useCallback(() => {
-        jobInstance.stage = JobStage.ACCEPTANCE;
-        jobInstance.state = core.enums.JobState.COMPLETED;
-        updateJob(jobInstance).then((success) => {
-            if (success) {
-                history.push(`/tasks/${jobInstance.taskId}`);
-            }
+        dispatch(finishCurrentJobAsync()).then(() => {
+            message.open({
+                duration: 1,
+                type: 'success',
+                content: 'You tagged the job as completed',
+                className: 'cvat-annotation-job-finished-success',
+            });
         });
-    }, [jobInstance]);
+    }, []);
 
     const openTask = useCallback(() => {
         history.push(`/tasks/${jobInstance.taskId}`);
     }, [jobInstance.taskId]);
 
     const uploadAnnotations = useCallback(() => {
-        showImportModal(jobInstance);
+        dispatch(importActions.openImportDatasetModal(jobInstance));
     }, [jobInstance]);
 
     const changeState = useCallback((state: JobState) => {
-        jobInstance.state = state;
-        updateJob(jobInstance).then((success) => {
-            if (success) {
-                message.info('Job state updated', 2);
-                setJobState(jobInstance.state);
-            }
+        dispatch(updateCurrentJobAsync({ state })).then(() => {
+            message.info('Job state updated', 2);
+            setJobState(jobInstance.state);
         });
     }, [jobInstance]);
 
     const changeJobState = useCallback((state: JobState) => () => {
         Modal.confirm({
-            title: 'Do you want to change current job state?',
-            content: `Job state will be switched to "${state}". Continue?`,
+            title: 'Would you like to update current job state?',
+            content: `Job state will be switched to "${state}"`,
             okText: 'Continue',
             cancelText: 'Cancel',
             className: 'cvat-modal-content-change-job-state',
-            onOk: () => {
-                checkUnsavedChanges(() => changeState(state));
-            },
+            onOk: () => changeState(state),
         });
     }, [changeState]);
 
@@ -168,8 +111,8 @@ function AnnotationMenuComponent(props: Props): JSX.Element {
         key: Actions.REMOVE_ANNOTATIONS,
         label: 'Remove annotations',
         onClick: () => {
-            let removeFrom: number | null;
-            let removeUpTo: number | null;
+            let removeFrom: number | undefined;
+            let removeUpTo: number | undefined;
             let removeOnlyKeyframes = false;
             Modal.confirm({
                 title: 'Remove Annotations',
@@ -221,7 +164,7 @@ function AnnotationMenuComponent(props: Props): JSX.Element {
                 ),
                 className: 'cvat-modal-confirm-remove-annotation',
                 onOk: () => {
-                    removeAnnotations(removeFrom, removeUpTo, removeOnlyKeyframes);
+                    dispatch(removeAnnotationsAsyncAction(removeFrom, removeUpTo, removeOnlyKeyframes));
                 },
                 okButtonProps: {
                     type: 'primary',
@@ -283,39 +226,20 @@ function AnnotationMenuComponent(props: Props): JSX.Element {
         }],
     });
 
-    if ([JobStage.ANNOTATION, JobStage.VALIDATION].includes(jobStage)) {
-        menuItems.push({
-            key: Actions.FINISH_JOB,
-            label: 'Finish the job',
-            onClick: () => {
-                Modal.confirm({
-                    title: 'The job stage is going to be switched',
-                    content: 'Stage will be changed to "acceptance". Would you like to continue?',
-                    okText: 'Continue',
-                    cancelText: 'Cancel',
-                    className: 'cvat-modal-content-finish-job',
-                    onOk: () => {
-                        checkUnsavedChanges(finishJob);
-                    },
-                });
-            },
-        });
-    } else {
-        menuItems.push({
-            key: Actions.RENEW_JOB,
-            label: 'Renew the job',
-            onClick: () => {
-                Modal.confirm({
-                    title: 'Do you want to renew the job?',
-                    content: 'Stage will be set to "in progress", state will be set to "annotation". Would you like to continue?',
-                    okText: 'Continue',
-                    cancelText: 'Cancel',
-                    className: 'cvat-modal-content-renew-job',
-                    onOk: renewJob,
-                });
-            },
-        });
-    }
+    menuItems.push({
+        key: Actions.FINISH_JOB,
+        label: 'Finish the job',
+        onClick: () => {
+            Modal.confirm({
+                title: 'Would you like to finish the job?',
+                content: 'It will save annotations and set the job state to "completed"',
+                okText: 'Continue',
+                cancelText: 'Cancel',
+                className: 'cvat-modal-content-finish-job',
+                onOk: finishJob,
+            });
+        },
+    });
 
     return (
         <Dropdown

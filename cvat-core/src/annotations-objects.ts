@@ -2187,6 +2187,11 @@ export class MaskShape extends Shape {
 
     constructor(data: SerializedShape, clientID: number, color: string, injection: AnnotationInjection) {
         super(data, clientID, color, injection);
+        const [left, top, right, bottom] = this.points.slice(-4);
+        const { width, height } = this.frameMeta[this.frame];
+        if (left >= width || top >= height || right >= width || bottom >= height) {
+            this.points = cropMask(this.points, width, height);
+        }
         [this.left, this.top, this.right, this.bottom] = this.points.splice(-4, 4);
         this.getMasksOnFrame = injection.getMasksOnFrame;
         this.pinned = true;
@@ -2994,6 +2999,12 @@ export class SkeletonTrack extends Track {
     // Method is used to export data to the server
     public toJSON(): SerializedTrack {
         const result: SerializedTrack = Track.prototype.toJSON.call(this);
+
+        result.shapes = result.shapes.map((shape) => ({
+            ...shape,
+            points: [],
+        }));
+
         result.elements = this.elements.map((el) => ({
             ...el.toJSON(),
             source: this.source,

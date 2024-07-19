@@ -18,11 +18,11 @@ import Dropdown from 'antd/lib/dropdown';
 import Icon from '@ant-design/icons';
 import {
     BorderOutlined,
-    LoadingOutlined, MoreOutlined, ProjectOutlined, QuestionCircleOutlined,
+    LoadingOutlined, MoreOutlined, QuestionCircleOutlined,
 } from '@ant-design/icons/lib/icons';
 import { DurationIcon, FramesIcon } from 'icons';
 import {
-    Job, JobStage, JobType, Task, User,
+    Job, JobStage, JobState, JobType, Task, User,
 } from 'cvat-core-wrapper';
 import { useIsMounted } from 'utils/hooks';
 import UserSelector from 'components/task-page/user-selector';
@@ -32,7 +32,7 @@ import JobActionsMenu from './job-actions-menu';
 interface Props {
     job: Job;
     task: Task;
-    onJobUpdate: (job: Job) => void;
+    onJobUpdate: (job: Job, fields: Parameters<Job['save']>[0]) => void;
 }
 
 function ReviewSummaryComponent({ jobInstance }: { jobInstance: any }): JSX.Element {
@@ -116,16 +116,22 @@ function JobItem(props: Props): JSX.Element {
     return (
         <Col span={24}>
             <Card className='cvat-job-item' style={{ ...style }} data-row-id={job.id}>
-                <Row>
+                <Row align='middle'>
                     <Col span={7}>
                         <Row>
                             <Col>
                                 <Link to={`/tasks/${job.taskId}/jobs/${job.id}`}>{`Job #${job.id}`}</Link>
                             </Col>
                             {
-                                job.type === JobType.GROUND_TRUTH && (
+                                job.type === JobType.GROUND_TRUTH ? (
                                     <Col offset={1}>
                                         <Tag color='#ED9C00'>Ground truth</Tag>
+                                    </Col>
+                                ) : (
+                                    <Col className='cvat-job-item-issues-summary-icon'>
+                                        <CVATTooltip title={<ReviewSummaryComponent jobInstance={job} />}>
+                                            <QuestionCircleOutlined />
+                                        </CVATTooltip>
                                     </Col>
                                 )
                             }
@@ -143,7 +149,7 @@ function JobItem(props: Props): JSX.Element {
                             </Col>
                         </Row>
                     </Col>
-                    <Col span={7}>
+                    <Col span={11}>
                         <Row className='cvat-job-item-selects' justify='space-between'>
                             <Col>
                                 <Row>
@@ -156,8 +162,7 @@ function JobItem(props: Props): JSX.Element {
                                             value={job.assignee}
                                             onSelect={(user: User | null): void => {
                                                 if (job?.assignee?.id === user?.id) return;
-                                                job.assignee = user;
-                                                onJobUpdate(job);
+                                                onJobUpdate(job, { assignee: user });
                                             }}
                                         />
                                     </Col>
@@ -166,18 +171,12 @@ function JobItem(props: Props): JSX.Element {
                                             <Col>
                                                 <Text>Stage:</Text>
                                             </Col>
-                                            <Col>
-                                                <CVATTooltip title={<ReviewSummaryComponent jobInstance={job} />}>
-                                                    <QuestionCircleOutlined />
-                                                </CVATTooltip>
-                                            </Col>
                                         </Row>
                                         <Select
                                             className='cvat-job-item-stage'
                                             value={stage}
                                             onChange={(newValue: JobStage) => {
-                                                job.stage = newValue;
-                                                onJobUpdate(job);
+                                                onJobUpdate(job, { stage: newValue });
                                             }}
                                         >
                                             <Select.Option value={JobStage.ANNOTATION}>
@@ -191,22 +190,40 @@ function JobItem(props: Props): JSX.Element {
                                             </Select.Option>
                                         </Select>
                                     </Col>
+                                    <Col className='cvat-job-item-select'>
+                                        <Row justify='space-between' align='middle'>
+                                            <Col>
+                                                <Text>State:</Text>
+                                            </Col>
+                                        </Row>
+                                        <Select
+                                            className='cvat-job-item-state'
+                                            value={job.state}
+                                            onChange={(newValue: JobState) => {
+                                                onJobUpdate(job, { state: newValue });
+                                            }}
+                                        >
+                                            <Select.Option value={JobState.NEW}>
+                                                {JobState.NEW}
+                                            </Select.Option>
+                                            <Select.Option value={JobState.IN_PROGRESS}>
+                                                {JobState.IN_PROGRESS}
+                                            </Select.Option>
+                                            <Select.Option value={JobState.REJECTED}>
+                                                {JobState.REJECTED}
+                                            </Select.Option>
+                                            <Select.Option value={JobState.COMPLETED}>
+                                                {JobState.COMPLETED}
+                                            </Select.Option>
+                                        </Select>
+                                    </Col>
                                 </Row>
                             </Col>
                         </Row>
                     </Col>
-                    <Col span={10}>
+                    <Col span={5} offset={1}>
                         <Row className='cvat-job-item-details'>
                             <Col>
-                                <Row>
-                                    <Col>
-                                        <ProjectOutlined />
-                                        <Text>State: </Text>
-                                        <Text type='secondary' className='cvat-job-item-state'>
-                                            {`${job.state.charAt(0).toUpperCase() + job.state.slice(1)}`}
-                                        </Text>
-                                    </Col>
-                                </Row>
                                 <Row>
                                     <Col>
                                         <Icon component={DurationIcon} />
@@ -214,8 +231,15 @@ function JobItem(props: Props): JSX.Element {
                                         <Text type='secondary'>{`${moment.duration(now.diff(created)).humanize()}`}</Text>
                                     </Col>
                                 </Row>
-                            </Col>
-                            <Col offset={2}>
+                                <Row>
+                                    <Col>
+                                        <BorderOutlined />
+                                        <Text>Frame count: </Text>
+                                        <Text type='secondary' className='cvat-job-item-frames'>
+                                            {`${job.frameCount} (${frameCountPercentRepresentation}%)`}
+                                        </Text>
+                                    </Col>
+                                </Row>
                                 {
                                     job.type !== JobType.GROUND_TRUTH && (
                                         <Row>
@@ -229,15 +253,6 @@ function JobItem(props: Props): JSX.Element {
                                         </Row>
                                     )
                                 }
-                                <Row>
-                                    <Col>
-                                        <BorderOutlined />
-                                        <Text>Frame count: </Text>
-                                        <Text type='secondary' className='cvat-job-item-frames'>
-                                            {`${job.frameCount} (${frameCountPercentRepresentation}%)`}
-                                        </Text>
-                                    </Col>
-                                </Row>
                             </Col>
                         </Row>
                     </Col>

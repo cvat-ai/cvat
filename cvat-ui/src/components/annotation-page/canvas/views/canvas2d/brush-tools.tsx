@@ -164,7 +164,7 @@ function BrushTools(): React.ReactPortal | null {
 
         const updateEditableState = (e: Event): void => {
             const evt = e as CustomEvent;
-            if (evt.type === 'canvas.editstart' && evt.detail.state) {
+            if (evt.type === 'canvas.editstart' && evt.detail?.state?.shapeType === ShapeType.MASK) {
                 setEditableState(evt.detail.state);
             } else if (editableState) {
                 setEditableState(null);
@@ -179,7 +179,7 @@ function BrushTools(): React.ReactPortal | null {
             canvasInstance.html().addEventListener('canvas.drawstart', showToolset);
             canvasInstance.html().addEventListener('canvas.editstart', showToolset);
             canvasInstance.html().addEventListener('canvas.editstart', updateEditableState);
-            canvasInstance.html().addEventListener('canvas.editdone', updateEditableState);
+            canvasInstance.html().addEventListener('canvas.edited', updateEditableState);
         }
 
         return () => {
@@ -191,7 +191,7 @@ function BrushTools(): React.ReactPortal | null {
                 canvasInstance.html().removeEventListener('canvas.drawstart', showToolset);
                 canvasInstance.html().removeEventListener('canvas.editstart', showToolset);
                 canvasInstance.html().removeEventListener('canvas.editstart', updateEditableState);
-                canvasInstance.html().removeEventListener('canvas.editdone', updateEditableState);
+                canvasInstance.html().removeEventListener('canvas.edited', updateEditableState);
             }
         };
     }, [visible, editableState, currentTool]);

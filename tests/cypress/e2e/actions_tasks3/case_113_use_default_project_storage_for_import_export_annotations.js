@@ -36,13 +36,11 @@ context('Tests for source and target storage.', () => {
         secondY: 450,
     };
 
-    const serverHost = Cypress.config('baseUrl').includes('3000') ? 'localhost' : 'minio';
-
     const cloudStorageData = {
         displayName: 'Demo bucket',
         resource: 'public',
         manifest: 'manifest.jsonl',
-        endpointUrl: `http://${serverHost}:9000`,
+        endpointUrl: Cypress.config('minioUrl'),
     };
 
     const storageConnectedToCloud = {

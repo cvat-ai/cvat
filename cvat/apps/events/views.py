@@ -1,20 +1,23 @@
-# Copyright (C) 2023 CVAT.ai Corporation
+# Copyright (C) 2023-2024 CVAT.ai Corporation
 #
 # SPDX-License-Identifier: MIT
 
 from django.conf import settings
-from rest_framework import status, viewsets
-from rest_framework.response import Response
-from drf_spectacular.utils import OpenApiResponse, OpenApiParameter, extend_schema
 from drf_spectacular.types import OpenApiTypes
+from drf_spectacular.utils import (OpenApiParameter, OpenApiResponse,
+                                   extend_schema)
+from rest_framework import status, viewsets
 from rest_framework.renderers import JSONRenderer
+from rest_framework.response import Response
 
-
-from cvat.apps.iam.filters import ORGANIZATION_OPEN_API_PARAMETERS
+from cvat.apps.engine.log import vlogger
 from cvat.apps.events.permissions import EventsPermission
 from cvat.apps.events.serializers import ClientEventsSerializer
-from cvat.apps.engine.log import vlogger
+from cvat.apps.iam.filters import ORGANIZATION_OPEN_API_PARAMETERS
+
 from .export import export
+from .handlers import handle_client_events_push
+
 
 class EventsViewSet(viewsets.ViewSet):
     serializer_class = None
@@ -31,11 +34,15 @@ class EventsViewSet(viewsets.ViewSet):
         serializer = ClientEventsSerializer(data=request.data, context={"request": request})
         serializer.is_valid(raise_exception=True)
 
-        for event in serializer.data["events"]:
-            message = JSONRenderer().render(event).decode('UTF-8')
+        handle_client_events_push(request, serializer.validated_data)
+        for event in serializer.validated_data["events"]:
+            message = JSONRenderer().render({
+                **event,
+                'timestamp': str(event["timestamp"].timestamp())
+            }).decode('UTF-8')
             vlogger.info(message)
 
-        return Response(serializer.data, status=status.HTTP_201_CREATED)
+        return Response(serializer.validated_data, status=status.HTTP_201_CREATED)
 
     @extend_schema(summary='Get an event log',
         methods=['GET'],

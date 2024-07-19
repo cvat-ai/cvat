@@ -10,7 +10,7 @@ import Modal from 'antd/lib/modal';
 import Button from 'antd/lib/button';
 import Text from 'antd/lib/typography/Text';
 
-import AnnotationMenuContainer from 'containers/annotation-page/top-bar/annotation-menu';
+import AnnotationMenuComponent from 'components/annotation-page/top-bar/annotation-menu';
 import { UndoIcon, RedoIcon } from 'icons';
 import { ActiveControl, ToolsBlockerState } from 'reducers';
 import CVATTooltip from 'components/common/cvat-tooltip';
@@ -104,7 +104,7 @@ function LeftGroup(props: Props): JSX.Element {
                 </Modal>
             )}
             <Col className='cvat-annotation-header-left-group'>
-                <AnnotationMenuContainer />
+                <AnnotationMenuComponent />
                 <SaveButtonComponent
                     isSaving={saving}
                     onClick={saving ? undefined : onSaveAnnotation}

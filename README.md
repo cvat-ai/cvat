@@ -108,7 +108,7 @@ presentations and covers the following topics:
 - **Speeding up your data annotation process: introduction to CVAT and Datumaro**.
   What problems do CVAT and Datumaro solve, and how they can speed up your model
   training process. Some resources you can use to learn more about how to use them.
-- **Deployment and use CVAT**. Use the app online at [app.cvat.ai](app.cvat.ai).
+- **Deployment and use CVAT**. Use the app online at [app.cvat.ai](https://app.cvat.ai).
   A local deployment. A containerized local deployment with Docker Compose (for regular use),
   and a local cluster deployment with Kubernetes (for enterprise users). A 2-minute
   tour of the interface, a breakdown of CVAT’s internals, and a demonstration of how
@@ -116,7 +116,7 @@ presentations and covers the following topics:
 
 [Product tour](https://www.youtube.com/playlist?list=PL0to7Ng4Puua37NJVMIShl_pzqJTigFzg): in this course, we show how to use CVAT, and help to get familiar with CVAT functionality and interfaces. This course does not cover integrations and is dedicated solely to CVAT. It covers the following topics:
 
-- **Pipeline**. In this video, we show how to use [app.cvat.ai](app.cvat.ai): how to sign up, upload your data, annotate it, and download it.
+- **Pipeline**. In this video, we show how to use [app.cvat.ai](https://app.cvat.ai): how to sign up, upload your data, annotate it, and download it.
 
 <!--lint enable maximum-line-length-->
 
@@ -264,8 +264,8 @@ questions and get our support.
 [ci-url]: https://github.com/cvat-ai/cvat/actions
 [gitter-img]: https://img.shields.io/gitter/room/opencv-cvat/public?style=flat
 [gitter-url]: https://gitter.im/opencv-cvat/public
-[coverage-img]: https://codecov.io/github/opencv/cvat/branch/develop/graph/badge.svg
-[coverage-url]: https://codecov.io/github/opencv/cvat
+[coverage-img]: https://codecov.io/github/cvat-ai/cvat/branch/develop/graph/badge.svg
+[coverage-url]: https://codecov.io/github/cvat-ai/cvat
 [doi-img]: https://zenodo.org/badge/139156354.svg
 [doi-url]: https://zenodo.org/badge/latestdoi/139156354
 [discord-img]: https://img.shields.io/discord/1000789942802337834?label=discord

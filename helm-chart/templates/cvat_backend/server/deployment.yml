@@ -59,6 +59,7 @@ spec:
           - name: ALLOWED_HOSTS
             value: {{ $localValues.envs.ALLOWED_HOSTS | squote}}
           {{ include "cvat.sharedBackendEnv" . | indent 10 }}
+          {{ include "cvat.sharedClickhouseEnv" . | indent 10 }}
           {{- with concat .Values.cvat.backend.additionalEnv $localValues.additionalEnv }}
           {{- toYaml . | nindent 10 }}
           {{- end }}

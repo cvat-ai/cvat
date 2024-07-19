@@ -25,13 +25,11 @@ context('Tests source & target storage for backups.', () => {
     const imagesFolder = `cypress/fixtures/${imageFileName}`;
     const directoryToArchive = imagesFolder;
 
-    const serverHost = Cypress.config('baseUrl').includes('3000') ? 'localhost' : 'minio';
-
     const cloudStorageData = {
         displayName: 'Demo bucket',
         resource: 'public',
         manifest: 'manifest.jsonl',
-        endpointUrl: `http://${serverHost}:9000`,
+        endpointUrl: Cypress.config('minioUrl'),
     };
 
     const storageConnectedToCloud = {
@@ -141,7 +139,10 @@ context('Tests source & target storage for backups.', () => {
                 { location: 'Local' },
                 false,
             );
-            cy.waitForDownload();
+            cy.downloadExport().then((file) => {
+                cy.verifyDownload(file);
+            });
+            cy.goBack();
         });
 
         it('Export project to default minio bucket', () => {
