@@ -40,7 +40,7 @@ function RequestsList(props: Props): JSX.Element {
             <RequestCard
                 request={request}
                 key={request.id}
-                disabled={disabled.includes(request.id)}
+                disabled={request.id in disabled}
             />
         ),
         );
