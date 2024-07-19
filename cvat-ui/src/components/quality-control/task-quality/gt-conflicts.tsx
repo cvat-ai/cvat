@@ -103,7 +103,7 @@ function GTConflicts(props: Props): JSX.Element {
             className='cvat-task-gt-conflicts'
             value={conflictsRepresentation}
             tooltip={<ConflictsTooltip reportSummary={reportSummary} />}
-            size={12}
+            size={{ cardSize: 12 }}
             bottomElement={bottomElement}
         />
     );

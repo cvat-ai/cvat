@@ -57,7 +57,7 @@ function Issues(props: Props): JSX.Element {
             title='Issues'
             className='cvat-task-issues'
             value={issuesCount}
-            size={12}
+            size={{ cardSize: 12 }}
             bottomElement={bottomElement}
         />
     );
