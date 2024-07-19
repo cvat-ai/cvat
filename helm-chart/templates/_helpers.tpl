@@ -165,22 +165,24 @@ The name of the service account to use for backend pods
   {{- if not .Values.cvat.backend.disableDistinctCachePerService }}
   - mountPath: /home/django/data/cache
     name: cvat-backend-per-service-cache
+    - mountPath: /home/django/data/cache
+      name: cvat-backend-per-service-cache
   {{- end }}
-  - mountPath: /home/django/data
-    name: cvat-backend-data
-    subPath: data
-  - mountPath: /home/django/keys
-    name: cvat-backend-data
-    subPath: keys
-  - mountPath: /home/django/logs
-    name: cvat-backend-data
-    subPath: logs
-  - mountPath: /home/django/models
-    name: cvat-backend-data
-    subPath: models
+    - mountPath: /home/django/data
+      name: cvat-backend-data
+      subPath: data
+    - mountPath: /home/django/keys
+      name: cvat-backend-data
+      subPath: keys
+    - mountPath: /home/django/logs
+      name: cvat-backend-data
+      subPath: logs
+    - mountPath: /home/django/models
+      name: cvat-backend-data
+      subPath: models
   {{- end }}
   {{- with concat .Values.cvat.backend.additionalVolumeMounts $localValues.additionalVolumeMounts }}
-  {{- toYaml . | nindent 0 }}
+  {{- toYaml . | nindent 4 }}
   {{- end }}
 {{- end }}
 {{- end }}
