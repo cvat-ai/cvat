@@ -144,15 +144,15 @@ The name of the service account to use for backend pods
 
 {{- define "cvat.backend.initContainers" -}}
 {{- $localValues := .Values.cvat.backend.server }}
-{{- if .Values.cvat.backend.permissionFix.enabled }}
+{{- if .Values.cvat.backend.permissionFix.enabled -}}
 - name: user-data-permission-fix
   image: busybox
   command: ["/bin/sh", "-c"]
   args:
-  {{- if not .Values.cvat.backend.permissionFix.commandOverride }}
+  {{- if not .Values.cvat.backend.permissionFix.commandOverride -}}
   {{- with join " " .Values.cvat.backend.permissionFix.paths }}
     - "chmod -R 777 {{ . }}"
-  {{- end }}
+  {{- end -}}
   {{ else }}
   {{- toYaml .Values.cvat.backend.permissionFix.commandOverride | nindent 3 }}
   {{- end }}
@@ -161,10 +161,8 @@ The name of the service account to use for backend pods
   {{- toYaml . | nindent 3 }}
   {{- end }}
   volumeMounts:
-  {{- if .Values.cvat.backend.defaultStorage.enabled }}
-  {{- if not .Values.cvat.backend.disableDistinctCachePerService }}
-  - mountPath: /home/django/data/cache
-    name: cvat-backend-per-service-cache
+  {{- if .Values.cvat.backend.defaultStorage.enabled -}}
+  {{- if not .Values.cvat.backend.disableDistinctCachePerService -}}
     - mountPath: /home/django/data/cache
       name: cvat-backend-per-service-cache
   {{- end }}
