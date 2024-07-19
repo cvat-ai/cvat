@@ -102,7 +102,7 @@ function ExportBackupModal(): JSX.Element {
             );
             closeModal();
 
-            const description = 'Backup export was started. You can check progress [here](/requests)';
+            const description = 'Backup export was started. You can check progress [here](/requests).';
             Notification.info({
                 message: 'Backup export started',
                 description: (
