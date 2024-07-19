@@ -193,6 +193,8 @@ function filterPythonTraceback(data: string): string {
 }
 
 function generateError(errorData: AxiosError): ServerError {
+    const DEFAULT_MESSAGE = 'An error occurred. Please try again later.';
+
     if (errorData.response) {
         if (errorData.response.status >= 500 && typeof errorData.response.data === 'string') {
             return new ServerError(
@@ -236,7 +238,11 @@ function generateError(errorData: AxiosError): ServerError {
 
             // errors with string data
             if (typeof errorData.response.data === 'string') {
-                return new ServerError(errorData.response.data, errorData.response.status);
+                let message = errorData.response.data;
+                if (message.toLowerCase().includes('<!doctype html>')) {
+                    message = DEFAULT_MESSAGE;
+                }
+                return new ServerError(message, errorData.response.status);
             }
         }
 
@@ -247,8 +253,8 @@ function generateError(errorData: AxiosError): ServerError {
         );
     }
 
-    // Server is unavailable (no any response)
-    const message = `${errorData.message}.`; // usually is "Error Network"
+    // Server is unavailable (no any response), it's usually "Error Network"
+    const message = errorData.message ? `${errorData.message}.` : DEFAULT_MESSAGE;
     return new ServerError(message, 0);
 }
 
