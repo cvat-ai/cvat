@@ -234,8 +234,10 @@ IAM_DEFAULT_ROLE = 'user'
 IAM_ADMIN_ROLE = 'admin'
 # Index in the list below corresponds to the priority (0 has highest priority)
 IAM_ROLES = [IAM_ADMIN_ROLE, 'business', 'user', 'worker']
-IAM_OPA_HOST = os.getenv('IAM_OPA_HOST', 'http://opa:8181')
-IAM_OPA_DATA_URL = f'{IAM_OPA_HOST}/v1/data'
+CVAT_IAM_OPA_SCHEME = os.getenv('CVAT_IAM_OPA_SCHEME', 'http'),
+CVAT_IAM_OPA_HOST = os.getenv('CVAT_IAM_OPA_HOST', 'opa')
+CVAT_IAM_OPA_PORT = os.getenv('CVAT_IAM_OPA_HOST', '8181')
+IAM_OPA_DATA_URL = f'{CVAT_IAM_OPA_SCHEME}://{CVAT_IAM_OPA_HOST}:{CVAT_IAM_OPA_PORT}/v1/data'
 LOGIN_URL = 'rest_login'
 LOGIN_REDIRECT_URL = '/'
 
