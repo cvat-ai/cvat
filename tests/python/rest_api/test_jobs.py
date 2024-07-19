@@ -1,5 +1,5 @@
 # Copyright (C) 2021-2022 Intel Corporation
-# Copyright (C) 2022-2023 CVAT.ai Corporation
+# Copyright (C) 2022-2024 CVAT.ai Corporation
 #
 # SPDX-License-Identifier: MIT
 
@@ -310,6 +310,33 @@ class TestPostJobs:
         with make_api_client(user) as api_client:
             (_, response) = api_client.jobs_api.retrieve(job["id"])
             assert DeepDiff(job, json.loads(response.data), ignore_order=True) == {}
+
+    @pytest.mark.parametrize("assignee", [None, "admin1"])
+    def test_can_create_with_assignee(self, admin_user, tasks, jobs, users_by_name, assignee):
+        task = next(
+            t
+            for t in tasks
+            if t["size"] > 0
+            if all(j["type"] != "ground_truth" for j in jobs if j["task_id"] == t["id"])
+        )
+
+        spec = {
+            "task_id": task["id"],
+            "type": "ground_truth",
+            "frame_selection_method": "random_uniform",
+            "frame_count": 1,
+            "assignee": users_by_name[assignee]["id"] if assignee else None,
+        }
+
+        with make_api_client(admin_user) as api_client:
+            (job, _) = api_client.jobs_api.create(job_write_request=spec)
+
+            if assignee:
+                assert job.assignee.username == assignee
+                assert job.assignee_updated_date
+            else:
+                assert job.assignee is None
+                assert job.assignee_updated_date is None
 
 
 @pytest.mark.usefixtures("restore_db_per_function")
@@ -1120,8 +1147,8 @@ class TestPatchJobAnnotations:
         self._check_response(username, jid, expect_success, data)
 
     @pytest.mark.parametrize("job_type", ("ground_truth", "annotation"))
-    def test_can_update_annotations(self, admin_user, jobs, request_data, job_type):
-        job = next(j for j in jobs if j["type"] == job_type)
+    def test_can_update_annotations(self, admin_user, jobs_with_shapes, request_data, job_type):
+        job = next(j for j in jobs_with_shapes if j["type"] == job_type)
         data = request_data(job["id"])
         self._check_response(admin_user, job["id"], True, data)
 
@@ -1203,13 +1230,43 @@ class TestPatchJob:
                     DeepDiff(
                         expected_data(jid, assignee),
                         json.loads(response.data),
-                        exclude_paths="root['updated_date']",
+                        exclude_paths=["root['updated_date']", "root['assignee_updated_date']"],
                         ignore_order=True,
                     )
                     == {}
                 )
             else:
                 assert response.status == HTTPStatus.FORBIDDEN
+
+    @pytest.mark.parametrize("has_old_assignee", [False, True])
+    @pytest.mark.parametrize("new_assignee", [None, "same", "different"])
+    def test_can_update_assignee_updated_date_on_assignee_updates(
+        self, admin_user, jobs, users, has_old_assignee, new_assignee
+    ):
+        job = next(j for j in jobs if bool(j.get("assignee")) == has_old_assignee)
+
+        old_assignee_id = (job.get("assignee") or {}).get("id")
+
+        new_assignee_id = None
+        if new_assignee == "same":
+            new_assignee_id = old_assignee_id
+        elif new_assignee == "different":
+            new_assignee_id = next(u for u in users if u["id"] != old_assignee_id)["id"]
+
+        with make_api_client(admin_user) as api_client:
+            (updated_job, _) = api_client.jobs_api.partial_update(
+                job["id"], patched_job_write_request={"assignee": new_assignee_id}
+            )
+
+            if new_assignee_id == old_assignee_id:
+                assert updated_job.assignee_updated_date == job["assignee_updated_date"]
+            else:
+                assert updated_job.assignee_updated_date != job["assignee_updated_date"]
+
+            if new_assignee_id:
+                assert updated_job.assignee.id == new_assignee_id
+            else:
+                assert updated_job.assignee is None
 
 
 def _check_coco_job_annotations(content, values_to_be_checked):

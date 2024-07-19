@@ -1,5 +1,5 @@
 # Copyright (C) 2018-2022 Intel Corporation
-# Copyright (C) 2022-2023 CVAT.ai Corporation
+# Copyright (C) 2022-2024 CVAT.ai Corporation
 #
 # SPDX-License-Identifier: MIT
 
@@ -331,6 +331,8 @@ class Project(TimestampedModel):
                               on_delete=models.SET_NULL, related_name="+")
     assignee = models.ForeignKey(User, null=True, blank=True,
                                  on_delete=models.SET_NULL, related_name="+")
+    assignee_updated_date = models.DateTimeField(null=True, blank=True, default=None)
+
     bug_tracker = models.CharField(max_length=2000, blank=True, default="")
     status = models.CharField(max_length=32, choices=StatusChoice.choices(),
                               default=StatusChoice.ANNOTATION)
@@ -402,6 +404,7 @@ class Task(TimestampedModel):
         on_delete=models.SET_NULL, related_name="owners")
     assignee = models.ForeignKey(User, null=True,  blank=True,
         on_delete=models.SET_NULL, related_name="assignees")
+    assignee_updated_date = models.DateTimeField(null=True, blank=True, default=None)
     bug_tracker = models.CharField(max_length=2000, blank=True, default="")
     overlap = models.PositiveIntegerField(null=True)
     # Zero means that there are no limits (default)
@@ -662,7 +665,9 @@ class Job(TimestampedModel):
     objects = JobQuerySet.as_manager()
 
     segment = models.ForeignKey(Segment, on_delete=models.CASCADE)
+
     assignee = models.ForeignKey(User, null=True, blank=True, on_delete=models.SET_NULL)
+    assignee_updated_date = models.DateTimeField(null=True, blank=True, default=None)
 
     # TODO: it has to be deleted in Job, Task, Project and replaced by (stage, state)
     # The stage field cannot be changed by an assignee, but state field can be. For
@@ -706,8 +711,7 @@ class Job(TimestampedModel):
 
     @extend_schema_field(OpenApiTypes.INT)
     def get_task_id(self):
-        task = self.segment.task
-        return task.id if task else None
+        return self.segment.task_id
 
     @property
     def organization_id(self):
@@ -935,27 +939,32 @@ class LabeledImage(Annotation):
     pass
 
 class LabeledImageAttributeVal(AttributeVal):
-    image = models.ForeignKey(LabeledImage, on_delete=models.CASCADE)
+    image = models.ForeignKey(LabeledImage, on_delete=models.CASCADE,
+        related_name='attributes', related_query_name='attribute')
 
 class LabeledShape(Annotation, Shape):
     parent = models.ForeignKey('self', on_delete=models.CASCADE, null=True, related_name='elements')
 
 class LabeledShapeAttributeVal(AttributeVal):
-    shape = models.ForeignKey(LabeledShape, on_delete=models.CASCADE)
+    shape = models.ForeignKey(LabeledShape, on_delete=models.CASCADE,
+        related_name='attributes', related_query_name='attribute')
 
 class LabeledTrack(Annotation):
     parent = models.ForeignKey('self', on_delete=models.CASCADE, null=True, related_name='elements')
 
 class LabeledTrackAttributeVal(AttributeVal):
-    track = models.ForeignKey(LabeledTrack, on_delete=models.CASCADE)
+    track = models.ForeignKey(LabeledTrack, on_delete=models.CASCADE,
+        related_name='attributes', related_query_name='attribute')
 
 class TrackedShape(Shape):
     id = models.BigAutoField(primary_key=True)
-    track = models.ForeignKey(LabeledTrack, on_delete=models.CASCADE)
+    track = models.ForeignKey(LabeledTrack, on_delete=models.CASCADE,
+        related_name='shapes', related_query_name='shape')
     frame = models.PositiveIntegerField()
 
 class TrackedShapeAttributeVal(AttributeVal):
-    shape = models.ForeignKey(TrackedShape, on_delete=models.CASCADE)
+    shape = models.ForeignKey(TrackedShape, on_delete=models.CASCADE,
+        related_name='attributes', related_query_name='attribute')
 
 class Profile(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE)

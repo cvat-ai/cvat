@@ -19,14 +19,13 @@ import Icon from '@ant-design/icons';
 import { MenuProps } from 'antd/lib/menu';
 
 import { MainMenuIcon } from 'icons';
-import { Job, JobStage, JobState } from 'cvat-core-wrapper';
+import { Job, JobState } from 'cvat-core-wrapper';
 
 import CVATTooltip from 'components/common/cvat-tooltip';
 import AnnotationsActionsModalContent from 'components/annotation-page/annotations-actions/annotations-actions-modal';
 import { CombinedState } from 'reducers';
 import {
-    saveAnnotationsAsync, updateCurrentJobAsync,
-    setForceExitAnnotationFlag as setForceExitAnnotationFlagAction,
+    updateCurrentJobAsync, finishCurrentJobAsync,
     removeAnnotationsAsync as removeAnnotationsAsyncAction,
 } from 'actions/annotation-actions';
 import { exportActions } from 'actions/export-actions';
@@ -39,7 +38,6 @@ export enum Actions {
     RUN_ACTIONS = 'run_actions',
     OPEN_TASK = 'open_task',
     FINISH_JOB = 'finish_job',
-    RENEW_JOB = 'renew_job',
 }
 
 function AnnotationMenuComponent(): JSX.Element {
@@ -47,58 +45,22 @@ function AnnotationMenuComponent(): JSX.Element {
     const history = useHistory();
     const jobInstance = useSelector((state: CombinedState) => state.annotation.job.instance as Job);
     const [jobState, setJobState] = useState(jobInstance.state);
-    const { stage: jobStage, stopFrame } = jobInstance;
-
-    const checkUnsavedChanges = useCallback((callback: () => void) => {
-        if (jobInstance.annotations.hasUnsavedChanges()) {
-            Modal.confirm({
-                title: 'The job has unsaved annotations',
-                content: 'Would you like to save changes before continue?',
-                className: 'cvat-modal-content-save-job',
-                okButtonProps: {
-                    children: 'Save',
-                },
-                cancelButtonProps: {
-                    children: 'No',
-                },
-                onOk: () => {
-                    dispatch(saveAnnotationsAsync(callback));
-                },
-                onCancel: () => {
-                    // do not ask leave confirmation
-                    dispatch(setForceExitAnnotationFlagAction(true));
-                    setTimeout(() => {
-                        callback();
-                    });
-                },
-            });
-        } else {
-            callback();
-        }
-    }, [jobInstance]);
+    const { stopFrame } = jobInstance;
 
     const exportDataset = useCallback(() => {
         dispatch(exportActions.openExportDatasetModal(jobInstance));
     }, [jobInstance]);
 
-    const renewJob = useCallback(() => {
-        dispatch(updateCurrentJobAsync({
-            state: JobState.NEW,
-            stage: JobStage.ANNOTATION,
-        })).then(() => {
-            message.info('Job renewed', 2);
-            setJobState(jobInstance.state);
-        });
-    }, [jobInstance]);
-
     const finishJob = useCallback(() => {
-        dispatch(updateCurrentJobAsync({
-            state: JobState.COMPLETED,
-            stage: JobStage.ACCEPTANCE,
-        })).then(() => {
-            history.push(`/tasks/${jobInstance.taskId}`);
+        dispatch(finishCurrentJobAsync()).then(() => {
+            message.open({
+                duration: 1,
+                type: 'success',
+                content: 'You tagged the job as completed',
+                className: 'cvat-annotation-job-finished-success',
+            });
         });
-    }, [jobInstance]);
+    }, []);
 
     const openTask = useCallback(() => {
         history.push(`/tasks/${jobInstance.taskId}`);
@@ -117,14 +79,12 @@ function AnnotationMenuComponent(): JSX.Element {
 
     const changeJobState = useCallback((state: JobState) => () => {
         Modal.confirm({
-            title: 'Do you want to change current job state?',
-            content: `Job state will be switched to "${state}". Continue?`,
+            title: 'Would you like to update current job state?',
+            content: `Job state will be switched to "${state}"`,
             okText: 'Continue',
             cancelText: 'Cancel',
             className: 'cvat-modal-content-change-job-state',
-            onOk: () => {
-                checkUnsavedChanges(() => changeState(state));
-            },
+            onOk: () => changeState(state),
         });
     }, [changeState]);
 
@@ -266,39 +226,20 @@ function AnnotationMenuComponent(): JSX.Element {
         }],
     });
 
-    if ([JobStage.ANNOTATION, JobStage.VALIDATION].includes(jobStage)) {
-        menuItems.push({
-            key: Actions.FINISH_JOB,
-            label: 'Finish the job',
-            onClick: () => {
-                Modal.confirm({
-                    title: 'The job stage is going to be switched',
-                    content: 'Stage will be changed to "acceptance". Would you like to continue?',
-                    okText: 'Continue',
-                    cancelText: 'Cancel',
-                    className: 'cvat-modal-content-finish-job',
-                    onOk: () => {
-                        checkUnsavedChanges(finishJob);
-                    },
-                });
-            },
-        });
-    } else {
-        menuItems.push({
-            key: Actions.RENEW_JOB,
-            label: 'Renew the job',
-            onClick: () => {
-                Modal.confirm({
-                    title: 'Do you want to renew the job?',
-                    content: 'Stage will be set to "in progress", state will be set to "annotation". Would you like to continue?',
-                    okText: 'Continue',
-                    cancelText: 'Cancel',
-                    className: 'cvat-modal-content-renew-job',
-                    onOk: renewJob,
-                });
-            },
-        });
-    }
+    menuItems.push({
+        key: Actions.FINISH_JOB,
+        label: 'Finish the job',
+        onClick: () => {
+            Modal.confirm({
+                title: 'Would you like to finish the job?',
+                content: 'It will save annotations and set the job state to "completed"',
+                okText: 'Continue',
+                cancelText: 'Cancel',
+                className: 'cvat-modal-content-finish-job',
+                onOk: finishJob,
+            });
+        },
+    });
 
     return (
         <Dropdown

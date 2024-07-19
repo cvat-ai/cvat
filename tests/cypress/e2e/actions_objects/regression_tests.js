@@ -44,7 +44,7 @@ context('Regression tests', () => {
             taskID = response.taskID;
             [jobID] = response.jobIDs;
 
-            cy.headlessCreateObject([rectanglePayload], jobID);
+            cy.headlessCreateObjects([rectanglePayload], jobID);
             cy.visit(`/tasks/${taskID}/jobs/${jobID}`);
         });
     });
