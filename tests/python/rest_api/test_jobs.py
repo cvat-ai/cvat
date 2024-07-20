@@ -5,6 +5,7 @@
 
 import json
 import os
+import io
 import xml.etree.ElementTree as ET
 import zipfile
 from copy import deepcopy
@@ -23,7 +24,12 @@ from PIL import Image
 from shared.utils.config import make_api_client
 from shared.utils.helpers import generate_image_files
 
-from .utils import CollectionSimpleFilterTestBase, compare_annotations, create_task, export_dataset
+from .utils import (
+    CollectionSimpleFilterTestBase,
+    compare_annotations,
+    create_task,
+    export_job_dataset,
+)
 
 
 def get_job_staff(job, tasks, projects):
@@ -1321,47 +1327,79 @@ def _check_cvat_for_video_job_annotations(content, values_to_be_checked):
 
 @pytest.mark.usefixtures("restore_db_per_class")
 class TestJobDataset:
-    def _export_dataset(self, username, jid, **kwargs):
-        with make_api_client(username) as api_client:
-            return export_dataset(api_client.jobs_api.retrieve_dataset_endpoint, id=jid, **kwargs)
 
-    def _export_annotations(self, username, jid, **kwargs):
-        with make_api_client(username) as api_client:
-            return export_dataset(
-                api_client.jobs_api.retrieve_annotations_endpoint, id=jid, **kwargs
-            )
+    @pytest.fixture(autouse=True)
+    def setup(self, tasks):
+        self.tasks = tasks
 
-    def test_can_export_dataset(self, admin_user: str, jobs_with_shapes: List):
+    def is_local_download(self, job: Dict):
+        # FUTURE-TODO: support jobs retrieved via API
+        task = next(t for t in self.tasks if t["id"] == job["task_id"])
+        return not (task["target_storage"] or {}).get("cloud_storage_id")
+
+    @staticmethod
+    def _test_export_dataset(
+        username: str, jid: int, api_version: int, local_download: bool, **kwargs
+    ) -> Optional[bytes]:
+        dataset = export_job_dataset(username, api_version, save_images=True, id=jid, **kwargs)
+        if local_download:
+            assert zipfile.is_zipfile(io.BytesIO(dataset))
+        else:
+            assert dataset is None
+
+        return dataset
+
+    @staticmethod
+    def _test_export_annotations(
+        username: str, jid: int, api_version: int, local_download: bool, **kwargs
+    ) -> Optional[bytes]:
+        dataset = export_job_dataset(username, api_version, save_images=False, id=jid, **kwargs)
+        if local_download:
+            assert zipfile.is_zipfile(io.BytesIO(dataset))
+        else:
+            assert dataset is None
+
+        return dataset
+
+    @pytest.mark.parametrize("api_version", (1, 2))
+    def test_can_export_dataset(self, admin_user: str, jobs_with_shapes: List, api_version: int):
         job = jobs_with_shapes[0]
-        response = self._export_dataset(admin_user, job["id"])
-        assert response.data
+        self._test_export_dataset(
+            admin_user, job["id"], api_version, local_download=self.is_local_download(job)
+        )
 
-    def test_non_admin_can_export_dataset(self, users, tasks, jobs_with_shapes):
-        job_id, username = next(
+    @pytest.mark.parametrize("api_version", (1, 2))
+    def test_non_admin_can_export_dataset(self, users, jobs_with_shapes, api_version: int):
+        job, username = next(
             (
-                (job["id"], tasks[job["task_id"]]["owner"]["username"])
+                (job, self.tasks[job["task_id"]]["owner"]["username"])
                 for job in jobs_with_shapes
-                if "admin" not in users[tasks[job["task_id"]]["owner"]["id"]]["groups"]
-                and tasks[job["task_id"]]["target_storage"] is None
-                and tasks[job["task_id"]]["organization"] is None
+                if "admin" not in users[self.tasks[job["task_id"]]["owner"]["id"]]["groups"]
+                and self.tasks[job["task_id"]]["target_storage"] is None
+                and self.tasks[job["task_id"]]["organization"] is None
             )
         )
-        response = self._export_dataset(username, job_id)
-        assert response.data
+        self._test_export_dataset(
+            username, job["id"], api_version, local_download=self.is_local_download(job)
+        )
 
-    def test_non_admin_can_export_annotations(self, users, tasks, jobs_with_shapes):
-        job_id, username = next(
+    @pytest.mark.parametrize("api_version", (1, 2))
+    def test_non_admin_can_export_annotations(self, users, jobs_with_shapes, api_version: int):
+        job, username = next(
             (
-                (job["id"], tasks[job["task_id"]]["owner"]["username"])
+                (job, self.tasks[job["task_id"]]["owner"]["username"])
                 for job in jobs_with_shapes
-                if "admin" not in users[tasks[job["task_id"]]["owner"]["id"]]["groups"]
-                and tasks[job["task_id"]]["target_storage"] is None
-                and tasks[job["task_id"]]["organization"] is None
+                if "admin" not in users[self.tasks[job["task_id"]]["owner"]["id"]]["groups"]
+                and self.tasks[job["task_id"]]["target_storage"] is None
+                and self.tasks[job["task_id"]]["organization"] is None
             )
         )
-        response = self._export_annotations(username, job_id)
-        assert response.data
 
+        self._test_export_annotations(
+            username, job["id"], api_version, local_download=self.is_local_download(job)
+        )
+
+    @pytest.mark.parametrize("api_version", (1, 2))
     @pytest.mark.parametrize("username, jid", [("admin1", 14)])
     @pytest.mark.parametrize(
         "anno_format, anno_file_name, check_func",
@@ -1377,15 +1415,15 @@ class TestJobDataset:
         anno_format,
         anno_file_name,
         check_func,
-        tasks,
         jobs,
         annotations,
+        api_version: int,
     ):
         job_data = jobs[jid]
         annotations_before = annotations["job"][str(jid)]
 
         values_to_be_checked = {
-            "task_size": tasks[job_data["task_id"]]["size"],
+            "task_size": self.tasks[job_data["task_id"]]["size"],
             # NOTE: data step is not stored in assets, default = 1
             "job_size": job_data["stop_frame"] - job_data["start_frame"] + 1,
             "start_frame": job_data["start_frame"],
@@ -1395,15 +1433,22 @@ class TestJobDataset:
             "mode": job_data["mode"],
         }
 
-        response = self._export_dataset(username, jid, format=anno_format)
-        assert response.data
-        with zipfile.ZipFile(BytesIO(response.data)) as zip_file:
+        dataset = self._test_export_dataset(
+            username,
+            jid,
+            api_version,
+            format=anno_format,
+            local_download=self.is_local_download(job_data),
+        )
+
+        with zipfile.ZipFile(BytesIO(dataset)) as zip_file:
             assert (
                 len(zip_file.namelist()) == values_to_be_checked["job_size"] + 1
             )  # images + annotation file
             content = zip_file.read(anno_file_name)
         check_func(content, values_to_be_checked)
 
+    @pytest.mark.parametrize("api_version", (1, 2))
     @pytest.mark.parametrize("username", ["admin1"])
     @pytest.mark.parametrize("jid", [25, 26])
     @pytest.mark.parametrize(
@@ -1419,13 +1464,21 @@ class TestJobDataset:
         ],
     )
     def test_export_job_among_several_jobs_in_task(
-        self, username, jid, anno_format, anno_file_name, check_func, tasks, jobs, annotations
+        self,
+        username,
+        jid,
+        anno_format,
+        anno_file_name,
+        check_func,
+        jobs,
+        annotations,
+        api_version: int,
     ):
         job_data = jobs[jid]
         annotations_before = annotations["job"][str(jid)]
 
         values_to_be_checked = {
-            "task_size": tasks[job_data["task_id"]]["size"],
+            "task_size": self.tasks[job_data["task_id"]]["size"],
             # NOTE: data step is not stored in assets, default = 1
             "job_size": job_data["stop_frame"] - job_data["start_frame"] + 1,
             "start_frame": job_data["start_frame"],
@@ -1435,9 +1488,15 @@ class TestJobDataset:
             "mode": job_data["mode"],
         }
 
-        response = self._export_dataset(username, jid, format=anno_format)
-        assert response.data
-        with zipfile.ZipFile(BytesIO(response.data)) as zip_file:
+        dataset = self._test_export_dataset(
+            username,
+            jid,
+            api_version,
+            format=anno_format,
+            local_download=self.is_local_download(job_data),
+        )
+
+        with zipfile.ZipFile(BytesIO(dataset)) as zip_file:
             assert (
                 len(zip_file.namelist()) == values_to_be_checked["job_size"] + 1
             )  # images + annotation file

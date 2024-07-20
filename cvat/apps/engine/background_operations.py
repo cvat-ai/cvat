@@ -15,6 +15,7 @@ import django_rq
 from attrs.converters import to_bool
 from django.conf import settings
 from django.http.request import HttpRequest
+from django.http.response import HttpResponseBadRequest
 from django.utils import timezone
 from django_rq.queues import DjangoRQ
 from rest_framework import serializers, status
@@ -208,7 +209,7 @@ class DatasetExportManager(_ResourceExportManager):
 
         request_time = rq_job.meta.get("request", {}).get("timestamp")
         instance_update_time = self.get_instance_update_time()
-        if request_time is None or request_time < instance_update_time:
+        if request_time is None or request_time < instance_update_time and action != "download":
             # The result is outdated, need to restart the export.
             # Cancel the current job.
             # The new attempt will be made after the last existing job.
@@ -352,6 +353,15 @@ class DatasetExportManager(_ResourceExportManager):
         )
 
         rq_job = queue.fetch_job(rq_id)
+
+        # TODO: handle scheduled jobs, add corresponding test
+
+        # workaround for case when rq job was deleted but there is a link to download data on UI
+        if not rq_job and self.request.query_params.get("action") == "download":
+            return HttpResponseBadRequest(
+                "Result file cannot be send since there is no such job. "
+                "Initialize background process first without sending action=download parameter."
+            )
 
         if rq_job:
             response = self.handle_rq_job(rq_job, queue)
@@ -588,6 +598,13 @@ class BackupExportManager(_ResourceExportManager):
             user_id=self.request.user.id,
         )
         rq_job = queue.fetch_job(rq_id)
+
+        # workaround for case when rq job was deleted but there is a link to download data on UI
+        if not rq_job and self.request.query_params.get("action") == "download":
+            return HttpResponseBadRequest(
+                "Result file cannot be send since there is no such job. "
+                "Initialize background process first without sending action=download parameter."
+            )
 
         if rq_job:
             response = self.handle_rq_job(rq_job, queue)

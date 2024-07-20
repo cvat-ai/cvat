@@ -2,6 +2,8 @@
 #
 # SPDX-License-Identifier: MIT
 
+import json
+
 from abc import ABCMeta, abstractmethod
 from copy import deepcopy
 from http import HTTPStatus
@@ -9,28 +11,43 @@ from time import sleep
 from typing import Any, Dict, Iterator, List, Optional, Sequence, Tuple, Union
 
 from cvat_sdk.api_client import apis, models
+from cvat_sdk.api_client.exceptions import ForbiddenException
 from cvat_sdk.api_client.api_client import ApiClient, Endpoint
 from cvat_sdk.core.helpers import get_paginated_collection
 from deepdiff import DeepDiff
 from urllib3 import HTTPResponse
 
-from shared.utils.config import make_api_client
+from shared.utils.config import make_api_client, USER_PASS, get_method, post_method
+import requests
+
+from cvat_sdk.api_client.api.tasks_api import TasksApi
+from cvat_sdk.api_client.api.jobs_api import JobsApi
+from cvat_sdk.api_client.api.projects_api import ProjectsApi
 
 
-def export_dataset(
+def export_v1(
     endpoint: Endpoint,
     *,
-    max_retries: int = 20,
+    max_retries: int = 30,
     interval: float = 0.1,
-    format: str = "CVAT for images 1.1",  # pylint: disable=redefined-builtin
+    forbidden: bool = False,
     **kwargs,
-) -> HTTPResponse:
+) -> Optional[bytes]:
+
+    # initialize background process and ensure that the first request returns 403 code if request should be forbidden
+    (_, response) = endpoint.call_with_http_info(
+        **kwargs, _parse_response=False, _check_status=False
+    )
+    if forbidden:
+        assert response.status == HTTPStatus.FORBIDDEN, "Request should be forbidden"
+        raise ForbiddenException()
+
     for _ in range(max_retries):
-        (_, response) = endpoint.call_with_http_info(**kwargs, format=format, _parse_response=False)
         if response.status in (HTTPStatus.CREATED, HTTPStatus.OK):
             break
         assert response.status == HTTPStatus.ACCEPTED
         sleep(interval)
+        (_, response) = endpoint.call_with_http_info(**kwargs, _parse_response=False)
     else:
         assert (
             False
@@ -38,11 +55,137 @@ def export_dataset(
 
     if response.status == HTTPStatus.CREATED:
         (_, response) = endpoint.call_with_http_info(
-            **kwargs, format=format, action="download", _parse_response=False
+            **kwargs, action="download", _parse_response=False
         )
         assert response.status == HTTPStatus.OK
 
-    return response
+    return response.data or None  # return None when export was on cloud storage
+
+
+def export_v2(
+    endpoint: Endpoint,
+    *,
+    max_retries: int = 30,
+    interval: float = 0.1,
+    forbidden: bool = False,
+    **kwargs,
+) -> Optional[bytes]:
+    # initialize background process and ensure that the first request returns 403 code if request should be forbidden
+    (_, response) = endpoint.call_with_http_info(
+        **kwargs, _parse_response=False, _check_status=False
+    )
+    if forbidden:
+        assert response.status == HTTPStatus.FORBIDDEN, "Request should be forbidden"
+        raise ForbiddenException()
+
+    assert response.status != HTTPStatus.CREATED  # TODO: check case when export was prepared
+
+    # define background request ID returned in the server response
+    rq_id = json.loads(response.data).get("rq_id")
+    assert rq_id, "The rq_id parameter was not found in the server response"
+
+    # check status of background process
+    for _ in range(max_retries):
+        (background_request, response) = endpoint.api_client.requests_api.retrieve(rq_id)
+        assert response.status == HTTPStatus.OK
+        if (
+            background_request.status.value
+            == models.RequestStatus.allowed_values[("value",)]["FINISHED"]
+        ):
+            break
+        sleep(interval)
+    else:
+        assert False, (
+            f"Export process was not finished within allowed time ({interval * max_retries}, sec). "
+            + f"Last status was: {background_request.status.value}"
+        )
+
+    # return downloaded file in case of local downloading or None otherwise
+    if background_request.result_url:
+        response = requests.get(
+            background_request.result_url,
+            auth=(endpoint.api_client.configuration.username, USER_PASS),
+        )
+        assert response.status_code == HTTPStatus.OK
+
+        return response.content
+
+    return None
+
+
+def export_dataset(
+    api: Union[ProjectsApi, TasksApi, JobsApi],
+    # todo" rename to endpoint_version
+    api_version: int,  # make this parameter required to be sure that all tests was updated and both API versions are used
+    *,
+    max_retries: int = 30,
+    interval: float = 0.1,
+    save_images: bool,
+    format: str = "CVAT for images 1.1",  # pylint: disable=redefined-builtin
+    **kwargs,
+) -> Optional[bytes]:
+    if api_version == 1:
+        endpoint = (
+            api.retrieve_dataset_endpoint if save_images else api.retrieve_annotations_endpoint
+        )
+        return export_v1(
+            endpoint, max_retries=max_retries, interval=interval, format=format, **kwargs
+        )
+    elif api_version == 2:
+        endpoint = api.create_dataset_export_endpoint
+        return export_v2(
+            endpoint,
+            max_retries=max_retries,
+            interval=interval,
+            format=format,
+            save_images=save_images,
+            **kwargs,
+        )
+
+    assert False, "Unsupported API version"
+
+
+def export_project_dataset(username: str, api_version: int, *args, **kwargs) -> Optional[bytes]:
+    with make_api_client(username) as api_client:
+        return export_dataset(api_client.projects_api, api_version, *args, **kwargs)
+
+
+def export_task_dataset(username: str, api_version: int, *args, **kwargs) -> Optional[bytes]:
+    with make_api_client(username) as api_client:
+        return export_dataset(api_client.tasks_api, api_version, *args, **kwargs)
+
+
+def export_job_dataset(username: str, api_version: int, *args, **kwargs) -> Optional[bytes]:
+    with make_api_client(username) as api_client:
+        return export_dataset(api_client.jobs_api, api_version, *args, **kwargs)
+
+
+def export_backup(
+    api: Union[ProjectsApi, TasksApi],
+    api_version: int,  # make this parameter required to be sure that all tests was updated and both API versions are used
+    *,
+    max_retries: int = 30,
+    interval: float = 0.1,
+    **kwargs,
+) -> Optional[bytes]:
+    if api_version == 1:
+        endpoint = api.retrieve_backup_endpoint
+        return export_v1(endpoint, max_retries=max_retries, interval=interval, **kwargs)
+    elif api_version == 2:
+        endpoint = api.create_backup_export_endpoint
+        return export_v2(endpoint, max_retries=max_retries, interval=interval, **kwargs)
+
+    assert False, "Unsupported API version"
+
+
+def export_project_backup(username: str, api_version: int, *args, **kwargs) -> Optional[bytes]:
+    with make_api_client(username) as api_client:
+        return export_backup(api_client.projects_api, api_version, *args, **kwargs)
+
+
+def export_task_backup(username: str, api_version: int, *args, **kwargs) -> Optional[bytes]:
+    with make_api_client(username) as api_client:
+        return export_backup(api_client.tasks_api, api_version, *args, **kwargs)
 
 
 FieldPath = Sequence[str]
