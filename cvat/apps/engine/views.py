@@ -262,7 +262,10 @@ class ProjectViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
 ):
     # NOTE: The search_fields attribute should be a list of names of text
     # type fields on the model,such as CharField or TextField
-    queryset = models.Project.objects
+    queryset = models.Project.objects.select_related(
+        'owner', 'assignee', 'organization',
+        'annotation_guide', 'source_storage', 'target_storage',
+    )
 
     search_fields = ('name', 'owner', 'assignee', 'status')
     filter_fields = list(search_fields) + ['id', 'updated_date']
@@ -282,18 +285,13 @@ class ProjectViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
             return ProjectWriteSerializer
 
     def get_queryset(self):
-        queryset = models.Project.objects.select_related('owner', 'assignee', 'organization')
+        queryset = super().get_queryset()
         if self.action in ('list', 'retrieve', 'partial_update', 'update') :
-            queryset = queryset.select_related(
-                'annotation_guide', 'source_storage', 'target_storage',
-            ).prefetch_related('tasks')
+            queryset = queryset.prefetch_related('tasks')
 
             if self.action == 'list':
                 perm = ProjectPermission.create_scope_list(self.request)
                 return perm.filter(queryset)
-
-        if 'pk' in self.kwargs:
-            queryset = queryset.filter(pk=self.kwargs['pk'])
 
         return queryset
 
@@ -871,7 +869,7 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
             perm = TaskPermission.create_scope_list(self.request)
             queryset = perm.filter(queryset)
         elif self.action == 'preview':
-            queryset = Task.objects.filter(**self.kwargs).select_related('data')
+            queryset = Task.objects.select_related('data')
 
         return queryset
 
@@ -2399,6 +2397,7 @@ class LabelViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
                 # In other cases permissions are checked already
                 queryset = super().get_queryset()
                 perm = LabelPermission.create_scope_list(self.request)
+                # Include only 1st level labels in list responses
                 queryset = perm.filter(queryset).filter(parent__isnull=True)
         else:
             queryset = super().get_queryset()
