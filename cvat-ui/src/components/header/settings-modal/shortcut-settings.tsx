@@ -29,6 +29,16 @@ function ShortcutsSettingsComponent(props: Props): JSX.Element {
         setSearchValue(event.target.value.toLowerCase());
     };
 
+    const onRestoreDefaults = (): void => {
+        const currentSettings = localStorage.getItem('clientSettings');
+        if (currentSettings) {
+            const parsedSettings = JSON.parse(currentSettings);
+            delete parsedSettings.shortcuts;
+            localStorage.setItem('clientSettings', JSON.stringify(parsedSettings));
+            window.location.reload();
+        }
+    };
+
     const filteredKeyMap = useMemo(() => Object.entries(keyMap).filter(
         ([, item]) => (
             item.name.toLowerCase().includes(searchValue) ||
@@ -89,7 +99,7 @@ function ShortcutsSettingsComponent(props: Props): JSX.Element {
                             onChange={onSearchChange}
                             className='cvat-shortcuts-settings-search'
                         />
-                        <Button size='large'>Restore Defaults</Button>
+                        <Button size='large' onClick={onRestoreDefaults}>Restore Defaults</Button>
                     </Flex>
                 </Col>
             </Row>
