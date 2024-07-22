@@ -325,6 +325,7 @@ class TimestampedModel(models.Model):
     def touch(self) -> None:
         self.save(update_fields=["updated_date"])
 
+@transaction.atomic(savepoint=False)
 def clear_annotations_in_jobs(job_ids):
     for job_ids_chunk in chunked_list(job_ids, chunk_size=1000):
         TrackedShapeAttributeVal.objects.filter(shape__track__job_id__in=job_ids_chunk).delete()
