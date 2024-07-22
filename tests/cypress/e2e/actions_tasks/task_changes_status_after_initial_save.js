@@ -8,6 +8,19 @@
 context('Task status updated after initial save.', () => {
     const labelName = 'car';
     const taskName = 'Test task status updated after initial save';
+    const attrName = 'Dummy attribute';
+    const textDefaultValue = 'Test';
+    const imagesCount = 1;
+    const imageFileName = `image_${labelName}`;
+    const width = 800;
+    const height = 800;
+    const posX = 10;
+    const posY = 10;
+    const color = 'gray';
+    const archiveName = `${imageFileName}.zip`;
+    const archivePath = `cypress/fixtures/${archiveName}`;
+    const imagesFolder = `cypress/fixtures/${imageFileName}`;
+    const directoryToArchive = imagesFolder;
     const rectangleData = {
         points: 'By 2 Points',
         type: 'Shape',
@@ -18,56 +31,34 @@ context('Task status updated after initial save.', () => {
         secondY: 450,
     };
 
-    let taskID = null;
-    let jobID = null;
-    const serverFiles = ['images/image_1.jpg'];
-
     before(() => {
-        cy.headlessLogout();
         cy.visit('auth/login');
         cy.login();
-        cy.url().should('contain', '/tasks');
-        cy.headlessCreateTask({
-            labels: [{ name: labelName, attributes: [], type: 'any' }],
-            name: taskName,
-            project_id: null,
-            source_storage: { location: 'local' },
-            target_storage: { location: 'local' },
-        }, {
-            server_files: serverFiles,
-            image_quality: 70,
-            use_zip_chunks: true,
-            use_cache: true,
-            sorting_method: 'lexicographical',
-        }).then((response) => {
-            taskID = response.taskID;
-            [jobID] = response.jobIDs;
-        });
+        cy.imageGenerator(imagesFolder, imageFileName, width, height, color, posX, posY, labelName, imagesCount);
+        cy.createZipArchive(directoryToArchive, archivePath);
+        cy.createAnnotationTask(taskName, labelName, attrName, textDefaultValue, archiveName);
     });
 
     after(() => {
-        if (taskID) {
-            cy.headlessDeleteTask(taskID);
-        }
+        cy.deleteTask(taskName);
+    });
+
+    afterEach(() => {
+        cy.goToTaskList();
     });
 
     describe(`Testing "${labelName}"`, () => {
         it('State of the created task should be "new".', () => {
-            cy.intercept('GET', `/tasks/${taskID}`).as('visitTaskPage');
-            cy.visit(`/tasks/${taskID}`);
-            cy.wait('@visitTaskPage');
-            cy.get('.cvat-job-item .cvat-job-item-state .ant-select-selection-item').invoke('text').should('equal', 'new');
+            cy.openTask(taskName);
+            cy.get('.cvat-job-item .cvat-job-item-state').invoke('text').should('equal', 'New');
         });
 
         it('Create object, save annotation, state should be "in progress"', () => {
-            cy.intercept('GET', `/tasks/${taskID}/jobs/${jobID}`).as('visitAnnotationView');
-            cy.visit(`/tasks/${taskID}/jobs/${jobID}`);
-            cy.wait('@visitAnnotationView');
-            cy.get('.cvat-canvas-container').should('exist').and('be.visible');
+            cy.openTaskJob(taskName);
             cy.createRectangle(rectangleData);
             cy.saveJob();
             cy.interactMenu('Open the task');
-            cy.get('.cvat-job-item .cvat-job-item-state .ant-select-selection-item').invoke('text').should('equal', 'in progress');
+            cy.get('.cvat-job-item .cvat-job-item-state').invoke('text').should('equal', 'In progress');
         });
     });
 });

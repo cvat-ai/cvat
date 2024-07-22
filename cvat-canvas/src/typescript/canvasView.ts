@@ -2398,14 +2398,14 @@ export class CanvasViewImpl implements CanvasView, Listener {
                     this.addText(state);
                 }
             } else {
-                const attrNames = Object.fromEntries(state.label.attributes.map((attr) => [attr.id, attr.name]));
                 // check if there are updates in attributes
                 for (const attrID of Object.keys(state.attributes)) {
                     if (state.attributes[attrID] !== drawnState.attributes[+attrID]) {
                         if (text) {
                             const [span] = text.node.querySelectorAll<SVGTSpanElement>(`[attrID="${attrID}"]`);
                             if (span && span.textContent) {
-                                span.textContent = `${attrNames[attrID]}: ${state.attributes[attrID]}`;
+                                const prefix = span.textContent.split(':').slice(0, -1).join(':');
+                                span.textContent = `${prefix}: ${state.attributes[attrID]}`;
                             }
                         }
                     }
@@ -2576,7 +2576,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
             }
 
             if (drawnState.shapeType === 'mask') {
-                shape.attr('opacity', `${Math.sqrt(this.configuration.shapeOpacity)}`);
+                shape.attr('opacity', `${this.configuration.shapeOpacity}`);
             } else {
                 shape.attr('fill-opacity', `${this.configuration.shapeOpacity}`);
             }
@@ -2666,7 +2666,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
         }
 
         if (state.shapeType === 'mask') {
-            shape.attr('opacity', `${Math.sqrt(this.configuration.selectedShapeOpacity)}`);
+            shape.attr('opacity', `${this.configuration.selectedShapeOpacity}`);
         } else {
             shape.attr('fill-opacity', `${this.configuration.selectedShapeOpacity}`);
         }
@@ -2982,8 +2982,11 @@ export class CanvasViewImpl implements CanvasView, Listener {
         const {
             label, clientID, attributes, source, descriptions,
         } = state;
+        const attrNames = label.attributes.reduce((acc: any, val: any): void => {
+            acc[val.id] = val.name;
+            return acc;
+        }, {});
 
-        const attrNames = Object.fromEntries(state.label.attributes.map((attr) => [attr.id, attr.name]));
         if (state.shapeType === 'skeleton') {
             state.elements.forEach((element: any) => {
                 if (!(element.clientID in this.svgTexts)) {
@@ -3169,8 +3172,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
             id: `cvat_canvas_shape_${state.clientID}`,
             'shape-rendering': 'geometricprecision',
             'data-z-order': state.zOrder,
-            // apply sqrt function to colorization to enhance displaying the mask on the canvas
-            opacity: Math.sqrt(colorization['fill-opacity']),
+            opacity: colorization['fill-opacity'],
             stroke: colorization.stroke,
         }).addClass('cvat_canvas_shape');
         image.move(this.geometry.offset + left, this.geometry.offset + top);

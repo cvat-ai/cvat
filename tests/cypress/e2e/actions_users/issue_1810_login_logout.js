@@ -20,7 +20,8 @@ context('When clicking on the Logout button, get the user session closed.', () =
     }
 
     before(() => {
-        cy.headlessLogout();
+        cy.clearAllCookies();
+        cy.clearAllLocalStorage();
         cy.visit('auth/login');
     });
 

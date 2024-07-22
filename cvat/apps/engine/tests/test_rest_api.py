@@ -3010,7 +3010,6 @@ class TaskImportExportAPITestCase(ApiTestBase):
                             "owner",
                             "project_id",
                             "assignee",
-                            "assignee_updated_date",
                             "created_date",
                             "updated_date",
                             "data",

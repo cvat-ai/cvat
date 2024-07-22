@@ -1,5 +1,5 @@
 // Copyright (C) 2020-2022 Intel Corporation
-// Copyright (C) 2023-2024 CVAT.ai Corporation
+// Copyright (C) 2023 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -14,15 +14,6 @@ const defaultState: PluginsState = {
         MODELS: false,
     },
     current: {},
-    callbacks: {
-        annotationPage: {
-            header: {
-                menu: {
-                    beforeJobFinish: [],
-                },
-            },
-        },
-    },
     components: {
         header: {
             userMenu: {
@@ -77,9 +68,9 @@ const defaultState: PluginsState = {
     },
 };
 
-function findContainerFromPath(path: string, state: PluginsState, prefix: 'components' | 'callbacks'): unknown[] {
+function findContainerFromPath(path: string, state: PluginsState): PluginComponent[] {
     const pathSegments = path.split('.');
-    let updatedStateSegment: any = state[prefix];
+    let updatedStateSegment: any = state.components;
     for (const pathSegment of pathSegments) {
         if (Array.isArray(updatedStateSegment[pathSegment])) {
             updatedStateSegment[pathSegment] = [...updatedStateSegment[pathSegment]];
@@ -88,7 +79,7 @@ function findContainerFromPath(path: string, state: PluginsState, prefix: 'compo
         }
         updatedStateSegment = updatedStateSegment[pathSegment];
         if (typeof updatedStateSegment === 'undefined') {
-            throw new Error('The specified plugins path is not supported by the core application');
+            throw new Error('Could not add plugin component. Path is not supported by the core application');
         }
     }
 
@@ -132,7 +123,7 @@ export default function (state: PluginsState = defaultState, action: PluginActio
                 components: { ...state.components },
             };
 
-            const container = findContainerFromPath(path, updatedState, 'components') as PluginComponent[];
+            const container = findContainerFromPath(path, updatedState);
             container.push({
                 component,
                 data: {
@@ -155,35 +146,8 @@ export default function (state: PluginsState = defaultState, action: PluginActio
                 components: { ...state.components },
             };
 
-            const container = findContainerFromPath(path, updatedState, 'components') as PluginComponent[];
+            const container = findContainerFromPath(path, updatedState);
             const index = container.findIndex((el) => el.component === component);
-            if (index !== -1) {
-                container.splice(index, 1);
-            }
-
-            return updatedState;
-        }
-        case PluginsActionTypes.ADD_UI_CALLBACK: {
-            const { path, callback } = action.payload;
-            const updatedState = {
-                ...state,
-                components: { ...state.components },
-            };
-
-            const container = findContainerFromPath(path, updatedState, 'callbacks') as CallableFunction[];
-            container.push(callback);
-
-            return updatedState;
-        }
-        case PluginsActionTypes.REMOVE_UI_CALLBACK: {
-            const { path, callback } = action.payload;
-            const updatedState = {
-                ...state,
-                components: { ...state.components },
-            };
-
-            const container = findContainerFromPath(path, updatedState, 'callbacks') as CallableFunction[];
-            const index = container.findIndex((_callback) => _callback === callback);
             if (index !== -1) {
                 container.splice(index, 1);
             }

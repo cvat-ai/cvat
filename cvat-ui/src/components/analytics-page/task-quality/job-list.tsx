@@ -67,12 +67,12 @@ function JobListComponent(props: Props): JSX.Element {
     function collectUsers(path: string): ColumnFilterItem[] {
         return Array.from<string | null>(
             new Set(
-                Object.values(jobsReports).map((report: QualityReport) => {
-                    if (report[path] === null) {
+                jobs.map((job: any) => {
+                    if (job[path] === null) {
                         return null;
                     }
 
-                    return report[path].username;
+                    return job[path].username;
                 }),
             ),
         ).map((value: string | null) => ({ text: value || 'Is Empty', value: value || false }));
@@ -127,8 +127,8 @@ function JobListComponent(props: Props): JSX.Element {
             dataIndex: 'assignee',
             key: 'assignee',
             className: 'cvat-job-item-assignee',
-            render: (report: QualityReport): JSX.Element => (
-                <Text>{report?.assignee?.username}</Text>
+            render: (jobInstance: any): JSX.Element => (
+                <Text>{jobInstance?.assignee?.username}</Text>
             ),
             sorter: sorter('assignee.assignee.username'),
             filters: collectUsers('assignee'),
@@ -232,7 +232,7 @@ function JobListComponent(props: Props): JSX.Element {
             job: job.id,
             download: job,
             stage: job,
-            assignee: report,
+            assignee: job,
             quality: report,
             conflicts: report,
             frame_intersection: report,

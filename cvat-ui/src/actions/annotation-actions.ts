@@ -11,8 +11,8 @@ import {
     RectDrawingMethod, CuboidDrawingMethod, Canvas, CanvasMode as Canvas2DMode,
 } from 'cvat-canvas-wrapper';
 import {
-    getCore, MLModel, JobType, Job,
-    QualityConflict, ObjectState, JobState,
+    getCore, MLModel, JobType, Job, QualityConflict, ObjectState,
+    JobState, JobStage,
 } from 'cvat-core-wrapper';
 import logger, { EventScope } from 'cvat-logger';
 import { getCVATStore } from 'cvat-store';
@@ -894,6 +894,7 @@ export function getJobAsync({
 
             const {
                 settings: {
+                    workspace: { showAllInterpolationTracks },
                     player: { showDeletedFrames },
                 },
             } = state;
@@ -938,8 +939,7 @@ export function getJobAsync({
                 // do nothing, user will be notified when data request is done
             }
 
-            await job.annotations.clear({ reload: true });
-
+            const states = await job.annotations.get(frameNumber, showAllInterpolationTracks, filters);
             const issues = await job.issues();
             const colors = [...cvat.enums.colors];
 
@@ -974,6 +974,7 @@ export function getJobAsync({
                     groundTruthInstance: gtJob || null,
                     groundTruthJobFramesMeta,
                     issues,
+                    states,
                     conflicts,
                     frameNumber,
                     frameFilename: frameData.filename,
@@ -1000,6 +1001,7 @@ export function getJobAsync({
 export function updateCurrentJobAsync(
     jobFieldsToUpdate: {
         state?: JobState;
+        stage?: JobStage;
     },
 ): ThunkAction {
     return async (dispatch: ThunkDispatch) => {
@@ -1017,7 +1019,7 @@ export function updateCurrentJobAsync(
     };
 }
 
-export function saveAnnotationsAsync(): ThunkAction {
+export function saveAnnotationsAsync(afterSave?: () => void): ThunkAction {
     return async (dispatch: ThunkDispatch): Promise<void> => {
         const { jobInstance } = receiveAnnotationsParameters();
 
@@ -1043,6 +1045,10 @@ export function saveAnnotationsAsync(): ThunkAction {
                 payload: {},
             });
 
+            if (typeof afterSave === 'function') {
+                afterSave();
+            }
+
             dispatch(fetchAnnotationsAsync());
         } catch (error) {
             dispatch({
@@ -1051,26 +1057,6 @@ export function saveAnnotationsAsync(): ThunkAction {
                     error,
                 },
             });
-
-            throw error;
-        }
-    };
-}
-
-export function finishCurrentJobAsync(): ThunkAction {
-    return async (dispatch: ThunkDispatch, getState) => {
-        const state = getState();
-        const beforeCallbacks = state.plugins.callbacks.annotationPage.header.menu.beforeJobFinish;
-        const { jobInstance } = receiveAnnotationsParameters();
-
-        await dispatch(saveAnnotationsAsync());
-
-        for await (const callback of beforeCallbacks) {
-            await callback();
-        }
-
-        if (jobInstance.state !== JobState.COMPLETED) {
-            await dispatch(updateCurrentJobAsync({ state: JobState.COMPLETED }));
         }
     };
 }

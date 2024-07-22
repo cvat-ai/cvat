@@ -85,7 +85,7 @@ RUN --mount=type=cache,target=/root/.cache/pip/http-v2 \
 
 FROM golang:1.22.4 AS build-smokescreen
 
-RUN git clone --filter=blob:none --no-checkout https://github.com/stripe/smokescreen.git
+RUN git clone --depth=1 https://github.com/stripe/smokescreen.git
 RUN cd smokescreen && git checkout eb1ac09 && go build -o /tmp/smokescreen
 
 FROM ${BASE_IMAGE}

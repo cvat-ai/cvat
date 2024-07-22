@@ -97,8 +97,9 @@ context('Single object annotation mode', { scrollBehavior: false }, () => {
         }
 
         cy.wait('@submitJob').its('response.statusCode').should('equal', 200);
-        cy.get('.cvat-annotation-job-finished-success').should('exist');
-        cy.get('.cvat-annotation-job-finished-success').should('not.exist');
+
+        cy.get('.cvat-single-shape-annotation-submit-success-modal').should('exist');
+        cy.get('.cvat-single-shape-annotation-submit-success-modal').within(() => { cy.contains('OK').click(); });
     }
 
     function changeLabel(labelName) {
@@ -225,7 +226,7 @@ context('Single object annotation mode', { scrollBehavior: false }, () => {
                 cy.get('[type="checkbox"]').uncheck();
             });
             clickPoints(polygonShape);
-            cy.get('.cvat-annotation-job-finished-success').should('not.exist');
+            cy.get('.cvat-single-shape-annotation-submit-success-modal').should('not.exist');
 
             // Navigate only on empty frames
             cy.get('.cvat-player-previous-button-empty').click();

@@ -23,8 +23,9 @@ import notification from 'antd/lib/notification';
 import { getCore, Project, Task } from 'cvat-core-wrapper';
 import { CombinedState, Indexable } from 'reducers';
 import { getProjectTasksAsync } from 'actions/projects-actions';
+import { cancelInferenceAsync } from 'actions/models-actions';
 import CVATLoadingSpinner from 'components/common/loading-spinner';
-import TaskItem from 'containers/tasks-page/task-item';
+import TaskItem from 'components/tasks-page/task-item';
 import MoveTaskModal from 'components/move-task-modal/move-task-modal';
 import ModelRunnerDialog from 'components/model-runner-modal/model-runner-dialog';
 import {
@@ -59,7 +60,10 @@ export default function ProjectPageComponent(): JSX.Element {
     const [updatingProject, setUpdatingProject] = useState(false);
     const mounted = useRef(false);
 
+    const ribbonPlugins = useSelector((state: CombinedState) => state.plugins.components.taskItem.ribbon);
     const deletes = useSelector((state: CombinedState) => state.projects.activities.deletes);
+    const taskDeletes = useSelector((state: CombinedState) => state.tasks.activities.deletes);
+    const tasksActiveInferences = useSelector((state: CombinedState) => state.models.inferences);
     const tasks = useSelector((state: CombinedState) => state.tasks.current);
     const tasksCount = useSelector((state: CombinedState) => state.tasks.count);
     const tasksQuery = useSelector((state: CombinedState) => state.projects.tasksGettingQuery);
@@ -116,12 +120,12 @@ export default function ProjectPageComponent(): JSX.Element {
     }, [tasksQuery]);
 
     useEffect(() => {
-        if (deletes[id]) {
+        if (projectInstance && id in deletes && deletes[id]) {
             history.push('/projects');
         }
     }, [deletes]);
 
-    if (fechingProject || id in deletes) {
+    if (fechingProject) {
         return <Spin size='large' className='cvat-spinner' />;
     }
 
@@ -149,8 +153,14 @@ export default function ProjectPageComponent(): JSX.Element {
                         .map((task: Task) => (
                             <TaskItem
                                 key={task.id}
-                                taskID={task.id}
-                                idx={tasks.indexOf(task)}
+                                ribbonPlugins={ribbonPlugins}
+                                deleted={task.id in taskDeletes ? taskDeletes[task.id] : false}
+                                hidden={false}
+                                activeInference={tasksActiveInferences[task.id] || null}
+                                cancelAutoAnnotation={() => {
+                                    dispatch(cancelInferenceAsync(task.id));
+                                }}
+                                taskInstance={task}
                             />
                         ))}
                 </React.Fragment>

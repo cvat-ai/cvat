@@ -1,10 +1,9 @@
 // Copyright (C) 2020-2022 Intel Corporation
-// Copyright (C) 2022-2024 CVAT.ai Corporation
+// Copyright (C) 2022-2023 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
 import { AnyAction } from 'redux';
-import { omit } from 'lodash';
 
 import { ProjectsActionTypes } from 'actions/projects-actions';
 import { BoundariesActionTypes } from 'actions/boundaries-actions';
@@ -118,40 +117,49 @@ export default (state: ProjectsState = defaultState, action: AnyAction): Project
         }
         case ProjectsActionTypes.DELETE_PROJECT: {
             const { projectId } = action.payload;
+            const { deletes } = state.activities;
+
+            deletes[projectId] = false;
 
             return {
                 ...state,
                 activities: {
                     ...state.activities,
                     deletes: {
-                        ...state.activities.deletes,
-                        [projectId]: false,
+                        ...deletes,
                     },
                 },
             };
         }
         case ProjectsActionTypes.DELETE_PROJECT_SUCCESS: {
             const { projectId } = action.payload;
+            const { deletes } = state.activities;
+
+            deletes[projectId] = true;
 
             return {
                 ...state,
                 activities: {
                     ...state.activities,
                     deletes: {
-                        ...state.activities.deletes,
-                        [projectId]: true,
+                        ...deletes,
                     },
                 },
             };
         }
         case ProjectsActionTypes.DELETE_PROJECT_FAILED: {
             const { projectId } = action.payload;
+            const { deletes } = state.activities;
+
+            delete deletes[projectId];
 
             return {
                 ...state,
                 activities: {
                     ...state.activities,
-                    deletes: omit(state.activities.deletes, projectId),
+                    deletes: {
+                        ...deletes,
+                    },
                 },
             };
         }

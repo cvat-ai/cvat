@@ -93,9 +93,7 @@ function ExportDatasetModal(props: StateToProps): JSX.Element {
         setUseDefaultTargetStorage(true);
         setTargetStorage({ location: StorageLocation.LOCAL });
         form.resetFields();
-        if (instance) {
-            dispatch(exportActions.closeExportDatasetModal(instance));
-        }
+        dispatch(exportActions.closeExportDatasetModal(instance));
     };
 
     const handleExport = useCallback(

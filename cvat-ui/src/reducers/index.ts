@@ -6,7 +6,7 @@
 import { Canvas3d } from 'cvat-canvas3d/src/typescript/canvas3d';
 import { Canvas, RectDrawingMethod, CuboidDrawingMethod } from 'cvat-canvas-wrapper';
 import {
-    Webhook, MLModel, Organization, Job, Task, Project, Label, User,
+    Webhook, MLModel, Organization, Job, Label, User,
     QualityConflict, FramesMetaData, RQStatus, Event, Invitation, SerializedAPISchema,
     Request,
 } from 'cvat-core-wrapper';
@@ -37,6 +37,8 @@ interface Preview {
     preview: string;
 }
 
+export type Project = any;
+
 export interface ProjectsState {
     initialized: boolean;
     fetching: boolean;
@@ -66,6 +68,8 @@ export interface TasksQuery {
     sort: string | null;
     projectId: number | null;
 }
+
+export type Task = any; // cvat-core instance
 
 export interface JobsQuery {
     page: number;
@@ -112,23 +116,23 @@ export interface TasksState {
 export interface ExportState {
     projects: {
         dataset: {
-            modalInstance: Project | null;
+            modalInstance: any | null;
         };
         backup: {
-            modalInstance: Project | null;
+            modalInstance: any | null;
         };
     };
     tasks: {
         dataset: {
-            modalInstance: Task | null;
+            modalInstance: any | null;
         };
         backup: {
-            modalInstance: Task | null;
+            modalInstance: any | null;
         };
     };
     jobs: {
         dataset: {
-            modalInstance: Job | null;
+            modalInstance: any | null;
         };
     };
     instanceType: 'project' | 'task' | 'job' | null;
@@ -137,7 +141,7 @@ export interface ExportState {
 export interface ImportState {
     projects: {
         dataset: {
-            modalInstance: Project | null;
+            modalInstance: any | null;
             uploadState: {
                 id: number | null,
                 format: string;
@@ -152,7 +156,7 @@ export interface ImportState {
     };
     tasks: {
         dataset: {
-            modalInstance: Task | null;
+            modalInstance: any | null;
         };
         backup: {
             modalVisible: boolean;
@@ -161,7 +165,7 @@ export interface ImportState {
     };
     jobs: {
         dataset: {
-            modalInstance: Job | null;
+            modalInstance: any | null;
         };
     };
     instanceType: 'project' | 'task' | 'job' | null;
@@ -251,19 +255,10 @@ export interface PluginsState {
             globalStateDidUpdate?: CallableFunction;
         };
     };
-    callbacks: {
-        annotationPage: {
-            header: {
-                menu: {
-                    beforeJobFinish: (() => Promise<void>)[];
-                };
-            };
-        };
-    };
     components: {
         header: {
             userMenu: {
-                items: PluginComponent[];
+                items: PluginComponent[],
             };
         };
         loginPage: {
@@ -271,18 +266,18 @@ export interface PluginsState {
         };
         modelsPage: {
             topBar: {
-                items: PluginComponent[];
-            };
+                items: PluginComponent[],
+            },
             modelItem: {
                 menu: {
-                    items: PluginComponent[];
-                };
+                    items: PluginComponent[],
+                },
                 topBar:{
                     menu: {
-                        items: PluginComponent[];
-                    };
-                };
-            };
+                        items: PluginComponent[],
+                    }
+                },
+            }
         };
         projectActions: {
             items: PluginComponent[];
@@ -303,12 +298,12 @@ export interface PluginsState {
         };
         settings: {
             player: PluginComponent[];
-        };
+        }
         about: {
             links: {
                 items: PluginComponent[];
-            };
-        };
+            }
+        }
         router: PluginComponent[];
         loggedInModals: PluginComponent[];
     }

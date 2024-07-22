@@ -1467,7 +1467,7 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
             else:
                 serializer = LabeledDataSerializer(data=request.data)
                 if serializer.is_valid(raise_exception=True):
-                    data = dm.task.put_task_data(pk, serializer.validated_data)
+                    data = dm.task.put_task_data(pk, serializer.data)
                     return Response(data)
         elif request.method == 'DELETE':
             dm.task.delete_task_data(pk)
@@ -1480,7 +1480,7 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
             serializer = LabeledDataSerializer(data=request.data)
             if serializer.is_valid(raise_exception=True):
                 try:
-                    data = dm.task.patch_task_data(pk, serializer.validated_data, action)
+                    data = dm.task.patch_task_data(pk, serializer.data, action)
                 except (AttributeError, IntegrityError) as e:
                     return Response(data=str(e), status=status.HTTP_400_BAD_REQUEST)
                 return Response(data)
@@ -1938,7 +1938,7 @@ class JobViewSet(viewsets.GenericViewSet, mixins.ListModelMixin, mixins.CreateMo
                 serializer = LabeledDataSerializer(data=request.data)
                 if serializer.is_valid(raise_exception=True):
                     try:
-                        data = dm.task.put_job_data(pk, serializer.validated_data)
+                        data = dm.task.put_job_data(pk, serializer.data)
                     except (AttributeError, IntegrityError) as e:
                         return Response(data=str(e), status=status.HTTP_400_BAD_REQUEST)
                     return Response(data)
@@ -1953,7 +1953,7 @@ class JobViewSet(viewsets.GenericViewSet, mixins.ListModelMixin, mixins.CreateMo
             serializer = LabeledDataSerializer(data=request.data)
             if serializer.is_valid(raise_exception=True):
                 try:
-                    data = dm.task.patch_job_data(pk, serializer.validated_data, action)
+                    data = dm.task.patch_job_data(pk, serializer.data, action)
                 except (AttributeError, IntegrityError) as e:
                     return Response(data=str(e), status=status.HTTP_400_BAD_REQUEST)
                 return Response(data)

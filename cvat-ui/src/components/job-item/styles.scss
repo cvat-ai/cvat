@@ -10,10 +10,6 @@
     margin-bottom: $grid-unit-size;
     background: $background-color-1;
 
-    .cvat-job-item-issues-summary-icon {
-        margin-left: $grid-unit-size;
-    }
-
     &:hover {
         transition: box-shadow $box-shadow-transition;
         box-shadow: $box-shadow-base;
@@ -31,19 +27,15 @@
     }
 
     .cvat-job-item-selects {
+        padding-top: $grid-unit-size;
+
         .cvat-job-item-select {
-            width: $grid-unit-size * 16;
-
-            > :first-child {
+            >div:first-child {
                 margin-bottom: $grid-unit-size;
-            }
-
-            .ant-select {
-                width: 100%;
             }
         }
 
-        .cvat-job-item-select:not(:last-child) {
+        .cvat-job-assignee-selector {
             margin-right: $grid-unit-size;
         }
     }
@@ -70,6 +62,14 @@
 
     .cvat-job-item-dates-info {
         margin-top: $grid-unit-size;
+    }
+
+    .cvat-job-assignee-selector {
+        max-width: $grid-unit-size * 16;
+
+        @media screen and (width <= 1620px) {
+            max-width: $grid-unit-size * 12;
+        }
     }
 }
 
