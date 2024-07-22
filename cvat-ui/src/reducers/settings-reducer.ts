@@ -1,18 +1,16 @@
 // Copyright (C) 2020-2022 Intel Corporation
-// Copyright (C) 2023 CVAT.ai Corporation
+// Copyright (C) 2023-2024 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
 import { AnyAction } from 'redux';
 
-import { BoundariesActionTypes } from 'actions/boundaries-actions';
 import { AuthActionTypes } from 'actions/auth-actions';
 import { SettingsActionTypes } from 'actions/settings-actions';
 import { AnnotationActionTypes } from 'actions/annotation-actions';
 import {
     SettingsState, GridColor, FrameSpeed, ColorBy,
 } from 'reducers';
-import { clampOpacity } from 'utils/clamp-opacity';
 
 const defaultState: SettingsState = {
     shapes: {
@@ -438,38 +436,15 @@ export default (state = defaultState, action: AnyAction): SettingsState => {
                 imageFilters: [],
             };
         }
-        case AnnotationActionTypes.FETCH_ANNOTATIONS_SUCCESS:
-        case AnnotationActionTypes.CHANGE_FRAME_SUCCESS: {
-            const { states } = action.payload;
-            const { shapes } = state;
-            const [clampedOpacity, clampedSelectedOpacity] = clampOpacity(states, shapes);
-            return {
-                ...state,
-                shapes: {
-                    ...state.shapes,
-                    opacity: clampedOpacity,
-                    selectedOpacity: clampedSelectedOpacity,
-                },
-            };
-        }
-        case BoundariesActionTypes.RESET_AFTER_ERROR:
         case AnnotationActionTypes.GET_JOB_SUCCESS: {
-            const { job, states } = action.payload;
-            const { shapes } = state;
             const filters = [...state.imageFilters];
             filters.forEach((imageFilter) => {
                 imageFilter.modifier.currentProcessedImage = null;
             });
 
-            const [clampedOpacity, clampedSelectedOpacity] = clampOpacity(states, shapes, job);
-
             return {
                 ...state,
-                shapes: {
-                    ...defaultState.shapes,
-                    opacity: clampedOpacity,
-                    selectedOpacity: clampedSelectedOpacity,
-                },
+
                 imageFilters: filters,
             };
         }

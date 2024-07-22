@@ -12,6 +12,7 @@ import React, {
 } from 'react';
 import { ShortcutScope } from 'utils/enums';
 import { KeyMap } from 'utils/mousetrap-react';
+import { Empty } from 'antd';
 import MultipleShortcutsDisplay from './multiple-shortcuts-display';
 
 interface Props {
@@ -31,44 +32,50 @@ function ShortcutsSettingsComponent(props: Props): JSX.Element {
     const filteredKeyMap = useMemo(() => Object.entries(keyMap).filter(
         ([, item]) => (
             item.name.toLowerCase().includes(searchValue) ||
-                item.description.toLowerCase().includes(searchValue)
+            item.description.toLowerCase().includes(searchValue)
         ),
     ), [keyMap, searchValue]);
 
-    const items: any = useMemo(() => Object.values(ShortcutScope).map((scope: string) => {
-        const viewFilteredItems = filteredKeyMap.filter(
-            ([, item]) => item.scope === scope,
-        );
+    const items: any = useMemo(() => {
+        const scopeItems = Object.values(ShortcutScope).map((scope: string) => {
+            const viewFilteredItems = filteredKeyMap.filter(
+                ([, item]) => item.scope === scope,
+            );
+            if (viewFilteredItems.length === 0) {
+                return null;
+            }
+            return {
+                label: <span className='cvat-shortcuts-settings-label'>{`${scope.split('_').join(' ').toLowerCase()} Shortcuts`}</span>,
+                key: scope,
+                children: (
+                    <List
+                        dataSource={viewFilteredItems}
+                        renderItem={([id, item]) => (
+                            <List.Item>
+                                <List.Item.Meta
+                                    title={<p className='cvat-shortcuts-settings-item-title'>{item.name}</p>}
+                                    description={<span className='cvat-shortcuts-settings-item-description'>{item.description}</span>}
+                                />
+                                <MultipleShortcutsDisplay
+                                    id={id}
+                                    keyMap={keyMap}
+                                    item={item}
+                                    onKeySequenceUpdate={onKeySequenceUpdate}
+                                />
+                            </List.Item>
+                        )}
+                        style={{ paddingLeft: 5 }}
+                    />
+                ),
+            };
+        }).filter(Boolean);
 
-        if (viewFilteredItems.length === 0) {
+        if (scopeItems.length === 0) {
             return null;
         }
 
-        return {
-            label: <span className='cvat-shortcuts-settings-label'>{`${scope.split('_').join(' ').toLowerCase()} Shortcuts`}</span>,
-            key: scope,
-            children: (
-                <List
-                    dataSource={viewFilteredItems}
-                    renderItem={([id, item]) => (
-                        <List.Item>
-                            <List.Item.Meta
-                                title={<p className='cvat-shortcuts-settings-item-title'>{item.name}</p>}
-                                description={<span className='cvat-shortcuts-settings-item-description'>{item.description}</span>}
-                            />
-                            <MultipleShortcutsDisplay
-                                id={id}
-                                keyMap={keyMap}
-                                item={item}
-                                onKeySequenceUpdate={onKeySequenceUpdate}
-                            />
-                        </List.Item>
-                    )}
-                    style={{ paddingLeft: 5 }}
-                />
-            ),
-        };
-    }).filter(Boolean), [filteredKeyMap]);
+        return scopeItems;
+    }, [filteredKeyMap]);
 
     return (
         <div className='cvat-shortcuts-settings'>
@@ -88,11 +95,15 @@ function ShortcutsSettingsComponent(props: Props): JSX.Element {
             </Row>
             <Row className='cvat-shortcuts-setting'>
                 <Col span={24}>
-                    <Collapse
-                        items={items}
-                        bordered={false}
-                        defaultActiveKey={Object.values(ShortcutScope).map((scope: string) => scope)}
-                    />
+                    {items ? (
+                        <Collapse
+                            items={items}
+                            bordered={false}
+                            defaultActiveKey={Object.values(ShortcutScope).map((scope: string) => scope)}
+                        />
+                    ) : (
+                        <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} />
+                    )}
                 </Col>
             </Row>
         </div>

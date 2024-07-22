@@ -1,9 +1,10 @@
 # Copyright (C) 2022 Intel Corporation
-# Copyright (C) 2022-2023 CVAT.ai Corporation
+# Copyright (C) 2022-2024 CVAT.ai Corporation
 #
 # SPDX-License-Identifier: MIT
 
 import io
+import itertools
 import json
 import os
 import os.path as osp
@@ -13,6 +14,7 @@ from functools import partial
 from http import HTTPStatus
 from itertools import chain, product
 from math import ceil
+from operator import itemgetter
 from pathlib import Path
 from tempfile import NamedTemporaryFile, TemporaryDirectory
 from time import sleep, time
@@ -206,6 +208,7 @@ class TestGetTasks:
 
         assert server_task.jobs.completed == 1
 
+    @pytest.mark.usefixtures("restore_db_per_function")
     def test_can_remove_owner_and_fetch_with_sdk(self, admin_user, tasks):
         # test for API schema regressions
         source_task = next(
@@ -411,6 +414,24 @@ class TestPostTasks:
         }
 
         self._test_create_task_201(username, spec)
+
+    @pytest.mark.parametrize("assignee", [None, "admin1"])
+    def test_can_create_with_assignee(self, admin_user, users_by_name, assignee):
+        task_spec = {
+            "name": "test task creation with assignee",
+            "labels": [{"name": "car"}],
+            "assignee_id": users_by_name[assignee]["id"] if assignee else None,
+        }
+
+        with make_api_client(admin_user) as api_client:
+            (task, _) = api_client.tasks_api.create(task_write_request=task_spec)
+
+            if assignee:
+                assert task.assignee.username == assignee
+                assert task.assignee_updated_date
+            else:
+                assert task.assignee is None
+                assert task.assignee_updated_date is None
 
 
 @pytest.mark.usefixtures("restore_db_per_class")
@@ -787,6 +808,32 @@ class TestGetTaskDataset:
 
             response = export_dataset(api_client.tasks_api.retrieve_dataset_endpoint, id=task["id"])
             assert response.data
+
+    @pytest.mark.parametrize(
+        "export_format, default_subset_name, subset_path_template",
+        [
+            ("Datumaro 1.0", "", "images/{subset}"),
+            ("YOLO 1.1", "train", "obj_{subset}_data"),
+        ],
+    )
+    def test_uses_subset_name(
+        self, tasks, admin_user, export_format, default_subset_name, subset_path_template
+    ):
+        group_key_func = itemgetter("subset")
+        subsets_and_tasks = [
+            (subset, next(group))
+            for subset, group in itertools.groupby(
+                sorted(tasks, key=group_key_func),
+                key=group_key_func,
+            )
+        ]
+        for subset_name, task in subsets_and_tasks:
+            response = self._test_export_task(admin_user, tid=task["id"], format=export_format)
+            with zipfile.ZipFile(io.BytesIO(response.data)) as zip_file:
+                subset_path = subset_path_template.format(subset=subset_name or default_subset_name)
+                assert any(
+                    subset_path in path for path in zip_file.namelist()
+                ), f"No {subset_path} in {zip_file.namelist()}"
 
 
 @pytest.mark.usefixtures("restore_db_per_function")
@@ -2655,6 +2702,36 @@ class TestPatchTask:
                 _check_status=False,
             )
         assert response.status == HTTPStatus.FORBIDDEN
+
+    @pytest.mark.parametrize("has_old_assignee", [False, True])
+    @pytest.mark.parametrize("new_assignee", [None, "same", "different"])
+    def test_can_update_assignee_updated_date_on_assignee_updates(
+        self, admin_user, tasks, users, has_old_assignee, new_assignee
+    ):
+        task = next(t for t in tasks if bool(t.get("assignee")) == has_old_assignee)
+
+        old_assignee_id = (task.get("assignee") or {}).get("id")
+
+        new_assignee_id = None
+        if new_assignee == "same":
+            new_assignee_id = old_assignee_id
+        elif new_assignee == "different":
+            new_assignee_id = next(u for u in users if u["id"] != old_assignee_id)["id"]
+
+        with make_api_client(admin_user) as api_client:
+            (updated_task, _) = api_client.tasks_api.partial_update(
+                task["id"], patched_task_write_request={"assignee_id": new_assignee_id}
+            )
+
+            if new_assignee_id == old_assignee_id:
+                assert updated_task.assignee_updated_date == task["assignee_updated_date"]
+            else:
+                assert updated_task.assignee_updated_date != task["assignee_updated_date"]
+
+            if new_assignee_id:
+                assert updated_task.assignee.id == new_assignee_id
+            else:
+                assert updated_task.assignee is None
 
 
 @pytest.mark.usefixtures("restore_db_per_function")

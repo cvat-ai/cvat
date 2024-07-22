@@ -108,8 +108,7 @@
 }
 
 .cvat-shortcuts-settings-select {
-    max-width: 300px;
-    min-width: 100px;
+    width: 200px;
 }
 
 .cvat-shortcuts-settings-item-title {
@@ -120,4 +119,15 @@
 .cvat-shortcuts-settings-item-description {
     font-size: 12px;
     font-weight: 600;
+}
+
+.cvat-shortcuts-settings-collapse .ant-collapse-header {
+    background-color: white;
+    border-bottom: 1px solid #ccc;
+    padding: 0 0 8px !important;
+}
+
+.cvat-shortcuts-settings-collapse .ant-collapse-content-box {
+    background-color: white;
+    padding: 0 !important;
 }
