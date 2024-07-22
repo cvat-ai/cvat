@@ -380,9 +380,11 @@ class Project(TimestampedModel):
     def delete(self, using=None, keep_parents=False):
         # quicker way to remove annotations and a way to reduce number of queries
         # is to remove labels and attributes first, it will remove annotations cascadely
-        # add ordering to guarantee in case of batched removing that
-        # annotations with parents will be removed first from the database
-        self.label_set.order_by('parent_id').delete()
+
+        # child objects must be removed first
+        if self.label_set.exclude(parent=None).count():
+            self.label_set.exclude(parent=None).delete()
+        self.label_set.filter(parent=None).delete()
         super().delete(using, keep_parents)
 
     # Extend default permission model
@@ -490,14 +492,16 @@ class Task(TimestampedModel):
     @cache_deleted
     @transaction.atomic(savepoint=False)
     def delete(self, using=None, keep_parents=False):
-        job_ids = list(self.segment_set.values_list('job__id', flat=True))
         if not self.project:
             # quicker way to remove annotations and a way to reduce number of queries
             # is to remove labels and attributes first, it will remove annotations cascadely
-            # add ordering to guarantee in case of batched removing that
-            # annotations with parents will be removed first from the database
-            self.label_set.order_by('parent_id').delete()
+
+            # child objects must be removed first
+            if self.label_set.exclude(parent=None).count():
+                self.label_set.exclude(parent=None).delete()
+            self.label_set.filter(parent=None).delete()
         else:
+            job_ids = list(self.segment_set.values_list('job__id', flat=True))
             clear_annotations_in_jobs(job_ids)
         super().delete(using, keep_parents)
 
