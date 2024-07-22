@@ -825,7 +825,7 @@ class Label(models.Model):
             raise InvalidLabel("All label names must be unique")
 
     @transaction.atomic(savepoint=False)
-    def delete(self):
+    def delete(self, using=None, keep_parents=False):
         sublabel_ids = self.sublabels.values_list('id', flat=True)
         ids = list(LabeledTrack.objects.filter(label_id=self.id).values_list('id', flat=True))
         if sublabel_ids:
@@ -836,7 +836,7 @@ class Label(models.Model):
             TrackedShapeAttributeVal.objects.filter(track_id__in=ids_chunk).delete()
             TrackedShape.objects.filter(track_id__in=ids_chunk).delete()
 
-        super().delete()
+        super().delete(using=using, keep_parents=keep_parents)
 
     @classmethod
     def create(cls, **kwargs):
