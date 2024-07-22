@@ -326,7 +326,7 @@ class TimestampedModel(models.Model):
         self.save(update_fields=["updated_date"])
 
 def clear_annotations_in_jobs(job_ids):
-    for job_ids_chunk in chunked_list(job_ids, chunk_size=10000):
+    for job_ids_chunk in chunked_list(job_ids, chunk_size=1000):
         TrackedShapeAttributeVal.objects.filter(shape__track__job_id__in=job_ids_chunk).delete()
         TrackedShape.objects.filter(track__job_id__in=job_ids_chunk).delete()
         LabeledTrackAttributeVal.objects.filter(track__job_id__in=job_ids_chunk).delete()
@@ -378,17 +378,17 @@ class Project(TimestampedModel):
     @transaction.atomic(savepoint=False)
     def delete(self, using=None, keep_parents=False):
         job_ids = self.tasks.values_list('segment__job__id', flat=True)
+
         # quicker way to remove annotations and a way to reduce number of queries
         # is to remove labels and attributes first, it will remove annotations cascadely
-        # hovewer it will not remove TrackedShape, so, we need to do it additionally
-        # additionally to remove tracked_shapes we have to remove TrackedShapeAttributeVal first
-        for job_ids_chunk in chunked_list(job_ids, chunk_size=10000):
+        # but before we need to delete manually TrackedShape, and TrackedShapeAttributeVal
+        for job_ids_chunk in chunked_list(job_ids, chunk_size=1000):
             TrackedShapeAttributeVal.objects.filter(shape__track__job_id__in=job_ids_chunk).delete()
             TrackedShape.objects.filter(track__job_id__in=job_ids_chunk).delete()
 
-        # it is important to remove first children and then parents
-        self.label_set.exclude(parent=None).delete()
-        self.label_set.filter(parent=None).delete()
+        # add ordering to guarantee in case of batched removing that
+        # annotations with parents will be removed first from the database
+        self.label_set.order_by('parent_id').delete()
         super().delete(using, keep_parents)
 
     # Extend default permission model
@@ -500,15 +500,14 @@ class Task(TimestampedModel):
         if not self.project:
             # quicker way to remove annotations and a way to reduce number of queries
             # is to remove labels and attributes first, it will remove annotations cascadely
-            # hovewer it will not remove TrackedShape, so, we need to do it additionally
-            # additionally to remove tracked_shapes we have to remove TrackedShapeAttributeVal first
-            for job_ids_chunk in chunked_list(job_ids, chunk_size=10000):
+            # but before we need to delete manually TrackedShape, and TrackedShapeAttributeVal
+            for job_ids_chunk in chunked_list(job_ids, chunk_size=1000):
                 TrackedShapeAttributeVal.objects.filter(shape__track__job_id__in=job_ids_chunk).delete()
                 TrackedShape.objects.filter(track__job_id__in=job_ids_chunk).delete()
 
-            # it is important to remove first children and then parents
-            self.label_set.exclude(parent=None).delete()
-            self.label_set.filter(parent=None).delete()
+            # add ordering to guarantee in case of batched removing that
+            # annotations with parents will be removed first from the database
+            self.label_set.order_by('parent_id').delete()
         else:
             clear_annotations_in_jobs(job_ids)
         super().delete(using, keep_parents)
@@ -826,13 +825,14 @@ class Label(models.Model):
 
     @transaction.atomic(savepoint=False)
     def delete(self, using=None, keep_parents=False):
-        sublabel_ids = self.sublabels.values_list('id', flat=True)
         ids = list(LabeledTrack.objects.filter(label_id=self.id).values_list('id', flat=True))
+
+        sublabel_ids = self.sublabels.values_list('id', flat=True)
         if sublabel_ids:
             child_ids = list(LabeledTrack.objects.filter(label_id__in=sublabel_ids).values_list('id', flat=True))
-            ids.extend(child_ids)
+            ids = child_ids + ids
 
-        for ids_chunk in chunked_list(ids, 10000):
+        for ids_chunk in chunked_list(ids, chunk_size=1000):
             TrackedShapeAttributeVal.objects.filter(track_id__in=ids_chunk).delete()
             TrackedShape.objects.filter(track_id__in=ids_chunk).delete()
 
