@@ -17,7 +17,7 @@ const componentShortcuts = {
     TOGGLE_LAYOUT_GRID: {
         name: 'Toggle layout grid',
         description: 'The grid is used to UI development',
-        sequences: ['control+alt+enter'],
+        sequences: ['ctrl+alt+enter'],
         scope: ShortcutScope.LAYOUT_GRID,
     },
 };

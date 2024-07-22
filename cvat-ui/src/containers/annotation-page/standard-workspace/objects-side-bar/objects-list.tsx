@@ -140,13 +140,13 @@ const componentShortcuts = {
     COPY_SHAPE: {
         name: 'Copy shape',
         description: 'Copy shape to CVAT internal clipboard',
-        sequences: ['control+c'],
+        sequences: ['ctrl+c'],
         scope: ShortcutScope.ANNOTATION_PAGE_STANDARD_WORKSPACE,
     },
     PROPAGATE_OBJECT: {
         name: 'Propagate object',
         description: 'Make a copy of the object on the following frames',
-        sequences: ['control+b'],
+        sequences: ['ctrl+b'],
         scope: ShortcutScope.ANNOTATION_PAGE_STANDARD_WORKSPACE,
     },
     NEXT_KEY_FRAME: {

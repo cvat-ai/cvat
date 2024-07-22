@@ -39,6 +39,7 @@ function MultipleShortcutsDisplay(props: Props): JSX.Element {
     }, [timer]);
 
     function conflictNotifier(keyMapId: string, updatedSequence: string[]): void {
+        console.log('conflictNotifier called', keyMapId, updatedSequence);
         const shortcut = {
             [keyMapId]: { ...keyMap[keyMapId], sequences: updatedSequence },
         };
@@ -120,7 +121,6 @@ function MultipleShortcutsDisplay(props: Props): JSX.Element {
                 setFocus(false);
                 if (timer) {
                     clearTimeout(timer);
-                    finalizeCombination();
                 }
             }}
             onClear={() => onKeySequenceUpdate(id, [])}

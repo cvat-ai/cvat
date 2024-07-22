@@ -51,7 +51,7 @@ const componentShortcuts = {
     PASTE_SHAPE: {
         name: 'Paste shape',
         description: 'Paste a shape from internal CVAT clipboard',
-        sequences: ['control+v'],
+        sequences: ['ctrl+v'],
         scope: ShortcutScope.ANNOTATION_PAGE,
     },
     SWITCH_DRAW_MODE: {

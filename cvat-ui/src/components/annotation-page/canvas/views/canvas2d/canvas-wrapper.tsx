@@ -264,7 +264,7 @@ const componentShortcuts = {
     SWITCH_AUTOMATIC_BORDERING: {
         name: 'Switch automatic bordering',
         description: 'Switch automatic bordering for polygons and polylines during drawing/editing',
-        sequences: ['control'],
+        sequences: ['ctrl'],
         scope: ShortcutScope.ANNOTATION_PAGE_CANVAS_WORKSPACE,
     },
 };

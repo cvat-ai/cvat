@@ -18,7 +18,7 @@ const componentShortcuts = {
     SAVE_JOB: {
         name: 'Save the job',
         description: 'Send all changes of annotations to the server',
-        sequences: ['control+s'],
+        sequences: ['ctrl+s'],
         scope: ShortcutScope.ALL,
     },
 };
