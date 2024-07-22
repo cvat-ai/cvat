@@ -265,6 +265,24 @@ export function highlightConflict(conflict: QualityConflict | null): AnyAction {
     };
 }
 
+function wrapAnnotationsInGTJob(job: Job, states: ObjectState[]): ObjectState[] {
+    if (job.type === JobType.GROUND_TRUTH) {
+        return states.map((state: ObjectState) => new Proxy(state, {
+            get(_state, prop) {
+                if (prop === 'isGroundTruth') {
+                    // ground truth objects are not considered as gt objects, relatively to a gt jobs
+                    // to avoid extra css styles, or restrictions applied
+                    return false;
+                }
+
+                return Reflect.get(_state, prop);
+            },
+        }));
+    }
+
+    return states;
+}
+
 async function fetchAnnotations(predefinedFrame?: number): Promise<{
     states: CombinedState['annotation']['annotations']['states'];
     history: CombinedState['annotation']['annotations']['history'];
@@ -279,19 +297,9 @@ async function fetchAnnotations(predefinedFrame?: number): Promise<{
     const fetchFrame = typeof predefinedFrame === 'undefined' ? frame : predefinedFrame;
     let states = await jobInstance.annotations.get(fetchFrame, showAllInterpolationTracks, filters);
     const [minZ, maxZ] = computeZRange(states);
-    if (jobInstance.type === JobType.GROUND_TRUTH) {
-        states = states.map((state: ObjectState) => new Proxy(state, {
-            get(_state, prop) {
-                if (prop === 'isGroundTruth') {
-                    // ground truth objects are not considered as gt objects, relatively to a gt jobs
-                    // to avoid extra css styles, or restrictions applied
-                    return false;
-                }
 
-                return Reflect.get(_state, prop);
-            },
-        }));
-    } else if (showGroundTruth && groundTruthInstance) {
+    states = wrapAnnotationsInGTJob(jobInstance, states);
+    if (jobInstance.type !== JobType.GROUND_TRUTH && showGroundTruth && groundTruthInstance) {
         const gtStates = await groundTruthInstance.annotations.get(fetchFrame, showAllInterpolationTracks, filters);
         states.push(...gtStates);
     }
@@ -1110,7 +1118,8 @@ export function updateAnnotationsAsync(statesToUpdate: any[]): ThunkAction {
             }
 
             const promises = statesToUpdate.map((objectState: any): Promise<any> => objectState.save());
-            const states = await Promise.all(promises);
+            let states = await Promise.all(promises);
+            states = wrapAnnotationsInGTJob(jobInstance, states);
 
             const needToUpdateAll = states
                 .some((state: any) => state.shapeType === ShapeType.MASK || state.parentID !== null);
