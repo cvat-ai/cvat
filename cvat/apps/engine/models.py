@@ -377,15 +377,8 @@ class Project(TimestampedModel):
     @cache_deleted
     @transaction.atomic(savepoint=False)
     def delete(self, using=None, keep_parents=False):
-        job_ids = self.tasks.values_list('segment__job__id', flat=True)
-
         # quicker way to remove annotations and a way to reduce number of queries
         # is to remove labels and attributes first, it will remove annotations cascadely
-        # but before we need to delete manually TrackedShape, and TrackedShapeAttributeVal
-        for job_ids_chunk in chunked_list(job_ids, chunk_size=1000):
-            TrackedShapeAttributeVal.objects.filter(shape__track__job_id__in=job_ids_chunk).delete()
-            TrackedShape.objects.filter(track__job_id__in=job_ids_chunk).delete()
-
         # add ordering to guarantee in case of batched removing that
         # annotations with parents will be removed first from the database
         self.label_set.order_by('parent_id').delete()
@@ -500,11 +493,6 @@ class Task(TimestampedModel):
         if not self.project:
             # quicker way to remove annotations and a way to reduce number of queries
             # is to remove labels and attributes first, it will remove annotations cascadely
-            # but before we need to delete manually TrackedShape, and TrackedShapeAttributeVal
-            for job_ids_chunk in chunked_list(job_ids, chunk_size=1000):
-                TrackedShapeAttributeVal.objects.filter(shape__track__job_id__in=job_ids_chunk).delete()
-                TrackedShape.objects.filter(track__job_id__in=job_ids_chunk).delete()
-
             # add ordering to guarantee in case of batched removing that
             # annotations with parents will be removed first from the database
             self.label_set.order_by('parent_id').delete()
@@ -823,21 +811,6 @@ class Label(models.Model):
         except IntegrityError:
             raise InvalidLabel("All label names must be unique")
 
-    @transaction.atomic(savepoint=False)
-    def delete(self, using=None, keep_parents=False):
-        ids = list(LabeledTrack.objects.filter(label_id=self.id).values_list('id', flat=True))
-
-        sublabel_ids = self.sublabels.values_list('id', flat=True)
-        if sublabel_ids:
-            child_ids = list(LabeledTrack.objects.filter(label_id__in=sublabel_ids).values_list('id', flat=True))
-            ids = child_ids + ids
-
-        for ids_chunk in chunked_list(ids, chunk_size=1000):
-            TrackedShapeAttributeVal.objects.filter(track_id__in=ids_chunk).delete()
-            TrackedShape.objects.filter(track_id__in=ids_chunk).delete()
-
-        super().delete(using=using, keep_parents=keep_parents)
-
     @classmethod
     def create(cls, **kwargs):
         try:
@@ -1004,7 +977,7 @@ class LabeledTrackAttributeVal(AttributeVal):
 
 class TrackedShape(Shape):
     id = models.BigAutoField(primary_key=True)
-    track = models.ForeignKey(LabeledTrack, on_delete=models.DO_NOTHING,
+    track = models.ForeignKey(LabeledTrack, on_delete=models.CASCADE,
         related_name='shapes', related_query_name='shape')
     frame = models.PositiveIntegerField()
 
