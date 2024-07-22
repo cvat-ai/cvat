@@ -126,6 +126,8 @@ The name of the service account to use for backend pods
   value: "{{ .Release.Name }}-vector"
 - name: DJANGO_LOG_SERVER_PORT
   value: "80"
+- name: CLICKHOUSE_HOST
+  value: "{{ .Release.Name }}-clickhouse"
 {{- end }}
 
 - name: SMOKESCREEN_OPTS
@@ -137,6 +139,49 @@ The name of the service account to use for backend pods
   value: "{{ .Release.Name }}-nuclio-dashboard"
 - name: CVAT_NUCLIO_FUNCTION_NAMESPACE
   value: "{{ .Release.Namespace }}"
+{{- end }}
+{{- end }}
+
+{{- define "cvat.backend.initContainers" -}}
+{{- $localValues := .Values.cvat.backend.server }}
+{{- if .Values.cvat.backend.permissionFix.enabled -}}
+- name: user-data-permission-fix
+  image: busybox
+  command: ["/bin/sh", "-c"]
+  args:
+  {{- if not .Values.cvat.backend.permissionFix.commandOverride -}}
+  {{- with join " " .Values.cvat.backend.permissionFix.paths }}
+    - "chmod -R 777 {{ . }}"
+  {{- end -}}
+  {{ else }}
+  {{- toYaml .Values.cvat.backend.permissionFix.commandOverride | nindent 3 }}
+  {{- end }}
+  {{- with merge $localValues.resources .Values.cvat.backend.resources }}
+  resources:
+  {{- toYaml . | nindent 3 }}
+  {{- end }}
+  volumeMounts:
+  {{- if .Values.cvat.backend.defaultStorage.enabled -}}
+  {{- if not .Values.cvat.backend.disableDistinctCachePerService -}}
+    - mountPath: /home/django/data/cache
+      name: cvat-backend-per-service-cache
+  {{- end }}
+    - mountPath: /home/django/data
+      name: cvat-backend-data
+      subPath: data
+    - mountPath: /home/django/keys
+      name: cvat-backend-data
+      subPath: keys
+    - mountPath: /home/django/logs
+      name: cvat-backend-data
+      subPath: logs
+    - mountPath: /home/django/models
+      name: cvat-backend-data
+      subPath: models
+  {{- end }}
+  {{- with concat .Values.cvat.backend.additionalVolumeMounts $localValues.additionalVolumeMounts }}
+  {{- toYaml . | nindent 4 }}
+  {{- end }}
 {{- end }}
 {{- end }}
 
