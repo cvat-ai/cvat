@@ -198,7 +198,7 @@ class JobAnnotation:
 
         if min_frame < parent_track.frame:
             # parent track cannot have a frame greater than the frame of the child track
-            parent_tracked_shape = parent_track.trackedshape_set.first()
+            parent_tracked_shape = parent_track.shapes.first()
             parent_track.frame = min_frame
             parent_tracked_shape.frame = min_frame
 
@@ -501,25 +501,25 @@ class JobAnnotation:
             'label_id',
             'group',
             'source',
-            'labeledimageattributeval__spec_id',
-            'labeledimageattributeval__value',
-            'labeledimageattributeval__id',
+            'attribute__spec_id',
+            'attribute__value',
+            'attribute__id',
         ).order_by('frame').iterator(chunk_size=2000)
 
         db_tags = merge_table_rows(
             rows=db_tags,
             keys_for_merge={
-                "labeledimageattributeval_set": [
-                    'labeledimageattributeval__spec_id',
-                    'labeledimageattributeval__value',
-                    'labeledimageattributeval__id',
+                "attributes": [
+                    'attribute__spec_id',
+                    'attribute__value',
+                    'attribute__id',
                 ],
             },
             field_id='id',
         )
 
         for db_tag in db_tags:
-            self._extend_attributes(db_tag.labeledimageattributeval_set,
+            self._extend_attributes(db_tag.attributes,
                 self.db_attributes[db_tag.label_id]["all"].values())
 
         serializer = serializers.LabeledImageSerializerFromDB(db_tags, many=True)
@@ -541,18 +541,18 @@ class JobAnnotation:
             'rotation',
             'points',
             'parent',
-            'labeledshapeattributeval__spec_id',
-            'labeledshapeattributeval__value',
-            'labeledshapeattributeval__id',
+            'attribute__spec_id',
+            'attribute__value',
+            'attribute__id',
         ).order_by('frame').iterator(chunk_size=2000)
 
         db_shapes = merge_table_rows(
             rows=db_shapes,
             keys_for_merge={
-                'labeledshapeattributeval_set': [
-                    'labeledshapeattributeval__spec_id',
-                    'labeledshapeattributeval__value',
-                    'labeledshapeattributeval__id',
+                'attributes': [
+                    'attribute__spec_id',
+                    'attribute__value',
+                    'attribute__id',
                 ],
             },
             field_id='id',
@@ -561,8 +561,12 @@ class JobAnnotation:
         shapes = {}
         elements = {}
         for db_shape in db_shapes:
-            self._extend_attributes(db_shape.labeledshapeattributeval_set,
+            self._extend_attributes(db_shape.attributes,
                 self.db_attributes[db_shape.label_id]["all"].values())
+            if db_shape['type'] == str(models.ShapeType.SKELETON):
+                # skeletons themselves should not have points as they consist of other elements
+                # here we ensure that it was initialized correctly
+                db_shape['points'] = []
 
             if db_shape.parent is None:
                 db_shape.elements = []
@@ -588,42 +592,42 @@ class JobAnnotation:
             "group",
             "source",
             "parent",
-            "labeledtrackattributeval__spec_id",
-            "labeledtrackattributeval__value",
-            "labeledtrackattributeval__id",
-            "trackedshape__type",
-            "trackedshape__occluded",
-            "trackedshape__z_order",
-            "trackedshape__rotation",
-            "trackedshape__points",
-            "trackedshape__id",
-            "trackedshape__frame",
-            "trackedshape__outside",
-            "trackedshape__trackedshapeattributeval__spec_id",
-            "trackedshape__trackedshapeattributeval__value",
-            "trackedshape__trackedshapeattributeval__id",
-        ).order_by('id', 'trackedshape__frame').iterator(chunk_size=2000)
+            "attribute__spec_id",
+            "attribute__value",
+            "attribute__id",
+            "shape__type",
+            "shape__occluded",
+            "shape__z_order",
+            "shape__rotation",
+            "shape__points",
+            "shape__id",
+            "shape__frame",
+            "shape__outside",
+            "shape__attribute__spec_id",
+            "shape__attribute__value",
+            "shape__attribute__id",
+        ).order_by('id', 'shape__frame').iterator(chunk_size=2000)
 
         db_tracks = merge_table_rows(
             rows=db_tracks,
             keys_for_merge={
-                "labeledtrackattributeval_set": [
-                    "labeledtrackattributeval__spec_id",
-                    "labeledtrackattributeval__value",
-                    "labeledtrackattributeval__id",
+                "attributes": [
+                    "attribute__spec_id",
+                    "attribute__value",
+                    "attribute__id",
                 ],
-                "trackedshape_set":[
-                    "trackedshape__type",
-                    "trackedshape__occluded",
-                    "trackedshape__z_order",
-                    "trackedshape__points",
-                    "trackedshape__rotation",
-                    "trackedshape__id",
-                    "trackedshape__frame",
-                    "trackedshape__outside",
-                    "trackedshape__trackedshapeattributeval__spec_id",
-                    "trackedshape__trackedshapeattributeval__value",
-                    "trackedshape__trackedshapeattributeval__id",
+                "shapes":[
+                    "shape__type",
+                    "shape__occluded",
+                    "shape__z_order",
+                    "shape__points",
+                    "shape__rotation",
+                    "shape__id",
+                    "shape__frame",
+                    "shape__outside",
+                    "shape__attribute__spec_id",
+                    "shape__attribute__value",
+                    "shape__attribute__id",
                 ],
             },
             field_id="id",
@@ -632,29 +636,31 @@ class JobAnnotation:
         tracks = {}
         elements = {}
         for db_track in db_tracks:
-            db_track["trackedshape_set"] = merge_table_rows(db_track["trackedshape_set"], {
-                'trackedshapeattributeval_set': [
-                    'trackedshapeattributeval__value',
-                    'trackedshapeattributeval__spec_id',
-                    'trackedshapeattributeval__id',
+            db_track["shapes"] = merge_table_rows(db_track["shapes"], {
+                'attributes': [
+                    'attribute__value',
+                    'attribute__spec_id',
+                    'attribute__id',
                 ]
             }, 'id')
 
             # A result table can consist many equal rows for track/shape attributes
             # We need filter unique attributes manually
-            db_track["labeledtrackattributeval_set"] = list(set(db_track["labeledtrackattributeval_set"]))
-            self._extend_attributes(db_track.labeledtrackattributeval_set,
+            db_track["attributes"] = list(set(db_track["attributes"]))
+            self._extend_attributes(db_track.attributes,
                 self.db_attributes[db_track.label_id]["immutable"].values())
 
             default_attribute_values = self.db_attributes[db_track.label_id]["mutable"].values()
-            for db_shape in db_track["trackedshape_set"]:
-                db_shape["trackedshapeattributeval_set"] = list(
-                    set(db_shape["trackedshapeattributeval_set"])
-                )
-                # in case of trackedshapes need to interpolate attriute values and extend it
+            for db_shape in db_track["shapes"]:
+                db_shape["attributes"] = list(set(db_shape["attributes"]))
+                # in case of trackedshapes need to interpolate attribute values and extend it
                 # by previous shape attribute values (not default values)
-                self._extend_attributes(db_shape["trackedshapeattributeval_set"], default_attribute_values)
-                default_attribute_values = db_shape["trackedshapeattributeval_set"]
+                self._extend_attributes(db_shape["attributes"], default_attribute_values)
+                if db_shape['type'] == str(models.ShapeType.SKELETON):
+                    # skeletons themselves should not have points as they consist of other elements
+                    # here we ensure that it was initialized correctly
+                    db_shape['points'] = []
+                default_attribute_values = db_shape["attributes"]
 
             if db_track.parent is None:
                 db_track.elements = []

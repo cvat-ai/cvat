@@ -1,5 +1,5 @@
 # Copyright (C) 2019-2022 Intel Corporation
-# Copyright (C) 2022-2023 CVAT.ai Corporation
+# Copyright (C) 2022-2024 CVAT.ai Corporation
 #
 # SPDX-License-Identifier: MIT
 
@@ -17,13 +17,14 @@ import textwrap
 from typing import Any, Dict, Iterable, Optional, OrderedDict, Union
 
 from rq.job import Job as RQJob, JobStatus as RQJobStatus
-from datetime import timezone, timedelta
+from datetime import timedelta
 from decimal import Decimal
 
 from rest_framework import serializers, exceptions
 from django.contrib.auth.models import User, Group
 from django.db import transaction
 from django.db.models import TextChoices
+from django.utils import timezone
 
 from cvat.apps.dataset_manager.formats.utils import get_label_color
 from cvat.apps.engine.utils import parse_exception_message
@@ -609,7 +610,7 @@ class JobReadSerializer(serializers.ModelSerializer):
             'dimension', 'bug_tracker', 'status', 'stage', 'state', 'mode', 'frame_count',
             'start_frame', 'stop_frame', 'data_chunk_size', 'data_compressed_chunk_type',
             'created_date', 'updated_date', 'issues', 'labels', 'type', 'organization',
-            'target_storage', 'source_storage')
+            'target_storage', 'source_storage', 'assignee_updated_date')
         read_only_fields = fields
 
     def to_representation(self, instance):
@@ -747,11 +748,16 @@ class JobWriteSerializer(WriteOnceMixin, serializers.ModelSerializer):
             raise serializers.ValidationError(f"Unexpected job type '{validated_data['type']}'")
 
         validated_data['segment'] = segment
+        validated_data["assignee_id"] = validated_data.pop("assignee", None)
 
         try:
             job = super().create(validated_data)
         except models.TaskGroundTruthJobsLimitError as ex:
             raise serializers.ValidationError(ex.message) from ex
+
+        if validated_data.get("assignee_id"):
+            job.assignee_updated_date = job.updated_date
+            job.save(update_fields=["assignee_updated_date"])
 
         job.make_dirs()
         return job
@@ -771,12 +777,13 @@ class JobWriteSerializer(WriteOnceMixin, serializers.ModelSerializer):
         if state != instance.state:
             validated_data['state'] = state
 
-        assignee = validated_data.get('assignee')
-        if assignee is not None:
-            validated_data['assignee'] = User.objects.get(id=assignee)
+        if "assignee" in validated_data and (
+            (assignee_id := validated_data.pop("assignee")) != instance.assignee_id
+        ):
+            validated_data["assignee_id"] = assignee_id
+            validated_data["assignee_updated_date"] = timezone.now()
 
         instance = super().update(instance, validated_data)
-
         return instance
 
 class SimpleJobSerializer(serializers.ModelSerializer):
@@ -1118,6 +1125,7 @@ class TaskReadSerializer(serializers.ModelSerializer):
             'status', 'data_chunk_size', 'data_compressed_chunk_type', 'guide_id',
             'data_original_chunk_type', 'size', 'image_quality', 'data', 'dimension',
             'subset', 'organization', 'target_storage', 'source_storage', 'jobs', 'labels',
+            'assignee_updated_date'
         )
         read_only_fields = fields
         extra_kwargs = {
@@ -1185,7 +1193,10 @@ class TaskWriteSerializer(WriteOnceMixin, serializers.ModelSerializer):
 
         LabelSerializer.create_labels(labels, parent_instance=db_task)
 
-        db_task.save()
+        if validated_data.get('assignee_id'):
+            db_task.assignee_updated_date = db_task.updated_date
+            db_task.save(update_fields=["assignee_updated_date"])
+
         return db_task
 
     # pylint: disable=no-self-use
@@ -1193,11 +1204,16 @@ class TaskWriteSerializer(WriteOnceMixin, serializers.ModelSerializer):
     def update(self, instance, validated_data):
         instance.name = validated_data.get('name', instance.name)
         instance.owner_id = validated_data.get('owner_id', instance.owner_id)
-        instance.assignee_id = validated_data.get('assignee_id', instance.assignee_id)
-        instance.bug_tracker = validated_data.get('bug_tracker',
-            instance.bug_tracker)
+        instance.bug_tracker = validated_data.get('bug_tracker', instance.bug_tracker)
         instance.subset = validated_data.get('subset', instance.subset)
         labels = validated_data.get('label_set', [])
+
+        if (
+            "assignee_id" in validated_data and
+            validated_data["assignee_id"] != instance.assignee_id
+        ):
+            instance.assignee_id = validated_data.pop('assignee_id')
+            instance.assignee_updated_date = timezone.now()
 
         if instance.project_id is None:
             LabelSerializer.update_labels(labels, parent_instance=instance)
@@ -1337,7 +1353,7 @@ class ProjectReadSerializer(serializers.ModelSerializer):
         fields = ('url', 'id', 'name', 'owner', 'assignee', 'guide_id',
             'bug_tracker', 'task_subsets', 'created_date', 'updated_date', 'status',
             'dimension', 'organization', 'target_storage', 'source_storage',
-            'tasks', 'labels',
+            'tasks', 'labels', 'assignee_updated_date'
         )
         read_only_fields = fields
         extra_kwargs = { 'organization': { 'allow_null': True } }
@@ -1391,6 +1407,10 @@ class ProjectWriteSerializer(serializers.ModelSerializer):
 
         LabelSerializer.create_labels(labels, parent_instance=db_project)
 
+        if validated_data.get("assignee_id"):
+            db_project.assignee_updated_date = db_project.updated_date
+            db_project.save(update_fields=["assignee_updated_date"])
+
         return db_project
 
     # pylint: disable=no-self-use
@@ -1398,10 +1418,16 @@ class ProjectWriteSerializer(serializers.ModelSerializer):
     def update(self, instance, validated_data):
         instance.name = validated_data.get('name', instance.name)
         instance.owner_id = validated_data.get('owner_id', instance.owner_id)
-        instance.assignee_id = validated_data.get('assignee_id', instance.assignee_id)
         instance.bug_tracker = validated_data.get('bug_tracker', instance.bug_tracker)
-        labels = validated_data.get('label_set', [])
 
+        if (
+            "assignee_id" in validated_data and
+            validated_data['assignee_id'] != instance.assignee_id
+        ):
+            instance.assignee_id = validated_data.pop('assignee_id')
+            instance.assignee_updated_date = timezone.now()
+
+        labels = validated_data.get('label_set', [])
         LabelSerializer.update_labels(labels, parent_instance=instance)
 
         # update source and target storages
@@ -1504,8 +1530,7 @@ class AnnotationSerializer(serializers.Serializer):
     source = serializers.CharField(default='manual')
 
 class LabeledImageSerializer(AnnotationSerializer):
-    attributes = AttributeValSerializer(many=True,
-        source="labeledimageattributeval_set", default=[])
+    attributes = AttributeValSerializer(many=True, default=[])
 
 class OptimizedFloatListField(serializers.ListField):
     '''Default ListField is extremely slow when try to process long lists of points'''
@@ -1541,8 +1566,7 @@ class ShapeSerializer(serializers.Serializer):
     )
 
 class SubLabeledShapeSerializer(ShapeSerializer, AnnotationSerializer):
-    attributes = AttributeValSerializer(many=True,
-        source="labeledshapeattributeval_set", default=[])
+    attributes = AttributeValSerializer(many=True, default=[])
 
 class LabeledShapeSerializer(SubLabeledShapeSerializer):
     elements = SubLabeledShapeSerializer(many=True, required=False)
@@ -1562,7 +1586,7 @@ class LabeledImageSerializerFromDB(serializers.BaseSerializer):
     def to_representation(self, instance):
         def convert_tag(tag):
             result = _convert_annotation(tag, ['id', 'label_id', 'frame', 'group', 'source'])
-            result['attributes'] = _convert_attributes(tag['labeledimageattributeval_set'])
+            result['attributes'] = _convert_attributes(tag['attributes'])
             return result
 
         return convert_tag(instance)
@@ -1576,7 +1600,7 @@ class LabeledShapeSerializerFromDB(serializers.BaseSerializer):
                 'id', 'label_id', 'type', 'frame', 'group', 'source',
                 'occluded', 'outside', 'z_order', 'rotation', 'points',
             ])
-            result['attributes'] = _convert_attributes(shape['labeledshapeattributeval_set'])
+            result['attributes'] = _convert_attributes(shape['attributes'])
             if shape.get('elements', None) is not None and shape['parent'] is None:
                 result['elements'] = [convert_shape(element) for element in shape['elements']]
             return result
@@ -1590,14 +1614,13 @@ class LabeledTrackSerializerFromDB(serializers.BaseSerializer):
         def convert_track(track):
             shape_keys = [
                 'id', 'type', 'frame', 'occluded', 'outside', 'z_order',
-                'rotation', 'points', 'trackedshapeattributeval_set',
+                'rotation', 'points', 'attributes',
             ]
             result = _convert_annotation(track, ['id', 'label_id', 'frame', 'group', 'source'])
-            result['shapes'] = [_convert_annotation(shape, shape_keys) for shape in track['trackedshape_set']]
-            result['attributes'] = _convert_attributes(track['labeledtrackattributeval_set'])
+            result['shapes'] = [_convert_annotation(shape, shape_keys) for shape in track['shapes']]
+            result['attributes'] = _convert_attributes(track['attributes'])
             for shape in result['shapes']:
-                shape['attributes'] = _convert_attributes(shape['trackedshapeattributeval_set'])
-                shape.pop('trackedshapeattributeval_set', None)
+                shape['attributes'] = _convert_attributes(shape['attributes'])
             if track.get('elements', None) is not None and track['parent'] is None:
                 result['elements'] = [convert_track(element) for element in track['elements']]
             return result
@@ -1607,14 +1630,11 @@ class LabeledTrackSerializerFromDB(serializers.BaseSerializer):
 class TrackedShapeSerializer(ShapeSerializer):
     id = serializers.IntegerField(default=None, allow_null=True)
     frame = serializers.IntegerField(min_value=0)
-    attributes = AttributeValSerializer(many=True,
-        source="trackedshapeattributeval_set", default=[])
+    attributes = AttributeValSerializer(many=True, default=[])
 
 class SubLabeledTrackSerializer(AnnotationSerializer):
-    shapes = TrackedShapeSerializer(many=True, allow_empty=True,
-        source="trackedshape_set")
-    attributes = AttributeValSerializer(many=True,
-        source="labeledtrackattributeval_set", default=[])
+    shapes = TrackedShapeSerializer(many=True, allow_empty=True)
+    attributes = AttributeValSerializer(many=True, default=[])
 
 class LabeledTrackSerializer(SubLabeledTrackSerializer):
     elements = SubLabeledTrackSerializer(many=True, required=False)

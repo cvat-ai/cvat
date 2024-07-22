@@ -4,6 +4,7 @@
   "previous": null,
   "results": [
     {
+      "assignee": null,
       "created_date": "2023-05-26T16:25:36.613000Z",
       "gt_last_updated": "2023-05-26T16:16:50.630000Z",
       "id": 1,
@@ -35,6 +36,7 @@
       "task_id": 22
     },
     {
+      "assignee": null,
       "created_date": "2023-05-26T16:25:36.616000Z",
       "gt_last_updated": "2023-05-26T16:16:50.630000Z",
       "id": 2,
@@ -66,6 +68,7 @@
       "task_id": null
     },
     {
+      "assignee": null,
       "created_date": "2023-11-24T15:24:25.355000Z",
       "gt_last_updated": "2023-11-24T15:18:55.216000Z",
       "id": 3,
@@ -97,6 +100,7 @@
       "task_id": 22
     },
     {
+      "assignee": null,
       "created_date": "2023-11-24T15:24:25.357000Z",
       "gt_last_updated": "2023-11-24T15:18:55.216000Z",
       "id": 4,
@@ -128,6 +132,7 @@
       "task_id": null
     },
     {
+      "assignee": null,
       "created_date": "2024-03-21T11:16:21.845000Z",
       "gt_last_updated": "2023-11-24T15:18:55.216000Z",
       "id": 5,
@@ -159,6 +164,7 @@
       "task_id": 22
     },
     {
+      "assignee": null,
       "created_date": "2024-03-21T11:16:21.847000Z",
       "gt_last_updated": "2023-11-24T15:18:55.216000Z",
       "id": 6,
@@ -190,6 +196,7 @@
       "task_id": null
     },
     {
+      "assignee": null,
       "created_date": "2024-03-21T20:52:03.542000Z",
       "gt_last_updated": "2024-03-21T20:50:20.020000Z",
       "id": 7,
@@ -216,6 +223,7 @@
       "task_id": 23
     },
     {
+      "assignee": null,
       "created_date": "2024-03-21T20:52:03.552000Z",
       "gt_last_updated": "2024-03-21T20:50:20.020000Z",
       "id": 8,
@@ -238,6 +246,7 @@
       "task_id": null
     },
     {
+      "assignee": null,
       "created_date": "2024-03-21T20:52:03.552000Z",
       "gt_last_updated": "2024-03-21T20:50:20.020000Z",
       "id": 9,
@@ -262,6 +271,7 @@
       "task_id": null
     },
     {
+      "assignee": null,
       "created_date": "2024-03-21T20:52:03.552000Z",
       "gt_last_updated": "2024-03-21T20:50:20.020000Z",
       "id": 10,
@@ -287,6 +297,7 @@
       "task_id": null
     },
     {
+      "assignee": null,
       "created_date": "2024-04-03T09:51:29.971000Z",
       "gt_last_updated": "2023-11-24T15:18:55.216000Z",
       "id": 11,
@@ -318,6 +329,7 @@
       "task_id": 22
     },
     {
+      "assignee": null,
       "created_date": "2024-04-03T09:51:29.992000Z",
       "gt_last_updated": "2023-11-24T15:18:55.216000Z",
       "id": 12,

@@ -21,7 +21,7 @@ For more information, see:
 For export of images: any 2D shapes, tags
 
 - Supported annotations: Bounding Boxes, Polygons, Polylines,
-  Masks, Points, Cuboids, Tags
+  Masks, Points, Cuboids, Tags, Skeletons
 - Attributes: Supported.
 - Tracks: Supported.
 
@@ -41,7 +41,7 @@ taskname.zip/
 # Import annotations in Datumaro format
 
 - supported annotations: Bounding Boxes, Polygons, Polylines,
-  Masks, Points, Cuboids, Labels
+  Masks, Points, Cuboids, Labels, Skeletons
 - supported attributes: any
 
 Uploaded file: a zip archive of the following structure:

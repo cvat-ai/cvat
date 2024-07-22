@@ -1,4 +1,4 @@
-import React, { useRef, useState } from 'react';
+import React, { useRef, useState, useEffect } from 'react';
 import { Select, Modal } from 'antd/lib';
 import { conflictDetector } from 'reducers/shortcuts-reducer';
 import { ShortcutScope } from 'utils/enums';
@@ -11,6 +11,15 @@ interface Props {
     onKeySequenceUpdate: (keyMapId: string, updatedSequence: string[]) => void;
 }
 
+const ShortcutMapper = (key: string): string => {
+    const mapping: Record<string, string> = {
+        control: 'ctrl',
+        ' ': 'space',
+        escape: 'esc',
+    };
+    return mapping[key] || key;
+};
+
 function MultipleShortcutsDisplay(props: Props): JSX.Element {
     const {
         id,
@@ -21,21 +30,13 @@ function MultipleShortcutsDisplay(props: Props): JSX.Element {
     const { sequences } = item;
     const selectRef = useRef<any>(null);
     const [focus, setFocus] = useState(false);
-    const [pressedKeys, setPressedKeys] = useState<string[]>([]);
+    const [pressedKeys, setPressedKeys] = useState<string[][]>([[]]);
+    const [currentIdx, setCurrentIdx] = useState<number>(0);
+    const [timer, setTimer] = useState<NodeJS.Timeout | null>(null);
 
-    const handleKeyDown = (event: React.KeyboardEvent): void => {
-        event.stopPropagation();
-        event.preventDefault();
-        if (focus) {
-            setPressedKeys((prevKeys) => {
-                const key = event.key.toLowerCase();
-                if (!prevKeys.includes(key)) {
-                    return [...prevKeys, key];
-                }
-                return prevKeys;
-            });
-        }
-    };
+    useEffect(() => () => {
+        if (timer) clearTimeout(timer);
+    }, [timer]);
 
     function conflictNotifier(keyMapId: string, updatedSequence: string[]): void {
         const shortcut = {
@@ -72,16 +73,42 @@ function MultipleShortcutsDisplay(props: Props): JSX.Element {
         }
     }
 
+    const finalizeCombination = (): void => {
+        const keyCombination = pressedKeys.map((keys) => keys.map((key) => ShortcutMapper(key)).join('+')).join(' ');
+        if (!sequences.includes(keyCombination)) {
+            conflictNotifier(id, [...sequences, keyCombination]);
+        }
+        setPressedKeys([[]]);
+        setCurrentIdx(0);
+        setTimer(null);
+        selectRef.current.blur();
+    };
+
+    const handleKeyDown = (event: React.KeyboardEvent): void => {
+        event.stopPropagation();
+        event.preventDefault();
+        const key = ShortcutMapper(event.key.toLowerCase());
+        if (!focus) return;
+
+        if (timer) {
+            clearTimeout(timer);
+            setTimer(null);
+            const newPressedKeys = [...pressedKeys, [key]];
+            setPressedKeys(newPressedKeys);
+            setCurrentIdx(currentIdx + 1);
+        } else if (!pressedKeys[currentIdx].includes(key)) {
+            const newPressedKeys = [...pressedKeys];
+            newPressedKeys[currentIdx].push(key);
+            setPressedKeys(newPressedKeys);
+        }
+    };
+
     const handleKeyUp = (event: React.KeyboardEvent): void => {
         event.stopPropagation();
         event.preventDefault();
         if (focus) {
-            const newKeyCombination = pressedKeys.join('+');
-            if (!sequences.includes(newKeyCombination)) {
-                onKeySequenceUpdate(id, [...sequences, newKeyCombination]);
-            }
-            setPressedKeys([]);
-            selectRef.current.blur();
+            const newTimer = setTimeout(finalizeCombination, 1000);
+            setTimer(newTimer);
         }
     };
 
@@ -89,11 +116,17 @@ function MultipleShortcutsDisplay(props: Props): JSX.Element {
         <Select
             allowClear
             onFocus={() => setFocus(true)}
-            onBlur={() => setFocus(false)}
+            onBlur={() => {
+                setFocus(false);
+                if (timer) {
+                    clearTimeout(timer);
+                    finalizeCombination();
+                }
+            }}
             onClear={() => onKeySequenceUpdate(id, [])}
             ref={selectRef}
-            searchValue=''
-            onChange={(value: string[]) => conflictNotifier(id, value)}
+            searchValue={pressedKeys.map((keys) => keys.map((key) => ShortcutMapper(key)).join('+')).join(' ')}
+            onChange={(value: string[]) => onKeySequenceUpdate(id, value)}
             suffixIcon={null}
             dropdownStyle={{ display: 'none' }}
             mode='multiple'

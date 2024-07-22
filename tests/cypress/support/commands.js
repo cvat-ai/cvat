@@ -266,7 +266,7 @@ Cypress.Commands.add('headlessLogin', (username = Cypress.env('user'), password 
     });
 });
 
-Cypress.Commands.add('headlessCreateObject', (objects, jobID) => {
+Cypress.Commands.add('headlessCreateObjects', (objects, jobID) => {
     cy.window().then(async ($win) => {
         const job = (await $win.cvat.jobs.get({ jobID }))[0];
         await job.annotations.clear({ reload: true });
@@ -331,6 +331,13 @@ Cypress.Commands.add('headlessDeleteProject', (projectID) => {
     });
 });
 
+Cypress.Commands.add('headlessDeleteTask', (taskID) => {
+    cy.window().then(async ($win) => {
+        const [task] = await $win.cvat.tasks.get({ id: taskID });
+        await task.delete();
+    });
+});
+
 Cypress.Commands.add('headlessCreateUser', (userSpec) => {
     cy.request({
         method: 'POST',
@@ -349,6 +356,11 @@ Cypress.Commands.add('headlessCreateUser', (userSpec) => {
         },
     });
     return cy.wrap();
+});
+
+Cypress.Commands.add('headlessLogout', () => {
+    cy.clearAllCookies();
+    cy.clearAllLocalStorage();
 });
 
 Cypress.Commands.add('openTask', (taskName, projectSubsetFieldValue) => {
@@ -1141,7 +1153,7 @@ Cypress.Commands.add('interactMenu', (choice) => {
     cy.get('.cvat-spinner').should('not.exist');
 });
 
-Cypress.Commands.add('setJobState', (choice) => {
+Cypress.Commands.add('updateJobStateOnAnnotationView', (choice) => {
     cy.interactMenu('Change job state');
     cy.get('.cvat-annotation-menu-job-state-submenu')
         .should('not.have.class', 'ant-zoom-big').within(() => {
@@ -1153,6 +1165,20 @@ Cypress.Commands.add('setJobState', (choice) => {
             cy.contains('[type="button"]', 'Continue').click();
         });
     cy.get('.cvat-modal-content-change-job-state').should('not.exist');
+    cy.get('.cvat-spinner').should('not.exist');
+});
+
+Cypress.Commands.add('setJobState', (jobID, state) => {
+    cy.get('.cvat-task-job-list')
+        .contains('a', `Job #${jobID}`)
+        .parents('.cvat-job-item')
+        .find('.cvat-job-item-state').click();
+    cy.get('.ant-select-dropdown')
+        .should('be.visible')
+        .not('.ant-select-dropdown-hidden')
+        .within(() => {
+            cy.get(`[title="${state}"]`).click();
+        });
     cy.get('.cvat-spinner').should('not.exist');
 });
 
@@ -1279,7 +1305,7 @@ Cypress.Commands.add('downloadExport', () => {
         .within(() => {
             cy.contains('[role="menuitem"]', 'Download').click();
         });
-    cy.wait('@download')
+    cy.wait('@download', { requestTimeout: 10000 })
         .then((download) => {
             const filename = download.response.headers['content-disposition'].split(';')[1].split('filename=')[1];
             // need to remove quotes

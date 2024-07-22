@@ -100,6 +100,7 @@ function ShortcutsSettingsComponent(props: Props): JSX.Element {
                             items={items}
                             bordered={false}
                             defaultActiveKey={Object.values(ShortcutScope).map((scope: string) => scope)}
+                            className='cvat-shortcuts-settings-collapse'
                         />
                     ) : (
                         <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} />

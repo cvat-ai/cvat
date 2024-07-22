@@ -1,4 +1,4 @@
-# Copyright (C) 2023 CVAT.ai Corporation
+# Copyright (C) 2023-2024 CVAT.ai Corporation
 #
 # SPDX-License-Identifier: MIT
 
@@ -311,7 +311,9 @@ class QualityReportViewSet(
                     raise ValidationError("No report has been computed")
 
                 report = self.get_queryset().get(pk=return_value)
-                report_serializer = QualityReportSerializer(instance=report)
+                report_serializer = QualityReportSerializer(
+                    instance=report, context={"request": request}
+                )
                 return Response(
                     data=report_serializer.data,
                     status=status.HTTP_201_CREATED,
