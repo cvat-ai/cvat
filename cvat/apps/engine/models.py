@@ -780,18 +780,6 @@ class Job(TimestampedModel):
 
         return super().clean()
 
-    def perform_destroy(self, instance):
-        if instance.type != JobType.GROUND_TRUTH:
-            raise ValidationError("Only ground truth jobs can be removed")
-
-        segment = instance.segment
-        if segment:
-            with transaction.atomic():
-                super().perform_destroy(instance)
-                segment.delete()
-        else:
-            super().perform_destroy(instance)
-
     @cache_deleted
     @transaction.atomic(savepoint=False)
     def delete(self, using=None, keep_parents=False):
