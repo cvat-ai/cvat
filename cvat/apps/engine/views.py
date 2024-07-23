@@ -1746,13 +1746,7 @@ class JobViewSet(viewsets.GenericViewSet, mixins.ListModelMixin, mixins.CreateMo
         if instance.type != JobType.GROUND_TRUTH:
             raise ValidationError("Only ground truth jobs can be removed")
 
-        segment = instance.segment
-        if segment:
-            with transaction.atomic():
-                super().perform_destroy(instance)
-                segment.delete()
-        else:
-            super().perform_destroy(instance)
+        return super().perform_destroy(instance)
 
     # UploadMixin method
     def get_upload_dir(self):

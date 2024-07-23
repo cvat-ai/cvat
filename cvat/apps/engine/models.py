@@ -780,11 +780,26 @@ class Job(TimestampedModel):
 
         return super().clean()
 
+    def perform_destroy(self, instance):
+        if instance.type != JobType.GROUND_TRUTH:
+            raise ValidationError("Only ground truth jobs can be removed")
+
+        segment = instance.segment
+        if segment:
+            with transaction.atomic():
+                super().perform_destroy(instance)
+                segment.delete()
+        else:
+            super().perform_destroy(instance)
+
     @cache_deleted
     @transaction.atomic(savepoint=False)
     def delete(self, using=None, keep_parents=False):
         clear_annotations_in_jobs([self.id])
+        segment = self.segment
         super().delete(using, keep_parents)
+        if segment:
+            segment.delete()
 
     def make_dirs(self):
         job_path = self.get_dirname()
