@@ -1259,13 +1259,15 @@ Cypress.Commands.add('exportTask', ({
 Cypress.Commands.add('exportJob', ({
     type, format, archiveCustomName,
     targetStorage = null, useDefaultLocation = true,
-    scrollList = false,
 }) => {
     cy.interactMenu('Export job dataset');
     cy.get('.cvat-modal-export-job').should('be.visible').find('.cvat-modal-export-select').click();
-    if (scrollList) {
-        cy.contains('.cvat-modal-export-option-item', format).scrollIntoView();
-    }
+    cy.get('.ant-select-dropdown')
+        .not('.ant-select-dropdown-hidden')
+        .not('.ant-slide-up')
+        .within(() => {
+            cy.contains('.cvat-modal-export-option-item', format).scrollIntoView();
+        });
     cy.contains('.cvat-modal-export-option-item', format).should('be.visible').click();
     cy.get('.cvat-modal-export-job').find('.cvat-modal-export-select').should('contain.text', format);
     if (type === 'dataset') {
