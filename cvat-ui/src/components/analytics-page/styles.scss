@@ -86,7 +86,6 @@
 
     a {
         color: white;
-        margin-left: $grid-unit-size;
 
         &:hover {
             color: white;
@@ -96,9 +95,6 @@
 
 .cvat-analytics-time-hint {
     font-size: 10px;
-    position: absolute;
-    bottom: -$grid-unit-size * 3;
-    right: $grid-unit-size * 4;
 }
 
 .cvat-analytics-page {
@@ -128,7 +124,7 @@
 }
 
 .cvat-quality-settings-switch {
-    padding: 6px 8px;
+    padding: $grid-unit-size $grid-unit-size * 1.25;
     border: 1px solid lightgray;
     margin-left: $grid-unit-size;
     border-radius: $border-radius-base;
@@ -154,10 +150,5 @@
 .cvat-job-list-item-conflicts {
     display: flex;
     justify-content: space-between;
-    align-items: center;
-}
-
-.cvat-quality-summary-controls {
-    display: flex;
     align-items: center;
 }

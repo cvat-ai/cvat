@@ -40,8 +40,6 @@ export default class MLModel {
     }
 
     public get kind(): ModelKind {
-        // compatibility alias; TODO: remove this
-        if (this.serialized.kind === 'classifier') return ModelKind.DETECTOR;
         return this.serialized.kind;
     }
 

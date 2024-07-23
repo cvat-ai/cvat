@@ -1,7 +1,7 @@
 openapi: 3.0.3
 info:
   title: CVAT REST API
-  version: 2.15.0
+  version: 2.17.0
   description: REST API for Computer Vision Annotation Tool (CVAT)
   termsOfService: https://www.google.com/policies/terms/
   contact:
@@ -2018,7 +2018,18 @@ paths:
       description: |
         If format is specified, a ZIP archive will be returned. Otherwise,
         the annotations will be returned as a JSON document.
-      summary: Get job annotations
+
+        Deprecation warning:
+
+        Utilizing this endpoint to export annotations as a dataset in
+        a specific format will be deprecated in one of the next releases.
+
+        Consider using new API:
+        - POST /api/jobs/<job_id>/dataset/export?save_images=False to initiate export process
+        - GET /api/requests/<rq_id> to check process status,
+            where rq_id is request id returned on initializing request
+      summary: Get job annotations or export job annotations as a dataset in a specific
+        format
       parameters:
       - in: query
         name: action
@@ -2066,6 +2077,7 @@ paths:
           type: boolean
           default: true
         description: Use the location that was configured in the task to export annotation
+        deprecated: true
       tags:
       - jobs
       security:
@@ -2134,6 +2146,7 @@ paths:
           type: boolean
           default: true
         description: Use the location that was configured in the task to import annotation
+        deprecated: true
       tags:
       - jobs
       requestBody:
@@ -2215,6 +2228,7 @@ paths:
           type: boolean
           default: true
         description: Use the location that was configured in the task to import annotation
+        deprecated: true
       tags:
       - jobs
       requestBody:
@@ -2405,6 +2419,13 @@ paths:
   /api/jobs/{id}/dataset:
     get:
       operationId: jobs_retrieve_dataset
+      description: |
+        Deprecation warning:
+            This endpoint will be deprecated in one of the next releases.
+            Consider using new API:
+            - POST /api/jobs/<job_id>/dataset/export?save_images=True to initiate export process
+            - GET /api/requests/<rq_id> to check process status,
+                where rq_id is request id returned on initializing request
       summary: Export job as a dataset in a specific format
       parameters:
       - in: query
@@ -2454,6 +2475,7 @@ paths:
           type: boolean
           default: true
         description: Use the location that was configured in the task to export dataset
+        deprecated: true
       tags:
       - jobs
       security:
@@ -2476,6 +2498,73 @@ paths:
           description: Exporting has been started
         '405':
           description: Format is not available
+  /api/jobs/{id}/dataset/export:
+    post:
+      operationId: jobs_create_dataset_export
+      description: |
+        The request `POST /api/<projects|tasks|jobs>/id/dataset/export` will initialize
+        a background process to export a dataset. To check status of the process
+        please, use `GET /api/requests/<rq_id>` where **rq_id** is request ID returned in the response for this endpoint.
+      summary: Initialize process to export resource as a dataset in a specific format
+      parameters:
+      - in: query
+        name: cloud_storage_id
+        schema:
+          type: integer
+        description: Storage id
+      - in: query
+        name: filename
+        schema:
+          type: string
+        description: Desired output file name
+      - in: query
+        name: format
+        schema:
+          type: string
+        description: |-
+          Desired output format name
+          You can get the list of supported formats at:
+          /server/annotation/formats
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this job.
+        required: true
+      - in: query
+        name: location
+        schema:
+          type: string
+          enum:
+          - cloud_storage
+          - local
+        description: Where need to save downloaded dataset
+      - in: query
+        name: save_images
+        schema:
+          type: boolean
+          default: false
+        description: Include images or not
+      tags:
+      - jobs
+      security:
+      - sessionAuth: []
+        csrfAuth: []
+        tokenAuth: []
+      - signatureAuth: []
+      - basicAuth: []
+      responses:
+        '202':
+          content:
+            application/vnd.cvat+json:
+              schema:
+                $ref: '#/components/schemas/RqId'
+          description: Exporting has been started
+        '405':
+          description: Format is not available
+        '409':
+          description: Exporting is already in progress
   /api/jobs/{id}/preview:
     get:
       operationId: jobs_retrieve_preview
@@ -3455,7 +3544,15 @@ paths:
   /api/projects/{id}/annotations:
     get:
       operationId: projects_retrieve_annotations
-      summary: Get project annotations
+      description: |
+        Deprecation warning:
+
+        Using this endpoint to initiate export of annotations as a dataset or to check export status is deprecated.
+        Consider using new API:
+        - POST /api/projects/<project_id>/dataset/export?save_images=False to initiate exporting process
+        - GET /api/requests/<rq_id> to check export status,
+            where rq_id is request id returned on initializing request'
+      summary: Get project annotations or export them as a dataset
       parameters:
       - in: query
         name: action
@@ -3504,6 +3601,7 @@ paths:
           type: boolean
           default: true
         description: Use the location that was configured in project to export annotation
+        deprecated: true
       tags:
       - projects
       security:
@@ -3530,6 +3628,14 @@ paths:
   /api/projects/{id}/backup:
     get:
       operationId: projects_retrieve_backup
+      description: |
+        Deprecation warning:
+
+        This endpoint will be deprecated in one of the next releases.
+        Consider using new API:
+        - POST /api/projects/<project_id>/backup/export to initiate backup process
+        - GET /api/requests/<rq_id> to check process status,
+            where rq_id is request id returned on initializing request
       summary: Back up a project
       parameters:
       - in: query
@@ -3570,6 +3676,7 @@ paths:
           type: boolean
           default: true
         description: Use the location that was configured in project to export backup
+        deprecated: true
       tags:
       - projects
       security:
@@ -3585,6 +3692,59 @@ paths:
           description: Output backup file is ready for downloading
         '202':
           description: Creating a backup file has been started
+  /api/projects/{id}/backup/export:
+    post:
+      operationId: projects_create_backup_export
+      description: |
+        The request `POST /api/<projects|tasks>/id/backup/export` will initialize
+        a background process to backup a resource. To check status of the process
+        please, use `GET /api/requests/<rq_id>` where **rq_id** is request ID returned in the response for this endpoint.
+      summary: Initiate process to backup resource
+      parameters:
+      - in: query
+        name: cloud_storage_id
+        schema:
+          type: integer
+        description: Storage id
+      - in: query
+        name: filename
+        schema:
+          type: string
+        description: Backup file name
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this project.
+        required: true
+      - in: query
+        name: location
+        schema:
+          type: string
+          enum:
+          - cloud_storage
+          - local
+        description: Where need to save downloaded backup
+      tags:
+      - projects
+      security:
+      - sessionAuth: []
+        csrfAuth: []
+        tokenAuth: []
+      - signatureAuth: []
+      - basicAuth: []
+      responses:
+        '202':
+          content:
+            application/vnd.cvat+json:
+              schema:
+                $ref: '#/components/schemas/RqId'
+          description: Creating a backup file has been started
+        '400':
+          description: Wrong query parameters were passed
+        '409':
+          description: The backup process has already been initiated and is not yet
+            finished
   /api/projects/{id}/dataset/:
     get:
       operationId: projects_retrieve_dataset
@@ -3596,6 +3756,14 @@ paths:
         Make sure to include this parameter as a query parameter in your subsequent
         GET /api/projects/id/dataset requests to track the status of the dataset import.
         Also you should specify action parameter: action=import_status.
+
+        Deprecation warning:
+        Utilizing this endpoint to export project dataset in
+        a specific format will be deprecated in one of the next releases.
+        Consider using new API:
+        - POST /api/projects/<project_id>/dataset/export/?save_images=True to initiate export process
+        - GET /api/requests/<rq_id> to check process status,
+            where rq_id is request id returned on initializing request
       summary: Export a project as a dataset / Check dataset import status
       parameters:
       - in: query
@@ -3650,6 +3818,7 @@ paths:
           type: boolean
           default: true
         description: Use the location that was configured in project to import dataset
+        deprecated: true
       tags:
       - projects
       security:
@@ -3720,6 +3889,7 @@ paths:
           default: true
         description: Use the location that was configured in the project to import
           annotations
+        deprecated: true
       tags:
       - projects
       requestBody:
@@ -3747,6 +3917,73 @@ paths:
           description: Failed to import dataset
         '405':
           description: Format is not available
+  /api/projects/{id}/dataset/export:
+    post:
+      operationId: projects_create_dataset_export
+      description: |
+        The request `POST /api/<projects|tasks|jobs>/id/dataset/export` will initialize
+        a background process to export a dataset. To check status of the process
+        please, use `GET /api/requests/<rq_id>` where **rq_id** is request ID returned in the response for this endpoint.
+      summary: Initialize process to export resource as a dataset in a specific format
+      parameters:
+      - in: query
+        name: cloud_storage_id
+        schema:
+          type: integer
+        description: Storage id
+      - in: query
+        name: filename
+        schema:
+          type: string
+        description: Desired output file name
+      - in: query
+        name: format
+        schema:
+          type: string
+        description: |-
+          Desired output format name
+          You can get the list of supported formats at:
+          /server/annotation/formats
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this project.
+        required: true
+      - in: query
+        name: location
+        schema:
+          type: string
+          enum:
+          - cloud_storage
+          - local
+        description: Where need to save downloaded dataset
+      - in: query
+        name: save_images
+        schema:
+          type: boolean
+          default: false
+        description: Include images or not
+      tags:
+      - projects
+      security:
+      - sessionAuth: []
+        csrfAuth: []
+        tokenAuth: []
+      - signatureAuth: []
+      - basicAuth: []
+      responses:
+        '202':
+          content:
+            application/vnd.cvat+json:
+              schema:
+                $ref: '#/components/schemas/RqId'
+          description: Exporting has been started
+        '405':
+          description: Format is not available
+        '409':
+          description: Exporting is already in progress
   /api/projects/{id}/preview:
     get:
       operationId: projects_retrieve_preview
@@ -4281,6 +4518,156 @@ paths:
               schema:
                 $ref: '#/components/schemas/QualitySettings'
           description: ''
+  /api/requests:
+    get:
+      operationId: requests_list
+      summary: List requests
+      parameters:
+      - name: action
+        in: query
+        description: A simple equality filter for the action field
+        schema:
+          type: string
+          enum:
+          - create
+          - import
+          - export
+      - name: filter
+        required: false
+        in: query
+        description: |2-
+
+          JSON Logic filter. This filter can be used to perform complex filtering by grouping rules.
+
+          Details about the syntax used can be found at the link: https://jsonlogic.com/
+
+           Available filter_fields: ['status', 'project_id', 'task_id', 'job_id', 'action', 'subresource', 'format'].
+        schema:
+          type: string
+      - name: format
+        in: query
+        description: A simple equality filter for the format field
+        schema:
+          type: string
+      - name: job_id
+        in: query
+        description: A simple equality filter for the job_id field
+        schema:
+          type: integer
+      - name: org
+        in: query
+        description: A simple equality filter for the org field
+        schema:
+          type: string
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      - name: page_size
+        required: false
+        in: query
+        description: Number of results to return per page.
+        schema:
+          type: integer
+      - name: project_id
+        in: query
+        description: A simple equality filter for the project_id field
+        schema:
+          type: integer
+      - name: sort
+        required: false
+        in: query
+        description: 'Which field to use when ordering the results. Available ordering_fields:
+          [''created_date'', ''status'', ''action'']'
+        schema:
+          type: string
+      - name: status
+        in: query
+        description: A simple equality filter for the status field
+        schema:
+          type: string
+          enum:
+          - queued
+          - started
+          - failed
+          - finished
+      - name: subresource
+        in: query
+        description: A simple equality filter for the subresource field
+        schema:
+          type: string
+          enum:
+          - annotations
+          - dataset
+          - backup
+      - name: task_id
+        in: query
+        description: A simple equality filter for the task_id field
+        schema:
+          type: integer
+      tags:
+      - requests
+      security:
+      - sessionAuth: []
+        csrfAuth: []
+        tokenAuth: []
+      - signatureAuth: []
+      - basicAuth: []
+      responses:
+        '200':
+          content:
+            application/vnd.cvat+json:
+              schema:
+                $ref: '#/components/schemas/PaginatedRequestList'
+          description: ''
+  /api/requests/{id}:
+    get:
+      operationId: requests_retrieve
+      summary: Get request details
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+      tags:
+      - requests
+      security:
+      - sessionAuth: []
+        csrfAuth: []
+        tokenAuth: []
+      - signatureAuth: []
+      - basicAuth: []
+      responses:
+        '200':
+          content:
+            application/vnd.cvat+json:
+              schema:
+                $ref: '#/components/schemas/Request'
+          description: ''
+  /api/requests/{id}/cancel:
+    post:
+      operationId: requests_create_cancel
+      summary: Cancel request
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+      tags:
+      - requests
+      security:
+      - sessionAuth: []
+        csrfAuth: []
+        tokenAuth: []
+      - signatureAuth: []
+      - basicAuth: []
+      responses:
+        '200':
+          description: The request has been cancelled
   /api/schema/:
     get:
       operationId: schema_retrieve
@@ -4780,7 +5167,17 @@ paths:
   /api/tasks/{id}/annotations/:
     get:
       operationId: tasks_retrieve_annotations
-      summary: Get task annotations
+      description: |
+        Deprecation warning:
+
+        Utilizing this endpoint ot export annotations as a dataset in
+        a specific format will be deprecated in one of the next releases.
+
+        Consider using new API:
+        - POST /api/tasks/<task_id>/dataset/export?save_images=False to initiate export process
+        - GET /api/requests/<rq_id> to check process status,
+            where rq_id is request id returned on initializing request
+      summary: Get task annotations or export them as a dataset in a specific format
       parameters:
       - in: query
         name: action
@@ -4828,6 +5225,7 @@ paths:
           type: boolean
           default: true
         description: Use the location that was configured in the task to export annotation
+        deprecated: true
       tags:
       - tasks
       security:
@@ -4898,6 +5296,7 @@ paths:
           type: boolean
           default: true
         description: Use the location that was configured in task to import annotations
+        deprecated: true
       tags:
       - tasks
       requestBody:
@@ -5044,6 +5443,13 @@ paths:
   /api/tasks/{id}/backup:
     get:
       operationId: tasks_retrieve_backup
+      description: |
+        Deprecation warning:
+            This endpoint will be deprecated in one of the next releases.
+            Consider using new API:
+            - POST /api/tasks/<task_id>/backup/export to initiate backup process
+            - GET /api/requests/<rq_id> to check process status,
+                where rq_id is request id returned on initializing request'
       summary: Back up a task
       parameters:
       - in: query
@@ -5084,6 +5490,7 @@ paths:
           type: boolean
           default: true
         description: Use the location that was configured in the task to export backup
+        deprecated: true
       tags:
       - tasks
       security:
@@ -5101,6 +5508,59 @@ paths:
           description: Creating a backup file has been started
         '400':
           description: Backup of a task without data is not allowed
+  /api/tasks/{id}/backup/export:
+    post:
+      operationId: tasks_create_backup_export
+      description: |
+        The request `POST /api/<projects|tasks>/id/backup/export` will initialize
+        a background process to backup a resource. To check status of the process
+        please, use `GET /api/requests/<rq_id>` where **rq_id** is request ID returned in the response for this endpoint.
+      summary: Initiate process to backup resource
+      parameters:
+      - in: query
+        name: cloud_storage_id
+        schema:
+          type: integer
+        description: Storage id
+      - in: query
+        name: filename
+        schema:
+          type: string
+        description: Backup file name
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this task.
+        required: true
+      - in: query
+        name: location
+        schema:
+          type: string
+          enum:
+          - cloud_storage
+          - local
+        description: Where need to save downloaded backup
+      tags:
+      - tasks
+      security:
+      - sessionAuth: []
+        csrfAuth: []
+        tokenAuth: []
+      - signatureAuth: []
+      - basicAuth: []
+      responses:
+        '202':
+          content:
+            application/vnd.cvat+json:
+              schema:
+                $ref: '#/components/schemas/RqId'
+          description: Creating a backup file has been started
+        '400':
+          description: Wrong query parameters were passed
+        '409':
+          description: The backup process has already been initiated and is not yet
+            finished
   /api/tasks/{id}/data/:
     get:
       operationId: tasks_retrieve_data
@@ -5196,7 +5656,7 @@ paths:
         https://docs.cvat.ai/docs/manual/advanced/dataset_manifest/
 
         After all data is sent, the operation status can be retrieved via
-        the /status endpoint.
+        the `GET /api/requests/<rq_id>`, where **rq_id** is request ID returned for this request.
 
         Once data is attached to a task, it cannot be detached or replaced.
       summary: Attach data to a task
@@ -5243,7 +5703,11 @@ paths:
       - basicAuth: []
       responses:
         '202':
-          description: No response body
+          content:
+            application/vnd.cvat+json:
+              schema:
+                $ref: '#/components/schemas/DataResponse'
+          description: Request to attach a data to a task has been accepted
   /api/tasks/{id}/data/meta:
     get:
       operationId: tasks_retrieve_data_meta
@@ -5303,6 +5767,16 @@ paths:
   /api/tasks/{id}/dataset:
     get:
       operationId: tasks_retrieve_dataset
+      description: |
+        Deprecation warning:
+
+        Utilizing this endpoint to export task dataset in
+        a specific format will be deprecated in one of the next releases.
+
+        Consider using new API:
+        - POST /api/tasks/<task_id>/dataset/export?save_images=True to initiate export process
+        - GET /api/requests/<rq_id> to check process status,
+            where rq_id is request id returned on initializing request
       summary: Export task as a dataset in a specific format
       parameters:
       - in: query
@@ -5352,6 +5826,7 @@ paths:
           type: boolean
           default: true
         description: Use the location that was configured in task to export annotations
+        deprecated: true
       tags:
       - tasks
       security:
@@ -5376,6 +5851,73 @@ paths:
           description: Exporting without data is not allowed
         '405':
           description: Format is not available
+  /api/tasks/{id}/dataset/export:
+    post:
+      operationId: tasks_create_dataset_export
+      description: |
+        The request `POST /api/<projects|tasks|jobs>/id/dataset/export` will initialize
+        a background process to export a dataset. To check status of the process
+        please, use `GET /api/requests/<rq_id>` where **rq_id** is request ID returned in the response for this endpoint.
+      summary: Initialize process to export resource as a dataset in a specific format
+      parameters:
+      - in: query
+        name: cloud_storage_id
+        schema:
+          type: integer
+        description: Storage id
+      - in: query
+        name: filename
+        schema:
+          type: string
+        description: Desired output file name
+      - in: query
+        name: format
+        schema:
+          type: string
+        description: |-
+          Desired output format name
+          You can get the list of supported formats at:
+          /server/annotation/formats
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this task.
+        required: true
+      - in: query
+        name: location
+        schema:
+          type: string
+          enum:
+          - cloud_storage
+          - local
+        description: Where need to save downloaded dataset
+      - in: query
+        name: save_images
+        schema:
+          type: boolean
+          default: false
+        description: Include images or not
+      tags:
+      - tasks
+      security:
+      - sessionAuth: []
+        csrfAuth: []
+        tokenAuth: []
+      - signatureAuth: []
+      - basicAuth: []
+      responses:
+        '202':
+          content:
+            application/vnd.cvat+json:
+              schema:
+                $ref: '#/components/schemas/RqId'
+          description: Exporting has been started
+        '405':
+          description: Format is not available
+        '409':
+          description: Exporting is already in progress
   /api/tasks/{id}/preview:
     get:
       operationId: tasks_retrieve_preview
@@ -5403,6 +5945,9 @@ paths:
   /api/tasks/{id}/status:
     get:
       operationId: tasks_retrieve_status
+      description: 'This method is deprecated and will be removed in one of the next
+        releases. To check status of task creation, use new common API for managing
+        background operations: GET /api/requests/?action=create&task_id=<task_id>'
       summary: Get the creation status of a task
       parameters:
       - in: path
@@ -5419,6 +5964,7 @@ paths:
         tokenAuth: []
       - signatureAuth: []
       - basicAuth: []
+      deprecated: true
       responses:
         '200':
           content:
@@ -6899,6 +7445,11 @@ components:
             pass the list of file names in the required order.
       required:
       - image_quality
+    DataResponse:
+      oneOf:
+      - $ref: '#/components/schemas/RqId'
+      - type: string
+        format: binary
     DatasetFileRequest:
       type: object
       properties:
@@ -7540,6 +8091,11 @@ components:
         source_storage:
           allOf:
           - $ref: '#/components/schemas/Storage'
+          nullable: true
+        assignee_updated_date:
+          type: string
+          format: date-time
+          readOnly: true
           nullable: true
       required:
       - issues
@@ -8412,6 +8968,26 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/QualitySettings'
+    PaginatedRequestList:
+      type: object
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/Request'
     PaginatedTaskReadList:
       type: object
       properties:
@@ -8999,6 +9575,11 @@ components:
           $ref: '#/components/schemas/TasksSummary'
         labels:
           $ref: '#/components/schemas/LabelsSummary'
+        assignee_updated_date:
+          type: string
+          format: date-time
+          readOnly: true
+          nullable: true
       required:
       - labels
       - tasks
@@ -9096,6 +9677,11 @@ components:
           type: string
           format: date-time
           readOnly: true
+        assignee:
+          allOf:
+          - $ref: '#/components/schemas/BasicUser'
+          readOnly: true
+          nullable: true
       required:
       - summary
       - target
@@ -9274,6 +9860,101 @@ components:
       - password1
       - password2
       - username
+    Request:
+      type: object
+      properties:
+        status:
+          $ref: '#/components/schemas/RequestStatus'
+        message:
+          type: string
+          readOnly: true
+        id:
+          type: string
+        operation:
+          $ref: '#/components/schemas/RequestDataOperation'
+        progress:
+          type: number
+          format: double
+          maximum: 1
+          minimum: 0
+          nullable: true
+          readOnly: true
+        created_date:
+          type: string
+          format: date-time
+        started_date:
+          type: string
+          format: date-time
+          nullable: true
+        finished_date:
+          type: string
+          format: date-time
+          nullable: true
+        expiry_date:
+          type: string
+          format: date-time
+          nullable: true
+          readOnly: true
+        owner:
+          allOf:
+          - $ref: '#/components/schemas/UserIdentifiers'
+          readOnly: true
+        result_url:
+          type: string
+          format: uri
+          nullable: true
+        result_id:
+          type: integer
+          nullable: true
+      required:
+      - created_date
+      - id
+      - operation
+      - status
+    RequestDataOperation:
+      type: object
+      properties:
+        type:
+          type: string
+        target:
+          $ref: '#/components/schemas/RequestDataOperationTargetEnum'
+        project_id:
+          type: integer
+          nullable: true
+        task_id:
+          type: integer
+          nullable: true
+        job_id:
+          type: integer
+          nullable: true
+        format:
+          type: string
+          nullable: true
+      required:
+      - target
+      - type
+    RequestDataOperationTargetEnum:
+      enum:
+      - project
+      - task
+      - job
+      type: string
+      description: |-
+        * `project` - Project
+        * `task` - Task
+        * `job` - Job
+    RequestStatus:
+      enum:
+      - queued
+      - started
+      - failed
+      - finished
+      type: string
+      description: |-
+        * `queued` - Queued
+        * `started` - Started
+        * `failed` - Failed
+        * `finished` - Finished
     RestAuthDetail:
       type: object
       properties:
@@ -9761,6 +10442,11 @@ components:
           $ref: '#/components/schemas/JobsSummary'
         labels:
           $ref: '#/components/schemas/LabelsSummary'
+        assignee_updated_date:
+          type: string
+          format: date-time
+          readOnly: true
+          nullable: true
       required:
       - jobs
       - labels
@@ -9975,6 +10661,20 @@ components:
           readOnly: true
       required:
       - groups
+      - username
+    UserIdentifiers:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        username:
+          type: string
+          description: Required. 150 characters or fewer. Letters, digits and @/./+/-/_
+            only.
+          pattern: ^[\w.@+-]+$
+          maxLength: 150
+      required:
       - username
     WebhookContentType:
       enum:
