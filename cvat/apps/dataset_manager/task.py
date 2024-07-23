@@ -438,14 +438,14 @@ class JobAnnotation:
         if not self._data_is_empty(self.data):
             self._set_updated_date()
 
-    def _delete_job_labeledimages(self, ids__UNSAFE):
+    def _delete_job_labeledimages(self, ids__UNSAFE: list[int]) -> None:
         # ids__UNSAFE is a list, received from the user
         # we MUST filter it by job_id additionally before applying to any queries
         ids = self.db_job.labeledimage_set.filter(pk__in=ids__UNSAFE).values_list('id', flat=True)
         models.LabeledImageAttributeVal.objects.filter(image_id__in=ids).delete()
         self.db_job.labeledimage_set.filter(pk__in=ids).delete()
 
-    def _delete_job_labeledshapes(self, ids__UNSAFE, is_subcall=False):
+    def _delete_job_labeledshapes(self, ids__UNSAFE: list[int], is_subcall=False) -> None:
         # ids__UNSAFE is a list, received from the user
         # we MUST filter it by job_id additionally before applying to any queries
         if is_subcall:
@@ -459,7 +459,7 @@ class JobAnnotation:
         models.LabeledShapeAttributeVal.objects.filter(shape_id__in=ids).delete()
         self.db_job.labeledshape_set.filter(pk__in=ids).delete()
 
-    def _delete_job_labeledtracks(self, ids__UNSAFE, is_subcall=False):
+    def _delete_job_labeledtracks(self, ids__UNSAFE: list[int], is_subcall=False) -> None:
         # ids__UNSAFE is a list, received from the user
         # we MUST filter it by job_id additionally before applying to any queries
         if is_subcall:
