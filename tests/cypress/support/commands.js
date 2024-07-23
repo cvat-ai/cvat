@@ -275,11 +275,11 @@ Cypress.Commands.add('headlessCreateObjects', (objects, jobID) => {
             .map((object) => new $win.cvat.classes
                 .ObjectState({
                     frame: object.frame,
-                    objectType: $win.cvat.enums.ObjectType[object.objectType],
-                    shapeType: $win.cvat.enums.ShapeType[object.shapeType],
+                    objectType: object.objectType,
+                    shapeType: object.shapeType,
                     points: $win.Array.from(object.points),
                     occluded: object.occluded,
-                    label: job.labels[0],
+                    label: job.labels.find((label) => label.name === object.labelName),
                     zOrder: 0,
                 }));
 
