@@ -31,8 +31,26 @@ def export_v1(
     max_retries: int = 30,
     interval: float = 0.1,
     forbidden: bool = False,
+    wait_result: bool = True,
+    download_result: bool = True,
     **kwargs,
 ) -> Optional[bytes]:
+    """_summary_
+
+    Args:
+        endpoint (Endpoint): _description_
+        max_retries (int, optional): _description_. Defaults to 30.
+        interval (float, optional): _description_. Defaults to 0.1.
+        forbidden (bool, optional): _description_. Defaults to False.
+        wait_result (bool, optional): _description_. Defaults to True.
+
+    Raises:
+        ForbiddenException: _description_
+
+    Returns:
+        bytes: The content of the file if downloaded locally.
+        None: If `wait_result` or `download_result` were False or the file is downloaded to cloud storage.
+    """
 
     # initialize background process and ensure that the first request returns 403 code if request should be forbidden
     (_, response) = endpoint.call_with_http_info(
@@ -41,6 +59,11 @@ def export_v1(
     if forbidden:
         assert response.status == HTTPStatus.FORBIDDEN, "Request should be forbidden"
         raise ForbiddenException()
+
+    # TODO: add check status before return
+    # TODO: probably need to extract initializing park into another func
+    if not wait_result:
+        return None
 
     for _ in range(max_retries):
         if response.status in (HTTPStatus.CREATED, HTTPStatus.OK):
@@ -52,6 +75,9 @@ def export_v1(
         assert (
             False
         ), f"Export process was not finished within allowed time ({interval * max_retries}, sec)"
+
+    if not download_result:
+        return None
 
     if response.status == HTTPStatus.CREATED:
         (_, response) = endpoint.call_with_http_info(
@@ -68,6 +94,8 @@ def export_v2(
     max_retries: int = 30,
     interval: float = 0.1,
     forbidden: bool = False,
+    wait_result: bool = True,
+    download_result: bool = True,
     **kwargs,
 ) -> Optional[bytes]:
     # initialize background process and ensure that the first request returns 403 code if request should be forbidden
@@ -77,6 +105,9 @@ def export_v2(
     if forbidden:
         assert response.status == HTTPStatus.FORBIDDEN, "Request should be forbidden"
         raise ForbiddenException()
+
+    if not wait_result:
+        return None
 
     assert response.status != HTTPStatus.CREATED  # TODO: check case when export was prepared
 
@@ -100,6 +131,9 @@ def export_v2(
             + f"Last status was: {background_request.status.value}"
         )
 
+    if not download_result:
+        return None
+
     # return downloaded file in case of local downloading or None otherwise
     if background_request.result_url:
         response = requests.get(
@@ -118,9 +152,9 @@ def export_dataset(
     # todo" rename to endpoint_version
     api_version: int,  # make this parameter required to be sure that all tests was updated and both API versions are used
     *,
+    save_images: bool,
     max_retries: int = 30,
     interval: float = 0.1,
-    save_images: bool,
     format: str = "CVAT for images 1.1",  # pylint: disable=redefined-builtin
     **kwargs,
 ) -> Optional[bytes]:
@@ -145,6 +179,7 @@ def export_dataset(
     assert False, "Unsupported API version"
 
 
+# TODO: support username: optional, api_client: optional
 def export_project_dataset(username: str, api_version: int, *args, **kwargs) -> Optional[bytes]:
     with make_api_client(username) as api_client:
         return export_dataset(api_client.projects_api, api_version, *args, **kwargs)
@@ -186,6 +221,74 @@ def export_project_backup(username: str, api_version: int, *args, **kwargs) -> O
 def export_task_backup(username: str, api_version: int, *args, **kwargs) -> Optional[bytes]:
     with make_api_client(username) as api_client:
         return export_backup(api_client.tasks_api, api_version, *args, **kwargs)
+
+
+def import_resource(
+    endpoint: Endpoint,
+    *,
+    max_retries: int = 30,
+    interval: float = 0.1,
+    forbidden: bool = False,
+    wait_result: bool = True,
+    # _content_type: str = "multipart/form-data",
+    **kwargs,
+) -> None:
+    # initialize background process and ensure that the first request returns 403 code if request should be forbidden
+    (_, response) = endpoint.call_with_http_info(
+        **kwargs, _parse_response=False, _check_status=False, _content_type="multipart/form-data",
+    )
+    if forbidden:
+        assert response.status == HTTPStatus.FORBIDDEN, "Request should be forbidden"
+        raise ForbiddenException()
+
+    if not wait_result:
+        return None
+
+    assert response.status != HTTPStatus.CREATED
+
+    # define background request ID returned in the server response
+    rq_id = json.loads(response.data).get("rq_id")
+    assert rq_id, "The rq_id parameter was not found in the server response"
+
+    # check status of background process
+    for _ in range(max_retries):
+        (background_request, response) = endpoint.api_client.requests_api.retrieve(rq_id)
+        assert response.status == HTTPStatus.OK
+        if (
+            background_request.status.value
+            in (
+                models.RequestStatus.allowed_values[("value",)]["FINISHED"],
+                models.RequestStatus.allowed_values[("value",)]["FAILED"],
+            )
+        ):
+            break
+        sleep(interval)
+    else:
+        assert False, (
+            f"Import process was not finished within allowed time ({interval * max_retries}, sec). "
+            + f"Last status was: {background_request.status.value}"
+        )
+
+
+def import_backup(
+    api: Union[ProjectsApi, TasksApi],
+    *,
+    max_retries: int = 30,
+    interval: float = 0.1,
+    **kwargs,
+) -> None:
+    endpoint = api.create_backup_endpoint
+    return import_resource(endpoint, max_retries=max_retries, interval=interval, **kwargs)
+
+
+def import_project_backup(username: str, data: Dict, **kwargs) -> None:
+    with make_api_client(username) as api_client:
+        return import_backup(api_client.projects_api, project_file_request=deepcopy(data), **kwargs)
+
+
+def import_task_backup(username: str, data: Dict, **kwargs) -> None:
+    with make_api_client(username) as api_client:
+        return import_backup(api_client.tasks_api, task_file_request=deepcopy(data), **kwargs)
 
 
 FieldPath = Sequence[str]
