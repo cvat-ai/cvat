@@ -136,6 +136,10 @@ export default interface CVATCore {
         quality: {
             reports: (filter: QualityReportsFilter) => Promise<PaginatedResource<QualityReport>>;
             conflicts: (filter: QualityConflictsFilter) => Promise<QualityConflict[]>;
+            calculate: (
+                body: { taskID?: number; },
+                onUpdate: (status: enums.RQStatus, progress: number, message: string) => void,
+            ) => Promise<void>;
             settings: {
                 get: (filter: QualitySettingsFilter) => Promise<QualitySettings>;
             };

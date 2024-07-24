@@ -252,12 +252,13 @@ class CreateTaskContent extends React.PureComponent<Props & RouteComponentProps,
         });
     };
 
-    private handleChangeQualityConfiguration = (values: QualityConfiguration): void => {
-        console.log(values);
+    private handleChangeQualityConfiguration = (values: QualityConfiguration, reset = false): void => {
+        console.log(values, reset);
         const { quality } = this.state;
         this.setState({
-            quality: { ...quality, ...values },
+            quality: { ...(reset ? {} : quality), ...values },
         });
+        console.log({ ...(reset ? {} : quality), ...values });
     };
 
     private handleSubmitAdvancedConfiguration = (values: AdvancedConfiguration): Promise<void> => (

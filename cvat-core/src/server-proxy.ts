@@ -2350,6 +2350,76 @@ async function calculateAnalyticsReport(
     return promise;
 }
 
+const listenToCreateQualityReportCallbacks: {
+    task: LongProcessListener<void>;
+} = {
+    task: {},
+};
+
+async function calculateQualityReport(
+    body: {
+        task_id?: number;
+    },
+    onUpdate: (state: string, progress: number, message: string) => void,
+): Promise<void> {
+    const id = body.task_id;
+    const { backendAPI } = config;
+    const params = enableOrganization();
+    let listenerStorage: LongProcessListener<void> = null;
+
+    if (Number.isInteger(body.task_id)) {
+        listenerStorage = listenToCreateQualityReportCallbacks.task;
+    }
+
+    if (listenerStorage[id]) {
+        listenerStorage[id].onUpdate.push(onUpdate);
+        return listenerStorage[id].promise;
+    }
+
+    const promise = new Promise<void>((resolve, reject) => {
+        Axios.post(`${backendAPI}/quality/reports`, {
+            ...body,
+            ...params,
+        }).then(({ data: { rq_id: rqID } }) => {
+            listenerStorage[id].onUpdate.forEach((_onUpdate) => _onUpdate(RQStatus.QUEUED, 0, 'Quality report request sent'));
+            const checkStatus = (): void => {
+                Axios.post(`${backendAPI}/quality/reports`, {
+                    ...body,
+                    ...params,
+                }, { params: { rq_id: rqID } }).then((response) => {
+                    // TODO: rewrite server logic, now it returns 202, 201 codes, but we need RQ statuses and details
+                    // after this patch is merged https://github.com/cvat-ai/cvat/pull/7537
+                    if (response.status === 201) {
+                        listenerStorage[id].onUpdate.forEach((_onUpdate) => _onUpdate(RQStatus.FINISHED, 0, 'Done'));
+                        resolve();
+                        return;
+                    }
+
+                    listenerStorage[id].onUpdate.forEach((_onUpdate) => _onUpdate(RQStatus.QUEUED, 0, 'Quality report calculation is in progress'));
+                    setTimeout(checkStatus, 10000);
+                }).catch((errorData) => {
+                    reject(generateError(errorData));
+                });
+            };
+
+            setTimeout(checkStatus, 2500);
+        }).catch((errorData) => {
+            reject(generateError(errorData));
+        });
+    });
+
+    listenerStorage[id] = {
+        promise,
+        onUpdate: [onUpdate],
+    };
+
+    promise.finally(() => {
+        delete listenerStorage[id];
+    });
+
+    return promise;
+}
+
 export default Object.freeze({
     server: Object.freeze({
         setAuthData,
@@ -2505,6 +2575,7 @@ export default Object.freeze({
         quality: Object.freeze({
             reports: getQualityReports,
             conflicts: getQualityConflicts,
+            calculate: calculateQualityReport,
             settings: Object.freeze({
                 get: getQualitySettings,
                 update: updateQualitySettings,

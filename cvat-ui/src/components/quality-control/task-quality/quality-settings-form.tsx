@@ -12,16 +12,23 @@ import Form, { FormInstance } from 'antd/lib/form';
 import Checkbox from 'antd/lib/checkbox/Checkbox';
 import CVATTooltip from 'components/common/cvat-tooltip';
 import { QualitySettings } from 'cvat-core-wrapper';
+import { Button, Select } from 'antd/lib';
 
 interface FormProps {
     form: FormInstance;
     settings: QualitySettings;
+    onSave: () => void;
 }
 
 export default function QualitySettingsForm(props: FormProps): JSX.Element | null {
-    const { form, settings } = props;
+    const { form, settings, onSave } = props;
 
     const initialValues = {
+        targetMetric: 'accuracy_micro',
+        targetMetricThreshold: 80,
+
+        jobValidationCount: 3,
+
         lowOverlapThreshold: settings.lowOverlapThreshold * 100,
         iouThreshold: settings.iouThreshold * 100,
         compareAttributes: settings.compareAttributes,
@@ -121,11 +128,78 @@ export default function QualitySettingsForm(props: FormProps): JSX.Element | nul
         <Form
             form={form}
             layout='vertical'
+            className='cvat-quality-settings-form'
             initialValues={initialValues}
         >
+            <Row justify='end' className='cvat-quality-settings-save-btn'>
+                <Col>
+                    <Button onClick={onSave} type='primary'>
+                        Save
+                    </Button>
+                </Col>
+            </Row>
             <Row className='cvat-quality-settings-title'>
                 <Text strong>
                     General
+                </Text>
+            </Row>
+            <Row>
+                <Col span={7}>
+                    <Form.Item
+                        name='targetMetric'
+                        label='Target metric'
+                        rules={[{ required: true }]}
+                    >
+                        <Select
+                            style={{ width: '70%' }}
+                            virtual={false}
+                        >
+                            <Select.Option value='accuracy_micro'>
+                                Accuracy micro
+                            </Select.Option>
+                            <Select.Option value='precision_micro'>
+                                Precision micro
+                            </Select.Option>
+                            <Select.Option value='recall_micro'>
+                                Recall micro
+                            </Select.Option>
+                            <Select.Option value='dice_macro'>
+                                Dice macro
+                            </Select.Option>
+                        </Select>
+                    </Form.Item>
+                </Col>
+                <Col span={7}>
+                    <Form.Item
+                        name='targetMetricThreshold'
+                        label='Target metric threshold'
+                        rules={[{ required: true }]}
+                    >
+                        <InputNumber min={0} max={100} precision={0} />
+                    </Form.Item>
+                </Col>
+            </Row>
+            <Divider />
+            <Row className='cvat-quality-settings-title'>
+                <Text strong>
+                    Job validation
+                </Text>
+            </Row>
+            <Row>
+                <Col span={7}>
+                    <Form.Item
+                        name='jobValidationCount'
+                        label='Job validation count'
+                        rules={[{ required: true }]}
+                    >
+                        <InputNumber min={0} max={100} precision={0} />
+                    </Form.Item>
+                </Col>
+            </Row>
+            <Divider />
+            <Row className='cvat-quality-settings-title'>
+                <Text strong>
+                    Shape comparison
                 </Text>
                 <CVATTooltip title={generalTooltip} className='cvat-analytics-tooltip' overlayStyle={{ maxWidth: '500px' }}>
                     <QuestionCircleOutlined
@@ -134,7 +208,7 @@ export default function QualitySettingsForm(props: FormProps): JSX.Element | nul
                 </CVATTooltip>
             </Row>
             <Row>
-                <Col span={12}>
+                <Col span={7}>
                     <Form.Item
                         name='iouThreshold'
                         label='Min overlap threshold (%)'
@@ -143,26 +217,13 @@ export default function QualitySettingsForm(props: FormProps): JSX.Element | nul
                         <InputNumber min={0} max={100} precision={0} />
                     </Form.Item>
                 </Col>
-                <Col span={12}>
+                <Col span={7}>
                     <Form.Item
                         name='lowOverlapThreshold'
                         label='Low overlap threshold (%)'
                         rules={[{ required: true }]}
                     >
                         <InputNumber min={0} max={100} precision={0} />
-                    </Form.Item>
-                </Col>
-            </Row>
-            <Row>
-                <Col span={12}>
-                    <Form.Item
-                        name='compareAttributes'
-                        valuePropName='checked'
-                        rules={[{ required: true }]}
-                    >
-                        <Checkbox>
-                            <Text className='cvat-text-color'>Compare attributes</Text>
-                        </Checkbox>
                     </Form.Item>
                 </Col>
             </Row>
@@ -178,7 +239,7 @@ export default function QualitySettingsForm(props: FormProps): JSX.Element | nul
                 </CVATTooltip>
             </Row>
             <Row>
-                <Col span={12}>
+                <Col span={7}>
                     <Form.Item
                         name='oksSigma'
                         label='OKS sigma (bbox side %)'
@@ -200,7 +261,7 @@ export default function QualitySettingsForm(props: FormProps): JSX.Element | nul
                 </CVATTooltip>
             </Row>
             <Row>
-                <Col span={12}>
+                <Col span={7}>
                     <Form.Item
                         name='lineThickness'
                         label='Relative thickness (frame side %)'
@@ -211,7 +272,7 @@ export default function QualitySettingsForm(props: FormProps): JSX.Element | nul
                 </Col>
             </Row>
             <Row>
-                <Col span={12}>
+                <Col span={7}>
                     <Form.Item
                         name='orientedLines'
                         rules={[{ required: true }]}
@@ -222,7 +283,7 @@ export default function QualitySettingsForm(props: FormProps): JSX.Element | nul
                         </Checkbox>
                     </Form.Item>
                 </Col>
-                <Col span={12}>
+                <Col span={7}>
                     <Form.Item
                         name='lineOrientationThreshold'
                         label='Min similarity gain (%)'
@@ -244,7 +305,7 @@ export default function QualitySettingsForm(props: FormProps): JSX.Element | nul
                 </CVATTooltip>
             </Row>
             <Row>
-                <Col span={12}>
+                <Col span={7}>
                     <Form.Item
                         name='compareGroups'
                         valuePropName='checked'
@@ -255,7 +316,7 @@ export default function QualitySettingsForm(props: FormProps): JSX.Element | nul
                         </Checkbox>
                     </Form.Item>
                 </Col>
-                <Col span={12}>
+                <Col span={7}>
                     <Form.Item
                         name='groupMatchThreshold'
                         label='Min group match threshold (%)'
@@ -277,7 +338,7 @@ export default function QualitySettingsForm(props: FormProps): JSX.Element | nul
                 </CVATTooltip>
             </Row>
             <Row>
-                <Col span={12}>
+                <Col span={7}>
                     <Form.Item
                         name='checkCoveredAnnotations'
                         valuePropName='checked'
@@ -288,7 +349,7 @@ export default function QualitySettingsForm(props: FormProps): JSX.Element | nul
                         </Checkbox>
                     </Form.Item>
                 </Col>
-                <Col span={12}>
+                <Col span={7}>
                     <Form.Item
                         name='objectVisibilityThreshold'
                         label='Min visibility threshold (area %)'
@@ -299,7 +360,7 @@ export default function QualitySettingsForm(props: FormProps): JSX.Element | nul
                 </Col>
             </Row>
             <Row>
-                <Col span={12}>
+                <Col span={7}>
                     <Form.Item
                         name='panopticComparison'
                         valuePropName='checked'

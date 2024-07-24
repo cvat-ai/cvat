@@ -3,7 +3,7 @@
 // SPDX-License-Identifier: MIT
 
 import React from 'react';
-import { DownloadOutlined, SettingOutlined } from '@ant-design/icons';
+import { DownloadOutlined } from '@ant-design/icons';
 import { Col, Row } from 'antd/lib/grid';
 import Text from 'antd/lib/typography/Text';
 import Button from 'antd/lib/button';
@@ -15,11 +15,10 @@ import { toRepresentation } from '../utils/text-formatting';
 interface Props {
     taskID: number;
     taskReport: QualityReport | null;
-    setQualitySettingsVisible: (visible: boolean) => void;
 }
 
 function MeanQuality(props: Props): JSX.Element {
-    const { taskID, taskReport, setQualitySettingsVisible } = props;
+    const { taskID, taskReport } = props;
     const reportSummary = taskReport?.summary;
 
     const tooltip = (
@@ -72,12 +71,6 @@ function MeanQuality(props: Props): JSX.Element {
                             </Button>
                         ) : null
                     }
-                </Col>
-                <Col>
-                    <SettingOutlined
-                        className='cvat-quality-settings-switch ant-btn ant-btn-default'
-                        onClick={() => setQualitySettingsVisible(true)}
-                    />
                 </Col>
             </Row>
         </div>

@@ -91,3 +91,36 @@
     justify-content: space-between;
     align-items: center;
 }
+
+.cvat-quality-settings-form {
+    display: block;
+    position: relative;
+    max-height: $grid-unit-size * 80;
+    overflow-y: scroll;
+
+    &::-webkit-scrollbar {
+        background-color: #fff;
+        width: $grid-unit-size * 2;
+    }
+
+    &::-webkit-scrollbar-track {
+        background-color: #fff;
+    }
+
+    &::-webkit-scrollbar-thumb {
+        background-color: #babac0;
+        border-radius: $border-radius-base * 2;
+        border: 6px solid #fff;
+    }
+
+    .cvat-quality-settings-save-btn {
+        position: sticky;
+        z-index: 1;
+        top: 0;
+        height: 0;
+    }
+
+    .ant-divider-horizontal {
+        margin: $grid-unit-size 0;
+    }
+}

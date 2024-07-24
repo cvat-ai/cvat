@@ -373,6 +373,14 @@ function build(): CVATCore {
                     const result = await PluginRegistry.apiWrapper(cvat.analytics.quality.conflicts, filter);
                     return result;
                 },
+                async calculate(body, onUpdate) {
+                    const result = await PluginRegistry.apiWrapper(
+                        cvat.analytics.quality.calculate,
+                        body,
+                        onUpdate,
+                    );
+                    return result;
+                },
                 settings: {
                     async get(filter = {}) {
                         const result = await PluginRegistry.apiWrapper(cvat.analytics.quality.settings.get, filter);
