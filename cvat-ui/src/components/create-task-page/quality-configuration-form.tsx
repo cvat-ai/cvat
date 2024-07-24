@@ -118,7 +118,7 @@ export default function QualityConfigurationForm(props: Props): React.JSX.Elemen
     validationFormItems.push([
         (
             <Radio.Button value={ValidationMethod.GT} key={ValidationMethod.GT}>
-                Ground truth
+                Ground Truth
             </Radio.Button>
         ), 20,
     ]);
