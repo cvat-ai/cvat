@@ -11,7 +11,7 @@ import Divider from 'antd/lib/divider';
 import Form, { FormInstance } from 'antd/lib/form';
 import Checkbox from 'antd/lib/checkbox/Checkbox';
 import CVATTooltip from 'components/common/cvat-tooltip';
-import { QualitySettings } from 'cvat-core-wrapper';
+import { QualitySettings, TargetMetric } from 'cvat-core-wrapper';
 import { Button, Select } from 'antd/lib';
 
 interface FormProps {
@@ -154,16 +154,16 @@ export default function QualitySettingsForm(props: FormProps): JSX.Element | nul
                             style={{ width: '70%' }}
                             virtual={false}
                         >
-                            <Select.Option value='accuracy_micro'>
+                            <Select.Option value={TargetMetric.ACCURACY_MICRO}>
                                 Accuracy micro
                             </Select.Option>
-                            <Select.Option value='precision_micro'>
+                            <Select.Option value={TargetMetric.PRECISION_MICRO}>
                                 Precision micro
                             </Select.Option>
-                            <Select.Option value='recall_micro'>
+                            <Select.Option value={TargetMetric.RECALL_MICRO}>
                                 Recall micro
                             </Select.Option>
-                            <Select.Option value='dice_macro'>
+                            <Select.Option value={TargetMetric.DICE_MACRO}>
                                 Dice macro
                             </Select.Option>
                         </Select>

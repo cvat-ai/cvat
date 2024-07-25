@@ -22,7 +22,7 @@ import { updateJobAsync } from 'actions/jobs-actions';
 import CVATLoadingSpinner from 'components/common/loading-spinner';
 import GoBackButton from 'components/common/go-back-button';
 import { CombinedState } from 'reducers';
-import { createAction } from 'utils/redux';
+import { ActionUnion, createAction } from 'utils/redux';
 import TaskQualityComponent from './task-quality/task-quality-component';
 import QualitySettingsComponent from './quality-settings';
 
@@ -232,24 +232,26 @@ function QualityControlPage(): JSX.Element {
     }, [instance]);
 
     const onCreateReport = useCallback(() => {
-        const onUpdate = (status: RQStatus, progress: number, message: string): void => {
-            dispatch(reducerActions.setReportRefreshingStatus(message));
-        };
+        if (instance) {
+            const onUpdate = (status: RQStatus, progress: number, message: string): void => {
+                dispatch(reducerActions.setReportRefreshingStatus(message));
+            };
 
-        const body = { taskID: instance.id };
+            const body = { taskID: instance.id };
 
-        core.analytics.quality.calculate(body, onUpdate).then(() => {
-            receiveReport(instance);
-        }).finally(() => {
-            dispatch(reducerActions.setReportRefreshingStatus(null));
-        }).catch((error: unknown) => {
-            if (isMounted()) {
-                notification.error({
-                    message: 'Error occurred during requesting performance report',
-                    description: error instanceof Error ? error.message : '',
-                });
-            }
-        });
+            core.analytics.quality.calculate(body, onUpdate).then(() => {
+                receiveReport(instance);
+            }).finally(() => {
+                dispatch(reducerActions.setReportRefreshingStatus(null));
+            }).catch((error: unknown) => {
+                if (isMounted()) {
+                    notification.error({
+                        message: 'Error occurred during requesting performance report',
+                        description: error instanceof Error ? error.message : '',
+                    });
+                }
+            });
+        }
     }, [instance]);
 
     const onSaveQualitySettings = useCallback(async (values) => {

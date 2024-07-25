@@ -241,6 +241,8 @@ export type QualitySettingsFilter = Camelized<APIQualitySettingsFilter>;
 export interface SerializedQualitySettingsData {
     id?: number;
     task?: number;
+    target_metric?: string;
+    target_metric_threshold?: number;
     iou_threshold?: number;
     oks_sigma?: number;
     line_thickness?: number;

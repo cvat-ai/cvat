@@ -6,8 +6,17 @@ import { SerializedQualitySettingsData } from './server-response-types';
 import PluginRegistry from './plugins';
 import serverProxy from './server-proxy';
 
+export enum TargetMetric {
+    ACCURACY_MICRO = 'accuracy_micro',
+    PRECISION_MICRO = 'precision_micro',
+    RECALL_MICRO = 'recall_micro',
+    DICE_MACRO = 'dice_macro',
+}
+
 export default class QualitySettings {
     #id: number;
+    #targetMetric: TargetMetric;
+    #targetMetricThreshold: number;
     #task: number;
     #iouThreshold: number;
     #oksSigma: number;
@@ -25,6 +34,8 @@ export default class QualitySettings {
     constructor(initialData: SerializedQualitySettingsData) {
         this.#id = initialData.id;
         this.#task = initialData.task;
+        this.#targetMetric = initialData.target_metric as TargetMetric;
+        this.#targetMetricThreshold = initialData.target_metric_threshold;
         this.#iouThreshold = initialData.iou_threshold;
         this.#oksSigma = initialData.oks_sigma;
         this.#lineThickness = initialData.line_thickness;
@@ -143,6 +154,22 @@ export default class QualitySettings {
         this.#compareAttributes = newVal;
     }
 
+    get targetMetric(): TargetMetric {
+        return this.#targetMetric;
+    }
+
+    set targetMetric(newVal: TargetMetric) {
+        this.#targetMetric = newVal;
+    }
+
+    get targetMetricThreshold(): number {
+        return this.#targetMetricThreshold;
+    }
+
+    set targetMetricThreshold(newVal: number) {
+        this.#targetMetricThreshold = newVal;
+    }
+
     public toJSON(): SerializedQualitySettingsData {
         const result: SerializedQualitySettingsData = {
             iou_threshold: this.#iouThreshold,
@@ -157,6 +184,8 @@ export default class QualitySettings {
             object_visibility_threshold: this.#objectVisibilityThreshold,
             panoptic_comparison: this.#panopticComparison,
             compare_attributes: this.#compareAttributes,
+            target_metric: this.#targetMetric,
+            target_metric_threshold: this.#targetMetricThreshold,
         };
 
         return result;
