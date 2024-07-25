@@ -5,13 +5,14 @@
 
 from __future__ import annotations
 from dataclasses import dataclass, field
+from itertools import islice
 
 import os
 import re
 import shutil
 import uuid
 from enum import Enum
-from functools import cached_property
+from functools import cached_property, wraps
 from typing import Any, Callable, Dict, Iterator, Optional, Sequence, TypeVar, overload
 
 from django.conf import settings
@@ -186,17 +187,61 @@ class JobFrameSelectionMethod(str, Enum):
 T = TypeVar("T")
 
 
+def _parse_before_accessing(fn: Callable[..., Any]) -> Callable[..., Any]:
+    """Wrapper for original list methods. Forces LazyList to parse itself before accessing them."""
+    @wraps(fn)
+    def decorator(self: 'LazyList', *args, **kwargs) -> 'LazyList':
+        self._parse_up_to(-1)
+        return fn(self, *args, **kwargs)
+
+    return decorator
+
+
 @dataclass(slots=True)
-class LazyList(Sequence[T]):
+class LazyList(list[T]):
     """
-    Evaluates elements from the string representation as needed
-    Initial conversion is ~4 times slower than just splitting the string, but it's more memory efficient
+    Evaluates elements from the string representation as needed.
+    Lazy evaluation is supported for __getitem__ and __iter__ methods.
+    Using any other method will result in parsing the whole string.
+    Once instance of LazyList is fully parsed (either by accessing list methods
+    or by iterating over all elements), it will behave just as a regular python list.
     """
-    string: str
-    separator: str
-    converter: Callable[[str], T]
-    _computed_elements: list[T] = field(init=False, default_factory=list)
+    _string: str
+    _separator: str
+    _converter: Callable[[str], T]
     _length: int | None = field(init=False, default=None)
+    parsed: bool = field(init=False, default=False)
+
+    for method in [
+        "append",
+        "copy",
+        "extend",
+        "insert",
+        "pop",
+        "remove",
+        "reverse",
+        "sort",
+        "clear",
+        "__setitem__",
+        "__delitem__",
+        "__eq__",
+        "__contains__",
+        "__len__",
+        "__hash__",
+        "__add__",
+        "__iadd__",
+        "__mul__",
+        "__rmul__",
+        "__imul__",
+        "__contains__",
+        "__reversed__",
+        "__gt__",
+        "__ge__",
+        "__lt__",
+        "__le__",
+        "__eq__",
+    ]:
+        locals()[method] = _parse_before_accessing(getattr(list, method))
 
     @overload
     def __getitem__(self, index: int) -> T: ...
@@ -205,87 +250,77 @@ class LazyList(Sequence[T]):
     def __getitem__(self, index: slice) -> list[T]: ...
 
     def __getitem__(self, index: int | slice) -> T | list[T]:
-        if isinstance(index, slice):
-            self._compute_up_to(index.indices(self._compute_length())[1] - 1)
-            return self._computed_elements[index]
-        if index < 0:
-            index += self._compute_length()
-        if index < 0 or index >= self._compute_length():
-            raise IndexError('index out of range')
-        self._compute_up_to(index)
-        return self._computed_elements[index]
+        if self.parsed:
+            return list.__getitem__(self, index)
 
-    def __setitem__(self, index: int, value: T) -> None:
-        self._compute_up_to(index)
-        self._computed_elements[index] = value
+        if isinstance(index, slice):
+            self._parse_up_to(index.indices(self._compute_length())[1] - 1)
+            return list.__getitem__(self, index)
+
+        self._parse_up_to(index)
+        return list.__getitem__(self, index)
 
     def __iter__(self) -> Iterator[T]:
-        yield from iter(self._computed_elements)
-
-        current_index = len(self._computed_elements)
-        current_position = self._string_start
-        string_length = self._string_length
-        separator_offset = len(self.separator)
-
-        while True:
-            end = self.string.find(self.separator, current_position, string_length)
-            if end == -1:
-                end = string_length
-            element_str = self.string[current_position:end]
-            element = self.converter(element_str)
-            self._computed_elements.append(element)
-            yield element
-            if end == string_length:
-                break
-            current_position = end + separator_offset
-            current_index += 1
+        yield from list.__iter__(self)
+        yield from self._iter_unparsed()
 
     def __len__(self) -> int:
+        if self.parsed:
+            return list.__len__(self)
         return self._compute_length()
 
     def __repr__(self) -> str:
-        return f"{self.__class__.__name__}({self.string!r}, {self.separator!r}, {self.converter})"
+        if self.parsed:
+            return list.__repr__(self)
+        return f"LazyList({self._separator!r}, {self._converter!r}, parsed={list.__len__(self) / self._compute_length() * 100:.02f}%)"
 
-    def __eq__(self, other: Any) -> bool:
-        if isinstance(other, LazyList):
-            return (self.converter, self.separator, self.string) == (other.converter, other.separator, other.string)
-        if isinstance(other, list):
-            return list(self) == other
-        return False
+    def _parse_up_to(self, index: int) -> None:
+        if self.parsed:
+            return
 
-    def _compute_up_to(self, index: int) -> None:
-        start = len(self._computed_elements)
+        if index < 0:
+            index += self._compute_length()
+        if index < 0 or index >= self._compute_length():
+            raise IndexError('Index out of range')
+
+        start = list.__len__(self)
         if start > index:
             return
 
-        current_position = self._string_start
-        string_length = self._string_length
-        separator_offset = len(self.separator)
+        end = index - start + 1
+        for _ in islice(self._iter_unparsed(), end):
+            pass
 
-        for _ in range(start):
-            current_position = self.string.find(self.separator, current_position) + separator_offset
+        if index == self._compute_length() - 1:
+            self.parsed = True
+            self._string = ""  # freeing the memory
 
-        while start <= index:
-            end = self.string.find(self.separator, current_position, string_length)
+    def _iter_unparsed(self):
+        if self.parsed:
+            return
+        current_index = list.__len__(self)
+        current_position = 1 if self._string.startswith('[') else 0
+        string_length = len(self._string) - 1 if self._string.endswith(']') else len(self._string)
+        separator_offset = len(self._separator)
+
+        for _ in range(current_index):
+            current_position = self._string.find(self._separator, current_position) + separator_offset
+
+        while current_index < self._compute_length():
+            end = self._string.find(self._separator, current_position, string_length)
             if end == -1:
                 end = string_length
-            element_str = self.string[current_position:end]
-            self._computed_elements.append(self.converter(element_str))
+                self.parsed = True
+            element = self._converter(self._string[current_position:end])
+            list.append(self, element)
+            yield element
             current_position = end + separator_offset
-            start += 1
+            current_index += 1
 
     def _compute_length(self) -> int:
         if self._length is None:
-            self._length = self.string.count(self.separator) + 1
+            self._length = self._string.count(self._separator) + 1
         return self._length
-
-    @property
-    def _string_start(self) -> int:
-        return 1 if self.string.startswith('[') else 0
-
-    @property
-    def _string_length(self) -> int:
-        return len(self.string) - 1 if self.string.endswith(']') else len(self.string)
 
 
 class AbstractArrayField(models.TextField):
@@ -309,7 +344,7 @@ class AbstractArrayField(models.TextField):
         return self.from_db_value(value, None, None)
 
     def get_prep_value(self, value):
-        if isinstance(value, LazyList) and not (self._unique_values or self._store_sorted):
+        if isinstance(value, LazyList) and not value.parsed and not (self._unique_values or self._store_sorted):
             return value.string.strip("[]")
 
         if self._unique_values:
