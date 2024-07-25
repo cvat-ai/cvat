@@ -54,7 +54,7 @@ from cvat.apps.engine.cloud_provider import db_storage_to_storage_instance, impo
 from cvat.apps.events.handlers import handle_dataset_import
 from cvat.apps.dataset_manager.bindings import CvatImportError
 from cvat.apps.dataset_manager.serializers import DatasetFormatsSerializer
-from cvat.apps.engine.frame_provider import FrameProvider
+from cvat.apps.engine.frame_provider import FrameProvider, JobFrameProvider
 from cvat.apps.engine.filters import NonModelSimpleFilter, NonModelOrderingFilter, NonModelJsonLogicFilter
 from cvat.apps.engine.media_extractors import get_mime
 from cvat.apps.engine.models import (
@@ -625,7 +625,7 @@ class ProjectViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
     def preview(self, request, pk):
         self._object = self.get_object() # call check_object_permissions as well
 
-        first_task = self._object.tasks.order_by('-id').first()
+        first_task: Optional[models.Task] = self._object.tasks.order_by('-id').first()
         if not first_task:
             return HttpResponseNotFound('Project image preview not found')
 
@@ -746,13 +746,13 @@ class JobDataGetter(DataChunkGetter):
         self.job = job
 
     def _check_frame_range(self, frame: int):
-        frame_range = self.job.segment.frame_set
-        if frame not in frame_range:
+        if frame not in self.job.segment.frame_set:
             raise ValidationError("The frame number doesn't belong to the job")
 
     def __call__(self, request, start, stop, db_data):
+        # TODO: add segment boundary handling
         if self.type == 'chunk' and self.job.segment.type == SegmentType.SPECIFIC_FRAMES:
-            frame_provider = FrameProvider(db_data, self.dimension)
+            frame_provider = JobFrameProvider(self.job)
 
             start_chunk = frame_provider.get_chunk_number(start)
             stop_chunk = frame_provider.get_chunk_number(stop)
@@ -764,12 +764,10 @@ class JobDataGetter(DataChunkGetter):
             cache = MediaCache()
 
             if settings.USE_CACHE and db_data.storage_method == StorageMethodChoice.CACHE:
-                buf, mime = cache.get_selective_job_chunk_data_with_mime(
-                    chunk_number=self.number, quality=self.quality, job=self.job
-                )
+                buf, mime = cache.get_segment_chunk(self.job, self.number, quality=self.quality)
             else:
-                buf, mime = cache.prepare_selective_job_chunk(
-                    chunk_number=self.number, quality=self.quality, db_job=self.job
+                buf, mime = cache.prepare_masked_range_segment_chunk(
+                    self.job, self.number, quality=self.quality
                 )
 
             return HttpResponse(buf.getvalue(), content_type=mime)
@@ -1298,8 +1296,7 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
             data_num = request.query_params.get('number', None)
             data_quality = request.query_params.get('quality', 'compressed')
 
-            data_getter = DataChunkGetter(data_type, data_num, data_quality,
-                self._object.dimension)
+            data_getter = DataChunkGetter(data_type, data_num, data_quality, self._object.dimension)
 
             return data_getter(request, self._object.data.start_frame,
                 self._object.data.stop_frame, self._object.data)
