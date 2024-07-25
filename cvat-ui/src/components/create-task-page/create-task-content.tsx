@@ -82,6 +82,7 @@ const defaultState: State = {
         },
         useProjectSourceStorage: true,
         useProjectTargetStorage: true,
+        consensusJobsPerRegularJob: 0,
     },
     labels: [],
     files: {
@@ -967,7 +968,6 @@ class CreateTaskContent extends React.PureComponent<Props & RouteComponentProps,
                 {this.renderLabelsBlock()}
                 {this.renderFilesBlock()}
                 {this.renderAdvancedBlock()}
-
                 <Col span={24} className='cvat-create-task-content-footer'>
                     {many ? this.renderFooterMultiTasks() : this.renderFooterSingleTask() }
                 </Col>

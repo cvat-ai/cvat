@@ -71,6 +71,28 @@
     .cvat-job-item-dates-info {
         margin-top: $grid-unit-size;
     }
+
+    .cvat-job-assignee-selector {
+        max-width: $grid-unit-size * 16;
+
+        @media screen and (width <= 1620px) {
+            max-width: $grid-unit-size * 12;
+        }
+    }
+
+    .cvat-consensus-job-collapse {
+        margin-top: 12px;
+
+        .ant-collapse-item > .ant-collapse-header {
+            align-items: center;
+        }
+    }
+
+    .job-actions-menu {
+        position: absolute;
+        top: $grid-unit-size * 6.5;
+    }
+
 }
 
 .ant-menu.cvat-job-item-menu {

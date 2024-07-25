@@ -61,6 +61,9 @@ function setUpJobsList(jobs: Job[], query: JobsQuery): Job[] {
         result = result.filter((job, index) => jsonLogic.apply(filter, converted[index]));
     }
 
+    // consensus jobs will be under the collapse view
+    result = result.filter((job) => job.parent_job_id === null);
+
     return result;
 }
 

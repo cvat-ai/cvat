@@ -727,6 +727,7 @@ class TaskAnnotation:
         ).get(id=pk)
 
         # Postgres doesn't guarantee an order by default without explicit order_by
+        # Only select regular jobs, not ground truth or consensus jobs
         self.db_jobs = models.Job.objects.select_related("segment").filter(
             segment__task_id=pk, type=models.JobType.ANNOTATION.value,
         ).order_by('id')
