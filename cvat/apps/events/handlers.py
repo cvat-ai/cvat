@@ -373,20 +373,23 @@ def handle_delete(scope, instance, store_in_deletion_cache=False, **kwargs):
         user_email=uemail,
     )
 
-def handle_annotations_change(instance, annotations, action, should_deepcopy=True, **kwargs):
-    _annotations = deepcopy(annotations) if should_deepcopy else annotations
-    def filter_shape_data(shape):
-        data = {
-            "id": shape["id"],
-            "frame": shape["frame"],
-            "attributes": shape["attributes"],
+def handle_annotations_change(instance, annotations, action, **kwargs):
+    def filter_data(data):
+        filtered_data = {
+            "id": data["id"],
+            "frame": data["frame"],
+            "attributes": data["attributes"],
         }
 
-        label_id = shape.get("label_id", None)
+        label_id = data.get("label_id", None)
         if label_id:
-            data["label_id"] = label_id
+            filtered_data["label_id"] = label_id
 
-        return data
+        shapes = data.get("shates", None)
+        if shapes is not None:
+            filtered_data["shapes"] = [filter_data(shape) for shape in shapes]
+
+        return filtered_data
 
     oid = organization_id(instance)
     oslug = organization_slug(instance)
@@ -397,7 +400,7 @@ def handle_annotations_change(instance, annotations, action, should_deepcopy=Tru
     uname = user_name(instance)
     uemail = user_email(instance)
 
-    tags = [filter_shape_data(tag) for tag in _annotations.get("tags", [])]
+    tags = [filter_data(tag) for tag in annotations.get("tags", [])]
     if tags:
         record_server_event(
             scope=event_scope(action, "tags"),
@@ -416,8 +419,8 @@ def handle_annotations_change(instance, annotations, action, should_deepcopy=Tru
         )
 
     shapes_by_type = {shape_type[0]: [] for shape_type in ShapeType.choices()}
-    for shape in _annotations.get("shapes", []):
-        shapes_by_type[shape["type"]].append(filter_shape_data(shape))
+    for shape in annotations.get("shapes", []):
+        shapes_by_type[shape["type"]].append(filter_data(shape))
 
     scope = event_scope(action, "shapes")
     for shape_type, shapes in shapes_by_type.items():
@@ -440,13 +443,9 @@ def handle_annotations_change(instance, annotations, action, should_deepcopy=Tru
             )
 
     tracks_by_type = {shape_type[0]: [] for shape_type in ShapeType.choices()}
-    for track in _annotations.get("tracks", []):
-        track_shapes = track.pop("shapes")
-        track = filter_shape_data(track)
-        track["shapes"] = []
-        for track_shape in track_shapes:
-            track["shapes"].append(filter_shape_data(track_shape))
-        tracks_by_type[track_shapes[0]["type"]].append(track)
+    for track in annotations.get("tracks", []):
+        filtered_track = filter_data(track)
+        tracks_by_type[track["shapes"][0]["type"]].append(filtered_track)
 
     scope = event_scope(action, "tracks")
     for track_type, tracks in tracks_by_type.items():
