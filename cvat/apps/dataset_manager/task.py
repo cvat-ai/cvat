@@ -477,10 +477,10 @@ class JobAnnotation:
 
     def delete(self, data=None):
         deleted_data = self._delete(data)
-        handle_annotations_change(self.db_job, deleted_data, "delete")
-
         if not self._data_is_empty(deleted_data):
             self._set_updated_date()
+
+        handle_annotations_change(self.db_job, deleted_data, "delete")
 
     @staticmethod
     def _extend_attributes(attributeval_set, default_attribute_values):
