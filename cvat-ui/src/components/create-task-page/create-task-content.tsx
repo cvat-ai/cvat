@@ -153,7 +153,6 @@ function filterFiles(remoteFiles: RemoteFile[], many: boolean): RemoteFile[] {
 class CreateTaskContent extends React.PureComponent<Props & RouteComponentProps, State> {
     private basicConfigurationComponent: RefObject<BasicConfigurationForm>;
     private advancedConfigurationComponent: RefObject<AdvancedConfigurationForm>;
-    // private consensusConfigurationComponent: RefObject<ConsensusConfigurationForm>;
     private fileManagerComponent: any;
 
     public constructor(props: Props & RouteComponentProps) {
@@ -161,7 +160,6 @@ class CreateTaskContent extends React.PureComponent<Props & RouteComponentProps,
         this.state = { ...defaultState };
         this.basicConfigurationComponent = React.createRef<BasicConfigurationForm>();
         this.advancedConfigurationComponent = React.createRef<AdvancedConfigurationForm>();
-        // this.consensusConfigurationComponent = React.createRef<ConsensusConfigurationForm>();
     }
 
     public componentDidMount(): void {
