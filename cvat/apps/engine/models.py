@@ -4,6 +4,7 @@
 # SPDX-License-Identifier: MIT
 
 from __future__ import annotations
+from dataclasses import dataclass, field
 
 import os
 import re
@@ -11,7 +12,7 @@ import shutil
 import uuid
 from enum import Enum
 from functools import cached_property
-from typing import Any, Dict, Optional, Sequence
+from typing import Any, Callable, Dict, Iterator, Optional, Sequence, TypeVar, overload
 
 from django.conf import settings
 from django.contrib.auth.models import User
@@ -181,6 +182,112 @@ class JobFrameSelectionMethod(str, Enum):
     def __str__(self):
         return self.value
 
+
+T = TypeVar("T")
+
+
+@dataclass(slots=True)
+class LazyList(Sequence[T]):
+    """
+    Evaluates elements from the string representation as needed
+    Initial conversion is ~4 times slower than just splitting the string, but it's more memory efficient
+    """
+    string: str
+    separator: str
+    converter: Callable[[str], T]
+    _computed_elements: list[T] = field(init=False, default_factory=list)
+    _length: int | None = field(init=False, default=None)
+
+    @overload
+    def __getitem__(self, index: int) -> T: ...
+
+    @overload
+    def __getitem__(self, index: slice) -> list[T]: ...
+
+    def __getitem__(self, index: int | slice) -> T | list[T]:
+        if isinstance(index, slice):
+            self._compute_up_to(index.indices(self._compute_length())[1] - 1)
+            return self._computed_elements[index]
+        if index < 0:
+            index += self._compute_length()
+        if index < 0 or index >= self._compute_length():
+            raise IndexError('index out of range')
+        self._compute_up_to(index)
+        return self._computed_elements[index]
+
+    def __setitem__(self, index: int, value: T) -> None:
+        self._compute_up_to(index)
+        self._computed_elements[index] = value
+
+    def __iter__(self) -> Iterator[T]:
+        yield from iter(self._computed_elements)
+
+        current_index = len(self._computed_elements)
+        current_position = self._string_start
+        string_length = self._string_length
+        separator_offset = len(self.separator)
+
+        while True:
+            end = self.string.find(self.separator, current_position, string_length)
+            if end == -1:
+                end = string_length
+            element_str = self.string[current_position:end]
+            element = self.converter(element_str)
+            self._computed_elements.append(element)
+            yield element
+            if end == string_length:
+                break
+            current_position = end + separator_offset
+            current_index += 1
+
+    def __len__(self) -> int:
+        return self._compute_length()
+
+    def __repr__(self) -> str:
+        return f"{self.__class__.__name__}({self.string!r}, {self.separator!r}, {self.converter})"
+
+    def __eq__(self, other: Any) -> bool:
+        if isinstance(other, LazyList):
+            return (self.converter, self.separator, self.string) == (other.converter, other.separator, other.string)
+        if isinstance(other, list):
+            return list(self) == other
+        return False
+
+    def _compute_up_to(self, index: int) -> None:
+        start = len(self._computed_elements)
+        if start > index:
+            return
+
+        current_position = self._string_start
+        string_length = self._string_length
+        separator_offset = len(self.separator)
+
+        for _ in range(start):
+            current_position = self.string.find(self.separator, current_position) + separator_offset
+
+        while start <= index:
+            end = self.string.find(self.separator, current_position, string_length)
+            if end == -1:
+                end = string_length
+            element_str = self.string[current_position:end]
+            self._computed_elements.append(self.converter(element_str))
+            current_position = end + separator_offset
+            start += 1
+
+    def _compute_length(self) -> int:
+        if self._length is None:
+            self._length = self.string.count(self.separator) + 1
+        return self._length
+
+    @property
+    def _string_start(self) -> int:
+        return 1 if self.string.startswith('[') else 0
+
+    @property
+    def _string_length(self) -> int:
+        return len(self.string) - 1 if self.string.endswith(']') else len(self.string)
+
+
 class AbstractArrayField(models.TextField):
     separator = ","
     converter = staticmethod(lambda x: x)
@@ -193,19 +300,20 @@ class AbstractArrayField(models.TextField):
     def from_db_value(self, value, expression, connection):
         if not value:
             return []
-        if value.startswith('[') and value.endswith(']'):
-            value = value[1:-1]
-        return [self.converter(v) for v in value.split(self.separator) if v]
+        return LazyList(value, self.separator, self.converter)
 
     def to_python(self, value):
-        if isinstance(value, list):
+        if isinstance(value, list | LazyList):
             return value
 
         return self.from_db_value(value, None, None)
 
     def get_prep_value(self, value):
+        if isinstance(value, LazyList) and not (self._unique_values or self._store_sorted):
+            return value.string.strip("[]")
+
         if self._unique_values:
-            value = list(dict.fromkeys(value))
+            value = dict.fromkeys(value)
         if self._store_sorted:
             value = sorted(value)
         return self.separator.join(map(str, value))
