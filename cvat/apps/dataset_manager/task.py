@@ -958,7 +958,6 @@ def import_task_annotations(src_file, task_id, format_name, conv_mask_to_poly):
 @transaction.atomic
 def import_job_annotations(src_file, job_id, format_name, conv_mask_to_poly):
     job = JobAnnotation(job_id)
-    job.init_from_db()
 
     importer = make_importer(format_name)
     with open(src_file, 'rb') as f:
