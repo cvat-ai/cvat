@@ -477,9 +477,11 @@ class JobAnnotation:
 
     def delete(self, data=None):
         deleted_data = self._delete(data)
-        handle_annotations_change(self.db_job, deleted_data, "delete")
+        should_update = not self._data_is_empty(deleted_data)
 
-        if not self._data_is_empty(deleted_data):
+        handle_annotations_change(self.db_job, deleted_data, "delete", should_deepcopy=False)
+
+        if should_update:
             self._set_updated_date()
 
     @staticmethod

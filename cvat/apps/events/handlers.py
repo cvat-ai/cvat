@@ -373,8 +373,8 @@ def handle_delete(scope, instance, store_in_deletion_cache=False, **kwargs):
         user_email=uemail,
     )
 
-def handle_annotations_change(instance, annotations, action, **kwargs):
-    _annotations = deepcopy(annotations)
+def handle_annotations_change(instance, annotations, action, should_deepcopy=True, **kwargs):
+    _annotations = deepcopy(annotations) if should_deepcopy else annotations
     def filter_shape_data(shape):
         data = {
             "id": shape["id"],
