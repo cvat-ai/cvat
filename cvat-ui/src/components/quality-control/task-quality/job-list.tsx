@@ -15,8 +15,8 @@ import {
     Task, Job, JobType, QualityReport, getCore,
 } from 'cvat-core-wrapper';
 import CVATTooltip from 'components/common/cvat-tooltip';
-import { getQualityColor } from 'utils/quality-color';
 import Tag from 'antd/lib/tag';
+import { QualityColors } from 'utils/quality-color';
 import { toRepresentation } from '../utils/text-formatting';
 import { ConflictsTooltip } from './gt-conflicts';
 import { sorter, collectUsers } from '../utils/table-utils';
@@ -24,12 +24,14 @@ import { sorter, collectUsers } from '../utils/table-utils';
 interface Props {
     task: Task;
     jobsReports: QualityReport[];
+    getQualityColor: (value?: number) => QualityColors;
 }
 
 function JobListComponent(props: Props): JSX.Element {
     const {
         task: taskInstance,
         jobsReports: jobsReportsArray,
+        getQualityColor,
     } = props;
 
     const jobsReports: Record<number, QualityReport> = jobsReportsArray

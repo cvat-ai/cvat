@@ -13,6 +13,7 @@ import {
 } from 'cvat-core-wrapper';
 import React from 'react';
 import CVATTooltip from 'components/common/cvat-tooltip';
+import { QualityColors } from 'utils/quality-color';
 import EmptyGtJob from './empty-job';
 import GtConflicts from './gt-conflicts';
 import Issues from './issues';
@@ -26,11 +27,12 @@ interface Props {
     reportRefreshingStatus: string | null;
     onJobUpdate: (job: Job, data: Parameters<Job['save']>[0]) => void;
     onCreateReport: () => void;
+    getQualityColor: (value?: number) => QualityColors;
 }
 
 function TaskQualityComponent(props: Props): JSX.Element {
     const {
-        task, onJobUpdate, taskReport, jobsReports, reportRefreshingStatus, onCreateReport,
+        task, onJobUpdate, taskReport, jobsReports, reportRefreshingStatus, onCreateReport, getQualityColor,
     } = props;
 
     const gtJob = task.jobs.find((job: Job) => job.type === JobType.GROUND_TRUTH);
@@ -90,7 +92,7 @@ function TaskQualityComponent(props: Props): JSX.Element {
                             <JobItem job={gtJob} task={task} onJobUpdate={onJobUpdate} />
                         </Row>
                         <Row>
-                            <JobList jobsReports={jobsReports} task={task} />
+                            <JobList jobsReports={jobsReports} task={task} getQualityColor={getQualityColor} />
                         </Row>
                     </>
                 ) : (

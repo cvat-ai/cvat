@@ -9,13 +9,23 @@ export enum QualityColors {
     GRAY = '#8c8c8c',
 }
 
-const thresholds = {
-    low: 75,
-    middle: 82,
-    high: 91,
+export const BASE_TARGET_THRESHOLD = 80;
+
+const ratios = {
+    low: 0.82,
+    middle: 0.9,
+    high: 1,
 };
 
-export function getQualityColor(value?: number): QualityColors {
+export const qualityColorGenerator = (targetMetric?: number) => (value?: number) => {
+    const baseValue = targetMetric ?? BASE_TARGET_THRESHOLD;
+
+    const thresholds = {
+        low: baseValue * ratios.low,
+        middle: baseValue * ratios.middle,
+        high: baseValue * ratios.high,
+    };
+
     if (!value) {
         return QualityColors.GRAY;
     }
@@ -31,4 +41,4 @@ export function getQualityColor(value?: number): QualityColors {
     }
 
     return QualityColors.GRAY;
-}
+};

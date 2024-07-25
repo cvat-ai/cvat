@@ -23,6 +23,7 @@ import CVATLoadingSpinner from 'components/common/loading-spinner';
 import GoBackButton from 'components/common/go-back-button';
 import { CombinedState } from 'reducers';
 import { ActionUnion, createAction } from 'utils/redux';
+import { BASE_TARGET_THRESHOLD, qualityColorGenerator, QualityColors } from 'utils/quality-color';
 import TaskQualityComponent from './task-quality/task-quality-component';
 import QualitySettingsComponent from './quality-settings';
 
@@ -52,6 +53,7 @@ interface State {
         settings: QualitySettings | null;
         fetching: boolean;
         visible: boolean;
+        getQualityColor: (value?: number) => QualityColors;
     },
 }
 
@@ -117,6 +119,7 @@ const reducer = (state: State, action: ActionUnion<typeof reducerActions>): Stat
             qualitySettings: {
                 ...state.qualitySettings,
                 settings: action.payload.qualitySettings,
+                getQualityColor: qualityColorGenerator(action.payload.qualitySettings.targetMetricThreshold),
             },
         };
     }
@@ -152,6 +155,7 @@ function QualityControlPage(): JSX.Element {
             settings: null,
             fetching: true,
             visible: false,
+            getQualityColor: qualityColorGenerator(BASE_TARGET_THRESHOLD),
         },
     });
 
@@ -165,7 +169,7 @@ function QualityControlPage(): JSX.Element {
     const pluginTabs = usePlugins(
         (appState: CombinedState) => appState.plugins.components.qualityControlPage.tabs.items,
         {},
-        { task: instance },
+        { task: instance, getQualityColor: state.qualitySettings.getQualityColor },
     );
     const supportedTabs = ['Overview', 'Settings', ...pluginTabs.map(({ component: Component }) => Component.name)];
     const [activeTab, setTab] = useState(getTabFromHash(supportedTabs));
@@ -196,7 +200,7 @@ function QualityControlPage(): JSX.Element {
         }
     };
 
-    const receiveReport = useCallback((taskInstance: Task) => {
+    const receiveReport = useCallback(async (taskInstance: Task) => {
         dispatch(reducerActions.setFetching(true));
         dispatch(reducerActions.setQualitySettingsFetching(true));
 
@@ -209,10 +213,11 @@ function QualityControlPage(): JSX.Element {
             }
         }
 
-        core.analytics.quality.reports({ pageSize: 1, target: 'task', taskID: taskInstance.id }).then(([report]) => {
-            let reportRequest = Promise.resolve<QualityReport[]>([]);
+        try {
+            const [report] = await core.analytics.quality.reports({ pageSize: 1, target: 'task', taskID: taskInstance.id });
+            let jobReportsRequest = Promise.resolve<QualityReport[]>([]);
             if (report) {
-                reportRequest = core.analytics.quality.reports({
+                jobReportsRequest = core.analytics.quality.reports({
                     pageSize: taskInstance.jobs.length,
                     parentID: report.id,
                     target: 'job',
@@ -220,7 +225,7 @@ function QualityControlPage(): JSX.Element {
             }
             const settingsRequest = core.analytics.quality.settings.get({ taskID: taskInstance.id });
 
-            Promise.all([reportRequest, settingsRequest]).then(([jobReports, settings]) => {
+            await Promise.all([jobReportsRequest, settingsRequest]).then(([jobReports, settings]) => {
                 dispatch(reducerActions.setQualitySettings(settings));
                 dispatch(reducerActions.setTaskReport(report || null));
                 dispatch(reducerActions.setJobsReports(jobReports));
@@ -228,7 +233,9 @@ function QualityControlPage(): JSX.Element {
                 dispatch(reducerActions.setQualitySettingsFetching(false));
                 dispatch(reducerActions.setFetching(false));
             });
-        }).catch(handleError);
+        } catch (error: unknown) {
+            handleError(error as Error);
+        }
     }, [instance]);
 
     const onCreateReport = useCallback(() => {
@@ -299,11 +306,11 @@ function QualityControlPage(): JSX.Element {
     useEffect(() => {
         if (Number.isInteger(requestedInstanceID) && ['project', 'task', 'job'].includes(requestedInstanceType)) {
             dispatch(reducerActions.setFetching(true));
-            Promise.all([
-                receiveInstance(requestedInstanceType, requestedInstanceID),
-            ]).then((result) => Promise.all([
-                receiveReport(result[0]),
-            ]));
+            receiveInstance(requestedInstanceType, requestedInstanceID).then((task) => {
+                if (task) {
+                    receiveReport(task);
+                }
+            });
         } else {
             notification.error({
                 message: 'Could not load this page',
@@ -376,6 +383,7 @@ function QualityControlPage(): JSX.Element {
                     reportRefreshingStatus={state.reportRefreshingStatus}
                     taskReport={state.taskReport}
                     jobsReports={state.jobsReports}
+                    getQualityColor={state.qualitySettings.getQualityColor}
                 />
             ),
         }, 10]);
@@ -398,7 +406,10 @@ function QualityControlPage(): JSX.Element {
             key: Component.name,
             label: Component.name,
             children: (
-                <Component key={index} targetState={{ task: instance }} />
+                <Component
+                    key={index}
+                    targetState={{ task: instance, getQualityColor: state.qualitySettings.getQualityColor }}
+                />
             ),
         }, weight]));
 
