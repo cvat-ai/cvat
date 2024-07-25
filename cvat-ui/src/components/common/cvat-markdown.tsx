@@ -1,3 +1,7 @@
+// Copyright (C) 2024 CVAT.ai Corporation
+//
+// SPDX-License-Identifier: MIT
+
 import Button from 'antd/lib/button';
 import React from 'react';
 import ReactMarkdown from 'react-markdown';

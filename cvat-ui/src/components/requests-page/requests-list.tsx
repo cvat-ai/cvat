@@ -3,7 +3,7 @@
 // SPDX-License-Identifier: MIT
 
 import React from 'react';
-import { useDispatch, useSelector } from 'react-redux';
+import { shallowEqual, useDispatch, useSelector } from 'react-redux';
 import { CombinedState, RequestsQuery } from 'reducers';
 
 import { Row, Col } from 'antd/lib/grid';
@@ -33,7 +33,9 @@ function RequestsList(props: Props): JSX.Element {
     const dispatch = useDispatch();
     const { query, count } = props;
     const { page } = query;
-    const { requests, disabled } = useSelector((state: CombinedState) => state.requests);
+    const { requests, disabled } = useSelector((state: CombinedState) => ({
+        requests: state.requests.requests, disabled: state.requests.disabled,
+    }), shallowEqual);
 
     const requestViews = setUpRequestsList(Object.values(requests), page)
         .map((request: Request): JSX.Element => (
