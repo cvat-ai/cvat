@@ -45,6 +45,10 @@ class ORIENTATION(IntEnum):
     MIRROR_HORIZONTAL_90_ROTATED=7
     NORMAL_270_ROTATED=8
 
+class FrameQuality(IntEnum):
+    COMPRESSED = 0
+    ORIGINAL = 100
+
 def get_mime(name):
     for type_name, type_def in MEDIA_TYPES.items():
         if type_def['has_mime_type'](name):
