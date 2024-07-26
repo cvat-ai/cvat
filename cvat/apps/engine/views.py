@@ -75,7 +75,7 @@ from cvat.apps.engine.serializers import (
     IssueWriteSerializer, CommentReadSerializer, CommentWriteSerializer, CloudStorageWriteSerializer,
     CloudStorageReadSerializer, DatasetFileSerializer,
     ProjectFileSerializer, TaskFileSerializer, RqIdSerializer, CloudStorageContentSerializer,
-    RequestSerializer, RequestStatus, RequestAction, RequestSubresource,
+    RequestSerializer, RequestStatus, RequestAction, RequestSubresource, RequestTarget,
 )
 from cvat.apps.engine.permissions import get_cloud_storage_for_import_or_export
 
@@ -3185,6 +3185,7 @@ class RequestViewSet(viewsets.GenericViewSet):
         'job_id',
         # derivatives fields (from parsed rq_id)
         'action',
+        'resource',
         'subresource',
         'format',
     ]
@@ -3194,7 +3195,9 @@ class RequestViewSet(viewsets.GenericViewSet):
     lookup_fields = {
         'created_date': 'created_at',
         'action': 'parsed_rq_id.action',
+        'resource': 'parsed_rq_id.resource',
         'subresource': 'parsed_rq_id.subresource',
+        'format': 'parsed_rq_id.format',
         'status': 'get_status',
         'project_id': 'meta.project_id',
         'task_id': 'meta.task_id',
@@ -3210,6 +3213,7 @@ class RequestViewSet(viewsets.GenericViewSet):
         'task_id': SchemaField('integer'),
         'job_id': SchemaField('integer'),
         'action': SchemaField('string', RequestAction.choices),
+        'resource': SchemaField('string', RequestTarget.choices),
         'subresource': SchemaField('string', RequestSubresource.choices),
         'format': SchemaField('string'),
         'org': SchemaField('string'),
