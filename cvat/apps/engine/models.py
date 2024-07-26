@@ -218,7 +218,7 @@ class LazyList(list[T]):
     Once instance of LazyList is fully parsed (either by accessing list methods
     or by iterating over all elements), it will behave just as a regular python list.
     """
-    _string: str
+    string: str
     _separator: str
     _converter: Callable[[str], T]
     _probable_length: int | None = field(init=False, default=None)
@@ -296,26 +296,26 @@ class LazyList(list[T]):
 
         if index == self._compute_max_length() - 1:
             self.parsed = True
-            self._string = ""  # freeing the memory
+            self.string = ""  # freeing the memory
 
     def _iter_unparsed(self):
         if self.parsed:
             return
         current_index = list.__len__(self)
-        current_position = 1 if self._string.startswith('[') else 0
-        string_length = len(self._string) - 1 if self._string.endswith(']') else len(self._string)
+        current_position = 1 if self.string.startswith('[') else 0
+        string_length = len(self.string) - 1 if self.string.endswith(']') else len(self.string)
         separator_offset = len(self._separator)
 
         for _ in range(current_index):
-            current_position = self._string.find(self._separator, current_position) + separator_offset
+            current_position = self.string.find(self._separator, current_position) + separator_offset
 
         while current_index < self._compute_max_length():
-            end = self._string.find(self._separator, current_position, string_length)
+            end = self.string.find(self._separator, current_position, string_length)
             if end == -1:
                 end = string_length
                 self.parsed = True
 
-            element_str = self._string[current_position:end]
+            element_str = self.string[current_position:end]
             current_position = end + separator_offset
             if not element_str:
                 self._probable_length -= 1
@@ -327,7 +327,7 @@ class LazyList(list[T]):
 
     def _compute_max_length(self) -> int:
         if self._probable_length is None:
-            self._probable_length = self._string.count(self._separator) + 1
+            self._probable_length = self.string.count(self._separator) + 1
         return self._probable_length
 
 
