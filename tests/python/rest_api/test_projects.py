@@ -4,6 +4,7 @@
 # SPDX-License-Identifier: MIT
 
 import io
+import itertools
 import json
 import xml.etree.ElementTree as ET
 import zipfile
@@ -11,6 +12,7 @@ from copy import deepcopy
 from http import HTTPStatus
 from io import BytesIO
 from itertools import product
+from operator import itemgetter
 from time import sleep
 from typing import Dict, List, Optional
 
@@ -692,73 +694,47 @@ class TestImportExportDatasetProject:
 
         self._test_import_project(admin_user, project_id, "CVAT 1.1", import_data)
 
+    @pytest.mark.parametrize(
+        "export_format, import_format",
+        (
+            ("COCO Keypoints 1.0", "COCO Keypoints 1.0"),
+            ("CVAT for images 1.1", "CVAT 1.1"),
+            ("CVAT for video 1.1", "CVAT 1.1"),
+            ("Datumaro 1.0", "Datumaro 1.0"),
+        ),
+    )
     @pytest.mark.parametrize("api_version", (1, 2))
-    def test_can_export_and_import_dataset_with_skeletons_coco_keypoints(
-        self, admin_user: str, api_version: int
+    def test_can_export_and_import_dataset_with_skeletons(
+        self, annotations, tasks, admin_user, export_format, import_format, api_version: int
     ):
-        project_id = 5
-        project = self.get_project_by_id(project_id)
+        tasks_with_skeletons = [
+            int(task_id)
+            for task_id in annotations["task"]
+            for element in annotations["task"][task_id]["shapes"]
+            if element["type"] == "skeleton"
+        ]
+        project_id = next(
+            task["project_id"]
+            for task in tasks
+            if task["id"] in tasks_with_skeletons and task["project_id"] is not None
+        )
+        project = next(p for p in self.projects if p["id"] == project_id)
 
-        dataset = self._test_export_dataset(
+        response = self._test_export_dataset(
             admin_user,
             project_id,
             api_version,
-            format="COCO Keypoints 1.0",
             local_download=(not (project["target_storage"] or {}).get("cloud_storage_id")),
+            format=export_format,
         )
 
-        tmp_file = io.BytesIO(dataset)
+        tmp_file = io.BytesIO(response.data)
         tmp_file.name = "dataset.zip"
         import_data = {
             "dataset_file": tmp_file,
         }
 
-        self._test_import_project(admin_user, project_id, "COCO Keypoints 1.0", import_data)
-
-    @pytest.mark.parametrize("api_version", (1, 2))
-    def test_can_export_and_import_dataset_with_skeletons_cvat_for_images(
-        self, admin_user: str, api_version: int
-    ):
-        project_id = 5
-        project = self.get_project_by_id(project_id)
-
-        dataset = self._test_export_dataset(
-            admin_user,
-            project_id,
-            api_version,
-            local_download=(not (project["target_storage"] or {}).get("cloud_storage_id")),
-        )
-
-        tmp_file = io.BytesIO(dataset)
-        tmp_file.name = "dataset.zip"
-        import_data = {
-            "dataset_file": tmp_file,
-        }
-
-        self._test_import_project(admin_user, project_id, "CVAT 1.1", import_data)
-
-    @pytest.mark.parametrize("api_version", (1, 2))
-    def test_can_export_and_import_dataset_with_skeletons_cvat_for_video(
-        self, admin_user: str, api_version: int
-    ):
-        project_id = 5
-        project = self.get_project_by_id(project_id)
-
-        dataset = self._test_export_dataset(
-            admin_user,
-            project_id,
-            api_version,
-            format="CVAT for video 1.1",
-            local_download=(not (project["target_storage"] or {}).get("cloud_storage_id")),
-        )
-
-        tmp_file = io.BytesIO(dataset)
-        tmp_file.name = "dataset.zip"
-        import_data = {
-            "dataset_file": tmp_file,
-        }
-
-        self._test_import_project(admin_user, project_id, "CVAT 1.1", import_data)
+        self._test_import_project(admin_user, project_id, import_format, import_data)
 
     @pytest.mark.parametrize("api_version", (1, 2))
     @pytest.mark.parametrize("format_name", ("Datumaro 1.0", "ImageNet 1.0", "PASCAL VOC 1.1"))
@@ -970,6 +946,52 @@ class TestImportExportDatasetProject:
             }
 
             self._test_import_project(admin_user, project_id, "CVAT 1.1", import_data)
+
+    @pytest.mark.parametrize(
+        "export_format, subset_path_template",
+        [
+            ("COCO 1.0", "images/{subset}/"),
+            ("COCO Keypoints 1.0", "images/{subset}/"),
+            ("CVAT for images 1.1", "images/{subset}/"),
+            ("CVAT for video 1.1", "images/{subset}/"),
+            ("Datumaro 1.0", "images/{subset}/"),
+            ("Datumaro 3D 1.0", "point_clouds/{subset}/"),
+            ("LabelMe 3.0", "{subset}/"),
+            ("MOTS PNG 1.0", "{subset}/images/"),
+            ("YOLO 1.1", "obj_{subset}_data/"),
+            ("CamVid 1.0", "{subset}/"),
+            ("WiderFace 1.0", "WIDER_{subset}/images/"),
+            ("VGGFace2 1.0", "{subset}/"),
+            ("Market-1501 1.0", "bounding_box_{subset}/"),
+            ("ICDAR Recognition 1.0", "{subset}/images/"),
+            ("ICDAR Localization 1.0", "{subset}/images/"),
+            ("ICDAR Segmentation 1.0", "{subset}/images/"),
+            ("KITTI 1.0", "{subset}/image_2/"),
+            ("LFW 1.0", "{subset}/images/"),
+            ("Cityscapes 1.0", "imgsFine/leftImg8bit/{subset}/"),
+            ("Open Images V6 1.0", "images/{subset}/"),
+        ],
+    )
+    def test_creates_subfolders_for_subsets_on_export(
+        self, tasks, admin_user, export_format, subset_path_template
+    ):
+        group_key_func = itemgetter("project_id")
+        subsets = ["Train", "Validation"]
+        project_id = next(
+            project_id
+            for project_id, group in itertools.groupby(
+                sorted(filter(group_key_func, tasks), key=group_key_func),
+                key=group_key_func,
+            )
+            if sorted(task["subset"] for task in group) == subsets
+        )
+        response = self._test_export_project(admin_user, project_id, format=export_format)
+        with zipfile.ZipFile(io.BytesIO(response.data)) as zip_file:
+            for subset in subsets:
+                folder_prefix = subset_path_template.format(subset=subset)
+                assert (
+                    len([f for f in zip_file.namelist() if f.startswith(folder_prefix)]) > 0
+                ), f"No {folder_prefix} in {zip_file.namelist()}"
 
 
 @pytest.mark.usefixtures("restore_db_per_function")

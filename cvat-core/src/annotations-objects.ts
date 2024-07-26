@@ -2349,12 +2349,16 @@ export class MaskShape extends Shape {
                     redoWithUnderlyingPixels();
                     redo();
                 },
-                [this.clientID, ...clientIDs], frame,
+                [this.clientID, ...clientIDs],
+                frame,
             );
         } else {
             this.history.do(
                 HistoryActions.CHANGED_POINTS,
-                undo, redo, [this.clientID], frame,
+                undo,
+                redo,
+                [this.clientID],
+                frame,
             );
         }
     }
@@ -2999,6 +3003,12 @@ export class SkeletonTrack extends Track {
     // Method is used to export data to the server
     public toJSON(): SerializedTrack {
         const result: SerializedTrack = Track.prototype.toJSON.call(this);
+
+        result.shapes = result.shapes.map((shape) => ({
+            ...shape,
+            points: [],
+        }));
+
         result.elements = this.elements.map((el) => ({
             ...el.toJSON(),
             source: this.source,

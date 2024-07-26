@@ -1153,8 +1153,8 @@ class TestPatchJobAnnotations:
         self._check_response(username, jid, expect_success, data)
 
     @pytest.mark.parametrize("job_type", ("ground_truth", "annotation"))
-    def test_can_update_annotations(self, admin_user, jobs, request_data, job_type):
-        job = next(j for j in jobs if j["type"] == job_type)
+    def test_can_update_annotations(self, admin_user, jobs_with_shapes, request_data, job_type):
+        job = next(j for j in jobs_with_shapes if j["type"] == job_type)
         data = request_data(job["id"])
         self._check_response(admin_user, job["id"], True, data)
 

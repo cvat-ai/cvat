@@ -7,10 +7,8 @@ import './styles.scss';
 import React from 'react';
 import Tabs from 'antd/lib/tabs';
 import Text from 'antd/lib/typography/Text';
-import ModalConfirm from 'antd/lib/modal/confirm';
-import {
-    EditOutlined, BuildOutlined, ExclamationCircleOutlined,
-} from '@ant-design/icons';
+import modal from 'antd/lib/modal';
+import { EditOutlined, BuildOutlined, ExclamationCircleOutlined } from '@ant-design/icons';
 
 import { SerializedLabel, SerializedAttribute } from 'cvat-core-wrapper';
 import RawViewer from './raw-viewer';
@@ -160,13 +158,13 @@ export default class LabelsEditor extends React.PureComponent<LabelsEditorProps,
         };
 
         if (typeof label.id !== 'undefined' && label.id >= 0) {
-            ModalConfirm({
+            modal.confirm({
                 className: 'cvat-modal-delete-label',
                 icon: <ExclamationCircleOutlined />,
                 title: `Do you want to delete "${label.name}" label?`,
-                content: 'This action is irreversible. Annotation corresponding with this label will be deleted.',
+                content: 'This action is undone. All annotations associated to the label will be deleted.',
                 type: 'warning',
-                okType: 'danger',
+                okButtonProps: { type: 'primary', danger: true },
                 onOk() {
                     deleteLabel();
                 },
