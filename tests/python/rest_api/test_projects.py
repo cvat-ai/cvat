@@ -617,7 +617,7 @@ class TestImportExportDatasetProject:
     # todo: remove code duplication
     @staticmethod
     def _test_export_dataset(
-        username: str, pid: int, api_version: int, local_download: bool, **kwargs
+        username: str, pid: int, *, api_version: int, local_download: bool = True, **kwargs
     ) -> Optional[bytes]:
         dataset = export_project_dataset(username, api_version, save_images=True, id=pid, **kwargs)
         if local_download:
@@ -629,7 +629,7 @@ class TestImportExportDatasetProject:
 
     @staticmethod
     def _test_export_annotations(
-        username: str, pid: int, api_version: int, local_download: bool, **kwargs
+        username: str, pid: int, *, api_version: int, local_download: bool = True, **kwargs
     ) -> Optional[bytes]:
         dataset = export_project_dataset(username, api_version, save_images=False, id=pid, **kwargs)
         if local_download:
@@ -681,7 +681,7 @@ class TestImportExportDatasetProject:
         dataset = self._test_export_dataset(
             admin_user,
             project_id,
-            api_version,
+            api_version=api_version,
             local_download=(not (project["target_storage"] or {}).get("cloud_storage_id")),
         )
 
@@ -720,15 +720,15 @@ class TestImportExportDatasetProject:
         )
         project = next(p for p in self.projects if p["id"] == project_id)
 
-        response = self._test_export_dataset(
+        dataset = self._test_export_dataset(
             admin_user,
             project_id,
-            api_version,
+            api_version=api_version,
             local_download=(not (project["target_storage"] or {}).get("cloud_storage_id")),
             format=export_format,
         )
 
-        tmp_file = io.BytesIO(response.data)
+        tmp_file = io.BytesIO(dataset)
         tmp_file.name = "dataset.zip"
         import_data = {
             "dataset_file": tmp_file,
@@ -748,9 +748,8 @@ class TestImportExportDatasetProject:
         dataset = self._test_export_dataset(
             username,
             project_id,
-            api_version,
+            api_version=api_version,
             format=format_name,
-            local_download=True,  # project with target_storage == null
         )
 
         tmp_file = io.BytesIO(dataset)
@@ -804,7 +803,7 @@ class TestImportExportDatasetProject:
         dataset = self._test_export_annotations(
             username,
             pid,
-            api_version,
+            api_version=api_version,
             format=anno_format,
             local_download=(not (project["target_storage"] or {}).get("cloud_storage_id")),
         )
@@ -822,8 +821,7 @@ class TestImportExportDatasetProject:
         dataset = self._test_export_dataset(
             username,
             project_id,
-            api_version,
-            local_download=True,  # project with target_storage == null
+            api_version=api_version,
         )
 
         tmp_file = io.BytesIO(dataset)
@@ -856,9 +854,8 @@ class TestImportExportDatasetProject:
         self._test_export_dataset(
             username,
             project_id,
-            api_version,
+            api_version=api_version,
             format="COCO Keypoints 1.0",
-            local_download=True,  # project's target_storage.location == local
         )
 
     @pytest.mark.parametrize("api_version", (1, 2))
@@ -867,7 +864,7 @@ class TestImportExportDatasetProject:
         self._test_export_dataset(
             "admin1",
             empty_project["id"],
-            api_version,
+            api_version=api_version,
             format="COCO 1.0",
             local_download=(not (empty_project["target_storage"] or {}).get("cloud_storage_id")),
         )
@@ -885,7 +882,7 @@ class TestImportExportDatasetProject:
         self._test_export_dataset(
             "admin1",
             project["id"],
-            api_version,
+            api_version=api_version,
             format="COCO 1.0",
             local_download=(not (project["target_storage"] or {}).get("cloud_storage_id")),
         )
@@ -908,7 +905,7 @@ class TestImportExportDatasetProject:
         self._test_export_dataset(
             "admin1",
             project["id"],
-            api_version,
+            api_version=api_version,
             format="COCO 1.0",
             local_download=(not (project["target_storage"] or {}).get("cloud_storage_id")),
         )
@@ -935,9 +932,7 @@ class TestImportExportDatasetProject:
         result, response = api_client.projects_api.retrieve(project_id)
         assert all([not getattr(result, field) for field in ("source_storage", "target_storage")])
 
-        dataset = self._test_export_dataset(
-            admin_user, project_id, api_version, local_download=True
-        )
+        dataset = self._test_export_dataset(admin_user, project_id, api_version=api_version)
 
         with io.BytesIO(dataset) as tmp_file:
             tmp_file.name = "dataset.zip"
@@ -972,11 +967,13 @@ class TestImportExportDatasetProject:
             ("Open Images V6 1.0", "images/{subset}/"),
         ],
     )
+    @pytest.mark.parametrize("api_version", (1, 2))
     def test_creates_subfolders_for_subsets_on_export(
-        self, tasks, admin_user, export_format, subset_path_template
+        self, filter_tasks, admin_user, export_format, subset_path_template, api_version: int
     ):
         group_key_func = itemgetter("project_id")
         subsets = ["Train", "Validation"]
+        tasks = filter_tasks(exclude_target_storage__location="cloud_storage")
         project_id = next(
             project_id
             for project_id, group in itertools.groupby(
@@ -985,8 +982,10 @@ class TestImportExportDatasetProject:
             )
             if sorted(task["subset"] for task in group) == subsets
         )
-        response = self._test_export_project(admin_user, project_id, format=export_format)
-        with zipfile.ZipFile(io.BytesIO(response.data)) as zip_file:
+        dataset = self._test_export_dataset(
+            admin_user, project_id, api_version=api_version, format=export_format
+        )
+        with zipfile.ZipFile(io.BytesIO(dataset)) as zip_file:
             for subset in subsets:
                 folder_prefix = subset_path_template.format(subset=subset)
                 assert (

@@ -1339,7 +1339,7 @@ class TestJobDataset:
 
     @staticmethod
     def _test_export_dataset(
-        username: str, jid: int, api_version: int, local_download: bool, **kwargs
+        username: str, jid: int, *, api_version: int, local_download: bool = True, **kwargs
     ) -> Optional[bytes]:
         dataset = export_job_dataset(username, api_version, save_images=True, id=jid, **kwargs)
         if local_download:
@@ -1351,7 +1351,7 @@ class TestJobDataset:
 
     @staticmethod
     def _test_export_annotations(
-        username: str, jid: int, api_version: int, local_download: bool, **kwargs
+        username: str, jid: int, *, api_version: int, local_download: bool = True, **kwargs
     ) -> Optional[bytes]:
         dataset = export_job_dataset(username, api_version, save_images=False, id=jid, **kwargs)
         if local_download:
@@ -1365,7 +1365,10 @@ class TestJobDataset:
     def test_can_export_dataset(self, admin_user: str, jobs_with_shapes: List, api_version: int):
         job = jobs_with_shapes[0]
         self._test_export_dataset(
-            admin_user, job["id"], api_version, local_download=self.is_local_download(job)
+            admin_user,
+            job["id"],
+            api_version=api_version,
+            local_download=self.is_local_download(job),
         )
 
     @pytest.mark.parametrize("api_version", (1, 2))
@@ -1380,7 +1383,7 @@ class TestJobDataset:
             )
         )
         self._test_export_dataset(
-            username, job["id"], api_version, local_download=self.is_local_download(job)
+            username, job["id"], api_version=api_version, local_download=self.is_local_download(job)
         )
 
     @pytest.mark.parametrize("api_version", (1, 2))
@@ -1396,7 +1399,7 @@ class TestJobDataset:
         )
 
         self._test_export_annotations(
-            username, job["id"], api_version, local_download=self.is_local_download(job)
+            username, job["id"], api_version=api_version, local_download=self.is_local_download(job)
         )
 
     @pytest.mark.parametrize("api_version", (1, 2))
@@ -1436,7 +1439,7 @@ class TestJobDataset:
         dataset = self._test_export_dataset(
             username,
             jid,
-            api_version,
+            api_version=api_version,
             format=anno_format,
             local_download=self.is_local_download(job_data),
         )
@@ -1491,7 +1494,7 @@ class TestJobDataset:
         dataset = self._test_export_dataset(
             username,
             jid,
-            api_version,
+            api_version=api_version,
             format=anno_format,
             local_download=self.is_local_download(job_data),
         )

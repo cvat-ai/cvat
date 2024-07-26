@@ -658,7 +658,7 @@ class TestGetTaskDataset:
 
     @staticmethod
     def _test_can_export_dataset(
-        username: str, task_id: int, api_version: int, *, local_download: bool, **kwargs
+        username: str, task_id: int, *, api_version: int, local_download: bool = True, **kwargs
     ) -> Optional[bytes]:
         dataset = export_task_dataset(username, api_version, save_images=True, id=task_id, **kwargs)
         if local_download:
@@ -674,7 +674,7 @@ class TestGetTaskDataset:
         self._test_can_export_dataset(
             admin_user,
             task["id"],
-            api_version,
+            api_version=api_version,
             local_download=(not (task["target_storage"] or {}).get("cloud_storage_id")),
         )
 
@@ -690,7 +690,7 @@ class TestGetTaskDataset:
         self._test_can_export_dataset(
             admin_user,
             task["id"],
-            api_version,
+            api_version=api_version,
             format=format_name,
             local_download=(not (task["target_storage"] or {}).get("cloud_storage_id")),
         )
@@ -788,7 +788,7 @@ class TestGetTaskDataset:
         self._test_can_export_dataset(
             admin_user,
             tid,
-            api_version,
+            api_version=api_version,
             format="COCO Keypoints 1.0",
             local_download=(not (task["target_storage"] or {}).get("cloud_storage_id")),
         )
@@ -820,9 +820,7 @@ class TestGetTaskDataset:
 
         task_id, _ = create_task(admin_user, task_spec, task_data)
 
-        dataset = self._test_can_export_dataset(
-            admin_user, task_id, api_version, local_download=True
-        )
+        dataset = self._test_can_export_dataset(admin_user, task_id, api_version=api_version)
         assert zipfile.is_zipfile(io.BytesIO(dataset))
 
     @pytest.mark.usefixtures("restore_db_per_function")
@@ -845,7 +843,7 @@ class TestGetTaskDataset:
             result, response = api_client.tasks_api.retrieve(task_id)
             assert not result[related_field]
 
-            self._test_can_export_dataset(admin_user, task["id"], api_version, local_download=True)
+            self._test_can_export_dataset(admin_user, task["id"], api_version=api_version)
 
     @pytest.mark.parametrize(
         "export_format, default_subset_name, subset_path_template",
@@ -854,9 +852,17 @@ class TestGetTaskDataset:
             ("YOLO 1.1", "train", "obj_{subset}_data"),
         ],
     )
+    @pytest.mark.parametrize("api_version", (1, 2))
     def test_uses_subset_name(
-        self, tasks, admin_user, export_format, default_subset_name, subset_path_template
+        self,
+        admin_user,
+        filter_tasks,
+        export_format,
+        default_subset_name,
+        subset_path_template,
+        api_version: int,
     ):
+        tasks = filter_tasks(exclude_target_storage__location="cloud_storage")
         group_key_func = itemgetter("subset")
         subsets_and_tasks = [
             (subset, next(group))
@@ -866,8 +872,13 @@ class TestGetTaskDataset:
             )
         ]
         for subset_name, task in subsets_and_tasks:
-            response = self._test_export_task(admin_user, tid=task["id"], format=export_format)
-            with zipfile.ZipFile(io.BytesIO(response.data)) as zip_file:
+            dataset = self._test_can_export_dataset(
+                admin_user,
+                task["id"],
+                api_version=api_version,
+                format=export_format,
+            )
+            with zipfile.ZipFile(io.BytesIO(dataset)) as zip_file:
                 subset_path = subset_path_template.format(subset=subset_name or default_subset_name)
                 assert any(
                     subset_path in path for path in zip_file.namelist()
