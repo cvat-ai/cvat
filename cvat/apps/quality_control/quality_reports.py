@@ -641,7 +641,7 @@ class _MemoizingAnnotationConverter(CvatToDmAnnotationConverter):
         return converted
 
 
-def _match_segments(
+def match_segments(
     a_segms,
     b_segms,
     distance=dm.ops.segment_iou,
@@ -1049,7 +1049,7 @@ class _DistanceComparator(dm.ops.DistanceComparator):
             if label_matcher:
                 extra_args["label_matcher"] = label_matcher
 
-            returned_values = _match_segments(
+            returned_values = match_segments(
                 a_objs,
                 b_objs,
                 distance=distance,
@@ -1296,7 +1296,7 @@ class _DistanceComparator(dm.ops.DistanceComparator):
                 a_points = np.reshape(a.points, (-1, 2))
                 b_points = np.reshape(b.points, (-1, 2))
 
-                matches, mismatches, a_extra, b_extra = _match_segments(
+                matches, mismatches, a_extra, b_extra = match_segments(
                     range(len(a_points)),
                     range(len(b_points)),
                     distance=lambda ai, bi: _OKS(
@@ -1584,7 +1584,7 @@ class _Comparator:
             union = len(gt_groups[gt_group_id]) + len(ds_groups[ds_group_id]) - intersection
             return intersection / (union or 1)
 
-        matches, mismatches, gt_unmatched, ds_unmatched = _match_segments(
+        matches, mismatches, gt_unmatched, ds_unmatched = match_segments(
             list(gt_groups),
             list(ds_groups),
             distance=_group_distance,

@@ -27,6 +27,7 @@ import {
 import { useIsMounted } from 'utils/hooks';
 import UserSelector from 'components/task-page/user-selector';
 import CVATTooltip from 'components/common/cvat-tooltip';
+import Collapse from 'antd/lib/collapse';
 import JobActionsMenu from './job-actions-menu';
 
 interface Props {
@@ -113,6 +114,19 @@ function JobItem(props: Props): JSX.Element {
     }
     const frameCountPercent = ((job.frameCount / (task.size || 1)) * 100).toFixed(0);
     const frameCountPercentRepresentation = frameCountPercent === '0' ? '<1' : frameCountPercent;
+    let jobName = `Job #${job.id}`;
+    if (task.consensusJobsPerRegularJob && job.type !== JobType.GROUND_TRUTH) {
+        jobName = job.type === JobType.CONSENSUS ? `Consensus Job #${job.id}` : `Regular Job #${job.id}`;
+    }
+
+    let consensusJobs: Job[] = [];
+    if (task.consensusJobsPerRegularJob) {
+        consensusJobs = task.jobs.filter((eachJob: Job) => eachJob.parent_job_id === id).reverse();
+    }
+    const consensusJobViews: React.JSX.Element[] = consensusJobs.map((eachJob: Job) => (
+        <JobItem key={eachJob.id} job={eachJob} task={task} onJobUpdate={onJobUpdate} />
+    ));
+
     return (
         <Col span={24}>
             <Card className='cvat-job-item' style={{ ...style }} data-row-id={job.id}>
@@ -120,7 +134,9 @@ function JobItem(props: Props): JSX.Element {
                     <Col span={7}>
                         <Row>
                             <Col>
-                                <Link to={`/tasks/${job.taskId}/jobs/${job.id}`}>{`Job #${job.id}`}</Link>
+                                <Link to={`/tasks/${job.taskId}/jobs/${job.id}`}>
+                                    { jobName }
+                                </Link>
                             </Col>
                             {
                                 job.type === JobType.GROUND_TRUTH ? (
@@ -260,10 +276,27 @@ function JobItem(props: Props): JSX.Element {
                 <Dropdown
                     trigger={['click']}
                     destroyPopupOnHide
+                    className='job-actions-menu'
                     overlay={<JobActionsMenu job={job} onJobUpdate={onJobUpdate} />}
                 >
                     <MoreOutlined className='cvat-job-item-more-button' />
                 </Dropdown>
+                {consensusJobs.length > 0 &&
+                    (
+                        <Collapse
+                            className='cvat-consensus-job-collapse'
+                            items={[{
+                                key: '1',
+                                label:
+                                    <Text>
+                                        {`${consensusJobs.length} Consensus Jobs`}
+                                    </Text>,
+                                children: (
+                                    consensusJobViews
+                                ),
+                            }]}
+                        />
+                    )}
             </Card>
         </Col>
     );
