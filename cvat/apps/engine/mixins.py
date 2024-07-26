@@ -28,7 +28,7 @@ from rest_framework.authentication import SessionAuthentication
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from cvat.apps.engine.background_operations import (BackupExportManager,
+from cvat.apps.engine.background import (BackupExportManager,
                                                     DatasetExportManager)
 from cvat.apps.engine.handlers import clear_import_cache
 from cvat.apps.engine.location import StorageType, get_location_configuration
