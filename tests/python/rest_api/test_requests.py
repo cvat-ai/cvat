@@ -10,9 +10,7 @@ from urllib.parse import urlparse
 import pytest
 from cvat_sdk.api_client import ApiClient, models
 
-from shared.utils.config import (
-    make_api_client,
-)
+from shared.utils.config import make_api_client
 from shared.utils.helpers import generate_image_files
 
 from .utils import (
@@ -22,45 +20,37 @@ from .utils import (
     export_project_dataset,
     export_task_backup,
     export_task_dataset,
-    import_project_backup,
     import_task_backup,
 )
 
 
-def validate_action_filtering(
-    filter_: str, filter_value: str, requests: List[models.Request]
-) -> bool:
+def validate_action(filter_: str, filter_value: str, requests: List[models.Request]) -> bool:
     return {filter_value} == {r.operation.type.split(":")[0] for r in requests}
 
 
-def validate_subresource_filtering(
-    filter_: str, filter_value: str, requests: List[models.Request]
-) -> bool:
+def validate_subresource(filter_: str, filter_value: str, requests: List[models.Request]) -> bool:
     return {filter_value} == {r.operation.type.split(":")[1] for r in requests}
 
 
-def validate_status_filtering(
-    filter_: str, filter_value: str, requests: List[models.Request]
-) -> bool:
+def validate_status(filter_: str, filter_value: str, requests: List[models.Request]) -> bool:
     return {filter_value} == {r.status.value for r in requests}
 
 
-def validate_filtering_by_id(
-    filter_: str, filter_value: int, requests: List[models.Request]
-) -> bool:
-    return {filter_value} == {getattr(r.operation, filter_) for r in requests} and {
-        filter_.split("_")[0]
-    } == {r.operation.target.value for r in requests}
+def validate_id(filter_: str, filter_value: int, requests: List[models.Request]) -> bool:
+    return {filter_value} == {getattr(r.operation, filter_) for r in requests}
 
 
-def validate_format_filtering(
-    filter_: str, filter_value: str, requests: List[models.Request]
-) -> bool:
+def validate_resource(filter_: str, filter_value: str, requests: List[models.Request]) -> bool:
+    return {filter_value} == {r.operation.target.value for r in requests}
+
+
+def validate_format(filter_: str, filter_value: str, requests: List[models.Request]) -> bool:
     return {filter_value} == {r.operation.format for r in requests}
 
 
 @pytest.mark.usefixtures("restore_db_per_class")
 @pytest.mark.usefixtures("restore_redis_inmem_per_function")
+@pytest.mark.timeout(30)
 class TestListRequests:
     @pytest.fixture(autouse=True)
     def setup(self, projects, tasks, jobs, find_users):
@@ -209,27 +199,17 @@ class TestListRequests:
 
             return [j.id for j in jobs.results]
 
-    def test_list_all_export_requests(self):
-        with make_api_client(self.user) as api_client:
-            bg_requests, response = api_client.requests_api.list(action="export")
-            assert response.status == HTTPStatus.OK
-            assert (
-                len(bg_requests.results)
-                == len(self.project_ids - 1) * 3
-                + len(self.task_ids - 1) * 3
-                + len(self.job_ids - 1) * 2
-            )
-
     @pytest.mark.parametrize(
         "simple_filter, values, validate_func",
         [
-            ("subresource", ["annotations", "dataset", "backup"], validate_subresource_filtering),
-            ("action", ["create", "export", "import"], validate_action_filtering),
-            ("status", ["finished", "failed"], validate_status_filtering),
-            ("project_id", [], validate_filtering_by_id),
-            # FIXME: ("task_id", [], validate_filtering_by_id),
-            ("job_id", [], validate_filtering_by_id),
-            # FIXME ("format", ["CVAT for images 1.1", "COCO 1.0", "YOLO 1.1"], validate_format_filtering),
+            ("subresource", ["annotations", "dataset", "backup"], validate_subresource),
+            ("action", ["create", "export", "import"], validate_action),
+            ("status", ["finished", "failed"], validate_status),
+            ("project_id", [], validate_id),
+            ("task_id", [], validate_id),
+            ("job_id", [], validate_id),
+            ("format", ["CVAT for images 1.1", "COCO 1.0", "YOLO 1.1"], validate_format),
+            ("resource", ["project", "task", "job"], validate_resource),
         ],
     )
     def test_list_request_with_simple_filter(
@@ -253,7 +233,7 @@ class TestListRequests:
 @pytest.mark.usefixtures("restore_redis_inmem_per_function")
 class TestGetRequests:
 
-    def _test_get_request_200(self, api_client: ApiClient, rq_id: str, **kwargs):
+    def _test_get_request_200(self, api_client: ApiClient, rq_id: str, **kwargs) -> models.Request:
         (background_request, response) = api_client.requests_api.retrieve(rq_id, **kwargs)
         assert response.status == HTTPStatus.OK
         assert background_request.id == rq_id

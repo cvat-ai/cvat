@@ -3,26 +3,23 @@
 # SPDX-License-Identifier: MIT
 
 import json
-
 from abc import ABCMeta, abstractmethod
 from copy import deepcopy
 from http import HTTPStatus
 from time import sleep
 from typing import Any, Dict, Iterator, List, Optional, Sequence, Tuple, Union
 
-from cvat_sdk.api_client import apis, models
-from cvat_sdk.api_client.exceptions import ForbiddenException
-from cvat_sdk.api_client.api_client import ApiClient, Endpoint
-from cvat_sdk.core.helpers import get_paginated_collection
-from deepdiff import DeepDiff
-from urllib3 import HTTPResponse
-
-from shared.utils.config import make_api_client, USER_PASS, get_method, post_method
 import requests
-
-from cvat_sdk.api_client.api.tasks_api import TasksApi
+from cvat_sdk.api_client import apis, models
 from cvat_sdk.api_client.api.jobs_api import JobsApi
 from cvat_sdk.api_client.api.projects_api import ProjectsApi
+from cvat_sdk.api_client.api.tasks_api import TasksApi
+from cvat_sdk.api_client.api_client import ApiClient, Endpoint
+from cvat_sdk.api_client.exceptions import ForbiddenException
+from cvat_sdk.core.helpers import get_paginated_collection
+from deepdiff import DeepDiff
+
+from shared.utils.config import make_api_client
 
 
 def export_v1(
@@ -35,17 +32,14 @@ def export_v1(
     download_result: bool = True,
     **kwargs,
 ) -> Optional[bytes]:
-    """_summary_
+    """Export datasets|annotations|backups using first version of export API
 
     Args:
-        endpoint (Endpoint): _description_
-        max_retries (int, optional): _description_. Defaults to 30.
-        interval (float, optional): _description_. Defaults to 0.1.
-        forbidden (bool, optional): _description_. Defaults to False.
-        wait_result (bool, optional): _description_. Defaults to True.
-
-    Raises:
-        ForbiddenException: _description_
+        endpoint (Endpoint): Export endpoint, will be called to initialize export process and to check status
+        max_retries (int, optional): Number of retries when checking process status. Defaults to 30.
+        interval (float, optional): Interval in seconds between retries. Defaults to 0.1.
+        forbidden (bool, optional): Should export request be forbidden or not. Defaults to False.
+        wait_result (bool, optional): Wait until export process will be finished. Defaults to True.
 
     Returns:
         bytes: The content of the file if downloaded locally.
@@ -60,17 +54,17 @@ def export_v1(
         assert response.status == HTTPStatus.FORBIDDEN, "Request should be forbidden"
         raise ForbiddenException()
 
-    # TODO: add check status before return
-    # TODO: probably need to extract initializing park into another func
+    assert response.status in {HTTPStatus.ACCEPTED, HTTPStatus.CREATED, HTTPStatus.OK}
+
     if not wait_result:
         return None
 
     for _ in range(max_retries):
+        (_, response) = endpoint.call_with_http_info(**kwargs, _parse_response=False)
         if response.status in (HTTPStatus.CREATED, HTTPStatus.OK):
             break
         assert response.status == HTTPStatus.ACCEPTED
         sleep(interval)
-        (_, response) = endpoint.call_with_http_info(**kwargs, _parse_response=False)
     else:
         assert (
             False
@@ -98,6 +92,19 @@ def export_v2(
     download_result: bool = True,
     **kwargs,
 ) -> Optional[bytes]:
+    """Export datasets|annotations|backups using the second version of export API
+
+    Args:
+        endpoint (Endpoint): Export endpoint, will be called only to initialize export process
+        max_retries (int, optional): Number of retries when checking process status. Defaults to 30.
+        interval (float, optional): Interval in seconds between retries. Defaults to 0.1.
+        forbidden (bool, optional): Should export request be forbidden or not. Defaults to False.
+        wait_result (bool, optional): Wait until export process will be finished. Defaults to True.
+
+    Returns:
+        bytes: The content of the file if downloaded locally.
+        None: If `wait_result` or `download_result` were False or the file is downloaded to cloud storage.
+    """
     # initialize background process and ensure that the first request returns 403 code if request should be forbidden
     (_, response) = endpoint.call_with_http_info(
         **kwargs, _parse_response=False, _check_status=False
@@ -106,18 +113,19 @@ def export_v2(
         assert response.status == HTTPStatus.FORBIDDEN, "Request should be forbidden"
         raise ForbiddenException()
 
+    assert response.status != HTTPStatus.CREATED
+
     if not wait_result:
         return None
-
-    assert response.status != HTTPStatus.CREATED  # TODO: check case when export was prepared
 
     # define background request ID returned in the server response
     rq_id = json.loads(response.data).get("rq_id")
     assert rq_id, "The rq_id parameter was not found in the server response"
 
+    api_client = endpoint.api_client
     # check status of background process
     for _ in range(max_retries):
-        (background_request, response) = endpoint.api_client.requests_api.retrieve(rq_id)
+        (background_request, response) = api_client.requests_api.retrieve(rq_id)
         assert response.status == HTTPStatus.OK
         if (
             background_request.status.value
@@ -138,7 +146,7 @@ def export_v2(
     if background_request.result_url:
         response = requests.get(
             background_request.result_url,
-            auth=(endpoint.api_client.configuration.username, USER_PASS),
+            auth=(api_client.configuration.username, api_client.configuration.password),
         )
         assert response.status_code == HTTPStatus.OK
 
@@ -149,7 +157,6 @@ def export_v2(
 
 def export_dataset(
     api: Union[ProjectsApi, TasksApi, JobsApi],
-    # todo" rename to endpoint_version
     api_version: int,  # make this parameter required to be sure that all tests was updated and both API versions are used
     *,
     save_images: bool,
@@ -179,7 +186,7 @@ def export_dataset(
     assert False, "Unsupported API version"
 
 
-# TODO: support username: optional, api_client: optional
+# FUTURE-TODO: support username: optional, api_client: optional
 def export_project_dataset(username: str, api_version: int, *args, **kwargs) -> Optional[bytes]:
     with make_api_client(username) as api_client:
         return export_dataset(api_client.projects_api, api_version, *args, **kwargs)
@@ -230,21 +237,23 @@ def import_resource(
     interval: float = 0.1,
     forbidden: bool = False,
     wait_result: bool = True,
-    # _content_type: str = "multipart/form-data",
     **kwargs,
 ) -> None:
     # initialize background process and ensure that the first request returns 403 code if request should be forbidden
     (_, response) = endpoint.call_with_http_info(
-        **kwargs, _parse_response=False, _check_status=False, _content_type="multipart/form-data",
+        **kwargs,
+        _parse_response=False,
+        _check_status=False,
+        _content_type="multipart/form-data",
     )
     if forbidden:
         assert response.status == HTTPStatus.FORBIDDEN, "Request should be forbidden"
         raise ForbiddenException()
 
+    assert response.status != HTTPStatus.CREATED
+
     if not wait_result:
         return None
-
-    assert response.status != HTTPStatus.CREATED
 
     # define background request ID returned in the server response
     rq_id = json.loads(response.data).get("rq_id")
@@ -254,12 +263,9 @@ def import_resource(
     for _ in range(max_retries):
         (background_request, response) = endpoint.api_client.requests_api.retrieve(rq_id)
         assert response.status == HTTPStatus.OK
-        if (
-            background_request.status.value
-            in (
-                models.RequestStatus.allowed_values[("value",)]["FINISHED"],
-                models.RequestStatus.allowed_values[("value",)]["FAILED"],
-            )
+        if background_request.status.value in (
+            models.RequestStatus.allowed_values[("value",)]["FINISHED"],
+            models.RequestStatus.allowed_values[("value",)]["FAILED"],
         ):
             break
         sleep(interval)

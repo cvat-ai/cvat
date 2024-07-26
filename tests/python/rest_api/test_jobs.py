@@ -3,9 +3,9 @@
 #
 # SPDX-License-Identifier: MIT
 
+import io
 import json
 import os
-import io
 import xml.etree.ElementTree as ET
 import zipfile
 from copy import deepcopy

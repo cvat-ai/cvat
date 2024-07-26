@@ -17,8 +17,8 @@ from typing import Dict, List, Optional
 import pytest
 from cvat_sdk.api_client import ApiClient, Configuration, models
 from cvat_sdk.api_client.api_client import Endpoint
-from cvat_sdk.core.helpers import get_paginated_collection
 from cvat_sdk.api_client.exceptions import ForbiddenException
+from cvat_sdk.core.helpers import get_paginated_collection
 from deepdiff import DeepDiff
 from PIL import Image
 
