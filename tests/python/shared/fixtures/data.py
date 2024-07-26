@@ -4,9 +4,9 @@
 
 import json
 import operator
-from typing import Iterable
 from collections import defaultdict
 from copy import deepcopy
+from typing import Iterable
 
 import pytest
 
