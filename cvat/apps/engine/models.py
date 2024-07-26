@@ -189,12 +189,24 @@ T = TypeVar("T")
 
 def _parse_before_accessing(fn: Callable[..., Any]) -> Callable[..., Any]:
     """Wrapper for original list methods. Forces LazyList to parse itself before accessing them."""
-    @wraps(fn)
-    def decorator(self: 'LazyList', *args, **kwargs) -> 'LazyList':
-        self._parse_up_to(-1)
-        return fn(self, *args, **kwargs)
+    if fn.__name__ in {"__add__", "__mul__"}:
+        @wraps(fn)
+        def wrapper(self: 'LazyList', other):
+            self._parse_up_to(-1)
+            if not isinstance(other, list):
+                # explicitly calling list.__add__ with
+                # np.ndarray raises TypeError instead of it returning NotImplemented
+                # this prevents python from executing np.ndarray.__radd__
+                return NotImplemented
+            return fn(self, other)
+    else:
+        @wraps(fn)
+        def wrapper(self: 'LazyList', *args, **kwargs) -> 'LazyList':
+            self._parse_up_to(-1)
 
-    return decorator
+            return fn(self, *args, **kwargs)
+
+    return wrapper
 
 
 @dataclass(slots=True)
