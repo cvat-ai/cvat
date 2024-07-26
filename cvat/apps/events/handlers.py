@@ -374,20 +374,20 @@ def handle_delete(scope, instance, store_in_deletion_cache=False, **kwargs):
 
 def handle_annotations_change(instance, annotations, action, **kwargs):
     def filter_data(data):
-        filtered_data = {
+        return {
             "id": data["id"],
             "frame": data["frame"],
             "attributes": data["attributes"],
         }
 
-        label_id = data.get("label_id", None)
-        if label_id:
-            filtered_data["label_id"] = label_id
+    def filter_shape(shape):
+        filtered_data = filter_data(shape)
+        filtered_data["label_id"] = shape["label_id"]
+        return filtered_data
 
-        shapes = data.get("shates", None)
-        if shapes is not None:
-            filtered_data["shapes"] = [filter_data(shape) for shape in shapes]
-
+    def filter_track(track):
+        filtered_data = filter_data(track)
+        filtered_data["shapes"] = [filter_shape(shape) for shape in track["shapes"]]
         return filtered_data
 
     oid = organization_id(instance)
@@ -419,7 +419,7 @@ def handle_annotations_change(instance, annotations, action, **kwargs):
 
     shapes_by_type = {shape_type[0]: [] for shape_type in ShapeType.choices()}
     for shape in annotations.get("shapes", []):
-        shapes_by_type[shape["type"]].append(filter_data(shape))
+        shapes_by_type[shape["type"]].append(filter_shape(shape))
 
     scope = event_scope(action, "shapes")
     for shape_type, shapes in shapes_by_type.items():
@@ -443,7 +443,7 @@ def handle_annotations_change(instance, annotations, action, **kwargs):
 
     tracks_by_type = {shape_type[0]: [] for shape_type in ShapeType.choices()}
     for track in annotations.get("tracks", []):
-        filtered_track = filter_data(track)
+        filtered_track = filter_track(track)
         tracks_by_type[track["shapes"][0]["type"]].append(filtered_track)
 
     scope = event_scope(action, "tracks")
