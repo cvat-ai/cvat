@@ -209,7 +209,7 @@ class LazyList(list[T]):
     _string: str
     _separator: str
     _converter: Callable[[str], T]
-    _length: int | None = field(init=False, default=None)
+    _probable_length: int | None = field(init=False, default=None)
     parsed: bool = field(init=False, default=False)
 
     for method in [
@@ -227,7 +227,6 @@ class LazyList(list[T]):
         "__eq__",
         "__contains__",
         "__len__",
-        "__hash__",
         "__add__",
         "__iadd__",
         "__mul__",
@@ -240,6 +239,8 @@ class LazyList(list[T]):
         "__lt__",
         "__le__",
         "__eq__",
+        "___repr__",
+        "__len__",
     ]:
         locals()[method] = _parse_before_accessing(getattr(list, method))
 
@@ -254,7 +255,7 @@ class LazyList(list[T]):
             return list.__getitem__(self, index)
 
         if isinstance(index, slice):
-            self._parse_up_to(index.indices(self._compute_length())[1] - 1)
+            self._parse_up_to(index.indices(self._compute_max_length())[1] - 1)
             return list.__getitem__(self, index)
 
         self._parse_up_to(index)
@@ -264,23 +265,18 @@ class LazyList(list[T]):
         yield from list.__iter__(self)
         yield from self._iter_unparsed()
 
-    def __len__(self) -> int:
-        if self.parsed:
-            return list.__len__(self)
-        return self._compute_length()
-
     def __repr__(self) -> str:
         if self.parsed:
             return list.__repr__(self)
-        return f"LazyList({self._separator!r}, {self._converter!r}, parsed={list.__len__(self) / self._compute_length() * 100:.02f}%)"
+        return f"LazyList({self._separator!r}, {self._converter!r}, parsed={list.__len__(self) / self._compute_max_length() * 100:.02f}%)"
 
     def _parse_up_to(self, index: int) -> None:
         if self.parsed:
             return
 
         if index < 0:
-            index += self._compute_length()
-        if index < 0 or index >= self._compute_length():
+            index += self._compute_max_length()
+        if index < 0 or index >= self._compute_max_length():
             raise IndexError('Index out of range')
 
         start = list.__len__(self)
@@ -291,7 +287,7 @@ class LazyList(list[T]):
         for _ in islice(self._iter_unparsed(), end):
             pass
 
-        if index == self._compute_length() - 1:
+        if index == self._compute_max_length() - 1:
             self.parsed = True
             self._string = ""  # freeing the memory
 
@@ -306,21 +302,26 @@ class LazyList(list[T]):
         for _ in range(current_index):
             current_position = self._string.find(self._separator, current_position) + separator_offset
 
-        while current_index < self._compute_length():
+        while current_index < self._compute_max_length():
             end = self._string.find(self._separator, current_position, string_length)
             if end == -1:
                 end = string_length
                 self.parsed = True
-            element = self._converter(self._string[current_position:end])
+
+            element_str = self._string[current_position:end]
+            current_position = end + separator_offset
+            if not element_str:
+                self._probable_length -= 1
+                continue
+            element = self._converter(element_str)
             list.append(self, element)
             yield element
-            current_position = end + separator_offset
             current_index += 1
 
-    def _compute_length(self) -> int:
-        if self._length is None:
-            self._length = self._string.count(self._separator) + 1
-        return self._length
+    def _compute_max_length(self) -> int:
+        if self._probable_length is None:
+            self._probable_length = self._string.count(self._separator) + 1
+        return self._probable_length
 
 
 class AbstractArrayField(models.TextField):
