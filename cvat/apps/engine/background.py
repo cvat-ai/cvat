@@ -14,7 +14,6 @@ from typing import Any, Callable, Dict, Optional, Union
 import django_rq
 from attrs.converters import to_bool
 from django.conf import settings
-from django.http.request import HttpRequest
 from rest_framework.request import Request
 from django.http.response import HttpResponseBadRequest
 from django.utils import timezone
