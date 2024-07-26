@@ -251,7 +251,7 @@ class LazyList(list[T]):
         "__lt__",
         "__le__",
         "__eq__",
-        "___repr__",
+        "__repr__",
         "__len__",
     ]:
         locals()[method] = _parse_before_accessing(getattr(list, method))
@@ -276,11 +276,6 @@ class LazyList(list[T]):
     def __iter__(self) -> Iterator[T]:
         yield from list.__iter__(self)
         yield from self._iter_unparsed()
-
-    def __repr__(self) -> str:
-        if self.parsed:
-            return list.__repr__(self)
-        return f"LazyList({self._separator!r}, {self._converter!r}, parsed={list.__len__(self) / self._compute_max_length() * 100:.02f}%)"
 
     def _parse_up_to(self, index: int) -> None:
         if self.parsed:
