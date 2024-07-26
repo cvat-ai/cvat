@@ -445,7 +445,7 @@ class JobAnnotation:
         models.LabeledImageAttributeVal.objects.filter(image_id__in=ids).delete()
         self.db_job.labeledimage_set.filter(pk__in=ids).delete()
 
-    def _delete_job_labeledshapes(self, ids__UNSAFE: list[int], is_subcall=False) -> None:
+    def _delete_job_labeledshapes(self, ids__UNSAFE: list[int], *, is_subcall: bool = False) -> None:
         # ids__UNSAFE is a list, received from the user
         # we MUST filter it by job_id additionally before applying to any queries
         if is_subcall:
