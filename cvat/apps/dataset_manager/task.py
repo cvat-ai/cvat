@@ -454,7 +454,7 @@ class JobAnnotation:
             ids = self.db_job.labeledshape_set.filter(pk__in=ids__UNSAFE).values_list('id', flat=True)
             child_ids = self.db_job.labeledshape_set.filter(parent_id__in=ids).values_list('id', flat=True)
             if len(child_ids):
-                self._delete_job_labeledshapes(child_ids, True)
+                self._delete_job_labeledshapes(child_ids, is_subcall=True)
 
         models.LabeledShapeAttributeVal.objects.filter(shape_id__in=ids).delete()
         self.db_job.labeledshape_set.filter(pk__in=ids).delete()
@@ -468,7 +468,7 @@ class JobAnnotation:
             ids = self.db_job.labeledtrack_set.filter(pk__in=ids__UNSAFE).values_list('id', flat=True)
             child_ids = self.db_job.labeledtrack_set.filter(parent_id__in=ids).values_list('id', flat=True)
             if len(child_ids):
-                self._delete_job_labeledtracks(child_ids, True)
+                self._delete_job_labeledtracks(child_ids, is_subcall=True)
 
         models.TrackedShapeAttributeVal.objects.filter(shape__track_id__in=ids).delete()
         models.LabeledTrackAttributeVal.objects.filter(track_id__in=ids).delete()
