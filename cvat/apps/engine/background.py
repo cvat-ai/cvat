@@ -312,7 +312,7 @@ class DatasetExportManager(_ResourceExportManager):
 
                             return Response(status=status.HTTP_201_CREATED)
 
-                        cancel_and_reenqueue()
+                        cancel_and_reenqueue(rq_job)
             else:
                 raise NotImplementedError(
                     f"Export to {self.export_args.location} location is not implemented yet"
@@ -333,10 +333,10 @@ class DatasetExportManager(_ResourceExportManager):
             # Such dependencies are never removed or finished,
             # as there is no TTL for deferred jobs,
             # so the current job can be blocked indefinitely.
-            cancel_and_reenqueue()
+            cancel_and_reenqueue(rq_job)
 
         if is_result_outdated():
-            cancel_and_reenqueue()
+            cancel_and_reenqueue(rq_job)
 
         return Response(status=status.HTTP_202_ACCEPTED)
 
