@@ -459,7 +459,7 @@ class JobAnnotation:
         models.LabeledShapeAttributeVal.objects.filter(shape_id__in=ids).delete()
         self.db_job.labeledshape_set.filter(pk__in=ids).delete()
 
-    def _delete_job_labeledtracks(self, ids__UNSAFE: list[int], is_subcall=False) -> None:
+    def _delete_job_labeledtracks(self, ids__UNSAFE: list[int], *, is_subcall: bool = False) -> None:
         # ids__UNSAFE is a list, received from the user
         # we MUST filter it by job_id additionally before applying to any queries
         if is_subcall:
