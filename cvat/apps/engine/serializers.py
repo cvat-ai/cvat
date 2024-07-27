@@ -1127,8 +1127,7 @@ class TaskReadSerializer(serializers.ModelSerializer):
             'status', 'data_chunk_size', 'data_compressed_chunk_type', 'guide_id',
             'data_original_chunk_type', 'size', 'image_quality', 'data', 'dimension',
             'subset', 'organization', 'target_storage', 'source_storage', 'jobs', 'labels',
-            'assignee_updated_date'
-            'consensus_jobs_per_regular_job',
+            'assignee_updated_date', 'consensus_jobs_per_regular_job',
         )
         read_only_fields = fields
         extra_kwargs = {
