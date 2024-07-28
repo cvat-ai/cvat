@@ -64,14 +64,7 @@ class ConsensusReportCreateSerializer(serializers.Serializer):
 class ConsensusSettingsSerializer(serializers.ModelSerializer):
     class Meta:
         model = models.ConsensusSettings
-        fields = (
-            "id",
-            "task_id",
-            "iou_threshold",
-            "agreement_score_threshold",
-            "quorum",
-            "sigma"
-        )
+        fields = ("id", "task_id", "iou_threshold", "agreement_score_threshold", "quorum", "sigma")
         read_only_fields = (
             "id",
             "task_id",

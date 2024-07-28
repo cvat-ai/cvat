@@ -7,8 +7,6 @@ from uuid import uuid4
 
 import datumaro as dm
 import django_rq
-# from datumaro.components.operations import IntersectMerge
-from cvat.apps.consensus.new_intersect_merge import IntersectMerge
 from django.conf import settings
 from django.db import transaction
 from django.utils import timezone
@@ -23,6 +21,9 @@ from cvat.apps.consensus.consensus_reports import (
     save_report,
 )
 from cvat.apps.consensus.models import ConsensusSettings
+
+# from datumaro.components.operations import IntersectMerge
+from cvat.apps.consensus.new_intersect_merge import IntersectMerge
 from cvat.apps.dataset_manager.bindings import import_dm_annotations
 from cvat.apps.dataset_manager.task import PatchAction, patch_job_data
 from cvat.apps.engine.models import Job, JobType, StageChoice, StateChoice, Task

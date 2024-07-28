@@ -5,11 +5,24 @@
 
 import itertools
 import logging as log
+import math
 from collections import OrderedDict
 from copy import deepcopy
 from functools import cached_property, partial
-import math
-from typing import Any, Callable, Dict, Hashable, Iterable, List, Optional, Sequence, Tuple, Type, Union, cast
+from typing import (
+    Any,
+    Callable,
+    Dict,
+    Hashable,
+    Iterable,
+    List,
+    Optional,
+    Sequence,
+    Tuple,
+    Type,
+    Union,
+    cast,
+)
 
 import attr
 import datumaro as dm
@@ -84,9 +97,10 @@ def OKS(a, b, sigma=0.1, bbox=None, scale=None, visibility_a=None, visibility_b=
 
     dists = np.linalg.norm(p1 - p2, axis=1)
     return np.sum(
-        visibility_a * visibility_b * np.exp((visibility_a == visibility_b)*(-(dists**2) / (2 * scale * (2 * sigma) ** 2)))
+        visibility_a
+        * visibility_b
+        * np.exp((visibility_a == visibility_b) * (-(dists**2) / (2 * scale * (2 * sigma) ** 2)))
     ) / np.sum(visibility_a | visibility_b, dtype=float)
-
 
 
 def match_annotations_equal(a, b):
@@ -792,8 +806,8 @@ class IntersectMerge(MergingStrategy):
             elif t is AnnotationType.skeleton:
                 return _make(SkeletonMerger, **kwargs)
             # else:
-                # pass
-                # raise NotImplementedError("Type %s is not supported" % t)
+            # pass
+            # raise NotImplementedError("Type %s is not supported" % t)
 
         instance_map = {}
         for s in sources:
@@ -814,7 +828,10 @@ class IntersectMerge(MergingStrategy):
                 for ann in inst:
                     instance_map[id(ann)] = [inst, inst_bbox]
 
-        self._mergers = {t: _for_type(t, instance_map=instance_map, categories=self._categories) for t in AnnotationType}
+        self._mergers = {
+            t: _for_type(t, instance_map=instance_map, categories=self._categories)
+            for t in AnnotationType
+        }
 
     def _match_ann_type(self, t, sources):
         return self._mergers[t].match_annotations(sources)
@@ -1059,9 +1076,7 @@ class _ShapeMatcher(AnnotationMatcher):
 
     @staticmethod
     def _get_ann_type(t, item: dm.Annotation) -> Sequence[dm.Annotation]:
-        return [
-            a for a in item if a.type == t and not a.attributes.get("outside", False)
-        ]
+        return [a for a in item if a.type == t and not a.attributes.get("outside", False)]
 
     def _match_segments(
         self,
@@ -1216,6 +1231,7 @@ class BboxMatcher(_ShapeMatcher):
                 return dm.ops.bbox_iou(a, b)
             else:
                 return segment_iou(_to_polygon(a), _to_polygon(b), img_h=img_h, img_w=img_w)
+
         dataitem_id = self._context._ann_map[id(a)][1]
         img_h, img_w = self._context._item_map[dataitem_id][0].image.size
         return _bbox_iou(a, b, img_h=img_h, img_w=img_w)
@@ -1880,6 +1896,7 @@ class PointsMerger(_ShapeMerger, PointsMatcher):
 class LineMerger(_ShapeMerger, LineMatcher):
     pass
 
+
 class SkeletonMerger(_ShapeMerger, SkeletonMatcher):
     def _merge_cluster_shape_nearest(self, cluster):
         dist = {}
@@ -1903,11 +1920,10 @@ class SkeletonMerger(_ShapeMerger, SkeletonMatcher):
         shape = self._merge_cluster_shape_nearest(cluster)
         shape_score = sum(max(0, self.distance(shape, s)) for s in cluster) / len(cluster)
         return shape, shape_score
+
     # def __init__(self, categories=None):
     #     _ShapeMerger.__init__(self)
     #     SkeletonMatcher.__init__(self, categories)
-
-
 
 
 def match_segments(

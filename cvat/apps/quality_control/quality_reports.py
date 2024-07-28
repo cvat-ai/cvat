@@ -728,7 +728,9 @@ def _OKS(a, b, sigma=0.1, bbox=None, scale=None, visibility_a=None, visibility_b
 
     dists = np.linalg.norm(p1 - p2, axis=1)
     return np.sum(
-        visibility_a * visibility_b * np.exp((visibility_a == visibility_b)*(-(dists**2) / (2 * scale * (2 * sigma) ** 2)))
+        visibility_a
+        * visibility_b
+        * np.exp((visibility_a == visibility_b) * (-(dists**2) / (2 * scale * (2 * sigma) ** 2)))
     ) / np.sum(visibility_a | visibility_b, dtype=float)
 
 
