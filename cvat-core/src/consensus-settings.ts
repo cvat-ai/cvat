@@ -12,6 +12,7 @@ export default class ConsensusSettings {
     #iouThreshold: number;
     #quorum: number;
     #agreementScoreThreshold: number;
+    #sigma: number;
 
     constructor(initialData: SerializedConsensusSettingsData) {
         this.#id = initialData.id;
@@ -19,6 +20,7 @@ export default class ConsensusSettings {
         this.#iouThreshold = initialData.iou_threshold;
         this.#agreementScoreThreshold = initialData.agreement_score_threshold;
         this.#quorum = initialData.quorum;
+        this.#sigma = initialData.sigma;
     }
 
     get id(): number {
@@ -45,6 +47,14 @@ export default class ConsensusSettings {
         this.#quorum = newVal;
     }
 
+    get sigma(): number {
+        return this.#sigma;
+    }
+
+    set sigma(newVal: number) {
+        this.#sigma = newVal;
+    }
+
     get agreementScoreThreshold(): number {
         return this.#agreementScoreThreshold;
     }
@@ -58,6 +68,7 @@ export default class ConsensusSettings {
             iou_threshold: this.#iouThreshold,
             quorum: this.#quorum,
             agreement_score_threshold: this.#agreementScoreThreshold,
+            sigma: this.#sigma,
         };
 
         return result;

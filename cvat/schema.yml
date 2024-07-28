@@ -7768,6 +7768,11 @@ components:
           minimum: -2147483648
           description: |
             Minimum count for a label and attribute voting results to be counted
+        sigma:
+          type: number
+          format: double
+          description: |
+            Sigma value for OKS calculation
     CredentialsTypeEnum:
       enum:
       - KEY_SECRET_KEY_PAIR
@@ -8660,17 +8665,17 @@ components:
           allOf:
           - $ref: '#/components/schemas/Storage'
           nullable: true
-        assignee_updated_date:
-          type: string
-          format: date-time
-          readOnly: true
-          nullable: true
         parent_job_id:
           type: integer
           maximum: 2147483647
           minimum: 0
           nullable: true
           readOnly: true
+        assignee_updated_date:
+          type: string
+          format: date-time
+          readOnly: true
+          nullable: true
       required:
       - issues
       - labels
@@ -9818,6 +9823,11 @@ components:
           minimum: -2147483648
           description: |
             Minimum count for a label and attribute voting results to be counted
+        sigma:
+          type: number
+          format: double
+          description: |
+            Sigma value for OKS calculation
     PatchedDataMetaWriteRequest:
       type: object
       properties:

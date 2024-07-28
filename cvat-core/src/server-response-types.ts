@@ -263,6 +263,7 @@ export interface SerializedConsensusSettingsData {
     agreement_score_threshold?: number;
     quorum?: number;
     iou_threshold?: number;
+    sigma?: number;
 }
 
 export interface APIQualityConflictsFilter extends APICommonFilterParams {

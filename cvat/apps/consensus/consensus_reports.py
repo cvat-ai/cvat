@@ -194,6 +194,7 @@ class ComparisonParameters(_Serializable):
     agreement_score_threshold: float
     quorum: int
     iou_threshold: float
+    sigma: float
 
     def _value_serializer(self, v):
         if isinstance(v, dm.AnnotationType):

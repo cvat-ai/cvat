@@ -38,6 +38,7 @@ export default function ConsensusSettingsForm(props: Props): JSX.Element | null 
         iouThreshold: settings.iouThreshold * 100,
         agreementScoreThreshold: settings.agreementScoreThreshold * 100,
         quorum: settings.quorum,
+        sigma: settings.sigma * 100,
     };
 
     const onSave = useCallback(async () => {
@@ -48,6 +49,7 @@ export default function ConsensusSettingsForm(props: Props): JSX.Element | null 
                 settings.iouThreshold = values.iouThreshold / 100;
                 settings.quorum = values.quorum;
                 settings.agreementScoreThreshold = values.agreementScoreThreshold / 100;
+                settings.sigma = values.sigma / 100;
 
                 try {
                     const responseSettings = await settings.save();
@@ -81,6 +83,9 @@ export default function ConsensusSettingsForm(props: Props): JSX.Element | null 
             </Text>
             <Text>
                 Quorum is used for voting a label and attribute results to be counted
+            </Text>
+            <Text>
+                Sigma is used while calculating the OKS distance
             </Text>
         </div>
     );
@@ -129,6 +134,15 @@ export default function ConsensusSettingsForm(props: Props): JSX.Element | null 
                         rules={[{ required: true }]}
                     >
                         <InputNumber min={0} max={10} precision={0} step={1} />
+                    </Form.Item>
+                </Col>
+                <Col span={12}>
+                    <Form.Item
+                        name='sigma'
+                        label='Sigma'
+                        rules={[{ required: true }]}
+                    >
+                        <InputNumber min={5} max={20} precision={0} />
                     </Form.Item>
                 </Col>
             </Row>

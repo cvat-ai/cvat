@@ -7,7 +7,8 @@ from uuid import uuid4
 
 import datumaro as dm
 import django_rq
-from datumaro.components.operations import IntersectMerge
+# from datumaro.components.operations import IntersectMerge
+from cvat.apps.consensus.new_intersect_merge import IntersectMerge
 from django.conf import settings
 from django.db import transaction
 from django.utils import timezone
@@ -80,6 +81,7 @@ def _merge_consensus_jobs(task_id: int) -> None:
             pairwise_dist=consensus_settings.iou_threshold,
             output_conf_thresh=consensus_settings.agreement_score_threshold,
             quorum=consensus_settings.quorum,
+            sigma=consensus_settings.sigma,
         )
     )
 

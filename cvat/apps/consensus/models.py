@@ -63,6 +63,7 @@ class ConsensusSettings(models.Model):
     agreement_score_threshold = models.FloatField(default=0)
     quorum = models.IntegerField(default=-1)
     iou_threshold = models.FloatField(default=0.5)
+    sigma = models.FloatField(default=0.1)
 
     def __init__(self, *args: Any, **kwargs: Any) -> None:
         super().__init__(*args, **kwargs)
