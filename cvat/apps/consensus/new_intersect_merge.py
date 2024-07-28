@@ -3,15 +3,16 @@
 #
 # SPDX-License-Identifier: MIT
 
-import hashlib
+import itertools
 import logging as log
 from collections import OrderedDict
 from copy import deepcopy
-from typing import Any, Callable, Dict, Iterable, List, Optional, Set, Tuple, Type, Union
-from unittest import TestCase
+from functools import cached_property, partial
+import math
+from typing import Any, Callable, Dict, Hashable, Iterable, List, Optional, Sequence, Tuple, Type, Union, cast
 
 import attr
-import cv2
+import datumaro as dm
 import numpy as np
 from attr import attrib, attrs
 from datumaro.components.annotation import (
@@ -45,15 +46,47 @@ from datumaro.components.extractor import CategoriesInfo, DatasetItem
 from datumaro.components.media import Image, MediaElement, MultiframeImage, PointCloud, Video
 from datumaro.util import filter_dict, find
 from datumaro.util.annotation_util import (
-    OKS,
     approximate_line,
     bbox_iou,
     find_instances,
     max_bbox,
     mean_bbox,
-    segment_iou,
 )
 from datumaro.util.attrs_util import default_if_none, ensure_cls
+from scipy.optimize import linear_sum_assignment
+
+
+def OKS(a, b, sigma=0.1, bbox=None, scale=None, visibility_a=None, visibility_b=None):
+    """
+    Object Keypoint Similarity metric.
+    https://cocodataset.org/#keypoints-eval
+    """
+
+    p1 = np.array(a.points).reshape((-1, 2))
+    p2 = np.array(b.points).reshape((-1, 2))
+    if len(p1) != len(p2):
+        return 0
+
+    if visibility_a is None:
+        visibility_a = np.full(len(p1), True)
+    else:
+        visibility_a = np.asarray(visibility_a, dtype=bool)
+
+    if visibility_b is None:
+        visibility_b = np.full(len(p2), True)
+    else:
+        visibility_b = np.asarray(visibility_b, dtype=bool)
+
+    if not scale:
+        if bbox is None:
+            bbox = dm.ops.mean_bbox([a, b])
+        scale = bbox[2] * bbox[3]
+
+    dists = np.linalg.norm(p1 - p2, axis=1)
+    return np.sum(
+        visibility_a * visibility_b * np.exp((visibility_a == visibility_b)*(-(dists**2) / (2 * scale * (2 * sigma) ** 2)))
+    ) / np.sum(visibility_a | visibility_b, dtype=float)
+
 
 
 def match_annotations_equal(a, b):
@@ -390,12 +423,67 @@ class ExactMerge:
         return None
 
 
+class _KeypointsMatcher(dm.ops.PointsMatcher):
+    def distance(self, a: dm.Points, b: dm.Points) -> float:
+        a_bbox = self.instance_map[id(a)][1]
+        b_bbox = self.instance_map[id(b)][1]
+        if dm.ops.bbox_iou(a_bbox, b_bbox) <= 0:
+            return 0
+
+        bbox = dm.ops.mean_bbox([a_bbox, b_bbox])
+        return OKS(
+            a,
+            b,
+            sigma=self.sigma,
+            bbox=bbox,
+            visibility_a=[v == dm.Points.Visibility.visible for v in a.visibility],
+            visibility_b=[v == dm.Points.Visibility.visible for v in b.visibility],
+        )
+
+
+def _to_rle(ann: dm.Annotation, *, img_h: int, img_w: int):
+    from pycocotools import mask as mask_utils
+
+    if ann.type == dm.AnnotationType.polygon:
+        return mask_utils.frPyObjects([ann.points], img_h, img_w)
+    elif isinstance(ann, dm.RleMask):
+        return [ann.rle]
+    elif ann.type == dm.AnnotationType.mask:
+        return [mask_utils.encode(ann.image)]
+    else:
+        assert False
+
+
+def segment_iou(a: dm.Annotation, b: dm.Annotation, *, img_h: int, img_w: int) -> float:
+    """
+    Generic IoU computation with masks and polygons.
+    Returns -1 if no intersection, [0; 1] otherwise
+    """
+    # Comparing to the dm version, this fixes the comparison for segments,
+    # as the images size are required for correct decoding.
+    # Boxes are not included, because they are not needed
+
+    from pycocotools import mask as mask_utils
+
+    is_bbox = AnnotationType.bbox in [a.type, b.type]
+
+    if not is_bbox:
+        a = _to_rle(a, img_h=img_h, img_w=img_w)
+        b = _to_rle(b, img_h=img_h, img_w=img_w)
+    else:
+        a = [list(a.get_bbox())]
+        b = [list(b.get_bbox())]
+
+    # Note that mask_utils.iou expects (dt, gt). Check this if the 3rd param is True
+    return float(mask_utils.iou(b, a, [0]))
+
+
 @attrs
 class IntersectMerge(MergingStrategy):
     @attrs(repr_ns="IntersectMerge", kw_only=True)
     class Conf:
         pairwise_dist = attrib(converter=float, default=0.5)
-        sigma = attrib(converter=list, factory=list)
+        sigma = attrib(converter=float, factory=float)
 
         output_conf_thresh = attrib(converter=float, default=0)
         quorum = attrib(converter=int, default=0)
@@ -463,8 +551,8 @@ class IntersectMerge(MergingStrategy):
     def merge_items(self, items):
         self._item = next(iter(items.values()))
 
-        self._ann_map = {}
-        sources = []
+        self._ann_map = {}  # id(annotation) -> (annotation, id(frame/item))
+        sources = []  # [annotation of frame 0, frame 1, ...]
         for item in items.values():
             self._ann_map.update({id(a): (a, id(item)) for a in item.annotations})
             sources.append(item.annotations)
@@ -668,7 +756,7 @@ class IntersectMerge(MergingStrategy):
         return dst_categories
 
     def _match_annotations(self, sources):
-        all_by_type = {}
+        all_by_type = {}  # annotation type -> [[annotations from frame 0], [frame 1]]
         for s in sources:
             src_by_type = {}
             for a in s:
@@ -695,25 +783,17 @@ class IntersectMerge(MergingStrategy):
                 return _make(BboxMerger, **kwargs)
             elif t is AnnotationType.mask:
                 return _make(MaskMerger, **kwargs)
-            elif t is AnnotationType.polygon:
+            elif t is AnnotationType.polygon or AnnotationType.mask:
                 return _make(PolygonMerger, **kwargs)
             elif t is AnnotationType.polyline:
                 return _make(LineMerger, **kwargs)
             elif t is AnnotationType.points:
                 return _make(PointsMerger, **kwargs)
-            elif t is AnnotationType.caption:
-                return _make(CaptionsMerger, **kwargs)
-            elif t is AnnotationType.cuboid_3d:
-                return _make(Cuboid3dMerger, **kwargs)
-            elif t is AnnotationType.super_resolution_annotation:
-                return _make(ImageAnnotationMerger, **kwargs)
-            elif t is AnnotationType.depth_annotation:
-                return _make(ImageAnnotationMerger, **kwargs)
             elif t is AnnotationType.skeleton:
-                # to do: add skeletons merge
-                return _make(ImageAnnotationMerger, **kwargs)
-            else:
-                raise NotImplementedError("Type %s is not supported" % t)
+                return _make(SkeletonMerger, **kwargs)
+            # else:
+                # pass
+                # raise NotImplementedError("Type %s is not supported" % t)
 
         instance_map = {}
         for s in sources:
@@ -734,7 +814,7 @@ class IntersectMerge(MergingStrategy):
                 for ann in inst:
                     instance_map[id(ann)] = [inst, inst_bbox]
 
-        self._mergers = {t: _for_type(t, instance_map=instance_map) for t in AnnotationType}
+        self._mergers = {t: _for_type(t, instance_map=instance_map, categories=self._categories) for t in AnnotationType}
 
     def _match_ann_type(self, t, sources):
         return self._mergers[t].match_annotations(sources)
@@ -936,10 +1016,103 @@ class LabelMatcher(AnnotationMatcher):
 class _ShapeMatcher(AnnotationMatcher):
     pairwise_dist = attrib(converter=float, default=0.9)
     cluster_dist = attrib(converter=float, default=-1.0)
+    return_distances = False
+    categories = attrib(converter=dict, default={})
+
+    def _instance_bbox(
+        self, instance_anns: Sequence[dm.Annotation]
+    ) -> Tuple[float, float, float, float]:
+        return dm.ops.max_bbox(
+            a.get_bbox() if isinstance(a, dm.Skeleton) else a
+            for a in instance_anns
+            if hasattr(a, "get_bbox") and not a.attributes.get("outside", False)
+        )
+
+    def distance(a, b):
+        return segment_iou(a, b)
+
+    def label_matcher(self, a, b):
+        a_label = self._context._get_any_label_name(a, a.label)
+        b_label = self._context._get_any_label_name(b, b.label)
+        return a_label == b_label
+
+    @classmethod
+    def _make_memoizing_distance(cls, distance_function: Callable[[Any, Any], float]):
+        distances = {}
+        notfound = object()
+
+        def memoizing_distance(a, b):
+            if isinstance(a, int) and isinstance(b, int):
+                key = (a, b)
+            else:
+                key = (id(a), id(b))
+
+            dist = distances.get(key, notfound)
+
+            if dist is notfound:
+                dist = distance_function(a, b)
+                distances[key] = dist
+
+            return dist
+
+        return memoizing_distance, distances
+
+    @staticmethod
+    def _get_ann_type(t, item: dm.Annotation) -> Sequence[dm.Annotation]:
+        return [
+            a for a in item if a.type == t and not a.attributes.get("outside", False)
+        ]
+
+    def _match_segments(
+        self,
+        t,
+        item_a,
+        item_b,
+        *,
+        distance: Callable = distance,
+        label_matcher: Callable = None,
+        a_objs: Optional[Sequence[dm.Annotation]] = None,
+        b_objs: Optional[Sequence[dm.Annotation]] = None,
+        dist_thresh: Optional[float] = None,
+    ):
+        if label_matcher is None:
+            label_matcher = self.label_matcher
+        if dist_thresh is None:
+            dist_thresh = self.pairwise_dist
+        if a_objs is None:
+            a_objs = self._get_ann_type(t, item_a)
+        if b_objs is None:
+            b_objs = self._get_ann_type(t, item_b)
+
+        if self.return_distances:
+            distance, distances = self._make_memoizing_distance(distance)
+
+        if not a_objs and not b_objs:
+            distances = {}
+            returned_values = [], [], [], []
+        else:
+            extra_args = {}
+            if label_matcher:
+                extra_args["label_matcher"] = label_matcher
+
+            returned_values = match_segments(
+                a_objs,
+                b_objs,
+                distance=distance,
+                dist_thresh=dist_thresh if dist_thresh is not None else self.iou_threshold,
+                **extra_args,
+            )
+
+        if self.return_distances:
+            returned_values = returned_values + (distances,)
+
+        return returned_values
+
+    def match_annotations_two_sources(self, a, b):
+        pass
 
     def match_annotations(self, sources):
         distance = self.distance
-        label_matcher = self.label_matcher
         pairwise_dist = self.pairwise_dist
         cluster_dist = self.cluster_dist
 
@@ -969,14 +1142,19 @@ class _ShapeMatcher(AnnotationMatcher):
         # match segments in sources, pairwise
         adjacent = {i: [] for i in id_segm}  # id(sgm) -> [id(adj_sgm1), ...]
         for a_idx, src_a in enumerate(sources):
+            # matches further sources of same frame for matching annotations
             for src_b in sources[a_idx + 1 :]:
-                matches, _, _, _ = match_segments(
-                    src_a,
-                    src_b,
-                    dist_thresh=pairwise_dist,
-                    distance=distance,
-                    label_matcher=label_matcher,
-                )
+                # an annotation can be adjacent to multiple annotations
+                if self.return_distances:
+                    matches, _, _, _, _ = self.match_annotations_two_sources(
+                        src_a,
+                        src_b,
+                    )
+                else:
+                    matches, _, _, _ = self.match_annotations_two_sources(
+                        src_a,
+                        src_b,
+                    )
                 for a, b in matches:
                     adjacent[id(a)].append(id(b))
 
@@ -996,35 +1174,229 @@ class _ShapeMatcher(AnnotationMatcher):
 
                 for i in adjacent[c]:
                     if i in visited:
+                        # if that annotation is already in another cluster
                         continue
                     if 0 < cluster_dist and not _is_close_enough(cluster, i):
+                        # if positive cluster_dist and this annotation isn't close enough with other annotations in cluster
                         continue
                     if _has_same_source(cluster, i):
+                        # if both the annotation are belong to the same frame in same consensus job
                         continue
 
-                    to_visit.add(i)
+                    to_visit.add(
+                        i
+                    )  # check whether annotations matching this element in cluster can be added in this cluster
 
             clusters.append([id_segm[i][0] for i in cluster])
 
         return clusters
 
-    def distance(self, a, b):
-        return segment_iou(a, b)
-
-    def label_matcher(self, a, b):
-        a_label = self._context._get_any_label_name(a, a.label)
-        b_label = self._context._get_any_label_name(b, b.label)
-        return a_label == b_label
-
 
 @attrs
 class BboxMatcher(_ShapeMatcher):
-    pass
+    def distance(self, a, b):
+        def _to_polygon(bbox_ann: dm.Bbox):
+            points = bbox_ann.as_polygon()
+            angle = bbox_ann.attributes.get("rotation", 0) / 180 * math.pi
+
+            if angle:
+                points = np.reshape(points, (-1, 2))
+                center = (points[0] + points[2]) / 2
+                rel_points = points - center
+                cos = np.cos(angle)
+                sin = np.sin(angle)
+                rotation_matrix = ((cos, sin), (-sin, cos))
+                points = np.matmul(rel_points, rotation_matrix) + center
+                points = points.flatten()
+
+            return dm.Polygon(points)
+
+        def _bbox_iou(a: dm.Bbox, b: dm.Bbox, *, img_w: int, img_h: int) -> float:
+            if a.attributes.get("rotation", 0) == b.attributes.get("rotation", 0):
+                return dm.ops.bbox_iou(a, b)
+            else:
+                return segment_iou(_to_polygon(a), _to_polygon(b), img_h=img_h, img_w=img_w)
+        dataitem_id = self._context._ann_map[id(a)][1]
+        img_h, img_w = self._context._item_map[dataitem_id][0].image.size
+        return _bbox_iou(a, b, img_h=img_h, img_w=img_w)
+
+    def match_annotations_two_sources(self, a, b):
+        return self._match_segments(
+            dm.AnnotationType.bbox,
+            a,
+            b,
+            distance=self.distance,
+        )
 
 
 @attrs
 class PolygonMatcher(_ShapeMatcher):
-    pass
+    def distance(self, item_a, item_b):
+        from pycocotools import mask as mask_utils
+
+        def _get_segment(item):
+            dataitem_id = self._context._ann_map[id(item)][1]
+            img_h, img_w = self._context._item_map[dataitem_id][0].image.size
+            object_rle_groups = [_to_rle(item, img_h=img_h, img_w=img_w)]
+            rle = mask_utils.merge(list(itertools.chain.from_iterable(object_rle_groups)))
+            return rle
+
+        a_segm = _get_segment(item_a)
+        b_segm = _get_segment(item_b)
+        return float(mask_utils.iou([b_segm], [a_segm], [0])[0])
+
+    def match_annotations_two_sources(self, item_a, item_b):
+        def _get_segmentations(item):
+            return self._get_ann_type(dm.AnnotationType.polygon, item) + self._get_ann_type(
+                dm.AnnotationType.mask, item
+            )
+
+        dataitem_id = self._context._ann_map[id(item_a[0])][1]
+        img_h, img_w = self._context._item_map[dataitem_id][0].image.size
+
+        def _find_instances(annotations):
+            # Group instance annotations by label.
+            # Annotations with the same label and group will be merged,
+            # and considered a single object in comparison
+            instances = []
+            instance_map = {}  # ann id -> instance id
+            for ann_group in dm.ops.find_instances(annotations):
+                ann_group = sorted(ann_group, key=lambda a: a.label)
+                for _, label_group in itertools.groupby(ann_group, key=lambda a: a.label):
+                    label_group = list(label_group)
+                    instance_id = len(instances)
+                    instances.append(label_group)
+                    for ann in label_group:
+                        instance_map[id(ann)] = instance_id
+
+            return instances, instance_map
+
+        def _get_compiled_mask(
+            anns: Sequence[dm.Annotation], *, instance_ids: Dict[int, int]
+        ) -> dm.CompiledMask:
+            if not anns:
+                return None
+
+            from pycocotools import mask as mask_utils
+
+            object_rle_groups = [_to_rle(ann, img_h=img_h, img_w=img_w) for ann in anns]
+            object_rles = [mask_utils.merge(g) for g in object_rle_groups]
+            object_masks = mask_utils.decode(object_rles)
+
+            return dm.CompiledMask.from_instance_masks(
+                # need to increment labels and instance ids by 1 to avoid confusion with background
+                instance_masks=(
+                    dm.Mask(image=object_masks[:, :, i], z_order=ann.z_order, label=ann.label + 1)
+                    for i, ann in enumerate(anns)
+                ),
+                instance_ids=(iid + 1 for iid in instance_ids),
+            )
+
+        a_instances, a_instance_map = _find_instances(_get_segmentations(item_a))
+        b_instances, b_instance_map = _find_instances(_get_segmentations(item_b))
+
+        # if self.panoptic_comparison:
+        #     a_compiled_mask = _get_compiled_mask(
+        #         list(itertools.chain.from_iterable(a_instances)),
+        #         instance_ids=[
+        #             a_instance_map[id(ann)] for ann in itertools.chain.from_iterable(a_instances)
+        #         ],
+        #     )
+        #     b_compiled_mask = _get_compiled_mask(
+        #         list(itertools.chain.from_iterable(b_instances)),
+        #         instance_ids=[
+        #             b_instance_map[id(ann)] for ann in itertools.chain.from_iterable(b_instances)
+        #         ],
+        #     )
+        # else:
+        a_compiled_mask = None
+        b_compiled_mask = None
+
+        segment_cache = {}
+
+        def _get_segment(
+            obj_id: int, *, compiled_mask: Optional[dm.CompiledMask] = None, instances
+        ):
+            key = (id(instances), obj_id)
+            rle = segment_cache.get(key)
+
+            if rle is None:
+                from pycocotools import mask as mask_utils
+
+                if compiled_mask is not None:
+                    mask = compiled_mask.extract(obj_id + 1)
+
+                    rle = mask_utils.encode(mask)
+                else:
+                    # Create merged RLE for the instance shapes
+                    object_anns = instances[obj_id]
+                    object_rle_groups = [
+                        _to_rle(ann, img_h=img_h, img_w=img_w) for ann in object_anns
+                    ]
+                    rle = mask_utils.merge(list(itertools.chain.from_iterable(object_rle_groups)))
+
+                segment_cache[key] = rle
+
+            return rle
+
+        def _segment_comparator(a_inst_id: int, b_inst_id: int) -> float:
+            a_segm = _get_segment(a_inst_id, compiled_mask=a_compiled_mask, instances=a_instances)
+            b_segm = _get_segment(b_inst_id, compiled_mask=b_compiled_mask, instances=b_instances)
+
+            from pycocotools import mask as mask_utils
+
+            return float(mask_utils.iou([b_segm], [a_segm], [0])[0])
+
+        def _label_matcher(a_inst_id: int, b_inst_id: int) -> bool:
+            # labels are the same in the instance annotations
+            # instances are required to have the same labels in all shapes
+            a = a_instances[a_inst_id][0]
+            b = b_instances[b_inst_id][0]
+            return a.label == b.label
+
+        results = self._match_segments(
+            dm.AnnotationType.polygon,
+            item_a,
+            item_b,
+            a_objs=range(len(a_instances)),
+            b_objs=range(len(b_instances)),
+            distance=_segment_comparator,
+            label_matcher=_label_matcher,
+        )
+
+        # restore results for original annotations
+        matched, mismatched, a_extra, b_extra = results[:4]
+        if self.return_distances:
+            distances = results[4]
+
+        # i_x ~ instance idx in _x
+        # ia_x ~ instance annotation in _x
+        matched = [
+            (ia_a, ia_b)
+            for (i_a, i_b) in matched
+            for (ia_a, ia_b) in itertools.product(a_instances[i_a], b_instances[i_b])
+        ]
+        mismatched = [
+            (ia_a, ia_b)
+            for (i_a, i_b) in mismatched
+            for (ia_a, ia_b) in itertools.product(a_instances[i_a], b_instances[i_b])
+        ]
+        a_extra = [ia_a for i_a in a_extra for ia_a in a_instances[i_a]]
+        b_extra = [ia_b for i_b in b_extra for ia_b in b_instances[i_b]]
+
+        if self.return_distances:
+            for i_a, i_b in list(distances.keys()):
+                dist = distances.pop((i_a, i_b))
+
+                for ia_a, ia_b in itertools.product(a_instances[i_a], b_instances[i_b]):
+                    distances[(id(ia_a), id(ia_b))] = dist
+
+        returned_values = (matched, mismatched, a_extra, b_extra)
+
+        if self.return_distances:
+            returned_values = returned_values + (distances,)
+
+        return returned_values
 
 
 @attrs
@@ -1038,86 +1410,363 @@ class PointsMatcher(_ShapeMatcher):
     instance_map = attrib(converter=dict)
 
     def distance(self, a, b):
+        for source_anns in [a.annotations, b.annotations]:
+            source_instances = dm.ops.find_instances(source_anns)
+            for instance_group in source_instances:
+                instance_bbox = self._instance_bbox(instance_group)
+
+                for ann in instance_group:
+                    if ann.type == dm.AnnotationType.points:
+                        self.instance_map[id(ann)] = [instance_group, instance_bbox]
+
+        dataitem_id = self._context._ann_map[id(a)][1]
+        img_h, img_w = self._context._item_map[dataitem_id][0].image.size
         a_bbox = self.instance_map[id(a)][1]
         b_bbox = self.instance_map[id(b)][1]
-        if bbox_iou(a_bbox, b_bbox) <= 0:
-            return 0
-        bbox = mean_bbox([a_bbox, b_bbox])
-        return OKS(a, b, sigma=self.sigma, bbox=bbox)
+        a_area = a_bbox[2] * a_bbox[3]
+        b_area = b_bbox[2] * b_bbox[3]
+
+        if a_area == 0 and b_area == 0:
+            # Simple case: singular points without bbox
+            # match them in the image space
+            return OKS(a, b, sigma=self.sigma, scale=img_h * img_w)
+
+        else:
+            # Complex case: multiple points, grouped points, points with a bbox
+            # Try to align points and then return the metric
+            # match them in their bbox space
+
+            if dm.ops.bbox_iou(a_bbox, b_bbox) <= 0:
+                return 0
+
+            bbox = dm.ops.mean_bbox([a_bbox, b_bbox])
+            scale = bbox[2] * bbox[3]
+
+            a_points = np.reshape(a.points, (-1, 2))
+            b_points = np.reshape(b.points, (-1, 2))
+
+            matches, mismatches, a_extra, b_extra = match_segments(
+                range(len(a_points)),
+                range(len(b_points)),
+                distance=lambda ai, bi: OKS(
+                    dm.Points(a_points[ai]),
+                    dm.Points(b_points[bi]),
+                    sigma=self.sigma,
+                    scale=scale,
+                ),
+                dist_thresh=self.iou_threshold,
+                label_matcher=lambda ai, bi: True,
+            )
+
+            # the exact array is determined by the label matcher
+            # all the points will have the same match status,
+            # because there is only 1 shared label for all the points
+            matched_points = matches + mismatches
+
+            a_sorting_indices = [ai for ai, _ in matched_points]
+            a_points = a_points[a_sorting_indices]
+
+            b_sorting_indices = [bi for _, bi in matched_points]
+            b_points = b_points[b_sorting_indices]
+
+            # Compute OKS for 2 groups of points, matching points aligned
+            dists = np.linalg.norm(a_points - b_points, axis=1)
+            return np.sum(np.exp(-(dists**2) / (2 * scale * (2 * self.sigma) ** 2))) / (
+                len(matched_points) + len(a_extra) + len(b_extra)
+            )
+
+    def match_annotations_two_sources(self, item_a, item_b):
+        a_points = self._get_ann_type(dm.AnnotationType.points, item_a)
+        b_points = self._get_ann_type(dm.AnnotationType.points, item_b)
+
+        return self._match_segments(
+            dm.AnnotationType.points,
+            item_a,
+            item_b,
+            a_objs=a_points,
+            b_objs=b_points,
+            distance=self.distance,
+        )
+
+
+class SkeletonMatcher(_ShapeMatcher):
+    return_distances = True
+    sigma: float = 0.1
+    instance_map = {}
+    skeleton_map = {}
+    _skeleton_info = {}
+    distances = {}
+
+    def distance(self, a, b):
+        matcher = _KeypointsMatcher(instance_map=self.instance_map, sigma=self.sigma)
+        if isinstance(a, dm.Skeleton) and isinstance(b, dm.Skeleton):
+            if a == b:
+                return 1
+            elif (id(b), id(a)) in self.distances:
+                return self.distances[(id(b), id(a))]
+            else:
+                return self.distances[(id(a), id(b))]
+
+        return matcher.distance(a, b)
+
+    def _get_skeleton_info(self, skeleton_label_id: int):
+        label_cat = cast(dm.LabelCategories, self.categories[dm.AnnotationType.label])
+        skeleton_info = self._skeleton_info.get(skeleton_label_id)
+
+        if skeleton_info is None:
+            skeleton_label_name = label_cat[skeleton_label_id].name
+
+            # Build a sorted list of sublabels to arrange skeleton points during comparison
+            skeleton_info = sorted(
+                idx for idx, label in enumerate(label_cat) if label.parent == skeleton_label_name
+            )
+            self._skeleton_info[skeleton_label_id] = skeleton_info
+
+        return skeleton_info
+
+    def match_annotations_two_sources(self, a_skeletons, b_skeletons):
+        if not a_skeletons and not b_skeletons:
+            return [], [], [], []
+
+        # Convert skeletons to point lists for comparison
+        # This is required to compute correct per-instance distance
+        # It is assumed that labels are the same in the datasets
+        skeleton_infos = {}
+        points_map = {}
+        a_points = []
+        b_points = []
+        for source, source_points in [(a_skeletons, a_points), (b_skeletons, b_points)]:
+            for skeleton in source:
+                skeleton_info = skeleton_infos.setdefault(
+                    skeleton.label, self._get_skeleton_info(skeleton.label)
+                )
+
+                # Merge skeleton points into a single list
+                # The list is ordered by skeleton_info
+                skeleton_points = [
+                    next((p for p in skeleton.elements if p.label == sublabel), None)
+                    for sublabel in skeleton_info
+                ]
+
+                # Build a single Points object for further comparisons
+                merged_points = dm.Points()
+                merged_points.points = np.ravel(
+                    [p.points if p else [0, 0] for p in skeleton_points]
+                )
+                merged_points.visibility = np.ravel(
+                    [p.visibility if p else [dm.Points.Visibility.absent] for p in skeleton_points]
+                )
+                merged_points.label = skeleton.label
+                # no per-point attributes currently in CVAT
+
+                if all(v == dm.Points.Visibility.absent for v in merged_points.visibility):
+                    # The whole skeleton is outside, exclude it
+                    self.skeleton_map[id(skeleton)] = None
+                    continue
+
+                points_map[id(merged_points)] = skeleton
+                self.skeleton_map[id(skeleton)] = merged_points
+                source_points.append(merged_points)
+
+        for source in [a_skeletons, b_skeletons]:
+            for instance_group in dm.ops.find_instances(source):
+                instance_bbox = self._instance_bbox(instance_group)
+
+                instance_group = [
+                    self.skeleton_map[id(a)] if isinstance(a, dm.Skeleton) else a
+                    for a in instance_group
+                    if not isinstance(a, dm.Skeleton) or self.skeleton_map[id(a)] is not None
+                ]
+                for ann in instance_group:
+                    self.instance_map[id(ann)] = [instance_group, instance_bbox]
+
+        results = self._match_segments(
+            dm.AnnotationType.points,
+            a_skeletons,
+            b_skeletons,
+            a_objs=a_points,
+            b_objs=b_points,
+            distance=self.distance,
+        )
+
+        matched, mismatched, a_extra, b_extra = results[:4]
+        if self.return_distances:
+            distances = results[4]
+
+        matched = [(points_map[id(p_a)], points_map[id(p_b)]) for (p_a, p_b) in matched]
+        mismatched = [(points_map[id(p_a)], points_map[id(p_b)]) for (p_a, p_b) in mismatched]
+        a_extra = [points_map[id(p_a)] for p_a in a_extra]
+        b_extra = [points_map[id(p_b)] for p_b in b_extra]
+
+        # Map points back to skeletons
+        if self.return_distances:
+            for p_a_id, p_b_id in list(distances.keys()):
+                dist = distances.pop((p_a_id, p_b_id))
+                distances[(id(points_map[p_a_id]), id(points_map[p_b_id]))] = dist
+
+        self.distances.update(distances)
+        returned_values = (matched, mismatched, a_extra, b_extra)
+
+        if self.return_distances:
+            returned_values = returned_values + (distances,)
+
+        return returned_values
 
 
 @attrs
 class LineMatcher(_ShapeMatcher):
-    def distance(self, a, b):
-        # Compute inter-line area by using the Trapezoid formulae
-        # https://en.wikipedia.org/wiki/Trapezoidal_rule
-        # Normalize by common bbox and get the bbox fill ratio
-        # Call this ratio the "distance"
+    EPSILON = 1e-7
+    torso_r: float = 0.01
+    oriented: bool = True
+    scale: float = None
 
-        # The box area is an early-exit filter for non-intersected figures
-        bbox = max_bbox([a, b])
-        box_area = bbox[2] * bbox[3]
-        if not box_area:
-            return 1
+    def distance(self, a: dm.PolyLine, b: dm.PolyLine) -> float:
+        # Check distances of the very coarse estimates for the curves
+        def _get_bbox_circle(ann: dm.PolyLine):
+            xs = ann.points[0::2]
+            ys = ann.points[1::2]
+            x0 = min(xs)
+            x1 = max(xs)
+            y0 = min(ys)
+            y1 = max(ys)
+            return (x0 + x1) / 2, (y0 + y1) / 2, ((x1 - x0) ** 2 + (y1 - y0) ** 2) / 4
 
-        def _approx(line, segments):
-            if len(line) // 2 != segments + 1:
-                line = approximate_line(line, segments=segments)
-            return np.reshape(line, (-1, 2))
+        a_center_x, a_center_y, a_r2 = _get_bbox_circle(a)
+        b_center_x, b_center_y, b_r2 = _get_bbox_circle(b)
+        sigma6_2 = self.scale * (6 * self.torso_r) ** 2
+        if (
+            (b_center_x - a_center_x) ** 2 + (b_center_y - a_center_y) ** 2
+        ) > b_r2 + a_r2 + sigma6_2:
+            return 0
 
-        segments = max(len(a.points) // 2, len(b.points) // 2, 5) - 1
+        # Approximate lines to the same number of points for pointwise comparison
+        a, b = self.approximate_points(
+            np.array(a.points).reshape((-1, 2)), np.array(b.points).reshape((-1, 2))
+        )
 
-        a = _approx(a.points, segments)
-        b = _approx(b.points, segments)
+        # Compare the direct and, optionally, the reverse variants
+        similarities = []
+        candidates = [b]
+        if not self.oriented:
+            candidates.append(b[::-1])
+
+        for candidate_b in candidates:
+            similarities.append(self._compare_lines(a, candidate_b))
+
+        return max(similarities)
+
+    def _compare_lines(self, a: np.ndarray, b: np.ndarray) -> float:
         dists = np.linalg.norm(a - b, axis=1)
-        dists = dists[:-1] + dists[1:]
-        a_steps = np.linalg.norm(a[1:] - a[:-1], axis=1)
-        b_steps = np.linalg.norm(b[1:] - b[:-1], axis=1)
 
-        # For the common bbox we can't use
-        # - the AABB (axis-alinged bbox) of a point set
-        # - the exterior of a point set
-        # - the convex hull of a point set
-        # because these soultions won't be correctly normalized.
-        # The lines can have multiple self-intersections, which can give
-        # the inter-line area more than internal area of the options above,
-        # producing the value of the distance outside of the [0; 1] range.
-        #
-        # Instead, we can compute the upper boundary for the inter-line
-        # area based on the maximum point distance and line length.
-        max_area = np.max(dists) * max(np.sum(a_steps), np.sum(b_steps))
+        scale = self.scale
+        if scale is None:
+            segment_dists = np.linalg.norm(a[1:] - a[:-1], axis=1)
+            scale = np.sum(segment_dists) ** 2
 
-        area = np.dot(dists, a_steps + b_steps) * 0.5 * 0.5 / max(max_area, 1.0)
+        # Compute Gaussian for approximated lines similarly to OKS
+        return sum(np.exp(-(dists**2) / (2 * scale * (2 * self.torso_r) ** 2))) / len(a)
 
-        return abs(1 - area)
+    @classmethod
+    def approximate_points(cls, a: np.ndarray, b: np.ndarray) -> Tuple[np.ndarray, np.ndarray]:
+        """
+        Creates 2 polylines with the same numbers of points,
+        the points are placed on the original lines with the same step.
+        The step for each point is determined as minimal to the next original
+        point on one of the curves.
+        A simpler, but slower version could be just approximate each curve to
+        some big number of points. The advantage of this algo is that it keeps
+        corners and original points untouched, while adding intermediate points.
+        """
+        a_segment_count = len(a) - 1
+        b_segment_count = len(b) - 1
 
+        a_segment_lengths = np.linalg.norm(a[1:] - a[:-1], axis=1)
+        a_segment_end_dists = [0]
+        for l in a_segment_lengths:
+            a_segment_end_dists.append(a_segment_end_dists[-1] + l)
+        a_segment_end_dists.pop(0)
+        a_segment_end_dists.append(a_segment_end_dists[-1])  # duplicate for simpler code
 
-@attrs
-class CaptionsMatcher(AnnotationMatcher):
-    def match_annotations(self, sources):
-        raise NotImplementedError()
+        b_segment_lengths = np.linalg.norm(b[1:] - b[:-1], axis=1)
+        b_segment_end_dists = [0]
+        for l in b_segment_lengths:
+            b_segment_end_dists.append(b_segment_end_dists[-1] + l)
+        b_segment_end_dists.pop(0)
+        b_segment_end_dists.append(b_segment_end_dists[-1])  # duplicate for simpler code
 
+        a_length = a_segment_end_dists[-1]
+        b_length = b_segment_end_dists[-1]
 
-@attrs
-class Cuboid3dMatcher(_ShapeMatcher):
-    def distance(self, a, b):
-        raise NotImplementedError()
+        # lines can have lesser number of points in some cases
+        max_points_count = len(a) + len(b) - 1
+        a_new_points = np.zeros((max_points_count, 2))
+        b_new_points = np.zeros((max_points_count, 2))
+        a_new_points[0] = a[0]
+        b_new_points[0] = b[0]
 
+        a_segment_idx = 0
+        b_segment_idx = 0
+        while a_segment_idx < a_segment_count or b_segment_idx < b_segment_count:
+            next_point_idx = a_segment_idx + b_segment_idx + 1
 
-@attrs
-class ImageAnnotationMatcher(AnnotationMatcher):
-    def match_annotations(self, sources):
-        raise NotImplementedError()
+            a_segment_end_pos = a_segment_end_dists[a_segment_idx] / (a_length or 1)
+            b_segment_end_pos = b_segment_end_dists[b_segment_idx] / (b_length or 1)
+            if a_segment_idx < a_segment_count and a_segment_end_pos <= b_segment_end_pos:
+                if b_segment_idx < b_segment_count:
+                    # advance b in the current segment to the relative position in a
+                    q = (b_segment_end_pos - a_segment_end_pos) * (
+                        b_length / (b_segment_lengths[b_segment_idx] or 1)
+                    )
+                    if abs(q) <= cls.EPSILON:
+                        b_new_points[next_point_idx] = b[1 + b_segment_idx]
+                    else:
+                        b_new_points[next_point_idx] = b[b_segment_idx] * q + b[
+                            1 + b_segment_idx
+                        ] * (1 - q)
+                elif b_segment_idx == b_segment_count:
+                    b_new_points[next_point_idx] = b[b_segment_idx]
+
+                # advance a to the end of the current segment
+                a_segment_idx += 1
+                a_new_points[next_point_idx] = a[a_segment_idx]
+
+            elif b_segment_idx < b_segment_count:
+                if a_segment_idx < a_segment_count:
+                    # advance a in the current segment to the relative position in b
+                    q = (a_segment_end_pos - b_segment_end_pos) * (
+                        a_length / (a_segment_lengths[a_segment_idx] or 1)
+                    )
+                    if abs(q) <= cls.EPSILON:
+                        a_new_points[next_point_idx] = a[1 + a_segment_idx]
+                    else:
+                        a_new_points[next_point_idx] = a[a_segment_idx] * q + a[
+                            1 + a_segment_idx
+                        ] * (1 - q)
+                elif a_segment_idx == a_segment_count:
+                    a_new_points[next_point_idx] = a[a_segment_idx]
+
+                # advance b to the end of the current segment
+                b_segment_idx += 1
+                b_new_points[next_point_idx] = b[b_segment_idx]
+
+            else:
+                assert False
+
+        # truncate the final values
+        if next_point_idx < max_points_count:
+            a_new_points = a_new_points[:next_point_idx]
+            b_new_points = b_new_points[:next_point_idx]
+
+        return a_new_points, b_new_points
+
+    def match_annotations_two_sources(self, item_a, item_b):
+        return self._match_segments(
+            dm.AnnotationType.polyline, item_a, item_b, distance=self.distance
+        )
 
 
 @attrs(kw_only=True)
-class AnnotationMerger:
-    def merge_clusters(self, clusters):
-        raise NotImplementedError()
-
-
-@attrs(kw_only=True)
-class LabelMerger(AnnotationMerger, LabelMatcher):
+class LabelMerger(LabelMatcher):
     quorum = attrib(converter=int, default=0)
 
     def merge_clusters(self, clusters):
@@ -1153,7 +1802,7 @@ class LabelMerger(AnnotationMerger, LabelMatcher):
 
 
 @attrs(kw_only=True)
-class _ShapeMerger(AnnotationMerger, _ShapeMatcher):
+class _ShapeMerger(_ShapeMatcher):
     quorum = attrib(converter=int, default=0)
 
     def merge_clusters(self, clusters):
@@ -1175,10 +1824,12 @@ class _ShapeMerger(AnnotationMerger, _ShapeMatcher):
         label = self._context._get_label_id(label)
         return label, score
 
-    @staticmethod
-    def _merge_cluster_shape_mean_box_nearest(cluster):
+    def _merge_cluster_shape_mean_box_nearest(self, cluster):
         mbbox = Bbox(*mean_bbox(cluster))
-        dist = list(segment_iou(mbbox, s) for s in cluster)
+        a = cluster[0]
+        dataitem_id = self._context._ann_map[id(a)][1]
+        img_h, img_w = self._context._item_map[dataitem_id][0].image.size
+        dist = list(segment_iou(mbbox, s, img_h=img_h, img_w=img_w) for s in cluster)
         # print(cluster)
         # print(mbbox, dist)
         nearest_pos, _ = max(enumerate(dist), key=lambda e: e[1])
@@ -1191,14 +1842,13 @@ class _ShapeMerger(AnnotationMerger, _ShapeMatcher):
         return shape, shape_score
 
     def merge_cluster(self, cluster):
-        for ann in cluster:
-            if ann.id == 3:
-                print(cluster)
         label, label_score = self.find_cluster_label(cluster)
+
+        # when the merged annotation is rejected due to quorum constraint
+        if label is None:
+            return None
+
         shape, shape_score = self.merge_cluster_shape(cluster)
-        # print(shape, shape_score, label, label_score)
-        # if label is None:
-        #     return None
         shape.z_order = max(cluster, key=lambda a: a.z_order).z_order
         shape.label = label
         shape.attributes["score"] = label_score * shape_score if label is not None else shape_score
@@ -1230,767 +1880,90 @@ class PointsMerger(_ShapeMerger, PointsMatcher):
 class LineMerger(_ShapeMerger, LineMatcher):
     pass
 
+class SkeletonMerger(_ShapeMerger, SkeletonMatcher):
+    def _merge_cluster_shape_nearest(self, cluster):
+        dist = {}
+        for idx, skeleton1 in enumerate(cluster):
+            id_skeleton1 = id(skeleton1)
+            skeleton_distance = 0
+            for skeleton2 in cluster:
+                id_skeleton2 = id(skeleton2)
+                if (id_skeleton1, id_skeleton2) in self.distances:
+                    skeleton_distance += self.distances[(id_skeleton1, id_skeleton2)]
+                elif (id_skeleton2, id_skeleton1) in self.distances:
+                    skeleton_distance += self.distances[(id_skeleton2, id_skeleton1)]
+                else:
+                    skeleton_distance += 1
 
-@attrs
-class CaptionsMerger(AnnotationMerger, CaptionsMatcher):
-    pass
+            dist[idx] = skeleton_distance / len(cluster)
+
+        return cluster[min(dist, key=dist.get)]
+
+    def merge_cluster_shape(self, cluster):
+        shape = self._merge_cluster_shape_nearest(cluster)
+        shape_score = sum(max(0, self.distance(shape, s)) for s in cluster) / len(cluster)
+        return shape, shape_score
+    # def __init__(self, categories=None):
+    #     _ShapeMerger.__init__(self)
+    #     SkeletonMatcher.__init__(self, categories)
 
 
-@attrs
-class Cuboid3dMerger(_ShapeMerger, Cuboid3dMatcher):
-    @staticmethod
-    def _merge_cluster_shape_mean_box_nearest(cluster):
-        raise NotImplementedError()
-        # mbbox = Bbox(*mean_cuboid(cluster))
-        # dist = (segment_iou(mbbox, s) for s in cluster)
-        # nearest_pos, _ = max(enumerate(dist), key=lambda e: e[1])
-        # return cluster[nearest_pos]
-
-    def merge_cluster(self, cluster):
-        label, label_score = self.find_cluster_label(cluster)
-        shape, shape_score = self.merge_cluster_shape(cluster)
-
-        shape.label = label
-        shape.attributes["score"] = label_score * shape_score if label is not None else shape_score
-
-        return shape
-
-
-@attrs
-class ImageAnnotationMerger(AnnotationMerger, ImageAnnotationMatcher):
-    pass
 
 
 def match_segments(
     a_segms,
     b_segms,
-    distance=segment_iou,
+    distance=dm.ops.segment_iou,
     dist_thresh=1.0,
     label_matcher=lambda a, b: a.label == b.label,
 ):
     assert callable(distance), distance
     assert callable(label_matcher), label_matcher
 
-    a_segms.sort(key=lambda ann: 1 - ann.attributes.get("score", 1))
-    b_segms.sort(key=lambda ann: 1 - ann.attributes.get("score", 1))
+    max_anns = max(len(a_segms), len(b_segms))
+    distances = np.array(
+        [
+            [
+                1 - distance(a, b) if a is not None and b is not None else 1
+                for b, _ in itertools.zip_longest(b_segms, range(max_anns), fillvalue=None)
+            ]
+            for a, _ in itertools.zip_longest(a_segms, range(max_anns), fillvalue=None)
+        ]
+    )
+    distances[~np.isfinite(distances)] = 1
+    distances[distances > 1 - dist_thresh] = 1
 
-    # a_matches: indices of b_segms matched to a bboxes
-    # b_matches: indices of a_segms matched to b bboxes
-    a_matches = -np.ones(len(a_segms), dtype=int)
-    b_matches = -np.ones(len(b_segms), dtype=int)
-
-    distances = np.array([[distance(a, b) for b in b_segms] for a in a_segms])
+    if a_segms and b_segms:
+        a_matches, b_matches = linear_sum_assignment(distances)
+    else:
+        a_matches = []
+        b_matches = []
 
     # matches: boxes we succeeded to match completely
     # mispred: boxes we succeeded to match, having label mismatch
     matches = []
     mispred = []
-
-    for a_idx, a_segm in enumerate(a_segms):
-        if len(b_segms) == 0:
-            break
-        matched_b = -1
-        max_dist = -1
-        b_indices = np.argsort(
-            [not label_matcher(a_segm, b_segm) for b_segm in b_segms], kind="stable"
-        )  # prioritize those with same label, keep score order
-        for b_idx in b_indices:
-            if 0 <= b_matches[b_idx]:  # assign a_segm with max conf
-                continue
-            d = distances[a_idx, b_idx]
-            if d < dist_thresh or d <= max_dist:
-                continue
-            max_dist = d
-            matched_b = b_idx
-
-        if matched_b < 0:
-            continue
-        a_matches[a_idx] = matched_b
-        b_matches[matched_b] = a_idx
-
-        b_segm = b_segms[matched_b]
-
-        if label_matcher(a_segm, b_segm):
-            matches.append((a_segm, b_segm))
-        else:
-            mispred.append((a_segm, b_segm))
-
     # *_umatched: boxes of (*) we failed to match
-    a_unmatched = [a_segms[i] for i, m in enumerate(a_matches) if m < 0]
-    b_unmatched = [b_segms[i] for i, m in enumerate(b_matches) if m < 0]
+    a_unmatched = []
+    b_unmatched = []
+
+    for a_idx, b_idx in zip(a_matches, b_matches):
+        dist = distances[a_idx, b_idx]
+        if dist > 1 - dist_thresh or dist == 1:
+            if a_idx < len(a_segms):
+                a_unmatched.append(a_segms[a_idx])
+            if b_idx < len(b_segms):
+                b_unmatched.append(b_segms[b_idx])
+        else:
+            a_ann = a_segms[a_idx]
+            b_ann = b_segms[b_idx]
+            if label_matcher(a_ann, b_ann):
+                matches.append((a_ann, b_ann))
+            else:
+                mispred.append((a_ann, b_ann))
+
+    if not len(a_matches) and not len(b_matches):
+        a_unmatched = list(a_segms)
+        b_unmatched = list(b_segms)
 
     return matches, mispred, a_unmatched, b_unmatched
-
-
-def mean_std(dataset: IDataset):
-    counter = _MeanStdCounter()
-
-    for item in dataset:
-        counter.accumulate(item)
-
-    return counter.get_result()
-
-
-class _MeanStdCounter:
-    """
-    Computes unbiased mean and std. dev. for dataset images, channel-wise.
-    """
-
-    def __init__(self):
-        self._stats = {}  # (id, subset) -> (pixel count, mean vec, std vec)
-
-    def accumulate(self, item: DatasetItem):
-        size = item.media.size
-        if size is None:
-            log.warning(
-                "Item %s: can't detect image size, "
-                "the image will be skipped from pixel statistics",
-                item.id,
-            )
-            return
-        count = np.prod(item.media.size)
-
-        image = item.media.data
-        if len(image.shape) == 2:
-            image = image[:, :, np.newaxis]
-        else:
-            image = image[:, :, :3]
-        # opencv is much faster than numpy here
-        mean, std = cv2.meanStdDev(image.astype(np.double) / 255)
-
-        self._stats[(item.id, item.subset)] = (count, mean, std)
-
-    def get_result(
-        self,
-    ) -> Tuple[Tuple[float, float, float], Tuple[float, float, float]]:
-        n = len(self._stats)
-
-        if n == 0:
-            return [0, 0, 0], [0, 0, 0]
-
-        counts = np.empty(n, dtype=np.uint32)
-        stats = np.empty((n, 2, 3), dtype=np.double)
-
-        for i, v in enumerate(self._stats.values()):
-            counts[i] = v[0]
-            stats[i][0] = v[1].reshape(-1)
-            stats[i][1] = v[2].reshape(-1)
-
-        mean = lambda i, s: s[i][0]
-        var = lambda i, s: s[i][1]
-
-        # make variance unbiased
-        np.multiply(
-            np.square(stats[:, 1]),
-            (counts / (counts - 1))[:, np.newaxis],
-            out=stats[:, 1],
-        )
-
-        # Use an online algorithm to:
-        # - handle different image sizes
-        # - avoid cancellation problem
-        _, mean, var = self._compute_stats(stats, counts, mean, var)
-        return mean * 255, np.sqrt(var) * 255
-
-    # Implements online parallel computation of sample variance
-    # https://en.wikipedia.org/wiki/Algorithms_for_calculating_variance#Parallel_algorithm
-    @staticmethod
-    def _pairwise_stats(count_a, mean_a, var_a, count_b, mean_b, var_b):
-        """
-        Computes vector mean and variance.
-
-        Needed do avoid catastrophic cancellation in floating point computations
-
-        Returns:
-            A tuple (total count, mean, variance)
-        """
-
-        # allow long arithmetics
-        count_a = int(count_a)
-        count_b = int(count_b)
-
-        delta = mean_b - mean_a
-        m_a = var_a * (count_a - 1)
-        m_b = var_b * (count_b - 1)
-        M2 = m_a + m_b + delta**2 * (count_a * count_b / (count_a + count_b))
-
-        return (
-            count_a + count_b,
-            mean_a * 0.5 + mean_b * 0.5,
-            M2 / (count_a + count_b - 1),
-        )
-
-    @staticmethod
-    def _compute_stats(stats, counts, mean_accessor, variance_accessor):
-        """
-        Recursively computes total count, mean and variance,
-        does O(log(N)) calls.
-
-        Args:
-            stats: (float array of shape N, 2 * d, d = dimensions of values)
-            count: (integer array of shape N)
-            mean_accessor: (function(idx, stats)) to retrieve element mean
-            variance_accessor: (function(idx, stats)) to retrieve element variance
-
-        Returns:
-            A tuple (total count, mean, variance)
-        """
-
-        m = mean_accessor
-        v = variance_accessor
-        n = len(stats)
-        if n == 1:
-            return counts[0], m(0, stats), v(0, stats)
-        if n == 2:
-            return __class__._pairwise_stats(
-                counts[0], m(0, stats), v(0, stats), counts[1], m(1, stats), v(1, stats)
-            )
-        h = n // 2
-        return __class__._pairwise_stats(
-            *__class__._compute_stats(stats[:h], counts[:h], m, v),
-            *__class__._compute_stats(stats[h:], counts[h:], m, v),
-        )
-
-
-def compute_image_statistics(dataset: IDataset):
-    stats = {
-        "dataset": {
-            "images count": 0,
-            "unique images count": 0,
-            "repeated images count": 0,
-            "repeated images": [],  # [[id1, id2], [id3, id4, id5], ...]
-        },
-        "subsets": {},
-    }
-
-    stats_counter = _MeanStdCounter()
-    unique_counter = _ItemMatcher()
-
-    for item in dataset:
-        stats_counter.accumulate(item)
-        unique_counter.process_item(item)
-
-    def _extractor_stats(subset_name, extractor):
-        sub_counter = _MeanStdCounter()
-        sub_counter._stats = {
-            k: v
-            for k, v in stats_counter._stats.items()
-            if subset_name and k[1] == subset_name or not subset_name
-        }
-
-        available = len(sub_counter._stats) != 0
-
-        stats = {
-            "images count": len(extractor),
-        }
-
-        if available:
-            mean, std = sub_counter.get_result()
-
-            stats.update(
-                {
-                    "image mean": [float(v) for v in mean[::-1]],
-                    "image std": [float(v) for v in std[::-1]],
-                }
-            )
-        else:
-            stats.update(
-                {
-                    "image mean": "n/a",
-                    "image std": "n/a",
-                }
-            )
-        return stats
-
-    for subset_name in dataset.subsets():
-        stats["subsets"][subset_name] = _extractor_stats(
-            subset_name, dataset.get_subset(subset_name)
-        )
-
-    unique_items = unique_counter.get_result()
-    repeated_items = [sorted(g) for g in unique_items.values() if 1 < len(g)]
-
-    stats["dataset"].update(
-        {
-            "images count": len(dataset),
-            "unique images count": len(unique_items),
-            "repeated images count": len(repeated_items),
-            "repeated images": repeated_items,  # [[id1, id2], [id3, id4, id5], ...]
-        }
-    )
-
-    return stats
-
-
-def compute_ann_statistics(dataset: IDataset):
-    labels = dataset.categories().get(AnnotationType.label, LabelCategories())
-
-    def get_label(ann):
-        return labels.items[ann.label].name if ann.label is not None else None
-
-    stats = {
-        "images count": 0,
-        "annotations count": 0,
-        "unannotated images count": 0,
-        "unannotated images": [],
-        "annotations by type": {
-            t.name: {
-                "count": 0,
-            }
-            for t in AnnotationType
-        },
-        "annotations": {},
-    }
-    by_type = stats["annotations by type"]
-
-    attr_template = {
-        "count": 0,
-        "values count": 0,
-        "values present": set(),
-        "distribution": {},  # value -> (count, total%)
-    }
-    label_stat = {
-        "count": 0,
-        "distribution": {l.name: [0, 0] for l in labels.items},  # label -> (count, total%)
-        "attributes": {},
-    }
-    stats["annotations"]["labels"] = label_stat
-    segm_stat = {
-        "avg. area": 0,
-        "area distribution": [],  # a histogram with 10 bins
-        # (min, min+10%), ..., (min+90%, max) -> (count, total%)
-        "pixel distribution": {l.name: [0, 0] for l in labels.items},  # label -> (count, total%)
-    }
-    stats["annotations"]["segments"] = segm_stat
-    segm_areas = []
-    pixel_dist = segm_stat["pixel distribution"]
-    total_pixels = 0
-
-    for item in dataset:
-        if len(item.annotations) == 0:
-            stats["unannotated images"].append(item.id)
-            continue
-
-        for ann in item.annotations:
-            by_type[ann.type.name]["count"] += 1
-
-            if not hasattr(ann, "label") or ann.label is None:
-                continue
-
-            if ann.type in {
-                AnnotationType.mask,
-                AnnotationType.polygon,
-                AnnotationType.bbox,
-            }:
-                area = ann.get_area()
-                segm_areas.append(area)
-                pixel_dist[get_label(ann)][0] += int(area)
-
-            label_stat["count"] += 1
-            label_stat["distribution"][get_label(ann)][0] += 1
-
-            for name, value in ann.attributes.items():
-                if name.lower() in {
-                    "occluded",
-                    "visibility",
-                    "score",
-                    "id",
-                    "track_id",
-                }:
-                    continue
-                attrs_stat = label_stat["attributes"].setdefault(name, deepcopy(attr_template))
-                attrs_stat["count"] += 1
-                attrs_stat["values present"].add(str(value))
-                attrs_stat["distribution"].setdefault(str(value), [0, 0])[0] += 1
-
-    stats["images count"] = len(dataset)
-
-    stats["annotations count"] = sum(t["count"] for t in stats["annotations by type"].values())
-    stats["unannotated images count"] = len(stats["unannotated images"])
-
-    for label_info in label_stat["distribution"].values():
-        label_info[1] = label_info[0] / (label_stat["count"] or 1)
-
-    for label_attr in label_stat["attributes"].values():
-        label_attr["values count"] = len(label_attr["values present"])
-        label_attr["values present"] = sorted(label_attr["values present"])
-        for attr_info in label_attr["distribution"].values():
-            attr_info[1] = attr_info[0] / (label_attr["count"] or 1)
-
-    # numpy.sum might be faster, but could overflow with large datasets.
-    # Python's int can transparently mutate to be of indefinite precision (long)
-    total_pixels = sum(int(a) for a in segm_areas)
-
-    segm_stat["avg. area"] = total_pixels / (len(segm_areas) or 1.0)
-
-    for label_info in segm_stat["pixel distribution"].values():
-        label_info[1] = label_info[0] / (total_pixels or 1)
-
-    if len(segm_areas) != 0:
-        hist, bins = np.histogram(segm_areas)
-        segm_stat["area distribution"] = [
-            {
-                "min": float(bin_min),
-                "max": float(bin_max),
-                "count": int(c),
-                "percent": int(c) / len(segm_areas),
-            }
-            for c, (bin_min, bin_max) in zip(hist, zip(bins[:-1], bins[1:]))
-        ]
-
-    return stats
-
-
-@attrs
-class DistanceComparator:
-    iou_threshold = attrib(converter=float, default=0.5)
-
-    def match_annotations(self, item_a, item_b):
-        return {t: self._match_ann_type(t, item_a, item_b) for t in AnnotationType}
-
-    def _match_ann_type(self, t, *args):
-        # pylint: disable=no-value-for-parameter
-        if t == AnnotationType.label:
-            return self.match_labels(*args)
-        elif t == AnnotationType.bbox:
-            return self.match_boxes(*args)
-        elif t == AnnotationType.polygon:
-            return self.match_polygons(*args)
-        elif t == AnnotationType.mask:
-            return self.match_masks(*args)
-        elif t == AnnotationType.points:
-            return self.match_points(*args)
-        elif t == AnnotationType.polyline:
-            return self.match_lines(*args)
-        # pylint: enable=no-value-for-parameter
-        else:
-            raise NotImplementedError("Unexpected annotation type %s" % t)
-
-    @staticmethod
-    def _get_ann_type(t, item):
-        return [a for a in item.annotations if a.type == t]
-
-    def match_labels(self, item_a, item_b):
-        a_labels = set(a.label for a in self._get_ann_type(AnnotationType.label, item_a))
-        b_labels = set(a.label for a in self._get_ann_type(AnnotationType.label, item_b))
-
-        matches = a_labels & b_labels
-        a_unmatched = a_labels - b_labels
-        b_unmatched = b_labels - a_labels
-        return matches, a_unmatched, b_unmatched
-
-    def _match_segments(self, t, item_a, item_b):
-        a_boxes = self._get_ann_type(t, item_a)
-        b_boxes = self._get_ann_type(t, item_b)
-        return match_segments(a_boxes, b_boxes, dist_thresh=self.iou_threshold)
-
-    def match_polygons(self, item_a, item_b):
-        return self._match_segments(AnnotationType.polygon, item_a, item_b)
-
-    def match_masks(self, item_a, item_b):
-        return self._match_segments(AnnotationType.mask, item_a, item_b)
-
-    def match_boxes(self, item_a, item_b):
-        return self._match_segments(AnnotationType.bbox, item_a, item_b)
-
-    def match_points(self, item_a, item_b):
-        a_points = self._get_ann_type(AnnotationType.points, item_a)
-        b_points = self._get_ann_type(AnnotationType.points, item_b)
-
-        instance_map = {}
-        for s in [item_a.annotations, item_b.annotations]:
-            s_instances = find_instances(s)
-            for inst in s_instances:
-                inst_bbox = max_bbox(inst)
-                for ann in inst:
-                    instance_map[id(ann)] = [inst, inst_bbox]
-        matcher = PointsMatcher(instance_map=instance_map)
-
-        return match_segments(
-            a_points,
-            b_points,
-            dist_thresh=self.iou_threshold,
-            distance=matcher.distance,
-        )
-
-    def match_lines(self, item_a, item_b):
-        a_lines = self._get_ann_type(AnnotationType.polyline, item_a)
-        b_lines = self._get_ann_type(AnnotationType.polyline, item_b)
-
-        matcher = LineMatcher()
-
-        return match_segments(
-            a_lines, b_lines, dist_thresh=self.iou_threshold, distance=matcher.distance
-        )
-
-
-def match_items_by_id(a: IDataset, b: IDataset):
-    a_items = set((item.id, item.subset) for item in a)
-    b_items = set((item.id, item.subset) for item in b)
-
-    matches = a_items & b_items
-    matches = [([m], [m]) for m in matches]
-    a_unmatched = a_items - b_items
-    b_unmatched = b_items - a_items
-    return matches, a_unmatched, b_unmatched
-
-
-def match_items_by_image_hash(a: IDataset, b: IDataset):
-    a_hash = find_unique_images(a)
-    b_hash = find_unique_images(b)
-
-    a_items = set(a_hash)
-    b_items = set(b_hash)
-
-    matches = a_items & b_items
-    a_unmatched = a_items - b_items
-    b_unmatched = b_items - a_items
-
-    matches = [(a_hash[h], b_hash[h]) for h in matches]
-    a_unmatched = set(i for h in a_unmatched for i in a_hash[h])
-    b_unmatched = set(i for h in b_unmatched for i in b_hash[h])
-
-    return matches, a_unmatched, b_unmatched
-
-
-class _ItemMatcher:
-    @staticmethod
-    def _default_item_hash(item: DatasetItem):
-        if not item.media or not item.media.has_data:
-            if item.media and item.media.path:
-                return hash(item.media.path)
-
-            log.warning(
-                "Item (%s, %s) has no image " "info, counted as unique",
-                item.id,
-                item.subset,
-            )
-            return None
-
-        # Disable B303:md5, because the hash is not used in a security context
-        return hashlib.md5(item.media.data.tobytes()).hexdigest()  # nosec
-
-    def __init__(self, item_hash: Optional[Callable] = None):
-        self._hash = item_hash or self._default_item_hash
-
-        # hash -> [(id, subset), ...]
-        self._unique: Dict[str, Set[Tuple[str, str]]] = {}
-
-    def process_item(self, item: DatasetItem):
-        h = self._hash(item)
-        if h is None:
-            h = str(id(item))  # anything unique
-
-        self._unique.setdefault(h, set()).add((item.id, item.subset))
-
-    def get_result(self):
-        return self._unique
-
-
-def find_unique_images(dataset: IDataset, item_hash: Optional[Callable] = None):
-    matcher = _ItemMatcher(item_hash=item_hash)
-    for item in dataset:
-        matcher.process_item(item)
-    return matcher.get_result()
-
-
-def match_classes(a: CategoriesInfo, b: CategoriesInfo):
-    a_label_cat = a.get(AnnotationType.label, LabelCategories())
-    b_label_cat = b.get(AnnotationType.label, LabelCategories())
-
-    a_labels = set(c.name for c in a_label_cat)
-    b_labels = set(c.name for c in b_label_cat)
-
-    matches = a_labels & b_labels
-    a_unmatched = a_labels - b_labels
-    b_unmatched = b_labels - a_labels
-    return matches, a_unmatched, b_unmatched
-
-
-@attrs
-class ExactComparator:
-    match_images: bool = attrib(kw_only=True, default=False)
-    ignored_fields = attrib(kw_only=True, factory=set, validator=default_if_none(set))
-    ignored_attrs = attrib(kw_only=True, factory=set, validator=default_if_none(set))
-    ignored_item_attrs = attrib(kw_only=True, factory=set, validator=default_if_none(set))
-
-    _test: TestCase = attrib(init=False)
-    errors: list = attrib(init=False)
-
-    def __attrs_post_init__(self):
-        self._test = TestCase()
-        self._test.maxDiff = None
-
-    def _match_items(self, a, b):
-        if self.match_images:
-            return match_items_by_image_hash(a, b)
-        else:
-            return match_items_by_id(a, b)
-
-    def _compare_categories(self, a, b):
-        test = self._test
-        errors = self.errors
-
-        try:
-            test.assertEqual(sorted(a, key=lambda t: t.value), sorted(b, key=lambda t: t.value))
-        except AssertionError as e:
-            errors.append({"type": "categories", "message": str(e)})
-
-        if AnnotationType.label in a:
-            try:
-                test.assertEqual(
-                    a[AnnotationType.label].items,
-                    b[AnnotationType.label].items,
-                )
-            except AssertionError as e:
-                errors.append({"type": "labels", "message": str(e)})
-        if AnnotationType.mask in a:
-            try:
-                test.assertEqual(
-                    a[AnnotationType.mask].colormap,
-                    b[AnnotationType.mask].colormap,
-                )
-            except AssertionError as e:
-                errors.append({"type": "colormap", "message": str(e)})
-        if AnnotationType.points in a:
-            try:
-                test.assertEqual(
-                    a[AnnotationType.points].items,
-                    b[AnnotationType.points].items,
-                )
-            except AssertionError as e:
-                errors.append({"type": "points", "message": str(e)})
-
-    def _compare_annotations(self, a, b):
-        ignored_fields = self.ignored_fields
-        ignored_attrs = self.ignored_attrs
-
-        a_fields = {k: None for k in a.as_dict() if k in ignored_fields}
-        b_fields = {k: None for k in b.as_dict() if k in ignored_fields}
-        if "attributes" not in ignored_fields:
-            a_fields["attributes"] = filter_dict(a.attributes, ignored_attrs)
-            b_fields["attributes"] = filter_dict(b.attributes, ignored_attrs)
-
-        result = a.wrap(**a_fields) == b.wrap(**b_fields)
-
-        return result
-
-    def _compare_items(self, item_a, item_b):
-        test = self._test
-
-        a_id = (item_a.id, item_a.subset)
-        b_id = (item_b.id, item_b.subset)
-
-        matched = []
-        unmatched = []
-        errors = []
-
-        try:
-            test.assertEqual(
-                filter_dict(item_a.attributes, self.ignored_item_attrs),
-                filter_dict(item_b.attributes, self.ignored_item_attrs),
-            )
-        except AssertionError as e:
-            errors.append({"type": "item_attr", "a_item": a_id, "b_item": b_id, "message": str(e)})
-
-        b_annotations = item_b.annotations[:]
-        for ann_a in item_a.annotations:
-            ann_b_candidates = [x for x in item_b.annotations if x.type == ann_a.type]
-
-            ann_b = find(
-                enumerate(self._compare_annotations(ann_a, x) for x in ann_b_candidates),
-                lambda x: x[1],
-            )
-            if ann_b is None:
-                unmatched.append(
-                    {
-                        "item": a_id,
-                        "source": "a",
-                        "ann": str(ann_a),
-                    }
-                )
-                continue
-            else:
-                ann_b = ann_b_candidates[ann_b[0]]
-
-            b_annotations.remove(ann_b)  # avoid repeats
-            matched.append({"a_item": a_id, "b_item": b_id, "a": str(ann_a), "b": str(ann_b)})
-
-        for ann_b in b_annotations:
-            unmatched.append({"item": b_id, "source": "b", "ann": str(ann_b)})
-
-        return matched, unmatched, errors
-
-    def compare_datasets(self, a, b):
-        self.errors = []
-        errors = self.errors
-
-        self._compare_categories(a.categories(), b.categories())
-
-        matched = []
-        unmatched = []
-
-        matches, a_unmatched, b_unmatched = self._match_items(a, b)
-
-        if a.categories().get(AnnotationType.label) != b.categories().get(AnnotationType.label):
-            return matched, unmatched, a_unmatched, b_unmatched, errors
-
-        _dist = lambda s: len(s[1]) + len(s[2])
-        for a_ids, b_ids in matches:
-            # build distance matrix
-            match_status = {}  # (a_id, b_id): [matched, unmatched, errors]
-            a_matches = {a_id: None for a_id in a_ids}
-            b_matches = {b_id: None for b_id in b_ids}
-
-            for a_id in a_ids:
-                item_a = a.get(*a_id)
-                candidates = {}
-
-                for b_id in b_ids:
-                    item_b = b.get(*b_id)
-
-                    i_m, i_um, i_err = self._compare_items(item_a, item_b)
-                    candidates[b_id] = [i_m, i_um, i_err]
-
-                    if len(i_um) == 0:
-                        a_matches[a_id] = b_id
-                        b_matches[b_id] = a_id
-                        matched.extend(i_m)
-                        errors.extend(i_err)
-                        break
-
-                match_status[a_id] = candidates
-
-            # assign
-            for a_id in a_ids:
-                if len(b_ids) == 0:
-                    break
-
-                # find the closest, ignore already assigned
-                matched_b = a_matches[a_id]
-                if matched_b is not None:
-                    continue
-                min_dist = -1
-                for b_id in b_ids:
-                    if b_matches[b_id] is not None:
-                        continue
-                    d = _dist(match_status[a_id][b_id])
-                    if d < min_dist and 0 <= min_dist:
-                        continue
-                    min_dist = d
-                    matched_b = b_id
-
-                if matched_b is None:
-                    continue
-                a_matches[a_id] = matched_b
-                b_matches[matched_b] = a_id
-
-                m = match_status[a_id][matched_b]
-                matched.extend(m[0])
-                unmatched.extend(m[1])
-                errors.extend(m[2])
-
-            a_unmatched |= set(a_id for a_id, m in a_matches.items() if not m)
-            b_unmatched |= set(b_id for b_id, m in b_matches.items() if not m)
-
-        return matched, unmatched, a_unmatched, b_unmatched, errors
