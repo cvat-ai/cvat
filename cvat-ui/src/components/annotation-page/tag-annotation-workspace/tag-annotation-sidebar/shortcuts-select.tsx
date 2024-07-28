@@ -27,13 +27,6 @@ type Props = {
 };
 
 const componentShortcuts = {
-    SETUP_0_TAG: {
-        name: 'Create a new tag',
-        description: 'Create a new tag with corresponding class. The class may be setup in tag annotation sidebar',
-        sequences: ['0', 'shift+0'],
-        scope: ShortcutScope.ALL,
-        applicable: [DimensionType.DIMENSION_2D, DimensionType.DIMENSION_3D],
-    },
     SETUP_1_TAG: {
         name: 'Create a new tag',
         description: 'Create a new tag with corresponding class. The class may be setup in tag annotation sidebar',
@@ -97,6 +90,13 @@ const componentShortcuts = {
         scope: ShortcutScope.ALL,
         applicable: [DimensionType.DIMENSION_2D, DimensionType.DIMENSION_3D],
     },
+    SETUP_0_TAG: {
+        name: 'Create a new tag',
+        description: 'Create a new tag with corresponding class. The class may be setup in tag annotation sidebar',
+        sequences: ['0', 'shift+0'],
+        scope: ShortcutScope.ALL,
+        applicable: [DimensionType.DIMENSION_2D, DimensionType.DIMENSION_3D],
+    },
 };
 
 registerComponentShortcuts(componentShortcuts);
@@ -130,6 +130,31 @@ function ShortcutsSelect(props: Props): JSX.Element {
         });
         setShortcutLabelMap(newShortcutLabelMap);
     }, []);
+
+    useEffect(() => {
+        const updatedComponentShortcuts = {
+            ...componentShortcuts,
+        };
+
+        Object.keys(shortcutLabelMap)
+            .map((id) => Number.parseInt(id, 10))
+            .filter((id) => shortcutLabelMap[id])
+            .reduce((acc: any, id) => {
+                const [label] = labels.filter((_label) => _label.id === shortcutLabelMap[id]);
+                const key = `SETUP_${id}_TAG`;
+                acc[key] = {
+                    ...acc[key],
+                    name: `Create a new tag "${label.name}"`,
+                    description: `Create a new tag having class "${label.name}"`,
+                };
+                return acc;
+            }, updatedComponentShortcuts);
+
+        registerComponentShortcuts(updatedComponentShortcuts);
+        return () => {
+            registerComponentShortcuts(componentShortcuts);
+        };
+    }, [shortcutLabelMap]);
 
     Object.keys(shortcutLabelMap)
         .map((id) => Number.parseInt(id, 10))

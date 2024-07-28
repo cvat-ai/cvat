@@ -32,62 +32,62 @@ const componentShortcuts = {
     SET_0_VALUE: {
         name: 'Set 1st value to the current attribute',
         description: 'Change current value for the attribute to the 1th value in the list',
-        sequences: ['0'],
+        sequences: ['1'],
         scope: ShortcutScope.ALL,
     },
     SET_1_VALUE: {
         name: 'Set 2nd value to the current attribute',
         description: 'Change current value for the attribute to the 2nd value in the list',
-        sequences: ['1'],
         scope: ShortcutScope.ALL,
+        sequences: ['2'],
     },
     SET_2_VALUE: {
         name: 'Set 3rd value to the current attribute',
         description: 'Change current value for the attribute to the 3rd value in the list',
-        sequences: ['2'],
         scope: ShortcutScope.ALL,
+        sequences: ['3'],
     },
     SET_3_VALUE: {
         name: 'Set 4th value to the current attribute',
         description: 'Change current value for the attribute to the 4th value in the list',
-        sequences: ['3'],
         scope: ShortcutScope.ALL,
+        sequences: ['4'],
     },
     SET_4_VALUE: {
         name: 'Set 5th value to the current attribute',
         description: 'Change current value for the attribute to the 5th value in the list',
-        sequences: ['4'],
         scope: ShortcutScope.ALL,
+        sequences: ['5'],
     },
     SET_5_VALUE: {
         name: 'Set 6th value to the current attribute',
         description: 'Change current value for the attribute to the 6th value in the list',
-        sequences: ['5'],
         scope: ShortcutScope.ALL,
+        sequences: ['6'],
     },
     SET_6_VALUE: {
         name: 'Set 7th value to the current attribute',
         description: 'Change current value for the attribute to the 7th value in the list',
-        sequences: ['6'],
         scope: ShortcutScope.ALL,
+        sequences: ['7'],
     },
     SET_7_VALUE: {
         name: 'Set 8th value to the current attribute',
         description: 'Change current value for the attribute to the 8th value in the list',
-        sequences: ['7'],
         scope: ShortcutScope.ALL,
+        sequences: ['8'],
     },
     SET_8_VALUE: {
         name: 'Set 9th value to the current attribute',
         description: 'Change current value for the attribute to the 9th value in the list',
-        sequences: ['8'],
         scope: ShortcutScope.ALL,
+        sequences: ['9'],
     },
-    SET_9_VALUE: {
+    SET_10_VALUE: {
         name: 'Set 10th value to the current attribute',
         description: 'Change current value for the attribute to the 10th value in the list',
-        sequences: ['9'],
         scope: ShortcutScope.ALL,
+        sequences: ['0'],
     },
 };
 
