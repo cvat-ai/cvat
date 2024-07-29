@@ -5,6 +5,7 @@
 
 import React from 'react';
 import Button from 'antd/lib/button';
+import { MenuProps } from 'antd/lib/menu';
 import Icon, {
     LinkOutlined, CopyOutlined, BlockOutlined, RetweetOutlined, DeleteOutlined, EditOutlined,
 } from '@ant-design/icons';
@@ -12,10 +13,10 @@ import Icon, {
 import {
     BackgroundIcon, ForegroundIcon, ResetPerspectiveIcon, ColorizeIcon, SliceIcon,
 } from 'icons';
+import { getCVATStore } from 'cvat-store';
 import CVATTooltip from 'components/common/cvat-tooltip';
 import { ObjectType, ShapeType, ColorBy } from 'reducers';
 import { DimensionType, Job } from 'cvat-core-wrapper';
-import { MenuProps } from 'antd';
 
 interface Props {
     readonly: boolean;
@@ -38,7 +39,6 @@ interface Props {
     copy(): void;
     remove(): void;
     propagate(): void;
-    createURL(): void;
     switchOrientation(): void;
     toBackground(): void;
     toForeground(): void;
@@ -55,17 +55,26 @@ interface ItemProps {
 
 function CreateURLItem(props: ItemProps): JSX.Element {
     const { toolProps } = props;
-    const { serverID, createURL } = toolProps;
+    const { serverID, objectType } = toolProps;
+    const frame = getCVATStore().getState().annotation.player.frame.number;
+    const { origin, pathname } = window.location;
+    const search = `frame=${frame}&type=${objectType}&serverID=${serverID}`;
+    const url = `${origin}${pathname}?${search}`;
+
     return (
-        <Button
-            className='cvat-object-item-menu-create-url'
-            disabled={!Number.isInteger(serverID)}
-            type='link'
-            icon={<LinkOutlined />}
-            onClick={createURL}
-        >
-            Create object URL
-        </Button>
+        <CVATTooltip mouseLeaveDelay={0.75} title={url}>
+            <Button
+                className='cvat-object-item-menu-create-url'
+                disabled={!Number.isInteger(serverID)}
+                type='link'
+                icon={<LinkOutlined />}
+                onClick={() => {
+                    window.navigator.clipboard.writeText(url);
+                }}
+            >
+                Create object URL
+            </Button>
+        </CVATTooltip>
     );
 }
 

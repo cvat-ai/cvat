@@ -33,7 +33,6 @@ interface Props {
     activate(activeElementID?: number): void;
     copy(): void;
     propagate(): void;
-    createURL(): void;
     switchOrientation(): void;
     toBackground(): void;
     toForeground(): void;
@@ -65,7 +64,6 @@ function ObjectItemComponent(props: Props): JSX.Element {
         activate,
         copy,
         propagate,
-        createURL,
         switchOrientation,
         toBackground,
         toForeground,
@@ -126,7 +124,6 @@ function ObjectItemComponent(props: Props): JSX.Element {
                     copy={copy}
                     remove={remove}
                     propagate={propagate}
-                    createURL={createURL}
                     switchOrientation={switchOrientation}
                     toBackground={toBackground}
                     toForeground={toForeground}

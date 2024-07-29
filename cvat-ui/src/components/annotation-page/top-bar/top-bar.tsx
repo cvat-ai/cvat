@@ -63,7 +63,6 @@ interface Props {
     onSearchAnnotations(direction: 'forward' | 'backward'): void;
     onSliderChange(value: number): void;
     onInputChange(value: number): void;
-    onURLIconClick(): void;
     onUndoClick(): void;
     onRedoClick(): void;
     onFinishDraw(): void;
@@ -121,7 +120,6 @@ export default function AnnotationTopBarComponent(props: Props): JSX.Element {
         onSearchAnnotations,
         onSliderChange,
         onInputChange,
-        onURLIconClick,
         onUndoClick,
         onRedoClick,
         onFinishDraw,
@@ -184,7 +182,6 @@ export default function AnnotationTopBarComponent(props: Props): JSX.Element {
             workspace={workspace}
             onSliderChange={onSliderChange}
             onInputChange={onInputChange}
-            onURLIconClick={onURLIconClick}
             onDeleteFrame={onDeleteFrame}
             onRestoreFrame={onRestoreFrame}
             switchNavigationBlocked={switchNavigationBlocked}

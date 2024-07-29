@@ -7,7 +7,6 @@ import React from 'react';
 import { connect } from 'react-redux';
 import { withRouter } from 'react-router';
 import { RouteComponentProps } from 'react-router-dom';
-import copy from 'copy-to-clipboard';
 
 import {
     changeFrameAsync,
@@ -534,13 +533,6 @@ class AnnotationTopBarContainer extends React.PureComponent<Props> {
         onSwitchToolsBlockerState({ algorithmsLocked: !toolsBlockerState.algorithmsLocked });
     };
 
-    private onURLIconClick = (): void => {
-        const { frameNumber } = this.props;
-        const { origin, pathname } = window.location;
-        const url = `${origin}${pathname}?frame=${frameNumber}`;
-        copy(url);
-    };
-
     private onDeleteFrame = (): void => {
         const {
             deleteFrame, frameNumber, jobInstance, canvasIsReady,
@@ -688,7 +680,6 @@ class AnnotationTopBarContainer extends React.PureComponent<Props> {
                 setNavigationType={setNavigationType}
                 onSliderChange={this.onChangePlayerSliderValue}
                 onInputChange={this.onChangePlayerInputValue}
-                onURLIconClick={this.onURLIconClick}
                 onDeleteFrame={this.onDeleteFrame}
                 onRestoreFrame={this.onRestoreFrame}
                 changeWorkspace={this.changeWorkspace}

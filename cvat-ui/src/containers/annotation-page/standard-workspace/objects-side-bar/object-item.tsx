@@ -1,10 +1,9 @@
 // Copyright (C) 2021-2022 Intel Corporation
-// Copyright (C) 2022-2023 CVAT.ai Corporation
+// Copyright (C) 2022-2024 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
 import React from 'react';
-import copy from 'copy-to-clipboard';
 import { connect } from 'react-redux';
 
 import {
@@ -227,15 +226,6 @@ class ObjectItemContainer extends React.PureComponent<Props, State> {
         }
     };
 
-    private createURL = (): void => {
-        const { objectState, frameNumber } = this.props;
-        const { origin, pathname } = window.location;
-
-        const search = `frame=${frameNumber}&type=${objectState.objectType}&serverID=${objectState.serverID}`;
-        const url = `${origin}${pathname}?${search}`;
-        copy(url);
-    };
-
     private switchOrientation = (): void => {
         const { objectState, readonly, updateState } = this.props;
         if (readonly) {
@@ -414,7 +404,6 @@ class ObjectItemContainer extends React.PureComponent<Props, State> {
                 remove={this.remove}
                 copy={this.copy}
                 propagate={this.propagate}
-                createURL={this.createURL}
                 switchOrientation={this.switchOrientation}
                 toBackground={this.toBackground}
                 toForeground={this.toForeground}
