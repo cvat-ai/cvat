@@ -536,7 +536,8 @@ class CommonData(InstanceLabelData):
             )
         ]
 
-        # FIXME: should be done in the importers, here's as a safeguard (see #1893, #1898)
+        # TODO: remove once importers are guaranteed to return correct type 
+        # (see https://github.com/cvat-ai/cvat/pull/8226/files#r1695445137)
         points = _shape["points"]
         for i, point in enumerate(map(float, points)):
             points[i] = point
@@ -566,7 +567,8 @@ class CommonData(InstanceLabelData):
                 for attrib in shape['attributes']
                 if self._get_mutable_attribute_id(label_id, attrib.name)
             ]
-            # FIXME: should be done in the importers, here's as a safeguard (see #1893, #1898)
+        # TODO: remove once importers are guaranteed to return correct type 
+        # (see https://github.com/cvat-ai/cvat/pull/8226/files#r1695445137)
             points = shape["points"]
             for i, point in enumerate(map(float, points)):
                 points[i] = point
