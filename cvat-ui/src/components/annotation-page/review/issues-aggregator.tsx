@@ -15,7 +15,7 @@ import {
     AnnotationConflict, ConflictSeverity, ObjectState, QualityConflict,
 } from 'cvat-core-wrapper';
 
-import { highlightConflict } from 'actions/annotation-actions';
+import { highlightConflict, updateActiveControl } from 'actions/annotation-actions';
 import CreateIssueDialog from './create-issue-dialog';
 import HiddenIssueLabel from './hidden-issue-label';
 import IssueDialog from './issue-dialog';
@@ -87,6 +87,13 @@ export default function IssueAggregatorComponent(): JSX.Element | null {
     const issueLabels: JSX.Element[] = [];
     const issueDialogs: JSX.Element[] = [];
     const conflictLabels: JSX.Element[] = [];
+
+    const onCreateIssue = useCallback(() => {
+        if (canvasReady) {
+            canvasInstance.selectRegion(false);
+            dispatch(updateActiveControl(ActiveControl.CURSOR));
+        }
+    }, [canvasReady, canvasInstance]);
 
     useEffect(() => {
         if (canvasReady) {
@@ -290,6 +297,7 @@ export default function IssueAggregatorComponent(): JSX.Element | null {
                     left={createLeft}
                     angle={-geometry.angle}
                     scale={1 / geometry.scale}
+                    onCreateIssue={onCreateIssue}
                 />
             ) : null}
             {issueDialogs}
