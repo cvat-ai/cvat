@@ -834,6 +834,10 @@ class TestImportExportDatasetProject:
             ("LFW 1.0", "{subset}/images/"),
             ("Cityscapes 1.0", "imgsFine/leftImg8bit/{subset}/"),
             ("Open Images V6 1.0", "images/{subset}/"),
+            ("YOLOv8 Detection 1.0", "images/{subset}/"),
+            ("YOLOv8 Oriented Bounding Boxes 1.0", "images/{subset}/"),
+            ("YOLOv8 Segmentation 1.0", "images/{subset}/"),
+            ("YOLOv8 Pose 1.0", "images/{subset}/"),
         ],
     )
     def test_creates_subfolders_for_subsets_on_export(

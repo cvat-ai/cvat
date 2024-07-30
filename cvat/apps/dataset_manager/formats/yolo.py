@@ -26,6 +26,7 @@ def _export(dst_file, temp_dir, instance_data, save_images=False):
 
     make_zip_archive(temp_dir, dst_file)
 
+
 @importer(name='YOLO', ext='ZIP', version='1.1')
 def _import(src_file, temp_dir, instance_data, load_data_callback=None, **kwargs):
     Archive(src_file.name).extractall(temp_dir)
@@ -49,6 +50,86 @@ def _import(src_file, temp_dir, instance_data, load_data_callback=None, **kwargs
     detect_dataset(temp_dir, format_name='yolo', importer=dm_env.importers.get('yolo'))
     dataset = Dataset.import_from(temp_dir, 'yolo',
         env=dm_env, image_info=image_info)
+    if load_data_callback is not None:
+        load_data_callback(dataset, instance_data)
+    import_dm_annotations(dataset, instance_data)
+
+
+@exporter(name='YOLOv8 Detection', ext='ZIP', version='1.0')
+def _export(dst_file, temp_dir, instance_data, save_images=False):
+    with GetCVATDataExtractor(instance_data, include_images=save_images) as extractor:
+        dataset = Dataset.from_extractors(extractor, env=dm_env)
+        dataset.export(temp_dir, 'yolov8', save_images=save_images)
+    make_zip_archive(temp_dir, dst_file)
+
+
+@exporter(name='YOLOv8 Oriented Bounding Boxes', ext='ZIP', version='1.0')
+def _export(dst_file, temp_dir, instance_data, save_images=False):
+    with GetCVATDataExtractor(instance_data, include_images=save_images) as extractor:
+        dataset = Dataset.from_extractors(extractor, env=dm_env)
+        dataset.export(temp_dir, 'yolov8_oriented_boxes', save_images=save_images)
+    make_zip_archive(temp_dir, dst_file)
+
+
+@exporter(name='YOLOv8 Segmentation', ext='ZIP', version='1.0')
+def _export(dst_file, temp_dir, instance_data, save_images=False):
+    with GetCVATDataExtractor(instance_data, include_images=save_images) as extractor:
+        dataset = Dataset.from_extractors(extractor, env=dm_env)
+        dataset.export(temp_dir, 'yolov8_segmentation', save_images=save_images)
+    make_zip_archive(temp_dir, dst_file)
+
+
+@exporter(name='YOLOv8 Pose', ext='ZIP', version='1.0')
+def _export(dst_file, temp_dir, instance_data, save_images=False):
+    with GetCVATDataExtractor(instance_data, include_images=save_images) as extractor:
+        dataset = Dataset.from_extractors(extractor, env=dm_env)
+        dataset.export(temp_dir, 'yolov8_pose', save_images=save_images)
+    make_zip_archive(temp_dir, dst_file)
+
+
+@importer(name='YOLOv8 Detection', ext="ZIP", version="1.0")
+def _import(src_file, temp_dir, instance_data, load_data_callback=None, **kwargs):
+    Archive(src_file.name).extractall(temp_dir)
+
+    detect_dataset(temp_dir, format_name='yolov8', importer=dm_env.importers.get('yolov8'))
+    dataset = Dataset.import_from(temp_dir, 'yolov8', env=dm_env)
+
+    if load_data_callback is not None:
+        load_data_callback(dataset, instance_data)
+    import_dm_annotations(dataset, instance_data)
+
+
+@importer(name='YOLOv8 Segmentation', ext="ZIP", version="1.0")
+def _import(src_file, temp_dir, instance_data, load_data_callback=None, **kwargs):
+    Archive(src_file.name).extractall(temp_dir)
+
+    detect_dataset(temp_dir, format_name='yolov8_segmentation', importer=dm_env.importers.get('yolov8_segmentation'))
+    dataset = Dataset.import_from(temp_dir, 'yolov8_segmentation', env=dm_env)
+
+    if load_data_callback is not None:
+        load_data_callback(dataset, instance_data)
+    import_dm_annotations(dataset, instance_data)
+
+
+@importer(name='YOLOv8 Oriented Bounding Boxes', ext="ZIP", version="1.0")
+def _import(src_file, temp_dir, instance_data, load_data_callback=None, **kwargs):
+    Archive(src_file.name).extractall(temp_dir)
+
+    detect_dataset(temp_dir, format_name='yolov8_oriented_boxes', importer=dm_env.importers.get('yolov8_oriented_boxes'))
+    dataset = Dataset.import_from(temp_dir, 'yolov8_oriented_boxes', env=dm_env)
+
+    if load_data_callback is not None:
+        load_data_callback(dataset, instance_data)
+    import_dm_annotations(dataset, instance_data)
+
+
+@importer(name='YOLOv8 Pose', ext="ZIP", version="1.0")
+def _import(src_file, temp_dir, instance_data, load_data_callback=None, **kwargs):
+    Archive(src_file.name).extractall(temp_dir)
+
+    detect_dataset(temp_dir, format_name='yolov8_pose', importer=dm_env.importers.get('yolov8_pose'))
+    dataset = Dataset.import_from(temp_dir, 'yolov8_pose', env=dm_env)
+
     if load_data_callback is not None:
         load_data_callback(dataset, instance_data)
     import_dm_annotations(dataset, instance_data)
