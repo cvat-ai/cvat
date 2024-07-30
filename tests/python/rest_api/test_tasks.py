@@ -2245,6 +2245,7 @@ class TestWorkWithTask:
                 assert image_name in ex.body
 
 
+@pytest.mark.usefixtures("restore_db_per_function")
 class TestTaskBackups:
     def _make_client(self) -> Client:
         return Client(BASE_URL, config=Config(status_check_period=0.01))
