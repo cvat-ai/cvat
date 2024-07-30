@@ -272,12 +272,12 @@ class Data(models.Model):
     def _get_original_chunk_name(self, chunk_number):
         return self._get_chunk_name(chunk_number, self.original_chunk_type)
 
-    def get_original_chunk_path(self, chunk_number):
-        return os.path.join(self.get_original_cache_dirname(),
+    def get_original_segment_chunk_path(self, chunk_number: int, segment: int) -> str:
+        return os.path.join(self.get_original_cache_dirname(), f'segment_{segment}',
             self._get_original_chunk_name(chunk_number))
 
-    def get_compressed_chunk_path(self, chunk_number):
-        return os.path.join(self.get_compressed_cache_dirname(),
+    def get_compressed_segment_chunk_path(self, chunk_number: int, segment: int) -> str:
+        return os.path.join(self.get_compressed_cache_dirname(), f'segment_{segment}',
             self._get_compressed_chunk_name(chunk_number))
 
     def get_manifest_path(self):
@@ -558,7 +558,7 @@ class SegmentType(str, Enum):
 
 class Segment(models.Model):
     # Common fields
-    task = models.ForeignKey(Task, on_delete=models.CASCADE)
+    task = models.ForeignKey(Task, on_delete=models.CASCADE) # TODO: add related name
     start_frame = models.IntegerField()
     stop_frame = models.IntegerField()
     type = models.CharField(choices=SegmentType.choices(), default=SegmentType.RANGE, max_length=32)

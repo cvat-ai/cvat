@@ -8,14 +8,15 @@ from __future__ import annotations
 import io
 import os
 import pickle  # nosec
-import shutil
 import tempfile
 import zipfile
 import zlib
-from contextlib import contextmanager
+from contextlib import ExitStack, contextmanager
 from datetime import datetime, timezone
-from typing import Any, Callable, Optional, Sequence, Tuple, Type
+from itertools import pairwise
+from typing import Any, Callable, Iterable, Optional, Sequence, Tuple, Type, Union
 
+import av
 import cv2
 import PIL.Image
 import PIL.ImageOps
@@ -33,10 +34,10 @@ from cvat.apps.engine.log import ServerLogManager
 from cvat.apps.engine.media_extractors import (
     FrameQuality,
     IChunkWriter,
-    ImageDatasetManifestReader,
+    ImageReaderWithManifest,
     Mpeg4ChunkWriter,
     Mpeg4CompressedChunkWriter,
-    VideoDatasetManifestReader,
+    VideoReaderWithManifest,
     ZipChunkWriter,
     ZipCompressedChunkWriter,
 )
@@ -127,10 +128,10 @@ class MediaCache:
             ),
         )
 
-    def get_local_preview(self, db_data: models.Data, frame_number: int) -> DataWithMime:
+    def get_or_set_segment_preview(self, db_segment: models.Segment) -> DataWithMime:
         return self._get_or_set_cache_item(
-            key=f"data_{db_data.id}_{frame_number}_preview",
-            create_callback=lambda: self._prepare_local_preview(frame_number, db_data),
+            f"segment_preview_{db_segment.id}",
+            create_callback=lambda: self._prepare_segment_preview(db_segment),
         )
 
     def get_cloud_preview(self, db_storage: models.CloudStorage) -> Optional[DataWithMime]:
@@ -148,18 +149,17 @@ class MediaCache:
             create_callback=lambda: self._prepare_context_image(db_data, frame_number),
         )
 
-    def get_task_preview(self, db_task: models.Task) -> Optional[DataWithMime]:
-        return self._get(f"task_{db_task.data_id}_preview")
-
-    def get_segment_preview(self, db_segment: models.Segment) -> Optional[DataWithMime]:
-        return self._get(f"segment_{db_segment.id}_preview")
-
     @contextmanager
-    def _read_raw_frames(self, db_task: models.Task, frames: Sequence[int]):
+    def _read_raw_frames(
+        self, db_task: models.Task, frame_ids: Sequence[int]
+    ) -> Iterable[Tuple[Union[av.VideoFrame, PIL.Image.Image], str, str]]:
+        for prev_frame, cur_frame in pairwise(frame_ids):
+            assert (
+                prev_frame <= cur_frame
+            ), f"Requested frame ids must be sorted, got a ({prev_frame}, {cur_frame}) pair"
+
         db_data = db_task.data
 
-        media = []
-        tmp_dir = None
         raw_data_dir = {
             models.StorageChoice.LOCAL: db_data.get_upload_dirname(),
             models.StorageChoice.SHARE: settings.SHARE_ROOT,
@@ -168,33 +168,20 @@ class MediaCache:
 
         dimension = db_task.dimension
 
-        # TODO
-        try:
+        media = []
+        with ExitStack() as es:
             if hasattr(db_data, "video"):
                 source_path = os.path.join(raw_data_dir, db_data.video.path)
 
-                # TODO: refactor to allow non-manifest videos
-                reader = VideoDatasetManifestReader(
+                reader = VideoReaderWithManifest(
                     manifest_path=db_data.get_manifest_path(),
                     source_path=source_path,
-                    chunk_number=chunk_number,
-                    chunk_size=db_data.chunk_size,
-                    start=db_data.start_frame,
-                    stop=db_data.stop_frame,
-                    step=db_data.get_frame_step(),
                 )
-                for frame in reader:
+                for frame in reader.iterate_frames(frame_ids):
                     media.append((frame, source_path, None))
             else:
-                reader = ImageDatasetManifestReader(
-                    manifest_path=db_data.get_manifest_path(),
-                    chunk_number=chunk_number,
-                    chunk_size=db_data.chunk_size,
-                    start=db_data.start_frame,
-                    stop=db_data.stop_frame,
-                    step=db_data.get_frame_step(),
-                )
-                if db_data.storage == StorageChoice.CLOUD_STORAGE:
+                reader = ImageReaderWithManifest(db_data.get_manifest_path())
+                if db_data.storage == models.StorageChoice.CLOUD_STORAGE:
                     db_cloud_storage = db_data.cloud_storage
                     assert db_cloud_storage, "Cloud storage instance was deleted"
                     credentials = Credentials()
@@ -213,10 +200,10 @@ class MediaCache:
                         cloud_provider=db_cloud_storage.provider_type, **details
                     )
 
-                    tmp_dir = tempfile.mkdtemp(prefix="cvat")
+                    tmp_dir = es.enter_context(tempfile.TemporaryDirectory(prefix="cvat"))
                     files_to_download = []
                     checksums = []
-                    for item in reader:
+                    for item in reader.iterate_frames(frame_ids):
                         file_name = f"{item['name']}{item['extension']}"
                         fs_filename = os.path.join(tmp_dir, file_name)
 
@@ -235,18 +222,16 @@ class MediaCache:
                                 "Hash sums of files {} do not match".format(file_name)
                             )
                 else:
-                    for item in reader:
+                    for item in reader.iterate_frames(frame_ids):
                         source_path = os.path.join(
                             raw_data_dir, f"{item['name']}{item['extension']}"
                         )
                         media.append((source_path, source_path, None))
+
                     if dimension == models.DimensionType.DIM_2D:
                         media = preload_images(media)
 
             yield media
-        finally:
-            if db_data.storage == models.StorageChoice.CLOUD_STORAGE and tmp_dir is not None:
-                shutil.rmtree(tmp_dir)
 
     def prepare_segment_chunk(
         self, db_segment: models.Segment, chunk_number: int, *, quality: FrameQuality
@@ -267,8 +252,8 @@ class MediaCache:
         db_data = db_task.data
 
         chunk_size = db_data.chunk_size
-        chunk_frames = db_segment.frame_set[
-            chunk_size * chunk_number : chunk_number * (chunk_number + 1)
+        chunk_frame_ids = db_segment.frame_set[
+            chunk_size * chunk_number : chunk_size * (chunk_number + 1)
         ]
 
         writer_classes: dict[FrameQuality, Type[IChunkWriter]] = {
@@ -300,26 +285,29 @@ class MediaCache:
             kwargs["dimension"] = models.DimensionType.DIM_3D
         writer = writer_classes[quality](image_quality, **kwargs)
 
-        buff = io.BytesIO()
-        with self._read_raw_frames(db_task, frames=chunk_frames) as images:
-            writer.save_as_chunk(images, buff)
+        buffer = io.BytesIO()
+        with self._read_raw_frames(db_task, frame_ids=chunk_frame_ids) as images:
+            writer.save_as_chunk(images, buffer)
 
-        buff.seek(0)
-        return buff, mime_type
+        buffer.seek(0)
+        return buffer, mime_type
 
     def prepare_masked_range_segment_chunk(
-        self, db_job: models.Job, quality, chunk_number: int
+        self, db_segment: models.Segment, chunk_number: int, *, quality: FrameQuality
     ) -> DataWithMime:
-        db_data = db_job.segment.task.data
+        # TODO: try to refactor into 1 function with prepare_range_segment_chunk()
+        db_task = db_segment.task
+        db_data = db_task.data
 
-        FrameProvider = self._get_frame_provider_class()
-        frame_provider = FrameProvider(db_data, self._dimension)
+        from cvat.apps.engine.frame_provider import TaskFrameProvider
 
-        frame_set = db_job.segment.frame_set
+        frame_provider = TaskFrameProvider(db_task)
+
+        frame_set = db_segment.frame_set
         frame_step = db_data.get_frame_step()
         chunk_frames = []
 
-        writer = ZipCompressedChunkWriter(db_data.image_quality, dimension=self._dimension)
+        writer = ZipCompressedChunkWriter(db_data.image_quality, dimension=db_task.dimension)
         dummy_frame = io.BytesIO()
         PIL.Image.new("RGB", (1, 1)).save(dummy_frame, writer.IMAGE_EXT)
 
@@ -370,18 +358,23 @@ class MediaCache:
 
         return buff, "application/zip"
 
-    def prepare_segment_preview(self, db_segment: models.Segment) -> DataWithMime:
-        if db_segment.task.data.cloud_storage:
-            return self._prepare_cloud_segment_preview(db_segment)
+    def _prepare_segment_preview(self, db_segment: models.Segment) -> DataWithMime:
+        if db_segment.task.dimension == models.DimensionType.DIM_3D:
+            # TODO
+            preview = PIL.Image.open(
+                os.path.join(os.path.dirname(__file__), "assets/3d_preview.jpeg")
+            )
         else:
-            return self._prepare_local_segment_preview(db_segment)
+            from cvat.apps.engine.frame_provider import FrameOutputType, SegmentFrameProvider
 
-    def _prepare_local_preview(self, db_data: models.Data, frame_number: int) -> DataWithMime:
-        FrameProvider = self._get_frame_provider_class()
-        frame_provider = FrameProvider(db_data, self._dimension)
-        buff, mime_type = frame_provider.get_preview(frame_number)
+            segment_frame_provider = SegmentFrameProvider(db_segment)
+            preview = segment_frame_provider.get_frame(
+                min(db_segment.frame_set),
+                quality=FrameQuality.COMPRESSED,
+                out_type=FrameOutputType.PIL,
+            ).data
 
-        return buff, mime_type
+        return prepare_preview_image(preview)
 
     def _prepare_cloud_preview(self, db_storage):
         storage = db_storage_to_storage_instance(db_storage)
@@ -428,9 +421,10 @@ class MediaCache:
         except models.Image.DoesNotExist:
             return None
 
+        if not image.related_files.count():
+            return None, None
+
         with zipfile.ZipFile(zip_buffer, "a", zipfile.ZIP_DEFLATED, False) as zip_file:
-            if not image.related_files.count():
-                return None, None
             common_path = os.path.commonpath(
                 list(map(lambda x: str(x.path), image.related_files.all()))
             )
@@ -457,4 +451,4 @@ def prepare_preview_image(image: PIL.Image.Image) -> DataWithMime:
 
     output_buf = io.BytesIO()
     image.convert("RGB").save(output_buf, format="JPEG")
-    return image, PREVIEW_MIME
+    return output_buf, PREVIEW_MIME

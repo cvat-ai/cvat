@@ -32,7 +32,7 @@ from rest_framework.response import Response
 from rest_framework.request import Request
 
 import cvat.apps.dataset_manager as dm
-from cvat.apps.engine.frame_provider import FrameProvider
+from cvat.apps.engine.frame_provider import FrameQuality, TaskFrameProvider
 from cvat.apps.engine.models import Job, ShapeType, SourceType, Task, Label
 from cvat.apps.engine.serializers import LabeledDataSerializer
 from cvat.apps.lambda_manager.permissions import LambdaPermission
@@ -480,16 +480,16 @@ class LambdaFunction:
 
     def _get_image(self, db_task, frame, quality):
         if quality is None or quality == "original":
-            quality = FrameProvider.Quality.ORIGINAL
+            quality = FrameQuality.ORIGINAL
         elif  quality == "compressed":
-            quality = FrameProvider.Quality.COMPRESSED
+            quality = FrameQuality.COMPRESSED
         else:
             raise ValidationError(
                 '`{}` lambda function was run '.format(self.id) +
                 'with wrong arguments (quality={})'.format(quality),
                 code=status.HTTP_400_BAD_REQUEST)
 
-        frame_provider = FrameProvider(db_task.data)
+        frame_provider = TaskFrameProvider(db_task)
         image = frame_provider.get_frame(frame, quality=quality)
 
         return base64.b64encode(image[0].getvalue()).decode('utf-8')

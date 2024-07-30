@@ -11,9 +11,10 @@ import zipfile
 import io
 import itertools
 import struct
-from enum import IntEnum
 from abc import ABC, abstractmethod
+from bisect import bisect
 from contextlib import closing
+from enum import IntEnum
 from typing import Iterable
 
 import av
@@ -493,79 +494,42 @@ class VideoReader(IMediaReader):
         image = (next(iter(self)))[0]
         return image.width, image.height
 
-class FragmentMediaReader:
-    def __init__(self, chunk_number, chunk_size, start, stop, step=1):
-        self._start = start
-        self._stop = stop + 1 # up to the last inclusive
-        self._step = step
-        self._chunk_number = chunk_number
-        self._chunk_size = chunk_size
-        self._start_chunk_frame_number = \
-            self._start + self._chunk_number * self._chunk_size * self._step
-        self._end_chunk_frame_number = min(self._start_chunk_frame_number \
-            + (self._chunk_size - 1) * self._step + 1, self._stop)
-        self._frame_range = self._get_frame_range()
-
-    @property
-    def frame_range(self):
-        return self._frame_range
-
-    def _get_frame_range(self):
-        frame_range = []
-        for idx in range(self._start, self._stop, self._step):
-            if idx < self._start_chunk_frame_number:
-                continue
-            elif idx < self._end_chunk_frame_number and \
-                    not (idx - self._start_chunk_frame_number) % self._step:
-                frame_range.append(idx)
-            elif (idx - self._start_chunk_frame_number) % self._step:
-                continue
-            else:
-                break
-        return frame_range
-
-class ImageDatasetManifestReader(FragmentMediaReader):
-    def __init__(self, manifest_path, **kwargs):
-        super().__init__(**kwargs)
+class ImageReaderWithManifest:
+    def __init__(self, manifest_path: str):
         self._manifest = ImageManifestManager(manifest_path)
         self._manifest.init_index()
 
-    def __iter__(self):
-        for idx in self._frame_range:
+    def iterate_frames(self, frame_ids: Iterable[int]):
+        for idx in frame_ids:
             yield self._manifest[idx]
 
-class VideoDatasetManifestReader(FragmentMediaReader):
-    def __init__(self, manifest_path, **kwargs):
-        self.source_path = kwargs.pop('source_path')
-        super().__init__(**kwargs)
+class VideoReaderWithManifest:
+    def __init__(self, manifest_path: str, source_path: str):
+        self._source_path = source_path
         self._manifest = VideoManifestManager(manifest_path)
         self._manifest.init_index()
 
-    def _get_nearest_left_key_frame(self):
-        if self._start_chunk_frame_number >= \
-                self._manifest[len(self._manifest) - 1].get('number'):
-            left_border = len(self._manifest) - 1
-        else:
-            left_border = 0
-            delta = len(self._manifest)
-            while delta:
-                step = delta // 2
-                cur_position = left_border + step
-                if self._manifest[cur_position].get('number') < self._start_chunk_frame_number:
-                    cur_position += 1
-                    left_border = cur_position
-                    delta -= step + 1
-                else:
-                    delta = step
-            if self._manifest[cur_position].get('number') > self._start_chunk_frame_number:
-                left_border -= 1
-        frame_number = self._manifest[left_border].get('number')
-        timestamp = self._manifest[left_border].get('pts')
+    def _get_nearest_left_key_frame(self, frame_id: int) -> tuple[int, int]:
+        nearest_left_keyframe_pos = bisect(
+            self._manifest, frame_id, key=lambda entry: entry.get('number')
+        )
+        frame_number = self._manifest[nearest_left_keyframe_pos].get('number')
+        timestamp = self._manifest[nearest_left_keyframe_pos].get('pts')
         return frame_number, timestamp
 
-    def __iter__(self):
-        start_decode_frame_number, start_decode_timestamp = self._get_nearest_left_key_frame()
-        with closing(av.open(self.source_path, mode='r')) as container:
+    def iterate_frames(self, frame_ids: Iterable[int]) -> Iterable[av.VideoFrame]:
+        "frame_ids must be an ordered sequence in the ascending order"
+
+        frame_ids_iter = iter(frame_ids)
+        frame_ids_frame = next(frame_ids_iter, None)
+        if frame_ids_frame is None:
+            return
+
+        start_decode_frame_number, start_decode_timestamp = self._get_nearest_left_key_frame(
+            frame_ids_frame
+        )
+
+        with closing(av.open(self._source_path, mode='r')) as container:
             video_stream = next(stream for stream in container.streams if stream.type == 'video')
             video_stream.thread_type = 'AUTO'
 
@@ -575,7 +539,10 @@ class VideoDatasetManifestReader(FragmentMediaReader):
             for packet in container.demux(video_stream):
                 for frame in packet.decode():
                     frame_number += 1
-                    if frame_number in self._frame_range:
+
+                    if frame_number < frame_ids_frame:
+                        continue
+                    elif frame_number == frame_ids_frame:
                         if video_stream.metadata.get('rotate'):
                             frame = av.VideoFrame().from_ndarray(
                                 rotate_image(
@@ -584,11 +551,12 @@ class VideoDatasetManifestReader(FragmentMediaReader):
                                 ),
                                 format ='bgr24'
                             )
+
                         yield frame
-                    elif frame_number < self._frame_range[-1]:
-                        continue
                     else:
-                        return
+                        frame_ids_frame = next(frame_ids_iter, None)
+                        if frame_ids_frame is None:
+                            return
 
 class IChunkWriter(ABC):
     def __init__(self, quality, dimension=DimensionType.DIM_2D):

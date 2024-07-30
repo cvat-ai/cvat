@@ -31,7 +31,7 @@ from django.conf import settings
 
 from cvat.apps.dataset_manager.formats.utils import get_label_color
 from cvat.apps.dataset_manager.util import add_prefetch_fields
-from cvat.apps.engine.frame_provider import FrameProvider
+from cvat.apps.engine.frame_provider import TaskFrameProvider, FrameQuality, FrameOutputType
 from cvat.apps.engine.models import (AttributeSpec, AttributeType, Data, DimensionType, Job,
                                      JobType, Label, LabelType, Project, SegmentType, ShapeType,
                                      Task)
@@ -1348,8 +1348,8 @@ class ImageProvider2D(ImageProvider):
                 # optimization for videos: use numpy arrays instead of bytes
                 # some formats or transforms can require image data
                 return self._frame_provider.get_frame(frame_index,
-                    quality=FrameProvider.Quality.ORIGINAL,
-                    out_type=FrameProvider.Type.NUMPY_ARRAY)[0]
+                    quality=FrameQuality.ORIGINAL,
+                    out_type=FrameOutputType.NUMPY_ARRAY).data
             return dm.Image(data=video_frame_loader, **image_kwargs)
         else:
             def image_loader(_):
@@ -1357,8 +1357,8 @@ class ImageProvider2D(ImageProvider):
 
                 # for images use encoded data to avoid recoding
                 return self._frame_provider.get_frame(frame_index,
-                    quality=FrameProvider.Quality.ORIGINAL,
-                    out_type=FrameProvider.Type.BUFFER)[0].getvalue()
+                    quality=FrameQuality.ORIGINAL,
+                    out_type=FrameOutputType.BUFFER).data.getvalue()
             return dm.ByteImage(data=image_loader, **image_kwargs)
 
     def _load_source(self, source_id: int, source: ImageSource) -> None:
@@ -1366,7 +1366,7 @@ class ImageProvider2D(ImageProvider):
             return
 
         self._unload_source()
-        self._frame_provider = FrameProvider(source.db_data)
+        self._frame_provider = TaskFrameProvider(next(iter(source.db_data.tasks))) # TODO: refactor
         self._current_source_id = source_id
 
     def _unload_source(self) -> None:
@@ -1502,7 +1502,7 @@ class CvatTaskOrJobDataExtractor(dm.SourceExtractor, CVATDataExtractorMixin):
         is_video = instance_meta['mode'] == 'interpolation'
         ext = ''
         if is_video:
-            ext = FrameProvider.VIDEO_FRAME_EXT
+            ext = TaskFrameProvider.VIDEO_FRAME_EXT
 
         if dimension == DimensionType.DIM_3D or include_images:
             self._image_provider = IMAGE_PROVIDERS_BY_DIMENSION[dimension](
@@ -1593,7 +1593,7 @@ class CVATProjectDataExtractor(dm.Extractor, CVATDataExtractorMixin):
             )
 
         ext_per_task: Dict[int, str] = {
-            task.id: FrameProvider.VIDEO_FRAME_EXT if is_video else ''
+            task.id: TaskFrameProvider.VIDEO_FRAME_EXT if is_video else ''
             for task in project_data.tasks
             for is_video in [task.mode == 'interpolation']
         }
