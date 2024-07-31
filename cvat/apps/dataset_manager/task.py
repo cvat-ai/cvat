@@ -477,10 +477,10 @@ class JobAnnotation:
 
     def delete(self, data=None):
         deleted_data = self._delete(data)
-        handle_annotations_change(self.db_job, deleted_data, "delete")
-
         if not self._data_is_empty(deleted_data):
             self._set_updated_date()
+
+        handle_annotations_change(self.db_job, deleted_data, "delete")
 
     @staticmethod
     def _extend_attributes(attributeval_set, default_attribute_values):
@@ -947,7 +947,6 @@ def export_task(task_id, dst_file, format_name, server_url=None, save_images=Fal
 @transaction.atomic
 def import_task_annotations(src_file, task_id, format_name, conv_mask_to_poly):
     task = TaskAnnotation(task_id)
-    task.init_from_db()
 
     importer = make_importer(format_name)
     with open(src_file, 'rb') as f:
@@ -959,7 +958,6 @@ def import_task_annotations(src_file, task_id, format_name, conv_mask_to_poly):
 @transaction.atomic
 def import_job_annotations(src_file, job_id, format_name, conv_mask_to_poly):
     job = JobAnnotation(job_id)
-    job.init_from_db()
 
     importer = make_importer(format_name)
     with open(src_file, 'rb') as f:

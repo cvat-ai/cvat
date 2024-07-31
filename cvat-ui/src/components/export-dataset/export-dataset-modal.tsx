@@ -6,6 +6,7 @@
 import './styles.scss';
 import React, { useState, useEffect, useCallback } from 'react';
 import { connect, useDispatch } from 'react-redux';
+import { useHistory } from 'react-router';
 import Modal from 'antd/lib/modal';
 import Notification from 'antd/lib/notification';
 import { DownloadOutlined } from '@ant-design/icons';
@@ -16,12 +17,12 @@ import Form from 'antd/lib/form';
 import Switch from 'antd/lib/switch';
 import Space from 'antd/lib/space';
 import TargetStorageField from 'components/storage/target-storage-field';
+import CVATMarkdown from 'components/common/cvat-markdown';
 import { CombinedState, StorageLocation } from 'reducers';
 import { exportActions, exportDatasetAsync } from 'actions/export-actions';
 import {
     Dumper, ProjectOrTaskOrJob, Job, Project, Storage, StorageData, Task,
 } from 'cvat-core-wrapper';
-import ReactMarkdown from 'react-markdown';
 
 type FormValues = {
     selectedFormat: string | undefined;
@@ -59,6 +60,7 @@ function ExportDatasetModal(props: StateToProps): JSX.Element {
     const [defaultStorageCloudId, setDefaultStorageCloudId] = useState<number>();
     const [helpMessage, setHelpMessage] = useState('');
     const dispatch = useDispatch();
+    const history = useHistory();
 
     useEffect(() => {
         if (instance instanceof Project) {
@@ -121,7 +123,7 @@ function ExportDatasetModal(props: StateToProps): JSX.Element {
             Notification.info({
                 message: `${resource} export started`,
                 description: (
-                    <ReactMarkdown>{description}</ReactMarkdown>
+                    <CVATMarkdown history={history}>{description}</CVATMarkdown>
                 ),
                 className: `cvat-notification-notice-export-${instanceType.split(' ')[0]}-start`,
             });

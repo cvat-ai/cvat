@@ -33,9 +33,9 @@ def get_organization(request):
         org_slug = org_slug if org_slug is not None else org_header
 
         if org_slug:
-            organization = Organization.objects.get(slug=org_slug)
+            organization = Organization.objects.select_related('owner').get(slug=org_slug)
         elif org_id:
-            organization = Organization.objects.get(id=int(org_id))
+            organization = Organization.objects.select_related('owner').get(id=int(org_id))
     except Organization.DoesNotExist:
         raise NotFound(f'{org_slug or org_id} organization does not exist.')
 

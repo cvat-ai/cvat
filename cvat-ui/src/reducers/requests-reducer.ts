@@ -2,6 +2,7 @@
 //
 // SPDX-License-Identifier: MIT
 
+import _ from 'lodash';
 import { BoundariesActions, BoundariesActionTypes } from 'actions/boundaries-actions';
 import { RequestsActionsTypes, RequestsActions } from 'actions/requests-actions';
 import { AuthActionTypes, AuthActions } from 'actions/auth-actions';
@@ -11,7 +12,7 @@ const defaultState: RequestsState = {
     initialized: false,
     fetching: false,
     requests: {},
-    urls: [],
+    disabled: {},
     query: {
         page: 1,
     },
@@ -33,6 +34,16 @@ export default function (
                 },
             };
         }
+        case RequestsActionsTypes.DISABLE_REQUEST: {
+            const { request } = action.payload;
+            return {
+                ...state,
+                disabled: {
+                    ...state.disabled,
+                    [request.id]: true,
+                },
+            };
+        }
         case RequestsActionsTypes.GET_REQUESTS_SUCCESS: {
             return {
                 ...state,
@@ -49,7 +60,7 @@ export default function (
             };
         }
         case RequestsActionsTypes.GET_REQUEST_STATUS_SUCCESS: {
-            const { requests } = state;
+            const { requests, disabled } = state;
 
             return {
                 ...state,
@@ -57,6 +68,7 @@ export default function (
                     ...requests,
                     [action.payload.request.id]: action.payload.request,
                 },
+                disabled: _.omit(disabled, action.payload.request.id),
             };
         }
         case BoundariesActionTypes.RESET_AFTER_ERROR:
