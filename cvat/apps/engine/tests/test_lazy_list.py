@@ -33,7 +33,7 @@ class TestLazyList(unittest.TestCase):
     def test_deepcopy(self):
         copied_list = copy.deepcopy(self.lazy_list)
         self.assertEqual(copied_list, [1, 2, 3])
-        self.assertNotEquals(id(copied_list), id(self.lazy_list))
+        self.assertNotEqual(id(copied_list), id(self.lazy_list))
         self.assertEqual(len(copied_list), 3)
 
     def test_getitem(self):
