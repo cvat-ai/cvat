@@ -25,7 +25,6 @@ def handler(context, event):
         context.logger.info("call handler")
         data = event.body
         buf = io.BytesIO(base64.b64decode(data["image"]))
-        context.logger.info(f"data: {data}")
         image = Image.open(buf)
         image = image.convert("RGB")  # to make sure image comes in RGB
         pos_points = data["pos_points"]
