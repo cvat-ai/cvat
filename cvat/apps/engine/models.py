@@ -336,6 +336,11 @@ class LazyList(list[T], metaclass=LazyListMeta):
         yield from list.__iter__(self)
         yield from self._iter_unparsed()
 
+    def __str__(self) -> str:
+        if not self.parsed:
+            return self.string.strip("[]")
+        return self._separator.join(map(str, self))
+
     def _parse_up_to(self, index: int) -> None:
         if self.parsed:
             return
@@ -450,8 +455,8 @@ class AbstractArrayField(models.TextField):
         return self.from_db_value(value, None, None)
 
     def get_prep_value(self, value):
-        if isinstance(value, LazyList) and not value.parsed and not (self._unique_values or self._store_sorted):
-            return value.string.strip("[]")
+        if isinstance(value, LazyList) and not (self._unique_values or self._store_sorted):
+            return str(value)
 
         if self._unique_values:
             value = dict.fromkeys(value)

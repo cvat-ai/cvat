@@ -169,6 +169,15 @@ class TestLazyList(unittest.TestCase):
 
         self.assertEqual(elements, [1, 2, 3])
 
+    def test_str(self):
+        self.assertEqual(str(self.lazy_list), "1,2,3")
+        self.assertEqual(self.lazy_list, LazyList(str(self.lazy_list), converter=int))
+
+    def test_str_parsed(self):
+        list(self.lazy_list)
+        self.assertEqual(str(self.lazy_list), "1,2,3")
+        self.assertEqual(self.lazy_list, LazyList(str(self.lazy_list), converter=int))
+
 
 if __name__ == "__main__":
     unittest.main()
