@@ -1292,11 +1292,11 @@ def load_anno(file_object, annotations):
                     shape['points'].append(float("{:.2f}".format(float(el.attrib['cx']) + float(el.attrib['rx']))))
                     shape['points'].append(float("{:.2f}".format(float(el.attrib['cy']) - float(el.attrib['ry']))))
                 elif el.tag == 'mask':
-                    shape['points'] = list(map(float, el.attrib['rle'].split(',')))
-                    shape['points'].append(float(el.attrib['left']))
-                    shape['points'].append(float(el.attrib['top']))
-                    shape['points'].append(float("{}".format(int(el.attrib['left']) + int(el.attrib['width']) - 1)))
-                    shape['points'].append(float("{}".format(int(el.attrib['top']) + int(el.attrib['height']) - 1)))
+                    shape['points'] = list(map(int, el.attrib['rle'].split(',')))
+                    shape['points'].append(int(el.attrib['left']))
+                    shape['points'].append(int(el.attrib['top']))
+                    shape['points'].append(int(el.attrib['left']) + int(el.attrib['width']) - 1)
+                    shape['points'].append(int(el.attrib['top']) + int(el.attrib['height']) - 1)
                 elif el.tag == 'cuboid':
                     shape['points'].append(float(el.attrib['xtl1']))
                     shape['points'].append(float(el.attrib['ytl1']))
