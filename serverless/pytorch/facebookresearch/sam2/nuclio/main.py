@@ -21,20 +21,29 @@ def init_context(context):
     context.logger.info("Init context...100%")
 
 def handler(context, event):
-    context.logger.info("call handler")
-    data = event.body
-    buf = io.BytesIO(base64.b64decode(data["image"]))
-    context.logger.info(f"data: {data}")
-    image = Image.open(buf)
-    image = image.convert("RGB")  # to make sure image comes in RGB
-    pos_points = data["pos_points"]
-    neg_points = data["neg_points"]
+    try:
+        context.logger.info("call handler")
+        data = event.body
+        buf = io.BytesIO(base64.b64decode(data["image"]))
+        context.logger.info(f"data: {data}")
+        image = Image.open(buf)
+        image = image.convert("RGB")  # to make sure image comes in RGB
+        pos_points = data["pos_points"]
+        neg_points = data["neg_points"]
 
-    mask = context.user_data.model.handle(image, pos_points, neg_points)
+        mask = context.user_data.model.handle(image, pos_points, neg_points)
 
-    return context.Response(
-        body=json.dumps({ 'mask': mask.tolist() }),
-        headers={},
-        content_type='application/json',
-        status_code=200
-    )
+        return context.Response(
+            body=json.dumps({'mask': mask.tolist()}),
+            headers={},
+            content_type='application/json',
+            status_code=200
+        )
+    except Exception as e:
+        context.logger.error(f"Error in handler: {str(e)}")
+        return context.Response(
+            body=json.dumps({'error': str(e)}),
+            headers={},
+            content_type='application/json',
+            status_code=500
+        )
