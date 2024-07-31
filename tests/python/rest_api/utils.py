@@ -113,7 +113,7 @@ def export_v2(
         assert response.status == HTTPStatus.FORBIDDEN, "Request should be forbidden"
         raise ForbiddenException()
 
-    assert response.status != HTTPStatus.CREATED
+    assert response.status == HTTPStatus.ACCEPTED
 
     if not wait_result:
         return None
@@ -250,7 +250,7 @@ def import_resource(
         assert response.status == HTTPStatus.FORBIDDEN, "Request should be forbidden"
         raise ForbiddenException()
 
-    assert response.status != HTTPStatus.CREATED
+    assert response.status == HTTPStatus.ACCEPTED
 
     if not wait_result:
         return None

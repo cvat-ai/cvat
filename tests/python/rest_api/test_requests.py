@@ -24,180 +24,206 @@ from .utils import (
 )
 
 
-def validate_action(filter_: str, filter_value: str, requests: List[models.Request]) -> bool:
-    return {filter_value} == {r.operation.type.split(":")[0] for r in requests}
-
-
-def validate_subresource(filter_: str, filter_value: str, requests: List[models.Request]) -> bool:
-    return {filter_value} == {r.operation.type.split(":")[1] for r in requests}
-
-
-def validate_status(filter_: str, filter_value: str, requests: List[models.Request]) -> bool:
-    return {filter_value} == {r.status.value for r in requests}
-
-
-def validate_id(filter_: str, filter_value: int, requests: List[models.Request]) -> bool:
-    return {filter_value} == {getattr(r.operation, filter_) for r in requests}
-
-
-def validate_resource(filter_: str, filter_value: str, requests: List[models.Request]) -> bool:
-    return {filter_value} == {r.operation.target.value for r in requests}
-
-
-def validate_format(filter_: str, filter_value: str, requests: List[models.Request]) -> bool:
-    return {filter_value} == {r.operation.format for r in requests}
-
-
 @pytest.mark.usefixtures("restore_db_per_class")
 @pytest.mark.usefixtures("restore_redis_inmem_per_function")
 @pytest.mark.timeout(30)
 class TestListRequests:
+    @staticmethod
+    def validate_action(filter_: str, filter_value: str, requests: List[models.Request]) -> bool:
+        return {filter_value} == {r.operation.type.split(":")[0] for r in requests}
+
+    @staticmethod
+    def validate_subresource(
+        filter_: str, filter_value: str, requests: List[models.Request]
+    ) -> bool:
+        return {filter_value} == {r.operation.type.split(":")[1] for r in requests}
+
+    @staticmethod
+    def validate_status(filter_: str, filter_value: str, requests: List[models.Request]) -> bool:
+        return {filter_value} == {r.status.value for r in requests}
+
+    @staticmethod
+    def validate_id(filter_: str, filter_value: int, requests: List[models.Request]) -> bool:
+        return {filter_value} == {getattr(r.operation, filter_) for r in requests}
+
+    @staticmethod
+    def validate_resource(filter_: str, filter_value: str, requests: List[models.Request]) -> bool:
+        return {filter_value} == {r.operation.target.value for r in requests}
+
+    @staticmethod
+    def validate_format(filter_: str, filter_value: str, requests: List[models.Request]) -> bool:
+        return {filter_value} == {r.operation.format for r in requests}
+
     @pytest.fixture(autouse=True)
-    def setup(self, projects, tasks, jobs, find_users):
-        self.projects = projects
-        self.tasks = tasks
-        self.jobs = jobs
+    def setup(self, find_users):
         self.user = find_users(privilege="user")[0]["username"]
 
-    def create_resources(self):
-        self.project_ids = self.create_projects()
-        self.task_ids = self.create_tasks()
-        self.job_ids = []
-        for tid in self.task_ids:
-            self.job_ids.extend(self.get_job_ids(tid))
+    @pytest.fixture
+    def fxt_resources_ids(self):
+        with make_api_client(self.user) as api_client:
+            project_ids = [
+                api_client.projects_api.create(
+                    {"name": f"Test project {idx + 1}", "labels": [{"name": "car"}]}
+                )[0].id
+                for idx in range(3)
+            ]
 
-    def make_requests(self):
-        # download datasets and backups for first resources
-        self.assets = {
-            "project": {},
-            "task": {},
-            "job": {},
-        }
+            task_ids = [
+                create_task(
+                    self.user,
+                    spec={"name": f"Test task {idx + 1}", "labels": [{"name": "car"}]},
+                    data={
+                        "image_quality": 75,
+                        "client_files": generate_image_files(2),
+                        "segment_size": 1,
+                    },
+                )[0]
+                for idx in range(3)
+            ]
 
-        for resource in ("project", "task", "job"):
-            for subresource in ("dataset", "annotations", "backup"):
-                if resource == "job" and subresource == "backup":
-                    continue
+            job_ids = []
+            for task_id in task_ids:
+                jobs, _ = api_client.jobs_api.list(task_id=task_id)
+                job_ids.extend([j.id for j in jobs.results])
 
-                func = {
-                    ("project", "dataset"): lambda *args, **kwargs: export_project_dataset(
-                        *args, **kwargs, save_images=True
-                    ),
-                    ("project", "annotations"): lambda *args, **kwargs: export_project_dataset(
-                        *args, **kwargs, save_images=False
-                    ),
-                    ("project", "backup"): export_project_backup,
-                    ("task", "dataset"): lambda *args, **kwargs: export_task_dataset(
-                        *args, **kwargs, save_images=True
-                    ),
-                    ("task", "annotations"): lambda *args, **kwargs: export_task_dataset(
-                        *args, **kwargs, save_images=False
-                    ),
-                    ("task", "backup"): export_task_backup,
-                    ("job", "dataset"): lambda *args, **kwargs: export_job_dataset(
-                        *args, **kwargs, save_images=True
-                    ),
-                    ("job", "annotations"): lambda *args, **kwargs: export_job_dataset(
-                        *args, **kwargs, save_images=False
-                    ),
-                }[(resource, subresource)]
+        return project_ids, task_ids, job_ids
 
-                data = func(self.user, api_version=2, id=getattr(self, f"{resource}_ids")[0])
-                assert data
-                tmp_file = io.BytesIO(data)
-                tmp_file.name = f"{resource}_{subresource}.zip"
+    @pytest.fixture
+    def fxt_make_requests(
+        self,
+        fxt_make_export_project_requests,
+        fxt_make_export_task_requests,
+        fxt_make_export_job_requests,
+        fxt_download_file,
+    ):
+        def _make_requests(project_ids: List[int], task_ids: List[int], job_ids: List[int]):
+            # make requests to export projects|tasks|jobs annotations|datasets|backups
+            fxt_make_export_project_requests(project_ids[1:])
+            fxt_make_export_task_requests(task_ids[1:])
+            fxt_make_export_job_requests(job_ids[1:])
 
-                self.assets[resource][subresource] = tmp_file
+            # make requests to download files and then import them
+            for resource_type, first_resource in zip(
+                ("project", "task", "job"), (project_ids[0], task_ids[0], job_ids[0])
+            ):
+                for subresource in ("dataset", "annotations", "backup"):
+                    if resource_type == "job" and subresource == "backup":
+                        continue
 
-        empty_file = io.BytesIO(b"empty_file")
-        empty_file.name = "empty.zip"
+                    data = fxt_download_file(resource_type, first_resource, subresource)
 
-        # import corrupted backup
-        import_task_backup(
-            self.user,
-            data={
-                "task_file": empty_file,
-            },
-        )
-        # import not corrupted backup
-        import_task_backup(
-            self.user,
-            data={
-                "task_file": self.assets["task"]["backup"],
-            },
-        )
+                    tmp_file = io.BytesIO(data)
+                    tmp_file.name = f"{resource_type}_{subresource}.zip"
 
-        for project_id in self.project_ids[1:]:
-            export_project_backup(self.user, api_version=2, id=project_id, download_result=False)
-            export_project_dataset(
-                self.user, api_version=2, save_images=True, id=project_id, download_result=False
-            )
-            export_project_dataset(
-                self.user, api_version=2, save_images=False, id=project_id, download_result=False
-            )
+                    if resource_type == "task" and subresource == "backup":
+                        import_task_backup(
+                            self.user,
+                            data={
+                                "task_file": tmp_file,
+                            },
+                        )
 
-        for task_id in self.task_ids[1:]:
-            export_task_backup(self.user, api_version=2, id=task_id, download_result=False)
-            export_task_dataset(
-                self.user, api_version=2, save_images=True, id=task_id, download_result=False
-            )
-            export_task_dataset(
-                self.user, api_version=2, save_images=False, id=task_id, download_result=False
-            )
+            empty_file = io.BytesIO(b"empty_file")
+            empty_file.name = "empty.zip"
 
-        for job_id in self.job_ids[1:]:
-            export_job_dataset(
+            # import corrupted backup
+            import_task_backup(
                 self.user,
-                api_version=2,
-                save_images=True,
-                id=job_id,
-                format="COCO 1.0",
-                download_result=False,
-            )
-            export_job_dataset(
-                self.user,
-                api_version=2,
-                save_images=False,
-                id=job_id,
-                format="YOLO 1.1",
-                download_result=False,
-            )
-
-    def create_tasks(self, number: int = 2) -> List[int]:
-        task_ids = []
-
-        for idx in range(1, number + 1):
-            task_id, _ = create_task(
-                self.user,
-                spec={"name": f"Test task {idx}", "labels": [{"name": "car"}]},
                 data={
-                    "image_quality": 75,
-                    "client_files": generate_image_files(2),
-                    "segment_size": 1,
+                    "task_file": empty_file,
                 },
             )
-            task_ids.append(task_id)
-        return task_ids
 
-    def create_projects(self, number: int = 2) -> List[int]:
-        project_ids = []
+        return _make_requests
 
-        with make_api_client(self.user) as api_client:
-            for idx in range(1, number + 1):
-                (project, response) = api_client.projects_api.create(
-                    {"name": f"Test project {idx}", "labels": [{"name": "car"}]}
+    @pytest.fixture
+    def fxt_download_file(self):
+        def download_file(resource: str, rid: int, subresource: str):
+            func = {
+                ("project", "dataset"): lambda *args, **kwargs: export_project_dataset(
+                    *args, **kwargs, save_images=True
+                ),
+                ("project", "annotations"): lambda *args, **kwargs: export_project_dataset(
+                    *args, **kwargs, save_images=False
+                ),
+                ("project", "backup"): export_project_backup,
+                ("task", "dataset"): lambda *args, **kwargs: export_task_dataset(
+                    *args, **kwargs, save_images=True
+                ),
+                ("task", "annotations"): lambda *args, **kwargs: export_task_dataset(
+                    *args, **kwargs, save_images=False
+                ),
+                ("task", "backup"): export_task_backup,
+                ("job", "dataset"): lambda *args, **kwargs: export_job_dataset(
+                    *args, **kwargs, save_images=True
+                ),
+                ("job", "annotations"): lambda *args, **kwargs: export_job_dataset(
+                    *args, **kwargs, save_images=False
+                ),
+            }[(resource, subresource)]
+
+            data = func(self.user, api_version=2, id=rid, download_result=True)
+            assert data, f"Failed to download {resource} {subresource} locally"
+            return data
+
+        return download_file
+
+    @pytest.fixture
+    def fxt_make_export_project_requests(self):
+        def make_requests(project_ids: List[int]):
+            for project_id in project_ids:
+                export_project_backup(
+                    self.user, api_version=2, id=project_id, download_result=False
                 )
-                assert response.status == HTTPStatus.CREATED
-                project_ids.append(project.id)
+                export_project_dataset(
+                    self.user, api_version=2, save_images=True, id=project_id, download_result=False
+                )
+                export_project_dataset(
+                    self.user,
+                    api_version=2,
+                    save_images=False,
+                    id=project_id,
+                    download_result=False,
+                )
 
-        return project_ids
+        return make_requests
 
-    def get_job_ids(self, task_id: int) -> List[int]:
-        with make_api_client(self.user) as api_client:
-            jobs, response = api_client.jobs_api.list(task_id=task_id)
-            assert response.status == HTTPStatus.OK
+    @pytest.fixture
+    def fxt_make_export_task_requests(self):
+        def make_requests(task_ids: List[int]):
+            for task_id in task_ids:
+                export_task_backup(self.user, api_version=2, id=task_id, download_result=False)
+                export_task_dataset(
+                    self.user, api_version=2, save_images=True, id=task_id, download_result=False
+                )
+                export_task_dataset(
+                    self.user, api_version=2, save_images=False, id=task_id, download_result=False
+                )
 
-            return [j.id for j in jobs.results]
+        return make_requests
+
+    @pytest.fixture
+    def fxt_make_export_job_requests(self):
+        def make_requests(job_ids: List[int]):
+            for job_id in job_ids:
+                export_job_dataset(
+                    self.user,
+                    api_version=2,
+                    save_images=True,
+                    id=job_id,
+                    format="COCO 1.0",
+                    download_result=False,
+                )
+                export_job_dataset(
+                    self.user,
+                    api_version=2,
+                    save_images=False,
+                    id=job_id,
+                    format="YOLO 1.1",
+                    download_result=False,
+                )
+
+        return make_requests
 
     @pytest.mark.parametrize(
         "simple_filter, values, validate_func",
@@ -213,13 +239,24 @@ class TestListRequests:
         ],
     )
     def test_list_request_with_simple_filter(
-        self, simple_filter: str, values: List[str], validate_func: Callable
+        self,
+        fxt_resources_ids,
+        fxt_make_requests,
+        simple_filter: str,
+        values: List[str],
+        validate_func: Callable,
     ):
-        self.create_resources()
-        self.make_requests()
+        project_ids, task_ids, job_ids = fxt_resources_ids
+        fxt_make_requests(project_ids, task_ids, job_ids)
+
         if simple_filter in ("project_id", "task_id", "job_id"):
             # check last project|task|job
-            values = getattr(self, f"{simple_filter}s")[-1:]
+            if simple_filter == "project_id":
+                values = project_ids[-1:]
+            elif simple_filter == "task_id":
+                values = task_ids[-1:]
+            else:
+                values = job_ids[-1:]
 
         with make_api_client(self.user) as api_client:
             for value in values:

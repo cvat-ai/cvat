@@ -654,6 +654,7 @@ class TestPatchTaskAnnotations:
 
 
 @pytest.mark.usefixtures("restore_db_per_class")
+@pytest.mark.usefixtures("restore_redis_inmem_per_function")
 class TestGetTaskDataset:
 
     @staticmethod
@@ -668,14 +669,23 @@ class TestGetTaskDataset:
 
         return dataset
 
+    @pytest.mark.usefixtures("restore_db_per_function")
     @pytest.mark.parametrize("api_version", (1, 2))
-    def test_can_export_task_dataset(self, admin_user, tasks_with_shapes, api_version: int):
-        task = tasks_with_shapes[0]
+    @pytest.mark.parametrize("local_download", (True, False))
+    def test_can_export_task_dataset_locally_and_to_cloud(
+        self, admin_user, tasks_with_shapes, filter_tasks, api_version: int, local_download: bool
+    ):
+        filter_ = "target_storage__location"
+        if local_download:
+            filter_ = "exclude_" + filter_
+        filtered_ids = {t["id"] for t in filter_tasks(**{filter_: "cloud_storage"})}
+
+        task_id = next(iter(filtered_ids & {t["id"] for t in tasks_with_shapes}))
         self._test_can_export_dataset(
             admin_user,
-            task["id"],
+            task_id,
             api_version=api_version,
-            local_download=(not (task["target_storage"] or {}).get("cloud_storage_id")),
+            local_download=local_download,
         )
 
     @pytest.mark.parametrize("api_version", (1, 2))
@@ -684,22 +694,18 @@ class TestGetTaskDataset:
         "format_name", ["CVAT for images 1.1", "CVAT for video 1.1", "COCO Keypoints 1.0"]
     )
     def test_can_export_task_with_several_jobs(
-        self, admin_user, tasks, tid, format_name, api_version: int
+        self, admin_user, tid, format_name, api_version: int
     ):
-        task = next(t for t in tasks if t["id"] == tid)
         self._test_can_export_dataset(
             admin_user,
-            task["id"],
-            api_version=api_version,
+            tid,
             format=format_name,
-            local_download=(not (task["target_storage"] or {}).get("cloud_storage_id")),
+            api_version=api_version,
         )
 
     @pytest.mark.parametrize("api_version", (1, 2))
     @pytest.mark.parametrize("tid", [8])
-    def test_can_export_task_to_coco_format(
-        self, admin_user: str, tasks, tid: int, api_version: int
-    ):
+    def test_can_export_task_to_coco_format(self, admin_user: str, tid: int, api_version: int):
         # these annotations contains incorrect frame numbers
         # in order to check that server handle such cases
         annotations = {
@@ -784,13 +790,11 @@ class TestGetTaskDataset:
         assert response.status_code == HTTPStatus.OK
 
         # check that we can export task dataset
-        task = next(t for t in tasks if t["id"] == tid)
         self._test_can_export_dataset(
             admin_user,
             tid,
-            api_version=api_version,
             format="COCO Keypoints 1.0",
-            local_download=(not (task["target_storage"] or {}).get("cloud_storage_id")),
+            api_version=api_version,
         )
 
         # check that server saved track annotations correctly
@@ -2287,10 +2291,15 @@ class TestTaskBackups:
             self.client.login((self.user, USER_PASS))
 
     @pytest.mark.parametrize("api_version", (1, 2))
-    def test_can_export_backup_with_both_api_versions(self, tasks, api_version: int):
-        task = next(t for t in tasks)
+    @pytest.mark.parametrize("local_download", (True, False))
+    def test_can_export_backup_with_both_api_versions(
+        self, filter_tasks, api_version: int, local_download: bool
+    ):
+        task = filter_tasks(
+            **{("exclude_" if local_download else "") + "target_storage__location": "cloud_storage"}
+        )[0]
         backup = export_task_backup(self.user, api_version, id=task["id"])
-        local_download = not (task["target_storage"] or {}).get("cloud_storage_id")
+
         if local_download:
             assert zipfile.is_zipfile(io.BytesIO(backup))
         else:

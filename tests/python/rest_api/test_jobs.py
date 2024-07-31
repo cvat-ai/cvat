@@ -1325,17 +1325,13 @@ def _check_cvat_for_video_job_annotations(content, values_to_be_checked):
         assert len(list(document.iter("track"))) == values_to_be_checked["tracks_length"]
 
 
+@pytest.mark.usefixtures("restore_redis_inmem_per_function")
 @pytest.mark.usefixtures("restore_db_per_class")
 class TestJobDataset:
 
     @pytest.fixture(autouse=True)
     def setup(self, tasks):
         self.tasks = tasks
-
-    def is_local_download(self, job: Dict):
-        # FUTURE-TODO: support jobs retrieved via API
-        task = next(t for t in self.tasks if t["id"] == job["task_id"])
-        return not (task["target_storage"] or {}).get("cloud_storage_id")
 
     @staticmethod
     def _test_export_dataset(
@@ -1362,13 +1358,27 @@ class TestJobDataset:
         return dataset
 
     @pytest.mark.parametrize("api_version", (1, 2))
-    def test_can_export_dataset(self, admin_user: str, jobs_with_shapes: List, api_version: int):
-        job = jobs_with_shapes[0]
+    @pytest.mark.parametrize("local_download", (True, False))
+    def test_can_export_dataset_locally_and_to_cloud(
+        self,
+        admin_user: str,
+        jobs_with_shapes: List,
+        filter_tasks,
+        api_version: int,
+        local_download: bool,
+    ):
+        filter_ = "target_storage__location"
+        if local_download:
+            filter_ = "exclude_" + filter_
+
+        task_ids = [t["id"] for t in filter_tasks(**{filter_: "cloud_storage"})]
+
+        job = next(j for j in jobs_with_shapes if j["task_id"] in task_ids)
         self._test_export_dataset(
             admin_user,
             job["id"],
             api_version=api_version,
-            local_download=self.is_local_download(job),
+            local_download=local_download,
         )
 
     @pytest.mark.parametrize("api_version", (1, 2))
@@ -1382,9 +1392,7 @@ class TestJobDataset:
                 and self.tasks[job["task_id"]]["organization"] is None
             )
         )
-        self._test_export_dataset(
-            username, job["id"], api_version=api_version, local_download=self.is_local_download(job)
-        )
+        self._test_export_dataset(username, job["id"], api_version=api_version)
 
     @pytest.mark.parametrize("api_version", (1, 2))
     def test_non_admin_can_export_annotations(self, users, jobs_with_shapes, api_version: int):
@@ -1398,9 +1406,7 @@ class TestJobDataset:
             )
         )
 
-        self._test_export_annotations(
-            username, job["id"], api_version=api_version, local_download=self.is_local_download(job)
-        )
+        self._test_export_annotations(username, job["id"], api_version=api_version)
 
     @pytest.mark.parametrize("api_version", (1, 2))
     @pytest.mark.parametrize("username, jid", [("admin1", 14)])
@@ -1441,7 +1447,6 @@ class TestJobDataset:
             jid,
             api_version=api_version,
             format=anno_format,
-            local_download=self.is_local_download(job_data),
         )
 
         with zipfile.ZipFile(BytesIO(dataset)) as zip_file:
@@ -1496,7 +1501,6 @@ class TestJobDataset:
             jid,
             api_version=api_version,
             format=anno_format,
-            local_download=self.is_local_download(job_data),
         )
 
         with zipfile.ZipFile(BytesIO(dataset)) as zip_file:
