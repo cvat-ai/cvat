@@ -4,7 +4,7 @@
 
 import io
 from http import HTTPStatus
-from typing import Any, Dict, List, Optional, Sequence, Union
+from typing import List
 from urllib.parse import urlparse
 
 import pytest
