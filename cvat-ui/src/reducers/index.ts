@@ -966,7 +966,7 @@ export interface RequestsState {
     fetching: boolean;
     initialized: boolean;
     requests: Record<string, Request>;
-    urls: string[];
+    disabled: Record<string, boolean>;
     query: RequestsQuery;
 }
 
