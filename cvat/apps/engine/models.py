@@ -187,35 +187,84 @@ class JobFrameSelectionMethod(str, Enum):
 T = TypeVar("T", bound=int | float | str)
 
 
-def _parse_both_before_accessing(fn):
-    @wraps(fn)
+def _parse_self_and_other_before_accessing(list_method: Callable[..., Any]) -> Callable[..., Any]:
+    @wraps(list_method)
     def wrapper(self: 'LazyList', other: Any) -> 'LazyList':
         self._parse_up_to(-1)
+        if isinstance(other, LazyList):
+            other._parse_up_to(-1)
         if not isinstance(other, list):
             # explicitly calling list.__add__ with
             # np.ndarray raises TypeError instead of it returning NotImplemented
             # this prevents python from executing np.ndarray.__radd__
             return NotImplemented
-        if isinstance(other, LazyList):
-            other._parse_up_to(-1)
 
-        return fn(self, other)
+        return list_method(self, other)
 
     return wrapper
 
 
-def _parse_before_accessing(fn: Callable[..., Any]) -> Callable[..., Any]:
+def _parse_self_before_accessing(list_method: Callable[..., Any]) -> Callable[..., Any]:
     """Wrapper for original list methods. Forces LazyList to parse itself before accessing them."""
-    @wraps(fn)
+    @wraps(list_method)
     def wrapper(self: 'LazyList', *args, **kwargs) -> 'LazyList':
         self._parse_up_to(-1)
 
-        return fn(self, *args, **kwargs)
+        return list_method(self, *args, **kwargs)
 
     return wrapper
 
 
-class LazyList(list[T]):
+class LazyListMeta(type):
+    def __new__(
+        mcs,
+        name: str,
+        bases: tuple[type, ...],
+        namespace: dict[str, Any],
+    ):
+        # add pre-parse for list methods
+        for method_name in [
+            "append",
+            "copy",
+            "insert",
+            "pop",
+            "remove",
+            "reverse",
+            "sort",
+            "clear",
+            "index",
+            "count",
+            "__setitem__",
+            "__delitem__",
+            "__contains__",
+            "__len__",
+            "__reversed__",
+            "__mul__",
+            "__rmul__",
+            "__imul__",
+        ]:
+            namespace[method_name] = _parse_self_before_accessing(
+                getattr(list, method_name)
+            )
+
+        for method_name in [
+            "extend",
+            "__add__",
+            "__iadd__",
+            "__eq__",
+            "__gt__",
+            "__ge__",
+            "__lt__",
+            "__le__",
+        ]:
+            namespace[method_name] = _parse_self_and_other_before_accessing(
+                getattr(list, method_name)
+            )
+
+        return super().__new__(mcs, name, bases, namespace)
+
+
+class LazyList(list[T], metaclass=LazyListMeta):
     """
     Evaluates elements from the string representation as needed.
     Lazy evaluation is supported for __getitem__ and __iter__ methods.
@@ -378,45 +427,6 @@ class LazyList(list[T]):
         self.parsed = state['parsed']
         if self.parsed:
             self.extend(state['parsed_elements'])
-
-    # add pre-parse for list methods
-    for method in [
-        "append",
-        "copy",
-        "insert",
-        "pop",
-        "remove",
-        "reverse",
-        "sort",
-        "clear",
-        "index",
-        "count",
-        "__setitem__",
-        "__delitem__",
-        "__contains__",
-        "__len__",
-        "__contains__",
-        "__reversed__",
-        "__mul__",
-        "__rmul__",
-        "__imul__",
-    ]:
-        locals()[method] = _parse_before_accessing(getattr(list, method))
-
-    for method in [
-        "extend",
-        "__add__",
-        "__eq__",
-        "__iadd__",
-        "__gt__",
-        "__ge__",
-        "__lt__",
-        "__le__",
-        "__eq__",
-    ]:
-        locals()[method] = _parse_both_before_accessing(getattr(list, method))
-
-    del method
 
 
 class AbstractArrayField(models.TextField):
