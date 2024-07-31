@@ -272,35 +272,31 @@ class LazyList(list[T], metaclass=LazyListMeta):
     Once instance of LazyList is fully parsed (either by accessing list methods
     or by iterating over all elements), it will behave just as a regular python list.
     """
-    __slots__ = ("string", "_separator", "_converter", "_probable_length", "parsed")
-    string: str
-    _separator: str
-    _converter: Callable[[str], T]
-    _probable_length: int | None
+    __slots__ = ("_string", "_separator", "_converter", "_probable_length", "_parsed")
 
     def __init__(self, string: str = "", separator: str = ",", converter: Callable[[str], T] = lambda s: s) -> None:
         super().__init__()
-        self.string = string
+        self._string = string
         self._separator = separator
         self._converter = converter
-        self._probable_length = None
-        self.parsed = False
+        self._probable_length: int | None = None
+        self._parsed: bool = False
 
     def __repr__(self) -> str:
-        if self.parsed:
+        if self._parsed:
             return f"LazyList({list.__repr__(self)})"
         current_index = list.__len__(self)
-        current_position = 1 if self.string.startswith('[') else 0
+        current_position = 1 if self._string.startswith('[') else 0
         separator_offset = len(self._separator)
 
         for _ in range(current_index):
-            current_position = self.string.find(self._separator, current_position) + separator_offset
+            current_position = self._string.find(self._separator, current_position) + separator_offset
 
         parsed_elements = list.__repr__(self).removesuffix("]")
-        unparsed_elements = self.string[current_position:]
+        unparsed_elements = self._string[current_position:]
         return (
             f"LazyList({parsed_elements}... + {unparsed_elements}', "
-            f"({list.__len__(self) / self._compute_max_length(self.string) * 100:.02f}% parsed))"
+            f"({list.__len__(self) / self._compute_max_length(self._string) * 100:.02f}% parsed))"
         )
 
     def __deepcopy__(self, memodict: Any = None) -> list[T]:
@@ -322,11 +318,11 @@ class LazyList(list[T], metaclass=LazyListMeta):
     def __getitem__(self, index: slice) -> list[T]: ...
 
     def __getitem__(self, index: int | slice) -> T | list[T]:
-        if self.parsed:
+        if self._parsed:
             return list.__getitem__(self, index)
 
         if isinstance(index, slice):
-            self._parse_up_to(index.indices(self._compute_max_length(self.string))[1] - 1)
+            self._parse_up_to(index.indices(self._compute_max_length(self._string))[1] - 1)
             return list.__getitem__(self, index)
 
         self._parse_up_to(index)
@@ -337,16 +333,16 @@ class LazyList(list[T], metaclass=LazyListMeta):
         yield from self._iter_unparsed()
 
     def __str__(self) -> str:
-        if not self.parsed:
-            return self.string.strip("[]")
+        if not self._parsed:
+            return self._string.strip("[]")
         return self._separator.join(map(str, self))
 
     def _parse_up_to(self, index: int) -> None:
-        if self.parsed:
+        if self._parsed:
             return
 
         if index < 0:
-            index += self._compute_max_length(self.string)
+            index += self._compute_max_length(self._string)
 
         start = list.__len__(self)
         if start > index:
@@ -355,17 +351,17 @@ class LazyList(list[T], metaclass=LazyListMeta):
         for _ in islice(self._iter_unparsed(), end + 1):
             pass
 
-        if index == self._compute_max_length(self.string) - 1:
+        if index == self._compute_max_length(self._string) - 1:
             self._mark_parsed()
 
     def _mark_parsed(self):
-        self.parsed = True
-        self.string = ""  # freeing the memory
+        self._parsed = True
+        self._string = ""  # freeing the memory
 
     def _iter_unparsed(self):
-        if self.parsed:
+        if self._parsed:
             return
-        string = self.string
+        string = self._string
         current_index = list.__len__(self)
         current_position = 1 if string.startswith('[') else 0
         string_length = len(string) - 1 if string.endswith(']') else len(string)
@@ -401,7 +397,7 @@ class LazyList(list[T], metaclass=LazyListMeta):
 
     def _compute_max_length(self, string) -> int:
         if self._probable_length is None:
-            if not self.string:
+            if not self._string:
                 return 0
             self._probable_length = string.count(self._separator) + 1
         return self._probable_length
@@ -409,28 +405,28 @@ class LazyList(list[T], metaclass=LazyListMeta):
     # support pickling
 
     def __reduce__(self):
-        return self.__class__, (self.string, self._separator, self._converter), self.__getstate__()
+        return self.__class__, (self._string, self._separator, self._converter), self.__getstate__()
 
     def __reduce_ex__(self, protocol: int):
         return self.__reduce__()
 
     def __getstate__(self):
         return {
-            'string': self.string,
+            'string': self._string,
             '_separator': self._separator,
             '_converter': self._converter,
             '_probable_length': self._probable_length,
-            'parsed': self.parsed,
-            'parsed_elements': list(self) if self.parsed else None
+            'parsed': self._parsed,
+            'parsed_elements': list(self) if self._parsed else None
         }
 
     def __setstate__(self, state):
-        self.string = state['string']
+        self._string = state['string']
         self._separator = state['_separator']
         self._converter = state['_converter']
         self._probable_length = state['_probable_length']
-        self.parsed = state['parsed']
-        if self.parsed:
+        self._parsed = state['parsed']
+        if self._parsed:
             self.extend(state['parsed_elements'])
 
 

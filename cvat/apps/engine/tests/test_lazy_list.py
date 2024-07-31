@@ -148,8 +148,8 @@ class TestLazyList(unittest.TestCase):
         pickled = pickle.dumps(self.lazy_list)
         unpickled = pickle.loads(pickled)
         self.assertEqual(unpickled, [1, 2, 3])
-        self.assertEqual(unpickled.string, "")
-        self.assertTrue(unpickled.parsed)
+        self.assertEqual(unpickled._string, "")
+        self.assertTrue(unpickled._parsed)
 
     def test_parse_before_accessing_decorator(self):
         lazy_list_copy = LazyList(string="1,2,3", converter=int)
