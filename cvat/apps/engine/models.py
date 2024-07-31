@@ -343,8 +343,11 @@ class Project(TimestampedModel):
     target_storage = models.ForeignKey('Storage', null=True, default=None,
         blank=True, on_delete=models.SET_NULL, related_name='+')
 
-    def get_labels(self):
-        return self.label_set.filter(parent__isnull=True)
+    def get_labels(self, prefetch=False):
+        queryset = self.label_set.filter(parent__isnull=True).select_related('skeleton')
+        return queryset.prefetch_related(
+            'attributespec_set', 'sublabels__attributespec_set',
+        ) if prefetch else queryset
 
     def get_dirname(self):
         return os.path.join(settings.PROJECTS_ROOT, str(self.id))
@@ -426,11 +429,15 @@ class Task(TimestampedModel):
     class Meta:
         default_permissions = ()
 
-    def get_labels(self):
+    def get_labels(self, prefetch=False):
         project = self.project
         if project:
-            return project.get_labels()
-        return self.label_set.filter(parent__isnull=True)
+            return project.get_labels(prefetch)
+
+        queryset = self.label_set.filter(parent__isnull=True).select_related('skeleton')
+        return queryset.prefetch_related(
+            'attributespec_set', 'sublabels__attributespec_set',
+        ) if prefetch else queryset
 
     def get_dirname(self):
         return os.path.join(settings.TASKS_ROOT, str(self.id))
@@ -725,10 +732,10 @@ class Job(TimestampedModel):
         project = task.project
         return task.bug_tracker or getattr(project, 'bug_tracker', None)
 
-    def get_labels(self):
+    def get_labels(self, prefetch=False):
         task = self.segment.task
         project = task.project
-        return project.get_labels() if project else task.get_labels()
+        return project.get_labels(prefetch) if project else task.get_labels(prefetch)
 
     class Meta:
         default_permissions = ()
