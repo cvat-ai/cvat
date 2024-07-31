@@ -22,7 +22,7 @@ For more information, see:
 For export of images:
 
 - Supported annotations: Bounding Boxes, Polygons, Polylines,
-  Points, Cuboids, Ellipses, Skeletons, Tags, Masks, Tags.
+  Points, Cuboids, Ellipses, Skeletons, Tags, Masks.
 - Attributes: Supported.
 - Tracks: Can be exported, but track id will be lost.
 
