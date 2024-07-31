@@ -285,8 +285,6 @@ class DatasetExportManager(_ResourceExportManager):
 
         REQUEST_TIMEOUT = 60
 
-
-
         if rq_job_status == RQJobStatus.FINISHED:
             if self.export_args.location == Location.CLOUD_STORAGE:
                 rq_job.delete()
