@@ -3552,7 +3552,7 @@ paths:
         - POST /api/projects/<project_id>/dataset/export?save_images=False to initiate exporting process
         - GET /api/requests/<rq_id> to check export status,
             where rq_id is request id returned on initializing request'
-      summary: Get project annotations or export them as a dataset
+      summary: Export project annotations as a dataset
       parameters:
       - in: query
         name: action
