@@ -184,7 +184,7 @@ class JobFrameSelectionMethod(str, Enum):
         return self.value
 
 
-T = TypeVar("T")
+T = TypeVar("T", bound=int | float | str)
 
 
 def _parse_both_before_accessing(fn):
