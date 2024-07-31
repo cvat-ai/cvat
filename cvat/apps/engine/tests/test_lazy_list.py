@@ -2,7 +2,7 @@ import unittest
 import copy
 import pickle
 from typing import TypeVar
-from cvat.apps.engine.models import LazyList
+from cvat.apps.engine.lazy_list import LazyList
 
 
 T = TypeVar('T')
