@@ -161,6 +161,14 @@ class TestLazyList(unittest.TestCase):
         result = self.lazy_list + other_list
         self.assertEqual(result, [1, 2, 3, 4, 5])
 
+    def test_length_on_iteration(self):
+        elements = []
+        for element in self.lazy_list:
+            self.assertEqual(len(self.lazy_list), 3)
+            elements.append(element)
+
+        self.assertEqual(elements, [1, 2, 3])
+
 
 if __name__ == "__main__":
     unittest.main()
