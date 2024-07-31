@@ -4,16 +4,19 @@
 
 import io
 from http import HTTPStatus
-from typing import Callable, List
+from typing import Any, Dict, List, Optional, Sequence, Union
 from urllib.parse import urlparse
 
 import pytest
 from cvat_sdk.api_client import ApiClient, models
+from cvat_sdk.api_client.api_client import Endpoint
+from cvat_sdk.core.helpers import get_paginated_collection
 
 from shared.utils.config import make_api_client
 from shared.utils.helpers import generate_image_files
 
 from .utils import (
+    CollectionSimpleFilterTestBase,
     create_task,
     export_job_dataset,
     export_project_backup,
@@ -27,32 +30,20 @@ from .utils import (
 @pytest.mark.usefixtures("restore_db_per_class")
 @pytest.mark.usefixtures("restore_redis_inmem_per_function")
 @pytest.mark.timeout(30)
-class TestListRequests:
-    @staticmethod
-    def validate_action(filter_: str, filter_value: str, requests: List[models.Request]) -> bool:
-        return {filter_value} == {r.operation.type.split(":")[0] for r in requests}
+class TestRequestsListFilters(CollectionSimpleFilterTestBase):
 
-    @staticmethod
-    def validate_subresource(
-        filter_: str, filter_value: str, requests: List[models.Request]
-    ) -> bool:
-        return {filter_value} == {r.operation.type.split(":")[1] for r in requests}
+    field_lookups = {
+        "resource": ["operation", "target"],
+        "subresource": ["operation", "type", lambda x: x.split(":")[1]],
+        "action": ["operation", "type", lambda x: x.split(":")[0]],
+        "project_id": ["operation", "project_id"],
+        "task_id": ["operation", "task_id"],
+        "job_id": ["operation", "job_id"],
+        "format": ["operation", "format"],
+    }
 
-    @staticmethod
-    def validate_status(filter_: str, filter_value: str, requests: List[models.Request]) -> bool:
-        return {filter_value} == {r.status.value for r in requests}
-
-    @staticmethod
-    def validate_id(filter_: str, filter_value: int, requests: List[models.Request]) -> bool:
-        return {filter_value} == {getattr(r.operation, filter_) for r in requests}
-
-    @staticmethod
-    def validate_resource(filter_: str, filter_value: str, requests: List[models.Request]) -> bool:
-        return {filter_value} == {r.operation.target.value for r in requests}
-
-    @staticmethod
-    def validate_format(filter_: str, filter_value: str, requests: List[models.Request]) -> bool:
-        return {filter_value} == {r.operation.format for r in requests}
+    def _get_endpoint(self, api_client: ApiClient) -> Endpoint:
+        return api_client.requests_api.list_endpoint
 
     @pytest.fixture(autouse=True)
     def setup(self, find_users):
@@ -226,25 +217,20 @@ class TestListRequests:
         return make_requests
 
     @pytest.mark.parametrize(
-        "simple_filter, values, validate_func",
+        "simple_filter, values",
         [
-            ("subresource", ["annotations", "dataset", "backup"], validate_subresource),
-            ("action", ["create", "export", "import"], validate_action),
-            ("status", ["finished", "failed"], validate_status),
-            ("project_id", [], validate_id),
-            ("task_id", [], validate_id),
-            ("job_id", [], validate_id),
-            ("format", ["CVAT for images 1.1", "COCO 1.0", "YOLO 1.1"], validate_format),
-            ("resource", ["project", "task", "job"], validate_resource),
+            ("subresource", ["annotations", "dataset", "backup"]),
+            ("action", ["create", "export", "import"]),
+            ("status", ["finished", "failed"]),
+            ("project_id", []),
+            ("task_id", []),
+            ("job_id", []),
+            ("format", ["CVAT for images 1.1", "COCO 1.0", "YOLO 1.1"]),
+            ("resource", ["project", "task", "job"]),
         ],
     )
-    def test_list_request_with_simple_filter(
-        self,
-        fxt_resources_ids,
-        fxt_make_requests,
-        simple_filter: str,
-        values: List[str],
-        validate_func: Callable,
+    def test_can_use_simple_filter_for_object_list(
+        self, simple_filter, values, fxt_resources_ids, fxt_make_requests
     ):
         project_ids, task_ids, job_ids = fxt_resources_ids
         fxt_make_requests(project_ids, task_ids, job_ids)
@@ -259,11 +245,11 @@ class TestListRequests:
                 values = job_ids[-1:]
 
         with make_api_client(self.user) as api_client:
-            for value in values:
-                bg_requests, response = api_client.requests_api.list(**{simple_filter: value})
-                assert response.status == HTTPStatus.OK
-                assert len(bg_requests.results)
-                assert validate_func(simple_filter, value, bg_requests.results)
+            self.samples = get_paginated_collection(
+                self._get_endpoint(api_client), return_json=True
+            )
+
+        return super().test_can_use_simple_filter_for_object_list(simple_filter, values)
 
 
 @pytest.mark.usefixtures("restore_db_per_class")

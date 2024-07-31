@@ -7,7 +7,7 @@ from abc import ABCMeta, abstractmethod
 from copy import deepcopy
 from http import HTTPStatus
 from time import sleep
-from typing import Any, Dict, Iterator, List, Optional, Sequence, Tuple, Union
+from typing import Any, Callable, Dict, Iterator, List, Optional, Sequence, Tuple, Union
 
 import requests
 from cvat_sdk.api_client import apis, models
@@ -297,7 +297,7 @@ def import_task_backup(username: str, data: Dict, **kwargs) -> None:
         return import_backup(api_client.tasks_api, task_file_request=deepcopy(data), **kwargs)
 
 
-FieldPath = Sequence[str]
+FieldPath = Sequence[Union[str, Callable]]
 
 
 class CollectionSimpleFilterTestBase(metaclass=ABCMeta):
@@ -320,9 +320,14 @@ class CollectionSimpleFilterTestBase(metaclass=ABCMeta):
         assert path
         for key in path:
             if isinstance(d, dict):
+                assert isinstance(key, str)
                 d = d.get(key)
             else:
-                d = None
+                if callable(key):
+                    assert isinstance(d, str)
+                    d = key(d)
+                else:
+                    d = None
 
         return d
 
@@ -365,12 +370,27 @@ class CollectionSimpleFilterTestBase(metaclass=ABCMeta):
 
         assert diff == {}, diff
 
-    def test_can_use_simple_filter_for_object_list(self, field):
-        value, gt_objects = self._get_field_samples(field)
+    def test_can_use_simple_filter_for_object_list(
+        self, field: str, field_values: Optional[List[Any]] = None
+    ):
+        gt_objects = []
+        field_path = self._map_field(field)
 
-        received_items = self._retrieve_collection(**{field: value})
+        if not field_values:
+            value, gt_objects = self._get_field_samples(field)
+            field_values = [value]
 
-        self._compare_results(gt_objects, received_items)
+        are_gt_objects_initialized = bool(gt_objects)
+
+        for value in field_values:
+            if not are_gt_objects_initialized:
+                gt_objects = [
+                    sample
+                    for sample in self.samples
+                    if value == self._get_field(sample, field_path)
+                ]
+            received_items = self._retrieve_collection(**{field: value})
+            self._compare_results(gt_objects, received_items)
 
 
 def get_attrs(obj: Any, attributes: Sequence[str]) -> Tuple[Any, ...]:
