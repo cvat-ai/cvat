@@ -21,7 +21,7 @@ For more information, see:
 For export of images: any 2D shapes, tags
 
 - Supported annotations: ounding Boxes, Polygons,
-Polylines, Points, Cuboids, Tags, Ellipses, Masks.
+Polylines, Points, Cuboids, Tags, Ellipses, Masks, Skeletons.
 - Attributes: Supported.
 - Tracks: Supported.
 
