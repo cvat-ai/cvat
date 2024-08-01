@@ -1,4 +1,5 @@
 // Copyright (C) 2020-2022 Intel Corporation
+// Copyright (C) 2024 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -12,7 +13,7 @@ import { ReviewState } from '.';
 const defaultState: ReviewState = {
     issues: [],
     latestComments: [],
-    frameIssues: [], // saved on the server and not saved on the server
+    frameIssues: [],
     conflicts: [],
     frameConflicts: [],
     newIssue: {
@@ -46,15 +47,8 @@ export default function (state: ReviewState = defaultState, action: any): Review
                 frameConflicts,
             };
         }
-        case AnnotationActionTypes.CHANGE_FRAME: {
-            return {
-                ...state,
-                newIssue: {
-                    position: null,
-                    source: null,
-                },
-            };
-        }
+        case AnnotationActionTypes.CHANGE_FRAME:
+        case ReviewActionTypes.CANCEL_ISSUE:
         case AnnotationActionTypes.DELETE_FRAME_SUCCESS: {
             return {
                 ...state,
@@ -74,15 +68,7 @@ export default function (state: ReviewState = defaultState, action: any): Review
                 },
             };
         }
-        case ReviewActionTypes.SUBMIT_REVIEW_SUCCESS: {
-            return {
-                ...state,
-                fetching: {
-                    ...state.fetching,
-                    jobId: null,
-                },
-            };
-        }
+        case ReviewActionTypes.SUBMIT_REVIEW_SUCCESS:
         case ReviewActionTypes.SUBMIT_REVIEW_FAILED: {
             return {
                 ...state,
@@ -136,15 +122,6 @@ export default function (state: ReviewState = defaultState, action: any): Review
                     ).slice(-config.LATEST_COMMENTS_SHOWN_QUICK_ISSUE),
                 frameIssues,
                 issues,
-                newIssue: {
-                    position: null,
-                    source: null,
-                },
-            };
-        }
-        case ReviewActionTypes.CANCEL_ISSUE: {
-            return {
-                ...state,
                 newIssue: {
                     position: null,
                     source: null,
@@ -220,6 +197,4 @@ export default function (state: ReviewState = defaultState, action: any): Review
         default:
             return state;
     }
-
-    return state;
 }
