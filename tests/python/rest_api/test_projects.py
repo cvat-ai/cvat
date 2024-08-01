@@ -750,7 +750,9 @@ class TestImportExportDatasetProject:
         self._test_import_project(username, project_id, format_name, import_data)
 
     @pytest.mark.parametrize("api_version", (1, 2))
-    @pytest.mark.parametrize("local_download", (True, False))
+    @pytest.mark.parametrize(
+        "local_download", (True, pytest.param(False, marks=pytest.mark.with_external_services))
+    )
     def test_can_export_dataset_locally_and_to_cloud(
         self, admin_user: str, filter_projects, api_version: int, local_download: bool
     ):

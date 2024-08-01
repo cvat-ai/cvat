@@ -1358,7 +1358,9 @@ class TestJobDataset:
         return dataset
 
     @pytest.mark.parametrize("api_version", (1, 2))
-    @pytest.mark.parametrize("local_download", (True, False))
+    @pytest.mark.parametrize(
+        "local_download", (True, pytest.param(False, marks=pytest.mark.with_external_services))
+    )
     def test_can_export_dataset_locally_and_to_cloud(
         self,
         admin_user: str,

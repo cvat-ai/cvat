@@ -671,7 +671,9 @@ class TestGetTaskDataset:
 
     @pytest.mark.usefixtures("restore_db_per_function")
     @pytest.mark.parametrize("api_version", (1, 2))
-    @pytest.mark.parametrize("local_download", (True, False))
+    @pytest.mark.parametrize(
+        "local_download", (True, pytest.param(False, marks=pytest.mark.with_external_services))
+    )
     def test_can_export_task_dataset_locally_and_to_cloud(
         self, admin_user, tasks_with_shapes, filter_tasks, api_version: int, local_download: bool
     ):
@@ -2291,7 +2293,9 @@ class TestTaskBackups:
             self.client.login((self.user, USER_PASS))
 
     @pytest.mark.parametrize("api_version", (1, 2))
-    @pytest.mark.parametrize("local_download", (True, False))
+    @pytest.mark.parametrize(
+        "local_download", (True, pytest.param(False, marks=pytest.mark.with_external_services))
+    )
     def test_can_export_backup_with_both_api_versions(
         self, filter_tasks, api_version: int, local_download: bool
     ):
