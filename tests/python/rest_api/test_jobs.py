@@ -11,7 +11,8 @@ import zipfile
 from copy import deepcopy
 from http import HTTPStatus
 from io import BytesIO
-from typing import Any, Dict, List, Optional
+from itertools import product
+from typing import Any, Dict, List, Optional, Tuple, Union
 
 import numpy as np
 import pytest
@@ -1335,7 +1336,12 @@ class TestJobDataset:
 
     @staticmethod
     def _test_export_dataset(
-        username: str, jid: int, *, api_version: int, local_download: bool = True, **kwargs
+        username: str,
+        jid: int,
+        *,
+        api_version: Union[int, Tuple[int]],
+        local_download: bool = True,
+        **kwargs,
     ) -> Optional[bytes]:
         dataset = export_job_dataset(username, api_version, save_images=True, id=jid, **kwargs)
         if local_download:
@@ -1357,16 +1363,16 @@ class TestJobDataset:
 
         return dataset
 
-    @pytest.mark.parametrize("api_version", (1, 2))
+    @pytest.mark.parametrize("api_version", product((1, 2), repeat=2))
     @pytest.mark.parametrize(
         "local_download", (True, pytest.param(False, marks=pytest.mark.with_external_services))
     )
-    def test_can_export_dataset_locally_and_to_cloud(
+    def test_can_export_dataset_locally_and_to_cloud_with_both_api_versions(
         self,
         admin_user: str,
         jobs_with_shapes: List,
         filter_tasks,
-        api_version: int,
+        api_version: Tuple[int],
         local_download: bool,
     ):
         filter_ = "target_storage__location"

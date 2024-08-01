@@ -14,7 +14,7 @@ from io import BytesIO
 from itertools import product
 from operator import itemgetter
 from time import sleep
-from typing import Dict, List, Optional
+from typing import Dict, List, Optional, Tuple, Union
 
 import pytest
 from cvat_sdk.api_client import ApiClient, Configuration, models
@@ -608,7 +608,12 @@ class TestImportExportDatasetProject:
 
     @staticmethod
     def _test_export_dataset(
-        username: str, pid: int, *, api_version: int, local_download: bool = True, **kwargs
+        username: str,
+        pid: int,
+        *,
+        api_version: Union[int, Tuple[int]],
+        local_download: bool = True,
+        **kwargs,
     ) -> Optional[bytes]:
         dataset = export_project_dataset(username, api_version, save_images=True, id=pid, **kwargs)
         if local_download:
@@ -749,12 +754,12 @@ class TestImportExportDatasetProject:
 
         self._test_import_project(username, project_id, format_name, import_data)
 
-    @pytest.mark.parametrize("api_version", (1, 2))
+    @pytest.mark.parametrize("api_version", product((1, 2), repeat=2))
     @pytest.mark.parametrize(
         "local_download", (True, pytest.param(False, marks=pytest.mark.with_external_services))
     )
-    def test_can_export_dataset_locally_and_to_cloud(
-        self, admin_user: str, filter_projects, api_version: int, local_download: bool
+    def test_can_export_dataset_locally_and_to_cloud_with_both_api_versions(
+        self, admin_user: str, filter_projects, api_version: Tuple[int], local_download: bool
     ):
         filter_ = "target_storage__location"
         if local_download:

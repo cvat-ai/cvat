@@ -22,43 +22,32 @@ from deepdiff import DeepDiff
 from shared.utils.config import make_api_client
 
 
-def export_v1(
-    endpoint: Endpoint,
-    *,
-    max_retries: int = 30,
-    interval: float = 0.1,
-    forbidden: bool = False,
-    wait_result: bool = True,
-    download_result: bool = True,
-    **kwargs,
-) -> Optional[bytes]:
-    """Export datasets|annotations|backups using first version of export API
-
-    Args:
-        endpoint (Endpoint): Export endpoint, will be called to initialize export process and to check status
-        max_retries (int, optional): Number of retries when checking process status. Defaults to 30.
-        interval (float, optional): Interval in seconds between retries. Defaults to 0.1.
-        forbidden (bool, optional): Should export request be forbidden or not. Defaults to False.
-        wait_result (bool, optional): Wait until export process will be finished. Defaults to True.
-
-    Returns:
-        bytes: The content of the file if downloaded locally.
-        None: If `wait_result` or `download_result` were False or the file is downloaded to cloud storage.
-    """
-
-    # initialize background process and ensure that the first request returns 403 code if request should be forbidden
+def initialize_export(endpoint: Endpoint, *, forbidden: bool = False, **kwargs) -> str:
     (_, response) = endpoint.call_with_http_info(
         **kwargs, _parse_response=False, _check_status=False
     )
     if forbidden:
-        assert response.status == HTTPStatus.FORBIDDEN, "Request should be forbidden"
+        assert (
+            response.status == HTTPStatus.FORBIDDEN
+        ), f"Request should be forbidden, status: {response.status}"
         raise ForbiddenException()
 
-    assert response.status in {HTTPStatus.ACCEPTED, HTTPStatus.CREATED, HTTPStatus.OK}
+    assert response.status == HTTPStatus.ACCEPTED, f"Status: {response.status}"
 
-    if not wait_result:
-        return None
+    # define background request ID returned in the server response
+    rq_id = json.loads(response.data).get("rq_id")
+    assert rq_id, "The rq_id parameter was not found in the server response"
+    return rq_id
 
+
+def wait_and_download_v1(
+    endpoint: Endpoint,
+    *,
+    max_retries: int = 30,
+    interval: float = 0.1,
+    download_result: bool = True,
+    **kwargs,
+) -> Optional[bytes]:
     for _ in range(max_retries):
         (_, response) = endpoint.call_with_http_info(**kwargs, _parse_response=False)
         if response.status in (HTTPStatus.CREATED, HTTPStatus.OK):
@@ -82,7 +71,7 @@ def export_v1(
     return response.data or None  # return None when export was on cloud storage
 
 
-def export_v2(
+def export_v1(
     endpoint: Endpoint,
     *,
     max_retries: int = 30,
@@ -92,38 +81,43 @@ def export_v2(
     download_result: bool = True,
     **kwargs,
 ) -> Optional[bytes]:
-    """Export datasets|annotations|backups using the second version of export API
+    """Export datasets|annotations|backups using first version of export API
 
     Args:
-        endpoint (Endpoint): Export endpoint, will be called only to initialize export process
+        endpoint (Endpoint): Export endpoint, will be called to initialize export process and to check status
         max_retries (int, optional): Number of retries when checking process status. Defaults to 30.
         interval (float, optional): Interval in seconds between retries. Defaults to 0.1.
         forbidden (bool, optional): Should export request be forbidden or not. Defaults to False.
         wait_result (bool, optional): Wait until export process will be finished. Defaults to True.
+        download_result (bool, optional): Download exported file. Defaults to True.
 
     Returns:
         bytes: The content of the file if downloaded locally.
         None: If `wait_result` or `download_result` were False or the file is downloaded to cloud storage.
     """
     # initialize background process and ensure that the first request returns 403 code if request should be forbidden
-    (_, response) = endpoint.call_with_http_info(
-        **kwargs, _parse_response=False, _check_status=False
-    )
-    if forbidden:
-        assert response.status == HTTPStatus.FORBIDDEN, "Request should be forbidden"
-        raise ForbiddenException()
-
-    assert response.status == HTTPStatus.ACCEPTED
+    initialize_export(endpoint, forbidden=forbidden, **kwargs)
 
     if not wait_result:
         return None
 
-    # define background request ID returned in the server response
-    rq_id = json.loads(response.data).get("rq_id")
-    assert rq_id, "The rq_id parameter was not found in the server response"
+    return wait_and_download_v1(
+        endpoint,
+        max_retries=max_retries,
+        interval=interval,
+        download_result=download_result,
+        **kwargs,
+    )
 
-    api_client = endpoint.api_client
-    # check status of background process
+
+def wait_and_download_v2(
+    api_client: ApiClient,
+    rq_id: str,
+    *,
+    max_retries: int = 30,
+    interval: float = 0.1,
+    download_result: bool = True,
+) -> Optional[bytes]:
     for _ in range(max_retries):
         (background_request, response) = api_client.requests_api.retrieve(rq_id)
         assert response.status == HTTPStatus.OK
@@ -155,9 +149,50 @@ def export_v2(
     return None
 
 
+def export_v2(
+    endpoint: Endpoint,
+    *,
+    max_retries: int = 30,
+    interval: float = 0.1,
+    forbidden: bool = False,
+    wait_result: bool = True,
+    download_result: bool = True,
+    **kwargs,
+) -> Optional[bytes]:
+    """Export datasets|annotations|backups using the second version of export API
+
+    Args:
+        endpoint (Endpoint): Export endpoint, will be called only to initialize export process
+        max_retries (int, optional): Number of retries when checking process status. Defaults to 30.
+        interval (float, optional): Interval in seconds between retries. Defaults to 0.1.
+        forbidden (bool, optional): Should export request be forbidden or not. Defaults to False.
+        download_result (bool, optional): Download exported file. Defaults to True.
+
+    Returns:
+        bytes: The content of the file if downloaded locally.
+        None: If `wait_result` or `download_result` were False or the file is downloaded to cloud storage.
+    """
+    # initialize background process and ensure that the first request returns 403 code if request should be forbidden
+    rq_id = initialize_export(endpoint, forbidden=forbidden, **kwargs)
+
+    if not wait_result:
+        return None
+
+    # check status of background process
+    return wait_and_download_v2(
+        endpoint.api_client,
+        rq_id,
+        max_retries=max_retries,
+        interval=interval,
+        download_result=download_result,
+    )
+
+
 def export_dataset(
     api: Union[ProjectsApi, TasksApi, JobsApi],
-    api_version: int,  # make this parameter required to be sure that all tests was updated and both API versions are used
+    api_version: Union[
+        int, Tuple[int]
+    ],  # make this parameter required to be sure that all tests was updated and both API versions are used
     *,
     save_images: bool,
     max_retries: int = 30,
@@ -165,46 +200,82 @@ def export_dataset(
     format: str = "CVAT for images 1.1",  # pylint: disable=redefined-builtin
     **kwargs,
 ) -> Optional[bytes]:
+    def _get_endpoint_and_kwargs(version: int) -> Endpoint:
+        extra_kwargs = {
+            "format": format,
+        }
+        if version == 1:
+            endpoint = (
+                api.retrieve_dataset_endpoint if save_images else api.retrieve_annotations_endpoint
+            )
+        else:
+            endpoint = api.create_dataset_export_endpoint
+            extra_kwargs["save_images"] = save_images
+        return endpoint, extra_kwargs
+
     if api_version == 1:
-        endpoint = (
-            api.retrieve_dataset_endpoint if save_images else api.retrieve_annotations_endpoint
-        )
+        endpoint, extra_kwargs = _get_endpoint_and_kwargs(api_version)
         return export_v1(
-            endpoint, max_retries=max_retries, interval=interval, format=format, **kwargs
+            endpoint,
+            max_retries=max_retries,
+            interval=interval,
+            **kwargs,
+            **extra_kwargs,
         )
     elif api_version == 2:
-        endpoint = api.create_dataset_export_endpoint
+        endpoint, extra_kwargs = _get_endpoint_and_kwargs(api_version)
         return export_v2(
             endpoint,
             max_retries=max_retries,
             interval=interval,
-            format=format,
-            save_images=save_images,
             **kwargs,
+            **extra_kwargs,
         )
+    elif isinstance(api_version, tuple):
+        assert len(api_version) == 2, "Expected 2 elements in api_version tuple"
+        initialize_endpoint, extra_kwargs = _get_endpoint_and_kwargs(api_version[0])
+        rq_id = initialize_export(initialize_endpoint, **kwargs, **extra_kwargs)
+
+        if api_version[1] == 1:
+            endpoint, extra_kwargs = _get_endpoint_and_kwargs(api_version[1])
+            return wait_and_download_v1(
+                endpoint, max_retries=max_retries, interval=interval, **kwargs, **extra_kwargs
+            )
+        else:
+            return wait_and_download_v2(
+                api.api_client, rq_id, max_retries=max_retries, interval=interval
+            )
 
     assert False, "Unsupported API version"
 
 
 # FUTURE-TODO: support username: optional, api_client: optional
-def export_project_dataset(username: str, api_version: int, *args, **kwargs) -> Optional[bytes]:
+def export_project_dataset(
+    username: str, api_version: Union[int, Tuple[int]], *args, **kwargs
+) -> Optional[bytes]:
     with make_api_client(username) as api_client:
         return export_dataset(api_client.projects_api, api_version, *args, **kwargs)
 
 
-def export_task_dataset(username: str, api_version: int, *args, **kwargs) -> Optional[bytes]:
+def export_task_dataset(
+    username: str, api_version: Union[int, Tuple[int]], *args, **kwargs
+) -> Optional[bytes]:
     with make_api_client(username) as api_client:
         return export_dataset(api_client.tasks_api, api_version, *args, **kwargs)
 
 
-def export_job_dataset(username: str, api_version: int, *args, **kwargs) -> Optional[bytes]:
+def export_job_dataset(
+    username: str, api_version: Union[int, Tuple[int]], *args, **kwargs
+) -> Optional[bytes]:
     with make_api_client(username) as api_client:
         return export_dataset(api_client.jobs_api, api_version, *args, **kwargs)
 
 
 def export_backup(
     api: Union[ProjectsApi, TasksApi],
-    api_version: int,  # make this parameter required to be sure that all tests was updated and both API versions are used
+    api_version: Union[
+        int, Tuple[int]
+    ],  # make this parameter required to be sure that all tests was updated and both API versions are used
     *,
     max_retries: int = 30,
     interval: float = 0.1,
@@ -216,16 +287,37 @@ def export_backup(
     elif api_version == 2:
         endpoint = api.create_backup_export_endpoint
         return export_v2(endpoint, max_retries=max_retries, interval=interval, **kwargs)
+    elif isinstance(api_version, tuple):
+        assert len(api_version) == 2, "Expected 2 elements in api_version tuple"
+        initialize_endpoint = (
+            api.retrieve_backup_endpoint
+            if api_version[0] == 1
+            else api.create_backup_export_endpoint
+        )
+        rq_id = initialize_export(initialize_endpoint, **kwargs)
+
+        if api_version[1] == 1:
+            return wait_and_download_v1(
+                api.retrieve_backup_endpoint, max_retries=max_retries, interval=interval, **kwargs
+            )
+        else:
+            return wait_and_download_v2(
+                api.api_client, rq_id, max_retries=max_retries, interval=interval
+            )
 
     assert False, "Unsupported API version"
 
 
-def export_project_backup(username: str, api_version: int, *args, **kwargs) -> Optional[bytes]:
+def export_project_backup(
+    username: str, api_version: Union[int, Tuple[int]], *args, **kwargs
+) -> Optional[bytes]:
     with make_api_client(username) as api_client:
         return export_backup(api_client.projects_api, api_version, *args, **kwargs)
 
 
-def export_task_backup(username: str, api_version: int, *args, **kwargs) -> Optional[bytes]:
+def export_task_backup(
+    username: str, api_version: Union[int, Tuple[int]], *args, **kwargs
+) -> Optional[bytes]:
     with make_api_client(username) as api_client:
         return export_backup(api_client.tasks_api, api_version, *args, **kwargs)
 

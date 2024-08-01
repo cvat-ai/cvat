@@ -18,7 +18,7 @@ from operator import itemgetter
 from pathlib import Path
 from tempfile import NamedTemporaryFile, TemporaryDirectory
 from time import sleep, time
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Optional, Tuple, Union
 
 import pytest
 from cvat_sdk import Client, Config, exceptions
@@ -659,7 +659,12 @@ class TestGetTaskDataset:
 
     @staticmethod
     def _test_can_export_dataset(
-        username: str, task_id: int, *, api_version: int, local_download: bool = True, **kwargs
+        username: str,
+        task_id: int,
+        *,
+        api_version: Union[int, Tuple[int]],
+        local_download: bool = True,
+        **kwargs,
     ) -> Optional[bytes]:
         dataset = export_task_dataset(username, api_version, save_images=True, id=task_id, **kwargs)
         if local_download:
@@ -670,12 +675,17 @@ class TestGetTaskDataset:
         return dataset
 
     @pytest.mark.usefixtures("restore_db_per_function")
-    @pytest.mark.parametrize("api_version", (1, 2))
+    @pytest.mark.parametrize("api_version", product((1, 2), repeat=2))
     @pytest.mark.parametrize(
         "local_download", (True, pytest.param(False, marks=pytest.mark.with_external_services))
     )
-    def test_can_export_task_dataset_locally_and_to_cloud(
-        self, admin_user, tasks_with_shapes, filter_tasks, api_version: int, local_download: bool
+    def test_can_export_task_dataset_locally_and_to_cloud_with_both_api_versions(
+        self,
+        admin_user,
+        tasks_with_shapes,
+        filter_tasks,
+        api_version: Tuple[int],
+        local_download: bool,
     ):
         filter_ = "target_storage__location"
         if local_download:
@@ -2278,6 +2288,7 @@ class TestWorkWithTask:
                 assert image_name in ex.body
 
 
+@pytest.mark.usefixtures("restore_redis_inmem_per_function")
 class TestTaskBackups:
     def _make_client(self) -> Client:
         return Client(BASE_URL, config=Config(status_check_period=0.01))
@@ -2292,12 +2303,12 @@ class TestTaskBackups:
         with self.client:
             self.client.login((self.user, USER_PASS))
 
-    @pytest.mark.parametrize("api_version", (1, 2))
+    @pytest.mark.parametrize("api_version", product((1, 2), repeat=2))
     @pytest.mark.parametrize(
         "local_download", (True, pytest.param(False, marks=pytest.mark.with_external_services))
     )
     def test_can_export_backup_with_both_api_versions(
-        self, filter_tasks, api_version: int, local_download: bool
+        self, filter_tasks, api_version: Tuple[int], local_download: bool
     ):
         task = filter_tasks(
             **{("exclude_" if local_download else "") + "target_storage__location": "cloud_storage"}
