@@ -21,12 +21,13 @@ import FileManagerComponent, { Files } from 'components/file-manager/file-manage
 import { RemoteFile } from 'components/file-manager/remote-browser';
 import { getFileContentType, getContentTypeRemoteFile, getFileNameFromPath } from 'utils/files';
 
+import { FrameSelectionMethod } from 'components/create-job-page/job-form';
 import BasicConfigurationForm, { BaseConfiguration } from './basic-configuration-form';
 import ProjectSearchField from './project-search-field';
 import ProjectSubsetField from './project-subset-field';
 import MultiTasksProgress from './multi-task-progress';
 import AdvancedConfigurationForm, { AdvancedConfiguration, SortingMethod } from './advanced-configuration-form';
-import QualityConfigurationForm, { QualityConfiguration } from './quality-configuration-form';
+import QualityConfigurationForm, { QualityConfiguration, ValidationMethod } from './quality-configuration-form';
 
 type TabName = 'local' | 'share' | 'remote' | 'cloudStorage';
 const core = getCore();
@@ -86,6 +87,10 @@ const defaultState: State = {
         useProjectTargetStorage: true,
     },
     quality: {
+        validationMethod: ValidationMethod.NONE,
+        validationFramesPercent: 5,
+        validationFramesPerJob: 1,
+        frameSelectionMethod: FrameSelectionMethod.RANDOM,
     },
     labels: [],
     files: {
@@ -252,14 +257,13 @@ class CreateTaskContent extends React.PureComponent<Props & RouteComponentProps,
         });
     };
 
-    private handleChangeQualityConfiguration = (values: QualityConfiguration, reset = false): void => {
-        console.log(values, reset);
-        const { quality } = this.state;
-        this.setState({
-            quality: { ...(reset ? {} : quality), ...values },
-        });
-        console.log({ ...(reset ? {} : quality), ...values });
-    };
+    private handleSubmitQualityConfiguration = (values: QualityConfiguration): Promise<void> => (
+        new Promise((resolve) => {
+            this.setState({
+                quality: { ...values },
+            }, resolve);
+        })
+    );
 
     private handleSubmitAdvancedConfiguration = (values: AdvancedConfiguration): Promise<void> => (
         new Promise((resolve) => {
@@ -295,6 +299,15 @@ class CreateTaskContent extends React.PureComponent<Props & RouteComponentProps,
             advanced: {
                 ...state.advanced,
                 useProjectTargetStorage: value,
+            },
+        }));
+    };
+
+    private handleValidationMethodChange = (value: ValidationMethod): void => {
+        this.setState((state) => ({
+            quality: {
+                ...state.quality,
+                validationMethod: value,
             },
         }));
     };
@@ -446,6 +459,9 @@ class CreateTaskContent extends React.PureComponent<Props & RouteComponentProps,
         this.basicConfigurationComponent.current
             .submit()
             .then(() => {
+                if (this.qualityConfigurationComponent.current) {
+                    this.qualityConfigurationComponent.current.submit();
+                }
                 if (this.advancedConfigurationComponent.current) {
                     return this.advancedConfigurationComponent.current.submit();
                 }
@@ -893,6 +909,8 @@ class CreateTaskContent extends React.PureComponent<Props & RouteComponentProps,
     }
 
     private renderQualityBlock(): JSX.Element {
+        const { quality: { validationMethod } } = this.state;
+
         return (
             <Col span={24}>
                 <Collapse
@@ -903,7 +921,10 @@ class CreateTaskContent extends React.PureComponent<Props & RouteComponentProps,
                         children: (
                             <QualityConfigurationForm
                                 ref={this.qualityConfigurationComponent}
-                                onChange={this.handleChangeQualityConfiguration}
+                                initialValues={defaultState.quality}
+                                onSubmit={this.handleSubmitQualityConfiguration}
+                                validationMethod={validationMethod}
+                                onChangeValidationMethod={this.handleValidationMethodChange}
                             />
                         ),
                     }]}

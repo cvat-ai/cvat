@@ -284,14 +284,6 @@ export interface PluginsState {
                 };
             };
         };
-        createTaskPage: {
-            qualityForm: {
-                validationMethods: {
-                    items: PluginComponent[];
-                    params: PluginComponent[];
-                }
-            },
-        };
         qualityControlPage:{
             tabs: {
                 items: PluginComponent[];

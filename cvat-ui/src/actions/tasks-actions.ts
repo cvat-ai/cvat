@@ -11,6 +11,7 @@ import {
 import { filterNull } from 'utils/filter-null';
 import { ThunkDispatch, ThunkAction } from 'utils/redux';
 
+import { ValidationMethod } from 'components/create-task-page/quality-configuration-form';
 import { getInferenceStatusAsync } from './models-actions';
 import { updateRequestProgress } from './requests-actions';
 
@@ -254,6 +255,16 @@ ThunkAction {
             description.cloud_storage_id = data.cloudStorageId;
         }
 
+        if (data.quality.validationMethod === ValidationMethod.GT) {
+            description.validation_method = ValidationMethod.GT;
+            description.validation_frames_percent = data.quality.validationFramesPercent;
+            description.frame_selection_method = data.quality.frameSelectionMethod;
+        } else if (data.quality.validationMethod === ValidationMethod.HONEYPOTS) {
+            description.validation_method = ValidationMethod.HONEYPOTS;
+            description.validation_frames_percent = data.quality.validationFramesPercent;
+            description.validation_frames_per_job = data.quality.validationFramesPerJob;
+        }
+
         const taskInstance = new cvat.classes.Task(description);
         taskInstance.clientFiles = data.files.local;
         taskInstance.serverFiles = data.files.share.concat(data.files.cloudStorage);
@@ -279,7 +290,6 @@ ThunkAction {
                     onProgress?.(`${message} ${progress ? `${Math.floor(progress * 100)}%` : ''}. ${helperMessage}`);
                     if (request.id) updateRequestProgress(request, dispatch);
                 },
-                fields: { ...data.quality },
             });
 
             dispatch(updateTaskInState(savedTask));

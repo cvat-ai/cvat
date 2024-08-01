@@ -666,7 +666,7 @@ export function implementTask(Task: typeof TaskClass): typeof TaskClass {
                 });
             }
 
-            let taskSpec: any = {
+            const taskSpec: any = {
                 name: this.name,
                 labels: this.labels.map((el) => el.toJSON()),
             };
@@ -695,8 +695,18 @@ export function implementTask(Task: typeof TaskClass): typeof TaskClass {
                 taskSpec.source_storage = this.sourceStorage.toJSON();
             }
 
-            const { fields } = options;
-            taskSpec = { ...taskSpec, ...fields };
+            if (this.validationMethod !== 'undefined') {
+                taskSpec.validation_method = this.validationMethod;
+            }
+            if (typeof this.validationFramesPercent !== 'undefined') {
+                taskSpec.validation_frames_percent = this.validationFramesPercent;
+            }
+            if (typeof this.validationFramesPerJob !== 'undefined') {
+                taskSpec.validation_frames_per_job = this.validationFramesPerJob;
+            }
+            if (typeof this.frameSelectionMethod !== 'undefined') {
+                taskSpec.frame_selection_method = this.frameSelectionMethod;
+            }
 
             const taskDataSpec = {
                 client_files: this.clientFiles,

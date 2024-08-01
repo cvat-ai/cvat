@@ -730,6 +730,11 @@ export class Task extends Session {
     public readonly cloudStorageID: number;
     public readonly sortingMethod: string;
 
+    public readonly validationMethod: string;
+    public readonly validationFramesPercent: number;
+    public readonly validationFramesPerJob: number;
+    public readonly frameSelectionMethod: string;
+
     constructor(initialData: Readonly<Omit<SerializedTask, 'labels' | 'jobs'> & {
         labels?: SerializedLabel[];
         progress?: SerializedTask['jobs'];
@@ -775,7 +780,10 @@ export class Task extends Session {
             sorting_method: undefined,
             files: undefined,
 
-            quality_settings: undefined,
+            validation_method: undefined,
+            validation_frames_percent: undefined,
+            validation_frames_per_job: undefined,
+            frame_selection_method: undefined,
         };
 
         const updateTrigger = new FieldUpdateTrigger();
@@ -785,7 +793,7 @@ export class Task extends Session {
                 data[property] = initialData[property];
             }
         }
-
+        console.log(data);
         if (data.assignee) data.assignee = new User(data.assignee);
         if (data.owner) data.owner = new User(data.owner);
 
@@ -1103,6 +1111,18 @@ export class Task extends Session {
                 progress: {
                     get: () => data.progress,
                 },
+                validationFramesPercent: {
+                    get: () => data.validation_frames_percent,
+                },
+                validationFramesPerJob: {
+                    get: () => data.validation_frames_per_job,
+                },
+                frameSelectionMethod: {
+                    get: () => data.frame_selection_method,
+                },
+                validationMethod: {
+                    get: () => data.validation_method,
+                },
                 _internalData: {
                     get: () => data,
                 },
@@ -1118,7 +1138,7 @@ export class Task extends Session {
         return result;
     }
 
-    async save(options?: { requestStatusCallback?: (request: Request) => void, fields: any }): Promise<Task> {
+    async save(options?: { requestStatusCallback?: (request: Request) => void }): Promise<Task> {
         const result = await PluginRegistry.apiWrapper.call(this, Task.prototype.save, options);
         return result;
     }
