@@ -7,7 +7,7 @@ import './styles.scss';
 import React, { useState, useEffect, useCallback } from 'react';
 import { useSelector, useDispatch, shallowEqual } from 'react-redux';
 
-import { ActiveControl, CombinedState } from 'reducers';
+import { ActiveControl, CombinedState, NewIssueSource } from 'reducers';
 
 import { commentIssueAsync, resolveIssueAsync, reopenIssueAsync } from 'actions/review-actions';
 import {
@@ -41,6 +41,7 @@ export default function IssueAggregatorComponent(): JSX.Element | null {
         canvasIsReady,
         annotationsZLayer,
         newIssuePosition,
+        newIssueSource,
         issueFetching,
         qualityConflicts,
         objectStates,
@@ -54,7 +55,8 @@ export default function IssueAggregatorComponent(): JSX.Element | null {
         canvasInstance: state.annotation.canvas.instance,
         canvasIsReady: state.annotation.canvas.ready,
         annotationsZLayer: state.annotation.annotations.zLayer.cur,
-        newIssuePosition: state.review.newIssuePosition,
+        newIssuePosition: state.review.newIssue.position,
+        newIssueSource: state.review.newIssue.source,
         issueFetching: state.review.fetching.issueId,
         qualityConflicts: state.review.frameConflicts,
         objectStates: state.annotation.annotations.states,
@@ -291,7 +293,7 @@ export default function IssueAggregatorComponent(): JSX.Element | null {
 
     return (
         <>
-            {createLeft !== null && createTop !== null ? (
+            {newIssueSource === NewIssueSource.ISSUE_TOOL && createLeft !== null && createTop !== null ? (
                 <CreateIssueDialog
                     top={createTop}
                     left={createLeft}

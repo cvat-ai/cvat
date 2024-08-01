@@ -15,7 +15,10 @@ const defaultState: ReviewState = {
     frameIssues: [], // saved on the server and not saved on the server
     conflicts: [],
     frameConflicts: [],
-    newIssuePosition: null,
+    newIssue: {
+        position: null,
+        source: null,
+    },
     issuesHidden: false,
     issuesResolvedHidden: false,
     fetching: {
@@ -46,13 +49,19 @@ export default function (state: ReviewState = defaultState, action: any): Review
         case AnnotationActionTypes.CHANGE_FRAME: {
             return {
                 ...state,
-                newIssuePosition: null,
+                newIssue: {
+                    position: null,
+                    source: null,
+                },
             };
         }
         case AnnotationActionTypes.DELETE_FRAME_SUCCESS: {
             return {
                 ...state,
-                newIssuePosition: null,
+                newIssue: {
+                    position: null,
+                    source: null,
+                },
             };
         }
         case ReviewActionTypes.SUBMIT_REVIEW: {
@@ -97,10 +106,13 @@ export default function (state: ReviewState = defaultState, action: any): Review
             };
         }
         case ReviewActionTypes.START_ISSUE: {
-            const { position } = action.payload;
+            const { position, source } = action.payload;
             return {
                 ...state,
-                newIssuePosition: position,
+                newIssue: {
+                    position,
+                    source,
+                },
             };
         }
         case ReviewActionTypes.FINISH_ISSUE_SUCCESS: {
@@ -124,13 +136,19 @@ export default function (state: ReviewState = defaultState, action: any): Review
                     ).slice(-config.LATEST_COMMENTS_SHOWN_QUICK_ISSUE),
                 frameIssues,
                 issues,
-                newIssuePosition: null,
+                newIssue: {
+                    position: null,
+                    source: null,
+                },
             };
         }
         case ReviewActionTypes.CANCEL_ISSUE: {
             return {
                 ...state,
-                newIssuePosition: null,
+                newIssue: {
+                    position: null,
+                    source: null,
+                },
             };
         }
         case ReviewActionTypes.COMMENT_ISSUE:
