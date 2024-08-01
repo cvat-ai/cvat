@@ -265,12 +265,13 @@ class ProjectViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
     mixins.RetrieveModelMixin, mixins.CreateModelMixin, mixins.DestroyModelMixin,
     PartialUpdateModelMixin, UploadMixin, DatasetMixin, BackupMixin, CsrfWorkaroundMixin
 ):
-    queryset = models.Project.objects.select_related(
-        'assignee', 'owner', 'target_storage', 'source_storage', 'annotation_guide',
-    ).prefetch_related('tasks').all()
-
     # NOTE: The search_fields attribute should be a list of names of text
     # type fields on the model,such as CharField or TextField
+    queryset = models.Project.objects.select_related(
+        'owner', 'assignee', 'organization',
+        'annotation_guide', 'source_storage', 'target_storage',
+    )
+
     search_fields = ('name', 'owner', 'assignee', 'status')
     filter_fields = list(search_fields) + ['id', 'updated_date']
     simple_filters = list(search_fields)
@@ -290,10 +291,13 @@ class ProjectViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
 
     def get_queryset(self):
         queryset = super().get_queryset()
+        if self.action in ('list', 'retrieve', 'partial_update', 'update') :
+            queryset = queryset.prefetch_related('tasks')
 
-        if self.action == 'list':
-            perm = ProjectPermission.create_scope_list(self.request)
-            queryset = perm.filter(queryset)
+            if self.action == 'list':
+                perm = ProjectPermission.create_scope_list(self.request)
+                return perm.filter(queryset)
+
         return queryset
 
     @transaction.atomic
@@ -630,7 +634,7 @@ class ProjectViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
     def preview(self, request, pk):
         self._object = self.get_object() # call check_object_permissions as well
 
-        first_task = self._object.tasks.order_by('-id').first()
+        first_task = self._object.tasks.select_related('data__video').order_by('-id').first()
         if not first_task:
             return HttpResponseNotFound('Project image preview not found')
 
@@ -869,6 +873,8 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
         if self.action == 'list':
             perm = TaskPermission.create_scope_list(self.request)
             queryset = perm.filter(queryset)
+        elif self.action == 'preview':
+            queryset = Task.objects.select_related('data')
 
         return queryset
 
@@ -2362,41 +2368,42 @@ class LabelViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
                     code=status.HTTP_400_BAD_REQUEST
                 )
 
-            if job_id:
+            if job_id or task_id or project_id:
+                if job_id:
+                    instance = Job.objects.select_related(
+                        'assignee', 'segment__task__organization',
+                        'segment__task__owner', 'segment__task__assignee',
+                        'segment__task__project__organization',
+                        'segment__task__project__owner',
+                        'segment__task__project__assignee',
+                    ).get(id=job_id)
+                elif task_id:
+                    instance = Task.objects.select_related(
+                        'owner', 'assignee', 'organization',
+                        'project__owner', 'project__assignee', 'project__organization',
+                    ).get(id=task_id)
+                elif project_id:
+                    instance = Project.objects.select_related(
+                        'owner', 'assignee', 'organization',
+                    ).get(id=project_id)
+
                 # NOTE: This filter is too complex to be implemented by other means
                 # It requires the following filter query:
                 # (
                 #  project__task__segment__job__id = job_id
                 #  OR
                 #  task__segment__job__id = job_id
-                # )
-                job = Job.objects.get(id=job_id)
-                self.check_object_permissions(self.request, job)
-                queryset = job.get_labels()
-            elif task_id:
-                # NOTE: This filter is too complex to be implemented by other means
-                # It requires the following filter query:
-                # (
-                #  project__task__id = task_id
                 #  OR
-                #  task_id = task_id
+                #  project__task__id = task_id
                 # )
-                task = Task.objects.get(id=task_id)
-                self.check_object_permissions(self.request, task)
-                queryset = task.get_labels()
-            elif project_id:
-                # NOTE: this check is to make behavior consistent with other source filters
-                project = Project.objects.get(id=project_id)
-                self.check_object_permissions(self.request, project)
-                queryset = project.get_labels()
+                self.check_object_permissions(self.request, instance)
+                queryset = instance.get_labels(prefetch=True)
             else:
                 # In other cases permissions are checked already
                 queryset = super().get_queryset()
                 perm = LabelPermission.create_scope_list(self.request)
-                queryset = perm.filter(queryset)
-
-            # Include only 1st level labels in list responses
-            queryset = queryset.filter(parent__isnull=True)
+                # Include only 1st level labels in list responses
+                queryset = perm.filter(queryset).filter(parent__isnull=True)
         else:
             queryset = super().get_queryset()
 
