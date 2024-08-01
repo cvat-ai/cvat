@@ -8,12 +8,12 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { useSelector, useDispatch, shallowEqual } from 'react-redux';
 
 import { ActiveControl, CombinedState } from 'reducers';
-import { Canvas } from 'cvat-canvas/src/typescript/canvas';
 
 import { commentIssueAsync, resolveIssueAsync, reopenIssueAsync } from 'actions/review-actions';
 import {
     AnnotationConflict, ConflictSeverity, ObjectState, QualityConflict,
 } from 'cvat-core-wrapper';
+import { Canvas, CanvasMode } from 'cvat-canvas-wrapper';
 
 import { highlightConflict, updateActiveControl } from 'actions/annotation-actions';
 import CreateIssueDialog from './create-issue-dialog';
@@ -89,7 +89,7 @@ export default function IssueAggregatorComponent(): JSX.Element | null {
     const conflictLabels: JSX.Element[] = [];
 
     const onCreateIssue = useCallback(() => {
-        if (canvasReady) {
+        if (canvasReady && canvasInstance.mode() === CanvasMode.SELECT_REGION) {
             canvasInstance.selectRegion(false);
             dispatch(updateActiveControl(ActiveControl.CURSOR));
         }
