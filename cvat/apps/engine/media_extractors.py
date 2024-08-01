@@ -3,6 +3,8 @@
 #
 # SPDX-License-Identifier: MIT
 
+from __future__ import annotations
+
 import os
 import sysconfig
 import tempfile
@@ -13,11 +15,15 @@ import itertools
 import struct
 from abc import ABC, abstractmethod
 from bisect import bisect
-from contextlib import closing
+from contextlib import ExitStack, closing
+from dataclasses import dataclass
 from enum import IntEnum
-from typing import Iterable
+from typing import Callable, Iterable, Iterator, Optional, Protocol, Tuple, TypeVar
 
 import av
+import av.codec
+import av.container
+import av.video.stream
 import numpy as np
 from natsort import os_sorted
 from pyunpack import Archive
@@ -91,6 +97,97 @@ def image_size_within_orientation(img: Image):
 
 def has_exif_rotation(img: Image):
     return img.getexif().get(ORIENTATION_EXIF_TAG, ORIENTATION.NORMAL_HORIZONTAL) != ORIENTATION.NORMAL_HORIZONTAL
+
+_T = TypeVar("_T")
+
+
+class RandomAccessIterator(Iterator[_T]):
+    def __init__(self, iterable: Iterable[_T]):
+        self.iterable: Iterable[_T] = iterable
+        self.iterator: Optional[Iterator[_T]] = None
+        self.pos: int = -1
+
+    def __iter__(self):
+        return self
+
+    def __next__(self):
+        return self[self.pos + 1]
+
+    def __getitem__(self, idx: int) -> Optional[_T]:
+        assert 0 <= idx
+        if self.iterator is None or idx <= self.pos:
+            self.reset()
+        v = None
+        while self.pos < idx:
+            # NOTE: don't keep the last item in self, it can be expensive
+            v = next(self.iterator)
+            self.pos += 1
+        return v
+
+    def reset(self):
+        self.close()
+        self.iterator = iter(self.iterable)
+
+    def close(self):
+        if self.iterator is not None:
+            if close := getattr(self.iterator, "close", None):
+                close()
+        self.iterator = None
+        self.pos = -1
+
+
+class Sized(Protocol):
+    def get_size(self) -> int: ...
+
+_MediaT = TypeVar("_MediaT", bound=Sized)
+
+class CachingMediaIterator(RandomAccessIterator[_MediaT]):
+    @dataclass
+    class _CacheItem:
+        value: _MediaT
+        size: int
+
+    def __init__(
+        self,
+        iterable: Iterable,
+        *,
+        max_cache_memory: int,
+        max_cache_entries: int,
+        object_size_callback: Optional[Callable[[_MediaT], int]] = None,
+    ):
+        super().__init__(iterable)
+        self.max_cache_entries = max_cache_entries
+        self.max_cache_memory = max_cache_memory
+        self._get_object_size_callback = object_size_callback
+        self.used_cache_memory = 0
+        self._cache: dict[int, self._CacheItem] = {}
+
+    def _get_object_size(self, obj: _MediaT) -> int:
+        if self._get_object_size_callback:
+            return self._get_object_size_callback(obj)
+
+        return obj.get_size()
+
+    def __getitem__(self, idx: int):
+        cache_item = self._cache.get(idx)
+        if cache_item:
+            return cache_item.value
+
+        value = super().__getitem__(idx)
+        value_size = self._get_object_size(value)
+
+        while (
+            len(self._cache) + 1 > self.max_cache_entries or
+            self.used_cache_memory + value_size > self.max_cache_memory
+        ):
+            min_key = min(self._cache.keys())
+            self._cache.pop(min_key)
+
+        if self.used_cache_memory + value_size <= self.max_cache_memory:
+            self._cache[idx] = self._CacheItem(value, value_size)
+
+        return value
+
 
 class IMediaReader(ABC):
     def __init__(self, source_path, step, start, stop, dimension):
@@ -409,7 +506,10 @@ class ZipReader(ImageListReader):
             os.remove(self._zip_source.filename)
 
 class VideoReader(IMediaReader):
-    def __init__(self, source_path, step=1, start=0, stop=None, dimension=DimensionType.DIM_2D):
+    def __init__(
+        self, source_path, step=1, start=0, stop=None,
+        dimension=DimensionType.DIM_2D, *, allow_threading: bool = True
+    ):
         super().__init__(
             source_path=source_path,
             step=step,
@@ -417,6 +517,10 @@ class VideoReader(IMediaReader):
             stop=stop + 1 if stop is not None else stop,
             dimension=dimension,
         )
+
+        self.allow_threading = allow_threading
+        self._frame_count: Optional[int] = None
+        self._frame_size: Optional[tuple[int, int]] = None # (w, h)
 
     def _has_frame(self, i):
         if i >= self._start:
@@ -426,26 +530,59 @@ class VideoReader(IMediaReader):
 
         return False
 
-    def __iter__(self):
-        with self._get_av_container() as container:
-            stream = container.streams.video[0]
-            stream.thread_type = 'AUTO'
+    def _make_frame_iterator(
+        self,
+        *,
+        apply_filter: bool = True,
+        stream: Optional[av.video.stream.VideoStream] = None,
+    ) -> Iterator[Tuple[av.VideoFrame, str, int]]:
+        es = ExitStack()
+
+        need_init = stream is None
+        if need_init:
+            container = es.enter_context(self._get_av_container())
+        else:
+            container = stream.container
+
+        with es:
+            if need_init:
+                stream = container.streams.video[0]
+
+                if self.allow_threading:
+                    stream.thread_type = 'AUTO'
+
+                es.enter_context(closing(stream.codec_context))
+
             frame_num = 0
+
             for packet in container.demux(stream):
                 for image in packet.decode():
                     frame_num += 1
-                    if self._has_frame(frame_num - 1):
-                        if packet.stream.metadata.get('rotate'):
-                            pts = image.pts
-                            image = av.VideoFrame().from_ndarray(
-                                rotate_image(
-                                    image.to_ndarray(format='bgr24'),
-                                    360 - int(stream.metadata.get('rotate'))
-                                ),
-                                format ='bgr24'
-                            )
-                            image.pts = pts
-                        yield (image, self._source_path[0], image.pts)
+
+                    if apply_filter and not self._has_frame(frame_num - 1):
+                        continue
+
+                    if stream.metadata.get('rotate'):
+                        pts = image.pts
+                        image = av.VideoFrame().from_ndarray(
+                            rotate_image(
+                                image.to_ndarray(format='bgr24'),
+                                360 - int(stream.metadata.get('rotate'))
+                            ),
+                            format ='bgr24'
+                        )
+                        image.pts = pts
+
+                    if self._frame_size is None:
+                        self._frame_size = (image.width, image.height)
+
+                    yield (image, self._source_path[0], image.pts)
+
+                if self._frame_count is None:
+                    self._frame_count = frame_num
+
+    def __iter__(self):
+        return self._make_frame_iterator()
 
     def get_progress(self, pos):
         duration = self._get_duration()
@@ -457,8 +594,11 @@ class VideoReader(IMediaReader):
         return av.open(self._source_path[0])
 
     def _get_duration(self):
-        with self._get_av_container() as container:
+        with ExitStack() as es:
+            container = es.enter_context(self._get_av_container())
             stream = container.streams.video[0]
+            es.enter_context(closing(stream.codec_context))
+
             duration = None
             if stream.duration:
                 duration = stream.duration
@@ -473,26 +613,52 @@ class VideoReader(IMediaReader):
             return duration
 
     def get_preview(self, frame):
-        with self._get_av_container() as container:
+        with ExitStack() as es:
+            container = es.enter_context(self._get_av_container())
             stream = container.streams.video[0]
+            es.enter_context(closing(stream.codec_context))
+
             tb_denominator = stream.time_base.denominator
             needed_time = int((frame / stream.guessed_rate) * tb_denominator)
             container.seek(offset=needed_time, stream=stream)
-            for packet in container.demux(stream):
-                for frame in packet.decode():
-                    return self._get_preview(frame.to_image() if not stream.metadata.get('rotate') \
-                        else av.VideoFrame().from_ndarray(
-                            rotate_image(
-                                frame.to_ndarray(format='bgr24'),
-                                360 - int(container.streams.video[0].metadata.get('rotate'))
-                            ),
-                            format ='bgr24'
-                        ).to_image()
-                    )
+
+            with closing(self._make_frame_iterator(stream=stream)) as frame_iter:
+                return self._get_preview(next(frame_iter))
 
     def get_image_size(self, i):
-        image = (next(iter(self)))[0]
-        return image.width, image.height
+        if self._frame_size is not None:
+            return self._frame_size
+
+        with closing(iter(self)) as frame_iter:
+            image = next(frame_iter)[0]
+            self._frame_size = (image.width, image.height)
+
+        return self._frame_size
+
+    def get_frame_count(self) -> int:
+        """
+        Returns total frame count in the video
+
+        Note that not all videos provide length / duration metainfo, so the
+        result may require full video decoding.
+
+        The total count is NOT affected by the frame filtering options of the object,
+        i.e. start frame, end frame and frame step.
+        """
+        # It's possible to retrieve frame count from the stream.frames,
+        # but the number may be incorrect.
+        # https://superuser.com/questions/1512575/why-total-frame-count-is-different-in-ffmpeg-than-ffprobe
+        if self._frame_count is not None:
+            return self._frame_count
+
+        frame_count = 0
+        for _ in self._make_frame_iterator(apply_filter=False):
+            frame_count += 1
+
+        self._frame_count = frame_count
+
+        return frame_count
+
 
 class ImageReaderWithManifest:
     def __init__(self, manifest_path: str):
@@ -723,7 +889,7 @@ class Mpeg4ChunkWriter(IChunkWriter):
                 "preset": "ultrafast",
             }
 
-    def _add_video_stream(self, container, w, h, rate, options):
+    def _add_video_stream(self, container: av.container.OutputContainer, w, h, rate, options):
         # x264 requires width and height must be divisible by 2 for yuv420p
         if h % 2:
             h += 1
@@ -760,11 +926,15 @@ class Mpeg4ChunkWriter(IChunkWriter):
                 options=self._codec_opts,
             )
 
-            self._encode_images(images, output_container, output_v_stream)
+            with closing(output_v_stream):
+                self._encode_images(images, output_container, output_v_stream)
+
         return [(input_w, input_h)]
 
     @staticmethod
-    def _encode_images(images, container, stream):
+    def _encode_images(
+        images, container: av.container.OutputContainer, stream: av.video.stream.VideoStream
+    ):
         for frame, _, _ in images:
             # let libav set the correct pts and time_base
             frame.pts = None
@@ -812,7 +982,9 @@ class Mpeg4CompressedChunkWriter(Mpeg4ChunkWriter):
                 options=self._codec_opts,
             )
 
-            self._encode_images(images, output_container, output_v_stream)
+            with closing(output_v_stream):
+                self._encode_images(images, output_container, output_v_stream)
+
         return [(input_w, input_h)]
 
 def _is_archive(path):

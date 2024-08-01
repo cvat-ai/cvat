@@ -3,15 +3,17 @@
 #
 # SPDX-License-Identifier: MIT
 
+from contextlib import closing
 import itertools
 import fnmatch
 import os
+import av
 import rq
 import re
 import shutil
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Any, Dict, Iterator, List, NamedTuple, Optional, Sequence, Union, Iterable
+from typing import Any, Dict, Iterator, List, NamedTuple, Optional, Sequence, Tuple, Union, Iterable
 from urllib import parse as urlparse
 from urllib import request as urlrequest
 import concurrent.futures
@@ -26,7 +28,8 @@ from rest_framework.serializers import ValidationError
 from cvat.apps.engine import models
 from cvat.apps.engine.log import ServerLogManager
 from cvat.apps.engine.media_extractors import (
-    MEDIA_TYPES, IMediaReader, ImageListReader, Mpeg4ChunkWriter, Mpeg4CompressedChunkWriter,
+    MEDIA_TYPES, CachingMediaIterator, IMediaReader, ImageListReader,
+    Mpeg4ChunkWriter, Mpeg4CompressedChunkWriter, RandomAccessIterator,
     ValidateDimension, ZipChunkWriter, ZipCompressedChunkWriter, get_mime, sort
 )
 from cvat.apps.engine.utils import (
@@ -119,7 +122,7 @@ def _copy_data_from_share_point(
                 os.makedirs(target_dir)
             shutil.copyfile(source_path, target_path)
 
-def _get_task_segment_data(
+def _generate_segment_params(
     db_task: models.Task,
     *,
     data_size: Optional[int] = None,
@@ -170,7 +173,7 @@ def _get_task_segment_data(
 
     return SegmentsParams(segments, segment_size, overlap)
 
-def _save_task_to_db(
+def _create_segments_and_jobs(
     db_task: models.Task,
     *,
     job_file_mapping: Optional[JobFileMapping] = None,
@@ -179,7 +182,7 @@ def _save_task_to_db(
     rq_job.meta['status'] = 'Task is being saved in database'
     rq_job.save_meta()
 
-    segments, segment_size, overlap = _get_task_segment_data(
+    segments, segment_size, overlap = _generate_segment_params(
         db_task=db_task, job_file_mapping=job_file_mapping,
     )
     db_task.segment_size = segment_size
@@ -975,7 +978,7 @@ def _create_thread(
         manifest_file = os.path.relpath(db_data.get_manifest_path(), upload_dir)
 
     video_path: str = ""
-    video_size: tuple[int, int] = (0, 0)
+    video_frame_size: tuple[int, int] = (0, 0)
 
     images: list[models.Image] = []
 
@@ -1000,8 +1003,8 @@ def _create_thread(
                     if not len(manifest):
                         raise ValidationError("No key frames found in the manifest")
 
-                    all_frames = manifest.video_length
-                    video_size = manifest.video_resolution
+                    video_frame_count = manifest.video_length
+                    video_frame_size = manifest.video_resolution
                     manifest_is_prepared = True
                 except Exception as ex:
                     manifest.remove()
@@ -1030,8 +1033,8 @@ def _create_thread(
 
                     _update_status('A manifest has been created')
 
-                    all_frames = len(manifest.reader) # TODO: check if the field access above and here are equivalent
-                    video_size = manifest.reader.resolution
+                    video_frame_count = len(manifest.reader) # TODO: check if the field access above and here are equivalent
+                    video_frame_size = manifest.reader.resolution
                     manifest_is_prepared = True
                 except Exception as ex:
                     manifest.remove()
@@ -1044,14 +1047,14 @@ def _create_thread(
                     _update_status("{} The task will be created using the old method".format(base_msg))
 
             if not manifest:
-                all_frames = len(extractor)
-                video_size = extractor.get_image_size(0)
+                video_frame_count = extractor.get_frame_count()
+                video_frame_size = extractor.get_image_size(0)
 
             db_data.size = len(range(
                 db_data.start_frame,
                 min(
-                    data['stop_frame'] + 1 if data['stop_frame'] else all_frames,
-                    all_frames,
+                    data['stop_frame'] + 1 if data['stop_frame'] else video_frame_count,
+                    video_frame_count,
                 ),
                 db_data.get_frame_step()
             ))
@@ -1126,7 +1129,7 @@ def _create_thread(
         models.Video.objects.create(
             data=db_data,
             path=os.path.relpath(video_path, upload_dir),
-            width=video_size[0], height=video_size[1]
+            width=video_frame_size[0], height=video_frame_size[1]
         )
 
     # validate stop_frame
@@ -1137,13 +1140,12 @@ def _create_thread(
             db_data.start_frame + (db_data.size - 1) * db_data.get_frame_step())
 
     slogger.glob.info("Found frames {} for Data #{}".format(db_data.size, db_data.id))
-    _save_task_to_db(db_task, job_file_mapping=job_file_mapping) # TODO: split into jobs and task saving
+    _create_segments_and_jobs(db_task, job_file_mapping=job_file_mapping)
 
     # Save chunks
-    # TODO: refactor
-    # TODO: save chunks per job
+    # TODO: refactor into a separate class / function for chunk creation
     if db_data.storage_method == models.StorageMethodChoice.FILE_SYSTEM or not settings.USE_CACHE:
-        def update_progress(progress):
+        def update_progress(progress: float):
             # TODO: refactor this function into a class
             progress_animation = '|/-\\'
             if not hasattr(update_progress, 'call_counter'):
@@ -1157,16 +1159,48 @@ def _create_thread(
             job.save_meta()
             update_progress.call_counter = (update_progress.call_counter + 1) % len(progress_animation)
 
+        db_segments = db_task.segment_set.all()
 
-        counter = itertools.count()
-        generator = itertools.groupby(extractor, lambda _: next(counter) // db_data.chunk_size)
-        generator = ((chunk_idx, list(chunk_data)) for chunk_idx, chunk_data in generator)
+        def generate_chunk_params() -> Iterator[Tuple[models.Segment, int, Sequence[Any]]]:
+            if isinstance(extractor, MEDIA_TYPES['video']['extractor']):
+                def _get_frame_size(frame_tuple: Tuple[av.VideoFrame, Any, Any]) -> int:
+                    # There is no need to be absolutely precise here,
+                    # just need to provide the reasonable upper boundary.
+                    # Return bytes needed for 1 frame
+                    frame = frame_tuple[0]
+                    return frame.width * frame.height * (frame.format.padded_bits_per_pixel // 8)
+
+                media_iterator = CachingMediaIterator(
+                    extractor,
+                    max_cache_memory=2 ** 30, max_cache_entries=db_task.overlap,
+                    object_size_callback=_get_frame_size
+                )
+            else:
+                media_iterator = RandomAccessIterator(extractor)
+
+            with closing(media_iterator):
+                for db_segment in db_segments:
+                    counter = itertools.count()
+                    generator = (
+                        media_iterator[frame_idx]
+                        for frame_idx in db_segment.frame_set # TODO: check absolute vs relative ids
+                    ) # probably won't work for GT job segments with gaps
+                    generator = itertools.groupby(
+                        generator, lambda _: next(counter) // db_data.chunk_size
+                    )
+                    generator = (
+                        (chunk_idx, list(chunk_data))
+                        for chunk_idx, chunk_data in generator
+                    )
+
+                    yield (db_segment, generator)
 
         def save_chunks(
             executor: concurrent.futures.ThreadPoolExecutor,
+            db_segment: models.Segment,
             chunk_idx: int,
-            chunk_data: Iterable[tuple[str, str, str]]
-        ) -> list[tuple[str, int, tuple[int, int]]]:
+            chunk_data: Iterable[tuple[Any, str, str]]
+        ):
             if (
                 db_task.dimension == models.DimensionType.DIM_2D and
                 isinstance(extractor, (
@@ -1181,32 +1215,35 @@ def _create_thread(
             fs_original = executor.submit(
                 original_chunk_writer.save_as_chunk,
                 images=chunk_data,
-                chunk_path=db_data.get_original_chunk_path(chunk_idx)
+                chunk_path=db_data.get_original_segment_chunk_path(
+                    chunk_idx, segment=db_segment.id
+                ),
             )
-            fs_compressed = executor.submit(
-                compressed_chunk_writer.save_as_chunk,
+            compressed_chunk_writer.save_as_chunk(
                 images=chunk_data,
-                chunk_path=db_data.get_compressed_chunk_path(chunk_idx),
+                chunk_path=db_data.get_compressed_segment_chunk_path(
+                    chunk_idx, segment=db_segment.id
+                ),
             )
-            # TODO: convert to async for proper concurrency
+
             fs_original.result()
-            image_sizes = fs_compressed.result()
-
-            # (path, frame, size)
-            return list((i[0][1], i[0][2], i[1]) for i in zip(chunk_data, image_sizes))
-
-        def process_results(img_meta: list[tuple[str, int, tuple[int, int]]]):
-            progress = img_meta[-1][1] / db_data.size
-            update_progress(progress)
 
         futures = queue.Queue(maxsize=settings.CVAT_CONCURRENT_CHUNK_PROCESSING)
         with concurrent.futures.ThreadPoolExecutor(
-            max_workers=2 * settings.CVAT_CONCURRENT_CHUNK_PROCESSING
+            max_workers=2 * settings.CVAT_CONCURRENT_CHUNK_PROCESSING # TODO: remove 2 * or configuration
         ) as executor:
-            for chunk_idx, chunk_data in generator:
-                if futures.full():
-                    process_results(futures.get().result())
-                futures.put(executor.submit(save_chunks, executor, chunk_idx, chunk_data))
+            # TODO: maybe make real multithreading support, currently the code is limited by 1
+            # segment chunk, even if more threads are available
+            for segment_idx, (segment, segment_chunk_params) in enumerate(generate_chunk_params()):
+                for chunk_idx, chunk_data in segment_chunk_params:
+                    if futures.full():
+                        futures.get().result()
+
+                    futures.put(executor.submit(
+                        save_chunks, executor, segment, chunk_idx, chunk_data
+                    ))
+
+                update_progress(segment_idx / len(db_segments))
 
             while not futures.empty():
-                process_results(futures.get().result())
+                futures.get().result()

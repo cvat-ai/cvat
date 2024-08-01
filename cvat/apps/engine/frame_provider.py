@@ -11,7 +11,7 @@ from abc import ABCMeta, abstractmethod
 from dataclasses import dataclass
 from enum import Enum, auto
 from io import BytesIO
-from typing import Any, Callable, Generic, Iterable, Iterator, Optional, Tuple, TypeVar, Union
+from typing import Any, Callable, Generic, Iterator, Optional, Tuple, Type, TypeVar, Union
 
 import av
 import cv2
@@ -23,8 +23,13 @@ from cvat.apps.engine import models
 from cvat.apps.engine.cache import DataWithMime, MediaCache
 from cvat.apps.engine.media_extractors import (
     FrameQuality,
+    IChunkWriter,
     IMediaReader,
+    Mpeg4ChunkWriter,
+    Mpeg4CompressedChunkWriter,
+    RandomAccessIterator,
     VideoReader,
+    ZipChunkWriter,
     ZipCompressedChunkWriter,
     ZipReader,
 )
@@ -33,53 +38,18 @@ from cvat.apps.engine.mime_types import mimetypes
 _T = TypeVar("_T")
 
 
-class _RandomAccessIterator(Iterator[_T]):
-    def __init__(self, iterable: Iterable[_T]):
-        self.iterable: Iterable[_T] = iterable
-        self.iterator: Optional[Iterator[_T]] = None
-        self.pos: int = -1
-
-    def __iter__(self):
-        return self
-
-    def __next__(self):
-        return self[self.pos + 1]
-
-    def __getitem__(self, idx: int) -> Optional[_T]:
-        assert 0 <= idx
-        if self.iterator is None or idx <= self.pos:
-            self.reset()
-        v = None
-        while self.pos < idx:
-            # NOTE: don't keep the last item in self, it can be expensive
-            v = next(self.iterator)
-            self.pos += 1
-        return v
-
-    def reset(self):
-        self.close()
-        self.iterator = iter(self.iterable)
-
-    def close(self):
-        if self.iterator is not None:
-            if close := getattr(self.iterator, "close", None):
-                close()
-        self.iterator = None
-        self.pos = -1
-
-
 class _ChunkLoader(metaclass=ABCMeta):
     def __init__(self, reader_class: IMediaReader) -> None:
         self.chunk_id: Optional[int] = None
-        self.chunk_reader: Optional[_RandomAccessIterator] = None
+        self.chunk_reader: Optional[RandomAccessIterator] = None
         self.reader_class = reader_class
 
-    def load(self, chunk_id: int) -> _RandomAccessIterator[Tuple[Any, str, int]]:
+    def load(self, chunk_id: int) -> RandomAccessIterator[Tuple[Any, str, int]]:
         if self.chunk_id != chunk_id:
             self.unload()
 
             self.chunk_id = chunk_id
-            self.chunk_reader = _RandomAccessIterator(
+            self.chunk_reader = RandomAccessIterator(
                 self.reader_class([self.read_chunk(chunk_id)[0]])
             )
         return self.chunk_reader
@@ -103,7 +73,7 @@ class _FileChunkLoader(_ChunkLoader):
 
     def read_chunk(self, chunk_id: int) -> DataWithMime:
         chunk_path = self.get_chunk_path(chunk_id)
-        with open(chunk_path, "r") as f:
+        with open(chunk_path, "rb") as f:
             return (
                 io.BytesIO(f.read()),
                 mimetypes.guess_type(chunk_path)[0],
@@ -254,7 +224,6 @@ class TaskFrameProvider(IFrameProvider):
         return_type = DataWithMeta[BytesIO]
         chunk_number = self.validate_chunk_number(chunk_number)
 
-        # TODO: return a joined chunk. Find a solution for segment boundary video chunks
         db_data = self._db_task.data
         step = db_data.get_frame_step()
         task_chunk_start_frame = chunk_number * db_data.chunk_size
@@ -270,7 +239,7 @@ class TaskFrameProvider(IFrameProvider):
         matching_segments = sorted(
             [
                 s
-                for s in self._db_task.segment_set
+                for s in self._db_task.segment_set.all()
                 if s.type == models.SegmentType.RANGE
                 if not task_chunk_frame_set.isdisjoint(s.frame_set)
             ],
@@ -284,6 +253,8 @@ class TaskFrameProvider(IFrameProvider):
                 segment_frame_provider.get_chunk_number(task_chunk_start_frame), quality=quality
             )
 
+        # Create and return a joined chunk
+        # TODO: refactor into another class, optimize (don't visit frames twice)
         task_chunk_frames = []
         for db_segment in matching_segments:
             segment_frame_provider = SegmentFrameProvider(db_segment)
@@ -295,12 +266,37 @@ class TaskFrameProvider(IFrameProvider):
 
                 frame = segment_frame_provider.get_frame(
                     task_chunk_frame_id, quality=quality, out_type=FrameOutputType.BUFFER
-                )
+                ).data
                 task_chunk_frames.append((frame, None, None))
 
-        merged_chunk_writer = ZipCompressedChunkWriter(
-            db_data.image_quality, dimension=self._db_task.dimension
+        writer_classes: dict[FrameQuality, Type[IChunkWriter]] = {
+            FrameQuality.COMPRESSED: (
+                Mpeg4CompressedChunkWriter
+                if db_data.compressed_chunk_type == models.DataChoice.VIDEO
+                else ZipCompressedChunkWriter
+            ),
+            FrameQuality.ORIGINAL: (
+                Mpeg4ChunkWriter
+                if db_data.original_chunk_type == models.DataChoice.VIDEO
+                else ZipChunkWriter
+            ),
+        }
+
+        image_quality = (
+            100
+            if writer_classes[quality] in [Mpeg4ChunkWriter, ZipChunkWriter]
+            else db_data.image_quality
         )
+        mime_type = (
+            "video/mp4"
+            if writer_classes[quality] in [Mpeg4ChunkWriter, Mpeg4CompressedChunkWriter]
+            else "application/zip"
+        )
+
+        kwargs = {}
+        if self._db_task.dimension == models.DimensionType.DIM_3D:
+            kwargs["dimension"] = models.DimensionType.DIM_3D
+        merged_chunk_writer = writer_classes[quality](image_quality, **kwargs)
 
         buffer = io.BytesIO()
         merged_chunk_writer.save_as_chunk(
@@ -311,7 +307,9 @@ class TaskFrameProvider(IFrameProvider):
         )
         buffer.seek(0)
 
-        return return_type(data=buffer, mime="application/zip", checksum=None)
+        # TODO: add caching
+
+        return return_type(data=buffer, mime=mime_type, checksum=None)
 
     def get_frame(
         self,
@@ -406,10 +404,14 @@ class SegmentFrameProvider(IFrameProvider):
         return self._db_segment.frame_count
 
     def validate_frame_number(self, frame_number: int) -> Tuple[int, int, int]:
-        if frame_number not in self._db_segment.frame_set:
+        frame_sequence = list(self._db_segment.frame_set)
+        if frame_number not in frame_sequence:
             raise ValidationError(f"Incorrect requested frame number: {frame_number}")
 
-        chunk_number, frame_position = divmod(frame_number, self._db_segment.task.data.chunk_size)
+        # TODO: maybe optimize search
+        chunk_number, frame_position = divmod(
+            frame_sequence.index(frame_number), self._db_segment.task.data.chunk_size
+        )
         return frame_number, chunk_number, frame_position
 
     def get_chunk_number(self, frame_number: int) -> int:
