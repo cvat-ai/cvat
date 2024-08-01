@@ -4,20 +4,17 @@
 
 from functools import wraps
 from itertools import islice
-from typing import Any
-from typing import Callable
-from typing import Iterator
+from typing import Any, Callable, Iterator, TypeVar, overload
 
-from typing import TypeVar
-from typing import overload
-
+import attrs
+from attr import field
 
 T = TypeVar("T", bound=int | float | str)
 
 
 def _parse_self_and_other_before_accessing(list_method: Callable[..., Any]) -> Callable[..., Any]:
     @wraps(list_method)
-    def wrapper(self: 'LazyList', other: Any) -> 'LazyList':
+    def wrapper(self: "LazyList", other: Any) -> "LazyList":
         self._parse_up_to(-1)
         if isinstance(other, LazyList):
             other._parse_up_to(-1)
@@ -34,8 +31,9 @@ def _parse_self_and_other_before_accessing(list_method: Callable[..., Any]) -> C
 
 def _parse_self_before_accessing(list_method: Callable[..., Any]) -> Callable[..., Any]:
     """Wrapper for original list methods. Forces LazyList to parse itself before accessing them."""
+
     @wraps(list_method)
-    def wrapper(self: 'LazyList', *args, **kwargs) -> 'LazyList':
+    def wrapper(self: "LazyList", *args, **kwargs) -> "LazyList":
         self._parse_up_to(-1)
 
         return list_method(self, *args, **kwargs)
@@ -71,9 +69,7 @@ class LazyListMeta(type):
             "__rmul__",
             "__imul__",
         ]:
-            namespace[method_name] = _parse_self_before_accessing(
-                getattr(list, method_name)
-            )
+            namespace[method_name] = _parse_self_before_accessing(getattr(list, method_name))
 
         for method_name in [
             "extend",
@@ -92,6 +88,7 @@ class LazyListMeta(type):
         return super().__new__(mcs, name, bases, namespace)
 
 
+@attrs.define(slots=True, repr=False)
 class LazyList(list[T], metaclass=LazyListMeta):
     """
     Evaluates elements from the string representation as needed.
@@ -100,25 +97,24 @@ class LazyList(list[T], metaclass=LazyListMeta):
     Once instance of LazyList is fully parsed (either by accessing list methods
     or by iterating over all elements), it will behave just as a regular python list.
     """
-    __slots__ = ("_string", "_separator", "_converter", "_probable_length", "_parsed")
 
-    def __init__(self, string: str = "", separator: str = ",", converter: Callable[[str], T] = lambda s: s) -> None:
-        super().__init__()
-        self._string = string
-        self._separator = separator
-        self._converter = converter
-        self._probable_length: int | None = None
-        self._parsed: bool = False
+    _string: str = ""
+    _separator: str = ","
+    _converter: Callable[[str], T] = lambda s: s
+    _probable_length: int | None = field(init=False, default=None)
+    _parsed: bool = field(init=False, default=False)
 
     def __repr__(self) -> str:
         if self._parsed:
             return f"LazyList({list.__repr__(self)})"
         current_index = list.__len__(self)
-        current_position = 1 if self._string.startswith('[') else 0
+        current_position = 1 if self._string.startswith("[") else 0
         separator_offset = len(self._separator)
 
         for _ in range(current_index):
-            current_position = self._string.find(self._separator, current_position) + separator_offset
+            current_position = (
+                self._string.find(self._separator, current_position) + separator_offset
+            )
 
         parsed_elements = list.__repr__(self).removesuffix("]")
         unparsed_elements = self._string[current_position:]
@@ -191,8 +187,8 @@ class LazyList(list[T], metaclass=LazyListMeta):
             return
         string = self._string
         current_index = list.__len__(self)
-        current_position = 1 if string.startswith('[') else 0
-        string_length = len(string) - 1 if string.endswith(']') else len(string)
+        current_position = 1 if string.startswith("[") else 0
+        string_length = len(string) - 1 if string.endswith("]") else len(string)
         separator_offset = len(self._separator)
 
         for _ in range(current_index):
@@ -240,19 +236,19 @@ class LazyList(list[T], metaclass=LazyListMeta):
 
     def __getstate__(self):
         return {
-            'string': self._string,
-            '_separator': self._separator,
-            '_converter': self._converter,
-            '_probable_length': self._probable_length,
-            'parsed': self._parsed,
-            'parsed_elements': list(self) if self._parsed else None
+            "string": self._string,
+            "_separator": self._separator,
+            "_converter": self._converter,
+            "_probable_length": self._probable_length,
+            "parsed": self._parsed,
+            "parsed_elements": list(self) if self._parsed else None,
         }
 
     def __setstate__(self, state):
-        self._string = state['string']
-        self._separator = state['_separator']
-        self._converter = state['_converter']
-        self._probable_length = state['_probable_length']
-        self._parsed = state['parsed']
+        self._string = state["string"]
+        self._separator = state["_separator"]
+        self._converter = state["_converter"]
+        self._probable_length = state["_probable_length"]
+        self._parsed = state["parsed"]
         if self._parsed:
-            self.extend(state['parsed_elements'])
+            self.extend(state["parsed_elements"])
