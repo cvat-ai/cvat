@@ -24,6 +24,15 @@ from .registry import dm_env, exporter, importer
 from ...engine.models import LabelType
 
 
+@exporter(name='YOLO', ext='ZIP', version='1.1')
+def _export(dst_file, temp_dir, instance_data, save_images=False):
+    with GetCVATDataExtractor(instance_data, include_images=save_images) as extractor:
+        dataset = Dataset.from_extractors(extractor, env=dm_env)
+        dataset.export(temp_dir, 'yolo', save_images=save_images)
+
+    make_zip_archive(temp_dir, dst_file)
+
+
 def _import_common(
     src_file,
     temp_dir,
