@@ -230,7 +230,7 @@ class TestRequestsListFilters(CollectionSimpleFilterTestBase):
         ],
     )
     def test_can_use_simple_filter_for_object_list(
-        self, simple_filter, values, fxt_resources_ids, fxt_make_requests
+        self, simple_filter: str, values: List, fxt_resources_ids, fxt_make_requests
     ):
         project_ids, task_ids, job_ids = fxt_resources_ids
         fxt_make_requests(project_ids, task_ids, job_ids)
@@ -249,7 +249,7 @@ class TestRequestsListFilters(CollectionSimpleFilterTestBase):
                 self._get_endpoint(api_client), return_json=True
             )
 
-        return super().test_can_use_simple_filter_for_object_list(simple_filter, values)
+        return super()._test_can_use_simple_filter_for_object_list(simple_filter, values)
 
 
 @pytest.mark.usefixtures("restore_db_per_class")
