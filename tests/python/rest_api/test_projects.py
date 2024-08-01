@@ -923,19 +923,18 @@ class TestImportExportDatasetProject:
         )
 
     @pytest.mark.parametrize("api_version", (1, 2))
-    @pytest.mark.parametrize("cloud_storage_id", [2])
+    @pytest.mark.parametrize("cloud_storage_id", [3])  # import/export bucket
     def test_can_export_and_import_dataset_after_deleting_related_storage(
         self, admin_user, cloud_storage_id: int, api_version: int
     ):
-        project = next(
+        project_id = next(
             p
             for p in self.projects
             if p["source_storage"]
             and p["source_storage"]["cloud_storage_id"] == cloud_storage_id
             and p["target_storage"]
             and p["target_storage"]["cloud_storage_id"] == cloud_storage_id
-        )
-        project_id = project["id"]
+        )["id"]
 
         with make_api_client(admin_user) as api_client:
             _, response = api_client.cloudstorages_api.destroy(cloud_storage_id)
