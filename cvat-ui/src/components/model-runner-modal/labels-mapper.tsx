@@ -126,14 +126,17 @@ function LabelsMapperComponent(props: Props): JSX.Element {
         const mapping = mappingRef.current;
         const [index, parentItem] = getMappingItem(modelLabel, taskLabel, mapping);
         if (parentItem) {
-            const copy = mapping.filter((_, _index: number) => index !== _index);
-            copy.push([
-                modelLabel, taskLabel, parentItem[2],
-                sublabelsMapping.map(([modelSublabel, taskSublabel]) => (
-                    [modelSublabel, taskSublabel, [], []]
-                )),
-            ] as FullMapping[0]);
-            setMapping(copy);
+            const [, childItem] = getMappingItem(modelLabel, taskLabel, parentItem[3]);
+            if (childItem) {
+                const copy = mapping.filter((_, _index: number) => index !== _index);
+                copy.push([
+                    modelLabel, taskLabel, parentItem[2],
+                    sublabelsMapping.map(([modelSublabel, taskSublabel]) => (
+                        [modelSublabel, taskSublabel, childItem[2], []]
+                    )),
+                ] as FullMapping[0]);
+                setMapping(copy);
+            }
         }
     };
 
