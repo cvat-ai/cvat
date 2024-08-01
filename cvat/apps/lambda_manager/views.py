@@ -349,7 +349,10 @@ class LambdaFunction:
                         db_label.sublabels.all()
                     )
 
-        mapping = make_default_mapping(model_labels, task_labels)
+        if not mapping:
+            mapping = make_default_mapping(model_labels, task_labels)
+        else:
+            validate_labels_mapping(mapping, self.labels, task_labels)
 
         mapping = update_mapping(mapping, self.labels, task_labels)
 
