@@ -600,6 +600,7 @@ def _check_cvat_for_video_project_annotations_meta(content, values_to_be_checked
 
 
 @pytest.mark.usefixtures("restore_db_per_function")
+@pytest.mark.usefixtures("restore_redis_inmem_per_function")
 class TestImportExportDatasetProject:
 
     @pytest.fixture(autouse=True)
