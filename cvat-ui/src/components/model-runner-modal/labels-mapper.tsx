@@ -177,6 +177,45 @@ function LabelsMapperComponent(props: Props): JSX.Element {
             rowExtras={(modelLabel: LabelInterface, taskLabel: LabelInterface): JSX.Element[] => {
                 const extras = [];
 
+                if (modelLabel.attributes?.length && taskLabel.attributes?.length) {
+                    extras.push(
+                        <React.Fragment key='attributes'>
+                            <ObjectMatcher
+                                leftData={modelLabel.attributes}
+                                rightData={taskLabel.attributes}
+                                allowManyToOne={false}
+                                defaultMapping={computeAttributesAutoMapping(
+                                    modelLabel.attributes || [],
+                                    taskLabel.attributes || [],
+                                ) as [AttributeInterface, AttributeInterface][]}
+                                rowClassName='cvat-runner-attribute-mapping-row'
+                                containerClassName='cvat-runner-attribute-mapper'
+                                deleteMappingLabel='Remove mapped attribute'
+                                infoMappingLabel='Specify mapping between label attributes'
+                                getObjectName={(object: AttributeInterface) => object.name}
+                                getObjectColor={() => taskLabel.color}
+                                filterObjects={(
+                                    left: AttributeInterface | null | AttributeInterface[],
+                                    right: AttributeInterface | null | AttributeInterface[],
+                                ): AttributeInterface[] => {
+                                    if (Array.isArray(left)) return left;
+                                    if (Array.isArray(right)) return right;
+                                    return [];
+                                }}
+                                onUpdateMapping={(_attrMapping: [AttributeInterface, AttributeInterface][]) => {
+                                    const mapping = mappingRef.current;
+                                    const [index, item] = getMappingItem(modelLabel, taskLabel, mapping);
+                                    if (index !== -1 && item) {
+                                        const copy = mapping.filter((_, _index: number) => index !== _index);
+                                        copy.push([modelLabel, taskLabel, _attrMapping, item[3]] as FullMapping[0]);
+                                        setMapping(copy);
+                                    }
+                                }}
+                            />
+                        </React.Fragment>,
+                    );
+                }
+
                 if (modelLabel.type === LabelType.SKELETON && taskLabel.type === LabelType.SKELETON) {
                     extras.push(
                         <React.Fragment key='skeleton'>
@@ -243,45 +282,6 @@ function LabelsMapperComponent(props: Props): JSX.Element {
                                     return sublabelRowExtras;
                                 }}
                                 onUpdateMapping={updateSublabelsMapping(modelLabel, taskLabel)}
-                            />
-                        </React.Fragment>,
-                    );
-                }
-
-                if (modelLabel.attributes?.length && taskLabel.attributes?.length) {
-                    extras.push(
-                        <React.Fragment key='attributes'>
-                            <ObjectMatcher
-                                leftData={modelLabel.attributes}
-                                rightData={taskLabel.attributes}
-                                allowManyToOne={false}
-                                defaultMapping={computeAttributesAutoMapping(
-                                    modelLabel.attributes || [],
-                                    taskLabel.attributes || [],
-                                ) as [AttributeInterface, AttributeInterface][]}
-                                rowClassName='cvat-runner-attribute-mapping-row'
-                                containerClassName='cvat-runner-attribute-mapper'
-                                deleteMappingLabel='Remove mapped attribute'
-                                infoMappingLabel='Specify mapping between label attributes'
-                                getObjectName={(object: AttributeInterface) => object.name}
-                                getObjectColor={() => taskLabel.color}
-                                filterObjects={(
-                                    left: AttributeInterface | null | AttributeInterface[],
-                                    right: AttributeInterface | null | AttributeInterface[],
-                                ): AttributeInterface[] => {
-                                    if (Array.isArray(left)) return left;
-                                    if (Array.isArray(right)) return right;
-                                    return [];
-                                }}
-                                onUpdateMapping={(_attrMapping: [AttributeInterface, AttributeInterface][]) => {
-                                    const mapping = mappingRef.current;
-                                    const [index, item] = getMappingItem(modelLabel, taskLabel, mapping);
-                                    if (index !== -1 && item) {
-                                        const copy = mapping.filter((_, _index: number) => index !== _index);
-                                        copy.push([modelLabel, taskLabel, _attrMapping, item[3]] as FullMapping[0]);
-                                        setMapping(copy);
-                                    }
-                                }}
                             />
                         </React.Fragment>,
                     );

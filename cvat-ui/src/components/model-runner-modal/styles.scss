@@ -14,7 +14,7 @@
     }
 }
 
-.tree-display {
+.cvat-labels-attributes-mapper-tree {
     position: relative;
     border-left: 1px solid $objects-bar-tabs-color;
     padding-left: $grid-unit-size;
@@ -34,7 +34,7 @@
 }
 
 .cvat-runner-label-mapper {
-    @extend .tree-display;
+    @extend .cvat-labels-attributes-mapper-tree;
 
     width: 100%;
 
@@ -54,7 +54,7 @@
     }
 
     .cvat-runner-attribute-mapper {
-        @extend .tree-display;
+        @extend .cvat-labels-attributes-mapper-tree;
 
         border-left: 1px solid $objects-bar-tabs-color;
         padding-left: $grid-unit-size;
