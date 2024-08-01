@@ -14,8 +14,33 @@
     }
 }
 
+.tree-display {
+    position: relative;
+    border-left: 1px solid $objects-bar-tabs-color;
+    padding-left: $grid-unit-size;
+
+    &:not(:first-child) {
+        &::before {
+            content: '';
+            width: $grid-unit-size * 2;
+            bottom: 50%;
+            left: -17px;
+            position: absolute;
+            border: 1px solid $objects-bar-tabs-color;
+            border-top: 0 none transparent;
+            border-right: 0 none transparent;
+        }
+    }
+}
+
 .cvat-runner-label-mapper {
+    @extend .tree-display;
+
     width: 100%;
+
+    span {
+        text-align: center;
+    }
 
     &:has(.cvat-runner-label-mapper) {
         max-height: $grid-unit-size * 64;
@@ -25,10 +50,19 @@
     > .cvat-runner-label-mapper {
         margin-top: $grid-unit-size * 2;
         margin-bottom: $grid-unit-size * 2;
-        margin-left: $grid-unit-size * 2;
+        margin-left: $grid-unit-size;
     }
 
     .cvat-runner-attribute-mapper {
+        @extend .tree-display;
+
+        border-left: 1px solid $objects-bar-tabs-color;
+        padding-left: $grid-unit-size;
+        width: 100%;
+        margin-top: $grid-unit-size * 2;
+        margin-bottom: $grid-unit-size * 2;
+        margin-left: $grid-unit-size;
+
         .cvat-runner-attribute-mapping-row {
             align-items: baseline;
             margin-bottom: $grid-unit-size;
@@ -37,11 +71,6 @@
                 width: 100%;
             }
         }
-
-        width: 100%;
-        margin-top: $grid-unit-size * 2;
-        margin-bottom: $grid-unit-size * 2;
-        margin-left: $grid-unit-size * 2;
     }
 }
 

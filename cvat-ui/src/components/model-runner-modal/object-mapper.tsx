@@ -6,6 +6,8 @@ import React, { useEffect, useState } from 'react';
 import { Row, Col } from 'antd/lib/grid';
 import Select from 'antd/lib/select';
 import Tag from 'antd/lib/tag';
+import Text from 'antd/lib/typography/Text';
+
 import { DeleteOutlined, QuestionCircleOutlined } from '@ant-design/icons';
 
 import CVATTooltip from 'components/common/cvat-tooltip';
@@ -18,6 +20,7 @@ interface Props {
     allowManyToOne: boolean;
     rowClassName: string;
     containerClassName: string;
+    containerTitle: string;
     deleteMappingLabel: string;
     infoMappingLabel: string;
     getObjectName(object: object): string;
@@ -29,7 +32,7 @@ interface Props {
 
 function ObjectMapperComponent(props: Props): JSX.Element {
     const {
-        leftData, rightData, defaultMapping, allowManyToOne,
+        leftData, rightData, defaultMapping, allowManyToOne, containerTitle,
         rowClassName, containerClassName, deleteMappingLabel, infoMappingLabel,
         getObjectName, getObjectColor, onUpdateMapping, filterObjects, rowExtras,
     } = props;
@@ -68,6 +71,9 @@ function ObjectMapperComponent(props: Props): JSX.Element {
 
     return (
         <div className={containerClassName}>
+            <div className={`${containerClassName}-title-wrapper`}>
+                <Text>{containerTitle}</Text>
+            </div>
             { mapping.map((mappingItem) => {
                 const [left, right] = mappingItem;
                 const leftName = getObjectName(left);

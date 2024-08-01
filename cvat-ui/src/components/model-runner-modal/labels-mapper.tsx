@@ -1,11 +1,10 @@
-// Copyright (C) 2023 CVAT.ai Corporation
+// Copyright (C) 2023-2024 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
 import React, { useCallback, useRef } from 'react';
-import Text from 'antd/lib/typography/Text';
 
-import { Attribute, Label, ShapeType } from 'cvat-core-wrapper';
+import { Attribute, Label, LabelType } from 'cvat-core-wrapper';
 import ObjectMatcher from './object-mapper';
 
 export type Md2JobAttributesMapping = [AttributeInterface | null, AttributeInterface | null][];
@@ -37,10 +36,10 @@ interface Props {
 function labelsCompatible(modelLabel: LabelInterface, jobLabel: LabelInterface): boolean {
     const { type: modelLabelType } = modelLabel;
     const { type: jobLabelType } = jobLabel;
-    const compatibleTypes = [[ShapeType.MASK, ShapeType.POLYGON]];
+    const compatibleTypes = [[LabelType.MASK, LabelType.POLYGON]];
     return modelLabelType === jobLabelType ||
-        (jobLabelType === 'any' && modelLabelType !== ShapeType.SKELETON) ||
-        (modelLabelType === 'unknown' && jobLabelType !== ShapeType.SKELETON) || // legacy support
+        (jobLabelType === 'any' && modelLabelType !== LabelType.SKELETON) ||
+        (modelLabelType === 'unknown' && jobLabelType !== LabelType.SKELETON) || // legacy support
         compatibleTypes.some((compatible) => compatible.includes(jobLabelType) && compatible.includes(modelLabelType));
 }
 
@@ -86,6 +85,58 @@ function LabelsMapperComponent(props: Props): JSX.Element {
         onUpdateMapping(_mapping);
     }, [onUpdateMapping]);
 
+    function getMappingItem(
+        modelLabel: LabelInterface, taskLabel: LabelInterface, source: FullMapping,
+    ): [number, FullMapping[0] | undefined] {
+        const index = source.findIndex((el) => el[0] === modelLabel && el[1] === taskLabel);
+        if (index !== -1) {
+            return [index, source[index]];
+        }
+
+        return [-1, undefined];
+    }
+
+    const updateSublabelAttributesMapping = (
+        modelLabel: LabelInterface, taskLabel: LabelInterface,
+    ) => (
+        modelSublabel: LabelInterface, taskSublabel: LabelInterface,
+    ) => (
+        _attrMapping: [AttributeInterface, AttributeInterface][],
+    ) => {
+        const mapping = mappingRef.current;
+        const [parentIndex, parentItem] = getMappingItem(modelLabel, taskLabel, mapping);
+        const copy = mapping.filter((_, index) => index !== parentIndex);
+        if (parentItem) {
+            const [childIndex] = getMappingItem(modelSublabel, taskSublabel, parentItem[3]);
+            copy.push([
+                modelLabel, taskLabel, parentItem[2],
+                [
+                    ...parentItem[3].filter((_, index) => index !== childIndex),
+                    [modelSublabel, taskSublabel, _attrMapping, []],
+                ],
+            ]);
+
+            setMapping(copy);
+        }
+    };
+
+    const updateSublabelsMapping = (
+        modelLabel: LabelInterface, taskLabel: LabelInterface,
+    ) => (sublabelsMapping: [LabelInterface, LabelInterface][]) => {
+        const mapping = mappingRef.current;
+        const [index, parentItem] = getMappingItem(modelLabel, taskLabel, mapping);
+        if (parentItem) {
+            const copy = mapping.filter((_, _index: number) => index !== _index);
+            copy.push([
+                modelLabel, taskLabel, parentItem[2],
+                sublabelsMapping.map(([modelSublabel, taskSublabel]) => (
+                    [modelSublabel, taskSublabel, [], []]
+                )),
+            ] as FullMapping[0]);
+            setMapping(copy);
+        }
+    };
+
     return (
         <ObjectMatcher
             leftData={modelLabels}
@@ -95,6 +146,7 @@ function LabelsMapperComponent(props: Props): JSX.Element {
             deleteMappingLabel='Remove mapped label'
             infoMappingLabel='Specify mapping between labels'
             containerClassName='cvat-runner-label-mapper'
+            containerTitle='Labels mapping:'
             rowClassName='cvat-runner-label-mapping-row'
             getObjectName={(object: LabelInterface) => object.name}
             getObjectColor={(object: LabelInterface) => object.color}
@@ -123,11 +175,9 @@ function LabelsMapperComponent(props: Props): JSX.Element {
             rowExtras={(modelLabel: LabelInterface, taskLabel: LabelInterface): JSX.Element[] => {
                 const extras = [];
 
-                if (modelLabel.type === ShapeType.SKELETON && taskLabel.type === ShapeType.SKELETON) {
+                if (modelLabel.type === LabelType.SKELETON && taskLabel.type === LabelType.SKELETON) {
                     extras.push(
                         <React.Fragment key='skeleton'>
-                            <hr />
-                            <Text strong>Skeleton points mapping: </Text>
                             <ObjectMatcher
                                 leftData={modelLabel.sublabels || []}
                                 rightData={taskLabel.sublabels || []}
@@ -138,6 +188,7 @@ function LabelsMapperComponent(props: Props): JSX.Element {
                                 )}
                                 rowClassName='cvat-runner-label-mapping-row'
                                 containerClassName='cvat-runner-label-mapper'
+                                containerTitle='Skeleton points mapping:'
                                 deleteMappingLabel='Remove mapped label'
                                 infoMappingLabel='Specify mapping between skeleton sublabels'
                                 getObjectName={(object: LabelInterface) => object.name}
@@ -150,29 +201,49 @@ function LabelsMapperComponent(props: Props): JSX.Element {
                                     if (Array.isArray(right)) return right;
                                     return [];
                                 }}
-                                onUpdateMapping={(sublabelsMapping: [LabelInterface, LabelInterface][]) => {
-                                    const mapping = mappingRef.current;
-                                    const updatedFullMapping = mapping.map((mappingItem) => {
-                                        if (mappingItem[0] === modelLabel && mappingItem[1] === taskLabel) {
-                                            return [
-                                                modelLabel,
-                                                taskLabel,
-                                                mappingItem[2],
-                                                sublabelsMapping.map(([modelElement, taskElement]) => ([
-                                                    modelElement,
-                                                    taskElement,
-                                                    [],
-                                                    [],
-                                                ])),
-                                            ] as FullMapping[0];
-                                        }
+                                rowExtras={(modelSublabel: LabelInterface, taskSublabel: LabelInterface) => {
+                                    const sublabelRowExtras = [];
 
-                                        return mappingItem;
-                                    });
-                                    setMapping(updatedFullMapping);
+                                    if (modelSublabel.attributes?.length && taskSublabel.attributes?.length) {
+                                        sublabelRowExtras.push(
+                                            <React.Fragment key='attributes'>
+                                                <ObjectMatcher
+                                                    leftData={modelSublabel.attributes}
+                                                    rightData={taskSublabel.attributes}
+                                                    allowManyToOne={false}
+                                                    defaultMapping={computeAttributesAutoMapping(
+                                                        modelSublabel.attributes || [],
+                                                        taskSublabel.attributes || [],
+                                                    ) as [AttributeInterface, AttributeInterface][]}
+                                                    rowClassName='cvat-runner-attribute-mapping-row'
+                                                    containerClassName='cvat-runner-attribute-mapper'
+                                                    containerTitle='Sublabel attributes mapping:'
+                                                    deleteMappingLabel='Remove mapped attribute'
+                                                    infoMappingLabel='Specify mapping between sublabel attributes'
+                                                    getObjectName={(object: AttributeInterface) => object.name}
+                                                    getObjectColor={() => taskSublabel.color}
+                                                    filterObjects={(
+                                                        left: AttributeInterface | null | AttributeInterface[],
+                                                        right: AttributeInterface | null | AttributeInterface[],
+                                                    ): AttributeInterface[] => {
+                                                        if (Array.isArray(left)) return left;
+                                                        if (Array.isArray(right)) return right;
+                                                        return [];
+                                                    }}
+                                                    onUpdateMapping={
+                                                        updateSublabelAttributesMapping(
+                                                            modelLabel, taskLabel,
+                                                        )(modelSublabel, taskSublabel)
+                                                    }
+                                                />
+                                            </React.Fragment>,
+                                        );
+                                    }
+
+                                    return sublabelRowExtras;
                                 }}
+                                onUpdateMapping={updateSublabelsMapping(modelLabel, taskLabel)}
                             />
-                            <hr />
                         </React.Fragment>,
                     );
                 }
@@ -180,8 +251,6 @@ function LabelsMapperComponent(props: Props): JSX.Element {
                 if (modelLabel.attributes?.length && taskLabel.attributes?.length) {
                     extras.push(
                         <React.Fragment key='attributes'>
-                            <hr />
-                            <Text strong>Label attributes mapping: </Text>
                             <ObjectMatcher
                                 leftData={modelLabel.attributes}
                                 rightData={taskLabel.attributes}
@@ -192,8 +261,9 @@ function LabelsMapperComponent(props: Props): JSX.Element {
                                 ) as [AttributeInterface, AttributeInterface][]}
                                 rowClassName='cvat-runner-attribute-mapping-row'
                                 containerClassName='cvat-runner-attribute-mapper'
+                                containerTitle='Label attributes mapping: '
                                 deleteMappingLabel='Remove mapped attribute'
-                                infoMappingLabel='Specify mapping between attributes'
+                                infoMappingLabel='Specify mapping between label attributes'
                                 getObjectName={(object: AttributeInterface) => object.name}
                                 getObjectColor={() => taskLabel.color}
                                 filterObjects={(
@@ -206,22 +276,14 @@ function LabelsMapperComponent(props: Props): JSX.Element {
                                 }}
                                 onUpdateMapping={(_attrMapping: [AttributeInterface, AttributeInterface][]) => {
                                     const mapping = mappingRef.current;
-                                    const updatedFullMapping = mapping.map((mappingItem) => {
-                                        if (mappingItem[0] === modelLabel && mappingItem[1] === taskLabel) {
-                                            return [
-                                                modelLabel,
-                                                taskLabel,
-                                                _attrMapping,
-                                                mappingItem[3],
-                                            ] as FullMapping[0];
-                                        }
-
-                                        return mappingItem;
-                                    });
-                                    setMapping(updatedFullMapping);
+                                    const [index, item] = getMappingItem(modelLabel, taskLabel, mapping);
+                                    if (index !== -1 && item) {
+                                        const copy = mapping.filter((_, _index: number) => index !== _index);
+                                        copy.push([modelLabel, taskLabel, _attrMapping, item[3]] as FullMapping[0]);
+                                        setMapping(copy);
+                                    }
                                 }}
                             />
-                            <hr />
                         </React.Fragment>,
                     );
                 }
@@ -229,18 +291,18 @@ function LabelsMapperComponent(props: Props): JSX.Element {
                 return extras;
             }}
             onUpdateMapping={(_mapping: [LabelInterface, LabelInterface][]) => {
-                const updatedFullMapping = _mapping.reduce<FullMapping>(
-                    (acc, [modelLabel, taskLabel]) => {
-                        for (const existingMappingItem of mappingRef.current) {
-                            if (existingMappingItem[0] === modelLabel && existingMappingItem[1] === taskLabel) {
-                                return [...acc, existingMappingItem];
-                            }
-                        }
+                const updated = _mapping.reduce<FullMapping>((acc, [modelLabel, taskLabel]) => {
+                    const [index, item] = getMappingItem(modelLabel, taskLabel, mappingRef.current);
+                    // the code to avoid reset mapping for sublabels/attributes
+                    // when one of top level mappings was updated
+                    if (index !== -1 && item) {
+                        return [...acc, item];
+                    }
 
-                        return [...acc, [modelLabel, taskLabel, [], []]];
-                    }, [],
-                );
-                setMapping(updatedFullMapping);
+                    return [...acc, [modelLabel, taskLabel, [], []]];
+                }, []);
+
+                setMapping(updated);
             }}
         />
     );
