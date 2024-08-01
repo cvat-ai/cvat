@@ -146,7 +146,6 @@ function LabelsMapperComponent(props: Props): JSX.Element {
             deleteMappingLabel='Remove mapped label'
             infoMappingLabel='Specify mapping between labels'
             containerClassName='cvat-runner-label-mapper'
-            containerTitle='Labels mapping:'
             rowClassName='cvat-runner-label-mapping-row'
             getObjectName={(object: LabelInterface) => object.name}
             getObjectColor={(object: LabelInterface) => object.color}
@@ -188,7 +187,6 @@ function LabelsMapperComponent(props: Props): JSX.Element {
                                 )}
                                 rowClassName='cvat-runner-label-mapping-row'
                                 containerClassName='cvat-runner-label-mapper'
-                                containerTitle='Skeleton points mapping:'
                                 deleteMappingLabel='Remove mapped label'
                                 infoMappingLabel='Specify mapping between skeleton sublabels'
                                 getObjectName={(object: LabelInterface) => object.name}
@@ -217,7 +215,6 @@ function LabelsMapperComponent(props: Props): JSX.Element {
                                                     ) as [AttributeInterface, AttributeInterface][]}
                                                     rowClassName='cvat-runner-attribute-mapping-row'
                                                     containerClassName='cvat-runner-attribute-mapper'
-                                                    containerTitle='Sublabel attributes mapping:'
                                                     deleteMappingLabel='Remove mapped attribute'
                                                     infoMappingLabel='Specify mapping between sublabel attributes'
                                                     getObjectName={(object: AttributeInterface) => object.name}
@@ -261,7 +258,6 @@ function LabelsMapperComponent(props: Props): JSX.Element {
                                 ) as [AttributeInterface, AttributeInterface][]}
                                 rowClassName='cvat-runner-attribute-mapping-row'
                                 containerClassName='cvat-runner-attribute-mapper'
-                                containerTitle='Label attributes mapping: '
                                 deleteMappingLabel='Remove mapped attribute'
                                 infoMappingLabel='Specify mapping between label attributes'
                                 getObjectName={(object: AttributeInterface) => object.name}
