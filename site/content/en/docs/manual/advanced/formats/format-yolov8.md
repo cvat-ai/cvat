@@ -98,9 +98,14 @@ names:
 # label_id cx cy rw rh x1 y1 x2 y2 x3 y3 ...
 1 0.3 0.8 0.1 0.3 0.3 0.8 0.1 0.3 0.4 0.5
 2 0.3 0.8 0.1 0.3 0.7 0.2 0.3 0.1 0.4 0.5 0.5 0.6 0.7 0.5
-
-
 ```
+
+All coordinates must be normalized and be in range \[0, 1\].
+It can be achieved by dividing x coordinates and widths by image width,
+and y coordinates and heights by image height.
+> Note, that in CVAT you can place an object or some parts of it outside the image,
+> which will cause the coordinates to be outside the \[0, 1\] range.
+> YOLOv8 framework ignores labels with such coordinates.
 
 Each annotation file, with the `.txt` extension,
 is named to correspond with its associated image file.
