@@ -3,22 +3,22 @@
 #
 # SPDX-License-Identifier: MIT
 
-from contextlib import closing
+import concurrent.futures
 import itertools
 import fnmatch
 import os
-import av
-import rq
 import re
+import rq
 import shutil
+from contextlib import closing
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Dict, Iterator, List, NamedTuple, Optional, Sequence, Tuple, Union, Iterable
 from urllib import parse as urlparse
 from urllib import request as urlrequest
-import concurrent.futures
-import queue
 
+import av
+import attrs
 import django_rq
 from django.conf import settings
 from django.db import transaction
@@ -190,8 +190,8 @@ def _create_segments_and_jobs(
 
     for segment_idx, segment_params in enumerate(segments):
         slogger.glob.info(
-            "New segment for task #{task_id}: idx = {segment_idx}, start_frame = {start_frame}, \
-            stop_frame = {stop_frame}".format(
+            "New segment for task #{task_id}: idx = {segment_idx}, start_frame = {start_frame}, "
+            "stop_frame = {stop_frame}".format(
                 task_id=db_task.id, segment_idx=segment_idx, **segment_params._asdict()
             ))
 
@@ -936,24 +936,10 @@ def _create_thread(
     db_data.original_chunk_type = models.DataChoice.VIDEO if task_mode == 'interpolation' else models.DataChoice.IMAGESET
 
     compressed_chunk_writer_class = Mpeg4CompressedChunkWriter if db_data.compressed_chunk_type == models.DataChoice.VIDEO else ZipCompressedChunkWriter
-    if db_data.original_chunk_type == models.DataChoice.VIDEO:
-        original_chunk_writer_class = Mpeg4ChunkWriter
-        # Let's use QP=17 (that is 67 for 0-100 range) for the original chunks, which should be visually lossless or nearly so.
-        # A lower value will significantly increase the chunk size with a slight increase of quality.
-        original_quality = 67
-    else:
-        original_chunk_writer_class = ZipChunkWriter
-        original_quality = 100
-
-    kwargs = {}
-    if validate_dimension.dimension == models.DimensionType.DIM_3D:
-        kwargs["dimension"] = validate_dimension.dimension
-    compressed_chunk_writer = compressed_chunk_writer_class(db_data.image_quality, **kwargs)
-    original_chunk_writer = original_chunk_writer_class(original_quality, **kwargs)
 
     # calculate chunk size if it isn't specified
     if db_data.chunk_size is None:
-        if isinstance(compressed_chunk_writer, ZipCompressedChunkWriter):
+        if issubclass(compressed_chunk_writer_class, ZipCompressedChunkWriter):
             first_image_idx = db_data.start_frame
             if not is_data_in_cloud:
                 w, h = extractor.get_image_size(first_image_idx)
@@ -1027,7 +1013,7 @@ def _create_thread(
                     manifest.link(
                         media_file=media_files[0],
                         upload_dir=upload_dir,
-                        chunk_size=db_data.chunk_size
+                        chunk_size=db_data.chunk_size # TODO: why it's needed here?
                     )
                     manifest.create()
 
@@ -1142,108 +1128,140 @@ def _create_thread(
     slogger.glob.info("Found frames {} for Data #{}".format(db_data.size, db_data.id))
     _create_segments_and_jobs(db_task, job_file_mapping=job_file_mapping)
 
-    # Save chunks
-    # TODO: refactor into a separate class / function for chunk creation
     if db_data.storage_method == models.StorageMethodChoice.FILE_SYSTEM or not settings.USE_CACHE:
-        def update_progress(progress: float):
-            # TODO: refactor this function into a class
+        _create_static_chunks(db_task, media_extractor=extractor)
+
+def _create_static_chunks(db_task: models.Task, *, media_extractor: IMediaReader):
+    @attrs.define
+    class _ChunkProgressUpdater:
+        _call_counter: int = attrs.field(default=0, init=False)
+        _rq_job: rq.job.Job = attrs.field(factory=rq.get_current_job)
+
+        def update_progress(self, progress: float):
             progress_animation = '|/-\\'
-            if not hasattr(update_progress, 'call_counter'):
-                update_progress.call_counter = 0
 
             status_message = 'CVAT is preparing data chunks'
             if not progress:
-                status_message = '{} {}'.format(status_message, progress_animation[update_progress.call_counter])
-            job.meta['status'] = status_message
-            job.meta['task_progress'] = progress or 0.
-            job.save_meta()
-            update_progress.call_counter = (update_progress.call_counter + 1) % len(progress_animation)
-
-        db_segments = db_task.segment_set.all()
-
-        def generate_chunk_params() -> Iterator[Tuple[models.Segment, int, Sequence[Any]]]:
-            if isinstance(extractor, MEDIA_TYPES['video']['extractor']):
-                def _get_frame_size(frame_tuple: Tuple[av.VideoFrame, Any, Any]) -> int:
-                    # There is no need to be absolutely precise here,
-                    # just need to provide the reasonable upper boundary.
-                    # Return bytes needed for 1 frame
-                    frame = frame_tuple[0]
-                    return frame.width * frame.height * (frame.format.padded_bits_per_pixel // 8)
-
-                media_iterator = CachingMediaIterator(
-                    extractor,
-                    max_cache_memory=2 ** 30, max_cache_entries=db_task.overlap,
-                    object_size_callback=_get_frame_size
+                status_message = '{} {}'.format(
+                    status_message, progress_animation[self._call_counter]
                 )
-            else:
-                media_iterator = RandomAccessIterator(extractor)
 
-            with closing(media_iterator):
-                for db_segment in db_segments:
-                    counter = itertools.count()
-                    generator = (
-                        media_iterator[frame_idx]
-                        for frame_idx in db_segment.frame_set # TODO: check absolute vs relative ids
-                    ) # probably won't work for GT job segments with gaps
-                    generator = itertools.groupby(
-                        generator, lambda _: next(counter) // db_data.chunk_size
-                    )
-                    generator = (
-                        (chunk_idx, list(chunk_data))
-                        for chunk_idx, chunk_data in generator
-                    )
+            self._rq_job.meta['status'] = status_message
+            self._rq_job.meta['task_progress'] = progress or 0.
+            self._rq_job.save_meta()
 
-                    yield (db_segment, generator)
+            self._call_counter = (self._call_counter + 1) % len(progress_animation)
 
-        def save_chunks(
-            executor: concurrent.futures.ThreadPoolExecutor,
-            db_segment: models.Segment,
-            chunk_idx: int,
-            chunk_data: Iterable[tuple[Any, str, str]]
+    def save_chunks(
+        executor: concurrent.futures.ThreadPoolExecutor,
+        db_segment: models.Segment,
+        chunk_idx: int,
+        chunk_frame_ids: Sequence[int]
+    ):
+        chunk_data = [media_iterator[frame_idx] for frame_idx in chunk_frame_ids]
+
+        if (
+            db_task.dimension == models.DimensionType.DIM_2D and
+            isinstance(media_extractor, (
+                MEDIA_TYPES['image']['extractor'],
+                MEDIA_TYPES['zip']['extractor'],
+                MEDIA_TYPES['pdf']['extractor'],
+                MEDIA_TYPES['archive']['extractor'],
+            ))
         ):
-            if (
-                db_task.dimension == models.DimensionType.DIM_2D and
-                isinstance(extractor, (
-                    MEDIA_TYPES['image']['extractor'],
-                    MEDIA_TYPES['zip']['extractor'],
-                    MEDIA_TYPES['pdf']['extractor'],
-                    MEDIA_TYPES['archive']['extractor'],
-                ))
-            ):
-                chunk_data = preload_images(chunk_data)
+            chunk_data = preload_images(chunk_data)
 
-            fs_original = executor.submit(
-                original_chunk_writer.save_as_chunk,
-                images=chunk_data,
-                chunk_path=db_data.get_original_segment_chunk_path(
-                    chunk_idx, segment=db_segment.id
-                ),
-            )
-            compressed_chunk_writer.save_as_chunk(
-                images=chunk_data,
-                chunk_path=db_data.get_compressed_segment_chunk_path(
-                    chunk_idx, segment=db_segment.id
-                ),
-            )
+        # TODO: extract into a class
 
-            fs_original.result()
+        fs_original = executor.submit(
+            original_chunk_writer.save_as_chunk,
+            images=chunk_data,
+            chunk_path=db_data.get_original_segment_chunk_path(
+                chunk_idx, segment=db_segment.id
+            ),
+        )
+        compressed_chunk_writer.save_as_chunk(
+            images=chunk_data,
+            chunk_path=db_data.get_compressed_segment_chunk_path(
+                chunk_idx, segment=db_segment.id
+            ),
+        )
 
-        futures = queue.Queue(maxsize=settings.CVAT_CONCURRENT_CHUNK_PROCESSING)
-        with concurrent.futures.ThreadPoolExecutor(
-            max_workers=2 * settings.CVAT_CONCURRENT_CHUNK_PROCESSING # TODO: remove 2 * or configuration
-        ) as executor:
-            # TODO: maybe make real multithreading support, currently the code is limited by 1
-            # segment chunk, even if more threads are available
-            for segment_idx, (segment, segment_chunk_params) in enumerate(generate_chunk_params()):
-                for chunk_idx, chunk_data in segment_chunk_params:
-                    if futures.full():
-                        futures.get().result()
+        fs_original.result()
 
-                    futures.put(executor.submit(
-                        save_chunks, executor, segment, chunk_idx, chunk_data
-                    ))
+    db_data = db_task.data
 
-                update_progress(segment_idx / len(db_segments))
+    if db_data.compressed_chunk_type == models.DataChoice.VIDEO:
+        compressed_chunk_writer_class = Mpeg4CompressedChunkWriter
+    else:
+        compressed_chunk_writer_class = ZipCompressedChunkWriter
 
-            while not futures.empty():
-                futures.get().result()
+    if db_data.original_chunk_type == models.DataChoice.VIDEO:
+        original_chunk_writer_class = Mpeg4ChunkWriter
+
+        # Let's use QP=17 (that is 67 for 0-100 range) for the original chunks,
+        # which should be visually lossless or nearly so.
+        # A lower value will significantly increase the chunk size with a slight increase of quality.
+        original_quality = 67
+    else:
+        original_chunk_writer_class = ZipChunkWriter
+        original_quality = 100
+
+    chunk_writer_kwargs = {}
+    if db_task.dimension == models.DimensionType.DIM_3D:
+        chunk_writer_kwargs["dimension"] = db_task.dimension
+    compressed_chunk_writer = compressed_chunk_writer_class(
+        db_data.image_quality, **chunk_writer_kwargs
+    )
+    original_chunk_writer = original_chunk_writer_class(original_quality, **chunk_writer_kwargs)
+
+    db_segments = db_task.segment_set.all()
+
+    if isinstance(media_extractor, MEDIA_TYPES['video']['extractor']):
+        def _get_frame_size(frame_tuple: Tuple[av.VideoFrame, Any, Any]) -> int:
+            # There is no need to be absolutely precise here,
+            # just need to provide the reasonable upper boundary.
+            # Return bytes needed for 1 frame
+            frame = frame_tuple[0]
+            return frame.width * frame.height * (frame.format.padded_bits_per_pixel // 8)
+
+        # Currently, we only optimize video creation for sequential
+        # chunks with potential overlap, so parallel processing is likely to
+        # help only for image datasets
+        media_iterator = CachingMediaIterator(
+            media_extractor,
+            max_cache_memory=2 ** 30, max_cache_entries=db_task.overlap,
+            object_size_callback=_get_frame_size
+        )
+    else:
+        media_iterator = RandomAccessIterator(media_extractor)
+
+    with closing(media_iterator):
+        progress_updater = _ChunkProgressUpdater()
+
+        # TODO: remove 2 * or the configuration option
+        # TODO: maybe make real multithreading support, currently the code is limited by 1
+        # video segment chunk, even if more threads are available
+        max_concurrency = 2 * settings.CVAT_CONCURRENT_CHUNK_PROCESSING if not isinstance(
+            media_extractor, MEDIA_TYPES['video']['extractor']
+        ) else 2
+        with concurrent.futures.ThreadPoolExecutor(max_workers=max_concurrency) as executor:
+            frame_step = db_data.get_frame_step()
+            for segment_idx, db_segment in enumerate(db_segments):
+                frame_counter = itertools.count()
+                for chunk_idx, chunk_frame_ids in (
+                    (chunk_idx, list(chunk_frame_ids))
+                    for chunk_idx, chunk_frame_ids in itertools.groupby(
+                        (
+                            # Convert absolute to relative ids (extractor output positions)
+                            # Extractor will skip frames outside requested
+                            (abs_frame_id - db_data.start_frame) // frame_step
+                            for abs_frame_id in db_segment.frame_set
+                            # TODO: is start frame different for video and images?
+                        ),
+                        lambda _: next(frame_counter) // db_data.chunk_size
+                    )
+                ):
+                    save_chunks(executor, db_segment, chunk_idx, chunk_frame_ids)
+
+                progress_updater.update_progress(segment_idx / len(db_segments))
