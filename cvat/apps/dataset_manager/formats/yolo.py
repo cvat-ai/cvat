@@ -15,6 +15,7 @@ from cvat.apps.dataset_manager.bindings import (
     match_dm_item,
     find_dataset_root,
     TaskData,
+    ProjectData,
 )
 from cvat.apps.dataset_manager.util import make_zip_archive
 from datumaro.components.extractor import DatasetItem
@@ -58,7 +59,7 @@ def _import_common(
         except Exception: # nosec
             pass
         if frame_info is not None:
-            image_info[frame] = (frame_info['height'], frame_info['width'])
+            image_info[frame] = (frame_info["height"], frame_info["width"])
 
     detect_dataset(temp_dir, format_name=format_name, importer=dm_env.importers.get(format_name))
     dataset = Dataset.import_from(temp_dir, format_name,
@@ -149,13 +150,18 @@ def _import(src_file, temp_dir, instance_data, load_data_callback=None, **kwargs
 
 @importer(name='YOLOv8 Pose', ext="ZIP", version="1.0")
 def _import(src_file, temp_dir, instance_data, load_data_callback=None, **kwargs):
+    if TaskData.META_FIELD in instance_data.meta:
+        labels = instance_data.meta[TaskData.META_FIELD]["labels"]
+    else:
+        labels = instance_data.meta[ProjectData.META_FIELD]["labels"]
+
     true_skeleton_point_labels = {
         skeleton_label["name"]: [
             el.attrib["data-label-name"]
             for el in ET.fromstring("<root>" + skeleton_label.get("svg", "") + "</root>")
             if el.tag == "circle"
         ]
-        for _, skeleton_label in instance_data.meta[TaskData.META_FIELD]["labels"]
+        for _, skeleton_label in labels
         if skeleton_label["type"] == str(LabelType.SKELETON)
     }
     _import_common(
