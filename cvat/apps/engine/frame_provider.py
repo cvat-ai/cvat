@@ -204,7 +204,7 @@ class TaskFrameProvider(IFrameProvider):
     def validate_chunk_number(self, chunk_number: int) -> int:
         start_chunk = 0
         stop_chunk = math.ceil(self._db_task.data.size / self._db_task.data.chunk_size)
-        if not (start_chunk <= chunk_number <= stop_chunk):
+        if not (start_chunk <= chunk_number < stop_chunk):
             raise ValidationError(
                 f"Invalid chunk number '{chunk_number}'. "
                 f"The chunk number should be in the [{start_chunk}, {stop_chunk}] range"
@@ -247,69 +247,49 @@ class TaskFrameProvider(IFrameProvider):
         )
         assert matching_segments
 
-        if len(matching_segments) == 1:
+        if len(matching_segments) == 1 and task_chunk_frame_set == set(
+            matching_segments[0].frame_set
+        ):
             segment_frame_provider = SegmentFrameProvider(matching_segments[0])
             return segment_frame_provider.get_chunk(
                 segment_frame_provider.get_chunk_number(task_chunk_start_frame), quality=quality
             )
 
-        # Create and return a joined chunk
-        # TODO: refactor into another class, optimize (don't visit frames twice)
-        task_chunk_frames = []
+        # Create and return a joined / cleaned chunk
+        # TODO: refactor into another class, maybe optimize
+        task_chunk_frames = {}
         for db_segment in matching_segments:
             segment_frame_provider = SegmentFrameProvider(db_segment)
             segment_frame_set = db_segment.frame_set
 
-            for task_chunk_frame_id in task_chunk_frame_set:
-                if task_chunk_frame_id not in segment_frame_set:
+            for task_chunk_frame_id in sorted(task_chunk_frame_set):
+                if (
+                    task_chunk_frame_id not in segment_frame_set
+                    or task_chunk_frame_id in task_chunk_frames
+                ):
                     continue
 
                 frame = segment_frame_provider.get_frame(
                     task_chunk_frame_id, quality=quality, out_type=FrameOutputType.BUFFER
                 ).data
-                task_chunk_frames.append((frame, None, None))
-
-        writer_classes: dict[FrameQuality, Type[IChunkWriter]] = {
-            FrameQuality.COMPRESSED: (
-                Mpeg4CompressedChunkWriter
-                if db_data.compressed_chunk_type == models.DataChoice.VIDEO
-                else ZipCompressedChunkWriter
-            ),
-            FrameQuality.ORIGINAL: (
-                Mpeg4ChunkWriter
-                if db_data.original_chunk_type == models.DataChoice.VIDEO
-                else ZipChunkWriter
-            ),
-        }
-
-        image_quality = (
-            100
-            if writer_classes[quality] in [Mpeg4ChunkWriter, ZipChunkWriter]
-            else db_data.image_quality
-        )
-        mime_type = (
-            "video/mp4"
-            if writer_classes[quality] in [Mpeg4ChunkWriter, Mpeg4CompressedChunkWriter]
-            else "application/zip"
-        )
+                task_chunk_frames[task_chunk_frame_id] = (frame, None, None)
 
         kwargs = {}
         if self._db_task.dimension == models.DimensionType.DIM_3D:
             kwargs["dimension"] = models.DimensionType.DIM_3D
-        merged_chunk_writer = writer_classes[quality](image_quality, **kwargs)
+        merged_chunk_writer = ZipCompressedChunkWriter(
+            100 if quality == FrameQuality.ORIGINAL else db_data.image_quality, **kwargs
+        )
 
         buffer = io.BytesIO()
         merged_chunk_writer.save_as_chunk(
-            task_chunk_frames,
-            buffer,
-            compress_frames=False,
-            zip_compress_level=1,
+            task_chunk_frames.values(), buffer, compress_frames=False, zip_compress_level=1
         )
         buffer.seek(0)
 
-        # TODO: add caching
+        # TODO: add caching in media cache for the resulting chunk
 
-        return return_type(data=buffer, mime=mime_type, checksum=None)
+        return return_type(data=buffer, mime="application/zip", checksum=None)
 
     def get_frame(
         self,

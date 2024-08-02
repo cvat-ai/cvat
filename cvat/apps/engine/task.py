@@ -1257,7 +1257,6 @@ def _create_static_chunks(db_task: models.Task, *, media_extractor: IMediaReader
                             # Extractor will skip frames outside requested
                             (abs_frame_id - db_data.start_frame) // frame_step
                             for abs_frame_id in db_segment.frame_set
-                            # TODO: is start frame different for video and images?
                         ),
                         lambda _: next(frame_counter) // db_data.chunk_size
                     )
