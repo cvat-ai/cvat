@@ -49,7 +49,7 @@ const defaultState: PluginsState = {
         },
         qualityControlPage: {
             tabs: {
-                items: [],
+                management: [],
             },
         },
         projectActions: {

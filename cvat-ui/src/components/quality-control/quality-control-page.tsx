@@ -14,17 +14,17 @@ import { Row, Col } from 'antd/lib/grid';
 import Tabs from 'antd/lib/tabs';
 import Title from 'antd/lib/typography/Title';
 import notification from 'antd/lib/notification';
-import { useIsMounted, usePlugins } from 'utils/hooks';
+import { useIsMounted } from 'utils/hooks';
 import {
     Job, JobType, QualityReport, QualitySettings, RQStatus, Task, getCore,
 } from 'cvat-core-wrapper';
 import { updateJobAsync } from 'actions/jobs-actions';
 import CVATLoadingSpinner from 'components/common/loading-spinner';
 import GoBackButton from 'components/common/go-back-button';
-import { CombinedState } from 'reducers';
 import { ActionUnion, createAction } from 'utils/redux';
 import { BASE_TARGET_THRESHOLD, qualityColorGenerator, QualityColors } from 'utils/quality-color';
 import TaskQualityComponent from './task-quality/task-quality-component';
+import TaskQualityManagementComponent from './task-quality/task-quality-magement-component';
 import QualitySettingsComponent from './quality-settings';
 
 const core = getCore();
@@ -166,12 +166,7 @@ function QualityControlPage(): JSX.Element {
     const [instance, setInstance] = useState<Task | null>(null);
     const isMounted = useIsMounted();
 
-    const pluginTabs = usePlugins(
-        (appState: CombinedState) => appState.plugins.components.qualityControlPage.tabs.items,
-        {},
-        { task: instance, getQualityColor: state.qualitySettings.getQualityColor },
-    );
-    const supportedTabs = ['Overview', 'Settings', ...pluginTabs.map(({ component: Component }) => Component.name)];
+    const supportedTabs = ['overview', 'settings', 'management'];
     const [activeTab, setTab] = useState(getTabFromHash(supportedTabs));
     const receiveInstance = async (type: InstanceType, id: number): Promise<Task | null> => {
         let receivedInstance: Task | null = null;
@@ -373,7 +368,7 @@ function QualityControlPage(): JSX.Element {
         const tabsItems = [];
         const gtJob = instance.jobs.find((job: Job) => job.type === JobType.GROUND_TRUTH);
         tabsItems.push([{
-            key: 'Overview',
+            key: 'overview',
             label: 'Overview',
             children: (
                 <TaskQualityComponent
@@ -388,9 +383,25 @@ function QualityControlPage(): JSX.Element {
             ),
         }, 10]);
 
+        tabsItems.push([{
+            key: 'management',
+            label: 'Management',
+            children: (
+                <TaskQualityManagementComponent
+                    task={instance}
+                    onJobUpdate={onJobUpdate}
+                    onCreateReport={onCreateReport}
+                    reportRefreshingStatus={state.reportRefreshingStatus}
+                    taskReport={state.taskReport}
+                    jobsReports={state.jobsReports}
+                    getQualityColor={state.qualitySettings.getQualityColor}
+                />
+            ),
+        }, 20]);
+
         if (gtJob) {
             tabsItems.push([{
-                key: 'Settings',
+                key: 'settings',
                 label: 'Settings',
                 children: (
                     <QualitySettingsComponent
@@ -399,19 +410,8 @@ function QualityControlPage(): JSX.Element {
                         setQualitySettings={onSaveQualitySettings}
                     />
                 ),
-            }, 100]);
+            }, 30]);
         }
-
-        tabsItems.push(...pluginTabs.map(({ component: Component, weight }, index: number) => [{
-            key: Component.name,
-            label: Component.name,
-            children: (
-                <Component
-                    key={index}
-                    targetState={{ task: instance, getQualityColor: state.qualitySettings.getQualityColor }}
-                />
-            ),
-        }, weight]));
 
         tabs = (
             <Tabs

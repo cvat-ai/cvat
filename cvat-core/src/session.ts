@@ -793,7 +793,7 @@ export class Task extends Session {
                 data[property] = initialData[property];
             }
         }
-        console.log(data);
+
         if (data.assignee) data.assignee = new User(data.assignee);
         if (data.owner) data.owner = new User(data.owner);
 
