@@ -195,8 +195,7 @@ function QualityControlPage(): JSX.Element {
         }
     };
 
-    const receiveReport = useCallback(async (taskInstance: Task) => {
-        dispatch(reducerActions.setFetching(true));
+    const receiveSettings = useCallback(async (taskInstance: Task) => {
         dispatch(reducerActions.setQualitySettingsFetching(true));
 
         function handleError(error: Error): void {
@@ -209,21 +208,10 @@ function QualityControlPage(): JSX.Element {
         }
 
         try {
-            const [report] = await core.analytics.quality.reports({ pageSize: 1, target: 'task', taskID: taskInstance.id });
-            let jobReportsRequest = Promise.resolve<QualityReport[]>([]);
-            if (report) {
-                jobReportsRequest = core.analytics.quality.reports({
-                    pageSize: taskInstance.jobs.length,
-                    parentID: report.id,
-                    target: 'job',
-                });
-            }
             const settingsRequest = core.analytics.quality.settings.get({ taskID: taskInstance.id });
 
-            await Promise.all([jobReportsRequest, settingsRequest]).then(([jobReports, settings]) => {
+            await Promise.all([settingsRequest]).then(([settings]) => {
                 dispatch(reducerActions.setQualitySettings(settings));
-                dispatch(reducerActions.setTaskReport(report || null));
-                dispatch(reducerActions.setJobsReports(jobReports));
             }).catch(handleError).finally(() => {
                 dispatch(reducerActions.setQualitySettingsFetching(false));
                 dispatch(reducerActions.setFetching(false));
@@ -242,7 +230,7 @@ function QualityControlPage(): JSX.Element {
             const body = { taskID: instance.id };
 
             core.analytics.quality.calculate(body, onUpdate).then(() => {
-                receiveReport(instance);
+                receiveSettings(instance);
             }).finally(() => {
                 dispatch(reducerActions.setReportRefreshingStatus(null));
             }).catch((error: unknown) => {
@@ -303,7 +291,7 @@ function QualityControlPage(): JSX.Element {
             dispatch(reducerActions.setFetching(true));
             receiveInstance(requestedInstanceType, requestedInstanceID).then((task) => {
                 if (task) {
-                    receiveReport(task);
+                    receiveSettings(task);
                 }
             });
         } else {

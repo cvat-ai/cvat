@@ -286,6 +286,7 @@ export interface PluginsState {
         };
         qualityControlPage:{
             tabs: {
+                overview: PluginComponent[];
                 management: PluginComponent[];
             },
         };
