@@ -106,7 +106,6 @@ AnyFrame = Union[Frame2d, Frame3d]
 class DataWithMeta(Generic[_T]):
     data: _T
     mime: str
-    checksum: int
 
 
 class IFrameProvider(metaclass=ABCMeta):
@@ -288,7 +287,7 @@ class TaskFrameProvider(IFrameProvider):
 
         # TODO: add caching in media cache for the resulting chunk
 
-        return return_type(data=buffer, mime="application/zip", checksum=None)
+        return return_type(data=buffer, mime="application/zip")
 
     def get_frame(
         self,
@@ -410,14 +409,14 @@ class SegmentFrameProvider(IFrameProvider):
     def get_preview(self) -> DataWithMeta[BytesIO]:
         cache = MediaCache()
         preview, mime = cache.get_or_set_segment_preview(self._db_segment)
-        return DataWithMeta[BytesIO](preview, mime=mime, checksum=None)
+        return DataWithMeta[BytesIO](preview, mime=mime)
 
     def get_chunk(
         self, chunk_number: int, *, quality: FrameQuality = FrameQuality.ORIGINAL
     ) -> DataWithMeta[BytesIO]:
         chunk_number = self.validate_chunk_number(chunk_number)
         chunk_data, mime = self._loaders[quality].read_chunk(chunk_number)
-        return DataWithMeta[BytesIO](chunk_data, mime=mime, checksum=None)
+        return DataWithMeta[BytesIO](chunk_data, mime=mime)
 
     def get_frame(
         self,
@@ -435,9 +434,9 @@ class SegmentFrameProvider(IFrameProvider):
 
         frame = self._convert_frame(frame, loader.reader_class, out_type)
         if loader.reader_class is VideoReader:
-            return return_type(frame, mime=self.VIDEO_FRAME_MIME, checksum=None)
+            return return_type(frame, mime=self.VIDEO_FRAME_MIME)
 
-        return return_type(frame, mime=mimetypes.guess_type(frame_name)[0], checksum=None)
+        return return_type(frame, mime=mimetypes.guess_type(frame_name)[0])
 
     def get_frame_context_images(
         self,
@@ -454,7 +453,7 @@ class SegmentFrameProvider(IFrameProvider):
         if not data:
             return None
 
-        return DataWithMeta[BytesIO](data, mime=mime, checksum=None)
+        return DataWithMeta[BytesIO](data, mime=mime)
 
     def iterate_frames(
         self,
