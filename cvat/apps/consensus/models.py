@@ -20,16 +20,16 @@ from django.core.exceptions import ValidationError
 from django.db import models
 from django.forms.models import model_to_dict
 
-from cvat.apps.engine.models import Job, ShapeType, Task
+from cvat.apps.engine.models import Job, ShapeType, Task, User
 
 
 class ConsensusConflictType(str, Enum):
-    NoMatchingItemError = "NO_MATCHING_ITEM"
-    FailedAttrVotingError = "FAILED_ATTRIBUTE_VOTING"
-    NoMatchingAnnError = "NO_MATCHING_ANNOTATION"
-    AnnotationsTooCloseError = "ANNOTATION_TOO_CLOSE"
-    WrongGroupError = "WRONG_GROUP"
-    FailedLabelVotingError = "FAILED_LABEL_VOTING"
+    NoMatchingItemError = "no_matching_item"
+    FailedAttrVotingError = "failed_attribute_voting"
+    NoMatchingAnnError = "no_matching_annotation"
+    AnnotationsTooCloseError = "annotation_too_close"
+    WrongGroupError = "wrong_group"
+    FailedLabelVotingError = "failed_label_voting"
 
     def __str__(self) -> str:
         return self.value
@@ -97,6 +97,10 @@ class ConsensusReport(models.Model):
 
     created_date = models.DateTimeField(auto_now_add=True)
     target_last_updated = models.DateTimeField()
+    consensus_score = models.FloatField()
+    assignee = models.ForeignKey(
+        User, on_delete=models.SET_NULL, related_name="consensus", null=True, blank=True
+    )
 
     data = models.JSONField()
 

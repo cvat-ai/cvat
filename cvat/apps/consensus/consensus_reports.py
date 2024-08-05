@@ -10,6 +10,7 @@ from collections import Counter
 from copy import deepcopy
 from datetime import timedelta
 from functools import cached_property, partial
+from types import NoneType
 from typing import Any, Callable, Dict, Hashable, List, Optional, Sequence, Tuple, Union, cast
 from uuid import uuid4
 
@@ -127,6 +128,7 @@ class ComparisonReportComparisonSummary(_Serializable):
 @define(kw_only=True, init=False)
 class ComparisonReportFrameSummary(_Serializable):
     conflicts: List[AnnotationConflict]
+    consensus_score: float
 
     @cached_property
     def conflict_count(self) -> int:
@@ -173,6 +175,7 @@ class ComparisonReportFrameSummary(_Serializable):
                 else {}
             ),
             conflicts=[AnnotationConflict.from_dict(v) for v in d["conflicts"]],
+            consensus_score=d["consensus_score"],
         )
 
 
@@ -218,6 +221,25 @@ class ComparisonReport(_Serializable):
     def conflicts(self) -> List[AnnotationConflict]:
         return list(itertools.chain.from_iterable(r.conflicts for r in self.frame_results.values()))
 
+    @property
+    def consensus_score(self) -> float:
+        mean_consensus_score = 0
+        frame_count = 0
+        for frame_result in self.frame_results.values():
+            if not isinstance(frame_result.consensus_score, NoneType):
+                mean_consensus_score += frame_result.consensus_score
+                frame_count += 1
+
+        return mean_consensus_score / (frame_count or 1)
+
+    def _fields_dict(self, *, include_properties: Optional[List[str]] = None) -> dict:
+        return super()._fields_dict(
+            include_properties=include_properties
+            or [
+                "consensus_score",
+            ]
+        )
+
     @classmethod
     def from_dict(cls, d: Dict[str, Any]) -> ComparisonReport:
         return cls(
@@ -245,12 +267,15 @@ def generate_job_consensus_report(
     consensus_settings: ConsensusSettings,
     errors,
     consensus_job_data_providers: List[JobDataProvider],
+    merged_dataset: dm.Dataset,
 ) -> ComparisonReport:
 
     frame_results: Dict[int, ComparisonReportFrameSummary] = {}
     frames = set()
     conflicts_count = len(errors)
-    conflicts = []
+    frame_wise_conflicts: Dict[int, List[AnnotationConflict]] = {}
+    frame_wise_consensus_score: Dict[int, List[float]] = {}
+    conflicts: List[AnnotationConflict] = []
 
     for error in errors:
         error_type = str(type(error)).split(".")[-1].split("'")[0]
@@ -274,7 +299,7 @@ def generate_job_consensus_report(
         dm_item = consensus_job_data_providers[0].dm_dataset.get(error.item_id[0])
         frame_id: int = consensus_job_data_providers[0].dm_item_id_to_frame_id(dm_item)
         frames.add(frame_id)
-        frame_results.setdefault(frame_id, []).append(
+        frame_wise_conflicts.setdefault(frame_id, []).append(
             AnnotationConflict(
                 frame_id=frame_id,
                 type=error_type,
@@ -282,9 +307,19 @@ def generate_job_consensus_report(
             )
         )
 
-    for frame_id in frame_results:
-        conflicts += frame_results[frame_id]
-        frame_results[frame_id] = ComparisonReportFrameSummary(conflicts=frame_results[frame_id])
+    for dataset_item in merged_dataset:
+        frame_id = consensus_job_data_providers[0].dm_item_id_to_frame_id(dataset_item)
+        frames.add(frame_id)
+        frame_wise_consensus_score.setdefault(frame_id, []).append(
+            np.mean([ann.attributes.get("score", 0) for ann in dataset_item.annotations])
+        )
+
+    for frame_id in frames:
+        conflicts += frame_wise_conflicts.get(frame_id, [])
+        frame_results[frame_id] = ComparisonReportFrameSummary(
+            conflicts=frame_wise_conflicts.get(frame_id, []),
+            consensus_score=np.mean(frame_wise_consensus_score.get(frame_id, [0])),
+        )
 
     return ComparisonReport(
         parameters=ComparisonParameters.from_dict(consensus_settings.to_dict()),
@@ -316,6 +351,10 @@ def generate_task_consensus_report(job_reports: List[ComparisonReport]) -> Compa
                 task_frame_result = deepcopy(job_frame_result)
             else:
                 task_frame_result.conflicts += job_frame_result.conflicts
+                task_frame_result.consensus_score = (
+                    task_frame_result.consensus_score * task_frame_results_counts[frame_id]
+                    + job_frame_result.consensus_score
+                ) / (task_frame_results_counts[frame_id] + 1)
 
             task_frame_results_counts[frame_id] = 1 + frame_results_count
             task_frame_results[frame_id] = task_frame_result
@@ -362,18 +401,25 @@ def save_report(
     #     # with another one
     #     return
 
+    mean_consensus_score = 0
+
     job_reports = {}
     for job_id in jobs:
         job_comparison_report = job_report_data[job_id]
         job = Job.objects.filter(id=job_id).first()
+        job_consensus_score = job_comparison_report.consensus_score
         job_report = dict(
             job=job,
             target_last_updated=job.updated_date,
             data=job_comparison_report.to_json(),
             conflicts=[c.to_dict() for c in job_comparison_report.conflicts],
+            consensus_score=job_consensus_score,
+            assignee=job.assignee,
         )
-
+        mean_consensus_score += job_consensus_score
         job_reports[job.id] = job_report
+
+    mean_consensus_score /= len(jobs)
 
     job_reports = list(job_reports.values())
 
@@ -382,12 +428,16 @@ def save_report(
         target_last_updated=task.updated_date,
         data=task_report_data.to_json(),
         conflicts=[],  # the task doesn't have own conflicts
+        consensus_score=mean_consensus_score,
+        assignee=task.assignee,
     )
 
     db_task_report = ConsensusReport(
         task=task_report["task"],
         target_last_updated=task_report["target_last_updated"],
         data=task_report["data"],
+        consensus_score=task_report["consensus_score"],
+        assignee=task_report["assignee"],
     )
     db_task_report.save()
 
@@ -397,6 +447,8 @@ def save_report(
             job=job_report["job"],
             target_last_updated=job_report["target_last_updated"],
             data=job_report["data"],
+            consensus_score=job_report["consensus_score"],
+            assignee=job_report["assignee"],
         )
         db_job_reports.append(db_job_report)
 

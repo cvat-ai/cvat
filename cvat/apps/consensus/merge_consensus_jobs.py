@@ -116,6 +116,7 @@ def _merge_consensus_jobs(task_id: int) -> None:
             consensus_settings=consensus_settings,
             errors=merger.errors,
             consensus_job_data_providers=consensus_job_data_providers,
+            merged_dataset=merged_dataset,
         )
         parent_job = Job.objects.filter(id=parent_job_id, type=JobType.ANNOTATION.value).first()
         parent_job.state = StateChoice.COMPLETED.value
