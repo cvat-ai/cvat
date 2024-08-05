@@ -253,7 +253,7 @@ class LambdaFunction:
         mapping = data.get("mapping", {})
 
         model_labels = self.labels
-        task_labels = db_task.get_labels().prefetch_related('attributespec_set')
+        task_labels = db_task.get_labels(prefetch=True)
 
         def labels_compatible(model_label: Dict, task_label: Label) -> bool:
             model_type = model_label['type']
@@ -271,9 +271,9 @@ class LambdaFunction:
                     if task_label.name == model_label['name'] and labels_compatible(model_label, task_label):
                         attributes_default_mapping = {}
                         for model_attr in model_label.get('attributes', {}):
-                            for db_attr in model_label.attributespec_set.all():
+                            for db_attr in task_label.attributespec_set.all():
                                 if db_attr.name == model_attr['name']:
-                                    attributes_default_mapping[model_attr] = db_attr.name
+                                    attributes_default_mapping[model_attr['name']] = db_attr.name
 
                         mapping_by_default[model_label['name']] = {
                             'name': task_label.name,
@@ -948,7 +948,7 @@ class LambdaJob:
                     labels[label.name]['attributes'][attr['name']] = attr['id']
             return labels
 
-        labels = convert_labels(db_task.get_labels().prefetch_related('attributespec_set'))
+        labels = convert_labels(db_task.get_labels(prefetch=True))
 
         if function.kind == LambdaType.DETECTOR:
             cls._call_detector(function, db_task, labels, quality,

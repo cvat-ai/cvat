@@ -385,7 +385,7 @@ class TaskExporter(_ExporterBase, _TaskBackupBase):
             for field in ('url', 'owner', 'assignee'):
                 task_serializer.fields.pop(field)
 
-            task_labels = LabelSerializer(self._db_task.get_labels(), many=True)
+            task_labels = LabelSerializer(self._db_task.get_labels(prefetch=True), many=True)
 
             task = self._prepare_task_meta(task_serializer.data)
             task['labels'] = [self._prepare_label_meta(l) for l in task_labels.data if not l['has_parent']]
@@ -790,7 +790,7 @@ class ProjectExporter(_ExporterBase, _ProjectBackupBase):
             for field in ('assignee', 'owner', 'url'):
                 project_serializer.fields.pop(field)
 
-            project_labels = LabelSerializer(self._db_project.get_labels(), many=True).data
+            project_labels = LabelSerializer(self._db_project.get_labels(prefetch=True), many=True).data
 
             project = self._prepare_project_meta(project_serializer.data)
             project['labels'] = [self._prepare_label_meta(l) for l in project_labels if not l['has_parent']]
