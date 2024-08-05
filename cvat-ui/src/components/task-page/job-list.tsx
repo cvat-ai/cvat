@@ -7,7 +7,7 @@ import React, { useCallback, useEffect, useState } from 'react';
 import jsonLogic from 'json-logic-js';
 import _ from 'lodash';
 import copy from 'copy-to-clipboard';
-import { Indexable, JobsQuery } from 'reducers';
+import { CombinedState, Indexable, JobsQuery } from 'reducers';
 import { useHistory } from 'react-router';
 import { Row, Col } from 'antd/lib/grid';
 import Text from 'antd/lib/typography/Text';
@@ -21,6 +21,7 @@ import CVATTooltip from 'components/common/cvat-tooltip';
 import {
     SortingComponent, ResourceFilterHOC, defaultVisibility, updateHistoryFromQuery,
 } from 'components/resource-sorting-filtering';
+import { useSelector } from 'react-redux';
 import {
     localStorageRecentKeyword, localStorageRecentCapacity, predefinedFilterValues, config,
 } from './jobs-filter-configuration';
@@ -68,6 +69,8 @@ function JobListComponent(props: Props): JSX.Element {
     const { task: taskInstance, onUpdateJob } = props;
     const [visibility, setVisibility] = useState(defaultVisibility);
 
+    const deletedJobs = useSelector((state: CombinedState) => state.jobs.activities.deletes);
+
     const history = useHistory();
     const { id: taskId } = taskInstance;
     const { jobs } = taskInstance;
@@ -89,7 +92,15 @@ function JobListComponent(props: Props): JSX.Element {
     const filteredJobs = setUpJobsList(jobs, query);
     const jobViews = filteredJobs
         .slice((query.page - 1) * PAGE_SIZE, query.page * PAGE_SIZE)
-        .map((job: Job) => <JobItem key={job.id} job={job} task={taskInstance} onJobUpdate={onUpdateJob} />);
+        .map((job: Job) => (
+            <JobItem
+                key={job.id}
+                job={job}
+                task={taskInstance}
+                deleted={job.id in deletedJobs}
+                onJobUpdate={onUpdateJob}
+            />
+        ));
     useEffect(() => {
         history.replace({
             search: updateHistoryFromQuery(query),

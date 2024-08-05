@@ -5,9 +5,7 @@
 import './styles.scss';
 
 import React, { useEffect, useState } from 'react';
-import { useSelector } from 'react-redux';
 import { Link } from 'react-router-dom';
-import { CombinedState } from 'reducers';
 import moment from 'moment';
 import { Col, Row } from 'antd/lib/grid';
 import Card from 'antd/lib/card';
@@ -32,6 +30,7 @@ import JobActionsMenu from './job-actions-menu';
 interface Props {
     job: Job;
     task: Task;
+    deleted: boolean;
     onJobUpdate: (job: Job, fields: Parameters<Job['save']>[0]) => void;
 }
 
@@ -99,13 +98,14 @@ function ReviewSummaryComponent({ jobInstance }: { jobInstance: any }): JSX.Elem
 }
 
 function JobItem(props: Props): JSX.Element {
-    const { job, task, onJobUpdate } = props;
-    const { stage, id } = job;
+    const {
+        job, task, deleted, onJobUpdate,
+    } = props;
+    const { stage } = job;
     const created = moment(job.createdDate);
     const updated = moment(job.updatedDate);
     const now = moment(moment.now());
-    const deletes = useSelector((state: CombinedState) => state.jobs.activities.deletes);
-    const deleted = id in deletes ? deletes[id] === true : false;
+
     const style = {};
     if (deleted) {
         (style as any).pointerEvents = 'none';

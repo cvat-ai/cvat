@@ -22,7 +22,7 @@ import { updateJobAsync } from 'actions/jobs-actions';
 import CVATLoadingSpinner from 'components/common/loading-spinner';
 import GoBackButton from 'components/common/go-back-button';
 import { ActionUnion, createAction } from 'utils/redux';
-import { BASE_TARGET_THRESHOLD, qualityColorGenerator, QualityColors } from 'utils/quality-color';
+import { BASE_TARGET_THRESHOLD, qualityColorGenerator, QualityColors } from 'utils/quality';
 import TaskQualityComponent from './task-quality/task-quality-component';
 import TaskQualityManagementComponent from './task-quality/task-quality-magement-component';
 import QualitySettingsComponent from './quality-settings';
