@@ -83,7 +83,7 @@ const componentShortcuts = {
         sequences: ['8'],
         scope: ShortcutScope.ANNOTATION_PAGE_ATTRIBUTE_ANNOTATION_WORKSPACE,
     },
-    SET_9_VALUE: {
+    SET_10_VALUE: {
         name: 'Set 10th value to the current attribute',
         description: 'Change current value for the attribute to the 10th value in the list',
         sequences: ['9'],

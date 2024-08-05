@@ -131,6 +131,31 @@ function ShortcutsSelect(props: Props): JSX.Element {
         setShortcutLabelMap(newShortcutLabelMap);
     }, []);
 
+    useEffect(() => {
+        const updatedComponentShortcuts = {
+            ...componentShortcuts,
+        };
+
+        Object.keys(shortcutLabelMap)
+            .map((id) => Number.parseInt(id, 10))
+            .filter((id) => shortcutLabelMap[id])
+            .reduce((acc: any, id) => {
+                const [label] = labels.filter((_label) => _label.id === shortcutLabelMap[id]);
+                const key = `SETUP_${id}_TAG`;
+                acc[key] = {
+                    ...acc[key],
+                    name: `Create a new tag "${label.name}"`,
+                    description: `Create a new tag having class "${label.name}"`,
+                };
+                return acc;
+            }, updatedComponentShortcuts);
+
+        registerComponentShortcuts(updatedComponentShortcuts);
+        return () => {
+            registerComponentShortcuts(componentShortcuts);
+        };
+    }, [shortcutLabelMap]);
+
     Object.keys(shortcutLabelMap)
         .map((id) => Number.parseInt(id, 10))
         .filter((id) => shortcutLabelMap[id])
