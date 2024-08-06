@@ -125,14 +125,14 @@ class IFrameProvider(metaclass=ABCMeta):
         return BytesIO(result.tobytes())
 
     def _convert_frame(
-        self, frame: Any, reader_class: IMediaReader, out_type: FrameOutputType
+        self, frame: Any, reader: IMediaReader, out_type: FrameOutputType
     ) -> AnyFrame:
         if out_type == FrameOutputType.BUFFER:
-            return self._av_frame_to_png_bytes(frame) if reader_class is VideoReader else frame
+            return self._av_frame_to_png_bytes(frame) if isinstance(reader, VideoReader) else frame
         elif out_type == FrameOutputType.PIL:
-            return frame.to_image() if reader_class is VideoReader else Image.open(frame)
+            return frame.to_image() if isinstance(reader, VideoReader) else Image.open(frame)
         elif out_type == FrameOutputType.NUMPY_ARRAY:
-            if reader_class is VideoReader:
+            if isinstance(reader, VideoReader):
                 image = frame.to_ndarray(format="bgr24")
             else:
                 image = np.array(Image.open(frame))
@@ -255,6 +255,28 @@ class TaskFrameProvider(IFrameProvider):
 
         # Create and return a joined / cleaned chunk
         # TODO: refactor into another class, maybe optimize
+
+        writer_classes: dict[FrameQuality, Type[IChunkWriter]] = {
+            FrameQuality.COMPRESSED: (
+                Mpeg4CompressedChunkWriter
+                if db_data.compressed_chunk_type == models.DataChoice.VIDEO
+                else ZipCompressedChunkWriter
+            ),
+            FrameQuality.ORIGINAL: (
+                Mpeg4ChunkWriter
+                if db_data.original_chunk_type == models.DataChoice.VIDEO
+                else ZipChunkWriter
+            ),
+        }
+
+        writer_class = writer_classes[quality]
+
+        mime_type = (
+            "video/mp4"
+            if writer_classes[quality] in [Mpeg4ChunkWriter, Mpeg4CompressedChunkWriter]
+            else "application/zip"
+        )
+
         task_chunk_frames = {}
         for db_segment in matching_segments:
             segment_frame_provider = SegmentFrameProvider(db_segment)
@@ -267,27 +289,27 @@ class TaskFrameProvider(IFrameProvider):
                 ):
                     continue
 
-                frame = segment_frame_provider.get_frame(
-                    task_chunk_frame_id, quality=quality, out_type=FrameOutputType.BUFFER
-                ).data
+                frame, _, _ = segment_frame_provider._get_raw_frame(
+                    task_chunk_frame_id, quality=quality
+                )
                 task_chunk_frames[task_chunk_frame_id] = (frame, None, None)
 
-        kwargs = {}
+        writer_kwargs = {}
         if self._db_task.dimension == models.DimensionType.DIM_3D:
-            kwargs["dimension"] = models.DimensionType.DIM_3D
-        merged_chunk_writer = ZipCompressedChunkWriter(
-            100 if quality == FrameQuality.ORIGINAL else db_data.image_quality, **kwargs
-        )
+            writer_kwargs["dimension"] = models.DimensionType.DIM_3D
+        merged_chunk_writer = writer_class(int(quality), **writer_kwargs)
+
+        writer_kwargs = {}
+        if isinstance(merged_chunk_writer, ZipCompressedChunkWriter):
+            writer_kwargs = dict(compress_frames=False, zip_compress_level=1)
 
         buffer = io.BytesIO()
-        merged_chunk_writer.save_as_chunk(
-            task_chunk_frames.values(), buffer, compress_frames=False, zip_compress_level=1
-        )
+        merged_chunk_writer.save_as_chunk(list(task_chunk_frames.values()), buffer, **writer_kwargs)
         buffer.seek(0)
 
         # TODO: add caching in media cache for the resulting chunk
 
-        return return_type(data=buffer, mime="application/zip")
+        return return_type(data=buffer, mime=mime_type)
 
     def get_frame(
         self,
@@ -418,6 +440,18 @@ class SegmentFrameProvider(IFrameProvider):
         chunk_data, mime = self._loaders[quality].read_chunk(chunk_number)
         return DataWithMeta[BytesIO](chunk_data, mime=mime)
 
+    def _get_raw_frame(
+        self,
+        frame_number: int,
+        *,
+        quality: FrameQuality = FrameQuality.ORIGINAL,
+    ) -> Tuple[Any, str, IMediaReader]:
+        _, chunk_number, frame_offset = self.validate_frame_number(frame_number)
+        loader = self._loaders[quality]
+        chunk_reader = loader.load(chunk_number)
+        frame, frame_name, _ = chunk_reader[frame_offset]
+        return frame, frame_name, chunk_reader
+
     def get_frame(
         self,
         frame_number: int,
@@ -427,13 +461,10 @@ class SegmentFrameProvider(IFrameProvider):
     ) -> DataWithMeta[AnyFrame]:
         return_type = DataWithMeta[AnyFrame]
 
-        _, chunk_number, frame_offset = self.validate_frame_number(frame_number)
-        loader = self._loaders[quality]
-        chunk_reader = loader.load(chunk_number)
-        frame, frame_name, _ = chunk_reader[frame_offset]
+        frame, frame_name, reader = self._get_raw_frame(frame_number, quality=quality)
 
-        frame = self._convert_frame(frame, loader.reader_class, out_type)
-        if loader.reader_class is VideoReader:
+        frame = self._convert_frame(frame, reader, out_type)
+        if isinstance(reader, VideoReader):
             return return_type(frame, mime=self.VIDEO_FRAME_MIME)
 
         return return_type(frame, mime=mimetypes.guess_type(frame_name)[0])

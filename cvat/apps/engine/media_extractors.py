@@ -18,7 +18,7 @@ from bisect import bisect
 from contextlib import ExitStack, closing
 from dataclasses import dataclass
 from enum import IntEnum
-from typing import Callable, Iterable, Iterator, Optional, Protocol, Tuple, TypeVar
+from typing import Callable, Iterable, Iterator, Optional, Protocol, Sequence, Tuple, TypeVar
 
 import av
 import av.codec
@@ -910,7 +910,9 @@ class Mpeg4ChunkWriter(IChunkWriter):
 
         return video_stream
 
-    def save_as_chunk(self, images, chunk_path):
+    def save_as_chunk(
+        self, images: Sequence[av.VideoFrame], chunk_path: str
+    ) -> Sequence[Tuple[int, int]]:
         if not images:
             raise Exception('no images to save')
 
