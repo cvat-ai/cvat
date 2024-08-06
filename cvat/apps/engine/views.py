@@ -5,7 +5,11 @@
 
 import os
 import os.path as osp
+import re
+import shutil
 import functools
+
+from contextlib import suppress
 from PIL import Image
 from types import SimpleNamespace
 from typing import Optional, Any, Dict, List, cast, Callable, Mapping, Iterable
@@ -57,6 +61,7 @@ from cvat.apps.dataset_manager.serializers import DatasetFormatsSerializer
 from cvat.apps.engine.frame_provider import FrameProvider
 from cvat.apps.engine.filters import NonModelSimpleFilter, NonModelOrderingFilter, NonModelJsonLogicFilter
 from cvat.apps.engine.media_extractors import get_mime
+from cvat.apps.engine.permissions import AnnotationGuidePermission, get_iam_context
 from cvat.apps.engine.models import (
     ClientFile, Job, JobType, Label, SegmentType, Task, Project, Issue, Data,
     Comment, StorageMethodChoice, StorageChoice,
@@ -260,12 +265,13 @@ class ProjectViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
     mixins.RetrieveModelMixin, mixins.CreateModelMixin, mixins.DestroyModelMixin,
     PartialUpdateModelMixin, UploadMixin, DatasetMixin, BackupMixin, CsrfWorkaroundMixin
 ):
-    queryset = models.Project.objects.select_related(
-        'assignee', 'owner', 'target_storage', 'source_storage', 'annotation_guide',
-    ).prefetch_related('tasks').all()
-
     # NOTE: The search_fields attribute should be a list of names of text
     # type fields on the model,such as CharField or TextField
+    queryset = models.Project.objects.select_related(
+        'owner', 'assignee', 'organization',
+        'annotation_guide', 'source_storage', 'target_storage',
+    )
+
     search_fields = ('name', 'owner', 'assignee', 'status')
     filter_fields = list(search_fields) + ['id', 'updated_date']
     simple_filters = list(search_fields)
@@ -285,10 +291,13 @@ class ProjectViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
 
     def get_queryset(self):
         queryset = super().get_queryset()
+        if self.action in ('list', 'retrieve', 'partial_update', 'update') :
+            queryset = queryset.prefetch_related('tasks')
 
-        if self.action == 'list':
-            perm = ProjectPermission.create_scope_list(self.request)
-            queryset = perm.filter(queryset)
+            if self.action == 'list':
+                perm = ProjectPermission.create_scope_list(self.request)
+                return perm.filter(queryset)
+
         return queryset
 
     @transaction.atomic
@@ -625,7 +634,7 @@ class ProjectViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
     def preview(self, request, pk):
         self._object = self.get_object() # call check_object_permissions as well
 
-        first_task = self._object.tasks.order_by('-id').first()
+        first_task = self._object.tasks.select_related('data__video').order_by('-id').first()
         if not first_task:
             return HttpResponseNotFound('Project image preview not found')
 
@@ -864,6 +873,8 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
         if self.action == 'list':
             perm = TaskPermission.create_scope_list(self.request)
             queryset = perm.filter(queryset)
+        elif self.action == 'preview':
+            queryset = Task.objects.select_related('data')
 
         return queryset
 
@@ -2357,41 +2368,42 @@ class LabelViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
                     code=status.HTTP_400_BAD_REQUEST
                 )
 
-            if job_id:
+            if job_id or task_id or project_id:
+                if job_id:
+                    instance = Job.objects.select_related(
+                        'assignee', 'segment__task__organization',
+                        'segment__task__owner', 'segment__task__assignee',
+                        'segment__task__project__organization',
+                        'segment__task__project__owner',
+                        'segment__task__project__assignee',
+                    ).get(id=job_id)
+                elif task_id:
+                    instance = Task.objects.select_related(
+                        'owner', 'assignee', 'organization',
+                        'project__owner', 'project__assignee', 'project__organization',
+                    ).get(id=task_id)
+                elif project_id:
+                    instance = Project.objects.select_related(
+                        'owner', 'assignee', 'organization',
+                    ).get(id=project_id)
+
                 # NOTE: This filter is too complex to be implemented by other means
                 # It requires the following filter query:
                 # (
                 #  project__task__segment__job__id = job_id
                 #  OR
                 #  task__segment__job__id = job_id
-                # )
-                job = Job.objects.get(id=job_id)
-                self.check_object_permissions(self.request, job)
-                queryset = job.get_labels()
-            elif task_id:
-                # NOTE: This filter is too complex to be implemented by other means
-                # It requires the following filter query:
-                # (
-                #  project__task__id = task_id
                 #  OR
-                #  task_id = task_id
+                #  project__task__id = task_id
                 # )
-                task = Task.objects.get(id=task_id)
-                self.check_object_permissions(self.request, task)
-                queryset = task.get_labels()
-            elif project_id:
-                # NOTE: this check is to make behavior consistent with other source filters
-                project = Project.objects.get(id=project_id)
-                self.check_object_permissions(self.request, project)
-                queryset = project.get_labels()
+                self.check_object_permissions(self.request, instance)
+                queryset = instance.get_labels(prefetch=True)
             else:
                 # In other cases permissions are checked already
                 queryset = super().get_queryset()
                 perm = LabelPermission.create_scope_list(self.request)
-                queryset = perm.filter(queryset)
-
-            # Include only 1st level labels in list responses
-            queryset = queryset.filter(parent__isnull=True)
+                # Include only 1st level labels in list responses
+                queryset = perm.filter(queryset).filter(parent__isnull=True)
         else:
             queryset = super().get_queryset()
 
@@ -2914,6 +2926,77 @@ class AnnotationGuidesViewSet(
     ordering = "-id"
     iam_organization_field = None
 
+    def _update_related_assets(self, request, guide: AnnotationGuide):
+        existing_assets = list(guide.assets.all())
+        new_assets = []
+
+        # pylint: disable=anomalous-backslash-in-string
+        pattern = re.compile(r'\(/api/assets/([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12})\)')
+        results = set(re.findall(pattern, guide.markdown))
+
+        db_assets_to_copy = {}
+
+        # first check if we need to copy some assets and if user has permissions to access them
+        for asset_id in results:
+            with suppress(models.Asset.DoesNotExist):
+                db_asset = models.Asset.objects.select_related('guide').get(pk=asset_id)
+                if db_asset.guide.id != guide.id:
+                    perm = AnnotationGuidePermission.create_base_perm(
+                        request,
+                        self,
+                        AnnotationGuidePermission.Scopes.VIEW,
+                        get_iam_context(request, db_asset.guide),
+                        db_asset.guide
+                    )
+
+                    if perm.check_access().allow:
+                        db_assets_to_copy[asset_id] = db_asset
+                else:
+                    new_assets.append(db_asset)
+
+        # then copy those assets, where user has permissions
+        assets_mapping = {}
+        with transaction.atomic():
+            for asset_id in results:
+                db_asset = db_assets_to_copy.get(asset_id)
+                if db_asset is not None:
+                    copied_asset = Asset(
+                        filename=db_asset.filename,
+                        owner=request.user,
+                        guide=guide,
+                    )
+                    copied_asset.save()
+                    assets_mapping[asset_id] = copied_asset
+
+        # finally apply changes on filesystem out of transaction
+        try:
+            for asset_id in results:
+                copied_asset = assets_mapping.get(asset_id)
+                if copied_asset is not None:
+                    db_asset = db_assets_to_copy.get(asset_id)
+                    os.makedirs(copied_asset.get_asset_dir())
+                    shutil.copyfile(
+                        os.path.join(db_asset.get_asset_dir(), db_asset.filename),
+                        os.path.join(copied_asset.get_asset_dir(), db_asset.filename),
+                    )
+
+                    guide.markdown = guide.markdown.replace(
+                        f'(/api/assets/{asset_id})',
+                        f'(/api/assets/{assets_mapping[asset_id].uuid})',
+                    )
+
+                    new_assets.append(copied_asset)
+        except Exception as ex:
+            # in case of any errors, remove copied assets
+            for asset_id in assets_mapping:
+                assets_mapping[asset_id].delete()
+            raise ex
+
+        guide.save()
+        for existing_asset in existing_assets:
+            if existing_asset not in new_assets:
+                existing_asset.delete()
+
     def get_serializer_class(self):
         if self.request.method in SAFE_METHODS:
             return AnnotationGuideReadSerializer
@@ -2922,15 +3005,18 @@ class AnnotationGuidesViewSet(
 
     def perform_create(self, serializer):
         super().perform_create(serializer)
-        serializer.instance.target.save()
+        self._update_related_assets(self.request, serializer.instance)
+        serializer.instance.target.touch()
 
     def perform_update(self, serializer):
         super().perform_update(serializer)
-        serializer.instance.target.save()
+        self._update_related_assets(self.request, serializer.instance)
+        serializer.instance.target.touch()
 
     def perform_destroy(self, instance):
-        (instance.project or instance.task).save()
-        instance.delete()
+        target = instance.target
+        super().perform_destroy(instance)
+        target.touch()
 
 def rq_exception_handler(rq_job, exc_type, exc_value, tb):
     rq_job.meta[RQJobMetaField.FORMATTED_EXCEPTION] = "".join(

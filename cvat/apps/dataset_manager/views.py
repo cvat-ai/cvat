@@ -13,11 +13,13 @@ import django_rq
 import rq
 from django.conf import settings
 from django.utils import timezone
+from rq_scheduler import Scheduler
 
 import cvat.apps.dataset_manager.project as project
 import cvat.apps.dataset_manager.task as task
 from cvat.apps.engine.log import ServerLogManager
 from cvat.apps.engine.models import Job, Project, Task
+from cvat.apps.engine.utils import get_rq_lock_by_user
 
 from .formats.registry import EXPORT_FORMATS, IMPORT_FORMATS
 from .util import (
@@ -58,6 +60,42 @@ def get_export_cache_ttl(db_instance: str | Project | Task | Job) -> timedelta:
 
     return TTL_CONSTS[db_instance.lower()]
 
+def _retry_current_rq_job(time_delta: timedelta) -> rq.job.Job:
+    # TODO: implement using retries once we move from rq_scheduler to builtin RQ scheduler
+    # for better reliability and error reporting
+
+    # This implementation can potentially lead to 2 jobs with the same name running in parallel,
+    # if the retry is enqueued immediately.
+    assert time_delta.total_seconds() > 0
+
+    current_rq_job = rq.get_current_job()
+
+    def _patched_retry(*_1, **_2):
+        scheduler: Scheduler = django_rq.get_scheduler(
+            settings.CVAT_QUEUES.EXPORT_DATA.value
+        )
+
+        user_id = current_rq_job.meta.get('user', {}).get('id') or -1
+
+        with get_rq_lock_by_user(settings.CVAT_QUEUES.EXPORT_DATA.value, user_id):
+            scheduler.enqueue_in(
+                time_delta,
+                current_rq_job.func,
+                *current_rq_job.args,
+                **current_rq_job.kwargs,
+                job_id=current_rq_job.id,
+                meta=current_rq_job.meta,
+                depends_on=current_rq_job.dependency_ids,
+                job_ttl=current_rq_job.ttl,
+                job_result_ttl=current_rq_job.result_ttl,
+                job_description=current_rq_job.description,
+                on_success=current_rq_job.success_callback,
+                on_failure=current_rq_job.failure_callback,
+            )
+
+    current_rq_job.retries_left = 1
+    setattr(current_rq_job, 'retry', _patched_retry)
+    return current_rq_job
 
 def export(dst_format, project_id=None, task_id=None, job_id=None, server_url=None, save_images=False):
     try:
@@ -109,7 +147,9 @@ def export(dst_format, project_id=None, task_id=None, job_id=None, server_url=No
                         server_url=server_url, save_images=save_images)
                     os.replace(temp_file, output_path)
 
-                scheduler = django_rq.get_scheduler(settings.CVAT_QUEUES.EXPORT_DATA.value)
+                scheduler: Scheduler = django_rq.get_scheduler(
+                    settings.CVAT_QUEUES.EXPORT_DATA.value
+                )
                 cleaning_job = scheduler.enqueue_in(
                     time_delta=cache_ttl,
                     func=clear_export_cache,
@@ -122,7 +162,9 @@ def export(dst_format, project_id=None, task_id=None, job_id=None, server_url=No
                     "and available for downloading for the next {}. "
                     "Export cache cleaning job is enqueued, id '{}'".format(
                         db_instance.__class__.__name__.lower(),
-                        db_instance.name if isinstance(db_instance, (Project, Task)) else db_instance.id,
+                        db_instance.name if isinstance(
+                            db_instance, (Project, Task)
+                        ) else db_instance.id,
                         dst_format, output_path, cache_ttl,
                         cleaning_job.id
                     )
@@ -131,10 +173,13 @@ def export(dst_format, project_id=None, task_id=None, job_id=None, server_url=No
         return output_path
     except LockNotAvailableError:
         # Need to retry later if the lock was not available
-        rq_job = rq.get_current_job() # the worker references the same object
-        rq_job.retries_left = 1
-        rq_job.retry_intervals = [EXPORT_LOCKED_RETRY_INTERVAL.total_seconds()]
-        raise # should be handled by the worker
+        _retry_current_rq_job(EXPORT_LOCKED_RETRY_INTERVAL)
+        logger.info(
+            "Failed to acquire export cache lock. Retrying in {}".format(
+                EXPORT_LOCKED_RETRY_INTERVAL
+            )
+        )
+        raise
     except Exception:
         log_exception(logger)
         raise
@@ -179,9 +224,7 @@ def clear_export_cache(file_path: str, file_ctime: float, logger: logging.Logger
 
             if timezone.now().timestamp() <= osp.getmtime(file_path) + cache_ttl.total_seconds():
                 # Need to retry later, the export is in use
-                rq_job = rq.get_current_job() # the worker references the same object
-                rq_job.retries_left = 1
-                rq_job.retry_intervals = [cache_ttl.total_seconds()]
+                _retry_current_rq_job(cache_ttl)
                 logger.info(
                     "Export cache file '{}' is recently accessed, will retry in {}".format(
                         file_path, cache_ttl
@@ -194,10 +237,13 @@ def clear_export_cache(file_path: str, file_ctime: float, logger: logging.Logger
             logger.info("Export cache file '{}' successfully removed".format(file_path))
     except LockNotAvailableError:
         # Need to retry later if the lock was not available
-        rq_job = rq.get_current_job() # the worker references the same object
-        rq_job.retries_left = 1
-        rq_job.retry_intervals = [EXPORT_LOCKED_RETRY_INTERVAL.total_seconds()]
-        raise # should be handled by the worker
+        _retry_current_rq_job(EXPORT_LOCKED_RETRY_INTERVAL)
+        logger.info(
+            "Failed to acquire export cache lock. Retrying in {}".format(
+                EXPORT_LOCKED_RETRY_INTERVAL
+            )
+        )
+        raise
     except Exception:
         log_exception(logger)
         raise
