@@ -703,8 +703,12 @@ class VideoReaderWithManifest:
         nearest_left_keyframe_pos = bisect(
             self._manifest, frame_id, key=lambda entry: entry.get('number')
         )
-        frame_number = self._manifest[nearest_left_keyframe_pos].get('number')
-        timestamp = self._manifest[nearest_left_keyframe_pos].get('pts')
+        if nearest_left_keyframe_pos:
+            frame_number = self._manifest[nearest_left_keyframe_pos - 1].get('number')
+            timestamp = self._manifest[nearest_left_keyframe_pos - 1].get('pts')
+        else:
+            frame_number = 0
+            timestamp = 0
         return frame_number, timestamp
 
     def iterate_frames(self, frame_ids: Iterable[int]) -> Iterable[av.VideoFrame]:
@@ -744,10 +748,12 @@ class VideoReaderWithManifest:
                             )
 
                         yield frame
-                    else:
+
                         frame_ids_frame = next(frame_ids_iter, None)
-                        if frame_ids_frame is None:
-                            return
+
+                    if frame_ids_frame is None:
+                        return
+
 
 class IChunkWriter(ABC):
     def __init__(self, quality, dimension=DimensionType.DIM_2D):
