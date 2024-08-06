@@ -48,6 +48,7 @@ const defaultState: ShortcutsState = {
         acc[key] = normalized;
         return acc;
     }, {}),
+    defaultState: { ...defaultKeyMap },
 };
 
 export function conflictDetector(
@@ -153,6 +154,13 @@ export default (state = defaultState, action: ShortcutsActions | BoundariesActio
             return {
                 ...state,
                 ...shortcuts,
+            };
+        }
+        case ShortcutsActionsTypes.SET_DEFAULT_SHORTCUTS: {
+            const { shortcuts } = action.payload;
+            return {
+                ...state,
+                defaultState: { ...shortcuts },
             };
         }
         case BoundariesActionTypes.RESET_AFTER_ERROR:

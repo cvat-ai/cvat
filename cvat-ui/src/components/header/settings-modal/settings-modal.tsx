@@ -42,6 +42,14 @@ function SettingsModal(props: SettingsModalProps): JSX.Element {
             }
         }
         settingsForSaving.shortcuts = { ...shortcuts };
+        for (const [key] of Object.entries(shortcuts.keyMap)) {
+            if (key in shortcuts.defaultState) {
+                settingsForSaving.shortcuts.keyMap[key] = {
+                    ...shortcuts.defaultState[key],
+                    sequences: shortcuts.keyMap[key].sequences,
+                };
+            }
+        }
 
         localStorage.setItem('clientSettings', JSON.stringify(settingsForSaving));
         notification.success({
@@ -54,6 +62,7 @@ function SettingsModal(props: SettingsModalProps): JSX.Element {
 
     useEffect(() => {
         try {
+            dispatch(shortcutsActions.setDefaultShortcuts(shortcuts.keyMap));
             const newSettings = _.pick(settings, 'player', 'workspace');
             const settingsString = localStorage.getItem('clientSettings') as string;
             if (!settingsString) return;

@@ -9,10 +9,14 @@ import {
 import Search from 'antd/lib/input/Search';
 import React, {
     useState, useMemo,
+    useCallback,
 } from 'react';
 import { ShortcutScope } from 'utils/enums';
 import { KeyMap } from 'utils/mousetrap-react';
 import { Empty } from 'antd';
+import { shortcutsActions } from 'actions/shortcuts-actions';
+import { useDispatch, useSelector } from 'react-redux';
+import { CombinedState } from 'reducers';
 import MultipleShortcutsDisplay from './multiple-shortcuts-display';
 
 interface Props {
@@ -24,20 +28,26 @@ interface Props {
 function ShortcutsSettingsComponent(props: Props): JSX.Element {
     const { keyMap, onKeySequenceUpdate } = props;
     const [searchValue, setSearchValue] = useState('');
+    const shortcuts = useSelector((state: CombinedState) => state.shortcuts);
+    const dispatch = useDispatch();
 
     const onSearchChange = (event: React.ChangeEvent<HTMLInputElement>): void => {
         setSearchValue(event.target.value.toLowerCase());
     };
 
-    const onRestoreDefaults = (): void => {
+    const onRestoreDefaults = useCallback(() => {
         const currentSettings = localStorage.getItem('clientSettings');
+        console.log(shortcuts);
+        dispatch(shortcutsActions.setShortcuts({
+            ...shortcuts,
+            keyMap: { ...shortcuts.defaultState },
+        }));
         if (currentSettings) {
             const parsedSettings = JSON.parse(currentSettings);
             delete parsedSettings.shortcuts;
             localStorage.setItem('clientSettings', JSON.stringify(parsedSettings));
-            window.location.reload();
         }
-    };
+    }, [shortcuts.defaultState]);
 
     const filteredKeyMap = useMemo(() => Object.entries(keyMap).filter(
         ([, item]) => (
