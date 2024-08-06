@@ -141,60 +141,20 @@ class _CollectionSummarySerializer(serializers.Serializer):
     def get_fields(self):
         fields = super().get_fields()
         fields['url'] = HyperlinkedEndpointSerializer(self._model, filter_key=self._url_filter_key)
-        fields['count'].source = self._collection_key + '.count'
+        if not fields['count'].source:
+            fields['count'].source = self._collection_key + '.count'
         return fields
 
     def get_attribute(self, instance):
         return instance
 
-class JobsSummarySerializer(serializers.Serializer):
-    url = serializers.URLField(read_only=True)
-    count = serializers.IntegerField(read_only=True)
-    completed = serializers.IntegerField(read_only=True)
-    validation = serializers.IntegerField(read_only=True)
+class JobsSummarySerializer(_CollectionSummarySerializer):
+    count = serializers.IntegerField(source='total_jobs_count', allow_null=True)
+    completed = serializers.IntegerField(source='completed_jobs_count', allow_null=True)
+    validation = serializers.IntegerField(source='validation_jobs_count', allow_null=True)
 
     def __init__(self, *, model=models.Job, url_filter_key, **kwargs):
-        super().__init__(**kwargs)
-        self._model = model
-        self._url_filter_key = url_filter_key
-
-    def get_url(self, request, instance):
-        return reverse(
-            "job-list", request=request, query_params={"task_id": instance.id}
-        )
-
-    def get_counts(self, instance):
-        jobs = [
-            j
-            for j in list(
-                self._model.objects.filter(segment__task=instance)
-            )
-        ]
-        return {
-            "count": len(jobs),
-            "completed": len(
-                [
-                    j
-                    for j in jobs
-                    if j.status == models.StatusChoice.COMPLETED.value
-                    and j.stage == models.StageChoice.ACCEPTANCE.value
-                ]
-            ),
-            "validation": len(
-                [j for j in jobs if j.stage == models.StageChoice.VALIDATION.value]
-            ),
-        }
-
-    def to_representation(self, instance):
-        request = self.context.get("request")
-        if not request:
-            return None
-
-
-        representation = self.get_counts(instance)
-        representation["url"] = self.get_url(request, instance)
-
-        return representation
+        super().__init__(model=model, url_filter_key=url_filter_key, **kwargs)
 
 
 class TasksSummarySerializer(_CollectionSummarySerializer):
@@ -1158,7 +1118,7 @@ class TaskReadSerializer(serializers.ModelSerializer):
     dimension = serializers.CharField(allow_blank=True, required=False)
     target_storage = StorageSerializer(required=False, allow_null=True)
     source_storage = StorageSerializer(required=False, allow_null=True)
-    jobs = JobsSummarySerializer(url_filter_key='task_id', source="*")
+    jobs = JobsSummarySerializer(url_filter_key='task_id', source='segment_set')
     labels = LabelsSummarySerializer(source='*')
     consensus_jobs_per_regular_job = serializers.ReadOnlyField(required=False, allow_null=True)
 
