@@ -505,8 +505,9 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
 
         try {
             const { points } = (e as CustomEvent).detail.shapes[0];
+            const shapeType = points.length === 4 ? ShapeType.RECTANGLE : ShapeType.POLYGON;
             const state = new core.classes.ObjectState({
-                shapeType: ShapeType.POLYGON, // changed by aashutosh
+                shapeType, // changed by aashutosh
                 objectType: ObjectType.TRACK,
                 source: core.enums.Source.SEMI_AUTO,
                 zOrder: curZOrder,
