@@ -827,7 +827,7 @@ class ZipChunkWriter(IChunkWriter):
             if isinstance(image, str):
                 image_buf.close()
 
-    def save_as_chunk(self, images: Iterable[tuple[Image.Image|io.IOBase|str, str, str]], chunk_path: str):
+    def save_as_chunk(self, images: Iterator[tuple[Image.Image|io.IOBase|str, str, str]], chunk_path: str):
         with zipfile.ZipFile(chunk_path, 'x') as zip_chunk:
             for idx, (image, path, _) in enumerate(images):
                 ext = os.path.splitext(path)[1].replace('.', '')
@@ -872,7 +872,7 @@ class ZipChunkWriter(IChunkWriter):
 class ZipCompressedChunkWriter(ZipChunkWriter):
     def save_as_chunk(
         self,
-        images: Iterable[tuple[Image.Image|io.IOBase|str, str, str]],
+        images: Iterator[tuple[Image.Image|io.IOBase|str, str, str]],
         chunk_path: str, *, compress_frames: bool = True, zip_compress_level: int = 0
     ):
         image_sizes = []

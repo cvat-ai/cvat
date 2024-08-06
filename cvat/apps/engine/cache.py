@@ -11,10 +11,10 @@ import pickle  # nosec
 import tempfile
 import zipfile
 import zlib
-from contextlib import ExitStack, contextmanager
+from contextlib import ExitStack, closing
 from datetime import datetime, timezone
 from itertools import pairwise
-from typing import Any, Callable, Iterable, Optional, Sequence, Tuple, Type, Union
+from typing import Any, Callable, Iterator, Optional, Sequence, Tuple, Type, Union
 
 import av
 import cv2
@@ -149,10 +149,9 @@ class MediaCache:
             create_callback=lambda: self._prepare_context_image(db_data, frame_number),
         )
 
-    @contextmanager
     def _read_raw_frames(
         self, db_task: models.Task, frame_ids: Sequence[int]
-    ) -> Iterable[Tuple[Union[av.VideoFrame, PIL.Image.Image], str, str]]:
+    ) -> Iterator[Tuple[Union[av.VideoFrame, PIL.Image.Image], str, str]]:
         for prev_frame, cur_frame in pairwise(frame_ids):
             assert (
                 prev_frame <= cur_frame
@@ -168,20 +167,19 @@ class MediaCache:
 
         dimension = db_task.dimension
 
-        media = []
-        with ExitStack() as es:
-            if hasattr(db_data, "video"):
-                source_path = os.path.join(raw_data_dir, db_data.video.path)
+        if hasattr(db_data, "video"):
+            source_path = os.path.join(raw_data_dir, db_data.video.path)
 
-                reader = VideoReaderWithManifest(
-                    manifest_path=db_data.get_manifest_path(),
-                    source_path=source_path,
-                )
-                for frame in reader.iterate_frames(frame_ids):
-                    media.append((frame, source_path, None))
-            else:
-                reader = ImageReaderWithManifest(db_data.get_manifest_path())
-                if db_data.storage == models.StorageChoice.CLOUD_STORAGE:
+            reader = VideoReaderWithManifest(
+                manifest_path=db_data.get_manifest_path(),
+                source_path=source_path,
+            )
+            for frame in reader.iterate_frames(frame_ids):
+                yield (frame, source_path, None)
+        else:
+            reader = ImageReaderWithManifest(db_data.get_manifest_path())
+            if db_data.storage == models.StorageChoice.CLOUD_STORAGE:
+                with ExitStack() as es:
                     db_cloud_storage = db_data.cloud_storage
                     assert db_cloud_storage, "Cloud storage instance was deleted"
                     credentials = Credentials()
@@ -221,17 +219,17 @@ class MediaCache:
                             slogger.cloud_storage[db_cloud_storage.id].warning(
                                 "Hash sums of files {} do not match".format(file_name)
                             )
-                else:
-                    for item in reader.iterate_frames(frame_ids):
-                        source_path = os.path.join(
-                            raw_data_dir, f"{item['name']}{item['extension']}"
-                        )
-                        media.append((source_path, source_path, None))
 
-                    if dimension == models.DimensionType.DIM_2D:
-                        media = preload_images(media)
+                    yield from media
+            else:
+                for item in reader.iterate_frames(frame_ids):
+                    source_path = os.path.join(raw_data_dir, f"{item['name']}{item['extension']}")
+                    media.append((source_path, source_path, None))
 
-            yield media
+                if dimension == models.DimensionType.DIM_2D:
+                    media = preload_images(media)
+
+                yield from media
 
     def prepare_segment_chunk(
         self, db_segment: models.Segment, chunk_number: int, *, quality: FrameQuality
@@ -269,11 +267,6 @@ class MediaCache:
             ),
         }
 
-        image_quality = (
-            100
-            if writer_classes[quality] in [Mpeg4ChunkWriter, ZipChunkWriter]
-            else db_data.image_quality
-        )
         mime_type = (
             "video/mp4"
             if writer_classes[quality] in [Mpeg4ChunkWriter, Mpeg4CompressedChunkWriter]
@@ -283,11 +276,11 @@ class MediaCache:
         kwargs = {}
         if db_segment.task.dimension == models.DimensionType.DIM_3D:
             kwargs["dimension"] = models.DimensionType.DIM_3D
-        writer = writer_classes[quality](image_quality, **kwargs)
+        writer = writer_classes[quality](int(quality), **kwargs)
 
         buffer = io.BytesIO()
-        with self._read_raw_frames(db_task, frame_ids=chunk_frame_ids) as images:
-            writer.save_as_chunk(images, buffer)
+        with closing(self._read_raw_frames(db_task, frame_ids=chunk_frame_ids)) as frame_iter:
+            writer.save_as_chunk(frame_iter, buffer)
 
         buffer.seek(0)
         return buffer, mime_type

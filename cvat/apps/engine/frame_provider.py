@@ -378,12 +378,15 @@ class SegmentFrameProvider(IFrameProvider):
 
         reader_class: dict[models.DataChoice, Tuple[Type[IMediaReader], Optional[dict]]] = {
             models.DataChoice.IMAGESET: (ZipReader, None),
-            models.DataChoice.VIDEO: (VideoReader, {
-                "allow_threading": False
-                # disable threading to avoid unpredictable server
-                # resource consumption during reading in endpoints
-                # can be enabled for other clients
-            }),
+            models.DataChoice.VIDEO: (
+                VideoReader,
+                {
+                    "allow_threading": False
+                    # disable threading to avoid unpredictable server
+                    # resource consumption during reading in endpoints
+                    # can be enabled for other clients
+                },
+            ),
         }
 
         self._loaders: dict[FrameQuality, _ChunkLoader] = {}
