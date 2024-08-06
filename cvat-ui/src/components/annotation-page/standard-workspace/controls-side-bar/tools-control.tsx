@@ -269,6 +269,7 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
         });
         canvasInstance.html().addEventListener('canvas.interacted', this.interactionListener);
         canvasInstance.html().addEventListener('canvas.canceled', this.cancelListener);
+        canvasInstance.html().addEventListener('canvas.drawn', this.interactionListener);
     }
 
     public componentDidUpdate(prevProps: Props, prevState: State): void {
@@ -333,6 +334,7 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
         onRemoveAnnotations(null);
         canvasInstance.html().removeEventListener('canvas.interacted', this.interactionListener);
         canvasInstance.html().removeEventListener('canvas.canceled', this.cancelListener);
+        canvasInstance.html().removeEventListener('canvas.drawn', this.interactionListener);
     }
 
     private contextmenuDisabler = (e: MouseEvent): void => {
@@ -821,7 +823,9 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
                             job: jobInstance.id,
                         }) as TrackerResults;
 
-                        response.shapes = response.shapes.map(trackedRectangleMapper);
+                        if (response.shapes[0].length === 4) {
+                            response.shapes = response.shapes.map(trackedRectangleMapper);
+                        }
                         for (let i = 0; i < trackableObjects.clientIDs.length; i++) {
                             const clientID = trackableObjects.clientIDs[i];
                             const shape = response.shapes[i];
