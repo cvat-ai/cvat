@@ -79,13 +79,13 @@ const componentShortcuts = {
         name: 'Show shortcuts',
         description: 'Open/hide the list of available shortcuts',
         sequences: ['f1'],
-        scope: ShortcutScope.ALL,
+        scope: ShortcutScope.GLOBAL,
     },
     SWITCH_SETTINGS: {
         name: 'Show settings',
         description: 'Open/hide settings dialog',
         sequences: ['f2'],
-        scope: ShortcutScope.ALL,
+        scope: ShortcutScope.GLOBAL,
     },
 };
 
