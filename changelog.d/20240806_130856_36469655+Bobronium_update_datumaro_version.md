@@ -1,4 +1,4 @@
-### Fixed <!-- pick one -->
+### Fixed
 
 - Fixed a label collision issue where labels with similar prefixes
 and numeric suffixes could conflict, causing error on export.
