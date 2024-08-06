@@ -504,7 +504,7 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
         try {
             const { points } = (e as CustomEvent).detail.shapes[0];
             const state = new core.classes.ObjectState({
-                shapeType: ShapeType.RECTANGLE,
+                shapeType: ShapeType.POLYGON, // changed by aashutosh
                 objectType: ObjectType.TRACK,
                 source: core.enums.Source.SEMI_AUTO,
                 zOrder: curZOrder,
@@ -592,7 +592,7 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
         const portals = !activeTracker ?
             [] :
             states
-                .filter((objectState) => objectState.objectType === 'track' && objectState.shapeType === 'rectangle')
+                .filter((objectState) => objectState.objectType === 'track' && objectState.shapeType === 'polygon') // changed by aashutosh
                 .map((objectState: any): React.ReactPortal | null => {
                     const { clientID } = objectState;
                     const selectorID = `#cvat-objects-sidebar-state-item-${clientID}`;
@@ -1046,7 +1046,32 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
                                 }
                             }}
                         >
-                            Track
+                            Track Rectangle
+                        </Button>
+                    </Col>
+                    <Col>
+                        <Button
+                            type='primary'
+                            loading={fetching}
+                            className='cvat-tools-track-button'
+                            disabled={!activeTracker || fetching || frame === jobInstance.stopFrame}
+                            onClick={() => {
+                                if (activeTracker && activeLabelID) {
+                                    this.setState({ mode: 'tracking' });
+
+                                    canvasInstance.cancel();
+                                    canvasInstance.draw({
+                                        shapeType: 'polygon',
+                                        enabled: true,
+                                    });
+
+                                    onInteractionStart(activeTracker, activeLabelID);
+                                    const { onSwitchToolsBlockerState } = this.props;
+                                    onSwitchToolsBlockerState({ buttonVisible: false });
+                                }
+                            }}
+                        >
+                            Track Polygon
                         </Button>
                     </Col>
                 </Row>
