@@ -1,0 +1,58 @@
+pixel_mean: [0.485, 0.456, 0.406]
+pixel_std: [0.229, 0.224, 0.225]
+
+pixel_dim: 256
+key_dim: 64
+value_dim: 256
+sensory_dim: 256
+embed_dim: 256
+
+pixel_encoder:
+  type: resnet50
+  ms_dims: [1024, 512, 256]
+
+mask_encoder:
+  type: resnet18
+  final_dim: 256
+
+pixel_pe_scale: 32
+pixel_pe_temperature: 128
+
+object_transformer:
+  embed_dim: ${model.embed_dim}
+  ff_dim: 2048
+  num_heads: 8
+  num_blocks: 3
+  num_queries: 16
+  read_from_pixel:
+    input_norm: False
+    input_add_pe: False
+    add_pe_to_qkv: [True, True, False]
+  read_from_past:
+    add_pe_to_qkv: [True, True, False]
+  read_from_memory:
+    add_pe_to_qkv: [True, True, False]
+  read_from_query:
+    add_pe_to_qkv: [True, True, False]
+    output_norm: False
+  query_self_attention:
+    add_pe_to_qkv: [True, True, False]
+  pixel_self_attention:
+    add_pe_to_qkv: [True, True, False]
+
+object_summarizer:
+  embed_dim: ${model.object_transformer.embed_dim}
+  num_summaries: ${model.object_transformer.num_queries}
+  add_pe: True
+
+aux_loss:
+  sensory:
+    enabled: True
+    weight: 0.01
+  query:
+    enabled: True
+    weight: 0.01
+
+mask_decoder:
+  # first value must equal embed_dim
+  up_dims: [256, 128, 128]

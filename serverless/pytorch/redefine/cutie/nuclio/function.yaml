@@ -1,0 +1,72 @@
+# Copyright (C) 2023-2024 CVAT.ai Corporation
+#
+# SPDX-License-Identifier: MIT
+
+metadata:
+  name: pth-redefine-cutie
+  namespace: cvat
+  annotations:
+    name: Cutie
+    version: 1
+    type: tracker
+    spec:
+    help_message: The tracker brings video-object-segmentation capabilities to cvat.
+
+spec:
+  description: Video object segmentation with Cutie
+  runtime: 'python:3.9'
+  handler: main:handler
+  eventTimeout: 30s
+  env:
+    - name: PYTHONPATH
+      value: /opt/nuclio/cutie
+
+  build:
+    image: cvat.pth.redefine.cutie
+    baseImage: ubuntu:22.04
+
+    directives:
+      preCopy:
+      # disable interactive frontend
+        - kind: ENV
+          value: DEBIAN_FRONTEND=noninteractive
+      # set workdir
+        - kind: WORKDIR
+          value: /opt/nuclio/cutie
+      # install basic deps
+        - kind: RUN
+          value: apt-get update && apt-get -y install curl git python3 python3-pip ffmpeg libsm6 libxext6
+      # install cutie deps
+        - kind: RUN
+          value: pip3 install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cpu
+        - kind: RUN
+          value: pip3 install pycocotools matplotlib onnxruntime onnx jsonpickle
+      # install cutie code
+        - kind: RUN
+          value: pip3 install git+https://github.com/hkchengrex/Cutie.git
+      # download weights
+        - kind: RUN
+          value: curl -LO https://github.com/hkchengrex/Cutie/releases/download/v1.0/coco_lvis_h18_itermask.pth -o /opt/nuclio/cutie/coco_lvis_h18_itermask.pth
+      # download weights
+        - kind: RUN
+          value: curl -LO https://github.com/hkchengrex/Cutie/releases/download/v1.0/cutie-base-mega.pth -o /opt/nuclio/cutie/cutie-base-mega.pth
+      # map pip3 and python3 to pip and python
+        - kind: RUN
+          value: ln -s /usr/bin/pip3 /usr/local/bin/pip && ln -s /usr/bin/python3 /usr/bin/python
+  triggers:
+    myHttpTrigger:
+      maxWorkers: 2
+      kind: 'http'
+      workerAvailabilityTimeoutMilliseconds: 10000
+      attributes:
+        maxRequestBodySize: 1073741824 # 1GB
+  resources:
+    limits:
+      nvidia.com/gpu: 1
+
+  platform:
+    attributes:
+      restartPolicy:
+        name: always
+        maximumRetryCount: 3
+      mountMode: volume
