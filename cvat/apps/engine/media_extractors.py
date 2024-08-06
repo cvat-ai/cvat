@@ -15,7 +15,7 @@ import itertools
 import struct
 from abc import ABC, abstractmethod
 from bisect import bisect
-from contextlib import ExitStack, closing
+from contextlib import ExitStack, closing, contextmanager
 from dataclasses import dataclass
 from enum import IntEnum
 from typing import Any, Callable, Iterable, Iterator, Optional, Protocol, Sequence, Tuple, TypeVar
@@ -538,20 +538,18 @@ class VideoReader(IMediaReader):
     ) -> Iterator[Tuple[av.VideoFrame, str, int]]:
         es = ExitStack()
 
-        need_init = stream is None
-        if need_init:
-            container = es.enter_context(self._get_av_container())
+        needs_init = stream is None
+        if needs_init:
+            container = es.enter_context(self._read_av_container())
         else:
             container = stream.container
 
         with es:
-            if need_init:
+            if needs_init:
                 stream = container.streams.video[0]
 
                 if self.allow_threading:
                     stream.thread_type = 'AUTO'
-
-                es.enter_context(closing(stream.codec_context))
 
             frame_num = 0
 
@@ -588,16 +586,27 @@ class VideoReader(IMediaReader):
         duration = self._get_duration()
         return pos / duration if duration else None
 
-    def _get_av_container(self):
+    @contextmanager
+    def _read_av_container(self):
         if isinstance(self._source_path[0], io.BytesIO):
             self._source_path[0].seek(0) # required for re-reading
-        return av.open(self._source_path[0])
+
+        container = av.open(self._source_path[0])
+        try:
+            yield container
+        finally:
+            # fixes a memory leak in input container closing
+            # https://github.com/PyAV-Org/PyAV/issues/1117
+            for stream in container.streams:
+                context = stream.codec_context
+                if context and context.is_open:
+                    context.close()
+
+            container.close()
 
     def _get_duration(self):
-        with ExitStack() as es:
-            container = es.enter_context(self._get_av_container())
+        with self._read_av_container() as container:
             stream = container.streams.video[0]
-            es.enter_context(closing(stream.codec_context))
 
             duration = None
             if stream.duration:
@@ -613,10 +622,8 @@ class VideoReader(IMediaReader):
             return duration
 
     def get_preview(self, frame):
-        with ExitStack() as es:
-            container = es.enter_context(self._get_av_container())
+        with self._read_av_container() as container:
             stream = container.streams.video[0]
-            es.enter_context(closing(stream.codec_context))
 
             tb_denominator = stream.time_base.denominator
             needed_time = int((frame / stream.guessed_rate) * tb_denominator)
@@ -670,10 +677,27 @@ class ImageReaderWithManifest:
             yield self._manifest[idx]
 
 class VideoReaderWithManifest:
-    def __init__(self, manifest_path: str, source_path: str):
+    def __init__(self, manifest_path: str, source_path: str, *, allow_threading: bool = False):
         self._source_path = source_path
         self._manifest = VideoManifestManager(manifest_path)
         self._manifest.init_index()
+
+        self.allow_threading = allow_threading
+
+    @contextmanager
+    def _read_av_container(self):
+        container = av.open(self._source_path[0])
+        try:
+            yield container
+        finally:
+            # fixes a memory leak in input container closing
+            # https://github.com/PyAV-Org/PyAV/issues/1117
+            for stream in container.streams:
+                context = stream.codec_context
+                if context and context.is_open:
+                    context.close()
+
+            container.close()
 
     def _get_nearest_left_key_frame(self, frame_id: int) -> tuple[int, int]:
         nearest_left_keyframe_pos = bisect(
@@ -695,21 +719,22 @@ class VideoReaderWithManifest:
             frame_ids_frame
         )
 
-        with closing(av.open(self._source_path, mode='r')) as container:
-            video_stream = next(stream for stream in container.streams if stream.type == 'video')
-            video_stream.thread_type = 'AUTO'
+        with self._read_av_container() as container:
+            stream = container.streams.video[0]
+            if self.allow_threading:
+                stream.thread_type = 'AUTO'
 
-            container.seek(offset=start_decode_timestamp, stream=video_stream)
+            container.seek(offset=start_decode_timestamp, stream=stream)
 
             frame_number = start_decode_frame_number - 1
-            for packet in container.demux(video_stream):
+            for packet in container.demux(stream):
                 for frame in packet.decode():
                     frame_number += 1
 
                     if frame_number < frame_ids_frame:
                         continue
                     elif frame_number == frame_ids_frame:
-                        if video_stream.metadata.get('rotate'):
+                        if stream.metadata.get('rotate'):
                             frame = av.VideoFrame().from_ndarray(
                                 rotate_image(
                                     frame.to_ndarray(format='bgr24'),
