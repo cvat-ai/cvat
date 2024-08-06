@@ -829,8 +829,11 @@ class CanvasWrapperComponent extends React.PureComponent<Props> {
     private onCanvasEditDone = (event: any): void => {
         const { activeControl, onUpdateAnnotations, updateActiveControl } = this.props;
         const { state, points, rotation } = event.detail;
-        state.points = points;
-        state.rotation = rotation;
+        if (state.rotation !== rotation) {
+            state.rotation = rotation;
+        } else {
+            state.points = points;
+        }
 
         if (activeControl !== ActiveControl.CURSOR) {
             // do not need to reset and deactivate if it was just resizing/dragging and other simple actions
