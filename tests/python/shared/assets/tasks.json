@@ -19,7 +19,7 @@
       "image_quality": 70,
       "jobs": {
         "completed": 0,
-        "count": 1,
+        "count": 4,
         "url": "http://localhost:8080/api/jobs?task_id=26",
         "validation": 0
       },
