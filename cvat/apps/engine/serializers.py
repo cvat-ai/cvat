@@ -250,6 +250,17 @@ class AttributeSerializer(serializers.ModelSerializer):
         model = models.AttributeSpec
         fields = ('id', 'name', 'mutable', 'input_type', 'default_value', 'values')
 
+    def validate(self, attr):
+        if attr.get('input_type') == 'checkbox':
+            def_val = attr.get('default_value')
+            value = attr.get('values')
+            attr_name = attr.get('name')
+            if value not in ['true', 'false']:
+                raise serializers.ValidationError(f"Checkbox value for attribute '{attr_name}' must be either true or false")
+            if def_val not in ['true', 'false']:
+                raise serializers.ValidationError(f"Default_value of checkbox for attribute '{attr_name}' must be either true or false")
+        return attr
+
 class SublabelSerializer(serializers.ModelSerializer):
     id = serializers.IntegerField(required=False)
     attributes = AttributeSerializer(many=True, source='attributespec_set', default=[],
