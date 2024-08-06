@@ -304,7 +304,7 @@ class TaskFrameProvider(IFrameProvider):
             writer_kwargs = dict(compress_frames=False, zip_compress_level=1)
 
         buffer = io.BytesIO()
-        merged_chunk_writer.save_as_chunk(list(task_chunk_frames.values()), buffer, **writer_kwargs)
+        merged_chunk_writer.save_as_chunk(task_chunk_frames.values(), buffer, **writer_kwargs)
         buffer.seek(0)
 
         # TODO: add caching in media cache for the resulting chunk

@@ -18,7 +18,7 @@ from bisect import bisect
 from contextlib import ExitStack, closing
 from dataclasses import dataclass
 from enum import IntEnum
-from typing import Callable, Iterable, Iterator, Optional, Protocol, Sequence, Tuple, TypeVar
+from typing import Any, Callable, Iterable, Iterator, Optional, Protocol, Sequence, Tuple, TypeVar
 
 import av
 import av.codec
@@ -910,14 +910,28 @@ class Mpeg4ChunkWriter(IChunkWriter):
 
         return video_stream
 
+    FrameDescriptor = Tuple[av.VideoFrame, Any, Any]
+
+    def _peek_first_frame(
+        self, frame_iter: Iterator[FrameDescriptor]
+    ) -> Tuple[Optional[FrameDescriptor], Iterator[FrameDescriptor]]:
+        "Gets the first frame and returns the same full iterator"
+
+        if not hasattr(frame_iter, '__next__'):
+            frame_iter = iter(frame_iter)
+
+        first_frame = next(frame_iter, None)
+        return first_frame, itertools.chain((first_frame, ), frame_iter)
+
     def save_as_chunk(
-        self, images: Sequence[av.VideoFrame], chunk_path: str
+        self, images: Iterator[FrameDescriptor], chunk_path: str
     ) -> Sequence[Tuple[int, int]]:
-        if not images:
+        first_frame, images = self._peek_first_frame(images)
+        if not first_frame:
             raise Exception('no images to save')
 
-        input_w = images[0][0].width
-        input_h = images[0][0].height
+        input_w = first_frame[0].width
+        input_h = first_frame[0].height
 
         with av.open(chunk_path, 'w', format=self.FORMAT) as output_container:
             output_v_stream = self._add_video_stream(
@@ -962,11 +976,12 @@ class Mpeg4CompressedChunkWriter(Mpeg4ChunkWriter):
             }
 
     def save_as_chunk(self, images, chunk_path):
-        if not images:
+        first_frame, images = self._peek_first_frame(images)
+        if not first_frame:
             raise Exception('no images to save')
 
-        input_w = images[0][0].width
-        input_h = images[0][0].height
+        input_w = first_frame[0].width
+        input_h = first_frame[0].height
 
         downscale_factor = 1
         while input_h / downscale_factor >= 1080:
