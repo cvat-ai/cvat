@@ -686,7 +686,7 @@ class VideoReaderWithManifest:
 
     @contextmanager
     def _read_av_container(self):
-        container = av.open(self._source_path[0])
+        container = av.open(self._source_path)
         try:
             yield container
         finally:

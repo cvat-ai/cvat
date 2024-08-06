@@ -39,10 +39,16 @@ _T = TypeVar("_T")
 
 
 class _ChunkLoader(metaclass=ABCMeta):
-    def __init__(self, reader_class: Type[IMediaReader]) -> None:
+    def __init__(
+        self,
+        reader_class: Type[IMediaReader],
+        *,
+        reader_params: Optional[dict] = None,
+    ) -> None:
         self.chunk_id: Optional[int] = None
         self.chunk_reader: Optional[RandomAccessIterator] = None
         self.reader_class = reader_class
+        self.reader_params = reader_params
 
     def load(self, chunk_id: int) -> RandomAccessIterator[Tuple[Any, str, int]]:
         if self.chunk_id != chunk_id:
@@ -50,7 +56,10 @@ class _ChunkLoader(metaclass=ABCMeta):
 
             self.chunk_id = chunk_id
             self.chunk_reader = RandomAccessIterator(
-                self.reader_class([self.read_chunk(chunk_id)[0]])
+                self.reader_class(
+                    [self.read_chunk(chunk_id)[0]],
+                    **(self.reader_params or {}),
+                )
             )
         return self.chunk_reader
 
@@ -66,9 +75,13 @@ class _ChunkLoader(metaclass=ABCMeta):
 
 class _FileChunkLoader(_ChunkLoader):
     def __init__(
-        self, reader_class: Type[IMediaReader], get_chunk_path_callback: Callable[[int], str]
+        self,
+        reader_class: Type[IMediaReader],
+        get_chunk_path_callback: Callable[[int], str],
+        *,
+        reader_params: Optional[dict] = None,
     ) -> None:
-        super().__init__(reader_class)
+        super().__init__(reader_class, reader_params=reader_params)
         self.get_chunk_path = get_chunk_path_callback
 
     def read_chunk(self, chunk_id: int) -> DataWithMime:
@@ -82,9 +95,13 @@ class _FileChunkLoader(_ChunkLoader):
 
 class _BufferChunkLoader(_ChunkLoader):
     def __init__(
-        self, reader_class: Type[IMediaReader], get_chunk_callback: Callable[[int], DataWithMime]
+        self,
+        reader_class: Type[IMediaReader],
+        get_chunk_callback: Callable[[int], DataWithMime],
+        *,
+        reader_params: Optional[dict] = None,
     ) -> None:
-        super().__init__(reader_class)
+        super().__init__(reader_class, reader_params=reader_params)
         self.get_chunk = get_chunk_callback
 
     def read_chunk(self, chunk_id: int) -> DataWithMime:
@@ -359,9 +376,14 @@ class SegmentFrameProvider(IFrameProvider):
 
         db_data = db_segment.task.data
 
-        reader_class: dict[models.DataChoice, Type[IMediaReader]] = {
-            models.DataChoice.IMAGESET: ZipReader,
-            models.DataChoice.VIDEO: VideoReader,
+        reader_class: dict[models.DataChoice, Tuple[Type[IMediaReader], Optional[dict]]] = {
+            models.DataChoice.IMAGESET: (ZipReader, None),
+            models.DataChoice.VIDEO: (VideoReader, {
+                "allow_threading": False
+                # disable threading to avoid unpredictable server
+                # resource consumption during reading in endpoints
+                # can be enabled for other clients
+            }),
         }
 
         self._loaders: dict[FrameQuality, _ChunkLoader] = {}
@@ -369,28 +391,32 @@ class SegmentFrameProvider(IFrameProvider):
             cache = MediaCache()
 
             self._loaders[FrameQuality.COMPRESSED] = _BufferChunkLoader(
-                reader_class=reader_class[db_data.compressed_chunk_type],
+                reader_class=reader_class[db_data.compressed_chunk_type][0],
+                reader_params=reader_class[db_data.compressed_chunk_type][1],
                 get_chunk_callback=lambda chunk_idx: cache.get_segment_chunk(
                     db_segment, chunk_idx, quality=FrameQuality.COMPRESSED
                 ),
             )
 
             self._loaders[FrameQuality.ORIGINAL] = _BufferChunkLoader(
-                reader_class=reader_class[db_data.original_chunk_type],
+                reader_class=reader_class[db_data.original_chunk_type][0],
+                reader_params=reader_class[db_data.original_chunk_type][1],
                 get_chunk_callback=lambda chunk_idx: cache.get_segment_chunk(
                     db_segment, chunk_idx, quality=FrameQuality.ORIGINAL
                 ),
             )
         else:
             self._loaders[FrameQuality.COMPRESSED] = _FileChunkLoader(
-                reader_class=reader_class[db_data.compressed_chunk_type],
+                reader_class=reader_class[db_data.compressed_chunk_type][0],
+                reader_params=reader_class[db_data.compressed_chunk_type][1],
                 get_chunk_path_callback=lambda chunk_idx: db_data.get_compressed_segment_chunk_path(
                     chunk_idx, segment=db_segment.id
                 ),
             )
 
             self._loaders[FrameQuality.ORIGINAL] = _FileChunkLoader(
-                reader_class=reader_class[db_data.original_chunk_type],
+                reader_class=reader_class[db_data.original_chunk_type][0],
+                reader_params=reader_class[db_data.original_chunk_type][1],
                 get_chunk_path_callback=lambda chunk_idx: db_data.get_original_segment_chunk_path(
                     chunk_idx, segment=db_segment.id
                 ),
