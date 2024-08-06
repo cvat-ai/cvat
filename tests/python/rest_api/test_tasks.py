@@ -2316,8 +2316,6 @@ class TestTaskBackups:
         old_jobs = task.get_jobs()
         new_jobs = restored_task.get_jobs()
         assert len(old_jobs) == len(new_jobs)
-        # print(old_jobs)
-        # print(new_jobs)
 
         for old_job, new_job in zip(old_jobs, new_jobs):
             assert old_job.status == new_job.status
