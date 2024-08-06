@@ -39,7 +39,7 @@ _T = TypeVar("_T")
 
 
 class _ChunkLoader(metaclass=ABCMeta):
-    def __init__(self, reader_class: IMediaReader) -> None:
+    def __init__(self, reader_class: Type[IMediaReader]) -> None:
         self.chunk_id: Optional[int] = None
         self.chunk_reader: Optional[RandomAccessIterator] = None
         self.reader_class = reader_class
@@ -66,7 +66,7 @@ class _ChunkLoader(metaclass=ABCMeta):
 
 class _FileChunkLoader(_ChunkLoader):
     def __init__(
-        self, reader_class: IMediaReader, get_chunk_path_callback: Callable[[int], str]
+        self, reader_class: Type[IMediaReader], get_chunk_path_callback: Callable[[int], str]
     ) -> None:
         super().__init__(reader_class)
         self.get_chunk_path = get_chunk_path_callback
@@ -82,7 +82,7 @@ class _FileChunkLoader(_ChunkLoader):
 
 class _BufferChunkLoader(_ChunkLoader):
     def __init__(
-        self, reader_class: IMediaReader, get_chunk_callback: Callable[[int], DataWithMime]
+        self, reader_class: Type[IMediaReader], get_chunk_callback: Callable[[int], DataWithMime]
     ) -> None:
         super().__init__(reader_class)
         self.get_chunk = get_chunk_callback
@@ -359,7 +359,7 @@ class SegmentFrameProvider(IFrameProvider):
 
         db_data = db_segment.task.data
 
-        reader_class: dict[models.DataChoice, IMediaReader] = {
+        reader_class: dict[models.DataChoice, Type[IMediaReader]] = {
             models.DataChoice.IMAGESET: ZipReader,
             models.DataChoice.VIDEO: VideoReader,
         }
