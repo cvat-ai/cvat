@@ -496,9 +496,8 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                     activeControl,
                 },
                 drawing: {
-                    ...state.drawing,
+                    ...defaultState.drawing,
                     ...payload,
-                    activeInteractor: undefined,
                 },
             };
         }
@@ -931,7 +930,7 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
             };
         }
         case AnnotationActionTypes.INTERACT_WITH_CANVAS: {
-            const { activeInteractor, activeLabelID } = action.payload;
+            const { activeInteractor, activeLabelID, activeInteractorParameters } = action.payload;
             return {
                 ...state,
                 annotations: {
@@ -941,6 +940,7 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                 drawing: {
                     ...state.drawing,
                     activeInteractor,
+                    activeInteractorParameters,
                     activeLabelID,
                 },
                 canvas: {

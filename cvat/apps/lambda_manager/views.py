@@ -194,6 +194,7 @@ class LambdaFunction:
         self.min_pos_points = int(meta_anno.get('min_pos_points', 1))
         self.min_neg_points = int(meta_anno.get('min_neg_points', -1))
         self.startswith_box = bool(meta_anno.get('startswith_box', False))
+        self.startswith_box_optional = bool(meta_anno.get('startswith_box_optional', False))
         self.animated_gif = meta_anno.get('animated_gif', '')
         self.version = int(meta_anno.get('version', '1'))
         self.help_message = meta_anno.get('help_message', '')
@@ -214,6 +215,7 @@ class LambdaFunction:
                 'min_pos_points': self.min_pos_points,
                 'min_neg_points': self.min_neg_points,
                 'startswith_box': self.startswith_box,
+                'startswith_box_optional': self.startswith_box_optional,
                 'help_message': self.help_message,
                 'animated_gif': self.animated_gif
             })
@@ -383,9 +385,9 @@ class LambdaFunction:
         elif self.kind == LambdaType.INTERACTOR:
             payload.update({
                 "image": self._get_image(db_task, mandatory_arg("frame"), quality),
-                "pos_points": mandatory_arg("pos_points")[2:] if self.startswith_box else mandatory_arg("pos_points"),
+                "pos_points": mandatory_arg("pos_points"),
                 "neg_points": mandatory_arg("neg_points"),
-                "obj_bbox": mandatory_arg("pos_points")[0:2] if self.startswith_box else None
+                "obj_bbox": data.get("pos_boxes", None)
             })
         elif self.kind == LambdaType.REID:
             payload.update({
