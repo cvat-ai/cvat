@@ -201,6 +201,7 @@ class MediaCache:
                     tmp_dir = es.enter_context(tempfile.TemporaryDirectory(prefix="cvat"))
                     files_to_download = []
                     checksums = []
+                    media = []
                     for item in reader.iterate_frames(frame_ids):
                         file_name = f"{item['name']}{item['extension']}"
                         fs_filename = os.path.join(tmp_dir, file_name)
@@ -222,6 +223,7 @@ class MediaCache:
 
                     yield from media
             else:
+                media = []
                 for item in reader.iterate_frames(frame_ids):
                     source_path = os.path.join(raw_data_dir, f"{item['name']}{item['extension']}")
                     media.append((source_path, source_path, None))
