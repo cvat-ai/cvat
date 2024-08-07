@@ -22,6 +22,7 @@ from django.db.models.fields import FloatField
 from django.db.models import Q
 from drf_spectacular.types import OpenApiTypes
 from drf_spectacular.utils import extend_schema_field
+from cvat.apps.engine.lazy_list import LazyList
 
 from cvat.apps.engine.utils import parse_specific_attributes, chunked_list
 from cvat.apps.events.utils import cache_deleted
@@ -181,6 +182,7 @@ class JobFrameSelectionMethod(str, Enum):
     def __str__(self):
         return self.value
 
+
 class AbstractArrayField(models.TextField):
     separator = ","
     converter = staticmethod(lambda x: x)
@@ -193,19 +195,20 @@ class AbstractArrayField(models.TextField):
     def from_db_value(self, value, expression, connection):
         if not value:
             return []
-        if value.startswith('[') and value.endswith(']'):
-            value = value[1:-1]
-        return [self.converter(v) for v in value.split(self.separator) if v]
+        return LazyList(string=value, separator=self.separator, converter=self.converter)
 
     def to_python(self, value):
-        if isinstance(value, list):
+        if isinstance(value, list | LazyList):
             return value
 
         return self.from_db_value(value, None, None)
 
     def get_prep_value(self, value):
+        if isinstance(value, LazyList) and not (self._unique_values or self._store_sorted):
+            return str(value)
+
         if self._unique_values:
-            value = list(dict.fromkeys(value))
+            value = dict.fromkeys(value)
         if self._store_sorted:
             value = sorted(value)
         return self.separator.join(map(str, value))
