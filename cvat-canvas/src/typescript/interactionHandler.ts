@@ -206,9 +206,10 @@ export class InteractionHandlerImpl implements InteractionHandler {
                     this.interact({ enabled: false });
                 } else if (this.shouldRaiseEvent(e.ctrlKey)) {
                     this.onInteraction(this.prepareResult(), true, false);
-                    if (onContinue) {
-                        onContinue();
-                    }
+                }
+
+                if (onContinue) {
+                    onContinue();
                 }
             })
             .addClass('cvat_canvas_shape_drawing')
