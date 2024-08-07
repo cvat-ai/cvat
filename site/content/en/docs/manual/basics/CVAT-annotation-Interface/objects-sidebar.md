@@ -52,7 +52,8 @@ The action menu contains:
 - **Propagate** function copies the form to multiple frames
   and displays a dialog box where you can specify the number
   of copies or the frame to which you want to copy the object.
-  The keyboard shortcut is **Ctr**l + **B**. <br>There are two options available:
+  The keyboard shortcut is **Ctr**l + **B**. On how to propagate
+  only filtered shapes, see [Shapes converter](/docs/enterprise/shapes-converter/)<br>There are two options available:
 
   - **Propagate forward** (![Fw propagate](/images/propagate_fw.png)) creates a
     copy of the object on `N` _subsequent_ frames at the same position.
