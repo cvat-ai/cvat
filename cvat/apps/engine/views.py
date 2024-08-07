@@ -1713,6 +1713,7 @@ class JobViewSet(viewsets.GenericViewSet, mixins.ListModelMixin, mixins.CreateMo
         'segment__task__project__annotation_guide',
         'segment__task__source_storage',
         'segment__task__target_storage',
+    ).prefetch_related(
         'segment__task__organization',
         'segment__task__owner',
     ).annotate(
