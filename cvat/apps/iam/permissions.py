@@ -51,9 +51,8 @@ def get_organization(request, obj):
         if not organization_id:
             return None
 
-        if org := getattr(obj, 'organization', None):
-            if isinstance(org, Organization):
-                return org
+        if hasattr(obj, 'organization') and isinstance(obj.organization, Organization):
+            return obj.organization
 
         try:
             return Organization.objects.select_related('owner').get(id=organization_id)
