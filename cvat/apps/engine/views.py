@@ -1705,8 +1705,18 @@ class JobViewSet(viewsets.GenericViewSet, mixins.ListModelMixin, mixins.CreateMo
     mixins.RetrieveModelMixin, PartialUpdateModelMixin, mixins.DestroyModelMixin,
     UploadMixin, DatasetMixin, CsrfWorkaroundMixin
 ):
-    queryset = Job.objects.select_related('assignee', 'segment__task__data',
-        'segment__task__project', 'segment__task__annotation_guide', 'segment__task__project__annotation_guide',
+    queryset = Job.objects.select_related(
+        'assignee',
+        'segment__task__data',
+        'segment__task__project',
+        'segment__task__annotation_guide',
+        'segment__task__project__annotation_guide',
+        'segment__task__source_storage',
+        'segment__task__target_storage',
+        'segment__task__organization',
+        'segment__task__project__organization',
+        'segment__task__owner',
+        'segment__task__project__owner',
     ).annotate(
         Count('issues', distinct=True),
     ).all()
