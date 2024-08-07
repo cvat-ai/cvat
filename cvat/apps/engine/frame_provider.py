@@ -142,14 +142,18 @@ class IFrameProvider(metaclass=ABCMeta):
         return BytesIO(result.tobytes())
 
     def _convert_frame(
-        self, frame: Any, reader: IMediaReader, out_type: FrameOutputType
+        self, frame: Any, reader_class: Type[IMediaReader], out_type: FrameOutputType
     ) -> AnyFrame:
         if out_type == FrameOutputType.BUFFER:
-            return self._av_frame_to_png_bytes(frame) if isinstance(reader, VideoReader) else frame
+            return (
+                self._av_frame_to_png_bytes(frame)
+                if issubclass(reader_class, VideoReader)
+                else frame
+            )
         elif out_type == FrameOutputType.PIL:
-            return frame.to_image() if isinstance(reader, VideoReader) else Image.open(frame)
+            return frame.to_image() if issubclass(reader_class, VideoReader) else Image.open(frame)
         elif out_type == FrameOutputType.NUMPY_ARRAY:
-            if isinstance(reader, VideoReader):
+            if issubclass(reader_class, VideoReader):
                 image = frame.to_ndarray(format="bgr24")
             else:
                 image = np.array(Image.open(frame))
@@ -358,6 +362,9 @@ class TaskFrameProvider(IFrameProvider):
             yield self.get_frame(idx, quality=quality, out_type=out_type)
 
     def _get_segment(self, validated_frame_number: int) -> models.Segment:
+        if not self._db_task.data or not self._db_task.data.size:
+            raise ValidationError("Task has no data")
+
         return next(
             s
             for s in self._db_task.segment_set.all()
@@ -474,12 +481,12 @@ class SegmentFrameProvider(IFrameProvider):
         frame_number: int,
         *,
         quality: FrameQuality = FrameQuality.ORIGINAL,
-    ) -> Tuple[Any, str, IMediaReader]:
+    ) -> Tuple[Any, str, Type[IMediaReader]]:
         _, chunk_number, frame_offset = self.validate_frame_number(frame_number)
         loader = self._loaders[quality]
         chunk_reader = loader.load(chunk_number)
         frame, frame_name, _ = chunk_reader[frame_offset]
-        return frame, frame_name, chunk_reader
+        return frame, frame_name, loader.reader_class
 
     def get_frame(
         self,
@@ -490,10 +497,10 @@ class SegmentFrameProvider(IFrameProvider):
     ) -> DataWithMeta[AnyFrame]:
         return_type = DataWithMeta[AnyFrame]
 
-        frame, frame_name, reader = self._get_raw_frame(frame_number, quality=quality)
+        frame, frame_name, reader_class = self._get_raw_frame(frame_number, quality=quality)
 
-        frame = self._convert_frame(frame, reader, out_type)
-        if isinstance(reader, VideoReader):
+        frame = self._convert_frame(frame, reader_class, out_type)
+        if issubclass(reader_class, VideoReader):
             return return_type(frame, mime=self.VIDEO_FRAME_MIME)
 
         return return_type(frame, mime=mimetypes.guess_type(frame_name)[0])
