@@ -615,6 +615,7 @@ export async function getFrame(
                 blockType,
                 chunkSize,
                 decodedBlocksCacheSize,
+                startFrame,
                 dimension,
             ),
             prefetchAnalyzer: new PrefetchAnalyzer(chunkSize, startFrame),
