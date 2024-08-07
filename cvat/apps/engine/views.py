@@ -1714,9 +1714,7 @@ class JobViewSet(viewsets.GenericViewSet, mixins.ListModelMixin, mixins.CreateMo
         'segment__task__source_storage',
         'segment__task__target_storage',
         'segment__task__organization',
-        'segment__task__project__organization',
         'segment__task__owner',
-        'segment__task__project__owner',
     ).annotate(
         Count('issues', distinct=True),
     ).all()
