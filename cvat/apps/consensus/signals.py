@@ -2,13 +2,12 @@
 #
 # SPDX-License-Identifier: MIT
 
-from django.db import transaction
 from django.db.models.signals import post_save
 from django.dispatch import receiver
 
 # from cvat.apps.quality_control import quality_reports as qc
 from cvat.apps.consensus.models import ConsensusSettings
-from cvat.apps.engine.models import Annotation, Job, Project, Task
+from cvat.apps.engine.models import Job, Task
 
 
 @receiver(

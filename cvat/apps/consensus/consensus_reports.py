@@ -5,26 +5,19 @@
 from __future__ import annotations
 
 import itertools
-import math
 from collections import Counter
 from copy import deepcopy
-from datetime import timedelta
-from functools import cached_property, partial
+from functools import cached_property
 from types import NoneType
-from typing import Any, Callable, Dict, Hashable, List, Optional, Sequence, Tuple, Union, cast
-from uuid import uuid4
+from typing import Any, Dict, List, Optional, cast
 
 import datumaro as dm
-import datumaro.util.mask_tools
-import django_rq
 import numpy as np
-from attrs import asdict, define, fields_dict
+from attrs import define, fields_dict
 from datumaro.components.annotation import Annotation
 from datumaro.util import dump_json, parse_json
-from django.conf import settings
 from django.db import transaction
 from django.utils import timezone
-from scipy.optimize import linear_sum_assignment
 
 from cvat.apps.consensus import models
 from cvat.apps.consensus.models import (
@@ -33,28 +26,9 @@ from cvat.apps.consensus.models import (
     ConsensusReport,
     ConsensusSettings,
 )
-from cvat.apps.dataset_manager.bindings import (
-    CommonData,
-    CvatToDmAnnotationConverter,
-    GetCVATDataExtractor,
-    JobData,
-    match_dm_item,
-)
-from cvat.apps.dataset_manager.formats.registry import dm_env
-from cvat.apps.dataset_manager.task import JobAnnotation
 from cvat.apps.dataset_manager.util import bulk_create
-from cvat.apps.engine.models import (
-    DimensionType,
-    Job,
-    JobType,
-    ShapeType,
-    StageChoice,
-    StatusChoice,
-    Task,
-)
-from cvat.apps.profiler import silk_profile
+from cvat.apps.engine.models import Job, Task
 from cvat.apps.quality_control.quality_reports import AnnotationId, JobDataProvider, _Serializable
-from cvat.utils.background_jobs import schedule_job_with_throttling
 
 
 @define(kw_only=True)
@@ -181,18 +155,15 @@ class ComparisonReportFrameSummary(_Serializable):
 
 @define(kw_only=True)
 class ComparisonParameters(_Serializable):
-    # TODO: dm.AnnotationType.skeleton to be implemented
     included_annotation_types: List[dm.AnnotationType] = [
         dm.AnnotationType.bbox,
         dm.AnnotationType.points,
         dm.AnnotationType.mask,
         dm.AnnotationType.polygon,
         dm.AnnotationType.polyline,
+        dm.AnnotationType.skeleton,
         dm.AnnotationType.label,
     ]
-
-    # non_groupable_ann_type = dm.AnnotationType.label
-    # "Annotation type that can't be grouped"
 
     agreement_score_threshold: float
     quorum: int
@@ -222,7 +193,7 @@ class ComparisonReport(_Serializable):
         return list(itertools.chain.from_iterable(r.conflicts for r in self.frame_results.values()))
 
     @property
-    def consensus_score(self) -> float:
+    def consensus_score(self) -> int:
         mean_consensus_score = 0
         frame_count = 0
         for frame_result in self.frame_results.values():
@@ -230,7 +201,7 @@ class ComparisonReport(_Serializable):
                 mean_consensus_score += frame_result.consensus_score
                 frame_count += 1
 
-        return mean_consensus_score / (frame_count or 1)
+        return np.round(100 * (mean_consensus_score / (frame_count or 1)))
 
     def _fields_dict(self, *, include_properties: Optional[List[str]] = None) -> dict:
         return super()._fields_dict(
@@ -337,7 +308,7 @@ def generate_task_consensus_report(job_reports: List[ComparisonReport]) -> Compa
     task_conflicts: List[AnnotationConflict] = []
     task_frame_results = {}
     task_frame_results_counts = {}
-    for r in job_reports.values():
+    for r in job_reports:
         task_frames.update(r.comparison_summary.frames)
         task_conflicts.extend(r.conflicts)
 
@@ -360,7 +331,7 @@ def generate_task_consensus_report(job_reports: List[ComparisonReport]) -> Compa
             task_frame_results[frame_id] = task_frame_result
 
     task_report_data = ComparisonReport(
-        parameters=next(iter(job_reports.values())).parameters,
+        parameters=job_reports[0].parameters,
         comparison_summary=ComparisonReportComparisonSummary(
             frames=sorted(task_frames),
             conflict_count=len(task_conflicts),
@@ -371,19 +342,12 @@ def generate_task_consensus_report(job_reports: List[ComparisonReport]) -> Compa
     return task_report_data
 
 
-def get_last_report_time(task: Task) -> Optional[timezone.datetime]:
-    report = models.ConsensusReport.objects.filter(task=task).order_by("-created_date").first()
-    if report:
-        return report.created_date
-    return None
-
-
 @transaction.atomic
 def save_report(
     task_id: int,
     jobs: List[Job],
     task_report_data: ComparisonReport,
-    job_report_data: List[ComparisonReport],
+    job_report_data: Dict[int, ComparisonReport],
 ):
     try:
         Task.objects.get(id=task_id)
@@ -392,21 +356,11 @@ def save_report(
 
     task = Task.objects.filter(id=task_id).first()
 
-    # last_report_time = self._get_last_report_time(task)
-    # if not self.is_custom_quality_check_job(self._get_current_job()) and (
-    #     last_report_time
-    #     and timezone.now() < last_report_time + self._get_quality_check_job_delay()
-    # ):
-    #     # Discard this report as it has probably been computed in parallel
-    #     # with another one
-    #     return
-
     mean_consensus_score = 0
 
     job_reports = {}
-    for job_id in jobs:
-        job_comparison_report = job_report_data[job_id]
-        job = Job.objects.filter(id=job_id).first()
+    for job in jobs:
+        job_comparison_report = job_report_data[job.id]
         job_consensus_score = job_comparison_report.consensus_score
         job_report = dict(
             job=job,
@@ -444,6 +398,7 @@ def save_report(
     db_job_reports = []
     for job_report in job_reports:
         db_job_report = ConsensusReport(
+            task=task_report["task"],
             job=job_report["job"],
             target_last_updated=job_report["target_last_updated"],
             data=job_report["data"],
@@ -490,6 +445,7 @@ def save_report(
 
 
 def prepare_report_for_downloading(db_report: ConsensusReport, *, host: str) -> str:
+    # copied from quality_reports.py
     # Decorate the report for better usability and readability:
     # - add conflicting annotation links like:
     # <host>/tasks/62/jobs/82?frame=250&type=shape&serverID=33741

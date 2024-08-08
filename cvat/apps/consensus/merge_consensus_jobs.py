@@ -2,14 +2,12 @@
 #
 # SPDX-License-Identifier: MIT
 
-from typing import Dict, List
-from uuid import uuid4
+from typing import Dict, List, Tuple
 
 import datumaro as dm
 import django_rq
 from django.conf import settings
 from django.db import transaction
-from django.utils import timezone
 from rest_framework import status
 from rest_framework.exceptions import ValidationError
 from rest_framework.response import Response
@@ -27,7 +25,6 @@ from cvat.apps.consensus.new_intersect_merge import IntersectMerge
 from cvat.apps.dataset_manager.bindings import import_dm_annotations
 from cvat.apps.dataset_manager.task import PatchAction, patch_job_data
 from cvat.apps.engine.models import Job, JobType, StageChoice, StateChoice, Task
-from cvat.apps.engine.serializers import RqIdSerializer
 from cvat.apps.engine.utils import (
     define_dependent_job,
     get_rq_job_meta,
@@ -37,8 +34,8 @@ from cvat.apps.engine.utils import (
 from cvat.apps.quality_control.quality_reports import JobDataProvider
 
 
-def get_consensus_jobs(task_id: int) -> Dict[int, List[int]]:
-    jobs = {}  # parent_job_id -> [consensus_job_id]
+def get_consensus_jobs(task_id: int) -> Tuple[Dict[int, List[int]], List[Job]]:
+    jobs = {}  # parent_job_id -> [(consensus_job_id, assignee)]
 
     for job in Job.objects.select_related("segment").filter(
         segment__task_id=task_id, type=JobType.CONSENSUS.value
@@ -48,29 +45,31 @@ def get_consensus_jobs(task_id: int) -> Dict[int, List[int]]:
         # if the job is in NEW state, it means that the job isn't annotated
         if job.state == StateChoice.NEW.value:
             continue
-        jobs.setdefault(job.parent_job_id, []).append(job.id)
+        jobs.setdefault(job.parent_job_id, []).append((job.id, job.assignee_id))
 
     parent_job_ids = list(jobs.keys())
 
+    parent_jobs: List[Job] = []
+    # remove parent jobs that are not in annotation stage
     for parent_job_id in parent_job_ids:
-        if (
-            Job.objects.filter(id=parent_job_id, type=JobType.ANNOTATION.value).first().stage
-            == StageChoice.ANNOTATION.value
-        ):
+        parent_job = Job.objects.filter(id=parent_job_id, type=JobType.ANNOTATION.value).first()
+        parent_jobs.append(parent_job)
+
+        if parent_job.stage == StageChoice.ANNOTATION.value:
             continue
         else:
             jobs.pop(parent_job_id)
 
-    return jobs
+    return jobs, parent_jobs
 
 
 def get_annotations(job_id: int) -> dm.Dataset:
-    return JobDataProvider(job_id).dm_dataset  # .get("08122008671")
+    return JobDataProvider(job_id).dm_dataset
 
 
 @transaction.atomic
 def _merge_consensus_jobs(task_id: int) -> None:
-    jobs = get_consensus_jobs(task_id)
+    jobs, parent_jobs = get_consensus_jobs(task_id)
     if not jobs:
         raise ValidationError(
             "No annotated consensus jobs found or no regular jobs in annotation stage"
@@ -88,7 +87,8 @@ def _merge_consensus_jobs(task_id: int) -> None:
 
     job_comparison_reports: Dict[int, ComparisonReport] = {}
 
-    for parent_job_id, job_ids in jobs.items():
+    for parent_job_id, job_info in jobs.items():
+        job_ids = [job_id for job_id, _ in job_info]
         consensus_job_data_providers = list(map(JobDataProvider, job_ids))
         consensus_datasets = [
             consensus_job_data_provider.dm_dataset
@@ -101,7 +101,7 @@ def _merge_consensus_jobs(task_id: int) -> None:
         patch_job_data(parent_job_id, None, PatchAction.DELETE)
         # if we don't delete exising annotations, the imported annotations
         # will be appended to the existing annotations, and thus updated annotation
-        # would have both exisiting + imported annotations, but we only want the
+        # would have both existing + imported annotations, but we only want the
         # imported annotations
 
         parent_job = JobDataProvider(parent_job_id)
@@ -122,8 +122,8 @@ def _merge_consensus_jobs(task_id: int) -> None:
         parent_job.state = StateChoice.COMPLETED.value
         parent_job.save()
 
-    task_report_data = generate_task_consensus_report(job_comparison_reports)
-    return save_report(task_id, jobs, task_report_data, job_comparison_reports)
+    task_report_data = generate_task_consensus_report(list(job_comparison_reports.values()))
+    return save_report(task_id, parent_jobs, task_report_data, job_comparison_reports)
 
 
 def merge_task(task: Task, request) -> Response:
@@ -138,16 +138,13 @@ def merge_task(task: Task, request) -> Response:
         if rq_job.is_finished:
             # returned_data = rq_job.return_value()
             rq_job.delete()
-            return Response(
-                status=status.HTTP_201_CREATED
-            )  # if returned_data == 201 else Response(status=status.HTTP_400_BAD_REQUEST)
+            return Response(status=status.HTTP_201_CREATED)
         elif rq_job.is_failed:
             exc_info = process_failed_job(rq_job)
             return Response(data=exc_info, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
         else:
             # rq_job is in queued stage or might be running
             return Response(status=status.HTTP_202_ACCEPTED)
-            # return Response(serializer.data, status=status.HTTP_202_ACCEPTED)
 
     func = _merge_consensus_jobs
     func_args = [task.id]
@@ -162,6 +159,3 @@ def merge_task(task: Task, request) -> Response:
         )
 
     return rq_id
-    # serializer = RqIdSerializer(data={'rq_id': rq_id})
-    # serializer.is_valid(raise_exception=True)
-    # return Response(serializer.data, status=status.HTTP_202_ACCEPTED)

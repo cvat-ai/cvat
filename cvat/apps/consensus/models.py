@@ -4,18 +4,9 @@
 
 from __future__ import annotations  # this allows forward references
 
-from copy import deepcopy
 from enum import Enum
 from typing import Any, Sequence
 
-from datumaro.components.errors import (
-    AnnotationsTooCloseError,
-    FailedAttrVotingError,
-    FailedLabelVotingError,
-    NoMatchingAnnError,
-    NoMatchingItemError,
-    WrongGroupError,
-)
 from django.core.exceptions import ValidationError
 from django.db import models
 from django.forms.models import model_to_dict
@@ -43,6 +34,18 @@ class AnnotationType(str, Enum):
     TAG = "tag"
     SHAPE = "shape"
     TRACK = "track"
+
+    def __str__(self) -> str:
+        return self.value
+
+    @classmethod
+    def choices(cls):
+        return tuple((x.value, x.name) for x in cls)
+
+
+class ConsensusReportTarget(str, Enum):
+    JOB = "job"
+    TASK = "task"
 
     def __str__(self) -> str:
         return self.value
@@ -97,7 +100,7 @@ class ConsensusReport(models.Model):
 
     created_date = models.DateTimeField(auto_now_add=True)
     target_last_updated = models.DateTimeField()
-    consensus_score = models.FloatField()
+    consensus_score = models.IntegerField()
     assignee = models.ForeignKey(
         User, on_delete=models.SET_NULL, related_name="consensus", null=True, blank=True
     )
@@ -115,6 +118,15 @@ class ConsensusReport(models.Model):
     def summary(self):
         report = self._parse_report()
         return report.comparison_summary
+
+    @property
+    def target(self) -> ConsensusReportTarget:
+        if self.job:
+            return ConsensusReportTarget.JOB
+        elif self.task:
+            return ConsensusReportTarget.TASK
+        else:
+            assert False
 
     def get_task(self) -> Task:
         if self.task is not None:

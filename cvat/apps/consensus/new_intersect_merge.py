@@ -1,5 +1,4 @@
-# Copyright (C) 2020-2022 Intel Corporation
-# Copyright (C) 2022 CVAT.ai Corporation
+# Copyright (C) 2024 CVAT.ai Corporation
 #
 # SPDX-License-Identifier: MIT
 
@@ -7,22 +6,7 @@ import itertools
 import logging as log
 import math
 from collections import OrderedDict
-from copy import deepcopy
-from functools import cached_property, partial
-from typing import (
-    Any,
-    Callable,
-    Dict,
-    Hashable,
-    Iterable,
-    List,
-    Optional,
-    Sequence,
-    Tuple,
-    Type,
-    Union,
-    cast,
-)
+from typing import Any, Callable, Dict, Iterable, List, Optional, Sequence, Tuple, Type, Union, cast
 
 import attr
 import datumaro as dm
@@ -57,15 +41,9 @@ from datumaro.components.errors import (
 )
 from datumaro.components.extractor import CategoriesInfo, DatasetItem
 from datumaro.components.media import Image, MediaElement, MultiframeImage, PointCloud, Video
-from datumaro.util import filter_dict, find
-from datumaro.util.annotation_util import (
-    approximate_line,
-    bbox_iou,
-    find_instances,
-    max_bbox,
-    mean_bbox,
-)
-from datumaro.util.attrs_util import default_if_none, ensure_cls
+from datumaro.util import find
+from datumaro.util.annotation_util import find_instances, max_bbox, mean_bbox
+from datumaro.util.attrs_util import ensure_cls
 from scipy.optimize import linear_sum_assignment
 
 
@@ -531,6 +509,7 @@ class IntersectMerge(MergingStrategy):
     _ann_map = attrib(init=False)  # id(ann) -> (ann, id(item))
     _item_id = attrib(init=False)
     _item = attrib(init=False)
+    _dataset_mean_consensus_score = attrib(init=False)  # id(dataset) -> mean consensus score: float
 
     # Misc.
     _categories = attrib(init=False)  # merged categories
@@ -546,6 +525,7 @@ class IntersectMerge(MergingStrategy):
 
         item_matches, item_map = self.match_items(datasets)
         self._item_map = item_map
+        self._dataset_mean_consensus_score = {id(d): [] for d in datasets}
         self._dataset_map = {id(d): (d, i) for i, d in enumerate(datasets)}
 
         for item_id, items in item_matches.items():
@@ -556,6 +536,12 @@ class IntersectMerge(MergingStrategy):
                 missing_sources = [self._dataset_map[s][1] for s in missing_sources]
                 self.add_item_error(NoMatchingItemError, sources=missing_sources)
             merged.put(self.merge_items(items))
+
+        # now we have conensus score for all annotations in
+        for dataset_id in self._dataset_mean_consensus_score:
+            self._dataset_mean_consensus_score[dataset_id] = np.mean(
+                self._dataset_mean_consensus_score[dataset_id]
+            )
 
         return merged
 
@@ -1035,6 +1021,7 @@ class _ShapeMatcher(AnnotationMatcher):
     cluster_dist = attrib(converter=float, default=-1.0)
     return_distances = False
     categories = attrib(converter=dict, default={})
+    distance_index = attrib(converter=dict, default={})
 
     def _instance_bbox(
         self, instance_anns: Sequence[dm.Annotation]
@@ -1846,15 +1833,18 @@ class _ShapeMerger(_ShapeMatcher):
         dataitem_id = self._context._ann_map[id(a)][1]
         img_h, img_w = self._context._item_map[dataitem_id][0].image.size
         dist = list(segment_iou(mbbox, s, img_h=img_h, img_w=img_w) for s in cluster)
-        # print(cluster)
-        # print(mbbox, dist)
         nearest_pos, _ = max(enumerate(dist), key=lambda e: e[1])
-        # print(nearest_pos, dist[nearest_pos], cluster[nearest_pos])
         return cluster[nearest_pos]
 
     def merge_cluster_shape(self, cluster):
         shape = self._merge_cluster_shape_mean_box_nearest(cluster)
-        shape_score = sum(max(0, self.distance(shape, s)) for s in cluster) / len(cluster)
+        distance, _ = self._make_memoizing_distance(self.distance)
+        for ann in cluster:
+            dataset_id = self._context._item_map[self._context._ann_map[id(ann)][1]][1]
+            self._context._dataset_mean_consensus_score.setdefault(dataset_id, []).append(
+                sum(max(0, distance(ann, s)) for s in cluster) / len(cluster)
+            )
+        shape_score = sum(max(0, distance(shape, s)) for s in cluster) / len(cluster)
         return shape, shape_score
 
     def merge_cluster(self, cluster):
