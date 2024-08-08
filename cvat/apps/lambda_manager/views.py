@@ -343,6 +343,11 @@ class LambdaFunction:
                 )
 
                 if md_label['type'] == 'skeleton' and db_label.type == 'skeleton':
+                    if 'sublabels' not in mapping_item:
+                        raise ValidationError(
+                            f'Mapping for sublabels of skeleton "{model_label_name}" is missing'
+                        )
+
                     validate_labels_mapping(
                         mapping_item['sublabels'],
                         md_label['sublabels'],
