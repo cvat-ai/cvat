@@ -257,21 +257,12 @@ export interface SerializedQualitySettingsData {
     compare_attributes?: boolean;
 }
 
-export interface SerializedConsensusSettingsData {
-    id?: number;
-    task?: number;
-    agreement_score_threshold?: number;
-    quorum?: number;
-    iou_threshold?: number;
-    sigma?: number;
-}
-
-export interface APIQualityConflictsFilter extends APICommonFilterParams {
+export interface APIConflictsFilter extends APICommonFilterParams {
     report_id?: number;
 }
-export type QualityConflictsFilter = Camelized<APIQualityConflictsFilter>;
+export type ConflictsFilter = Camelized<APIConflictsFilter>;
 
-export interface SerializedAnnotationConflictData {
+export interface SerializedAnnotationQualityConflictData {
     job_id?: number;
     obj_id?: number;
     type?: ObjectType;
@@ -284,7 +275,7 @@ export interface SerializedQualityConflictData {
     id?: number;
     frame?: number;
     type?: string;
-    annotation_ids?: SerializedAnnotationConflictData[];
+    annotation_ids?: SerializedAnnotationQualityConflictData[];
     data?: string;
     severity?: string;
     description?: string;
