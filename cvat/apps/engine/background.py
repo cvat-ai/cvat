@@ -261,8 +261,8 @@ class DatasetExportManager(_ResourceExportManager):
         if not rq_job:
             return None if action != "download" else \
                 HttpResponseBadRequest(
-                    "Result file cannot be send since there is no related job on the server. "
-                    "Initialize background process first without sending action=download parameter."
+                    "Unknown export request id. "
+                    "Please request export first by sending a request without the action=download parameter."
                 )
 
         # define status once to avoid refreshing it on each check
