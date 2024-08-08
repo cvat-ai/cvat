@@ -296,7 +296,7 @@ class UploadMixin:
             tus_file = TusFile.create_file(metadata, file_size, self.get_upload_dir())
 
             location = request.build_absolute_uri()
-            if 'HTTP_X_FORWARDED_HOST' not in request.META:
+            if 'HTTP_ORIGIN' in request.META:
                 location = request.META.get('HTTP_ORIGIN') + request.META.get('PATH_INFO')
 
             if import_type in ('backup', 'annotations', 'datasets'):
