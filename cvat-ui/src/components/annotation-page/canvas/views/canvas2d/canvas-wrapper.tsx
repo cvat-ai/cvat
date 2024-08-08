@@ -740,10 +740,9 @@ class CanvasWrapperComponent extends React.PureComponent<Props> {
     };
 
     private onCanvasPositionSelected = (event: any): void => {
-        const { onResetCanvas, onStartIssue } = this.props;
+        const { onStartIssue } = this.props;
         const { points } = event.detail;
         onStartIssue(points);
-        onResetCanvas();
     };
 
     private onCanvasMouseDown = (e: MouseEvent): void => {
