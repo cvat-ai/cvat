@@ -548,7 +548,7 @@ class BackupExportManager(_ResourceExportManager):
 
                 elif not os.path.exists(file_path):
                     return Response(
-                        "The result file does not exist in export cache",
+                        "The export result is not found",
                         status=status.HTTP_500_INTERNAL_SERVER_ERROR,
                     )
                 if action == "download":
