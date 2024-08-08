@@ -1,62 +1,36 @@
-// Copyright (C) 2023-2024 CVAT.ai Corporation
+// Copyright (C) 2024 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
 import './styles.scss';
 
 import React, { useCallback, useEffect, useState } from 'react';
-import { useDispatch } from 'react-redux';
+import { useDispatch, useSelector } from 'react-redux';
 import { useLocation, useParams } from 'react-router';
 import { Link } from 'react-router-dom';
 import { Row, Col } from 'antd/lib/grid';
 import Tabs from 'antd/lib/tabs';
 import Title from 'antd/lib/typography/Title';
 import notification from 'antd/lib/notification';
-import moment from 'moment';
 import { useIsMounted } from 'utils/hooks';
-import { Project, Task } from 'reducers';
-import {
-    AnalyticsReport, Job, RQStatus, getCore,
-} from 'cvat-core-wrapper';
-import { updateJobAsync } from 'actions/jobs-actions';
+import { CombinedState, Project, Task } from 'reducers';
+import { Job, getCore } from 'cvat-core-wrapper';
 import CVATLoadingSpinner from 'components/common/loading-spinner';
 import GoBackButton from 'components/common/go-back-button';
-import AnalyticsOverview, { DateIntervals } from './analytics-performance';
-import TaskQualityComponent from './task-quality/task-quality-component';
-import TaskConsensusComponent from './task-consensus/task-consensus-component';
+import ConsensusSettingsForm from 'components/consensus/consensus-settings-form';
+import { consensusActions } from 'actions/consensus-actions';
+import TaskConsensusAnalyticsComponent from './task-consensus/task-consensus-component';
 
 const core = getCore();
 
 enum AnalyticsTabs {
     OVERVIEW = 'overview',
-    QUALITY = 'quality',
-    CONSENSUS = 'consensus',
+    SETTINGS = 'settings',
 }
 
 function getTabFromHash(): AnalyticsTabs {
     const tab = window.location.hash.slice(1) as AnalyticsTabs;
     return Object.values(AnalyticsTabs).includes(tab) ? tab : AnalyticsTabs.OVERVIEW;
-}
-
-function handleTimePeriod(interval: DateIntervals): [string, string] {
-    const now = moment.utc();
-    switch (interval) {
-        case DateIntervals.LAST_WEEK: {
-            return [now.format(), now.subtract(7, 'd').format()];
-        }
-        case DateIntervals.LAST_MONTH: {
-            return [now.format(), now.subtract(30, 'd').format()];
-        }
-        case DateIntervals.LAST_QUARTER: {
-            return [now.format(), now.subtract(90, 'd').format()];
-        }
-        case DateIntervals.LAST_YEAR: {
-            return [now.format(), now.subtract(365, 'd').format()];
-        }
-        default: {
-            throw Error(`Date interval is not supported: ${interval}`);
-        }
-    }
 }
 
 function readInstanceType(location: ReturnType<typeof useLocation>): InstanceType {
@@ -81,7 +55,7 @@ function readInstanceId(type: InstanceType): number {
 
 type InstanceType = 'project' | 'task' | 'job';
 
-function AnalyticsPage(): JSX.Element {
+function TaskConsensusAnalyticsPage(): JSX.Element {
     const dispatch = useDispatch();
     const location = useLocation();
 
@@ -91,11 +65,13 @@ function AnalyticsPage(): JSX.Element {
     const [activeTab, setTab] = useState(getTabFromHash());
     const [instanceType, setInstanceType] = useState<InstanceType | null>(null);
     const [instance, setInstance] = useState<Project | Task | Job | null>(null);
-    const [analyticsReport, setAnalyticsReport] = useState<AnalyticsReport | null>(null);
-    const [timePeriod, setTimePeriod] = useState<DateIntervals>(DateIntervals.LAST_WEEK);
-    const [reportRefreshingStatus, setReportRefreshingStatus] = useState<string | null>(null);
     const [fetching, setFetching] = useState(true);
     const isMounted = useIsMounted();
+    const consensusSettings = useSelector((state: CombinedState) => state.consensus?.consensusSettings);
+
+    const onTabKeyChange = useCallback((key: string): void => {
+        setTab(key as AnalyticsTabs);
+    }, []);
 
     const receiveInstance = async (type: InstanceType, id: number): Promise<void> => {
         let receivedInstance: Task | Project | Job | null = null;
@@ -130,46 +106,11 @@ function AnalyticsPage(): JSX.Element {
         }
     };
 
-    const receiveReport = async (timeInterval: DateIntervals, type: InstanceType, id: number): Promise<void> => {
-        const [endDate, startDate] = handleTimePeriod(timeInterval);
-        let report: AnalyticsReport | null = null;
-
-        try {
-            const body = { endDate, startDate };
-            switch (type) {
-                case 'project': {
-                    report = await core.analytics.performance.reports({ ...body, projectID: id });
-                    break;
-                }
-                case 'task': {
-                    report = await core.analytics.performance.reports({ ...body, taskID: id });
-                    break;
-                }
-                case 'job': {
-                    report = await core.analytics.performance.reports({ ...body, jobID: id });
-                    break;
-                }
-                default:
-                    return;
-            }
-
-            if (isMounted()) {
-                setAnalyticsReport(report);
-            }
-        } catch (error: unknown) {
-            notification.error({
-                message: 'Could not receive requested report',
-                description: `${error instanceof Error ? error.message : ''}`,
-            });
-        }
-    };
-
     useEffect(() => {
         if (Number.isInteger(requestedInstanceID) && ['project', 'task', 'job'].includes(requestedInstanceType)) {
             setFetching(true);
             Promise.all([
                 receiveInstance(requestedInstanceType, requestedInstanceID),
-                receiveReport(timePeriod, requestedInstanceType, requestedInstanceID),
             ]).finally(() => {
                 if (isMounted()) {
                     setFetching(false);
@@ -185,10 +126,16 @@ function AnalyticsPage(): JSX.Element {
         return () => {
             if (isMounted()) {
                 setInstance(null);
-                setAnalyticsReport(null);
             }
         };
-    }, [requestedInstanceType, requestedInstanceID, timePeriod]);
+    }, [requestedInstanceType, requestedInstanceID]);
+
+    function handleError(error: Error): void {
+        notification.error({
+            description: error.toString(),
+            message: 'Could not fetch consensus settings.',
+        });
+    }
 
     useEffect(() => {
         window.addEventListener('hashchange', () => {
@@ -198,46 +145,25 @@ function AnalyticsPage(): JSX.Element {
     }, []);
 
     useEffect(() => {
+        if (instance) {
+            dispatch(consensusActions.setFetching(true));
+
+            const settingsRequest = core.consensus.settings.get({ taskID: instance.id });
+
+            Promise.all([settingsRequest])
+                .then(([settings]) => {
+                    dispatch(consensusActions.setConsensusSettings(settings));
+                })
+                .catch(handleError)
+                .finally(() => {
+                    dispatch(consensusActions.setFetching(false));
+                });
+        }
+    }, [instance?.id]);
+
+    useEffect(() => {
         window.location.hash = activeTab;
     }, [activeTab]);
-
-    const onCreateReport = useCallback(() => {
-        const onUpdate = (status: RQStatus, progress: number, message: string): void => {
-            setReportRefreshingStatus(message);
-        };
-
-        const body = {
-            ...(requestedInstanceType === 'project' ? { projectID: requestedInstanceID } : {}),
-            ...(requestedInstanceType === 'task' ? { taskID: requestedInstanceID } : {}),
-            ...(requestedInstanceType === 'job' ? { jobID: requestedInstanceID } : {}),
-        };
-
-        core.analytics.performance.calculate(body, onUpdate).then(() => {
-            receiveReport(timePeriod, requestedInstanceType, requestedInstanceID);
-        }).finally(() => {
-            setReportRefreshingStatus(null);
-        }).catch((error: unknown) => {
-            if (isMounted()) {
-                notification.error({
-                    message: 'Error occurred during requesting performance report',
-                    description: error instanceof Error ? error.message : '',
-                });
-            }
-        });
-    }, [requestedInstanceType, requestedInstanceID, timePeriod]);
-
-    const onJobUpdate = useCallback((job: Job, data: Parameters<Job['save']>[0]): void => {
-        setFetching(true);
-        dispatch(updateJobAsync(job, data)).finally(() => {
-            if (isMounted()) {
-                setFetching(false);
-            }
-        });
-    }, []);
-
-    const onTabKeyChange = useCallback((key: string): void => {
-        setTab(key as AnalyticsTabs);
-    }, []);
 
     let backNavigation: JSX.Element | null = null;
     let title: JSX.Element | null = null;
@@ -265,6 +191,13 @@ function AnalyticsPage(): JSX.Element {
             </Col>
         );
 
+        const consensusSettingsForm = (
+            <ConsensusSettingsForm
+                settings={consensusSettings}
+                setConsensusSettings={(settings) => dispatch(consensusActions.setConsensusSettings(settings))}
+            />
+        );
+
         tabs = (
             <Tabs
                 type='card'
@@ -272,29 +205,30 @@ function AnalyticsPage(): JSX.Element {
                 defaultActiveKey={AnalyticsTabs.OVERVIEW}
                 onChange={onTabKeyChange}
                 className='cvat-task-analytics-tabs'
-                items={[{
-                    key: AnalyticsTabs.OVERVIEW,
-                    label: 'Performance',
-                    children: (
-                        <AnalyticsOverview
-                            report={analyticsReport}
-                            timePeriod={timePeriod}
-                            reportRefreshingStatus={reportRefreshingStatus}
-                            onTimePeriodChange={setTimePeriod}
-                            onCreateReport={onCreateReport}
-                        />
-                    ),
-                },
-                ...(instanceType === 'task' ? [{
-                    key: AnalyticsTabs.QUALITY,
-                    label: 'Quality',
-                    children: <TaskQualityComponent task={instance} onJobUpdate={onJobUpdate} />,
-                }] : []),
-                ...((instanceType === 'task' && instance.consensusJobsPerRegularJob) ? [{
-                    key: AnalyticsTabs.CONSENSUS,
-                    label: 'Consensus',
-                    children: <TaskConsensusComponent task={instance} onJobUpdate={onJobUpdate} />,
-                }] : [])]}
+                items={[
+                    ...(instanceType === 'task' ?
+                        [
+                            {
+                                key: AnalyticsTabs.OVERVIEW,
+                                label: 'Overview',
+                                children: (
+                                    <TaskConsensusAnalyticsComponent task={instance} />
+                                ),
+                            },
+                        ] :
+                        []),
+                    ...(instanceType === 'task' && instance.consensusJobsPerRegularJob ?
+                        [
+                            {
+                                key: AnalyticsTabs.SETTINGS,
+                                label: 'Settings',
+                                children: (
+                                    consensusSettingsForm
+                                ),
+                            },
+                        ] :
+                        []),
+                ]}
             />
         );
     }
@@ -318,4 +252,4 @@ function AnalyticsPage(): JSX.Element {
     );
 }
 
-export default React.memo(AnalyticsPage);
+export default React.memo(TaskConsensusAnalyticsPage);
