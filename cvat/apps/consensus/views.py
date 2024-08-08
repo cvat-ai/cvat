@@ -22,7 +22,12 @@ from rest_framework.response import Response
 
 from cvat.apps.consensus.consensus_reports import prepare_report_for_downloading
 from cvat.apps.consensus.merge_consensus_jobs import merge_task
-from cvat.apps.consensus.models import ConsensusConflict, ConsensusReport, ConsensusSettings
+from cvat.apps.consensus.models import (
+    ConsensusConflict,
+    ConsensusReport,
+    ConsensusReportTarget,
+    ConsensusSettings,
+)
 from cvat.apps.consensus.permissions import (
     ConsensusConflictPermission,
     ConsensusReportPermission,
@@ -38,23 +43,6 @@ from cvat.apps.engine.mixins import PartialUpdateModelMixin
 from cvat.apps.engine.models import Task
 from cvat.apps.engine.serializers import RqIdSerializer
 from cvat.apps.engine.utils import get_server_url
-
-"""
-engine> views.py> TaskViewSet
-
-For now that's fine, but it should return `rq_id`
-
-In this views.py we can get details on merge report.
-
-storing merge report as `.json` like analytics report or quality report [prefered]
-like a string only a parameter model
-
-or somewhat like storing report attributes.
-
-/aggregate/ => list of merge reports
-/aggregate/settings/
-
-"""
 
 
 @extend_schema(tags=["consensus"])
@@ -121,7 +109,12 @@ class ConsensusConflictsViewSet(viewsets.GenericViewSet, mixins.ListModelMixin):
 
                 self.check_object_permissions(self.request, report)
 
-                queryset = queryset.filter(report=report)
+                if report.target == ConsensusReportTarget.TASK:
+                    queryset = queryset.filter(Q(report=report)).distinct()
+                elif report.target == ConsensusReportTarget.JOB:
+                    queryset = queryset.filter(report=report)
+                else:
+                    assert False
             else:
                 perm = ConsensusConflictPermission.create_scope_list(self.request)
                 queryset = perm.filter(queryset)
@@ -144,6 +137,9 @@ class ConsensusConflictsViewSet(viewsets.GenericViewSet, mixins.ListModelMixin):
             # These filters are implemented differently from others
             OpenApiParameter(
                 "task_id", type=OpenApiTypes.INT, description="A simple equality filter for task id"
+            ),
+            OpenApiParameter(
+                "target", type=OpenApiTypes.STR, description="A simple equality filter for target"
             ),
         ],
         responses={
@@ -202,6 +198,18 @@ class ConsensusReportViewSet(
             else:
                 perm = ConsensusReportPermission.create_scope_list(self.request)
                 queryset = perm.filter(queryset)
+
+            if target := self.request.query_params.get("target", None):
+                if target == ConsensusReportTarget.JOB:
+                    queryset = queryset.filter(job__isnull=False)
+                elif target == ConsensusReportTarget.TASK:
+                    queryset = queryset.filter(job__isnull=True)
+                else:
+                    raise ValidationError(
+                        "Unexpected 'target' filter value '{}'. Valid values are: {}".format(
+                            target, ", ".join(m[0] for m in ConsensusReportTarget.choices())
+                        )
+                    )
 
         return queryset
 
