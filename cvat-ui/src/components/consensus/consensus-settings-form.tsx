@@ -14,7 +14,6 @@ import { ConsensusSettings } from 'cvat-core-wrapper';
 import { Button } from 'antd/lib';
 import notification from 'antd/lib/notification';
 import { LoadingOutlined } from '@ant-design/icons';
-import { Modal } from 'antd';
 
 interface Props {
     settings: ConsensusSettings | null;
@@ -147,24 +146,7 @@ export default function ConsensusSettingsForm(props: Props): JSX.Element | null 
                 </Col>
             </Row>
             <Row>
-                <Col span={7} offset={5}>
-                    <Button
-                        type='default'
-                        onClick={() => {
-                            Modal.confirm({
-                                title: 'Reset Consensus Settings',
-                                content: 'Are you sure you want to reset consensus settings?',
-                                onOk: () => {
-                                    form.resetFields();
-                                },
-                            });
-                        }}
-                        className='cvat-button-reset-settings'
-                    >
-                        Reset Settings
-                    </Button>
-                </Col>
-                <Col span={11} offset={1}>
+                <Col span={11} offset={6}>
                     <Button
                         type='primary'
                         disabled={updatingConsensusSetting}
