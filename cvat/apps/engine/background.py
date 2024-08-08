@@ -542,7 +542,7 @@ class BackupExportManager(_ResourceExportManager):
 
                 if not file_path:
                     return Response(
-                        "A result for exporting job was not found for finished RQ job",
+                        "Export is completed, but has no results",
                         status=status.HTTP_500_INTERNAL_SERVER_ERROR,
                     )
 
