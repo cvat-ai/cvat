@@ -14,8 +14,6 @@ from cvat.apps.dataset_manager.bindings import (
     import_dm_annotations,
     match_dm_item,
     find_dataset_root,
-    TaskData,
-    ProjectData,
 )
 from cvat.apps.dataset_manager.util import make_zip_archive
 from datumaro.components.extractor import DatasetItem
