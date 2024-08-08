@@ -46,8 +46,6 @@ type InstanceType = 'project' | 'task' | 'job';
 
 interface State {
     fetching: boolean;
-    taskReport: QualityReport | null;
-    jobsReports: QualityReport[];
     reportRefreshingStatus: string | null;
     qualitySettings: {
         settings: QualitySettings | null;
@@ -99,20 +97,6 @@ const reducer = (state: State, action: ActionUnion<typeof reducerActions>): Stat
         };
     }
 
-    if (action.type === ReducerActionType.SET_TASK_REPORT) {
-        return {
-            ...state,
-            taskReport: action.payload.qualityReport,
-        };
-    }
-
-    if (action.type === ReducerActionType.SET_JOBS_REPORTS) {
-        return {
-            ...state,
-            jobsReports: action.payload.qualityReports,
-        };
-    }
-
     if (action.type === ReducerActionType.SET_QUALITY_SETTINGS) {
         return {
             ...state,
@@ -148,8 +132,6 @@ function QualityControlPage(): JSX.Element {
     const appDispatch = useDispatch();
     const [state, dispatch] = useReducer(reducer, {
         fetching: true,
-        taskReport: null,
-        jobsReports: [],
         reportRefreshingStatus: null,
         qualitySettings: {
             settings: null,
@@ -364,8 +346,6 @@ function QualityControlPage(): JSX.Element {
                     onJobUpdate={onJobUpdate}
                     onCreateReport={onCreateReport}
                     reportRefreshingStatus={state.reportRefreshingStatus}
-                    taskReport={state.taskReport}
-                    jobsReports={state.jobsReports}
                     getQualityColor={state.qualitySettings.getQualityColor}
                 />
             ),
@@ -380,8 +360,6 @@ function QualityControlPage(): JSX.Element {
                     onJobUpdate={onJobUpdate}
                     onCreateReport={onCreateReport}
                     reportRefreshingStatus={state.reportRefreshingStatus}
-                    taskReport={state.taskReport}
-                    jobsReports={state.jobsReports}
                     getQualityColor={state.qualitySettings.getQualityColor}
                 />
             ),

@@ -10,7 +10,10 @@ import { PluginsActionTypes, pluginActions } from 'actions/plugins-actions';
 import { getCore, CVATCore, APIWrapperEnterOptions } from 'cvat-core-wrapper';
 import { modelsActions } from 'actions/models-actions';
 import { changeFrameAsync, updateCurrentJobAsync } from 'actions/annotation-actions';
+import { updateJobAsync, deleteJobAsync } from 'actions/jobs-actions';
 import { getCVATStore } from 'cvat-store';
+import { importActions } from 'actions/import-actions';
+import { exportActions } from 'actions/export-actions';
 
 const core = getCore();
 
@@ -22,6 +25,10 @@ export type PluginActionCreators = {
     addUICallback: typeof pluginActions['addUICallback'],
     removeUICallback: typeof pluginActions['removeUICallback'],
     updateCurrentJobAsync: typeof updateCurrentJobAsync,
+    updateJobAsync: typeof updateJobAsync,
+    deleteJobAsync: typeof deleteJobAsync,
+    openExportDatasetModal: typeof exportActions.openExportDatasetModal,
+    openImportDatasetModal: typeof importActions.openImportDatasetModal,
 };
 
 export type ComponentBuilder = ({
@@ -69,6 +76,10 @@ function PluginEntrypoint(): null {
                         actionCreators: {
                             changeFrameAsync,
                             updateCurrentJobAsync,
+                            updateJobAsync,
+                            deleteJobAsync,
+                            openExportDatasetModal: exportActions.openExportDatasetModal,
+                            openImportDatasetModal: importActions.openImportDatasetModal,
                             getModelsSuccess: modelsActions.getModelsSuccess,
                             addUICallback: pluginActions.addUICallback,
                             removeUICallback: pluginActions.removeUICallback,

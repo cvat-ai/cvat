@@ -32,7 +32,10 @@ const FilteringComponent = ResourceFilterHOC(
 
 interface Props {
     task: Task;
-    onUpdateJob(job: Job, data: Parameters<Job['save']>[0]): void;
+    onJobUpdate(job: Job, data: Parameters<Job['save']>[0]): void;
+    onJobDelete: (job: Job) => void;
+    onJobExport: (job: Job) => void;
+    onJobImport: (job: Job) => void;
 }
 
 const PAGE_SIZE = 10;
@@ -66,7 +69,9 @@ function setUpJobsList(jobs: Job[], query: JobsQuery): Job[] {
 }
 
 function JobListComponent(props: Props): JSX.Element {
-    const { task: taskInstance, onUpdateJob } = props;
+    const {
+        task: taskInstance, onJobUpdate, onJobDelete, onJobExport, onJobImport,
+    } = props;
     const [visibility, setVisibility] = useState(defaultVisibility);
 
     const deletedJobs = useSelector((state: CombinedState) => state.jobs.activities.deletes);
@@ -98,7 +103,10 @@ function JobListComponent(props: Props): JSX.Element {
                 job={job}
                 task={taskInstance}
                 deleted={job.id in deletedJobs}
-                onJobUpdate={onUpdateJob}
+                onJobUpdate={onJobUpdate}
+                onJobDelete={onJobDelete}
+                onJobExport={onJobExport}
+                onJobImport={onJobImport}
             />
         ));
     useEffect(() => {

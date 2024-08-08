@@ -25,11 +25,15 @@ const useCardHeight = useCardHeightHOC({
 
 interface Props {
     job: Job;
-    onJobUpdate: (job: Job, fields: Parameters<Job['save']>[0]) => void;
+    onJobDelete: (job: Job) => void;
+    onJobExport: (job: Job) => void;
+    onJobImport: (job: Job) => void;
 }
 
 function JobCardComponent(props: Props): JSX.Element {
-    const { job, onJobUpdate } = props;
+    const {
+        job, onJobDelete, onJobExport, onJobImport,
+    } = props;
     const history = useHistory();
     const height = useCardHeight();
     const onClick = (event: React.MouseEvent): void => {
@@ -74,7 +78,14 @@ function JobCardComponent(props: Props): JSX.Element {
             <Dropdown
                 trigger={['click']}
                 destroyPopupOnHide
-                overlay={<JobActionsMenu onJobUpdate={onJobUpdate} job={job} />}
+                overlay={(
+                    <JobActionsMenu
+                        onJobDelete={onJobDelete}
+                        onJobExport={onJobExport}
+                        onJobImport={onJobImport}
+                        job={job}
+                    />
+                )}
             >
                 <MoreOutlined className='cvat-job-card-more-button' />
             </Dropdown>

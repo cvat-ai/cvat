@@ -3,25 +3,24 @@
 // SPDX-License-Identifier: MIT
 
 import React, { useCallback } from 'react';
-import { useDispatch } from 'react-redux';
 import { useHistory } from 'react-router';
 import Modal from 'antd/lib/modal';
-import { exportActions } from 'actions/export-actions';
 
 import { Job, JobType } from 'cvat-core-wrapper';
-import { deleteJobAsync } from 'actions/jobs-actions';
-import { importActions } from 'actions/import-actions';
 import Menu, { MenuInfo } from 'components/dropdown-menu';
 
 interface Props {
     job: Job;
-    onJobUpdate: (job: Job, fields: Parameters<Job['save']>[0]) => void;
+    onJobDelete: (job: Job) => void;
+    onJobExport: (job: Job) => void;
+    onJobImport: (job: Job) => void;
 }
 
 function JobActionsMenu(props: Props): JSX.Element {
-    const { job } = props;
+    const {
+        job, onJobDelete, onJobImport, onJobExport,
+    } = props;
     const history = useHistory();
-    const dispatch = useDispatch();
 
     const onDelete = useCallback(() => {
         Modal.confirm({
@@ -29,7 +28,7 @@ function JobActionsMenu(props: Props): JSX.Element {
             content: 'All related data (annotations) will be lost. Continue?',
             className: 'cvat-modal-confirm-delete-job',
             onOk: () => {
-                dispatch(deleteJobAsync(job));
+                onJobDelete(job);
             },
             okButtonProps: {
                 type: 'primary',
@@ -52,9 +51,9 @@ function JobActionsMenu(props: Props): JSX.Element {
                         window.open(job.bugTracker, '_blank', 'noopener noreferrer');
                     }
                 } else if (action.key === 'import_job') {
-                    dispatch(importActions.openImportDatasetModal(job));
+                    onJobImport(job);
                 } else if (action.key === 'export_job') {
-                    dispatch(exportActions.openExportDatasetModal(job));
+                    onJobExport(job);
                 } else if (action.key === 'view_analytics') {
                     history.push(`/tasks/${job.taskId}/jobs/${job.id}/analytics`);
                 }

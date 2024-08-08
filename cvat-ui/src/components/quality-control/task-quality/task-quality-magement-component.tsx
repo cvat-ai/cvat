@@ -3,7 +3,7 @@
 // SPDX-License-Identifier: MIT
 
 import {
-    Job, QualityReport, Task,
+    Task,
 } from 'cvat-core-wrapper';
 import React from 'react';
 import { QualityColors } from 'utils/quality-color';
@@ -12,17 +12,12 @@ import { usePlugins } from 'utils/hooks';
 
 interface Props {
     task: Task;
-    taskReport: QualityReport | null;
-    jobsReports: QualityReport[];
-    reportRefreshingStatus: string | null;
-    onJobUpdate: (job: Job, data: Parameters<Job['save']>[0]) => void;
-    onCreateReport: () => void;
     getQualityColor: (value?: number) => QualityColors;
 }
 
 function TaskQualityManagementComponent(props: Props): JSX.Element {
     const {
-        task, onJobUpdate, taskReport, jobsReports, reportRefreshingStatus, onCreateReport, getQualityColor,
+        task, getQualityColor,
     } = props;
 
     const plugins = usePlugins((state) => state.plugins.components.qualityControlPage.tabs.management, props, {

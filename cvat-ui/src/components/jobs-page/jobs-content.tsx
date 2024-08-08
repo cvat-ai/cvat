@@ -12,11 +12,15 @@ import dimensions from 'utils/dimensions';
 import JobCard from './job-card';
 
 interface Props {
-    onJobUpdate(job: Job, data: Parameters<Job['save']>[0]): void;
+    onJobDelete: (job: Job) => void;
+    onJobExport: (job: Job) => void;
+    onJobImport: (job: Job) => void;
 }
 
 function JobsContentComponent(props: Props): JSX.Element {
-    const { onJobUpdate } = props;
+    const {
+        onJobDelete, onJobExport, onJobImport,
+    } = props;
     const jobs = useSelector((state: CombinedState) => state.jobs.current);
 
     const groupedJobs = jobs.filter((job: Job) => job.type === JobType.ANNOTATION).reduce(
@@ -39,7 +43,13 @@ function JobsContentComponent(props: Props): JSX.Element {
                         <Row key={jobInstances[0].id}>
                             {jobInstances.map((job: Job) => (
                                 <Col span={6} key={job.id}>
-                                    <JobCard onJobUpdate={onJobUpdate} job={job} key={job.id} />
+                                    <JobCard
+                                        onJobDelete={onJobDelete}
+                                        onJobExport={onJobExport}
+                                        onJobImport={onJobImport}
+                                        job={job}
+                                        key={job.id}
+                                    />
                                 </Col>
                             ))}
                         </Row>
