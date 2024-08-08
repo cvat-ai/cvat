@@ -8692,6 +8692,11 @@ components:
           minimum: 0
           nullable: true
           readOnly: true
+        assignee_updated_date:
+          type: string
+          format: date-time
+          readOnly: true
+          nullable: true
       required:
       - issues
       - labels
@@ -11135,6 +11140,11 @@ components:
           type: integer
           maximum: 2147483647
           minimum: -2147483648
+          readOnly: true
+          nullable: true
+        assignee_updated_date:
+          type: string
+          format: date-time
           readOnly: true
           nullable: true
       required:
