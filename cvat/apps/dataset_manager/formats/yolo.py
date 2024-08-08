@@ -38,6 +38,7 @@ def _import_common(
     src_file,
     temp_dir,
     instance_data,
+    *,
     load_data_callback=None,
     format_name="yolo",
     import_kwargs=None,

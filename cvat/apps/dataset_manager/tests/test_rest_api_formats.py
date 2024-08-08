@@ -1086,8 +1086,8 @@ class TaskDumpUploadTest(_DbTestBase):
                     # create task
                     images = self._generate_task_images(3)
                     if dump_format_name in [
-                        "Market-1501 1.0", "Cityscapes 1.0", \
-                        "ICDAR Localization 1.0", "ICDAR Recognition 1.0", \
+                        "Market-1501 1.0", "Cityscapes 1.0",
+                        "ICDAR Localization 1.0", "ICDAR Recognition 1.0",
                         "ICDAR Segmentation 1.0", "COCO Keypoints 1.0",
                         "YOLOv8 Pose 1.0",
                     ]:

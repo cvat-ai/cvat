@@ -5,7 +5,7 @@ weight: 7
 description: 'How to export and import data in YOLOv8 formats'
 ---
 
-YOLOv8 is format family which consists of four formats:
+YOLOv8 is a format family which consists of four formats:
 - [Detection](https://docs.ultralytics.com/datasets/detect/)
 - [Oriented bounding Box](https://docs.ultralytics.com/datasets/obb/)
 - [Segmentation](https://docs.ultralytics.com/datasets/segment/)
@@ -45,15 +45,16 @@ archive.zip/
 
 # train.txt:
 images/<subset>/image1.jpg
-images/<subset>/image1.jpg
+images/<subset>/image2.jpg
+...
 
 # data.yaml:
 path:  ./ # dataset root dir
 train: train.txt  # train images (relative to 'path')
 
 # YOLOv8 Pose specific field
-# First number is a number of points in skeleton
-# Second number defines a format of point info in an annotation txt files
+# First number is the number of points in each skeleton
+# Second number defines the format of point info in annotation txt files
 kpt_shape: [17, 3]
 
 # Classes
@@ -63,7 +64,7 @@ names:
   2: car
   # ...
 
-# image_name.txt:
+# <image_name>.txt:
 # content depends on format
 
 # YOLOv8 Detection:
