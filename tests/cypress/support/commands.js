@@ -1173,7 +1173,7 @@ Cypress.Commands.add('setJobState', (jobID, state) => {
         .contains('a', `Job #${jobID}`)
         .parents('.cvat-job-item')
         .find('.cvat-job-item-state').click();
-    cy.get('.ant-select-dropdown')
+    cy.get('.cvat-job-item-state-dropdown')
         .should('be.visible')
         .not('.ant-select-dropdown-hidden')
         .within(() => {
@@ -1187,7 +1187,7 @@ Cypress.Commands.add('setJobStage', (jobID, stage) => {
         .contains('a', `Job #${jobID}`)
         .parents('.cvat-job-item')
         .find('.cvat-job-item-stage').click();
-    cy.get('.ant-select-dropdown')
+    cy.get('.cvat-job-item-stage-dropdown')
         .should('be.visible')
         .not('.ant-select-dropdown-hidden')
         .within(() => {
