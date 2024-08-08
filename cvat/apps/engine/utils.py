@@ -412,3 +412,7 @@ def directory_tree(path, max_depth=None) -> str:
 
 def is_dataset_export(request: HttpRequest) -> bool:
     return to_bool(request.query_params.get('save_images', False))
+
+def chunked_list(lst, chunk_size):
+    for i in range(0, len(lst), chunk_size):
+        yield lst[i:i + chunk_size]
