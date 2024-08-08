@@ -29,6 +29,9 @@ import SplitControl, {
 import GlobalHotKeys, { KeyMap } from 'utils/mousetrap-react';
 import ControlVisibilityObserver from 'components/annotation-page/standard-workspace/controls-side-bar/control-visibility-observer';
 import { filterApplicableForType } from 'utils/filter-applicable-labels';
+import { ShortcutScope } from 'utils/enums';
+import { registerComponentShortcuts } from 'actions/shortcuts-actions';
+import { subKeyMap } from 'utils/component-subkeymap';
 
 interface Props {
     keyMap: KeyMap;
@@ -43,6 +46,24 @@ interface Props {
     resetGroup(): void;
     updateActiveControl(activeControl: ActiveControl): void;
 }
+
+const componentShortcuts = {
+    PASTE_SHAPE: {
+        name: 'Paste shape',
+        description: 'Paste a shape from internal CVAT clipboard',
+        sequences: ['ctrl+v'],
+        scope: ShortcutScope.ALL,
+    },
+    SWITCH_DRAW_MODE: {
+        name: 'Draw mode',
+        description:
+            'Repeat the latest procedure of drawing with the same parameters (shift to redraw an existing shape)',
+        sequences: ['shift+n', 'n'],
+        scope: ShortcutScope.ALL,
+    },
+};
+
+registerComponentShortcuts(componentShortcuts);
 
 const ObservedCursorControl = ControlVisibilityObserver<CursorControlProps>(CursorControl);
 const ObservedMoveControl = ControlVisibilityObserver<MoveControlProps>(MoveControl);
@@ -72,11 +93,6 @@ export default function ControlsSideBarComponent(props: Props): JSX.Element {
         }
     };
 
-    const subKeyMap: any = applicableLabels.length ? {
-        PASTE_SHAPE: keyMap.PASTE_SHAPE,
-        SWITCH_DRAW_MODE: keyMap.SWITCH_DRAW_MODE,
-    } : {};
-
     const handlers: any = applicableLabels.length ? {
         PASTE_SHAPE: (event: KeyboardEvent | undefined) => {
             preventDefault(event);
@@ -103,7 +119,10 @@ export default function ControlsSideBarComponent(props: Props): JSX.Element {
     const controlsDisabled = !applicableLabels.length;
     return (
         <Layout.Sider className='cvat-canvas-controls-sidebar' theme='light' width={44}>
-            <GlobalHotKeys keyMap={subKeyMap} handlers={handlers} />
+            <GlobalHotKeys
+                keyMap={applicableLabels.length ? subKeyMap(componentShortcuts, keyMap) : {}}
+                handlers={handlers}
+            />
             <ObservedCursorControl
                 cursorShortkey={normalizedKeyMap.CANCEL}
                 canvasInstance={canvasInstance}
