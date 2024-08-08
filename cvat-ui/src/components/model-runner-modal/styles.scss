@@ -52,7 +52,7 @@
 .cvat-runner-label-mapper {
     @extend .cvat-labels-attributes-mapper-tree;
 
-    width: $grid-unit-size * 50;
+    width: 100%;
 
     span {
         text-align: center;
