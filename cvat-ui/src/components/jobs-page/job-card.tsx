@@ -10,10 +10,11 @@ import Descriptions from 'antd/lib/descriptions';
 import { MoreOutlined } from '@ant-design/icons';
 import Dropdown from 'antd/lib/dropdown';
 
-import { Job } from 'cvat-core-wrapper';
+import { Job, JobType } from 'cvat-core-wrapper';
 import { useCardHeightHOC } from 'utils/hooks';
 import Preview from 'components/common/preview';
 import JobActionsMenu from 'components/job-item/job-actions-menu';
+import { Tag } from 'antd';
 
 const useCardHeight = useCardHeightHOC({
     containerClassName: 'cvat-jobs-page',
@@ -41,6 +42,13 @@ function JobCardComponent(props: Props): JSX.Element {
         }
     };
 
+    let tag = null;
+    if (job.type === JobType.GROUND_TRUTH) {
+        tag = <Tag color='#ED9C00'>Ground truth</Tag>;
+    } else if (job.type === JobType.CONSENSUS) {
+        tag = <Tag color='#1890FF'>Consensus</Tag>;
+    }
+
     return (
         <Card
             style={{ height }}
@@ -67,9 +75,12 @@ function JobCardComponent(props: Props): JSX.Element {
             <Descriptions column={1} size='small'>
                 <Descriptions.Item label='Stage and state'>{`${job.stage} ${job.state}`}</Descriptions.Item>
                 <Descriptions.Item label='Frames'>{job.stopFrame - job.startFrame + 1}</Descriptions.Item>
-                { job.assignee ? (
+                {job.assignee ? (
                     <Descriptions.Item label='Assignee'>{job.assignee.username}</Descriptions.Item>
-                ) : <Descriptions.Item label='Assignee'> </Descriptions.Item>}
+                ) : (
+                    <Descriptions.Item label='Assignee'> </Descriptions.Item>
+                )}
+                <Descriptions.Item>{tag}</Descriptions.Item>
             </Descriptions>
             <Dropdown
                 trigger={['click']}
