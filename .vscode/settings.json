@@ -27,15 +27,26 @@
             "driver": "SQLite",
             "name": "cvat",
             "database": "${workspaceFolder:cvat}/db.sqlite3"
+        },
+        {
+            "previewLimit": 50,
+            "server": "cvat_db",
+            "port": 5432,
+            "driver": "PostgreSQL",
+            "name": "cvat-db",
+            "database": "cvat",
+            "username": "root",
+            "password": ""
         }
     ],
-    "python.defaultInterpreterPath": "${workspaceFolder}/.env/",
+    // To prevet override of values. This setting is managed in .devcontainer/devcontainer.json file.
+    // "python.defaultInterpreterPath": "${workspaceFolder}/.env/",
     "python.testing.pytestArgs": [
         "--rootdir","${workspaceFolder}/tests/"
     ],
     "python.testing.unittestEnabled": false,
     "python.testing.pytestEnabled": true,
-    "python.testing.pytestPath": "${workspaceFolder}/.env/bin/pytest",
+    "python.testing.pytestPath": "/opt/venv-test/bin/pytest",
     "python.testing.cwd": "${workspaceFolder}/tests",
     "cSpell.words": [
         "crowdsourcing"

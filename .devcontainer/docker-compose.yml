@@ -1,0 +1,86 @@
+services:
+  cvat_server:
+    image: cvat/server:devcontainer
+    build:
+      dockerfile: .devcontainer/Dockerfile
+      context: .
+      args:
+        - pull # To fetch upstream base image (cvat/server:dev) changes on container rebuild
+        - HOST_USER_UID=${HOST_USER_UID:-1001}
+        - HOST_USER_GID=${HOST_USER_GID:-1001}
+        - NUCLIO_VERSION=1.13.0
+        - OPA_VERSION=0.63.0
+    restart: no
+    entrypoint: ["/bin/bash", "-c"]
+    command: ["sleep infinity"]
+    environment:
+      DEVCONTAINER: 1
+      CVAT_SERVERLESS: 1
+      IAM_OPA_HOST: http://opa:8181
+      DJANGO_LOG_SERVER_HOST: ${DJANGO_LOG_SERVER_HOST:-}
+      DJANGO_SUPERUSER_USERNAME: ${DJANGO_SUPERUSER_USERNAME:-admin}
+      DJANGO_SUPERUSER_PASSWORD: ${DJANGO_SUPERUSER_PASSWORD:-admin}
+      DJANGO_SUPERUSER_EMAIL: ${DJANGO_SUPERUSER_EMAIL:-admin@admin.com}
+    volumes: !override
+      - .:/home/devcontainer/workspaces
+      - ${HOME}/.ssh:/home/devcontainer/.ssh
+      - cvat_data:/home/devcontainer/workspaces/data
+      - cvat_keys:/home/devcontainer/workspaces/keys
+      - cvat_logs:/home/devcontainer/workspaces/logs
+      # For improving write performance on non-linux machines, static files should be
+      # mounted to named volumes
+      - cvat_node_modules:/home/devcontainer/workspaces/node_modules
+      - cvat_server_static:/home/devcontainer/workspaces/static
+      - cvat_pip_cache:/home/devcontainer/.cache/pip
+      # Preserve important user data between rebuilds
+      - cvat_user_data:/home/devcontainer/
+      # Exclude .vscode-server directories to enable reinstall of extensions upon rebuild
+      - /home/devcontainer/.vscode-server-insiders
+      - /home/devcontainer/.vscode-server
+    labels:
+      - com.devcontainer.git_branch_${GIT_BRANCH:-}
+
+  cvat_db:
+    restart: no
+    labels:
+      - com.devcontainer.git_branch=${GIT_BRANCH:-}
+
+  cvat_redis_inmem:
+    restart: no
+    labels:
+      - com.devcontainer.git_branch=${GIT_BRANCH:-}
+
+  cvat_redis_ondisk:
+    restart: no
+    labels:
+      - com.devcontainer.git_branch=${GIT_BRANCH:-}
+
+  cvat_opa:
+    restart: no
+    labels:
+      - com.devcontainer.git_branch=${GIT_BRANCH:-}
+
+# VS code shuts down containers upon closing the window. If in any case if it fails to shut
+# down the containers they should not restart upon system restart. This shall save
+# unncessary memory usage of the system when not developing
+
+volumes:
+  cvat_node_modules:
+  cvat_server_static:
+  cvat_pip_cache:
+  cvat_user_data:
+  cvat_db:
+    name: cvat_db_${GIT_BRANCH:-}
+  cvat_data:
+    name: cvat_data_${GIT_BRANCH:-}
+  cvat_keys:
+    name: cvat_keys_${GIT_BRANCH:-}
+  cvat_logs:
+    name: cvat_logs_${GIT_BRANCH:-}
+  cvat_inmem_db:
+    name: cvat_inmem_db_${GIT_BRANCH:-}
+  cvat_cache_db:
+    name: cvat_cache_db_${GIT_BRANCH:-}
+
+# Volumes are parameterized with the current git branch values to isolate development environment based on git branches
+
