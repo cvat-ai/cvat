@@ -11,13 +11,14 @@ import Radio, { RadioChangeEvent } from 'antd/lib/radio';
 import Input from 'antd/lib/input';
 import { TextAreaRef } from 'antd/lib/input/TextArea';
 import InputNumber from 'antd/lib/input-number';
-import GlobalHotKeys from 'utils/mousetrap-react';
+import GlobalHotKeys, { KeyMapItem } from 'utils/mousetrap-react';
 import config from 'config';
 import { ShortcutScope } from 'utils/enums';
 import { registerComponentShortcuts } from 'actions/shortcuts-actions';
 import { subKeyMap } from 'utils/component-subkeymap';
 import { CombinedState } from 'reducers';
 import { useSelector } from 'react-redux';
+import { isEqual } from 'lodash';
 
 interface InputElementParameters {
     clientID: number;
@@ -259,6 +260,24 @@ interface ListParameters {
 function renderList(parameters: ListParameters): JSX.Element | null {
     const { inputType, values, onChange } = parameters;
     const { keyMap } = useSelector((state: CombinedState) => state.shortcuts);
+    const prevValuesRef = useRef<string[] | null>(null);
+    const keyMapRef = useRef(keyMap);
+
+    useEffect(() => {
+        keyMapRef.current = keyMap;
+    }, [keyMap]);
+
+    useEffect(() => () => {
+        const revertedShortcuts = Object.entries(componentShortcuts).reduce((acc: any, [key, value]) => {
+            acc[key] = {
+                ...value,
+                sequences: keyMapRef.current[key] ? keyMapRef.current[key].sequences : value.sequences,
+            };
+            return acc;
+        }, {});
+        registerComponentShortcuts(revertedShortcuts);
+    }, []);
+
     if (inputType === 'checkbox') {
         const sortedValues = ['true', 'false'];
         if (values[0].toLowerCase() !== 'true') {
@@ -279,6 +298,22 @@ function renderList(parameters: ListParameters): JSX.Element | null {
                 onChange(value);
             };
         });
+
+        useEffect(() => {
+            if (!isEqual(values, prevValuesRef.current)) {
+                const updatedComponentShortcuts: Record<string, KeyMapItem> = { ...componentShortcuts };
+                sortedValues.forEach((value: string, index: number): void => {
+                    const key = `SET_${index}_VALUE`;
+                    updatedComponentShortcuts[key] = {
+                        ...updatedComponentShortcuts[key],
+                        name: `Set checkbox to ${value}`,
+                        description: `Change current value for the attribute to ${value}`,
+                    };
+                });
+                registerComponentShortcuts({ ...updatedComponentShortcuts });
+                prevValuesRef.current = values;
+            }
+        }, [values]);
 
         return (
             <div className='attribute-annotation-sidebar-attr-list-wrapper'>
@@ -311,6 +346,22 @@ function renderList(parameters: ListParameters): JSX.Element | null {
                 onChange(value);
             };
         });
+
+        useEffect(() => {
+            if (!isEqual(values, prevValuesRef.current)) {
+                const updatedComponentShortcuts: Record<string, KeyMapItem> = { ...componentShortcuts };
+                filteredValues.slice(0, 10).forEach((value: string, index: number): void => {
+                    const key = `SET_${index}_VALUE`;
+                    updatedComponentShortcuts[key] = {
+                        ...updatedComponentShortcuts[key],
+                        name: `Set radio/select to ${value}`,
+                        description: `Change current value for the attribute to ${value}`,
+                    };
+                });
+                registerComponentShortcuts({ ...updatedComponentShortcuts });
+                prevValuesRef.current = values;
+            }
+        }, [values]);
 
         return (
             <div className='attribute-annotation-sidebar-attr-list-wrapper'>

@@ -3,7 +3,7 @@
 //
 // SPDX-License-Identifier: MIT
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Row, Col } from 'antd/lib/grid';
 import Text from 'antd/lib/typography/Text';
 import Select from 'antd/lib/select';
@@ -118,7 +118,7 @@ function ShortcutsSelect(props: Props): JSX.Element {
     const [shortcutLabelMap, setShortcutLabelMap] = useState(defaultShortcutLabelMap);
 
     const keyMap: KeyMap = useSelector((state: CombinedState) => state.shortcuts.keyMap);
-    const keyMapRef = React.useRef(keyMap);
+    const keyMapRef = useRef(keyMap);
     const handlers: {
         [key: string]: (keyEvent?: KeyboardEvent) => void;
     } = {};
