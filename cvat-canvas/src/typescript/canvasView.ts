@@ -1875,6 +1875,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
                 this.canvas.style.cursor = 'pointer';
             } else {
                 this.regionSelector.select(false);
+                this.canvas.style.cursor = '';
             }
         } else if (reason === UpdateReasons.DRAG_CANVAS) {
             if (this.mode === Mode.DRAG_CANVAS) {
