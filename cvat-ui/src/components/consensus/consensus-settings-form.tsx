@@ -21,8 +21,8 @@ interface Props {
 }
 
 export default function ConsensusSettingsForm(props: Props): JSX.Element | null {
+    const [form] = Form.useForm();
     const { settings, setConsensusSettings } = props;
-
     const [updatingConsensusSetting, setUpdatingConsensusSetting] = useState<boolean>(false);
 
     if (!settings) {
@@ -30,8 +30,6 @@ export default function ConsensusSettingsForm(props: Props): JSX.Element | null 
             <Text>No quality settings</Text>
         );
     }
-
-    const [form] = Form.useForm();
 
     const initialValues = {
         iouThreshold: settings.iouThreshold * 100,
