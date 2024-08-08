@@ -380,6 +380,7 @@ class TaskQuerySet(models.QuerySet):
         return self.prefetch_related(
             'segment_set__job_set',
         ).annotate(
+            total_jobs_count=models.Count('segment__job', distinct=True),
             completed_jobs_count=models.Count(
                 'segment__job',
                 filter=models.Q(segment__job__state=StateChoice.COMPLETED.value) &

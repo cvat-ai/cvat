@@ -148,6 +148,7 @@ class _CollectionSummarySerializer(serializers.Serializer):
         return instance
 
 class JobsSummarySerializer(_CollectionSummarySerializer):
+    count = serializers.IntegerField(source='total_jobs_count', allow_null=True)
     completed = serializers.IntegerField(source='completed_jobs_count', allow_null=True)
     validation = serializers.IntegerField(source='validation_jobs_count', allow_null=True)
 
@@ -611,7 +612,7 @@ class JobReadSerializer(serializers.ModelSerializer):
             'dimension', 'bug_tracker', 'status', 'stage', 'state', 'mode', 'frame_count',
             'start_frame', 'stop_frame', 'data_chunk_size', 'data_compressed_chunk_type',
             'created_date', 'updated_date', 'issues', 'labels', 'type', 'organization',
-            'target_storage', 'source_storage', 'parent_job_id', 'assignee_updated_date')
+            'target_storage', 'source_storage', 'assignee_updated_date', 'parent_job_id')
         read_only_fields = fields
 
     def to_representation(self, instance):
@@ -1340,8 +1341,8 @@ class TaskWriteSerializer(WriteOnceMixin, serializers.ModelSerializer):
 
         consensus_jobs_per_regular_job = attrs.get('consensus_jobs_per_regular_job', self.instance.consensus_jobs_per_regular_job if self.instance else None)
 
-        if consensus_jobs_per_regular_job and (consensus_jobs_per_regular_job == 1 or consensus_jobs_per_regular_job < 0):
-            raise serializers.ValidationError("Consensus jobs per regular job should be greater than or equal to 0 and not 1")
+        if consensus_jobs_per_regular_job and (consensus_jobs_per_regular_job == 1 or consensus_jobs_per_regular_job < 0 or consensus_jobs_per_regular_job > 10):
+            raise serializers.ValidationError("Consensus jobs per regular job shouldn't be negative, less than 10 except 1")
 
         return attrs
 
