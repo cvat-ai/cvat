@@ -42,6 +42,7 @@ import { Event } from 'cvat-core/src/event';
 import { APIWrapperEnterOptions } from 'cvat-core/src/plugins';
 import BaseSingleFrameAction, { ActionParameterType, FrameSelectionType } from 'cvat-core/src/annotations-actions';
 import { Request } from 'cvat-core/src/request';
+import ConsensusReport from 'cvat-core/src/consensus-report';
 
 const cvat: CVATCore = _cvat;
 
@@ -93,6 +94,7 @@ export {
     QualityConflict,
     QualitySettings,
     ConsensusSettings,
+    ConsensusReport,
     AnnotationConflict,
     ConflictSeverity,
     FramesMetaData,

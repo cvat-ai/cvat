@@ -31,8 +31,9 @@ import Organization, { Invitation } from './organization';
 import Webhook from './webhook';
 import { ArgumentError } from './exceptions';
 import {
-    AnalyticsReportFilter, QualityConflictsFilter, QualityReportsFilter,
+    AnalyticsReportFilter, ConflictsFilter, QualityReportsFilter,
     SettingsFilter, SerializedAsset,
+    ConsensusReportsFilter,
 } from './server-response-types';
 import QualityReport from './quality-report';
 import QualityConflict, { ConflictSeverity } from './quality-conflict';
@@ -44,6 +45,8 @@ import { JobType } from './enums';
 import { PaginatedResource } from './core-types';
 import CVATCore from '.';
 import ConsensusSettings from './consensus-settings';
+import ConsensusReport from './consensus-report';
+import ConsensusConflict from './consensus-conflict';
 
 function implementationMixin(func: Function, implementation: Function): void {
     Object.assign(func, { implementation });
@@ -435,7 +438,7 @@ export default function implementAPI(cvat: CVATCore): CVATCore {
         );
         return reports;
     });
-    implementationMixin(cvat.analytics.quality.conflicts, async (filter: QualityConflictsFilter) => {
+    implementationMixin(cvat.analytics.quality.conflicts, async (filter: ConflictsFilter) => {
         checkFilter(filter, {
             reportID: isInteger,
         });
@@ -521,6 +524,29 @@ export default function implementAPI(cvat: CVATCore): CVATCore {
         const settings = await serverProxy.analytics.quality.settings.get(params);
         return new QualitySettings({ ...settings });
     });
+    implementationMixin(cvat.consensus.reports, async (filter: ConsensusReportsFilter) => {
+        checkFilter(filter, {
+            page: isInteger,
+            pageSize: isPageSize,
+            projectID: isInteger,
+            taskID: isInteger,
+            jobID: (value: any) => isInteger(value) || value === null,
+            filter: isString,
+            search: isString,
+            target: isString,
+            sort: isString,
+        });
+
+        const params = fieldsToSnakeCase({ ...filter, sort: '-created_date' });
+
+        const reportsData = await serverProxy.consensus.reports(params);
+        console.log(reportsData);
+        const reports = Object.assign(
+            reportsData.map((report) => new ConsensusReport({ ...report })),
+            { count: reportsData.count },
+        );
+        return reports;
+    });
     implementationMixin(cvat.consensus.settings.get, async (filter: SettingsFilter) => {
         checkFilter(filter, {
             taskID: isInteger,
@@ -545,6 +571,81 @@ export default function implementAPI(cvat: CVATCore): CVATCore {
         const params = fieldsToSnakeCase(filter);
         const reportData = await serverProxy.analytics.performance.reports(params);
         return new AnalyticsReport(reportData);
+    });
+    implementationMixin(cvat.consensus.conflicts, async (filter: ConflictsFilter) => {
+        checkFilter(filter, {
+            reportID: isInteger,
+        });
+
+        const params = fieldsToSnakeCase(filter);
+
+        const conflictsData = await serverProxy.consensus.conflicts(params);
+        const conflicts = conflictsData.map((conflict) => new ConsensusConflict({ ...conflict }));
+        const frames = Array.from(new Set(conflicts.map((conflict) => conflict.frame)))
+            .sort((a, b) => a - b);
+
+        // each ConsensusConflict may have several AnnotationConflicts bound
+        // at the same time, many quality conflicts may refer
+        // to the same labeled object (e.g. mismatch label, low overlap)
+        // the code below unites quality conflicts bound to the same object into one QualityConflict object
+        const mergedConflicts: ConsensusConflict[] = [];
+
+        for (const frame of frames) {
+            const frameConflicts = conflicts.filter((conflict) => conflict.frame === frame);
+            const conflictsByObject: Record<string, ConsensusConflict[]> = {};
+
+            frameConflicts.forEach((qualityConflict: ConsensusConflict) => {
+                const { type, serverID } = qualityConflict.annotationConflicts[0];
+                const firstObjID = `${type}_${serverID}`;
+                conflictsByObject[firstObjID] = conflictsByObject[firstObjID] || [];
+                conflictsByObject[firstObjID].push(qualityConflict);
+            });
+
+            for (const objectConflicts of Object.values(conflictsByObject)) {
+                if (objectConflicts.length === 1) {
+                    // only one quality conflict refers to the object on current frame
+                    mergedConflicts.push(objectConflicts[0]);
+                } else {
+                    const mainObjectConflict = objectConflicts[0];
+                    const descriptionList: string[] = [mainObjectConflict.description];
+
+                    for (const objectConflict of objectConflicts) {
+                        if (objectConflict !== mainObjectConflict) {
+                            descriptionList.push(objectConflict.description);
+
+                            for (const annotationConflict of objectConflict.annotationConflicts) {
+                                if (!mainObjectConflict.annotationConflicts.find((_annotationConflict) => (
+                                    _annotationConflict.serverID === annotationConflict.serverID &&
+                                    _annotationConflict.type === annotationConflict.type))
+                                ) {
+                                    mainObjectConflict.annotationConflicts.push(annotationConflict);
+                                }
+                            }
+                        }
+                    }
+
+                    // decorate the original conflict to avoid changing it
+                    const description = descriptionList.join(', ');
+                    const visibleConflict = new Proxy(mainObjectConflict, {
+                        get(target, prop) {
+                            if (prop === 'description') {
+                                return description;
+                            }
+
+                            // By default, it looks like Reflect.get(target, prop, receiver)
+                            // which has a different value of `this`. It doesn't allow to
+                            // work with methods / properties that use private members.
+                            const val = Reflect.get(target, prop);
+                            return typeof val === 'function' ? (...args: any[]) => val.apply(target, args) : val;
+                        },
+                    });
+
+                    mergedConflicts.push(visibleConflict);
+                }
+            }
+        }
+
+        return mergedConflicts;
     });
     implementationMixin(cvat.analytics.performance.calculate, async (
         body: Parameters<CVATCore['analytics']['performance']['calculate']>[0],

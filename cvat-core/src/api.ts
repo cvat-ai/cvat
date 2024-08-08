@@ -402,6 +402,14 @@ function build(): CVATCore {
             },
         },
         consensus: {
+            async reports(filter = {}) {
+                const result = await PluginRegistry.apiWrapper(cvat.consensus.reports, filter);
+                return result;
+            },
+            async conflicts(filter = {}) {
+                const result = await PluginRegistry.apiWrapper(cvat.consensus.conflicts, filter);
+                return result;
+            },
             settings: {
                 async get(filter = {}) {
                     const result = await PluginRegistry.apiWrapper(cvat.consensus.settings.get, filter);

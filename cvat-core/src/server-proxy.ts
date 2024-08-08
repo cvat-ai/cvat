@@ -16,9 +16,10 @@ import {
     SerializedAbout, SerializedRemoteFile, SerializedUserAgreement,
     SerializedRegister, JobsFilter, SerializedJob, SerializedGuide, SerializedAsset, SerializedAPISchema,
     SerializedInvitationData, SerializedCloudStorage, SerializedFramesMetaData, SerializedCollection,
-    SerializedQualitySettingsData, APISettingsFilter, SerializedQualityConflictData, APIQualityConflictsFilter,
+    SerializedQualitySettingsData, APISettingsFilter, SerializedQualityConflictData, APIConflictsFilter,
     SerializedQualityReportData, APIQualityReportsFilter, SerializedAnalyticsReport, APIAnalyticsReportFilter,
     SerializedConsensusSettingsData, SerializedRequest,
+    SerializedConsensusConflictData,
 } from './server-response-types';
 import { PaginatedResource } from './core-types';
 import { Request } from './request';
@@ -2241,7 +2242,7 @@ async function updateConsensusSettings(
 }
 
 async function getQualityConflicts(
-    filter: APIQualityConflictsFilter,
+    filter: APIConflictsFilter,
 ): Promise<SerializedQualityConflictData[]> {
     const params = enableOrganization();
     const { backendAPI } = config;
@@ -2265,6 +2266,43 @@ async function getQualityReports(
 
     try {
         const response = await Axios.get(`${backendAPI}/quality/reports`, {
+            params: {
+                ...filter,
+            },
+        });
+
+        response.data.results.count = response.data.count;
+        return response.data.results;
+    } catch (errorData) {
+        throw generateError(errorData);
+    }
+}
+
+async function getConsensusConflicts(
+    filter: APIConflictsFilter,
+): Promise<SerializedConsensusConflictData[]> {
+    const params = enableOrganization();
+    const { backendAPI } = config;
+
+    try {
+        const response = await fetchAll(`${backendAPI}/consensus/conflicts`, {
+            ...params,
+            ...filter,
+        });
+
+        return response.results;
+    } catch (errorData) {
+        throw generateError(errorData);
+    }
+}
+
+async function getConsensusReports(
+    filter: APIQualityReportsFilter,
+): Promise<PaginatedResource<SerializedConsensusSettingsData>> {
+    const { backendAPI } = config;
+
+    try {
+        const response = await Axios.get(`${backendAPI}/consensus/reports`, {
             params: {
                 ...filter,
             },
@@ -2574,6 +2612,8 @@ export default Object.freeze({
     }),
 
     consensus: Object.freeze({
+        reports: getConsensusReports,
+        conflicts: getConsensusConflicts,
         settings: Object.freeze({
             get: getConsensusSettings,
             update: updateConsensusSettings,
