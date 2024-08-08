@@ -16,7 +16,7 @@ import config from 'config';
 import { ShortcutScope } from 'utils/enums';
 import { registerComponentShortcuts } from 'actions/shortcuts-actions';
 import { subKeyMap } from 'utils/component-subkeymap';
-import { CombinedState } from 'reducers';
+import { CombinedState, ShortcutsState } from 'reducers';
 import { useSelector } from 'react-redux';
 
 interface InputElementParameters {
@@ -256,9 +256,8 @@ interface ListParameters {
     onChange(value: string): void;
 }
 
-function renderList(parameters: ListParameters): JSX.Element | null {
+function renderList(parameters: ListParameters, keyMap: ShortcutsState['keyMap']): JSX.Element | null {
     const { inputType, values, onChange } = parameters;
-    const { keyMap } = useSelector((state: CombinedState) => state.shortcuts);
     if (inputType === 'checkbox') {
         const sortedValues = ['true', 'false'];
         if (values[0].toLowerCase() !== 'true') {
@@ -360,11 +359,13 @@ function AttributeEditor(props: Props): JSX.Element {
     const {
         attribute, currentValue, onChange, clientID,
     } = props;
+
+    const keyMap = useSelector((state: CombinedState) => state.shortcuts.keyMap);
     const { inputType, values, id: attrID } = attribute;
 
     return (
         <div className='attribute-annotations-sidebar-attribute-editor'>
-            {renderList({ values, inputType, onChange })}
+            {renderList({ values, inputType, onChange }, keyMap)}
             <hr />
             {renderInputElement({
                 clientID,
