@@ -4,12 +4,11 @@
 
 import textwrap
 
-from django.db import IntegrityError, models, transaction
 from rest_framework import serializers
 
 from cvat.apps.consensus import models
 from cvat.apps.consensus.models import AnnotationId
-from cvat.apps.engine.models import Task
+from cvat.apps.engine import serializers as engine_serializers
 
 
 class ConsensusAnnotationIdSerializer(serializers.ModelSerializer):
@@ -42,6 +41,8 @@ class ConsensusReportSummarySerializer(serializers.Serializer):
 
 
 class ConsensusReportSerializer(serializers.ModelSerializer):
+    target = serializers.ChoiceField(models.ConsensusReportTarget.choices())
+    assignee = engine_serializers.BasicUserSerializer(allow_null=True, read_only=True)
     summary = ConsensusReportSummarySerializer()
 
     class Meta:
@@ -53,6 +54,9 @@ class ConsensusReportSerializer(serializers.ModelSerializer):
             "summary",
             "created_date",
             "target_last_updated",
+            "target",
+            "assignee",
+            "consensus_score",
         )
         read_only_fields = fields
 
