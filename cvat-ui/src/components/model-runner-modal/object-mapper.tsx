@@ -148,11 +148,9 @@ function ObjectMapperComponent(props: Props): JSX.Element {
                     </Col>
                     <Col span={2} offset={1}>
                         { (leftValue === null && rightValue === null) ? (
-                            <Col span={1} offset={1}>
-                                <CVATTooltip title={infoMappingLabel}>
-                                    <QuestionCircleOutlined className='cvat-info-circle-icon' />
-                                </CVATTooltip>
-                            </Col>
+                            <CVATTooltip title={infoMappingLabel}>
+                                <QuestionCircleOutlined className='cvat-info-circle-icon' />
+                            </CVATTooltip>
                         ) : (
                             <CVATTooltip title={deleteMappingLabel}>
                                 <DeleteOutlined
