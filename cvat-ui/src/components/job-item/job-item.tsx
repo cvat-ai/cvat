@@ -116,7 +116,7 @@ function JobItem(props: Props): JSX.Element {
     const frameCountPercentRepresentation = frameCountPercent === '0' ? '<1' : frameCountPercent;
     let jobName = `Job #${job.id}`;
     if (task.consensusJobsPerRegularJob && job.type !== JobType.GROUND_TRUTH) {
-        jobName = job.type === JobType.CONSENSUS ? `Consensus Job #${job.id}` : `Regular Job #${job.id}`;
+        jobName = `Job #${job.id}`;
     }
 
     let consensusJobs: Job[] = [];
@@ -126,6 +126,20 @@ function JobItem(props: Props): JSX.Element {
     const consensusJobViews: React.JSX.Element[] = consensusJobs.map((eachJob: Job) => (
         <JobItem key={eachJob.id} job={eachJob} task={task} onJobUpdate={onJobUpdate} />
     ));
+    let tag = null;
+    if (job.type === JobType.GROUND_TRUTH) {
+        tag = (
+            <Col offset={1}>
+                <Tag color='#ED9C00'>Ground truth</Tag>
+            </Col>
+        );
+    } else if (job.type === JobType.CONSENSUS) {
+        tag = (
+            <Col offset={1}>
+                <Tag color='#1890FF'>Consensus</Tag>
+            </Col>
+        );
+    }
 
     return (
         <Col span={24}>
@@ -138,19 +152,14 @@ function JobItem(props: Props): JSX.Element {
                                     { jobName }
                                 </Link>
                             </Col>
-                            {
-                                job.type === JobType.GROUND_TRUTH ? (
-                                    <Col offset={1}>
-                                        <Tag color='#ED9C00'>Ground truth</Tag>
-                                    </Col>
-                                ) : (
-                                    <Col className='cvat-job-item-issues-summary-icon'>
-                                        <CVATTooltip title={<ReviewSummaryComponent jobInstance={job} />}>
-                                            <QuestionCircleOutlined />
-                                        </CVATTooltip>
-                                    </Col>
-                                )
-                            }
+                            {tag}
+                            {job.type !== JobType.GROUND_TRUTH && (
+                                <Col className='cvat-job-item-issues-summary-icon'>
+                                    <CVATTooltip title={<ReviewSummaryComponent jobInstance={job} />}>
+                                        <QuestionCircleOutlined />
+                                    </CVATTooltip>
+                                </Col>
+                            )}
                         </Row>
                         <Row className='cvat-job-item-dates-info'>
                             <Col>
