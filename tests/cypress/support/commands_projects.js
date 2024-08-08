@@ -257,7 +257,7 @@ Cypress.Commands.add('assignProjectToUser', (user) => {
         cy.get('.cvat-user-search-field').click();
         cy.get('.cvat-user-search-field').type(user);
     });
-    cy.get('.ant-select-dropdown')
+    cy.get('.cvat-user-search-dropdown')
         .not('.ant-select-dropdown-hidden')
         .within(() => {
             cy.get(`.ant-select-item-option[title="${user}"]`).click();
