@@ -1130,12 +1130,12 @@ paths:
         schema:
           type: string
           enum:
-          - NO_MATCHING_ITEM
-          - FAILED_ATTRIBUTE_VOTING
-          - NO_MATCHING_ANNOTATION
-          - ANNOTATION_TOO_CLOSE
-          - WRONG_GROUP
-          - FAILED_LABEL_VOTING
+          - no_matching_item
+          - failed_attribute_voting
+          - no_matching_annotation
+          - annotation_too_close
+          - wrong_group
+          - failed_label_voting
       tags:
       - consensus
       security:
@@ -1211,6 +1211,11 @@ paths:
           [''id'', ''job_id'', ''created_date'', ''target_last_updated'']'
         schema:
           type: string
+      - in: query
+        name: target
+        schema:
+          type: string
+        description: A simple equality filter for target
       - in: query
         name: task_id
         schema:
@@ -7680,20 +7685,20 @@ components:
       - annotation_ids
     ConsensusConflictTypeEnum:
       enum:
-      - NO_MATCHING_ITEM
-      - FAILED_ATTRIBUTE_VOTING
-      - NO_MATCHING_ANNOTATION
-      - ANNOTATION_TOO_CLOSE
-      - WRONG_GROUP
-      - FAILED_LABEL_VOTING
+      - no_matching_item
+      - failed_attribute_voting
+      - no_matching_annotation
+      - annotation_too_close
+      - wrong_group
+      - failed_label_voting
       type: string
       description: |-
-        * `NO_MATCHING_ITEM` - NoMatchingItemError
-        * `FAILED_ATTRIBUTE_VOTING` - FailedAttrVotingError
-        * `NO_MATCHING_ANNOTATION` - NoMatchingAnnError
-        * `ANNOTATION_TOO_CLOSE` - AnnotationsTooCloseError
-        * `WRONG_GROUP` - WrongGroupError
-        * `FAILED_LABEL_VOTING` - FailedLabelVotingError
+        * `no_matching_item` - NoMatchingItemError
+        * `failed_attribute_voting` - FailedAttrVotingError
+        * `no_matching_annotation` - NoMatchingAnnError
+        * `annotation_too_close` - AnnotationsTooCloseError
+        * `wrong_group` - WrongGroupError
+        * `failed_label_voting` - FailedLabelVotingError
     ConsensusReport:
       type: object
       properties:
@@ -7718,8 +7723,19 @@ components:
           type: string
           format: date-time
           readOnly: true
+        target:
+          $ref: '#/components/schemas/QualityReportTarget'
+        assignee:
+          allOf:
+          - $ref: '#/components/schemas/BasicUser'
+          readOnly: true
+          nullable: true
+        consensus_score:
+          type: integer
+          readOnly: true
       required:
       - summary
+      - target
     ConsensusReportCreateRequest:
       type: object
       properties:
@@ -8665,17 +8681,17 @@ components:
           allOf:
           - $ref: '#/components/schemas/Storage'
           nullable: true
+        assignee_updated_date:
+          type: string
+          format: date-time
+          readOnly: true
+          nullable: true
         parent_job_id:
           type: integer
           maximum: 2147483647
           minimum: 0
           nullable: true
           readOnly: true
-        assignee_updated_date:
-          type: string
-          format: date-time
-          readOnly: true
-          nullable: true
       required:
       - issues
       - labels
@@ -8754,7 +8770,7 @@ components:
       properties:
         count:
           type: integer
-          default: 0
+          nullable: true
         completed:
           type: integer
           nullable: true
@@ -8767,6 +8783,7 @@ components:
           readOnly: true
       required:
       - completed
+      - count
       - validation
     Label:
       type: object
