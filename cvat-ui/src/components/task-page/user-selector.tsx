@@ -34,11 +34,7 @@ const searchUsers = debounce(
                     setUsers(result);
                 }
             });
-    },
-    250,
-    {
-        maxWait: 750,
-    },
+    }, 500,
 );
 
 const initialUsersStorage: {
