@@ -26,6 +26,10 @@ export default function DetailsComponent(props: DetailsComponentProps): JSX.Elem
         history.push(`/tasks/${taskInstance.id}/analytics`);
     }, [history]);
 
+    const onViewConsensusAnalytics = (): void => {
+        history.push(`/tasks/${taskInstance.id}/analytics/consensus`);
+    };
+
     return (
         <Row className='cvat-task-top-bar' justify='space-between' align='middle'>
             <Col>
@@ -59,6 +63,7 @@ export default function DetailsComponent(props: DetailsComponentProps): JSX.Elem
                         <ActionsMenuContainer
                             taskInstance={taskInstance}
                             onViewAnalytics={onViewAnalytics}
+                            onViewConsensusAnalytics={onViewConsensusAnalytics}
                         />
                     )}
                 >

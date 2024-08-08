@@ -442,7 +442,7 @@ class TestGetQualityReportData(_PermissionTestBase):
         )
         task_id = gt_job["task_id"]
 
-        normal_job = next(j for j in jobs if j["type"] == "annotation")
+        normal_job = next(j for j in jobs if j["type"] == "annotation" and j["task_id"] == task_id)
         if has_assignee:
             new_assignee = users_by_name[admin_user]
         else:

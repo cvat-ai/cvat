@@ -23,6 +23,7 @@ for paths in \
     "tests/python/" \
     "cvat/apps/quality_control" \
     "cvat/apps/analytics_report" \
+    "cvat/apps/consensus" \
     ; do
     ${BLACK} -- ${paths}
     ${ISORT} -- ${paths}

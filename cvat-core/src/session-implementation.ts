@@ -769,6 +769,14 @@ export function implementTask(Task: typeof TaskClass): typeof TaskClass {
         },
     });
 
+    Object.defineProperty(Task.prototype.mergeConsensusJobs, 'implementation', {
+        value: function mergeConsensusJobsImplementation(
+            this: TaskClass,
+        ): ReturnType<typeof TaskClass.prototype.mergeConsensusJobs> {
+            return serverProxy.tasks.mergeConsensusJobs(this.id);
+        },
+    });
+
     Object.defineProperty(Task.prototype.issues, 'implementation', {
         value: function issuesImplementation(
             this: TaskClass,

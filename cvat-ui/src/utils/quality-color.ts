@@ -4,7 +4,7 @@
 
 enum QualityColors {
     GREEN = '#237804',
-    YELLOW = '#ffec3d',
+    YELLOW = '#cebe1e',
     RED = '#ff4d4f',
     GRAY = '#8c8c8c',
 }

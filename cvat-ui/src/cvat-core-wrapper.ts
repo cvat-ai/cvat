@@ -22,6 +22,7 @@ import Project from 'cvat-core/src/project';
 import QualityReport, { QualitySummary } from 'cvat-core/src/quality-report';
 import QualityConflict, { AnnotationConflict, ConflictSeverity } from 'cvat-core/src/quality-conflict';
 import QualitySettings from 'cvat-core/src/quality-settings';
+import ConsensusSettings from 'cvat-core/src/consensus-settings';
 import { FramesMetaData, FrameData } from 'cvat-core/src/frames';
 import { ServerError, RequestError } from 'cvat-core/src/exceptions';
 import {
@@ -41,6 +42,7 @@ import { Event } from 'cvat-core/src/event';
 import { APIWrapperEnterOptions } from 'cvat-core/src/plugins';
 import BaseSingleFrameAction, { ActionParameterType, FrameSelectionType } from 'cvat-core/src/annotations-actions';
 import { Request } from 'cvat-core/src/request';
+import ConsensusReport from 'cvat-core/src/consensus-report';
 
 const cvat: CVATCore = _cvat;
 
@@ -91,6 +93,8 @@ export {
     QualityReport,
     QualityConflict,
     QualitySettings,
+    ConsensusSettings,
+    ConsensusReport,
     AnnotationConflict,
     ConflictSeverity,
     FramesMetaData,

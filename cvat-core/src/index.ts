@@ -2,8 +2,9 @@
 //
 // SPDX-License-Identifier: MIT
 
+import ConsensusConflict from 'consensus-conflict';
 import {
-    AnalyticsReportFilter, QualityConflictsFilter, QualityReportsFilter, QualitySettingsFilter,
+    AnalyticsReportFilter, ConflictsFilter, QualityReportsFilter, SettingsFilter, ConsensusReportsFilter,
 } from './server-response-types';
 import PluginRegistry from './plugins';
 import serverProxy from './server-proxy';
@@ -30,6 +31,8 @@ import Webhook from './webhook';
 import QualityReport from './quality-report';
 import QualityConflict from './quality-conflict';
 import QualitySettings from './quality-settings';
+import ConsensusReport from './consensus-report';
+import ConsensusSettings from './consensus-settings';
 import AnalyticsReport from './analytics-report';
 import AnnotationGuide from './guide';
 import { Request } from './request';
@@ -132,12 +135,19 @@ export default interface CVATCore {
     webhooks: {
         get: any;
     };
+    consensus: {
+        reports: (filter: ConsensusReportsFilter) => Promise<PaginatedResource<ConsensusReport>>;
+        conflicts: (filter: ConflictsFilter) => Promise<ConsensusConflict[]>;
+        settings: {
+            get: (filter: SettingsFilter) => Promise<ConsensusSettings>;
+        };
+    }
     analytics: {
         quality: {
             reports: (filter: QualityReportsFilter) => Promise<PaginatedResource<QualityReport>>;
-            conflicts: (filter: QualityConflictsFilter) => Promise<QualityConflict[]>;
+            conflicts: (filter: ConflictsFilter) => Promise<QualityConflict[]>;
             settings: {
-                get: (filter: QualitySettingsFilter) => Promise<QualitySettings>;
+                get: (filter: SettingsFilter) => Promise<QualitySettings>;
             };
         };
         performance: {

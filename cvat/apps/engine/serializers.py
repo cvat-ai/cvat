@@ -148,6 +148,7 @@ class _CollectionSummarySerializer(serializers.Serializer):
         return instance
 
 class JobsSummarySerializer(_CollectionSummarySerializer):
+    count = serializers.IntegerField(source='total_jobs_count', allow_null=True)
     completed = serializers.IntegerField(source='completed_jobs_count', allow_null=True)
     validation = serializers.IntegerField(source='validation_jobs_count', allow_null=True)
 
@@ -1127,8 +1128,7 @@ class TaskReadSerializer(serializers.ModelSerializer):
             'status', 'data_chunk_size', 'data_compressed_chunk_type', 'guide_id',
             'data_original_chunk_type', 'size', 'image_quality', 'data', 'dimension',
             'subset', 'organization', 'target_storage', 'source_storage', 'jobs', 'labels',
-            'assignee_updated_date'
-            'consensus_jobs_per_regular_job',
+            'assignee_updated_date', 'consensus_jobs_per_regular_job',
         )
         read_only_fields = fields
         extra_kwargs = {
@@ -1341,8 +1341,8 @@ class TaskWriteSerializer(WriteOnceMixin, serializers.ModelSerializer):
 
         consensus_jobs_per_regular_job = attrs.get('consensus_jobs_per_regular_job', self.instance.consensus_jobs_per_regular_job if self.instance else None)
 
-        if consensus_jobs_per_regular_job and (consensus_jobs_per_regular_job == 1 or consensus_jobs_per_regular_job < 0):
-            raise serializers.ValidationError("Consensus jobs per regular job should be greater than or equal to 0 and not 1")
+        if consensus_jobs_per_regular_job and (consensus_jobs_per_regular_job == 1 or consensus_jobs_per_regular_job < 0 or consensus_jobs_per_regular_job > 10):
+            raise serializers.ValidationError("Consensus jobs per regular job shouldn't be negative, less than 10 except 1")
 
         return attrs
 
@@ -2198,32 +2198,6 @@ class AnnotationGuideWriteSerializer(WriteOnceMixin, serializers.ModelSerializer
                 raise serializers.ValidationError(f'The specified task #{task_id} does not exist.')
         db_data = models.AnnotationGuide.objects.create(**validated_data, project = project, task = task)
         return db_data
-
-    @transaction.atomic
-    def save(self, **kwargs):
-        instance = super().save(**kwargs)
-        def _update_assets(guide):
-            md_assets = []
-            current_assets = list(guide.assets.all())
-            markdown = guide.markdown
-
-            # pylint: disable=anomalous-backslash-in-string
-            pattern = re.compile(r'\(/api/assets/([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12})\)')
-            results = re.findall(pattern, markdown)
-
-            for asset_id in results:
-                db_asset = models.Asset.objects.get(pk=asset_id)
-                if db_asset.guide_id != guide.id:
-                    raise serializers.ValidationError('Asset is already related to another guide')
-                md_assets.append(db_asset)
-
-            for current_asset in current_assets:
-                if current_asset not in md_assets:
-                    current_asset.delete()
-
-        _update_assets(instance)
-        return instance
-
 
     class Meta:
         model = models.AnnotationGuide

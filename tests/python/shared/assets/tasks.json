@@ -1,8 +1,110 @@
 {
-  "count": 18,
+  "count": 20,
   "next": null,
   "previous": null,
   "results": [
+    {
+      "assignee": null,
+      "assignee_updated_date": null,
+      "bug_tracker": "",
+      "created_date": "2024-07-15T15:34:53.156000Z",
+      "data": 24,
+      "data_chunk_size": 72,
+      "data_compressed_chunk_type": "imageset",
+      "data_original_chunk_type": "imageset",
+      "dimension": "2d",
+      "guide_id": null,
+      "id": 25,
+      "image_quality": 70,
+      "jobs": {
+        "completed": 0,
+        "count": 1,
+        "url": "http://localhost:8080/api/jobs?task_id=25",
+        "validation": 0
+      },
+      "labels": {
+        "url": "http://localhost:8080/api/labels?task_id=25"
+      },
+      "mode": "annotation",
+      "name": "task-validation",
+      "organization": null,
+      "overlap": 0,
+      "owner": {
+        "first_name": "Admin",
+        "id": 1,
+        "last_name": "First",
+        "url": "http://localhost:8080/api/users/1",
+        "username": "admin1"
+      },
+      "project_id": 14,
+      "segment_size": 1,
+      "size": 1,
+      "source_storage": {
+        "cloud_storage_id": null,
+        "id": 39,
+        "location": "local"
+      },
+      "status": "annotation",
+      "subset": "Validation",
+      "target_storage": {
+        "cloud_storage_id": null,
+        "id": 40,
+        "location": "local"
+      },
+      "updated_date": "2024-07-15T15:34:53.692000Z",
+      "url": "http://localhost:8080/api/tasks/25"
+    },
+    {
+      "assignee": null,
+      "assignee_updated_date": null,
+      "bug_tracker": "",
+      "created_date": "2024-07-15T15:33:10.135000Z",
+      "data": 23,
+      "data_chunk_size": 72,
+      "data_compressed_chunk_type": "imageset",
+      "data_original_chunk_type": "imageset",
+      "dimension": "2d",
+      "guide_id": null,
+      "id": 24,
+      "image_quality": 70,
+      "jobs": {
+        "completed": 0,
+        "count": 1,
+        "url": "http://localhost:8080/api/jobs?task_id=24",
+        "validation": 0
+      },
+      "labels": {
+        "url": "http://localhost:8080/api/labels?task_id=24"
+      },
+      "mode": "annotation",
+      "name": "task_train",
+      "organization": null,
+      "overlap": 0,
+      "owner": {
+        "first_name": "Admin",
+        "id": 1,
+        "last_name": "First",
+        "url": "http://localhost:8080/api/users/1",
+        "username": "admin1"
+      },
+      "project_id": 14,
+      "segment_size": 1,
+      "size": 1,
+      "source_storage": {
+        "cloud_storage_id": null,
+        "id": 37,
+        "location": "local"
+      },
+      "status": "annotation",
+      "subset": "Train",
+      "target_storage": {
+        "cloud_storage_id": null,
+        "id": 38,
+        "location": "local"
+      },
+      "updated_date": "2024-07-15T15:33:10.641000Z",
+      "url": "http://localhost:8080/api/tasks/24"
+    },
     {
       "assignee": null,
       "assignee_updated_date": null,

@@ -31,6 +31,7 @@ import ExportDatasetModal from 'components/export-dataset/export-dataset-modal';
 import ExportBackupModal from 'components/export-backup/export-backup-modal';
 import ImportDatasetModal from 'components/import-dataset/import-dataset-modal';
 import ImportBackupModal from 'components/import-backup/import-backup-modal';
+import ConsensusModal from 'components/consensus/consensus-modal';
 import UploadFileStatusModal from 'components/common/upload-file-status-modal';
 
 import JobsPageComponent from 'components/jobs-page/jobs-page';
@@ -56,7 +57,7 @@ import WebhooksPage from 'components/webhooks-page/webhooks-page';
 import CreateWebhookPage from 'components/setup-webhook-pages/create-webhook-page';
 import UpdateWebhookPage from 'components/setup-webhook-pages/update-webhook-page';
 
-import GuidePage from 'components/md-guide/guide-page';
+import AnnotationGuidePage from 'components/md-guide/annotation-guide-page';
 
 import InvitationsPage from 'components/invitations-page/invitations-page';
 
@@ -82,6 +83,7 @@ import EmailVerificationSentPage from './email-confirmation-pages/email-verifica
 import IncorrectEmailConfirmationPage from './email-confirmation-pages/incorrect-email-confirmation';
 import CreateJobPage from './create-job-page/create-job-page';
 import AnalyticsPage from './analytics-page/analytics-page';
+import TaskConsensusAnalyticsPage from './analytics-page/consensus-analytics-page';
 import InvitationWatcher from './invitation-watcher/invitation-watcher';
 
 interface CVATAppProps {
@@ -507,14 +509,15 @@ class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentP
                                         <Route exact path='/projects/create' component={CreateProjectPageComponent} />
                                         <Route exact path='/projects/:id' component={ProjectPageComponent} />
                                         <Route exact path='/projects/:id/webhooks' component={WebhooksPage} />
-                                        <Route exact path='/projects/:id/guide' component={GuidePage} />
+                                        <Route exact path='/projects/:id/guide' component={AnnotationGuidePage} />
                                         <Route exact path='/projects/:pid/analytics' component={AnalyticsPage} />
                                         <Route exact path='/tasks' component={TasksPageContainer} />
                                         <Route exact path='/tasks/create' component={CreateTaskPageContainer} />
                                         <Route exact path='/tasks/:id' component={TaskPageComponent} />
                                         <Route exact path='/tasks/:tid/analytics' component={AnalyticsPage} />
+                                        <Route exact path='/tasks/:tid/analytics/consensus' component={TaskConsensusAnalyticsPage} />
                                         <Route exact path='/tasks/:id/jobs/create' component={CreateJobPage} />
-                                        <Route exact path='/tasks/:id/guide' component={GuidePage} />
+                                        <Route exact path='/tasks/:id/guide' component={AnnotationGuidePage} />
                                         <Route exact path='/tasks/:tid/jobs/:jid' component={AnnotationPageContainer} />
                                         <Route exact path='/tasks/:tid/jobs/:jid/analytics' component={AnalyticsPage} />
                                         <Route exact path='/jobs' component={JobsPageComponent} />
@@ -560,6 +563,7 @@ class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentP
                                     </Switch>
                                     <ExportDatasetModal />
                                     <ExportBackupModal />
+                                    <ConsensusModal />
                                     <ImportDatasetModal />
                                     <ImportBackupModal />
                                     <InvitationWatcher />

@@ -235,10 +235,10 @@ export interface SerializedOrganization {
     contact?: SerializedOrganizationContact,
 }
 
-export interface APIQualitySettingsFilter extends APICommonFilterParams {
+export interface APISettingsFilter extends APICommonFilterParams {
     task_id?: number;
 }
-export type QualitySettingsFilter = Camelized<APIQualitySettingsFilter>;
+export type SettingsFilter = Camelized<APISettingsFilter>;
 
 export interface SerializedQualitySettingsData {
     id?: number;
@@ -257,12 +257,12 @@ export interface SerializedQualitySettingsData {
     compare_attributes?: boolean;
 }
 
-export interface APIQualityConflictsFilter extends APICommonFilterParams {
+export interface APIConflictsFilter extends APICommonFilterParams {
     report_id?: number;
 }
-export type QualityConflictsFilter = Camelized<APIQualityConflictsFilter>;
+export type ConflictsFilter = Camelized<APIConflictsFilter>;
 
-export interface SerializedAnnotationConflictData {
+export interface SerializedAnnotationQualityConflictData {
     job_id?: number;
     obj_id?: number;
     type?: ObjectType;
@@ -275,7 +275,7 @@ export interface SerializedQualityConflictData {
     id?: number;
     frame?: number;
     type?: string;
-    annotation_ids?: SerializedAnnotationConflictData[];
+    annotation_ids?: SerializedAnnotationQualityConflictData[];
     data?: string;
     severity?: string;
     description?: string;
@@ -283,7 +283,7 @@ export interface SerializedQualityConflictData {
 
 export interface APIQualityReportsFilter extends APICommonFilterParams {
     parent_id?: number;
-    peoject_id?: number;
+    project_id?: number;
     task_id?: number;
     job_id?: number;
     target?: string;
@@ -318,6 +318,62 @@ export interface SerializedQualityReportData {
             mismatching_attributes: number;
             mismatching_groups: number;
             covered_annotation: number;
+        }
+    };
+}
+
+export interface SerializedAnnotationConsensusConflictData {
+    job_id?: number;
+    obj_id?: number;
+    type?: ObjectType;
+    shape_type?: string | null;
+    conflict_type?: string;
+}
+
+export interface SerializedConsensusConflictData {
+    id?: number;
+    frame?: number;
+    type?: string;
+    annotation_ids?: SerializedAnnotationConsensusConflictData[];
+    data?: string;
+    description?: string;
+}
+
+export interface SerializedConsensusSettingsData {
+    id?: number;
+    task?: number;
+    agreement_score_threshold?: number;
+    quorum?: number;
+    iou_threshold?: number;
+    sigma?: number;
+}
+
+export interface APIConsensusReportsFilter extends APICommonFilterParams {
+    task_id?: number;
+    job_id?: number | null;
+    target?: string;
+}
+
+export type ConsensusReportsFilter = Camelized<APIConsensusReportsFilter>;
+
+export interface SerializedConsensusReportData {
+    id?: number;
+    task_id?: number;
+    job_id?: number | null;
+    created_date?: string;
+    target?: string;
+    assignee?: SerializedUser | null;
+    consensus_score?: number;
+    summary?: {
+        frame_count: number;
+        conflict_count: number;
+        conflicts_by_type: {
+            no_matching_item: number;
+            failed_attribute_voting: number;
+            no_matching_annotation: number;
+            annotation_too_close: number;
+            wrong_group: number;
+            failed_label_voting: number;
         }
     };
 }

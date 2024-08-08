@@ -274,9 +274,9 @@ class ProjectPermission(OpenPolicyAgentPermission):
             ('append_dataset_chunk', 'PATCH'): Scopes.IMPORT_DATASET,
             ('annotations', 'GET'): Scopes.EXPORT_ANNOTATIONS,
             ('dataset', 'GET'): Scopes.IMPORT_DATASET if request.query_params.get('action') == 'import_status' else Scopes.EXPORT_DATASET,
-            ('export_dataset_v2', 'GET'): Scopes.EXPORT_DATASET if is_dataset_export(request) else Scopes.EXPORT_ANNOTATIONS,
+            ('export_dataset_v2', 'POST'): Scopes.EXPORT_DATASET if is_dataset_export(request) else Scopes.EXPORT_ANNOTATIONS,
             ('export_backup', 'GET'): Scopes.EXPORT_BACKUP,
-            ('export_backup_v2', 'GET'): Scopes.EXPORT_BACKUP,
+            ('export_backup_v2', 'POST'): Scopes.EXPORT_BACKUP,
             ('import_backup', 'POST'): Scopes.IMPORT_BACKUP,
             ('append_backup_chunk', 'PATCH'): Scopes.IMPORT_BACKUP,
             ('append_backup_chunk', 'HEAD'): Scopes.IMPORT_BACKUP,
@@ -479,7 +479,7 @@ class TaskPermission(OpenPolicyAgentPermission):
             ('append_annotations_chunk', 'PATCH'): Scopes.UPDATE_ANNOTATIONS,
             ('append_annotations_chunk', 'HEAD'): Scopes.UPDATE_ANNOTATIONS,
             ('dataset_export', 'GET'): Scopes.EXPORT_DATASET,
-            ('export_dataset_v2', 'GET'): Scopes.EXPORT_DATASET if is_dataset_export(request) else Scopes.EXPORT_ANNOTATIONS,
+            ('export_dataset_v2', 'POST'): Scopes.EXPORT_DATASET if is_dataset_export(request) else Scopes.EXPORT_ANNOTATIONS,
             ('metadata', 'GET'): Scopes.VIEW_METADATA,
             ('metadata', 'PATCH'): Scopes.UPDATE_METADATA,
             ('data', 'GET'): Scopes.VIEW_DATA,
@@ -491,7 +491,7 @@ class TaskPermission(OpenPolicyAgentPermission):
             ('append_backup_chunk', 'PATCH'): Scopes.IMPORT_BACKUP,
             ('append_backup_chunk', 'HEAD'): Scopes.IMPORT_BACKUP,
             ('export_backup', 'GET'): Scopes.EXPORT_BACKUP,
-            ('export_backup_v2', 'GET'): Scopes.EXPORT_BACKUP,
+            ('export_backup_v2', 'POST'): Scopes.EXPORT_BACKUP,
             ('preview', 'GET'): Scopes.VIEW,
         }.get((view.action, request.method))
 
@@ -717,7 +717,7 @@ class JobPermission(OpenPolicyAgentPermission):
             ('metadata','PATCH'): Scopes.UPDATE_METADATA,
             ('issues', 'GET'): Scopes.VIEW,
             ('dataset_export', 'GET'): Scopes.EXPORT_DATASET,
-            ('export_dataset_v2', 'GET'): Scopes.EXPORT_DATASET if is_dataset_export(request) else Scopes.EXPORT_ANNOTATIONS,
+            ('export_dataset_v2', 'POST'): Scopes.EXPORT_DATASET if is_dataset_export(request) else Scopes.EXPORT_ANNOTATIONS,
             ('preview', 'GET'): Scopes.VIEW,
         }.get((view.action, request.method))
 
@@ -1092,7 +1092,6 @@ class AnnotationGuidePermission(OpenPolicyAgentPermission):
 
     @classmethod
     def create(cls, request, view, obj, iam_context):
-        Scopes = __class__.Scopes
         permissions = []
 
         if view.basename == 'annotationguide':
@@ -1101,13 +1100,8 @@ class AnnotationGuidePermission(OpenPolicyAgentPermission):
             params = { 'project_id': project_id, 'task_id': task_id }
 
             for scope in cls.get_scopes(request, view, obj):
-                if scope == Scopes.VIEW and isinstance(obj, Job):
-                    permissions.append(JobPermission.create_base_perm(
-                        request, view, JobPermission.Scopes.VIEW, iam_context, obj=obj,
-                    ))
-                else:
-                    self = cls.create_base_perm(request, view, scope, iam_context, obj, **params)
-                    permissions.append(self)
+                self = cls.create_base_perm(request, view, scope, iam_context, obj, **params)
+                permissions.append(self)
 
         return permissions
 

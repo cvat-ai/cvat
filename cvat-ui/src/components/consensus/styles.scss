@@ -1,0 +1,39 @@
+@use 'sass:color';
+@import '../export-backup/styles';
+
+.consensus-modal-form {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+
+  .ant-btn-default {
+    background-color: #1890ff;
+    color: white !important;
+
+    &:hover {
+      background-color: color.adjust(#1890ff, $lightness: 7%) !important;
+      color: white !important;
+    }
+  }
+}
+
+.custom-modal-center-title {
+  .ant-modal-header {
+    text-align: center;
+  }
+
+  .ant-modal-title {
+    flex: 1;
+    text-align: center;
+  }
+}
+
+.cvat-button-reset-settings {
+  background-color: red;
+  color: white;
+
+  &:hover {
+    background-color: color.adjust(red, $lightness: 7%) !important;
+    color: white !important;
+  }
+}

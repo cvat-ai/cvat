@@ -17,10 +17,12 @@ import {
 } from 'actions/tasks-actions';
 import { exportActions } from 'actions/export-actions';
 import { importActions } from 'actions/import-actions';
+import { consensusActions, mergeTaskConsensusJobsAsync } from 'actions/consensus-actions';
 
 interface OwnProps {
     taskInstance: any;
     onViewAnalytics: () => void;
+    onViewConsensusAnalytics: () => void;
 }
 
 interface StateToProps {
@@ -34,6 +36,8 @@ interface DispatchToProps {
     openRunModelWindow: (taskInstance: any) => void;
     deleteTask: (taskInstance: any) => void;
     openMoveTaskToProjectWindow: (taskInstance: any) => void;
+    showConsensusModal: (taskInstance: any) => void;
+    mergeConsensusJobs: (taskInstance: any) => void;
 }
 
 function mapStateToProps(state: CombinedState, own: OwnProps): StateToProps {
@@ -72,6 +76,12 @@ function mapDispatchToProps(dispatch: any): DispatchToProps {
         openMoveTaskToProjectWindow: (taskId: number): void => {
             dispatch(switchMoveTaskModalVisible(true, taskId));
         },
+        showConsensusModal: (taskInstance: any): void => {
+            dispatch(consensusActions.openConsensusModal(taskInstance));
+        },
+        mergeConsensusJobs: (taskInstance: any): void => {
+            dispatch(mergeTaskConsensusJobsAsync(taskInstance));
+        },
     };
 }
 
@@ -86,6 +96,9 @@ function ActionsMenuContainer(props: OwnProps & StateToProps & DispatchToProps):
         openRunModelWindow,
         openMoveTaskToProjectWindow,
         onViewAnalytics,
+        showConsensusModal,
+        onViewConsensusAnalytics,
+        mergeConsensusJobs,
     } = props;
     const onClickMenu = (params: MenuInfo): void | JSX.Element => {
         const [action] = params.keyPath;
@@ -105,6 +118,12 @@ function ActionsMenuContainer(props: OwnProps & StateToProps & DispatchToProps):
             showImportModal(taskInstance);
         } else if (action === Actions.VIEW_ANALYTICS) {
             onViewAnalytics();
+        } else if (action === Actions.SHOW_TASK_CONSENSUS_CONFIGURATION) {
+            showConsensusModal(taskInstance);
+        } else if (action === Actions.VIEW_CONSENSUS_ANALYTICS) {
+            onViewConsensusAnalytics();
+        } else if (action === Actions.MERGE_CONSENSUS_JOBS) {
+            mergeConsensusJobs(taskInstance);
         }
     };
 
@@ -119,6 +138,7 @@ function ActionsMenuContainer(props: OwnProps & StateToProps & DispatchToProps):
             inferenceIsActive={inferenceIsActive}
             onClickMenu={onClickMenu}
             taskDimension={taskInstance.dimension}
+            consensusJobsPerRegularJob={taskInstance.consensusJobsPerRegularJob}
         />
     );
 }

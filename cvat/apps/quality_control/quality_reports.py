@@ -728,7 +728,9 @@ def _OKS(a, b, sigma=0.1, bbox=None, scale=None, visibility_a=None, visibility_b
 
     dists = np.linalg.norm(p1 - p2, axis=1)
     return np.sum(
-        visibility_a * visibility_b * np.exp(-(dists**2) / (2 * scale * (2 * sigma) ** 2))
+        visibility_a
+        * visibility_b
+        * np.exp((visibility_a == visibility_b) * (-(dists**2) / (2 * scale * (2 * sigma) ** 2)))
     ) / np.sum(visibility_a | visibility_b, dtype=float)
 
 
@@ -1701,7 +1703,7 @@ class DatasetComparator:
         gt_job_dataset = self._gt_dataset
 
         for gt_item in gt_job_dataset:
-            ds_item = ds_job_dataset.get(gt_item.id)
+            ds_item = ds_job_dataset.get(id=gt_item.id, subset=gt_item.subset)
             if not ds_item:
                 continue  # we need to compare only intersecting frames
 
