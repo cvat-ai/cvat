@@ -98,6 +98,8 @@ def generate_video_file(filename, width=1280, height=720, duration=1, fps=25, co
 
 
 def compare_datasets(test, expected, actual):
+    # we need this function to allow for a bit of variation in a rotation attribute
+    # we need to copy a dataset, because dm_compare_datasets modifies it
     actual_copy = copy.deepcopy(actual)
     dm_compare_datasets(test, expected, actual, ignored_attrs=["rotation"])
     for item_a, item_b in zip(expected, actual_copy):

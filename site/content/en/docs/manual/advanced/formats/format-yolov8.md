@@ -88,6 +88,8 @@ names:
 2 0.7 0.2 0.3 0.1 0.4 0.5 0.5 0.6 0.7 0.5
 
 # YOLOv8 Pose:
+# cx, cy - relative coordinates of the bbox center
+# rw, rh - relative size of the bbox
 # xn, yn - relative coordinates of the n-th point
 # vn - visibility of n-th point. 2 - visible, 1 - partially visible, 0 - not visible
 # if second value in kpt_shape is 3:
@@ -101,7 +103,7 @@ names:
 2 0.3 0.8 0.1 0.3 0.7 0.2 0.3 0.1 0.4 0.5 0.5 0.6 0.7 0.5
 ```
 
-All coordinates must be normalized and be in range \[0, 1\].
+All coordinates must be normalized.
 It can be achieved by dividing x coordinates and widths by image width,
 and y coordinates and heights by image height.
 > Note, that in CVAT you can place an object or some parts of it outside the image,

@@ -595,6 +595,7 @@ class TestImportExportDatasetProject:
             ("CVAT for images 1.1", "CVAT 1.1"),
             ("CVAT for video 1.1", "CVAT 1.1"),
             ("Datumaro 1.0", "Datumaro 1.0"),
+            ("YOLOv8 Pose 1.0", "YOLOv8 Pose 1.0"),
         ),
     )
     def test_can_export_and_import_dataset_with_skeletons(
