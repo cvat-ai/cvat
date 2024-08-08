@@ -1,8 +1,8 @@
-// Copyright (C) 2023 CVAT.ai Corporation
+// Copyright (C) 2023-2024 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
-@import '../../base.scss';
+@import 'base';
 
 .cvat-md-guide-control-wrapper {
     margin-top: $grid-unit-size;
@@ -27,6 +27,7 @@
 
         .cvat-guide-page-editor-wrapper {
             flex: 1;
+            height: calc(100% - $grid-unit-size * 16);
         }
 
         .cvat-guide-page-bottom {

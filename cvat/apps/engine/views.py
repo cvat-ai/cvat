@@ -5,7 +5,11 @@
 
 import os
 import os.path as osp
+import re
+import shutil
 import functools
+
+from contextlib import suppress
 from PIL import Image
 from types import SimpleNamespace
 from typing import Optional, Any, Dict, List, cast, Callable, Mapping, Iterable
@@ -57,6 +61,7 @@ from cvat.apps.dataset_manager.serializers import DatasetFormatsSerializer
 from cvat.apps.engine.frame_provider import FrameProvider
 from cvat.apps.engine.filters import NonModelSimpleFilter, NonModelOrderingFilter, NonModelJsonLogicFilter
 from cvat.apps.engine.media_extractors import get_mime
+from cvat.apps.engine.permissions import AnnotationGuidePermission, get_iam_context
 from cvat.apps.engine.models import (
     ClientFile, Job, JobType, Label, SegmentType, Task, Project, Issue, Data,
     Comment, StorageMethodChoice, StorageChoice,
@@ -2914,6 +2919,77 @@ class AnnotationGuidesViewSet(
     ordering = "-id"
     iam_organization_field = None
 
+    def _update_related_assets(self, request, guide: AnnotationGuide):
+        existing_assets = list(guide.assets.all())
+        new_assets = []
+
+        # pylint: disable=anomalous-backslash-in-string
+        pattern = re.compile(r'\(/api/assets/([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12})\)')
+        results = set(re.findall(pattern, guide.markdown))
+
+        db_assets_to_copy = {}
+
+        # first check if we need to copy some assets and if user has permissions to access them
+        for asset_id in results:
+            with suppress(models.Asset.DoesNotExist):
+                db_asset = models.Asset.objects.select_related('guide').get(pk=asset_id)
+                if db_asset.guide.id != guide.id:
+                    perm = AnnotationGuidePermission.create_base_perm(
+                        request,
+                        self,
+                        AnnotationGuidePermission.Scopes.VIEW,
+                        get_iam_context(request, db_asset.guide),
+                        db_asset.guide
+                    )
+
+                    if perm.check_access().allow:
+                        db_assets_to_copy[asset_id] = db_asset
+                else:
+                    new_assets.append(db_asset)
+
+        # then copy those assets, where user has permissions
+        assets_mapping = {}
+        with transaction.atomic():
+            for asset_id in results:
+                db_asset = db_assets_to_copy.get(asset_id)
+                if db_asset is not None:
+                    copied_asset = Asset(
+                        filename=db_asset.filename,
+                        owner=request.user,
+                        guide=guide,
+                    )
+                    copied_asset.save()
+                    assets_mapping[asset_id] = copied_asset
+
+        # finally apply changes on filesystem out of transaction
+        try:
+            for asset_id in results:
+                copied_asset = assets_mapping.get(asset_id)
+                if copied_asset is not None:
+                    db_asset = db_assets_to_copy.get(asset_id)
+                    os.makedirs(copied_asset.get_asset_dir())
+                    shutil.copyfile(
+                        os.path.join(db_asset.get_asset_dir(), db_asset.filename),
+                        os.path.join(copied_asset.get_asset_dir(), db_asset.filename),
+                    )
+
+                    guide.markdown = guide.markdown.replace(
+                        f'(/api/assets/{asset_id})',
+                        f'(/api/assets/{assets_mapping[asset_id].uuid})',
+                    )
+
+                    new_assets.append(copied_asset)
+        except Exception as ex:
+            # in case of any errors, remove copied assets
+            for asset_id in assets_mapping:
+                assets_mapping[asset_id].delete()
+            raise ex
+
+        guide.save()
+        for existing_asset in existing_assets:
+            if existing_asset not in new_assets:
+                existing_asset.delete()
+
     def get_serializer_class(self):
         if self.request.method in SAFE_METHODS:
             return AnnotationGuideReadSerializer
@@ -2922,15 +2998,18 @@ class AnnotationGuidesViewSet(
 
     def perform_create(self, serializer):
         super().perform_create(serializer)
-        serializer.instance.target.save()
+        self._update_related_assets(self.request, serializer.instance)
+        serializer.instance.target.touch()
 
     def perform_update(self, serializer):
         super().perform_update(serializer)
-        serializer.instance.target.save()
+        self._update_related_assets(self.request, serializer.instance)
+        serializer.instance.target.touch()
 
     def perform_destroy(self, instance):
-        (instance.project or instance.task).save()
-        instance.delete()
+        target = instance.target
+        super().perform_destroy(instance)
+        target.touch()
 
 def rq_exception_handler(rq_job, exc_type, exc_value, tb):
     rq_job.meta[RQJobMetaField.FORMATTED_EXCEPTION] = "".join(

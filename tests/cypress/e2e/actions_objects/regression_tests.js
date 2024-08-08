@@ -30,10 +30,11 @@ context('Regression tests', () => {
 
     const rectanglePayload = {
         frame: 99,
-        objectType: 'SHAPE',
-        shapeType: 'RECTANGLE',
+        objectType: 'shape',
+        shapeType: 'rectangle',
         points: [250, 64, 491, 228],
         occluded: false,
+        labelName: 'label 1',
     };
 
     before(() => {

@@ -56,7 +56,7 @@ import WebhooksPage from 'components/webhooks-page/webhooks-page';
 import CreateWebhookPage from 'components/setup-webhook-pages/create-webhook-page';
 import UpdateWebhookPage from 'components/setup-webhook-pages/update-webhook-page';
 
-import GuidePage from 'components/md-guide/guide-page';
+import AnnotationGuidePage from 'components/md-guide/annotation-guide-page';
 
 import InvitationsPage from 'components/invitations-page/invitations-page';
 
@@ -507,14 +507,14 @@ class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentP
                                         <Route exact path='/projects/create' component={CreateProjectPageComponent} />
                                         <Route exact path='/projects/:id' component={ProjectPageComponent} />
                                         <Route exact path='/projects/:id/webhooks' component={WebhooksPage} />
-                                        <Route exact path='/projects/:id/guide' component={GuidePage} />
+                                        <Route exact path='/projects/:id/guide' component={AnnotationGuidePage} />
                                         <Route exact path='/projects/:pid/analytics' component={AnalyticsPage} />
                                         <Route exact path='/tasks' component={TasksPageContainer} />
                                         <Route exact path='/tasks/create' component={CreateTaskPageContainer} />
                                         <Route exact path='/tasks/:id' component={TaskPageComponent} />
                                         <Route exact path='/tasks/:tid/analytics' component={AnalyticsPage} />
                                         <Route exact path='/tasks/:id/jobs/create' component={CreateJobPage} />
-                                        <Route exact path='/tasks/:id/guide' component={GuidePage} />
+                                        <Route exact path='/tasks/:id/guide' component={AnnotationGuidePage} />
                                         <Route exact path='/tasks/:tid/jobs/:jid' component={AnnotationPageContainer} />
                                         <Route exact path='/tasks/:tid/jobs/:jid/analytics' component={AnalyticsPage} />
                                         <Route exact path='/jobs' component={JobsPageComponent} />

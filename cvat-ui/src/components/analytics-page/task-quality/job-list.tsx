@@ -56,7 +56,9 @@ function JobListComponent(props: Props): JSX.Element {
                 Number.isFinite(field1) && Number.isFinite(field2)) return field1 - field2;
             }
 
-            if (field1 === null || !Number.isFinite(field1)) {
+            if (field1 === null && field2 === null) return 0;
+
+            if (field1 === null || (typeof field1 === 'number' && !Number.isFinite(field1))) {
                 return -1;
             }
 

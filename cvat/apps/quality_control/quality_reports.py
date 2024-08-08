@@ -1701,7 +1701,7 @@ class DatasetComparator:
         gt_job_dataset = self._gt_dataset
 
         for gt_item in gt_job_dataset:
-            ds_item = ds_job_dataset.get(gt_item.id)
+            ds_item = ds_job_dataset.get(id=gt_item.id, subset=gt_item.subset)
             if not ds_item:
                 continue  # we need to compare only intersecting frames
 
