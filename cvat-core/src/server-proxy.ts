@@ -10,6 +10,7 @@ import * as tus from 'tus-js-client';
 import { ChunkQuality } from 'cvat-data';
 
 import './axios-config';
+import { axiosTusHttpStack } from './axios-tus';
 import {
     SerializedLabel, SerializedAnnotationFormats, ProjectsFilter,
     SerializedProject, SerializedTask, TasksFilter, SerializedUser, SerializedOrganization,
@@ -117,7 +118,6 @@ function fetchAll(url, filter = {}): Promise<any> {
 }
 
 async function chunkUpload(file: File, uploadConfig): Promise<{ uploadSentSize: number; filename: string }> {
-    const params = enableOrganization();
     const {
         endpoint, chunkSize, totalSize, onUpdate, metadata, totalSentSize,
     } = uploadConfig;
@@ -130,9 +130,7 @@ async function chunkUpload(file: File, uploadConfig): Promise<{ uploadSentSize: 
                 filetype: file.type,
                 ...metadata,
             },
-            headers: {
-                Authorization: Axios.defaults.headers.common.Authorization,
-            },
+            httpStack: axiosTusHttpStack,
             chunkSize,
             retryDelays: [2000, 4000, 8000, 16000, 32000, 64000],
             onShouldRetry(err: tus.DetailedError | Error): boolean {
@@ -150,12 +148,6 @@ async function chunkUpload(file: File, uploadConfig): Promise<{ uploadSentSize: 
             },
             onError(error) {
                 reject(error);
-            },
-            onBeforeRequest(req) {
-                const xhr = req.getUnderlyingObject();
-                const { org } = params;
-                req.setHeader('X-Organization', org);
-                xhr.withCredentials = true;
             },
             onProgress(bytesUploaded) {
                 if (onUpdate && Number.isInteger(totalSentSize) && Number.isInteger(totalSize)) {
@@ -366,10 +358,10 @@ Axios.interceptors.response.use((response) => {
     return response;
 });
 
-let token = store.get('token');
-if (token) {
-    Axios.defaults.headers.common.Authorization = `Token ${token}`;
-}
+// Previously, we used to store an additional authentication token in local storage.
+// Now we don't, and if the user still has one stored, we'll remove it to prevent
+// unnecessary credential exposure.
+store.remove('token');
 
 function setAuthData(response: AxiosResponse): void {
     if (response.headers['set-cookie']) {
@@ -378,18 +370,6 @@ function setAuthData(response: AxiosResponse): void {
         const cookies = response.headers['set-cookie'].join(';');
         Axios.defaults.headers.common.Cookie = cookies;
     }
-
-    if (response.data.key) {
-        token = response.data.key;
-        store.set('token', token);
-        Axios.defaults.headers.common.Authorization = `Token ${token}`;
-    }
-}
-
-function removeAuthData(): void {
-    Axios.defaults.headers.common.Authorization = '';
-    store.remove('token');
-    token = null;
 }
 
 async function about(): Promise<SerializedAbout> {
@@ -482,7 +462,6 @@ async function register(
 }
 
 async function login(credential: string, password: string): Promise<void> {
-    removeAuthData();
     let authenticationResponse = null;
     try {
         authenticationResponse = await Axios.post(`${config.backendAPI}/auth/login`, {
@@ -499,7 +478,6 @@ async function login(credential: string, password: string): Promise<void> {
 async function logout(): Promise<void> {
     try {
         await Axios.post(`${config.backendAPI}/auth/logout`);
-        removeAuthData();
     } catch (errorData) {
         throw generateError(errorData);
     }
@@ -578,17 +556,9 @@ async function getSelf(): Promise<SerializedUser> {
 
 async function authenticated(): Promise<boolean> {
     try {
-        // In CVAT app we use two types of authentication
-        // At first we check if authentication token is present
-        // Request in getSelf will provide correct authentication cookies
-        if (!store.get('token')) {
-            removeAuthData();
-            return false;
-        }
         await getSelf();
     } catch (serverError) {
         if (serverError.code === 401) {
-            removeAuthData();
             return false;
         }
 
@@ -2353,7 +2323,6 @@ async function calculateAnalyticsReport(
 export default Object.freeze({
     server: Object.freeze({
         setAuthData,
-        removeAuthData,
         about,
         share,
         formats,
