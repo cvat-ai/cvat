@@ -592,10 +592,12 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                 annotations: { highlightedConflict, states },
             } = state;
 
-            const requiredObjectExists = states.find((_state) => _state.clientID === activatedStateID);
-            if (!requiredObjectExists || activeControl !== ActiveControl.CURSOR ||
-                (instance as Canvas | Canvas3d).mode() !== CanvasMode.IDLE ||
-                highlightedConflict) {
+            const objectDoesNotExist = activatedStateID !== null &&
+                !states.some((_state) => _state.clientID === activatedStateID);
+            const canvasNotReady = (instance as Canvas | Canvas3d)
+                .mode() !== CanvasMode.IDLE || activeControl !== ActiveControl.CURSOR;
+
+            if (objectDoesNotExist || canvasNotReady || highlightedConflict) {
                 return state;
             }
 
