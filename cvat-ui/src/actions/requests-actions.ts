@@ -21,6 +21,7 @@ export enum RequestsActionsTypes {
     CANCEL_REQUEST_FAILED = 'CANCEL_REQUEST_FAILED',
     DELETE_REQUEST = 'DELETE_REQUEST',
     DELETE_REQUEST_FAILED = 'DELETE_REQUEST_FAILED',
+    DISABLE_REQUEST = 'DISABLE_REQUEST',
 }
 
 export const requestsActions = {
@@ -43,6 +44,9 @@ export const requestsActions = {
     cancelRequest: (request: Request) => createAction(RequestsActionsTypes.CANCEL_REQUEST, { request }),
     cancelRequestFailed: (request: Request, error: any) => createAction(
         RequestsActionsTypes.CANCEL_REQUEST_FAILED, { request, error },
+    ),
+    disableRequest: (request: Request) => createAction(
+        RequestsActionsTypes.DISABLE_REQUEST, { request },
     ),
 };
 

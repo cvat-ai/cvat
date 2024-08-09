@@ -1360,10 +1360,10 @@ class ProjectReadSerializer(serializers.ModelSerializer):
 
     def to_representation(self, instance):
         response = super().to_representation(instance)
-        task_subsets = set(instance.tasks.values_list('subset', flat=True))
+        task_subsets = {task.subset for task in instance.tasks.all()}
         task_subsets.discard('')
         response['task_subsets'] = list(task_subsets)
-        response['dimension'] = instance.tasks.first().dimension if instance.tasks.count() else None
+        response['dimension'] = getattr(instance.tasks.first(), 'dimension', None)
         return response
 
 class ProjectWriteSerializer(serializers.ModelSerializer):
@@ -2189,32 +2189,6 @@ class AnnotationGuideWriteSerializer(WriteOnceMixin, serializers.ModelSerializer
                 raise serializers.ValidationError(f'The specified task #{task_id} does not exist.')
         db_data = models.AnnotationGuide.objects.create(**validated_data, project = project, task = task)
         return db_data
-
-    @transaction.atomic
-    def save(self, **kwargs):
-        instance = super().save(**kwargs)
-        def _update_assets(guide):
-            md_assets = []
-            current_assets = list(guide.assets.all())
-            markdown = guide.markdown
-
-            # pylint: disable=anomalous-backslash-in-string
-            pattern = re.compile(r'\(/api/assets/([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12})\)')
-            results = re.findall(pattern, markdown)
-
-            for asset_id in results:
-                db_asset = models.Asset.objects.get(pk=asset_id)
-                if db_asset.guide_id != guide.id:
-                    raise serializers.ValidationError('Asset is already related to another guide')
-                md_assets.append(db_asset)
-
-            for current_asset in current_assets:
-                if current_asset not in md_assets:
-                    current_asset.delete()
-
-        _update_assets(instance)
-        return instance
-
 
     class Meta:
         model = models.AnnotationGuide

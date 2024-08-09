@@ -1,5 +1,5 @@
 // Copyright (C) 2020-2022 Intel Corporation
-// Copyright (C) 2022-2023 CVAT.ai Corporation
+// Copyright (C) 2022-2024 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -8,7 +8,7 @@ import PropTypes from 'prop-types';
 
 import { connect } from 'react-redux';
 import {
-    CombinedState, ContextMenuType, ShapeType, Workspace,
+    CombinedState, ContextMenuType, NewIssueSource, ShapeType, Workspace,
 } from 'reducers';
 
 import CanvasContextMenuComponent from 'components/annotation-page/canvas/views/canvas2d/canvas-context-menu';
@@ -106,7 +106,7 @@ function mapDispatchToProps(dispatch: ThunkDispatch): DispatchToProps {
             dispatch(updateCanvasContextMenu(false, 0, 0));
         },
         openIssue(position: number[], message: string): void {
-            dispatch(reviewActions.startIssue(position));
+            dispatch(reviewActions.startIssue(position, NewIssueSource.QUICK_ISSUE));
             dispatch(finishIssueAsync(message));
             dispatch(updateCanvasContextMenu(false, 0, 0));
         },

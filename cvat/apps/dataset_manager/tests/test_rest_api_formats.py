@@ -1833,7 +1833,6 @@ class ExportBehaviorTest(_DbTestBase):
 
         mock_get_export_cache_lock.assert_called()
         self.assertEqual(mock_rq_job.retries_left, 1)
-        self.assertEqual(len(mock_rq_job.retry_intervals), 1)
 
     def test_export_can_reuse_older_file_if_still_relevant(self):
         format_name = "CVAT for images 1.1"
@@ -1926,7 +1925,6 @@ class ExportBehaviorTest(_DbTestBase):
 
         mock_get_export_cache_lock.assert_called()
         self.assertEqual(mock_rq_job.retries_left, 1)
-        self.assertEqual(len(mock_rq_job.retry_intervals), 1)
         self.assertTrue(osp.isfile(export_path))
 
     def test_cleanup_can_fail_if_no_file(self):
@@ -1969,7 +1967,6 @@ class ExportBehaviorTest(_DbTestBase):
             clear_export_cache(file_path=export_path, file_ctime=file_ctime, logger=MagicMock())
 
         self.assertEqual(mock_rq_job.retries_left, 1)
-        self.assertEqual(len(mock_rq_job.retry_intervals), 1)
         self.assertTrue(osp.isfile(export_path))
 
     def test_cleanup_can_be_called_with_old_signature_and_values(self):

@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: MIT
 
-import React, { useState } from 'react';
+import React from 'react';
 import { Link } from 'react-router-dom';
 
 import { Row, Col } from 'antd/lib/grid';
@@ -20,10 +20,12 @@ import { RQStatus, Request } from 'cvat-core-wrapper';
 
 import moment from 'moment';
 import { cancelRequestAsync } from 'actions/requests-async-actions';
+import { requestsActions } from 'actions/requests-actions';
 import StatusMessage from './request-status';
 
 export interface Props {
     request: Request;
+    disabled: boolean;
 }
 
 function constructLink(request: Request): string | null {
@@ -136,12 +138,11 @@ const dimensions = {
 };
 
 function RequestCard(props: Props): JSX.Element {
-    const { request } = props;
+    const { request, disabled } = props;
     const { operation } = request;
     const { type } = operation;
 
     const dispatch = useDispatch();
-    const [isActive, setIsActive] = useState(true);
 
     const linkToEntity = constructLink(request);
     const percent = request.status === RQStatus.FINISHED ? 100 : request.progress;
@@ -152,7 +153,7 @@ function RequestCard(props: Props): JSX.Element {
     const percentProgress = (request.status === RQStatus.FAILED || !percent) ? '' : `${percent.toFixed(2)}%`;
 
     const style: React.CSSProperties = {};
-    if (!isActive) {
+    if (disabled) {
         style.pointerEvents = 'none';
         style.opacity = 0.5;
     }
@@ -166,7 +167,7 @@ function RequestCard(props: Props): JSX.Element {
                 const downloadAnchor = window.document.getElementById('downloadAnchor') as HTMLAnchorElement;
                 downloadAnchor.href = request.url;
                 downloadAnchor.click();
-                setIsActive(false);
+                dispatch(requestsActions.disableRequest(request));
             },
         });
     }
@@ -178,7 +179,7 @@ function RequestCard(props: Props): JSX.Element {
             label: 'Cancel',
             onClick: () => {
                 dispatch(cancelRequestAsync(request, () => {
-                    setIsActive(false);
+                    dispatch(requestsActions.disableRequest(request));
                 }));
             },
         });

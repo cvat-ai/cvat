@@ -110,9 +110,10 @@ function TaskPageComponent(): JSX.Element {
     const onJobUpdate = (job: Job, data: Parameters<Job['save']>[0]): void => {
         setUpdatingTask(true);
         dispatch(updateJobAsync(job, data)).then(() => {
-            receieveTask().finally(() => {
-                setUpdatingTask(false);
-            });
+            // if one of jobs changes, task will have its updated_date bumped
+            // but generally we do not use this field anywhere on the page
+            // so, as a kind of optimization we do not fetch the task again
+            setUpdatingTask(false);
         }).catch((error: Error) => {
             setUpdatingTask(false);
             notification.error({
