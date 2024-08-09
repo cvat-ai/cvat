@@ -8,8 +8,14 @@ import Text from 'antd/lib/typography/Text';
 import { LeftOutlined } from '@ant-design/icons';
 import { useGoBack } from 'utils/hooks';
 
-function GoBackButton(): JSX.Element {
-    const goBack = useGoBack();
+interface Props {
+    backLink?: string;
+}
+
+function GoBackButton(props: Props): JSX.Element {
+    const { backLink } = props;
+    const goBack = useGoBack(backLink);
+
     return (
         <>
             <Button style={{ marginRight: 8 }} onClick={goBack}>

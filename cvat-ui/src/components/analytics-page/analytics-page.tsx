@@ -79,7 +79,12 @@ function readInstanceId(type: InstanceType): number {
 
 type InstanceType = 'project' | 'task' | 'job';
 
-function AnalyticsPage(): JSX.Element {
+export interface Props {
+    backLink?: string;
+}
+
+function AnalyticsPage(props: Props): JSX.Element {
+    const { backLink } = props;
     const dispatch = useDispatch();
     const location = useLocation();
 
@@ -243,7 +248,7 @@ function AnalyticsPage(): JSX.Element {
     if (instanceType && instance) {
         backNavigation = (
             <Col span={22} xl={18} xxl={14} className='cvat-task-top-bar'>
-                <GoBackButton />
+                <GoBackButton backLink={backLink} />
             </Col>
         );
 
