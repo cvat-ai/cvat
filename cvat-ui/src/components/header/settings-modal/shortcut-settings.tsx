@@ -37,7 +37,6 @@ function ShortcutsSettingsComponent(props: Props): JSX.Element {
 
     const onRestoreDefaults = useCallback(() => {
         const currentSettings = localStorage.getItem('clientSettings');
-        console.log(shortcuts);
         dispatch(shortcutsActions.setShortcuts({
             ...shortcuts,
             keyMap: { ...shortcuts.defaultState },

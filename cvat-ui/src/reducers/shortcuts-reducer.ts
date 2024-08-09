@@ -7,6 +7,7 @@ import { BoundariesActions, BoundariesActionTypes } from 'actions/boundaries-act
 import { AuthActions, AuthActionTypes } from 'actions/auth-actions';
 import { ShortcutsActions, ShortcutsActionsTypes } from 'actions/shortcuts-actions';
 import { KeyMap, KeyMapItem } from 'utils/mousetrap-react';
+import { ShortcutScope } from 'utils/enums';
 import { ShortcutsState } from '.';
 
 const capitalize = (text: string): string => text.slice(0, 1).toUpperCase() + text.slice(1);
@@ -55,7 +56,7 @@ export function conflictDetector(
     shortcuts: Record<string, KeyMapItem>,
     keyMap: KeyMap): Record<string, KeyMapItem> | null {
     const flatKeyMap: { [scope: string]: { sequences: string[], items: Record<string, KeyMapItem> } } = {};
-    const conlictingItems: Record<string, KeyMapItem> = {};
+    const conflictingItems: Record<string, KeyMapItem> = {};
 
     for (const [action, keyMapItem] of Object.entries(keyMap)) {
         const { scope } = keyMapItem;
@@ -73,24 +74,52 @@ export function conflictDetector(
         if (!flatKeyMap[scope]) {
             flatKeyMap[scope] = { sequences: [], items: {} };
         }
-        const flatKeyMapUpdated = structuredClone(flatKeyMap[scope]);
+
+        const annotationScope = scope.includes(ShortcutScope.ANNOTATION_PAGE) &&
+            flatKeyMap[ShortcutScope.ANNOTATION_PAGE] ?
+            structuredClone(flatKeyMap[ShortcutScope.ANNOTATION_PAGE]) :
+            { sequences: [], items: {} };
+
+        const globalScope = scope !== ShortcutScope.GLOBAL &&
+            flatKeyMap[ShortcutScope.GLOBAL] ?
+            structuredClone(flatKeyMap[ShortcutScope.GLOBAL]) :
+            { sequences: [], items: {} };
+
+        const flatKeyMapUpdated = {
+            sequences: [
+                ...flatKeyMap[scope].sequences,
+                ...globalScope.sequences,
+                ...annotationScope.sequences,
+            ],
+            items: {
+                ...flatKeyMap[scope].items,
+                ...globalScope.items,
+                ...annotationScope.items,
+            },
+
+        };
 
         if (flatKeyMapUpdated.items[action]) {
             const currentSequences = flatKeyMapUpdated.items[action].sequences;
             delete flatKeyMapUpdated.items[action];
             flatKeyMapUpdated.sequences = flatKeyMapUpdated.sequences.filter(
-                (s) => !currentSequences.includes(s),
+                (s: any) => !currentSequences.includes(s),
             );
         }
 
         for (const sequence of sequences) {
-            if (flatKeyMapUpdated.sequences.includes(sequence)) {
-                const conflictingAction = Object.keys(flatKeyMapUpdated.items)
-                    .find((a) => flatKeyMapUpdated.items[a].sequences.includes(sequence));
-                const conflictingItem = flatKeyMapUpdated.items[conflictingAction!];
-                conflictingItem.sequences = conflictingItem.sequences.filter((s) => s !== sequence);
-                if (conflictingAction) {
-                    conlictingItems[conflictingAction] = conflictingItem;
+            for (const existingSequence of flatKeyMapUpdated.sequences) {
+                // const sequenceOverlap = sequence.split(' ').some((key) => existingSequence.split(' ').includes(key));
+                const sequenceOverlap = sequence === existingSequence;
+                console.log(sequence.split(' '), existingSequence.split(' '));
+                if (sequenceOverlap) {
+                    const conflictingAction = Object.keys(flatKeyMapUpdated.items)
+                        .find((a) => flatKeyMapUpdated.items[a].sequences.includes(existingSequence));
+                    const conflictingItem = flatKeyMapUpdated.items[conflictingAction!];
+                    conflictingItem.sequences = conflictingItem.sequences.filter((s) => s !== existingSequence);
+                    if (conflictingAction) {
+                        conflictingItems[conflictingAction] = conflictingItem;
+                    }
                 }
             }
         }
@@ -99,7 +128,7 @@ export function conflictDetector(
         flatKeyMap[scope].items[action] = keyMapItem;
     }
 
-    return Object.keys(conlictingItems).length ? conlictingItems : null;
+    return Object.keys(conflictingItems).length ? conflictingItems : null;
 }
 
 export default (state = defaultState, action: ShortcutsActions | BoundariesActions | AuthActions): ShortcutsState => {
@@ -112,7 +141,8 @@ export default (state = defaultState, action: ShortcutsActions | BoundariesActio
             }
             const conflictingShortcut = conflictDetector(shortcuts, state.keyMap);
             if (conflictingShortcut) {
-                throw new Error(`The shortcut has conflicts with this shortcut: ${conflictingShortcut}.`);
+                throw new Error(`The shortcuts: ${JSON.stringify(shortcuts)}
+                    have conflicts with these shortcut: ${JSON.stringify(conflictingShortcut)}.`);
             }
             return {
                 ...state,

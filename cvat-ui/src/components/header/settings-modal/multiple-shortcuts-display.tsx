@@ -141,11 +141,10 @@ function MultipleShortcutsDisplay(props: Props): JSX.Element {
     }, [timer]);
 
     function conflictNotifier(keyMapId: string, updatedSequence: string[]): void {
-        console.log('conflictNotifier called', keyMapId, updatedSequence);
         const shortcut = {
             [keyMapId]: { ...keyMap[keyMapId], sequences: updatedSequence },
         };
-        const conflictingShortcuts = conflictDetector(shortcut, keyMap);
+        const conflictingShortcuts: Record<string, KeyMapItem> | null = conflictDetector(shortcut, keyMap);
         if (conflictingShortcuts) {
             Modal.confirm({
                 title: 'Shortcut conflict',
@@ -161,7 +160,10 @@ function MultipleShortcutsDisplay(props: Props): JSX.Element {
                         ))}
                         in the scope:
                         <br />
-                        <strong>{ShortcutScope[shortcut[keyMapId].scope]}</strong>
+                        <strong>
+                            {ShortcutScope[
+                                Object.values(conflictingShortcuts)[0].scope].split('_').join(' ')}
+                        </strong>
                         <br />
                         Do you want to unset the conflicting shortcuts?
                     </p>

@@ -29,7 +29,7 @@ interface InputElementParameters {
     onChange(value: string): void;
 }
 
-const componentShortcuts = {
+const componentShortcuts: Record<string, KeyMapItem> = {
     SET_0_VALUE: {
         name: 'Set 1st value to the current attribute',
         description: 'Change current value for the attribute to the 1th value in the list',
@@ -301,7 +301,17 @@ function renderList(parameters: ListParameters): JSX.Element | null {
 
         useEffect(() => {
             if (!isEqual(values, prevValuesRef.current)) {
-                const updatedComponentShortcuts: Record<string, KeyMapItem> = { ...componentShortcuts };
+                const updatedComponentShortcuts = {
+                    ...Object.keys(componentShortcuts).reduce((acc: any, key) => {
+                        if (keyMap[key]) {
+                            acc[key] = {
+                                ...componentShortcuts[key],
+                                sequences: keyMap[key].sequences,
+                            };
+                        }
+                        return acc;
+                    }, {}),
+                };
                 sortedValues.forEach((value: string, index: number): void => {
                     const key = `SET_${index}_VALUE`;
                     updatedComponentShortcuts[key] = {
@@ -349,7 +359,17 @@ function renderList(parameters: ListParameters): JSX.Element | null {
 
         useEffect(() => {
             if (!isEqual(values, prevValuesRef.current)) {
-                const updatedComponentShortcuts: Record<string, KeyMapItem> = { ...componentShortcuts };
+                const updatedComponentShortcuts = {
+                    ...Object.keys(componentShortcuts).reduce((acc: any, key) => {
+                        if (keyMap[key]) {
+                            acc[key] = {
+                                ...componentShortcuts[key],
+                                sequences: keyMap[key].sequences,
+                            };
+                        }
+                        return acc;
+                    }, {}),
+                };
                 filteredValues.slice(0, 10).forEach((value: string, index: number): void => {
                     const key = `SET_${index}_VALUE`;
                     updatedComponentShortcuts[key] = {
@@ -379,6 +399,9 @@ function renderList(parameters: ListParameters): JSX.Element | null {
     }
 
     if (inputType === 'number') {
+        useEffect(() => {
+            registerComponentShortcuts({ ...componentShortcuts });
+        }, []);
         return (
             <div className='attribute-annotation-sidebar-attr-list-wrapper'>
                 <div>

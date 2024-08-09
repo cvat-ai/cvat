@@ -21,7 +21,7 @@ const componentShortcuts = {
     SWITCH_LABEL: {
         name: 'Switch label',
         description: 'Changes a label for an activated object or for the next drawn object if no objects are activated',
-        sequences: ['1', '2', '3', '4', '5', '6', '7', '8', '9', '0'].map((val: string): string => `control+${val}`),
+        sequences: ['1', '2', '3', '4', '5', '6', '7', '8', '9', '0'].map((val: string): string => `ctrl+${val}`),
         scope: ShortcutScope.ANNOTATION_PAGE_STANDARD_WORKSPACE,
     },
 };
