@@ -35,7 +35,7 @@ spec:
         - kind: ENV
           value: DEBIAN_FRONTEND=noninteractive
         - kind: ENV
-          value: TORCH_CUDA_ARCH_LIST="6.0 6.1 7.0 7.5 8.0 8.6+PTX"
+          value: TORCH_CUDA_ARCH_LIST="6.0 6.1 7.0 7.5 8.0 8.6 8.9+PTX"
       # set workdir
         - kind: WORKDIR
           value: /opt/nuclio/sam2
@@ -44,7 +44,7 @@ spec:
           value: apt-get update && apt-get -y install build-essential curl git
       # install sam2 code
         - kind: RUN
-          value: pip install git+https://github.com/jeanchristopheruel/segment-anything-2.git@main
+          value: pip install git+https://github.com/facebookresearch/segment-anything-2.git@main
       # download sam2 weights
         - kind: RUN
           value: curl -O https://dl.fbaipublicfiles.com/segment_anything_2/072824/sam2_hiera_large.pt
