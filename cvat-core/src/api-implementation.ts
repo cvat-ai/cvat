@@ -137,10 +137,6 @@ export default function implementAPI(cvat: CVATCore): CVATCore {
         const result = await serverProxy.server.setAuthData(response);
         return result;
     });
-    implementationMixin(cvat.server.removeAuthData, async () => {
-        const result = await serverProxy.server.removeAuthData();
-        return result;
-    });
     implementationMixin(cvat.server.installedApps, async () => {
         const result = await serverProxy.server.installedApps();
         return result;
