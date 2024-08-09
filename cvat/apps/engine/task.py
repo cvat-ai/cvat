@@ -1128,7 +1128,7 @@ def _create_thread(
     _create_segments_and_jobs(db_task, job_file_mapping=job_file_mapping)
 
     if (
-        settings.MEDIA_CACHE_ALLOW_STATIC_CHUNKS and
+        settings.MEDIA_CACHE_ALLOW_STATIC_CACHE and
         db_data.storage_method == models.StorageMethodChoice.FILE_SYSTEM
     ):
         _create_static_chunks(db_task, media_extractor=extractor)
