@@ -94,28 +94,48 @@ export function conflictDetector(
             flatKeyMap[scope] = { sequences: [], items: {} };
         }
 
-        const annotationScope = scope.includes(ShortcutScope.ANNOTATION_PAGE) &&
-            flatKeyMap[ShortcutScope.ANNOTATION_PAGE] ?
-            structuredClone(flatKeyMap[ShortcutScope.ANNOTATION_PAGE]) :
-            { sequences: [], items: {} };
-
-        const globalScope = scope !== ShortcutScope.GLOBAL &&
-            flatKeyMap[ShortcutScope.GLOBAL] ?
-            structuredClone(flatKeyMap[ShortcutScope.GLOBAL]) :
-            { sequences: [], items: {} };
-
         const flatKeyMapUpdated = {
-            sequences: [
-                ...flatKeyMap[scope].sequences,
-                ...globalScope.sequences,
-                ...annotationScope.sequences,
-            ],
-            items: {
-                ...flatKeyMap[scope].items,
-                ...globalScope.items,
-                ...annotationScope.items,
-            },
+            sequences: [...flatKeyMap[scope].sequences],
+            items: { ...flatKeyMap[scope].items },
         };
+
+        if (scope && flatKeyMap[scope]) {
+            if (scope === ShortcutScope.GLOBAL) {
+                const otherScopes = Object.keys(flatKeyMap).filter((s) => s !== ShortcutScope.GLOBAL);
+                for (const s of otherScopes) {
+                    if (flatKeyMap[s]) {
+                        flatKeyMapUpdated.sequences.push(...flatKeyMap[s].sequences);
+                        flatKeyMapUpdated.items = { ...flatKeyMapUpdated.items, ...flatKeyMap[s].items };
+                    }
+                }
+            } else {
+                const globalSequences = flatKeyMap[ShortcutScope.GLOBAL]?.sequences || [];
+                flatKeyMapUpdated.sequences.push(...globalSequences);
+                flatKeyMapUpdated.items = {
+                    ...flatKeyMapUpdated.items,
+                    ...flatKeyMap[ShortcutScope.GLOBAL]?.items || {},
+                };
+
+                if (scope === ShortcutScope.ANNOTATION_PAGE) {
+                    const otherAnnotationScopes = Object.keys(flatKeyMap).filter(
+                        (s) => s.includes(ShortcutScope.ANNOTATION_PAGE) && s !== ShortcutScope.ANNOTATION_PAGE,
+                    );
+                    for (const s of otherAnnotationScopes) {
+                        if (flatKeyMap[s]) {
+                            flatKeyMapUpdated.sequences.push(...flatKeyMap[s].sequences);
+                            flatKeyMapUpdated.items = { ...flatKeyMapUpdated.items, ...flatKeyMap[s].items };
+                        }
+                    }
+                } else if (scope.includes(ShortcutScope.ANNOTATION_PAGE)) {
+                    const annotationSequences = flatKeyMap[ShortcutScope.ANNOTATION_PAGE]?.sequences || [];
+                    flatKeyMapUpdated.sequences.push(...annotationSequences);
+                    flatKeyMapUpdated.items = {
+                        ...flatKeyMapUpdated.items,
+                        ...flatKeyMap[ShortcutScope.ANNOTATION_PAGE]?.items || {},
+                    };
+                }
+            }
+        }
 
         if (flatKeyMapUpdated.items[action]) {
             const currentSequences = flatKeyMapUpdated.items[action].sequences;
@@ -131,7 +151,6 @@ export function conflictDetector(
                     const conflictingAction = Object.keys(flatKeyMapUpdated.items)
                         .find((a) => flatKeyMapUpdated.items[a].sequences.includes(existingSequence));
                     const conflictingItem = flatKeyMapUpdated.items[conflictingAction!];
-                    conflictingItem.sequences = conflictingItem.sequences.filter((s) => s !== existingSequence);
                     if (conflictingAction) {
                         conflictingItems[conflictingAction] = conflictingItem;
                     }

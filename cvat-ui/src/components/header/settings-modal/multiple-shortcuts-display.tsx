@@ -3,6 +3,7 @@ import { Select, Modal } from 'antd/lib';
 import { conflictDetector } from 'reducers/shortcuts-reducer';
 import { ShortcutScope } from 'utils/enums';
 import { KeyMapItem } from 'utils/mousetrap-react';
+import { registerComponentShortcuts } from 'actions/shortcuts-actions';
 
 interface Props {
     id: string;
@@ -140,6 +141,17 @@ function MultipleShortcutsDisplay(props: Props): JSX.Element {
         if (timer) clearTimeout(timer);
     }, [timer]);
 
+    function unsetExistingShortcut(conflictingShortcuts: Record<string, KeyMapItem>, updatedSequence: string[]): void {
+        const commonSequence = updatedSequence.filter(
+            (s) => Object.values(conflictingShortcuts).some((cs) => cs.sequences.includes(s)));
+        const updatedShortcuts: Record<string, KeyMapItem> = {};
+        for (const [key, value] of Object.entries(conflictingShortcuts)) {
+            const newSequences = value.sequences.filter((s) => !commonSequence.includes(s));
+            updatedShortcuts[key] = { ...value, sequences: newSequences };
+        }
+        registerComponentShortcuts(updatedShortcuts);
+    }
+
     function conflictNotifier(keyMapId: string, updatedSequence: string[]): void {
         const shortcut = {
             [keyMapId]: { ...keyMap[keyMapId], sequences: updatedSequence },
@@ -153,10 +165,10 @@ function MultipleShortcutsDisplay(props: Props): JSX.Element {
                         This sequence conflicts with the following shortcuts:
                         <br />
                         {Object.values(conflictingShortcuts).map((s, idx) => (
-                            <>
-                                <strong key={idx}>{s.name}</strong>
+                            <span key={idx}>
+                                <strong>{s.name}</strong>
                                 <br />
-                            </>
+                            </span>
                         ))}
                         in the scope:
                         <br />
@@ -170,6 +182,7 @@ function MultipleShortcutsDisplay(props: Props): JSX.Element {
                 ),
                 onOk: () => {
                     onKeySequenceUpdate(keyMapId, updatedSequence);
+                    unsetExistingShortcut(conflictingShortcuts, updatedSequence);
                 },
                 onCancel: () => {},
             });
