@@ -35,7 +35,7 @@ const componentShortcuts = {
         name: 'Split mode',
         description: 'Activate or deactivate mode to splitting shapes',
         sequences: ['alt+m'],
-        scope: ShortcutScope.ALL,
+        scope: ShortcutScope.ANNOTATION_PAGE,
     },
 };
 

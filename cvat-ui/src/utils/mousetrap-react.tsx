@@ -38,7 +38,14 @@ export default function GlobalHotKeys(props: Props): JSX.Element {
         for (const key of Object.keys(keyMap)) {
             const { sequences } = keyMap[key];
             const handler = handlers[key];
-            Mousetrap.bind(sequences, handler, 'keydown');
+            Mousetrap.bind(sequences, (event) => {
+                const e = event || window.event;
+                e.preventDefault();
+                e.stopPropagation();
+                if (handler) {
+                    handler(e, key);
+                }
+            }, 'keydown');
             applicationKeyMap[key] = keyMap[key];
         }
 

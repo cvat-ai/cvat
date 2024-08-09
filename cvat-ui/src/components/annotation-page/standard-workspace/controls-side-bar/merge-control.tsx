@@ -35,7 +35,7 @@ const componentShortcuts = {
         name: 'Merge mode',
         description: 'Activate or deactivate mode to merging shapes',
         sequences: ['m'],
-        scope: ShortcutScope.ALL,
+        scope: ShortcutScope.ANNOTATION_PAGE_STANDARD_WORKSPACE,
     },
 };
 

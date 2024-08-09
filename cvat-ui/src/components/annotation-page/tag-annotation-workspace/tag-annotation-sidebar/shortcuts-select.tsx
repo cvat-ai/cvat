@@ -3,13 +3,12 @@
 //
 // SPDX-License-Identifier: MIT
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Row, Col } from 'antd/lib/grid';
 import Text from 'antd/lib/typography/Text';
 import Select from 'antd/lib/select';
-
 import { Label, DimensionType } from 'cvat-core-wrapper';
-import GlobalHotKeys, { KeyMap } from 'utils/mousetrap-react';
+import GlobalHotKeys, { KeyMap, KeyMapItem } from 'utils/mousetrap-react';
 import { shift } from 'utils/math';
 import { registerComponentShortcuts } from 'actions/shortcuts-actions';
 import { ShortcutScope } from 'utils/enums';
@@ -26,75 +25,75 @@ type Props = {
     labels: Label[];
 };
 
-const componentShortcuts = {
+const componentShortcuts: Record<string, KeyMapItem> = {
+    SETUP_0_TAG: {
+        name: 'Create a new tag',
+        description: 'Create a new tag with corresponding class. The class may be setup in tag annotation sidebar',
+        sequences: ['0', 'shift+0'],
+        scope: ShortcutScope.ANNOTATION_PAGE_TAG_ANNOATION_WORKSPACE,
+        applicable: [DimensionType.DIMENSION_2D, DimensionType.DIMENSION_3D],
+    },
     SETUP_1_TAG: {
         name: 'Create a new tag',
         description: 'Create a new tag with corresponding class. The class may be setup in tag annotation sidebar',
         sequences: ['1', 'shift+1'],
-        scope: ShortcutScope.ALL,
+        scope: ShortcutScope.ANNOTATION_PAGE_TAG_ANNOATION_WORKSPACE,
         applicable: [DimensionType.DIMENSION_2D, DimensionType.DIMENSION_3D],
     },
     SETUP_2_TAG: {
         name: 'Create a new tag',
         description: 'Create a new tag with corresponding class. The class may be setup in tag annotation sidebar',
         sequences: ['2', 'shift+2'],
-        scope: ShortcutScope.ALL,
+        scope: ShortcutScope.ANNOTATION_PAGE_TAG_ANNOATION_WORKSPACE,
         applicable: [DimensionType.DIMENSION_2D, DimensionType.DIMENSION_3D],
     },
     SETUP_3_TAG: {
         name: 'Create a new tag',
         description: 'Create a new tag with corresponding class. The class may be setup in tag annotation sidebar',
         sequences: ['3', 'shift+3'],
-        scope: ShortcutScope.ALL,
+        scope: ShortcutScope.ANNOTATION_PAGE_TAG_ANNOATION_WORKSPACE,
         applicable: [DimensionType.DIMENSION_2D, DimensionType.DIMENSION_3D],
     },
     SETUP_4_TAG: {
         name: 'Create a new tag',
         description: 'Create a new tag with corresponding class. The class may be setup in tag annotation sidebar',
         sequences: ['4', 'shift+4'],
-        scope: ShortcutScope.ALL,
+        scope: ShortcutScope.ANNOTATION_PAGE_TAG_ANNOATION_WORKSPACE,
         applicable: [DimensionType.DIMENSION_2D, DimensionType.DIMENSION_3D],
     },
     SETUP_5_TAG: {
         name: 'Create a new tag',
         description: 'Create a new tag with corresponding class. The class may be setup in tag annotation sidebar',
         sequences: ['5', 'shift+5'],
-        scope: ShortcutScope.ALL,
+        scope: ShortcutScope.ANNOTATION_PAGE_TAG_ANNOATION_WORKSPACE,
         applicable: [DimensionType.DIMENSION_2D, DimensionType.DIMENSION_3D],
     },
     SETUP_6_TAG: {
         name: 'Create a new tag',
         description: 'Create a new tag with corresponding class. The class may be setup in tag annotation sidebar',
         sequences: ['6', 'shift+6'],
-        scope: ShortcutScope.ALL,
+        scope: ShortcutScope.ANNOTATION_PAGE_TAG_ANNOATION_WORKSPACE,
         applicable: [DimensionType.DIMENSION_2D, DimensionType.DIMENSION_3D],
     },
     SETUP_7_TAG: {
         name: 'Create a new tag',
         description: 'Create a new tag with corresponding class. The class may be setup in tag annotation sidebar',
         sequences: ['7', 'shift+7'],
-        scope: ShortcutScope.ALL,
+        scope: ShortcutScope.ANNOTATION_PAGE_TAG_ANNOATION_WORKSPACE,
         applicable: [DimensionType.DIMENSION_2D, DimensionType.DIMENSION_3D],
     },
     SETUP_8_TAG: {
         name: 'Create a new tag',
         description: 'Create a new tag with corresponding class. The class may be setup in tag annotation sidebar',
         sequences: ['8', 'shift+8'],
-        scope: ShortcutScope.ALL,
+        scope: ShortcutScope.ANNOTATION_PAGE_TAG_ANNOATION_WORKSPACE,
         applicable: [DimensionType.DIMENSION_2D, DimensionType.DIMENSION_3D],
     },
     SETUP_9_TAG: {
         name: 'Create a new tag',
         description: 'Create a new tag with corresponding class. The class may be setup in tag annotation sidebar',
         sequences: ['9', 'shift+9'],
-        scope: ShortcutScope.ALL,
-        applicable: [DimensionType.DIMENSION_2D, DimensionType.DIMENSION_3D],
-    },
-    SETUP_0_TAG: {
-        name: 'Create a new tag',
-        description: 'Create a new tag with corresponding class. The class may be setup in tag annotation sidebar',
-        sequences: ['0', 'shift+0'],
-        scope: ShortcutScope.ALL,
+        scope: ShortcutScope.ANNOTATION_PAGE_TAG_ANNOATION_WORKSPACE,
         applicable: [DimensionType.DIMENSION_2D, DimensionType.DIMENSION_3D],
     },
 };
@@ -119,6 +118,7 @@ function ShortcutsSelect(props: Props): JSX.Element {
     const [shortcutLabelMap, setShortcutLabelMap] = useState(defaultShortcutLabelMap);
 
     const keyMap: KeyMap = useSelector((state: CombinedState) => state.shortcuts.keyMap);
+    const keyMapRef = useRef(keyMap);
     const handlers: {
         [key: string]: (keyEvent?: KeyboardEvent) => void;
     } = {};
@@ -131,29 +131,48 @@ function ShortcutsSelect(props: Props): JSX.Element {
         setShortcutLabelMap(newShortcutLabelMap);
     }, []);
 
+    // This effect is used to revert the shortcuts to their original state when the component is unmounted
+    useEffect(() => () => {
+        const revertedShortcuts = Object.entries(componentShortcuts).reduce((acc: any, [key, value]) => {
+            acc[key] = {
+                ...value,
+                sequences: keyMapRef.current[key] ? keyMapRef.current[key].sequences : value.sequences,
+            };
+            return acc;
+        }, {});
+        registerComponentShortcuts(revertedShortcuts);
+    }, []);
+
+    useEffect(() => {
+        keyMapRef.current = keyMap;
+    }, [keyMap]);
+
     useEffect(() => {
         const updatedComponentShortcuts = {
-            ...componentShortcuts,
+            ...Object.keys(componentShortcuts).reduce((acc: any, key) => {
+                if (keyMap[key]) {
+                    acc[key] = {
+                        ...componentShortcuts[key],
+                        sequences: keyMap[key].sequences,
+                    };
+                }
+                return acc;
+            }, {}),
         };
 
-        Object.keys(shortcutLabelMap)
-            .map((id) => Number.parseInt(id, 10))
-            .filter((id) => shortcutLabelMap[id])
-            .reduce((acc: any, id) => {
-                const [label] = labels.filter((_label) => _label.id === shortcutLabelMap[id]);
+        for (const [id, labelID] of Object.entries(shortcutLabelMap)) {
+            if (labelID) {
+                const [label] = labels.filter((_label) => _label.id === labelID);
                 const key = `SETUP_${id}_TAG`;
-                acc[key] = {
-                    ...acc[key],
+                updatedComponentShortcuts[key] = {
+                    ...updatedComponentShortcuts[key],
                     name: `Create a new tag "${label.name}"`,
                     description: `Create a new tag having class "${label.name}"`,
                 };
-                return acc;
-            }, updatedComponentShortcuts);
+            }
+        }
 
         registerComponentShortcuts(updatedComponentShortcuts);
-        return () => {
-            registerComponentShortcuts(componentShortcuts);
-        };
     }, [shortcutLabelMap]);
 
     Object.keys(shortcutLabelMap)

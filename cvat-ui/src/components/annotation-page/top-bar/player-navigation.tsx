@@ -50,14 +50,14 @@ const componentShortcuts = {
         name: 'Delete frame',
         description: 'Delete frame',
         sequences: ['alt+del'],
-        scope: ShortcutScope.ALL,
+        scope: ShortcutScope.ANNOTATION_PAGE,
     },
     FOCUS_INPUT_FRAME: {
         name: 'Focus input frame',
         description: 'Focus on the element to change the current frame',
         sequences: ['`'],
         displayedSequences: ['~'],
-        scope: ShortcutScope.ALL,
+        scope: ShortcutScope.ANNOTATION_PAGE,
     },
 };
 

@@ -7,6 +7,8 @@ import { BoundariesActions, BoundariesActionTypes } from 'actions/boundaries-act
 import { AuthActions, AuthActionTypes } from 'actions/auth-actions';
 import { ShortcutsActions, ShortcutsActionsTypes } from 'actions/shortcuts-actions';
 import { KeyMap, KeyMapItem } from 'utils/mousetrap-react';
+import { ShortcutScope } from 'utils/enums';
+import { isEqual } from 'lodash';
 import { ShortcutsState } from '.';
 
 const capitalize = (text: string): string => text.slice(0, 1).toUpperCase() + text.slice(1);
@@ -48,11 +50,119 @@ const defaultState: ShortcutsState = {
         acc[key] = normalized;
         return acc;
     }, {}),
+    defaultState: { ...defaultKeyMap },
 };
 
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-function conflictDetector(key: string, keyMap: KeyMap): KeyMap | null {
-    return null;
+function conflict(sequence: string, existingSequence: string): boolean {
+    if (isEqual(sequence, existingSequence)) {
+        return true;
+    }
+    const splitSequence = sequence.split(' ');
+    const splitExistingSequence = existingSequence.split(' ');
+
+    for (let i = 0; i < Math.max(splitSequence.length, splitExistingSequence.length); i++) {
+        if (!splitSequence[i] || !splitExistingSequence[i]) {
+            return true;
+        }
+        if (splitSequence[i] !== splitExistingSequence[i]) {
+            return false;
+        }
+    }
+    return true;
+}
+
+export function conflictDetector(
+    shortcuts: Record<string, KeyMapItem>,
+    keyMap: KeyMap): Record<string, KeyMapItem> | null {
+    const flatKeyMap: { [scope: string]: { sequences: string[], items: Record<string, KeyMapItem> } } = {};
+    const conflictingItems: Record<string, KeyMapItem> = {};
+
+    for (const [action, keyMapItem] of Object.entries(keyMap)) {
+        const { scope } = keyMapItem;
+        if (!flatKeyMap[scope]) {
+            flatKeyMap[scope] = { sequences: [], items: {} };
+        }
+        flatKeyMap[scope].sequences.push(...keyMapItem.sequences);
+        flatKeyMap[scope].items[action] = keyMapItem;
+    }
+
+    for (const [action, keyMapItem] of Object.entries(shortcuts)) {
+        const { scope } = keyMapItem;
+        const { sequences } = keyMapItem;
+
+        if (!flatKeyMap[scope]) {
+            flatKeyMap[scope] = { sequences: [], items: {} };
+        }
+
+        const flatKeyMapUpdated = {
+            sequences: [...flatKeyMap[scope].sequences],
+            items: { ...flatKeyMap[scope].items },
+        };
+
+        if (scope && flatKeyMap[scope]) {
+            if (scope === ShortcutScope.GLOBAL) {
+                const otherScopes = Object.keys(flatKeyMap).filter((s) => s !== ShortcutScope.GLOBAL);
+                for (const s of otherScopes) {
+                    if (flatKeyMap[s]) {
+                        flatKeyMapUpdated.sequences.push(...flatKeyMap[s].sequences);
+                        flatKeyMapUpdated.items = { ...flatKeyMapUpdated.items, ...flatKeyMap[s].items };
+                    }
+                }
+            } else {
+                const globalSequences = flatKeyMap[ShortcutScope.GLOBAL]?.sequences || [];
+                flatKeyMapUpdated.sequences.push(...globalSequences);
+                flatKeyMapUpdated.items = {
+                    ...flatKeyMapUpdated.items,
+                    ...flatKeyMap[ShortcutScope.GLOBAL]?.items || {},
+                };
+
+                if (scope === ShortcutScope.ANNOTATION_PAGE) {
+                    const otherAnnotationScopes = Object.keys(flatKeyMap).filter(
+                        (s) => s.includes(ShortcutScope.ANNOTATION_PAGE) && s !== ShortcutScope.ANNOTATION_PAGE,
+                    );
+                    for (const s of otherAnnotationScopes) {
+                        if (flatKeyMap[s]) {
+                            flatKeyMapUpdated.sequences.push(...flatKeyMap[s].sequences);
+                            flatKeyMapUpdated.items = { ...flatKeyMapUpdated.items, ...flatKeyMap[s].items };
+                        }
+                    }
+                } else if (scope.includes(ShortcutScope.ANNOTATION_PAGE)) {
+                    const annotationSequences = flatKeyMap[ShortcutScope.ANNOTATION_PAGE]?.sequences || [];
+                    flatKeyMapUpdated.sequences.push(...annotationSequences);
+                    flatKeyMapUpdated.items = {
+                        ...flatKeyMapUpdated.items,
+                        ...flatKeyMap[ShortcutScope.ANNOTATION_PAGE]?.items || {},
+                    };
+                }
+            }
+        }
+
+        if (flatKeyMapUpdated.items[action]) {
+            const currentSequences = flatKeyMapUpdated.items[action].sequences;
+            delete flatKeyMapUpdated.items[action];
+            flatKeyMapUpdated.sequences = flatKeyMapUpdated.sequences.filter(
+                (s: any) => !currentSequences.includes(s),
+            );
+        }
+
+        for (const sequence of sequences) {
+            for (const existingSequence of flatKeyMapUpdated.sequences) {
+                if (conflict(sequence, existingSequence)) {
+                    const conflictingAction = Object.keys(flatKeyMapUpdated.items)
+                        .find((a) => flatKeyMapUpdated.items[a].sequences.includes(existingSequence));
+                    const conflictingItem = flatKeyMapUpdated.items[conflictingAction!];
+                    if (conflictingAction) {
+                        conflictingItems[conflictingAction] = conflictingItem;
+                    }
+                }
+            }
+        }
+
+        flatKeyMap[scope].sequences.push(...sequences);
+        flatKeyMap[scope].items[action] = keyMapItem;
+    }
+
+    return Object.keys(conflictingItems).length ? conflictingItems : null;
 }
 
 export default (state = defaultState, action: ShortcutsActions | BoundariesActions | AuthActions): ShortcutsState => {
@@ -63,9 +173,10 @@ export default (state = defaultState, action: ShortcutsActions | BoundariesActio
             if (!keys.length) {
                 return state;
             }
-            const conflictingShortcut = (keys as string[]).find((key: string) => conflictDetector(key, state.keyMap));
+            const conflictingShortcut = conflictDetector(shortcuts, state.keyMap);
             if (conflictingShortcut) {
-                throw new Error(`The shortcut has conflicts with this shortcut: ${conflictingShortcut}.`);
+                throw new Error(`The shortcuts: ${JSON.stringify(shortcuts)}
+                    have conflicts with these shortcut: ${JSON.stringify(conflictingShortcut)}.`);
             }
             return {
                 ...state,
@@ -82,6 +193,38 @@ export default (state = defaultState, action: ShortcutsActions | BoundariesActio
             return {
                 ...state,
                 visibleShortcutsHelp: action.payload.visible,
+            };
+        }
+        case ShortcutsActionsTypes.UPDATE_SEQUNCE: {
+            const { keyMapId, updatedSequence } = action.payload;
+            let keyMap = { ...state.keyMap };
+            const shortcut = {
+                [keyMapId]: { ...keyMap[keyMapId], sequences: updatedSequence },
+            };
+            const conflictingShortcuts = conflictDetector(shortcut, keyMap);
+            if (conflictingShortcuts) {
+                keyMap = { ...keyMap, ...conflictingShortcuts };
+            }
+            keyMap[keyMapId] = { ...keyMap[keyMapId], sequences: updatedSequence };
+            const normalized = formatShortcuts(keyMap[keyMapId]);
+            return {
+                ...state,
+                keyMap,
+                normalizedKeyMap: { ...state.normalizedKeyMap, [keyMapId]: normalized },
+            };
+        }
+        case ShortcutsActionsTypes.SET_SHORTCUTS: {
+            const { shortcuts } = action.payload;
+            return {
+                ...state,
+                ...shortcuts,
+            };
+        }
+        case ShortcutsActionsTypes.SET_DEFAULT_SHORTCUTS: {
+            const { shortcuts } = action.payload;
+            return {
+                ...state,
+                defaultState: { ...shortcuts },
             };
         }
         case BoundariesActionTypes.RESET_AFTER_ERROR:
