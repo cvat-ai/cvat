@@ -14,6 +14,7 @@ from tempfile import NamedTemporaryFile
 from unittest import mock
 from textwrap import dedent
 from typing import Optional, Callable, Dict, Any, Mapping
+from urllib.parse import urljoin
 
 import django_rq
 from attr.converters import to_bool
@@ -315,7 +316,7 @@ class UploadMixin:
 
             return self._tus_response(
                 status=status.HTTP_201_CREATED,
-                extra_headers={'Location': '{}{}'.format(location, tus_file.file_id),
+                extra_headers={'Location': urljoin(location, tus_file.file_id),
                                'Upload-Filename': tus_file.filename})
 
     def append_tus_chunk(self, request, file_id):
