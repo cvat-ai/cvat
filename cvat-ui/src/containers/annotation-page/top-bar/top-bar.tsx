@@ -558,7 +558,9 @@ class AnnotationTopBarContainer extends React.PureComponent<Props> {
         const {
             deleteFrame, frameNumber, jobInstance,
         } = this.props;
-        if (jobInstance.type !== JobType.GROUND_TRUTH) deleteFrame(frameNumber);
+        if (jobInstance.type !== JobType.GROUND_TRUTH) {
+            deleteFrame(frameNumber);
+        }
     };
 
     private onRestoreFrame = (): void => {

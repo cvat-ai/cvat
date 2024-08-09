@@ -550,11 +550,11 @@ export class CanvasModelImpl extends MasterImpl implements CanvasModel {
             this.data.zLayer = zLayer;
             this.data.objects = objectStates;
             if (this.data.image) {
-                // draw objects only if image exists
-                // if it does not, UpdateReasons.OBJECTS_UPDATED will be triggered after image is set
-                // it covers cases when annotations was changed while image is being received from the server
-                // e.g. with UI buttons (lock, unlock), shortcuts, delete/restore frames, etc.
-                // generally any action triggering updating a list of objects in cvat-ui
+                // display objects only if there is a drawn image
+                // if there is not, UpdateReasons.OBJECTS_UPDATED will be triggered after image is set
+                // it covers cases when annotations are changed while image is being received from the server
+                // e.g. with UI buttons (lock, unlock), shortcuts, delete/restore frames,
+                // and anytime when a list of objects updated in cvat-ui
                 this.notify(UpdateReasons.OBJECTS_UPDATED);
             }
             return;

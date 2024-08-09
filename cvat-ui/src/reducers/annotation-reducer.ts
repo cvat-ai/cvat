@@ -594,10 +594,10 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
 
             const objectDoesNotExist = activatedStateID !== null &&
                 !states.some((_state) => _state.clientID === activatedStateID);
-            const canvasNotReady = (instance as Canvas | Canvas3d)
+            const canvasIsNotReady = (instance as Canvas | Canvas3d)
                 .mode() !== CanvasMode.IDLE || activeControl !== ActiveControl.CURSOR;
 
-            if (objectDoesNotExist || canvasNotReady || highlightedConflict) {
+            if (objectDoesNotExist || canvasIsNotReady || highlightedConflict) {
                 return state;
             }
 
