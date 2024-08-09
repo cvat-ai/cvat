@@ -427,7 +427,7 @@ class SegmentFrameProvider(IFrameProvider):
                 reader_class=reader_class[db_data.compressed_chunk_type][0],
                 reader_params=reader_class[db_data.compressed_chunk_type][1],
                 get_chunk_path_callback=lambda chunk_idx: db_data.get_compressed_segment_chunk_path(
-                    chunk_idx, segment=db_segment.id
+                    chunk_idx, segment_id=db_segment.id
                 ),
             )
 
@@ -435,7 +435,7 @@ class SegmentFrameProvider(IFrameProvider):
                 reader_class=reader_class[db_data.original_chunk_type][0],
                 reader_params=reader_class[db_data.original_chunk_type][1],
                 get_chunk_path_callback=lambda chunk_idx: db_data.get_original_segment_chunk_path(
-                    chunk_idx, segment=db_segment.id
+                    chunk_idx, segment_id=db_segment.id
                 ),
             )
 

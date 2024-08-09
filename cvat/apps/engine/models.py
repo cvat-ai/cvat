@@ -272,13 +272,13 @@ class Data(models.Model):
     def _get_original_chunk_name(self, segment_id: int, chunk_number: int) -> str:
         return self._get_chunk_name(segment_id, chunk_number, self.original_chunk_type)
 
-    def get_original_segment_chunk_path(self, chunk_number: int, segment: int) -> str:
+    def get_original_segment_chunk_path(self, chunk_number: int, segment_id: int) -> str:
         return os.path.join(self.get_original_cache_dirname(),
-            self._get_original_chunk_name(segment, chunk_number))
+            self._get_original_chunk_name(segment_id, chunk_number))
 
-    def get_compressed_segment_chunk_path(self, chunk_number: int, segment: int) -> str:
+    def get_compressed_segment_chunk_path(self, chunk_number: int, segment_id: int) -> str:
         return os.path.join(self.get_compressed_cache_dirname(),
-            self._get_compressed_chunk_name(segment, chunk_number))
+            self._get_compressed_chunk_name(segment_id, chunk_number))
 
     def get_manifest_path(self):
         return os.path.join(self.get_upload_dirname(), 'manifest.jsonl')

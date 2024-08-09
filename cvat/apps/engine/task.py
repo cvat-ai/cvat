@@ -1179,13 +1179,13 @@ def _create_static_chunks(db_task: models.Task, *, media_extractor: IMediaReader
             original_chunk_writer.save_as_chunk,
             images=chunk_data,
             chunk_path=db_data.get_original_segment_chunk_path(
-                chunk_idx, segment=db_segment.id
+                chunk_idx, segment_id=db_segment.id
             ),
         )
         compressed_chunk_writer.save_as_chunk(
             images=chunk_data,
             chunk_path=db_data.get_compressed_segment_chunk_path(
-                chunk_idx, segment=db_segment.id
+                chunk_idx, segment_id=db_segment.id
             ),
         )
 
