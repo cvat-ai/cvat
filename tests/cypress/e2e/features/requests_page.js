@@ -47,7 +47,6 @@ context('Requests page', () => {
             data.projectID = response.projectID;
 
             cy.headlessCreateTask({
-                labels: [],
                 name: taskName,
                 project_id: data.projectID,
                 source_storage: { location: 'local' },
@@ -61,6 +60,21 @@ context('Requests page', () => {
             }).then((taskResponse) => {
                 data.taskID = taskResponse.taskID;
                 [data.jobID] = taskResponse.jobIDs;
+
+                const cuboidPayload = {
+                    frame: 0,
+                    objectType: 'shape',
+                    shapeType: 'cuboid',
+                    labelName: mainLabelName,
+                    points: [
+                        38, 58, 38, 174, 173,
+                        58, 173, 174, 186, 46,
+                        186, 162, 52, 46, 52, 162,
+                    ],
+                    occluded: false,
+                };
+
+                cy.headlessCreateObjects([cuboidPayload], data.jobID);
             });
         });
 
@@ -69,11 +83,11 @@ context('Requests page', () => {
     });
 
     after(() => {
-        cy.headlessDeleteTask(data.taskID);
+        cy.headlessDeleteProject(data.projectID);
     });
 
     describe('Requests page', () => {
-        it('Check creating a task creates a request. Correct task can be opened.', () => {
+        it('Creating a task creates a request. Correct task can be opened.', () => {
             cy.visit('/requests');
             cy.contains('.cvat-requests-card', 'Create Task')
                 .within(() => {
@@ -82,7 +96,9 @@ context('Requests page', () => {
                 });
             cy.get('.cvat-spinner').should('not.exist');
             cy.url().should('include', `/tasks/${data.taskID}`);
+        });
 
+        it('Creating a task creates a request. Incorrect task cant be opened.', () => {
             cy.visit('/tasks');
             cy.createAnnotationTask(
                 taskName,
@@ -106,9 +122,5 @@ context('Requests page', () => {
             cy.get('.cvat-spinner').should('not.exist');
             cy.url().should('include', '/requests');
         });
-
-        // it('Check creating a task creates a request. Correct task can be opened.', () => {
-
-        // });
     });
 });
