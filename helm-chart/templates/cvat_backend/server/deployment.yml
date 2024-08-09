@@ -117,6 +117,21 @@ spec:
           {{- toYaml . | nindent 10 }}
           {{- end }}
         {{- end }}
+        {{- if .Values.cvat.backend.initSecretKey.enabled }}
+        - name: generate-secret-key
+          image: busybox
+          command: ["bin/sh", "-c", "SECRET_KEY=$(tr -dc A-Za-z0-9 </dev/urandom | head -c 50) && echo \"SECRET_KEY = \'$SECRET_KEY\' \"  > /home/django/keys/secret_key.py"]
+          {{- with merge $localValues.resources .Values.cvat.backend.resources }}
+          resources:
+          {{- toYaml . | nindent 12 }}
+          {{- end }}
+          volumeMounts:
+          {{- if .Values.cvat.backend.defaultStorage.enabled }}
+          - mountPath: /home/django/keys
+            name: cvat-backend-data
+            subPath: keys
+          {{- end }}
+        {{- end }}
       {{- with merge $localValues.affinity .Values.cvat.backend.affinity }}
       affinity:
       {{- toYaml . | nindent 8 }}
