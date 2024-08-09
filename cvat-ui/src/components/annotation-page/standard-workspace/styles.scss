@@ -165,6 +165,17 @@
     margin-top: $grid-unit-size;
 }
 
+.cvat-tools-interactor-setups {
+    > div {
+        margin-top: $grid-unit-size * 2;
+        width: 100%;
+
+        > .ant-switch {
+            margin-right: $grid-unit-size;
+        }
+    }
+}
+
 .cvat-interactors-tips-icon-container {
     text-align: center;
     font-size: 20px;

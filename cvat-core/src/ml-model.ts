@@ -57,6 +57,7 @@ export default class MLModel {
                 minPosVertices: this.serialized.min_pos_points,
                 minNegVertices: this.serialized.min_neg_points,
                 startWithBox: this.serialized.startswith_box,
+                startWithBoxOptional: this.serialized.startswith_box_optional,
             },
         };
 

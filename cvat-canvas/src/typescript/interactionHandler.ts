@@ -193,7 +193,7 @@ export class InteractionHandlerImpl implements InteractionHandler {
         this.currentInteractionShape = this.canvas.rect();
         this.canvas.on('mousedown.interaction', eventListener);
         this.currentInteractionShape
-            .on('drawstop', (): void => {
+            .on('drawstop', (e): void => {
                 if (this.cancelled) {
                     return;
                 }
@@ -204,7 +204,11 @@ export class InteractionHandlerImpl implements InteractionHandler {
 
                 if (shouldFinish) {
                     this.interact({ enabled: false });
-                } else if (onContinue) {
+                } else if (this.shouldRaiseEvent(e.ctrlKey)) {
+                    this.onInteraction(this.prepareResult(), true, false);
+                }
+
+                if (onContinue) {
                     onContinue();
                 }
             })
