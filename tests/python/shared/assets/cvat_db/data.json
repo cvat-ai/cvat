@@ -11276,7 +11276,7 @@
   "pk": 1,
   "fields": {
     "location": "cloud_storage",
-    "cloud_storage": 2
+    "cloud_storage": 3
   }
 },
 {
@@ -11284,7 +11284,7 @@
   "pk": 2,
   "fields": {
     "location": "cloud_storage",
-    "cloud_storage": 2
+    "cloud_storage": 3
   }
 },
 {
@@ -11292,7 +11292,7 @@
   "pk": 3,
   "fields": {
     "location": "cloud_storage",
-    "cloud_storage": 2
+    "cloud_storage": 3
   }
 },
 {
@@ -11300,7 +11300,7 @@
   "pk": 4,
   "fields": {
     "location": "cloud_storage",
-    "cloud_storage": 2
+    "cloud_storage": 3
   }
 },
 {

@@ -616,7 +616,7 @@ class TestSimpleQualityReportsFilters(CollectionSimpleFilterTestBase):
         ("task_id", "job_id", "parent_id", "target", "org_id"),
     )
     def test_can_use_simple_filter_for_object_list(self, field):
-        return super().test_can_use_simple_filter_for_object_list(field)
+        return super()._test_can_use_simple_filter_for_object_list(field)
 
 
 @pytest.mark.usefixtures("restore_db_per_class")
@@ -801,7 +801,7 @@ class TestSimpleQualityConflictsFilters(CollectionSimpleFilterTestBase):
         ("report_id", "severity", "type", "frame", "job_id", "task_id", "org_id"),
     )
     def test_can_use_simple_filter_for_object_list(self, field):
-        return super().test_can_use_simple_filter_for_object_list(field)
+        return super()._test_can_use_simple_filter_for_object_list(field)
 
 
 class TestSimpleQualitySettingsFilters(CollectionSimpleFilterTestBase):
@@ -815,7 +815,7 @@ class TestSimpleQualitySettingsFilters(CollectionSimpleFilterTestBase):
 
     @pytest.mark.parametrize("field", ("task_id",))
     def test_can_use_simple_filter_for_object_list(self, field):
-        return super().test_can_use_simple_filter_for_object_list(field)
+        return super()._test_can_use_simple_filter_for_object_list(field)
 
 
 @pytest.mark.usefixtures("restore_db_per_class")

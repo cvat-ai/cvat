@@ -355,7 +355,7 @@ class TestIssuesListFilters(CollectionSimpleFilterTestBase):
         ("owner", "assignee", "job_id", "resolved", "frame_id"),
     )
     def test_can_use_simple_filter_for_object_list(self, field):
-        return super().test_can_use_simple_filter_for_object_list(field)
+        return super()._test_can_use_simple_filter_for_object_list(field)
 
 
 class TestCommentsListFilters(CollectionSimpleFilterTestBase):
@@ -393,7 +393,7 @@ class TestCommentsListFilters(CollectionSimpleFilterTestBase):
         ("owner", "issue_id", "job_id", "frame_id"),
     )
     def test_can_use_simple_filter_for_object_list(self, field):
-        return super().test_can_use_simple_filter_for_object_list(field)
+        return super()._test_can_use_simple_filter_for_object_list(field)
 
 
 @pytest.mark.usefixtures("restore_db_per_class")
