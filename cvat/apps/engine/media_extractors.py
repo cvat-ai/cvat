@@ -18,7 +18,7 @@ from bisect import bisect
 from contextlib import ExitStack, closing, contextmanager
 from dataclasses import dataclass
 from enum import IntEnum
-from typing import Any, Callable, Iterable, Iterator, Optional, Protocol, Sequence, Tuple, TypeVar
+from typing import Any, Callable, Iterable, Iterator, Optional, Protocol, Sequence, Tuple, TypeVar, Union
 
 import av
 import av.codec
@@ -507,8 +507,14 @@ class ZipReader(ImageListReader):
 
 class VideoReader(IMediaReader):
     def __init__(
-        self, source_path, step=1, start=0, stop=None,
-        dimension=DimensionType.DIM_2D, *, allow_threading: bool = True
+        self,
+        source_path: Union[str, io.BytesIO],
+        step: int = 1,
+        start: int = 0,
+        stop: Optional[int] = None,
+        dimension: DimensionType = DimensionType.DIM_2D,
+        *,
+        allow_threading: bool = True,
     ):
         super().__init__(
             source_path=source_path,
@@ -522,65 +528,88 @@ class VideoReader(IMediaReader):
         self._frame_count: Optional[int] = None
         self._frame_size: Optional[tuple[int, int]] = None # (w, h)
 
-    def _has_frame(self, i):
-        if i >= self._start:
-            if (i - self._start) % self._step == 0:
-                if self._stop is None or i < self._stop:
-                    return True
-
-        return False
-
-    def _make_frame_iterator(
+    def iterate_frames(
         self,
         *,
-        apply_filter: bool = True,
-        stream: Optional[av.video.stream.VideoStream] = None,
+        frame_filter: Union[bool, Iterable[int]] = True,
+        video_stream: Optional[av.video.stream.VideoStream] = None,
     ) -> Iterator[Tuple[av.VideoFrame, str, int]]:
+        """
+        If provided, frame_filter must be an ordered sequence in the ascending order.
+        'True' means using the frames configured in the reader object.
+        'False' or 'None' means returning all the video frames.
+        """
+
+        if frame_filter is True:
+            frame_filter = itertools.count(self._start, self._step)
+            if self._stop:
+                frame_filter = itertools.takewhile(lambda x: x <= self._stop, frame_filter)
+        elif not frame_filter:
+            frame_filter = itertools.count()
+
+        frame_filter_iter = iter(frame_filter)
+        next_frame_filter_frame = next(frame_filter_iter, None)
+        if next_frame_filter_frame is None:
+            return
+
         es = ExitStack()
 
-        needs_init = stream is None
+        needs_init = video_stream is None
         if needs_init:
             container = es.enter_context(self._read_av_container())
         else:
-            container = stream.container
+            container = video_stream.container
 
         with es:
             if needs_init:
-                stream = container.streams.video[0]
+                video_stream = container.streams.video[0]
 
                 if self.allow_threading:
-                    stream.thread_type = 'AUTO'
+                    video_stream.thread_type = 'AUTO'
 
-            frame_num = 0
+            exception = None
+            frame_number = 0
+            for packet in container.demux(video_stream):
+                try:
+                    for frame in packet.decode():
+                        if frame_number == next_frame_filter_frame:
+                            if video_stream.metadata.get('rotate'):
+                                pts = frame.pts
+                                frame = av.VideoFrame().from_ndarray(
+                                    rotate_image(
+                                        frame.to_ndarray(format='bgr24'),
+                                        360 - int(video_stream.metadata.get('rotate'))
+                                    ),
+                                    format ='bgr24'
+                                )
+                                frame.pts = pts
 
-            for packet in container.demux(stream):
-                for image in packet.decode():
-                    frame_num += 1
+                            if self._frame_size is None:
+                                self._frame_size = (frame.width, frame.height)
 
-                    if apply_filter and not self._has_frame(frame_num - 1):
-                        continue
+                            yield (frame, self._source_path[0], frame.pts)
 
-                    if stream.metadata.get('rotate'):
-                        pts = image.pts
-                        image = av.VideoFrame().from_ndarray(
-                            rotate_image(
-                                image.to_ndarray(format='bgr24'),
-                                360 - int(stream.metadata.get('rotate'))
-                            ),
-                            format ='bgr24'
-                        )
-                        image.pts = pts
+                            next_frame_filter_frame = next(frame_filter_iter, None)
 
-                    if self._frame_size is None:
-                        self._frame_size = (image.width, image.height)
+                        if next_frame_filter_frame is None:
+                            return
 
-                    yield (image, self._source_path[0], image.pts)
+                        frame_number += 1
+                except Exception as e:
+                    if av.__version__ == "9.2.0":
+                        # av v9.2.0 seems to have a memory corruption
+                        # in exception handling for demux() in the multithreaded mode.
+                        # Instead of breaking the iteration, we iterate over packets till the end.
+                        # Fixed in v12.2.0.
+                        exception = e
+                        if video_stream.thread_type != 'AUTO':
+                            break
 
-                if self._frame_count is None:
-                    self._frame_count = frame_num
+            if exception:
+                raise exception
 
     def __iter__(self):
-        return self._make_frame_iterator()
+        return self.iterate_frames()
 
     def get_progress(self, pos):
         duration = self._get_duration()
@@ -602,7 +631,8 @@ class VideoReader(IMediaReader):
                 if context and context.is_open:
                     context.close()
 
-            container.close()
+            if container.open_files:
+                container.close()
 
     def _get_duration(self):
         with self._read_av_container() as container:
@@ -629,7 +659,7 @@ class VideoReader(IMediaReader):
             needed_time = int((frame / stream.guessed_rate) * tb_denominator)
             container.seek(offset=needed_time, stream=stream)
 
-            with closing(self._make_frame_iterator(stream=stream)) as frame_iter:
+            with closing(self.iterate_frames(video_stream=stream)) as frame_iter:
                 return self._get_preview(next(frame_iter))
 
     def get_image_size(self, i):
@@ -637,8 +667,8 @@ class VideoReader(IMediaReader):
             return self._frame_size
 
         with closing(iter(self)) as frame_iter:
-            image = next(frame_iter)[0]
-            self._frame_size = (image.width, image.height)
+            frame = next(frame_iter)[0]
+            self._frame_size = (frame.width, frame.height)
 
         return self._frame_size
 
@@ -659,7 +689,7 @@ class VideoReader(IMediaReader):
             return self._frame_count
 
         frame_count = 0
-        for _ in self._make_frame_iterator(apply_filter=False):
+        for _ in self.iterate_frames(frame_filter=False):
             frame_count += 1
 
         self._frame_count = frame_count
@@ -677,10 +707,13 @@ class ImageReaderWithManifest:
             yield self._manifest[idx]
 
 class VideoReaderWithManifest:
+    # TODO: merge this class with VideoReader
+
     def __init__(self, manifest_path: str, source_path: str, *, allow_threading: bool = False):
         self._source_path = source_path
         self._manifest = VideoManifestManager(manifest_path)
-        self._manifest.init_index()
+        if self._manifest.exists:
+            self._manifest.init_index()
 
         self.allow_threading = allow_threading
 
@@ -711,49 +744,59 @@ class VideoReaderWithManifest:
             timestamp = 0
         return frame_number, timestamp
 
-    def iterate_frames(self, frame_ids: Iterable[int]) -> Iterable[av.VideoFrame]:
+    def iterate_frames(self, *, frame_filter: Iterable[int]) -> Iterable[av.VideoFrame]:
         "frame_ids must be an ordered sequence in the ascending order"
 
-        frame_ids_iter = iter(frame_ids)
-        frame_ids_frame = next(frame_ids_iter, None)
-        if frame_ids_frame is None:
+        frame_filter_iter = iter(frame_filter)
+        next_frame_filter_frame = next(frame_filter_iter, None)
+        if next_frame_filter_frame is None:
             return
 
         start_decode_frame_number, start_decode_timestamp = self._get_nearest_left_key_frame(
-            frame_ids_frame
+            next_frame_filter_frame
         )
 
         with self._read_av_container() as container:
-            stream = container.streams.video[0]
+            video_stream = container.streams.video[0]
             if self.allow_threading:
-                stream.thread_type = 'AUTO'
+                video_stream.thread_type = 'AUTO'
 
-            container.seek(offset=start_decode_timestamp, stream=stream)
+            container.seek(offset=start_decode_timestamp, stream=video_stream)
 
             frame_number = start_decode_frame_number - 1
-            for packet in container.demux(stream):
-                for frame in packet.decode():
-                    frame_number += 1
+            for packet in container.demux(video_stream):
+                try:
+                    for frame in packet.decode():
+                        if frame_number == next_frame_filter_frame:
+                            if video_stream.metadata.get('rotate'):
+                                frame = av.VideoFrame().from_ndarray(
+                                    rotate_image(
+                                        frame.to_ndarray(format='bgr24'),
+                                        360 - int(video_stream.metadata.get('rotate'))
+                                    ),
+                                    format ='bgr24'
+                                )
 
-                    if frame_number < frame_ids_frame:
-                        continue
-                    elif frame_number == frame_ids_frame:
-                        if stream.metadata.get('rotate'):
-                            frame = av.VideoFrame().from_ndarray(
-                                rotate_image(
-                                    frame.to_ndarray(format='bgr24'),
-                                    360 - int(container.streams.video[0].metadata.get('rotate'))
-                                ),
-                                format ='bgr24'
-                            )
+                            yield frame
 
-                        yield frame
+                            next_frame_filter_frame = next(frame_filter_iter, None)
 
-                        frame_ids_frame = next(frame_ids_iter, None)
+                        if next_frame_filter_frame is None:
+                            return
 
-                    if frame_ids_frame is None:
-                        return
+                        frame_number += 1
+                except Exception as e:
+                    if av.__version__ == "9.2.0":
+                        # av v9.2.0 seems to have a memory corruption
+                        # in exception handling for demux() in the multithreaded mode.
+                        # Instead of breaking the iteration, we iterate over packets till the end.
+                        # Fixed in v12.2.0.
+                        exception = e
+                        if video_stream.thread_type != 'AUTO':
+                            break
 
+            if exception:
+                raise exception
 
 class IChunkWriter(ABC):
     def __init__(self, quality, dimension=DimensionType.DIM_2D):
