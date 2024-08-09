@@ -7,6 +7,14 @@
 
 import { taskName, labelName } from '../../support/const';
 
+Cypress.automation('remote:debugger:protocol', {
+    command: 'Browser.grantPermissions',
+    params: {
+        permissions: ['clipboardReadWrite', 'clipboardSanitizedWrite'],
+        origin: window.location.origin,
+    },
+});
+
 context('Create a link for shape, frame.', () => {
     const caseId = '102';
     const createRectangleShape2Points = {
@@ -30,7 +38,7 @@ context('Create a link for shape, frame.', () => {
             cy.window()
                 .its('navigator.clipboard')
                 .then((clipboard) => {
-                    cy.stub(clipboard, 'writeText').as('copyTextToClipboard');
+                    cy.spy(clipboard, 'writeText').as('copyTextToClipboard');
                 });
 
             cy.interactAnnotationObjectMenu('#cvat-objects-sidebar-state-item-1', 'Create object URL');
@@ -50,7 +58,7 @@ context('Create a link for shape, frame.', () => {
             cy.window()
                 .its('navigator.clipboard')
                 .then((clipboard) => {
-                    cy.stub(clipboard, 'writeText').as('copyTextToClipboard');
+                    cy.spy(clipboard, 'writeText').as('copyTextToClipboard');
                 });
 
             cy.get('.cvat-player-frame-url-icon').click();
