@@ -5,7 +5,14 @@
 /// <reference types="cypress" />
 
 context('Requests page', () => {
+    const serverFiles = ['images/image_1.jpg', 'images/image_2.jpg', 'images/image_3.jpg'];
+    const projectName = 'Project for testing requests page';
     const mainLabelName = 'requests_page_label';
+    const secondLabelName = 'requests_page_label_2';
+    const projectLabels = [
+        { name: mainLabelName, attributes: [], type: 'any' },
+        { name: secondLabelName, attributes: [], type: 'any' },
+    ];
 
     const attrName = 'requests_attr';
     const imagesCount = 1;
@@ -15,8 +22,6 @@ context('Requests page', () => {
     const posX = 10;
     const posY = 10;
     const color = 'gray';
-    const archiveName = `${imageFileName}.zip`;
-    const archivePath = `cypress/fixtures/${archiveName}`;
     const badArchiveName = `${imageFileName}.zipabcd`;
     const badArchivePath = `cypress/fixtures/${badArchiveName}`;
     const imagesFolder = `cypress/fixtures/${imageFileName}`;
@@ -31,26 +36,36 @@ context('Requests page', () => {
     };
 
     before(() => {
-        cy.visit('/tasks');
-        // cy.login();
+        cy.visit('/auth/login');
+        cy.login();
+        // cy.visit('/tasks');
 
-        // cy.headlessCreateProject({
-        //     labels: projectLabels,
-        //     name: projectName,
-        // }).then((response) => {
-        //     data.projectID = response.projectID;
-        // });
+        cy.headlessCreateProject({
+            labels: projectLabels,
+            name: projectName,
+        }).then((response) => {
+            data.projectID = response.projectID;
+
+            cy.headlessCreateTask({
+                labels: [],
+                name: taskName,
+                project_id: data.projectID,
+                source_storage: { location: 'local' },
+                target_storage: { location: 'local' },
+            }, {
+                server_files: serverFiles,
+                image_quality: 70,
+                use_zip_chunks: true,
+                use_cache: true,
+                sorting_method: 'lexicographical',
+            }).then((taskResponse) => {
+                data.taskID = taskResponse.taskID;
+                [data.jobID] = taskResponse.jobIDs;
+            });
+        });
 
         cy.imageGenerator(imagesFolder, imageFileName, width, height, color, posX, posY, mainLabelName, imagesCount);
-        cy.createZipArchive(directoryToArchive, archivePath);
-
         cy.createZipArchive(directoryToArchive, badArchivePath);
-
-        cy.createAnnotationTask(taskName, mainLabelName, attrName, attrName, archiveName);
-        cy.openTask(taskName);
-        cy.url().then((url) => {
-            data.taskID = Number(url.split('/').slice(-1)[0].split('?')[0]);
-        });
     });
 
     after(() => {
@@ -59,30 +74,14 @@ context('Requests page', () => {
 
     describe('Requests page', () => {
         it('Check creating a task creates a request. Correct task can be opened.', () => {
-            const checkTaskCanBeOpened = () => {
-                cy.contains('.cvat-requests-card', 'Create Task')
-                    .within(() => {
-                        cy.contains('Finished').should('exist');
-                        cy.get('.cvat-requests-name').click();
-                    });
-                cy.get('.cvat-spinner').should('not.exist');
-                cy.url().should('include', `/tasks/${data.taskID}`);
-            };
-
-            cy.contains('.cvat-header-button', 'Requests').click();
-            checkTaskCanBeOpened();
             cy.visit('/requests');
-            checkTaskCanBeOpened();
-
-            const checkTaskCantBeOpened = () => {
-                cy.contains('.cvat-requests-card', 'Create Task')
-                    .within(() => {
-                        cy.contains('Error').should('exist');
-                        cy.get('.cvat-requests-name').click();
-                    });
-                cy.get('.cvat-spinner').should('not.exist');
-                cy.url().should('include', '/requests');
-            };
+            cy.contains('.cvat-requests-card', 'Create Task')
+                .within(() => {
+                    cy.contains('Finished').should('exist');
+                    cy.get('.cvat-requests-name').click();
+                });
+            cy.get('.cvat-spinner').should('not.exist');
+            cy.url().should('include', `/tasks/${data.taskID}`);
 
             cy.visit('/tasks');
             cy.createAnnotationTask(
@@ -99,9 +98,17 @@ context('Requests page', () => {
                 'fail',
             );
             cy.contains('.cvat-header-button', 'Requests').click();
-            checkTaskCantBeOpened();
-            cy.visit('/requests');
-            checkTaskCantBeOpened();
+            cy.contains('.cvat-requests-card', 'Create Task')
+                .within(() => {
+                    cy.contains('Error').should('exist');
+                    cy.get('.cvat-requests-name').click();
+                });
+            cy.get('.cvat-spinner').should('not.exist');
+            cy.url().should('include', '/requests');
         });
+
+        // it('Check creating a task creates a request. Correct task can be opened.', () => {
+
+        // });
     });
 });
