@@ -595,6 +595,7 @@ class TestImportExportDatasetProject:
             ("CVAT for images 1.1", "CVAT 1.1"),
             ("CVAT for video 1.1", "CVAT 1.1"),
             ("Datumaro 1.0", "Datumaro 1.0"),
+            ("YOLOv8 Pose 1.0", "YOLOv8 Pose 1.0"),
         ),
     )
     def test_can_export_and_import_dataset_with_skeletons(
@@ -834,6 +835,10 @@ class TestImportExportDatasetProject:
             ("LFW 1.0", "{subset}/images/"),
             ("Cityscapes 1.0", "imgsFine/leftImg8bit/{subset}/"),
             ("Open Images V6 1.0", "images/{subset}/"),
+            ("YOLOv8 Detection 1.0", "images/{subset}/"),
+            ("YOLOv8 Oriented Bounding Boxes 1.0", "images/{subset}/"),
+            ("YOLOv8 Segmentation 1.0", "images/{subset}/"),
+            ("YOLOv8 Pose 1.0", "images/{subset}/"),
         ],
     )
     def test_creates_subfolders_for_subsets_on_export(

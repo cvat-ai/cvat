@@ -158,7 +158,7 @@ class ProjectAnnotationAndData:
         os.makedirs(temp_dir_base, exist_ok=True)
         with TemporaryDirectory(dir=temp_dir_base) as temp_dir:
             try:
-                importer(dataset_file, temp_dir, project_data, self.load_dataset_data, **options)
+                importer(dataset_file, temp_dir, project_data, load_data_callback=self.load_dataset_data, **options)
             except (DatasetNotFoundError, CvatDatasetNotFoundError) as not_found:
                 if settings.CVAT_LOG_IMPORT_ERRORS:
                     dlogger.log_import_error(
