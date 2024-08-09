@@ -953,28 +953,24 @@ def _create_thread(
 
     # TODO: try to pull up
     # replace manifest file (e.g was uploaded 'subdir/manifest.jsonl' or 'some_manifest.jsonl')
-    if (
-        settings.USE_CACHE and db_data.storage_method == models.StorageMethodChoice.CACHE and
-        manifest_file and not os.path.exists(db_data.get_manifest_path())
-    ):
+    if (manifest_file and not os.path.exists(db_data.get_manifest_path())):
         shutil.copyfile(os.path.join(manifest_root, manifest_file),
             db_data.get_manifest_path())
         if manifest_root and manifest_root.startswith(db_data.get_upload_dirname()):
             os.remove(os.path.join(manifest_root, manifest_file))
         manifest_file = os.path.relpath(db_data.get_manifest_path(), upload_dir)
 
+    # Create task frames from the metadata collected
     video_path: str = ""
     video_frame_size: tuple[int, int] = (0, 0)
 
     images: list[models.Image] = []
 
-    # Collect media metadata
     for media_type, media_files in media.items():
         if not media_files:
             continue
 
         if task_mode == MEDIA_TYPES['video']['mode']:
-            manifest_is_prepared = False
             if manifest_file:
                 try:
                     _update_status('Validating the input manifest file')
@@ -989,22 +985,21 @@ def _create_thread(
                     if not len(manifest):
                         raise ValidationError("No key frames found in the manifest")
 
-                    video_frame_count = manifest.video_length
-                    video_frame_size = manifest.video_resolution
-                    manifest_is_prepared = True
                 except Exception as ex:
                     manifest.remove()
                     manifest = None
 
-                    slogger.glob.warning(ex, exc_info=True)
                     if isinstance(ex, (ValidationError, AssertionError)):
-                        _update_status(f'Invalid manifest file was upload: {ex}')
+                        base_msg = f"Invalid manifest file was uploaded: {ex}"
+                    else:
+                        base_msg = "Failed to parse the uploaded manifest file"
+                        slogger.glob.warning(ex, exc_info=True)
 
-            if (
-                settings.USE_CACHE and db_data.storage_method == models.StorageMethodChoice.CACHE
-                and not manifest_is_prepared
-            ):
-                # TODO: check if we can always use video manifest for optimization
+                    _update_status(base_msg)
+            else:
+                manifest = None
+
+            if not manifest:
                 try:
                     _update_status('Preparing a manifest file')
 
@@ -1013,26 +1008,32 @@ def _create_thread(
                     manifest.link(
                         media_file=media_files[0],
                         upload_dir=upload_dir,
-                        chunk_size=db_data.chunk_size # TODO: why it's needed here?
+                        chunk_size=db_data.chunk_size, # TODO: why it's needed here?
+                        force=True
                     )
                     manifest.create()
 
                     _update_status('A manifest has been created')
 
-                    video_frame_count = len(manifest.reader) # TODO: check if the field access above and here are equivalent
-                    video_frame_size = manifest.reader.resolution
-                    manifest_is_prepared = True
                 except Exception as ex:
                     manifest.remove()
                     manifest = None
 
-                    db_data.storage_method = models.StorageMethodChoice.FILE_SYSTEM
+                    if isinstance(ex, AssertionError):
+                        base_msg = f": {ex}"
+                    else:
+                        base_msg = ""
+                        slogger.glob.warning(ex, exc_info=True)
 
-                    base_msg = str(ex) if isinstance(ex, AssertionError) \
-                        else "Uploaded video does not support a quick way of task creating."
-                    _update_status("{} The task will be created using the old method".format(base_msg))
+                    _update_status(
+                        f"Failed to create manifest for the uploaded video{base_msg}. "
+                        "A manifest will not be used in this task"
+                    )
 
-            if not manifest:
+            if manifest:
+                video_frame_count = manifest.video_length
+                video_frame_size = manifest.video_resolution
+            else:
                 video_frame_count = extractor.get_frame_count()
                 video_frame_size = extractor.get_image_size(0)
 
@@ -1048,22 +1049,20 @@ def _create_thread(
         else: # images, archive, pdf
             db_data.size = len(extractor)
 
-            manifest = None
-            if settings.USE_CACHE and db_data.storage_method == models.StorageMethodChoice.CACHE:
-                manifest = ImageManifestManager(db_data.get_manifest_path())
-                if not manifest.exists:
-                    manifest.link(
-                        sources=extractor.absolute_source_paths,
-                        meta={
-                            k: {'related_images': related_images[k] }
-                            for k in related_images
-                        },
-                        data_dir=upload_dir,
-                        DIM_3D=(db_task.dimension == models.DimensionType.DIM_3D),
-                    )
-                    manifest.create()
-                else:
-                    manifest.init_index()
+            manifest = ImageManifestManager(db_data.get_manifest_path())
+            if not manifest.exists:
+                manifest.link(
+                    sources=extractor.absolute_source_paths,
+                    meta={
+                        k: {'related_images': related_images[k] }
+                        for k in related_images
+                    },
+                    data_dir=upload_dir,
+                    DIM_3D=(db_task.dimension == models.DimensionType.DIM_3D),
+                )
+                manifest.create()
+            else:
+                manifest.init_index()
 
             for frame_id in extractor.frame_range:
                 image_path = extractor.get_path(frame_id)
@@ -1128,7 +1127,10 @@ def _create_thread(
     slogger.glob.info("Found frames {} for Data #{}".format(db_data.size, db_data.id))
     _create_segments_and_jobs(db_task, job_file_mapping=job_file_mapping)
 
-    if db_data.storage_method == models.StorageMethodChoice.FILE_SYSTEM or not settings.USE_CACHE:
+    if (
+        settings.MEDIA_CACHE_ALLOW_STATIC_CHUNKS and
+        db_data.storage_method == models.StorageMethodChoice.FILE_SYSTEM
+    ):
         _create_static_chunks(db_task, media_extractor=extractor)
 
 def _create_static_chunks(db_task: models.Task, *, media_extractor: IMediaReader):

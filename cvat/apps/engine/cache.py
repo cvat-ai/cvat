@@ -7,6 +7,7 @@ from __future__ import annotations
 
 import io
 import os
+import os.path
 import pickle  # nosec
 import tempfile
 import zipfile
@@ -37,6 +38,7 @@ from cvat.apps.engine.media_extractors import (
     ImageReaderWithManifest,
     Mpeg4ChunkWriter,
     Mpeg4CompressedChunkWriter,
+    VideoReader,
     VideoReaderWithManifest,
     ZipChunkWriter,
     ZipCompressedChunkWriter,
@@ -166,19 +168,38 @@ class MediaCache:
         }[db_data.storage]
 
         dimension = db_task.dimension
+        manifest_path = db_data.get_manifest_path()
 
         if hasattr(db_data, "video"):
             source_path = os.path.join(raw_data_dir, db_data.video.path)
 
             reader = VideoReaderWithManifest(
-                manifest_path=db_data.get_manifest_path(),
+                manifest_path=manifest_path,
                 source_path=source_path,
+                allow_threading=False,
             )
-            for frame in reader.iterate_frames(frame_ids):
-                yield (frame, source_path, None)
+            if not os.path.isfile(manifest_path):
+                try:
+                    reader._manifest.link(source_path, force=True)
+                    reader._manifest.create()
+                except Exception as e:
+                    # TODO: improve logging
+                    reader = None
+
+            if reader:
+                for frame in reader.iterate_frames(frame_filter=frame_ids):
+                    yield (frame, source_path, None)
+            else:
+                reader = VideoReader([source_path], allow_threading=False)
+
+                for frame_tuple in reader.iterate_frames(frame_filter=frame_ids):
+                    yield frame_tuple
         else:
-            reader = ImageReaderWithManifest(db_data.get_manifest_path())
-            if db_data.storage == models.StorageChoice.CLOUD_STORAGE:
+            if (
+                os.path.isfile(manifest_path)
+                and db_data.storage == models.StorageChoice.CLOUD_STORAGE
+            ):
+                reader = ImageReaderWithManifest()
                 with ExitStack() as es:
                     db_cloud_storage = db_data.cloud_storage
                     assert db_cloud_storage, "Cloud storage instance was deleted"
@@ -224,8 +245,8 @@ class MediaCache:
                     yield from media
             else:
                 media = []
-                for item in reader.iterate_frames(frame_ids):
-                    source_path = os.path.join(raw_data_dir, f"{item['name']}{item['extension']}")
+                for image in sorted(db_data.images.all(), key=lambda image: image.frame):
+                    source_path = os.path.join(raw_data_dir, image.path)
                     media.append((source_path, source_path, None))
 
                 if dimension == models.DimensionType.DIM_2D:

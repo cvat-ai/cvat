@@ -16,6 +16,7 @@ from typing import Any, Callable, Generic, Iterator, Optional, Tuple, Type, Type
 import av
 import cv2
 import numpy as np
+from django.conf import settings
 from PIL import Image
 from rest_framework.exceptions import ValidationError
 
@@ -399,7 +400,11 @@ class SegmentFrameProvider(IFrameProvider):
         }
 
         self._loaders: dict[FrameQuality, _ChunkLoader] = {}
-        if db_data.storage_method == models.StorageMethodChoice.CACHE:
+        if (
+            db_data.storage_method == models.StorageMethodChoice.CACHE
+            or not settings.MEDIA_CACHE_ALLOW_STATIC_CHUNKS
+            # TODO: separate handling, extract cache creation logic from media cache
+        ):
             cache = MediaCache()
 
             self._loaders[FrameQuality.COMPRESSED] = _BufferChunkLoader(
