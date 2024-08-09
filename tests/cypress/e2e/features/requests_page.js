@@ -52,7 +52,6 @@ context('Requests page', () => {
     before(() => {
         cy.visit('/auth/login');
         cy.login();
-        // cy.visit('/tasks');
 
         cy.headlessCreateProject({
             labels: projectLabels,
@@ -206,7 +205,6 @@ context('Requests page', () => {
             cy.get('.cvat-spinner').should('not.exist');
             cy.openTask(taskName);
             cy.clickInTaskMenu('Upload annotations', true);
-            cy.intercept('GET', '/api/jobs/**/annotations?**').as('uploadAnnotationsGet');
             cy.uploadAnnotations({
                 format: exportFormat.split(' ')[0],
                 filePath: exportFileName,
@@ -229,7 +227,6 @@ context('Requests page', () => {
             cy.get('.cvat-spinner').should('not.exist');
             cy.openTask(taskName);
             cy.clickInTaskMenu('Upload annotations', true);
-            cy.intercept('GET', '/api/jobs/**/annotations?**').as('uploadAnnotationsGet');
             cy.uploadAnnotations({
                 format: exportFormat.split(' ')[0],
                 filePath: badAnnotationsName,
