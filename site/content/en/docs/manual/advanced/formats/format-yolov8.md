@@ -53,7 +53,8 @@ path:  ./ # dataset root dir
 train: train.txt  # train images (relative to 'path')
 
 # YOLOv8 Pose specific field
-# First number is the number of points in each skeleton
+# First number is the number of points in a skeleton.
+# If there are several skeletons with different number of points, it is the greatest number of points
 # Second number defines the format of point info in annotation txt files
 kpt_shape: [17, 3]
 
@@ -94,13 +95,16 @@ names:
 # vn - visibility of n-th point. 2 - visible, 1 - partially visible, 0 - not visible
 # if second value in kpt_shape is 3:
 # label_id cx cy rw rh x1 y1 v1 x2 y2 v2 x3 y3 v3 ...
-1 0.3 0.8 0.1 0.3 0.3 0.8 2 0.1 0.3 2 0.4 0.5 2
+1 0.3 0.8 0.1 0.3 0.3 0.8 2 0.1 0.3 2 0.4 0.5 2 0.0 0.0 0 0.0 0.0 0
 2 0.3 0.8 0.1 0.3 0.7 0.2 2 0.3 0.1 1 0.4 0.5 0 0.5 0.6 2 0.7 0.5 2
 
 # if second value in kpt_shape is 2:
 # label_id cx cy rw rh x1 y1 x2 y2 x3 y3 ...
-1 0.3 0.8 0.1 0.3 0.3 0.8 0.1 0.3 0.4 0.5
+1 0.3 0.8 0.1 0.3 0.3 0.8 0.1 0.3 0.4 0.5 0.0 0.0 0.0 0.0
 2 0.3 0.8 0.1 0.3 0.7 0.2 0.3 0.1 0.4 0.5 0.5 0.6 0.7 0.5
+
+# Note, that if there are several skeletons with different number of points,
+# smaller skeletons are padded with points with coordinates 0.0 0.0 and visibility = 0
 ```
 
 All coordinates must be normalized.

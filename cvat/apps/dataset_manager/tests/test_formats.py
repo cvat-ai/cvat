@@ -400,7 +400,7 @@ class TaskExportTest(_DbTestBase):
             ('LFW 1.0', 'lfw'),
             # ('Cityscapes 1.0', 'cityscapes'), does not support, empty annotations
             ('YOLOv8 Oriented Bounding Boxes 1.0', 'yolov8_oriented_boxes'),
-            ('YOLOv8 Detection 1.0', 'yolov8'),
+            ('YOLOv8 Detection 1.0', 'yolov8_detection'),
             ('YOLOv8 Pose 1.0', 'yolov8_pose'),
             ('YOLOv8 Segmentation 1.0', 'yolov8_segmentation'),
         ]:

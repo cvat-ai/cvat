@@ -86,7 +86,7 @@ def _import_yolo(src_file, temp_dir, instance_data, **kwargs):
 
 @exporter(name='YOLOv8 Detection', ext='ZIP', version='1.0')
 def _export_yolov8_detection(dst_file, temp_dir, instance_data, save_images=False):
-    _export_common(dst_file, temp_dir, instance_data, 'yolov8', save_images=save_images)
+    _export_common(dst_file, temp_dir, instance_data, 'yolov8_detection', save_images=save_images)
 
 
 @exporter(name='YOLOv8 Oriented Bounding Boxes', ext='ZIP', version='1.0')
@@ -110,7 +110,7 @@ def _import_yolov8_detection(src_file, temp_dir, instance_data, **kwargs):
         src_file,
         temp_dir,
         instance_data,
-        format_name="yolov8",
+        format_name="yolov8_detection",
         **kwargs
     )
 
