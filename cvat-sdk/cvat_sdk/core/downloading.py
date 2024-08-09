@@ -69,14 +69,12 @@ class Downloader:
                     pbar.advance(len(chunk))
                     fd.write(chunk)
 
-    def prepare_and_download_file_from_endpoint(
+    def prepare_file(
         self,
         endpoint: Endpoint,
-        filename: Path,
         *,
         url_params: Optional[Dict[str, Any]] = None,
         query_params: Optional[Dict[str, Any]] = None,
-        pbar: Optional[ProgressReporter] = None,
         status_check_period: Optional[int] = None,
     ):
         client = self._client
@@ -91,7 +89,7 @@ class Downloader:
 
         # initialize background process
         response = client.api_client.rest_client.request(
-            method="GET",
+            method=endpoint.settings["http_method"],
             url=url,
             headers=client.api_client.get_common_headers(),
         )
@@ -106,5 +104,29 @@ class Downloader:
             rq_id, status_check_period=status_check_period
         )
 
-        downloader = Downloader(client)
-        downloader.download_file(request.result_url, output_path=filename, pbar=pbar)
+        return request
+
+    def prepare_and_download_file_from_endpoint(
+        self,
+        endpoint: Endpoint,
+        filename: Path,
+        *,
+        url_params: Optional[Dict[str, Any]] = None,
+        query_params: Optional[Dict[str, Any]] = None,
+        pbar: Optional[ProgressReporter] = None,
+        status_check_period: Optional[int] = None,
+    ):
+        client = self._client
+
+        if status_check_period is None:
+            status_check_period = client.config.status_check_period
+
+        bg_request = self.prepare_file(
+            endpoint,
+            url_params=url_params,
+            query_params=query_params,
+            status_check_period=status_check_period,
+        )
+
+        assert bg_request.result_url, "Result url was not found in server response"
+        self.download_file(bg_request.result_url, output_path=filename, pbar=pbar)

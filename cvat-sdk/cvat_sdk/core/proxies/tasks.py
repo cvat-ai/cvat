@@ -27,6 +27,8 @@ from cvat_sdk.core.proxies.model_proxy import (
     ModelListMixin,
     ModelRetrieveMixin,
     ModelUpdateMixin,
+    ExportDatasetMixin,
+    DownloadBackupMixin,
     build_model_bases,
 )
 from cvat_sdk.core.uploading import AnnotationUploader, DataUploader, Uploader
@@ -59,6 +61,8 @@ class Task(
     ModelUpdateMixin[models.IPatchedTaskWriteRequest],
     ModelDeleteMixin,
     AnnotationCrudMixin,
+    ExportDatasetMixin,
+    DownloadBackupMixin,
 ):
     _model_partial_update_arg = "patched_task_write_request"
     _put_annotations_data_param = "task_annotations_update_request"
@@ -248,60 +252,6 @@ class Task(
 
             outfile = filename_pattern.format(frame_id=frame_id, frame_ext=im_ext)
             im.save(outdir / outfile)
-
-    def export_dataset(
-        self,
-        format_name: str,
-        filename: StrPath,
-        *,
-        pbar: Optional[ProgressReporter] = None,
-        status_check_period: Optional[int] = None,
-        include_images: bool = True,
-    ) -> None:
-        """
-        Download annotations for a task in the specified format (e.g. 'YOLO ZIP 1.0').
-        """
-
-        filename = Path(filename)
-
-        if include_images:
-            endpoint = self.api.retrieve_dataset_endpoint
-        else:
-            endpoint = self.api.retrieve_annotations_endpoint
-
-        Downloader(self._client).prepare_and_download_file_from_endpoint(
-            endpoint=endpoint,
-            filename=filename,
-            url_params={"id": self.id},
-            query_params={"format": format_name},
-            pbar=pbar,
-            status_check_period=status_check_period,
-        )
-
-        self._client.logger.info(f"Dataset for task {self.id} has been downloaded to {filename}")
-
-    def download_backup(
-        self,
-        filename: StrPath,
-        *,
-        status_check_period: int = None,
-        pbar: Optional[ProgressReporter] = None,
-    ) -> None:
-        """
-        Download a task backup
-        """
-
-        filename = Path(filename)
-
-        Downloader(self._client).prepare_and_download_file_from_endpoint(
-            self.api.retrieve_backup_endpoint,
-            filename=filename,
-            pbar=pbar,
-            status_check_period=status_check_period,
-            url_params={"id": self.id},
-        )
-
-        self._client.logger.info(f"Backup for task {self.id} has been downloaded to {filename}")
 
     def get_jobs(self) -> List[Job]:
         return [

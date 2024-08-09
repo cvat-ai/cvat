@@ -7,7 +7,7 @@ import os.path as osp
 import zipfile
 from logging import Logger
 from pathlib import Path
-from typing import Tuple
+from typing import Tuple, Optional
 
 import pytest
 from cvat_sdk import Client, models
@@ -15,6 +15,7 @@ from cvat_sdk.api_client import exceptions
 from cvat_sdk.core.proxies.tasks import ResourceType, Task
 from cvat_sdk.core.uploading import Uploader, _MyTusUploader
 from PIL import Image
+from shared.utils.s3 import make_client as make_s3_client
 
 from shared.utils.helpers import generate_image_files
 
@@ -57,6 +58,23 @@ class TestTaskUsecases:
             spec={
                 "name": "test_task",
                 "labels": [{"name": "car"}, {"name": "person"}],
+            },
+            resources=[fxt_image_file],
+            data_params={"image_quality": 80},
+        )
+
+        return task
+
+    @pytest.fixture
+    def fxt_new_task_with_target_storage(self, fxt_image_file: Path):
+        task = self.client.tasks.create_from_data(
+            spec={
+                "name": "test_task",
+                "labels": [{"name": "car"}, {"name": "person"}],
+                "target_storage": {
+                    "location": "cloud_storage",
+                    "cloud_storage_id": 3,  # import/export bucket
+                },
             },
             resources=[fxt_image_file],
             data_params={"image_quality": 80},
@@ -275,23 +293,60 @@ class TestTaskUsecases:
         assert self.stdout.getvalue() == ""
 
     @pytest.mark.parametrize("include_images", (True, False))
-    def test_can_download_dataset(self, fxt_new_task: Task, include_images: bool):
-        pbar_out = io.StringIO()
-        pbar = make_pbar(file=pbar_out)
+    @pytest.mark.parametrize(
+        "fxt_task_name",
+        (
+            "fxt_new_task",
+            "fxt_new_task_with_target_storage",
+        ),
+    )
+    @pytest.mark.parametrize("location", (None, "local", "cloud_storage"))
+    def test_can_download_dataset(
+        self, include_images: bool, fxt_task_name, location: Optional[str], request, cloud_storages
+    ):
+        fxt_task: Task = request.getfixturevalue(fxt_task_name)
+        task = self.client.tasks.retrieve(fxt_task.id)
 
-        task_id = fxt_new_task.id
-        path = self.tmp_path / f"task_{task_id}-cvat.zip"
-        task = self.client.tasks.retrieve(task_id)
+        path = self.tmp_path / f"task_{fxt_task.id}-cvat.zip"
+        kwargs = dict()
+
+        local_downloading = (
+            location == "local"
+            or not location
+            and (not task.target_storage or task.target_storage.location.value == "local")
+        )
+        if local_downloading:
+            pbar_out = io.StringIO()
+            pbar = make_pbar(file=pbar_out)
+            kwargs = {
+                **kwargs,
+                "pbar": pbar,
+            }
+        else:
+            s3_client = make_s3_client()
+            request.addfinalizer(
+                lambda: s3_client.remove_file(bucket="importexportbucket", filename=str(path))
+            )
+            kwargs = {
+                **kwargs,
+                "cloud_storage_id": 3 if location == "cloud_storage" else None,
+            }
+
         task.export_dataset(
             format_name="CVAT for images 1.1",
             filename=path,
-            pbar=pbar,
             include_images=include_images,
+            location=location,
+            **kwargs,
         )
-
-        assert "100%" in pbar_out.getvalue().strip("\r").split("\r")[-1]
-        assert path.is_file()
         assert self.stdout.getvalue() == ""
+
+        if local_downloading:
+            assert "100%" in pbar_out.getvalue().strip("\r").split("\r")[-1]
+            assert path.is_file()
+        else:
+            dataset = s3_client.download_fileobj("importexportbucket", str(path))
+            assert zipfile.is_zipfile(io.BytesIO(dataset))
 
     def test_can_download_backup(self, fxt_new_task: Task):
         pbar_out = io.StringIO()
@@ -323,7 +378,9 @@ class TestTaskUsecases:
 
     @pytest.mark.parametrize("quality", ("compressed", "original"))
     @pytest.mark.parametrize("image_extension", (None, "bmp"))
-    def test_can_download_frames(self, fxt_new_task: Task, quality: str, image_extension: str):
+    def test_can_download_frames(
+        self, fxt_new_task: Task, quality: str, image_extension: Optional[str]
+    ):
         fxt_new_task.download_frames(
             [0],
             image_extension=image_extension,
