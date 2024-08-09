@@ -48,6 +48,12 @@ def get_organization(request, obj):
 
             raise exc
 
+        if not organization_id:
+            return None
+
+        if hasattr(obj, 'organization') and isinstance(obj.organization, Organization):
+            return obj.organization
+
         try:
             return Organization.objects.select_related('owner').get(id=organization_id)
         except Organization.DoesNotExist:

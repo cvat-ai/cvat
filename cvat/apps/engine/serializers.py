@@ -1360,10 +1360,14 @@ class ProjectReadSerializer(serializers.ModelSerializer):
 
     def to_representation(self, instance):
         response = super().to_representation(instance)
-        task_subsets = {task.subset for task in instance.tasks.all()}
-        task_subsets.discard('')
+
+        task_subsets = {task.subset for task in instance.tasks.all() if task.subset}
+        task_dimension = next(
+            (task.dimension for task in instance.tasks.all() if task.dimension),
+            None
+        )
         response['task_subsets'] = list(task_subsets)
-        response['dimension'] = getattr(instance.tasks.first(), 'dimension', None)
+        response['dimension'] = task_dimension
         return response
 
 class ProjectWriteSerializer(serializers.ModelSerializer):
