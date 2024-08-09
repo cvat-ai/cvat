@@ -7,7 +7,6 @@ import React from 'react';
 import { connect } from 'react-redux';
 import { withRouter } from 'react-router';
 import { RouteComponentProps } from 'react-router-dom';
-import copy from 'copy-to-clipboard';
 
 import {
     changeFrameAsync,
@@ -551,7 +550,17 @@ class AnnotationTopBarContainer extends React.PureComponent<Props> {
         const { frameNumber } = this.props;
         const { origin, pathname } = window.location;
         const url = `${origin}${pathname}?frame=${frameNumber}`;
-        copy(url);
+
+        const fallback = (): void => {
+            // eslint-disable-next-line
+            window.prompt('Browser Clipboard API not allowed, please copy manually', url);
+        };
+
+        if (window.isSecureContext) {
+            window.navigator.clipboard.writeText(url).catch(fallback);
+        } else {
+            fallback();
+        }
     };
 
     private onDeleteFrame = (): void => {
