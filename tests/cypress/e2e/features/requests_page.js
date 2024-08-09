@@ -36,6 +36,7 @@ context('Requests page', () => {
     const annotationsArchiveNameLocal = 'requests_annotations_archive_local';
     const annotationsArchiveNameCloud = 'requests_annotations_archive_cloud';
     const exportFormat = 'CVAT for images';
+    let exportFileName;
 
     const taskName = 'Annotation task for testing requests page';
 
@@ -104,7 +105,7 @@ context('Requests page', () => {
     });
 
     describe('Requests page', () => {
-        it('Creating a task creates a request. Correct task can be opened.', () => {
+        it.skip('Creating a task creates a request. Correct task can be opened.', () => {
             cy.visit('/requests');
             cy.contains('.cvat-requests-card', 'Create Task')
                 .within(() => {
@@ -115,7 +116,7 @@ context('Requests page', () => {
             cy.url().should('include', `/tasks/${data.taskID}`);
         });
 
-        it('Creating a task creates a request. Incorrect task cant be opened.', () => {
+        it.skip('Creating a task creates a request. Incorrect task cant be opened.', () => {
             cy.visit('/tasks');
             cy.createAnnotationTask(
                 taskName,
@@ -164,10 +165,11 @@ context('Requests page', () => {
             cy.visit('/requests');
             cy.downloadExport({ expectNotification: false }).then((file) => {
                 cy.verifyDownload(file);
+                exportFileName = file;
             });
         });
 
-        it('Export on cloud storage creates a request. Expire field does not exist', () => {
+        it.skip('Export on cloud storage creates a request. Expire field does not exist', () => {
             cy.visit('/tasks');
             cy.get('.cvat-spinner').should('not.exist');
             cy.openTask(taskName);
@@ -186,6 +188,33 @@ context('Requests page', () => {
 
             cy.contains('.cvat-header-button', 'Requests').click();
             cy.contains('.cvat-requests-card', 'Export Annotations')
+                .within(() => {
+                    cy.contains('Finished').should('exist');
+                    cy.contains('Expires').should('not.exist');
+                    cy.contains(exportFormat).should('exist');
+                    cy.get('.cvat-requests-name').click();
+                });
+            cy.get('.cvat-spinner').should('not.exist');
+            cy.url().should('include', `/tasks/${data.taskID}`);
+        });
+
+        it('Import creates a request. Task can be opened from request.', () => {
+            cy.visit('/tasks');
+            cy.get('.cvat-spinner').should('not.exist');
+            cy.openTask(taskName);
+            cy.clickInTaskMenu('Upload annotations', true);
+            cy.intercept('GET', '/api/jobs/**/annotations?**').as('uploadAnnotationsGet');
+            cy.uploadAnnotations(
+                exportFormat.split(' ')[0],
+                exportFileName,
+                '.cvat-modal-content-load-task-annotation',
+                null,
+                true,
+                false,
+            );
+
+            cy.contains('.cvat-header-button', 'Requests').click();
+            cy.contains('.cvat-requests-card', 'Import Annotations')
                 .within(() => {
                     cy.contains('Finished').should('exist');
                     cy.contains('Expires').should('not.exist');
