@@ -16,6 +16,9 @@ import { ActiveControl, ToolsBlockerState } from 'reducers';
 import CVATTooltip from 'components/common/cvat-tooltip';
 import customizableComponents from 'components/customizable-components';
 import GlobalHotKeys, { KeyMap } from 'utils/mousetrap-react';
+import { registerComponentShortcuts } from 'actions/shortcuts-actions';
+import { ShortcutScope } from 'utils/enums';
+import { subKeyMap } from 'utils/component-subkeymap';
 
 interface Props {
     saving: boolean;
@@ -34,6 +37,23 @@ interface Props {
     onFinishDraw(): void;
     onSwitchToolsBlockerState(): void;
 }
+
+const componentShortcuts = {
+    UNDO: {
+        name: 'Undo action',
+        description: 'Cancel the latest action related with objects',
+        sequences: ['ctrl+z'],
+        scope: ShortcutScope.ALL,
+    },
+    REDO: {
+        name: 'Redo action',
+        description: 'Cancel undo action',
+        sequences: ['ctrl+shift+z', 'ctrl+y'],
+        scope: ShortcutScope.ALL,
+    },
+};
+
+registerComponentShortcuts(componentShortcuts);
 
 function LeftGroup(props: Props): JSX.Element {
     const {
@@ -68,12 +88,7 @@ function LeftGroup(props: Props): JSX.Element {
     const shouldEnableToolsBlockerOnClick = [ActiveControl.OPENCV_TOOLS].includes(activeControl);
     const SaveButtonComponent = customizableComponents.SAVE_ANNOTATION_BUTTON;
 
-    const subKeyMap = {
-        UNDO: keyMap.UNDO,
-        REDO: keyMap.REDO,
-    };
-
-    const handlers = {
+    const handlers: Record<keyof typeof componentShortcuts, (event?: KeyboardEvent) => void> = {
         UNDO: (event: KeyboardEvent | undefined) => {
             event?.preventDefault();
             if (undoAction) {
@@ -90,7 +105,7 @@ function LeftGroup(props: Props): JSX.Element {
 
     return (
         <>
-            <GlobalHotKeys keyMap={subKeyMap} handlers={handlers} />
+            <GlobalHotKeys keyMap={subKeyMap(componentShortcuts, keyMap)} handlers={handlers} />
             { saving && (
                 <Modal
                     open

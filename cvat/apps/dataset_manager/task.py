@@ -18,6 +18,7 @@ from rest_framework.exceptions import ValidationError
 from cvat.apps.engine import models, serializers
 from cvat.apps.engine.plugins import plugin_decorator
 from cvat.apps.engine.log import DatasetLogManager
+from cvat.apps.engine.utils import chunked_list
 from cvat.apps.events.handlers import handle_annotations_change
 from cvat.apps.profiler import silk_profile
 
@@ -437,24 +438,52 @@ class JobAnnotation:
         if not self._data_is_empty(self.data):
             self._set_updated_date()
 
+    def _delete_job_labeledimages(self, ids__UNSAFE: list[int]) -> None:
+        # ids__UNSAFE is a list, received from the user
+        # we MUST filter it by job_id additionally before applying to any queries
+        ids = self.db_job.labeledimage_set.filter(pk__in=ids__UNSAFE).values_list('id', flat=True)
+        models.LabeledImageAttributeVal.objects.filter(image_id__in=ids).delete()
+        self.db_job.labeledimage_set.filter(pk__in=ids).delete()
+
+    def _delete_job_labeledshapes(self, ids__UNSAFE: list[int], *, is_subcall: bool = False) -> None:
+        # ids__UNSAFE is a list, received from the user
+        # we MUST filter it by job_id additionally before applying to any queries
+        if is_subcall:
+            ids = ids__UNSAFE
+        else:
+            ids = self.db_job.labeledshape_set.filter(pk__in=ids__UNSAFE).values_list('id', flat=True)
+            child_ids = self.db_job.labeledshape_set.filter(parent_id__in=ids).values_list('id', flat=True)
+            if len(child_ids):
+                self._delete_job_labeledshapes(child_ids, is_subcall=True)
+
+        models.LabeledShapeAttributeVal.objects.filter(shape_id__in=ids).delete()
+        self.db_job.labeledshape_set.filter(pk__in=ids).delete()
+
+    def _delete_job_labeledtracks(self, ids__UNSAFE: list[int], *, is_subcall: bool = False) -> None:
+        # ids__UNSAFE is a list, received from the user
+        # we MUST filter it by job_id additionally before applying to any queries
+        if is_subcall:
+            ids = ids__UNSAFE
+        else:
+            ids = self.db_job.labeledtrack_set.filter(pk__in=ids__UNSAFE).values_list('id', flat=True)
+            child_ids = self.db_job.labeledtrack_set.filter(parent_id__in=ids).values_list('id', flat=True)
+            if len(child_ids):
+                self._delete_job_labeledtracks(child_ids, is_subcall=True)
+
+        models.TrackedShapeAttributeVal.objects.filter(shape__track_id__in=ids).delete()
+        models.LabeledTrackAttributeVal.objects.filter(track_id__in=ids).delete()
+        self.db_job.labeledtrack_set.filter(pk__in=ids).delete()
+
     def _delete(self, data=None):
         deleted_data = {}
         if data is None:
             self.init_from_db()
             deleted_data = self.data
-            self.db_job.labeledimage_set.all().delete()
-            self.db_job.labeledshape_set.all().delete()
-            self.db_job.labeledtrack_set.all().delete()
+            models.clear_annotations_in_jobs([self.db_job.id])
         else:
             labeledimage_ids = [image["id"] for image in data["tags"]]
             labeledshape_ids = [shape["id"] for shape in data["shapes"]]
             labeledtrack_ids = [track["id"] for track in data["tracks"]]
-            labeledimage_set = self.db_job.labeledimage_set
-            labeledimage_set = labeledimage_set.filter(pk__in=labeledimage_ids)
-            labeledshape_set = self.db_job.labeledshape_set
-            labeledshape_set = labeledshape_set.filter(pk__in=labeledshape_ids)
-            labeledtrack_set = self.db_job.labeledtrack_set
-            labeledtrack_set = labeledtrack_set.filter(pk__in=labeledtrack_ids)
 
             # It is not important for us that data had some "invalid" objects
             # which were skipped (not actually deleted). The main idea is to
@@ -463,9 +492,14 @@ class JobAnnotation:
             self.ir_data.shapes = data['shapes']
             self.ir_data.tracks = data['tracks']
 
-            labeledimage_set.delete()
-            labeledshape_set.delete()
-            labeledtrack_set.delete()
+            for labeledimage_ids_chunk in chunked_list(labeledimage_ids, chunk_size=1000):
+                self._delete_job_labeledimages(labeledimage_ids_chunk)
+
+            for labeledshape_ids_chunk in chunked_list(labeledshape_ids, chunk_size=1000):
+                self._delete_job_labeledshapes(labeledshape_ids_chunk)
+
+            for labeledtrack_ids_chunk in chunked_list(labeledtrack_ids, chunk_size=1000):
+                self._delete_job_labeledtracks(labeledtrack_ids_chunk)
 
             deleted_data = {
                 "tags": data["tags"],
@@ -477,10 +511,10 @@ class JobAnnotation:
 
     def delete(self, data=None):
         deleted_data = self._delete(data)
-        handle_annotations_change(self.db_job, deleted_data, "delete")
-
         if not self._data_is_empty(deleted_data):
             self._set_updated_date()
+
+        handle_annotations_change(self.db_job, deleted_data, "delete")
 
     @staticmethod
     def _extend_attributes(attributeval_set, default_attribute_values):
@@ -947,7 +981,6 @@ def export_task(task_id, dst_file, format_name, server_url=None, save_images=Fal
 @transaction.atomic
 def import_task_annotations(src_file, task_id, format_name, conv_mask_to_poly):
     task = TaskAnnotation(task_id)
-    task.init_from_db()
 
     importer = make_importer(format_name)
     with open(src_file, 'rb') as f:
@@ -959,7 +992,6 @@ def import_task_annotations(src_file, task_id, format_name, conv_mask_to_poly):
 @transaction.atomic
 def import_job_annotations(src_file, job_id, format_name, conv_mask_to_poly):
     job = JobAnnotation(job_id)
-    job.init_from_db()
 
     importer = make_importer(format_name)
     with open(src_file, 'rb') as f:

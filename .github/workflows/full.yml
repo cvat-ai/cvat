@@ -133,17 +133,22 @@ jobs:
       - name: Verify API schema
         id: verify_schema
         run: |
-          docker run --rm --entrypoint /bin/bash cvat/server:${CVAT_VERSION} \
+          docker run --rm cvat/server:${CVAT_VERSION} bash \
             -c 'python manage.py spectacular' > cvat/schema-expected.yml
 
           if ! git diff --no-index cvat/schema.yml cvat/schema-expected.yml; then
             echo
             echo 'API schema has changed! Please update cvat/schema.yml:'
             echo
-            echo '  docker run --rm --entrypoint /bin/bash cvat/server:dev \'
+            echo '  docker run --rm cvat/server:dev bash \'
             echo "    -c 'python manage.py spectacular' > cvat/schema.yml"
             exit 1
           fi
+
+      - name: Verify migrations
+        run: |
+          docker run --rm cvat/server:${CVAT_VERSION} bash \
+            -c 'python manage.py makemigrations --check'
 
       - name: Upload expected schema as an artifact
         if: failure() && steps.verify_schema.conclusion == 'failure'
