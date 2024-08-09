@@ -292,6 +292,8 @@ class TaskFrameProvider(IFrameProvider):
 
         writer_class = writer_classes[quality]
 
+        image_quality = 100 if quality == FrameQuality.ORIGINAL else db_data.image_quality
+
         mime_type = (
             "video/mp4"
             if writer_classes[quality] in [Mpeg4ChunkWriter, Mpeg4CompressedChunkWriter]
@@ -318,7 +320,7 @@ class TaskFrameProvider(IFrameProvider):
         writer_kwargs = {}
         if self._db_task.dimension == models.DimensionType.DIM_3D:
             writer_kwargs["dimension"] = models.DimensionType.DIM_3D
-        merged_chunk_writer = writer_class(int(quality), **writer_kwargs)
+        merged_chunk_writer = writer_class(image_quality, **writer_kwargs)
 
         writer_kwargs = {}
         if isinstance(merged_chunk_writer, ZipCompressedChunkWriter):

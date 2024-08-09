@@ -1202,7 +1202,7 @@ def _create_static_chunks(db_task: models.Task, *, media_extractor: IMediaReader
         # Let's use QP=17 (that is 67 for 0-100 range) for the original chunks,
         # which should be visually lossless or nearly so.
         # A lower value will significantly increase the chunk size with a slight increase of quality.
-        original_quality = 67
+        original_quality = 67 # TODO: fix discrepancy in values in different parts of code
     else:
         original_chunk_writer_class = ZipChunkWriter
         original_quality = 100

@@ -269,6 +269,8 @@ class MediaCache:
             ),
         }
 
+        image_quality = 100 if quality == FrameQuality.ORIGINAL else db_data.image_quality
+
         mime_type = (
             "video/mp4"
             if writer_classes[quality] in [Mpeg4ChunkWriter, Mpeg4CompressedChunkWriter]
@@ -278,7 +280,7 @@ class MediaCache:
         kwargs = {}
         if db_segment.task.dimension == models.DimensionType.DIM_3D:
             kwargs["dimension"] = models.DimensionType.DIM_3D
-        writer = writer_classes[quality](int(quality), **kwargs)
+        writer = writer_classes[quality](image_quality, **kwargs)
 
         buffer = io.BytesIO()
         with closing(self._read_raw_frames(db_task, frame_ids=chunk_frame_ids)) as frame_iter:
