@@ -62,6 +62,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
     private controller: CanvasController;
     private svgShapes: Record<number, SVG.Shape>;
     private svgTexts: Record<number, SVG.Text>;
+    private isImageLoading: boolean;
     private issueRegionPattern_1: SVG.Pattern;
     private issueRegionPattern_2: SVG.Pattern;
     private drawnStates: Record<number, DrawnState>;
@@ -1437,6 +1438,8 @@ export class CanvasViewImpl implements CanvasView, Listener {
             editHidden: {},
             sliceHidden: {},
         };
+
+        this.isImageLoading = true;
         this.draggableShape = null;
         this.resizableShape = null;
 
@@ -1643,19 +1646,21 @@ export class CanvasViewImpl implements CanvasView, Listener {
             if (this.mode !== Mode.IDLE) return;
             if (e.ctrlKey || e.altKey) return;
 
-            const { offset } = this.controller.geometry;
-            const [x, y] = translateToSVG(this.content, [e.clientX, e.clientY]);
-            const event: CustomEvent = new CustomEvent('canvas.moved', {
-                bubbles: false,
-                cancelable: true,
-                detail: {
-                    x: x - offset,
-                    y: y - offset,
-                    states: this.controller.objects,
-                },
-            });
+            if (!this.isImageLoading) {
+                const { offset } = this.controller.geometry;
+                const [x, y] = translateToSVG(this.content, [e.clientX, e.clientY]);
+                const event: CustomEvent = new CustomEvent('canvas.moved', {
+                    bubbles: false,
+                    cancelable: true,
+                    detail: {
+                        x: x - offset,
+                        y: y - offset,
+                        states: this.controller.objects,
+                    },
+                });
 
-            this.canvas.dispatchEvent(event);
+                this.canvas.dispatchEvent(event);
+            }
         });
 
         this.content.oncontextmenu = (): boolean => false;
@@ -1787,6 +1792,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
         } else if (reason === UpdateReasons.IMAGE_CHANGED) {
             const { image } = model;
             if (image) {
+                this.isImageLoading = false;
                 const ctx = this.background.getContext('2d');
                 this.background.setAttribute('width', `${image.renderWidth}px`);
                 this.background.setAttribute('height', `${image.renderHeight}px`);
@@ -1819,6 +1825,8 @@ export class CanvasViewImpl implements CanvasView, Listener {
                 this.moveCanvas();
                 this.resizeCanvas();
                 this.transformCanvas();
+            } else {
+                this.isImageLoading = true;
             }
         } else if (reason === UpdateReasons.FITTED_CANVAS) {
             // Canvas geometry is going to be changed. Old object positions aren't valid any more
@@ -1875,6 +1883,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
                 this.canvas.style.cursor = 'pointer';
             } else {
                 this.regionSelector.select(false);
+                this.canvas.style.cursor = '';
             }
         } else if (reason === UpdateReasons.DRAG_CANVAS) {
             if (this.mode === Mode.DRAG_CANVAS) {
