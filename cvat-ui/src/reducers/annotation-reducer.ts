@@ -587,13 +587,13 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
         }
         case AnnotationActionTypes.ACTIVATE_OBJECT: {
             const { activatedStateID, activatedElementID, activatedAttributeID } = action.payload;
-
             const {
                 canvas: { activeControl, instance },
-                annotations: { highlightedConflict },
+                annotations: { highlightedConflict, states },
             } = state;
 
-            if (activeControl !== ActiveControl.CURSOR ||
+            const requiredObjectExists = states.find((_state) => _state.clientID === activatedStateID);
+            if (!requiredObjectExists || activeControl !== ActiveControl.CURSOR ||
                 (instance as Canvas | Canvas3d).mode() !== CanvasMode.IDLE ||
                 highlightedConflict) {
                 return state;
@@ -1008,55 +1008,18 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                 },
             };
         }
-        case AnnotationActionTypes.DELETE_FRAME:
-        case AnnotationActionTypes.RESTORE_FRAME: {
-            return {
-                ...state,
-                player: {
-                    ...state.player,
-                    frame: {
-                        ...state.player.frame,
-                        fetching: true,
-                    },
-                },
-                canvas: {
-                    ...state.canvas,
-                    ready: false,
-                },
-            };
-        }
-        case AnnotationActionTypes.DELETE_FRAME_FAILED:
-        case AnnotationActionTypes.RESTORE_FRAME_FAILED: {
-            return {
-                ...state,
-                player: {
-                    ...state.player,
-                    frame: {
-                        ...state.player.frame,
-                        fetching: false,
-                    },
-                },
-                canvas: {
-                    ...state.canvas,
-                    ready: true,
-                },
-            };
-        }
         case AnnotationActionTypes.DELETE_FRAME_SUCCESS:
         case AnnotationActionTypes.RESTORE_FRAME_SUCCESS: {
+            const { data } = action.payload;
+
             return {
                 ...state,
                 player: {
                     ...state.player,
                     frame: {
                         ...state.player.frame,
-                        data: action.payload.data,
-                        fetching: false,
+                        data,
                     },
-                },
-                canvas: {
-                    ...state.canvas,
-                    ready: true,
                 },
             };
         }

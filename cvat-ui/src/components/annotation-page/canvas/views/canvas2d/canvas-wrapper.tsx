@@ -926,7 +926,7 @@ class CanvasWrapperComponent extends React.PureComponent<Props> {
 
         if (activatedStateID !== null) {
             const [activatedState] = annotations.filter((state: any): boolean => state.clientID === activatedStateID);
-            if (workspace === Workspace.ATTRIBUTES) {
+            if (activatedState && workspace === Workspace.ATTRIBUTES) {
                 if (activatedState.objectType !== ObjectType.TAG) {
                     canvasInstance.focus(activatedStateID, aamZoomMargin);
                 } else {
@@ -959,8 +959,8 @@ class CanvasWrapperComponent extends React.PureComponent<Props> {
             const proxy = new Proxy(frameData, {
                 get: (_frameData, prop, receiver) => {
                     if (prop === 'data') {
-                        return async () => {
-                            const originalImage = await _frameData.data();
+                        return async (...args: any[]) => {
+                            const originalImage = await _frameData.data(...args);
                             const imageIsNotProcessed = imageFilters.some((imageFilter: ImageFilter) => (
                                 imageFilter.modifier.currentProcessedImage !== frame
                             ));

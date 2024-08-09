@@ -549,14 +549,21 @@ export class CanvasModelImpl extends MasterImpl implements CanvasModel {
         ) {
             this.data.zLayer = zLayer;
             this.data.objects = objectStates;
-            this.notify(UpdateReasons.OBJECTS_UPDATED);
+            if (this.data.image) {
+                // draw objects only if image exists
+                // if it does not, UpdateReasons.OBJECTS_UPDATED will be triggered after image is set
+                this.notify(UpdateReasons.OBJECTS_UPDATED);
+            }
             return;
         }
 
         this.data.imageID = frameData.number;
+        this.data.imageIsDeleted = frameData.deleted;
+        if (this.data.imageIsDeleted) {
+            this.data.angle = 0;
+        }
 
         const { zLayer: prevZLayer, objects: prevObjects } = this.data;
-
         frameData
             .data((): void => {
                 this.data.image = null;
@@ -580,11 +587,6 @@ export class CanvasModelImpl extends MasterImpl implements CanvasModel {
                 };
 
                 this.data.image = data;
-                this.data.imageIsDeleted = frameData.deleted;
-                if (this.data.imageIsDeleted) {
-                    this.data.angle = 0;
-                }
-
                 this.fit();
 
                 // restore correct image position after switching to a new frame
