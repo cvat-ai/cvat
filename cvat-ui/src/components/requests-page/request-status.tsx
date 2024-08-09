@@ -35,17 +35,21 @@ function StatusMessage(props: Props): JSX.Element {
     message = message || '';
     status = status || RQStatus.FINISHED;
     let textType: 'success' | 'danger' | 'warning' | undefined;
+    let classHelper: 'success' | 'failed' | 'queued' | undefined;
 
     if ([RQStatus.FAILED, RQStatus.UNKNOWN].includes(status)) {
         textType = 'danger';
+        classHelper = 'failed';
     } else if ([RQStatus.QUEUED].includes(status)) {
         textType = 'warning';
+        classHelper = 'queued';
     } else if ([RQStatus.FINISHED].includes(status)) {
         textType = 'success';
+        classHelper = 'success';
     }
     return (
         <Text
-            className='cvat-request-item-progress-message'
+            className={`cvat-request-item-progress-message cvat-request-item-progress-${classHelper}`}
             type={textType}
             strong
         >

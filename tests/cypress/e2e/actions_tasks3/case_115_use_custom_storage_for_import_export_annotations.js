@@ -150,16 +150,16 @@ context('Import and export annotations: specify source and target storage in mod
         it('Import job annotations from custom minio "public" bucket', () => {
             cy.interactMenu('Upload annotations');
             cy.intercept('GET', '/api/jobs/**/annotations?**').as('uploadAnnotationsGet');
-            cy.uploadAnnotations(
-                format.split(' ')[0],
-                'job_annotations.zip',
-                '.cvat-modal-content-load-job-annotation',
-                {
+            cy.uploadAnnotations({
+                format: format.split(' ')[0],
+                filePath: 'job_annotations.zip',
+                confirmModalClassName: '.cvat-modal-content-load-job-annotation',
+                sourceStorage: {
                     location: 'Cloud storage',
                     cloudStorageId: createdCloudStorageId,
                 },
-                false,
-            );
+                useDefaultLocation: false,
+            });
             cy.get('.cvat-notification-notice-upload-annotations-fail').should('not.exist');
             cy.get('#cvat_canvas_shape_1').should('exist');
             cy.get('#cvat-objects-sidebar-state-item-1').should('exist');

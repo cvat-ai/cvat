@@ -899,12 +899,11 @@ Cypress.Commands.add('confirmUpdate', (modalWindowClassName) => {
 });
 
 Cypress.Commands.add(
-    'uploadAnnotations', (
-        format,
-        filePath,
-        confirmModalClassName,
-        sourceStorage = null,
-        useDefaultLocation = true,
+    'uploadAnnotations', ({
+        format, filePath, confirmModalClassName,
+        sourceStorage = null, useDefaultLocation = true, waitAnnotationsGet = true,
+        expectedResult = 'success',
+    },
     ) => {
         cy.get('.cvat-modal-import-dataset').find('.cvat-modal-import-select').click();
         cy.contains('.cvat-modal-import-dataset-option-item', format).click();
@@ -937,9 +936,13 @@ Cypress.Commands.add(
         cy.confirmUpdate(confirmModalClassName);
         cy.get('.cvat-notification-notice-import-annotation-start').should('be.visible');
         cy.closeNotification('.cvat-notification-notice-import-annotation-start');
-        cy.wait('@uploadAnnotationsGet').its('response.statusCode').should('equal', 200);
-        cy.contains('Annotations have been loaded').should('be.visible');
-        cy.closeNotification('.ant-notification-notice-info');
+        if (waitAnnotationsGet) {
+            cy.wait('@uploadAnnotationsGet').its('response.statusCode').should('equal', 200);
+        }
+        if (expectedResult === 'success') {
+            cy.contains('Annotations have been loaded').should('be.visible');
+            cy.closeNotification('.ant-notification-notice-info');
+        }
     },
 );
 
@@ -1293,8 +1296,10 @@ Cypress.Commands.add('exportJob', ({
     cy.closeNotification('.cvat-notification-notice-export-job-start');
 });
 
-Cypress.Commands.add('downloadExport', () => {
-    cy.verifyNotification();
+Cypress.Commands.add('downloadExport', ({ expectNotification = true } = {}) => {
+    if (expectNotification) {
+        cy.verifyNotification();
+    }
     cy.get('.cvat-header-requests-button').click();
     cy.get('.cvat-spinner').should('not.exist');
     cy.get('.cvat-requests-list').should('be.visible');
