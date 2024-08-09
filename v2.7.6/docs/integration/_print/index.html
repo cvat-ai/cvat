@@ -1,0 +1,747 @@
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    <meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+<meta name="generator" content="Hugo 0.83.0" /><link rel="canonical" type="text/html" href="../../../docs/integration/">
+<META NAME="ROBOTS" CONTENT="NOINDEX, NOFOLLOW">
+
+
+<link rel="shortcut icon" href="../../../favicons/favicon.ico" >
+<link rel="apple-touch-icon" href="../../../favicons/apple-touch-icon-180x180.png" sizes="180x180">
+<link rel="icon" type="image/png" href="../../../favicons/favicon-16x16.png" sizes="16x16">
+<link rel="icon" type="image/png" href="../../../favicons/favicon-32x32.png" sizes="32x32">
+<link rel="icon" type="image/png" href="../../../favicons/android-36x36.png" sizes="36x36">
+<link rel="icon" type="image/png" href="../../../favicons/android-48x48.png" sizes="48x48">
+<link rel="icon" type="image/png" href="../../../favicons/android-72x72.png" sizes="72x72">
+<link rel="icon" type="image/png" href="../../../favicons/android-96x96.png" sizes="96x96">
+<link rel="icon" type="image/png" href="../../../favicons/android-144x144.png" sizes="144x144">
+<link rel="icon" type="image/png" href="../../../favicons/android-192x192.png" sizes="192x192">
+
+<title>Integrations | CVAT</title>
+<meta name="description" content=""><meta property="og:title" content="Integrations" />
+<meta property="og:description" content="This section contains information about the tools that are integrated with CVAT." />
+<meta property="og:type" content="website" />
+<meta property="og:url" content="/docs/integration/" /><meta property="og:site_name" content="CVAT" />
+
+<meta itemprop="name" content="Integrations">
+<meta itemprop="description" content="This section contains information about the tools that are integrated with CVAT."><meta name="twitter:card" content="summary"/>
+<meta name="twitter:title" content="Integrations"/>
+<meta name="twitter:description" content="This section contains information about the tools that are integrated with CVAT."/>
+
+
+
+
+<link rel="preload" href="../../../scss/main.min.6c5c9450c6df778171581cbf2aa82ce445787ffee7a644313041b00ff75d710d.css" as="style">
+<link href="../../../scss/main.min.6c5c9450c6df778171581cbf2aa82ce445787ffee7a644313041b00ff75d710d.css" rel="stylesheet" integrity="">
+
+
+<script
+  src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"
+  integrity="sha256-9/aliU8dGd2tb6OSsuzixeV4y/faTqgFtohetphbbj0="
+  crossorigin="anonymous"></script>
+
+<script
+  src="https://unpkg.com/lunr@2.3.8/lunr.min.js"
+  integrity="sha384-vRQ9bDyE0Wnu+lMfm57BlYLO0/XauFuKpVsZPs7KEDwYKktWi5+Kz3MP8++DFlRY"
+  crossorigin="anonymous"></script>
+
+
+
+<link rel="stylesheet" href="../../../css/prism.css"/>
+
+
+
+
+
+
+  </head>
+  <body class="td-section">
+    <header>
+      
+
+
+<nav class="js-navbar-scroll navbar navbar-expand navbar-dark flex-column flex-md-row td-navbar">
+        <a class="navbar-brand" href="../../../about/">
+    <span class="navbar-logo"><svg width="80" height="15" viewBox="0 0 80 15" xmlns="http://www.w3.org/2000/svg"><path d="M6.63399 15C2.37083 15 0 12.5333.0 7.48889.0 2.46667 2.34908.0 6.63399.0H10.6576V2.62222H6.63399c-2.84935.0-4.0674 1.44445-4.0674 4.86667.0 3.44441 1.2398 4.88891 4.0674 4.88891H15.0638V15H6.63399z"/><path d="M22.412.0l4.8346 13.1004C27.7814 14.5415 28.8724 15 30.2842 15 31.7817 15 32.7657 14.476 33.3005 13.1004L38.3918.0H35.5895L30.9902 11.8559C30.8404 12.2052 30.6265 12.3581 30.2842 12.3581 29.942 12.3581 29.7067 12.2052 29.5783 11.8559L25.1929.0H22.412z"/><path d="M53.0989 3.1441C53.2487 2.79476 53.484 2.64192 53.8262 2.64192 54.1685 2.64192 54.4038 2.79476 54.5322 3.1441L58.9176 15h2.8023L56.8425 1.89956C56.3291.524017 55.3451.0 53.8476.0 52.3288.0 51.3448.524017 50.81 1.89956L45.74 15h2.781L53.0989 3.1441z"/><path d="M69.0681.0V2.5665H73.2661V15H75.802V2.5665H80V0H69.0681z"/></svg></span>
+  </a>
+  <div class="td-navbar-nav-scroll ml-md-auto" id="main_navbar">
+    <ul class="navbar-nav mt-2 mt-lg-0">
+      
+      
+      <li class="nav-item mr-4 mb-2 mb-lg-0">
+        
+        
+        
+        
+        
+        
+        
+        
+        <a class="nav-link active" href="../../../docs/" ><span class="active">Documentation</span></a>
+      </li>
+      
+      <li class="nav-item mr-4 mb-2 mb-lg-0">
+        
+        
+        
+        
+        
+        
+        
+        
+        <a class="nav-link" href="../../../about/" ><span>About</span></a>
+      </li>
+      
+      <li class="nav-item mr-4 mb-2 mb-lg-0">
+        
+        
+        
+        
+        
+        
+        <a class="nav-link" href="https://app.cvat.ai"  ><span>Try it now</span></a>
+      </li>
+      
+      <li class="nav-item mr-4 mb-2 mb-lg-0">
+        
+        
+        
+        
+        
+        
+        <a class="nav-link" href="https://github.com/cvat-ai/cvat"  ><i class='fab fa-github'></i><span>GitHub</span></a>
+      </li>
+      
+      
+        
+        <li class="nav-item dropdown">
+          <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-target="#dropdown_ver" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+            v2.7.6
+          </a>
+        </li>
+        
+      
+      
+    </ul>
+  </div>
+  <div class="dropdown-menu" id="dropdown_ver" aria-labelledby="navbarDropdownMenuLink">
+    
+      
+        <a class="dropdown-item" href="../../../../docs/integration/">Latest version</a>
+    
+      
+        <a class="dropdown-item" href="../../../../v1.5.0/docs/integration/">v1.5.0</a>
+    
+      
+        <a class="dropdown-item" href="../../../../v1.6.0/docs/integration/">v1.6.0</a>
+    
+      
+        <a class="dropdown-item" href="../../../../v1.7.0/docs/integration/">v1.7.0</a>
+    
+      
+        <a class="dropdown-item" href="../../../../v2.0.0/docs/integration/">v2.0.0</a>
+    
+      
+        <a class="dropdown-item" href="../../../../v2.1.0/docs/integration/">v2.1.0</a>
+    
+      
+        <a class="dropdown-item" href="../../../../v2.10.3/docs/integration/">v2.10.3</a>
+    
+      
+        <a class="dropdown-item" href="../../../../v2.11.3/docs/integration/">v2.11.3</a>
+    
+      
+        <a class="dropdown-item" href="../../../../v2.12.1/docs/integration/">v2.12.1</a>
+    
+      
+        <a class="dropdown-item" href="../../../../v2.13.0/docs/integration/">v2.13.0</a>
+    
+      
+        <a class="dropdown-item" href="../../../../v2.14.4/docs/integration/">v2.14.4</a>
+    
+      
+        <a class="dropdown-item" href="../../../../v2.15.0/docs/integration/">v2.15.0</a>
+    
+      
+        <a class="dropdown-item" href="../../../../v2.16.2/docs/integration/">v2.16.2</a>
+    
+      
+        <a class="dropdown-item" href="../../../../v2.2.0/docs/integration/">v2.2.0</a>
+    
+      
+        <a class="dropdown-item" href="../../../../v2.3.0/docs/integration/">v2.3.0</a>
+    
+      
+        <a class="dropdown-item" href="../../../../v2.4.9/docs/integration/">v2.4.9</a>
+    
+      
+        <a class="dropdown-item" href="../../../../v2.5.2/docs/integration/">v2.5.2</a>
+    
+      
+        <a class="dropdown-item" href="../../../../v2.6.2/docs/integration/">v2.6.2</a>
+    
+      
+        <a class="dropdown-item" href="../../../../v2.7.6/docs/integration/">v2.7.6</a>
+    
+      
+        <a class="dropdown-item" href="../../../../v2.8.2/docs/integration/">v2.8.2</a>
+    
+      
+        <a class="dropdown-item" href="../../../../v2.9.2/docs/integration/">v2.9.2</a>
+    
+  </div>
+  <div class="navbar-nav d-none d-lg-block">
+
+
+
+<input
+  type="search"
+  class="form-control td-search-input"
+  placeholder="&#xf002; Search this site…"
+  aria-label="Search this site…"
+  autocomplete="off"
+  
+  data-offline-search-index-json-src="../../../offline-search-index.ee1a7ff2c76966b2c9d263ff4ae97b3b.json"
+  data-offline-search-base-href="../../../"
+  data-offline-search-max-results="10"
+>
+
+</div>
+</nav>
+
+    </header>
+    <div class="container-fluid td-outer">
+      <div class="td-main">
+        <div class="row flex-xl-nowrap">
+          <div class="col-12 col-md-3 col-xl-2 td-sidebar d-print-none">
+          </div>
+          <div class="d-none d-xl-block col-xl-2 td-toc d-print-none">
+          </div>
+          <main class="col-12 col-md-9 col-xl-8 pl-md-5" role="main">
+            
+
+
+
+
+<div class="td-content">
+<div class="pageinfo pageinfo-primary d-print-none">
+<p>
+This the multi-page printable view of this section.
+<a href="#" onclick="print();return false;">Click here to print</a>.
+</p><p>
+<a href="../../../docs/integration/">Return to the regular view of this page</a>.
+</p>
+</div>
+
+
+
+<h1 class="title">Integrations</h1>
+<div class="lead">This section contains information about the tools that are integrated with CVAT.</div>
+
+
+
+
+    <ul>
+    
+  
+  
+  
+  
+
+  
+    
+    
+	
+<li>1: <a href="#pg-a99b1167c55fd24de247216c50721d4e">FiftyOne</a></li>
+
+
+    
+  
+    
+    
+	
+<li>2: <a href="#pg-6241c5296f503728a4cb2479855ddf9b">Toloka</a></li>
+
+
+    
+  
+
+    </ul>
+
+
+<div class="content">
+      
+</div>
+</div>
+
+
+  
+  
+  
+  
+
+  
+  
+
+  
+    
+    
+	
+    
+
+<div class="td-content" style="">
+    
+	<h1 id="pg-a99b1167c55fd24de247216c50721d4e">1 - FiftyOne</h1>
+    
+	<p><img src="../../../images/fiftyone_logo.png" alt=""></p>
+<p><a href="https://github.com/voxel51/fiftyone">FiftyOne</a> is an open-source tool for building high-quality datasets
+and computer vision models.
+FiftyOne supercharges your machine learning workflows by enabling you to visualize datasets and interpret
+models faster and more effectively.</p>
+<p>FiftyOne provides an API to create tasks and jobs, upload data, define label schemas,
+and download annotations using CVAT, all programmatically in Python.
+All of the following label types are supported, for both image and video datasets:</p>
+<ul>
+<li>Classifications</li>
+<li>Detections</li>
+<li>Instance segmentations</li>
+<li>Polygons and polylines</li>
+<li>Keypoints</li>
+<li>Scalar fields</li>
+<li>Semantic segmentation</li>
+</ul>
+<p><img src="../../../images/image264.jpg" alt=""></p>
+
+</div>
+
+
+
+    
+	
+  
+    
+    
+	
+    
+
+<div class="td-content" style="page-break-before: always">
+    
+	<h1 id="pg-6241c5296f503728a4cb2479855ddf9b">2 - Toloka</h1>
+    
+	<p>To have your dataset annotated through Toloka, simply establish
+a project in CVAT set the pricing, and let Toloka annotators
+take care of the annotations for you.</p>
+<p>See:</p>
+<ul>
+<li><a href="#glossary">Glossary</a></li>
+<li><a href="#preconditions">Preconditions</a></li>
+<li><a href="#creating-toloka-project">Creating Toloka project</a></li>
+<li><a href="#adding-tasks-and-jobs-to-the-toloka-project">Adding tasks and jobs to the Toloka project</a></li>
+<li><a href="#adding-instructions-for-annotators-to-the-toloka-project">Adding instructions for annotators to the Toloka project</a></li>
+<li><a href="#toloka-pool-setup">Toloka pool setup</a></li>
+<li><a href="#changing-toloka-pool">Changing Toloka pool</a></li>
+<li><a href="#reviewing-annotated-jobs">Reviewing annotated jobs</a>
+<ul>
+<li><a href="#accepting-job">Accepting job</a></li>
+<li><a href="#rejecting-job">Rejecting job</a></li>
+</ul>
+</li>
+<li><a href="#moving-toloka-pool-to-archive">Moving Toloka pool to archive</a></li>
+<li><a href="#moving-toloka-project-to-archive">Moving Toloka project to archive</a></li>
+<li><a href="#resource-sync-between-cvat-and-toloka">Resource sync between CVAT and Toloka</a>
+<ul>
+<li><a href="#acceptancerejection-synchronization">Acceptance/Rejection synchronization</a></li>
+</ul>
+</li>
+</ul>
+<h2 id="glossary">Glossary</h2>
+<p>This page contains several terms used to describe interactions between systems and actors.
+Refer to the table below for clarity on how we define and use them.</p>
+<!--lint disable maximum-line-length-->
+<table>
+<thead>
+<tr>
+<th>Term</th>
+<th>Explanation</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Toloka</td>
+<td>Toloka is a crowdsourcing platform that allows users to assign tasks to a broad group of participants, often termed &ldquo;crowd workers&rdquo;. In the context of this article, when we mention Toloka, we are specifically referring to one of its UI interfaces.</td>
+</tr>
+<tr>
+<td>CVAT</td>
+<td>CVAT is a tool designed for annotating video and image data for computer vision tasks. In this article&rsquo;s context, when we reference CVAT, we mean one of its UI interfaces.</td>
+</tr>
+<tr>
+<td>Requester</td>
+<td>An individual who establishes an annotation project within CVAT determines the price, creates tasks and jobs within the project, and then releases it on Toloka.</td>
+</tr>
+<tr>
+<td>Toloker</td>
+<td>A person who annotates the Requester&rsquo;s dataset.</td>
+</tr>
+</tbody>
+</table>
+<!--lint enable maximum-line-length-->
+<h2 id="preconditions">Preconditions</h2>
+<p>Actor: Requester.</p>
+<p>Requester must have a <a href="../../../docs/manual/basics/registration/">CVAT account</a>
+and <a href="https://platform.toloka.ai/auth?role=REQUESTER&amp;retpath=%2Fsignup%2Frequester">Toloka Requester account</a>.</p>
+<p>To get access to the feature in CVAT, send request to <a href="mailto:support@cvat.ai">CVAT Support</a></p>
+<h2 id="creating-toloka-project">Creating Toloka project</h2>
+<p>The requester can set up a project within CVAT and subsequently
+connect it to Toloka, making it accessible for annotations by Tolokers.</p>
+<p>To initiate your Toloka project, proceed with the following steps:</p>
+<ol>
+<li>
+<p><a href="../../../docs/manual/basics/registration/#account-access">Log in to CVAT</a>
+and <a href="../../../docs/manual/advanced/projects/">initiate a new Project</a>.
+<br>Here you can can setup user guide which will be shown on Toloka platform,
+see <a href="#adding-instructions-for-annotators-to-the-toloka-project">Adding instructions for annotators to the Toloka project</a>.</p>
+</li>
+<li>
+<p>Navigate to the project page and select <strong>Actions</strong> &gt; <strong>Setup crowdsourcing project</strong>.</p>
+<p><img src="../../../images/toloka01.png" alt="Setting Up Toloka Project"></p>
+</li>
+<li>
+<p>Fill in the following fields in the <strong>Setup crowdsourcing project</strong> form:</p>
+<p><img src="../../../images/toloka02.png" alt="Toloka Project Configuration"></p>
+<ul>
+<li><strong>Provider</strong>: Choose Toloka as your provider.</li>
+<li><strong>Environment</strong>: Select either <strong>Sandbox</strong> for a testing environment or <strong>Production</strong> for a live environment.</li>
+<li><strong>API key</strong>: Enter the <a href="https://toloka.ai/docs/toloka-kit/registration/">Requester API key</a>.</li>
+<li><strong>Project description</strong> (Optional): Provide a brief description of your project.</li>
+</ul>
+</li>
+<li>
+<p>Click <strong>Submit</strong>.
+A pop-up indicating <strong>Toloka Project Created</strong> will appear, along with the <strong>Update project</strong> form.</p>
+<p><img src="../../../images/toloka03.png" alt="Project Update Form"></p>
+<ul>
+<li><img src="../../../images/toloka04.png" alt="Open Project in Toloka"> will take you to the published project in Toloka.</li>
+<li><img src="../../../images/toloka05.png" alt="Open Project in CVAT"> will take you back to the project in CVAT.</li>
+</ul>
+</li>
+</ol>
+<p>In CVAT, all projects related to Toloka will be labeled as <strong>Toloka</strong>.</p>
+<p><img src="../../../images/toloka06.png" alt="Toloka Label on Project"></p>
+<p>The status indicator changes based on the
+state of the project:</p>
+<ul>
+<li>Green - active</li>
+<li>Dark grey - archived</li>
+</ul>
+<h2 id="adding-tasks-and-jobs-to-the-toloka-project">Adding tasks and jobs to the Toloka project</h2>
+<p>To add tasks to the Toloka project,
+see <a href="../../../docs/manual/basics/create_an_annotation_task/#create-a-task"><strong>Create annotation task</strong></a>.</p>
+<p>On step 2 of the <strong>Create annotation task</strong> procedure,
+from the drop-down list, select your Toloka project.</p>
+<p><img src="../../../images/toloka07.jpg" alt="Toloka Add Task"></p>
+<h2 id="adding-instructions-for-annotators-to-the-toloka-project">Adding instructions for annotators to the Toloka project</h2>
+<p>To add instructions for annotators to the Toloka project,
+see <a href="../../../docs/manual/advanced/specification/#adding-specification-to-project"><strong>Adding specification to Project</strong></a>
+documentation or <a href="https://www.youtube.com/embed/hAN9UGRvwOk"><strong>Adding instructions</strong></a>
+video tutorial.</p>
+<h2 id="toloka-pool-setup">Toloka pool setup</h2>
+<p>After creating a task and its associated jobs in
+CVAT, you&rsquo;ll need to configure a Toloka pool,
+specifying all task requirements and setting the price for task completion.</p>
+<p>To set up the Toloka pool, do the following:</p>
+<ol>
+<li>
+<p>Open Toloka task, go to <strong>Actions</strong> &gt; <strong>Setup Toloka pool</strong>.</p>
+<p><img src="../../../images/toloka08.jpg" alt="Set up Toloka pool"></p>
+</li>
+<li>
+<p>In the <strong>Create crowdsourcing task</strong> form, fill in the following fields:</p>
+<p><img src="../../../images/toloka09.jpg" alt="Set up Toloka pool"></p>
+<ul>
+<li><strong>Price per job</strong>: Specify the payment amount for completing
+one job within the project.</li>
+<li><strong>Use project description</strong>: Switch this toggle if you want
+to use the overarching project description for individual tasks.</li>
+<li><strong>Description</strong>: Provide details about the pool.
+This field is visible only when the <strong>Use project description</strong> toggle is off.</li>
+<li><strong>Sensible content</strong>: Switch this toggle if your dataset
+contains images intended for an adult audience.</li>
+<li><strong>Accept solutions automatically</strong>: Enable this if you
+wish for completed jobs to be automatically accepted.</li>
+<li><strong>Close pool after completion, sec</strong>: The interval during which the pool will
+remain open from the moment all tasks are completed.
+Minimum — 0, maximum — 259200 seconds (three days).</li>
+<li><strong>Time per task suite, sec</strong>: Enter the time limit, in seconds, within which each job must be completed.
+The Toloker will see the deadline in the task information on the main Toloka page
+and also in CVAT interface. Uncompleted tasks are redistributed to other Tolokers.</li>
+<li><strong>Days for manual review by requester</strong>: Specify the Review period in days —
+the number of days for the review (from 1 to 21 days from the task completion date).
+The Toloker will see the deadline in the task information on the main Toloka page.</li>
+<li><strong>Audience</strong>: Add rules to make jobs available only to Tolokers who meet certain criteria.
+For example, you might require Tolokers to be proficient in English and have higher education.
+These rules operate based on filter principles. For more information,
+see <a href="https://toloka.ai/docs/guide/filters/#:~:text=You%20can%20use%20filters%20to,faster%20and%20spend%20less%20money.">Toloks Filters</a>
+documentation, <a href="../../../docs/manual/advanced/filter/">CVAT Filters</a> documentation
+or <a href="https://www.youtube.com/watch?v=lj6KLIFn24A">CVAT Filters</a> video tutorial.</li>
+<li><img src="../../../images/toloka10.jpg" alt="Toloka Rules"></li>
+</ul>
+</li>
+<li>
+<p>Click <strong>Submit</strong>. You will see the <strong>Toloka task was created</strong> pop-up and the <strong>Update pool</strong> form.</p>
+<p><img src="../../../images/toloka11.jpg" alt="Update pool"></p>
+<ul>
+<li><img src="../../../images/toloka04.png" alt="Open pool in Toloka"> opens pool in Toloka.</li>
+<li><img src="../../../images/toloka05.png" alt="Open task in CVAT"> opens task in CVAT.</li>
+</ul>
+</li>
+<li>
+<p>Open the CVAT task that was published to Toloka, go to <strong>Actions</strong> &gt; <strong>Start Toloka pool</strong>.
+<br>Project, that you created will now be visible to Tolokers.</br></p>
+<p><img src="../../../images/toloka12.jpg" alt="Toloka Project"></p>
+</li>
+</ol>
+<p>Pools status indicator has the following states:</p>
+<ul>
+<li>Green - open for annotating</li>
+<li>Light gray - closed</li>
+<li>Dark grey - archived</li>
+</ul>
+<h2 id="changing-toloka-pool">Changing Toloka pool</h2>
+<p>To change started Toloka pool, you need to stop it first.</p>
+<ol>
+<li>Open Toloka task, <strong>Actions</strong> &gt; <strong>Stop Toloka pool</strong>.</li>
+<li>Implement changes.</li>
+<li>Open Toloka task, go to <strong>Actions</strong> &gt; <strong>Start Toloka pool</strong>.</li>
+</ol>
+<h2 id="reviewing-annotated-jobs">Reviewing annotated jobs</h2>
+<p>In case the pool you&rsquo;ve created are not in the <strong>Accept solutions automatically</strong>
+mode, you will need to manually review and accept them
+within time limits that were defined in the Toloka pool settings.</p>
+<p>To approve or reject the job, use the <strong>Accept</strong> and <strong>Reject</strong> buttons.</p>
+<p><img src="../../../images/toloka13.jpg" alt="Toloka Project"></p>
+<h3 id="accepting-job">Accepting job</h3>
+<p>To accept the annotated job, do the following:</p>
+<ol>
+<li>
+<p>Go to the Toloka task and open the job.</p>
+</li>
+<li>
+<p>Review the result of annotation and in case all is fine, on the top menu,
+click <strong>Accept</strong>.</p>
+</li>
+<li>
+<p>Optionally, you may add comment.</p>
+<p><img src="../../../images/toloka14.jpg" alt="Toloka Project"></p>
+</li>
+<li>
+<p>Click <strong>OK</strong>.</p>
+</li>
+</ol>
+<h3 id="rejecting-job">Rejecting job</h3>
+<blockquote>
+<p>Note, that Toloker can open dispute and appeal the rejected
+job on the Toloka platform.</p>
+</blockquote>
+<p>To reject the annotated job, do the following:</p>
+<ol>
+<li>
+<p>Go to the Toloka task and open the job.
+<br>On the top menu, you will see <strong>Accept</strong> and <strong>Reject</strong> buttons.
+<img src="../../../images/toloka13.jpg" alt="Toloka Project"></p>
+</li>
+<li>
+<p>Review the result of the annotation and in case something is wrong,
+on the top menu, click <strong>Reject</strong>.</p>
+</li>
+<li>
+<p>Add comment why this work was rejected</p>
+<p><img src="../../../images/toloka15.jpg" alt="Toloka Project"></p>
+</li>
+<li>
+<p>Click <strong>OK</strong>.</p>
+</li>
+</ol>
+<p>After you reject the job, the menu bar will change and only the <strong>Accept</strong>
+button will be active.</p>
+<p>Rejected job can be accepted later.</p>
+<h2 id="moving-toloka-pool-to-archive">Moving Toloka pool to archive</h2>
+<p>After annotation is complete, you can move
+the Toloka pools to archive without
+archiving the whole Project.</p>
+<blockquote>
+<p><strong>Note</strong>, that to archive pool, all jobs within task
+must be in the Complete state.</p>
+</blockquote>
+<blockquote>
+<p><strong>Note</strong>, that pool must accepted and
+without active assignments on the Toloka
+side.</p>
+</blockquote>
+<blockquote>
+<p>Keep in mind, that if you
+<strong>Rejected</strong> the job, it will not become
+unassigned immediately, to give
+Toloker time to open a dispute.</p>
+</blockquote>
+<p>To archive complete jobs, do the following:</p>
+<ol>
+<li>Open Toloka task, and go to <strong>Actions</strong>.</li>
+<li>(Optional) If the task is ongoing, select <strong>Stop Toloka pool</strong>.</li>
+<li>Select <strong>Archive Toloka pool</strong></li>
+<li>In the pop-up click <strong>OK</strong>.</li>
+</ol>
+<h2 id="moving-toloka-project-to-archive">Moving Toloka project to archive</h2>
+<p>After annotation is completed, you can move the Toloka project to the archive.</p>
+<blockquote>
+<p>Note that all jobs must be complete.
+Tasks must not have active assignments or assignments that are being disputed.
+All project pools must be closed/archived.</p>
+</blockquote>
+<ol>
+<li>
+<p>Open Toloka project, go to <strong>Actions</strong> &gt; <strong>Archive Toloka project</strong>.</p>
+<p><img src="../../../images/toloka16.jpg" alt="Toloka Project"></p>
+</li>
+<li>
+<p>In the pop-up, click <strong>Yes</strong>.</p>
+</li>
+</ol>
+<h2 id="resource-sync-between-cvat-and-toloka">Resource sync between CVAT and Toloka</h2>
+<p>There are two types of synchronization between CVAT and Toloka:</p>
+<ul>
+<li><strong>Explicit synchronization</strong>: Triggered manually by the requester
+by clicking the <strong>Sync Toloka project</strong>/<strong>Sync Toloka pool</strong> button within the CVAT interface.</li>
+<li><strong>Implicit Synchronization</strong>: Occurs automatically at predetermined intervals.
+Resources that have been requested by users will be synchronized
+without any manual intervention.</li>
+</ul>
+<h3 id="acceptancerejection-synchronization">Acceptance/Rejection synchronization</h3>
+<p>In addition to project and pool synchronization, it is essential to synchronize
+the status of assignments. If a requester accepts or rejects an assignment
+through Toloka&rsquo;s client interface, this action automatically
+synchronizes with CVAT to ensure that the data remains
+current and consistent across both platforms.</p>
+
+</div>
+
+
+
+    
+	
+  
+
+
+
+          </main>
+        </div>
+      </div>
+      
+<footer class="bg-dark py-5 row d-print-none">
+  <div class="container-fluid mx-sm-5">
+    <div class="row">
+      <div class="col-6 col-sm-2 text-xs-center order-sm-2">
+        
+        
+        
+<ul class="list-inline mb-0">
+  
+  <li class="list-inline-item mx-2 h3" data-toggle="tooltip" data-placement="top" title="Gitter public chat" aria-label="Gitter public chat">
+    <a class="text-white" rel="noopener noreferrer" href="https://gitter.im/opencv-cvat/public">
+      <i class="fab fa-gitter"></i>
+    </a>
+  </li>
+  
+  <li class="list-inline-item mx-2 h3" data-toggle="tooltip" data-placement="top" title="Stack Overflow" aria-label="Stack Overflow">
+    <a class="text-white" rel="noopener noreferrer" href="https://stackoverflow.com/search?q=%23cvat">
+      <i class="fab fa-stack-overflow"></i>
+    </a>
+  </li>
+  
+  <li class="list-inline-item mx-2 h3" data-toggle="tooltip" data-placement="top" title="YouTube" aria-label="YouTube">
+    <a class="text-white" rel="noopener noreferrer" href="https://www.youtube.com/@cvat-ai">
+      <i class="fab fa-youtube"></i>
+    </a>
+  </li>
+  
+</ul>
+
+        
+        
+      </div>
+      <div class="col-6 col-sm-2 text-right text-xs-center order-sm-3">
+        
+        
+        
+<ul class="list-inline mb-0">
+  
+  <li class="list-inline-item mx-2 h3" data-toggle="tooltip" data-placement="top" title="GitHub" aria-label="GitHub">
+    <a class="text-white" rel="noopener noreferrer" href="https://github.com/cvat-ai/cvat">
+      <i class="fab fa-github"></i>
+    </a>
+  </li>
+  
+  <li class="list-inline-item mx-2 h3" data-toggle="tooltip" data-placement="top" title="Gitter developers chat" aria-label="Gitter developers chat">
+    <a class="text-white" rel="noopener noreferrer" href="https://gitter.im/opencv-cvat/dev">
+      <i class="fab fa-gitter"></i>
+    </a>
+  </li>
+  
+  <li class="list-inline-item mx-2 h3" data-toggle="tooltip" data-placement="top" title="Discord chat" aria-label="Discord chat">
+    <a class="text-white" rel="noopener noreferrer" href="https://discord.gg/fNR3eXfk6C">
+      <i class="fab fa-discord"></i>
+    </a>
+  </li>
+  
+</ul>
+
+        
+        
+      </div>
+      <div class="col-12 col-sm-8 text-center order-sm-2">
+        <small class="mr-1"><a href="https://www.cvat.ai/privacy">Privacy Policy</a></small>
+        |
+        <small class="mx-1"><a href="https://www.cvat.ai/terms-of-use">Terms of Use</a></small>
+      </div>
+  
+    <p class="mt-2"><a href="../../../about/">About</a></p>
+  
+      </div>
+    </div>
+  </div>
+</footer>
+
+
+    </div>
+    <script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.1/dist/umd/popper.min.js" integrity="sha384-9/reFTGAW83EW2RDu2S0VKaIzap3H66lZH81PoYlFhbGU+6BZp6G7niu735Sk7lN" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@4.6.0/dist/js/bootstrap.min.js" integrity="sha384-+YQ4JLhjyBLPDQt//I+STsc9iw4uQqACwlvpslubQzn4u2UU2UFM80nGisd026JF" crossorigin="anonymous"></script>
+
+
+
+
+
+
+ 
+
+
+
+
+
+
+
+
+
+
+
+
+
+<script src="../../../js/main.min.3b172c13b62c2bea8b1c9d2599cddc8cf89718a92d792c680871c81ba43d8c85.js" integrity="sha256-OxcsE7YsK&#43;qLHJ0lmc3cjPiXGKkteSxoCHHIG6Q9jIU=" crossorigin="anonymous"></script>
+
+
+
+<script src='../../../js/prism.js'></script>
+
+
+
+  </body>
+</html>

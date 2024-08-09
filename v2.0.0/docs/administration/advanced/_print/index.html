@@ -1,0 +1,1074 @@
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    <meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+<meta name="generator" content="Hugo 0.83.0" /><link rel="canonical" type="text/html" href="../../../../docs/administration/advanced/">
+<META NAME="ROBOTS" CONTENT="NOINDEX, NOFOLLOW">
+
+
+<link rel="shortcut icon" href="../../../../favicons/favicon.ico" >
+<link rel="apple-touch-icon" href="../../../../favicons/apple-touch-icon-180x180.png" sizes="180x180">
+<link rel="icon" type="image/png" href="../../../../favicons/favicon-16x16.png" sizes="16x16">
+<link rel="icon" type="image/png" href="../../../../favicons/favicon-32x32.png" sizes="32x32">
+<link rel="icon" type="image/png" href="../../../../favicons/android-36x36.png" sizes="36x36">
+<link rel="icon" type="image/png" href="../../../../favicons/android-48x48.png" sizes="48x48">
+<link rel="icon" type="image/png" href="../../../../favicons/android-72x72.png" sizes="72x72">
+<link rel="icon" type="image/png" href="../../../../favicons/android-96x96.png" sizes="96x96">
+<link rel="icon" type="image/png" href="../../../../favicons/android-144x144.png" sizes="144x144">
+<link rel="icon" type="image/png" href="../../../../favicons/android-192x192.png" sizes="192x192">
+
+<title>Advanced | CVAT</title>
+<meta name="description" content=""><meta property="og:title" content="Advanced" />
+<meta property="og:description" content="This section contains advanced documents for system administrators." />
+<meta property="og:type" content="website" />
+<meta property="og:url" content="/docs/administration/advanced/" /><meta property="og:site_name" content="CVAT" />
+
+<meta itemprop="name" content="Advanced">
+<meta itemprop="description" content="This section contains advanced documents for system administrators."><meta name="twitter:card" content="summary"/>
+<meta name="twitter:title" content="Advanced"/>
+<meta name="twitter:description" content="This section contains advanced documents for system administrators."/>
+
+
+
+
+<link rel="preload" href="../../../../scss/main.min.591a88c412fca6c692021fe322184768cfc320012e0a443e8514b68fd373aa21.css" as="style">
+<link href="../../../../scss/main.min.591a88c412fca6c692021fe322184768cfc320012e0a443e8514b68fd373aa21.css" rel="stylesheet" integrity="">
+
+
+<script
+  src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"
+  integrity="sha256-9/aliU8dGd2tb6OSsuzixeV4y/faTqgFtohetphbbj0="
+  crossorigin="anonymous"></script>
+
+<script
+  src="https://unpkg.com/lunr@2.3.8/lunr.min.js"
+  integrity="sha384-vRQ9bDyE0Wnu+lMfm57BlYLO0/XauFuKpVsZPs7KEDwYKktWi5+Kz3MP8++DFlRY"
+  crossorigin="anonymous"></script>
+
+
+
+<link rel="stylesheet" href="../../../../css/prism.css"/>
+
+
+
+
+
+
+  </head>
+  <body class="td-section">
+    <header>
+      
+
+
+<nav class="js-navbar-scroll navbar navbar-expand navbar-dark flex-column flex-md-row td-navbar">
+        <a class="navbar-brand" href="../../../../about/">
+    <span class="navbar-logo"><svg width="98" height="27" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink"><defs><path d="M101 0v29l-52.544.001C44.326 35.511 35.598 40 25.5 40 11.417 40 0 31.27.0 20.5S11.417 1 25.5 1c4.542.0 8.807.908 12.5 2.5V0h63z" id="logoA"/></defs><g transform="translate(-2 -1)" fill="none" fill-rule="evenodd"><mask id="logoB" fill="#fff"><use xlink:href="#logoA"/></mask><path d="M48.142 1c4.736.0 6.879 3.234 6.879 5.904v2.068h-4.737V6.904c0-.79-.789-2.144-2.142-2.144-1.654.0-2.368 1.354-2.368 2.144v15.192c0 .79.714 2.144 2.368 2.144 1.353.0 2.142-1.354 2.142-2.144v-2.068h4.737v2.068c0 2.67-2.143 5.904-6.88 5.904C42.956 28 41 24.766 41 22.134V6.904C41 4.234 42.955 1 48.142 1zM19-6c9.389.0 17 7.611 17 17s-7.611 17-17 17S2 20.389 2 11 9.611-6 19-6zm42.256 7.338 3.345 19.48h.075l3.42-19.48h5l-6.052 26.324h-5L56.22 1.338h5.037zm20.706.0 5.413 26.324h-4.699l-.94-6.13h-4.548l-.902 6.13h-4.435l5.413-26.324h4.698zm18.038.0v3.723h-4.849v22.6h-4.699v-22.6h-4.81V1.338H1e2zM19 4a7 7 0 100 14 7 7 0 000-14zm60.557 4.295h-.113l-1.466 9.439h3.007l-1.428-9.439z" fill="#fff" fill-rule="nonzero" mask="url(#logoB)"/></g></svg></span>
+  </a>
+  <div class="td-navbar-nav-scroll ml-md-auto" id="main_navbar">
+    <ul class="navbar-nav mt-2 mt-lg-0">
+      
+      
+      <li class="nav-item mr-4 mb-2 mb-lg-0">
+        
+        
+        
+        
+        
+        
+        
+        
+        <a class="nav-link active" href="../../../../docs/" ><span class="active">Documentation</span></a>
+      </li>
+      
+      <li class="nav-item mr-4 mb-2 mb-lg-0">
+        
+        
+        
+        
+        
+        
+        
+        
+        <a class="nav-link" href="../../../../about/" ><span>About</span></a>
+      </li>
+      
+      <li class="nav-item mr-4 mb-2 mb-lg-0">
+        
+        
+        
+        
+        
+        
+        <a class="nav-link" href="https://app.cvat.ai"  ><span>Try it now</span></a>
+      </li>
+      
+      <li class="nav-item mr-4 mb-2 mb-lg-0">
+        
+        
+        
+        
+        
+        
+        <a class="nav-link" href="https://github.com/cvat-ai/cvat"  ><i class='fab fa-github'></i><span>GitHub</span></a>
+      </li>
+      
+      
+        
+        <li class="nav-item dropdown">
+          <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-target="#dropdown_ver" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+            v2.0.0
+          </a>
+        </li>
+        
+      
+      
+    </ul>
+  </div>
+  <div class="dropdown-menu" id="dropdown_ver" aria-labelledby="navbarDropdownMenuLink">
+    
+      
+        <a class="dropdown-item" href="../../../../../docs/administration/advanced/">Latest version</a>
+    
+      
+        <a class="dropdown-item" href="../../../../../v1.5.0/docs/administration/advanced/">v1.5.0</a>
+    
+      
+        <a class="dropdown-item" href="../../../../../v1.6.0/docs/administration/advanced/">v1.6.0</a>
+    
+      
+        <a class="dropdown-item" href="../../../../../v1.7.0/docs/administration/advanced/">v1.7.0</a>
+    
+      
+        <a class="dropdown-item" href="../../../../../v2.0.0/docs/administration/advanced/">v2.0.0</a>
+    
+      
+        <a class="dropdown-item" href="../../../../../v2.1.0/docs/administration/advanced/">v2.1.0</a>
+    
+      
+        <a class="dropdown-item" href="../../../../../v2.10.3/docs/administration/advanced/">v2.10.3</a>
+    
+      
+        <a class="dropdown-item" href="../../../../../v2.11.3/docs/administration/advanced/">v2.11.3</a>
+    
+      
+        <a class="dropdown-item" href="../../../../../v2.12.1/docs/administration/advanced/">v2.12.1</a>
+    
+      
+        <a class="dropdown-item" href="../../../../../v2.13.0/docs/administration/advanced/">v2.13.0</a>
+    
+      
+        <a class="dropdown-item" href="../../../../../v2.14.4/docs/administration/advanced/">v2.14.4</a>
+    
+      
+        <a class="dropdown-item" href="../../../../../v2.15.0/docs/administration/advanced/">v2.15.0</a>
+    
+      
+        <a class="dropdown-item" href="../../../../../v2.16.2/docs/administration/advanced/">v2.16.2</a>
+    
+      
+        <a class="dropdown-item" href="../../../../../v2.2.0/docs/administration/advanced/">v2.2.0</a>
+    
+      
+        <a class="dropdown-item" href="../../../../../v2.3.0/docs/administration/advanced/">v2.3.0</a>
+    
+      
+        <a class="dropdown-item" href="../../../../../v2.4.9/docs/administration/advanced/">v2.4.9</a>
+    
+      
+        <a class="dropdown-item" href="../../../../../v2.5.2/docs/administration/advanced/">v2.5.2</a>
+    
+      
+        <a class="dropdown-item" href="../../../../../v2.6.2/docs/administration/advanced/">v2.6.2</a>
+    
+      
+        <a class="dropdown-item" href="../../../../../v2.7.6/docs/administration/advanced/">v2.7.6</a>
+    
+      
+        <a class="dropdown-item" href="../../../../../v2.8.2/docs/administration/advanced/">v2.8.2</a>
+    
+      
+        <a class="dropdown-item" href="../../../../../v2.9.2/docs/administration/advanced/">v2.9.2</a>
+    
+  </div>
+  <div class="navbar-nav d-none d-lg-block">
+
+
+
+<input
+  type="search"
+  class="form-control td-search-input"
+  placeholder="&#xf002; Search this site…"
+  aria-label="Search this site…"
+  autocomplete="off"
+  
+  data-offline-search-index-json-src="../../../../offline-search-index.4177fb6c7651f371288e2ce441df3655.json"
+  data-offline-search-base-href="../../../../"
+  data-offline-search-max-results="10"
+>
+
+</div>
+</nav>
+
+    </header>
+    <div class="container-fluid td-outer">
+      <div class="td-main">
+        <div class="row flex-xl-nowrap">
+          <div class="col-12 col-md-3 col-xl-2 td-sidebar d-print-none">
+          </div>
+          <div class="d-none d-xl-block col-xl-2 td-toc d-print-none">
+          </div>
+          <main class="col-12 col-md-9 col-xl-8 pl-md-5" role="main">
+            
+
+
+
+
+<div class="td-content">
+<div class="pageinfo pageinfo-primary d-print-none">
+<p>
+This the multi-page printable view of this section.
+<a href="#" onclick="print();return false;">Click here to print</a>.
+</p><p>
+<a href="../../../../docs/administration/advanced/">Return to the regular view of this page</a>.
+</p>
+</div>
+
+
+
+<h1 class="title">Advanced</h1>
+<div class="lead">This section contains advanced documents for system administrators.</div>
+
+
+
+
+    <ul>
+    
+  
+  
+  
+  
+
+  
+    
+    
+	
+<li>1: <a href="#pg-510d3a6059194f92357d8aa6f6ce7693">Installation Analytics</a></li>
+
+
+    
+  
+    
+    
+	
+<li>2: <a href="#pg-0525160925e6dcda34a919060abed2a7">Semi-automatic and Automatic Annotation</a></li>
+
+
+    
+  
+    
+    
+	
+<li>3: <a href="#pg-7545f3c848c8d646b0c6d2ceef722983">Mounting cloud storage</a></li>
+
+
+    
+  
+    
+    
+	
+<li>4: <a href="#pg-c7cf871a1ff98f3a84b27456c266df2c">Backup guide</a></li>
+
+
+    
+  
+    
+    
+	
+<li>5: <a href="#pg-4f8e6a0deaea3f18579f18b2ee20ccd0">IAM: system roles</a></li>
+
+
+    
+  
+
+    </ul>
+
+
+<div class="content">
+      
+</div>
+</div>
+
+
+  
+  
+  
+  
+
+  
+  
+
+  
+    
+    
+	
+    
+
+<div class="td-content" style="">
+    
+	<h1 id="pg-510d3a6059194f92357d8aa6f6ce7693">1 - Installation Analytics</h1>
+    <div class="lead">Instructions for deployment and customization of Analytics. This section on <a href="https://github.com/openvinotoolkit/cvat/tree/develop/components/analytics">GitHub</a>.</div>
+	<p><img src="../../../../images/image097.jpg" alt=""></p>
+<p>It is possible to proxy annotation logs from client to ELK. To do that run the following command below:</p>
+<h3 id="build-docker-image">Build docker image</h3>
+<div class="highlight"><pre style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash"><span style="color:#8f5902;font-style:italic"># From project root directory</span>
+docker-compose -f docker-compose.yml -f components/analytics/docker-compose.analytics.yml build
+</code></pre></div><h3 id="run-docker-container">Run docker container</h3>
+<div class="highlight"><pre style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash"><span style="color:#8f5902;font-style:italic"># From project root directory</span>
+docker-compose -f docker-compose.yml -f components/analytics/docker-compose.analytics.yml up -d
+</code></pre></div><p>At the moment it is not possible to save advanced settings. Below values should be specified manually.</p>
+<h2 id="time-picker-default">Time picker default</h2>
+<div class="highlight"><pre style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-json" data-lang="json"><span style="color:#000;font-weight:bold">{</span>
+<span style="color:#204a87;font-weight:bold">&#34;from&#34;</span><span style="color:#000;font-weight:bold">:</span> <span style="color:#4e9a06">&#34;now/d&#34;</span><span style="color:#000;font-weight:bold">,</span>
+<span style="color:#204a87;font-weight:bold">&#34;to&#34;</span><span style="color:#000;font-weight:bold">:</span> <span style="color:#4e9a06">&#34;now/d&#34;</span><span style="color:#000;font-weight:bold">,</span>
+<span style="color:#204a87;font-weight:bold">&#34;display&#34;</span><span style="color:#000;font-weight:bold">:</span> <span style="color:#4e9a06">&#34;Today&#34;</span><span style="color:#000;font-weight:bold">,</span>
+<span style="color:#204a87;font-weight:bold">&#34;section&#34;</span><span style="color:#000;font-weight:bold">:</span> <span style="color:#0000cf;font-weight:bold">0</span>
+<span style="color:#000;font-weight:bold">}</span>
+</code></pre></div><h2 id="time-picker-quick-ranges">Time picker quick ranges</h2>
+<div class="highlight"><pre style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-json" data-lang="json"><span style="color:#000;font-weight:bold">[</span>
+  <span style="color:#000;font-weight:bold">{</span>
+    <span style="color:#204a87;font-weight:bold">&#34;from&#34;</span><span style="color:#000;font-weight:bold">:</span> <span style="color:#4e9a06">&#34;now/d&#34;</span><span style="color:#000;font-weight:bold">,</span>
+    <span style="color:#204a87;font-weight:bold">&#34;to&#34;</span><span style="color:#000;font-weight:bold">:</span> <span style="color:#4e9a06">&#34;now/d&#34;</span><span style="color:#000;font-weight:bold">,</span>
+    <span style="color:#204a87;font-weight:bold">&#34;display&#34;</span><span style="color:#000;font-weight:bold">:</span> <span style="color:#4e9a06">&#34;Today&#34;</span><span style="color:#000;font-weight:bold">,</span>
+    <span style="color:#204a87;font-weight:bold">&#34;section&#34;</span><span style="color:#000;font-weight:bold">:</span> <span style="color:#0000cf;font-weight:bold">0</span>
+  <span style="color:#000;font-weight:bold">},</span>
+  <span style="color:#000;font-weight:bold">{</span>
+    <span style="color:#204a87;font-weight:bold">&#34;from&#34;</span><span style="color:#000;font-weight:bold">:</span> <span style="color:#4e9a06">&#34;now/w&#34;</span><span style="color:#000;font-weight:bold">,</span>
+    <span style="color:#204a87;font-weight:bold">&#34;to&#34;</span><span style="color:#000;font-weight:bold">:</span> <span style="color:#4e9a06">&#34;now/w&#34;</span><span style="color:#000;font-weight:bold">,</span>
+    <span style="color:#204a87;font-weight:bold">&#34;display&#34;</span><span style="color:#000;font-weight:bold">:</span> <span style="color:#4e9a06">&#34;This week&#34;</span><span style="color:#000;font-weight:bold">,</span>
+    <span style="color:#204a87;font-weight:bold">&#34;section&#34;</span><span style="color:#000;font-weight:bold">:</span> <span style="color:#0000cf;font-weight:bold">0</span>
+  <span style="color:#000;font-weight:bold">},</span>
+  <span style="color:#000;font-weight:bold">{</span>
+    <span style="color:#204a87;font-weight:bold">&#34;from&#34;</span><span style="color:#000;font-weight:bold">:</span> <span style="color:#4e9a06">&#34;now/M&#34;</span><span style="color:#000;font-weight:bold">,</span>
+    <span style="color:#204a87;font-weight:bold">&#34;to&#34;</span><span style="color:#000;font-weight:bold">:</span> <span style="color:#4e9a06">&#34;now/M&#34;</span><span style="color:#000;font-weight:bold">,</span>
+    <span style="color:#204a87;font-weight:bold">&#34;display&#34;</span><span style="color:#000;font-weight:bold">:</span> <span style="color:#4e9a06">&#34;This month&#34;</span><span style="color:#000;font-weight:bold">,</span>
+    <span style="color:#204a87;font-weight:bold">&#34;section&#34;</span><span style="color:#000;font-weight:bold">:</span> <span style="color:#0000cf;font-weight:bold">0</span>
+  <span style="color:#000;font-weight:bold">},</span>
+  <span style="color:#000;font-weight:bold">{</span>
+    <span style="color:#204a87;font-weight:bold">&#34;from&#34;</span><span style="color:#000;font-weight:bold">:</span> <span style="color:#4e9a06">&#34;now/y&#34;</span><span style="color:#000;font-weight:bold">,</span>
+    <span style="color:#204a87;font-weight:bold">&#34;to&#34;</span><span style="color:#000;font-weight:bold">:</span> <span style="color:#4e9a06">&#34;now/y&#34;</span><span style="color:#000;font-weight:bold">,</span>
+    <span style="color:#204a87;font-weight:bold">&#34;display&#34;</span><span style="color:#000;font-weight:bold">:</span> <span style="color:#4e9a06">&#34;This year&#34;</span><span style="color:#000;font-weight:bold">,</span>
+    <span style="color:#204a87;font-weight:bold">&#34;section&#34;</span><span style="color:#000;font-weight:bold">:</span> <span style="color:#0000cf;font-weight:bold">0</span>
+  <span style="color:#000;font-weight:bold">},</span>
+  <span style="color:#000;font-weight:bold">{</span>
+    <span style="color:#204a87;font-weight:bold">&#34;from&#34;</span><span style="color:#000;font-weight:bold">:</span> <span style="color:#4e9a06">&#34;now/d&#34;</span><span style="color:#000;font-weight:bold">,</span>
+    <span style="color:#204a87;font-weight:bold">&#34;to&#34;</span><span style="color:#000;font-weight:bold">:</span> <span style="color:#4e9a06">&#34;now&#34;</span><span style="color:#000;font-weight:bold">,</span>
+    <span style="color:#204a87;font-weight:bold">&#34;display&#34;</span><span style="color:#000;font-weight:bold">:</span> <span style="color:#4e9a06">&#34;Today so far&#34;</span><span style="color:#000;font-weight:bold">,</span>
+    <span style="color:#204a87;font-weight:bold">&#34;section&#34;</span><span style="color:#000;font-weight:bold">:</span> <span style="color:#0000cf;font-weight:bold">2</span>
+  <span style="color:#000;font-weight:bold">},</span>
+  <span style="color:#000;font-weight:bold">{</span>
+    <span style="color:#204a87;font-weight:bold">&#34;from&#34;</span><span style="color:#000;font-weight:bold">:</span> <span style="color:#4e9a06">&#34;now/w&#34;</span><span style="color:#000;font-weight:bold">,</span>
+    <span style="color:#204a87;font-weight:bold">&#34;to&#34;</span><span style="color:#000;font-weight:bold">:</span> <span style="color:#4e9a06">&#34;now&#34;</span><span style="color:#000;font-weight:bold">,</span>
+    <span style="color:#204a87;font-weight:bold">&#34;display&#34;</span><span style="color:#000;font-weight:bold">:</span> <span style="color:#4e9a06">&#34;Week to date&#34;</span><span style="color:#000;font-weight:bold">,</span>
+    <span style="color:#204a87;font-weight:bold">&#34;section&#34;</span><span style="color:#000;font-weight:bold">:</span> <span style="color:#0000cf;font-weight:bold">2</span>
+  <span style="color:#000;font-weight:bold">},</span>
+  <span style="color:#000;font-weight:bold">{</span>
+    <span style="color:#204a87;font-weight:bold">&#34;from&#34;</span><span style="color:#000;font-weight:bold">:</span> <span style="color:#4e9a06">&#34;now/M&#34;</span><span style="color:#000;font-weight:bold">,</span>
+    <span style="color:#204a87;font-weight:bold">&#34;to&#34;</span><span style="color:#000;font-weight:bold">:</span> <span style="color:#4e9a06">&#34;now&#34;</span><span style="color:#000;font-weight:bold">,</span>
+    <span style="color:#204a87;font-weight:bold">&#34;display&#34;</span><span style="color:#000;font-weight:bold">:</span> <span style="color:#4e9a06">&#34;Month to date&#34;</span><span style="color:#000;font-weight:bold">,</span>
+    <span style="color:#204a87;font-weight:bold">&#34;section&#34;</span><span style="color:#000;font-weight:bold">:</span> <span style="color:#0000cf;font-weight:bold">2</span>
+  <span style="color:#000;font-weight:bold">},</span>
+  <span style="color:#000;font-weight:bold">{</span>
+    <span style="color:#204a87;font-weight:bold">&#34;from&#34;</span><span style="color:#000;font-weight:bold">:</span> <span style="color:#4e9a06">&#34;now/y&#34;</span><span style="color:#000;font-weight:bold">,</span>
+    <span style="color:#204a87;font-weight:bold">&#34;to&#34;</span><span style="color:#000;font-weight:bold">:</span> <span style="color:#4e9a06">&#34;now&#34;</span><span style="color:#000;font-weight:bold">,</span>
+    <span style="color:#204a87;font-weight:bold">&#34;display&#34;</span><span style="color:#000;font-weight:bold">:</span> <span style="color:#4e9a06">&#34;Year to date&#34;</span><span style="color:#000;font-weight:bold">,</span>
+    <span style="color:#204a87;font-weight:bold">&#34;section&#34;</span><span style="color:#000;font-weight:bold">:</span> <span style="color:#0000cf;font-weight:bold">2</span>
+  <span style="color:#000;font-weight:bold">},</span>
+  <span style="color:#000;font-weight:bold">{</span>
+    <span style="color:#204a87;font-weight:bold">&#34;from&#34;</span><span style="color:#000;font-weight:bold">:</span> <span style="color:#4e9a06">&#34;now-1d/d&#34;</span><span style="color:#000;font-weight:bold">,</span>
+    <span style="color:#204a87;font-weight:bold">&#34;to&#34;</span><span style="color:#000;font-weight:bold">:</span> <span style="color:#4e9a06">&#34;now-1d/d&#34;</span><span style="color:#000;font-weight:bold">,</span>
+    <span style="color:#204a87;font-weight:bold">&#34;display&#34;</span><span style="color:#000;font-weight:bold">:</span> <span style="color:#4e9a06">&#34;Yesterday&#34;</span><span style="color:#000;font-weight:bold">,</span>
+    <span style="color:#204a87;font-weight:bold">&#34;section&#34;</span><span style="color:#000;font-weight:bold">:</span> <span style="color:#0000cf;font-weight:bold">1</span>
+  <span style="color:#000;font-weight:bold">},</span>
+  <span style="color:#000;font-weight:bold">{</span>
+    <span style="color:#204a87;font-weight:bold">&#34;from&#34;</span><span style="color:#000;font-weight:bold">:</span> <span style="color:#4e9a06">&#34;now-1w/w&#34;</span><span style="color:#000;font-weight:bold">,</span>
+    <span style="color:#204a87;font-weight:bold">&#34;to&#34;</span><span style="color:#000;font-weight:bold">:</span> <span style="color:#4e9a06">&#34;now-1w/w&#34;</span><span style="color:#000;font-weight:bold">,</span>
+    <span style="color:#204a87;font-weight:bold">&#34;display&#34;</span><span style="color:#000;font-weight:bold">:</span> <span style="color:#4e9a06">&#34;Previous week&#34;</span><span style="color:#000;font-weight:bold">,</span>
+    <span style="color:#204a87;font-weight:bold">&#34;section&#34;</span><span style="color:#000;font-weight:bold">:</span> <span style="color:#0000cf;font-weight:bold">1</span>
+  <span style="color:#000;font-weight:bold">},</span>
+  <span style="color:#000;font-weight:bold">{</span>
+    <span style="color:#204a87;font-weight:bold">&#34;from&#34;</span><span style="color:#000;font-weight:bold">:</span> <span style="color:#4e9a06">&#34;now-1m/m&#34;</span><span style="color:#000;font-weight:bold">,</span>
+    <span style="color:#204a87;font-weight:bold">&#34;to&#34;</span><span style="color:#000;font-weight:bold">:</span> <span style="color:#4e9a06">&#34;now-1m/m&#34;</span><span style="color:#000;font-weight:bold">,</span>
+    <span style="color:#204a87;font-weight:bold">&#34;display&#34;</span><span style="color:#000;font-weight:bold">:</span> <span style="color:#4e9a06">&#34;Previous month&#34;</span><span style="color:#000;font-weight:bold">,</span>
+    <span style="color:#204a87;font-weight:bold">&#34;section&#34;</span><span style="color:#000;font-weight:bold">:</span> <span style="color:#0000cf;font-weight:bold">1</span>
+  <span style="color:#000;font-weight:bold">},</span>
+  <span style="color:#000;font-weight:bold">{</span>
+    <span style="color:#204a87;font-weight:bold">&#34;from&#34;</span><span style="color:#000;font-weight:bold">:</span> <span style="color:#4e9a06">&#34;now-1y/y&#34;</span><span style="color:#000;font-weight:bold">,</span>
+    <span style="color:#204a87;font-weight:bold">&#34;to&#34;</span><span style="color:#000;font-weight:bold">:</span> <span style="color:#4e9a06">&#34;now-1y/y&#34;</span><span style="color:#000;font-weight:bold">,</span>
+    <span style="color:#204a87;font-weight:bold">&#34;display&#34;</span><span style="color:#000;font-weight:bold">:</span> <span style="color:#4e9a06">&#34;Previous year&#34;</span><span style="color:#000;font-weight:bold">,</span>
+    <span style="color:#204a87;font-weight:bold">&#34;section&#34;</span><span style="color:#000;font-weight:bold">:</span> <span style="color:#0000cf;font-weight:bold">1</span>
+  <span style="color:#000;font-weight:bold">}</span>
+<span style="color:#000;font-weight:bold">]</span>
+</code></pre></div>
+</div>
+
+
+
+    
+	
+  
+    
+    
+	
+    
+
+<div class="td-content" style="page-break-before: always">
+    
+	<h1 id="pg-0525160925e6dcda34a919060abed2a7">2 - Semi-automatic and Automatic Annotation</h1>
+    <div class="lead">Information about the installation of components needed for semi-automatic and automatic annotation.</div>
+	<blockquote>
+<p><strong>⚠ WARNING: Do not use <code>docker-compose up</code></strong>
+If you did, make sure all containers are stopped by <code>docker-compose down</code>.</p>
+</blockquote>
+<ul>
+<li>
+<p>To bring up cvat with auto annotation tool, from cvat root directory, you need to run:</p>
+<div class="highlight"><pre style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">docker-compose -f docker-compose.yml -f components/serverless/docker-compose.serverless.yml up -d
+</code></pre></div><p>If you did any changes to the docker-compose files, make sure to add <code>--build</code> at the end.</p>
+<p>To stop the containers, simply run:</p>
+<div class="highlight"><pre style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">docker-compose -f docker-compose.yml -f components/serverless/docker-compose.serverless.yml down
+</code></pre></div></li>
+<li>
+<p>You have to install <code>nuctl</code> command line tool to build and deploy serverless
+functions. Download <a href="https://github.com/nuclio/nuclio/releases/tag/1.5.16">version 1.5.16</a>.
+It is important that the version you download matches the version in
+<a href="https://github.com/openvinotoolkit/cvat/blob/develop/components/serverless/docker-compose.serverless.yml">docker-compose.serverless.yml</a>.
+For example, using wget.</p>
+<div class="highlight"><pre style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">wget https://github.com/nuclio/nuclio/releases/download/&lt;version&gt;/nuctl-&lt;version&gt;-linux-amd64
+</code></pre></div><p>After downloading the nuclio, give it a proper permission and do a softlink.</p>
+<div class="highlight"><pre style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">sudo chmod +x nuctl-&lt;version&gt;-linux-amd64
+sudo ln -sf <span style="color:#204a87;font-weight:bold">$(</span><span style="color:#204a87">pwd</span><span style="color:#204a87;font-weight:bold">)</span>/nuctl-&lt;version&gt;-linux-amd64 /usr/local/bin/nuctl
+</code></pre></div></li>
+<li>
+<p>Create <code>cvat</code> project inside nuclio dashboard where you will deploy new serverless functions
+and deploy a couple of DL models. Commands below should be run only after CVAT has been installed
+using <code>docker-compose</code> because it runs nuclio dashboard which manages all serverless functions.</p>
+<div class="highlight"><pre style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">nuctl create project cvat
+</code></pre></div><div class="highlight"><pre style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">nuctl deploy --project-name cvat <span style="color:#4e9a06">\
+</span><span style="color:#4e9a06"></span>  --path serverless/openvino/dextr/nuclio <span style="color:#4e9a06">\
+</span><span style="color:#4e9a06"></span>  --volume <span style="color:#4e9a06">`</span><span style="color:#204a87">pwd</span><span style="color:#4e9a06">`</span>/serverless/common:/opt/nuclio/common <span style="color:#4e9a06">\
+</span><span style="color:#4e9a06"></span>  --platform <span style="color:#204a87">local</span>
+</code></pre></div><div class="highlight"><pre style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">nuctl deploy --project-name cvat <span style="color:#4e9a06">\
+</span><span style="color:#4e9a06"></span>  --path serverless/openvino/omz/public/yolo-v3-tf/nuclio <span style="color:#4e9a06">\
+</span><span style="color:#4e9a06"></span>  --volume <span style="color:#4e9a06">`</span><span style="color:#204a87">pwd</span><span style="color:#4e9a06">`</span>/serverless/common:/opt/nuclio/common <span style="color:#4e9a06">\
+</span><span style="color:#4e9a06"></span>  --platform <span style="color:#204a87">local</span>
+</code></pre></div><p><strong>Note:</strong></p>
+<ul>
+<li>See <a href="https://github.com/openvinotoolkit/cvat/blob/develop/serverless/deploy_cpu.sh">deploy_cpu.sh</a>
+for more examples.</li>
+</ul>
+<h4 id="gpu-support">GPU Support</h4>
+<p>You will need to install <a href="https://www.tensorflow.org/install/docker#gpu_support">Nvidia Container Toolkit</a>.
+Also you will need to add <code>--resource-limit nvidia.com/gpu=1 --triggers '{&quot;myHttpTrigger&quot;: {&quot;maxWorkers&quot;: 1}}'</code> to
+the nuclio deployment command. You can increase the maxWorker if you have enough GPU memory.
+As an example, below will run on the GPU:</p>
+<div class="highlight"><pre style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">nuctl deploy --project-name cvat <span style="color:#4e9a06">\
+</span><span style="color:#4e9a06"></span>  --path serverless/tensorflow/matterport/mask_rcnn/nuclio <span style="color:#4e9a06">\
+</span><span style="color:#4e9a06"></span>  --platform <span style="color:#204a87">local</span> --base-image tensorflow/tensorflow:1.15.5-gpu-py3 <span style="color:#4e9a06">\
+</span><span style="color:#4e9a06"></span>  --desc <span style="color:#4e9a06">&#34;GPU based implementation of Mask RCNN on Python 3, Keras, and TensorFlow.&#34;</span> <span style="color:#4e9a06">\
+</span><span style="color:#4e9a06"></span>  --image cvat/tf.matterport.mask_rcnn_gpu <span style="color:#4e9a06">\
+</span><span style="color:#4e9a06"></span>  --triggers <span style="color:#4e9a06">&#39;{&#34;myHttpTrigger&#34;: {&#34;maxWorkers&#34;: 1}}&#39;</span> <span style="color:#4e9a06">\
+</span><span style="color:#4e9a06"></span>  --resource-limit nvidia.com/gpu<span style="color:#ce5c00;font-weight:bold">=</span><span style="color:#0000cf;font-weight:bold">1</span>
+</code></pre></div><p><strong>Note:</strong></p>
+<ul>
+<li>The number of GPU deployed functions will be limited to your GPU memory.</li>
+<li>See <a href="https://github.com/openvinotoolkit/cvat/blob/develop/serverless/deploy_gpu.sh">deploy_gpu.sh</a>
+script for more examples.</li>
+<li>For some models (namely <a href="../../../../docs/manual/advanced/ai-tools#trackers">SiamMask</a>) you need an <a href="https://www.nvidia.com/en-us/drivers/unix/">Nvidia driver</a>
+version greater than or equal to 450.80.02.</li>
+</ul>
+<p><strong>Note for Windows users:</strong></p>
+<p>If you want to use nuclio under Windows CVAT installation you should install Nvidia drivers for WSL according to
+<a href="https://docs.nvidia.com/cuda/wsl-user-guide/index.html">this</a> instruction and follow the steps up to “2.3 Installing Nvidia drivers”.
+Important requirement: you should have the latest versions of Docker Desktop, Nvidia drivers for WSL,
+and the latest updates from the Windows Insider Preview Dev channel.</p>
+</li>
+</ul>
+<p><strong>Troubleshooting Nuclio Functions:</strong></p>
+<ul>
+<li>
+<p>You can open nuclio dashboard at <a href="http://localhost:8070">localhost:8070</a>.
+Make sure status of your functions are up and running without any error.</p>
+</li>
+<li>
+<p>Test your deployed DL model as a serverless function. The command below should work on Linux and Mac OS.</p>
+<div class="highlight"><pre style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash"><span style="color:#000">image</span><span style="color:#ce5c00;font-weight:bold">=</span><span style="color:#204a87;font-weight:bold">$(</span>curl https://upload.wikimedia.org/wikipedia/en/7/7d/Lenna_%28test_image%29.png --output - <span style="color:#000;font-weight:bold">|</span> base64 <span style="color:#000;font-weight:bold">|</span> tr -d <span style="color:#4e9a06">&#39;\n&#39;</span><span style="color:#204a87;font-weight:bold">)</span>
+cat <span style="color:#4e9a06">&lt;&lt; EOF &gt; /tmp/input.json
+</span><span style="color:#4e9a06">{&#34;image&#34;: &#34;$image&#34;}
+</span><span style="color:#4e9a06">EOF</span>
+cat /tmp/input.json <span style="color:#000;font-weight:bold">|</span> nuctl invoke openvino.omz.public.yolo-v3-tf -c <span style="color:#4e9a06">&#39;application/json&#39;</span>
+</code></pre></div><details>
+<div class="highlight"><pre style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">20.07.17 12:07:44.519    nuctl.platform.invoker <span style="color:#ce5c00;font-weight:bold">(</span>I<span style="color:#ce5c00;font-weight:bold">)</span> Executing <span style="color:#204a87;font-weight:bold">function</span> <span style="color:#ce5c00;font-weight:bold">{</span><span style="color:#4e9a06">&#34;method&#34;</span>: <span style="color:#4e9a06">&#34;POST&#34;</span>, <span style="color:#4e9a06">&#34;url&#34;</span>: <span style="color:#4e9a06">&#34;http://:57308&#34;</span>, <span style="color:#4e9a06">&#34;headers&#34;</span>: <span style="color:#ce5c00;font-weight:bold">{</span><span style="color:#4e9a06">&#34;Content-Type&#34;</span>:<span style="color:#ce5c00;font-weight:bold">[</span><span style="color:#4e9a06">&#34;application/json&#34;</span><span style="color:#ce5c00;font-weight:bold">]</span>,<span style="color:#4e9a06">&#34;X-Nuclio-Log-Level&#34;</span>:<span style="color:#ce5c00;font-weight:bold">[</span><span style="color:#4e9a06">&#34;info&#34;</span><span style="color:#ce5c00;font-weight:bold">]</span>,<span style="color:#4e9a06">&#34;X-Nuclio-Target&#34;</span>:<span style="color:#ce5c00;font-weight:bold">[</span><span style="color:#4e9a06">&#34;openvino.omz.public.yolo-v3-tf&#34;</span><span style="color:#ce5c00;font-weight:bold">]}}</span>
+20.07.17 12:07:45.275    nuctl.platform.invoker <span style="color:#ce5c00;font-weight:bold">(</span>I<span style="color:#ce5c00;font-weight:bold">)</span> Got response <span style="color:#ce5c00;font-weight:bold">{</span><span style="color:#4e9a06">&#34;status&#34;</span>: <span style="color:#4e9a06">&#34;200 OK&#34;</span><span style="color:#ce5c00;font-weight:bold">}</span>
+20.07.17 12:07:45.275                     nuctl <span style="color:#ce5c00;font-weight:bold">(</span>I<span style="color:#ce5c00;font-weight:bold">)</span> &gt;&gt;&gt; Start of <span style="color:#204a87;font-weight:bold">function</span> logs
+20.07.17 12:07:45.275 ino.omz.public.yolo-v3-tf <span style="color:#ce5c00;font-weight:bold">(</span>I<span style="color:#ce5c00;font-weight:bold">)</span> Run yolo-v3-tf model <span style="color:#ce5c00;font-weight:bold">{</span><span style="color:#4e9a06">&#34;worker_id&#34;</span>: <span style="color:#4e9a06">&#34;0&#34;</span>, <span style="color:#4e9a06">&#34;time&#34;</span>: 1594976864570.9353<span style="color:#ce5c00;font-weight:bold">}</span>
+20.07.17 12:07:45.275                     nuctl <span style="color:#ce5c00;font-weight:bold">(</span>I<span style="color:#ce5c00;font-weight:bold">)</span> <span style="color:#ce5c00;font-weight:bold">&lt;&lt;&lt;</span> End of <span style="color:#204a87;font-weight:bold">function</span> logs
+
+&gt; Response headers:
+<span style="color:#000">Date</span> <span style="color:#ce5c00;font-weight:bold">=</span> Fri, <span style="color:#0000cf;font-weight:bold">17</span> Jul <span style="color:#0000cf;font-weight:bold">2020</span> 09:07:45 GMT
+Content-Type <span style="color:#ce5c00;font-weight:bold">=</span> application/json
+Content-Length <span style="color:#ce5c00;font-weight:bold">=</span> <span style="color:#0000cf;font-weight:bold">100</span>
+<span style="color:#000">Server</span> <span style="color:#ce5c00;font-weight:bold">=</span> nuclio
+
+&gt; Response body:
+<span style="color:#ce5c00;font-weight:bold">[</span>
+    <span style="color:#ce5c00;font-weight:bold">{</span>
+        <span style="color:#4e9a06">&#34;confidence&#34;</span>: <span style="color:#4e9a06">&#34;0.9992254&#34;</span>,
+        <span style="color:#4e9a06">&#34;label&#34;</span>: <span style="color:#4e9a06">&#34;person&#34;</span>,
+        <span style="color:#4e9a06">&#34;points&#34;</span>: <span style="color:#ce5c00;font-weight:bold">[</span>
+            39,
+            124,
+            408,
+            <span style="color:#0000cf;font-weight:bold">512</span>
+        <span style="color:#ce5c00;font-weight:bold">]</span>,
+        <span style="color:#4e9a06">&#34;type&#34;</span>: <span style="color:#4e9a06">&#34;rectangle&#34;</span>
+    <span style="color:#ce5c00;font-weight:bold">}</span>
+<span style="color:#ce5c00;font-weight:bold">]</span>
+</code></pre></div></details>
+</li>
+<li>
+<p>To check for internal server errors, run <code>docker ps -a</code> to see the list of containers.
+Find the container that you are interested, e.g., <code>nuclio-nuclio-tf-faster-rcnn-inception-v2-coco-gpu</code>.
+Then check its logs by <code>docker logs &lt;name of your container&gt;</code>
+e.g.,</p>
+<div class="highlight"><pre style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">docker logs nuclio-nuclio-tf-faster-rcnn-inception-v2-coco-gpu
+</code></pre></div></li>
+<li>
+<p>To debug a code inside a container, you can use vscode to attach to a container <a href="https://code.visualstudio.com/docs/remote/attach-container">instructions</a>.
+To apply your changes, make sure to restart the container.</p>
+<div class="highlight"><pre style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">docker restart &lt;name_of_the_container&gt;
+</code></pre></div></li>
+</ul>
+
+</div>
+
+
+
+    
+	
+  
+    
+    
+	
+    
+
+<div class="td-content" style="page-break-before: always">
+    
+	<h1 id="pg-7545f3c848c8d646b0c6d2ceef722983">3 - Mounting cloud storage</h1>
+    <div class="lead">Instructions on how to mount AWS S3 bucket, Microsoft Azure container or Google Drive as a filesystem.</div>
+	<!--lint disable heading-style-->
+<h2 id="aws-s3-bucket-as-filesystem">AWS S3 bucket as filesystem</h2>
+<h3 id="a-nameaws_s3_ubuntu_2004ubuntu-2004a"><a name="aws_s3_ubuntu_2004">Ubuntu 20.04</a></h3>
+<h4 id="a-nameaws_s3_mountmounta"><a name="aws_s3_mount">Mount</a></h4>
+<ol>
+<li>
+<p>Install s3fs:</p>
+<div class="highlight"><pre style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">sudo apt install s3fs
+</code></pre></div></li>
+<li>
+<p>Enter your credentials in a file <code>${HOME}/.passwd-s3fs</code> and set owner-only permissions:</p>
+<div class="highlight"><pre style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash"><span style="color:#204a87">echo</span> ACCESS_KEY_ID:SECRET_ACCESS_KEY &gt; <span style="color:#4e9a06">${</span><span style="color:#000">HOME</span><span style="color:#4e9a06">}</span>/.passwd-s3fs
+chmod <span style="color:#0000cf;font-weight:bold">600</span> <span style="color:#4e9a06">${</span><span style="color:#000">HOME</span><span style="color:#4e9a06">}</span>/.passwd-s3fs
+</code></pre></div></li>
+<li>
+<p>Uncomment <code>user_allow_other</code> in the <code>/etc/fuse.conf</code> file: <code>sudo nano /etc/fuse.conf</code></p>
+</li>
+<li>
+<p>Run s3fs, replace <code>bucket_name</code>, <code>mount_point</code>:</p>
+<div class="highlight"><pre style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">s3fs &lt;bucket_name&gt; &lt;mount_point&gt; -o allow_other
+</code></pre></div></li>
+</ol>
+<p>For more details see <a href="https://github.com/s3fs-fuse/s3fs-fuse">here</a>.</p>
+<h4 id="a-nameaws_s3_automatically_mountautomatically-mounta"><a name="aws_s3_automatically_mount">Automatically mount</a></h4>
+<p>Follow the first 3 mounting steps above.</p>
+<h5 id="a-nameaws_s3_using_fstabusing-fstaba"><a name="aws_s3_using_fstab">Using fstab</a></h5>
+<ol>
+<li>
+<p>Create a bash script named aws_s3_fuse(e.g in /usr/bin, as root) with this content
+(replace <code>user_name</code> on whose behalf the disk will be mounted, <code>backet_name</code>, <code>mount_point</code>, <code>/path/to/.passwd-s3fs</code>):</p>
+<div class="highlight"><pre style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash"><span style="color:#8f5902;font-style:italic">#!/bin/bash
+</span><span style="color:#8f5902;font-style:italic"></span>sudo -u &lt;user_name&gt; s3fs &lt;backet_name&gt; &lt;mount_point&gt; -o <span style="color:#000">passwd_file</span><span style="color:#ce5c00;font-weight:bold">=</span>/path/to/.passwd-s3fs -o allow_other
+<span style="color:#204a87">exit</span> <span style="color:#0000cf;font-weight:bold">0</span>
+</code></pre></div></li>
+<li>
+<p>Give it the execution permission:</p>
+<div class="highlight"><pre style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">sudo chmod +x /usr/bin/aws_s3_fuse
+</code></pre></div></li>
+<li>
+<p>Edit <code>/etc/fstab</code> adding a line like this, replace <code>mount_point</code>):</p>
+<div class="highlight"><pre style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">/absolute/path/to/aws_s3_fuse  &lt;mount_point&gt;     fuse    allow_other,user,_netdev     <span style="color:#0000cf;font-weight:bold">0</span>       <span style="color:#0000cf;font-weight:bold">0</span>
+</code></pre></div></li>
+</ol>
+<h5 id="a-nameaws_s3_using_systemdusing-systemda"><a name="aws_s3_using_systemd">Using systemd</a></h5>
+<ol>
+<li>
+<p>Create unit file <code>sudo nano /etc/systemd/system/s3fs.service</code>
+(replace <code>user_name</code>, <code>bucket_name</code>, <code>mount_point</code>, <code>/path/to/.passwd-s3fs</code>):</p>
+<div class="highlight"><pre style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash"><span style="color:#ce5c00;font-weight:bold">[</span>Unit<span style="color:#ce5c00;font-weight:bold">]</span>
+<span style="color:#000">Description</span><span style="color:#ce5c00;font-weight:bold">=</span>FUSE filesystem over AWS S3 bucket
+<span style="color:#000">After</span><span style="color:#ce5c00;font-weight:bold">=</span>network.target
+
+<span style="color:#ce5c00;font-weight:bold">[</span>Service<span style="color:#ce5c00;font-weight:bold">]</span>
+<span style="color:#000">Environment</span><span style="color:#ce5c00;font-weight:bold">=</span><span style="color:#4e9a06">&#34;MOUNT_POINT=&lt;mount_point&gt;&#34;</span>
+<span style="color:#000">User</span><span style="color:#ce5c00;font-weight:bold">=</span>&lt;user_name&gt;
+<span style="color:#000">Group</span><span style="color:#ce5c00;font-weight:bold">=</span>&lt;user_name&gt;
+<span style="color:#000">ExecStart</span><span style="color:#ce5c00;font-weight:bold">=</span>s3fs &lt;bucket_name&gt; <span style="color:#4e9a06">${</span><span style="color:#000">MOUNT_POINT</span><span style="color:#4e9a06">}</span> -o <span style="color:#000">passwd_file</span><span style="color:#ce5c00;font-weight:bold">=</span>/path/to/.passwd-s3fs -o allow_other
+<span style="color:#000">ExecStop</span><span style="color:#ce5c00;font-weight:bold">=</span>fusermount -u <span style="color:#4e9a06">${</span><span style="color:#000">MOUNT_POINT</span><span style="color:#4e9a06">}</span>
+<span style="color:#000">Restart</span><span style="color:#ce5c00;font-weight:bold">=</span>always
+<span style="color:#000">Type</span><span style="color:#ce5c00;font-weight:bold">=</span>forking
+
+<span style="color:#ce5c00;font-weight:bold">[</span>Install<span style="color:#ce5c00;font-weight:bold">]</span>
+<span style="color:#000">WantedBy</span><span style="color:#ce5c00;font-weight:bold">=</span>multi-user.target
+</code></pre></div></li>
+<li>
+<p>Update the system configurations, enable unit autorun when the system boots, mount the bucket:</p>
+<div class="highlight"><pre style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">sudo systemctl daemon-reload
+sudo systemctl <span style="color:#204a87">enable</span> s3fs.service
+sudo systemctl start s3fs.service
+</code></pre></div></li>
+</ol>
+<h4 id="a-nameaws_s3_checkchecka"><a name="aws_s3_check">Check</a></h4>
+<p>A file <code>/etc/mtab</code> contains records of currently mounted filesystems.</p>
+<div class="highlight"><pre style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">cat /etc/mtab <span style="color:#000;font-weight:bold">|</span> grep <span style="color:#4e9a06">&#39;s3fs&#39;</span>
+</code></pre></div><h4 id="a-nameaws_s3_unmount_filesystemunmount-filesystema"><a name="aws_s3_unmount_filesystem">Unmount filesystem</a></h4>
+<div class="highlight"><pre style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">fusermount -u &lt;mount_point&gt;
+</code></pre></div><p>If you used <a href="#aws_s3_using_systemd">systemd</a> to mount a bucket:</p>
+<div class="highlight"><pre style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">sudo systemctl stop s3fs.service
+sudo systemctl disable s3fs.service
+</code></pre></div><h2 id="microsoft-azure-container-as-filesystem">Microsoft Azure container as filesystem</h2>
+<h3 id="a-nameazure_ubuntu_2004ubuntu-2004a"><a name="azure_ubuntu_2004">Ubuntu 20.04</a></h3>
+<h4 id="a-nameazure_mountmounta"><a name="azure_mount">Mount</a></h4>
+<ol>
+<li>
+<p>Set up the Microsoft package repository.(More <a href="https://docs.microsoft.com/en-us/windows-server/administration/Linux-Package-Repository-for-Microsoft-Software#configuring-the-repositories">here</a>)</p>
+<div class="highlight"><pre style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">wget https://packages.microsoft.com/config/ubuntu/20.04/packages-microsoft-prod.deb
+sudo dpkg -i packages-microsoft-prod.deb
+sudo apt-get update
+</code></pre></div></li>
+<li>
+<p>Install <code>blobfuse</code> and <code>fuse</code>:</p>
+<div class="highlight"><pre style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">sudo apt-get install blobfuse fuse
+</code></pre></div><p>For more details see <a href="https://github.com/Azure/azure-storage-fuse/wiki/1.-Installation">here</a></p>
+</li>
+<li>
+<p>Create environments (replace <code>account_name</code>, <code>account_key</code>, <code>mount_point</code>):</p>
+<div class="highlight"><pre style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash"><span style="color:#204a87">export</span> <span style="color:#000">AZURE_STORAGE_ACCOUNT</span><span style="color:#ce5c00;font-weight:bold">=</span>&lt;account_name&gt;
+<span style="color:#204a87">export</span> <span style="color:#000">AZURE_STORAGE_ACCESS_KEY</span><span style="color:#ce5c00;font-weight:bold">=</span>&lt;account_key&gt;
+<span style="color:#000">MOUNT_POINT</span><span style="color:#ce5c00;font-weight:bold">=</span>&lt;mount_point&gt;
+</code></pre></div></li>
+<li>
+<p>Create a folder for cache:</p>
+<div class="highlight"><pre style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">sudo mkdir -p /mnt/blobfusetmp
+</code></pre></div></li>
+<li>
+<p>Make sure the file must be owned by the user who mounts the container:</p>
+<div class="highlight"><pre style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">sudo chown &lt;user&gt; /mnt/blobfusetmp
+</code></pre></div></li>
+<li>
+<p>Create the mount point, if it doesn&rsquo;t exists:</p>
+<div class="highlight"><pre style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">mkdir -p <span style="color:#4e9a06">${</span><span style="color:#000">MOUNT_POINT</span><span style="color:#4e9a06">}</span>
+</code></pre></div></li>
+<li>
+<p>Uncomment <code>user_allow_other</code> in the <code>/etc/fuse.conf</code> file: <code>sudo nano /etc/fuse.conf</code></p>
+</li>
+<li>
+<p>Mount container(replace <code>your_container</code>):</p>
+<div class="highlight"><pre style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">blobfuse <span style="color:#4e9a06">${</span><span style="color:#000">MOUNT_POINT</span><span style="color:#4e9a06">}</span> --container-name<span style="color:#ce5c00;font-weight:bold">=</span>&lt;your_container&gt; --tmp-path<span style="color:#ce5c00;font-weight:bold">=</span>/mnt/blobfusetmp -o allow_other
+</code></pre></div></li>
+</ol>
+<h4 id="a-nameazure_automatically_mountautomatically-mounta"><a name="azure_automatically_mount">Automatically mount</a></h4>
+<p>Follow the first 7 mounting steps above.</p>
+<h5 id="a-nameazure_using_fstabusing-fstaba"><a name="azure_using_fstab">Using fstab</a></h5>
+<ol>
+<li>
+<p>Create configuration file <code>connection.cfg</code> with same content, change accountName,
+select one from accountKey or sasToken and replace with your value:</p>
+<div class="highlight"><pre style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">accountName &lt;account-name-here&gt;
+<span style="color:#8f5902;font-style:italic"># Please provide either an account key or a SAS token, and delete the other line.</span>
+accountKey &lt;account-key-here-delete-next-line&gt;
+<span style="color:#8f5902;font-style:italic">#change authType to specify only 1</span>
+sasToken &lt;shared-access-token-here-delete-previous-line&gt;
+authType &lt;MSI/SAS/SPN/Key/empty&gt;
+containerName &lt;insert-container-name-here&gt;
+</code></pre></div></li>
+<li>
+<p>Create a bash script named <code>azure_fuse</code>(e.g in /usr/bin, as root) with content below
+(replace <code>user_name</code> on whose behalf the disk will be mounted, <code>mount_point</code>, <code>/path/to/blobfusetmp</code>,<code>/path/to/connection.cfg</code>):</p>
+<div class="highlight"><pre style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash"><span style="color:#8f5902;font-style:italic">#!/bin/bash
+</span><span style="color:#8f5902;font-style:italic"></span>sudo -u &lt;user_name&gt; blobfuse &lt;mount_point&gt; --tmp-path<span style="color:#ce5c00;font-weight:bold">=</span>/path/to/blobfusetmp  --config-file<span style="color:#ce5c00;font-weight:bold">=</span>/path/to/connection.cfg -o allow_other
+<span style="color:#204a87">exit</span> <span style="color:#0000cf;font-weight:bold">0</span>
+</code></pre></div></li>
+<li>
+<p>Give it the execution permission:</p>
+<div class="highlight"><pre style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">sudo chmod +x /usr/bin/azure_fuse
+</code></pre></div></li>
+<li>
+<p>Edit <code>/etc/fstab</code> with the blobfuse script. Add the following line(replace paths):</p>
+<div class="highlight"><pre style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">/absolute/path/to/azure_fuse &lt;/path/to/desired/mountpoint&gt; fuse allow_other,user,_netdev
+</code></pre></div></li>
+</ol>
+<h5 id="a-nameazure_using_systemdusing-systemda"><a name="azure_using_systemd">Using systemd</a></h5>
+<ol>
+<li>
+<p>Create unit file <code>sudo nano /etc/systemd/system/blobfuse.service</code>.
+(replace <code>user_name</code>, <code>mount_point</code>, <code>container_name</code>,<code>/path/to/connection.cfg</code>):</p>
+<div class="highlight"><pre style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash"><span style="color:#ce5c00;font-weight:bold">[</span>Unit<span style="color:#ce5c00;font-weight:bold">]</span>
+<span style="color:#000">Description</span><span style="color:#ce5c00;font-weight:bold">=</span>FUSE filesystem over Azure container
+<span style="color:#000">After</span><span style="color:#ce5c00;font-weight:bold">=</span>network.target
+
+<span style="color:#ce5c00;font-weight:bold">[</span>Service<span style="color:#ce5c00;font-weight:bold">]</span>
+<span style="color:#000">Environment</span><span style="color:#ce5c00;font-weight:bold">=</span><span style="color:#4e9a06">&#34;MOUNT_POINT=&lt;mount_point&gt;&#34;</span>
+<span style="color:#000">User</span><span style="color:#ce5c00;font-weight:bold">=</span>&lt;user_name&gt;
+<span style="color:#000">Group</span><span style="color:#ce5c00;font-weight:bold">=</span>&lt;user_name&gt;
+<span style="color:#000">ExecStart</span><span style="color:#ce5c00;font-weight:bold">=</span>blobfuse <span style="color:#4e9a06">${</span><span style="color:#000">MOUNT_POINT</span><span style="color:#4e9a06">}</span> --container-name<span style="color:#ce5c00;font-weight:bold">=</span>&lt;container_name&gt; --tmp-path<span style="color:#ce5c00;font-weight:bold">=</span>/mnt/blobfusetmp --config-file<span style="color:#ce5c00;font-weight:bold">=</span>/path/to/connection.cfg -o allow_other
+<span style="color:#000">ExecStop</span><span style="color:#ce5c00;font-weight:bold">=</span>fusermount -u <span style="color:#4e9a06">${</span><span style="color:#000">MOUNT_POINT</span><span style="color:#4e9a06">}</span>
+<span style="color:#000">Restart</span><span style="color:#ce5c00;font-weight:bold">=</span>always
+<span style="color:#000">Type</span><span style="color:#ce5c00;font-weight:bold">=</span>forking
+
+<span style="color:#ce5c00;font-weight:bold">[</span>Install<span style="color:#ce5c00;font-weight:bold">]</span>
+<span style="color:#000">WantedBy</span><span style="color:#ce5c00;font-weight:bold">=</span>multi-user.target
+</code></pre></div></li>
+<li>
+<p>Update the system configurations, enable unit autorun when the system boots, mount the container:</p>
+<div class="highlight"><pre style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">sudo systemctl daemon-reload
+sudo systemctl <span style="color:#204a87">enable</span> blobfuse.service
+sudo systemctl start blobfuse.service
+</code></pre></div><p>Or for more detail <a href="https://github.com/Azure/azure-storage-fuse/tree/master/systemd">see here</a></p>
+</li>
+</ol>
+<h4 id="a-nameazure_checkchecka"><a name="azure_check">Check</a></h4>
+<p>A file <code>/etc/mtab</code> contains records of currently mounted filesystems.</p>
+<div class="highlight"><pre style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">cat /etc/mtab <span style="color:#000;font-weight:bold">|</span> grep <span style="color:#4e9a06">&#39;blobfuse&#39;</span>
+</code></pre></div><h4 id="a-nameazure_unmount_filesystemunmount-filesystema"><a name="azure_unmount_filesystem">Unmount filesystem</a></h4>
+<div class="highlight"><pre style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">fusermount -u &lt;mount_point&gt;
+</code></pre></div><p>If you used <a href="#azure_using_systemd">systemd</a> to mount a container:</p>
+<div class="highlight"><pre style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">sudo systemctl stop blobfuse.service
+sudo systemctl disable blobfuse.service
+</code></pre></div><p>If you have any mounting problems, check out the <a href="https://github.com/Azure/azure-storage-fuse/wiki/3.-Troubleshoot-FAQ">answers</a>
+to common problems</p>
+<h2 id="google-drive-as-filesystem">Google Drive as filesystem</h2>
+<h3 id="a-namegoogle_drive_ubuntu_2004ubuntu-2004a"><a name="google_drive_ubuntu_2004">Ubuntu 20.04</a></h3>
+<h4 id="a-namegoogle_drive_mountmounta"><a name="google_drive_mount">Mount</a></h4>
+<p>To mount a google drive as a filesystem in user space(FUSE)
+you can use <a href="https://github.com/astrada/google-drive-ocamlfuse">google-drive-ocamlfuse</a>
+To do this follow the instructions below:</p>
+<ol>
+<li>
+<p>Install google-drive-ocamlfuse:</p>
+<div class="highlight"><pre style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">sudo add-apt-repository ppa:alessandro-strada/ppa
+sudo apt-get update
+sudo apt-get install google-drive-ocamlfuse
+</code></pre></div></li>
+<li>
+<p>Run <code>google-drive-ocamlfuse</code> without parameters:</p>
+<div class="highlight"><pre style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">google-drive-ocamlfuse
+</code></pre></div><p>This command will create the default application directory (~/.gdfuse/default),
+containing the configuration file config (see the <a href="https://github.com/astrada/google-drive-ocamlfuse/wiki">wiki</a>
+page for more details about configuration).
+And it will start a web browser to obtain authorization to access your Google Drive.
+This will let you modify default configuration before mounting the filesystem.</p>
+<p>Then you can choose a local directory to mount your Google Drive (e.g.: ~/GoogleDrive).</p>
+</li>
+<li>
+<p>Create the mount point, if it doesn&rsquo;t exist(replace mount_point):</p>
+<div class="highlight"><pre style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash"><span style="color:#000">mountpoint</span><span style="color:#ce5c00;font-weight:bold">=</span><span style="color:#4e9a06">&#34;&lt;mount_point&gt;&#34;</span>
+mkdir -p <span style="color:#000">$mountpoint</span>
+</code></pre></div></li>
+<li>
+<p>Uncomment <code>user_allow_other</code> in the <code>/etc/fuse.conf</code> file: <code>sudo nano /etc/fuse.conf</code></p>
+</li>
+<li>
+<p>Mount the filesystem:</p>
+<div class="highlight"><pre style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">google-drive-ocamlfuse -o allow_other <span style="color:#000">$mountpoint</span>
+</code></pre></div></li>
+</ol>
+<h4 id="a-namegoogle_drive_automatically_mountautomatically-mounta"><a name="google_drive_automatically_mount">Automatically mount</a></h4>
+<p>Follow the first 4 mounting steps above.</p>
+<h5 id="a-namegoogle_drive_using_fstabusing-fstaba"><a name="google_drive_using_fstab">Using fstab</a></h5>
+<ol>
+<li>
+<p>Create a bash script named gdfuse(e.g in /usr/bin, as root) with this content
+(replace <code>user_name</code> on whose behalf the disk will be mounted, <code>label</code>, <code>mount_point</code>):</p>
+<div class="highlight"><pre style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash"><span style="color:#8f5902;font-style:italic">#!/bin/bash
+</span><span style="color:#8f5902;font-style:italic"></span>sudo -u &lt;user_name&gt; google-drive-ocamlfuse -o allow_other -label &lt;label&gt; &lt;mount_point&gt;
+<span style="color:#204a87">exit</span> <span style="color:#0000cf;font-weight:bold">0</span>
+</code></pre></div></li>
+<li>
+<p>Give it the execution permission:</p>
+<div class="highlight"><pre style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">sudo chmod +x /usr/bin/gdfuse
+</code></pre></div></li>
+<li>
+<p>Edit <code>/etc/fstab</code> adding a line like this, replace <code>mount_point</code>):</p>
+<div class="highlight"><pre style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">/absolute/path/to/gdfuse  &lt;mount_point&gt;     fuse    allow_other,user,_netdev     <span style="color:#0000cf;font-weight:bold">0</span>       <span style="color:#0000cf;font-weight:bold">0</span>
+</code></pre></div><p>For more details see <a href="https://github.com/astrada/google-drive-ocamlfuse/wiki/Automounting">here</a></p>
+</li>
+</ol>
+<h5 id="a-namegoogle_drive_using_systemdusing-systemda"><a name="google_drive_using_systemd">Using systemd</a></h5>
+<ol>
+<li>
+<p>Create unit file <code>sudo nano /etc/systemd/system/google-drive-ocamlfuse.service</code>.
+(replace <code>user_name</code>, <code>label</code>(default <code>label=default</code>), <code>mount_point</code>):</p>
+<div class="highlight"><pre style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash"><span style="color:#ce5c00;font-weight:bold">[</span>Unit<span style="color:#ce5c00;font-weight:bold">]</span>
+<span style="color:#000">Description</span><span style="color:#ce5c00;font-weight:bold">=</span>FUSE filesystem over Google Drive
+<span style="color:#000">After</span><span style="color:#ce5c00;font-weight:bold">=</span>network.target
+
+<span style="color:#ce5c00;font-weight:bold">[</span>Service<span style="color:#ce5c00;font-weight:bold">]</span>
+<span style="color:#000">Environment</span><span style="color:#ce5c00;font-weight:bold">=</span><span style="color:#4e9a06">&#34;MOUNT_POINT=&lt;mount_point&gt;&#34;</span>
+<span style="color:#000">User</span><span style="color:#ce5c00;font-weight:bold">=</span>&lt;user_name&gt;
+<span style="color:#000">Group</span><span style="color:#ce5c00;font-weight:bold">=</span>&lt;user_name&gt;
+<span style="color:#000">ExecStart</span><span style="color:#ce5c00;font-weight:bold">=</span>google-drive-ocamlfuse -label &lt;label&gt; <span style="color:#4e9a06">${</span><span style="color:#000">MOUNT_POINT</span><span style="color:#4e9a06">}</span>
+<span style="color:#000">ExecStop</span><span style="color:#ce5c00;font-weight:bold">=</span>fusermount -u <span style="color:#4e9a06">${</span><span style="color:#000">MOUNT_POINT</span><span style="color:#4e9a06">}</span>
+<span style="color:#000">Restart</span><span style="color:#ce5c00;font-weight:bold">=</span>always
+<span style="color:#000">Type</span><span style="color:#ce5c00;font-weight:bold">=</span>forking
+
+<span style="color:#ce5c00;font-weight:bold">[</span>Install<span style="color:#ce5c00;font-weight:bold">]</span>
+<span style="color:#000">WantedBy</span><span style="color:#ce5c00;font-weight:bold">=</span>multi-user.target
+</code></pre></div></li>
+<li>
+<p>Update the system configurations, enable unit autorun when the system boots, mount the drive:</p>
+<div class="highlight"><pre style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">sudo systemctl daemon-reload
+sudo systemctl <span style="color:#204a87">enable</span> google-drive-ocamlfuse.service
+sudo systemctl start google-drive-ocamlfuse.service
+</code></pre></div><p>For more details see <a href="https://github.com/astrada/google-drive-ocamlfuse/wiki/Automounting">here</a></p>
+</li>
+</ol>
+<h4 id="a-namegoogle_drive_checkchecka"><a name="google_drive_check">Check</a></h4>
+<p>A file <code>/etc/mtab</code> contains records of currently mounted filesystems.</p>
+<div class="highlight"><pre style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">cat /etc/mtab <span style="color:#000;font-weight:bold">|</span> grep <span style="color:#4e9a06">&#39;google-drive-ocamlfuse&#39;</span>
+</code></pre></div><h4 id="a-namegoogle_drive_unmount_filesystemunmount-filesystema"><a name="google_drive_unmount_filesystem">Unmount filesystem</a></h4>
+<div class="highlight"><pre style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">fusermount -u &lt;mount_point&gt;
+</code></pre></div><p>If you used <a href="#google_drive_using_systemd">systemd</a> to mount a drive:</p>
+<div class="highlight"><pre style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">sudo systemctl stop google-drive-ocamlfuse.service
+sudo systemctl disable google-drive-ocamlfuse.service
+</code></pre></div>
+</div>
+
+
+
+    
+	
+  
+    
+    
+	
+    
+
+<div class="td-content" style="page-break-before: always">
+    
+	<h1 id="pg-c7cf871a1ff98f3a84b27456c266df2c">4 - Backup guide</h1>
+    <div class="lead">Instructions on how to backup CVAT data with Docker.</div>
+	<!--lint disable heading-style-->
+<h2 id="about-cvat-data-volumes">About CVAT data volumes</h2>
+<p>Docker volumes are used to store all CVAT data:</p>
+<ul>
+<li>
+<p><code>cvat_db</code>: PostgreSQL database files, used to store information about users, tasks, projects, annotations, etc.
+Mounted into <code>cvat_db</code> container by <code>/var/lib/postgresql/data</code> path.</p>
+</li>
+<li>
+<p><code>cvat_data</code>: used to store uploaded and prepared media data.
+Mounted into <code>cvat</code> container by <code>/home/django/data</code> path.</p>
+</li>
+<li>
+<p><code>cvat_keys</code>: used to store user ssh keys needed for <a href="../../../../docs/manual/advanced/task-synchronization/">synchronization with a remote Git repository</a>.
+Mounted into <code>cvat</code> container by <code>/home/django/keys</code> path.</p>
+</li>
+<li>
+<p><code>cvat_logs</code>: used to store logs of CVAT backend processes managed by supevisord.
+Mounted into <code>cvat</code> container by <code>/home/django/logs</code> path.</p>
+</li>
+<li>
+<p><code>cvat_events</code>: this is an optional volume that is used only when <a href="../../../../docs/administration/advanced/analytics/">Analytics component</a>
+is enabled and is used to store Elasticsearch database files.
+Mounted into <code>cvat_elasticsearch</code> container by <code>/usr/share/elasticsearch/data</code> path.</p>
+</li>
+</ul>
+<h2 id="how-to-backup-all-cvat-data">How to backup all CVAT data</h2>
+<p>All CVAT containers should be stopped before backup:</p>
+<div class="highlight"><pre style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">docker-compose stop
+</code></pre></div><p>Please don&rsquo;t forget to include all the compose config files that were used in the docker-compose command
+using the <code>-f</code> parameter.</p>
+<p>Backup data:</p>
+<div class="highlight"><pre style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">mkdir backup
+docker run --rm --name temp_backup --volumes-from cvat_db -v <span style="color:#204a87;font-weight:bold">$(</span><span style="color:#204a87">pwd</span><span style="color:#204a87;font-weight:bold">)</span>/backup:/backup ubuntu tar -cjvf /backup/cvat_db.tar.bz2 /var/lib/postgresql/data
+docker run --rm --name temp_backup --volumes-from cvat -v <span style="color:#204a87;font-weight:bold">$(</span><span style="color:#204a87">pwd</span><span style="color:#204a87;font-weight:bold">)</span>/backup:/backup ubuntu tar -cjvf /backup/cvat_data.tar.bz2 /home/django/data
+<span style="color:#8f5902;font-style:italic"># [optional]</span>
+docker run --rm --name temp_backup --volumes-from cvat_elasticsearch -v <span style="color:#204a87;font-weight:bold">$(</span><span style="color:#204a87">pwd</span><span style="color:#204a87;font-weight:bold">)</span>/backup:/backup ubuntu tar -cjvf /backup/cvat_events.tar.bz2 /usr/share/elasticsearch/data
+</code></pre></div><p>Make sure the backup archives have been created, the output of <code>ls backup</code> command should look like this:</p>
+<div class="highlight"><pre style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">ls backup
+cvat_data.tar.bz2  cvat_db.tar.bz2  cvat_events.tar.bz2
+</code></pre></div><h2 id="how-to-restore-cvat-from-backup">How to restore CVAT from backup</h2>
+<p><strong>Warning: use exactly the same CVAT version to restore DB. Otherwise
+it will not work because between CVAT releases the layout of DB can be
+changed. You always can upgrade CVAT later. It will take care to migrate
+your data properly internally.</strong></p>
+<p>Note: CVAT containers must exist (if no, please follow the <a href="../../../../docs/administration/basics/installation/#quick-installation-guide">installation guide</a>).
+Stop all CVAT containers:</p>
+<div class="highlight"><pre style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">docker-compose stop
+</code></pre></div><p>Restore data:</p>
+<div class="highlight"><pre style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash"><span style="color:#204a87">cd</span> &lt;path_to_backup_folder&gt;
+docker run --rm --name temp_backup --volumes-from cvat_db -v <span style="color:#204a87;font-weight:bold">$(</span><span style="color:#204a87">pwd</span><span style="color:#204a87;font-weight:bold">)</span>:/backup ubuntu bash -c <span style="color:#4e9a06">&#34;cd /var/lib/postgresql/data &amp;&amp; tar -xvf /backup/cvat_db.tar.bz2 --strip 4&#34;</span>
+docker run --rm --name temp_backup --volumes-from cvat -v <span style="color:#204a87;font-weight:bold">$(</span><span style="color:#204a87">pwd</span><span style="color:#204a87;font-weight:bold">)</span>:/backup ubuntu bash -c <span style="color:#4e9a06">&#34;cd /home/django/data &amp;&amp; tar -xvf /backup/cvat_data.tar.bz2 --strip 3&#34;</span>
+<span style="color:#8f5902;font-style:italic"># [optional]</span>
+docker run --rm --name temp_backup --volumes-from cvat_elasticsearch -v <span style="color:#204a87;font-weight:bold">$(</span><span style="color:#204a87">pwd</span><span style="color:#204a87;font-weight:bold">)</span>:/backup ubuntu bash -c <span style="color:#4e9a06">&#34;cd /usr/share/elasticsearch/data &amp;&amp; tar -xvf /backup/cvat_events.tar.bz2 --strip 4&#34;</span>
+</code></pre></div><p>After that run CVAT as usual:</p>
+<div class="highlight"><pre style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">docker-compose up -d
+</code></pre></div><h2 id="additional-resources">Additional resources</h2>
+<p><a href="https://docs.docker.com/storage/volumes/#backup-restore-or-migrate-data-volumes">Docker guide about volume backups</a></p>
+
+</div>
+
+
+
+    
+	
+  
+    
+    
+	
+    
+
+<div class="td-content" style="page-break-before: always">
+    
+	<h1 id="pg-4f8e6a0deaea3f18579f18b2ee20ccd0">5 - IAM: system roles</h1>
+    
+	<!--lint disable heading-style-->
+<h2 id="system-roles">System roles</h2>
+
+</div>
+
+
+
+    
+	
+  
+
+
+
+          </main>
+        </div>
+      </div>
+      
+<footer class="bg-dark py-5 row d-print-none">
+  <div class="container-fluid mx-sm-5">
+    <div class="row">
+      <div class="col-6 col-sm-2 text-xs-center order-sm-2">
+        
+        
+        
+<ul class="list-inline mb-0">
+  
+  <li class="list-inline-item mx-2 h3" data-toggle="tooltip" data-placement="top" title="Gitter public chat" aria-label="Gitter public chat">
+    <a class="text-white" rel="noopener noreferrer" href="https://gitter.im/opencv-cvat/public">
+      <i class="fab fa-gitter"></i>
+    </a>
+  </li>
+  
+  <li class="list-inline-item mx-2 h3" data-toggle="tooltip" data-placement="top" title="Stack Overflow" aria-label="Stack Overflow">
+    <a class="text-white" rel="noopener noreferrer" href="https://stackoverflow.com/search?q=%23cvat">
+      <i class="fab fa-stack-overflow"></i>
+    </a>
+  </li>
+  
+  <li class="list-inline-item mx-2 h3" data-toggle="tooltip" data-placement="top" title="YouTube" aria-label="YouTube">
+    <a class="text-white" rel="noopener noreferrer" href="https://www.youtube.com/@cvat-ai">
+      <i class="fab fa-youtube"></i>
+    </a>
+  </li>
+  
+</ul>
+
+        
+        
+      </div>
+      <div class="col-6 col-sm-2 text-right text-xs-center order-sm-3">
+        
+        
+        
+<ul class="list-inline mb-0">
+  
+  <li class="list-inline-item mx-2 h3" data-toggle="tooltip" data-placement="top" title="GitHub" aria-label="GitHub">
+    <a class="text-white" rel="noopener noreferrer" href="https://github.com/cvat-ai/cvat">
+      <i class="fab fa-github"></i>
+    </a>
+  </li>
+  
+  <li class="list-inline-item mx-2 h3" data-toggle="tooltip" data-placement="top" title="Gitter developers chat" aria-label="Gitter developers chat">
+    <a class="text-white" rel="noopener noreferrer" href="https://gitter.im/opencv-cvat/dev">
+      <i class="fab fa-gitter"></i>
+    </a>
+  </li>
+  
+  <li class="list-inline-item mx-2 h3" data-toggle="tooltip" data-placement="top" title="Discord chat" aria-label="Discord chat">
+    <a class="text-white" rel="noopener noreferrer" href="https://discord.gg/fNR3eXfk6C">
+      <i class="fab fa-discord"></i>
+    </a>
+  </li>
+  
+</ul>
+
+        
+        
+      </div>
+      <div class="col-12 col-sm-8 text-center order-sm-2">
+        
+        |
+        
+        |
+        
+        <br/>
+        <div class="footer-disclaimer text-white ">
+          <small>Intel technologies may require enabled hardware, software or service activation. // No product or component can be absolutely secure. // Your costs and results may vary. // Performance varies by use, configuration and other factors. // See our complete legal <u><a href="https://edc.intel.com/content/www/us/en/products/performance/benchmarks/overview/?r=219444055">Notices and Disclaimers</a></u>. // Intel is committed to respecting human rights and avoiding complicity in human rights abuses. See Intel’s <a href="https://www.intel.com/content/www/us/en/policy/policy-human-rights.html"><u>Global Human Rights Principles</u></a>. Intel’s products and software are intended only to be used in applications that do not cause or contribute to a violation of an internationally recognized human right.</small>
+      </div>
+  
+    <p class="mt-2"><a href="../../../../about/">About</a></p>
+  
+      </div>
+    </div>
+  </div>
+</footer>
+
+
+    </div>
+    <script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.1/dist/umd/popper.min.js" integrity="sha384-9/reFTGAW83EW2RDu2S0VKaIzap3H66lZH81PoYlFhbGU+6BZp6G7niu735Sk7lN" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@4.6.0/dist/js/bootstrap.min.js" integrity="sha384-+YQ4JLhjyBLPDQt//I+STsc9iw4uQqACwlvpslubQzn4u2UU2UFM80nGisd026JF" crossorigin="anonymous"></script>
+
+
+
+
+
+
+ 
+
+
+
+
+
+
+
+
+
+
+
+
+
+<script src="../../../../js/main.min.3b172c13b62c2bea8b1c9d2599cddc8cf89718a92d792c680871c81ba43d8c85.js" integrity="sha256-OxcsE7YsK&#43;qLHJ0lmc3cjPiXGKkteSxoCHHIG6Q9jIU=" crossorigin="anonymous"></script>
+
+
+
+<script src='../../../../js/prism.js'></script>
+
+
+
+  </body>
+</html>

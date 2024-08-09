@@ -1,0 +1,891 @@
+<!doctype html>
+<html itemscope itemtype="http://schema.org/WebPage" lang="en" class="no-js">
+  <head>
+    <meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+<meta name="generator" content="Hugo 0.110.0">
+<link rel="canonical" type="text/html" href="../../../../../docs/manual/advanced/analytics-and-monitoring/">
+<meta name="robots" content="noindex, nofollow">
+
+
+<link rel="shortcut icon" href="../../../../../favicons/favicon.ico" >
+<link rel="apple-touch-icon" href="../../../../../favicons/apple-touch-icon-180x180.png" sizes="180x180">
+<link rel="icon" type="image/png" href="../../../../../favicons/favicon-16x16.png" sizes="16x16">
+<link rel="icon" type="image/png" href="../../../../../favicons/favicon-32x32.png" sizes="32x32">
+<link rel="icon" type="image/png" href="../../../../../favicons/android-36x36.png" sizes="36x36">
+<link rel="icon" type="image/png" href="../../../../../favicons/android-48x48.png" sizes="48x48">
+<link rel="icon" type="image/png" href="../../../../../favicons/android-72x72.png" sizes="72x72">
+<link rel="icon" type="image/png" href="../../../../../favicons/android-96x96.png" sizes="96x96">
+<link rel="icon" type="image/png" href="../../../../../favicons/android-144x144.png" sizes="144x144">
+<link rel="icon" type="image/png" href="../../../../../favicons/android-192x192.png" sizes="192x192">
+
+<title>CVAT Analytics and QA in Cloud | CVAT</title>
+<meta name="description" content="Analytics and quality assessment in CVAT Cloud">
+<meta property="og:title" content="CVAT Analytics and QA in Cloud" />
+<meta property="og:description" content="Analytics and quality assessment in CVAT Cloud" />
+<meta property="og:type" content="website" />
+<meta property="og:url" content="/docs/manual/advanced/analytics-and-monitoring/" /><meta property="og:site_name" content="CVAT" />
+<meta itemprop="name" content="CVAT Analytics and QA in Cloud">
+<meta itemprop="description" content="Analytics and quality assessment in CVAT Cloud"><meta name="twitter:card" content="summary"/>
+<meta name="twitter:title" content="CVAT Analytics and QA in Cloud"/>
+<meta name="twitter:description" content="Analytics and quality assessment in CVAT Cloud"/>
+
+
+
+
+<link rel="preload" href="../../../../../scss/main.min.5176d9fef59ea153ab767b7b61a90b35fb24ef3fb7aef25530f05dcb464a2db0.css" as="style">
+<link href="../../../../../scss/main.min.5176d9fef59ea153ab767b7b61a90b35fb24ef3fb7aef25530f05dcb464a2db0.css" rel="stylesheet" integrity="">
+
+<script
+  src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.3/jquery.min.js"
+  integrity="sha512-STof4xm1wgkfm7heWqFJVn58Hm3EtS31XFaagaa8VMReCXAkQnJZ+jEy8PCC/iT18dFy95WcExNHFTqLyp72eQ=="
+  crossorigin="anonymous"></script>
+<script defer
+  src="https://unpkg.com/lunr@2.3.9/lunr.min.js"
+  integrity="sha384-203J0SNzyqHby3iU6hzvzltrWi/M41wOP5Gu+BiJMz5nwKykbkUx8Kp7iti0Lpli"
+  crossorigin="anonymous"></script>
+<link rel="stylesheet" href="../../../../../css/prism.css"/>
+
+  </head>
+  <body class="td-section">
+    <header>
+      <nav class="td-navbar navbar-dark js-navbar-scroll">
+<div class="container-fluid flex-column flex-md-row">
+  <a class="navbar-brand" href="../../../../../about/"><span class="navbar-brand__logo navbar-logo"><svg width="80" height="15" viewBox="0 0 80 15" xmlns="http://www.w3.org/2000/svg"><path d="M6.63399 15C2.37083 15 0 12.5333.0 7.48889.0 2.46667 2.34908.0 6.63399.0H10.6576V2.62222H6.63399c-2.84935.0-4.0674 1.44445-4.0674 4.86667.0 3.44441 1.2398 4.88891 4.0674 4.88891H15.0638V15H6.63399z"/><path d="M22.412.0l4.8346 13.1004C27.7814 14.5415 28.8724 15 30.2842 15 31.7817 15 32.7657 14.476 33.3005 13.1004L38.3918.0H35.5895L30.9902 11.8559C30.8404 12.2052 30.6265 12.3581 30.2842 12.3581 29.942 12.3581 29.7067 12.2052 29.5783 11.8559L25.1929.0H22.412z"/><path d="M53.0989 3.1441C53.2487 2.79476 53.484 2.64192 53.8262 2.64192 54.1685 2.64192 54.4038 2.79476 54.5322 3.1441L58.9176 15h2.8023L56.8425 1.89956C56.3291.524017 55.3451.0 53.8476.0 52.3288.0 51.3448.524017 50.81 1.89956L45.74 15h2.781L53.0989 3.1441z"/><path d="M69.0681.0V2.5665H73.2661V15H75.802V2.5665H80V0H69.0681z"/></svg></span></a>
+  <div class="td-navbar-nav-scroll ms-md-auto" style="height: auto;" id="main_navbar">
+    <ul class="navbar-nav d-flex flex-wrap" style="padding-bottom: 0;">
+      <li class="nav-item">
+        <a class="nav-link active" href="../../../../../docs/"><span>Documentation</span></a>
+      </li>
+      <li class="nav-item">
+        <a class="nav-link" href="../../../../../about/"><span>About</span></a>
+      </li>
+      <li class="nav-item">
+        <a class="nav-link" href="https://app.cvat.ai" rel="noopener"><span>Try it now</span></a>
+      </li>
+      <li class="nav-item">
+        <a class="nav-link" href="https://github.com/cvat-ai/cvat" rel="noopener"><i class='fab fa-github'></i><span>GitHub</span></a>
+      </li>
+      <li class="nav-item dropdown d-none d-lg-block">
+        <div class="dropdown">
+  <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">v2.16.2</a>
+  <ul class="dropdown-menu">
+    <li><a class="dropdown-item" href="../../../../../../">Latest version</a></li>
+    <li><a class="dropdown-item" href="../../../../../../v1.5.0">v1.5.0</a></li>
+    <li><a class="dropdown-item" href="../../../../../../v1.6.0">v1.6.0</a></li>
+    <li><a class="dropdown-item" href="../../../../../../v1.7.0">v1.7.0</a></li>
+    <li><a class="dropdown-item" href="../../../../../../v2.0.0">v2.0.0</a></li>
+    <li><a class="dropdown-item" href="../../../../../../v2.1.0">v2.1.0</a></li>
+    <li><a class="dropdown-item" href="../../../../../../v2.10.3">v2.10.3</a></li>
+    <li><a class="dropdown-item" href="../../../../../../v2.11.3">v2.11.3</a></li>
+    <li><a class="dropdown-item" href="../../../../../../v2.12.1">v2.12.1</a></li>
+    <li><a class="dropdown-item" href="../../../../../../v2.13.0">v2.13.0</a></li>
+    <li><a class="dropdown-item" href="../../../../../../v2.14.4">v2.14.4</a></li>
+    <li><a class="dropdown-item" href="../../../../../../v2.15.0">v2.15.0</a></li>
+    <li><a class="dropdown-item" href="../../../../../../v2.16.2">v2.16.2</a></li>
+    <li><a class="dropdown-item" href="../../../../../../v2.2.0">v2.2.0</a></li>
+    <li><a class="dropdown-item" href="../../../../../../v2.3.0">v2.3.0</a></li>
+    <li><a class="dropdown-item" href="../../../../../../v2.4.9">v2.4.9</a></li>
+    <li><a class="dropdown-item" href="../../../../../../v2.5.2">v2.5.2</a></li>
+    <li><a class="dropdown-item" href="../../../../../../v2.6.2">v2.6.2</a></li>
+    <li><a class="dropdown-item" href="../../../../../../v2.7.6">v2.7.6</a></li>
+    <li><a class="dropdown-item" href="../../../../../../v2.8.2">v2.8.2</a></li>
+    <li><a class="dropdown-item" href="../../../../../../v2.9.2">v2.9.2</a></li>
+    </ul>
+</div></li>
+      </ul>
+  </div>
+  <div class="d-none d-lg-block">
+    <div class="td-search td-search--offline">
+  <div class="td-search__icon"></div>
+  <input
+    type="search"
+    class="td-search__input form-control"
+    placeholder="Search this site…"
+    aria-label="Search this site…"
+    autocomplete="off"
+    
+    data-offline-search-index-json-src="../../../../../offline-search-index.62229ea4ed65539ffa23d795ce918f46.json"
+    data-offline-search-base-href="../../../../../"
+    data-offline-search-max-results="10"
+  >
+</div>
+
+  </div>
+</div>
+</nav>
+    </header>
+    <div class="container-fluid td-outer">
+      <div class="td-main">
+        <div class="row flex-xl-nowrap">
+          <main class="col-12 col-md-9 col-xl-8 ps-md-5" role="main">
+            
+
+
+
+
+<div class="td-content">
+<div class="pageinfo pageinfo-primary d-print-none">
+<p>
+This is the multi-page printable view of this section.
+<a href="#" onclick="print();return false;">Click here to print</a>.
+</p><p>
+<a href="../../../../../docs/manual/advanced/analytics-and-monitoring/">Return to the regular view of this page</a>.
+</p>
+</div>
+
+
+
+<h1 class="title">CVAT Analytics and QA in Cloud</h1>
+<div class="lead">Analytics and quality assessment in CVAT Cloud</div>
+
+
+
+
+    <ul>
+    
+  
+  
+  
+  
+
+  
+    
+    
+	
+<li>1: <a href="#pg-216fb61fb3c583cf905606b6bb2cef90">Automated QA, Review &amp; Honeypot</a></li>
+
+
+    
+  
+    
+    
+	
+<li>2: <a href="#pg-f5275c350b840af83814c4397308c7b1">Manual QA and Review</a></li>
+
+
+    
+  
+    
+    
+	
+<li>3: <a href="#pg-80576ce0840ea07baad18f1f64132744">CVAT Team Performance &amp; Monitoring</a></li>
+
+
+    
+  
+
+    </ul>
+
+
+<div class="content">
+      
+</div>
+</div>
+
+
+  
+  
+  
+  
+
+  
+  
+
+  
+    
+    
+	
+    
+
+<div class="td-content" style="">
+    
+	<h1 id="pg-216fb61fb3c583cf905606b6bb2cef90">1 - Automated QA, Review &amp; Honeypot</h1>
+    <div class="lead">Guidelines for assessing annotation quality in CVAT automatically</div>
+	<p>In CVAT, it&rsquo;s possible to evaluate the quality of annotation through
+the creation of a <strong>Ground truth</strong> job, referred to as a Honeypot.
+To estimate the task quality, CVAT compares all other jobs in the task against the
+established <strong>Ground truth</strong> job, and calculates annotation quality
+based on this comparison.</p>
+<blockquote>
+<p><strong>Note</strong> that quality estimation only supports
+2d tasks. It supports all the annotation types except 2d cuboids.</p>
+</blockquote>
+<blockquote>
+<p><strong>Note</strong> that tracks are considered separate shapes
+and compared on a per-frame basis with other tracks and shapes.</p>
+</blockquote>
+<p>See:</p>
+<ul>
+<li><a href="#ground-truth-job">Ground truth job</a></li>
+<li><a href="#managing-ground-truth-jobs-import-export-and-deletion">Managing Ground Truth jobs: Import, Export, and Deletion</a>
+<ul>
+<li><a href="#import">Import</a></li>
+<li><a href="#export">Export</a></li>
+<li><a href="#delete">Delete</a></li>
+</ul>
+</li>
+<li><a href="#assessing-data-quality-with-ground-truth-jobs">Assessing data quality with Ground truth jobs</a>
+<ul>
+<li><a href="#quality-data">Quality data</a></li>
+<li><a href="#annotation-quality-settings">Annotation quality settings</a></li>
+<li><a href="#gt-conflicts-in-the-cvat-interface">GT conflicts in the CVAT interface</a></li>
+</ul>
+</li>
+<li><a href="#annotation-quality--honeypot-video-tutorial">Annotation quality &amp; Honeypot video tutorial</a></li>
+</ul>
+<h2 id="ground-truth-job">Ground truth job</h2>
+<p>A <strong>Ground truth</strong> job is a way to tell CVAT where to store
+and get the &ldquo;correct&rdquo; annotations for task quality estimation.</p>
+<p>To estimate task quality, you need to
+create a <strong>Ground truth</strong> job in the task,
+and annotate it. You don’t need to
+annotate the whole dataset twice,
+the annotation quality of a small part of
+the data shows the quality of annotation for
+the whole dataset.</p>
+<p>For the quality assurance to function correctly, the <strong>Ground truth</strong> job must
+have a small portion of the task frames and the frames must be chosen randomly.
+Depending on the dataset size and task complexity,
+<strong>5-15% of the data is typically good enough</strong> for quality estimation,
+while keeping extra annotation overhead acceptable.</p>
+<p>For example, in a typical <strong>task with 2000 frames</strong>, selecting <strong>just 5%</strong>,
+which is 100 extra frames to annotate, <strong>is enough</strong> to estimate the
+annotation quality. If the task contains <strong>only 30 frames</strong>, it&rsquo;s advisable to
+select <strong>8-10 frames</strong>, which is <strong>about 30%</strong>.</p>
+<p>It is more than 15% but in the case of smaller datasets,
+we need more samples to estimate quality reliably.</p>
+<p>To create a <strong>Ground truth</strong> job, do the following:</p>
+<ol>
+<li>
+<p>Create a <a href="../../../../../docs/manual/basics/create_an_annotation_task/">task</a>, and open the task page.</p>
+</li>
+<li>
+<p>Click <strong>+</strong>.</p>
+<p><img src="../../../../../images/honeypot01.jpg" alt="Create job"></p>
+</li>
+<li>
+<p>In the <strong>Add new job</strong> window, fill in the following fields:</p>
+<p><img src="../../../../../images/honeypot02.jpg" alt="Add new job"></p>
+<ul>
+<li><strong>Job type</strong>: Use the default parameter <strong>Ground truth</strong>.</li>
+<li><strong>Frame selection method</strong>: Use the default parameter <strong>Random</strong>.</li>
+<li><strong>Quantity %</strong>: Set the desired percentage of frames for the <strong>Ground truth</strong> job.
+<br><strong>Note</strong> that when you use <strong>Quantity %</strong>, the <strong>Frames</strong> field will be autofilled.</li>
+<li><strong>Frame count</strong>: Set the desired number of frames for the &ldquo;ground truth&rdquo; job.
+<br><strong>Note</strong> that when you use <strong>Frames</strong>, the <strong>Quantity %</strong> field will be will be autofilled.</li>
+<li><strong>Seed</strong>: (Optional) If you need to make the random selection reproducible, specify this number.
+It can be any integer number, the same value will yield the same random selection (given that the
+frame number is unchanged). <br> <strong>Note</strong> that if you want to use a
+custom frame sequence, you can do this using the server API instead,
+see <a href="https://docs.cvat.ai/docs/api_sdk/sdk/reference/apis/jobs-api/#create">Jobs API #create</a>.</li>
+</ul>
+</li>
+<li>
+<p>Click <strong>Submit</strong>.</p>
+</li>
+<li>
+<p>Annotate frames, save your work.</p>
+</li>
+<li>
+<p>Change the status of the job to <strong>Completed</strong>.</p>
+</li>
+<li>
+<p>Change <strong>Stage</strong> to <strong>Accepted</strong>.</p>
+</li>
+</ol>
+<p>The <strong>Ground truth</strong> job will appear in the jobs list.</p>
+<p><img src="../../../../../images/honeypot03.jpg" alt="Add new job"></p>
+<h2 id="managing-ground-truth-jobs-import-export-and-deletion">Managing Ground Truth jobs: Import, Export, and Deletion</h2>
+<p>Annotations from <strong>Ground truth</strong> jobs are not included in the dataset export,
+they also cannot be imported during task annotations import
+or with automatic annotation for the task.</p>
+<p>Import, export, and delete options are available from the
+job&rsquo;s menu.</p>
+<p><img src="../../../../../images/honeypot04.jpg" alt="Add new job"></p>
+<h3 id="import">Import</h3>
+<p>If you want to import annotations into the <strong>Ground truth</strong> job, do the following.</p>
+<ol>
+<li>Open the task, and find the <strong>Ground truth</strong> job in the jobs list.</li>
+<li>Click on three dots to open the menu.</li>
+<li>From the menu, select <strong>Import annotations</strong>.</li>
+<li>Select import format, and select file.</li>
+<li>Click <strong>OK</strong>.</li>
+</ol>
+<blockquote>
+<p><strong>Note</strong> that if there are imported annotations for the frames that exist in the task,
+but are not included in the <strong>Ground truth</strong> job, they will be ignored.
+This way, you don&rsquo;t need to worry about &ldquo;cleaning up&rdquo; your <strong>Ground truth</strong>
+annotations for the whole dataset before importing them.
+Importing annotations for the frames that are not known in the task still raises errors.</p>
+</blockquote>
+<h3 id="export">Export</h3>
+<p>To export annotations from the <strong>Ground truth</strong> job, do the following.</p>
+<ol>
+<li>Open the task, and find a job in the jobs list.</li>
+<li>Click on three dots to open the menu.</li>
+<li>From the menu, select <strong>Export annotations</strong>.</li>
+</ol>
+<h3 id="delete">Delete</h3>
+<p>To delete the <strong>Ground truth</strong> job, do the following.</p>
+<ol>
+<li>Open the task, and find the <strong>Ground truth</strong> job in the jobs list.</li>
+<li>Click on three dots to open the menu.</li>
+<li>From the menu, select <strong>Delete</strong>.</li>
+</ol>
+<h2 id="assessing-data-quality-with-ground-truth-jobs">Assessing data quality with Ground truth jobs</h2>
+<p>Once you&rsquo;ve established the <strong>Ground truth</strong> job, proceed to annotate the dataset.</p>
+<p>CVAT will begin the quality comparison between the annotated task and the
+<strong>Ground truth</strong> job in this task once it is finished (on the <code>acceptance</code> stage and in the <code>completed</code> state).</p>
+<blockquote>
+<p><strong>Note</strong> that the process of quality calculation may take up to several hours, depending on
+the amount of data and labeled objects, and is <strong>not updated immediately</strong> after task updates.</p>
+</blockquote>
+<p>To view results go to the <strong>Task</strong> &gt; <strong>Actions</strong> &gt; <strong>View analytics</strong>&gt; <strong>Performance</strong> tab.</p>
+<p><img src="../../../../../images/honeypot05.jpg" alt="Add new job"></p>
+<h3 id="quality-data">Quality data</h3>
+<p>The Analytics page has the following fields:</p>
+<!--lint disable maximum-line-length-->
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Mean annotation quality</td>
+<td>Displays the average quality of annotations, which includes: the count of accurate annotations, total task annotations, ground truth annotations, accuracy rate, precision rate, and recall rate.</td>
+</tr>
+<tr>
+<td>GT Conflicts</td>
+<td>Conflicts identified during quality assessment, including extra or missing annotations. Mouse over the <strong>?</strong> icon for a detailed conflict report on your dataset.</td>
+</tr>
+<tr>
+<td>Issues</td>
+<td>Number of <a href="../../../../../docs/manual/advanced/analytics-and-monitoring/manual-qa/">opened issues</a>. If no issues were reported, will show 0.</td>
+</tr>
+<tr>
+<td>Quality report</td>
+<td>Quality report in JSON format.</td>
+</tr>
+<tr>
+<td>Ground truth job data</td>
+<td>&ldquo;Information about ground truth job, including date, time, and number of issues.</td>
+</tr>
+<tr>
+<td>List of jobs</td>
+<td>List of all the jobs in the task</td>
+</tr>
+</tbody>
+</table>
+<!--lint enable maximum-line-length-->
+<h3 id="annotation-quality-settings">Annotation quality settings</h3>
+<p>If you need to tweak some aspects of comparisons, you can do this from
+the <strong>Annotation Quality Settings</strong> menu.</p>
+<p>You can configure what overlap
+should be considered low or how annotations must be compared.</p>
+<p>The updated settings will take effect
+on the next quality update.</p>
+<p>To open <strong>Annotation Quality Settings</strong>, find
+<strong>Quality report</strong> and on the right side of it, click on
+three dots.</p>
+<p>The following window will open.
+Hover over the <strong>?</strong> marks to understand what each field represents.</p>
+<p><img src="../../../../../images/honeypot08.jpg" alt="Add new job"></p>
+<p>Annotation quality settings have the following parameters:</p>
+<!--lint disable maximum-line-length-->
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Min overlap threshold</td>
+<td>Min overlap threshold(IoU) is used for the distinction between matched / unmatched shapes.</td>
+</tr>
+<tr>
+<td>Low overlap threshold</td>
+<td>Low overlap threshold is used for the distinction between strong/weak (low overlap) matches.</td>
+</tr>
+<tr>
+<td>OKS Sigma</td>
+<td>IoU threshold for points. The percent of the box area, used as the radius of the circle around the GT point, where the checked point is expected to be.</td>
+</tr>
+<tr>
+<td>Relative thickness (frame side %)</td>
+<td>Thickness of polylines, relative to the (image area) ^ 0.5. The distance to the boundary around the GT line inside of which the checked line points should be.</td>
+</tr>
+<tr>
+<td>Check orientation</td>
+<td>Indicates that polylines have direction.</td>
+</tr>
+<tr>
+<td>Min similarity gain (%)</td>
+<td>The minimal gain in the GT IoU between the given and reversed line directions to consider the line inverted. Only useful with the Check orientation parameter.</td>
+</tr>
+<tr>
+<td>Compare groups</td>
+<td>Enables or disables annotation group checks.</td>
+</tr>
+<tr>
+<td>Min group match threshold</td>
+<td>Minimal IoU for groups to be considered matching, used when the Compare groups are enabled.</td>
+</tr>
+<tr>
+<td>Check object visibility</td>
+<td>Check for partially-covered annotations. Masks and polygons will be compared to each other.</td>
+</tr>
+<tr>
+<td>Min visibility threshold</td>
+<td>Minimal visible area percent of the spatial annotations (polygons, masks). For reporting covered annotations, useful with the Check object visibility option.</td>
+</tr>
+<tr>
+<td>Match only visible parts</td>
+<td>Use only the visible part of the masks and polygons in comparisons.</td>
+</tr>
+</tbody>
+</table>
+<!--lint enable maximum-line-length-->
+<h3 id="gt-conflicts-in-the-cvat-interface">GT conflicts in the CVAT interface</h3>
+<p>To see GT Conflicts in the CVAT interface, go to <strong>Review</strong> &gt;
+<strong>Issues</strong> &gt; <strong>Show ground truth annotations and conflicts</strong>.</p>
+<p><img src="../../../../../images/honeypot06.gif" alt="GT conflict"></p>
+<p>The ground truth (GT) annotation is depicted as
+a dotted-line box with an associated label.</p>
+<p>Upon hovering over an issue on the right-side panel with your mouse,
+the corresponding GT Annotation gets highlighted.</p>
+<p>Use arrows in the Issue toolbar to move between GT conflicts.</p>
+<p>To create an issue related to the conflict,
+right-click on the bounding box and from the
+menu select the type of issue you want to create.</p>
+<p><img src="../../../../../images/honeypot07.jpg" alt="GT conflict"></p>
+<h2 id="annotation-quality--honeypot-video-tutorial">Annotation quality &amp; Honeypot video tutorial</h2>
+<p>This video demonstrates the process:</p>
+<iframe width="560" height="315" src="https://www.youtube.com/embed/0HtBnr_CZAM" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>
+
+</div>
+
+
+
+    
+	
+  
+    
+    
+	
+    
+
+<div class="td-content" style="page-break-before: always">
+    
+	<h1 id="pg-f5275c350b840af83814c4397308c7b1">2 - Manual QA and Review</h1>
+    <div class="lead">Guidelines on evaluating annotation quality in CVAT manually</div>
+	<p>In the demanding process of annotation, ensuring accuracy is paramount.</p>
+<p>CVAT introduces a specialized <strong>Review mode</strong>, designed to streamline the
+validation of annotations by pinpointing errors or discrepancies in annotation.</p>
+<blockquote>
+<p><strong>Note</strong>: The <strong>Review mode</strong> is not applicable for 3D tasks.</p>
+</blockquote>
+<p>See:</p>
+<ul>
+<li><a href="#review-and-report-issues-review-only-mode">Review and report issues: review only mode</a>
+<ul>
+<li><a href="#assigning-reviewer">Assigning reviewer</a></li>
+<li><a href="#reporting-issues">Reporting issues</a></li>
+<li><a href="#quick-issue">Quick issue</a></li>
+<li><a href="#assigning-corrector">Assigning corrector</a></li>
+<li><a href="#correcting-reported-issues">Correcting reported issues</a></li>
+</ul>
+</li>
+<li><a href="#review-and-report-issues-review-and-correct-mode">Review and report issues: review and correct mode</a></li>
+<li><a href="#issues-navigation-and-interface">Issues navigation and interface</a>
+<ul>
+<li><a href="#issues-tab">Issues tab</a></li>
+<li><a href="#issues-workspace">Issues workspace</a></li>
+<li><a href="#issues-comments">Issues comments</a></li>
+</ul>
+</li>
+<li><a href="#manual-qa-complete-video-tutorial">Manual QA complete video tutorial</a></li>
+</ul>
+<h2 id="review-and-report-issues-review-only-mode">Review and report issues: review only mode</h2>
+<p>Review mode is a user interface (UI) setting where a specialized
+<strong>Issue</strong> tool is available. This tool allows you to identify
+and describe issues with objects or areas within the frame.</p>
+<blockquote>
+<p><strong>Note:</strong> While in review mode, all other tools will be hidden.</p>
+</blockquote>
+<p><strong>Review</strong> mode screen looks like the following:</p>
+<p><img src="../../../../../images/review_mode_screen.jpg" alt="Review mode screen"></p>
+<h3 id="assigning-reviewer">Assigning reviewer</h3>
+<blockquote>
+<p><strong>Note</strong>: Reviewers can be assigned by project or task owner, assignee, and maintainer.</p>
+</blockquote>
+<p>To assign a reviewer to the job, do the following:</p>
+<ol>
+<li>
+<p>Log in to the Owner or Maintainer account.</p>
+</li>
+<li>
+<p>(Optional) If the person you wish to assign as a reviewer
+is not a member of <strong>Organization</strong>, you
+need to <a href="../../../../../docs/manual/advanced/organization/#invite-members-into-organization">Invite this person to the <strong>Organization</strong></a>.</p>
+</li>
+<li>
+<p>Click on the <strong>Assignee</strong> field and select the reviewer.</p>
+</li>
+<li>
+<p>From the <strong>Stage</strong> drop-down list, select <strong>Validation</strong>.</p>
+<p><img src="../../../../../images/image194.jpg" alt="Assigning reviewer"></p>
+</li>
+</ol>
+<h3 id="reporting-issues">Reporting issues</h3>
+<p>To report an issue, do the following:</p>
+<ol>
+<li>
+<p>Log in to the reviewer&rsquo;s account.</p>
+</li>
+<li>
+<p>On the <strong>Controls</strong> sidebar, click <strong>Open and issue</strong> (<img src="../../../../../images/image195.jpg" alt="">).</p>
+</li>
+<li>
+<p>Click on the area of the frame where the issue is occurring,
+and the <strong>Issue report popup</strong> will appear.</p>
+<p><img src="../../../../../images/issue_report.jpg" alt="Issue report window"></p>
+</li>
+<li>
+<p>In the text field of the <strong>Issue report popup</strong>, enter the issue description.</p>
+</li>
+<li>
+<p>Click <strong>Submit</strong>.</p>
+</li>
+</ol>
+<h3 id="quick-issue">Quick issue</h3>
+<p>The <strong>Quick issue</strong> function streamlines the review process.
+It allows reviewers to efficiently select from a list of
+previously created issues or add a new one,
+facilitating a faster and more organized review.</p>
+<p><img src="../../../../../images/image231.jpg" alt="Quick issue"></p>
+<p>To create a <strong>Quick issue</strong> do the following:</p>
+<ol>
+<li>
+<p>Right-click on the area of the frame where the issue is occurring.</p>
+</li>
+<li>
+<p>From the popup menu select one of the following:</p>
+<ul>
+<li><strong>Open an issue&hellip;</strong>: to create new issue.</li>
+<li><strong>Quick issue: incorrect position</strong>: to report incorrect position of the label.</li>
+<li><strong>Quick issue: incorrect attribute</strong>: to report incorrect attribute of the label.</li>
+<li><strong>Quick issue&hellip;</strong>: to open the list of issues that were reported by you before.</li>
+</ul>
+</li>
+</ol>
+<h3 id="assigning-corrector">Assigning corrector</h3>
+<blockquote>
+<p><strong>Note</strong>: Only project owners and maintainers can assign reviewers.</p>
+</blockquote>
+<p>To assign a corrector to the job, do the following:</p>
+<ol>
+<li>
+<p>Log in to the Owner or Maintainer account.</p>
+</li>
+<li>
+<p>(Optional) If the person you wish to assign as a corrector
+is not a member of <strong>Organization</strong>, you
+need to <a href="../../../../../docs/manual/advanced/organization/#invite-members-into-organization">Invite this person to the <strong>Organization</strong></a>.</p>
+</li>
+<li>
+<p>Click on the <strong>Assignee</strong> field and select the reviewer.</p>
+</li>
+<li>
+<p>From the <strong>Stage</strong> drop-down list, select <strong>Annotation</strong>.</p>
+<p><img src="../../../../../images/image194_1.jpg" alt="Assigning corrector"></p>
+</li>
+</ol>
+<h3 id="correcting-reported-issues">Correcting reported issues</h3>
+<p>To correct the reported issue, do the following:</p>
+<ol>
+<li>
+<p>Log in to the corrector account.</p>
+</li>
+<li>
+<p>Go to the reviewed job and open it.</p>
+</li>
+<li>
+<p>Click on the issue report, to see details of
+what needs to be corrected.</p>
+<p><img src="../../../../../images/issue_report_label.jpg" alt="Issue report label"></p>
+</li>
+<li>
+<p>Correct annotation.</p>
+</li>
+<li>
+<p>Add a comment to the issue report and click <strong>Resolve</strong>.</p>
+<p><img src="../../../../../images/resolve_issue.jpg" alt="Issue report"></p>
+</li>
+<li>
+<p>After all issues are fixed save work, go to the <strong>Menu</strong> select the <strong>Change the job state</strong> and
+change state to <strong>Complete</strong>.</p>
+<p><img src="../../../../../images/image197.jpg" alt="Change job status"></p>
+</li>
+</ol>
+<h2 id="review-and-report-issues-review-and-correct-mode">Review and report issues: review and correct mode</h2>
+<p>The person, assigned as <a href="#assigning-reviewer">assigned as reviewer</a>
+can switch to correction mode and correct all annotation issues.</p>
+<p>To correct annotation issues as a reviewer, do the following:</p>
+<ol>
+<li>
+<p>Log in to the reviewer account.</p>
+</li>
+<li>
+<p>Go to the assigned job and open it.</p>
+</li>
+<li>
+<p>In the top right corner, from the drop-down list,
+select <strong>Standard</strong>.</p>
+<p><img src="../../../../../images/switch_to_standart_mode.jpg" alt="Change job status"></p>
+</li>
+</ol>
+<h2 id="issues-navigation-and-interface">Issues navigation and interface</h2>
+<p>This section describes navigation, interface and
+comments section.</p>
+<h3 id="issues-tab">Issues tab</h3>
+<p>The created issue will appear on the <strong>Objects</strong> sidebar, in the <strong>Issues</strong> tab.</p>
+<p><img src="../../../../../images/image196_detrac.jpg" alt=""></p>
+<p>It has has the following elements:</p>
+<!--lint disable maximum-line-length-->
+<table>
+<thead>
+<tr>
+<th>Element</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Arrows</td>
+<td>You can switch between issues by clicking on arrows</td>
+</tr>
+<tr>
+<td>Hide all issues</td>
+<td>Click on the eye icon to hide all issues</td>
+</tr>
+<tr>
+<td>Hide resolved issues</td>
+<td>Click on the check mark to hide only resolved issues</td>
+</tr>
+<tr>
+<td>Ground truth</td>
+<td>Show ground truth annotations and objects</td>
+</tr>
+</tbody>
+</table>
+<!--lint enable maximum-line-length-->
+<h3 id="issues-workspace">Issues workspace</h3>
+<p>In the workspace, you can click on the issue, and add a
+comment on the issue, remove (<strong>Remove</strong>) it, or resolve (<strong>Resolve</strong>) it.</p>
+<p><img src="../../../../../images/image232.jpg" alt=""></p>
+<p>To reopen the resolved issue, click <strong>Reopen</strong>.</p>
+<p>You can easily access multiple issues created in one
+location by hovering over an issue and scrolling the mouse wheel.</p>
+<p><img src="../../../../../images/issues_scroll.gif" alt=""></p>
+<h3 id="issues-comments">Issues comments</h3>
+<p>You can add as many comments as needed to the issue.</p>
+<p>In the Objects toolbar, only the first and last comments will be displayed</p>
+<p><img src="../../../../../images/issue_comments.png" alt=""></p>
+<p>You can copy and paste comments text.</p>
+<h2 id="manual-qa-complete-video-tutorial">Manual QA complete video tutorial</h2>
+<p>This video demonstrates the process:</p>
+<!--lint disable maximum-line-length-->
+<iframe width="560" height="315" src="https://www.youtube.com/embed/7HxCpjdQt-c?si=xIho-KJLv4b__tRo" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>
+<!--lint enable maximum-line-length-->
+
+</div>
+
+
+
+    
+	
+  
+    
+    
+	
+    
+
+<div class="td-content" style="page-break-before: always">
+    
+	<h1 id="pg-80576ce0840ea07baad18f1f64132744">3 - CVAT Team Performance &amp; Monitoring</h1>
+    <div class="lead">How to monitor team activity and performance in CVAT</div>
+	<p>In CVAT Cloud, you can track a variety of metrics
+reflecting the team&rsquo;s productivity and the pace of annotation with
+the <strong>Performance</strong> feature.</p>
+<p>See:</p>
+<ul>
+<li><a href="#performance-dashboard">Performance dashboard</a></li>
+<li><a href="#performance-video-tutorial">Performance video tutorial</a></li>
+</ul>
+<h2 id="performance-dashboard">Performance dashboard</h2>
+<p>To open the <strong>Performance</strong> dashboard, do the following:</p>
+<ol>
+<li>In the top menu click on <strong>Projects</strong>/ <strong>Tasks</strong>/ <strong>Jobs</strong>.</li>
+<li>Select an item from the list, and click on three dots (<img src="../../../../../images/openmenu.jpg" alt="Open menu">).</li>
+<li>From the menu, select <strong>View analytics</strong> &gt; <strong>Performance</strong> tab.</li>
+</ol>
+<p><img src="../../../../../images/viewanalytics.jpg" alt="Open menu"></p>
+<p>The following dashboard will open:</p>
+<p><img src="../../../../../images/performance_dashboard.jpg" alt="Open menu"></p>
+<p>The <strong>Performance</strong> dashboard has the following elements:</p>
+<!--lint disable maximum-line-length-->
+<table>
+<thead>
+<tr>
+<th>Element</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Analytics for</td>
+<td><strong>Object</strong>/ <strong>Task</strong>/ <strong>Job</strong> number.</td>
+</tr>
+<tr>
+<td>Created</td>
+<td>Time when the dashboard was updated last time.</td>
+</tr>
+<tr>
+<td>Objects</td>
+<td>Graph, showing the number of annotated, updated, and deleted objects by day.</td>
+</tr>
+<tr>
+<td>Annotation speed (objects per hour)</td>
+<td>Number of objects annotated per hour.</td>
+</tr>
+<tr>
+<td>Time</td>
+<td>A drop-down list with various periods for the graph. Currently affects only the histogram data.</td>
+</tr>
+<tr>
+<td>Annotation time (hours)</td>
+<td>Shows for how long the <strong>Project</strong>/<strong>Task</strong>/<strong>Job</strong> is in <strong>In progress</strong> state.</td>
+</tr>
+<tr>
+<td>Total objects count</td>
+<td>Shows the total objects count in the task. Interpolated objects are counted.</td>
+</tr>
+<tr>
+<td>Total annotation speed (objects per hour)</td>
+<td>Shows the annotation speed in the <strong>Project</strong>/<strong>Task</strong>/<strong>Job</strong>. Interpolated objects are counted.</td>
+</tr>
+</tbody>
+</table>
+<!--lint enable maximum-line-length-->
+<p>You can rearrange elements of the dashboard by dragging and dropping each of them.</p>
+<h2 id="performance-video-tutorial">Performance video tutorial</h2>
+<p>This video demonstrates the process:</p>
+<iframe width="560" height="315" src="https://www.youtube.com/embed/W4LUq3gwLko" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>
+
+</div>
+
+
+
+    
+	
+  
+
+
+
+          </main>
+        </div>
+      </div>
+      <footer class="bg-dark py-5 row d-print-none" style="min-height: 0">
+  <div class="container-fluid">
+    <div class="row">
+      <div class="col text-center">
+        
+        
+        
+<ul class="list-inline mb-0">
+  
+  <li class="list-inline-item mx-2 h3" data-bs-toggle="tooltip" data-placement="top" title="Gitter public chat" aria-label="Gitter public chat">
+    <a class="text-white" rel="noopener noreferrer" href="https://gitter.im/opencv-cvat/public">
+      <i class="fab fa-gitter"></i>
+    </a>
+  </li>
+  
+  <li class="list-inline-item mx-2 h3" data-bs-toggle="tooltip" data-placement="top" title="Stack Overflow" aria-label="Stack Overflow">
+    <a class="text-white" rel="noopener noreferrer" href="https://stackoverflow.com/search?q=%23cvat">
+      <i class="fab fa-stack-overflow"></i>
+    </a>
+  </li>
+  
+  <li class="list-inline-item mx-2 h3" data-bs-toggle="tooltip" data-placement="top" title="YouTube" aria-label="YouTube">
+    <a class="text-white" rel="noopener noreferrer" href="https://www.youtube.com/@cvat-ai">
+      <i class="fab fa-youtube"></i>
+    </a>
+  </li>
+  
+</ul>
+
+        
+        
+      </div>
+      <div class="col-4 text-center">
+        <div class="row">
+          <a href="https://www.cvat.ai/privacy">Privacy Policy</a>
+        </div>
+        <div class="row">
+          <a href="https://www.cvat.ai/terms-of-use">Terms of Use</a>
+        </div>
+        <div class="row">
+          
+            <p><a href="../../../../../about/">About</a></p>
+          
+        </div>
+      </div>
+      <div class="col text-right text-center">
+        
+        
+        
+<ul class="list-inline mb-0">
+  
+  <li class="list-inline-item mx-2 h3" data-bs-toggle="tooltip" data-placement="top" title="GitHub" aria-label="GitHub">
+    <a class="text-white" rel="noopener noreferrer" href="https://github.com/cvat-ai/cvat">
+      <i class="fab fa-github"></i>
+    </a>
+  </li>
+  
+  <li class="list-inline-item mx-2 h3" data-bs-toggle="tooltip" data-placement="top" title="Gitter developers chat" aria-label="Gitter developers chat">
+    <a class="text-white" rel="noopener noreferrer" href="https://gitter.im/opencv-cvat/dev">
+      <i class="fab fa-gitter"></i>
+    </a>
+  </li>
+  
+  <li class="list-inline-item mx-2 h3" data-bs-toggle="tooltip" data-placement="top" title="Discord chat" aria-label="Discord chat">
+    <a class="text-white" rel="noopener noreferrer" href="https://discord.gg/fNR3eXfk6C">
+      <i class="fab fa-discord"></i>
+    </a>
+  </li>
+  
+</ul>
+
+        
+        
+      </div>
+    </div>
+  </div>
+</footer>
+
+
+
+    </div>
+    
+  <script src="../../../../../js/main.min.99abe30f7fb05785a480d405ee1665ebd520cec6bbadffe966b7737e103675b8.js" integrity="sha256-mavjD3&#43;wV4WkgNQF7hZl69Ugzsa7rf/pZrdzfhA2dbg=" crossorigin="anonymous"></script>
+<script src='../../../../../js/prism.js'></script>
+<script src='../../../../../js/tabpane-persist.js'></script>
+
+  </body>
+</html>

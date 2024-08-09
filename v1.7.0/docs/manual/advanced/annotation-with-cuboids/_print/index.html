@@ -1,0 +1,483 @@
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    <meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+<meta name="generator" content="Hugo 0.83.0" /><link rel="canonical" type="text/html" href="../../../../../docs/manual/advanced/annotation-with-cuboids/">
+<META NAME="ROBOTS" CONTENT="NOINDEX, NOFOLLOW">
+
+
+<link rel="shortcut icon" href="../../../../../favicons/favicon.ico" >
+<link rel="apple-touch-icon" href="../../../../../favicons/apple-touch-icon-180x180.png" sizes="180x180">
+<link rel="icon" type="image/png" href="../../../../../favicons/favicon-16x16.png" sizes="16x16">
+<link rel="icon" type="image/png" href="../../../../../favicons/favicon-32x32.png" sizes="32x32">
+<link rel="icon" type="image/png" href="../../../../../favicons/android-36x36.png" sizes="36x36">
+<link rel="icon" type="image/png" href="../../../../../favicons/android-48x48.png" sizes="48x48">
+<link rel="icon" type="image/png" href="../../../../../favicons/android-72x72.png" sizes="72x72">
+<link rel="icon" type="image/png" href="../../../../../favicons/android-96x96.png" sizes="96x96">
+<link rel="icon" type="image/png" href="../../../../../favicons/android-144x144.png" sizes="144x144">
+<link rel="icon" type="image/png" href="../../../../../favicons/android-192x192.png" sizes="192x192">
+
+<title>Annotation with cuboids | CVAT</title>
+<meta name="description" content=""><meta property="og:title" content="Annotation with cuboids" />
+<meta property="og:description" content="Guide to creating and editing cuboids." />
+<meta property="og:type" content="website" />
+<meta property="og:url" content="/docs/manual/advanced/annotation-with-cuboids/" /><meta property="og:site_name" content="CVAT" />
+
+<meta itemprop="name" content="Annotation with cuboids">
+<meta itemprop="description" content="Guide to creating and editing cuboids."><meta name="twitter:card" content="summary"/>
+<meta name="twitter:title" content="Annotation with cuboids"/>
+<meta name="twitter:description" content="Guide to creating and editing cuboids."/>
+
+
+
+
+<link rel="preload" href="../../../../../scss/main.min.88ff73c089fd4eec8d7a4ab29bf6ecf09b91583115bd3f07d391066443331b78.css" as="style">
+<link href="../../../../../scss/main.min.88ff73c089fd4eec8d7a4ab29bf6ecf09b91583115bd3f07d391066443331b78.css" rel="stylesheet" integrity="">
+
+
+<script
+  src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"
+  integrity="sha256-9/aliU8dGd2tb6OSsuzixeV4y/faTqgFtohetphbbj0="
+  crossorigin="anonymous"></script>
+
+<script
+  src="https://unpkg.com/lunr@2.3.8/lunr.min.js"
+  integrity="sha384-vRQ9bDyE0Wnu+lMfm57BlYLO0/XauFuKpVsZPs7KEDwYKktWi5+Kz3MP8++DFlRY"
+  crossorigin="anonymous"></script>
+
+
+
+<link rel="stylesheet" href="../../../../../css/prism.css"/>
+
+
+
+
+
+
+  </head>
+  <body class="td-section">
+    <header>
+      
+
+
+<nav class="js-navbar-scroll navbar navbar-expand navbar-dark flex-column flex-md-row td-navbar">
+        <a class="navbar-brand" href="../../../../../about/">
+    <span class="navbar-logo"><svg width="98" height="27" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink"><defs><path d="M101 0v29l-52.544.001C44.326 35.511 35.598 40 25.5 40 11.417 40 0 31.27.0 20.5S11.417 1 25.5 1c4.542.0 8.807.908 12.5 2.5V0h63z" id="logoA"/></defs><g transform="translate(-2 -1)" fill="none" fill-rule="evenodd"><mask id="logoB" fill="#fff"><use xlink:href="#logoA"/></mask><path d="M48.142 1c4.736.0 6.879 3.234 6.879 5.904v2.068h-4.737V6.904c0-.79-.789-2.144-2.142-2.144-1.654.0-2.368 1.354-2.368 2.144v15.192c0 .79.714 2.144 2.368 2.144 1.353.0 2.142-1.354 2.142-2.144v-2.068h4.737v2.068c0 2.67-2.143 5.904-6.88 5.904C42.956 28 41 24.766 41 22.134V6.904C41 4.234 42.955 1 48.142 1zM19-6c9.389.0 17 7.611 17 17s-7.611 17-17 17S2 20.389 2 11 9.611-6 19-6zm42.256 7.338 3.345 19.48h.075l3.42-19.48h5l-6.052 26.324h-5L56.22 1.338h5.037zm20.706.0 5.413 26.324h-4.699l-.94-6.13h-4.548l-.902 6.13h-4.435l5.413-26.324h4.698zm18.038.0v3.723h-4.849v22.6h-4.699v-22.6h-4.81V1.338H1e2zM19 4a7 7 0 100 14 7 7 0 000-14zm60.557 4.295h-.113l-1.466 9.439h3.007l-1.428-9.439z" fill="#fff" fill-rule="nonzero" mask="url(#logoB)"/></g></svg></span>
+  </a>
+  <div class="td-navbar-nav-scroll ml-md-auto" id="main_navbar">
+    <ul class="navbar-nav mt-2 mt-lg-0">
+      
+      
+      <li class="nav-item mr-4 mb-2 mb-lg-0">
+        
+        
+        
+        
+        
+        
+        
+        
+        <a class="nav-link active" href="../../../../../docs/" ><span class="active">Documentation</span></a>
+      </li>
+      
+      <li class="nav-item mr-4 mb-2 mb-lg-0">
+        
+        
+        
+        
+        
+        
+        
+        
+        <a class="nav-link" href="../../../../../about/" ><span>About</span></a>
+      </li>
+      
+      <li class="nav-item mr-4 mb-2 mb-lg-0">
+        
+        
+        
+        
+        
+        
+        <a class="nav-link" href="https://app.cvat.ai"  ><span>Try it now</span></a>
+      </li>
+      
+      <li class="nav-item mr-4 mb-2 mb-lg-0">
+        
+        
+        
+        
+        
+        
+        <a class="nav-link" href="https://github.com/cvat-ai/cvat"  ><i class='fab fa-github'></i><span>GitHub</span></a>
+      </li>
+      
+      
+        
+        <li class="nav-item dropdown">
+          <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-target="#dropdown_ver" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+            v1.7.0
+          </a>
+        </li>
+        
+      
+      
+    </ul>
+  </div>
+  <div class="dropdown-menu" id="dropdown_ver" aria-labelledby="navbarDropdownMenuLink">
+    
+      
+        <a class="dropdown-item" href="../../../../../../docs/manual/advanced/annotation-with-cuboids/">Latest version</a>
+    
+      
+        <a class="dropdown-item" href="../../../../../../v1.5.0/docs/manual/advanced/annotation-with-cuboids/">v1.5.0</a>
+    
+      
+        <a class="dropdown-item" href="../../../../../../v1.6.0/docs/manual/advanced/annotation-with-cuboids/">v1.6.0</a>
+    
+      
+        <a class="dropdown-item" href="../../../../../../v1.7.0/docs/manual/advanced/annotation-with-cuboids/">v1.7.0</a>
+    
+      
+        <a class="dropdown-item" href="../../../../../../v2.0.0/docs/manual/advanced/annotation-with-cuboids/">v2.0.0</a>
+    
+      
+        <a class="dropdown-item" href="../../../../../../v2.1.0/docs/manual/advanced/annotation-with-cuboids/">v2.1.0</a>
+    
+      
+        <a class="dropdown-item" href="../../../../../../v2.10.3/docs/manual/advanced/annotation-with-cuboids/">v2.10.3</a>
+    
+      
+        <a class="dropdown-item" href="../../../../../../v2.11.3/docs/manual/advanced/annotation-with-cuboids/">v2.11.3</a>
+    
+      
+        <a class="dropdown-item" href="../../../../../../v2.12.1/docs/manual/advanced/annotation-with-cuboids/">v2.12.1</a>
+    
+      
+        <a class="dropdown-item" href="../../../../../../v2.13.0/docs/manual/advanced/annotation-with-cuboids/">v2.13.0</a>
+    
+      
+        <a class="dropdown-item" href="../../../../../../v2.14.4/docs/manual/advanced/annotation-with-cuboids/">v2.14.4</a>
+    
+      
+        <a class="dropdown-item" href="../../../../../../v2.15.0/docs/manual/advanced/annotation-with-cuboids/">v2.15.0</a>
+    
+      
+        <a class="dropdown-item" href="../../../../../../v2.16.2/docs/manual/advanced/annotation-with-cuboids/">v2.16.2</a>
+    
+      
+        <a class="dropdown-item" href="../../../../../../v2.2.0/docs/manual/advanced/annotation-with-cuboids/">v2.2.0</a>
+    
+      
+        <a class="dropdown-item" href="../../../../../../v2.3.0/docs/manual/advanced/annotation-with-cuboids/">v2.3.0</a>
+    
+      
+        <a class="dropdown-item" href="../../../../../../v2.4.9/docs/manual/advanced/annotation-with-cuboids/">v2.4.9</a>
+    
+      
+        <a class="dropdown-item" href="../../../../../../v2.5.2/docs/manual/advanced/annotation-with-cuboids/">v2.5.2</a>
+    
+      
+        <a class="dropdown-item" href="../../../../../../v2.6.2/docs/manual/advanced/annotation-with-cuboids/">v2.6.2</a>
+    
+      
+        <a class="dropdown-item" href="../../../../../../v2.7.6/docs/manual/advanced/annotation-with-cuboids/">v2.7.6</a>
+    
+      
+        <a class="dropdown-item" href="../../../../../../v2.8.2/docs/manual/advanced/annotation-with-cuboids/">v2.8.2</a>
+    
+      
+        <a class="dropdown-item" href="../../../../../../v2.9.2/docs/manual/advanced/annotation-with-cuboids/">v2.9.2</a>
+    
+  </div>
+  <div class="navbar-nav d-none d-lg-block">
+
+
+
+<input
+  type="search"
+  class="form-control td-search-input"
+  placeholder="&#xf002; Search this site…"
+  aria-label="Search this site…"
+  autocomplete="off"
+  
+  data-offline-search-index-json-src="../../../../../offline-search-index.8b4fadae27ae58ca4ce4f3af162e85d8.json"
+  data-offline-search-base-href="../../../../../"
+  data-offline-search-max-results="10"
+>
+
+</div>
+</nav>
+
+    </header>
+    <div class="container-fluid td-outer">
+      <div class="td-main">
+        <div class="row flex-xl-nowrap">
+          <div class="col-12 col-md-3 col-xl-2 td-sidebar d-print-none">
+          </div>
+          <div class="d-none d-xl-block col-xl-2 td-toc d-print-none">
+          </div>
+          <main class="col-12 col-md-9 col-xl-8 pl-md-5" role="main">
+            
+
+
+
+
+<div class="td-content">
+<div class="pageinfo pageinfo-primary d-print-none">
+<p>
+This the multi-page printable view of this section.
+<a href="#" onclick="print();return false;">Click here to print</a>.
+</p><p>
+<a href="../../../../../docs/manual/advanced/annotation-with-cuboids/">Return to the regular view of this page</a>.
+</p>
+</div>
+
+
+
+<h1 class="title">Annotation with cuboids</h1>
+<div class="lead">Guide to creating and editing cuboids.</div>
+
+
+
+
+    <ul>
+    
+  
+  
+  
+  
+
+  
+    
+    
+	
+<li>1: <a href="#pg-7b24a39d3199ad1d17cd5b25b2ccd305">Creating the cuboid</a></li>
+
+
+    
+  
+    
+    
+	
+<li>2: <a href="#pg-03837b9c8c03b964e151f921b8c66118">Editing the cuboid</a></li>
+
+
+    
+  
+
+    </ul>
+
+
+<div class="content">
+      <p>It is used to annotate 3 dimensional objects such as cars, boxes, etc&hellip;
+Currently the feature supports one point perspective and has the constraint
+where the vertical edges are exactly parallel to the sides.</p>
+
+</div>
+</div>
+
+
+  
+  
+  
+  
+
+  
+  
+
+  
+    
+    
+	
+    
+
+<div class="td-content" style="">
+    
+	<h1 id="pg-7b24a39d3199ad1d17cd5b25b2ccd305">1 - Creating the cuboid</h1>
+    
+	<p>Before you start, you have to make sure that Cuboid is selected
+and choose a drawing method ”from rectangle” or “by 4 points”.</p>
+<p><img src="../../../../../images/image091.jpg" alt=""></p>
+<h4 id="drawing-cuboid-by-4-points">Drawing cuboid by 4 points</h4>
+<p>Choose a drawing method “by 4 points” and click Shape to enter the drawing mode. There are many ways to draw a cuboid.
+You can draw the cuboid by placing 4 points, after that the drawing will be completed automatically.
+The first 3 points determine the plane of the cuboid while the last point determines the depth of that plane.
+For the first 3 points, it is recommended to only draw the 2 closest side faces, as well as the top and bottom face.</p>
+<p>A few examples:</p>
+<p><img src="../../../../../images/image177_mapillary_vistas.jpg" alt=""></p>
+<h3 id="drawing-cuboid-from-rectangle">Drawing cuboid from rectangle</h3>
+<p>Choose a drawing method “from rectangle” and click Shape to enter the drawing mode.
+When you draw using the rectangle method, you must select the frontal plane of the object using the bounding box.
+The depth and perspective of the resulting cuboid can be edited.</p>
+<p>Example:</p>
+<p><img src="../../../../../images/image182_mapillary_vistas.jpg" alt=""></p>
+
+</div>
+
+
+
+    
+	
+  
+    
+    
+	
+    
+
+<div class="td-content" style="page-break-before: always">
+    
+	<h1 id="pg-03837b9c8c03b964e151f921b8c66118">2 - Editing the cuboid</h1>
+    
+	<p><img src="../../../../../images/image178_mapillary_vistas.jpg" alt=""></p>
+<p>The cuboid can be edited in multiple ways: by dragging points, by dragging certain faces or by dragging planes.
+First notice that there is a face that is painted with gray lines only, let us call it the front face.</p>
+<p>You can move the cuboid by simply dragging the shape behind the front face.
+The cuboid can be extended by dragging on the point in the middle of the edges.
+The cuboid can also be extended up and down by dragging the point at the vertices.</p>
+<p><img src="../../../../../images/gif017_mapillary_vistas.gif" alt=""></p>
+<p>To draw with perspective effects it should be assumed that the front face is the closest to the camera.
+To begin simply drag the points on the vertices that are not on the gray/front face while holding <code>Shift</code>.
+The cuboid can then be edited as usual.</p>
+<p><img src="../../../../../images/gif018_mapillary_vistas.gif" alt=""></p>
+<p>If you wish to reset perspective effects, you may right click on the cuboid,
+and select <code>Reset perspective</code> to return to a regular cuboid.</p>
+<p><img src="../../../../../images/image180_mapillary_vistas.jpg" alt=""></p>
+<p>The location of the gray face can be swapped with the adjacent visible side face.
+You can do it by right clicking on the cuboid and selecting <code>Switch perspective orientation</code>.
+Note that this will also reset the perspective effects.</p>
+<p><img src="../../../../../images/image179_mapillary_vistas.jpg" alt=""></p>
+<p>Certain faces of the cuboid can also be edited,
+these faces are: the left, right and dorsal faces, relative to the gray face.
+Simply drag the faces to move them independently from the rest of the cuboid.</p>
+<p><img src="../../../../../images/gif020_mapillary_vistas.gif" alt=""></p>
+<p>You can also use cuboids in track mode, similar to rectangles in track mode (<a href="../../../../../docs/manual/basics/track-mode-basics/">basics</a> and <a href="../../../../../docs/manual/advanced/track-mode-advanced/">advanced</a>) or <a href="../../../../../docs/manual/advanced/annotation-with-polygons/track-mode-with-polygons/">Track mode with polygons</a></p>
+
+</div>
+
+
+
+    
+	
+  
+
+
+
+          </main>
+        </div>
+      </div>
+      
+<footer class="bg-dark py-5 row d-print-none">
+  <div class="container-fluid mx-sm-5">
+    <div class="row">
+      <div class="col-6 col-sm-2 text-xs-center order-sm-2">
+        
+        
+        
+<ul class="list-inline mb-0">
+  
+  <li class="list-inline-item mx-2 h3" data-toggle="tooltip" data-placement="top" title="Gitter public chat" aria-label="Gitter public chat">
+    <a class="text-white" rel="noopener noreferrer" href="https://gitter.im/opencv-cvat/public">
+      <i class="fab fa-gitter"></i>
+    </a>
+  </li>
+  
+  <li class="list-inline-item mx-2 h3" data-toggle="tooltip" data-placement="top" title="Stack Overflow" aria-label="Stack Overflow">
+    <a class="text-white" rel="noopener noreferrer" href="https://stackoverflow.com/search?q=%23cvat">
+      <i class="fab fa-stack-overflow"></i>
+    </a>
+  </li>
+  
+  <li class="list-inline-item mx-2 h3" data-toggle="tooltip" data-placement="top" title="YouTube" aria-label="YouTube">
+    <a class="text-white" rel="noopener noreferrer" href="https://www.youtube.com/@cvat-ai">
+      <i class="fab fa-youtube"></i>
+    </a>
+  </li>
+  
+</ul>
+
+        
+        
+      </div>
+      <div class="col-6 col-sm-2 text-right text-xs-center order-sm-3">
+        
+        
+        
+<ul class="list-inline mb-0">
+  
+  <li class="list-inline-item mx-2 h3" data-toggle="tooltip" data-placement="top" title="GitHub" aria-label="GitHub">
+    <a class="text-white" rel="noopener noreferrer" href="https://github.com/cvat-ai/cvat">
+      <i class="fab fa-github"></i>
+    </a>
+  </li>
+  
+  <li class="list-inline-item mx-2 h3" data-toggle="tooltip" data-placement="top" title="Gitter developers chat" aria-label="Gitter developers chat">
+    <a class="text-white" rel="noopener noreferrer" href="https://gitter.im/opencv-cvat/dev">
+      <i class="fab fa-gitter"></i>
+    </a>
+  </li>
+  
+  <li class="list-inline-item mx-2 h3" data-toggle="tooltip" data-placement="top" title="Discord chat" aria-label="Discord chat">
+    <a class="text-white" rel="noopener noreferrer" href="https://discord.gg/fNR3eXfk6C">
+      <i class="fab fa-discord"></i>
+    </a>
+  </li>
+  
+</ul>
+
+        
+        
+      </div>
+      <div class="col-12 col-sm-8 text-center order-sm-2">
+        
+        |
+        
+        |
+        
+        <br/>
+        <div class="footer-disclaimer text-white ">
+          <small>Intel technologies may require enabled hardware, software or service activation. // No product or component can be absolutely secure. // Your costs and results may vary. // Performance varies by use, configuration and other factors. // See our complete legal <u><a href="https://edc.intel.com/content/www/us/en/products/performance/benchmarks/overview/?r=219444055">Notices and Disclaimers</a></u>. // Intel is committed to respecting human rights and avoiding complicity in human rights abuses. See Intel’s <a href="https://www.intel.com/content/www/us/en/policy/policy-human-rights.html"><u>Global Human Rights Principles</u></a>. Intel’s products and software are intended only to be used in applications that do not cause or contribute to a violation of an internationally recognized human right.</small>
+      </div>
+  
+    <p class="mt-2"><a href="../../../../../about/">About</a></p>
+  
+      </div>
+    </div>
+  </div>
+</footer>
+
+
+    </div>
+    <script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.1/dist/umd/popper.min.js" integrity="sha384-9/reFTGAW83EW2RDu2S0VKaIzap3H66lZH81PoYlFhbGU+6BZp6G7niu735Sk7lN" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@4.6.0/dist/js/bootstrap.min.js" integrity="sha384-+YQ4JLhjyBLPDQt//I+STsc9iw4uQqACwlvpslubQzn4u2UU2UFM80nGisd026JF" crossorigin="anonymous"></script>
+
+
+
+
+
+
+ 
+
+
+
+
+
+
+
+
+
+
+
+
+
+<script src="../../../../../js/main.min.3b172c13b62c2bea8b1c9d2599cddc8cf89718a92d792c680871c81ba43d8c85.js" integrity="sha256-OxcsE7YsK&#43;qLHJ0lmc3cjPiXGKkteSxoCHHIG6Q9jIU=" crossorigin="anonymous"></script>
+
+
+
+<script src='../../../../../js/prism.js'></script>
+
+
+
+  </body>
+</html>

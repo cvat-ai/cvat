@@ -1,0 +1,1403 @@
+<!doctype html>
+<html itemscope itemtype="http://schema.org/WebPage" lang="en" class="no-js">
+  <head>
+    <meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+<meta name="generator" content="Hugo 0.110.0">
+<link rel="canonical" type="text/html" href="../../../docs/contributing/">
+<meta name="robots" content="noindex, nofollow">
+
+
+<link rel="shortcut icon" href="../../../favicons/favicon.ico" >
+<link rel="apple-touch-icon" href="../../../favicons/apple-touch-icon-180x180.png" sizes="180x180">
+<link rel="icon" type="image/png" href="../../../favicons/favicon-16x16.png" sizes="16x16">
+<link rel="icon" type="image/png" href="../../../favicons/favicon-32x32.png" sizes="32x32">
+<link rel="icon" type="image/png" href="../../../favicons/android-36x36.png" sizes="36x36">
+<link rel="icon" type="image/png" href="../../../favicons/android-48x48.png" sizes="48x48">
+<link rel="icon" type="image/png" href="../../../favicons/android-72x72.png" sizes="72x72">
+<link rel="icon" type="image/png" href="../../../favicons/android-96x96.png" sizes="96x96">
+<link rel="icon" type="image/png" href="../../../favicons/android-144x144.png" sizes="144x144">
+<link rel="icon" type="image/png" href="../../../favicons/android-192x192.png" sizes="192x192">
+
+<title>Contributing to this project | CVAT</title>
+<meta name="description" content="This section contains documents for CVAT developers.">
+<meta property="og:title" content="Contributing to this project" />
+<meta property="og:description" content="This section contains documents for CVAT developers." />
+<meta property="og:type" content="website" />
+<meta property="og:url" content="/docs/contributing/" /><meta property="og:site_name" content="CVAT" />
+<meta itemprop="name" content="Contributing to this project">
+<meta itemprop="description" content="This section contains documents for CVAT developers."><meta name="twitter:card" content="summary"/>
+<meta name="twitter:title" content="Contributing to this project"/>
+<meta name="twitter:description" content="This section contains documents for CVAT developers."/>
+
+
+
+
+<link rel="preload" href="../../../scss/main.min.5176d9fef59ea153ab767b7b61a90b35fb24ef3fb7aef25530f05dcb464a2db0.css" as="style">
+<link href="../../../scss/main.min.5176d9fef59ea153ab767b7b61a90b35fb24ef3fb7aef25530f05dcb464a2db0.css" rel="stylesheet" integrity="">
+
+<script
+  src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.3/jquery.min.js"
+  integrity="sha512-STof4xm1wgkfm7heWqFJVn58Hm3EtS31XFaagaa8VMReCXAkQnJZ+jEy8PCC/iT18dFy95WcExNHFTqLyp72eQ=="
+  crossorigin="anonymous"></script>
+<script defer
+  src="https://unpkg.com/lunr@2.3.9/lunr.min.js"
+  integrity="sha384-203J0SNzyqHby3iU6hzvzltrWi/M41wOP5Gu+BiJMz5nwKykbkUx8Kp7iti0Lpli"
+  crossorigin="anonymous"></script>
+<link rel="stylesheet" href="../../../css/prism.css"/>
+
+  </head>
+  <body class="td-section">
+    <header>
+      <nav class="td-navbar navbar-dark js-navbar-scroll">
+<div class="container-fluid flex-column flex-md-row">
+  <a class="navbar-brand" href="../../../about/"><span class="navbar-brand__logo navbar-logo"><svg width="80" height="15" viewBox="0 0 80 15" xmlns="http://www.w3.org/2000/svg"><path d="M6.63399 15C2.37083 15 0 12.5333.0 7.48889.0 2.46667 2.34908.0 6.63399.0H10.6576V2.62222H6.63399c-2.84935.0-4.0674 1.44445-4.0674 4.86667.0 3.44441 1.2398 4.88891 4.0674 4.88891H15.0638V15H6.63399z"/><path d="M22.412.0l4.8346 13.1004C27.7814 14.5415 28.8724 15 30.2842 15 31.7817 15 32.7657 14.476 33.3005 13.1004L38.3918.0H35.5895L30.9902 11.8559C30.8404 12.2052 30.6265 12.3581 30.2842 12.3581 29.942 12.3581 29.7067 12.2052 29.5783 11.8559L25.1929.0H22.412z"/><path d="M53.0989 3.1441C53.2487 2.79476 53.484 2.64192 53.8262 2.64192 54.1685 2.64192 54.4038 2.79476 54.5322 3.1441L58.9176 15h2.8023L56.8425 1.89956C56.3291.524017 55.3451.0 53.8476.0 52.3288.0 51.3448.524017 50.81 1.89956L45.74 15h2.781L53.0989 3.1441z"/><path d="M69.0681.0V2.5665H73.2661V15H75.802V2.5665H80V0H69.0681z"/></svg></span></a>
+  <div class="td-navbar-nav-scroll ms-md-auto" style="height: auto;" id="main_navbar">
+    <ul class="navbar-nav d-flex flex-wrap" style="padding-bottom: 0;">
+      <li class="nav-item">
+        <a class="nav-link active" href="../../../docs/"><span>Documentation</span></a>
+      </li>
+      <li class="nav-item">
+        <a class="nav-link" href="../../../about/"><span>About</span></a>
+      </li>
+      <li class="nav-item">
+        <a class="nav-link" href="https://app.cvat.ai" rel="noopener"><span>Try it now</span></a>
+      </li>
+      <li class="nav-item">
+        <a class="nav-link" href="https://github.com/cvat-ai/cvat" rel="noopener"><i class='fab fa-github'></i><span>GitHub</span></a>
+      </li>
+      <li class="nav-item dropdown d-none d-lg-block">
+        <div class="dropdown">
+  <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">develop</a>
+  <ul class="dropdown-menu">
+    <li><a class="dropdown-item" href="../../../">Latest version</a></li>
+    <li><a class="dropdown-item" href="../../../v1.5.0">v1.5.0</a></li>
+    <li><a class="dropdown-item" href="../../../v1.6.0">v1.6.0</a></li>
+    <li><a class="dropdown-item" href="../../../v1.7.0">v1.7.0</a></li>
+    <li><a class="dropdown-item" href="../../../v2.0.0">v2.0.0</a></li>
+    <li><a class="dropdown-item" href="../../../v2.1.0">v2.1.0</a></li>
+    <li><a class="dropdown-item" href="../../../v2.10.3">v2.10.3</a></li>
+    <li><a class="dropdown-item" href="../../../v2.11.3">v2.11.3</a></li>
+    <li><a class="dropdown-item" href="../../../v2.12.1">v2.12.1</a></li>
+    <li><a class="dropdown-item" href="../../../v2.13.0">v2.13.0</a></li>
+    <li><a class="dropdown-item" href="../../../v2.14.4">v2.14.4</a></li>
+    <li><a class="dropdown-item" href="../../../v2.15.0">v2.15.0</a></li>
+    <li><a class="dropdown-item" href="../../../v2.16.2">v2.16.2</a></li>
+    <li><a class="dropdown-item" href="../../../v2.2.0">v2.2.0</a></li>
+    <li><a class="dropdown-item" href="../../../v2.3.0">v2.3.0</a></li>
+    <li><a class="dropdown-item" href="../../../v2.4.9">v2.4.9</a></li>
+    <li><a class="dropdown-item" href="../../../v2.5.2">v2.5.2</a></li>
+    <li><a class="dropdown-item" href="../../../v2.6.2">v2.6.2</a></li>
+    <li><a class="dropdown-item" href="../../../v2.7.6">v2.7.6</a></li>
+    <li><a class="dropdown-item" href="../../../v2.8.2">v2.8.2</a></li>
+    <li><a class="dropdown-item" href="../../../v2.9.2">v2.9.2</a></li>
+    </ul>
+</div></li>
+      </ul>
+  </div>
+  <div class="d-none d-lg-block">
+    <div class="td-search td-search--offline">
+  <div class="td-search__icon"></div>
+  <input
+    type="search"
+    class="td-search__input form-control"
+    placeholder="Search this site…"
+    aria-label="Search this site…"
+    autocomplete="off"
+    
+    data-offline-search-index-json-src="../../../offline-search-index.62229ea4ed65539ffa23d795ce918f46.json"
+    data-offline-search-base-href="../../../"
+    data-offline-search-max-results="10"
+  >
+</div>
+
+  </div>
+</div>
+</nav>
+    </header>
+    <div class="container-fluid td-outer">
+      <div class="td-main">
+        <div class="row flex-xl-nowrap">
+          <main class="col-12 col-md-9 col-xl-8 ps-md-5" role="main">
+            
+
+
+
+
+<div class="td-content">
+<div class="pageinfo pageinfo-primary d-print-none">
+<p>
+This is the multi-page printable view of this section.
+<a href="#" onclick="print();return false;">Click here to print</a>.
+</p><p>
+<a href="../../../docs/contributing/">Return to the regular view of this page</a>.
+</p>
+</div>
+
+
+
+<h1 class="title">Contributing to this project</h1>
+<div class="lead">This section contains documents for CVAT developers.</div>
+
+
+
+
+    <ul>
+    
+  
+  
+  
+  
+
+  
+    
+    
+	
+<li>1: <a href="#pg-581cde702b4a79613a0ad27e40794a90">Development environment</a></li>
+
+
+    
+  
+    
+    
+	
+<li>2: <a href="#pg-9331ae571b7ea5467eaf6403bb797504">Setup additional components in development environment</a></li>
+
+
+    
+  
+    
+    
+	
+<li>3: <a href="#pg-c414e3e4151a3294cd86a33ca60eb228">Coding style</a></li>
+
+
+    
+  
+    
+    
+	
+<li>4: <a href="#pg-4ef825a7833abf73c578fadc480d6f1b">Branching model</a></li>
+
+
+    
+  
+    
+    
+	
+<li>5: <a href="#pg-9f0fa9959f1dde888009a7489abc95ad">Using the issue tracker</a></li>
+
+
+    
+  
+    
+    
+	
+<li>6: <a href="#pg-3d2c51c440746ae3c1c664fd3c6874c5">Bug reports</a></li>
+
+
+    
+  
+    
+    
+	
+<li>7: <a href="#pg-36bf632c8a299272d929049c3399f872">Feature requests</a></li>
+
+
+    
+  
+    
+    
+	
+<li>8: <a href="#pg-bfe8b249a0cc63de417c2f12c6a75c87">Pull requests</a></li>
+
+
+    
+  
+    
+    
+	
+<li>9: <a href="#pg-aa57dee42d2570392356d846a0921fdf">How to add a new annotation format support</a></li>
+
+
+    
+  
+    
+    
+	
+<li>10: <a href="#pg-7eeea8fd2f941135caa5e10f5f3eaaf1">Server Profiling</a></li>
+
+
+    
+  
+    
+    
+	
+<li>11: <a href="#pg-dcce7b96f2dcf1adc45ffadd13643a76">Running tests</a></li>
+
+
+    
+  
+    
+    
+	
+<li>12: <a href="#pg-af7b8ac5d1b8f94dc59b4e12f4a11af1">Repository structure</a></li>
+
+
+    
+  
+
+    </ul>
+
+
+<div class="content">
+      <p>Please take a moment to review this document in order to make the contribution
+process easy and effective for everyone involved.</p>
+<p>Following these guidelines helps to communicate that you respect the time of
+the developers managing and developing this open source project. In return,
+they should reciprocate that respect in addressing your issue or assessing
+patches and features.</p>
+
+</div>
+</div>
+
+
+  
+  
+  
+  
+
+  
+  
+
+  
+    
+    
+	
+    
+
+<div class="td-content" style="page-break-before: always">
+    
+	<h1 id="pg-581cde702b4a79613a0ad27e40794a90">1 - Development environment</h1>
+    <div class="lead">Installing a development environment for different operating systems.</div>
+	<h3 id="setup-the-dependencies">Setup the dependencies:</h3>
+<ul>
+<li>
+<p>Install necessary dependencies:</p>
+<p>Ubuntu 22.04/20.04</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>sudo apt-get update <span style="color:#ce5c00;font-weight:bold">&amp;&amp;</span> sudo apt-get --no-install-recommends install -y build-essential curl git redis-server python3-dev python3-pip python3-venv python3-tk libldap2-dev libsasl2-dev
+</span></span></code></pre></div><div class="highlight"><pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span><span style="color:#8f5902;font-style:italic"># Install Node.js 20 and yarn</span>
+</span></span><span style="display:flex;"><span>curl -fsSL https://deb.nodesource.com/setup_20.x <span style="color:#000;font-weight:bold">|</span> sudo bash -
+</span></span><span style="display:flex;"><span>sudo apt-get install -y nodejs
+</span></span><span style="display:flex;"><span>sudo npm install --global yarn
+</span></span></code></pre></div><p>MacOS 10.15</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>brew install git python pyenv redis curl openssl node sqlite3 geos
+</span></span></code></pre></div><p>Arch Linux</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span><span style="color:#8f5902;font-style:italic"># Update the system and AUR (you can use any other AUR helper of choice) first:</span>
+</span></span><span style="display:flex;"><span>sudo pacman -Syyu
+</span></span><span style="display:flex;"><span>pikaur -Syu
+</span></span></code></pre></div><div class="highlight"><pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span><span style="color:#8f5902;font-style:italic"># Install the required dependencies:</span>
+</span></span><span style="display:flex;"><span>sudo pacman -S base-devel curl git redis cmake gcc python python-pip tk libldap libsasl pkgconf ffmpeg geos openldap
+</span></span></code></pre></div><div class="highlight"><pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span><span style="color:#8f5902;font-style:italic"># CVAT supports only Python 3.10, so install it if you don’t have it:</span>
+</span></span><span style="display:flex;"><span>pikaur -S python310
+</span></span></code></pre></div><div class="highlight"><pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span><span style="color:#8f5902;font-style:italic"># Install Node.js, yarn and npm</span>
+</span></span><span style="display:flex;"><span>sudo pacman -S nodejs-lts-gallium yarn npm
+</span></span></code></pre></div></li>
+<li>
+<p>Install Chrome</p>
+</li>
+<li>
+<p>Install <a href="https://code.visualstudio.com/docs/setup/linux#_debian-and-ubuntu-based-distributions">VS Code</a>.</p>
+</li>
+<li>
+<p>Install the following VScode extensions:</p>
+<ul>
+<li><a href="https://marketplace.visualstudio.com/items?itemName=ms-vscode.js-debug">JavaScript Debugger</a></li>
+<li><a href="https://marketplace.visualstudio.com/items?itemName=ms-python.python">Python</a></li>
+<li><a href="https://marketplace.visualstudio.com/items?itemName=dbaeumer.vscode-eslint">ESLint</a></li>
+<li><a href="https://marketplace.visualstudio.com/items?itemName=stylelint.vscode-stylelint">Stylelint</a></li>
+<li><a href="https://marketplace.visualstudio.com/items?itemName=esbenp.prettier-vscode">Prettier Formatter for Visual Studio Code</a></li>
+<li><a href="https://marketplace.visualstudio.com/items?itemName=ymotongpoo.licenser">licenser</a></li>
+<li><a href="https://marketplace.visualstudio.com/items?itemName=shardulm94.trailing-spaces">Trailing Spaces</a></li>
+<li><a href="https://marketplace.visualstudio.com/items?itemName=streetsidesoftware.code-spell-checker">Code Spell Checker</a></li>
+</ul>
+</li>
+<li>
+<p>Make sure to use Python 3.10.0 or higher</p>
+<pre tabindex="0"><code>python3 --version
+</code></pre></li>
+<li>
+<p>Install CVAT on your local host:</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>git clone https://github.com/cvat-ai/cvat
+</span></span><span style="display:flex;"><span><span style="color:#204a87">cd</span> cvat <span style="color:#ce5c00;font-weight:bold">&amp;&amp;</span> mkdir logs keys
+</span></span><span style="display:flex;"><span>python3 -m venv .env
+</span></span><span style="display:flex;"><span>. .env/bin/activate
+</span></span><span style="display:flex;"><span>pip install -U pip wheel setuptools
+</span></span><span style="display:flex;"><span>pip install -r cvat/requirements/development.txt
+</span></span></code></pre></div><p>Note that the <code>.txt</code> files in the <code>cvat/requirements</code> directory
+have pinned dependencies intended for the main target OS/Python version
+(the one used in the main Dockerfile).
+If you&rsquo;re unable to install those dependency versions,
+you can substitute the corresponding <code>.in</code> files instead.
+That way, you&rsquo;re more likely to be able to install the dependencies,
+but their versions might not correspond to those used in production.</p>
+<blockquote>
+<p>Note for Mac users</p>
+<p>If you have any problems with installing dependencies from
+<code>cvat/requirements/*.txt</code>, you may need to reinstall your system python
+In some cases after system update it can be configured incorrectly and cannot compile
+some native modules</p>
+<p>Make sure Homebrew lib path is in <code>DYLD_LIBRARY_PATH</code>.
+For Apple Silicon: <code>export DYLD_LIBRARY_PATH=/opt/homebrew/lib:$DYLD_LIBRARY_PATH</code></p>
+<p>Homebrew will install FFMpeg 5.0 by default, which does not work, so you should install 4.X.
+You can install older 4.X FFMpeg using Homebrew like that:</p>
+<pre tabindex="0"><code> cd &#34;$(brew --repo homebrew/core)&#34;
+ git checkout addd616edc9134f057e33694c420f4900be59db8
+ brew unlink ffmpeg
+ HOMEBREW_NO_AUTO_UPDATE=1 brew install ffmpeg
+ git checkout master
+</code></pre><p>if you are still facing error <code>Running setup.py install for av ... error</code>, you may
+try more radical variant</p>
+<pre tabindex="0"><code> cd &#34;$(brew --repo homebrew/core)&#34;
+ git checkout addd616edc9134f057e33694c420f4900be59db8
+ brew uninstall ffmpeg --force
+ HOMEBREW_NO_AUTO_UPDATE=1 brew install ffmpeg
+ git checkout master
+</code></pre><p>If you faced with error <code>Failed building wheel for h5py</code>, you may need install <code>hdf5</code></p>
+<pre tabindex="0"><code>brew install hdf5
+export HDF5_DIR=&#34;$(brew --prefix hdf5)&#34;
+pip install --no-binary=h5py h5py
+</code></pre><p>If you faced with error
+<code>OSError: Could not find library geos_c or load any of its variants ['libgeos_c.so.1', 'libgeos_c.so']</code>.
+You may fix this using</p>
+<pre tabindex="0"><code>sudo ln -s /opt/homebrew/lib/libgeos_c.dylib /usr/local/lib
+</code></pre></blockquote>
+<blockquote>
+<p>Note for Arch Linux users:</p>
+<p>Because PyAV as of version 10.0.0 already <a href="https://github.com/PyAV-Org/PyAV/pull/910">works</a>
+with FFMPEG5, you may consider changing the <code>av</code> version requirement
+in <code>/cvat/cvat/requirements/base.txt</code> to 10.0.0 or higher.</p>
+<p>Perform this action before installing cvat requirements from the list mentioned above.</p>
+</blockquote>
+</li>
+<li>
+<p>Install <a href="https://docs.docker.com/engine/install/ubuntu/">Docker Engine</a> and <a href="https://docs.docker.com/compose/install/">Docker Compose</a></p>
+</li>
+<li>
+<p>Start service dependencies:</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>docker compose -f docker-compose.yml -f docker-compose.dev.yml up -d --build <span style="color:#4e9a06">\
+</span></span></span><span style="display:flex;"><span><span style="color:#4e9a06"></span>  cvat_opa cvat_db cvat_redis_inmem cvat_redis_ondisk cvat_server
+</span></span></code></pre></div><p>Note: this runs an extra copy of the CVAT server in order to supply rules to OPA.
+If you update the OPA rules, rerun this command to recreate the server image and container.</p>
+<p>Note: to stop these services, use
+<code>docker compose -f docker-compose.yml -f docker-compose.dev.yml down</code>.
+You can add <code>-v</code> to remove the data, as well.</p>
+</li>
+<li>
+<p>Apply migrations and create a super user for CVAT:</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>python manage.py migrate
+</span></span><span style="display:flex;"><span>python manage.py collectstatic
+</span></span><span style="display:flex;"><span>python manage.py createsuperuser
+</span></span></code></pre></div></li>
+<li>
+<p>Install npm packages for UI (run the following command from CVAT root directory):</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>yarn --frozen-lockfile
+</span></span></code></pre></div><blockquote>
+<p>Note for Mac users</p>
+<p>If you faced with error</p>
+<p><code>Node Sass does not yet support your current environment: OS X 64-bit with Unsupported runtime (57)</code></p>
+<p>Read this article <a href="https://marketplace.visualstudio.com/items?itemName=msjsdiag.debugger-for-chrome">Node Sass does not yet support your current environment</a></p>
+</blockquote>
+</li>
+</ul>
+<h3 id="run-cvat">Run CVAT</h3>
+<ul>
+<li>
+<p>Start npm UI debug server (run the following command from CVAT root directory):</p>
+<ul>
+<li>If you want to run CVAT in localhost:
+<div class="highlight"><pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-sh" data-lang="sh"><span style="display:flex;"><span>yarn run start:cvat-ui
+</span></span></code></pre></div></li>
+<li>If you want to access CVAT from outside of your host:
+<div class="highlight"><pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-sh" data-lang="sh"><span style="display:flex;"><span><span style="color:#000">CVAT_UI_HOST</span><span style="color:#ce5c00;font-weight:bold">=</span><span style="color:#4e9a06">&#39;&lt;YOUR_HOST_IP&gt;&#39;</span> yarn run start:cvat-ui
+</span></span></code></pre></div></li>
+</ul>
+</li>
+<li>
+<p>Open a new terminal window.</p>
+</li>
+<li>
+<p>Run VScode from the virtual environment (run the following command from CVAT root directory):</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-sh" data-lang="sh"><span style="display:flex;"><span><span style="color:#204a87">source</span> .env/bin/activate <span style="color:#ce5c00;font-weight:bold">&amp;&amp;</span> code
+</span></span></code></pre></div></li>
+<li>
+<p>Inside VScode, Open CVAT root dir</p>
+</li>
+<li>
+<p>Select <code>server: debug</code> configuration and run it (F5) to run REST server and its workers</p>
+</li>
+<li>
+<p>Make sure that <code>Uncaught Exceptions</code> option under breakpoints section is unchecked</p>
+</li>
+<li>
+<p>If you choose to run CVAT in localhost: Select <code>server: chrome</code> configuration and run it (F5) to open CVAT in Chrome</p>
+</li>
+<li>
+<p>Alternative: If you changed CVAT_UI_HOST just enter <code>&lt;YOUR_HOST_IP&gt;:3000</code> in your browser.</p>
+</li>
+</ul>
+<blockquote>
+<p>Note for Mac users</p>
+<p>You may have a permission denied problem starting the server because <strong>AirPlay Receiver</strong> running on port 5000/7000.</p>
+<p>Turn off AirPlay Receiver:
+<em>Go to System Settings</em> → <em>General</em> → <em>AirDrop &amp; Handoff</em> → <em>Untick Airplay Receiver</em>.</p>
+</blockquote>
+<p>You have done! Now it is possible to insert breakpoints and debug server and client of the tool.
+Instructions for running tests locally are available <a href="../../../docs/contributing/running-tests/">here</a>.</p>
+<h2 id="note-for-windows-users">Note for Windows users</h2>
+<p>You develop CVAT under WSL (Windows subsystem for Linux) following next steps.</p>
+<ul>
+<li>
+<p>Install WSL using <a href="https://docs.microsoft.com/en-us/windows/wsl/install-win10">this guide</a>.</p>
+</li>
+<li>
+<p>Following this guide install Ubuntu 18.04 Linux distribution for WSL.</p>
+</li>
+<li>
+<p>Run Ubuntu using start menu link or execute next command</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-powershell" data-lang="powershell"><span style="display:flex;"><span><span style="color:#000">wsl</span> <span style="color:#000">-d</span> <span style="color:#000">Ubuntu</span><span style="color:#000;font-weight:bold">-</span><span style="color:#0000cf;font-weight:bold">18.04</span>
+</span></span></code></pre></div></li>
+<li>
+<p>Run all commands from this installation guide in WSL Ubuntu shell.</p>
+</li>
+<li>
+<p>You might have to manually start the redis server in wsl before you can start the configuration inside
+Visual Studio Code. You can do this with <code>sudo service redis-server start</code>. Alternatively you can also
+use a redis docker image instead of using the redis-server locally.</p>
+</li>
+</ul>
+<h2 id="note-for-mac-users">Note for Mac users</h2>
+<ul>
+<li>You might have to manually start the redis server. You can do this with <code>redis-server</code>.
+Alternatively you can also use a redis docker image instead of using the redis-server locally.</li>
+</ul>
+<h2 id="note-for-arch-linux-users">Note for Arch Linux users</h2>
+<ul>
+<li>You need to start <code>redis</code> and <code>docker</code> services manually in order to begin debugging/running tests:
+<div class="highlight"><pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>sudo systemctl start redis.service
+</span></span><span style="display:flex;"><span>sudo systemctl start docker.service
+</span></span></code></pre></div></li>
+</ul>
+<h2 id="cvat-analytics-ports">CVAT Analytics Ports</h2>
+<p>In case you cannot access analytics, check if the following ports are open:</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-yml" data-lang="yml"><span style="display:flex;"><span><span style="color:#204a87;font-weight:bold">cvat_vector</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">    </span><span style="color:#204a87;font-weight:bold">ports</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">      </span>- <span style="color:#4e9a06">&#39;8282:80&#39;</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">  </span><span style="color:#204a87;font-weight:bold">cvat_clickhouse</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">    </span><span style="color:#204a87;font-weight:bold">ports</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">      </span>- <span style="color:#4e9a06">&#39;8123:8123&#39;</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span></code></pre></div><p>In addition, you can completely disable analytics if you don&rsquo;t need it by deleting the following data from
+<a href="https://github.com/cvat-ai/cvat/blob/develop/.vscode/launch.json">launch.json</a>:</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-json" data-lang="json"><span style="display:flex;"><span>  <span style="color:#4e9a06">&#34;DJANGO_LOG_SERVER_HOST&#34;</span><span style="color:#a40000">:</span> <span style="color:#4e9a06">&#34;localhost&#34;</span><span style="color:#a40000">,</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#4e9a06">&#34;DJANGO_LOG_SERVER_PORT&#34;</span><span style="color:#a40000">:</span> <span style="color:#4e9a06">&#34;8282&#34;</span>
+</span></span></code></pre></div><p>Analytics on GitHub:
+<a href="https://github.com/cvat-ai/cvat/tree/develop/components/analytics">Analytics Components</a></p>
+
+</div>
+
+
+
+    
+	
+  
+    
+    
+	
+    
+
+<div class="td-content" style="page-break-before: always">
+    
+	<h1 id="pg-9331ae571b7ea5467eaf6403bb797504">2 - Setup additional components in development environment</h1>
+    <div class="lead">Deploying a DL model as a serverless function and Cypress tests.</div>
+	<h2 id="dl-models-as-serverless-functions">DL models as serverless functions</h2>
+<p>Follow this <a href="../../../docs/administration/advanced/installation_automatic_annotation/">guide</a> to install Nuclio:</p>
+<ul>
+<li>You have to install <code>nuctl</code> command line tool to build and deploy serverless
+functions.</li>
+<li>The simplest way to explore Nuclio is to run its graphical user interface (GUI)
+of the Nuclio dashboard. All you need in order to run the dashboard is Docker. See
+<a href="https://github.com/nuclio/nuclio#quick-start-steps">nuclio documentation</a>
+for more details.</li>
+<li>Deploy a couple of functions.
+This will automatically create a <code>cvat</code> Nuclio project to contain the functions.</li>
+</ul>
+<div class="highlight"><pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>./serverless/deploy_cpu.sh serverless/openvino/dextr
+</span></span><span style="display:flex;"><span>./serverless/deploy_cpu.sh serverless/openvino/omz/public/yolo-v3-tf
+</span></span></code></pre></div><ul>
+<li>Display a list of running serverless functions using <code>nuctl</code> command or see them
+in nuclio dashboard:</li>
+</ul>
+<div class="highlight"><pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>nuctl get <span style="color:#204a87;font-weight:bold">function</span>
+</span></span></code></pre></div><details>
+<pre tabindex="0"><code>  NAMESPACE |                             NAME                              | PROJECT | STATE | NODE PORT | REPLICAS
+  nuclio    | openvino-dextr                                                | cvat    | ready |     55274 | 1/1
+  nuclio    | openvino-omz-public-yolo-v3-tf                                | cvat    | ready |     57308 | 1/1
+</code></pre></details>
+<ul>
+<li>Test your deployed DL model as a serverless function. The command below
+should work on Linux and Mac OS.</li>
+</ul>
+<div class="highlight"><pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span><span style="color:#000">image</span><span style="color:#ce5c00;font-weight:bold">=</span><span style="color:#204a87;font-weight:bold">$(</span>curl https://upload.wikimedia.org/wikipedia/en/7/7d/Lenna_%28test_image%29.png --output - <span style="color:#000;font-weight:bold">|</span> base64 <span style="color:#000;font-weight:bold">|</span> tr -d <span style="color:#4e9a06">&#39;\n&#39;</span><span style="color:#204a87;font-weight:bold">)</span>
+</span></span><span style="display:flex;"><span>cat <span style="color:#4e9a06">&lt;&lt; EOF &gt; /tmp/input.json
+</span></span></span><span style="display:flex;"><span><span style="color:#4e9a06">{&#34;image&#34;: &#34;$image&#34;}
+</span></span></span><span style="display:flex;"><span><span style="color:#4e9a06">EOF</span>
+</span></span><span style="display:flex;"><span>cat /tmp/input.json <span style="color:#000;font-weight:bold">|</span> nuctl invoke openvino-omz-public-yolo-v3-tf -c <span style="color:#4e9a06">&#39;application/json&#39;</span>
+</span></span></code></pre></div><details>
+<pre tabindex="0"><code>23.05.11 22:14:17.275    nuctl.platform.invoker (I) Executing function {&#34;method&#34;: &#34;POST&#34;, &#34;url&#34;: &#34;http://0.0.0.0:32771&#34;, &#34;bodyLength&#34;: 631790, &#34;headers&#34;: {&#34;Content-Type&#34;:[&#34;application/json&#34;],&#34;X-Nuclio-Log-Level&#34;:[&#34;info&#34;],&#34;X-Nuclio-Target&#34;:[&#34;openvino-omz-public-yolo-v3-tf&#34;]}}
+23.05.11 22:14:17.788    nuctl.platform.invoker (I) Got response {&#34;status&#34;: &#34;200 OK&#34;}
+23.05.11 22:14:17.789                     nuctl (I) &gt;&gt;&gt; Start of function logs
+23.05.11 22:14:17.789 ino-omz-public-yolo-v3-tf (I) Run yolo-v3-tf model {&#34;worker_id&#34;: &#34;0&#34;, &#34;time&#34;: 1683828857301.8765}
+23.05.11 22:14:17.789                     nuctl (I) &lt;&lt;&lt; End of function logs
+
+&gt; Response headers:
+Server = nuclio
+Date = Thu, 11 May 2023 18:14:17 GMT
+Content-Type = application/json
+Content-Length = 100
+
+&gt; Response body:
+[
+    {
+        &#34;confidence&#34;: &#34;0.9992254&#34;,
+        &#34;label&#34;: &#34;person&#34;,
+        &#34;points&#34;: [
+            39,
+            124,
+            408,
+            512
+        ],
+        &#34;type&#34;: &#34;rectangle&#34;
+    }
+]
+</code></pre></details>
+<h2 id="run-cypress-tests">Run Cypress tests</h2>
+<ul>
+<li>Install Cypress as described in the <a href="https://docs.cypress.io/guides/getting-started/installing-cypress.html">documentation</a>.</li>
+<li>Run cypress tests:</li>
+</ul>
+<div class="highlight"><pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>    <span style="color:#204a87">cd</span> &lt;cvat_local_repository&gt;/tests
+</span></span><span style="display:flex;"><span>    &lt;cypress_installation_directory&gt;/node_modules/.bin/cypress run --headless --browser chrome
+</span></span></code></pre></div><p>For more information, see the <a href="https://docs.cypress.io/">documentation</a>.</p>
+
+</div>
+
+
+
+    
+	
+  
+    
+    
+	
+    
+
+<div class="td-content" style="page-break-before: always">
+    
+	<h1 id="pg-c414e3e4151a3294cd86a33ca60eb228">3 - Coding style</h1>
+    <div class="lead">Information about coding style that is used in CVAT development.</div>
+	<p>We use the <a href="https://github.com/airbnb/javascript">Airbnb JavaScript Style Guide</a>
+for JavaScript/TypeScript code with a little exception - we prefer 4 spaces
+for indentation of nested blocks and statements.</p>
+<p>For Python, we use <a href="https://github.com/psf/black">Black</a> and
+<a href="https://pycqa.github.io/isort/">isort</a> to enforce the coding style and autoformat files.
+Currently, not all components implement formatting, the actual information about the enabled
+components is available in the CI checks <a href="https://github.com/cvat-ai/cvat/tree/develop/.github/workflows">here</a>
+and in the formatting script at <code>dev/format_python_code.sh</code>.</p>
+
+</div>
+
+
+
+    
+	
+  
+    
+    
+	
+    
+
+<div class="td-content" style="page-break-before: always">
+    
+	<h1 id="pg-4ef825a7833abf73c578fadc480d6f1b">4 - Branching model</h1>
+    <div class="lead">Information about the branching model that is used in the project.</div>
+	<p>The project uses <a href="https://nvie.com/posts/a-successful-git-branching-model">a successful Git branching model</a>.
+Thus it has a couple of branches. Some of them are described below:</p>
+<ul>
+<li>
+<p><code>origin/master</code> to be the main branch where the source code of
+HEAD always reflects a production-ready state</p>
+</li>
+<li>
+<p><code>origin/develop</code> to be the main branch where the source code of
+HEAD always reflects a state with the latest delivered development
+changes for the next release. Some would call this the “integration branch”.</p>
+</li>
+</ul>
+
+</div>
+
+
+
+    
+	
+  
+    
+    
+	
+    
+
+<div class="td-content" style="page-break-before: always">
+    
+	<h1 id="pg-9f0fa9959f1dde888009a7489abc95ad">5 - Using the issue tracker</h1>
+    <div class="lead">Information and rules for using the issue tracker.</div>
+	<p>The issue tracker is the preferred channel for <a href="#bugs">bug reports</a>,
+<a href="#features">features requests</a> and <a href="#pull-requests">submitting pull
+requests</a>, but please respect the following restrictions:</p>
+<ul>
+<li>
+<p>Please <strong>do not</strong> use the issue tracker for personal support requests (use
+<a href="http://stackoverflow.com">Stack Overflow</a>).</p>
+</li>
+<li>
+<p>Please <strong>do not</strong> derail or troll issues. Keep the discussion on topic and
+respect the opinions of others.</p>
+</li>
+</ul>
+<p><a name="bugs"></a></p>
+
+</div>
+
+
+
+    
+	
+  
+    
+    
+	
+    
+
+<div class="td-content" style="page-break-before: always">
+    
+	<h1 id="pg-3d2c51c440746ae3c1c664fd3c6874c5">6 - Bug reports</h1>
+    <div class="lead">Guidelines and an example of how to report a bug.</div>
+	<p>A bug is a <em>demonstrable problem</em> that is caused by the code in the repository.
+Good bug reports are extremely helpful - thank you!</p>
+<p>Guidelines for bug reports:</p>
+<ol>
+<li>
+<p><strong>Use the GitHub issue search</strong> — check if the issue has already been
+reported.</p>
+</li>
+<li>
+<p><strong>Check if the issue has been fixed</strong> — try to reproduce it using the
+latest <code>develop</code> branch in the repository.</p>
+</li>
+<li>
+<p><strong>Isolate the problem</strong> — ideally create a reduced test case.</p>
+</li>
+</ol>
+<p>A good bug report shouldn&rsquo;t leave others needing to chase you up for more
+information. Please try to be as detailed as possible in your report. What is
+your environment? What steps will reproduce the issue? What browser(s) and OS
+experience the problem? What would you expect to be the outcome? All these
+details will help people to fix any potential bugs.</p>
+<p>Example:</p>
+<blockquote>
+<p>Short and descriptive example bug report title</p>
+<p>A summary of the issue and the browser/OS environment in which it occurs. If
+suitable, include the steps required to reproduce the bug.</p>
+<ol>
+<li>This is the first step</li>
+<li>This is the second step</li>
+<li>Further steps, etc.</li>
+</ol>
+<p>Any other information you want to share that is relevant to the issue being
+reported. This might include the lines of code that you have identified as
+causing the bug, and potential solutions (and your opinions on their
+merits).</p>
+</blockquote>
+<p><a name="features"></a></p>
+
+</div>
+
+
+
+    
+	
+  
+    
+    
+	
+    
+
+<div class="td-content" style="page-break-before: always">
+    
+	<h1 id="pg-36bf632c8a299272d929049c3399f872">7 - Feature requests</h1>
+    <div class="lead">Information on requesting new features.</div>
+	<p>Feature requests are welcome. But take a moment to find out whether your idea
+fits with the scope and aims of the project. It&rsquo;s up to <em>you</em> to make a strong
+case to convince the project&rsquo;s developers of the merits of this feature. Please
+provide as much detail and context as possible.</p>
+<p><a name="pull-requests"></a></p>
+
+</div>
+
+
+
+    
+	
+  
+    
+    
+	
+    
+
+<div class="td-content" style="page-break-before: always">
+    
+	<h1 id="pg-bfe8b249a0cc63de417c2f12c6a75c87">8 - Pull requests</h1>
+    <div class="lead">Instructions on how to create a pull request.</div>
+	<p>Good pull requests - patches, improvements, new features - are a fantastic
+help. They should remain focused in scope and avoid containing unrelated
+commits.</p>
+<p><strong>Please ask first</strong> before embarking on any significant pull request (e.g.
+implementing features, refactoring code, porting to a different language),
+otherwise you risk spending a lot of time working on something that the
+project&rsquo;s developers might not want to merge into the project.</p>
+<p>Please adhere to the coding conventions used throughout a project (indentation,
+accurate comments, etc.) and any other requirements (such as test coverage).</p>
+<p>Follow this process if you&rsquo;d like your work considered for inclusion in the
+project:</p>
+<ol>
+<li>
+<p><a href="https://docs.github.com/en/github/getting-started-with-github/fork-a-repo">Fork</a> the project, clone your fork,
+and configure the remotes:</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span><span style="color:#8f5902;font-style:italic"># Clone your fork of the repo into the current directory</span>
+</span></span><span style="display:flex;"><span>git clone https://github.com/&lt;your-username&gt;/&lt;repo-name&gt;
+</span></span><span style="display:flex;"><span><span style="color:#8f5902;font-style:italic"># Navigate to the newly cloned directory</span>
+</span></span><span style="display:flex;"><span><span style="color:#204a87">cd</span> &lt;repo-name&gt;
+</span></span><span style="display:flex;"><span><span style="color:#8f5902;font-style:italic"># Assign the original repo to a remote called &#34;upstream&#34;</span>
+</span></span><span style="display:flex;"><span>git remote add upstream https://github.com/&lt;upstream-owner&gt;/&lt;repo-name&gt;
+</span></span></code></pre></div></li>
+<li>
+<p>If you cloned a while ago, get the latest changes from upstream:</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>git checkout &lt;dev-branch&gt;
+</span></span><span style="display:flex;"><span>git pull upstream &lt;dev-branch&gt;
+</span></span></code></pre></div></li>
+<li>
+<p>Create a new topic branch (off the main project development branch) to
+contain your feature, change, or fix:</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>git checkout -b &lt;topic-branch-name&gt;
+</span></span></code></pre></div></li>
+<li>
+<p>Commit your changes in logical chunks. Please adhere to these <a href="http://tbaggery.com/2008/04/19/a-note-about-git-commit-messages.html">git commit
+message guidelines</a>
+or your code is unlikely be merged into the main project. Use Git&rsquo;s
+<a href="https://docs.github.com/en/github/using-git/about-git-rebase">interactive rebase</a>
+feature to tidy up your commits before making them public.</p>
+</li>
+<li>
+<p>Locally merge (or rebase) the upstream development branch into your topic branch:</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>git pull <span style="color:#ce5c00;font-weight:bold">[</span>--rebase<span style="color:#ce5c00;font-weight:bold">]</span> upstream &lt;dev-branch&gt;
+</span></span></code></pre></div></li>
+<li>
+<p>Push your topic branch up to your fork:</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>git push origin &lt;topic-branch-name&gt;
+</span></span></code></pre></div></li>
+<li>
+<p><a href="https://docs.github.com/en/github/collaborating-with-issues-and-pull-requests/about-pull-requests">Open a Pull Request</a>
+with a clear title and description.</p>
+</li>
+</ol>
+<p><strong>IMPORTANT</strong>: By submitting a patch, you agree to allow the project owner to
+license your work under the same license as that used by the project.</p>
+
+</div>
+
+
+
+    
+	
+  
+    
+    
+	
+    
+
+<div class="td-content" style="page-break-before: always">
+    
+	<h1 id="pg-aa57dee42d2570392356d846a0921fdf">9 - How to add a new annotation format support</h1>
+    <div class="lead">Instructions on adding support for new annotation formats. This section on <a href="https://github.com/cvat-ai/cvat/tree/develop/cvat/apps/dataset_manager/formats">GitHub</a>.</div>
+	<ol>
+<li>Add a python script to <code>dataset_manager/formats</code></li>
+<li>Add an import statement to <a href="https://github.com/cvat-ai/cvat/tree/develop/cvat/apps/dataset_manager/formats/registry.py">registry.py</a>.</li>
+<li>Implement some importers and exporters as the format requires.</li>
+</ol>
+<p>Each format is supported by an importer and exporter.</p>
+<p>It can be a function or a class decorated with
+<code>importer</code> or <code>exporter</code> from <a href="https://github.com/cvat-ai/cvat/tree/develop/cvat/apps/dataset_manager/formats/registry.py">registry.py</a>.
+Examples:</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span><span style="color:#5c35cc;font-weight:bold">@importer</span><span style="color:#000;font-weight:bold">(</span><span style="color:#000">name</span><span style="color:#ce5c00;font-weight:bold">=</span><span style="color:#4e9a06">&#34;MyFormat&#34;</span><span style="color:#000;font-weight:bold">,</span> <span style="color:#000">version</span><span style="color:#ce5c00;font-weight:bold">=</span><span style="color:#4e9a06">&#34;1.0&#34;</span><span style="color:#000;font-weight:bold">,</span> <span style="color:#000">ext</span><span style="color:#ce5c00;font-weight:bold">=</span><span style="color:#4e9a06">&#34;ZIP&#34;</span><span style="color:#000;font-weight:bold">)</span>
+</span></span><span style="display:flex;"><span><span style="color:#204a87;font-weight:bold">def</span> <span style="color:#000">my_importer</span><span style="color:#000;font-weight:bold">(</span><span style="color:#000">file_object</span><span style="color:#000;font-weight:bold">,</span> <span style="color:#000">task_data</span><span style="color:#000;font-weight:bold">,</span> <span style="color:#ce5c00;font-weight:bold">**</span><span style="color:#000">options</span><span style="color:#000;font-weight:bold">):</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#ce5c00;font-weight:bold">...</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#5c35cc;font-weight:bold">@importer</span><span style="color:#000;font-weight:bold">(</span><span style="color:#000">name</span><span style="color:#ce5c00;font-weight:bold">=</span><span style="color:#4e9a06">&#34;MyFormat&#34;</span><span style="color:#000;font-weight:bold">,</span> <span style="color:#000">version</span><span style="color:#ce5c00;font-weight:bold">=</span><span style="color:#4e9a06">&#34;2.0&#34;</span><span style="color:#000;font-weight:bold">,</span> <span style="color:#000">ext</span><span style="color:#ce5c00;font-weight:bold">=</span><span style="color:#4e9a06">&#34;XML&#34;</span><span style="color:#000;font-weight:bold">)</span>
+</span></span><span style="display:flex;"><span><span style="color:#204a87;font-weight:bold">class</span> <span style="color:#000">my_importer</span><span style="color:#000;font-weight:bold">(</span><span style="color:#000">file_object</span><span style="color:#000;font-weight:bold">,</span> <span style="color:#000">task_data</span><span style="color:#000;font-weight:bold">,</span> <span style="color:#ce5c00;font-weight:bold">**</span><span style="color:#000">options</span><span style="color:#000;font-weight:bold">):</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#204a87;font-weight:bold">def</span> <span style="color:#000">__call__</span><span style="color:#000;font-weight:bold">(</span><span style="color:#3465a4">self</span><span style="color:#000;font-weight:bold">,</span> <span style="color:#000">file_object</span><span style="color:#000;font-weight:bold">,</span> <span style="color:#000">task_data</span><span style="color:#000;font-weight:bold">,</span> <span style="color:#ce5c00;font-weight:bold">**</span><span style="color:#000">options</span><span style="color:#000;font-weight:bold">):</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#ce5c00;font-weight:bold">...</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#5c35cc;font-weight:bold">@exporter</span><span style="color:#000;font-weight:bold">(</span><span style="color:#000">name</span><span style="color:#ce5c00;font-weight:bold">=</span><span style="color:#4e9a06">&#34;MyFormat&#34;</span><span style="color:#000;font-weight:bold">,</span> <span style="color:#000">version</span><span style="color:#ce5c00;font-weight:bold">=</span><span style="color:#4e9a06">&#34;1.0&#34;</span><span style="color:#000;font-weight:bold">,</span> <span style="color:#000">ext</span><span style="color:#ce5c00;font-weight:bold">=</span><span style="color:#4e9a06">&#34;ZIP&#34;</span><span style="color:#000;font-weight:bold">):</span>
+</span></span><span style="display:flex;"><span><span style="color:#204a87;font-weight:bold">def</span> <span style="color:#000">my_exporter</span><span style="color:#000;font-weight:bold">(</span><span style="color:#000">file_object</span><span style="color:#000;font-weight:bold">,</span> <span style="color:#000">task_data</span><span style="color:#000;font-weight:bold">,</span> <span style="color:#ce5c00;font-weight:bold">**</span><span style="color:#000">options</span><span style="color:#000;font-weight:bold">):</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#ce5c00;font-weight:bold">...</span>
+</span></span></code></pre></div><p>Each decorator defines format parameters such as:</p>
+<ul>
+<li>
+<p><em>name</em></p>
+</li>
+<li>
+<p><em>version</em></p>
+</li>
+<li>
+<p><em>file extension</em>. For the <code>importer</code> it can be a comma-separated list.
+These parameters are combined to produce a visible name. It can be
+set explicitly by the <code>display_name</code> argument.</p>
+</li>
+</ul>
+<p>Importer arguments:</p>
+<ul>
+<li><em>file_object</em> - a file with annotations or dataset</li>
+<li><em>task_data</em> - an instance of <code>TaskData</code> class.</li>
+</ul>
+<p>Exporter arguments:</p>
+<ul>
+<li>
+<p><em>file_object</em> - a file for annotations or dataset</p>
+</li>
+<li>
+<p><em>task_data</em> - an instance of <code>TaskData</code> class.</p>
+</li>
+<li>
+<p><em>options</em> - format-specific options. <code>save_images</code> is the option to
+distinguish if dataset or just annotations are requested.</p>
+</li>
+</ul>
+<p><a href="https://github.com/cvat-ai/cvat/blob/develop/cvat/apps/dataset_manager/bindings.py"><code>TaskData</code></a> provides
+many task properties and interfaces to add and read task annotations.</p>
+<p>Public members:</p>
+<ul>
+<li>
+<p><strong>TaskData. Attribute</strong> - class, <code>namedtuple('Attribute', 'name, value')</code></p>
+</li>
+<li>
+<p><strong>TaskData. LabeledShape</strong> - class, <code>namedtuple('LabeledShape', 'type, frame, label, points, occluded, attributes, group, z_order')</code></p>
+</li>
+<li>
+<p><strong>TrackedShape</strong> - <code>namedtuple('TrackedShape', 'type, points, occluded, frame, attributes, outside, keyframe, z_order')</code></p>
+</li>
+<li>
+<p><strong>Track</strong> - class, <code>namedtuple('Track', 'label, group, shapes')</code></p>
+</li>
+<li>
+<p><strong>Tag</strong> - class, <code>namedtuple('Tag', 'frame, label, attributes, group')</code></p>
+</li>
+<li>
+<p><strong>Frame</strong> - class, <code>namedtuple('Frame', 'frame, name, width, height, labeled_shapes, tags')</code></p>
+</li>
+<li>
+<p><strong>TaskData. shapes</strong> - property, an iterator over <code>LabeledShape</code> objects</p>
+</li>
+<li>
+<p><strong>TaskData. tracks</strong> - property, an iterator over <code>Track</code> objects</p>
+</li>
+<li>
+<p><strong>TaskData. tags</strong> - property, an iterator over <code>Tag</code> objects</p>
+</li>
+<li>
+<p><strong>TaskData. meta</strong> - property, a dictionary with task information</p>
+</li>
+<li>
+<p><strong>TaskData. group_by_frame()</strong> - method, returns
+an iterator over <code>Frame</code> objects, which groups annotation objects by frame.
+Note that <code>TrackedShape</code> s will be represented as <code>LabeledShape</code> s.</p>
+</li>
+<li>
+<p><strong>TaskData. add_tag(tag)</strong> - method,
+tag should be an instance of the <code>Tag</code> class</p>
+</li>
+<li>
+<p><strong>TaskData. add_shape(shape)</strong> - method,
+shape should be an instance of the <code>Shape</code> class</p>
+</li>
+<li>
+<p><strong>TaskData. add_track(track)</strong> - method,
+track should be an instance of the <code>Track</code> class</p>
+</li>
+</ul>
+<p>Sample exporter code:</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span><span style="color:#ce5c00;font-weight:bold">...</span>
+</span></span><span style="display:flex;"><span><span style="color:#8f5902;font-style:italic"># dump meta info if necessary</span>
+</span></span><span style="display:flex;"><span><span style="color:#ce5c00;font-weight:bold">...</span>
+</span></span><span style="display:flex;"><span><span style="color:#8f5902;font-style:italic"># iterate over all frames</span>
+</span></span><span style="display:flex;"><span><span style="color:#204a87;font-weight:bold">for</span> <span style="color:#000">frame_annotation</span> <span style="color:#204a87;font-weight:bold">in</span> <span style="color:#000">task_data</span><span style="color:#ce5c00;font-weight:bold">.</span><span style="color:#000">group_by_frame</span><span style="color:#000;font-weight:bold">():</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#8f5902;font-style:italic"># get frame info</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#000">image_name</span> <span style="color:#ce5c00;font-weight:bold">=</span> <span style="color:#000">frame_annotation</span><span style="color:#ce5c00;font-weight:bold">.</span><span style="color:#000">name</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#000">image_width</span> <span style="color:#ce5c00;font-weight:bold">=</span> <span style="color:#000">frame_annotation</span><span style="color:#ce5c00;font-weight:bold">.</span><span style="color:#000">width</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#000">image_height</span> <span style="color:#ce5c00;font-weight:bold">=</span> <span style="color:#000">frame_annotation</span><span style="color:#ce5c00;font-weight:bold">.</span><span style="color:#000">height</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#8f5902;font-style:italic"># iterate over all shapes on the frame</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#204a87;font-weight:bold">for</span> <span style="color:#000">shape</span> <span style="color:#204a87;font-weight:bold">in</span> <span style="color:#000">frame_annotation</span><span style="color:#ce5c00;font-weight:bold">.</span><span style="color:#000">labeled_shapes</span><span style="color:#000;font-weight:bold">:</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#000">label</span> <span style="color:#ce5c00;font-weight:bold">=</span> <span style="color:#000">shape</span><span style="color:#ce5c00;font-weight:bold">.</span><span style="color:#000">label</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#000">xtl</span> <span style="color:#ce5c00;font-weight:bold">=</span> <span style="color:#000">shape</span><span style="color:#ce5c00;font-weight:bold">.</span><span style="color:#000">points</span><span style="color:#000;font-weight:bold">[</span><span style="color:#0000cf;font-weight:bold">0</span><span style="color:#000;font-weight:bold">]</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#000">ytl</span> <span style="color:#ce5c00;font-weight:bold">=</span> <span style="color:#000">shape</span><span style="color:#ce5c00;font-weight:bold">.</span><span style="color:#000">points</span><span style="color:#000;font-weight:bold">[</span><span style="color:#0000cf;font-weight:bold">1</span><span style="color:#000;font-weight:bold">]</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#000">xbr</span> <span style="color:#ce5c00;font-weight:bold">=</span> <span style="color:#000">shape</span><span style="color:#ce5c00;font-weight:bold">.</span><span style="color:#000">points</span><span style="color:#000;font-weight:bold">[</span><span style="color:#0000cf;font-weight:bold">2</span><span style="color:#000;font-weight:bold">]</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#000">ybr</span> <span style="color:#ce5c00;font-weight:bold">=</span> <span style="color:#000">shape</span><span style="color:#ce5c00;font-weight:bold">.</span><span style="color:#000">points</span><span style="color:#000;font-weight:bold">[</span><span style="color:#0000cf;font-weight:bold">3</span><span style="color:#000;font-weight:bold">]</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#8f5902;font-style:italic"># iterate over shape attributes</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#204a87;font-weight:bold">for</span> <span style="color:#000">attr</span> <span style="color:#204a87;font-weight:bold">in</span> <span style="color:#000">shape</span><span style="color:#ce5c00;font-weight:bold">.</span><span style="color:#000">attributes</span><span style="color:#000;font-weight:bold">:</span>
+</span></span><span style="display:flex;"><span>      <span style="color:#000">attr_name</span> <span style="color:#ce5c00;font-weight:bold">=</span> <span style="color:#000">attr</span><span style="color:#ce5c00;font-weight:bold">.</span><span style="color:#000">name</span>
+</span></span><span style="display:flex;"><span>      <span style="color:#000">attr_value</span> <span style="color:#ce5c00;font-weight:bold">=</span> <span style="color:#000">attr</span><span style="color:#ce5c00;font-weight:bold">.</span><span style="color:#000">value</span>
+</span></span><span style="display:flex;"><span><span style="color:#ce5c00;font-weight:bold">...</span>
+</span></span><span style="display:flex;"><span><span style="color:#8f5902;font-style:italic"># dump annotation code</span>
+</span></span><span style="display:flex;"><span><span style="color:#000">file_object</span><span style="color:#ce5c00;font-weight:bold">.</span><span style="color:#000">write</span><span style="color:#000;font-weight:bold">(</span><span style="color:#ce5c00;font-weight:bold">...</span><span style="color:#000;font-weight:bold">)</span>
+</span></span><span style="display:flex;"><span><span style="color:#ce5c00;font-weight:bold">...</span>
+</span></span></code></pre></div><p>Sample importer code:</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span><span style="color:#ce5c00;font-weight:bold">...</span>
+</span></span><span style="display:flex;"><span><span style="color:#8f5902;font-style:italic">#read file_object</span>
+</span></span><span style="display:flex;"><span><span style="color:#ce5c00;font-weight:bold">...</span>
+</span></span><span style="display:flex;"><span><span style="color:#204a87;font-weight:bold">for</span> <span style="color:#000">parsed_shape</span> <span style="color:#204a87;font-weight:bold">in</span> <span style="color:#000">parsed_shapes</span><span style="color:#000;font-weight:bold">:</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#000">shape</span> <span style="color:#ce5c00;font-weight:bold">=</span> <span style="color:#000">task_data</span><span style="color:#ce5c00;font-weight:bold">.</span><span style="color:#000">LabeledShape</span><span style="color:#000;font-weight:bold">(</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#204a87">type</span><span style="color:#ce5c00;font-weight:bold">=</span><span style="color:#4e9a06">&#34;rectangle&#34;</span><span style="color:#000;font-weight:bold">,</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#000">points</span><span style="color:#ce5c00;font-weight:bold">=</span><span style="color:#000;font-weight:bold">[</span><span style="color:#0000cf;font-weight:bold">0</span><span style="color:#000;font-weight:bold">,</span> <span style="color:#0000cf;font-weight:bold">0</span><span style="color:#000;font-weight:bold">,</span> <span style="color:#0000cf;font-weight:bold">100</span><span style="color:#000;font-weight:bold">,</span> <span style="color:#0000cf;font-weight:bold">100</span><span style="color:#000;font-weight:bold">],</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#000">occluded</span><span style="color:#ce5c00;font-weight:bold">=</span><span style="color:#204a87;font-weight:bold">False</span><span style="color:#000;font-weight:bold">,</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#000">attributes</span><span style="color:#ce5c00;font-weight:bold">=</span><span style="color:#000;font-weight:bold">[],</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#000">label</span><span style="color:#ce5c00;font-weight:bold">=</span><span style="color:#4e9a06">&#34;car&#34;</span><span style="color:#000;font-weight:bold">,</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#000">outside</span><span style="color:#ce5c00;font-weight:bold">=</span><span style="color:#204a87;font-weight:bold">False</span><span style="color:#000;font-weight:bold">,</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#000">frame</span><span style="color:#ce5c00;font-weight:bold">=</span><span style="color:#0000cf;font-weight:bold">99</span><span style="color:#000;font-weight:bold">,</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#000;font-weight:bold">)</span>
+</span></span><span style="display:flex;"><span><span style="color:#000">task_data</span><span style="color:#ce5c00;font-weight:bold">.</span><span style="color:#000">add_shape</span><span style="color:#000;font-weight:bold">(</span><span style="color:#000">shape</span><span style="color:#000;font-weight:bold">)</span>
+</span></span></code></pre></div><h2 id="format-specifications">Format specifications</h2>
+<ul>
+<li><a href="../../../docs/manual/advanced/formats/format-cvat/">CVAT</a></li>
+<li><a href="../../../docs/manual/advanced/formats/format-datumaro/">Datumaro</a></li>
+<li><a href="../../../docs/manual/advanced/formats/format-labelme/">LabelMe</a></li>
+<li><a href="../../../docs/manual/advanced/formats/format-mot/">MOT</a></li>
+<li><a href="../../../docs/manual/advanced/formats/format-mots/">MOTS</a></li>
+<li><a href="../../../docs/manual/advanced/formats/format-coco/">COCO</a></li>
+<li><a href="../../../docs/manual/advanced/formats/format-voc/">PASCAL VOC and mask</a></li>
+<li><a href="../../../docs/manual/advanced/formats/format-yolo/">YOLO</a></li>
+<li><a href="../../../docs/manual/advanced/formats/format-imagenet/">ImageNet</a></li>
+<li><a href="../../../docs/manual/advanced/formats/format-camvid/">CamVid</a></li>
+<li><a href="../../../docs/manual/advanced/formats/format-widerface/">WIDER Face</a></li>
+<li><a href="../../../docs/manual/advanced/formats/format-vggface2/">VGGFace2</a></li>
+<li><a href="../../../docs/manual/advanced/formats/format-market1501/">Market-1501</a></li>
+<li><a href="../../../docs/manual/advanced/formats/format-icdar/">ICDAR13/15</a></li>
+</ul>
+
+</div>
+
+
+
+    
+	
+  
+    
+    
+	
+    
+
+<div class="td-content" style="page-break-before: always">
+    
+	<h1 id="pg-7eeea8fd2f941135caa5e10f5f3eaaf1">10 - Server Profiling</h1>
+    <div class="lead">Tutorial about how to profile the server</div>
+	<p>Below you can find just quick overview of the
+<a href="https://github.com/jazzband/django-silk">Django Silk profiler</a>.
+Please read <a href="https://github.com/jazzband/django-silk/tree/master#features">Silk documentation</a>
+for more information about its features.</p>
+<p>Silk is a live profiling and inspection tool for the Django framework.
+Silk intercepts and stores HTTP requests and database queries before
+presenting them in a user interface for further inspection:</p>
+<p><img src="https://raw.githubusercontent.com/jazzband/django-silk/master/screenshots/1.png" alt="Silk Screenshot"></p>
+<p>Primary features:</p>
+<ul>
+<li>Request Inspection</li>
+<li>SQL Inspection</li>
+<li>Profiling of python code</li>
+</ul>
+<p>Silk is available in the development configuration of CVAT server for
+authenticated users: <a href="http://localhost:3000/profiler/">http://localhost:3000/profiler/</a>.</p>
+
+</div>
+
+
+
+    
+	
+  
+    
+    
+	
+    
+
+<div class="td-content" style="page-break-before: always">
+    
+	<h1 id="pg-dcce7b96f2dcf1adc45ffadd13643a76">11 - Running tests</h1>
+    <div class="lead">Instructions on how to run all existence tests.</div>
+	<h1 id="e2e-tests">E2E tests</h1>
+<p><strong>Initial steps</strong>:</p>
+<ol>
+<li>Run CVAT instance:
+<div class="highlight"><pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span>docker compose <span style="color:#4e9a06">\
+</span></span></span><span style="display:flex;"><span><span style="color:#4e9a06"></span>          -f docker-compose.yml <span style="color:#4e9a06">\
+</span></span></span><span style="display:flex;"><span><span style="color:#4e9a06"></span>          -f docker-compose.dev.yml <span style="color:#4e9a06">\
+</span></span></span><span style="display:flex;"><span><span style="color:#4e9a06"></span>          -f components/serverless/docker-compose.serverless.yml <span style="color:#4e9a06">\
+</span></span></span><span style="display:flex;"><span><span style="color:#4e9a06"></span>          -f tests/docker-compose.minio.yml <span style="color:#4e9a06">\
+</span></span></span><span style="display:flex;"><span><span style="color:#4e9a06"></span>          -f tests/docker-compose.file_share.yml up -d
+</span></span></code></pre></div></li>
+<li>Add test user in CVAT:
+<div class="highlight"><pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span>docker <span style="color:#204a87">exec</span> -i cvat_server <span style="color:#4e9a06">\
+</span></span></span><span style="display:flex;"><span><span style="color:#4e9a06"></span>          /bin/bash -c <span style="color:#4e9a06">\
+</span></span></span><span style="display:flex;"><span><span style="color:#4e9a06"></span>          <span style="color:#4e9a06">&#34;echo \&#34;from django.contrib.auth.models import User; User.objects.create_superuser(&#39;admin&#39;, &#39;admin@localhost.company&#39;, &#39;12qwaszx&#39;)\&#34; | python3 ~/manage.py shell&#34;</span>
+</span></span></code></pre></div></li>
+<li>Install npm dependencies:
+<pre tabindex="0"><code>cd tests
+yarn --frozen-lockfile
+</code></pre></li>
+</ol>
+<p>If you want to get a code coverage report, instrument the code:</p>
+<pre tabindex="0"><code>yarn --frozen-lockfile
+yarn run coverage
+</code></pre><p><strong>Running tests</strong></p>
+<pre tabindex="0"><code>yarn run cypress:run:chrome
+yarn run cypress:run:chrome:canvas3d
+</code></pre><h1 id="rest-api-sdk-and-cli-tests">REST API, SDK and CLI tests</h1>
+<p><strong>Initial steps</strong></p>
+<ol>
+<li>Follow <a href="../../../docs/api_sdk/sdk/developer-guide/">this guide</a> to prepare
+<code>cvat-sdk</code> and <code>cvat-cli</code> source code</li>
+<li>Install all necessary requirements before running REST API tests:
+<pre tabindex="0"><code>pip install -r ./tests/python/requirements.txt
+pip install -e ./cvat-sdk
+pip install -e ./cvat-cli
+</code></pre></li>
+<li>Stop any other CVAT containers which you run previously. They keep ports
+which are used by containers for the testing system.</li>
+</ol>
+<p><strong>Running tests</strong></p>
+<p>Run all REST API tests:</p>
+<pre tabindex="0"><code>pytest ./tests/python
+</code></pre><p>This command will automatically start all necessary docker containers.</p>
+<p>If you want to start/stop these containers without running tests
+use special options for it:</p>
+<pre tabindex="0"><code>pytest ./tests/python --start-services
+pytest ./tests/python --stop-services
+</code></pre><p>If you need to rebuild your CVAT images add <code>--rebuild</code> option:</p>
+<pre tabindex="0"><code>pytest ./tests/python --rebuild
+</code></pre><p>If you want to get a code coverage report, use special option for it:</p>
+<pre tabindex="0"><code>COVERAGE_PROCESS_START=.coveragerc pytest ./tests/python --rebuild --cov --cov-report xml
+</code></pre><p><strong>Debugging</strong></p>
+<p>Currently, this is only supported in deployments based on Docker Compose,
+which should be enough to fix errors arising in REST API tests.</p>
+<p>To debug a server deployed with Docker, you need to do the following:</p>
+<ul>
+<li>
+<p>Adjust env variables in the <code>docker-compose.dev.yml</code> file for your test case</p>
+</li>
+<li>
+<p>Rebuild the images and start the test containers:</p>
+</li>
+</ul>
+<div class="highlight"><pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span><span style="color:#000">CVAT_DEBUG_ENABLED</span><span style="color:#ce5c00;font-weight:bold">=</span>yes pytest --rebuild --start-services tests/python
+</span></span></code></pre></div><p>Now, you can use VS Code tasks to attach to the running server containers.
+To attach to a container, run one of the following tasks:</p>
+<ul>
+<li><code>REST API tests: Attach to server</code> for the server container</li>
+<li><code>REST API tests: Attach to RQ low</code> for the low priority queue worker</li>
+<li><code>REST API tests: Attach to RQ default</code> for the default priority queue worker</li>
+</ul>
+<blockquote>
+<p>If you have a custom development environment setup, you need to adjust
+host-remote path mappings in the <code>.vscode/launch.json</code>:</p>
+</blockquote>
+<div class="highlight"><pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-json" data-lang="json"><span style="display:flex;"><span><span style="color:#a40000">...</span>
+</span></span><span style="display:flex;"><span><span style="color:#4e9a06">&#34;pathMappings&#34;</span><span style="color:#a40000">:</span> <span style="color:#000;font-weight:bold">[</span>
+</span></span><span style="display:flex;"><span>   <span style="color:#000;font-weight:bold">{</span>
+</span></span><span style="display:flex;"><span>      <span style="color:#204a87;font-weight:bold">&#34;localRoot&#34;</span><span style="color:#000;font-weight:bold">:</span> <span style="color:#4e9a06">&#34;${workspaceFolder}/my_venv&#34;</span><span style="color:#000;font-weight:bold">,</span>
+</span></span><span style="display:flex;"><span>      <span style="color:#204a87;font-weight:bold">&#34;remoteRoot&#34;</span><span style="color:#000;font-weight:bold">:</span> <span style="color:#4e9a06">&#34;/opt/venv&#34;</span><span style="color:#000;font-weight:bold">,</span>
+</span></span><span style="display:flex;"><span>   <span style="color:#000;font-weight:bold">},</span>
+</span></span><span style="display:flex;"><span>   <span style="color:#000;font-weight:bold">{</span>
+</span></span><span style="display:flex;"><span>      <span style="color:#204a87;font-weight:bold">&#34;localRoot&#34;</span><span style="color:#000;font-weight:bold">:</span> <span style="color:#4e9a06">&#34;/some/other/path&#34;</span><span style="color:#000;font-weight:bold">,</span>
+</span></span><span style="display:flex;"><span>      <span style="color:#204a87;font-weight:bold">&#34;remoteRoot&#34;</span><span style="color:#000;font-weight:bold">:</span> <span style="color:#4e9a06">&#34;/some/container/path&#34;</span><span style="color:#000;font-weight:bold">,</span>
+</span></span><span style="display:flex;"><span>   <span style="color:#000;font-weight:bold">}</span>
+</span></span><span style="display:flex;"><span><span style="color:#000;font-weight:bold">]</span>
+</span></span></code></pre></div><p>Extra options:</p>
+<ul>
+<li>If you want the server to wait for a debugger on startup,
+use the <code>CVAT_DEBUG_WAIT_CLIENT</code> environment variable:
+<div class="highlight"><pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span><span style="color:#000">CVAT_DEBUG_WAIT_CLIENT</span><span style="color:#ce5c00;font-weight:bold">=</span>yes pytest ...
+</span></span></code></pre></div></li>
+<li>If you want to change the default debugging ports, check the <code>*_DEBUG_PORT</code>
+variables in the <code>docker-compose.dev.yml</code></li>
+</ul>
+<h1 id="unit-tests">Unit tests</h1>
+<p><strong>Initial steps</strong></p>
+<ol>
+<li>Install necessary Python dependencies:
+<pre tabindex="0"><code>pip install -r cvat/requirements/testing.txt
+</code></pre></li>
+<li>Install npm dependencies:
+<pre tabindex="0"><code>yarn --frozen-lockfile
+</code></pre></li>
+<li>Build CVAT server image
+<pre tabindex="0"><code>docker compose -f docker-compose.yml -f docker-compose.dev.yml build cvat_server
+</code></pre></li>
+<li>Run cvat_opa container
+<pre tabindex="0"><code>docker compose -f docker-compose.yml -f docker-compose.dev.yml up -d cvat_opa
+</code></pre></li>
+</ol>
+<p><strong>Running tests</strong></p>
+<ol>
+<li>Python tests
+<pre tabindex="0"><code>python manage.py test --settings cvat.settings.testing cvat/apps -v 2
+</code></pre></li>
+</ol>
+<p>If you want to get a code coverage report, run the next command:</p>
+<pre tabindex="0"><code>coverage run manage.py test --settings cvat.settings.testing cvat/apps -v 2
+</code></pre><ol>
+<li>JS tests
+<pre tabindex="0"><code>cd cvat-core
+yarn run test
+</code></pre></li>
+</ol>
+<p><strong>Debug python unit tests</strong></p>
+<ol>
+<li>Run <code>server: tests</code> debug task in VSCode</li>
+<li>If you want to debug particular tests then change the configuration
+of the corresponding task in <code>./vscode/launch.json</code>, for example:
+<div class="highlight"><pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-json" data-lang="json"><span style="display:flex;"><span><span style="color:#000;font-weight:bold">{</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#204a87;font-weight:bold">&#34;name&#34;</span><span style="color:#000;font-weight:bold">:</span> <span style="color:#4e9a06">&#34;server: tests&#34;</span><span style="color:#000;font-weight:bold">,</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#204a87;font-weight:bold">&#34;type&#34;</span><span style="color:#000;font-weight:bold">:</span> <span style="color:#4e9a06">&#34;python&#34;</span><span style="color:#000;font-weight:bold">,</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#204a87;font-weight:bold">&#34;request&#34;</span><span style="color:#000;font-weight:bold">:</span> <span style="color:#4e9a06">&#34;launch&#34;</span><span style="color:#000;font-weight:bold">,</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#204a87;font-weight:bold">&#34;justMyCode&#34;</span><span style="color:#000;font-weight:bold">:</span> <span style="color:#204a87;font-weight:bold">false</span><span style="color:#000;font-weight:bold">,</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#204a87;font-weight:bold">&#34;stopOnEntry&#34;</span><span style="color:#000;font-weight:bold">:</span> <span style="color:#204a87;font-weight:bold">false</span><span style="color:#000;font-weight:bold">,</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#204a87;font-weight:bold">&#34;python&#34;</span><span style="color:#000;font-weight:bold">:</span> <span style="color:#4e9a06">&#34;${command:python.interpreterPath}&#34;</span><span style="color:#000;font-weight:bold">,</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#204a87;font-weight:bold">&#34;program&#34;</span><span style="color:#000;font-weight:bold">:</span> <span style="color:#4e9a06">&#34;${workspaceRoot}/manage.py&#34;</span><span style="color:#000;font-weight:bold">,</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#204a87;font-weight:bold">&#34;args&#34;</span><span style="color:#000;font-weight:bold">:</span> <span style="color:#000;font-weight:bold">[</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#4e9a06">&#34;test&#34;</span><span style="color:#000;font-weight:bold">,</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#4e9a06">&#34;--settings&#34;</span><span style="color:#000;font-weight:bold">,</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#4e9a06">&#34;cvat.settings.testing&#34;</span><span style="color:#000;font-weight:bold">,</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#4e9a06">&#34;cvat/apps/engine&#34;</span><span style="color:#000;font-weight:bold">,</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#4e9a06">&#34;-v&#34;</span><span style="color:#000;font-weight:bold">,</span> <span style="color:#4e9a06">&#34;2&#34;</span><span style="color:#000;font-weight:bold">,</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#4e9a06">&#34;-k&#34;</span><span style="color:#000;font-weight:bold">,</span> <span style="color:#4e9a06">&#34;test_api_v2_projects_&#34;</span><span style="color:#000;font-weight:bold">,</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#000;font-weight:bold">],</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#204a87;font-weight:bold">&#34;django&#34;</span><span style="color:#000;font-weight:bold">:</span> <span style="color:#204a87;font-weight:bold">true</span><span style="color:#000;font-weight:bold">,</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#204a87;font-weight:bold">&#34;cwd&#34;</span><span style="color:#000;font-weight:bold">:</span> <span style="color:#4e9a06">&#34;${workspaceFolder}&#34;</span><span style="color:#000;font-weight:bold">,</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#204a87;font-weight:bold">&#34;env&#34;</span><span style="color:#000;font-weight:bold">:</span> <span style="color:#000;font-weight:bold">{},</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#204a87;font-weight:bold">&#34;console&#34;</span><span style="color:#000;font-weight:bold">:</span> <span style="color:#4e9a06">&#34;internalConsole&#34;</span>
+</span></span><span style="display:flex;"><span><span style="color:#000;font-weight:bold">}</span>
+</span></span></code></pre></div></li>
+</ol>
+<p><a id="opa-tests"></a></p>
+<h2 id="iam-and-open-policy-agent-tests">IAM and Open Policy Agent tests</h2>
+<h3 id="generate-tests">Generate tests</h3>
+<div class="highlight"><pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>python cvat/apps/iam/rules/tests/generate_tests.py
+</span></span></code></pre></div><h3 id="run-testing">Run testing</h3>
+<ul>
+<li>In a Docker container</li>
+</ul>
+<div class="highlight"><pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>docker compose run --rm -v <span style="color:#4e9a06">&#34;</span><span style="color:#000">$PWD</span><span style="color:#4e9a06">:/mnt/src:ro&#34;</span> -w /mnt/src <span style="color:#4e9a06">\
+</span></span></span><span style="display:flex;"><span><span style="color:#4e9a06"></span>    cvat_opa <span style="color:#204a87">test</span> -v cvat/apps/*/rules
+</span></span></code></pre></div><ul>
+<li>or execute OPA directly</li>
+</ul>
+<div class="highlight"><pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>curl -L -o opa https://openpolicyagent.org/downloads/v0.63.0/opa_linux_amd64_static
+</span></span><span style="display:flex;"><span>chmod +x ./opa
+</span></span><span style="display:flex;"><span>./opa <span style="color:#204a87">test</span> cvat/apps/*/rules
+</span></span></code></pre></div><h3 id="linting-rego">Linting Rego</h3>
+<p>The Rego policies in this project are linted using <a href="https://github.com/styrainc/regal">Regal</a>.</p>
+<ul>
+<li>In a Docker container</li>
+</ul>
+<div class="highlight"><pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>docker run --rm -v <span style="color:#4e9a06">${</span><span style="color:#000">PWD</span><span style="color:#4e9a06">}</span>:/mnt/src:ro -w /mnt/src <span style="color:#4e9a06">\
+</span></span></span><span style="display:flex;"><span><span style="color:#4e9a06"></span>    ghcr.io/styrainc/regal:0.11.0 <span style="color:#4e9a06">\
+</span></span></span><span style="display:flex;"><span><span style="color:#4e9a06"></span>    lint cvat/apps/*/rules
+</span></span></code></pre></div><ul>
+<li>or execute Regal directly</li>
+</ul>
+<div class="highlight"><pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>curl -L -o regal https://github.com/StyraInc/regal/releases/download/v0.11.0/regal_Linux_x86_64
+</span></span><span style="display:flex;"><span>chmod +x ./regal
+</span></span><span style="display:flex;"><span>./regal lint cvat/apps/*/rules
+</span></span></code></pre></div>
+</div>
+
+
+
+    
+	
+  
+    
+    
+	
+    
+
+<div class="td-content" style="page-break-before: always">
+    
+	<h1 id="pg-af7b8ac5d1b8f94dc59b4e12f4a11af1">12 - Repository structure</h1>
+    <div class="lead">How to find the components needed</div>
+	<p>CVAT stores all its components is a single (&ldquo;monolithic&rdquo;) repository.
+An explanation of CVAT components is available <a href="https://youtu.be/CGOBR5ZmIC0?t=237">here</a>.</p>
+<p>Here is the list of the main directories and files in the repository:</p>
+<ul>
+<li><code>./</code> - Various common files for the repository</li>
+<li><code>.github/</code> - GitHub configuration files</li>
+<li><code>.vscode/</code> - VS Code configuration files</li>
+<li><code>components/</code> - optional server services</li>
+<li><code>cvat/</code> - server source code
+<ul>
+<li><code>apps/</code> - server modules sources</li>
+<li><code>requirements/</code> - server Python package requirements</li>
+<li><code>settings/</code> - server configurations</li>
+</ul>
+</li>
+<li><code>cvat-canvas/</code> - UI package, responsible for the annotation canvas</li>
+<li><code>cvat-canvas3d/</code> - UI package, responsible for the annotation canvas for 3D</li>
+<li><code>cvat-cli/</code> - CLI utility</li>
+<li><code>cvat-core/</code> - UI package, responsible for server interaction</li>
+<li><code>cvat-data/</code> - UI package, responsible for media data decoding</li>
+<li><code>cvat-sdk/</code> - Python SDK package</li>
+<li><code>cvat-ui/</code> - UI package, responsible for UI elements</li>
+<li><code>helm-chart/</code> - Helm configuration for deployment on Kubernetes</li>
+<li><code>serverless/</code> - AI models</li>
+<li><code>site/</code> - Documentation website sources
+<ul>
+<li><code>assets/</code> - Media content</li>
+<li><code>content/</code> - Documentation pages</li>
+</ul>
+</li>
+<li><code>supervisord/</code> - supervisord deployment configuration</li>
+<li><code>tests/</code> - End-to-end tests
+<ul>
+<li><code>cypress/</code> - UI end-to-end tests</li>
+<li><code>python/</code> - Tests for server, SDK, CLI and other Python components</li>
+</ul>
+</li>
+<li><code>utils/</code> - Additional tools and utility scripts
+<ul>
+<li><code>dataset_manifest/</code> - Python library and a tool to create dataset manifest files</li>
+<li><code>dicom_converter/</code> - Script to convert DICOM data to CVAT-compatible format</li>
+</ul>
+</li>
+<li><code>docker-compose*.yml</code> - Docker Compose local deployment configuration</li>
+<li><code>Dockerfile*</code> - Docker image descriptions</li>
+<li><code>manage.py</code> - Django utility to manipulate server components</li>
+</ul>
+
+</div>
+
+
+
+    
+	
+  
+
+
+
+          </main>
+        </div>
+      </div>
+      <footer class="bg-dark py-5 row d-print-none" style="min-height: 0">
+  <div class="container-fluid">
+    <div class="row">
+      <div class="col text-center">
+        
+        
+        
+<ul class="list-inline mb-0">
+  
+  <li class="list-inline-item mx-2 h3" data-bs-toggle="tooltip" data-placement="top" title="Gitter public chat" aria-label="Gitter public chat">
+    <a class="text-white" rel="noopener noreferrer" href="https://gitter.im/opencv-cvat/public">
+      <i class="fab fa-gitter"></i>
+    </a>
+  </li>
+  
+  <li class="list-inline-item mx-2 h3" data-bs-toggle="tooltip" data-placement="top" title="Stack Overflow" aria-label="Stack Overflow">
+    <a class="text-white" rel="noopener noreferrer" href="https://stackoverflow.com/search?q=%23cvat">
+      <i class="fab fa-stack-overflow"></i>
+    </a>
+  </li>
+  
+  <li class="list-inline-item mx-2 h3" data-bs-toggle="tooltip" data-placement="top" title="YouTube" aria-label="YouTube">
+    <a class="text-white" rel="noopener noreferrer" href="https://www.youtube.com/@cvat-ai">
+      <i class="fab fa-youtube"></i>
+    </a>
+  </li>
+  
+</ul>
+
+        
+        
+      </div>
+      <div class="col-4 text-center">
+        <div class="row">
+          <a href="https://www.cvat.ai/privacy">Privacy Policy</a>
+        </div>
+        <div class="row">
+          <a href="https://www.cvat.ai/terms-of-use">Terms of Use</a>
+        </div>
+        <div class="row">
+          
+            <p><a href="../../../about/">About</a></p>
+          
+        </div>
+      </div>
+      <div class="col text-right text-center">
+        
+        
+        
+<ul class="list-inline mb-0">
+  
+  <li class="list-inline-item mx-2 h3" data-bs-toggle="tooltip" data-placement="top" title="GitHub" aria-label="GitHub">
+    <a class="text-white" rel="noopener noreferrer" href="https://github.com/cvat-ai/cvat">
+      <i class="fab fa-github"></i>
+    </a>
+  </li>
+  
+  <li class="list-inline-item mx-2 h3" data-bs-toggle="tooltip" data-placement="top" title="Gitter developers chat" aria-label="Gitter developers chat">
+    <a class="text-white" rel="noopener noreferrer" href="https://gitter.im/opencv-cvat/dev">
+      <i class="fab fa-gitter"></i>
+    </a>
+  </li>
+  
+  <li class="list-inline-item mx-2 h3" data-bs-toggle="tooltip" data-placement="top" title="Discord chat" aria-label="Discord chat">
+    <a class="text-white" rel="noopener noreferrer" href="https://discord.gg/fNR3eXfk6C">
+      <i class="fab fa-discord"></i>
+    </a>
+  </li>
+  
+</ul>
+
+        
+        
+      </div>
+    </div>
+  </div>
+</footer>
+
+
+
+    </div>
+    
+  <script src="../../../js/main.min.99abe30f7fb05785a480d405ee1665ebd520cec6bbadffe966b7737e103675b8.js" integrity="sha256-mavjD3&#43;wV4WkgNQF7hZl69Ugzsa7rf/pZrdzfhA2dbg=" crossorigin="anonymous"></script>
+<script src='../../../js/prism.js'></script>
+<script src='../../../js/tabpane-persist.js'></script>
+
+  </body>
+</html>

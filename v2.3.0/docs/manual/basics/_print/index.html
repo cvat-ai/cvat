@@ -1,0 +1,2931 @@
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    <meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+<meta name="generator" content="Hugo 0.83.0" /><link rel="canonical" type="text/html" href="../../../../docs/manual/basics/">
+<META NAME="ROBOTS" CONTENT="NOINDEX, NOFOLLOW">
+
+
+<link rel="shortcut icon" href="../../../../favicons/favicon.ico" >
+<link rel="apple-touch-icon" href="../../../../favicons/apple-touch-icon-180x180.png" sizes="180x180">
+<link rel="icon" type="image/png" href="../../../../favicons/favicon-16x16.png" sizes="16x16">
+<link rel="icon" type="image/png" href="../../../../favicons/favicon-32x32.png" sizes="32x32">
+<link rel="icon" type="image/png" href="../../../../favicons/android-36x36.png" sizes="36x36">
+<link rel="icon" type="image/png" href="../../../../favicons/android-48x48.png" sizes="48x48">
+<link rel="icon" type="image/png" href="../../../../favicons/android-72x72.png" sizes="72x72">
+<link rel="icon" type="image/png" href="../../../../favicons/android-96x96.png" sizes="96x96">
+<link rel="icon" type="image/png" href="../../../../favicons/android-144x144.png" sizes="144x144">
+<link rel="icon" type="image/png" href="../../../../favicons/android-192x192.png" sizes="192x192">
+
+<title>Basics | CVAT</title>
+<meta name="description" content=""><meta property="og:title" content="Basics" />
+<meta property="og:description" content="This section contains basic documents for CVAT users" />
+<meta property="og:type" content="website" />
+<meta property="og:url" content="/docs/manual/basics/" /><meta property="og:site_name" content="CVAT" />
+
+<meta itemprop="name" content="Basics">
+<meta itemprop="description" content="This section contains basic documents for CVAT users"><meta name="twitter:card" content="summary"/>
+<meta name="twitter:title" content="Basics"/>
+<meta name="twitter:description" content="This section contains basic documents for CVAT users"/>
+
+
+
+
+<link rel="preload" href="../../../../scss/main.min.591a88c412fca6c692021fe322184768cfc320012e0a443e8514b68fd373aa21.css" as="style">
+<link href="../../../../scss/main.min.591a88c412fca6c692021fe322184768cfc320012e0a443e8514b68fd373aa21.css" rel="stylesheet" integrity="">
+
+
+<script
+  src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"
+  integrity="sha256-9/aliU8dGd2tb6OSsuzixeV4y/faTqgFtohetphbbj0="
+  crossorigin="anonymous"></script>
+
+<script
+  src="https://unpkg.com/lunr@2.3.8/lunr.min.js"
+  integrity="sha384-vRQ9bDyE0Wnu+lMfm57BlYLO0/XauFuKpVsZPs7KEDwYKktWi5+Kz3MP8++DFlRY"
+  crossorigin="anonymous"></script>
+
+
+
+<link rel="stylesheet" href="../../../../css/prism.css"/>
+
+
+
+
+
+
+  </head>
+  <body class="td-section">
+    <header>
+      
+
+
+<nav class="js-navbar-scroll navbar navbar-expand navbar-dark flex-column flex-md-row td-navbar">
+        <a class="navbar-brand" href="../../../../about/">
+    <span class="navbar-logo"><svg width="98" height="27" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink"><defs><path d="M101 0v29l-52.544.001C44.326 35.511 35.598 40 25.5 40 11.417 40 0 31.27.0 20.5S11.417 1 25.5 1c4.542.0 8.807.908 12.5 2.5V0h63z" id="logoA"/></defs><g transform="translate(-2 -1)" fill="none" fill-rule="evenodd"><mask id="logoB" fill="#fff"><use xlink:href="#logoA"/></mask><path d="M48.142 1c4.736.0 6.879 3.234 6.879 5.904v2.068h-4.737V6.904c0-.79-.789-2.144-2.142-2.144-1.654.0-2.368 1.354-2.368 2.144v15.192c0 .79.714 2.144 2.368 2.144 1.353.0 2.142-1.354 2.142-2.144v-2.068h4.737v2.068c0 2.67-2.143 5.904-6.88 5.904C42.956 28 41 24.766 41 22.134V6.904C41 4.234 42.955 1 48.142 1zM19-6c9.389.0 17 7.611 17 17s-7.611 17-17 17S2 20.389 2 11 9.611-6 19-6zm42.256 7.338 3.345 19.48h.075l3.42-19.48h5l-6.052 26.324h-5L56.22 1.338h5.037zm20.706.0 5.413 26.324h-4.699l-.94-6.13h-4.548l-.902 6.13h-4.435l5.413-26.324h4.698zm18.038.0v3.723h-4.849v22.6h-4.699v-22.6h-4.81V1.338H1e2zM19 4a7 7 0 100 14 7 7 0 000-14zm60.557 4.295h-.113l-1.466 9.439h3.007l-1.428-9.439z" fill="#fff" fill-rule="nonzero" mask="url(#logoB)"/></g></svg></span>
+  </a>
+  <div class="td-navbar-nav-scroll ml-md-auto" id="main_navbar">
+    <ul class="navbar-nav mt-2 mt-lg-0">
+      
+      
+      <li class="nav-item mr-4 mb-2 mb-lg-0">
+        
+        
+        
+        
+        
+        
+        
+        
+        <a class="nav-link active" href="../../../../docs/" ><span class="active">Documentation</span></a>
+      </li>
+      
+      <li class="nav-item mr-4 mb-2 mb-lg-0">
+        
+        
+        
+        
+        
+        
+        
+        
+        <a class="nav-link" href="../../../../about/" ><span>About</span></a>
+      </li>
+      
+      <li class="nav-item mr-4 mb-2 mb-lg-0">
+        
+        
+        
+        
+        
+        
+        <a class="nav-link" href="https://app.cvat.ai"  ><span>Try it now</span></a>
+      </li>
+      
+      <li class="nav-item mr-4 mb-2 mb-lg-0">
+        
+        
+        
+        
+        
+        
+        <a class="nav-link" href="https://github.com/cvat-ai/cvat"  ><i class='fab fa-github'></i><span>GitHub</span></a>
+      </li>
+      
+      
+        
+        <li class="nav-item dropdown">
+          <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-target="#dropdown_ver" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+            v2.3.0
+          </a>
+        </li>
+        
+      
+      
+    </ul>
+  </div>
+  <div class="dropdown-menu" id="dropdown_ver" aria-labelledby="navbarDropdownMenuLink">
+    
+      
+        <a class="dropdown-item" href="../../../../../docs/manual/basics/">Latest version</a>
+    
+      
+        <a class="dropdown-item" href="../../../../../v1.5.0/docs/manual/basics/">v1.5.0</a>
+    
+      
+        <a class="dropdown-item" href="../../../../../v1.6.0/docs/manual/basics/">v1.6.0</a>
+    
+      
+        <a class="dropdown-item" href="../../../../../v1.7.0/docs/manual/basics/">v1.7.0</a>
+    
+      
+        <a class="dropdown-item" href="../../../../../v2.0.0/docs/manual/basics/">v2.0.0</a>
+    
+      
+        <a class="dropdown-item" href="../../../../../v2.1.0/docs/manual/basics/">v2.1.0</a>
+    
+      
+        <a class="dropdown-item" href="../../../../../v2.10.3/docs/manual/basics/">v2.10.3</a>
+    
+      
+        <a class="dropdown-item" href="../../../../../v2.11.3/docs/manual/basics/">v2.11.3</a>
+    
+      
+        <a class="dropdown-item" href="../../../../../v2.12.1/docs/manual/basics/">v2.12.1</a>
+    
+      
+        <a class="dropdown-item" href="../../../../../v2.13.0/docs/manual/basics/">v2.13.0</a>
+    
+      
+        <a class="dropdown-item" href="../../../../../v2.14.4/docs/manual/basics/">v2.14.4</a>
+    
+      
+        <a class="dropdown-item" href="../../../../../v2.15.0/docs/manual/basics/">v2.15.0</a>
+    
+      
+        <a class="dropdown-item" href="../../../../../v2.16.2/docs/manual/basics/">v2.16.2</a>
+    
+      
+        <a class="dropdown-item" href="../../../../../v2.2.0/docs/manual/basics/">v2.2.0</a>
+    
+      
+        <a class="dropdown-item" href="../../../../../v2.3.0/docs/manual/basics/">v2.3.0</a>
+    
+      
+        <a class="dropdown-item" href="../../../../../v2.4.9/docs/manual/basics/">v2.4.9</a>
+    
+      
+        <a class="dropdown-item" href="../../../../../v2.5.2/docs/manual/basics/">v2.5.2</a>
+    
+      
+        <a class="dropdown-item" href="../../../../../v2.6.2/docs/manual/basics/">v2.6.2</a>
+    
+      
+        <a class="dropdown-item" href="../../../../../v2.7.6/docs/manual/basics/">v2.7.6</a>
+    
+      
+        <a class="dropdown-item" href="../../../../../v2.8.2/docs/manual/basics/">v2.8.2</a>
+    
+      
+        <a class="dropdown-item" href="../../../../../v2.9.2/docs/manual/basics/">v2.9.2</a>
+    
+  </div>
+  <div class="navbar-nav d-none d-lg-block">
+
+
+
+<input
+  type="search"
+  class="form-control td-search-input"
+  placeholder="&#xf002; Search this site…"
+  aria-label="Search this site…"
+  autocomplete="off"
+  
+  data-offline-search-index-json-src="../../../../offline-search-index.5146bb653f596663da42a90739d11f53.json"
+  data-offline-search-base-href="../../../../"
+  data-offline-search-max-results="10"
+>
+
+</div>
+</nav>
+
+    </header>
+    <div class="container-fluid td-outer">
+      <div class="td-main">
+        <div class="row flex-xl-nowrap">
+          <div class="col-12 col-md-3 col-xl-2 td-sidebar d-print-none">
+          </div>
+          <div class="d-none d-xl-block col-xl-2 td-toc d-print-none">
+          </div>
+          <main class="col-12 col-md-9 col-xl-8 pl-md-5" role="main">
+            
+
+
+
+
+<div class="td-content">
+<div class="pageinfo pageinfo-primary d-print-none">
+<p>
+This the multi-page printable view of this section.
+<a href="#" onclick="print();return false;">Click here to print</a>.
+</p><p>
+<a href="../../../../docs/manual/basics/">Return to the regular view of this page</a>.
+</p>
+</div>
+
+
+
+<h1 class="title">Basics</h1>
+<div class="lead">This section contains basic documents for CVAT users</div>
+
+
+
+
+    <ul>
+    
+  
+  
+  
+  
+
+  
+    
+    
+	
+<li>1: <a href="#pg-628774102564cce8a9b3ea45e8287c63">Registration</a></li>
+
+
+    
+  
+    
+    
+	
+<li>2: <a href="#pg-4cba161eee5c23abe3080d09ab388363">Creating an annotation task</a></li>
+
+
+    
+  
+    
+    
+	
+<li>3: <a href="#pg-bbd4fb5d7a1d5bae7ef2ea2d18297182">Creating multi tasks</a></li>
+
+
+    
+  
+    
+    
+	
+<li>4: <a href="#pg-f05979e03e250e4fd83819a9fb4f8c6f">Jobs page</a></li>
+
+
+    
+  
+    
+    
+	
+<li>5: <a href="#pg-8b4dc0e86031450cd60eaa0f2183926a">Tasks page</a></li>
+
+
+    
+  
+    
+    
+	
+<li>6: <a href="#pg-8c04ccdab3bc47dc61dead92a456dc5e">Task details</a></li>
+
+
+    
+  
+    
+    
+	
+<li>7: <a href="#pg-a3f5ac3c9c71a6d1895f21973a3e7073">Interface of the annotation tool</a></li>
+
+
+    
+  
+    
+    
+	
+<li>8: <a href="#pg-96e4853b69b3c2d45ac6c4dd9eef69f6">Basic navigation</a></li>
+
+
+    
+  
+    
+    
+	
+<li>9: <a href="#pg-247db7504d756f9b8a302d89c1c60fe7">Top Panel</a></li>
+
+
+    
+  
+    
+    
+	
+<li>10: <a href="#pg-033c4b006bed59c7b79e37da79355e2e">Controls sidebar</a></li>
+
+
+    
+  
+    
+    
+	
+<li>11: <a href="#pg-d34292e27e49f0509de6c6421a59ba45">Objects sidebar</a></li>
+
+
+    
+  
+    
+    
+	
+<li>12: <a href="#pg-10c89fea132557f61275ddd0d266cb4e">Workspace</a></li>
+
+
+    
+  
+    
+    
+	
+<li>13: <a href="#pg-47ed10f28d06442b6965546d6ab61314">3D task workspace</a></li>
+
+
+    
+  
+    
+    
+	
+<li>14: <a href="#pg-c8319ec25cc2a4c111e6b974fbac56a9">Standard 3D mode (basics)</a></li>
+
+
+    
+  
+    
+    
+	
+<li>15: <a href="#pg-53f38f5f3dc68518da9fd1c61a97f54b">Settings</a></li>
+
+
+    
+  
+    
+    
+	
+<li>16: <a href="#pg-80f7a8f997d5088990b434c7df6c7816">Types of shapes</a></li>
+
+
+    
+  
+    
+    
+	
+<li>17: <a href="#pg-0eec06490fd7abcbf29363c77731c1c9">Shape mode (basics)</a></li>
+
+
+    
+  
+    
+    
+	
+<li>18: <a href="#pg-1a21d24ffd5d3b98ea39a1b5efdc33e2">Track mode (basics)</a></li>
+
+
+    
+  
+    
+    
+	
+<li>19: <a href="#pg-1dbc64c6e91e3ee0c7d7a8112ccdc7b6">3D Object annotation (basics)</a></li>
+
+
+    
+  
+    
+    
+	
+<li>20: <a href="#pg-01df2b1d465b8c0d0021dec1627ed90f">Attribute annotation mode (basics)</a></li>
+
+
+    
+  
+    
+    
+	
+<li>21: <a href="#pg-49ca3c5a8947ba788a9e6295ce16a840">Vocabulary</a></li>
+
+
+    
+  
+    
+    
+	
+<li>22: <a href="#pg-c9da6f8a00196503e659cee9f4e1b3b6">Cloud storages page</a></li>
+
+
+    
+  
+    
+    
+	
+<li>23: <a href="#pg-d013ec6e69303d468f8e8b14075372d7">Attach cloud storage</a></li>
+
+
+    
+  
+
+    </ul>
+
+
+<div class="content">
+      
+</div>
+</div>
+
+
+  
+  
+  
+  
+
+  
+  
+
+  
+    
+    
+	
+    
+
+<div class="td-content" style="">
+    
+	<h1 id="pg-628774102564cce8a9b3ea45e8287c63">1 - Registration</h1>
+    <div class="lead">App CVAT user registration and account access.</div>
+	<p>To start to annotate in CVAT, you need to
+create an account or log in to the existing account.</p>
+<p>This section describes <a href="https://app.cvat.ai/">App CVAT</a>, that is sutable
+for small personal projects, that do not require user management.
+It is also ok to use if you just want to try what is CVAT.</p>
+<p>While it is easy to use, it has some limitations.
+For example, in App CVAT you cannot create a superuser (admin account)
+or administer user roles. All these features are available
+for <a href="../../../../docs/administration/basics/admin-account/">Admin user</a> in
+<a href="../../../../docs/administration/basics/installation/">local version of CVAT</a>.</p>
+<p>See:</p>
+<ul>
+<li><a href="#user-registration">User registration</a></li>
+<li><a href="#account-access">Account access</a></li>
+</ul>
+<p>To creata account or log in, go to the <a href="https://app.cvat.ai/">App CVAT</a> login page:</p>
+<p><img src="../../../../images/image001.jpg" alt=""></p>
+<blockquote>
+<p><strong>Note:</strong> By default authentication and registration with Google and GitHub work only for <a href="https://app.cvat.ai/">App CVAT</a>. <br>If you want to use Google and GitHub authentication on a local installation, see <a href="../../../../docs/administration/basics/social-accounts-configuration/">Social auth configuration</a>.</p>
+</blockquote>
+<h3 id="user-registration">User registration</h3>
+<p>To register as a non-admin user, do the following:</p>
+<ol>
+<li>
+<p>Click <strong>Create an account</strong>.</p>
+<p><img src="../../../../images/image002.jpg" alt="Create account"></p>
+</li>
+<li>
+<p>Fill in all blank fields, accept terms of use, and
+click the <strong>Create an account</strong> button.</p>
+</li>
+</ol>
+<p><img src="../../../../images/image003.jpg" alt="Account form"></p>
+<p><br>A username generates from the email automatically. You can edit it if needed.</p>
+<p><img src="../../../../images/filling_email.gif" alt="Usernname generation"></p>
+<p>To register with Google or Github, click the button with the name of the service, and folow instructions on the screen.</p>
+<h3 id="account-access">Account access</h3>
+<p>To access your account, do the following:</p>
+<ol>
+<li>Go to the login page.</li>
+<li>Enter username or email. The password field will appear.</li>
+<li>Enter the password and click <strong>Next</strong>.</li>
+</ol>
+<p>To log in with Google or Github, click the button with the name of the service.</p>
+
+</div>
+
+
+
+    
+	
+  
+    
+    
+	
+    
+
+<div class="td-content" style="page-break-before: always">
+    
+	<h1 id="pg-4cba161eee5c23abe3080d09ab388363">2 - Creating an annotation task</h1>
+    <div class="lead">Instructions on how to create and configure an annotation task.</div>
+	<p>Create an annotation task pressing <code>+</code> button and select <code>Create new task</code> on the tasks page or on the project page.</p>
+<p><img src="../../../../images/image004.jpg" alt=""></p>
+<blockquote>
+<p>Notice that the task will be created inside the organization that you had selected at the time of creation.
+Read more about <a href="../../../../docs/manual/advanced/organization/">organizations</a>.</p>
+</blockquote>
+<p>Specify parameters of the task:</p>
+<h2 id="basic-configuration">Basic configuration</h2>
+<h3 id="name">Name</h3>
+<p>The name of the task to be created.</p>
+<p><img src="../../../../images/image005.jpg" alt=""></p>
+<h3 id="projects">Projects</h3>
+<p>The project that this task will be related with.</p>
+<p><img src="../../../../images/image193.jpg" alt=""></p>
+<h3 id="labels">Labels</h3>
+<p>There are two ways of working with labels (available only if the task is not related to the project):</p>
+<ul>
+<li>
+<p>The <code>Constructor</code> is a simple way to add and adjust labels. To add a new label click the <code>Add label</code> button.</p>
+<p><img src="../../../../images/image123.jpg" alt=""></p>
+<p>You can set a name of the label in the <code>Label name</code> field and choose a color for each label.</p>
+<p><img src="../../../../images/image124.jpg" alt=""></p>
+<p>If necessary you can add an attribute and set its properties by clicking <code>Add an attribute</code>:</p>
+<p><img src="../../../../images/image125.jpg" alt=""></p>
+<p>The following actions are available here:</p>
+<ol>
+<li>Set the attribute’s name.</li>
+<li>Choose the way to display the attribute:
+<ul>
+<li>Select — drop down list of value</li>
+<li>Radio — is used when it is necessary to choose just one option out of few suggested.</li>
+<li>Checkbox — is used when it is necessary to choose any number of options out of suggested.</li>
+<li>Text — is used when an attribute is entered as a text.</li>
+<li>Number — is used when an attribute is entered as a number.</li>
+</ul>
+</li>
+<li>Set values for the attribute. The values could be separated by pressing <code>Enter</code>.
+The entered value is displayed as a separate element which could be deleted
+by pressing <code>Backspace</code> or clicking the close button (x).
+If the specified way of displaying the attribute is Text or Number,
+the entered value will be displayed as text by default (e.g. you can specify the text format).</li>
+<li>Checkbox <code>Mutable</code> determines if an attribute would be changed frame to frame.</li>
+<li>You can delete the attribute by clicking the close button (x).</li>
+</ol>
+<p>Click the <code>Continue</code> button to add more labels.
+If you need to cancel adding a label - press the <code>Cancel</code> button.
+After all the necessary labels are added click the <code>Done</code> button.
+After clicking <code>Done</code> the added labels would be displayed as separate elements of different colour.
+You can edit or delete labels by clicking <code>Update attributes</code> or <code>Delete label</code>.</p>
+</li>
+<li>
+<p>The <code>Raw</code> is a way of working with labels for an advanced user.
+Raw presents label data in <em>json</em> format with an option of editing and copying labels as a text.
+The <code>Done</code> button applies the changes and the <code>Reset</code> button cancels the changes.
+<img src="../../../../images/image126.jpg" alt=""></p>
+</li>
+</ul>
+<h3 id="select-files">Select files</h3>
+<p>Press tab <code>My computer</code> to choose some files for annotation from your PC.
+If you select tab <code>Connected file share</code> you can choose files for annotation from your network.
+If you select <code> Remote source</code> , you&rsquo;ll see a field where you can enter a list of URLs (one URL per line).
+If you upload a video or dataset with images and select <code>Use cache</code> option, you can attach a <code>manifest.jsonl</code> file.
+You can find how to prepare it <a href="../../../../docs/manual/advanced/dataset_manifest/">here</a>.
+If you select the <code>Cloud Storage</code> tab, you can select a cloud storage (for this type the cloud storage name),
+after that choose the manifest file and select the required files.
+For more information on how to attach cloud storage, see <a href="../../../../docs/manual/basics/attach-cloud-storage/">attach cloud storage</a></p>
+<p><img src="../../../../images/image127.jpg" alt=""></p>
+<h3 id="data-formats-for-a-3d-task">Data formats for a 3D task</h3>
+<p>To create a 3D task, you must prepare an archive with one of the following directory structures:
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<ul class="nav nav-tabs" id="tabs-0" role="tablist"><li class="nav-item">
+      <a class="nav-link active"
+        id="tabs-0-0-tab" data-toggle="tab" href="#tabs-0-0" role="tab"
+        aria-controls="tabs-0-0" aria-selected="true">
+        Velodyne
+      </a>
+    </li><li class="nav-item">
+      <a class="nav-link"
+        id="tabs-0-1-tab" data-toggle="tab" href="#tabs-0-1" role="tab"
+        aria-controls="tabs-0-1" aria-selected="false">
+        3D pointcloud
+      </a>
+    </li><li class="nav-item">
+      <a class="nav-link"
+        id="tabs-0-2-tab" data-toggle="tab" href="#tabs-0-2" role="tab"
+        aria-controls="tabs-0-2" aria-selected="false">
+        3D Option 1
+      </a>
+    </li><li class="nav-item">
+      <a class="nav-link"
+        id="tabs-0-3-tab" data-toggle="tab" href="#tabs-0-3" role="tab"
+        aria-controls="tabs-0-3" aria-selected="false">
+        3D Option 2
+      </a>
+    </li></ul>
+
+
+<div class="tab-content" id="tabs-0-content"><div class="tab-pane fade show active"
+        id="tabs-0-0" role="tabpanel" aria-labelled-by="tabs-0-0-tab"><pre><code class="language-en" data-lang="en">    VELODYNE FORMAT
+    Structure:
+      velodyne_points/
+        data/
+          image_01.bin
+          IMAGE_00 # unknown dirname,
+                   # generally image_01.png can be under IMAGE_00, IMAGE_01, IMAGE_02, IMAGE_03, etc
+      data/
+        image_01.png
+  </code></pre></div>
+  <div class="tab-pane fade"
+        id="tabs-0-1" role="tabpanel" aria-labelled-by="tabs-0-1-tab"><pre><code class="language-en" data-lang="en">    3D POINTCLOUD DATA FORMAT
+    Structure:
+      pointcloud/
+        00001.pcd
+      related_images/
+        00001_pcd/
+          image_01.png # or any other image
+  </code></pre></div>
+  <div class="tab-pane fade"
+        id="tabs-0-2" role="tabpanel" aria-labelled-by="tabs-0-2-tab"><pre><code class="language-en" data-lang="en">    3D, DEFAULT DATAFORMAT Option 1
+    Structure:
+      data/
+        image.pcd
+        image.png
+  </code></pre></div>
+  <div class="tab-pane fade"
+        id="tabs-0-3" role="tabpanel" aria-labelled-by="tabs-0-3-tab"><pre><code class="language-en" data-lang="en">    3D, DEFAULT DATAFORMAT Option 2
+    Structure:
+      data/
+        image_1/
+            image_1.pcd
+            context_1.png # or any other name
+            context_2.jpg
+  </code></pre></div>
+  
+</div>
+</p>
+<blockquote>
+<p>You can&rsquo;t mix 2D and 3D data in the same task.</p>
+</blockquote>
+<h2 id="advanced-configuration">Advanced configuration</h2>
+<p><img src="../../../../images/image128.jpg" alt=""></p>
+<h3 id="sorting-method">Sorting method</h3>
+<p>Option to sort the data. It is not relevant for videos.
+For example, the sequence <code>2.jpeg, 10.jpeg, 1.jpeg</code> after sorting will be:</p>
+<ul>
+<li><code>lexicographical</code>: 1.jpeg, 10.jpeg, 2.jpeg</li>
+<li><code>natural</code>: 1.jpeg, 2.jpeg, 10.jpeg</li>
+<li><code>predefined</code>: 2.jpeg, 10.jpeg, 1.jpeg</li>
+</ul>
+<h3 id="use-zipvideo-chunks">Use zip/video chunks</h3>
+<p>Force to use zip chunks as compressed data. Cut out content for videos only.</p>
+<h3 id="use-cache">Use cache</h3>
+<p>Defines how to work with data. Select the checkbox to switch to the &ldquo;on-the-fly data processing&rdquo;,
+which will reduce the task creation time (by preparing chunks when requests are received)
+and store data in a cache of limited size with a policy of evicting less popular items.
+See more <a href="../../../../docs/manual/advanced/data_on_fly/">here</a>.</p>
+<h3 id="image-quality">Image Quality</h3>
+<p>Use this option to specify quality of uploaded images.
+The option helps to load high resolution datasets faster.
+Use the value from <code>5</code> (almost completely compressed images) to <code>100</code> (not compressed images).</p>
+<h3 id="overlap-size">Overlap Size</h3>
+<p>Use this option to make overlapped segments.
+The option makes tracks continuous from one segment into another.
+Use it for interpolation mode. There are several options for using the parameter:</p>
+<ul>
+<li>For an interpolation task (video sequence).
+If you annotate a bounding box on two adjacent segments they will be merged into one bounding box.
+If overlap equals to zero or annotation is poor on adjacent segments inside a dumped annotation file,
+you will have several tracks, one for each segment, which corresponds to the object.</li>
+<li>For an annotation task (independent images).
+If an object exists on overlapped segments, the overlap is greater than zero
+and the annotation is good enough on adjacent segments, it will be automatically merged into one object.
+If overlap equals to zero or annotation is poor on adjacent segments inside a dumped annotation file,
+you will have several bounding boxes for the same object.
+Thus, you annotate an object on the first segment.
+You annotate the same object on second segment, and if you do it right, you
+will have one track inside the annotations.
+If annotations on different segments (on overlapped frames)
+are very different, you will have two shapes for the same object.
+This functionality works only for bounding boxes.
+Polygons, polylines, points don&rsquo;t support automatic merge on overlapped segments
+even the overlap parameter isn&rsquo;t zero and match between corresponding shapes on adjacent segments is perfect.</li>
+</ul>
+<h3 id="segment-size">Segment size</h3>
+<p>Use this option to divide a huge dataset into a few smaller segments.
+For example, one job cannot be annotated by several labelers (it isn&rsquo;t supported).
+Thus using &ldquo;segment size&rdquo; you can create several jobs for the same annotation task.
+It will help you to parallel data annotation process.</p>
+<h3 id="start-frame">Start frame</h3>
+<p>Frame from which video in task begins.</p>
+<h3 id="stop-frame">Stop frame</h3>
+<p>Frame on which video in task ends.</p>
+<h3 id="frame-step">Frame Step</h3>
+<p>Use this option to filter video frames.
+For example, enter <code>25</code> to leave every twenty fifth frame in the video or every twenty fifth image.</p>
+<h3 id="chunk-size">Chunk size</h3>
+<p>Defines a number of frames to be packed in a chunk when send from client to server.
+Server defines automatically if empty.</p>
+<p>Recommended values:</p>
+<ul>
+<li>1080p or less: 36</li>
+<li>2k or less: 8 - 16</li>
+<li>4k or less: 4 - 8</li>
+<li>More: 1 - 4</li>
+</ul>
+<h3 id="dataset-repository">Dataset Repository</h3>
+<p>URL link of the repository optionally specifies the path to the repository for storage
+(<code>default: annotation / &lt;dump_file_name&gt; .zip</code>).
+The .zip and .xml file extension of annotation are supported.
+Field format: <code>URL [PATH]</code> example: <code>https://github.com/project/repos.git [1/2/3/4/annotation.xml]</code></p>
+<p>Supported URL formats :</p>
+<ul>
+<li><code>https://github.com/project/repos[.git]</code></li>
+<li><code>github.com/project/repos[.git]</code></li>
+<li><code>git@github.com:project/repos[.git]</code></li>
+</ul>
+<p>After the task is created, the synchronization status is displayed on the task page.</p>
+<p>If you specify a dataset repository, when you create a task, you will see a message
+about the need to grant access with the ssh key.
+This is the key you need to <a href="https://github.com/settings/keys">add to your github account</a>.
+For other git systems, you can learn about adding an ssh key in their documentation.</p>
+<h3 id="use-lfs">Use LFS</h3>
+<p>If the annotation file is large, you can create a repository with
+<a href="https://git-lfs.github.com/">LFS</a> support.</p>
+<h3 id="issue-tracker">Issue tracker</h3>
+<p>Specify full issue tracker&rsquo;s URL if it&rsquo;s necessary.</p>
+<h3 id="source-storage">Source storage</h3>
+<p>Specify source storage for import resources like annotations and backups. It can be a local or a cloud storage.
+If the task is created in the project, then the <code>Use project source storage</code> switch will determine whether
+to use the default values ​​or specify new ones.</p>
+<h3 id="target-storage">Target storage</h3>
+<p>Specify target storage for export resources like annotations and backups. It can be a local or a cloud storage.
+If the task is created in the project, then the <code>Use project target storage</code> switch will determine whether
+to use the default values ​​or specify new ones.</p>
+<p>To save and open task click on <code>Submit &amp; Open</code> button. Also you
+can click on <code>Submit &amp; Continue</code> button for creating several tasks in sequence.
+Then, the created tasks will be displayed on a <a href="../../../../docs/manual/basics/tasks-page/">tasks page</a>.</p>
+
+</div>
+
+
+
+    
+	
+  
+    
+    
+	
+    
+
+<div class="td-content" style="page-break-before: always">
+    
+	<h1 id="pg-bbd4fb5d7a1d5bae7ef2ea2d18297182">3 - Creating multi tasks</h1>
+    <div class="lead">Instructions on how to create and configure multi tasks.</div>
+	<p>In case when you have a few videos and you don&rsquo;t want to set up CVAT tasks one-by-one manually,
+you can use the <code>multi tasks</code> option.</p>
+<blockquote>
+<p>This feature is available for videos only.</p>
+</blockquote>
+<p>Create several tasks pressing <code>+</code> button and select <code>Create multi tasks</code> on the tasks page or on the project page.</p>
+<p><img src="../../../../images/image254.jpg" alt=""></p>
+<p>Specify the task parameters:</p>
+<ul>
+<li>
+<p>In the <code>Name</code> text field, there is a template you can use for quick and simple task naming.</p>
+<p><img src="../../../../images/image255.jpg" alt=""></p>
+<p>In the template you can manage the following:</p>
+<ul>
+<li>some_text - any text that will be entered into the template will be the same for all created tasks.</li>
+<li>{{index}} - index file in set (sets a number of a task starting from 0).</li>
+<li>{{file_name}} - name of file (sets a task name from a filename).</li>
+</ul>
+<p>You can find out a prompt by hovering the mouse over the text <code>When forming the name, a template is used</code>.</p>
+<p><img src="../../../../images/image256.jpg" alt=""></p>
+</li>
+<li>
+<p><a href="../../../../docs/manual/basics/creating_an_annotation_task/#projects">Project</a>, <a href="../../../../docs/manual/basics/creating_an_annotation_task/#labels">labels</a>, <a href="../../../../docs/manual/basics/creating_an_annotation_task/#select-files">select files</a> and <a href="../../../../docs/manual/basics/creating_an_annotation_task/#advanced-configuration">advanced configuration</a> are filled in the same way as when <a href="../../../../docs/manual/basics/creating_an_annotation_task/">creating an annotation task</a>.</p>
+</li>
+</ul>
+<blockquote>
+<p>It is not possible yet to use cloud storages for multi tasks creation.</p>
+</blockquote>
+<p><img src="../../../../images/image257.jpg" alt=""></p>
+<ol>
+<li>
+<p>Let&rsquo;s specify in the <code>Name</code> field the <code>Road_annotation-{{index}}-{{file_name}}</code> string,
+where <code>Road_annotation</code> is “any text” (let it match to the task type name). The task index number and the video file
+name will be specified after it.</p>
+</li>
+<li>
+<p>After selecting files, file names will be shown under the <code>Select files</code> section.
+In case of there are more than 4 files, the total number of selected files will be displayed only.</p>
+<p><img src="../../../../images/image258.jpg" alt=""></p>
+</li>
+<li>
+<p>The <code>Submit</code> button indicates how many tasks will be created.</p>
+</li>
+</ol>
+<p>After clicking on the <code>Submit</code> button, information about tasks creation process will be displayed.</p>
+<p><img src="../../../../images/image259.jpg" alt=""></p>
+<p>If there were no errors during the process of creating tasks, we can complete this by clicking on <code>Ok</code>.</p>
+<p><img src="../../../../images/image260.jpg" alt=""></p>
+<p>This is how the created tasks will look like.</p>
+<p><img src="../../../../images/image261.jpg" alt=""></p>
+<h2 id="errors">Errors</h2>
+<p>You can face with the following errors during multi tasks creation:</p>
+<ul>
+<li>
+<p>If where were no video files selected, this warning will be shown.</p>
+<p><img src="../../../../images/image262.jpg" alt=""></p>
+</li>
+<li>
+<p>If during tasks creation there was not possible to process with some videos,
+the names of such videos will be displayed in the <code>Failed files</code> list. In this case, you can try
+to create tasks for these videos one more time by clicking on the <code>Retry failed tasks</code> button,
+or you can click on the <code>Ok</code> button to skip these videos.</p>
+<p><img src="../../../../images/image263.jpg" alt=""></p>
+</li>
+</ul>
+
+</div>
+
+
+
+    
+	
+  
+    
+    
+	
+    
+
+<div class="td-content" style="page-break-before: always">
+    
+	<h1 id="pg-f05979e03e250e4fd83819a9fb4f8c6f">4 - Jobs page</h1>
+    
+	<p>On the jobs page, users (for example, with the worker role)
+can see the jobs that are assigned to them without having access to the task page,
+as well as track progress, sort and apply filters to the job list.</p>
+<p><img src="../../../../images/image243_detrac.jpg" alt=""></p>
+<p>On the job page there is a list of jobs presented in the form of tiles, where each tile is one job.
+Each element contains:</p>
+<ul>
+<li>job ID</li>
+<li>dimension <code>2D</code> or <code>3D</code></li>
+<li>preview</li>
+<li><a href="../../../../docs/manual/basics/vocabulary/#stage">stage</a> and <a href="../../../../docs/manual/basics/vocabulary/#state">state</a></li>
+<li>when hovering over an element, you can see:
+<ul>
+<li>size</li>
+<li>assignee</li>
+</ul>
+</li>
+<li>menu to navigate to a task, project, or bug tracker.</li>
+</ul>
+<blockquote>
+<p>To open the job in a new tab, click on the job by holding <code>Ctrl</code>.</p>
+</blockquote>
+<p>In the upper left corner there is a search bar, using which you can find the job by assignee, stage, state, etc.
+In the upper right corner there are <a href="../../../../docs/manual/advanced/filter/#sort-by">sorting</a>, <a href="../../../../docs/manual/advanced/filter/#quick-filters">quick filters</a> and filter.</p>
+<h2 id="filter">Filter</h2>
+<blockquote>
+<p>Applying filter disables the <a href="../../../../docs/manual/advanced/filter/#quick-filters">quick filter</a>.</p>
+</blockquote>
+<p>The filter works similarly to the filters for annotation,
+you can create rules from <a href="#supported-properties-for-jobs-list">properties</a>, <a href="../../../../docs/manual/advanced/filter/#supported-operators-for-properties">operators</a>
+and values and group rules into <a href="../../../../docs/manual/advanced/filter/#groups">groups</a>. For more details, see the <a href="../../../../docs/manual/advanced/filter/#create-a-filter">filter section</a>.
+Learn more about <a href="../../../../docs/manual/advanced/filter#date-and-time-selection">date and time selection</a>.</p>
+<p>For clear all filters press <code>Clear filters</code>.</p>
+<h3 id="supported-properties-for-jobs-list">Supported properties for jobs list</h3>
+<table>
+<thead>
+<tr>
+<th>Properties</th>
+<th>Supported values</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>State</code></td>
+<td>all the state names</td>
+<td>The state of the job <br>(can be changed in the menu inside the job)</td>
+</tr>
+<tr>
+<td><code>Stage</code></td>
+<td>all the stage names</td>
+<td>The stage of the job <br>(is specified by a drop-down list on the task page)</td>
+</tr>
+<tr>
+<td><code>Dimension</code></td>
+<td><code>2D</code> or <code>3D</code></td>
+<td>Depends on the data format <br>(read more in <a href="../../../../docs/manual/basics/creating_an_annotation_task">creating an annotation task</a>)</td>
+</tr>
+<tr>
+<td><code>Assignee</code></td>
+<td>username</td>
+<td>Assignee is the user who is working on the job. <br>(is specified on task page)</td>
+</tr>
+<tr>
+<td><code>Last updated</code></td>
+<td>last modified date and time (or value range)</td>
+<td>The date can be entered in the <code>dd.MM.yyyy HH:mm</code> format <br>or by selecting the date in the window that appears <br>when you click on the input field</td>
+</tr>
+<tr>
+<td><code>ID</code></td>
+<td>number or range of job ID</td>
+<td></td>
+</tr>
+<tr>
+<td><code>Task ID</code></td>
+<td>number or range of task ID</td>
+<td></td>
+</tr>
+<tr>
+<td><code>Project ID</code></td>
+<td>number or range of project ID</td>
+<td></td>
+</tr>
+<tr>
+<td><code>Task name</code></td>
+<td>task name</td>
+<td>Set when creating a task, <br>can be changed on the (<a href="../../../../docs/manual/basics/task-details/">task page</a>)</td>
+</tr>
+<tr>
+<td><code>Project name</code></td>
+<td>project name</td>
+<td>Specified when creating a project, <br>can be changed on the (<a href="../../../../docs/manual/advanced/projects/">project section</a>)</td>
+</tr>
+</tbody>
+</table>
+
+</div>
+
+
+
+    
+	
+  
+    
+    
+	
+    
+
+<div class="td-content" style="page-break-before: always">
+    
+	<h1 id="pg-8b4dc0e86031450cd60eaa0f2183926a">5 - Tasks page</h1>
+    <div class="lead">Overview of the Tasks page.</div>
+	<p><img src="../../../../images/image006_detrac.jpg" alt=""></p>
+<p>The tasks page contains elements and each of them relates to a separate task. They are sorted in creation order.
+Each element contains: task name, preview, progress bar, button <code>Open</code>, and menu <code>Actions</code>.
+Each button is responsible for a in menu <code>Actions</code> specific function:</p>
+<ul>
+<li><code>Export task dataset</code> — download annotations or annotations and images in a specific format.
+More information is available in the <a href="../../../../docs/manual/advanced/export-import-datasets/">export/import datasets</a>
+section.</li>
+<li><code>Upload annotation</code> upload annotations in a specific format.
+More information is available in the <a href="../../../../docs/manual/advanced/export-import-datasets/">export/import datasets</a>
+section.</li>
+<li><code>Automatic Annotation</code> — automatic annotation with OpenVINO toolkit.
+Presence depends on how you build the CVAT instance.</li>
+<li><code>Backup task</code> — make a backup of this task into a zip archive.
+Read more in the <a href="../../../../docs/manual/advanced/backup/">backup</a> section.</li>
+<li><code>Move to project</code> — Moving a task to a project (can be used to move a task from one project to another).
+Note that attributes reset during the moving process. In case of label mismatch,
+you can create or delete necessary labels in the project/task.
+Some task labels can be matched with the target project labels.</li>
+<li><code>Delete</code> — delete task.</li>
+</ul>
+<p>In the upper left corner there is a search bar, using which you can find the task by assignee, task name etc.
+In the upper right corner there are <a href="../../../../docs/manual/advanced/filter/#sort-by">sorting</a>, <a href="../../../../docs/manual/advanced/filter/#quick-filters">quick filters</a> and filter.</p>
+<h2 id="filter">Filter</h2>
+<blockquote>
+<p>Applying filter disables the <a href="../../../../docs/manual/advanced/filter/#quick-filters">quick filter</a>.</p>
+</blockquote>
+<p>The filter works similarly to the filters for annotation,
+you can create rules from <a href="#supported-properties-for-tasks-list">properties</a>,
+<a href="../../../../docs/manual/advanced/filter/#supported-operators-for-properties">operators</a> and values and group rules into <a href="../../../../docs/manual/advanced/filter/#groups">groups</a>.
+For more details, see the <a href="../../../../docs/manual/advanced/filter/#create-a-filter">filter section</a>.
+Learn more about <a href="../../../../docs/manual/advanced/filter#date-and-time-selection">date and time selection</a>.</p>
+<p>For clear all filters press <code>Clear filters</code>.</p>
+<h3 id="supported-properties-for-tasks-list">Supported properties for tasks list</h3>
+<table>
+<thead>
+<tr>
+<th>Properties</th>
+<th>Supported values</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>Dimension</code></td>
+<td><code>2D</code> or <code>3D</code></td>
+<td>Depends on the data format <br>(read more in <a href="../../../../docs/manual/basics/creating_an_annotation_task">creating an annotation task</a>)</td>
+</tr>
+<tr>
+<td><code>Status</code></td>
+<td><code>annotation</code>, <code>validation</code> or <code>completed</code></td>
+<td></td>
+</tr>
+<tr>
+<td><code>Data</code></td>
+<td><code>video</code>, <code>images</code></td>
+<td>Depends on the data format <br>(read more in <a href="../../../../docs/manual/basics/creating_an_annotation_task">creating an annotation task</a>)</td>
+</tr>
+<tr>
+<td><code>Subset</code></td>
+<td><code>test</code>, <code>train</code>, <code>validation</code> or custom subset</td>
+<td>[read more] [subset]</td>
+</tr>
+<tr>
+<td><code>Assignee</code></td>
+<td>username</td>
+<td>Assignee is the user who is working on the project, task or job. <br>(is specified on task page)</td>
+</tr>
+<tr>
+<td><code>Owner</code></td>
+<td>username</td>
+<td>The user who owns the project, task, or job</td>
+</tr>
+<tr>
+<td><code>Last updated</code></td>
+<td>last modified date and time (or value range)</td>
+<td>The date can be entered in the <code>dd.MM.yyyy HH:mm</code> format <br>or by selecting the date in the window that appears <br>when you click on the input field</td>
+</tr>
+<tr>
+<td><code>ID</code></td>
+<td>number or range of job ID</td>
+<td></td>
+</tr>
+<tr>
+<td><code>Project ID</code></td>
+<td>number or range of project ID</td>
+<td></td>
+</tr>
+<tr>
+<td><code>Name</code></td>
+<td>name</td>
+<td>On the tasks page - name of the task,<br> on the project page - name of the project</td>
+</tr>
+<tr>
+<td><code>Project name</code></td>
+<td>project name</td>
+<td>Specified when creating a project, <br>can be changed on the (<a href="../../../../docs/manual/advanced/projects/">project section</a>)</td>
+</tr>
+</tbody>
+</table>
+<hr>
+<p>Push <code>Open</code> button to go to <a href="../../../../docs/manual/basics/task-details/">task details</a>.</p>
+
+</div>
+
+
+
+    
+	
+  
+    
+    
+	
+    
+
+<div class="td-content" style="page-break-before: always">
+    
+	<h1 id="pg-8c04ccdab3bc47dc61dead92a456dc5e">6 - Task details</h1>
+    <div class="lead">Overview of the Task details page.</div>
+	<p>Task details is a task page which contains a preview, a progress bar
+and the details of the task (specified when the task was created) and the jobs section.</p>
+<p><img src="../../../../images/image131_detrac.jpg" alt=""></p>
+<ul>
+<li>
+<p>The next actions are available on this page:</p>
+<ol>
+<li>
+<p>Change the task’s title.</p>
+</li>
+<li>
+<p>Open <code>Actions</code> menu.</p>
+</li>
+<li>
+<p>Change issue tracker or open issue tracker if it is specified.</p>
+</li>
+<li>
+<p>Change labels (available only if the task is not related to the project).
+You can add new labels or add attributes for the existing labels in the Raw mode or the Constructor mode.
+By clicking <code>Copy</code> you will copy the labels to the clipboard.</p>
+</li>
+<li>
+<p>Assigned to — is used to assign a task to a person. Start typing an assignee’s name and/or
+choose the right person out of the dropdown list.
+In the list of users, you will only see the users of the <a href="../../../../docs/manual/advanced/organization/">organization</a>
+where the task is created.</p>
+</li>
+<li>
+<p>Dataset Repository</p>
+<ul>
+<li>Repository link</li>
+<li>Synchronization status with dataset repository.
+When you click on the status, the current annotation will be sent. It has several states:
+<ul>
+<li>Synchronized - task synchronized, that is, created a pull of requisites with an actual annotation file.</li>
+<li>Merged - merged pull request with up-to-date annotation file.</li>
+<li>Synchronize - highlighted in red, annotations are not synced.</li>
+</ul>
+</li>
+<li>Use a format drop-down list of formats in which the annotation can be synchronized.</li>
+<li>Support for large file enabling the use of <a href="https://git-lfs.github.com/">LFS</a>.</li>
+</ul>
+</li>
+</ol>
+</li>
+<li>
+<p><strong>Jobs</strong> — is a list of all jobs for a particular task. Here you can find the next data:</p>
+<ul>
+<li>Jobs name with a hyperlink to it.</li>
+<li>Frames — the frame interval.</li>
+<li>A stage of the job. The stage is specified by a drop-down list.
+There are three stages: <code>annotation</code>, <code>validation</code> or <code>acceptance</code>. This value affects the task progress bar.</li>
+<li>A state of the job. The state can be changed by an assigned user in the menu inside the job.
+There are several possible states: <code>new</code>, <code>in progress</code>, <code>rejected</code>, <code>completed</code>.</li>
+<li>Started on — start date of this job.</li>
+<li>Duration — is the amount of time the job is being worked.</li>
+<li>Assignee is the user who is working on the job.
+You can start typing an assignee’s name and/or choose the right person out of the dropdown list.</li>
+<li>Reviewer – a user assigned to carry out the review,
+read more in the <a href="../../../../docs/manual/advanced/review/">review</a> section.</li>
+<li><code>Copy</code>. By clicking <code>Copy</code> you will copy the job list to the clipboard.
+The job list contains direct links to jobs.</li>
+</ul>
+<p>You can filter or sort jobs by status, as well as by assigner or reviewer.</p>
+</li>
+</ul>
+<p>Follow a link inside <code>Jobs</code> section to start annotation process.
+In some cases, you can have several links. It depends on size of your
+task and <code>Overlap Size</code> and <code>Segment Size</code> parameters. To improve
+UX, only the first chunk of several frames will be loaded and you will be able
+to annotate first images. Other frames will be loaded in background.</p>
+<p><img src="../../../../images/image007_detrac.jpg" alt=""></p>
+
+</div>
+
+
+
+    
+	
+  
+    
+    
+	
+    
+
+<div class="td-content" style="page-break-before: always">
+    
+	<h1 id="pg-a3f5ac3c9c71a6d1895f21973a3e7073">7 - Interface of the annotation tool</h1>
+    
+	<h2 id="main-user-interface">Main user interface</h2>
+<p>The tool consists of:</p>
+<ul>
+<li>
+<p><code>Header</code> - pinned header used to navigate CVAT sections and account settings;</p>
+</li>
+<li>
+<p><a href="../../../../docs/manual/basics/top-panel/"><code>Top panel</code></a> — contains navigation buttons, main functions and menu access;</p>
+</li>
+<li>
+<p><a href="../../../../docs/manual/basics/workspace/"><code>Workspace</code></a> — space where images are shown;</p>
+</li>
+<li>
+<p><a href="../../../../docs/manual/basics/controls-sidebar/"><code>Controls sidebar</code></a> — contains tools for navigating the image, zoom,
+creating shapes and editing tracks (merge, split, group);</p>
+</li>
+<li>
+<p><a href="../../../../docs/manual/basics/objects-sidebar/"><code>Objects sidebar</code></a> — contains label filter, two lists:
+objects (on the frame) and labels (of objects on the frame) and appearance settings.</p>
+</li>
+</ul>
+<p><img src="../../../../images/image034_detrac.jpg" alt=""></p>
+<h2 id="pop-up-messages">Pop-up messages</h2>
+<p><img src="../../../../images/pop-up_message.jpg" alt="Pop-up message"></p>
+<p>In CVAT, you&rsquo;ll receive pop-up messages in the upper-right corner, on any page.
+Pop-up messages can contain useful information, links, or error messages.</p>
+<h3 id="information-message">Information message</h3>
+<p>Informational messages inform about the end of the auto-annotation process.
+<a href="../../../../docs/manual/advanced/automatic-annotation/">Learn more about auto-annotation</a>.</p>
+<h3 id="jump-suggestion-messages">Jump Suggestion Messages</h3>
+<h4 id="open-a-task">Open a task</h4>
+<p>After creating a task, you can immediately open it by clicking <code>Open task</code>.
+<a href="../../../../docs/manual/basics/creating_an_annotation_task/">Learn more about creating a task</a>.</p>
+<h4 id="continue-to-the-frame-on-which-the-work-on-the-job-is-finished">Continue to the frame on which the work on the job is finished</h4>
+<p>When you open a job that you previously worked on, you will receive pop-up messages with a proposal
+to go to the frame that was visited before closing the tab.</p>
+<h3 id="error-messages">Error Messages</h3>
+<p>If you perform impossible actions, you may receive an error message.
+The message may contain information about the error
+or a prompt to open the browser console (shortcut <code>F12</code>) for information.
+If you encounter a bug that you can&rsquo;t solve yourself,
+you can <a href="https://github.com/cvat-ai/cvat/issues/new">create an issue on GitHub</a>.</p>
+
+</div>
+
+
+
+    
+	
+  
+    
+    
+	
+    
+
+<div class="td-content" style="page-break-before: always">
+    
+	<h1 id="pg-96e4853b69b3c2d45ac6c4dd9eef69f6">8 - Basic navigation</h1>
+    <div class="lead">Overview of basic controls.</div>
+	<ol>
+<li>
+<p>Use arrows below to move to the next/previous frame.
+Use the scroll bar slider to scroll through frames.
+Almost every button has a shortcut.
+To get a hint about a shortcut, just move your mouse pointer over an UI element.</p>
+<p><img src="../../../../images/image008.jpg" alt=""></p>
+</li>
+<li>
+<p>To navigate the image, use the button on the controls sidebar.
+Another way an image can be moved/shifted is by holding the left mouse button inside
+an area without annotated objects.
+If the <code>Mouse Wheel</code> is pressed, then all annotated objects are ignored. Otherwise the
+a highlighted bounding box will be moved instead of the image itself.</p>
+<p><img src="../../../../images/image136.jpg" alt=""></p>
+</li>
+<li>
+<p>You can use the button on the sidebar controls to zoom on a region of interest.
+Use the button <code>Fit the image</code> to fit the image in the workspace.
+You can also use the mouse wheel to scale the image
+(the image will be zoomed relatively to your current cursor position).</p>
+<p><img src="../../../../images/image137.jpg" alt=""></p>
+</li>
+</ol>
+
+</div>
+
+
+
+    
+	
+  
+    
+    
+	
+    
+
+<div class="td-content" style="page-break-before: always">
+    
+	<h1 id="pg-247db7504d756f9b8a302d89c1c60fe7">9 - Top Panel</h1>
+    <div class="lead">Overview of controls available on the top panel of the annotation tool.</div>
+	<p><img src="../../../../images/image035.jpg" alt=""></p>
+<hr>
+<h2 id="menu-button">Menu button</h2>
+<p>It is the main menu of the annotation tool. It can be used to download, upload and remove annotations.</p>
+<p><img src="../../../../images/image051.jpg" alt=""></p>
+<p>Button assignment:</p>
+<ul>
+<li>
+<p><code>Upload Annotations</code> — uploads annotations into a task.</p>
+</li>
+<li>
+<p><code>Export as a dataset</code> — download a data set from a task in one of the <a href="../../../../docs/manual/advanced/formats/">supported formats</a>.
+You can also enter a <code>Custom name</code> and enable the <code>Save images</code> checkbox if you want the dataset to contain images.</p>
+</li>
+<li>
+<p><code>Remove Annotations</code> — calls the confirmation window if you click <code>Delete</code>, the annotation of the current job
+will be removed, if you click <code>Select range</code> you can remove annotation on range frames, if you activate checkbox
+<code>Delete only keyframe for tracks</code> then only keyframes will be deleted from the tracks, on the selected range.</p>
+<p><img src="../../../../images/image229.jpg" alt=""></p>
+</li>
+<li>
+<p><code>Open the task</code> — opens a page with details about the task.</p>
+</li>
+<li>
+<p><code>Change job state</code> - changes the state of the job (<code>new</code>, <code>in progress</code>, <code>rejected</code>, <code>completed</code>).</p>
+</li>
+<li>
+<p><code>Finish the job</code>/<code>Renew the job</code> - changes the job stage and state
+to <code>acceptance</code> and <code>completed</code> / <code>annotation</code> and <code>new</code> correspondingly.</p>
+</li>
+</ul>
+<h2 id="save-work">Save Work</h2>
+<p>Saves annotations for the current job. The button has an indication of the saving process.</p>
+<p><img src="../../../../images/image141.jpg" alt=""></p>
+<h2 id="undo-redo-buttons">Undo-redo buttons</h2>
+<p>Use buttons to undo actions or redo them.</p>
+<p><img src="../../../../images/image061.jpg" alt=""></p>
+<hr>
+<h2 id="done">Done</h2>
+<p><img src="../../../../images/image223.jpg" alt=""></p>
+<p>Used to complete the creation of the object. This button appears only when the object is being created.</p>
+<hr>
+<h2 id="block">Block</h2>
+<p><img src="../../../../images/image226.jpg" alt=""></p>
+<p>Used to pause automatic line creation when drawing a polygon with
+<a href="../../../../docs/manual/advanced/opencv-tools/#intelligent-scissors">OpenCV Intelligent scissors</a>.
+Also used to postpone server requests when creating an object using <a href="../../../../docs/manual/advanced/ai-tools/">AI Tools</a>.
+When blocking is activated, the button turns blue.</p>
+<hr>
+<h2 id="player">Player</h2>
+<p>Go to the first /the latest frames.</p>
+<p><img src="../../../../images/image036.jpg" alt=""></p>
+<p>Go to the next/previous frame with a predefined step. Shortcuts:
+<code>V</code> — step backward, <code>C</code> — step forward. By default the step is <code>10</code> frames
+(change at <code>Account Menu</code> —&gt; <code>Settings</code> —&gt; <code>Player Step</code>).</p>
+<p><img src="../../../../images/image037.jpg" alt=""></p>
+<p>The button to go to the next / previous frame has the customization possibility.
+To customize, right-click on the button and select one of three options:</p>
+<ol>
+<li>The default option - go to the next / previous frame (the step is 1 frame).</li>
+<li>Go to the next / previous frame that has any objects (in particular filtered).
+Read the <a href="../../../../docs/manual/advanced/filter/">filter</a> section to know the details how to use it.</li>
+<li>Go to the next / previous frame without annotation at all.
+Use this option in cases when you need to find missed frames quickly.</li>
+</ol>
+<p>Shortcuts: <code>D</code> - previous, <code>F</code> - next.</p>
+<p><img src="../../../../images/image040.jpg" alt=""></p>
+<p>Play the sequence of frames or the set of images.
+Shortcut: <code>Space</code> (change at <code>Account Menu</code> —&gt; <code>Settings</code> —&gt; <code>Player Speed</code>).</p>
+<p><img src="../../../../images/image041.jpg" alt=""></p>
+<p>Go to a specific frame. Press <code>~</code> to focus on the element.</p>
+<p><img src="../../../../images/image060.jpg" alt=""></p>
+<hr>
+<h2 id="fullscreen-player">Fullscreen Player</h2>
+<p>The fullscreen player mode. The keyboard shortcut is <code>F11</code>.</p>
+<p><img src="../../../../images/image143.jpg" alt=""></p>
+<h2 id="info">Info</h2>
+<p>Open the job info.</p>
+<p><img src="../../../../images/image144_detrac.jpg" alt=""></p>
+<p><em>Overview</em>:</p>
+<ul>
+<li><code>Assignee</code> - the one to whom the job is assigned.</li>
+<li><code>Reviewer</code> – a user assigned to carry out the review,
+read more in the <a href="../../../../docs/manual/advanced/review">review</a> section.</li>
+<li><code>Start Frame</code> - the number of the first frame in this job.</li>
+<li><code>End Frame</code> - the number of the last frame in this job.</li>
+<li><code>Frames</code> - the total number of all frames in the job.</li>
+</ul>
+<p><em>Annotations statistics</em>:</p>
+<p>This is a table number of created shapes, sorted by labels (e.g. vehicle, person)
+and type of annotation (shape, track). As well as the number of manual and interpolated frames.</p>
+<h2 id="ui-switcher">UI switcher</h2>
+<p>Switching between user interface modes.</p>
+<p><img src="../../../../images/image145.jpg" alt=""></p>
+
+</div>
+
+
+
+    
+	
+  
+    
+    
+	
+    
+
+<div class="td-content" style="page-break-before: always">
+    
+	<h1 id="pg-033c4b006bed59c7b79e37da79355e2e">10 - Controls sidebar</h1>
+    <div class="lead">Overview of available functions on the controls sidebar of the annotation tool.</div>
+	<h2 id="navigation">Navigation</h2>
+<p><strong>Navigation block</strong> - contains tools for moving and rotating images.</p>
+<table>
+<thead>
+<tr>
+<th>Icon</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><img src="../../../../images/image148.jpg" alt=""></td>
+<td><code>Cursor</code> (<code>Esc</code>)- a basic annotation pedacting tool.</td>
+</tr>
+<tr>
+<td><img src="../../../../images/image149.jpg" alt=""></td>
+<td><code>Move the image</code>- a tool for moving around the image without<br/> the possibility of editing.</td>
+</tr>
+<tr>
+<td><img src="../../../../images/image102.jpg" alt=""></td>
+<td><code>Rotate</code>- two buttons to rotate the current frame<br/> a clockwise (<code>Ctrl+R</code>) and anticlockwise (<code>Ctrl+Shift+R</code>).<br/> You can enable <code>Rotate all images</code> in the settings to rotate all the images in the job</td>
+</tr>
+</tbody>
+</table>
+<hr>
+<h2 id="zoom">Zoom</h2>
+<p><strong>Zoom block</strong> - contains tools for image zoom.</p>
+<table>
+<thead>
+<tr>
+<th>Icon</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><img src="../../../../images/image151.jpg" alt=""></td>
+<td><code>Fit image</code>- fits image into the workspace size.<br/> Shortcut - double click on an image</td>
+</tr>
+<tr>
+<td><img src="../../../../images/image166.jpg" alt=""></td>
+<td><code>Select a region of interest</code>- zooms in on a selected region.<br/> You can use this tool to quickly zoom in on a specific part of the frame.</td>
+</tr>
+</tbody>
+</table>
+<hr>
+<h2 id="shapes">Shapes</h2>
+<p><strong>Shapes block</strong> - contains all the tools for creating shapes.</p>
+<table>
+<thead>
+<tr>
+<th>Icon</th>
+<th>Description</th>
+<th>Links to section</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><img src="../../../../images/image189.jpg" alt=""></td>
+<td><code>AI Tools</code></td>
+<td><a href="../../../../docs/manual/advanced/ai-tools/">AI Tools</a></td>
+</tr>
+<tr>
+<td><img src="../../../../images/image201.jpg" alt=""></td>
+<td><code>OpenCV</code></td>
+<td><a href="../../../../docs/manual/advanced/opencv-tools/">OpenCV</a></td>
+</tr>
+<tr>
+<td><img src="../../../../images/image167.jpg" alt=""></td>
+<td><code>Rectangle</code></td>
+<td><a href="../../../../docs/manual/basics/shape-mode-basics/">Shape mode</a>; <a href="../../../../docs/manual/basics/track-mode-basics/">Track mode</a>;<br/> <a href="../../../../docs/manual/advanced/annotation-with-rectangles/">Drawing by 4 points</a></td>
+</tr>
+<tr>
+<td><img src="../../../../images/image168.jpg" alt=""></td>
+<td><code>Polygon</code></td>
+<td><a href="../../../../docs/manual/advanced/annotation-with-polygons/">Annotation with polygons</a>; <a href="../../../../docs/manual/advanced/annotation-with-polygons/track-mode-with-polygons/">Track mode with polygons</a></td>
+</tr>
+<tr>
+<td><img src="../../../../images/image169.jpg" alt=""></td>
+<td><code>Polyline</code></td>
+<td><a href="../../../../docs/manual/advanced/annotation-with-polylines/">Annotation with polylines</a></td>
+</tr>
+<tr>
+<td><img src="../../../../images/image170.jpg" alt=""></td>
+<td><code>Points</code></td>
+<td><a href="../../../../docs/manual/advanced/annotation-with-points/">Annotation with points</a></td>
+</tr>
+<tr>
+<td><img src="../../../../images/image241.jpg" alt=""></td>
+<td><code>Ellipses</code></td>
+<td><a href="../../../../docs/manual/advanced/annotation-with-ellipses/">Annotation with ellipses</a></td>
+</tr>
+<tr>
+<td><img src="../../../../images/image176.jpg" alt=""></td>
+<td><code>Cuboid</code></td>
+<td><a href="../../../../docs/manual/advanced/annotation-with-cuboids/">Annotation with cuboids</a></td>
+</tr>
+<tr>
+<td><img src="../../../../images/brushing_tools_icon.png" alt=""></td>
+<td><code>Brushing tools</code></td>
+<td><a href="../../../../docs/manual/advanced/annotation-with-brushing-tools/">Annotation with brushing</a></td>
+</tr>
+<tr>
+<td><img src="../../../../images/image171.jpg" alt=""></td>
+<td><code>Tag</code></td>
+<td><a href="../../../../docs/manual/advanced/annotation-with-tags/">Annotation with tags</a></td>
+</tr>
+<tr>
+<td><img src="../../../../images/image195.jpg" alt=""></td>
+<td><code>Open an issue</code></td>
+<td><a href="../../../../docs/manual/advanced/review/">Review</a> (available only in review mode)</td>
+</tr>
+</tbody>
+</table>
+<hr>
+<h2 id="edit">Edit</h2>
+<p><strong>Edit block</strong> - contains tools for editing tracks and shapes.</p>
+<table>
+<thead>
+<tr>
+<th>Icon</th>
+<th>Description</th>
+<th>Links to section</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><img src="../../../../images/image172.jpg" alt=""></td>
+<td><code>Merge Shapes</code>(<code>M</code>) - starts/stops the merging shapes mode.</td>
+<td><a href="../../../../docs/manual/basics/track-mode-basics/">Track mode (basics)</a></td>
+</tr>
+<tr>
+<td><img src="../../../../images/image173.jpg" alt=""></td>
+<td><code>Group Shapes</code> (<code>G</code>) - starts/stops the grouping shapes mode.</td>
+<td><a href="../../../../docs/manual/advanced/shape-grouping/">Shape grouping</a></td>
+</tr>
+<tr>
+<td><img src="../../../../images/image174.jpg" alt=""></td>
+<td><code>Split</code> - splits a track.</td>
+<td><a href="../../../../docs/manual/advanced/track-mode-advanced/">Track mode (advanced)</a></td>
+</tr>
+</tbody>
+</table>
+<hr>
+
+</div>
+
+
+
+    
+	
+  
+    
+    
+	
+    
+
+<div class="td-content" style="page-break-before: always">
+    
+	<h1 id="pg-d34292e27e49f0509de6c6421a59ba45">11 - Objects sidebar</h1>
+    <div class="lead">Overview of available functions on the objects sidebar of the annotation tool.</div>
+	<h2 id="hide-objects-sidebar">Hide objects sidebar</h2>
+<p><code>Hide</code> - the button hides the object&rsquo;s sidebar.</p>
+<p><img src="../../../../images/image146.jpg" alt=""></p>
+<h2 id="objects">Objects</h2>
+<p><strong>Filter</strong> input box</p>
+<p><img src="../../../../images/image059.jpg" alt=""></p>
+<p>The way how to use filters is described in the advanced guide <a href="../../../../docs/manual/advanced/filter/">here</a>.</p>
+<p><strong>List of objects</strong></p>
+<p><img src="../../../../images/image147.jpg" alt=""></p>
+<ul>
+<li>Switch lock property for all - switches lock property of all objects in the frame.</li>
+<li>Switch hidden property for all - switches hide property of all objects in the frame.</li>
+<li>Expand/collapse all - collapses/expands the details field of all objects in the frame.</li>
+<li>Sorting - sort the list of objects: updated time, ID - accent, ID - descent</li>
+</ul>
+<p>In the objects sidebar you can see the list of available objects on the current
+frame. The following figure is an example of how the list might look like:</p>
+<table>
+<thead>
+<tr>
+<th>Shape mode</th>
+<th>Track mode</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><img src="../../../../images/image044.jpg" alt=""></td>
+<td><img src="../../../../images/image045.jpg" alt=""></td>
+</tr>
+</tbody>
+</table>
+<hr>
+<p><strong>Objects</strong> on the side bar</p>
+<p>The type of a shape can be changed by selecting <strong>Label</strong> property.
+For instance, it can look like shown on the figure below:</p>
+<p><img src="../../../../images/image050.jpg" alt=""></p>
+<p><strong>Object action menu</strong></p>
+<p>The action menu calls up the button:</p>
+<p><img src="../../../../images/image047.jpg" alt=""></p>
+<p>The action menu contains:</p>
+<ul>
+<li>
+<p><code>Create object URL</code> - puts a link to an object on the clipboard.
+After you open the link, this object will be filtered.</p>
+</li>
+<li>
+<p><code>Make a copy</code>- copies an object. The keyboard shortcut is <code>Ctrl + C</code> <code>Ctrl + V</code>.</p>
+</li>
+<li>
+<p><code>Propagate</code> - Copies the form to several frames,
+invokes a dialog box in which you can specify the number of copies
+or the frame onto which you want to copy the object. The keyboard shortcut <code>Ctrl + B</code>.</p>
+<p><img src="../../../../images/image053.jpg" alt=""></p>
+</li>
+<li>
+<p><code>To background</code> - moves the object to the background. The keyboard shortcut <code>-</code>,<code>_</code>.</p>
+</li>
+<li>
+<p><code>To foreground</code> - moves the object to the foreground. The keyboard shortcut <code>+</code>,<code>=</code>.</p>
+</li>
+<li>
+<p><code>Change instance color</code>- choosing a color using the color picker (available only in instance mode).</p>
+<p><img src="../../../../images/image153.jpg" alt=""></p>
+</li>
+<li>
+<p><code>Remove</code> - removes the object. The keyboard shortcut <code>Del</code>,<code>Shift+Del</code>.</p>
+</li>
+</ul>
+<p>A shape can be locked to prevent its modification or moving by an accident. Shortcut to lock an object: <code>L</code>.</p>
+<p><img src="../../../../images/image046.jpg" alt=""></p>
+<p>A shape can be <strong>Occluded</strong>. Shortcut: <code>Q</code>. Such shapes have dashed boundaries.</p>
+<p><img src="../../../../images/image048.jpg" alt=""></p>
+<p><img src="../../../../images/image049_detrac.jpg" alt=""></p>
+<p>You can change the way an object is displayed on a frame (show or hide).</p>
+<p><img src="../../../../images/image055.jpg" alt=""></p>
+<p><code>Switch pinned property</code> - when enabled, a shape cannot be moved by dragging or dropping.</p>
+<p><img src="../../../../images/image052.jpg" alt=""></p>
+<p><code>Tracker switcher</code> - enable/disable <a href="../../../../docs/manual/advanced/ai-tools#trackers">tracking</a> for the object.</p>
+<p><img src="../../../../images/tracker_switcher.jpg" alt=""></p>
+<p>By clicking on the <code>Details</code> button you can collapse or expand the field with all the attributes of the object.</p>
+<p><img src="../../../../images/image154.jpg" alt=""></p>
+<hr>
+<h2 id="labels">Labels</h2>
+<p>In this tab you can lock or hide objects of a certain label.
+To change the color for a specific label,
+you need to go to the task page and select the color by clicking the edit button,
+this way you will change the label color for all jobs in the task.</p>
+<p><img src="../../../../images/image062.jpg" alt=""></p>
+<p><strong>Fast label change</strong></p>
+<p>You can change the label of an object using hot keys.
+In order to do it, you need to assign a number (from 0 to 9) to labels.
+By default numbers 1,2&hellip;0 are assigned to the first ten labels.
+To assign a number, click on the button placed at the right of a label name on the sidebar.</p>
+<p><img src="../../../../images/image210.jpg" alt=""></p>
+<p>After that you will be able to assign a corresponding label to an object
+by hovering your mouse cursor over it and pressing <code>Ctrl + Num(0..9)</code>.</p>
+<p>In case you do not point the cursor to the object, pressing <code>Ctrl + Num(0..9)</code> will set a chosen label as default,
+so that the next object you create (use <code>N</code> key) will automatically have this label assigned.</p>
+<p><img src="../../../../images/image211.jpg" alt=""></p>
+<hr>
+<h2 id="appearance">Appearance</h2>
+<p><strong>Color By</strong> options</p>
+<p>Change the color scheme of annotation:</p>
+<ul>
+<li>
+<p><code>Instance</code> — every shape has random color</p>
+<p><img src="../../../../images/image095_detrac.jpg" alt=""></p>
+</li>
+<li>
+<p><code>Group</code> — every group of shape has its own random color, ungrouped shapes are white</p>
+<p><img src="../../../../images/image094_detrac.jpg" alt=""></p>
+</li>
+<li>
+<p><code>Label</code> — every label (e.g. car, person) has its own random color</p>
+<p><img src="../../../../images/image093_detrac.jpg" alt=""></p>
+<p>You can change any random color pointing to a needed box on a frame or on an
+object sidebar.</p>
+</li>
+</ul>
+<p><strong>Fill Opacity</strong> slider</p>
+<p>Change the opacity of every shape in the annotation.</p>
+<p><img src="../../../../images/image086_detrac.jpg" alt=""></p>
+<p><strong>Selected Fill Opacity</strong> slider</p>
+<p>Change the opacity of the selected object&rsquo;s fill. It is possible to change opacity while drawing an object in the case
+of rectangles, polygons and cuboids.</p>
+<p><img src="../../../../images/image089_detrac.jpg" alt=""></p>
+<p><strong>Outlines borders</strong> checkbox</p>
+<p>You can change a special shape border color by clicking on the <code>Eyedropper</code> icon.</p>
+<p><img src="../../../../images/image088_detrac.jpg" alt=""></p>
+<p><strong>Show bitmap</strong> checkbox</p>
+<p>If enabled all shapes are displayed in white and the background is black.</p>
+<p><img src="../../../../images/image087_detrac.jpg" alt=""></p>
+<p><strong>Show projections</strong> checkbox</p>
+<p>Enables / disables the display of auxiliary perspective lines. Only relevant for cuboids</p>
+<p><img src="../../../../images/image090_detrac.jpg" alt=""></p>
+
+</div>
+
+
+
+    
+	
+  
+    
+    
+	
+    
+
+<div class="td-content" style="page-break-before: always">
+    
+	<h1 id="pg-10c89fea132557f61275ddd0d266cb4e">12 - Workspace</h1>
+    <div class="lead">Overview of available functions on the workspace of the annotation tool.</div>
+	<p>This is the main field in which drawing and editing objects takes place.
+In addition the workspace also has the following functions:</p>
+<ul>
+<li>
+<p>Right-clicking on an object calls up the <code>Object card</code> - this is an element containing
+the necessary controls for changing the label and attributes of the object, as well as the action menu.</p>
+<p><img src="../../../../images/image138_mapillary_vistas.jpg" alt=""></p>
+</li>
+<li>
+<p>Right-clicking a point deletes it.</p>
+<p><img src="../../../../images/image139_mapillary_vistas.jpg" alt=""></p>
+</li>
+<li>
+<p><code>Z-axis slider</code> - Allows you to switch annotation layers hiding the upper layers
+(slider is enabled if several z layers are on a frame).
+This element has a button for adding a new layer. When pressed, a new layer is added and switched to it.
+You can move objects in layers using the <code>+</code> and <code>-</code> keys.</p>
+<p><img src="../../../../images/image140.jpg" alt=""></p>
+</li>
+<li>
+<p><code>Image settings panel</code> -  used to set up the grid and set up image brightness contrast saturation.</p>
+<ul>
+<li>Show <code>Grid</code>, change grid size, choose color and transparency:</li>
+</ul>
+<p><img src="../../../../images/image068_mapillary_vistas.jpg" alt=""></p>
+<ul>
+<li>Adjust <code>Brightness</code>/<code>Contrast</code>/<code>Saturation</code> of too exposed or too
+dark images using color settings (it affects only how a user sees the image, not the image itself).</li>
+</ul>
+<p><img src="../../../../images/image164_mapillary_vistas.jpg" alt=""></p>
+<ul>
+<li><code>Reset color settings</code> to default values.</li>
+</ul>
+</li>
+</ul>
+
+</div>
+
+
+
+    
+	
+  
+    
+    
+	
+    
+
+<div class="td-content" style="page-break-before: always">
+    
+	<h1 id="pg-47ed10f28d06442b6965546d6ab61314">13 - 3D task workspace</h1>
+    
+	<p><img src="../../../../images/image214_carla_town3.jpg" alt=""></p>
+<p>If the <code>related_images</code> folder contains any images, a <code>context image</code> will be available  in the perspective window.
+The contextual image could be compared to 3D data and would help to identify the labels of marked objects.</p>
+<p><code>Perspective</code> – a main window for work with objects in a 3D task.</p>
+<p>Projections - projections are tied to an object so that a cuboid is in the center and looks like a rectangle.
+Projections show only the selected object.</p>
+<ul>
+<li><code>Top</code> – a projection of the view from above.</li>
+<li><code>Side</code> – a projection of the left side of the object.</li>
+<li><code>Front</code> - a frontal projection of the object.</li>
+</ul>
+
+</div>
+
+
+
+    
+	
+  
+    
+    
+	
+    
+
+<div class="td-content" style="page-break-before: always">
+    
+	<h1 id="pg-c8319ec25cc2a4c111e6b974fbac56a9">14 - Standard 3D mode (basics)</h1>
+    
+	<p><code>Standard 3d mode</code> - Designed to work with 3D data.
+The mode is automatically available if you add PCD or Kitty BIN format data when you create a task.
+<a href="../../../../docs/manual/basics/creating_an_annotation_task/">read more</a></p>
+<p>You can adjust the size of the projections, to do so, simply drag the boundary between the projections.</p>
+<p><img src="../../../../images/image215_carla_town3.jpg" alt=""></p>
+
+</div>
+
+
+
+    
+	
+  
+    
+    
+	
+    
+
+<div class="td-content" style="page-break-before: always">
+    
+	<h1 id="pg-53f38f5f3dc68518da9fd1c61a97f54b">15 - Settings</h1>
+    
+	<p>To open the settings open the user menu in the header and select the settings item or press <code>F2</code>.</p>
+<p><img src="../../../../images/image067.jpg" alt=""></p>
+<p><code>Settings</code> have two tabs:</p>
+<p>In tab <code>Player</code> you can:</p>
+<ul>
+<li>Control step of <code>C</code> and <code>V</code> shortcuts.</li>
+<li>Control speed of <code>Space</code>/<code>Play</code> button.</li>
+<li>Select canvas background color. You can choose a background color or enter manually (in RGB or HEX format).</li>
+<li><code>Reset zoom</code> Show every image in full size or zoomed out like previous
+(it is enabled by default for interpolation mode and disabled for annotation mode).</li>
+<li><code>Rotate all images</code> checkbox — switch the rotation of all frames or an individual frame.</li>
+<li><code>Smooth image</code> checkbox — smooth image when zoom-in it.
+<table>
+<thead>
+<tr>
+<th><em>smoothed</em></th>
+<th><em>pixelized</em></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><img src="../../../../images/smoothed.jpg" alt=""></td>
+<td><img src="../../../../images/pixelized.jpg" alt=""></td>
+</tr>
+</tbody>
+</table>
+</li>
+</ul>
+<hr>
+<p>In tab <code>Workspace</code> you can:</p>
+<p><img src="../../../../images/image155.jpg" alt=""></p>
+<ul>
+<li>
+<p><code>Enable auto save</code> checkbox — turned off by default.</p>
+</li>
+<li>
+<p><code>Auto save interval (min)</code> input box — 15 minutes by default.</p>
+</li>
+<li>
+<p><code>Show all interpolation tracks</code> checkbox — shows hidden objects on the
+side panel for every interpolated object (turned off by default).</p>
+</li>
+<li>
+<p><code>Always show object details</code> - show text for an object on the canvas not only when the object is activated:</p>
+<p><img src="../../../../images/image152_detrac.jpg" alt=""></p>
+</li>
+<li>
+<p><code>Content of a text</code> - setup of the composition of the object details:</p>
+<ul>
+<li><code>ID</code> - object identifier.</li>
+<li><code>Attributes</code> - attributes of the object.</li>
+<li><code>Label</code> - object label.</li>
+<li><code>Source</code>- source of creating of objects <code>MANUAL</code>, <code>AUTO</code> or <code>SEMI-AUTO</code>.</li>
+<li><code>Descriptions</code> - description of attributes.</li>
+</ul>
+</li>
+<li>
+<p><code>Position of a text</code> - text positioning mode selection:</p>
+<ul>
+<li><code>Auto</code> - the object details will be automatically placed where free space is.</li>
+<li><code>Center</code> - the object details will be embedded to a corresponding object if possible.</li>
+</ul>
+</li>
+<li>
+<p><code>Font size of a text</code> - specifies the text size of the object details.</p>
+</li>
+<li>
+<p><code>Automatic bordering</code> - enable automatic bordering for polygons and polylines during drawing/editing.
+For more information To find out more, go to the section <a href="../../../../docs/manual/advanced/annotation-with-polygons/">annotation with polygons</a>.</p>
+</li>
+<li>
+<p><code>Intelligent polygon cropping</code> - activates intelligent cropping when editing the polygon (read more in the section <a href="../../../../docs/manual/advanced/annotation-with-polygons/edit-polygon/">edit polygon</a></p>
+</li>
+<li>
+<p><code>Show tags on frame</code> - shows/hides frame tags on current frame</p>
+</li>
+<li>
+<p><code>Attribute annotation mode (AAM) zoom margin</code> input box — defines margins (in px)
+for shape in the attribute annotation mode.</p>
+</li>
+<li>
+<p><code>Control points size</code> — defines a size of any interactable points in the tool
+(polygon&rsquo;s vertexes, rectangle dragging points, etc.)</p>
+</li>
+<li>
+<p><code>Default number of points in polygon approximation</code>
+With this setting, you can choose the default number of points in polygon.
+Works for serverless interactors and OpenCV scissors.</p>
+</li>
+<li>
+<p>Click <code>Save</code> to save settings (settings will be saved on the server and will not change after the page is refreshed).
+Click <code>Cancel</code> or press <code>F2</code> to return to the annotation.</p>
+</li>
+</ul>
+
+</div>
+
+
+
+    
+	
+  
+    
+    
+	
+    
+
+<div class="td-content" style="page-break-before: always">
+    
+	<h1 id="pg-80f7a8f997d5088990b434c7df6c7816">16 - Types of shapes</h1>
+    <div class="lead">List of shapes available for annotation.</div>
+	<p>There are several shapes with which you can annotate your images:</p>
+<ul>
+<li><code>Rectangle</code> or <code>Bounding box</code></li>
+<li><code>Polygon</code></li>
+<li><code>Polyline</code></li>
+<li><code>Points</code></li>
+<li><code>Ellipse</code></li>
+<li><code>Cuboid</code></li>
+<li><code>Cuboid in 3d task</code></li>
+<li><code>Skeleton</code></li>
+<li><code>Tag</code></li>
+</ul>
+<p>And there is how they all look like:</p>
+<p><img src="../../../../images/image038_detrac.jpg" alt="" title="Rectangle"> <img src="../../../../images/image033_detrac.jpg" alt="" title="Polygon"></p>
+<p><img src="../../../../images/image009_mapillary_vistas.jpg" alt="" title="Polyline"> <img src="../../../../images/image010_affectnet.jpg" alt="" title="Points"></p>
+<p><img src="../../../../images/image240_mapillary_vistas.jpg" alt="" title="Ellipse"> <img src="../../../../images/image015_detrac.jpg" alt="" title="Cuboid"></p>
+<p><img src="../../../../images/image218_carla_town3.jpg" alt="" title="Cuboid in 3d task"> <img src="../../../../images/image_skeleton_sample.jpg" alt="" title="Skeleton"></p>
+<p><img src="../../../../images/image135.jpg" alt="" title="Tag"></p>
+<p><code>Tag</code> - has no shape in the workspace, but is displayed in objects sidebar.</p>
+
+</div>
+
+
+
+    
+	
+  
+    
+    
+	
+    
+
+<div class="td-content" style="page-break-before: always">
+    
+	<h1 id="pg-0eec06490fd7abcbf29363c77731c1c9">17 - Shape mode (basics)</h1>
+    <div class="lead">Usage examples and basic operations available during annotation in shape mode.</div>
+	<p>Usage examples:</p>
+<ul>
+<li>Create new annotations for a set of images.</li>
+<li>Add/modify/delete objects for existing annotations.</li>
+</ul>
+<ol>
+<li>
+<p>You need to select <code>Rectangle</code> on the controls sidebar:</p>
+<p><img src="../../../../images/image082.jpg" alt=""></p>
+<p>Before you start, select the correct <code> Label</code> (should be specified by you when creating the task)
+and <code> Drawing Method</code> (by 2 points or by 4 points):</p>
+<p><img src="../../../../images/image080.jpg" alt=""></p>
+</li>
+<li>
+<p>Creating a new annotation in <code>Shape mode</code>:</p>
+<ul>
+<li>
+<p>Create a separate <code>Rectangle</code> by clicking on <code>Shape</code>.</p>
+<p><img src="../../../../images/image081.jpg" alt=""></p>
+</li>
+<li>
+<p>Choose the opposite points. Your first rectangle is ready!</p>
+<p><img src="../../../../images/image011_detrac.jpg" alt=""></p>
+</li>
+<li>
+<p>To learn more about creating a rectangle <a href="../../../../docs/manual/advanced/annotation-with-rectangles/">read here</a>.</p>
+</li>
+<li>
+<p>It is possible to adjust boundaries and location of the rectangle using a mouse.
+Rectangle&rsquo;s size is shown in the top right corner , you can check it by clicking on any point of the shape.
+You can also undo your actions using <code>Ctrl+Z</code> and redo them with <code>Shift+Ctrl+Z</code> or <code>Ctrl+Y</code>.</p>
+</li>
+</ul>
+</li>
+<li>
+<p>You can see the <code>Object card</code> in the objects sidebar or open it by right-clicking on the object.
+You can change the attributes in the details section.
+You can perform basic operations or delete an object by clicking on the action menu button.</p>
+<p><img src="../../../../images/image012.jpg" alt=""></p>
+</li>
+<li>
+<p>The following figure is an example of a fully annotated frame with separate shapes.</p>
+<p><img src="../../../../images/image013_detrac.jpg" alt=""></p>
+<p>Read more in the section <a href="../../../../docs/manual/advanced/shape-mode-advanced/">shape mode (advanced)</a>.</p>
+</li>
+</ol>
+
+</div>
+
+
+
+    
+	
+  
+    
+    
+	
+    
+
+<div class="td-content" style="page-break-before: always">
+    
+	<h1 id="pg-1a21d24ffd5d3b98ea39a1b5efdc33e2">18 - Track mode (basics)</h1>
+    <div class="lead">Usage examples and basic operations available during annotation in track mode.</div>
+	<p>Usage examples:</p>
+<ul>
+<li>Create new annotations for a sequence of frames.</li>
+<li>Add/modify/delete objects for existing annotations.</li>
+<li>Edit tracks, merge several rectangles into one track.</li>
+</ul>
+<ol>
+<li>
+<p>Like in the <code>Shape mode</code>, you need to select a <code>Rectangle</code> on the sidebar,
+in the appearing form, select the desired <code>Label</code> and the <code>Drawing method</code>.</p>
+<p><img src="../../../../images/image083.jpg" alt=""></p>
+</li>
+<li>
+<p>Creating a track for an object (look at the selected car as an example):</p>
+<ul>
+<li>
+<p>Create a <code>Rectangle</code> in <code>Track mode</code> by clicking on <code>Track</code>.</p>
+<p><img src="../../../../images/image014.jpg" alt=""></p>
+</li>
+<li>
+<p>In <code>Track mode</code> the rectangle will be automatically interpolated on the next frames.</p>
+</li>
+<li>
+<p>The cyclist starts moving on frame #2270. Let&rsquo;s mark the frame as a key frame.
+You can press <code>K</code> for that or click the <code>star</code> button (see the screenshot below).</p>
+<p><img src="../../../../images/image016.jpg" alt=""></p>
+</li>
+<li>
+<p>If the object starts to change its position, you need to modify the rectangle where it happens.
+It isn&rsquo;t necessary to change the rectangle on each frame, simply update several keyframes
+and the frames between them will be interpolated automatically.</p>
+</li>
+<li>
+<p>Let&rsquo;s jump 30 frames forward and adjust the boundaries of the object. See an example below:</p>
+<p><img src="../../../../images/image017_detrac.jpg" alt=""></p>
+</li>
+<li>
+<p>After that the rectangle of the object will be changed automatically on frames 2270 to 2300:</p>
+<p><img src="../../../../images/gif019_detrac.gif" alt=""></p>
+</li>
+</ul>
+</li>
+<li>
+<p>When the annotated object disappears or becomes too small, you need to
+finish the track. You have to choose <code>Outside Property</code>, shortcut <code>O</code>.</p>
+<p><img src="../../../../images/image019.jpg" alt=""></p>
+</li>
+<li>
+<p>If the object isn&rsquo;t visible on a couple of frames and then appears again,
+you can use the <code>Merge</code> feature to merge several individual tracks
+into one.</p>
+<p><img src="../../../../images/image020.jpg" alt=""></p>
+<ul>
+<li>
+<p>Create tracks for moments when the cyclist is visible:</p>
+<p><img src="../../../../images/gif001_detrac.gif" alt=""></p>
+</li>
+<li>
+<p>Click <code>Merge</code> button or press key <code>M</code> and click on any rectangle of the first track
+and on any rectangle of the second track and so on:</p>
+<p><img src="../../../../images/image162_detrac.jpg" alt=""></p>
+</li>
+<li>
+<p>Click <code>Merge</code> button or press <code>M</code> to apply changes.</p>
+<p><img src="../../../../images/image020.jpg" alt=""></p>
+</li>
+<li>
+<p>The final annotated sequence of frames in <code>Interpolation</code> mode can
+look like the clip below:</p>
+<p><img src="../../../../images/gif003_detrac.gif" alt=""></p>
+<p>Read more in the section <a href="../../../../docs/manual/advanced/track-mode-advanced/">track mode (advanced)</a>.</p>
+</li>
+</ul>
+</li>
+</ol>
+
+</div>
+
+
+
+    
+	
+  
+    
+    
+	
+    
+
+<div class="td-content" style="page-break-before: always">
+    
+	<h1 id="pg-1dbc64c6e91e3ee0c7d7a8112ccdc7b6">19 - 3D Object annotation (basics)</h1>
+    <div class="lead">Overview of basic operations available when annotating 3D objects.</div>
+	<h3 id="navigation">Navigation</h3>
+<p>To move in 3D space you can use several methods:</p>
+<ul>
+<li>
+<p>Select the <code>move the image</code> tool so you can move the camera using the mouse:</p>
+<p><img src="../../../../images/image149.jpg" alt=""></p>
+<ul>
+<li>Hold down the left mouse button in the perspective window to turn the camera around the conditional point.</li>
+<li>Hold down the right mouse button in the perspective window to move the camera inside the 3D space.</li>
+<li>Move the mouse while holding down the wheel to zoom in/out in the perspective window.</li>
+<li>Scroll the wheel to zoom in/out (works both in perspective and in projections).</li>
+</ul>
+</li>
+<li>
+<p>Move using the keys in the perspective window</p>
+<p><img src="../../../../images/image216_carla_town3.jpg" alt=""></p>
+</li>
+</ul>
+<p>You can move around by pressing the corresponding buttons:</p>
+<ul>
+<li>To rotate the camera use: <code>Shift+arrrowup</code>/<code>Shift+arrrowdown</code>/<code>Shift+arrrowleft</code>/<code>Shift+arrrowright</code>.</li>
+<li>To move left/right use: <code>Allt+J</code>/<code>Alt+L</code>.</li>
+<li>To move up/down use: <code>Alt-U</code>/<code>Alt+O</code>.</li>
+<li>To zoom in/out use: <code>Alt+K</code>/<code>Alt+I</code>.</li>
+</ul>
+<h3 id="creating-a-cuboid">Creating a cuboid</h3>
+<p>To create a cube in a 3D task you need to click the appropriate icon on the control sidebar,
+select the label of the future object and click <code>shape</code>.</p>
+<p><img src="../../../../images/image217.jpg" alt=""></p>
+<p>After that the cursor will be followed by a cube. In the creation process you can rotate and move the camera
+only using the keys. Left double-click will create an object.
+You can place an object only near the dots of the point cloud.</p>
+<p><img src="../../../../images/gif026_carla_town3.gif" alt=""></p>
+<p>To adjust the size precisely, you need to edit the cuboid on the projections, for this change <code>Cursor</code> on control
+sidebar or press <code>Esc</code>. In each projection you can:</p>
+<p>Move the object in the projection plane - to do this, hover over the object,
+press the left mouse button and move the object.</p>
+<p><img src="../../../../images/gif027_carla_town3.gif" alt=""></p>
+<p>Move one of the four points - you can change the size of the cuboid by dragging the points in the projection.</p>
+<p><img src="../../../../images/gif028_carla_town3.gif" alt=""></p>
+<p>Rotate the cuboid in the projection plane – to rotate the cuboid you should click on the appropriate point
+and then drag it up/down or to the left/right.</p>
+<p><img src="../../../../images/gif029_carla_town3.gif" alt=""></p>
+
+</div>
+
+
+
+    
+	
+  
+    
+    
+	
+    
+
+<div class="td-content" style="page-break-before: always">
+    
+	<h1 id="pg-01df2b1d465b8c0d0021dec1627ed90f">20 - Attribute annotation mode (basics)</h1>
+    <div class="lead">Usage examples and basic operations available in attribute annotation mode.</div>
+	<ul>
+<li>
+<p>In this mode you can edit attributes with fast navigation between objects and frames using a keyboard.
+Open the drop-down list in the top panel and select Attribute annotation Mode.</p>
+<p><img src="../../../../images/image023_affectnet.jpg" alt=""></p>
+</li>
+<li>
+<p>In this mode objects panel change to a special panel :</p>
+<p><img src="../../../../images/image026.jpg" alt=""></p>
+</li>
+<li>
+<p>The active attribute will be red. In this case it is <code>gender</code> . Look at the bottom side panel to see all possible
+shortcuts for changing the attribute. Press key <code>2</code> on your keyboard to assign a value (female) for the attribute
+or select from the drop-down list.</p>
+<p><img src="../../../../images/image024_affectnet.jpg" alt=""></p>
+</li>
+<li>
+<p>Press <code>Up Arrow</code>/<code>Down Arrow</code> on your keyboard or click the buttons in the UI to go to the next/previous
+attribute. In this case, after pressing <code>Down Arrow</code> you will be able to edit the <code>Age</code> attribute.</p>
+<p><img src="../../../../images/image025_affectnet.jpg" alt=""></p>
+</li>
+<li>
+<p>Use <code>Right Arrow</code>/<code>Left Arrow</code> keys to move to the previous/next image with annotation.</p>
+</li>
+</ul>
+<p>To see all the hot keys available in the attribute annotation mode, press <code>F2</code>.
+Read more in the section <a href="../../../../docs/manual/advanced/attribute-annotation-mode-advanced/">attribute annotation mode (advanced)</a>.</p>
+
+</div>
+
+
+
+    
+	
+  
+    
+    
+	
+    
+
+<div class="td-content" style="page-break-before: always">
+    
+	<h1 id="pg-49ca3c5a8947ba788a9e6295ce16a840">21 - Vocabulary</h1>
+    <div class="lead">List of terms pertaining to annotation in CVAT.</div>
+	<h2 id="label">Label</h2>
+<p>Label is a type of an annotated object (e.g. person, car, vehicle, etc.)</p>
+<p><img src="../../../../images/image032_detrac.jpg" alt=""></p>
+<hr>
+<h2 id="attribute">Attribute</h2>
+<p>Attribute is a property of an annotated object (e.g. color, model,
+quality, etc.). There are two types of attributes:</p>
+<h3 id="unique">Unique</h3>
+<p>Unique immutable and can&rsquo;t be changed from frame to frame (e.g. age, gender, color, etc.)</p>
+<p><img src="../../../../images/image073.jpg" alt=""></p>
+<h3 id="temporary">Temporary</h3>
+<p>Temporary mutable and can be changed on any frame (e.g. quality, pose, truncated, etc.)</p>
+<p><img src="../../../../images/image072.jpg" alt=""></p>
+<hr>
+<h2 id="track">Track</h2>
+<p>Track is a set of shapes on different frames which corresponds to one object.
+Tracks are created in <code>Track mode</code></p>
+<p><img src="../../../../images/gif003_detrac.gif" alt=""></p>
+<hr>
+<h2 id="annotation">Annotation</h2>
+<p>Annotation is a set of shapes and tracks. There are several types of annotations:</p>
+<ul>
+<li><em>Manual</em> which is created by a person</li>
+<li><em>Semi-automatic</em> which is created mainly automatically, but the user provides some data (e.g. interpolation)</li>
+<li><em>Automatic</em> which is created automatically without a person in the loop</li>
+</ul>
+<hr>
+<h2 id="approximation">Approximation</h2>
+<p>Approximation allows you to reduce the number of points in the polygon.
+Can be used to reduce the annotation file and to facilitate editing polygons.</p>
+<p><img src="../../../../images/approximation_accuracy.gif" alt=""></p>
+<hr>
+<h2 id="trackable">Trackable</h2>
+<p>Trackable object will be tracked automatically if the previous frame was
+a latest keyframe for the object. More details in the section <a href="../../../../docs/manual/advanced/ai-tools/#trackers">trackers</a>.</p>
+<p><img src="../../../../images/tracker_indication_detrac.jpg" alt=""></p>
+<hr>
+<h2 id="mode">Mode</h2>
+<h3 id="interpolation">Interpolation</h3>
+<p>Mode for video annotation, which uses <a href="#track"><code>track</code></a> objects.
+Only objects on keyframes are manually annotation, and intermediate frames are linearly interpolated.</p>
+<p>Related sections:</p>
+<ul>
+<li><a href="../../../../docs/manual/basics/track-mode-basics/">Track mode</a></li>
+</ul>
+<h3 id="annotation-1">Annotation</h3>
+<p>Mode for images annotation, which uses <code>shape</code> objects.</p>
+<p>Related sections:</p>
+<ul>
+<li><a href="../../../../docs/manual/basics/shape-mode-basics/">Shape mode</a></li>
+</ul>
+<hr>
+<h2 id="dimension">Dimension</h2>
+<p>Depends on the task data type that is defined when the <a href="../../../../docs/manual/basics/creating_an_annotation_task/">task is created</a>.</p>
+<h3 id="2d">2D</h3>
+<p>The data format of 2d tasks are images and videos.
+Related sections:</p>
+<ul>
+<li><a href="../../../../docs/manual/basics/creating_an_annotation_task/">Creating an annotation task</a></li>
+</ul>
+<h3 id="3d">3D</h3>
+<p>The data format of 3d tasks is a cloud of points.
+<a href="../../../../docs/manual/basics/creating_an_annotation_task/#data-formats-for-a-3d-task">Data formats for a 3D task</a></p>
+<p>Related sections:</p>
+<ul>
+<li><a href="../../../../docs/manual/basics/3d-task-workspace/">3D task workspace</a></li>
+<li><a href="../../../../docs/manual/basics/standard-3d-mode-basics/">Standard 3D mode</a></li>
+<li><a href="../../../../docs/manual/basics/3d-object-annotation-basics/">3D Object annotation</a></li>
+</ul>
+<hr>
+<h2 id="state">State</h2>
+<p>State of the job. The state can be changed by an assigned user in <a href="../../../../docs/manual/basics/top-panel/">the menu inside the job</a>.
+There are several possible states: <code>new</code>, <code>in progress</code>, <code>rejected</code>, <code>completed</code>.</p>
+<hr>
+<h2 id="stage">Stage</h2>
+<p>Stage of the job. The stage is specified with the drop-down list on the <a href="../../../../docs/manual/basics/tasks-page/">task page</a>.
+There are three stages: <code>annotation</code>, <code>validation</code> or <code>acceptance</code>. This value affects the task progress bar.</p>
+<hr>
+<h2 id="subset">Subset</h2>
+<p>A project can have subsets. Subsets are groups for tasks that make it easier to work with the dataset.
+It could be <code>test</code>, <code>train</code>, <code>validation</code> or custom subset.</p>
+<hr>
+<h2 id="credentials">Credentials</h2>
+<p>Under <code>credentials</code> is understood <code>Key &amp; secret key</code>, <code>Account name and token</code>, <code>Anonymous access</code>, <code>Key file</code>.
+Used to <a href="../../../../docs/manual/basics/attach-cloud-storage/#attach-new-cloud-storage">attach cloud storage</a>.</p>
+<hr>
+<h2 id="resource">Resource</h2>
+<p>Under <code>resource</code> is understood <code>bucket name</code> or <code>container name</code>.
+Used to <a href="../../../../docs/manual/basics/attach-cloud-storage/#attach-new-cloud-storage">attach cloud storage</a>.</p>
+
+</div>
+
+
+
+    
+	
+  
+    
+    
+	
+    
+
+<div class="td-content" style="page-break-before: always">
+    
+	<h1 id="pg-c9da6f8a00196503e659cee9f4e1b3b6">22 - Cloud storages page</h1>
+    <div class="lead">Overview of the cloud storages page.</div>
+	<p><img src="../../../../images/image227.jpg" alt=""></p>
+<p>The cloud storages page contains elements, each of them relating to a separate cloud storage. 
+Each element contains: preview, cloud storage name, provider, creation and update info, status,
+<code>?</code> button for displaying the description and the actions menu.</p>
+<p>Each button in the action menu is responsible for a specific function:</p>
+<ul>
+<li><code>Update</code> — update this cloud storage</li>
+<li><code>Delete</code> — delete cloud storage.</li>
+</ul>
+<p><img src="../../../../images/cloud_storage_icon.jpg" alt=""></p>
+<p>This preview will appear when it is impossible to get a real preview (e.g. storage is empty or
+invalid credentials were used).</p>
+<p>In the upper left corner there is a search bar,
+using which you can find the cloud storage by display name, provider, etc.
+In the upper right corner there are <a href="../../../../docs/manual/advanced/filter/#sort-by">sorting</a>, <a href="../../../../docs/manual/advanced/filter/#quick-filters">quick filters</a> and filter.</p>
+<h2 id="filter">Filter</h2>
+<blockquote>
+<p>Applying filter disables the <a href="../../../../docs/manual/advanced/filter/#quick-filters">quick filter</a>.</p>
+</blockquote>
+<p>The filter works similarly to the filters for annotation,
+you can create rules from <a href="#supported-properties-for-jobs-list">properties</a>,
+<a href="../../../../docs/manual/advanced/filter/#supported-operators-for-properties">operators</a> and values and group rules into <a href="../../../../docs/manual/advanced/filter/#groups">groups</a>.
+For more details, see the <a href="../../../../docs/manual/advanced/filter/#create-a-filter">filter section</a>.
+Learn more about <a href="../../../../docs/manual/advanced/filter#date-and-time-selection">date and time selection</a>.</p>
+<p>For clear all filters press <code>Clear filters</code>.</p>
+<h3 id="supported-properties-for-cloud-storages-list">Supported properties for cloud storages list</h3>
+<table>
+<thead>
+<tr>
+<th>Properties</th>
+<th>Supported values</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>ID</code></td>
+<td>number or range of task ID</td>
+<td></td>
+</tr>
+<tr>
+<td><code>Provider type</code></td>
+<td><code>AWS S3</code>, <code>Azure</code>, <code>Google cloud</code></td>
+<td></td>
+</tr>
+<tr>
+<td><code>Credentials type</code></td>
+<td><code>Key &amp; secret key</code>, <code>Account name and token</code>,<br> <code>Anonymous access</code>, <code>Key file</code></td>
+<td></td>
+</tr>
+<tr>
+<td><code>Resource name</code></td>
+<td></td>
+<td><code>Bucket name</code> or <code>container name</code></td>
+</tr>
+<tr>
+<td><code>Display name</code></td>
+<td></td>
+<td>Set when creating cloud storage</td>
+</tr>
+<tr>
+<td><code>Description</code></td>
+<td></td>
+<td>Description of the cloud storage</td>
+</tr>
+<tr>
+<td><code>Owner</code></td>
+<td>username</td>
+<td>The user who owns the project, task, or job</td>
+</tr>
+<tr>
+<td><code>Last updated</code></td>
+<td>last modified date and time (or value range)</td>
+<td>The date can be entered in the <code>dd.MM.yyyy HH:mm</code> format <br>or by selecting the date in the window that appears <br>when you click on the input field</td>
+</tr>
+</tbody>
+</table>
+<p>Click the <code>+</code> button to <a href="../../../../docs/manual/basics/attach-cloud-storage/">attach a new cloud storage</a>.</p>
+
+</div>
+
+
+
+    
+	
+  
+    
+    
+	
+    
+
+<div class="td-content" style="page-break-before: always">
+    
+	<h1 id="pg-d013ec6e69303d468f8e8b14075372d7">23 - Attach cloud storage</h1>
+    <div class="lead">Instructions on how to attach cloud storage using UI</div>
+	<p>In CVAT you can use <a href="using-aws-s3">AWS-S3</a>, <a href="#using-azure-blob-container">Azure Blob Container</a>
+and <a href="#using-google-cloud-storage">Google cloud</a> storages to store image datasets for your tasks.</p>
+<h2 id="using-aws-s3">Using AWS-S3</h2>
+<h3 id="create-aws-account">Create AWS account</h3>
+<p>First, you need to create an AWS account, to do this, <a href="https://portal.aws.amazon.com/billing/signup#/start">register of 5 steps</a>
+following the instructions
+(even if you plan to use a free basic account you may need to link a credit card to verify your identity).</p>
+<p>To learn more about the operation and benefits of AWS cloud,
+take a free <a href="https://www.aws.training/Details/eLearning?id=60697">AWS Cloud Practitioner Essentials</a> course,
+which will be available after registration.</p>
+<h3 id="create-a-bucket">Create a bucket</h3>
+<p>After the account is created, go to <a href="https://s3.console.aws.amazon.com/s3/home">console AWS-S3</a>
+and click <code>Create bucket</code>.</p>
+<p><img src="../../../../images/aws-s3_tutorial_1.jpg" alt=""></p>
+<p>You&rsquo;ll be taken to the bucket creation page. Here you have to specify the name of the bucket, region,
+optionally you can copy the settings of another bucket by clicking on the <code>choose bucket</code> button.
+Checkbox block all public access can be enabled as we will use <code>access key ID</code> and <code>secret access key</code> to gain access.
+In the following sections, you can leave the default settings and click <code>create bucket</code>.
+After you create the bucket it will appear in the list of buckets.</p>
+<h3 id="create-user-and-configure-permissions">Create user and configure permissions</h3>
+<p>To access bucket you will need to create a user, to do this, go <a href="https://console.aws.amazon.com/iamv2/home#/users">IAM</a>
+and click <code>add users</code>. You need to choose AWS access type, have an access key ID and secret access key.</p>
+<p><img src="../../../../images/aws-s3_tutorial_2.jpg" alt=""></p>
+<p>After pressing <code>next</code> button to configure permissions, you need to create a user group.
+To do this click <code>create a group</code>, input the <code>group name</code> and select permission policies add <code>AmazonS3ReadOnlyAccess</code>
+using the search (if you want the user you create to have write rights to bucket select <code>AmazonS3FullAccess</code>).</p>
+<p><img src="../../../../images/aws-s3_tutorial_3.jpg" alt=""></p>
+<p>You can also add tags for the user (optional), and look again at the entered data. In the last step of creating a user,
+you will be provided with <code>access key ID</code> and <code>secret access key</code>,
+they will need to be used in CVAT when adding cloud storage.</p>
+<p><img src="../../../../images/aws-s3_tutorial_4.jpg" alt=""></p>
+<h3 id="upload-dataset">Upload dataset</h3>
+<h4 id="prepare-dataset">Prepare dataset</h4>
+<p>For example, let&rsquo;s take <a href="https://www.robots.ox.ac.uk/~vgg/data/pets/">The Oxford-IIIT Pet Dataset</a>:</p>
+<ul>
+<li>
+<p>Download the <a href="https://www.robots.ox.ac.uk/~vgg/data/pets/data/images.tar.gz">archive with images</a>.</p>
+</li>
+<li>
+<p>Unpack the archive into the prepared folder
+and create a manifest file as described in <a href="../../../../docs/manual/advanced/dataset_manifest/">prepare manifest file section</a>:</p>
+<div class="highlight"><pre style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">python &lt;cvat repository&gt;/utils/dataset_manifest/create.py --output-dir &lt;yourfolder&gt; &lt;yourfolder&gt;
+</code></pre></div></li>
+</ul>
+<h4 id="upload">Upload</h4>
+<ul>
+<li>
+<p>When the manifest file is ready, open the previously prepared bucket and click <code>Upload</code>:</p>
+<p><img src="../../../../images/aws-s3_tutorial_5.jpg" alt=""></p>
+</li>
+<li>
+<p>Drag the manifest file and image folder on the page and click <code>Upload</code>:</p>
+<p><img src="../../../../images/aws-s3_tutorial_1.gif" alt=""></p>
+</li>
+</ul>
+<p>Now you can <a href="#attach-new-cloud-storage">attach new cloud storage into CVAT</a>.</p>
+<h2 id="using-azure-blob-container">Using Azure Blob Container</h2>
+<h3 id="create-microsoft-account">Create Microsoft account</h3>
+<p>First, create a Microsoft account by <a href="https://signup.live.com/signup?ru=https://login.live.com/">registering</a>,
+or you can use your GitHub account to log in. After signing up for Azure, you&rsquo;ll need to choose a subscription plan,
+you can choose a free 12-month subscription, but you&rsquo;ll need to enter your credit card details to verify your identity.
+To learn more about Azure, read <a href="https://docs.microsoft.com/en-us/azure/">documentation</a>.</p>
+<h3 id="create-a-storage-account">Create a storage account</h3>
+<p>After registration, go to <a href="https://portal.azure.com/#home">Azure portal</a>.
+Hover over the resource groups and click <code>create</code> in the window that appears.</p>
+<p><img src="../../../../images/azure_blob_container_tutorial1.jpg" alt=""></p>
+<p>Enter a name for the group and click <code>review + create</code>, check the entered data and click <code>create</code>.
+After the resource group is created,
+go to the <a href="https://portal.azure.com/#blade/HubsExtension/BrowseResourceGroups">resource groups page</a>
+and navigate to the resource group that you created.
+Click <code>create</code> for create a storage account.</p>
+<p><img src="../../../../images/azure_blob_container_tutorial2.jpg" alt=""></p>
+<ul>
+<li>
+<p><strong>Basics</strong></p>
+<p>Enter <code>storage account name</code> (will be used in CVAT to access your container), select a <code>region</code>,
+select <code>performance</code> in our case will be <code>standard</code> enough, select <code>redundancy</code> enough <code>LRS</code>
+<a href="https://docs.microsoft.com/en-us/azure/storage/common/storage-redundancy">more about redundancy</a>.
+Click <code>next</code> to go to the advanced section.</p>
+<p><img src="../../../../images/azure_blob_container_tutorial4.jpg" alt=""></p>
+</li>
+<li>
+<p><strong>Advanced</strong></p>
+<p>In the advanced section, you can change public access by disabling <code>enable blob public access</code>
+to deny anonymous access to the container.
+If you want to change public access you can find this switch in the <code>configuration</code> section of your storage account.</p>
+<p>After that, go to the review section, check the entered data and click <code>create</code>.</p>
+<p><img src="../../../../images/azure_blob_container_tutorial5.jpg" alt=""></p>
+</li>
+</ul>
+<p>You will be reached to the deployment page after the finished,
+navigate to the resource by clicking on <code>go to resource</code>.</p>
+<p><img src="../../../../images/azure_blob_container_tutorial6.jpg" alt=""></p>
+<h3 id="create-a-container">Create a container</h3>
+<p>Go to the containers section and create a new container. Enter the <code>name</code> of the container
+(will be used in CVAT to access your container) and select <code>container</code> in <code>public access level</code>.</p>
+<p><img src="../../../../images/azure_blob_container_tutorial7.jpg" alt=""></p>
+<h3 id="sas-token">SAS token</h3>
+<p>Using the <code>SAS token</code>, you can securely transfer access to the container to other people by preconfiguring rights,
+as well as the date/time of the starting and expiration of the token.
+To generate a SAS token, go to <code>Shared access signature</code> section of your storage account.
+Here you should enable <code>Blob</code> in the <code>Allowed services</code>, <code>Container</code> and <code>Object</code> in the <code>Allowed resource types</code>,
+<code>Read</code> and <code>List</code> in the <code>Allowed permissions</code>, <code>HTTPS and HTTP</code> in the <code>Allowed protocols</code>,
+also here you can set the date/time of the starting and expiration for the token. Click <code>Generation SAS token</code>.
+and copy <code>SAS token</code> (will be used in CVAT to access your container).</p>
+<p><img src="../../../../images/azure_blob_container_tutorial3.jpg" alt=""></p>
+<p>For personal use, you can enter the <code>Access Key</code> from the your storage account in the <code>SAS Token</code> field,
+<code>access key</code> can be found in the <code>security + networking</code> section.
+Click <code>show keys</code> to show the key.</p>
+<p><img src="../../../../images/azure_blob_container_tutorial8.jpg" alt=""></p>
+<h3 id="upload-dataset-1">Upload dataset</h3>
+<p>Prepare the dataset as in the point <a href="#prepare-dataset">prepare dataset</a>.</p>
+<ul>
+<li>
+<p>When the dataset is ready, go to your container and click <code>upload</code>.</p>
+</li>
+<li>
+<p>Click <code>select a files</code> and select all images from the images folder
+in the <code>upload to folder</code> item write the name of the folder in which you want to upload images in this case &ldquo;images&rdquo;.</p>
+<p><img src="../../../../images/azure_blob_container_tutorial9.jpg" alt=""></p>
+</li>
+<li>
+<p>Click <code>upload</code>, when the images are loaded you will need to upload a manifest file. When loading a manifest, you
+need to make sure that the relative paths specified in the manifest file match the paths
+to the files in the container. Click <code>select a file</code> and select manifest file, in order to upload file to the root
+of the container leave blank <code>upload to folder</code> field.</p>
+</li>
+</ul>
+<p>Now you can <a href="#attach-new-cloud-storage">attach new cloud storage into CVAT</a>.</p>
+<h2 id="using-google-cloud-storage">Using Google Cloud Storage</h2>
+<h3 id="create-google-account">Create Google account</h3>
+<p>First, create a Google account, go to <a href="https://accounts.google.com/">account login page</a> and click <code>Create account</code>.
+After, go to the <a href="https://cloud.google.com">Google Cloud page</a>, click <code>Get started</code>, enter the required data
+and accept the terms of service (you&rsquo;ll need credit card information to register).</p>
+<h3 id="create-a-bucket-1">Create a bucket</h3>
+<p>Your first project will be created automatically, you can see it on the <a href="https://console.cloud.google.com/cloud-resource-manager">cloud resource manager page</a>.
+To create a bucket, go to the <a href="https://console.cloud.google.com/storage/browser">cloud storage page</a>
+and press <code>Create bucket</code>. Next, enter the name of the bucket, add labels if necessary, select the type of location
+for example region and the location nearest to you, select storage class, when selecting access control
+you can enable <code>Enforce public access prevention on this bucket</code> (if you plan to have anonymous access to your bucket,
+it should be disabled) you can select <code>Uniform</code> or <code>Fine-grained</code> access control, if you need protection of your
+object data select protect object data type. When all the information is entered click <code>Create</code> to create the bucket.</p>
+<p><img src="../../../../images/google_cloud_storage_tutorial1.jpg" alt=""></p>
+<h3 id="upload-1">Upload</h3>
+<p>Prepare the dataset as in the point <a href="#prepare-dataset">prepare dataset</a>.</p>
+<p>To upload files, you can simply drag and drop files and folders into a browser window
+or use the <code>upload folder</code> and/or <code>upload files</code>.</p>
+<h3 id="access-permissions">Access permissions</h3>
+<p>To access Google Cloud Storage from CVAT you will need a <code>Project ID</code>
+you can find it by going to <a href="https://console.cloud.google.com/cloud-resource-manager">cloud resource manager page</a></p>
+<p><img src="../../../../images/google_cloud_storage_tutorial5.jpg" alt=""></p>
+<h4 id="create-a-service-account-and-key-file">Create a service account and key file</h4>
+<p>To access your bucket you need a key file and a service account. To create a service account,
+go to <code>IAM &amp; Admin</code>/<code>Service Accounts</code> and press <code>Create Service Account</code>. Enter your account
+name and click <code>Create And Continue</code>. Select a role for example <code>Basic</code>/<code>Viewer</code>.
+Next, you can give access rights to the service account, to complete click <code>Done</code>.</p>
+<p><img src="../../../../images/google_cloud_storage_tutorial2.jpg" alt=""></p>
+<p>The account you created will appear in the service accounts list, open it and go to the <code>Keys</code> tab.
+To create a key, click <code>ADD</code> and select <code>Create new key</code>, next you need to choose the key type <code>JSON</code> and select <code>Create</code>.
+The key file will be downloaded automatically.</p>
+<p><img src="../../../../images/google_cloud_storage_tutorial3.jpg" alt=""></p>
+<p><a href="https://cloud.google.com/docs/authentication/getting-started">Learn more about creating keys</a>.</p>
+<h4 id="anonymous-access">Anonymous access</h4>
+<p>To configure anonymous access, open your bucket and go to the permissions tab click <code>ADD</code> to add new principals.
+In <code>new principals</code> field specify <code>allUsers</code>, select role for example <code>Cloud Storage Legacy</code>/<code>Storage Legacy Bucket Reader</code>
+and press <code>SAVE</code>.</p>
+<p><img src="../../../../images/google_cloud_storage_tutorial4.jpg" alt=""></p>
+<p>Now you can attach new cloud storage into CVAT.</p>
+<h2 id="attach-new-cloud-storage">Attach new cloud storage</h2>
+<p>After you upload the dataset and manifest file to AWS-S3, Azure Blob Container or Google Cloud Storage
+you will be able to attach a cloud storage. To do this, press the <code>+</code> button on the <code>Cloud storages</code> page
+and fill out the following form:</p>
+<p><img src="../../../../images/image228.jpg" alt=""></p>
+<ul>
+<li>
+<p><code>Display name</code> - the display name of the cloud storage.</p>
+</li>
+<li>
+<p><code>Description</code> (optional) - description of the cloud storage, appears when you click on the <code>?</code> button
+of an item on cloud storages page.</p>
+</li>
+<li>
+<p><code>Provider</code> - choose provider of the cloud storage:</p>
+<ul>
+<li>
+<p><a href="#using-aws-s3"><strong>AWS-S3</strong></a>:</p>
+<ul>
+<li>
+<p><a href="https://docs.aws.amazon.com/AmazonS3/latest/userguide/UsingBucket"><code>Bucket</code></a> - cloud storage bucket name.</p>
+</li>
+<li>
+<p><a href="https://docs.aws.amazon.com/AmazonS3/latest/userguide/access-control-best-practices.html"><code>Authorization type</code></a>:</p>
+<ul>
+<li>
+<p><code>Key id and secret access key pair</code> - available on <a href="https://console.aws.amazon.com/iamv2/home?#/users">IAM</a>
+to obtain an access key and a secret key, create a user using IAM and grant the appropriate rights <a href="#create-user-and-configure-permissions">learn more</a>.</p>
+<ul>
+<li><code>ACCESS KEY ID</code></li>
+<li><code>SECRET ACCESS KEY ID</code></li>
+</ul>
+</li>
+<li>
+<p><code>Anonymous access</code> - for anonymous access, you need to enable public access to bucket.</p>
+</li>
+</ul>
+</li>
+<li>
+<p><code>Region</code> - here you can choose a region from the list or add a new one. To get more information click
+on <a href="https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/using-regions-availability-zones.html#concepts-available-regions"><code>?</code></a>.</p>
+</li>
+</ul>
+</br>
+</li>
+<li>
+<p><a href="https://docs.microsoft.com/en-us/azure/storage/blobs/"><strong>Azure Blob Container</strong></a>:</p>
+<ul>
+<li>
+<p><code>Container name</code> - name of the cloud storage container.</p>
+<ul>
+<li>
+<p><code>Authorization type</code>:</p>
+<ul>
+<li>
+<p><a href="https://docs.microsoft.com/en-us/azure/cognitive-services/translator/document-translation/create-sas-tokens?tabs=blobs"><code>Account name and SAS token</code></a>:</p>
+<ul>
+<li><code>Account name</code> - storage account name.</li>
+<li><code>SAS token</code> - is located in the <code>Shared access signature</code> section of your <code>Storage account</code> <a href="#sas-token">learn more</a>.</li>
+</ul>
+</li>
+<li>
+<p><a href="https://docs.microsoft.com/en-us/azure/storage/blobs/anonymous-read-access-configure?tabs=portal"><code>Anonymous access</code></a> -
+for anonymous access <code>enable blob public access</code> in the <code>configuration</code> section of your storage account.
+in this case, you only need the storage account name to gain anonymous access.</p>
+<ul>
+<li><code>Account name</code> - storage account name.</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</br>
+</li>
+<li>
+<p><a href="https://cloud.google.com/docs"><strong>Google Cloud</strong></a>:</p>
+<ul>
+<li>
+<p><a href="https://cloud.google.com/storage/docs/creating-buckets"><code>Bucket name</code></a> - cloud storage bucket name,
+you can find the created bucket on the <a href="https://console.cloud.google.com/storage/browser">storage browser page</a>.</p>
+</li>
+<li>
+<p><code>Authorization type</code>:</p>
+<ul>
+<li>
+<p><a href="#create-a-service-account-and-key-file"><code>Key file</code></a> - you can drag a key file to the area <code>attach a file</code>
+or click on the area to select the key file through the explorer. If the environment variable
+<code>GOOGLE_APPLICATION_CREDENTIALS</code> is specified for an environment with a deployed CVAT instance, then it will
+be used if you do not attach the key file
+(<a href="https://cloud.google.com/docs/authentication/getting-started#setting_the_environment_variable">more about <code>GOOGLE_APPLICATION_CREDENTIALS</code></a>).</p>
+</li>
+<li>
+<p><a href="#anonymous-access"><code>Anonymous access</code></a> - for anonymous access, you need to enable public access to bucket.</p>
+</li>
+</ul>
+</li>
+<li>
+<p><code>Prefix</code> - used to filter data from the bucket.</p>
+</li>
+<li>
+<p><a href="https://cloud.google.com/resource-manager/docs/creating-managing-projects"><code>Project ID</code></a> - you can find
+the created project on the <a href="https://console.cloud.google.com/cloud-resource-manager">cloud resource manager page</a>,
+note that the project name does not match the project ID.</p>
+</li>
+<li>
+<p><code>Location</code> - here you can choose a region from the list or add a new one. To get more information click
+on <a href="https://cloud.google.com/storage/docs/locations#available-locations"><code>?</code></a>.</p>
+</li>
+</ul>
+</br>
+</li>
+</ul>
+</li>
+<li>
+<p><code>Manifest</code> - the path to the manifest file on your cloud storage.
+You can add multiple manifest files using the <code>Add manifest</code> button.
+You can find on how to prepare dataset manifest <a href="../../../../docs/manual/advanced/dataset_manifest/"><code>here</code></a>.
+If you have data on the cloud storage and don&rsquo;t want to download content locally, you can mount your
+cloud storage as a share point according to <a href="../../../../docs/administration/advanced/mounting_cloud_storages/"><code>that guide</code></a>
+and prepare manifest for the data.</p>
+</li>
+</ul>
+<p>To publish the cloud storage, click <code>submit</code>, after which it will be available on
+the <a href="../../../../docs/manual/basics/cloud-storages/">Cloud storages page</a>.</p>
+<h2 id="using-aws-data-exchange">Using AWS Data Exchange</h2>
+<h3 id="subscribe-to-data-set">Subscribe to data set</h3>
+<p>You can use AWS Data Exchange to add image datasets.
+For example, consider adding a set of datasets <code>500 Image &amp; Metadata Free Sample</code>.
+Go to <a href="https://console.aws.amazon.com/dataexchange">browse catalog</a> and use the search to find
+<code>500 Image &amp; Metadata Free Sample</code>, open the dataset page and click <code>continue to subscribe</code>,
+you will be taken to the page complete subscription request, read the information provided
+and click send subscription request to provider.</p>
+<p><img src="../../../../images/aws-s3_tutorial_6.jpg" alt=""></p>
+<h3 id="export-to-bucket">Export to bucket</h3>
+<p>After that, this dataset will appear in the
+<a href="https://console.aws.amazon.com/dataexchange/home/subscriptions#/subscriptions">list subscriptions</a>.
+Now you need to export the dataset to <code>Amazon S3</code>.
+First, let&rsquo;s create a new one bucket similar to <a href="#create-a-bucket">described above</a>.
+To export one of the datasets to a new bucket open it <code>entitled data</code> select one of the datasets,
+select the corresponding revision and click export to Amazon S3
+(please note that if bucket and dataset are located in different regions, export fees may apply).
+In the window that appears, select the created bucket and click export.</p>
+<p><img src="../../../../images/aws-s3_tutorial_7.jpg" alt=""></p>
+<h3 id="prepare-manifest-file">Prepare manifest file</h3>
+<p>Now you need to prepare a manifest file. I used <a href="https://aws.amazon.com/cli/">AWS cli</a> and
+<a href="https://github.com/cvat-ai/cvat/tree/develop/utils/dataset_manifest">script for prepare manifest file</a>.
+Perform the installation using the manual <a href="https://github.com/awslabs/aws-shell">aws-shell</a>,
+I used <code>aws-cli 1.20.49</code> <code>Python 3.7.9</code> <code>Windows 10</code>.
+You can configure credentials by running <code>aws configure</code>.
+You will need to enter <code>Access Key ID</code> and <code>Secret Access Key</code> as well as region.</p>
+<div class="highlight"><pre style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">aws configure
+Access Key ID: &lt;your Access Key ID&gt;
+Secret Access Key: &lt;your Secret Access Key&gt;
+</code></pre></div><p>Copy the content of the bucket to a folder on your computer:</p>
+<div class="highlight"><pre style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">aws s3 cp &lt;s3://bucket-name&gt; &lt;yourfolder&gt; --recursive
+</code></pre></div><p>After copying the files, you can create a manifest file as described in <a href="../../../../docs/manual/advanced/dataset_manifest/">preapair manifest file section</a>:</p>
+<div class="highlight"><pre style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">python &lt;cvat repository&gt;/utils/dataset_manifest/create.py --output-dir &lt;yourfolder&gt; &lt;yourfolder&gt;
+</code></pre></div><p>When the manifest file is ready, you can upload it to aws s3 bucket. If you gave full write permissions
+when you created the user, run:</p>
+<div class="highlight"><pre style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">aws s3 cp &lt;yourfolder&gt;/manifest.jsonl &lt;s3://bucket-name&gt;
+</code></pre></div><p>If you have given read-only permissions, use the download through the browser, click upload,
+drag the manifest file to the page and click upload.</p>
+<p><img src="../../../../images/aws-s3_tutorial_5.jpg" alt=""></p>
+<p>Now you can <a href="#attach-new-cloud-storage">attach new cloud storage</a> using the dataset <code>500 Image &amp; Metadata Free Sample</code>.</p>
+
+</div>
+
+
+
+    
+	
+  
+
+
+
+          </main>
+        </div>
+      </div>
+      
+<footer class="bg-dark py-5 row d-print-none">
+  <div class="container-fluid mx-sm-5">
+    <div class="row">
+      <div class="col-6 col-sm-2 text-xs-center order-sm-2">
+        
+        
+        
+<ul class="list-inline mb-0">
+  
+  <li class="list-inline-item mx-2 h3" data-toggle="tooltip" data-placement="top" title="Gitter public chat" aria-label="Gitter public chat">
+    <a class="text-white" rel="noopener noreferrer" href="https://gitter.im/opencv-cvat/public">
+      <i class="fab fa-gitter"></i>
+    </a>
+  </li>
+  
+  <li class="list-inline-item mx-2 h3" data-toggle="tooltip" data-placement="top" title="Stack Overflow" aria-label="Stack Overflow">
+    <a class="text-white" rel="noopener noreferrer" href="https://stackoverflow.com/search?q=%23cvat">
+      <i class="fab fa-stack-overflow"></i>
+    </a>
+  </li>
+  
+  <li class="list-inline-item mx-2 h3" data-toggle="tooltip" data-placement="top" title="YouTube" aria-label="YouTube">
+    <a class="text-white" rel="noopener noreferrer" href="https://www.youtube.com/@cvat-ai">
+      <i class="fab fa-youtube"></i>
+    </a>
+  </li>
+  
+</ul>
+
+        
+        
+      </div>
+      <div class="col-6 col-sm-2 text-right text-xs-center order-sm-3">
+        
+        
+        
+<ul class="list-inline mb-0">
+  
+  <li class="list-inline-item mx-2 h3" data-toggle="tooltip" data-placement="top" title="GitHub" aria-label="GitHub">
+    <a class="text-white" rel="noopener noreferrer" href="https://github.com/cvat-ai/cvat">
+      <i class="fab fa-github"></i>
+    </a>
+  </li>
+  
+  <li class="list-inline-item mx-2 h3" data-toggle="tooltip" data-placement="top" title="Gitter developers chat" aria-label="Gitter developers chat">
+    <a class="text-white" rel="noopener noreferrer" href="https://gitter.im/opencv-cvat/dev">
+      <i class="fab fa-gitter"></i>
+    </a>
+  </li>
+  
+  <li class="list-inline-item mx-2 h3" data-toggle="tooltip" data-placement="top" title="Discord chat" aria-label="Discord chat">
+    <a class="text-white" rel="noopener noreferrer" href="https://discord.gg/fNR3eXfk6C">
+      <i class="fab fa-discord"></i>
+    </a>
+  </li>
+  
+</ul>
+
+        
+        
+      </div>
+      <div class="col-12 col-sm-8 text-center order-sm-2">
+        <small class="mr-1"><a href="https://www.cvat.ai/privacy">Privacy Policy</a></small>
+        |
+        <small class="mx-1"><a href="https://www.cvat.ai/terms-of-use">Terms of Use</a></small>
+      </div>
+  
+    <p class="mt-2"><a href="../../../../about/">About</a></p>
+  
+      </div>
+    </div>
+  </div>
+</footer>
+
+
+    </div>
+    <script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.1/dist/umd/popper.min.js" integrity="sha384-9/reFTGAW83EW2RDu2S0VKaIzap3H66lZH81PoYlFhbGU+6BZp6G7niu735Sk7lN" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@4.6.0/dist/js/bootstrap.min.js" integrity="sha384-+YQ4JLhjyBLPDQt//I+STsc9iw4uQqACwlvpslubQzn4u2UU2UFM80nGisd026JF" crossorigin="anonymous"></script>
+
+
+
+
+
+
+ 
+
+
+
+
+
+
+
+
+
+
+
+
+
+<script src="../../../../js/main.min.3b172c13b62c2bea8b1c9d2599cddc8cf89718a92d792c680871c81ba43d8c85.js" integrity="sha256-OxcsE7YsK&#43;qLHJ0lmc3cjPiXGKkteSxoCHHIG6Q9jIU=" crossorigin="anonymous"></script>
+
+
+
+<script src='../../../../js/prism.js'></script>
+
+
+
+  </body>
+</html>

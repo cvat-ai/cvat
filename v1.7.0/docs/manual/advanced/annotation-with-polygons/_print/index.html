@@ -1,0 +1,689 @@
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    <meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+<meta name="generator" content="Hugo 0.83.0" /><link rel="canonical" type="text/html" href="../../../../../docs/manual/advanced/annotation-with-polygons/">
+<META NAME="ROBOTS" CONTENT="NOINDEX, NOFOLLOW">
+
+
+<link rel="shortcut icon" href="../../../../../favicons/favicon.ico" >
+<link rel="apple-touch-icon" href="../../../../../favicons/apple-touch-icon-180x180.png" sizes="180x180">
+<link rel="icon" type="image/png" href="../../../../../favicons/favicon-16x16.png" sizes="16x16">
+<link rel="icon" type="image/png" href="../../../../../favicons/favicon-32x32.png" sizes="32x32">
+<link rel="icon" type="image/png" href="../../../../../favicons/android-36x36.png" sizes="36x36">
+<link rel="icon" type="image/png" href="../../../../../favicons/android-48x48.png" sizes="48x48">
+<link rel="icon" type="image/png" href="../../../../../favicons/android-72x72.png" sizes="72x72">
+<link rel="icon" type="image/png" href="../../../../../favicons/android-96x96.png" sizes="96x96">
+<link rel="icon" type="image/png" href="../../../../../favicons/android-144x144.png" sizes="144x144">
+<link rel="icon" type="image/png" href="../../../../../favicons/android-192x192.png" sizes="192x192">
+
+<title>Annotation with polygons | CVAT</title>
+<meta name="description" content=""><meta property="og:title" content="Annotation with polygons" />
+<meta property="og:description" content="Guide to creating and editing polygons." />
+<meta property="og:type" content="website" />
+<meta property="og:url" content="/docs/manual/advanced/annotation-with-polygons/" /><meta property="og:site_name" content="CVAT" />
+
+<meta itemprop="name" content="Annotation with polygons">
+<meta itemprop="description" content="Guide to creating and editing polygons."><meta name="twitter:card" content="summary"/>
+<meta name="twitter:title" content="Annotation with polygons"/>
+<meta name="twitter:description" content="Guide to creating and editing polygons."/>
+
+
+
+
+<link rel="preload" href="../../../../../scss/main.min.88ff73c089fd4eec8d7a4ab29bf6ecf09b91583115bd3f07d391066443331b78.css" as="style">
+<link href="../../../../../scss/main.min.88ff73c089fd4eec8d7a4ab29bf6ecf09b91583115bd3f07d391066443331b78.css" rel="stylesheet" integrity="">
+
+
+<script
+  src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"
+  integrity="sha256-9/aliU8dGd2tb6OSsuzixeV4y/faTqgFtohetphbbj0="
+  crossorigin="anonymous"></script>
+
+<script
+  src="https://unpkg.com/lunr@2.3.8/lunr.min.js"
+  integrity="sha384-vRQ9bDyE0Wnu+lMfm57BlYLO0/XauFuKpVsZPs7KEDwYKktWi5+Kz3MP8++DFlRY"
+  crossorigin="anonymous"></script>
+
+
+
+<link rel="stylesheet" href="../../../../../css/prism.css"/>
+
+
+
+
+
+
+  </head>
+  <body class="td-section">
+    <header>
+      
+
+
+<nav class="js-navbar-scroll navbar navbar-expand navbar-dark flex-column flex-md-row td-navbar">
+        <a class="navbar-brand" href="../../../../../about/">
+    <span class="navbar-logo"><svg width="98" height="27" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink"><defs><path d="M101 0v29l-52.544.001C44.326 35.511 35.598 40 25.5 40 11.417 40 0 31.27.0 20.5S11.417 1 25.5 1c4.542.0 8.807.908 12.5 2.5V0h63z" id="logoA"/></defs><g transform="translate(-2 -1)" fill="none" fill-rule="evenodd"><mask id="logoB" fill="#fff"><use xlink:href="#logoA"/></mask><path d="M48.142 1c4.736.0 6.879 3.234 6.879 5.904v2.068h-4.737V6.904c0-.79-.789-2.144-2.142-2.144-1.654.0-2.368 1.354-2.368 2.144v15.192c0 .79.714 2.144 2.368 2.144 1.353.0 2.142-1.354 2.142-2.144v-2.068h4.737v2.068c0 2.67-2.143 5.904-6.88 5.904C42.956 28 41 24.766 41 22.134V6.904C41 4.234 42.955 1 48.142 1zM19-6c9.389.0 17 7.611 17 17s-7.611 17-17 17S2 20.389 2 11 9.611-6 19-6zm42.256 7.338 3.345 19.48h.075l3.42-19.48h5l-6.052 26.324h-5L56.22 1.338h5.037zm20.706.0 5.413 26.324h-4.699l-.94-6.13h-4.548l-.902 6.13h-4.435l5.413-26.324h4.698zm18.038.0v3.723h-4.849v22.6h-4.699v-22.6h-4.81V1.338H1e2zM19 4a7 7 0 100 14 7 7 0 000-14zm60.557 4.295h-.113l-1.466 9.439h3.007l-1.428-9.439z" fill="#fff" fill-rule="nonzero" mask="url(#logoB)"/></g></svg></span>
+  </a>
+  <div class="td-navbar-nav-scroll ml-md-auto" id="main_navbar">
+    <ul class="navbar-nav mt-2 mt-lg-0">
+      
+      
+      <li class="nav-item mr-4 mb-2 mb-lg-0">
+        
+        
+        
+        
+        
+        
+        
+        
+        <a class="nav-link active" href="../../../../../docs/" ><span class="active">Documentation</span></a>
+      </li>
+      
+      <li class="nav-item mr-4 mb-2 mb-lg-0">
+        
+        
+        
+        
+        
+        
+        
+        
+        <a class="nav-link" href="../../../../../about/" ><span>About</span></a>
+      </li>
+      
+      <li class="nav-item mr-4 mb-2 mb-lg-0">
+        
+        
+        
+        
+        
+        
+        <a class="nav-link" href="https://app.cvat.ai"  ><span>Try it now</span></a>
+      </li>
+      
+      <li class="nav-item mr-4 mb-2 mb-lg-0">
+        
+        
+        
+        
+        
+        
+        <a class="nav-link" href="https://github.com/cvat-ai/cvat"  ><i class='fab fa-github'></i><span>GitHub</span></a>
+      </li>
+      
+      
+        
+        <li class="nav-item dropdown">
+          <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-target="#dropdown_ver" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+            v1.7.0
+          </a>
+        </li>
+        
+      
+      
+    </ul>
+  </div>
+  <div class="dropdown-menu" id="dropdown_ver" aria-labelledby="navbarDropdownMenuLink">
+    
+      
+        <a class="dropdown-item" href="../../../../../../docs/manual/advanced/annotation-with-polygons/">Latest version</a>
+    
+      
+        <a class="dropdown-item" href="../../../../../../v1.5.0/docs/manual/advanced/annotation-with-polygons/">v1.5.0</a>
+    
+      
+        <a class="dropdown-item" href="../../../../../../v1.6.0/docs/manual/advanced/annotation-with-polygons/">v1.6.0</a>
+    
+      
+        <a class="dropdown-item" href="../../../../../../v1.7.0/docs/manual/advanced/annotation-with-polygons/">v1.7.0</a>
+    
+      
+        <a class="dropdown-item" href="../../../../../../v2.0.0/docs/manual/advanced/annotation-with-polygons/">v2.0.0</a>
+    
+      
+        <a class="dropdown-item" href="../../../../../../v2.1.0/docs/manual/advanced/annotation-with-polygons/">v2.1.0</a>
+    
+      
+        <a class="dropdown-item" href="../../../../../../v2.10.3/docs/manual/advanced/annotation-with-polygons/">v2.10.3</a>
+    
+      
+        <a class="dropdown-item" href="../../../../../../v2.11.3/docs/manual/advanced/annotation-with-polygons/">v2.11.3</a>
+    
+      
+        <a class="dropdown-item" href="../../../../../../v2.12.1/docs/manual/advanced/annotation-with-polygons/">v2.12.1</a>
+    
+      
+        <a class="dropdown-item" href="../../../../../../v2.13.0/docs/manual/advanced/annotation-with-polygons/">v2.13.0</a>
+    
+      
+        <a class="dropdown-item" href="../../../../../../v2.14.4/docs/manual/advanced/annotation-with-polygons/">v2.14.4</a>
+    
+      
+        <a class="dropdown-item" href="../../../../../../v2.15.0/docs/manual/advanced/annotation-with-polygons/">v2.15.0</a>
+    
+      
+        <a class="dropdown-item" href="../../../../../../v2.16.2/docs/manual/advanced/annotation-with-polygons/">v2.16.2</a>
+    
+      
+        <a class="dropdown-item" href="../../../../../../v2.2.0/docs/manual/advanced/annotation-with-polygons/">v2.2.0</a>
+    
+      
+        <a class="dropdown-item" href="../../../../../../v2.3.0/docs/manual/advanced/annotation-with-polygons/">v2.3.0</a>
+    
+      
+        <a class="dropdown-item" href="../../../../../../v2.4.9/docs/manual/advanced/annotation-with-polygons/">v2.4.9</a>
+    
+      
+        <a class="dropdown-item" href="../../../../../../v2.5.2/docs/manual/advanced/annotation-with-polygons/">v2.5.2</a>
+    
+      
+        <a class="dropdown-item" href="../../../../../../v2.6.2/docs/manual/advanced/annotation-with-polygons/">v2.6.2</a>
+    
+      
+        <a class="dropdown-item" href="../../../../../../v2.7.6/docs/manual/advanced/annotation-with-polygons/">v2.7.6</a>
+    
+      
+        <a class="dropdown-item" href="../../../../../../v2.8.2/docs/manual/advanced/annotation-with-polygons/">v2.8.2</a>
+    
+      
+        <a class="dropdown-item" href="../../../../../../v2.9.2/docs/manual/advanced/annotation-with-polygons/">v2.9.2</a>
+    
+  </div>
+  <div class="navbar-nav d-none d-lg-block">
+
+
+
+<input
+  type="search"
+  class="form-control td-search-input"
+  placeholder="&#xf002; Search this site…"
+  aria-label="Search this site…"
+  autocomplete="off"
+  
+  data-offline-search-index-json-src="../../../../../offline-search-index.8b4fadae27ae58ca4ce4f3af162e85d8.json"
+  data-offline-search-base-href="../../../../../"
+  data-offline-search-max-results="10"
+>
+
+</div>
+</nav>
+
+    </header>
+    <div class="container-fluid td-outer">
+      <div class="td-main">
+        <div class="row flex-xl-nowrap">
+          <div class="col-12 col-md-3 col-xl-2 td-sidebar d-print-none">
+          </div>
+          <div class="d-none d-xl-block col-xl-2 td-toc d-print-none">
+          </div>
+          <main class="col-12 col-md-9 col-xl-8 pl-md-5" role="main">
+            
+
+
+
+
+<div class="td-content">
+<div class="pageinfo pageinfo-primary d-print-none">
+<p>
+This the multi-page printable view of this section.
+<a href="#" onclick="print();return false;">Click here to print</a>.
+</p><p>
+<a href="../../../../../docs/manual/advanced/annotation-with-polygons/">Return to the regular view of this page</a>.
+</p>
+</div>
+
+
+
+<h1 class="title">Annotation with polygons</h1>
+<div class="lead">Guide to creating and editing polygons.</div>
+
+
+
+
+    <ul>
+    
+  
+  
+  
+  
+
+  
+    
+    
+	
+<li>1: <a href="#pg-4d4bf5bacfbd5eb9dcef94a38c91930f">Manual drawing</a></li>
+
+
+    
+  
+    
+    
+	
+<li>2: <a href="#pg-49a42ac9fb14c261fcb4d6df121ec6b5">Drawing using automatic borders</a></li>
+
+
+    
+  
+    
+    
+	
+<li>3: <a href="#pg-f59490f3517703af487d1db1d573c2cf">Edit polygon</a></li>
+
+
+    
+  
+    
+    
+	
+<li>4: <a href="#pg-1f4fe1a1fe6fe79b065945412ca4d774">Track mode with polygons</a></li>
+
+
+    
+  
+    
+    
+	
+<li>5: <a href="#pg-c692762faa73de2bce0ebde15b8e137b">Creating masks</a></li>
+
+
+    
+  
+
+    </ul>
+
+
+<div class="content">
+      
+</div>
+</div>
+
+
+  
+  
+  
+  
+
+  
+  
+
+  
+    
+    
+	
+    
+
+<div class="td-content" style="">
+    
+	<h1 id="pg-4d4bf5bacfbd5eb9dcef94a38c91930f">1 - Manual drawing</h1>
+    
+	<p>It is used for semantic / instance segmentation.</p>
+<p>Before starting, you need to select <code>Polygon</code> on the controls sidebar and choose the correct Label.</p>
+<p><img src="../../../../../images/image084.jpg" alt=""></p>
+<ul>
+<li>Click <code>Shape</code> to enter drawing mode.
+There are two ways to draw a polygon: either create points by clicking or
+by dragging the mouse on the screen while holding <code>Shift</code>.</li>
+</ul>
+<table>
+<thead>
+<tr>
+<th>Clicking points</th>
+<th>Holding Shift+Dragging</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><img src="../../../../../images/gif005_detrac.gif" alt=""></td>
+<td><img src="../../../../../images/gif006_detrac.gif" alt=""></td>
+</tr>
+</tbody>
+</table>
+<ul>
+<li>When <code>Shift</code> isn&rsquo;t pressed, you can zoom in/out (when scrolling the mouse
+wheel) and move (when clicking the mouse wheel and moving the mouse), you can also
+delete the previous point by right-clicking on it.</li>
+<li>You can use the <code>Selected opacity</code> slider in the <code>Objects sidebar</code> to change the opacity of the polygon.
+You can read more in the <a href="../../../../../docs/manual/basics/objects-sidebar/#appearance">Objects sidebar</a> section.</li>
+<li>Press <code>N</code> again or click the <code>Done</code> button on the top panel for completing the shape.</li>
+<li>After creating the polygon, you can move the points or delete them by right-clicking and selecting <code>Delete point</code>
+or clicking with pressed <code>Alt</code> key in the context menu.</li>
+</ul>
+
+</div>
+
+
+
+    
+	
+  
+    
+    
+	
+    
+
+<div class="td-content" style="page-break-before: always">
+    
+	<h1 id="pg-49a42ac9fb14c261fcb4d6df121ec6b5">2 - Drawing using automatic borders</h1>
+    
+	<p><img src="../../../../../images/gif025_mapillary_vistas.gif" alt=""></p>
+<p>You can use auto borders when drawing a polygon. Using automatic borders allows you to automatically trace
+the outline of polygons existing in the annotation.</p>
+<ul>
+<li>
+<p>To do this, go to settings -&gt; workspace tab and enable <code>Automatic Bordering</code>
+or press <code>Ctrl</code> while drawing a polygon.</p>
+<p><img src="../../../../../images/image161.jpg" alt=""></p>
+</li>
+<li>
+<p>Start drawing / editing a polygon.</p>
+</li>
+<li>
+<p>Points of other shapes will be highlighted, which means that the polygon can be attached to them.</p>
+</li>
+<li>
+<p>Define the part of the polygon path that you want to repeat.</p>
+<p><img src="../../../../../images/image157_mapillary_vistas.jpg" alt=""></p>
+</li>
+<li>
+<p>Click on the first point of the contour part.</p>
+<p><img src="../../../../../images/image158_mapillary_vistas.jpg" alt=""></p>
+</li>
+<li>
+<p>Then click on any point located on part of the path. The selected point will be highlighted in purple.</p>
+<p><img src="../../../../../images/image159_mapillary_vistas.jpg" alt=""></p>
+</li>
+<li>
+<p>Click on the last point and the outline to this point will be built automatically.</p>
+<p><img src="../../../../../images/image160_mapillary_vistas.jpg" alt=""></p>
+</li>
+</ul>
+<p>Besides, you can set a fixed number of points in the <code>Number of points</code> field, then
+drawing will be stopped automatically. To enable dragging you should right-click
+inside the polygon and choose <code>Switch pinned property</code>.</p>
+<p>Below you can see results with opacity and black stroke:</p>
+<p><img src="../../../../../images/image064_mapillary_vistas.jpg" alt=""></p>
+<p>If you need to annotate small objects, increase <code>Image Quality</code> to
+<code>95</code> in <code>Create task</code> dialog for your convenience.</p>
+
+</div>
+
+
+
+    
+	
+  
+    
+    
+	
+    
+
+<div class="td-content" style="page-break-before: always">
+    
+	<h1 id="pg-f59490f3517703af487d1db1d573c2cf">3 - Edit polygon</h1>
+    
+	<p>To edit a polygon you have to click on it while holding <code>Shift</code>, it will open the polygon editor.</p>
+<ul>
+<li>
+<p>In the editor you can create new points or delete part of a polygon by closing the line on another point.</p>
+</li>
+<li>
+<p>When <code>Intelligent polygon cropping</code> option is activated in the settings,
+СVAT considers two criteria to decide which part of a polygon should be cut off during automatic editing.</p>
+<ul>
+<li>The first criteria is a number of cut points.</li>
+<li>The second criteria is a length of a cut curve.</li>
+</ul>
+<p>If both criteria recommend to cut the same part, algorithm works automatically,
+and if not, a user has to make the decision.
+If you want to choose manually which part of a polygon should be cut off,
+disable <code>Intelligent polygon cropping</code> in the settings.
+In this case after closing the polygon, you can select the part of the polygon you want to leave.</p>
+<p><img src="../../../../../images/image209.jpg" alt=""></p>
+</li>
+<li>
+<p>You can press <code>Esc</code> to cancel editing.</p>
+<p><img src="../../../../../images/gif007_mapillary_vistas.gif" alt=""></p>
+</li>
+</ul>
+
+</div>
+
+
+
+    
+	
+  
+    
+    
+	
+    
+
+<div class="td-content" style="page-break-before: always">
+    
+	<h1 id="pg-1f4fe1a1fe6fe79b065945412ca4d774">4 - Track mode with polygons</h1>
+    
+	<p>Polygons in the track mode allow you to mark moving objects more accurately other than using a rectangle
+(<a href="../../../../../docs/manual/basics/track-mode-basics/">Tracking mode (basic)</a>; <a href="../../../../../docs/manual/advanced/track-mode-advanced/">Tracking mode (advanced)</a>).</p>
+<ol>
+<li>
+<p>To create a polygon in the track mode, click the <code>Track</code> button.</p>
+<p><img src="../../../../../images/image184.jpg" alt=""></p>
+</li>
+<li>
+<p>Create a polygon the same way as in the case of <a href="../../../../../docs/manual/advanced/annotation-with-polygons/">Annotation with polygons</a>.
+Press <code>N</code> or click the <code>Done</code> button on the top panel to complete the polygon.</p>
+</li>
+<li>
+<p>Pay attention to the fact that the created polygon has a starting point and a direction,
+these elements are important for annotation of the following frames.</p>
+</li>
+<li>
+<p>After going a few frames forward press <code>Shift+N</code>, the old polygon will disappear and you can create a new polygon.
+The new starting point should match the starting point of the previously created polygon
+(in this example, the top of the left mirror). The direction must also match (in this example, clockwise).
+After creating the polygon, press <code>N</code> and the intermediate frames will be interpolated automatically.</p>
+<p><img src="../../../../../images/image185_detrac.jpg" alt=""></p>
+</li>
+<li>
+<p>If you need to change the starting point, right-click on the desired point and select <code>Set starting point</code>.
+To change the direction, right-click on the desired point and select switch orientation.</p>
+<p><img src="../../../../../images/image186_detrac.jpg" alt=""></p>
+</li>
+</ol>
+<p>There is no need to redraw the polygon every time using <code>Shift+N</code>,
+instead you can simply move the points or edit a part of the polygon by pressing <code>Shift+Click</code>.</p>
+
+</div>
+
+
+
+    
+	
+  
+    
+    
+	
+    
+
+<div class="td-content" style="page-break-before: always">
+    
+	<h1 id="pg-c692762faa73de2bce0ebde15b8e137b">5 - Creating masks</h1>
+    
+	<h3 id="cutting-holes-in-polygons">Cutting holes in polygons</h3>
+<p>Currently, CVAT does not support cutting transparent holes in polygons. However,
+it is poissble to generate holes in exported instance and class masks.
+To do this, one needs to define a background class in the task and draw holes
+with it as additional shapes above the shapes needed to have holes:</p>
+<p>The editor window:</p>
+<p><img src="../../../../../images/mask_export_example1_editor.png" alt="The editor"></p>
+<p>Remember to use z-axis ordering for shapes by [-] and [+, =] keys.</p>
+<p>Exported masks:</p>
+<p><img src="../../../../../images/mask_export_example1_cls_mask.png" alt="A class mask">  <img src="../../../../../images/mask_export_example1_inst_mask.png" alt="An instance mask"></p>
+<p>Notice that it is currently impossible to have a single instance number for
+internal shapes (they will be merged into the largest one and then covered by
+&ldquo;holes&rdquo;).</p>
+<h3 id="creating-masks">Creating masks</h3>
+<p>There are several formats in CVAT that can be used to export masks:</p>
+<ul>
+<li><code>Segmentation Mask</code> (PASCAL VOC masks)</li>
+<li><code>CamVid</code></li>
+<li><code>MOTS</code></li>
+<li><code>ICDAR</code></li>
+<li><code>COCO</code> (RLE-encoded instance masks, <a href="../../../../../docs/manual/advanced/formats/format-coco">guide</a>)</li>
+<li><code>TFRecord</code> (<a href="https://github.com/openvinotoolkit/datumaro/blob/develop/docs/user_manual.md">over Datumaro</a>, <a href="../../../../../docs/manual/advanced/formats/format-tfrecord">guide</a>):</li>
+<li><code>Datumaro</code></li>
+</ul>
+<p>An example of exported masks (in the <code>Segmentation Mask</code> format):</p>
+<p><img src="../../../../../images/exported_cls_masks_example.png" alt="A class mask"> <img src="../../../../../images/exported_inst_masks_example.png" alt="An instance mask"></p>
+<p>Important notices:</p>
+<ul>
+<li>Both boxes and polygons are converted into masks</li>
+<li>Grouped objects are considered as a single instance and exported as a single
+mask (label and attributes are taken from the largest object in the group)</li>
+</ul>
+<h4 id="class-colors">Class colors</h4>
+<p>All the labels have associated colors, which are used in the generated masks.
+These colors can be changed in the task label properties:</p>
+<p><img src="../../../../../images/label_color_picker.jpg" alt=""></p>
+<p>Label colors are also displayed in the annotation window on the right panel,
+where you can show or hide specific labels
+(only the presented labels are displayed):</p>
+<p><img src="../../../../../images/label_panel_anno_window.jpg" alt=""></p>
+<p>A background class can be:</p>
+<ul>
+<li>A default class, which is implicitly-added, of black color (RGB 0, 0, 0)</li>
+<li><code>background</code> class with any color (has a priority, name is case-insensitive)</li>
+<li>Any class of black color (RGB 0, 0, 0)</li>
+</ul>
+<p>To change background color in generated masks (default is black),
+change <code>background</code> class color to the desired one.</p>
+
+</div>
+
+
+
+    
+	
+  
+
+
+
+          </main>
+        </div>
+      </div>
+      
+<footer class="bg-dark py-5 row d-print-none">
+  <div class="container-fluid mx-sm-5">
+    <div class="row">
+      <div class="col-6 col-sm-2 text-xs-center order-sm-2">
+        
+        
+        
+<ul class="list-inline mb-0">
+  
+  <li class="list-inline-item mx-2 h3" data-toggle="tooltip" data-placement="top" title="Gitter public chat" aria-label="Gitter public chat">
+    <a class="text-white" rel="noopener noreferrer" href="https://gitter.im/opencv-cvat/public">
+      <i class="fab fa-gitter"></i>
+    </a>
+  </li>
+  
+  <li class="list-inline-item mx-2 h3" data-toggle="tooltip" data-placement="top" title="Stack Overflow" aria-label="Stack Overflow">
+    <a class="text-white" rel="noopener noreferrer" href="https://stackoverflow.com/search?q=%23cvat">
+      <i class="fab fa-stack-overflow"></i>
+    </a>
+  </li>
+  
+  <li class="list-inline-item mx-2 h3" data-toggle="tooltip" data-placement="top" title="YouTube" aria-label="YouTube">
+    <a class="text-white" rel="noopener noreferrer" href="https://www.youtube.com/@cvat-ai">
+      <i class="fab fa-youtube"></i>
+    </a>
+  </li>
+  
+</ul>
+
+        
+        
+      </div>
+      <div class="col-6 col-sm-2 text-right text-xs-center order-sm-3">
+        
+        
+        
+<ul class="list-inline mb-0">
+  
+  <li class="list-inline-item mx-2 h3" data-toggle="tooltip" data-placement="top" title="GitHub" aria-label="GitHub">
+    <a class="text-white" rel="noopener noreferrer" href="https://github.com/cvat-ai/cvat">
+      <i class="fab fa-github"></i>
+    </a>
+  </li>
+  
+  <li class="list-inline-item mx-2 h3" data-toggle="tooltip" data-placement="top" title="Gitter developers chat" aria-label="Gitter developers chat">
+    <a class="text-white" rel="noopener noreferrer" href="https://gitter.im/opencv-cvat/dev">
+      <i class="fab fa-gitter"></i>
+    </a>
+  </li>
+  
+  <li class="list-inline-item mx-2 h3" data-toggle="tooltip" data-placement="top" title="Discord chat" aria-label="Discord chat">
+    <a class="text-white" rel="noopener noreferrer" href="https://discord.gg/fNR3eXfk6C">
+      <i class="fab fa-discord"></i>
+    </a>
+  </li>
+  
+</ul>
+
+        
+        
+      </div>
+      <div class="col-12 col-sm-8 text-center order-sm-2">
+        
+        |
+        
+        |
+        
+        <br/>
+        <div class="footer-disclaimer text-white ">
+          <small>Intel technologies may require enabled hardware, software or service activation. // No product or component can be absolutely secure. // Your costs and results may vary. // Performance varies by use, configuration and other factors. // See our complete legal <u><a href="https://edc.intel.com/content/www/us/en/products/performance/benchmarks/overview/?r=219444055">Notices and Disclaimers</a></u>. // Intel is committed to respecting human rights and avoiding complicity in human rights abuses. See Intel’s <a href="https://www.intel.com/content/www/us/en/policy/policy-human-rights.html"><u>Global Human Rights Principles</u></a>. Intel’s products and software are intended only to be used in applications that do not cause or contribute to a violation of an internationally recognized human right.</small>
+      </div>
+  
+    <p class="mt-2"><a href="../../../../../about/">About</a></p>
+  
+      </div>
+    </div>
+  </div>
+</footer>
+
+
+    </div>
+    <script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.1/dist/umd/popper.min.js" integrity="sha384-9/reFTGAW83EW2RDu2S0VKaIzap3H66lZH81PoYlFhbGU+6BZp6G7niu735Sk7lN" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@4.6.0/dist/js/bootstrap.min.js" integrity="sha384-+YQ4JLhjyBLPDQt//I+STsc9iw4uQqACwlvpslubQzn4u2UU2UFM80nGisd026JF" crossorigin="anonymous"></script>
+
+
+
+
+
+
+ 
+
+
+
+
+
+
+
+
+
+
+
+
+
+<script src="../../../../../js/main.min.3b172c13b62c2bea8b1c9d2599cddc8cf89718a92d792c680871c81ba43d8c85.js" integrity="sha256-OxcsE7YsK&#43;qLHJ0lmc3cjPiXGKkteSxoCHHIG6Q9jIU=" crossorigin="anonymous"></script>
+
+
+
+<script src='../../../../../js/prism.js'></script>
+
+
+
+  </body>
+</html>

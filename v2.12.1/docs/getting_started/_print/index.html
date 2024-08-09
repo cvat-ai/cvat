@@ -1,0 +1,871 @@
+<!doctype html>
+<html itemscope itemtype="http://schema.org/WebPage" lang="en" class="no-js">
+  <head>
+    <meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+<meta name="generator" content="Hugo 0.110.0">
+<link rel="canonical" type="text/html" href="../../../docs/getting_started/">
+<meta name="robots" content="noindex, nofollow">
+
+
+<link rel="shortcut icon" href="../../../favicons/favicon.ico" >
+<link rel="apple-touch-icon" href="../../../favicons/apple-touch-icon-180x180.png" sizes="180x180">
+<link rel="icon" type="image/png" href="../../../favicons/favicon-16x16.png" sizes="16x16">
+<link rel="icon" type="image/png" href="../../../favicons/favicon-32x32.png" sizes="32x32">
+<link rel="icon" type="image/png" href="../../../favicons/android-36x36.png" sizes="36x36">
+<link rel="icon" type="image/png" href="../../../favicons/android-48x48.png" sizes="48x48">
+<link rel="icon" type="image/png" href="../../../favicons/android-72x72.png" sizes="72x72">
+<link rel="icon" type="image/png" href="../../../favicons/android-96x96.png" sizes="96x96">
+<link rel="icon" type="image/png" href="../../../favicons/android-144x144.png" sizes="144x144">
+<link rel="icon" type="image/png" href="../../../favicons/android-192x192.png" sizes="192x192">
+
+<title>Getting started | CVAT</title>
+<meta name="description" content="">
+<meta property="og:title" content="Getting started" />
+<meta property="og:description" content="" />
+<meta property="og:type" content="website" />
+<meta property="og:url" content="/docs/getting_started/" /><meta property="og:site_name" content="CVAT" />
+<meta itemprop="name" content="Getting started">
+<meta itemprop="description" content=""><meta name="twitter:card" content="summary"/>
+<meta name="twitter:title" content="Getting started"/>
+<meta name="twitter:description" content=""/>
+
+
+
+
+<link rel="preload" href="../../../scss/main.min.5176d9fef59ea153ab767b7b61a90b35fb24ef3fb7aef25530f05dcb464a2db0.css" as="style">
+<link href="../../../scss/main.min.5176d9fef59ea153ab767b7b61a90b35fb24ef3fb7aef25530f05dcb464a2db0.css" rel="stylesheet" integrity="">
+
+<script
+  src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.3/jquery.min.js"
+  integrity="sha512-STof4xm1wgkfm7heWqFJVn58Hm3EtS31XFaagaa8VMReCXAkQnJZ+jEy8PCC/iT18dFy95WcExNHFTqLyp72eQ=="
+  crossorigin="anonymous"></script>
+<script defer
+  src="https://unpkg.com/lunr@2.3.9/lunr.min.js"
+  integrity="sha384-203J0SNzyqHby3iU6hzvzltrWi/M41wOP5Gu+BiJMz5nwKykbkUx8Kp7iti0Lpli"
+  crossorigin="anonymous"></script>
+<link rel="stylesheet" href="../../../css/prism.css"/>
+
+  </head>
+  <body class="td-section">
+    <header>
+      <nav class="td-navbar navbar-dark js-navbar-scroll">
+<div class="container-fluid flex-column flex-md-row">
+  <a class="navbar-brand" href="../../../about/"><span class="navbar-brand__logo navbar-logo"><svg width="80" height="15" viewBox="0 0 80 15" xmlns="http://www.w3.org/2000/svg"><path d="M6.63399 15C2.37083 15 0 12.5333.0 7.48889.0 2.46667 2.34908.0 6.63399.0H10.6576V2.62222H6.63399c-2.84935.0-4.0674 1.44445-4.0674 4.86667.0 3.44441 1.2398 4.88891 4.0674 4.88891H15.0638V15H6.63399z"/><path d="M22.412.0l4.8346 13.1004C27.7814 14.5415 28.8724 15 30.2842 15 31.7817 15 32.7657 14.476 33.3005 13.1004L38.3918.0H35.5895L30.9902 11.8559C30.8404 12.2052 30.6265 12.3581 30.2842 12.3581 29.942 12.3581 29.7067 12.2052 29.5783 11.8559L25.1929.0H22.412z"/><path d="M53.0989 3.1441C53.2487 2.79476 53.484 2.64192 53.8262 2.64192 54.1685 2.64192 54.4038 2.79476 54.5322 3.1441L58.9176 15h2.8023L56.8425 1.89956C56.3291.524017 55.3451.0 53.8476.0 52.3288.0 51.3448.524017 50.81 1.89956L45.74 15h2.781L53.0989 3.1441z"/><path d="M69.0681.0V2.5665H73.2661V15H75.802V2.5665H80V0H69.0681z"/></svg></span></a>
+  <div class="td-navbar-nav-scroll ms-md-auto" style="height: auto;" id="main_navbar">
+    <ul class="navbar-nav d-flex flex-wrap" style="padding-bottom: 0;">
+      <li class="nav-item">
+        <a class="nav-link active" href="../../../docs/"><span>Documentation</span></a>
+      </li>
+      <li class="nav-item">
+        <a class="nav-link" href="../../../about/"><span>About</span></a>
+      </li>
+      <li class="nav-item">
+        <a class="nav-link" href="https://app.cvat.ai" rel="noopener"><span>Try it now</span></a>
+      </li>
+      <li class="nav-item">
+        <a class="nav-link" href="https://github.com/cvat-ai/cvat" rel="noopener"><i class='fab fa-github'></i><span>GitHub</span></a>
+      </li>
+      <li class="nav-item dropdown d-none d-lg-block">
+        <div class="dropdown">
+  <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">v2.12.1</a>
+  <ul class="dropdown-menu">
+    <li><a class="dropdown-item" href="../../../../">Latest version</a></li>
+    <li><a class="dropdown-item" href="../../../../v1.5.0">v1.5.0</a></li>
+    <li><a class="dropdown-item" href="../../../../v1.6.0">v1.6.0</a></li>
+    <li><a class="dropdown-item" href="../../../../v1.7.0">v1.7.0</a></li>
+    <li><a class="dropdown-item" href="../../../../v2.0.0">v2.0.0</a></li>
+    <li><a class="dropdown-item" href="../../../../v2.1.0">v2.1.0</a></li>
+    <li><a class="dropdown-item" href="../../../../v2.10.3">v2.10.3</a></li>
+    <li><a class="dropdown-item" href="../../../../v2.11.3">v2.11.3</a></li>
+    <li><a class="dropdown-item" href="../../../../v2.12.1">v2.12.1</a></li>
+    <li><a class="dropdown-item" href="../../../../v2.13.0">v2.13.0</a></li>
+    <li><a class="dropdown-item" href="../../../../v2.14.4">v2.14.4</a></li>
+    <li><a class="dropdown-item" href="../../../../v2.15.0">v2.15.0</a></li>
+    <li><a class="dropdown-item" href="../../../../v2.16.2">v2.16.2</a></li>
+    <li><a class="dropdown-item" href="../../../../v2.2.0">v2.2.0</a></li>
+    <li><a class="dropdown-item" href="../../../../v2.3.0">v2.3.0</a></li>
+    <li><a class="dropdown-item" href="../../../../v2.4.9">v2.4.9</a></li>
+    <li><a class="dropdown-item" href="../../../../v2.5.2">v2.5.2</a></li>
+    <li><a class="dropdown-item" href="../../../../v2.6.2">v2.6.2</a></li>
+    <li><a class="dropdown-item" href="../../../../v2.7.6">v2.7.6</a></li>
+    <li><a class="dropdown-item" href="../../../../v2.8.2">v2.8.2</a></li>
+    <li><a class="dropdown-item" href="../../../../v2.9.2">v2.9.2</a></li>
+    </ul>
+</div></li>
+      </ul>
+  </div>
+  <div class="d-none d-lg-block">
+    <div class="td-search td-search--offline">
+  <div class="td-search__icon"></div>
+  <input
+    type="search"
+    class="td-search__input form-control"
+    placeholder="Search this site…"
+    aria-label="Search this site…"
+    autocomplete="off"
+    
+    data-offline-search-index-json-src="../../../offline-search-index.40b1fa2fd080c1724c53dbd9cbd3ce82.json"
+    data-offline-search-base-href="../../../"
+    data-offline-search-max-results="10"
+  >
+</div>
+
+  </div>
+</div>
+</nav>
+    </header>
+    <div class="container-fluid td-outer">
+      <div class="td-main">
+        <div class="row flex-xl-nowrap">
+          <main class="col-12 col-md-9 col-xl-8 ps-md-5" role="main">
+            
+
+
+
+
+<div class="td-content">
+<div class="pageinfo pageinfo-primary d-print-none">
+<p>
+This is the multi-page printable view of this section.
+<a href="#" onclick="print();return false;">Click here to print</a>.
+</p><p>
+<a href="../../../docs/getting_started/">Return to the regular view of this page</a>.
+</p>
+</div>
+
+
+
+<h1 class="title">Getting started</h1>
+
+
+
+
+
+    <ul>
+    
+  
+  
+  
+  
+
+  
+    
+    
+	
+<li>1: <a href="#pg-fcee10706b7cc3dd20b293a6eb21661b">CVAT Overview</a></li>
+
+
+    
+  
+    
+    
+	
+<li>2: <a href="#pg-512f0f621f82c44a200b92dbb8feadf5">CVAT Complete Workflow Guide for Organizations</a></li>
+
+
+    
+  
+    
+    
+	
+<li>3: <a href="#pg-cf275990b8deae46b790cb94e549d160">Introduction to CVAT and Datumaro</a></li>
+
+
+    
+  
+
+    </ul>
+
+
+<div class="content">
+      
+</div>
+</div>
+
+
+  
+  
+  
+  
+
+  
+  
+
+  
+    
+    
+	
+    
+
+<div class="td-content" style="">
+    
+	<h1 id="pg-fcee10706b7cc3dd20b293a6eb21661b">1 - CVAT Overview</h1>
+    <div class="lead">The open-source tool for image and video annotation</div>
+	<p>Machine learning systems often struggle due to poor-quality data. Without effective tools,
+improving a model can be tough and inefficient.</p>
+<p><a href="https://www.cvat.ai/"><strong>CVAT.ai</strong></a> <strong>is a</strong> versatile <strong>tool</strong> for
+<strong>annotating images and videos</strong>, serving the computer
+vision community worldwide.</p>
+<p>Our goal is to help developers, businesses,
+and organizations globally by using a Data-centric AI approach.</p>
+<p>CVAT offers three versions:</p>
+<ul>
+<li>
+<p><a href="https://app.cvat.ai/"><strong>CVAT Cloud</strong></a>: Start online with CVAT,
+<strong>available for free</strong>. You can also choose a <a href="https://www.cvat.ai/pricing/cloud"><strong>subscription</strong></a>
+for <strong>unlimited data</strong>, <strong>collaboration</strong>, <strong>auto-annotations</strong>, and <a href="https://www.cvat.ai/post/cvat-ai-pricing-plans-choosing-the-right-plan-for-your-needs"><strong>more</strong></a>.</p>
+</li>
+<li>
+<p><strong>Self-hosted CVAT Community Edition</strong>: Follow the
+<a href="../../../docs/administration/basics/installation/"><strong>Self-hosted Installation Guide</strong></a>
+for setup.</p>
+</li>
+<li>
+<p><strong>Self-hosted CVAT Enterprise Edition</strong>: We provide <a href="https://www.cvat.ai/pricing/on-prem"><strong>Enterprise-level support</strong></a>
+for this version, <strong>including premium features</strong> like <strong>SSO</strong>, <strong>LDAP</strong>, advanced integrations with
+<a href="https://www.cvat.ai/post/integrating-hugging-face-and-roboflow-models"><strong>Roboflow and HuggingFace</strong></a>,
+and <strong>advanced analytics</strong>. We also offer <strong>professional training</strong> and <strong>24-hour SLA support</strong>.</p>
+</li>
+</ul>
+<p>See:</p>
+<ul>
+<li><a href="#tools-and-formats">Tools and formats</a>
+<ul>
+<li><a href="#supported-formats">Supported formats</a></li>
+<li><a href="#annotation-tools">Annotation tools</a></li>
+</ul>
+</li>
+<li><a href="#automated-labeling">Automated labeling</a></li>
+<li><a href="#useful-links">Useful links</a>
+<ul>
+<li><a href="#cloud">Cloud</a></li>
+<li><a href="#self-hosted">Self-Hosted</a></li>
+</ul>
+</li>
+<li><a href="#integrations">Integrations</a></li>
+<li><a href="#license-information">License Information</a></li>
+<li><a href="#get-in-touch">Get in touch</a></li>
+</ul>
+<h2 id="tools-and-formats">Tools and formats</h2>
+<p>CVAT stands as a comprehensive tool for image and video annotation,
+essential for various computer vision tasks.</p>
+<p>It emphasizes user-friendliness, adaptability, and compatibility with
+a range of formats and tools.</p>
+<h3 id="supported-formats">Supported formats</h3>
+<p>CVAT&rsquo;s supports the following formats:</p>
+<ul>
+<li><strong>For 3D</strong>: <code>.pcd</code>, <code>.bin</code></li>
+<li><strong>For image</strong>: everything supported by the Python
+<a href="https://pillow.readthedocs.io/en/stable/handbook/image-file-formats.html"><strong>Pillow library</strong></a>,
+including formats like <code>JPEG</code>, <code>PNG</code>, <code>BMP</code>, <code>GIF</code>, <code>PPM</code>and <code>TIFF</code>.</li>
+<li><strong>For video</strong>: all formats, supported by ffmpeg, including <code>MP4</code>, <code>AVI</code>, and <code>MOV</code>.</li>
+</ul>
+<p>For annotation export and import formats, see
+<a href="../../../docs/manual/advanced/formats/"><strong>Export annotations and data from CVAT</strong></a></p>
+<h3 id="annotation-tools">Annotation tools</h3>
+<p>CVAT offers a wide range of annotation tools, each catering to different aspects of
+image and video labeling:</p>
+<!--lint disable maximum-line-length-->
+<table>
+<thead>
+<tr>
+<th>Annotation Tool</th>
+<th>Use Cases</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><a href="../../../docs/manual/advanced/3d-object-annotation-advanced/"><strong>3D Object Annotation</strong></a></td>
+<td>Ideal for projects that require depth perception and volume estimation, like autonomous vehicle training.</td>
+</tr>
+<tr>
+<td><a href="../../../docs/manual/advanced/attribute-annotation-mode-advanced/"><strong>Attribute Annotation Mode</strong></a></td>
+<td>Useful for adding detailed information to objects, like color, size, or other specific characteristics.</td>
+</tr>
+<tr>
+<td><a href="../../../docs/manual/advanced/annotation-with-rectangles/"><strong>Annotation with Rectangles</strong></a></td>
+<td>Best for simple object detection where objects have a box-like shape, such as detecting windows in a building.</td>
+</tr>
+<tr>
+<td><a href="../../../docs/manual/advanced/annotation-with-polygons/"><strong>Annotation with Polygons</strong></a></td>
+<td>Suited for complex shapes in images, like outlining geographical features in maps or detailed product shapes.</td>
+</tr>
+<tr>
+<td><a href="../../../docs/manual/advanced/annotation-with-polylines/"><strong>Annotation with Polylines</strong></a></td>
+<td>Great for annotating linear objects like roads, pathways, or limbs in pose estimation.</td>
+</tr>
+<tr>
+<td><a href="../../../docs/manual/advanced/annotation-with-ellipses/"><strong>Annotation with Ellipses</strong></a></td>
+<td>Ideal for objects like plates, balls, or eyes, where a circular or oval annotation is needed.</td>
+</tr>
+<tr>
+<td><a href="../../../docs/manual/advanced/annotation-with-cuboids/"><strong>Annotation with Cuboids</strong></a></td>
+<td>Useful for 3D objects in 2D images, like boxes or furniture in room layouts.</td>
+</tr>
+<tr>
+<td><a href="../../../docs/manual/advanced/skeletons/"><strong>Annotation with Skeletons</strong></a></td>
+<td>Ideal for human pose estimation, animation, and movement analysis in sports or medical fields.</td>
+</tr>
+<tr>
+<td><a href="../../../docs/manual/advanced/annotation-with-brush-tool/"><strong>Annotation with Brush Tool</strong></a></td>
+<td>Perfect for intricate and detailed annotations where precision is key, such as in medical imaging.</td>
+</tr>
+<tr>
+<td><a href="../../../docs/manual/advanced/annotation-with-tags/"><strong>Annotation with Tags</strong></a></td>
+<td>Useful for image and video classification tasks, like identifying scenes or themes in a dataset.</td>
+</tr>
+</tbody>
+</table>
+<!--lint enable maximum-line-length-->
+<p>These tools make CVAT a versatile platform for a range of annotation
+needs, from basic labeling to complex, multidimensional
+tasks in advanced computer vision projects.</p>
+<h2 id="automated-labeling">Automated labeling</h2>
+<p>CVAT has an automated labeling features, enhancing the annotation process significantly,
+potentially speeding it up by up to 10 times.</p>
+<blockquote>
+<p><strong>Note:</strong>
+For more information,
+see <a href="../../../docs/manual/advanced/ai-tools/"><strong>OpenCV and AI Tools</strong></a></p>
+</blockquote>
+<p>Below is a detailed table of the supported algorithms and the platforms they operate on:</p>
+<!--lint disable maximum-line-length-->
+<table>
+<thead>
+<tr>
+<th>Algorithm Name</th>
+<th>Category</th>
+<th>Framework</th>
+<th>CPU Support</th>
+<th>GPU Support</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><a href="https://github.com/cvat-ai/cvat/tree/develop/serverless/pytorch/facebookresearch/sam/nuclio">Segment Anything</a></td>
+<td>Interactor</td>
+<td>PyTorch</td>
+<td>✔️</td>
+<td>✔️</td>
+</tr>
+<tr>
+<td><a href="https://github.com/cvat-ai/cvat/tree/develop/serverless/openvino/dextr/nuclio">Deep Extreme Cut</a></td>
+<td>Interactor</td>
+<td>OpenVINO</td>
+<td>✔️</td>
+<td></td>
+</tr>
+<tr>
+<td><a href="https://github.com/cvat-ai/cvat/tree/develop/serverless/openvino/omz/public/faster_rcnn_inception_resnet_v2_atrous_coco/nuclio">Faster RCNN</a></td>
+<td>Detector</td>
+<td>OpenVINO</td>
+<td>✔️</td>
+<td></td>
+</tr>
+<tr>
+<td><a href="https://github.com/cvat-ai/cvat/tree/develop/serverless/openvino/omz/public/mask_rcnn_inception_resnet_v2_atrous_coco/nuclio">Mask RCNN</a></td>
+<td>Detector</td>
+<td>OpenVINO</td>
+<td>✔️</td>
+<td></td>
+</tr>
+<tr>
+<td><a href="https://github.com/cvat-ai/cvat/tree/develop/serverless/openvino/omz/public/yolo-v3-tf/nuclio">YOLO v3</a></td>
+<td>Detector</td>
+<td>OpenVINO</td>
+<td>✔️</td>
+<td></td>
+</tr>
+<tr>
+<td><a href="https://github.com/cvat-ai/cvat/tree/develop/serverless/onnx/WongKinYiu/yolov7/nuclio">YOLO v7</a></td>
+<td>Detector</td>
+<td>ONNX</td>
+<td>✔️</td>
+<td>✔️</td>
+</tr>
+<tr>
+<td><a href="https://github.com/cvat-ai/cvat/tree/develop/serverless/openvino/omz/intel/person-reidentification-retail-0277/nuclio">Object Reidentification</a></td>
+<td>ReID</td>
+<td>OpenVINO</td>
+<td>✔️</td>
+<td></td>
+</tr>
+<tr>
+<td><a href="https://github.com/cvat-ai/cvat/tree/develop/serverless/openvino/omz/intel/semantic-segmentation-adas-0001/nuclio">Semantic Segmentation for ADAS</a></td>
+<td>Detector</td>
+<td>OpenVINO</td>
+<td>✔️</td>
+<td></td>
+</tr>
+<tr>
+<td><a href="https://github.com/cvat-ai/cvat/tree/develop/serverless/openvino/omz/intel/text-detection-0004/nuclio">Text Detection v4</a></td>
+<td>Detector</td>
+<td>OpenVINO</td>
+<td>✔️</td>
+<td></td>
+</tr>
+<tr>
+<td><a href="https://github.com/cvat-ai/cvat/tree/develop/serverless/pytorch/foolwood/siammask/nuclio">SiamMask</a></td>
+<td>Tracker</td>
+<td>PyTorch</td>
+<td>✔️</td>
+<td>✔️</td>
+</tr>
+<tr>
+<td><a href="https://github.com/cvat-ai/cvat/tree/develop/serverless/pytorch/dschoerk/transt/nuclio">TransT</a></td>
+<td>Tracker</td>
+<td>PyTorch</td>
+<td>✔️</td>
+<td>✔️</td>
+</tr>
+<tr>
+<td><a href="https://github.com/cvat-ai/cvat/tree/develop/serverless/pytorch/saic-vul/fbrs/nuclio">f-BRS</a></td>
+<td>Interactor</td>
+<td>PyTorch</td>
+<td>✔️</td>
+<td></td>
+</tr>
+<tr>
+<td><a href="https://github.com/cvat-ai/cvat/tree/develop/serverless/pytorch/saic-vul/hrnet/nuclio">HRNet</a></td>
+<td>Interactor</td>
+<td>PyTorch</td>
+<td></td>
+<td>✔️</td>
+</tr>
+<tr>
+<td><a href="https://github.com/cvat-ai/cvat/tree/develop/serverless/pytorch/shiyinzhang/iog/nuclio">Inside-Outside Guidance</a></td>
+<td>Interactor</td>
+<td>PyTorch</td>
+<td>✔️</td>
+<td></td>
+</tr>
+<tr>
+<td><a href="https://github.com/cvat-ai/cvat/tree/develop/serverless/tensorflow/faster_rcnn_inception_v2_coco/nuclio">Faster RCNN</a></td>
+<td>Detector</td>
+<td>TensorFlow</td>
+<td>✔️</td>
+<td>✔️</td>
+</tr>
+<tr>
+<td><a href="https://github.com/cvat-ai/cvat/tree/develop/serverless/tensorflow/matterport/mask_rcnn/nuclio">Mask RCNN</a></td>
+<td>Detector</td>
+<td>TensorFlow</td>
+<td>✔️</td>
+<td>✔️</td>
+</tr>
+<tr>
+<td><a href="https://github.com/cvat-ai/cvat/tree/develop/serverless/pytorch/facebookresearch/detectron2/retinanet_r101/nuclio">RetinaNet</a></td>
+<td>Detector</td>
+<td>PyTorch</td>
+<td>✔️</td>
+<td>✔️</td>
+</tr>
+<tr>
+<td><a href="https://github.com/cvat-ai/cvat/tree/develop/serverless/openvino/omz/intel/face-detection-0205/nuclio">Face Detection</a></td>
+<td>Detector</td>
+<td>OpenVINO</td>
+<td>✔️</td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<!--lint enable maximum-line-length-->
+<h2 id="useful-links">Useful links</h2>
+<p>Start here if you&rsquo;re unsure where to begin with CVAT.</p>
+<!--lint disable maximum-line-length-->
+<h3 id="cloud">Cloud</h3>
+<table>
+<thead>
+<tr>
+<th>Name</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><a href="../../../docs/manual/"><strong>User Manual</strong></a></td>
+<td>This comprehensive guide covers all CVAT tools available for work. It includes descriptions of all available tools, quality control methods, and procedures for importing and exporting data. This manual is relevant for both CVAT Cloud and Self-Hosted versions.</td>
+</tr>
+<tr>
+<td><a href="../../../docs/getting_started/workflow-org/"><strong>CVAT Complete Workflow Guide for Organizations</strong></a></td>
+<td>This guide provides a comprehensive overview of using CVAT for collaboration in organizations.</td>
+</tr>
+<tr>
+<td><a href="../../../docs/enterprise/subscription-managment/"><strong>Subscription Management</strong></a></td>
+<td>Learn how to <a href="https://www.cvat.ai/post/cvat-ai-pricing-plans-choosing-the-right-plan-for-your-needs"><strong>choose a plan</strong></a>, subscribe, and manage your subscription effectively.</td>
+</tr>
+<tr>
+<td><a href="../../../docs/manual/advanced/xml_format/"><strong>XML Annotation Format</strong></a></td>
+<td>Detailed documentation on the XML format used for annotations in CVAT essential for understanding data structure and compatibility.</td>
+</tr>
+</tbody>
+</table>
+<h3 id="self-hosted">Self-Hosted</h3>
+<table>
+<thead>
+<tr>
+<th>Name</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><a href="../../../docs/administration/basics/installation/"><strong>Self-hosted Installation Guide</strong></a></td>
+<td>Start here to install self-hosted solution on your premises.</td>
+</tr>
+<tr>
+<td><a href="https://github.com/cvat-ai/datumaro/blob/develop/README.md"><strong>Dataset Management Framework</strong></a></td>
+<td>Specifically for the Self-Hosted version, this framework and CLI tool are essential for building, transforming, and analyzing datasets.</td>
+</tr>
+<tr>
+<td><a href="../../../docs/api_sdk/api/"><strong>Server API</strong></a></td>
+<td>The CVAT server offers a HTTP REST API for interactions. This section explains how client applications, whether they are command line tools, browsers, or scripts, interact with CVAT through HTTP requests and responses.</td>
+</tr>
+<tr>
+<td><a href="../../../docs/api_sdk/sdk/"><strong>Python SDK</strong></a></td>
+<td>The CVAT SDK is a Python library providing access to server interactions and additional functionalities like data validation and serialization.</td>
+</tr>
+<tr>
+<td><a href="../../../docs/api_sdk/cli/"><strong>Command Line Tool</strong></a></td>
+<td>This tool offers a straightforward command line interface for managing CVAT tasks. Currently featuring basic functionalities, it has the potential to develop into a more advanced administration tool for CVAT.</td>
+</tr>
+<tr>
+<td><a href="../../../docs/manual/advanced/xml_format/"><strong>XML Annotation Format</strong></a></td>
+<td>Detailed documentation on the XML format used for annotations in CVAT essential for understanding data structure and compatibility.</td>
+</tr>
+<tr>
+<td><a href="../../../docs/administration/basics/aws-deployment-guide/"><strong>AWS Deployment Guide</strong></a></td>
+<td>A step-by-step guide for deploying CVAT on Amazon Web Services, covering all necessary procedures and tips.</td>
+</tr>
+<tr>
+<td><a href="../../../docs/faq/"><strong>Frequently Asked Questions</strong></a></td>
+<td>This section addresses common queries and provides helpful answers and insights about using CVAT.</td>
+</tr>
+</tbody>
+</table>
+<!--lint enable maximum-line-length-->
+<h2 id="integrations">Integrations</h2>
+<p>CVAT is a global tool, trusted and utilized by teams worldwide.
+Below is a list of key companies that contribute significantly to our
+product support or are an integral part of our ecosystem.</p>
+<blockquote>
+<p><strong>Note:</strong> If you&rsquo;re using CVAT, we&rsquo;d love to
+hear from you at <a href="mailto:contact+github@cvat.ai">contact@cvat.ai</a>.</p>
+</blockquote>
+<!--lint disable maximum-line-length-->
+<table>
+<thead>
+<tr>
+<th>Integrated Service</th>
+<th>Available In</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><a href="https://hmt.ai"><strong>Human Protocol</strong></a></td>
+<td>Cloud and Self-hosted</td>
+<td>Incorporates CVAT to augment annotation services within the Human Protocol framework, enhancing its capabilities in data labeling.</td>
+</tr>
+<tr>
+<td><a href="https://fiftyone.ai"><strong>FiftyOne</strong></a></td>
+<td>Cloud and Self-hosted</td>
+<td>An open-source tool for dataset management and model analysis in computer vision, FiftyOne is <a href="https://voxel51.com/docs/fiftyone/integrations/cvat.html">closely integrated</a> with CVAT to enhance annotation capabilities and label refinement.</td>
+</tr>
+<tr>
+<td><a href="https://huggingface.co/"><strong>Hugging Face</strong></a> &amp; <a href="https://roboflow.com/"><strong>Roboflow</strong></a></td>
+<td>Cloud</td>
+<td>In CVAT Cloud, models from Hugging Face and Roboflow can be added to enhance computer vision tasks. For more information, see <a href="https://www.cvat.ai/post/integrating-hugging-face-and-roboflow-models"><strong>Integration with Hugging Face and Roboflow</strong></a></td>
+</tr>
+</tbody>
+</table>
+<!--lint enable maximum-line-length-->
+<h2 id="license-information">License Information</h2>
+<p>CVAT includes the following licenses:</p>
+<!--lint disable maximum-line-length-->
+<table>
+<thead>
+<tr>
+<th>License Type</th>
+<th>Applicable To</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><a href="https://opensource.org/licenses/MIT"><strong>MIT License</strong></a></td>
+<td>Self-hosted</td>
+<td>This code is distributed under the MIT License, a permissive free software license that allows for broad use, modification, and distribution.</td>
+</tr>
+<tr>
+<td><a href="https://www.ffmpeg.org"><strong>LGPL License (FFmpeg)</strong></a></td>
+<td>Cloud and Self-hosted</td>
+<td>Incorporates LGPL-licensed components from the FFmpeg project. Users should verify if their use of FFmpeg requires additional licenses. CVAT.ai Corporation does not provide these licenses and is not liable for any related licensing fees.</td>
+</tr>
+<tr>
+<td><strong>Commercial License</strong></td>
+<td>Self-hosted Enterprise</td>
+<td>For commercial use of the Enterprise solution of CVAT, a separate commercial license is applicable. This is tailored for businesses and commercial entities.</td>
+</tr>
+<tr>
+<td><a href="https://www.cvat.ai/terms-of-use"><strong>Terms of Use</strong></a></td>
+<td>Cloud and Self-hosted</td>
+<td>Outlines the terms of use and confidential information handling for CVAT. Important for understanding the legal framework of using the platform.</td>
+</tr>
+<tr>
+<td><a href="https://www.cvat.ai/privacy"><strong>Privacy Policy</strong></a></td>
+<td>Cloud</td>
+<td>Our Privacy Policy governs your visit to <a href="https://cvat.ai">https://cvat.ai</a> and your use of <a href="https://app.cvat.ai">https://app.cvat.ai</a>, and explains how we collect, safeguard and disclose information that results from your use of our Service.</td>
+</tr>
+</tbody>
+</table>
+<!--lint enable maximum-line-length-->
+<h2 id="get-in-touch">Get in touch</h2>
+<p>To get in touch, use one of the following channels:</p>
+<!--lint disable maximum-line-length-->
+<table>
+<thead>
+<tr>
+<th>Support Channel</th>
+<th>Applicable To</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><a href="https://discord.gg/S6sRHhuQ7K"><strong>Discord Channel</strong></a></td>
+<td>Cloud and Self-hosted</td>
+<td>A space for broader discussions, questions, and all things related to CVAT.</td>
+</tr>
+<tr>
+<td><a href="https://www.linkedin.com/company/cvat-ai/"><strong>LinkedIn</strong></a></td>
+<td>Cloud and Self-hosted</td>
+<td>Follow for company updates, news, and employment opportunities.</td>
+</tr>
+<tr>
+<td><a href="https://www.youtube.com/@cvat-ai"><strong>YouTube Channel</strong></a></td>
+<td>Cloud and Self-hosted</td>
+<td>Find tutorials and screencasts about CVAT tools.</td>
+</tr>
+<tr>
+<td><a href="https://github.com/cvat-ai/cvat/issues"><strong>GitHub Issues</strong></a></td>
+<td>Cloud and Self-hosted</td>
+<td>Report bugs or contribute to the ongoing development of CVAT.</td>
+</tr>
+<tr>
+<td><a href="https://youtrack.cvat.ai/form/447d9c98-ab4b-466e-bf9d-004f01b22f73"><strong>Customer Support Channel</strong></a></td>
+<td>Cloud (Paid Users)</td>
+<td>Exclusive support for CVAT.ai cloud paid users.</td>
+</tr>
+<tr>
+<td><strong>Commercial Support Inquiries</strong></td>
+<td>Cloud and Self-hosted</td>
+<td>For direct commercial support inquiries, email <a href="mailto:contact+github@cvat.ai"><strong>contact@cvat.ai</strong></a>.</td>
+</tr>
+</tbody>
+</table>
+<!--lint enable maximum-line-length-->
+
+</div>
+
+
+
+    
+	
+  
+    
+    
+	
+    
+
+<div class="td-content" style="page-break-before: always">
+    
+	<h1 id="pg-512f0f621f82c44a200b92dbb8feadf5">2 - CVAT Complete Workflow Guide for Organizations</h1>
+    
+	<p>Welcome to CVAT.ai, this page is the place to start your team’s
+annotation process using the Computer Vision Annotation Tool (CVAT).</p>
+<p>This guide aims to equip your organization with the knowledge
+and best practices needed to use CVAT effectively.</p>
+<p>We&rsquo;ll walk you through every step of the CVAT workflow,
+from initial setup to advanced features.</p>
+<p>See:</p>
+<ul>
+<li><a href="#workflow-diagram">Workflow diagram</a></li>
+<li><a href="#end-to-end-workflow-for-organizations">End-to-end workflow for Organizations</a></li>
+<li><a href="#complete-workflow-guide-video-tutorial">Complete Workflow Guide video tutorial</a></li>
+</ul>
+<h2 id="workflow-diagram">Workflow diagram</h2>
+<p>The workflow diagram presents an overview of the general process at a high level.</p>
+<p><a href="../../../images/cvat-workflow-bpmn.png"><img src="../../../images/cvat-workflow-bpmn.png" alt="Workflow diagram"></a></p>
+<h2 id="end-to-end-workflow-for-organizations">End-to-end workflow for Organizations</h2>
+<p>To use CVAT within your organization, please follow these steps:</p>
+<ol>
+<li><a href="../../../docs/manual/basics/registration/">Create an account in CVAT</a>.</li>
+<li><a href="../../../docs/manual/advanced/organization/">Create <strong>Organization</strong></a>.</li>
+<li>Switch to the <strong>Organization</strong> that you&rsquo;ve
+created and <a href="../../../docs/enterprise/subscription-managment/#team-plan">subscribe to the <strong>Team plan</strong></a>.</li>
+<li><a href="../../../docs/manual/advanced/organization/#invite-members-into-organization">Invite members to <strong>Organization</strong></a> and
+assign <a href="../../../docs/manual/advanced/iam_user_roles/">User roles</a> to invited members.</li>
+<li><a href="../../../docs/manual/advanced/projects/">Create <strong>Project</strong></a>.</li>
+<li>(Optional) Attach <a href="../../../docs/manual/basics/attach-cloud-storage/"><strong>Cloud storages</strong></a> to the <strong>Project</strong>.</li>
+<li>Create <a href="../../../docs/manual/basics/create_an_annotation_task/"><strong>Task</strong></a> or <a href="../../../docs/manual/basics/create-multi-tasks/">
+<strong>Multitask</strong></a>.
+<br>At this step the CVAT platform will automatically create
+jobs.</li>
+<li>(Optional) Create <a href="../../../docs/manual/advanced/analytics-and-monitoring/auto-qa/"><strong>Ground truth job</strong></a>.
+<br>This step can be skipped if you&rsquo;re employing a manual QA approach.</li>
+<li>(Optional) Add <a href="../../../docs/manual/advanced/specification/"><strong>Instructions for annotators</strong></a>.</li>
+<li>(Optional) Configure <a href="../../../docs/administration/advanced/webhooks/"><strong>Webhooks</strong></a>.</li>
+<li>Assign jobs to annotators by adding the annotator name to <strong>Assignee</strong> and
+changing the <a href="../../../docs/manual/advanced/iam_user_roles/#job-stage"><strong>Job stage</strong></a>
+to <strong>Annotation</strong>.</li>
+<li>Annotator will see assigned jobs and annotate them.</li>
+<li>(Optional) In case you&rsquo;ve created
+a <a href="../../../docs/manual/advanced/analytics-and-monitoring/auto-qa/"><strong>Ground truth job</strong></a>
+give the CVAT platform some time to accumulate the data and
+check the accuracy of the annotation.</li>
+<li>If you are using the manual validation,
+assign jobs to validators by adding the validator name to <strong>Assignee</strong> and
+changing the <a href="../../../docs/manual/advanced/iam_user_roles/#job-stage"><strong>Job stage</strong></a>
+to <strong>Validation</strong>.</li>
+<li>Validator will see assigned jobs and report issues.
+<br>Note, that validators can correct issues,
+see <a href="../../../docs/manual/advanced/analytics-and-monitoring/manual-qa/"><strong>Manual QA and Review</strong></a></li>
+<li>Check issues and if there is a need for additional improvement, reassign jobs to
+either the Validator or Annotator.</li>
+<li>(Optional) Check <a href="../../../docs/manual/advanced/analytics-and-monitoring/analytics-in-cloud/"><strong>Analytics</strong></a>.</li>
+<li><a href="../../../docs/manual/advanced/formats/"><strong>Export Data</strong></a>.</li>
+</ol>
+<h2 id="complete-workflow-guide-video-tutorial">Complete Workflow Guide video tutorial</h2>
+<!--lint disable maximum-line-length-->
+<iframe width="560" height="315" src="https://www.youtube.com/embed/uI2OEoR08ME?si=0OTHPwgxGx30Gax7" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>
+<!--lint enable maximum-line-length-->
+
+</div>
+
+
+
+    
+	
+  
+    
+    
+	
+    
+
+<div class="td-content" style="page-break-before: always">
+    
+	<h1 id="pg-cf275990b8deae46b790cb94e549d160">3 - Introduction to CVAT and Datumaro</h1>
+    
+	<p>We are excited to introduce the first video in our course series designed to help you
+annotate data faster and better using CVAT.
+In this introductory 4 minute video, we walk through:</p>
+<ol>
+<li>what problems CVAT and Datumaro solve,</li>
+<li>how they can speed up your model training process, and</li>
+<li>some resources you can use to learn more about how to use them.</li>
+</ol>
+<iframe width="560" height="315" src="https://www.youtube.com/embed/GgKIEFhd1CY" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+
+</div>
+
+
+
+    
+	
+  
+
+
+
+          </main>
+        </div>
+      </div>
+      <footer class="bg-dark py-5 row d-print-none" style="min-height: 0">
+  <div class="container-fluid">
+    <div class="row">
+      <div class="col text-center">
+        
+        
+        
+<ul class="list-inline mb-0">
+  
+  <li class="list-inline-item mx-2 h3" data-bs-toggle="tooltip" data-placement="top" title="Gitter public chat" aria-label="Gitter public chat">
+    <a class="text-white" rel="noopener noreferrer" href="https://gitter.im/opencv-cvat/public">
+      <i class="fab fa-gitter"></i>
+    </a>
+  </li>
+  
+  <li class="list-inline-item mx-2 h3" data-bs-toggle="tooltip" data-placement="top" title="Stack Overflow" aria-label="Stack Overflow">
+    <a class="text-white" rel="noopener noreferrer" href="https://stackoverflow.com/search?q=%23cvat">
+      <i class="fab fa-stack-overflow"></i>
+    </a>
+  </li>
+  
+  <li class="list-inline-item mx-2 h3" data-bs-toggle="tooltip" data-placement="top" title="YouTube" aria-label="YouTube">
+    <a class="text-white" rel="noopener noreferrer" href="https://www.youtube.com/@cvat-ai">
+      <i class="fab fa-youtube"></i>
+    </a>
+  </li>
+  
+</ul>
+
+        
+        
+      </div>
+      <div class="col-4 text-center">
+        <div class="row">
+          <a href="https://www.cvat.ai/privacy">Privacy Policy</a>
+        </div>
+        <div class="row">
+          <a href="https://www.cvat.ai/terms-of-use">Terms of Use</a>
+        </div>
+        <div class="row">
+          
+            <p><a href="../../../about/">About</a></p>
+          
+        </div>
+      </div>
+      <div class="col text-right text-center">
+        
+        
+        
+<ul class="list-inline mb-0">
+  
+  <li class="list-inline-item mx-2 h3" data-bs-toggle="tooltip" data-placement="top" title="GitHub" aria-label="GitHub">
+    <a class="text-white" rel="noopener noreferrer" href="https://github.com/cvat-ai/cvat">
+      <i class="fab fa-github"></i>
+    </a>
+  </li>
+  
+  <li class="list-inline-item mx-2 h3" data-bs-toggle="tooltip" data-placement="top" title="Gitter developers chat" aria-label="Gitter developers chat">
+    <a class="text-white" rel="noopener noreferrer" href="https://gitter.im/opencv-cvat/dev">
+      <i class="fab fa-gitter"></i>
+    </a>
+  </li>
+  
+  <li class="list-inline-item mx-2 h3" data-bs-toggle="tooltip" data-placement="top" title="Discord chat" aria-label="Discord chat">
+    <a class="text-white" rel="noopener noreferrer" href="https://discord.gg/fNR3eXfk6C">
+      <i class="fab fa-discord"></i>
+    </a>
+  </li>
+  
+</ul>
+
+        
+        
+      </div>
+    </div>
+  </div>
+</footer>
+
+
+
+    </div>
+    
+  <script src="../../../js/main.min.99abe30f7fb05785a480d405ee1665ebd520cec6bbadffe966b7737e103675b8.js" integrity="sha256-mavjD3&#43;wV4WkgNQF7hZl69Ugzsa7rf/pZrdzfhA2dbg=" crossorigin="anonymous"></script>
+<script src='../../../js/prism.js'></script>
+<script src='../../../js/tabpane-persist.js'></script>
+
+  </body>
+</html>

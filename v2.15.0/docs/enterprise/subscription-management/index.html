@@ -1,0 +1,1119 @@
+<!doctype html>
+<html itemscope itemtype="http://schema.org/WebPage" lang="en" class="no-js">
+  <head>
+    <meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+<meta name="generator" content="Hugo 0.110.0">
+<meta name="robots" content="index, follow">
+
+
+<link rel="shortcut icon" href="../../../favicons/favicon.ico" >
+<link rel="apple-touch-icon" href="../../../favicons/apple-touch-icon-180x180.png" sizes="180x180">
+<link rel="icon" type="image/png" href="../../../favicons/favicon-16x16.png" sizes="16x16">
+<link rel="icon" type="image/png" href="../../../favicons/favicon-32x32.png" sizes="32x32">
+<link rel="icon" type="image/png" href="../../../favicons/android-36x36.png" sizes="36x36">
+<link rel="icon" type="image/png" href="../../../favicons/android-48x48.png" sizes="48x48">
+<link rel="icon" type="image/png" href="../../../favicons/android-72x72.png" sizes="72x72">
+<link rel="icon" type="image/png" href="../../../favicons/android-96x96.png" sizes="96x96">
+<link rel="icon" type="image/png" href="../../../favicons/android-144x144.png" sizes="144x144">
+<link rel="icon" type="image/png" href="../../../favicons/android-192x192.png" sizes="192x192">
+
+<title>Subscription management | CVAT</title>
+<meta name="description" content="How to manage your subscription">
+<meta property="og:title" content="Subscription management" />
+<meta property="og:description" content="How to manage your subscription" />
+<meta property="og:type" content="article" />
+<meta property="og:url" content="/docs/enterprise/subscription-management/" /><meta property="article:section" content="docs" />
+
+<meta property="og:site_name" content="CVAT" />
+<meta itemprop="name" content="Subscription management">
+<meta itemprop="description" content="How to manage your subscription">
+
+<meta itemprop="wordCount" content="1845">
+<meta itemprop="keywords" content="" /><meta name="twitter:card" content="summary"/>
+<meta name="twitter:title" content="Subscription management"/>
+<meta name="twitter:description" content="How to manage your subscription"/>
+
+
+
+
+<link rel="preload" href="../../../scss/main.min.5176d9fef59ea153ab767b7b61a90b35fb24ef3fb7aef25530f05dcb464a2db0.css" as="style">
+<link href="../../../scss/main.min.5176d9fef59ea153ab767b7b61a90b35fb24ef3fb7aef25530f05dcb464a2db0.css" rel="stylesheet" integrity="">
+
+<script
+  src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.3/jquery.min.js"
+  integrity="sha512-STof4xm1wgkfm7heWqFJVn58Hm3EtS31XFaagaa8VMReCXAkQnJZ+jEy8PCC/iT18dFy95WcExNHFTqLyp72eQ=="
+  crossorigin="anonymous"></script>
+<script defer
+  src="https://unpkg.com/lunr@2.3.9/lunr.min.js"
+  integrity="sha384-203J0SNzyqHby3iU6hzvzltrWi/M41wOP5Gu+BiJMz5nwKykbkUx8Kp7iti0Lpli"
+  crossorigin="anonymous"></script>
+<link rel="stylesheet" href="../../../css/prism.css"/>
+
+  </head>
+  <body class="td-page">
+    <header>
+      <nav class="td-navbar navbar-dark js-navbar-scroll">
+<div class="container-fluid flex-column flex-md-row">
+  <a class="navbar-brand" href="../../../about/"><span class="navbar-brand__logo navbar-logo"><svg width="80" height="15" viewBox="0 0 80 15" xmlns="http://www.w3.org/2000/svg"><path d="M6.63399 15C2.37083 15 0 12.5333.0 7.48889.0 2.46667 2.34908.0 6.63399.0H10.6576V2.62222H6.63399c-2.84935.0-4.0674 1.44445-4.0674 4.86667.0 3.44441 1.2398 4.88891 4.0674 4.88891H15.0638V15H6.63399z"/><path d="M22.412.0l4.8346 13.1004C27.7814 14.5415 28.8724 15 30.2842 15 31.7817 15 32.7657 14.476 33.3005 13.1004L38.3918.0H35.5895L30.9902 11.8559C30.8404 12.2052 30.6265 12.3581 30.2842 12.3581 29.942 12.3581 29.7067 12.2052 29.5783 11.8559L25.1929.0H22.412z"/><path d="M53.0989 3.1441C53.2487 2.79476 53.484 2.64192 53.8262 2.64192 54.1685 2.64192 54.4038 2.79476 54.5322 3.1441L58.9176 15h2.8023L56.8425 1.89956C56.3291.524017 55.3451.0 53.8476.0 52.3288.0 51.3448.524017 50.81 1.89956L45.74 15h2.781L53.0989 3.1441z"/><path d="M69.0681.0V2.5665H73.2661V15H75.802V2.5665H80V0H69.0681z"/></svg></span></a>
+  <div class="td-navbar-nav-scroll ms-md-auto" style="height: auto;" id="main_navbar">
+    <ul class="navbar-nav d-flex flex-wrap" style="padding-bottom: 0;">
+      <li class="nav-item">
+        <a class="nav-link active" href="../../../docs/"><span>Documentation</span></a>
+      </li>
+      <li class="nav-item">
+        <a class="nav-link" href="../../../about/"><span>About</span></a>
+      </li>
+      <li class="nav-item">
+        <a class="nav-link" href="https://app.cvat.ai" rel="noopener"><span>Try it now</span></a>
+      </li>
+      <li class="nav-item">
+        <a class="nav-link" href="https://github.com/cvat-ai/cvat" rel="noopener"><i class='fab fa-github'></i><span>GitHub</span></a>
+      </li>
+      <li class="nav-item dropdown d-none d-lg-block">
+        <div class="dropdown">
+  <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">v2.15.0</a>
+  <ul class="dropdown-menu">
+    <li><a class="dropdown-item" href="../../../../">Latest version</a></li>
+    <li><a class="dropdown-item" href="../../../../v1.5.0">v1.5.0</a></li>
+    <li><a class="dropdown-item" href="../../../../v1.6.0">v1.6.0</a></li>
+    <li><a class="dropdown-item" href="../../../../v1.7.0">v1.7.0</a></li>
+    <li><a class="dropdown-item" href="../../../../v2.0.0">v2.0.0</a></li>
+    <li><a class="dropdown-item" href="../../../../v2.1.0">v2.1.0</a></li>
+    <li><a class="dropdown-item" href="../../../../v2.10.3">v2.10.3</a></li>
+    <li><a class="dropdown-item" href="../../../../v2.11.3">v2.11.3</a></li>
+    <li><a class="dropdown-item" href="../../../../v2.12.1">v2.12.1</a></li>
+    <li><a class="dropdown-item" href="../../../../v2.13.0">v2.13.0</a></li>
+    <li><a class="dropdown-item" href="../../../../v2.14.4">v2.14.4</a></li>
+    <li><a class="dropdown-item" href="../../../../v2.15.0">v2.15.0</a></li>
+    <li><a class="dropdown-item" href="../../../../v2.16.2">v2.16.2</a></li>
+    <li><a class="dropdown-item" href="../../../../v2.2.0">v2.2.0</a></li>
+    <li><a class="dropdown-item" href="../../../../v2.3.0">v2.3.0</a></li>
+    <li><a class="dropdown-item" href="../../../../v2.4.9">v2.4.9</a></li>
+    <li><a class="dropdown-item" href="../../../../v2.5.2">v2.5.2</a></li>
+    <li><a class="dropdown-item" href="../../../../v2.6.2">v2.6.2</a></li>
+    <li><a class="dropdown-item" href="../../../../v2.7.6">v2.7.6</a></li>
+    <li><a class="dropdown-item" href="../../../../v2.8.2">v2.8.2</a></li>
+    <li><a class="dropdown-item" href="../../../../v2.9.2">v2.9.2</a></li>
+    </ul>
+</div></li>
+      </ul>
+  </div>
+  <div class="d-none d-lg-block">
+    <div class="td-search td-search--offline">
+  <div class="td-search__icon"></div>
+  <input
+    type="search"
+    class="td-search__input form-control"
+    placeholder="Search this site…"
+    aria-label="Search this site…"
+    autocomplete="off"
+    
+    data-offline-search-index-json-src="../../../offline-search-index.8086917ff92aaef2f59fac184886c564.json"
+    data-offline-search-base-href="../../../"
+    data-offline-search-max-results="10"
+  >
+</div>
+
+  </div>
+</div>
+</nav>
+    </header>
+    <div class="container-fluid td-outer">
+      <div class="td-main">
+        <div class="row flex-xl-nowrap">
+          <aside class="col-12 col-md-3 col-xl-2 td-sidebar d-print-none">
+            <div id="td-sidebar-menu" class="td-sidebar__inner">
+  <div id="content-mobile">
+  <form class="td-sidebar__search d-flex align-items-center">
+    <div class="td-search td-search--offline">
+  <div class="td-search__icon"></div>
+  <input
+    type="search"
+    class="td-search__input form-control"
+    placeholder="Search this site…"
+    aria-label="Search this site…"
+    autocomplete="off"
+    
+    data-offline-search-index-json-src="../../../offline-search-index.8086917ff92aaef2f59fac184886c564.json"
+    data-offline-search-base-href="../../../"
+    data-offline-search-max-results="10"
+  >
+</div>
+
+    <button class="btn btn-link td-sidebar__toggle d-md-none p-0 ms-3 fas fa-bars" type="button" data-bs-toggle="collapse" data-bs-target="#td-section-nav" aria-controls="td-section-nav" aria-expanded="false" aria-label="Toggle section navigation">
+    </button>
+  </form>
+  </div>
+  <div id="content-desktop"></div>
+  <nav class="collapse td-sidebar-nav" id="td-section-nav">
+    <ul class="td-sidebar-nav__section pe-md-3 ul-0">
+      <li class="td-sidebar-nav__section-title td-sidebar-nav__section with-child active-path" id="m-docs-li">
+  <a href="../../../docs/" class="align-left ps-0 td-sidebar-link td-sidebar-link__section tree-root" id="m-docs"><span class="">Documentation</span></a>
+  <ul class="ul-1">
+    <li class="td-sidebar-nav__section-title td-sidebar-nav__section with-child" id="m-docsgetting_started-li">
+  <a href="../../../docs/getting_started/" class="align-left ps-0 td-sidebar-link td-sidebar-link__section" id="m-docsgetting_started"><span class="">Getting started</span></a>
+  <ul class="ul-2 foldable">
+    <li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child" id="m-docsgetting_startedoverview-li">
+  <a href="../../../docs/getting_started/overview/" title="CVAT Overview" class="align-left ps-0 td-sidebar-link td-sidebar-link__page" id="m-docsgetting_startedoverview"><span class="">Introduction to CVAT</span></a>
+</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child" id="m-docsgetting_startedworkflow-org-li">
+  <a href="../../../docs/getting_started/workflow-org/" class="align-left ps-0 td-sidebar-link td-sidebar-link__page" id="m-docsgetting_startedworkflow-org"><span class="">CVAT Complete Workflow Guide for Organizations</span></a>
+</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child" id="m-docsgetting_startedintroduction-to-cvat-and-datumaro-li">
+  <a href="../../../docs/getting_started/introduction-to-cvat-and-datumaro/" class="align-left ps-0 td-sidebar-link td-sidebar-link__page" id="m-docsgetting_startedintroduction-to-cvat-and-datumaro"><span class="">Introduction to CVAT and Datumaro</span></a>
+</li>
+  </ul>
+</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section with-child" id="m-docsintegration-li">
+  <a href="../../../docs/integration/" class="align-left ps-0 td-sidebar-link td-sidebar-link__section" id="m-docsintegration"><span class="">Integrations</span></a>
+  <ul class="ul-2 foldable">
+    <li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child" id="m-docsintegrationfiftyone-li">
+  <a href="../../../docs/integration/fiftyone/" class="align-left ps-0 td-sidebar-link td-sidebar-link__page" id="m-docsintegrationfiftyone"><span class="">FiftyOne</span></a>
+</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child" id="m-docsintegrationhuman-protocol-li">
+  <a href="../../../docs/integration/human-protocol/" title="CVAT and Human Protocol" class="align-left ps-0 td-sidebar-link td-sidebar-link__page" id="m-docsintegrationhuman-protocol"><span class="">Human Protocol</span></a>
+</li>
+  </ul>
+</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child" id="m-docsfaq-li">
+  <a href="../../../docs/faq/" title="Frequently asked questions" class="align-left ps-0 td-sidebar-link td-sidebar-link__page" id="m-docsfaq"><span class="">FAQ</span></a>
+</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section with-child active-path" id="m-docsenterprise-li">
+  <a href="../../../docs/enterprise/" class="align-left ps-0 td-sidebar-link td-sidebar-link__section" id="m-docsenterprise"><span class="">Paid features</span></a>
+  <ul class="ul-2 foldable">
+    <li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child active-path" id="m-docsenterprisesubscription-management-li">
+  <a href="../../../docs/enterprise/subscription-management/" class="align-left ps-0 active td-sidebar-link td-sidebar-link__page" id="m-docsenterprisesubscription-management"><span class="td-sidebar-nav-active-item">Subscription management</span></a>
+</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child" id="m-docsenterprisesocial-accounts-configuration-li">
+  <a href="../../../docs/enterprise/social-accounts-configuration/" class="align-left ps-0 td-sidebar-link td-sidebar-link__page" id="m-docsenterprisesocial-accounts-configuration"><span class="">Social auth configuration</span></a>
+</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child" id="m-docsenterpriseshapes-converter-li">
+  <a href="../../../docs/enterprise/shapes-converter/" class="align-left ps-0 td-sidebar-link td-sidebar-link__page" id="m-docsenterpriseshapes-converter"><span class="">Shapes converter</span></a>
+</li>
+  </ul>
+</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section with-child" id="m-docsmanual-li">
+  <a href="../../../docs/manual/" class="align-left ps-0 td-sidebar-link td-sidebar-link__section" id="m-docsmanual"><span class="">Manual</span></a>
+  <ul class="ul-2 foldable">
+    <li class="td-sidebar-nav__section-title td-sidebar-nav__section with-child" id="m-docsmanualbasics-li">
+  <a href="../../../docs/manual/basics/" class="align-left ps-0 td-sidebar-link td-sidebar-link__section" id="m-docsmanualbasics"><span class="">Basics</span></a>
+  <ul class="ul-3 foldable">
+    <li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child collapse" id="m-docsmanualbasicsregistration-li">
+  <a href="../../../docs/manual/basics/registration/" class="align-left ps-0 td-sidebar-link td-sidebar-link__page" id="m-docsmanualbasicsregistration"><span class="">Registration &amp; Account Access</span></a>
+</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child collapse" id="m-docsmanualbasicscreate_an_annotation_task-li">
+  <a href="../../../docs/manual/basics/create_an_annotation_task/" class="align-left ps-0 td-sidebar-link td-sidebar-link__page" id="m-docsmanualbasicscreate_an_annotation_task"><span class="">Create annotation task</span></a>
+</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child collapse" id="m-docsmanualbasicscreate-multi-tasks-li">
+  <a href="../../../docs/manual/basics/create-multi-tasks/" class="align-left ps-0 td-sidebar-link td-sidebar-link__page" id="m-docsmanualbasicscreate-multi-tasks"><span class="">Create multi tasks</span></a>
+</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section with-child collapse" id="m-docsmanualbasicscvat-annotation-interface-li">
+  <a href="../../../docs/manual/basics/cvat-annotation-interface/" class="align-left ps-0 td-sidebar-link td-sidebar-link__section" id="m-docsmanualbasicscvat-annotation-interface"><span class="">CVAT Annotation Interface</span></a>
+  <ul class="ul-4 foldable">
+    <li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child collapse" id="m-docsmanualbasicscvat-annotation-interfacenavbar-li">
+  <a href="../../../docs/manual/basics/cvat-annotation-interface/navbar/" class="align-left ps-0 td-sidebar-link td-sidebar-link__page" id="m-docsmanualbasicscvat-annotation-interfacenavbar"><span class="">Navigation bar &amp; Menu</span></a>
+</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child collapse" id="m-docsmanualbasicscvat-annotation-interfacecontrols-sidebar-li">
+  <a href="../../../docs/manual/basics/cvat-annotation-interface/controls-sidebar/" class="align-left ps-0 td-sidebar-link td-sidebar-link__page" id="m-docsmanualbasicscvat-annotation-interfacecontrols-sidebar"><span class="">Controls sidebar</span></a>
+</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child collapse" id="m-docsmanualbasicscvat-annotation-interfaceobjects-sidebar-li">
+  <a href="../../../docs/manual/basics/cvat-annotation-interface/objects-sidebar/" class="align-left ps-0 td-sidebar-link td-sidebar-link__page" id="m-docsmanualbasicscvat-annotation-interfaceobjects-sidebar"><span class="">Objects sidebar</span></a>
+</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child collapse" id="m-docsmanualbasicscvat-annotation-interfaceworkspace-li">
+  <a href="../../../docs/manual/basics/cvat-annotation-interface/workspace/" class="align-left ps-0 td-sidebar-link td-sidebar-link__page" id="m-docsmanualbasicscvat-annotation-interfaceworkspace"><span class="">CVAT Workspace</span></a>
+</li>
+  </ul>
+</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child collapse" id="m-docsmanualbasicsjobs-page-li">
+  <a href="../../../docs/manual/basics/jobs-page/" class="align-left ps-0 td-sidebar-link td-sidebar-link__page" id="m-docsmanualbasicsjobs-page"><span class="">Jobs page</span></a>
+</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child collapse" id="m-docsmanualbasicstasks-page-li">
+  <a href="../../../docs/manual/basics/tasks-page/" class="align-left ps-0 td-sidebar-link td-sidebar-link__page" id="m-docsmanualbasicstasks-page"><span class="">Tasks page</span></a>
+</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child collapse" id="m-docsmanualbasicstask-details-li">
+  <a href="../../../docs/manual/basics/task-details/" class="align-left ps-0 td-sidebar-link td-sidebar-link__page" id="m-docsmanualbasicstask-details"><span class="">Task details</span></a>
+</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child collapse" id="m-docsmanualbasics3d-task-workspace-li">
+  <a href="../../../docs/manual/basics/3d-task-workspace/" class="align-left ps-0 td-sidebar-link td-sidebar-link__page" id="m-docsmanualbasics3d-task-workspace"><span class="">3D task workspace</span></a>
+</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child collapse" id="m-docsmanualbasicsstandard-3d-mode-basics-li">
+  <a href="../../../docs/manual/basics/standard-3d-mode-basics/" title="Standard 3D mode (basics)" class="align-left ps-0 td-sidebar-link td-sidebar-link__page" id="m-docsmanualbasicsstandard-3d-mode-basics"><span class="">Standard 3D mode</span></a>
+</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child collapse" id="m-docsmanualbasicssettings-li">
+  <a href="../../../docs/manual/basics/settings/" class="align-left ps-0 td-sidebar-link td-sidebar-link__page" id="m-docsmanualbasicssettings"><span class="">Settings</span></a>
+</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child collapse" id="m-docsmanualbasicstypes-of-shapes-li">
+  <a href="../../../docs/manual/basics/types-of-shapes/" class="align-left ps-0 td-sidebar-link td-sidebar-link__page" id="m-docsmanualbasicstypes-of-shapes"><span class="">Types of shapes</span></a>
+</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child collapse" id="m-docsmanualbasicsshape-mode-basics-li">
+  <a href="../../../docs/manual/basics/shape-mode-basics/" title="Shape mode (basics)" class="align-left ps-0 td-sidebar-link td-sidebar-link__page" id="m-docsmanualbasicsshape-mode-basics"><span class="">Shape mode</span></a>
+</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child collapse" id="m-docsmanualbasicstrack-mode-basics-li">
+  <a href="../../../docs/manual/basics/track-mode-basics/" title="Track mode (basics)" class="align-left ps-0 td-sidebar-link td-sidebar-link__page" id="m-docsmanualbasicstrack-mode-basics"><span class="">Track mode</span></a>
+</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child collapse" id="m-docsmanualbasics3d-object-annotation-li">
+  <a href="../../../docs/manual/basics/3d-object-annotation/" class="align-left ps-0 td-sidebar-link td-sidebar-link__page" id="m-docsmanualbasics3d-object-annotation"><span class="">3D Object annotation</span></a>
+</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child collapse" id="m-docsmanualbasicsattribute-annotation-mode-basics-li">
+  <a href="../../../docs/manual/basics/attribute-annotation-mode-basics/" title="Attribute annotation mode (basics)" class="align-left ps-0 td-sidebar-link td-sidebar-link__page" id="m-docsmanualbasicsattribute-annotation-mode-basics"><span class="">Attribute annotation mode</span></a>
+</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child collapse" id="m-docsmanualbasicsvocabulary-li">
+  <a href="../../../docs/manual/basics/vocabulary/" class="align-left ps-0 td-sidebar-link td-sidebar-link__page" id="m-docsmanualbasicsvocabulary"><span class="">Vocabulary</span></a>
+</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child collapse" id="m-docsmanualbasicscloud-storages-li">
+  <a href="../../../docs/manual/basics/cloud-storages/" class="align-left ps-0 td-sidebar-link td-sidebar-link__page" id="m-docsmanualbasicscloud-storages"><span class="">Cloud storages page</span></a>
+</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child collapse" id="m-docsmanualbasicsattach-cloud-storage-li">
+  <a href="../../../docs/manual/basics/attach-cloud-storage/" class="align-left ps-0 td-sidebar-link td-sidebar-link__page" id="m-docsmanualbasicsattach-cloud-storage"><span class="">Attach cloud storage</span></a>
+</li>
+  </ul>
+</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section with-child" id="m-docsmanualadvanced-li">
+  <a href="../../../docs/manual/advanced/" class="align-left ps-0 td-sidebar-link td-sidebar-link__section" id="m-docsmanualadvanced"><span class="">Advanced</span></a>
+  <ul class="ul-3 foldable">
+    <li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child collapse" id="m-docsmanualadvancedprojects-li">
+  <a href="../../../docs/manual/advanced/projects/" class="align-left ps-0 td-sidebar-link td-sidebar-link__page" id="m-docsmanualadvancedprojects"><span class="">Projects page</span></a>
+</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child collapse" id="m-docsmanualadvancedorganization-li">
+  <a href="../../../docs/manual/advanced/organization/" class="align-left ps-0 td-sidebar-link td-sidebar-link__page" id="m-docsmanualadvancedorganization"><span class="">Organization</span></a>
+</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child collapse" id="m-docsmanualadvancedsearch-li">
+  <a href="../../../docs/manual/advanced/search/" class="align-left ps-0 td-sidebar-link td-sidebar-link__page" id="m-docsmanualadvancedsearch"><span class="">Search</span></a>
+</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child collapse" id="m-docsmanualadvancedshape-mode-advanced-li">
+  <a href="../../../docs/manual/advanced/shape-mode-advanced/" title="Shape mode (advanced)" class="align-left ps-0 td-sidebar-link td-sidebar-link__page" id="m-docsmanualadvancedshape-mode-advanced"><span class="">Shape mode</span></a>
+</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child collapse" id="m-docsmanualadvancedsingle-shape-li">
+  <a href="../../../docs/manual/advanced/single-shape/" title="Single Shape" class="align-left ps-0 td-sidebar-link td-sidebar-link__page" id="m-docsmanualadvancedsingle-shape"><span class="">Single Shape Mode</span></a>
+</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child collapse" id="m-docsmanualadvancediam_user_roles-li">
+  <a href="../../../docs/manual/advanced/iam_user_roles/" class="align-left ps-0 td-sidebar-link td-sidebar-link__page" id="m-docsmanualadvancediam_user_roles"><span class="">CVAT User roles</span></a>
+</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child collapse" id="m-docsmanualadvancedtrack-mode-advanced-li">
+  <a href="../../../docs/manual/advanced/track-mode-advanced/" title="Track mode (advanced)" class="align-left ps-0 td-sidebar-link td-sidebar-link__page" id="m-docsmanualadvancedtrack-mode-advanced"><span class="">Track mode</span></a>
+</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child collapse" id="m-docsmanualadvanced3d-object-annotation-advanced-li">
+  <a href="../../../docs/manual/advanced/3d-object-annotation-advanced/" title="3D Object annotation (advanced)" class="align-left ps-0 td-sidebar-link td-sidebar-link__page" id="m-docsmanualadvanced3d-object-annotation-advanced"><span class="">3D Object annotation</span></a>
+</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child collapse" id="m-docsmanualadvancedattribute-annotation-mode-advanced-li">
+  <a href="../../../docs/manual/advanced/attribute-annotation-mode-advanced/" title="Attribute annotation mode (advanced)" class="align-left ps-0 td-sidebar-link td-sidebar-link__page" id="m-docsmanualadvancedattribute-annotation-mode-advanced"><span class="">Attribute annotation mode</span></a>
+</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child collapse" id="m-docsmanualadvancedannotation-with-rectangles-li">
+  <a href="../../../docs/manual/advanced/annotation-with-rectangles/" class="align-left ps-0 td-sidebar-link td-sidebar-link__page" id="m-docsmanualadvancedannotation-with-rectangles"><span class="">Annotation with rectangles</span></a>
+</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section with-child collapse" id="m-docsmanualadvancedannotation-with-polygons-li">
+  <a href="../../../docs/manual/advanced/annotation-with-polygons/" class="align-left ps-0 td-sidebar-link td-sidebar-link__section" id="m-docsmanualadvancedannotation-with-polygons"><span class="">Annotation with polygons</span></a>
+  <ul class="ul-4 foldable">
+    <li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child collapse" id="m-docsmanualadvancedannotation-with-polygonsmanual-drawing-li">
+  <a href="../../../docs/manual/advanced/annotation-with-polygons/manual-drawing/" class="align-left ps-0 td-sidebar-link td-sidebar-link__page" id="m-docsmanualadvancedannotation-with-polygonsmanual-drawing"><span class="">Manual drawing</span></a>
+</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child collapse" id="m-docsmanualadvancedannotation-with-polygonsautomatic-borders-li">
+  <a href="../../../docs/manual/advanced/annotation-with-polygons/automatic-borders/" title="Drawing using automatic borders" class="align-left ps-0 td-sidebar-link td-sidebar-link__page" id="m-docsmanualadvancedannotation-with-polygonsautomatic-borders"><span class="">Automatic borders</span></a>
+</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child collapse" id="m-docsmanualadvancedannotation-with-polygonsedit-polygon-li">
+  <a href="../../../docs/manual/advanced/annotation-with-polygons/edit-polygon/" class="align-left ps-0 td-sidebar-link td-sidebar-link__page" id="m-docsmanualadvancedannotation-with-polygonsedit-polygon"><span class="">Edit polygon</span></a>
+</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child collapse" id="m-docsmanualadvancedannotation-with-polygonstrack-mode-with-polygons-li">
+  <a href="../../../docs/manual/advanced/annotation-with-polygons/track-mode-with-polygons/" class="align-left ps-0 td-sidebar-link td-sidebar-link__page" id="m-docsmanualadvancedannotation-with-polygonstrack-mode-with-polygons"><span class="">Track mode with polygons</span></a>
+</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child collapse" id="m-docsmanualadvancedannotation-with-polygonscreating-mask-li">
+  <a href="../../../docs/manual/advanced/annotation-with-polygons/creating-mask/" class="align-left ps-0 td-sidebar-link td-sidebar-link__page" id="m-docsmanualadvancedannotation-with-polygonscreating-mask"><span class="">Creating masks</span></a>
+</li>
+  </ul>
+</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child collapse" id="m-docsmanualadvancedannotation-with-polylines-li">
+  <a href="../../../docs/manual/advanced/annotation-with-polylines/" class="align-left ps-0 td-sidebar-link td-sidebar-link__page" id="m-docsmanualadvancedannotation-with-polylines"><span class="">Annotation with polylines</span></a>
+</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section with-child collapse" id="m-docsmanualadvancedannotation-with-points-li">
+  <a href="../../../docs/manual/advanced/annotation-with-points/" class="align-left ps-0 td-sidebar-link td-sidebar-link__section" id="m-docsmanualadvancedannotation-with-points"><span class="">Annotation with points</span></a>
+  <ul class="ul-4 foldable">
+    <li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child collapse" id="m-docsmanualadvancedannotation-with-pointspoints-in-shape-mode-li">
+  <a href="../../../docs/manual/advanced/annotation-with-points/points-in-shape-mode/" class="align-left ps-0 td-sidebar-link td-sidebar-link__page" id="m-docsmanualadvancedannotation-with-pointspoints-in-shape-mode"><span class="">Points in shape mode</span></a>
+</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child collapse" id="m-docsmanualadvancedannotation-with-pointsliner-interpolation-with-one-point-li">
+  <a href="../../../docs/manual/advanced/annotation-with-points/liner-interpolation-with-one-point/" class="align-left ps-0 td-sidebar-link td-sidebar-link__page" id="m-docsmanualadvancedannotation-with-pointsliner-interpolation-with-one-point"><span class="">Linear interpolation with one point</span></a>
+</li>
+  </ul>
+</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child collapse" id="m-docsmanualadvancedannotation-with-ellipses-li">
+  <a href="../../../docs/manual/advanced/annotation-with-ellipses/" class="align-left ps-0 td-sidebar-link td-sidebar-link__page" id="m-docsmanualadvancedannotation-with-ellipses"><span class="">Annotation with ellipses</span></a>
+</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section with-child collapse" id="m-docsmanualadvancedannotation-with-cuboids-li">
+  <a href="../../../docs/manual/advanced/annotation-with-cuboids/" class="align-left ps-0 td-sidebar-link td-sidebar-link__section" id="m-docsmanualadvancedannotation-with-cuboids"><span class="">Annotation with cuboids</span></a>
+  <ul class="ul-4 foldable">
+    <li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child collapse" id="m-docsmanualadvancedannotation-with-cuboidscreating-the-cuboid-li">
+  <a href="../../../docs/manual/advanced/annotation-with-cuboids/creating-the-cuboid/" class="align-left ps-0 td-sidebar-link td-sidebar-link__page" id="m-docsmanualadvancedannotation-with-cuboidscreating-the-cuboid"><span class="">Creating the cuboid</span></a>
+</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child collapse" id="m-docsmanualadvancedannotation-with-cuboidsediting-the-cuboid-li">
+  <a href="../../../docs/manual/advanced/annotation-with-cuboids/editing-the-cuboid/" class="align-left ps-0 td-sidebar-link td-sidebar-link__page" id="m-docsmanualadvancedannotation-with-cuboidsediting-the-cuboid"><span class="">Editing the cuboid</span></a>
+</li>
+  </ul>
+</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child collapse" id="m-docsmanualadvancedskeletons-li">
+  <a href="../../../docs/manual/advanced/skeletons/" class="align-left ps-0 td-sidebar-link td-sidebar-link__page" id="m-docsmanualadvancedskeletons"><span class="">Annotation with skeletons</span></a>
+</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child collapse" id="m-docsmanualadvancedannotation-with-brush-tool-li">
+  <a href="../../../docs/manual/advanced/annotation-with-brush-tool/" class="align-left ps-0 td-sidebar-link td-sidebar-link__page" id="m-docsmanualadvancedannotation-with-brush-tool"><span class="">Annotation with brush tool</span></a>
+</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child collapse" id="m-docsmanualadvancedannotation-with-tags-li">
+  <a href="../../../docs/manual/advanced/annotation-with-tags/" class="align-left ps-0 td-sidebar-link td-sidebar-link__page" id="m-docsmanualadvancedannotation-with-tags"><span class="">Annotation with tags</span></a>
+</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child collapse" id="m-docsmanualadvancedmodels-li">
+  <a href="../../../docs/manual/advanced/models/" class="align-left ps-0 td-sidebar-link td-sidebar-link__page" id="m-docsmanualadvancedmodels"><span class="">Models</span></a>
+</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section with-child collapse" id="m-docsmanualadvancedanalytics-and-monitoring-li">
+  <a href="../../../docs/manual/advanced/analytics-and-monitoring/" title="CVAT Analytics and QA in Cloud" class="align-left ps-0 td-sidebar-link td-sidebar-link__section" id="m-docsmanualadvancedanalytics-and-monitoring"><span class="">Analytics and QA</span></a>
+  <ul class="ul-4 foldable">
+    <li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child collapse" id="m-docsmanualadvancedanalytics-and-monitoringauto-qa-li">
+  <a href="../../../docs/manual/advanced/analytics-and-monitoring/auto-qa/" title="Automated QA, Review &amp; Honeypot" class="align-left ps-0 td-sidebar-link td-sidebar-link__page" id="m-docsmanualadvancedanalytics-and-monitoringauto-qa"><span class="">Automated QA</span></a>
+</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child collapse" id="m-docsmanualadvancedanalytics-and-monitoringmanual-qa-li">
+  <a href="../../../docs/manual/advanced/analytics-and-monitoring/manual-qa/" title="Manual QA and Review" class="align-left ps-0 td-sidebar-link td-sidebar-link__page" id="m-docsmanualadvancedanalytics-and-monitoringmanual-qa"><span class="">Manual QA</span></a>
+</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child collapse" id="m-docsmanualadvancedanalytics-and-monitoringanalytics-in-cloud-li">
+  <a href="../../../docs/manual/advanced/analytics-and-monitoring/analytics-in-cloud/" title="CVAT Team Performance &amp; Monitoring" class="align-left ps-0 td-sidebar-link td-sidebar-link__page" id="m-docsmanualadvancedanalytics-and-monitoringanalytics-in-cloud"><span class="">Team performance &amp; monitoring</span></a>
+</li>
+  </ul>
+</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child collapse" id="m-docsmanualadvancedai-tools-li">
+  <a href="../../../docs/manual/advanced/ai-tools/" class="align-left ps-0 td-sidebar-link td-sidebar-link__page" id="m-docsmanualadvancedai-tools"><span class="">OpenCV and AI Tools</span></a>
+</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child collapse" id="m-docsmanualadvancedautomatic-annotation-li">
+  <a href="../../../docs/manual/advanced/automatic-annotation/" class="align-left ps-0 td-sidebar-link td-sidebar-link__page" id="m-docsmanualadvancedautomatic-annotation"><span class="">Automatic annotation</span></a>
+</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child collapse" id="m-docsmanualadvancedspecification-li">
+  <a href="../../../docs/manual/advanced/specification/" class="align-left ps-0 td-sidebar-link td-sidebar-link__page" id="m-docsmanualadvancedspecification"><span class="">Specification for annotators</span></a>
+</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child collapse" id="m-docsmanualadvancedbackup-li">
+  <a href="../../../docs/manual/advanced/backup/" title="Backup Task and Project" class="align-left ps-0 td-sidebar-link td-sidebar-link__page" id="m-docsmanualadvancedbackup"><span class="">Backup</span></a>
+</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child collapse" id="m-docsmanualadvanceddelete_frame-li">
+  <a href="../../../docs/manual/advanced/delete_frame/" title="Frame deleting" class="align-left ps-0 td-sidebar-link td-sidebar-link__page" id="m-docsmanualadvanceddelete_frame"><span class="">Delete frame from task</span></a>
+</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child collapse" id="m-docsmanualadvancedslice-and-join-li">
+  <a href="../../../docs/manual/advanced/slice-and-join/" class="align-left ps-0 td-sidebar-link td-sidebar-link__page" id="m-docsmanualadvancedslice-and-join"><span class="">Join and slice tools</span></a>
+</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child collapse" id="m-docsmanualadvancedimport-datasets-li">
+  <a href="../../../docs/manual/advanced/import-datasets/" class="align-left ps-0 td-sidebar-link td-sidebar-link__page" id="m-docsmanualadvancedimport-datasets"><span class="">Import datasets and upload annotation</span></a>
+</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section with-child collapse" id="m-docsmanualadvancedformats-li">
+  <a href="../../../docs/manual/advanced/formats/" class="align-left ps-0 td-sidebar-link td-sidebar-link__section" id="m-docsmanualadvancedformats"><span class="">Export annotations and data from CVAT</span></a>
+  <ul class="ul-4 foldable">
+    <li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child collapse" id="m-docsmanualadvancedformatsformat-cvat-li">
+  <a href="../../../docs/manual/advanced/formats/format-cvat/" class="align-left ps-0 td-sidebar-link td-sidebar-link__page" id="m-docsmanualadvancedformatsformat-cvat"><span class="">CVAT for image</span></a>
+</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child collapse" id="m-docsmanualadvancedformatsformat-datumaro-li">
+  <a href="../../../docs/manual/advanced/formats/format-datumaro/" class="align-left ps-0 td-sidebar-link td-sidebar-link__page" id="m-docsmanualadvancedformatsformat-datumaro"><span class="">Datumaro</span></a>
+</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child collapse" id="m-docsmanualadvancedformatsformat-labelme-li">
+  <a href="../../../docs/manual/advanced/formats/format-labelme/" class="align-left ps-0 td-sidebar-link td-sidebar-link__page" id="m-docsmanualadvancedformatsformat-labelme"><span class="">LabelMe</span></a>
+</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child collapse" id="m-docsmanualadvancedformatsformat-mot-li">
+  <a href="../../../docs/manual/advanced/formats/format-mot/" class="align-left ps-0 td-sidebar-link td-sidebar-link__page" id="m-docsmanualadvancedformatsformat-mot"><span class="">MOT</span></a>
+</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child collapse" id="m-docsmanualadvancedformatsformat-mots-li">
+  <a href="../../../docs/manual/advanced/formats/format-mots/" class="align-left ps-0 td-sidebar-link td-sidebar-link__page" id="m-docsmanualadvancedformatsformat-mots"><span class="">MOTS</span></a>
+</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child collapse" id="m-docsmanualadvancedformatsformat-coco-li">
+  <a href="../../../docs/manual/advanced/formats/format-coco/" class="align-left ps-0 td-sidebar-link td-sidebar-link__page" id="m-docsmanualadvancedformatsformat-coco"><span class="">COCO</span></a>
+</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child collapse" id="m-docsmanualadvancedformatscoco-keypoints-li">
+  <a href="../../../docs/manual/advanced/formats/coco-keypoints/" class="align-left ps-0 td-sidebar-link td-sidebar-link__page" id="m-docsmanualadvancedformatscoco-keypoints"><span class="">COCO Keypoints</span></a>
+</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child collapse" id="m-docsmanualadvancedformatsformat-voc-li">
+  <a href="../../../docs/manual/advanced/formats/format-voc/" class="align-left ps-0 td-sidebar-link td-sidebar-link__page" id="m-docsmanualadvancedformatsformat-voc"><span class="">Pascal VOC</span></a>
+</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child collapse" id="m-docsmanualadvancedformatsformat-smask-li">
+  <a href="../../../docs/manual/advanced/formats/format-smask/" class="align-left ps-0 td-sidebar-link td-sidebar-link__page" id="m-docsmanualadvancedformatsformat-smask"><span class="">Segmentation Mask</span></a>
+</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child collapse" id="m-docsmanualadvancedformatsformat-yolo-li">
+  <a href="../../../docs/manual/advanced/formats/format-yolo/" class="align-left ps-0 td-sidebar-link td-sidebar-link__page" id="m-docsmanualadvancedformatsformat-yolo"><span class="">YOLO</span></a>
+</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child collapse" id="m-docsmanualadvancedformatsformat-imagenet-li">
+  <a href="../../../docs/manual/advanced/formats/format-imagenet/" class="align-left ps-0 td-sidebar-link td-sidebar-link__page" id="m-docsmanualadvancedformatsformat-imagenet"><span class="">ImageNet</span></a>
+</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child collapse" id="m-docsmanualadvancedformatsformat-widerface-li">
+  <a href="../../../docs/manual/advanced/formats/format-widerface/" class="align-left ps-0 td-sidebar-link td-sidebar-link__page" id="m-docsmanualadvancedformatsformat-widerface"><span class="">Wider Face</span></a>
+</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child collapse" id="m-docsmanualadvancedformatsformat-camvid-li">
+  <a href="../../../docs/manual/advanced/formats/format-camvid/" class="align-left ps-0 td-sidebar-link td-sidebar-link__page" id="m-docsmanualadvancedformatsformat-camvid"><span class="">CamVid</span></a>
+</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child collapse" id="m-docsmanualadvancedformatsformat-vggface2-li">
+  <a href="../../../docs/manual/advanced/formats/format-vggface2/" class="align-left ps-0 td-sidebar-link td-sidebar-link__page" id="m-docsmanualadvancedformatsformat-vggface2"><span class="">VGGFace2</span></a>
+</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child collapse" id="m-docsmanualadvancedformatsformat-market1501-li">
+  <a href="../../../docs/manual/advanced/formats/format-market1501/" class="align-left ps-0 td-sidebar-link td-sidebar-link__page" id="m-docsmanualadvancedformatsformat-market1501"><span class="">Market-1501</span></a>
+</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child collapse" id="m-docsmanualadvancedformatsformat-icdar-li">
+  <a href="../../../docs/manual/advanced/formats/format-icdar/" class="align-left ps-0 td-sidebar-link td-sidebar-link__page" id="m-docsmanualadvancedformatsformat-icdar"><span class="">ICDAR13/15</span></a>
+</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child collapse" id="m-docsmanualadvancedformatsformat-openimages-li">
+  <a href="../../../docs/manual/advanced/formats/format-openimages/" class="align-left ps-0 td-sidebar-link td-sidebar-link__page" id="m-docsmanualadvancedformatsformat-openimages"><span class="">Open Images</span></a>
+</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child collapse" id="m-docsmanualadvancedformatsformat-cityscapes-li">
+  <a href="../../../docs/manual/advanced/formats/format-cityscapes/" class="align-left ps-0 td-sidebar-link td-sidebar-link__page" id="m-docsmanualadvancedformatsformat-cityscapes"><span class="">Cityscapes</span></a>
+</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child collapse" id="m-docsmanualadvancedformatsformat-kitti-li">
+  <a href="../../../docs/manual/advanced/formats/format-kitti/" class="align-left ps-0 td-sidebar-link td-sidebar-link__page" id="m-docsmanualadvancedformatsformat-kitti"><span class="">KITTI</span></a>
+</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child collapse" id="m-docsmanualadvancedformatsformat-lfw-li">
+  <a href="../../../docs/manual/advanced/formats/format-lfw/" class="align-left ps-0 td-sidebar-link td-sidebar-link__page" id="m-docsmanualadvancedformatsformat-lfw"><span class="">LFW</span></a>
+</li>
+  </ul>
+</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child collapse" id="m-docsmanualadvancedxml_format-li">
+  <a href="../../../docs/manual/advanced/xml_format/" class="align-left ps-0 td-sidebar-link td-sidebar-link__page" id="m-docsmanualadvancedxml_format"><span class="">XML annotation format</span></a>
+</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child collapse" id="m-docsmanualadvancedshortcuts-li">
+  <a href="../../../docs/manual/advanced/shortcuts/" class="align-left ps-0 td-sidebar-link td-sidebar-link__page" id="m-docsmanualadvancedshortcuts"><span class="">Shortcuts</span></a>
+</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child collapse" id="m-docsmanualadvancedfilter-li">
+  <a href="../../../docs/manual/advanced/filter/" class="align-left ps-0 td-sidebar-link td-sidebar-link__page" id="m-docsmanualadvancedfilter"><span class="">Filter</span></a>
+</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child collapse" id="m-docsmanualadvancedcontextual-images-li">
+  <a href="../../../docs/manual/advanced/contextual-images/" class="align-left ps-0 td-sidebar-link td-sidebar-link__page" id="m-docsmanualadvancedcontextual-images"><span class="">Contextual images</span></a>
+</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child collapse" id="m-docsmanualadvancedshape-grouping-li">
+  <a href="../../../docs/manual/advanced/shape-grouping/" class="align-left ps-0 td-sidebar-link td-sidebar-link__page" id="m-docsmanualadvancedshape-grouping"><span class="">Shape grouping</span></a>
+</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child collapse" id="m-docsmanualadvanceddataset_manifest-li">
+  <a href="../../../docs/manual/advanced/dataset_manifest/" title="Dataset Manifest" class="align-left ps-0 td-sidebar-link td-sidebar-link__page" id="m-docsmanualadvanceddataset_manifest"><span class="">Dataset manifest</span></a>
+</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child collapse" id="m-docsmanualadvanceddata_on_fly-li">
+  <a href="../../../docs/manual/advanced/data_on_fly/" class="align-left ps-0 td-sidebar-link td-sidebar-link__page" id="m-docsmanualadvanceddata_on_fly"><span class="">Data preparation on the fly</span></a>
+</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child collapse" id="m-docsmanualadvancedserverless-tutorial-li">
+  <a href="../../../docs/manual/advanced/serverless-tutorial/" class="align-left ps-0 td-sidebar-link td-sidebar-link__page" id="m-docsmanualadvancedserverless-tutorial"><span class="">Serverless tutorial</span></a>
+</li>
+  </ul>
+</li>
+  </ul>
+</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section with-child" id="m-docsadministration-li">
+  <a href="../../../docs/administration/" class="align-left ps-0 td-sidebar-link td-sidebar-link__section" id="m-docsadministration"><span class="">Administration</span></a>
+  <ul class="ul-2 foldable">
+    <li class="td-sidebar-nav__section-title td-sidebar-nav__section with-child" id="m-docsadministrationbasics-li">
+  <a href="../../../docs/administration/basics/" class="align-left ps-0 td-sidebar-link td-sidebar-link__section" id="m-docsadministrationbasics"><span class="">Basics</span></a>
+  <ul class="ul-3 foldable">
+    <li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child collapse" id="m-docsadministrationbasicsinstallation-li">
+  <a href="../../../docs/administration/basics/installation/" class="align-left ps-0 td-sidebar-link td-sidebar-link__page" id="m-docsadministrationbasicsinstallation"><span class="">Installation Guide</span></a>
+</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child collapse" id="m-docsadministrationbasicsadmin-account-li">
+  <a href="../../../docs/administration/basics/admin-account/" class="align-left ps-0 td-sidebar-link td-sidebar-link__page" id="m-docsadministrationbasicsadmin-account"><span class="">Superuser registration</span></a>
+</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child collapse" id="m-docsadministrationbasicsaws-deployment-guide-li">
+  <a href="../../../docs/administration/basics/aws-deployment-guide/" class="align-left ps-0 td-sidebar-link td-sidebar-link__page" id="m-docsadministrationbasicsaws-deployment-guide"><span class="">AWS-Deployment Guide</span></a>
+</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child collapse" id="m-docsadministrationbasicsrest_api_guide-li">
+  <a href="../../../docs/administration/basics/rest_api_guide/" title="REST API guide" class="align-left ps-0 td-sidebar-link td-sidebar-link__page" id="m-docsadministrationbasicsrest_api_guide"><span class="">REST API</span></a>
+</li>
+  </ul>
+</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section with-child" id="m-docsadministrationadvanced-li">
+  <a href="../../../docs/administration/advanced/" class="align-left ps-0 td-sidebar-link td-sidebar-link__section" id="m-docsadministrationadvanced"><span class="">Advanced</span></a>
+  <ul class="ul-3 foldable">
+    <li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child collapse" id="m-docsadministrationadvancedcvat-architecture-li">
+  <a href="../../../docs/administration/advanced/cvat-architecture/" class="align-left ps-0 td-sidebar-link td-sidebar-link__page" id="m-docsadministrationadvancedcvat-architecture"><span class="">CVAT Architecture</span></a>
+</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child collapse" id="m-docsadministrationadvancedk8s_deployment_with_helm-li">
+  <a href="../../../docs/administration/advanced/k8s_deployment_with_helm/" class="align-left ps-0 td-sidebar-link td-sidebar-link__page" id="m-docsadministrationadvancedk8s_deployment_with_helm"><span class="">CVAT deployment on Kubernetes with Helm</span></a>
+</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child collapse" id="m-docsadministrationadvancedinstallation_automatic_annotation-li">
+  <a href="../../../docs/administration/advanced/installation_automatic_annotation/" title="Semi-automatic and Automatic Annotation" class="align-left ps-0 td-sidebar-link td-sidebar-link__page" id="m-docsadministrationadvancedinstallation_automatic_annotation"><span class="">Installation Auto Annotation</span></a>
+</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child collapse" id="m-docsadministrationadvancedanalytics-li">
+  <a href="../../../docs/administration/advanced/analytics/" class="align-left ps-0 td-sidebar-link td-sidebar-link__page" id="m-docsadministrationadvancedanalytics"><span class="">CVAT Analytics and monitoring</span></a>
+</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child collapse" id="m-docsadministrationadvancedmounting_cloud_storages-li">
+  <a href="../../../docs/administration/advanced/mounting_cloud_storages/" class="align-left ps-0 td-sidebar-link td-sidebar-link__page" id="m-docsadministrationadvancedmounting_cloud_storages"><span class="">Mounting cloud storage</span></a>
+</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child collapse" id="m-docsadministrationadvancedldap-li">
+  <a href="../../../docs/administration/advanced/ldap/" title="LDAP Backed Authentication" class="align-left ps-0 td-sidebar-link td-sidebar-link__page" id="m-docsadministrationadvancedldap"><span class="">LDAP Login</span></a>
+</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child collapse" id="m-docsadministrationadvancedbackup_guide-li">
+  <a href="../../../docs/administration/advanced/backup_guide/" class="align-left ps-0 td-sidebar-link td-sidebar-link__page" id="m-docsadministrationadvancedbackup_guide"><span class="">Backup guide</span></a>
+</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child collapse" id="m-docsadministrationadvancedupgrade_guide-li">
+  <a href="../../../docs/administration/advanced/upgrade_guide/" class="align-left ps-0 td-sidebar-link td-sidebar-link__page" id="m-docsadministrationadvancedupgrade_guide"><span class="">Upgrade guide</span></a>
+</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child collapse" id="m-docsadministrationadvancedwebhooks-li">
+  <a href="../../../docs/administration/advanced/webhooks/" class="align-left ps-0 td-sidebar-link td-sidebar-link__page" id="m-docsadministrationadvancedwebhooks"><span class="">Webhooks</span></a>
+</li>
+  </ul>
+</li>
+  </ul>
+</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section with-child" id="m-docsapi_sdk-li">
+  <a href="../../../docs/api_sdk/" class="align-left ps-0 td-sidebar-link td-sidebar-link__section" id="m-docsapi_sdk"><span class="">API &amp; SDK</span></a>
+  <ul class="ul-2 foldable">
+    <li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child" id="m-docsapi_sdkapi-li">
+  <a href="../../../docs/api_sdk/api/" title="Server API" class="align-left ps-0 td-sidebar-link td-sidebar-link__section" id="m-docsapi_sdkapi"><span class="">API</span></a>
+</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section with-child" id="m-docsapi_sdksdk-li">
+  <a href="../../../docs/api_sdk/sdk/" title="CVAT Python SDK" class="align-left ps-0 td-sidebar-link td-sidebar-link__section" id="m-docsapi_sdksdk"><span class="">SDK</span></a>
+  <ul class="ul-3 foldable">
+    <li class="td-sidebar-nav__section-title td-sidebar-nav__section with-child collapse" id="m-docsapi_sdksdkreference-li">
+  <a href="../../../docs/api_sdk/sdk/reference/" title="SDK API Reference" class="align-left ps-0 td-sidebar-link td-sidebar-link__section" id="m-docsapi_sdksdkreference"><span class="">API Reference</span></a>
+  <ul class="ul-4 foldable">
+    <li class="td-sidebar-nav__section-title td-sidebar-nav__section with-child collapse" id="m-docsapi_sdksdkreferenceapis-li">
+  <a href="../../../docs/api_sdk/sdk/reference/apis/" class="align-left ps-0 td-sidebar-link td-sidebar-link__section" id="m-docsapi_sdksdkreferenceapis"><span class="">APIs</span></a>
+  <ul class="ul-5 foldable">
+    <li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child collapse" id="m-docsapi_sdksdkreferenceapisanalytics-api-li">
+  <a href="../../../docs/api_sdk/sdk/reference/apis/analytics-api/" title="AnalyticsApi class reference" class="align-left ps-0 td-sidebar-link td-sidebar-link__page" id="m-docsapi_sdksdkreferenceapisanalytics-api"><span class="">AnalyticsApi</span></a>
+</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child collapse" id="m-docsapi_sdksdkreferenceapisassets-api-li">
+  <a href="../../../docs/api_sdk/sdk/reference/apis/assets-api/" title="AssetsApi class reference" class="align-left ps-0 td-sidebar-link td-sidebar-link__page" id="m-docsapi_sdksdkreferenceapisassets-api"><span class="">AssetsApi</span></a>
+</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child collapse" id="m-docsapi_sdksdkreferenceapisauth-api-li">
+  <a href="../../../docs/api_sdk/sdk/reference/apis/auth-api/" title="AuthApi class reference" class="align-left ps-0 td-sidebar-link td-sidebar-link__page" id="m-docsapi_sdksdkreferenceapisauth-api"><span class="">AuthApi</span></a>
+</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child collapse" id="m-docsapi_sdksdkreferenceapiscloudstorages-api-li">
+  <a href="../../../docs/api_sdk/sdk/reference/apis/cloudstorages-api/" title="CloudstoragesApi class reference" class="align-left ps-0 td-sidebar-link td-sidebar-link__page" id="m-docsapi_sdksdkreferenceapiscloudstorages-api"><span class="">CloudstoragesApi</span></a>
+</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child collapse" id="m-docsapi_sdksdkreferenceapiscomments-api-li">
+  <a href="../../../docs/api_sdk/sdk/reference/apis/comments-api/" title="CommentsApi class reference" class="align-left ps-0 td-sidebar-link td-sidebar-link__page" id="m-docsapi_sdksdkreferenceapiscomments-api"><span class="">CommentsApi</span></a>
+</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child collapse" id="m-docsapi_sdksdkreferenceapisevents-api-li">
+  <a href="../../../docs/api_sdk/sdk/reference/apis/events-api/" title="EventsApi class reference" class="align-left ps-0 td-sidebar-link td-sidebar-link__page" id="m-docsapi_sdksdkreferenceapisevents-api"><span class="">EventsApi</span></a>
+</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child collapse" id="m-docsapi_sdksdkreferenceapisguides-api-li">
+  <a href="../../../docs/api_sdk/sdk/reference/apis/guides-api/" title="GuidesApi class reference" class="align-left ps-0 td-sidebar-link td-sidebar-link__page" id="m-docsapi_sdksdkreferenceapisguides-api"><span class="">GuidesApi</span></a>
+</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child collapse" id="m-docsapi_sdksdkreferenceapisinvitations-api-li">
+  <a href="../../../docs/api_sdk/sdk/reference/apis/invitations-api/" title="InvitationsApi class reference" class="align-left ps-0 td-sidebar-link td-sidebar-link__page" id="m-docsapi_sdksdkreferenceapisinvitations-api"><span class="">InvitationsApi</span></a>
+</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child collapse" id="m-docsapi_sdksdkreferenceapisissues-api-li">
+  <a href="../../../docs/api_sdk/sdk/reference/apis/issues-api/" title="IssuesApi class reference" class="align-left ps-0 td-sidebar-link td-sidebar-link__page" id="m-docsapi_sdksdkreferenceapisissues-api"><span class="">IssuesApi</span></a>
+</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child collapse" id="m-docsapi_sdksdkreferenceapisjobs-api-li">
+  <a href="../../../docs/api_sdk/sdk/reference/apis/jobs-api/" title="JobsApi class reference" class="align-left ps-0 td-sidebar-link td-sidebar-link__page" id="m-docsapi_sdksdkreferenceapisjobs-api"><span class="">JobsApi</span></a>
+</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child collapse" id="m-docsapi_sdksdkreferenceapislabels-api-li">
+  <a href="../../../docs/api_sdk/sdk/reference/apis/labels-api/" title="LabelsApi class reference" class="align-left ps-0 td-sidebar-link td-sidebar-link__page" id="m-docsapi_sdksdkreferenceapislabels-api"><span class="">LabelsApi</span></a>
+</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child collapse" id="m-docsapi_sdksdkreferenceapislambda-api-li">
+  <a href="../../../docs/api_sdk/sdk/reference/apis/lambda-api/" title="LambdaApi class reference" class="align-left ps-0 td-sidebar-link td-sidebar-link__page" id="m-docsapi_sdksdkreferenceapislambda-api"><span class="">LambdaApi</span></a>
+</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child collapse" id="m-docsapi_sdksdkreferenceapismemberships-api-li">
+  <a href="../../../docs/api_sdk/sdk/reference/apis/memberships-api/" title="MembershipsApi class reference" class="align-left ps-0 td-sidebar-link td-sidebar-link__page" id="m-docsapi_sdksdkreferenceapismemberships-api"><span class="">MembershipsApi</span></a>
+</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child collapse" id="m-docsapi_sdksdkreferenceapisorganizations-api-li">
+  <a href="../../../docs/api_sdk/sdk/reference/apis/organizations-api/" title="OrganizationsApi class reference" class="align-left ps-0 td-sidebar-link td-sidebar-link__page" id="m-docsapi_sdksdkreferenceapisorganizations-api"><span class="">OrganizationsApi</span></a>
+</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child collapse" id="m-docsapi_sdksdkreferenceapisprojects-api-li">
+  <a href="../../../docs/api_sdk/sdk/reference/apis/projects-api/" title="ProjectsApi class reference" class="align-left ps-0 td-sidebar-link td-sidebar-link__page" id="m-docsapi_sdksdkreferenceapisprojects-api"><span class="">ProjectsApi</span></a>
+</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child collapse" id="m-docsapi_sdksdkreferenceapisquality-api-li">
+  <a href="../../../docs/api_sdk/sdk/reference/apis/quality-api/" title="QualityApi class reference" class="align-left ps-0 td-sidebar-link td-sidebar-link__page" id="m-docsapi_sdksdkreferenceapisquality-api"><span class="">QualityApi</span></a>
+</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child collapse" id="m-docsapi_sdksdkreferenceapisrequests-api-li">
+  <a href="../../../docs/api_sdk/sdk/reference/apis/requests-api/" title="RequestsApi class reference" class="align-left ps-0 td-sidebar-link td-sidebar-link__page" id="m-docsapi_sdksdkreferenceapisrequests-api"><span class="">RequestsApi</span></a>
+</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child collapse" id="m-docsapi_sdksdkreferenceapisschema-api-li">
+  <a href="../../../docs/api_sdk/sdk/reference/apis/schema-api/" title="SchemaApi class reference" class="align-left ps-0 td-sidebar-link td-sidebar-link__page" id="m-docsapi_sdksdkreferenceapisschema-api"><span class="">SchemaApi</span></a>
+</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child collapse" id="m-docsapi_sdksdkreferenceapisserver-api-li">
+  <a href="../../../docs/api_sdk/sdk/reference/apis/server-api/" title="ServerApi class reference" class="align-left ps-0 td-sidebar-link td-sidebar-link__page" id="m-docsapi_sdksdkreferenceapisserver-api"><span class="">ServerApi</span></a>
+</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child collapse" id="m-docsapi_sdksdkreferenceapistasks-api-li">
+  <a href="../../../docs/api_sdk/sdk/reference/apis/tasks-api/" title="TasksApi class reference" class="align-left ps-0 td-sidebar-link td-sidebar-link__page" id="m-docsapi_sdksdkreferenceapistasks-api"><span class="">TasksApi</span></a>
+</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child collapse" id="m-docsapi_sdksdkreferenceapisusers-api-li">
+  <a href="../../../docs/api_sdk/sdk/reference/apis/users-api/" title="UsersApi class reference" class="align-left ps-0 td-sidebar-link td-sidebar-link__page" id="m-docsapi_sdksdkreferenceapisusers-api"><span class="">UsersApi</span></a>
+</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child collapse" id="m-docsapi_sdksdkreferenceapiswebhooks-api-li">
+  <a href="../../../docs/api_sdk/sdk/reference/apis/webhooks-api/" title="WebhooksApi class reference" class="align-left ps-0 td-sidebar-link td-sidebar-link__page" id="m-docsapi_sdksdkreferenceapiswebhooks-api"><span class="">WebhooksApi</span></a>
+</li>
+  </ul>
+</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section with-child collapse" id="m-docsapi_sdksdkreferencemodels-li">
+  <a href="../../../docs/api_sdk/sdk/reference/models/" class="align-left ps-0 td-sidebar-link td-sidebar-link__section" id="m-docsapi_sdksdkreferencemodels"><span class="">Models</span></a>
+  <ul class="ul-5 foldable">
+    <li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child collapse" id="m-docsapi_sdksdkreferencemodelsabout-li">
+  <a href="../../../docs/api_sdk/sdk/reference/models/about/" title="About class reference" class="align-left ps-0 td-sidebar-link td-sidebar-link__page" id="m-docsapi_sdksdkreferencemodelsabout"><span class="">About</span></a>
+</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child collapse" id="m-docsapi_sdksdkreferencemodelsaccept-invitation-read-li">
+  <a href="../../../docs/api_sdk/sdk/reference/models/accept-invitation-read/" title="AcceptInvitationRead class reference" class="align-left ps-0 td-sidebar-link td-sidebar-link__page" id="m-docsapi_sdksdkreferencemodelsaccept-invitation-read"><span class="">AcceptInvitationRead</span></a>
+</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child collapse" id="m-docsapi_sdksdkreferencemodelsanalytics-report-li">
+  <a href="../../../docs/api_sdk/sdk/reference/models/analytics-report/" title="AnalyticsReport class reference" class="align-left ps-0 td-sidebar-link td-sidebar-link__page" id="m-docsapi_sdksdkreferencemodelsanalytics-report"><span class="">AnalyticsReport</span></a>
+</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child collapse" id="m-docsapi_sdksdkreferencemodelsanalytics-report-create-request-li">
+  <a href="../../../docs/api_sdk/sdk/reference/models/analytics-report-create-request/" title="AnalyticsReportCreateRequest class reference" class="align-left ps-0 td-sidebar-link td-sidebar-link__page" id="m-docsapi_sdksdkreferencemodelsanalytics-report-create-request"><span class="">AnalyticsReportCreateRequest</span></a>
+</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child collapse" id="m-docsapi_sdksdkreferencemodelsanalytics-report-target-enum-li">
+  <a href="../../../docs/api_sdk/sdk/reference/models/analytics-report-target-enum/" title="AnalyticsReportTargetEnum class reference" class="align-left ps-0 td-sidebar-link td-sidebar-link__page" id="m-docsapi_sdksdkreferencemodelsanalytics-report-target-enum"><span class="">AnalyticsReportTargetEnum</span></a>
+</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child collapse" id="m-docsapi_sdksdkreferencemodelsannotation-conflict-li">
+  <a href="../../../docs/api_sdk/sdk/reference/models/annotation-conflict/" title="AnnotationConflict class reference" class="align-left ps-0 td-sidebar-link td-sidebar-link__page" id="m-docsapi_sdksdkreferencemodelsannotation-conflict"><span class="">AnnotationConflict</span></a>
+</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child collapse" id="m-docsapi_sdksdkreferencemodelsannotation-conflict-type-enum-li">
+  <a href="../../../docs/api_sdk/sdk/reference/models/annotation-conflict-type-enum/" title="AnnotationConflictTypeEnum class reference" class="align-left ps-0 td-sidebar-link td-sidebar-link__page" id="m-docsapi_sdksdkreferencemodelsannotation-conflict-type-enum"><span class="">AnnotationConflictTypeEnum</span></a>
+</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child collapse" id="m-docsapi_sdksdkreferencemodelsannotation-file-request-li">
+  <a href="../../../docs/api_sdk/sdk/reference/models/annotation-file-request/" title="AnnotationFileRequest class reference" class="align-left ps-0 td-sidebar-link td-sidebar-link__page" id="m-docsapi_sdksdkreferencemodelsannotation-file-request"><span class="">AnnotationFileRequest</span></a>
+</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child collapse" id="m-docsapi_sdksdkreferencemodelsannotation-guide-read-li">
+  <a href="../../../docs/api_sdk/sdk/reference/models/annotation-guide-read/" title="AnnotationGuideRead class reference" class="align-left ps-0 td-sidebar-link td-sidebar-link__page" id="m-docsapi_sdksdkreferencemodelsannotation-guide-read"><span class="">AnnotationGuideRead</span></a>
+</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child collapse" id="m-docsapi_sdksdkreferencemodelsannotation-guide-write-request-li">
+  <a href="../../../docs/api_sdk/sdk/reference/models/annotation-guide-write-request/" title="AnnotationGuideWriteRequest class reference" class="align-left ps-0 td-sidebar-link td-sidebar-link__page" id="m-docsapi_sdksdkreferencemodelsannotation-guide-write-request"><span class="">AnnotationGuideWriteRequest</span></a>
+</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child collapse" id="m-docsapi_sdksdkreferencemodelsannotation-id-li">
+  <a href="../../../docs/api_sdk/sdk/reference/models/annotation-id/" title="AnnotationId class reference" class="align-left ps-0 td-sidebar-link td-sidebar-link__page" id="m-docsapi_sdksdkreferencemodelsannotation-id"><span class="">AnnotationId</span></a>
+</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child collapse" id="m-docsapi_sdksdkreferencemodelsannotation-id-shape-type-li">
+  <a href="../../../docs/api_sdk/sdk/reference/models/annotation-id-shape-type/" title="AnnotationIdShapeType class reference" class="align-left ps-0 td-sidebar-link td-sidebar-link__page" id="m-docsapi_sdksdkreferencemodelsannotation-id-shape-type"><span class="">AnnotationIdShapeType</span></a>
+</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child collapse" id="m-docsapi_sdksdkreferencemodelsannotation-id-type-enum-li">
+  <a href="../../../docs/api_sdk/sdk/reference/models/annotation-id-type-enum/" title="AnnotationIdTypeEnum class reference" class="align-left ps-0 td-sidebar-link td-sidebar-link__page" id="m-docsapi_sdksdkreferencemodelsannotation-id-type-enum"><span class="">AnnotationIdTypeEnum</span></a>
+</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child collapse" id="m-docsapi_sdksdkreferencemodelsannotations-read-li">
+  <a href="../../../docs/api_sdk/sdk/reference/models/annotations-read/" title="AnnotationsRead class reference" class="align-left ps-0 td-sidebar-link td-sidebar-link__page" id="m-docsapi_sdksdkreferencemodelsannotations-read"><span class="">AnnotationsRead</span></a>
+</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child collapse" id="m-docsapi_sdksdkreferencemodelsasset-read-li">
+  <a href="../../../docs/api_sdk/sdk/reference/models/asset-read/" title="AssetRead class reference" class="align-left ps-0 td-sidebar-link td-sidebar-link__page" id="m-docsapi_sdksdkreferencemodelsasset-read"><span class="">AssetRead</span></a>
+</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child collapse" id="m-docsapi_sdksdkreferencemodelsattribute-li">
+  <a href="../../../docs/api_sdk/sdk/reference/models/attribute/" title="Attribute class reference" class="align-left ps-0 td-sidebar-link td-sidebar-link__page" id="m-docsapi_sdksdkreferencemodelsattribute"><span class="">Attribute</span></a>
+</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child collapse" id="m-docsapi_sdksdkreferencemodelsattribute-request-li">
+  <a href="../../../docs/api_sdk/sdk/reference/models/attribute-request/" title="AttributeRequest class reference" class="align-left ps-0 td-sidebar-link td-sidebar-link__page" id="m-docsapi_sdksdkreferencemodelsattribute-request"><span class="">AttributeRequest</span></a>
+</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child collapse" id="m-docsapi_sdksdkreferencemodelsattribute-val-li">
+  <a href="../../../docs/api_sdk/sdk/reference/models/attribute-val/" title="AttributeVal class reference" class="align-left ps-0 td-sidebar-link td-sidebar-link__page" id="m-docsapi_sdksdkreferencemodelsattribute-val"><span class="">AttributeVal</span></a>
+</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child collapse" id="m-docsapi_sdksdkreferencemodelsattribute-val-request-li">
+  <a href="../../../docs/api_sdk/sdk/reference/models/attribute-val-request/" title="AttributeValRequest class reference" class="align-left ps-0 td-sidebar-link td-sidebar-link__page" id="m-docsapi_sdksdkreferencemodelsattribute-val-request"><span class="">AttributeValRequest</span></a>
+</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child collapse" id="m-docsapi_sdksdkreferencemodelsbackup-write-request-li">
+  <a href="../../../docs/api_sdk/sdk/reference/models/backup-write-request/" title="BackupWriteRequest class reference" class="align-left ps-0 td-sidebar-link td-sidebar-link__page" id="m-docsapi_sdksdkreferencemodelsbackup-write-request"><span class="">BackupWriteRequest</span></a>
+</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child collapse" id="m-docsapi_sdksdkreferencemodelsbasic-organization-li">
+  <a href="../../../docs/api_sdk/sdk/reference/models/basic-organization/" title="BasicOrganization class reference" class="align-left ps-0 td-sidebar-link td-sidebar-link__page" id="m-docsapi_sdksdkreferencemodelsbasic-organization"><span class="">BasicOrganization</span></a>
+</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child collapse" id="m-docsapi_sdksdkreferencemodelsbasic-user-li">
+  <a href="../../../docs/api_sdk/sdk/reference/models/basic-user/" title="BasicUser class reference" class="align-left ps-0 td-sidebar-link td-sidebar-link__page" id="m-docsapi_sdksdkreferencemodelsbasic-user"><span class="">BasicUser</span></a>
+</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child collapse" id="m-docsapi_sdksdkreferencemodelsbasic-user-request-li">
+  <a href="../../../docs/api_sdk/sdk/reference/models/basic-user-request/" title="BasicUserRequest class reference" class="align-left ps-0 td-sidebar-link td-sidebar-link__page" id="m-docsapi_sdksdkreferencemodelsbasic-user-request"><span class="">BasicUserRequest</span></a>
+</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child collapse" id="m-docsapi_sdksdkreferencemodelsbinary-operation-li">
+  <a href="../../../docs/api_sdk/sdk/reference/models/binary-operation/" title="BinaryOperation class reference" class="align-left ps-0 td-sidebar-link td-sidebar-link__page" id="m-docsapi_sdksdkreferencemodelsbinary-operation"><span class="">BinaryOperation</span></a>
+</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child collapse" id="m-docsapi_sdksdkreferencemodelschunk-type-li">
+  <a href="../../../docs/api_sdk/sdk/reference/models/chunk-type/" title="ChunkType class reference" class="align-left ps-0 td-sidebar-link td-sidebar-link__page" id="m-docsapi_sdksdkreferencemodelschunk-type"><span class="">ChunkType</span></a>
+</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child collapse" id="m-docsapi_sdksdkreferencemodelsclient-events-li">
+  <a href="../../../docs/api_sdk/sdk/reference/models/client-events/" title="ClientEvents class reference" class="align-left ps-0 td-sidebar-link td-sidebar-link__page" id="m-docsapi_sdksdkreferencemodelsclient-events"><span class="">ClientEvents</span></a>
+</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child collapse" id="m-docsapi_sdksdkreferencemodelsclient-events-request-li">
+  <a href="../../../docs/api_sdk/sdk/reference/models/client-events-request/" title="ClientEventsRequest class reference" class="align-left ps-0 td-sidebar-link td-sidebar-link__page" id="m-docsapi_sdksdkreferencemodelsclient-events-request"><span class="">ClientEventsRequest</span></a>
+</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child collapse" id="m-docsapi_sdksdkreferencemodelsclient-events-request-previous-event-li">
+  <a href="../../../docs/api_sdk/sdk/reference/models/client-events-request-previous-event/" title="ClientEventsRequestPreviousEvent class reference" class="align-left ps-0 td-sidebar-link td-sidebar-link__page" id="m-docsapi_sdksdkreferencemodelsclient-events-request-previous-event"><span class="">ClientEventsRequestPreviousEvent</span></a>
+</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child collapse" id="m-docsapi_sdksdkreferencemodelscloud-storage-content-li">
+  <a href="../../../docs/api_sdk/sdk/reference/models/cloud-storage-content/" title="CloudStorageContent class reference" class="align-left ps-0 td-sidebar-link td-sidebar-link__page" id="m-docsapi_sdksdkreferencemodelscloud-storage-content"><span class="">CloudStorageContent</span></a>
+</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child collapse" id="m-docsapi_sdksdkreferencemodelscloud-storage-read-li">
+  <a href="../../../docs/api_sdk/sdk/reference/models/cloud-storage-read/" title="CloudStorageRead class reference" class="align-left ps-0 td-sidebar-link td-sidebar-link__page" id="m-docsapi_sdksdkreferencemodelscloud-storage-read"><span class="">CloudStorageRead</span></a>
+</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child collapse" id="m-docsapi_sdksdkreferencemodelscloud-storage-read-owner-li">
+  <a href="../../../docs/api_sdk/sdk/reference/models/cloud-storage-read-owner/" title="CloudStorageReadOwner class reference" class="align-left ps-0 td-sidebar-link td-sidebar-link__page" id="m-docsapi_sdksdkreferencemodelscloud-storage-read-owner"><span class="">CloudStorageReadOwner</span></a>
+</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child collapse" id="m-docsapi_sdksdkreferencemodelscloud-storage-write-request-li">
+  <a href="../../../docs/api_sdk/sdk/reference/models/cloud-storage-write-request/" title="CloudStorageWriteRequest class reference" class="align-left ps-0 td-sidebar-link td-sidebar-link__page" id="m-docsapi_sdksdkreferencemodelscloud-storage-write-request"><span class="">CloudStorageWriteRequest</span></a>
+</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child collapse" id="m-docsapi_sdksdkreferencemodelscomment-read-li">
+  <a href="../../../docs/api_sdk/sdk/reference/models/comment-read/" title="CommentRead class reference" class="align-left ps-0 td-sidebar-link td-sidebar-link__page" id="m-docsapi_sdksdkreferencemodelscomment-read"><span class="">CommentRead</span></a>
+</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child collapse" id="m-docsapi_sdksdkreferencemodelscomments-summary-li">
+  <a href="../../../docs/api_sdk/sdk/reference/models/comments-summary/" title="CommentsSummary class reference" class="align-left ps-0 td-sidebar-link td-sidebar-link__page" id="m-docsapi_sdksdkreferencemodelscomments-summary"><span class="">CommentsSummary</span></a>
+</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child collapse" id="m-docsapi_sdksdkreferencemodelscomment-write-request-li">
+  <a href="../../../docs/api_sdk/sdk/reference/models/comment-write-request/" title="CommentWriteRequest class reference" class="align-left ps-0 td-sidebar-link td-sidebar-link__page" id="m-docsapi_sdksdkreferencemodelscomment-write-request"><span class="">CommentWriteRequest</span></a>
+</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child collapse" id="m-docsapi_sdksdkreferencemodelscredentials-type-enum-li">
+  <a href="../../../docs/api_sdk/sdk/reference/models/credentials-type-enum/" title="CredentialsTypeEnum class reference" class="align-left ps-0 td-sidebar-link td-sidebar-link__page" id="m-docsapi_sdksdkreferencemodelscredentials-type-enum"><span class="">CredentialsTypeEnum</span></a>
+</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child collapse" id="m-docsapi_sdksdkreferencemodelsdata-frame-li">
+  <a href="../../../docs/api_sdk/sdk/reference/models/data-frame/" title="DataFrame class reference" class="align-left ps-0 td-sidebar-link td-sidebar-link__page" id="m-docsapi_sdksdkreferencemodelsdata-frame"><span class="">DataFrame</span></a>
+</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child collapse" id="m-docsapi_sdksdkreferencemodelsdata-meta-read-li">
+  <a href="../../../docs/api_sdk/sdk/reference/models/data-meta-read/" title="DataMetaRead class reference" class="align-left ps-0 td-sidebar-link td-sidebar-link__page" id="m-docsapi_sdksdkreferencemodelsdata-meta-read"><span class="">DataMetaRead</span></a>
+</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child collapse" id="m-docsapi_sdksdkreferencemodelsdata-request-li">
+  <a href="../../../docs/api_sdk/sdk/reference/models/data-request/" title="DataRequest class reference" class="align-left ps-0 td-sidebar-link td-sidebar-link__page" id="m-docsapi_sdksdkreferencemodelsdata-request"><span class="">DataRequest</span></a>
+</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child collapse" id="m-docsapi_sdksdkreferencemodelsdata-response-li">
+  <a href="../../../docs/api_sdk/sdk/reference/models/data-response/" title="DataResponse class reference" class="align-left ps-0 td-sidebar-link td-sidebar-link__page" id="m-docsapi_sdksdkreferencemodelsdata-response"><span class="">DataResponse</span></a>
+</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child collapse" id="m-docsapi_sdksdkreferencemodelsdataset-file-request-li">
+  <a href="../../../docs/api_sdk/sdk/reference/models/dataset-file-request/" title="DatasetFileRequest class reference" class="align-left ps-0 td-sidebar-link td-sidebar-link__page" id="m-docsapi_sdksdkreferencemodelsdataset-file-request"><span class="">DatasetFileRequest</span></a>
+</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child collapse" id="m-docsapi_sdksdkreferencemodelsdataset-format-li">
+  <a href="../../../docs/api_sdk/sdk/reference/models/dataset-format/" title="DatasetFormat class reference" class="align-left ps-0 td-sidebar-link td-sidebar-link__page" id="m-docsapi_sdksdkreferencemodelsdataset-format"><span class="">DatasetFormat</span></a>
+</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child collapse" id="m-docsapi_sdksdkreferencemodelsdataset-formats-li">
+  <a href="../../../docs/api_sdk/sdk/reference/models/dataset-formats/" title="DatasetFormats class reference" class="align-left ps-0 td-sidebar-link td-sidebar-link__page" id="m-docsapi_sdksdkreferencemodelsdataset-formats"><span class="">DatasetFormats</span></a>
+</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child collapse" id="m-docsapi_sdksdkreferencemodelsdataset-write-request-li">
+  <a href="../../../docs/api_sdk/sdk/reference/models/dataset-write-request/" title="DatasetWriteRequest class reference" class="align-left ps-0 td-sidebar-link td-sidebar-link__page" id="m-docsapi_sdksdkreferencemodelsdataset-write-request"><span class="">DatasetWriteRequest</span></a>
+</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child collapse" id="m-docsapi_sdksdkreferencemodelsdefault-view-enum-li">
+  <a href="../../../docs/api_sdk/sdk/reference/models/default-view-enum/" title="DefaultViewEnum class reference" class="align-left ps-0 td-sidebar-link td-sidebar-link__page" id="m-docsapi_sdksdkreferencemodelsdefault-view-enum"><span class="">DefaultViewEnum</span></a>
+</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child collapse" id="m-docsapi_sdksdkreferencemodelsevent-li">
+  <a href="../../../docs/api_sdk/sdk/reference/models/event/" title="Event class reference" class="align-left ps-0 td-sidebar-link td-sidebar-link__page" id="m-docsapi_sdksdkreferencemodelsevent"><span class="">Event</span></a>
+</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child collapse" id="m-docsapi_sdksdkreferencemodelsevent-request-li">
+  <a href="../../../docs/api_sdk/sdk/reference/models/event-request/" title="EventRequest class reference" class="align-left ps-0 td-sidebar-link td-sidebar-link__page" id="m-docsapi_sdksdkreferencemodelsevent-request"><span class="">EventRequest</span></a>
+</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child collapse" id="m-docsapi_sdksdkreferencemodelsevents-li">
+  <a href="../../../docs/api_sdk/sdk/reference/models/events/" title="Events class reference" class="align-left ps-0 td-sidebar-link td-sidebar-link__page" id="m-docsapi_sdksdkreferencemodelsevents"><span class="">Events</span></a>
+</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child collapse" id="m-docsapi_sdksdkreferencemodelsevents-enum-li">
+  <a href="../../../docs/api_sdk/sdk/reference/models/events-enum/" title="EventsEnum class reference" class="align-left ps-0 td-sidebar-link td-sidebar-link__page" id="m-docsapi_sdksdkreferencemodelsevents-enum"><span class="">EventsEnum</span></a>
+</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child collapse" id="m-docsapi_sdksdkreferencemodelsfile-info-li">
+  <a href="../../../docs/api_sdk/sdk/reference/models/file-info/" title="FileInfo class reference" class="align-left ps-0 td-sidebar-link td-sidebar-link__page" id="m-docsapi_sdksdkreferencemodelsfile-info"><span class="">FileInfo</span></a>
+</li>
+  </ul>
+</li>
+  </ul>
+</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child collapse" id="m-docsapi_sdksdklowlevel-api-li">
+  <a href="../../../docs/api_sdk/sdk/lowlevel-api/" class="align-left ps-0 td-sidebar-link td-sidebar-link__page" id="m-docsapi_sdksdklowlevel-api"><span class="">Low-level API</span></a>
+</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child collapse" id="m-docsapi_sdksdkhighlevel-api-li">
+  <a href="../../../docs/api_sdk/sdk/highlevel-api/" class="align-left ps-0 td-sidebar-link td-sidebar-link__page" id="m-docsapi_sdksdkhighlevel-api"><span class="">High-level API</span></a>
+</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child collapse" id="m-docsapi_sdksdkpytorch-adapter-li">
+  <a href="../../../docs/api_sdk/sdk/pytorch-adapter/" class="align-left ps-0 td-sidebar-link td-sidebar-link__page" id="m-docsapi_sdksdkpytorch-adapter"><span class="">PyTorch adapter</span></a>
+</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child collapse" id="m-docsapi_sdksdkauto-annotation-li">
+  <a href="../../../docs/api_sdk/sdk/auto-annotation/" class="align-left ps-0 td-sidebar-link td-sidebar-link__page" id="m-docsapi_sdksdkauto-annotation"><span class="">Auto-annotation API</span></a>
+</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child collapse" id="m-docsapi_sdksdkdeveloper-guide-li">
+  <a href="../../../docs/api_sdk/sdk/developer-guide/" class="align-left ps-0 td-sidebar-link td-sidebar-link__page" id="m-docsapi_sdksdkdeveloper-guide"><span class="">Developer guide</span></a>
+</li>
+  </ul>
+</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child" id="m-docsapi_sdkcli-li">
+  <a href="../../../docs/api_sdk/cli/" title="Command line interface (CLI)" class="align-left ps-0 td-sidebar-link td-sidebar-link__section" id="m-docsapi_sdkcli"><span class="">CLI</span></a>
+</li>
+  </ul>
+</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section with-child" id="m-docscontributing-li">
+  <a href="../../../docs/contributing/" title="Contributing to this project" class="align-left ps-0 td-sidebar-link td-sidebar-link__section" id="m-docscontributing"><span class="">Contributing</span></a>
+  <ul class="ul-2 foldable">
+    <li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child" id="m-docscontributingdevelopment-environment-li">
+  <a href="../../../docs/contributing/development-environment/" class="align-left ps-0 td-sidebar-link td-sidebar-link__page" id="m-docscontributingdevelopment-environment"><span class="">Development environment</span></a>
+</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child" id="m-docscontributingsetup-additional-components-li">
+  <a href="../../../docs/contributing/setup-additional-components/" class="align-left ps-0 td-sidebar-link td-sidebar-link__page" id="m-docscontributingsetup-additional-components"><span class="">Setup additional components in development environment</span></a>
+</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child" id="m-docscontributingcoding-style-li">
+  <a href="../../../docs/contributing/coding-style/" class="align-left ps-0 td-sidebar-link td-sidebar-link__page" id="m-docscontributingcoding-style"><span class="">Coding style</span></a>
+</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child" id="m-docscontributingbranching-model-li">
+  <a href="../../../docs/contributing/branching-model/" class="align-left ps-0 td-sidebar-link td-sidebar-link__page" id="m-docscontributingbranching-model"><span class="">Branching model</span></a>
+</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child" id="m-docscontributingusing-the-issue-tracker-li">
+  <a href="../../../docs/contributing/using-the-issue-tracker/" class="align-left ps-0 td-sidebar-link td-sidebar-link__page" id="m-docscontributingusing-the-issue-tracker"><span class="">Using the issue tracker</span></a>
+</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child" id="m-docscontributingbug-reports-li">
+  <a href="../../../docs/contributing/bug-reports/" class="align-left ps-0 td-sidebar-link td-sidebar-link__page" id="m-docscontributingbug-reports"><span class="">Bug reports</span></a>
+</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child" id="m-docscontributingfeature-requests-li">
+  <a href="../../../docs/contributing/feature-requests/" class="align-left ps-0 td-sidebar-link td-sidebar-link__page" id="m-docscontributingfeature-requests"><span class="">Feature requests</span></a>
+</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child" id="m-docscontributingpull-requests-li">
+  <a href="../../../docs/contributing/pull-requests/" class="align-left ps-0 td-sidebar-link td-sidebar-link__page" id="m-docscontributingpull-requests"><span class="">Pull requests</span></a>
+</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child" id="m-docscontributingnew-annotation-format-li">
+  <a href="../../../docs/contributing/new-annotation-format/" title="How to add a new annotation format support" class="align-left ps-0 td-sidebar-link td-sidebar-link__page" id="m-docscontributingnew-annotation-format"><span class="">New annotation format support</span></a>
+</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child" id="m-docscontributingserver-profiling-li">
+  <a href="../../../docs/contributing/server-profiling/" class="align-left ps-0 td-sidebar-link td-sidebar-link__page" id="m-docscontributingserver-profiling"><span class="">Server Profiling</span></a>
+</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child" id="m-docscontributingrunning-tests-li">
+  <a href="../../../docs/contributing/running-tests/" class="align-left ps-0 td-sidebar-link td-sidebar-link__page" id="m-docscontributingrunning-tests"><span class="">Running tests</span></a>
+</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child" id="m-docscontributingrepo-structure-li">
+  <a href="../../../docs/contributing/repo-structure/" class="align-left ps-0 td-sidebar-link td-sidebar-link__page" id="m-docscontributingrepo-structure"><span class="">Repository structure</span></a>
+</li>
+  </ul>
+</li>
+  </ul>
+</li>
+    </ul>
+  </nav>
+</div>
+
+          </aside>
+          <aside class="d-none d-xl-block col-xl-2 td-sidebar-toc d-print-none">
+            
+<div class="td-page-meta ms-2 pb-1 pt-2 mb-0">
+<a href="https://github.com/cvat-ai/cvat/tree/develop/site/content/en/docs/enterprise/subscription-management.md" class="td-page-meta--view" target="_blank" rel="noopener"><i class="fa-solid fa-file-lines fa-fw"></i> View page source</a>
+  <a href="https://github.com/cvat-ai/cvat/edit/develop/site/content/en/docs/enterprise/subscription-management.md" class="td-page-meta--edit" target="_blank" rel="noopener"><i class="fa-solid fa-pen-to-square fa-fw"></i> Edit this page</a>
+  <a href="https://github.com/cvat-ai/cvat/new/develop/site/content/en/docs/enterprise/subscription-management.md?filename=change-me.md&amp;value=---%0Atitle%3A&#43;%22Long&#43;Page&#43;Title%22%0AlinkTitle%3A&#43;%22Short&#43;Nav&#43;Title%22%0Aweight%3A&#43;100%0Adescription%3A&#43;%3E-%0A&#43;&#43;&#43;&#43;&#43;Page&#43;description&#43;for&#43;heading&#43;and&#43;indexes.%0A---%0A%0A%23%23&#43;Heading%0A%0AEdit&#43;this&#43;template&#43;to&#43;create&#43;your&#43;new&#43;page.%0A%0A%2A&#43;Give&#43;it&#43;a&#43;good&#43;name%2C&#43;ending&#43;in&#43;%60.md%60&#43;-&#43;e.g.&#43;%60getting-started.md%60%0A%2A&#43;Edit&#43;the&#43;%22front&#43;matter%22&#43;section&#43;at&#43;the&#43;top&#43;of&#43;the&#43;page&#43;%28weight&#43;controls&#43;how&#43;its&#43;ordered&#43;amongst&#43;other&#43;pages&#43;in&#43;the&#43;same&#43;directory%3B&#43;lowest&#43;number&#43;first%29.%0A%2A&#43;Add&#43;a&#43;good&#43;commit&#43;message&#43;at&#43;the&#43;bottom&#43;of&#43;the&#43;page&#43;%28%3C80&#43;characters%3B&#43;use&#43;the&#43;extended&#43;description&#43;field&#43;for&#43;more&#43;detail%29.%0A%2A&#43;Create&#43;a&#43;new&#43;branch&#43;so&#43;you&#43;can&#43;preview&#43;your&#43;new&#43;file&#43;and&#43;request&#43;a&#43;review&#43;via&#43;Pull&#43;Request.%0A" class="td-page-meta--child" target="_blank" rel="noopener"><i class="fa-solid fa-pen-to-square fa-fw"></i> Create child page</a>
+  <a href="https://github.com/cvat-ai/cvat/issues/new?title=Subscription%20management" class="td-page-meta--issue" target="_blank" rel="noopener"><i class="fa-solid fa-list-check fa-fw"></i> Create documentation issue</a>
+  <a href="https://github.com/cvat-ai/cvat/issues/new" class="td-page-meta--project-issue" target="_blank" rel="noopener"><i class="fa-solid fa-list-check fa-fw"></i> Create project issue</a>
+  <a id="print" href="../../../docs/enterprise/_print/"><i class="fa-solid fa-print fa-fw"></i> Print entire section</a>
+
+</div>
+
+            <div class="td-toc">
+        <nav id="TableOfContents">
+  <ul>
+    <li><a href="#available-paid-plans">Available paid plans</a>
+      <ul>
+        <li><a href="#monthly-plans">Monthly plans</a></li>
+        <li><a href="#annual-plans">Annual plans</a></li>
+      </ul>
+    </li>
+    <li><a href="#billing">Billing</a>
+      <ul>
+        <li><a href="#how-to-add-vattax-and-other-information-to-the-cvatai-invoice-before-the-first-payment">How to add VAT/tax and other information to the CVAT.ai invoice before the first payment?</a></li>
+        <li><a href="#how-to-update-vattax-information-and-other-details-for-upcoming-invoices-from-cvatai">How to update VAT/tax information and other details for upcoming invoices from CVAT.ai?</a></li>
+        <li><a href="#can-a-paid-invoice-be-modified">Can a paid invoice be modified?</a></li>
+        <li><a href="#how-can-i-get-a-quote-before-i-subscribe-how-to-add-a-po-number-to-my-invoices">How can I get a quote before I subscribe? How to add a PO number to my invoices?</a></li>
+        <li><a href="#can-you-sign-an-agreement-before-i-subscribe">Can you sign an agreement before I subscribe?</a></li>
+        <li><a href="#can-you-handle-a-bank-transfer-with-30-day-payment-terms">Can you handle a bank transfer with 30-day payment terms?</a></li>
+        <li><a href="#where-can-i-find-my-invoices">Where can I find my invoices?</a></li>
+        <li><a href="#i-am-a-student-can-i-have-a-discount-or-free-access">I am a student, can I have a discount or free access?</a></li>
+      </ul>
+    </li>
+    <li><a href="#payment-methods">Payment methods</a>
+      <ul>
+        <li><a href="#paying-with-bank-transfer">Paying with bank transfer</a></li>
+        <li><a href="#how-to-change-the-payment-method">How to change the payment method?</a></li>
+      </ul>
+    </li>
+    <li><a href="#adding-and-removing-team-members">Adding and removing team members</a></li>
+    <li><a href="#change-plan">Change plan</a>
+      <ul>
+        <li><a href="#how-to-change-the-plan-from-solo-to-team">How to change the plan from Solo to Team?</a></li>
+        <li><a href="#how-to-switch-from-a-monthly-subscription-to-an-annual-one">How to switch from a monthly subscription to an annual one?</a></li>
+      </ul>
+    </li>
+    <li><a href="#can-i-subscribe-to-several-plans">Can I subscribe to several plans?</a></li>
+    <li><a href="#cancel-plan">Cancel plan</a>
+      <ul>
+        <li><a href="#what-will-happen-to-my-data">What will happen to my data?</a></li>
+        <li><a href="#how-to-cancel-any-plan">How to cancel any plan?</a></li>
+        <li><a href="#how-can-i-get-a-refund">How can I get a refund?</a></li>
+      </ul>
+    </li>
+    <li><a href="#plan-renewal">Plan renewal</a></li>
+    <li><a href="#subscription-management-video-tutorial">Subscription management video tutorial</a></li>
+  </ul>
+</nav>
+      </div>
+    
+            
+
+          </aside>
+          <main class="col-12 col-md-9 col-xl-8 ps-md-5" role="main">
+            
+  
+
+            <nav aria-label="breadcrumb" class="td-breadcrumbs">
+  <ol class="breadcrumb">
+  <li class="breadcrumb-item">
+    <a href="../../../docs/">Documentation</a></li>
+  <li class="breadcrumb-item">
+    <a href="../../../docs/enterprise/">Paid features</a></li>
+  <li class="breadcrumb-item active" aria-current="page">
+    Subscription management</li>
+  </ol>
+</nav>
+            
+<div class="td-content">
+	<h1>Subscription management</h1>
+	<div class="lead">How to manage your subscription</div>
+	<header class="article-meta">
+		
+</header>
+	<p>This article provides tips on how to effectively manage your
+CVAT subscriptions, including tracking expenses and canceling
+unnecessary subscriptions, to optimize your finances and save time.</p>
+<p>Whether you&rsquo;re a business owner or an individual,
+you&rsquo;ll learn how to take control of your subscriptions and manage them.</p>
+<p>See:</p>
+<ul>
+<li><a href="#available-paid-plans">Available paid plans</a>
+<ul>
+<li><a href="#monthly-plans">Monthly plans</a></li>
+<li><a href="#annual-plans">Annual plans</a></li>
+</ul>
+</li>
+<li><a href="#billing">Billing</a>
+<ul>
+<li><a href="#how-to-add-vattax-and-other-information-to-the-cvatai-invoice-before-the-first-payment">How to add VAT/tax and other information to the CVAT.ai invoice before the first payment?</a></li>
+<li><a href="#how-to-update-vattax-information-and-other-details-for-upcoming-invoices-from-cvatai">How to update VAT/tax information and other details for upcoming invoices from CVAT.ai?</a></li>
+<li><a href="#can-a-paid-invoice-be-modified">Can a paid invoice be modified?</a></li>
+<li><a href="#how-can-i-get-a-quote-before-i-subscribe-how-to-add-a-po-number-to-my-invoices">How can I get a quote before I subscribe? How to add a PO number to my invoices?</a></li>
+<li><a href="#can-you-sign-an-agreement-before-i-subscribe">Can you sign an agreement before I subscribe?</a></li>
+<li><a href="#can-you-handle-a-bank-transfer-with-30-day-payment-terms">Can you handle a bank transfer with 30-day payment terms?</a></li>
+<li><a href="#where-can-i-find-my-invoices">Where can I find my invoices?</a></li>
+<li><a href="#i-am-a-student-can-i-have-a-discount-or-free-access">I am a student, can I have a discount or free access?</a></li>
+</ul>
+</li>
+<li><a href="#payment-methods">Payment methods</a>
+<ul>
+<li><a href="#paying-with-bank-transfer">Paying with bank transfer</a></li>
+<li><a href="#how-to-change-the-payment-method">How to change the payment method?</a></li>
+</ul>
+</li>
+<li><a href="#adding-and-removing-team-members">Adding and removing team members</a></li>
+<li><a href="#change-plan">Change plan</a>
+<ul>
+<li><a href="#how-to-change-the-plan-from-solo-to-team">How to change the plan from Solo to Team?</a></li>
+<li><a href="#how-to-switch-from-a-monthly-subscription-to-an-annual-one">How to switch from a monthly subscription to an annual one?</a></li>
+</ul>
+</li>
+<li><a href="#can-i-subscribe-to-several-plans">Can I subscribe to several plans?</a></li>
+<li><a href="#cancel-plan">Cancel plan</a>
+<ul>
+<li><a href="#what-will-happen-to-my-data">What will happen to my data?</a></li>
+<li><a href="#how-to-cancel-any-plan">How to cancel any plan?</a></li>
+<li><a href="#how-can-i-get-a-refund">How can I get a refund?</a></li>
+</ul>
+</li>
+<li><a href="#plan-renewal">Plan renewal</a></li>
+<li><a href="#subscription-management-video-tutorial">Subscription management video tutorial</a></li>
+</ul>
+<h2 id="available-paid-plans">Available paid plans</h2>
+<p>This section outlines the paid plans available on CVAT.ai.</p>
+<h3 id="monthly-plans">Monthly plans</h3>
+<!--lint disable maximum-line-length-->
+<table>
+<thead>
+<tr>
+<th>Name</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Solo</strong></td>
+<td>The <strong>Solo</strong> plan has a fixed price and is designed <strong>for personal use only</strong>. <br><br>It does not assume collaboration with team members and is not suitable for use within organizations, but it removes all other limitations of the <strong>Free</strong> plan. <Br><br> <strong>Note</strong>: Although it allows the creation of an organization and access for up to 2 members &ndash; it is <em>for trial purposes</em> only! <br>Organization and members <em>will have all the limitations of the <strong>Free</strong> plan</em>.</td>
+</tr>
+<tr>
+<td><strong>Team</strong></td>
+<td>The <strong>Team</strong> is <strong>for collaboration</strong>, it removes limitations of the <strong>Free</strong> plan for the whole organization, allowing you to share paid benefits with your colleagues. <br><br>The <strong>monthly payment for the plan depends on the number of team members you&rsquo;ve added</strong>. All limits of the <strong>Free</strong> plan will be removed. <Br><br> <strong>Note</strong>: The organization owner is also part of the team. So, if you have two annotators working, you&rsquo;ll need to pay for 3 seats (2 annotators + 1 organization owner).</td>
+</tr>
+</tbody>
+</table>
+<!--lint enable maximum-line-length-->
+<h3 id="annual-plans">Annual plans</h3>
+<p>Whether you&rsquo;re a new user, or have a subscription to <strong>Team</strong> or <strong>Solo</strong> plan, <a href="https://www.cvat.ai/post/cvat-annual-plans">you can
+subscribe to our annual plan</a>
+and save up to 30% on CVAT.ai usage costs.</p>
+<p>The annual subscription offers all the benefits of our paid plans but at
+a more affordable monthly rate.</p>
+<p>For more information, see <a href="#how-to-switch-from-monthly-subscription-to-annual">How to switch from monthly subscription to annual?</a></p>
+<h2 id="billing">Billing</h2>
+<p>This section describes the billing model and gives short a
+description of limitations for each plan.</p>
+<p>There are two types of subscriptions available for both the Solo
+and Team plans: monthly and annual.</p>
+<p>For more information,
+see: <a href="https://www.cvat.ai/post/new-pricing-plans">Pricing Plans</a></p>
+<h3 id="how-to-add-vattax-and-other-information-to-the-cvatai-invoice-before-the-first-payment">How to add VAT/tax and other information to the CVAT.ai invoice before the first payment?</h3>
+<p>To ensure VAT (tax) information and other relevant details are included on your CVAT.ai invoices,
+it&rsquo;s important to add this information before making the first payment.</p>
+<p>Here’s how you can do it:</p>
+<ol>
+<li>Sign up for a CVAT.ai account and log in.</li>
+<li>(Optional) If you add the VAT/tax number to the organization,
+first create an <a href="../../../docs/manual/advanced/organization/">organization</a> and
+switch to an <strong>Organization</strong> account.</li>
+<li>Navigate to the top right corner, next to the nickname,
+click on the arrow &gt; upgrade to the plan.</li>
+<li>Switch on the <strong>I would like the invoice to include additional
+data (address, phone number, VAT information)</strong> toggle, select the
+best payment period for you, and click <strong>Get Started</strong>.</li>
+</ol>
+<p><img src="../../../images/add-invoice.png" alt="Stripe Link"></p>
+<ol start="5">
+<li>You will see the billing page:</li>
+</ol>
+<p><img src="../../../images/add-vat.png" alt="Stripe Link"></p>
+<ul>
+<li>Phone number <strong>(1)</strong>.</li>
+<li><strong>Billing Address</strong>: Enter the billing address you want to appear on the invoice
+   in the address field <strong>(2)</strong>.</li>
+<li><strong>VAT Information</strong> and <strong>Business Name</strong>: Select the checkbox <strong>I am purchasing as a business</strong> and enter
+your VAT and business name information <strong>(3)</strong>.</li>
+</ul>
+<ol start="6">
+<li>
+<p>Select checkbox <strong>I agree to refund policy</strong> <strong>(4)</strong>.</p>
+<blockquote>
+<p><strong>Note:</strong> Please read the <strong>Refund policy</strong> before selecting the checkbox.</p>
+</blockquote>
+</li>
+<li>
+<p>Click <strong>Pay &amp; Subscribe</strong>.</p>
+</li>
+</ol>
+<p>All information you&rsquo;ve added will appear on the billing page and in the invoice.</p>
+<p><img src="../../../images/sm-profile-upd-inf.png" alt="Stripe Payment Info"></p>
+<p>By following these steps, you can seamlessly add VAT and other crucial information to your
+invoices, making your financial transactions with CVAT.ai transparent and compliant.</p>
+<h3 id="how-to-update-vattax-information-and-other-details-for-upcoming-invoices-from-cvatai">How to update VAT/tax information and other details for upcoming invoices from CVAT.ai?</h3>
+<p>In the top right corner, near the nickname, click on the arrow &gt; manage plan.</p>
+<p>You will see the Stripe page. Go to the <strong>Billing Information</strong> &gt; <strong>Update Information</strong>.</p>
+<p><img src="../../../images/sm-profile-upd-inf-2.png" alt="Stripe Payment Info"></p>
+<h3 id="can-a-paid-invoice-be-modified">Can a paid invoice be modified?</h3>
+<p>Once an invoice has been paid, it is not possible to modify it. This restriction is due to the
+limitations of the payment processing platform used, which in the case of CVAT.ai, is <a href="https://stripe.com/">Stripe</a>.</p>
+<p>Stripe&rsquo;s policy dictates that revisions to an invoice can only be made before payment.
+For more comprehensive information on this policy, please refer to Stripe&rsquo;s official documentation
+on <a href="https://docs.stripe.com/invoicing/invoice-edits#:~:text=Stripe%20lets%20you%20revise%20a,Edit%20the%20invoice%20description.">invoice edits</a>
+at their website.</p>
+<h3 id="how-can-i-get-a-quote-before-i-subscribe-how-to-add-a-po-number-to-my-invoices">How can I get a quote before I subscribe? How to add a PO number to my invoices?</h3>
+<p>If you require a quote from CVAT for payment via bank transfer, certain criteria must be met:</p>
+<ul>
+<li>The <strong>total subscription cost must be $396 and up per year</strong>.</li>
+<li>Quotes are available exclusively <strong>for annual subscriptions</strong>.</li>
+</ul>
+<p>Should you meet these requirements, please write to <a href="mailto:support@cvat.ai">support@cvat.ai</a></p>
+<h3 id="can-you-sign-an-agreement-before-i-subscribe">Can you sign an agreement before I subscribe?</h3>
+<p>Sign of specific agreements and approvals are available if you meet specific criteria
+(the <strong>total subscription cost must be $10,000 and up per year</strong>), for more details contact <a href="mailto:support@cvat.ai">support@cvat.ai</a></p>
+<h3 id="can-you-handle-a-bank-transfer-with-30-day-payment-terms">Can you handle a bank transfer with 30-day payment terms?</h3>
+<p>Yes, it is available if you fit the quota criteria, for details contact <a href="mailto:support@cvat.ai">support@cvat.ai</a>.</p>
+<h3 id="where-can-i-find-my-invoices">Where can I find my invoices?</h3>
+<p>In the top right corner, near the nickname, click on the arrow &gt; manage plan.</p>
+<p>You will see the Stripe page.
+At the bottom of the page, you will see the <strong>Invoice History</strong> section with all invoices.</p>
+<p>Invoices are automatically sent to the account owner&rsquo;s address used for the registration.</p>
+<p>To see the invoice click on the <strong>Show Invoice Icon</strong><img src="../../../images/invoice-icon.png" alt="Stripe Invoice Icon"> icon.</p>
+<p><img src="../../../images/show-invoice.png" alt="Show Invoice"></p>
+<h3 id="i-am-a-student-can-i-have-a-discount-or-free-access">I am a student, can I have a discount or free access?</h3>
+<p>To consider your request for a discount, we&rsquo;d need a few details from you:</p>
+<ul>
+<li>A copy of your valid student ID or any document confirming your university affiliation.</li>
+<li>Your university advisor&rsquo;s contact details.</li>
+<li>The name and contact information of the dean of your faculty.</li>
+<li>A brief outline of your project plan. This helps us understand how we might collaborate
+ on a joint marketing statement highlighting your use of CVAT.ai, and how it can benefit your project.</li>
+<li>We&rsquo;d also appreciate a positive LinkedIn post about your experience using CVAT, making sure to tag @CVAT.ai.</li>
+</ul>
+<p>All these details must be sent to <a href="mailto:support@cvat.ai">support@cvat.ai</a>. Once we have this
+information, we&rsquo;ll gladly offer you a 50% discount for one year.</p>
+<h2 id="payment-methods">Payment methods</h2>
+<p>This section describes how to change or add payment methods.</p>
+<h3 id="paying-with-bank-transfer">Paying with bank transfer</h3>
+<blockquote>
+<p><strong>Note</strong> At the moment this method of payment
+works only with US banks.</p>
+</blockquote>
+<p>To pay with a bank transfer:</p>
+<ol>
+<li>Go to the <strong>Upgrade to Solo</strong>/<strong>Team plan</strong>&gt; <strong>Get started</strong>.</li>
+<li>Click <strong>US Bank Transfer</strong>.</li>
+<li>Upon successful completion of the payment, you will receive a receipt via email.</li>
+</ol>
+<blockquote>
+<p><strong>Note</strong> that the completion of the payment process may take up to three banking days.</p>
+</blockquote>
+<p><img src="../../../images/bank_transfer_payment.png" alt="Bank Transfer Payment"></p>
+<h3 id="how-to-change-the-payment-method">How to change the payment method?</h3>
+<p>In the top right corner, near the nickname, click on the arrow &gt; manage plan &gt; <strong>+Add Payment Method</strong></p>
+<p><img src="../../../images/update_payment_team.png" alt="Payment team"></p>
+<h2 id="adding-and-removing-team-members">Adding and removing team members</h2>
+<blockquote>
+<p><strong>Solo plan</strong> is <strong>for personal use only</strong>, you cannot add or remove team members.</p>
+</blockquote>
+<p><strong>Team plan</strong> is for collaboration. To add members to your <a href="../../../docs/manual/advanced/organization/">Organization</a>,
+go to the <strong>Manage Team plan</strong> &gt; <strong>Update quantity</strong>.</p>
+<p><img src="../../../images/change_members_number_team.gif" alt="Add members"></p>
+<p>If you&rsquo;ve added a user <strong>before the current billing period ends</strong>,
+the payment will be prorated for the remaining time until the
+next billing cycle begins. From the following month onward,
+the full payment will be charged.</p>
+<p>In case you <strong>removed the user before the current billing period ends</strong>,
+funds will not be returned to your account,
+but next month you will pay less by the amount of unused funds.</p>
+<h2 id="change-plan">Change plan</h2>
+<h3 id="how-to-change-the-plan-from-solo-to-team">How to change the plan from Solo to Team?</h3>
+<p>The procedure is the same for both <strong>Solo</strong> and <strong>Team</strong> plans.</p>
+<p>If for some reason you want to change your plan, you need to:</p>
+<ol>
+<li>Unsubscribe from the previous plan.</li>
+<li>If you need a refund, contact us at <a href="mailto:support@cvat.ai">support@cvat.ai</a>.</li>
+<li>Subscribe to a new plan.</li>
+</ol>
+<h3 id="how-to-switch-from-a-monthly-subscription-to-an-annual-one">How to switch from a monthly subscription to an annual one?</h3>
+<p>If you have <strong>monthly subscription</strong>, and wish to switch to the
+<strong>Annual plan</strong>, please follow these steps:</p>
+<ol>
+<li>In the top-right corner, near the nickname, click on the arrow.</li>
+<li>Select <strong>Manage Solo</strong>/<strong>Team Plan</strong>.</li>
+<li>On the Stripe page that appears, click <strong>Update Plan</strong>.</li>
+</ol>
+<p><img src="../../../images/switch-to-annual.png" alt="Stripe Update Plan"></p>
+<ol start="4">
+<li>Choose <strong>Yearly</strong> and then click <strong>Continue</strong>.</li>
+</ol>
+<p><img src="../../../images/yearly-plan.png" alt="Stripe Yearly Plan"></p>
+<p>The price will be adjusted according to the number of members, selected in the
+<strong>Quantity</strong> field (if updated), taking into account the amount of money
+that was not spent in the current period.</p>
+<p>Upon payment, your subscription will be renewed and the start
+date will be reset to the day you switch to the new plan.</p>
+<h2 id="can-i-subscribe-to-several-plans">Can I subscribe to several plans?</h2>
+<p>Paid plans are not mutually exclusive.
+You can have several active subscriptions,
+for example, the <strong>Solo</strong> plan and several <strong>Team</strong>
+plans for different organizations.</p>
+<h2 id="cancel-plan">Cancel plan</h2>
+<p>This section describes how to cancel your CVAT subscription
+and what will happen to your data.</p>
+<h3 id="what-will-happen-to-my-data">What will happen to my data?</h3>
+<p>Once you have terminated your subscription, your data will remain
+accessible within the system for a month. During this period,
+you will be unable to add new tasks and free plan limits will be applied.</p>
+<p>In case you possess a substantial amount of data,
+it will be switched to read-only mode. It means
+you will not be able to save annotations, add any resources,
+and so on.</p>
+<p>Following the one month, you will receive a
+notification requesting you to either remove the
+excess data or it will be deleted automatically.</p>
+<h3 id="how-to-cancel-any-plan">How to cancel any plan?</h3>
+<p>To cancel the plan, in the top right corner, near the nickname,
+click on the arrow&gt; manage plan &gt; <strong>Cancel plan</strong></p>
+<p>Please, fill out the feedback form, to help us improve our platform.</p>
+<p><img src="../../../images/cancel-plan.png" alt="Cancel pro"></p>
+<h3 id="how-can-i-get-a-refund">How can I get a refund?</h3>
+<p>To understand if you are eligible for a refund,
+see <a href="https://www.cvat.ai/refund-policy">Refund policy</a>.</p>
+<ol>
+<li>Cancel the subscription before asking for a refund.</li>
+<li>Contact our support team at <a href="mailto:support@cvat.ai">support@cvat.ai</a>
+or use the &ldquo;Support&rdquo; option in the app.cvat.ai interface.</li>
+<li>Provide your account details and a brief explanation of the reason for the refund:
+<ul>
+<li>Send us your last invoice.</li>
+<li>Send us the username and e-mail address you’ve used to register in CVAT.ai.</li>
+</ul>
+</li>
+</ol>
+<p>Our team will review your request. We may request additional information if needed.
+Once approved, the refund will be processed to your original
+payment method <a href="https://docs.stripe.com/refunds#tracing-refunds">within 5-10 business days</a>.</p>
+<h2 id="plan-renewal">Plan renewal</h2>
+<p>To renew your CVAT.ai subscription, in the top right corner, near the nickname,
+click on the arrow&gt; manage plan &gt; <strong>Renew plan</strong>.</p>
+<h2 id="subscription-management-video-tutorial">Subscription management video tutorial</h2>
+<!--lint disable maximum-line-length-->
+<iframe width="560" height="315" src="https://www.youtube.com/embed/AMPtbmqZKNY?si=2TLhdytDIlSJ3Fwd" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>
+<!--lint enable maximum-line-length-->
+
+	
+</div>
+
+
+          </main>
+        </div>
+      </div>
+      <footer class="bg-dark py-5 row d-print-none" style="min-height: 0">
+  <div class="container-fluid">
+    <div class="row">
+      <div class="col text-center">
+        
+        
+        
+<ul class="list-inline mb-0">
+  
+  <li class="list-inline-item mx-2 h3" data-bs-toggle="tooltip" data-placement="top" title="Gitter public chat" aria-label="Gitter public chat">
+    <a class="text-white" rel="noopener noreferrer" href="https://gitter.im/opencv-cvat/public">
+      <i class="fab fa-gitter"></i>
+    </a>
+  </li>
+  
+  <li class="list-inline-item mx-2 h3" data-bs-toggle="tooltip" data-placement="top" title="Stack Overflow" aria-label="Stack Overflow">
+    <a class="text-white" rel="noopener noreferrer" href="https://stackoverflow.com/search?q=%23cvat">
+      <i class="fab fa-stack-overflow"></i>
+    </a>
+  </li>
+  
+  <li class="list-inline-item mx-2 h3" data-bs-toggle="tooltip" data-placement="top" title="YouTube" aria-label="YouTube">
+    <a class="text-white" rel="noopener noreferrer" href="https://www.youtube.com/@cvat-ai">
+      <i class="fab fa-youtube"></i>
+    </a>
+  </li>
+  
+</ul>
+
+        
+        
+      </div>
+      <div class="col-4 text-center">
+        <div class="row">
+          <a href="https://www.cvat.ai/privacy">Privacy Policy</a>
+        </div>
+        <div class="row">
+          <a href="https://www.cvat.ai/terms-of-use">Terms of Use</a>
+        </div>
+        <div class="row">
+          
+            <p><a href="../../../about/">About</a></p>
+          
+        </div>
+      </div>
+      <div class="col text-right text-center">
+        
+        
+        
+<ul class="list-inline mb-0">
+  
+  <li class="list-inline-item mx-2 h3" data-bs-toggle="tooltip" data-placement="top" title="GitHub" aria-label="GitHub">
+    <a class="text-white" rel="noopener noreferrer" href="https://github.com/cvat-ai/cvat">
+      <i class="fab fa-github"></i>
+    </a>
+  </li>
+  
+  <li class="list-inline-item mx-2 h3" data-bs-toggle="tooltip" data-placement="top" title="Gitter developers chat" aria-label="Gitter developers chat">
+    <a class="text-white" rel="noopener noreferrer" href="https://gitter.im/opencv-cvat/dev">
+      <i class="fab fa-gitter"></i>
+    </a>
+  </li>
+  
+  <li class="list-inline-item mx-2 h3" data-bs-toggle="tooltip" data-placement="top" title="Discord chat" aria-label="Discord chat">
+    <a class="text-white" rel="noopener noreferrer" href="https://discord.gg/fNR3eXfk6C">
+      <i class="fab fa-discord"></i>
+    </a>
+  </li>
+  
+</ul>
+
+        
+        
+      </div>
+    </div>
+  </div>
+</footer>
+
+
+
+    </div>
+    
+  <script src="../../../js/main.min.99abe30f7fb05785a480d405ee1665ebd520cec6bbadffe966b7737e103675b8.js" integrity="sha256-mavjD3&#43;wV4WkgNQF7hZl69Ugzsa7rf/pZrdzfhA2dbg=" crossorigin="anonymous"></script>
+<script src='../../../js/prism.js'></script>
+<script src='../../../js/tabpane-persist.js'></script>
+
+  </body>
+</html>

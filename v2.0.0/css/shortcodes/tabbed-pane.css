@@ -1,0 +1,18 @@
+.td-content .highlight {
+  margin: 0rem 0 2rem 0;
+}
+
+.tab-content .highlight {
+  border: none;
+}
+
+.tab-content {
+  margin: 0rem;
+  max-width: 80%;
+}
+
+.tab-content pre {
+  border-left: 1px solid rgba(0, 0, 0, 0.125);
+  border-right: 1px solid rgba(0, 0, 0, 0.125);
+  border-bottom: 1px solid rgba(0, 0, 0, 0.125);
+}

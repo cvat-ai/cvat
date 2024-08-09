@@ -1,0 +1,1338 @@
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    <meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+<meta name="generator" content="Hugo 0.83.0" /><link rel="canonical" type="text/html" href="../../../docs/contributing/">
+<META NAME="ROBOTS" CONTENT="NOINDEX, NOFOLLOW">
+
+
+<link rel="shortcut icon" href="../../../favicons/favicon.ico" >
+<link rel="apple-touch-icon" href="../../../favicons/apple-touch-icon-180x180.png" sizes="180x180">
+<link rel="icon" type="image/png" href="../../../favicons/favicon-16x16.png" sizes="16x16">
+<link rel="icon" type="image/png" href="../../../favicons/favicon-32x32.png" sizes="32x32">
+<link rel="icon" type="image/png" href="../../../favicons/android-36x36.png" sizes="36x36">
+<link rel="icon" type="image/png" href="../../../favicons/android-48x48.png" sizes="48x48">
+<link rel="icon" type="image/png" href="../../../favicons/android-72x72.png" sizes="72x72">
+<link rel="icon" type="image/png" href="../../../favicons/android-96x96.png" sizes="96x96">
+<link rel="icon" type="image/png" href="../../../favicons/android-144x144.png" sizes="144x144">
+<link rel="icon" type="image/png" href="../../../favicons/android-192x192.png" sizes="192x192">
+
+<title>Contributing to this project | CVAT</title>
+<meta name="description" content=""><meta property="og:title" content="Contributing to this project" />
+<meta property="og:description" content="This section contains documents for CVAT developers." />
+<meta property="og:type" content="website" />
+<meta property="og:url" content="/docs/contributing/" /><meta property="og:site_name" content="CVAT" />
+
+<meta itemprop="name" content="Contributing to this project">
+<meta itemprop="description" content="This section contains documents for CVAT developers."><meta name="twitter:card" content="summary"/>
+<meta name="twitter:title" content="Contributing to this project"/>
+<meta name="twitter:description" content="This section contains documents for CVAT developers."/>
+
+
+
+
+<link rel="preload" href="../../../scss/main.min.591a88c412fca6c692021fe322184768cfc320012e0a443e8514b68fd373aa21.css" as="style">
+<link href="../../../scss/main.min.591a88c412fca6c692021fe322184768cfc320012e0a443e8514b68fd373aa21.css" rel="stylesheet" integrity="">
+
+
+<script
+  src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"
+  integrity="sha256-9/aliU8dGd2tb6OSsuzixeV4y/faTqgFtohetphbbj0="
+  crossorigin="anonymous"></script>
+
+<script
+  src="https://unpkg.com/lunr@2.3.8/lunr.min.js"
+  integrity="sha384-vRQ9bDyE0Wnu+lMfm57BlYLO0/XauFuKpVsZPs7KEDwYKktWi5+Kz3MP8++DFlRY"
+  crossorigin="anonymous"></script>
+
+
+
+<link rel="stylesheet" href="../../../css/prism.css"/>
+
+
+
+
+
+
+  </head>
+  <body class="td-section">
+    <header>
+      
+
+
+<nav class="js-navbar-scroll navbar navbar-expand navbar-dark flex-column flex-md-row td-navbar">
+        <a class="navbar-brand" href="../../../about/">
+    <span class="navbar-logo"><svg width="98" height="27" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink"><defs><path d="M101 0v29l-52.544.001C44.326 35.511 35.598 40 25.5 40 11.417 40 0 31.27.0 20.5S11.417 1 25.5 1c4.542.0 8.807.908 12.5 2.5V0h63z" id="logoA"/></defs><g transform="translate(-2 -1)" fill="none" fill-rule="evenodd"><mask id="logoB" fill="#fff"><use xlink:href="#logoA"/></mask><path d="M48.142 1c4.736.0 6.879 3.234 6.879 5.904v2.068h-4.737V6.904c0-.79-.789-2.144-2.142-2.144-1.654.0-2.368 1.354-2.368 2.144v15.192c0 .79.714 2.144 2.368 2.144 1.353.0 2.142-1.354 2.142-2.144v-2.068h4.737v2.068c0 2.67-2.143 5.904-6.88 5.904C42.956 28 41 24.766 41 22.134V6.904C41 4.234 42.955 1 48.142 1zM19-6c9.389.0 17 7.611 17 17s-7.611 17-17 17S2 20.389 2 11 9.611-6 19-6zm42.256 7.338 3.345 19.48h.075l3.42-19.48h5l-6.052 26.324h-5L56.22 1.338h5.037zm20.706.0 5.413 26.324h-4.699l-.94-6.13h-4.548l-.902 6.13h-4.435l5.413-26.324h4.698zm18.038.0v3.723h-4.849v22.6h-4.699v-22.6h-4.81V1.338H1e2zM19 4a7 7 0 100 14 7 7 0 000-14zm60.557 4.295h-.113l-1.466 9.439h3.007l-1.428-9.439z" fill="#fff" fill-rule="nonzero" mask="url(#logoB)"/></g></svg></span>
+  </a>
+  <div class="td-navbar-nav-scroll ml-md-auto" id="main_navbar">
+    <ul class="navbar-nav mt-2 mt-lg-0">
+      
+      
+      <li class="nav-item mr-4 mb-2 mb-lg-0">
+        
+        
+        
+        
+        
+        
+        
+        
+        <a class="nav-link active" href="../../../docs/" ><span class="active">Documentation</span></a>
+      </li>
+      
+      <li class="nav-item mr-4 mb-2 mb-lg-0">
+        
+        
+        
+        
+        
+        
+        
+        
+        <a class="nav-link" href="../../../about/" ><span>About</span></a>
+      </li>
+      
+      <li class="nav-item mr-4 mb-2 mb-lg-0">
+        
+        
+        
+        
+        
+        
+        <a class="nav-link" href="https://app.cvat.ai"  ><span>Try it now</span></a>
+      </li>
+      
+      <li class="nav-item mr-4 mb-2 mb-lg-0">
+        
+        
+        
+        
+        
+        
+        <a class="nav-link" href="https://github.com/cvat-ai/cvat"  ><i class='fab fa-github'></i><span>GitHub</span></a>
+      </li>
+      
+      
+        
+        <li class="nav-item dropdown">
+          <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-target="#dropdown_ver" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+            v2.2.0
+          </a>
+        </li>
+        
+      
+      
+    </ul>
+  </div>
+  <div class="dropdown-menu" id="dropdown_ver" aria-labelledby="navbarDropdownMenuLink">
+    
+      
+        <a class="dropdown-item" href="../../../../docs/contributing/">Latest version</a>
+    
+      
+        <a class="dropdown-item" href="../../../../v1.5.0/docs/contributing/">v1.5.0</a>
+    
+      
+        <a class="dropdown-item" href="../../../../v1.6.0/docs/contributing/">v1.6.0</a>
+    
+      
+        <a class="dropdown-item" href="../../../../v1.7.0/docs/contributing/">v1.7.0</a>
+    
+      
+        <a class="dropdown-item" href="../../../../v2.0.0/docs/contributing/">v2.0.0</a>
+    
+      
+        <a class="dropdown-item" href="../../../../v2.1.0/docs/contributing/">v2.1.0</a>
+    
+      
+        <a class="dropdown-item" href="../../../../v2.10.3/docs/contributing/">v2.10.3</a>
+    
+      
+        <a class="dropdown-item" href="../../../../v2.11.3/docs/contributing/">v2.11.3</a>
+    
+      
+        <a class="dropdown-item" href="../../../../v2.12.1/docs/contributing/">v2.12.1</a>
+    
+      
+        <a class="dropdown-item" href="../../../../v2.13.0/docs/contributing/">v2.13.0</a>
+    
+      
+        <a class="dropdown-item" href="../../../../v2.14.4/docs/contributing/">v2.14.4</a>
+    
+      
+        <a class="dropdown-item" href="../../../../v2.15.0/docs/contributing/">v2.15.0</a>
+    
+      
+        <a class="dropdown-item" href="../../../../v2.16.2/docs/contributing/">v2.16.2</a>
+    
+      
+        <a class="dropdown-item" href="../../../../v2.2.0/docs/contributing/">v2.2.0</a>
+    
+      
+        <a class="dropdown-item" href="../../../../v2.3.0/docs/contributing/">v2.3.0</a>
+    
+      
+        <a class="dropdown-item" href="../../../../v2.4.9/docs/contributing/">v2.4.9</a>
+    
+      
+        <a class="dropdown-item" href="../../../../v2.5.2/docs/contributing/">v2.5.2</a>
+    
+      
+        <a class="dropdown-item" href="../../../../v2.6.2/docs/contributing/">v2.6.2</a>
+    
+      
+        <a class="dropdown-item" href="../../../../v2.7.6/docs/contributing/">v2.7.6</a>
+    
+      
+        <a class="dropdown-item" href="../../../../v2.8.2/docs/contributing/">v2.8.2</a>
+    
+      
+        <a class="dropdown-item" href="../../../../v2.9.2/docs/contributing/">v2.9.2</a>
+    
+  </div>
+  <div class="navbar-nav d-none d-lg-block">
+
+
+
+<input
+  type="search"
+  class="form-control td-search-input"
+  placeholder="&#xf002; Search this site…"
+  aria-label="Search this site…"
+  autocomplete="off"
+  
+  data-offline-search-index-json-src="../../../offline-search-index.54289926d1ef2463884e6e120c7ef7d4.json"
+  data-offline-search-base-href="../../../"
+  data-offline-search-max-results="10"
+>
+
+</div>
+</nav>
+
+    </header>
+    <div class="container-fluid td-outer">
+      <div class="td-main">
+        <div class="row flex-xl-nowrap">
+          <div class="col-12 col-md-3 col-xl-2 td-sidebar d-print-none">
+          </div>
+          <div class="d-none d-xl-block col-xl-2 td-toc d-print-none">
+          </div>
+          <main class="col-12 col-md-9 col-xl-8 pl-md-5" role="main">
+            
+
+
+
+
+<div class="td-content">
+<div class="pageinfo pageinfo-primary d-print-none">
+<p>
+This the multi-page printable view of this section.
+<a href="#" onclick="print();return false;">Click here to print</a>.
+</p><p>
+<a href="../../../docs/contributing/">Return to the regular view of this page</a>.
+</p>
+</div>
+
+
+
+<h1 class="title">Contributing to this project</h1>
+<div class="lead">This section contains documents for CVAT developers.</div>
+
+
+
+
+    <ul>
+    
+  
+  
+  
+  
+
+  
+    
+    
+	
+<li>1: <a href="#pg-581cde702b4a79613a0ad27e40794a90">Development environment</a></li>
+
+
+    
+  
+    
+    
+	
+<li>2: <a href="#pg-9331ae571b7ea5467eaf6403bb797504">Setup additional components in development environment</a></li>
+
+
+    
+  
+    
+    
+	
+<li>3: <a href="#pg-c414e3e4151a3294cd86a33ca60eb228">JavaScript/Typescript coding style</a></li>
+
+
+    
+  
+    
+    
+	
+<li>4: <a href="#pg-4ef825a7833abf73c578fadc480d6f1b">Branching model</a></li>
+
+
+    
+  
+    
+    
+	
+<li>5: <a href="#pg-9f0fa9959f1dde888009a7489abc95ad">Using the issue tracker</a></li>
+
+
+    
+  
+    
+    
+	
+<li>6: <a href="#pg-3d2c51c440746ae3c1c664fd3c6874c5">Bug reports</a></li>
+
+
+    
+  
+    
+    
+	
+<li>7: <a href="#pg-36bf632c8a299272d929049c3399f872">Feature requests</a></li>
+
+
+    
+  
+    
+    
+	
+<li>8: <a href="#pg-bfe8b249a0cc63de417c2f12c6a75c87">Pull requests</a></li>
+
+
+    
+  
+    
+    
+	
+<li>9: <a href="#pg-aa57dee42d2570392356d846a0921fdf">How to add a new annotation format support</a></li>
+
+
+    
+  
+    
+    
+	
+<li>10: <a href="#pg-dcce7b96f2dcf1adc45ffadd13643a76">Running tests</a></li>
+
+
+    
+  
+    
+    
+	
+<li>11: <a href="#pg-5e4aadf37d817bf7a4525e9d88ae86f7">REST API design principles</a></li>
+
+
+    
+  
+
+    </ul>
+
+
+<div class="content">
+      <p>Please take a moment to review this document in order to make the contribution
+process easy and effective for everyone involved.</p>
+<p>Following these guidelines helps to communicate that you respect the time of
+the developers managing and developing this open source project. In return,
+they should reciprocate that respect in addressing your issue or assessing
+patches and features.</p>
+
+</div>
+</div>
+
+
+  
+  
+  
+  
+
+  
+  
+
+  
+    
+    
+	
+    
+
+<div class="td-content" style="page-break-before: always">
+    
+	<h1 id="pg-581cde702b4a79613a0ad27e40794a90">1 - Development environment</h1>
+    <div class="lead">Installing a development environment for different operating systems.</div>
+	<h3 id="setup-the-dependencies">Setup the dependencies:</h3>
+<ul>
+<li>
+<p>Install necessary dependencies:</p>
+<p>Ubuntu 18.04</p>
+<div class="highlight"><pre style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">sudo apt-get update <span style="color:#ce5c00;font-weight:bold">&amp;&amp;</span> sudo apt-get --no-install-recommends install -y build-essential curl git redis-server python3-dev python3-pip python3-venv python3-tk libldap2-dev libsasl2-dev pkg-config libavformat-dev libavcodec-dev libavdevice-dev libavutil-dev libswscale-dev libswresample-dev libavfilter-dev
+</code></pre></div><div class="highlight"><pre style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash"><span style="color:#8f5902;font-style:italic"># Install Node.js 16 and yarn</span>
+curl -sL https://deb.nodesource.com/setup_16.x <span style="color:#000;font-weight:bold">|</span> sudo -E bash -
+sudo apt-get install -y nodejs
+sudo npm install --global yarn
+</code></pre></div><p>MacOS 10.15</p>
+<div class="highlight"><pre style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">brew install git python pyenv redis curl openssl node sqlite3 geos
+</code></pre></div></li>
+<li>
+<p>Install Chrome</p>
+</li>
+<li>
+<p>Install FFmpeg libraries (libav*) version 4.0 or higher.</p>
+</li>
+<li>
+<p>Install <a href="https://code.visualstudio.com/docs/setup/linux#_debian-and-ubuntu-based-distributions">VS Code</a>.</p>
+</li>
+<li>
+<p>Install the following VScode extensions:</p>
+<ul>
+<li><a href="https://marketplace.visualstudio.com/items?itemName=ms-vscode.js-debug">JavaScript Debugger</a></li>
+<li><a href="https://marketplace.visualstudio.com/items?itemName=ms-python.python">Python</a></li>
+<li><a href="https://marketplace.visualstudio.com/items?itemName=dbaeumer.vscode-eslint">ESLint</a></li>
+<li><a href="https://marketplace.visualstudio.com/items?itemName=stylelint.vscode-stylelint">Stylelint</a></li>
+<li><a href="https://marketplace.visualstudio.com/items?itemName=drewbourne.vscode-remark-lint">vscode-remark-lint</a></li>
+<li><a href="https://marketplace.visualstudio.com/items?itemName=ymotongpoo.licenser">licenser</a></li>
+<li><a href="https://marketplace.visualstudio.com/items?itemName=shardulm94.trailing-spaces">Trailing Spaces</a></li>
+</ul>
+</li>
+<li>
+<p>Make sure to use Python 3.9.0 or higher</p>
+<pre><code>python3 --version
+</code></pre></li>
+<li>
+<p>Install CVAT on your local host:</p>
+<div class="highlight"><pre style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">git clone https://github.com/cvat-ai/cvat
+<span style="color:#204a87">cd</span> cvat <span style="color:#ce5c00;font-weight:bold">&amp;&amp;</span> mkdir logs keys
+python3 -m venv .env
+. .env/bin/activate
+pip install -U pip wheel setuptools
+pip install -r cvat/requirements/development.txt
+python manage.py migrate
+python manage.py collectstatic
+</code></pre></div><blockquote>
+<p>Note for Mac users</p>
+<p>If you have any problems with installing dependencies from
+<code>cvat/requirements/*.txt</code>, you may need to reinstall your system python
+In some cases after system update it can be configured incorrectly and cannot compile some native modules</p>
+<p>Make sure Homebrew lib path is in <code>DYLD_LIBRARY_PATH</code>. For Apple Silicon: <code>export DYLD_LIBRARY_PATH=/opt/homebrew/lib:$DYLD_LIBRARY_PATH</code></p>
+<p>Homebrew will install FFMpeg 5.0 by default, which does not work, so you should install 4.X.
+You can install older 4.X FFMpeg using Homebrew like that:</p>
+<pre><code> cd &quot;$(brew --repo homebrew/core)&quot;
+ git checkout addd616edc9134f057e33694c420f4900be59db8
+ brew unlink ffmpeg
+ HOMEBREW_NO_AUTO_UPDATE=1 brew install ffmpeg
+ git checkout master
+</code></pre><p>if you are still facing error <code>Running setup.py install for av ... error</code>, you may try more radical variant</p>
+<pre><code> cd &quot;$(brew --repo homebrew/core)&quot;
+ git checkout addd616edc9134f057e33694c420f4900be59db8
+ brew uninstall ffmpeg --force
+ HOMEBREW_NO_AUTO_UPDATE=1 brew install ffmpeg
+ git checkout master
+</code></pre><p>If you faced with error <code>Failed building wheel for h5py</code>, you may need install <code>hdf5</code></p>
+<pre><code>brew install hdf5
+export HDF5_DIR=&quot;$(brew --prefix hdf5)&quot;
+pip install --no-binary=h5py h5py
+</code></pre><p>If you faced with error
+<code>OSError: Could not find library geos_c or load any of its variants ['libgeos_c.so.1', 'libgeos_c.so']</code>.
+You may fix this using</p>
+<pre><code>sudo ln -s /opt/homebrew/lib/libgeos_c.dylib /usr/local/lib
+</code></pre><p>On Mac with Apple Silicon (M1) in order to install TensorFlow you will have to edit <code>cvat/requirements/base.txt</code>.
+Change <code>tensorflow</code> to <code>tensorflow-macos</code>
+May need to downgrade version Python to 3.9.* or upgrade version <code>tensorflow-macos</code></p>
+</blockquote>
+</li>
+<li>
+<p>Create a super user for CVAT:</p>
+<div class="highlight"><pre style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">python manage.py createsuperuser
+</code></pre></div></li>
+<li>
+<p>Install npm packages for UI (run the following command from CVAT root directory):</p>
+<div class="highlight"><pre style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">yarn --frozen-lockfile
+</code></pre></div><blockquote>
+<p>Note for Mac users</p>
+<p>If you faced with error</p>
+<p><code>Node Sass does not yet support your current environment: OS X 64-bit with Unsupported runtime (57)</code></p>
+<p>Read this article <a href="https://marketplace.visualstudio.com/items?itemName=msjsdiag.debugger-for-chrome">Node Sass does not yet support your current environment</a></p>
+</blockquote>
+</li>
+<li>
+<p>Install <a href="https://docs.docker.com/engine/install/ubuntu/">Docker Engine</a> and <a href="https://docs.docker.com/compose/install/">Docker-Compose</a></p>
+</li>
+<li>
+<p>Pull OpenPolicyAgent Docker-image (run from CVAT root dir):</p>
+<div class="highlight"><pre style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">sudo docker-compose -f docker-compose.yml -f docker-compose.dev.yml up cvat_opa
+</code></pre></div></li>
+</ul>
+<h3 id="run-cvat">Run CVAT</h3>
+<ul>
+<li>
+<p>Start npm UI debug server (run the following command from CVAT root directory):</p>
+<ul>
+<li>If you want to run CVAT in localhost:
+<div class="highlight"><pre style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-sh" data-lang="sh">yarn run start:cvat-ui
+</code></pre></div></li>
+<li>If you want to access CVAT from outside of your host:
+<div class="highlight"><pre style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-sh" data-lang="sh"><span style="color:#000">CVAT_UI_HOST</span><span style="color:#ce5c00;font-weight:bold">=</span><span style="color:#4e9a06">&#39;&lt;YOUR_HOST_IP&gt;&#39;</span> yarn run start:cvat-ui
+</code></pre></div></li>
+</ul>
+</li>
+<li>
+<p>Open a new terminal window.</p>
+</li>
+<li>
+<p>Run VScode from the virtual environment (run the following command from CVAT root directory):</p>
+<div class="highlight"><pre style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-sh" data-lang="sh"><span style="color:#204a87">source</span> .env/bin/activate <span style="color:#ce5c00;font-weight:bold">&amp;&amp;</span> code
+</code></pre></div></li>
+<li>
+<p>Inside VScode, Open CVAT root dir</p>
+</li>
+<li>
+<p>Select <code>server: debug</code> configuration and run it (F5) to run REST server and its workers</p>
+</li>
+<li>
+<p>Make sure that <code>Uncaught Exceptions</code> option under breakpoints section is unchecked</p>
+</li>
+<li>
+<p>If you choose to run CVAT in localhost: Select <code>server: chrome</code> configuration and run it (F5) to open CVAT in Chrome</p>
+</li>
+<li>
+<p>Alternative: If you changed CVAT_UI_HOST just enter <code>&lt;YOUR_HOST_IP&gt;:3000</code> in your browser.</p>
+</li>
+</ul>
+<p>You have done! Now it is possible to insert breakpoints and debug server and client of the tool.
+Instructions for running tests locally are available <a href="../../../site/content/en/docs/contributing/running-tests.md">here</a>.</p>
+<h2 id="note-for-windows-users">Note for Windows users</h2>
+<p>You develop CVAT under WSL (Windows subsystem for Linux) following next steps.</p>
+<ul>
+<li>
+<p>Install WSL using <a href="https://docs.microsoft.com/en-us/windows/wsl/install-win10">this guide</a>.</p>
+</li>
+<li>
+<p>Following this guide install Ubuntu 18.04 Linux distribution for WSL.</p>
+</li>
+<li>
+<p>Run Ubuntu using start menu link or execute next command</p>
+<div class="highlight"><pre style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-powershell" data-lang="powershell"><span style="color:#000">wsl</span> <span style="color:#000">-d</span> <span style="color:#000">Ubuntu</span><span style="color:#000;font-weight:bold">-</span><span style="color:#000">18</span><span style="color:#000;font-weight:bold">.</span><span style="color:#000">04</span>
+</code></pre></div></li>
+<li>
+<p>Run all commands from this installation guide in WSL Ubuntu shell.</p>
+</li>
+<li>
+<p>You might have to manually start the redis server in wsl before you can start the configuration inside
+Visual Studio Code. You can do this with <code>sudo service redis-server start</code>. Alternatively you can also
+use a redis docker image instead of using the redis-server locally.</p>
+</li>
+</ul>
+<h2 id="note-for-mac-users">Note for Mac users</h2>
+<ul>
+<li>You might have to manually start the redis server. You can do this with <code>redis-server</code>.
+Alternatively you can also use a redis docker image instead of using the redis-server locally.</li>
+</ul>
+
+</div>
+
+
+
+    
+	
+  
+    
+    
+	
+    
+
+<div class="td-content" style="page-break-before: always">
+    
+	<h1 id="pg-9331ae571b7ea5467eaf6403bb797504">2 - Setup additional components in development environment</h1>
+    <div class="lead">Deploying a DL model as a serverless function and Cypress tests.</div>
+	<h2 id="dl-models-as-serverless-functions">DL models as serverless functions</h2>
+<p>Follow this <a href="../../../docs/administration/advanced/installation_automatic_annotation/">guide</a> to install Nuclio:</p>
+<ul>
+<li>You have to install <code>nuctl</code> command line tool to build and deploy serverless
+functions.</li>
+<li>The simplest way to explore Nuclio is to run its graphical user interface (GUI)
+of the Nuclio dashboard. All you need in order to run the dashboard is Docker. See
+<a href="https://github.com/nuclio/nuclio#quick-start-steps">nuclio documentation</a>
+for more details.</li>
+<li>Create <code>cvat</code> project inside nuclio dashboard where you will deploy new
+serverless functions and deploy a couple of DL models.</li>
+</ul>
+<div class="highlight"><pre style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">nuctl create project cvat
+</code></pre></div><div class="highlight"><pre style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">nuctl deploy --project-name cvat <span style="color:#4e9a06">\
+</span><span style="color:#4e9a06"></span>    --path serverless/openvino/dextr/nuclio <span style="color:#4e9a06">\
+</span><span style="color:#4e9a06"></span>    --volume <span style="color:#4e9a06">`</span><span style="color:#204a87">pwd</span><span style="color:#4e9a06">`</span>/serverless/common:/opt/nuclio/common <span style="color:#4e9a06">\
+</span><span style="color:#4e9a06"></span>    --platform <span style="color:#204a87">local</span>
+</code></pre></div><details>
+<pre><code>20.07.17 12:02:23.247                     nuctl (I) Deploying function {&quot;name&quot;: &quot;&quot;}
+20.07.17 12:02:23.248                     nuctl (I) Building {&quot;versionInfo&quot;: &quot;Label: 1.4.8, Git commit: 238d4539ac7783896d6c414535d0462b5f4cbcf1, OS: darwin, Arch: amd64, Go version: go1.14.3&quot;, &quot;name&quot;: &quot;&quot;}
+20.07.17 12:02:23.447                     nuctl (I) Cleaning up before deployment
+20.07.17 12:02:23.535                     nuctl (I) Function already exists, deleting
+20.07.17 12:02:25.877                     nuctl (I) Staging files and preparing base images
+20.07.17 12:02:25.891                     nuctl (I) Building processor image {&quot;imageName&quot;: &quot;cvat/openvino.dextr:latest&quot;}
+20.07.17 12:02:25.891     nuctl.platform.docker (I) Pulling image {&quot;imageName&quot;: &quot;quay.io/nuclio/handler-builder-python-onbuild:1.4.8-amd64&quot;}
+20.07.17 12:02:29.270     nuctl.platform.docker (I) Pulling image {&quot;imageName&quot;: &quot;quay.io/nuclio/uhttpc:0.0.1-amd64&quot;}
+20.07.17 12:02:33.208            nuctl.platform (I) Building docker image {&quot;image&quot;: &quot;cvat/openvino.dextr:latest&quot;}
+20.07.17 12:02:34.464            nuctl.platform (I) Pushing docker image into registry {&quot;image&quot;: &quot;cvat/openvino.dextr:latest&quot;, &quot;registry&quot;: &quot;&quot;}
+20.07.17 12:02:34.464            nuctl.platform (I) Docker image was successfully built and pushed into docker registry {&quot;image&quot;: &quot;cvat/openvino.dextr:latest&quot;}
+20.07.17 12:02:34.464                     nuctl (I) Build complete {&quot;result&quot;: {&quot;Image&quot;:&quot;cvat/openvino.dextr:latest&quot;,&quot;UpdatedFunctionConfig&quot;:{&quot;metadata&quot;:{&quot;name&quot;:&quot;openvino.dextr&quot;,&quot;namespace&quot;:&quot;nuclio&quot;,&quot;labels&quot;:{&quot;nuclio.io/project-name&quot;:&quot;cvat&quot;},&quot;annotations&quot;:{&quot;framework&quot;:&quot;openvino&quot;,&quot;spec&quot;:&quot;&quot;,&quot;type&quot;:&quot;interactor&quot;}},&quot;spec&quot;:{&quot;description&quot;:&quot;Deep Extreme Cut&quot;,&quot;handler&quot;:&quot;main:handler&quot;,&quot;runtime&quot;:&quot;python:3.6&quot;,&quot;env&quot;:[{&quot;name&quot;:&quot;NUCLIO_PYTHON_EXE_PATH&quot;,&quot;value&quot;:&quot;/opt/nuclio/python3&quot;}],&quot;resources&quot;:{},&quot;image&quot;:&quot;cvat/openvino.dextr:latest&quot;,&quot;targetCPU&quot;:75,&quot;triggers&quot;:{&quot;myHttpTrigger&quot;:{&quot;class&quot;:&quot;&quot;,&quot;kind&quot;:&quot;http&quot;,&quot;name&quot;:&quot;&quot;,&quot;maxWorkers&quot;:2,&quot;workerAvailabilityTimeoutMilliseconds&quot;:10000,&quot;attributes&quot;:{&quot;maxRequestBodySize&quot;:33554432}}},&quot;volumes&quot;:[{&quot;volume&quot;:{&quot;name&quot;:&quot;volume-1&quot;,&quot;hostPath&quot;:{&quot;path&quot;:&quot;/Users/nmanovic/Workspace/cvat/serverless/openvino/common&quot;}},&quot;volumeMount&quot;:{&quot;name&quot;:&quot;volume-1&quot;,&quot;mountPath&quot;:&quot;/opt/nuclio/common&quot;}}],&quot;build&quot;:{&quot;image&quot;:&quot;cvat/openvino.dextr&quot;,&quot;baseImage&quot;:&quot;openvino/ubuntu18_runtime:2020.2&quot;,&quot;directives&quot;:{&quot;postCopy&quot;:[{&quot;kind&quot;:&quot;RUN&quot;,&quot;value&quot;:&quot;curl -O https://download.01.org/openvinotoolkit/models_contrib/cvat/dextr_model_v1.zip&quot;},{&quot;kind&quot;:&quot;RUN&quot;,&quot;value&quot;:&quot;unzip dextr_model_v1.zip&quot;},{&quot;kind&quot;:&quot;RUN&quot;,&quot;value&quot;:&quot;pip3 install Pillow&quot;},{&quot;kind&quot;:&quot;USER&quot;,&quot;value&quot;:&quot;openvino&quot;}],&quot;preCopy&quot;:[{&quot;kind&quot;:&quot;USER&quot;,&quot;value&quot;:&quot;root&quot;},{&quot;kind&quot;:&quot;WORKDIR&quot;,&quot;value&quot;:&quot;/opt/nuclio&quot;},{&quot;kind&quot;:&quot;RUN&quot;,&quot;value&quot;:&quot;ln -s /usr/bin/pip3 /usr/bin/pip&quot;}]},&quot;codeEntryType&quot;:&quot;image&quot;},&quot;platform&quot;:{},&quot;readinessTimeoutSeconds&quot;:60,&quot;eventTimeout&quot;:&quot;30s&quot;}}}}
+20.07.17 12:02:35.012            nuctl.platform (I) Waiting for function to be ready {&quot;timeout&quot;: 60}
+20.07.17 12:02:37.448                     nuctl (I) Function deploy complete {&quot;httpPort&quot;: 55274}
+</code></pre></details>
+<div class="highlight"><pre style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">nuctl deploy --project-name cvat <span style="color:#4e9a06">\
+</span><span style="color:#4e9a06"></span>    --path serverless/openvino/omz/public/yolo-v3-tf/nuclio <span style="color:#4e9a06">\
+</span><span style="color:#4e9a06"></span>    --volume <span style="color:#4e9a06">`</span><span style="color:#204a87">pwd</span><span style="color:#4e9a06">`</span>/serverless/openvino/common:/opt/nuclio/common <span style="color:#4e9a06">\
+</span><span style="color:#4e9a06"></span>    --platform <span style="color:#204a87">local</span>
+</code></pre></div><details>
+<pre><code>20.07.17 12:05:23.377                     nuctl (I) Deploying function {&quot;name&quot;: &quot;&quot;}
+20.07.17 12:05:23.378                     nuctl (I) Building {&quot;versionInfo&quot;: &quot;Label: 1.4.8, Git commit: 238d4539ac7783896d6c414535d0462b5f4cbcf1, OS: darwin, Arch: amd64, Go version: go1.14.3&quot;, &quot;name&quot;: &quot;&quot;}
+20.07.17 12:05:23.590                     nuctl (I) Cleaning up before deployment
+20.07.17 12:05:23.694                     nuctl (I) Function already exists, deleting
+20.07.17 12:05:24.271                     nuctl (I) Staging files and preparing base images
+20.07.17 12:05:24.274                     nuctl (I) Building processor image {&quot;imageName&quot;: &quot;cvat/openvino.omz.public.yolo-v3-tf:latest&quot;}
+20.07.17 12:05:24.274     nuctl.platform.docker (I) Pulling image {&quot;imageName&quot;: &quot;quay.io/nuclio/handler-builder-python-onbuild:1.4.8-amd64&quot;}
+20.07.17 12:05:27.432     nuctl.platform.docker (I) Pulling image {&quot;imageName&quot;: &quot;quay.io/nuclio/uhttpc:0.0.1-amd64&quot;}
+20.07.17 12:05:31.462            nuctl.platform (I) Building docker image {&quot;image&quot;: &quot;cvat/openvino.omz.public.yolo-v3-tf:latest&quot;}
+20.07.17 12:05:32.798            nuctl.platform (I) Pushing docker image into registry {&quot;image&quot;: &quot;cvat/openvino.omz.public.yolo-v3-tf:latest&quot;, &quot;registry&quot;: &quot;&quot;}
+20.07.17 12:05:32.798            nuctl.platform (I) Docker image was successfully built and pushed into docker registry {&quot;image&quot;: &quot;cvat/openvino.omz.public.yolo-v3-tf:latest&quot;}
+20.07.17 12:05:32.798                     nuctl (I) Build complete {&quot;result&quot;: {&quot;Image&quot;:&quot;cvat/openvino.omz.public.yolo-v3-tf:latest&quot;,&quot;UpdatedFunctionConfig&quot;:{&quot;metadata&quot;:{&quot;name&quot;:&quot;openvino.omz.public.yolo-v3-tf&quot;,&quot;namespace&quot;:&quot;nuclio&quot;,&quot;labels&quot;:{&quot;nuclio.io/project-name&quot;:&quot;cvat&quot;},&quot;annotations&quot;:{&quot;framework&quot;:&quot;openvino&quot;,&quot;name&quot;:&quot;YOLO v3&quot;,&quot;spec&quot;:&quot;[\n  { \&quot;id\&quot;: 0, \&quot;name\&quot;: \&quot;person\&quot; },\n  { \&quot;id\&quot;: 1, \&quot;name\&quot;: \&quot;bicycle\&quot; },\n  { \&quot;id\&quot;: 2, \&quot;name\&quot;: \&quot;car\&quot; },\n  { \&quot;id\&quot;: 3, \&quot;name\&quot;: \&quot;motorbike\&quot; },\n  { \&quot;id\&quot;: 4, \&quot;name\&quot;: \&quot;aeroplane\&quot; },\n  { \&quot;id\&quot;: 5, \&quot;name\&quot;: \&quot;bus\&quot; },\n  { \&quot;id\&quot;: 6, \&quot;name\&quot;: \&quot;train\&quot; },\n  { \&quot;id\&quot;: 7, \&quot;name\&quot;: \&quot;truck\&quot; },\n  { \&quot;id\&quot;: 8, \&quot;name\&quot;: \&quot;boat\&quot; },\n  { \&quot;id\&quot;: 9, \&quot;name\&quot;: \&quot;traffic light\&quot; },\n  { \&quot;id\&quot;: 10, \&quot;name\&quot;: \&quot;fire hydrant\&quot; },\n  { \&quot;id\&quot;: 11, \&quot;name\&quot;: \&quot;stop sign\&quot; },\n  { \&quot;id\&quot;: 12, \&quot;name\&quot;: \&quot;parking meter\&quot; },\n  { \&quot;id\&quot;: 13, \&quot;name\&quot;: \&quot;bench\&quot; },\n  { \&quot;id\&quot;: 14, \&quot;name\&quot;: \&quot;bird\&quot; },\n  { \&quot;id\&quot;: 15, \&quot;name\&quot;: \&quot;cat\&quot; },\n  { \&quot;id\&quot;: 16, \&quot;name\&quot;: \&quot;dog\&quot; },\n  { \&quot;id\&quot;: 17, \&quot;name\&quot;: \&quot;horse\&quot; },\n  { \&quot;id\&quot;: 18, \&quot;name\&quot;: \&quot;sheep\&quot; },\n  { \&quot;id\&quot;: 19, \&quot;name\&quot;: \&quot;cow\&quot; },\n  { \&quot;id\&quot;: 20, \&quot;name\&quot;: \&quot;elephant\&quot; },\n  { \&quot;id\&quot;: 21, \&quot;name\&quot;: \&quot;bear\&quot; },\n  { \&quot;id\&quot;: 22, \&quot;name\&quot;: \&quot;zebra\&quot; },\n  { \&quot;id\&quot;: 23, \&quot;name\&quot;: \&quot;giraffe\&quot; },\n  { \&quot;id\&quot;: 24, \&quot;name\&quot;: \&quot;backpack\&quot; },\n  { \&quot;id\&quot;: 25, \&quot;name\&quot;: \&quot;umbrella\&quot; },\n  { \&quot;id\&quot;: 26, \&quot;name\&quot;: \&quot;handbag\&quot; },\n  { \&quot;id\&quot;: 27, \&quot;name\&quot;: \&quot;tie\&quot; },\n  { \&quot;id\&quot;: 28, \&quot;name\&quot;: \&quot;suitcase\&quot; },\n  { \&quot;id\&quot;: 29, \&quot;name\&quot;: \&quot;frisbee\&quot; },\n  { \&quot;id\&quot;: 30, \&quot;name\&quot;: \&quot;skis\&quot; },\n  { \&quot;id\&quot;: 31, \&quot;name\&quot;: \&quot;snowboard\&quot; },\n  { \&quot;id\&quot;: 32, \&quot;name\&quot;: \&quot;sports ball\&quot; },\n  { \&quot;id\&quot;: 33, \&quot;name\&quot;: \&quot;kite\&quot; },\n  { \&quot;id\&quot;: 34, \&quot;name\&quot;: \&quot;baseball bat\&quot; },\n  { \&quot;id\&quot;: 35, \&quot;name\&quot;: \&quot;baseball glove\&quot; },\n  { \&quot;id\&quot;: 36, \&quot;name\&quot;: \&quot;skateboard\&quot; },\n  { \&quot;id\&quot;: 37, \&quot;name\&quot;: \&quot;surfboard\&quot; },\n  { \&quot;id\&quot;: 38, \&quot;name\&quot;: \&quot;tennis racket\&quot; },\n  { \&quot;id\&quot;: 39, \&quot;name\&quot;: \&quot;bottle\&quot; },\n  { \&quot;id\&quot;: 40, \&quot;name\&quot;: \&quot;wine glass\&quot; },\n  { \&quot;id\&quot;: 41, \&quot;name\&quot;: \&quot;cup\&quot; },\n  { \&quot;id\&quot;: 42, \&quot;name\&quot;: \&quot;fork\&quot; },\n  { \&quot;id\&quot;: 43, \&quot;name\&quot;: \&quot;knife\&quot; },\n  { \&quot;id\&quot;: 44, \&quot;name\&quot;: \&quot;spoon\&quot; },\n  { \&quot;id\&quot;: 45, \&quot;name\&quot;: \&quot;bowl\&quot; },\n  { \&quot;id\&quot;: 46, \&quot;name\&quot;: \&quot;banana\&quot; },\n  { \&quot;id\&quot;: 47, \&quot;name\&quot;: \&quot;apple\&quot; },\n  { \&quot;id\&quot;: 48, \&quot;name\&quot;: \&quot;sandwich\&quot; },\n  { \&quot;id\&quot;: 49, \&quot;name\&quot;: \&quot;orange\&quot; },\n  { \&quot;id\&quot;: 50, \&quot;name\&quot;: \&quot;broccoli\&quot; },\n  { \&quot;id\&quot;: 51, \&quot;name\&quot;: \&quot;carrot\&quot; },\n  { \&quot;id\&quot;: 52, \&quot;name\&quot;: \&quot;hot dog\&quot; },\n  { \&quot;id\&quot;: 53, \&quot;name\&quot;: \&quot;pizza\&quot; },\n  { \&quot;id\&quot;: 54, \&quot;name\&quot;: \&quot;donut\&quot; },\n  { \&quot;id\&quot;: 55, \&quot;name\&quot;: \&quot;cake\&quot; },\n  { \&quot;id\&quot;: 56, \&quot;name\&quot;: \&quot;chair\&quot; },\n  { \&quot;id\&quot;: 57, \&quot;name\&quot;: \&quot;sofa\&quot; },\n  { \&quot;id\&quot;: 58, \&quot;name\&quot;: \&quot;pottedplant\&quot; },\n  { \&quot;id\&quot;: 59, \&quot;name\&quot;: \&quot;bed\&quot; },\n  { \&quot;id\&quot;: 60, \&quot;name\&quot;: \&quot;diningtable\&quot; },\n  { \&quot;id\&quot;: 61, \&quot;name\&quot;: \&quot;toilet\&quot; },\n  { \&quot;id\&quot;: 62, \&quot;name\&quot;: \&quot;tvmonitor\&quot; },\n  { \&quot;id\&quot;: 63, \&quot;name\&quot;: \&quot;laptop\&quot; },\n  { \&quot;id\&quot;: 64, \&quot;name\&quot;: \&quot;mouse\&quot; },\n  { \&quot;id\&quot;: 65, \&quot;name\&quot;: \&quot;remote\&quot; },\n  { \&quot;id\&quot;: 66, \&quot;name\&quot;: \&quot;keyboard\&quot; },\n  { \&quot;id\&quot;: 67, \&quot;name\&quot;: \&quot;cell phone\&quot; },\n  { \&quot;id\&quot;: 68, \&quot;name\&quot;: \&quot;microwave\&quot; },\n  { \&quot;id\&quot;: 69, \&quot;name\&quot;: \&quot;oven\&quot; },\n  { \&quot;id\&quot;: 70, \&quot;name\&quot;: \&quot;toaster\&quot; },\n  { \&quot;id\&quot;: 71, \&quot;name\&quot;: \&quot;sink\&quot; },\n  { \&quot;id\&quot;: 72, \&quot;name\&quot;: \&quot;refrigerator\&quot; },\n  { \&quot;id\&quot;: 73, \&quot;name\&quot;: \&quot;book\&quot; },\n  { \&quot;id\&quot;: 74, \&quot;name\&quot;: \&quot;clock\&quot; },\n  { \&quot;id\&quot;: 75, \&quot;name\&quot;: \&quot;vase\&quot; },\n  { \&quot;id\&quot;: 76, \&quot;name\&quot;: \&quot;scissors\&quot; },\n  { \&quot;id\&quot;: 77, \&quot;name\&quot;: \&quot;teddy bear\&quot; },\n  { \&quot;id\&quot;: 78, \&quot;name\&quot;: \&quot;hair drier\&quot; },\n  { \&quot;id\&quot;: 79, \&quot;name\&quot;: \&quot;toothbrush\&quot; }\n]\n&quot;,&quot;type&quot;:&quot;detector&quot;}},&quot;spec&quot;:{&quot;description&quot;:&quot;YOLO v3 via Intel OpenVINO&quot;,&quot;handler&quot;:&quot;main:handler&quot;,&quot;runtime&quot;:&quot;python:3.6&quot;,&quot;env&quot;:[{&quot;name&quot;:&quot;NUCLIO_PYTHON_EXE_PATH&quot;,&quot;value&quot;:&quot;/opt/nuclio/common/python3&quot;}],&quot;resources&quot;:{},&quot;image&quot;:&quot;cvat/openvino.omz.public.yolo-v3-tf:latest&quot;,&quot;targetCPU&quot;:75,&quot;triggers&quot;:{&quot;myHttpTrigger&quot;:{&quot;class&quot;:&quot;&quot;,&quot;kind&quot;:&quot;http&quot;,&quot;name&quot;:&quot;&quot;,&quot;maxWorkers&quot;:2,&quot;workerAvailabilityTimeoutMilliseconds&quot;:10000,&quot;attributes&quot;:{&quot;maxRequestBodySize&quot;:33554432}}},&quot;volumes&quot;:[{&quot;volume&quot;:{&quot;name&quot;:&quot;volume-1&quot;,&quot;hostPath&quot;:{&quot;path&quot;:&quot;/Users/nmanovic/Workspace/cvat/serverless/openvino/common&quot;}},&quot;volumeMount&quot;:{&quot;name&quot;:&quot;volume-1&quot;,&quot;mountPath&quot;:&quot;/opt/nuclio/common&quot;}}],&quot;build&quot;:{&quot;image&quot;:&quot;cvat/openvino.omz.public.yolo-v3-tf&quot;,&quot;baseImage&quot;:&quot;openvino/ubuntu18_dev:2020.2&quot;,&quot;directives&quot;:{&quot;postCopy&quot;:[{&quot;kind&quot;:&quot;USER&quot;,&quot;value&quot;:&quot;openvino&quot;}],&quot;preCopy&quot;:[{&quot;kind&quot;:&quot;USER&quot;,&quot;value&quot;:&quot;root&quot;},{&quot;kind&quot;:&quot;WORKDIR&quot;,&quot;value&quot;:&quot;/opt/nuclio&quot;},{&quot;kind&quot;:&quot;RUN&quot;,&quot;value&quot;:&quot;ln -s /usr/bin/pip3 /usr/bin/pip&quot;},{&quot;kind&quot;:&quot;RUN&quot;,&quot;value&quot;:&quot;/opt/intel/openvino/deployment_tools/open_model_zoo/tools/downloader/downloader.py --name yolo-v3-tf -o /opt/nuclio/open_model_zoo&quot;},{&quot;kind&quot;:&quot;RUN&quot;,&quot;value&quot;:&quot;/opt/intel/openvino/deployment_tools/open_model_zoo/tools/downloader/converter.py --name yolo-v3-tf --precisions FP32 -d /opt/nuclio/open_model_zoo -o /opt/nuclio/open_model_zoo&quot;}]},&quot;codeEntryType&quot;:&quot;image&quot;},&quot;platform&quot;:{},&quot;readinessTimeoutSeconds&quot;:60,&quot;eventTimeout&quot;:&quot;30s&quot;}}}}
+20.07.17 12:05:33.285            nuctl.platform (I) Waiting for function to be ready {&quot;timeout&quot;: 60}
+20.07.17 12:05:35.452                     nuctl (I) Function deploy complete {&quot;httpPort&quot;: 57308}
+</code></pre></details>
+<ul>
+<li>Display a list of running serverless functions using <code>nuctl</code> command or see them
+in nuclio dashboard:</li>
+</ul>
+<div class="highlight"><pre style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">nuctl get <span style="color:#204a87;font-weight:bold">function</span>
+</code></pre></div><details>
+<pre><code>  NAMESPACE |                             NAME                              | PROJECT | STATE | NODE PORT | REPLICAS
+  nuclio    | openvino.dextr                                                | cvat    | ready |     55274 | 1/1
+  nuclio    | openvino.omz.public.yolo-v3-tf                                | cvat    | ready |     57308 | 1/1
+</code></pre></details>
+<ul>
+<li>Test your deployed DL model as a serverless function. The command below
+should work on Linux and Mac OS.</li>
+</ul>
+<div class="highlight"><pre style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash"><span style="color:#000">image</span><span style="color:#ce5c00;font-weight:bold">=</span><span style="color:#204a87;font-weight:bold">$(</span>curl https://upload.wikimedia.org/wikipedia/en/7/7d/Lenna_%28test_image%29.png --output - <span style="color:#000;font-weight:bold">|</span> base64 <span style="color:#000;font-weight:bold">|</span> tr -d <span style="color:#4e9a06">&#39;\n&#39;</span><span style="color:#204a87;font-weight:bold">)</span>
+cat <span style="color:#4e9a06">&lt;&lt; EOF &gt; /tmp/input.json
+</span><span style="color:#4e9a06">{&#34;image&#34;: &#34;$image&#34;}
+</span><span style="color:#4e9a06">EOF</span>
+cat /tmp/input.json <span style="color:#000;font-weight:bold">|</span> nuctl invoke openvino.omz.public.yolo-v3-tf -c <span style="color:#4e9a06">&#39;application/json&#39;</span>
+</code></pre></div><details>
+<pre><code>20.07.17 12:07:44.519    nuctl.platform.invoker (I) Executing function {&quot;method&quot;: &quot;POST&quot;, &quot;url&quot;: &quot;http://:57308&quot;, &quot;headers&quot;: {&quot;Content-Type&quot;:[&quot;application/json&quot;],&quot;X-Nuclio-Log-Level&quot;:[&quot;info&quot;],&quot;X-Nuclio-Target&quot;:[&quot;openvino.omz.public.yolo-v3-tf&quot;]}}
+20.07.17 12:07:45.275    nuctl.platform.invoker (I) Got response {&quot;status&quot;: &quot;200 OK&quot;}
+20.07.17 12:07:45.275                     nuctl (I) &gt;&gt;&gt; Start of function logs
+20.07.17 12:07:45.275 ino.omz.public.yolo-v3-tf (I) Run yolo-v3-tf model {&quot;worker_id&quot;: &quot;0&quot;, &quot;time&quot;: 1594976864570.9353}
+20.07.17 12:07:45.275                     nuctl (I) &lt;&lt;&lt; End of function logs
+
+&gt; Response headers:
+Date = Fri, 17 Jul 2020 09:07:45 GMT
+Content-Type = application/json
+Content-Length = 100
+Server = nuclio
+
+&gt; Response body:
+[
+    {
+        &quot;confidence&quot;: &quot;0.9992254&quot;,
+        &quot;label&quot;: &quot;person&quot;,
+        &quot;points&quot;: [
+            39,
+            124,
+            408,
+            512
+        ],
+        &quot;type&quot;: &quot;rectangle&quot;
+    }
+]
+</code></pre></details>
+<h2 id="run-cypress-tests">Run Cypress tests</h2>
+<ul>
+<li>Install Сypress as described in the <a href="https://docs.cypress.io/guides/getting-started/installing-cypress.html">documentation</a>.</li>
+<li>Run cypress tests:</li>
+</ul>
+<div class="highlight"><pre style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">    <span style="color:#204a87">cd</span> &lt;cvat_local_repository&gt;/tests
+    &lt;cypress_installation_directory&gt;/node_modules/.bin/cypress run --headless --browser chrome
+</code></pre></div><p>For more information, see the <a href="https://docs.cypress.io/">documentation</a>.</p>
+
+</div>
+
+
+
+    
+	
+  
+    
+    
+	
+    
+
+<div class="td-content" style="page-break-before: always">
+    
+	<h1 id="pg-c414e3e4151a3294cd86a33ca60eb228">3 - JavaScript/Typescript coding style</h1>
+    <div class="lead">Information about JavaScript/Typescript coding style that is used in CVAT development.</div>
+	<p>We use the <a href="https://github.com/airbnb/javascript">Airbnb JavaScript Style Guide</a> for JavaScript code with a
+little exception - we prefer 4 spaces for indentation of nested blocks and statements.</p>
+
+</div>
+
+
+
+    
+	
+  
+    
+    
+	
+    
+
+<div class="td-content" style="page-break-before: always">
+    
+	<h1 id="pg-4ef825a7833abf73c578fadc480d6f1b">4 - Branching model</h1>
+    <div class="lead">Information about the branching model that is used in the project.</div>
+	<p>The project uses <a href="https://nvie.com/posts/a-successful-git-branching-model">a successful Git branching model</a>.
+Thus it has a couple of branches. Some of them are described below:</p>
+<ul>
+<li>
+<p><code>origin/master</code> to be the main branch where the source code of
+HEAD always reflects a production-ready state</p>
+</li>
+<li>
+<p><code>origin/develop</code> to be the main branch where the source code of
+HEAD always reflects a state with the latest delivered development
+changes for the next release. Some would call this the “integration branch”.</p>
+</li>
+</ul>
+
+</div>
+
+
+
+    
+	
+  
+    
+    
+	
+    
+
+<div class="td-content" style="page-break-before: always">
+    
+	<h1 id="pg-9f0fa9959f1dde888009a7489abc95ad">5 - Using the issue tracker</h1>
+    <div class="lead">Information and rules for using the issue tracker.</div>
+	<p>The issue tracker is the preferred channel for <a href="#bugs">bug reports</a>,
+<a href="#features">features requests</a> and <a href="#pull-requests">submitting pull
+requests</a>, but please respect the following restrictions:</p>
+<ul>
+<li>
+<p>Please <strong>do not</strong> use the issue tracker for personal support requests (use
+<a href="http://stackoverflow.com">Stack Overflow</a>).</p>
+</li>
+<li>
+<p>Please <strong>do not</strong> derail or troll issues. Keep the discussion on topic and
+respect the opinions of others.</p>
+</li>
+</ul>
+<p><a name="bugs"></a></p>
+
+</div>
+
+
+
+    
+	
+  
+    
+    
+	
+    
+
+<div class="td-content" style="page-break-before: always">
+    
+	<h1 id="pg-3d2c51c440746ae3c1c664fd3c6874c5">6 - Bug reports</h1>
+    <div class="lead">Guidelines and an example of how to report a bug.</div>
+	<p>A bug is a <em>demonstrable problem</em> that is caused by the code in the repository.
+Good bug reports are extremely helpful - thank you!</p>
+<p>Guidelines for bug reports:</p>
+<ol>
+<li>
+<p><strong>Use the GitHub issue search</strong> — check if the issue has already been
+reported.</p>
+</li>
+<li>
+<p><strong>Check if the issue has been fixed</strong> — try to reproduce it using the
+latest <code>develop</code> branch in the repository.</p>
+</li>
+<li>
+<p><strong>Isolate the problem</strong> — ideally create a reduced test case.</p>
+</li>
+</ol>
+<p>A good bug report shouldn&rsquo;t leave others needing to chase you up for more
+information. Please try to be as detailed as possible in your report. What is
+your environment? What steps will reproduce the issue? What browser(s) and OS
+experience the problem? What would you expect to be the outcome? All these
+details will help people to fix any potential bugs.</p>
+<p>Example:</p>
+<blockquote>
+<p>Short and descriptive example bug report title</p>
+<p>A summary of the issue and the browser/OS environment in which it occurs. If
+suitable, include the steps required to reproduce the bug.</p>
+<ol>
+<li>This is the first step</li>
+<li>This is the second step</li>
+<li>Further steps, etc.</li>
+</ol>
+<p>Any other information you want to share that is relevant to the issue being
+reported. This might include the lines of code that you have identified as
+causing the bug, and potential solutions (and your opinions on their
+merits).</p>
+</blockquote>
+<p><a name="features"></a></p>
+
+</div>
+
+
+
+    
+	
+  
+    
+    
+	
+    
+
+<div class="td-content" style="page-break-before: always">
+    
+	<h1 id="pg-36bf632c8a299272d929049c3399f872">7 - Feature requests</h1>
+    <div class="lead">Information on requesting new features.</div>
+	<p>Feature requests are welcome. But take a moment to find out whether your idea
+fits with the scope and aims of the project. It&rsquo;s up to <em>you</em> to make a strong
+case to convince the project&rsquo;s developers of the merits of this feature. Please
+provide as much detail and context as possible.</p>
+<p><a name="pull-requests"></a></p>
+
+</div>
+
+
+
+    
+	
+  
+    
+    
+	
+    
+
+<div class="td-content" style="page-break-before: always">
+    
+	<h1 id="pg-bfe8b249a0cc63de417c2f12c6a75c87">8 - Pull requests</h1>
+    <div class="lead">Instructions on how to create a pull request.</div>
+	<p>Good pull requests - patches, improvements, new features - are a fantastic
+help. They should remain focused in scope and avoid containing unrelated
+commits.</p>
+<p><strong>Please ask first</strong> before embarking on any significant pull request (e.g.
+implementing features, refactoring code, porting to a different language),
+otherwise you risk spending a lot of time working on something that the
+project&rsquo;s developers might not want to merge into the project.</p>
+<p>Please adhere to the coding conventions used throughout a project (indentation,
+accurate comments, etc.) and any other requirements (such as test coverage).</p>
+<p>Follow this process if you&rsquo;d like your work considered for inclusion in the
+project:</p>
+<ol>
+<li>
+<p><a href="https://docs.github.com/en/github/getting-started-with-github/fork-a-repo">Fork</a> the project, clone your fork,
+and configure the remotes:</p>
+<div class="highlight"><pre style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash"><span style="color:#8f5902;font-style:italic"># Clone your fork of the repo into the current directory</span>
+git clone https://github.com/&lt;your-username&gt;/&lt;repo-name&gt;
+<span style="color:#8f5902;font-style:italic"># Navigate to the newly cloned directory</span>
+<span style="color:#204a87">cd</span> &lt;repo-name&gt;
+<span style="color:#8f5902;font-style:italic"># Assign the original repo to a remote called &#34;upstream&#34;</span>
+git remote add upstream https://github.com/&lt;upstream-owner&gt;/&lt;repo-name&gt;
+</code></pre></div></li>
+<li>
+<p>If you cloned a while ago, get the latest changes from upstream:</p>
+<div class="highlight"><pre style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">git checkout &lt;dev-branch&gt;
+git pull upstream &lt;dev-branch&gt;
+</code></pre></div></li>
+<li>
+<p>Create a new topic branch (off the main project development branch) to
+contain your feature, change, or fix:</p>
+<div class="highlight"><pre style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">git checkout -b &lt;topic-branch-name&gt;
+</code></pre></div></li>
+<li>
+<p>Commit your changes in logical chunks. Please adhere to these <a href="http://tbaggery.com/2008/04/19/a-note-about-git-commit-messages.html">git commit
+message guidelines</a>
+or your code is unlikely be merged into the main project. Use Git&rsquo;s
+<a href="https://docs.github.com/en/github/using-git/about-git-rebase">interactive rebase</a>
+feature to tidy up your commits before making them public.</p>
+</li>
+<li>
+<p>Locally merge (or rebase) the upstream development branch into your topic branch:</p>
+<div class="highlight"><pre style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">git pull <span style="color:#ce5c00;font-weight:bold">[</span>--rebase<span style="color:#ce5c00;font-weight:bold">]</span> upstream &lt;dev-branch&gt;
+</code></pre></div></li>
+<li>
+<p>Push your topic branch up to your fork:</p>
+<div class="highlight"><pre style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">git push origin &lt;topic-branch-name&gt;
+</code></pre></div></li>
+<li>
+<p><a href="hhttps://docs.github.com/en/github/collaborating-with-issues-and-pull-requests/about-pull-requests">Open a Pull Request</a>
+with a clear title and description.</p>
+</li>
+</ol>
+<p><strong>IMPORTANT</strong>: By submitting a patch, you agree to allow the project owner to
+license your work under the same license as that used by the project.</p>
+
+</div>
+
+
+
+    
+	
+  
+    
+    
+	
+    
+
+<div class="td-content" style="page-break-before: always">
+    
+	<h1 id="pg-aa57dee42d2570392356d846a0921fdf">9 - How to add a new annotation format support</h1>
+    <div class="lead">Instructions on adding support for new annotation formats. This section on <a href="https://github.com/cvat-ai/cvat/tree/develop/cvat/apps/dataset_manager/formats">GitHub</a>.</div>
+	<ol>
+<li>Add a python script to <code>dataset_manager/formats</code></li>
+<li>Add an import statement to <a href="https://github.com/cvat-ai/cvat/tree/develop/cvat/apps/dataset_manager/formats/registry.py">registry.py</a>.</li>
+<li>Implement some importers and exporters as the format requires.</li>
+</ol>
+<p>Each format is supported by an importer and exporter.</p>
+<p>It can be a function or a class decorated with
+<code>importer</code> or <code>exporter</code> from <a href="https://github.com/cvat-ai/cvat/tree/develop/cvat/apps/dataset_manager/formats/registry.py">registry.py</a>.
+Examples:</p>
+<div class="highlight"><pre style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-python" data-lang="python"><span style="color:#5c35cc;font-weight:bold">@importer</span><span style="color:#000;font-weight:bold">(</span><span style="color:#000">name</span><span style="color:#ce5c00;font-weight:bold">=</span><span style="color:#4e9a06">&#34;MyFormat&#34;</span><span style="color:#000;font-weight:bold">,</span> <span style="color:#000">version</span><span style="color:#ce5c00;font-weight:bold">=</span><span style="color:#4e9a06">&#34;1.0&#34;</span><span style="color:#000;font-weight:bold">,</span> <span style="color:#000">ext</span><span style="color:#ce5c00;font-weight:bold">=</span><span style="color:#4e9a06">&#34;ZIP&#34;</span><span style="color:#000;font-weight:bold">)</span>
+<span style="color:#204a87;font-weight:bold">def</span> <span style="color:#000">my_importer</span><span style="color:#000;font-weight:bold">(</span><span style="color:#000">file_object</span><span style="color:#000;font-weight:bold">,</span> <span style="color:#000">task_data</span><span style="color:#000;font-weight:bold">,</span> <span style="color:#ce5c00;font-weight:bold">**</span><span style="color:#000">options</span><span style="color:#000;font-weight:bold">):</span>
+  <span style="color:#ce5c00;font-weight:bold">...</span>
+
+<span style="color:#5c35cc;font-weight:bold">@importer</span><span style="color:#000;font-weight:bold">(</span><span style="color:#000">name</span><span style="color:#ce5c00;font-weight:bold">=</span><span style="color:#4e9a06">&#34;MyFormat&#34;</span><span style="color:#000;font-weight:bold">,</span> <span style="color:#000">version</span><span style="color:#ce5c00;font-weight:bold">=</span><span style="color:#4e9a06">&#34;2.0&#34;</span><span style="color:#000;font-weight:bold">,</span> <span style="color:#000">ext</span><span style="color:#ce5c00;font-weight:bold">=</span><span style="color:#4e9a06">&#34;XML&#34;</span><span style="color:#000;font-weight:bold">)</span>
+<span style="color:#204a87;font-weight:bold">class</span> <span style="color:#000">my_importer</span><span style="color:#000;font-weight:bold">(</span><span style="color:#000">file_object</span><span style="color:#000;font-weight:bold">,</span> <span style="color:#000">task_data</span><span style="color:#000;font-weight:bold">,</span> <span style="color:#ce5c00;font-weight:bold">**</span><span style="color:#000">options</span><span style="color:#000;font-weight:bold">):</span>
+  <span style="color:#204a87;font-weight:bold">def</span> <span style="color:#000">__call__</span><span style="color:#000;font-weight:bold">(</span><span style="color:#3465a4">self</span><span style="color:#000;font-weight:bold">,</span> <span style="color:#000">file_object</span><span style="color:#000;font-weight:bold">,</span> <span style="color:#000">task_data</span><span style="color:#000;font-weight:bold">,</span> <span style="color:#ce5c00;font-weight:bold">**</span><span style="color:#000">options</span><span style="color:#000;font-weight:bold">):</span>
+    <span style="color:#ce5c00;font-weight:bold">...</span>
+
+<span style="color:#5c35cc;font-weight:bold">@exporter</span><span style="color:#000;font-weight:bold">(</span><span style="color:#000">name</span><span style="color:#ce5c00;font-weight:bold">=</span><span style="color:#4e9a06">&#34;MyFormat&#34;</span><span style="color:#000;font-weight:bold">,</span> <span style="color:#000">version</span><span style="color:#ce5c00;font-weight:bold">=</span><span style="color:#4e9a06">&#34;1.0&#34;</span><span style="color:#000;font-weight:bold">,</span> <span style="color:#000">ext</span><span style="color:#ce5c00;font-weight:bold">=</span><span style="color:#4e9a06">&#34;ZIP&#34;</span><span style="color:#000;font-weight:bold">):</span>
+<span style="color:#204a87;font-weight:bold">def</span> <span style="color:#000">my_exporter</span><span style="color:#000;font-weight:bold">(</span><span style="color:#000">file_object</span><span style="color:#000;font-weight:bold">,</span> <span style="color:#000">task_data</span><span style="color:#000;font-weight:bold">,</span> <span style="color:#ce5c00;font-weight:bold">**</span><span style="color:#000">options</span><span style="color:#000;font-weight:bold">):</span>
+  <span style="color:#ce5c00;font-weight:bold">...</span>
+</code></pre></div><p>Each decorator defines format parameters such as:</p>
+<ul>
+<li>
+<p><em>name</em></p>
+</li>
+<li>
+<p><em>version</em></p>
+</li>
+<li>
+<p><em>file extension</em>. For the <code>importer</code> it can be a comma-separated list.
+These parameters are combined to produce a visible name. It can be
+set explicitly by the <code>display_name</code> argument.</p>
+</li>
+</ul>
+<p>Importer arguments:</p>
+<ul>
+<li><em>file_object</em> - a file with annotations or dataset</li>
+<li><em>task_data</em> - an instance of <code>TaskData</code> class.</li>
+</ul>
+<p>Exporter arguments:</p>
+<ul>
+<li>
+<p><em>file_object</em> - a file for annotations or dataset</p>
+</li>
+<li>
+<p><em>task_data</em> - an instance of <code>TaskData</code> class.</p>
+</li>
+<li>
+<p><em>options</em> - format-specific options. <code>save_images</code> is the option to
+distinguish if dataset or just annotations are requested.</p>
+</li>
+</ul>
+<p><a href="https://github.com/cvat-ai/cvat/blob/develop/cvat/apps/dataset_manager/bindings.py"><code>TaskData</code></a> provides
+many task properties and interfaces to add and read task annotations.</p>
+<p>Public members:</p>
+<ul>
+<li>
+<p><strong>TaskData. Attribute</strong> - class, <code>namedtuple('Attribute', 'name, value')</code></p>
+</li>
+<li>
+<p><strong>TaskData. LabeledShape</strong> - class, <code>namedtuple('LabeledShape', 'type, frame, label, points, occluded, attributes, group, z_order')</code></p>
+</li>
+<li>
+<p><strong>TrackedShape</strong> - <code>namedtuple('TrackedShape', 'type, points, occluded, frame, attributes, outside, keyframe, z_order')</code></p>
+</li>
+<li>
+<p><strong>Track</strong> - class, <code>namedtuple('Track', 'label, group, shapes')</code></p>
+</li>
+<li>
+<p><strong>Tag</strong> - class, <code>namedtuple('Tag', 'frame, label, attributes, group')</code></p>
+</li>
+<li>
+<p><strong>Frame</strong> - class, <code>namedtuple('Frame', 'frame, name, width, height, labeled_shapes, tags')</code></p>
+</li>
+<li>
+<p><strong>TaskData. shapes</strong> - property, an iterator over <code>LabeledShape</code> objects</p>
+</li>
+<li>
+<p><strong>TaskData. tracks</strong> - property, an iterator over <code>Track</code> objects</p>
+</li>
+<li>
+<p><strong>TaskData. tags</strong> - property, an iterator over <code>Tag</code> objects</p>
+</li>
+<li>
+<p><strong>TaskData. meta</strong> - property, a dictionary with task information</p>
+</li>
+<li>
+<p><strong>TaskData. group_by_frame()</strong> - method, returns
+an iterator over <code>Frame</code> objects, which groups annotation objects by frame.
+Note that <code>TrackedShape</code> s will be represented as <code>LabeledShape</code> s.</p>
+</li>
+<li>
+<p><strong>TaskData. add_tag(tag)</strong> - method,
+tag should be an instance of the <code>Tag</code> class</p>
+</li>
+<li>
+<p><strong>TaskData. add_shape(shape)</strong> - method,
+shape should be an instance of the <code>Shape</code> class</p>
+</li>
+<li>
+<p><strong>TaskData. add_track(track)</strong> - method,
+track should be an instance of the <code>Track</code> class</p>
+</li>
+</ul>
+<p>Sample exporter code:</p>
+<div class="highlight"><pre style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-python" data-lang="python"><span style="color:#ce5c00;font-weight:bold">...</span>
+<span style="color:#8f5902;font-style:italic"># dump meta info if necessary</span>
+<span style="color:#ce5c00;font-weight:bold">...</span>
+<span style="color:#8f5902;font-style:italic"># iterate over all frames</span>
+<span style="color:#204a87;font-weight:bold">for</span> <span style="color:#000">frame_annotation</span> <span style="color:#204a87;font-weight:bold">in</span> <span style="color:#000">task_data</span><span style="color:#ce5c00;font-weight:bold">.</span><span style="color:#000">group_by_frame</span><span style="color:#000;font-weight:bold">():</span>
+  <span style="color:#8f5902;font-style:italic"># get frame info</span>
+  <span style="color:#000">image_name</span> <span style="color:#ce5c00;font-weight:bold">=</span> <span style="color:#000">frame_annotation</span><span style="color:#ce5c00;font-weight:bold">.</span><span style="color:#000">name</span>
+  <span style="color:#000">image_width</span> <span style="color:#ce5c00;font-weight:bold">=</span> <span style="color:#000">frame_annotation</span><span style="color:#ce5c00;font-weight:bold">.</span><span style="color:#000">width</span>
+  <span style="color:#000">image_height</span> <span style="color:#ce5c00;font-weight:bold">=</span> <span style="color:#000">frame_annotation</span><span style="color:#ce5c00;font-weight:bold">.</span><span style="color:#000">height</span>
+  <span style="color:#8f5902;font-style:italic"># iterate over all shapes on the frame</span>
+  <span style="color:#204a87;font-weight:bold">for</span> <span style="color:#000">shape</span> <span style="color:#204a87;font-weight:bold">in</span> <span style="color:#000">frame_annotation</span><span style="color:#ce5c00;font-weight:bold">.</span><span style="color:#000">labeled_shapes</span><span style="color:#000;font-weight:bold">:</span>
+    <span style="color:#000">label</span> <span style="color:#ce5c00;font-weight:bold">=</span> <span style="color:#000">shape</span><span style="color:#ce5c00;font-weight:bold">.</span><span style="color:#000">label</span>
+    <span style="color:#000">xtl</span> <span style="color:#ce5c00;font-weight:bold">=</span> <span style="color:#000">shape</span><span style="color:#ce5c00;font-weight:bold">.</span><span style="color:#000">points</span><span style="color:#000;font-weight:bold">[</span><span style="color:#0000cf;font-weight:bold">0</span><span style="color:#000;font-weight:bold">]</span>
+    <span style="color:#000">ytl</span> <span style="color:#ce5c00;font-weight:bold">=</span> <span style="color:#000">shape</span><span style="color:#ce5c00;font-weight:bold">.</span><span style="color:#000">points</span><span style="color:#000;font-weight:bold">[</span><span style="color:#0000cf;font-weight:bold">1</span><span style="color:#000;font-weight:bold">]</span>
+    <span style="color:#000">xbr</span> <span style="color:#ce5c00;font-weight:bold">=</span> <span style="color:#000">shape</span><span style="color:#ce5c00;font-weight:bold">.</span><span style="color:#000">points</span><span style="color:#000;font-weight:bold">[</span><span style="color:#0000cf;font-weight:bold">2</span><span style="color:#000;font-weight:bold">]</span>
+    <span style="color:#000">ybr</span> <span style="color:#ce5c00;font-weight:bold">=</span> <span style="color:#000">shape</span><span style="color:#ce5c00;font-weight:bold">.</span><span style="color:#000">points</span><span style="color:#000;font-weight:bold">[</span><span style="color:#0000cf;font-weight:bold">3</span><span style="color:#000;font-weight:bold">]</span>
+    <span style="color:#8f5902;font-style:italic"># iterate over shape attributes</span>
+    <span style="color:#204a87;font-weight:bold">for</span> <span style="color:#000">attr</span> <span style="color:#204a87;font-weight:bold">in</span> <span style="color:#000">shape</span><span style="color:#ce5c00;font-weight:bold">.</span><span style="color:#000">attributes</span><span style="color:#000;font-weight:bold">:</span>
+      <span style="color:#000">attr_name</span> <span style="color:#ce5c00;font-weight:bold">=</span> <span style="color:#000">attr</span><span style="color:#ce5c00;font-weight:bold">.</span><span style="color:#000">name</span>
+      <span style="color:#000">attr_value</span> <span style="color:#ce5c00;font-weight:bold">=</span> <span style="color:#000">attr</span><span style="color:#ce5c00;font-weight:bold">.</span><span style="color:#000">value</span>
+<span style="color:#ce5c00;font-weight:bold">...</span>
+<span style="color:#8f5902;font-style:italic"># dump annotation code</span>
+<span style="color:#000">file_object</span><span style="color:#ce5c00;font-weight:bold">.</span><span style="color:#000">write</span><span style="color:#000;font-weight:bold">(</span><span style="color:#ce5c00;font-weight:bold">...</span><span style="color:#000;font-weight:bold">)</span>
+<span style="color:#ce5c00;font-weight:bold">...</span>
+</code></pre></div><p>Sample importer code:</p>
+<div class="highlight"><pre style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-python" data-lang="python"><span style="color:#ce5c00;font-weight:bold">...</span>
+<span style="color:#8f5902;font-style:italic">#read file_object</span>
+<span style="color:#ce5c00;font-weight:bold">...</span>
+<span style="color:#204a87;font-weight:bold">for</span> <span style="color:#000">parsed_shape</span> <span style="color:#204a87;font-weight:bold">in</span> <span style="color:#000">parsed_shapes</span><span style="color:#000;font-weight:bold">:</span>
+  <span style="color:#000">shape</span> <span style="color:#ce5c00;font-weight:bold">=</span> <span style="color:#000">task_data</span><span style="color:#ce5c00;font-weight:bold">.</span><span style="color:#000">LabeledShape</span><span style="color:#000;font-weight:bold">(</span>
+    <span style="color:#204a87">type</span><span style="color:#ce5c00;font-weight:bold">=</span><span style="color:#4e9a06">&#34;rectangle&#34;</span><span style="color:#000;font-weight:bold">,</span>
+    <span style="color:#000">points</span><span style="color:#ce5c00;font-weight:bold">=</span><span style="color:#000;font-weight:bold">[</span><span style="color:#0000cf;font-weight:bold">0</span><span style="color:#000;font-weight:bold">,</span> <span style="color:#0000cf;font-weight:bold">0</span><span style="color:#000;font-weight:bold">,</span> <span style="color:#0000cf;font-weight:bold">100</span><span style="color:#000;font-weight:bold">,</span> <span style="color:#0000cf;font-weight:bold">100</span><span style="color:#000;font-weight:bold">],</span>
+    <span style="color:#000">occluded</span><span style="color:#ce5c00;font-weight:bold">=</span><span style="color:#3465a4">False</span><span style="color:#000;font-weight:bold">,</span>
+    <span style="color:#000">attributes</span><span style="color:#ce5c00;font-weight:bold">=</span><span style="color:#000;font-weight:bold">[],</span>
+    <span style="color:#000">label</span><span style="color:#ce5c00;font-weight:bold">=</span><span style="color:#4e9a06">&#34;car&#34;</span><span style="color:#000;font-weight:bold">,</span>
+    <span style="color:#000">outside</span><span style="color:#ce5c00;font-weight:bold">=</span><span style="color:#3465a4">False</span><span style="color:#000;font-weight:bold">,</span>
+    <span style="color:#000">frame</span><span style="color:#ce5c00;font-weight:bold">=</span><span style="color:#0000cf;font-weight:bold">99</span><span style="color:#000;font-weight:bold">,</span>
+  <span style="color:#000;font-weight:bold">)</span>
+<span style="color:#000">task_data</span><span style="color:#ce5c00;font-weight:bold">.</span><span style="color:#000">add_shape</span><span style="color:#000;font-weight:bold">(</span><span style="color:#000">shape</span><span style="color:#000;font-weight:bold">)</span>
+</code></pre></div><h2 id="format-specifications">Format specifications</h2>
+<ul>
+<li><a href="../../../docs/manual/advanced/formats/format-cvat/">CVAT</a></li>
+<li><a href="../../../docs/manual/advanced/formats/format-datumaro/">Datumaro</a></li>
+<li><a href="../../../docs/manual/advanced/formats/format-labelme/">LabelMe</a></li>
+<li><a href="../../../docs/manual/advanced/formats/format-mot/">MOT</a></li>
+<li><a href="../../../docs/manual/advanced/formats/format-mots/">MOTS</a></li>
+<li><a href="../../../docs/manual/advanced/formats/format-coco/">COCO</a></li>
+<li><a href="../../../docs/manual/advanced/formats/format-voc/">PASCAL VOC and mask</a></li>
+<li><a href="../../../docs/manual/advanced/formats/format-yolo/">YOLO</a></li>
+<li><a href="../../../docs/manual/advanced/formats/format-tfrecord/">TF detection API</a></li>
+<li><a href="../../../docs/manual/advanced/formats/format-imagenet/">ImageNet</a></li>
+<li><a href="../../../docs/manual/advanced/formats/format-camvid/">CamVid</a></li>
+<li><a href="../../../docs/manual/advanced/formats/format-widerface/">WIDER Face</a></li>
+<li><a href="../../../docs/manual/advanced/formats/format-vggface2/">VGGFace2</a></li>
+<li><a href="../../../docs/manual/advanced/formats/format-market1501/">Market-1501</a></li>
+<li><a href="../../../docs/manual/advanced/formats/format-icdar/">ICDAR13/15</a></li>
+</ul>
+
+</div>
+
+
+
+    
+	
+  
+    
+    
+	
+    
+
+<div class="td-content" style="page-break-before: always">
+    
+	<h1 id="pg-dcce7b96f2dcf1adc45ffadd13643a76">10 - Running tests</h1>
+    <div class="lead">Instructions on how to run all existence tests.</div>
+	<h1 id="e2e-tests">E2E tests</h1>
+<p><strong>Initial steps</strong>:</p>
+<ol>
+<li>Run CVAT instance:
+<pre><code>docker-compose \
+          -f docker-compose.yml \
+          -f docker-compose.dev.yml \
+          -f components/serverless/docker-compose.serverless.yml \
+          -f tests/docker-compose.file_share.yml up -d
+</code></pre></li>
+<li>Add test user in CVAT:
+<pre><code>docker exec -i cvat_server \
+          /bin/bash -c \
+          &quot;echo \&quot;from django.contrib.auth.models import User; User.objects.create_superuser('admin', 'admin@localhost.company', '12qwaszx')\&quot; | python3 ~/manage.py shell&quot;
+</code></pre></li>
+<li>Install npm dependencies:
+<pre><code>cd tests
+yarn --frozen-lockfile
+</code></pre></li>
+</ol>
+<p><strong>Running tests</strong></p>
+<pre><code>yarn run cypress:run:chrome
+yarn run cypress:run:chrome:canvas3d
+</code></pre><h1 id="rest-api-sdk-and-cli-tests">REST API, SDK and CLI tests</h1>
+<p><strong>Initial steps</strong></p>
+<ol>
+<li>Install all necessary requirements before running REST API tests:
+<pre><code>pip install -r ./tests/python/requirements.txt
+</code></pre></li>
+</ol>
+<p><strong>Running tests</strong></p>
+<p>Run all REST API tests:</p>
+<pre><code>pytest ./tests/python
+</code></pre><p>This command will automatically start all necessary docker containers.</p>
+<p>If you want to start/stop these containers without running tests
+use special options for it:</p>
+<pre><code>pytest ./tests/python --start-services
+pytest ./tests/python --stop-services
+</code></pre><p>If you need to rebuild your CVAT images add <code>--rebuild</code> option:</p>
+<pre><code>pytest ./tests/python --rebuild
+</code></pre><h1 id="unit-tests">Unit tests</h1>
+<p><strong>Initial steps</strong></p>
+<ol>
+<li>Install necessary Python dependencies:
+<pre><code>pip install -r cvat/requirements/testing.txt
+</code></pre></li>
+<li>Install npm dependencies:
+<pre><code>yarn --frozen-lockfile
+</code></pre></li>
+<li>Run CVAT instance
+<pre><code>docker-compose -f docker-compose.yml -f docker-compose.dev.yml up -d
+</code></pre></li>
+</ol>
+<p><strong>Running tests</strong></p>
+<ol>
+<li>Python tests
+<pre><code>python manage.py test --settings cvat.settings.testing cvat/apps utils/cli
+</code></pre></li>
+<li>JS tests
+<pre><code>cd cvat-core
+yarn run test
+</code></pre></li>
+</ol>
+
+</div>
+
+
+
+    
+	
+  
+    
+    
+	
+    
+
+<div class="td-content" style="page-break-before: always">
+    
+	<h1 id="pg-5e4aadf37d817bf7a4525e9d88ae86f7">11 - REST API design principles</h1>
+    <div class="lead">Information on using the REST API scheme and principles of its design.</div>
+	<h2 id="rest-api-scheme">REST API scheme</h2>
+<p>Common scheme for our REST API is <code>&lt;VERB&gt; [namespace] &lt;objects&gt; &lt;id&gt; &lt;action&gt;</code>.</p>
+<ul>
+<li><code>VERB</code> can be <code>POST</code>, <code>GET</code>, <code>PATCH</code>, <code>PUT</code>, <code>DELETE</code>.</li>
+<li><code>namespace</code> should scope some specific functionality like <code>auth</code>, <code>lambda</code>.
+It is optional in the scheme.</li>
+<li>Typical <code>objects</code> are <code>tasks</code>, <code>projects</code>, <code>jobs</code>.</li>
+<li>When you want to extract a specific object from a collection, just specify its <code>id</code>.</li>
+<li>An <code>action</code> can be used to simplify REST API or provide an endpoint for entities
+without <code>objects</code> endpoint like <code>annotations</code>, <code>data</code>, <code>data/meta</code>. Note: action
+should not duplicate other endpoints without a reason.</li>
+</ul>
+<h2 id="design-principles">Design principles</h2>
+<ul>
+<li>Use nouns instead of verbs in endpoint paths. For example,
+<code>POST /api/tasks</code> instead of <code>POST /api/tasks/create</code>.</li>
+<li>Accept and respond with JSON whenever it is possible</li>
+<li>Name collections with plural nouns (e.g. <code>/tasks</code>, <code>/projects</code>)</li>
+<li>Try to keep the API structure flat. Prefer two separate endpoints
+for <code>/projects</code> and <code>/tasks</code> instead of <code>/projects/:id1/tasks/:id2</code>. Use
+filters to extract necessary information like <code>/tasks/:id2?project=:id1</code>.
+In some cases it is useful to get all <code>tasks</code>. If the structure is
+hierarchical, it cannot be done easily. Also you have to know both <code>:id1</code>
+and <code>:id2</code> to get information about the task.
+<em>Note: for now we accept <code>GET /tasks/:id2/jobs</code> but it should be replaced
+by <code>/jobs?task=:id2</code> in the future</em>.</li>
+<li>Handle errors gracefully and return standard error codes (e.g. <code>201</code>, <code>400</code>)</li>
+<li>Allow filtering, sorting, and pagination</li>
+<li>Maintain good security practices</li>
+<li>Cache data to improve performance</li>
+<li>Versioning our APIs. It should be done when you delete an endpoint or modify
+its behaviors. Versioning uses a schema with <code>Accept</code> header with vendor media type.</li>
+</ul>
+<h2 id="links">Links</h2>
+<ul>
+<li><a href="https://stackoverflow.blog/2020/03/02/best-practices-for-rest-api-design/">Best practices for REST API design</a></li>
+<li><a href="https://stackoverflow.com/questions/20951419/what-are-best-practices-for-rest-nested-resources">Flat vs. nested resources</a></li>
+<li><a href="https://www.moesif.com/blog/technical/api-design/REST-API-Design-Best-Practices-for-Sub-and-Nested-Resources/">REST API Design Best Practices for Sub and Nested Resources</a></li>
+<li><a href="https://jsonapi.org/">A specification for building APIs in JSON</a></li>
+</ul>
+
+</div>
+
+
+
+    
+	
+  
+
+
+
+          </main>
+        </div>
+      </div>
+      
+<footer class="bg-dark py-5 row d-print-none">
+  <div class="container-fluid mx-sm-5">
+    <div class="row">
+      <div class="col-6 col-sm-2 text-xs-center order-sm-2">
+        
+        
+        
+<ul class="list-inline mb-0">
+  
+  <li class="list-inline-item mx-2 h3" data-toggle="tooltip" data-placement="top" title="Gitter public chat" aria-label="Gitter public chat">
+    <a class="text-white" rel="noopener noreferrer" href="https://gitter.im/opencv-cvat/public">
+      <i class="fab fa-gitter"></i>
+    </a>
+  </li>
+  
+  <li class="list-inline-item mx-2 h3" data-toggle="tooltip" data-placement="top" title="Stack Overflow" aria-label="Stack Overflow">
+    <a class="text-white" rel="noopener noreferrer" href="https://stackoverflow.com/search?q=%23cvat">
+      <i class="fab fa-stack-overflow"></i>
+    </a>
+  </li>
+  
+  <li class="list-inline-item mx-2 h3" data-toggle="tooltip" data-placement="top" title="YouTube" aria-label="YouTube">
+    <a class="text-white" rel="noopener noreferrer" href="https://www.youtube.com/@cvat-ai">
+      <i class="fab fa-youtube"></i>
+    </a>
+  </li>
+  
+</ul>
+
+        
+        
+      </div>
+      <div class="col-6 col-sm-2 text-right text-xs-center order-sm-3">
+        
+        
+        
+<ul class="list-inline mb-0">
+  
+  <li class="list-inline-item mx-2 h3" data-toggle="tooltip" data-placement="top" title="GitHub" aria-label="GitHub">
+    <a class="text-white" rel="noopener noreferrer" href="https://github.com/cvat-ai/cvat">
+      <i class="fab fa-github"></i>
+    </a>
+  </li>
+  
+  <li class="list-inline-item mx-2 h3" data-toggle="tooltip" data-placement="top" title="Gitter developers chat" aria-label="Gitter developers chat">
+    <a class="text-white" rel="noopener noreferrer" href="https://gitter.im/opencv-cvat/dev">
+      <i class="fab fa-gitter"></i>
+    </a>
+  </li>
+  
+  <li class="list-inline-item mx-2 h3" data-toggle="tooltip" data-placement="top" title="Discord chat" aria-label="Discord chat">
+    <a class="text-white" rel="noopener noreferrer" href="https://discord.gg/fNR3eXfk6C">
+      <i class="fab fa-discord"></i>
+    </a>
+  </li>
+  
+</ul>
+
+        
+        
+      </div>
+      <div class="col-12 col-sm-8 text-center order-sm-2">
+        
+        |
+        
+        |
+        
+        <br/>
+        <div class="footer-disclaimer text-white ">
+          <small>Intel technologies may require enabled hardware, software or service activation. // No product or component can be absolutely secure. // Your costs and results may vary. // Performance varies by use, configuration and other factors. // See our complete legal <u><a href="https://edc.intel.com/content/www/us/en/products/performance/benchmarks/overview/?r=219444055">Notices and Disclaimers</a></u>. // Intel is committed to respecting human rights and avoiding complicity in human rights abuses. See Intel’s <a href="https://www.intel.com/content/www/us/en/policy/policy-human-rights.html"><u>Global Human Rights Principles</u></a>. Intel’s products and software are intended only to be used in applications that do not cause or contribute to a violation of an internationally recognized human right.</small>
+      </div>
+  
+    <p class="mt-2"><a href="../../../about/">About</a></p>
+  
+      </div>
+    </div>
+  </div>
+</footer>
+
+
+    </div>
+    <script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.1/dist/umd/popper.min.js" integrity="sha384-9/reFTGAW83EW2RDu2S0VKaIzap3H66lZH81PoYlFhbGU+6BZp6G7niu735Sk7lN" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@4.6.0/dist/js/bootstrap.min.js" integrity="sha384-+YQ4JLhjyBLPDQt//I+STsc9iw4uQqACwlvpslubQzn4u2UU2UFM80nGisd026JF" crossorigin="anonymous"></script>
+
+
+
+
+
+
+ 
+
+
+
+
+
+
+
+
+
+
+
+
+
+<script src="../../../js/main.min.3b172c13b62c2bea8b1c9d2599cddc8cf89718a92d792c680871c81ba43d8c85.js" integrity="sha256-OxcsE7YsK&#43;qLHJ0lmc3cjPiXGKkteSxoCHHIG6Q9jIU=" crossorigin="anonymous"></script>
+
+
+
+<script src='../../../js/prism.js'></script>
+
+
+
+  </body>
+</html>

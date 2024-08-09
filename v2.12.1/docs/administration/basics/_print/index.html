@@ -1,0 +1,982 @@
+<!doctype html>
+<html itemscope itemtype="http://schema.org/WebPage" lang="en" class="no-js">
+  <head>
+    <meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+<meta name="generator" content="Hugo 0.110.0">
+<link rel="canonical" type="text/html" href="../../../../docs/administration/basics/">
+<meta name="robots" content="noindex, nofollow">
+
+
+<link rel="shortcut icon" href="../../../../favicons/favicon.ico" >
+<link rel="apple-touch-icon" href="../../../../favicons/apple-touch-icon-180x180.png" sizes="180x180">
+<link rel="icon" type="image/png" href="../../../../favicons/favicon-16x16.png" sizes="16x16">
+<link rel="icon" type="image/png" href="../../../../favicons/favicon-32x32.png" sizes="32x32">
+<link rel="icon" type="image/png" href="../../../../favicons/android-36x36.png" sizes="36x36">
+<link rel="icon" type="image/png" href="../../../../favicons/android-48x48.png" sizes="48x48">
+<link rel="icon" type="image/png" href="../../../../favicons/android-72x72.png" sizes="72x72">
+<link rel="icon" type="image/png" href="../../../../favicons/android-96x96.png" sizes="96x96">
+<link rel="icon" type="image/png" href="../../../../favicons/android-144x144.png" sizes="144x144">
+<link rel="icon" type="image/png" href="../../../../favicons/android-192x192.png" sizes="192x192">
+
+<title>Basics | CVAT</title>
+<meta name="description" content="This section contains basic documents for system administrators.">
+<meta property="og:title" content="Basics" />
+<meta property="og:description" content="This section contains basic documents for system administrators." />
+<meta property="og:type" content="website" />
+<meta property="og:url" content="/docs/administration/basics/" /><meta property="og:site_name" content="CVAT" />
+<meta itemprop="name" content="Basics">
+<meta itemprop="description" content="This section contains basic documents for system administrators."><meta name="twitter:card" content="summary"/>
+<meta name="twitter:title" content="Basics"/>
+<meta name="twitter:description" content="This section contains basic documents for system administrators."/>
+
+
+
+
+<link rel="preload" href="../../../../scss/main.min.5176d9fef59ea153ab767b7b61a90b35fb24ef3fb7aef25530f05dcb464a2db0.css" as="style">
+<link href="../../../../scss/main.min.5176d9fef59ea153ab767b7b61a90b35fb24ef3fb7aef25530f05dcb464a2db0.css" rel="stylesheet" integrity="">
+
+<script
+  src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.3/jquery.min.js"
+  integrity="sha512-STof4xm1wgkfm7heWqFJVn58Hm3EtS31XFaagaa8VMReCXAkQnJZ+jEy8PCC/iT18dFy95WcExNHFTqLyp72eQ=="
+  crossorigin="anonymous"></script>
+<script defer
+  src="https://unpkg.com/lunr@2.3.9/lunr.min.js"
+  integrity="sha384-203J0SNzyqHby3iU6hzvzltrWi/M41wOP5Gu+BiJMz5nwKykbkUx8Kp7iti0Lpli"
+  crossorigin="anonymous"></script>
+<link rel="stylesheet" href="../../../../css/prism.css"/>
+
+  </head>
+  <body class="td-section">
+    <header>
+      <nav class="td-navbar navbar-dark js-navbar-scroll">
+<div class="container-fluid flex-column flex-md-row">
+  <a class="navbar-brand" href="../../../../about/"><span class="navbar-brand__logo navbar-logo"><svg width="80" height="15" viewBox="0 0 80 15" xmlns="http://www.w3.org/2000/svg"><path d="M6.63399 15C2.37083 15 0 12.5333.0 7.48889.0 2.46667 2.34908.0 6.63399.0H10.6576V2.62222H6.63399c-2.84935.0-4.0674 1.44445-4.0674 4.86667.0 3.44441 1.2398 4.88891 4.0674 4.88891H15.0638V15H6.63399z"/><path d="M22.412.0l4.8346 13.1004C27.7814 14.5415 28.8724 15 30.2842 15 31.7817 15 32.7657 14.476 33.3005 13.1004L38.3918.0H35.5895L30.9902 11.8559C30.8404 12.2052 30.6265 12.3581 30.2842 12.3581 29.942 12.3581 29.7067 12.2052 29.5783 11.8559L25.1929.0H22.412z"/><path d="M53.0989 3.1441C53.2487 2.79476 53.484 2.64192 53.8262 2.64192 54.1685 2.64192 54.4038 2.79476 54.5322 3.1441L58.9176 15h2.8023L56.8425 1.89956C56.3291.524017 55.3451.0 53.8476.0 52.3288.0 51.3448.524017 50.81 1.89956L45.74 15h2.781L53.0989 3.1441z"/><path d="M69.0681.0V2.5665H73.2661V15H75.802V2.5665H80V0H69.0681z"/></svg></span></a>
+  <div class="td-navbar-nav-scroll ms-md-auto" style="height: auto;" id="main_navbar">
+    <ul class="navbar-nav d-flex flex-wrap" style="padding-bottom: 0;">
+      <li class="nav-item">
+        <a class="nav-link active" href="../../../../docs/"><span>Documentation</span></a>
+      </li>
+      <li class="nav-item">
+        <a class="nav-link" href="../../../../about/"><span>About</span></a>
+      </li>
+      <li class="nav-item">
+        <a class="nav-link" href="https://app.cvat.ai" rel="noopener"><span>Try it now</span></a>
+      </li>
+      <li class="nav-item">
+        <a class="nav-link" href="https://github.com/cvat-ai/cvat" rel="noopener"><i class='fab fa-github'></i><span>GitHub</span></a>
+      </li>
+      <li class="nav-item dropdown d-none d-lg-block">
+        <div class="dropdown">
+  <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">v2.12.1</a>
+  <ul class="dropdown-menu">
+    <li><a class="dropdown-item" href="../../../../../">Latest version</a></li>
+    <li><a class="dropdown-item" href="../../../../../v1.5.0">v1.5.0</a></li>
+    <li><a class="dropdown-item" href="../../../../../v1.6.0">v1.6.0</a></li>
+    <li><a class="dropdown-item" href="../../../../../v1.7.0">v1.7.0</a></li>
+    <li><a class="dropdown-item" href="../../../../../v2.0.0">v2.0.0</a></li>
+    <li><a class="dropdown-item" href="../../../../../v2.1.0">v2.1.0</a></li>
+    <li><a class="dropdown-item" href="../../../../../v2.10.3">v2.10.3</a></li>
+    <li><a class="dropdown-item" href="../../../../../v2.11.3">v2.11.3</a></li>
+    <li><a class="dropdown-item" href="../../../../../v2.12.1">v2.12.1</a></li>
+    <li><a class="dropdown-item" href="../../../../../v2.13.0">v2.13.0</a></li>
+    <li><a class="dropdown-item" href="../../../../../v2.14.4">v2.14.4</a></li>
+    <li><a class="dropdown-item" href="../../../../../v2.15.0">v2.15.0</a></li>
+    <li><a class="dropdown-item" href="../../../../../v2.16.2">v2.16.2</a></li>
+    <li><a class="dropdown-item" href="../../../../../v2.2.0">v2.2.0</a></li>
+    <li><a class="dropdown-item" href="../../../../../v2.3.0">v2.3.0</a></li>
+    <li><a class="dropdown-item" href="../../../../../v2.4.9">v2.4.9</a></li>
+    <li><a class="dropdown-item" href="../../../../../v2.5.2">v2.5.2</a></li>
+    <li><a class="dropdown-item" href="../../../../../v2.6.2">v2.6.2</a></li>
+    <li><a class="dropdown-item" href="../../../../../v2.7.6">v2.7.6</a></li>
+    <li><a class="dropdown-item" href="../../../../../v2.8.2">v2.8.2</a></li>
+    <li><a class="dropdown-item" href="../../../../../v2.9.2">v2.9.2</a></li>
+    </ul>
+</div></li>
+      </ul>
+  </div>
+  <div class="d-none d-lg-block">
+    <div class="td-search td-search--offline">
+  <div class="td-search__icon"></div>
+  <input
+    type="search"
+    class="td-search__input form-control"
+    placeholder="Search this site…"
+    aria-label="Search this site…"
+    autocomplete="off"
+    
+    data-offline-search-index-json-src="../../../../offline-search-index.40b1fa2fd080c1724c53dbd9cbd3ce82.json"
+    data-offline-search-base-href="../../../../"
+    data-offline-search-max-results="10"
+  >
+</div>
+
+  </div>
+</div>
+</nav>
+    </header>
+    <div class="container-fluid td-outer">
+      <div class="td-main">
+        <div class="row flex-xl-nowrap">
+          <main class="col-12 col-md-9 col-xl-8 ps-md-5" role="main">
+            
+
+
+
+
+<div class="td-content">
+<div class="pageinfo pageinfo-primary d-print-none">
+<p>
+This is the multi-page printable view of this section.
+<a href="#" onclick="print();return false;">Click here to print</a>.
+</p><p>
+<a href="../../../../docs/administration/basics/">Return to the regular view of this page</a>.
+</p>
+</div>
+
+
+
+<h1 class="title">Basics</h1>
+<div class="lead">This section contains basic documents for system administrators.</div>
+
+
+
+
+    <ul>
+    
+  
+  
+  
+  
+
+  
+    
+    
+	
+<li>1: <a href="#pg-3b52a3a4deeb0315f304ab2f6d5bc85d">Installation Guide</a></li>
+
+
+    
+  
+    
+    
+	
+<li>2: <a href="#pg-4efbab3bd12a91d702f7e3c75e7e5aa2">Superuser registration</a></li>
+
+
+    
+  
+    
+    
+	
+<li>3: <a href="#pg-e0876969fd23d4213b245cf0d69ca6d3">AWS-Deployment Guide</a></li>
+
+
+    
+  
+    
+    
+	
+<li>4: <a href="#pg-fe76cc8b9c063eb6606ea27948386ce7">REST API guide</a></li>
+
+
+    
+  
+
+    </ul>
+
+
+<div class="content">
+      
+</div>
+</div>
+
+
+  
+  
+  
+  
+
+  
+  
+
+  
+    
+    
+	
+    
+
+<div class="td-content" style="">
+    
+	<h1 id="pg-3b52a3a4deeb0315f304ab2f6d5bc85d">1 - Installation Guide</h1>
+    <div class="lead">A CVAT installation guide for different operating systems.</div>
+	<h1 id="quick-installation-guide">Quick installation guide</h1>
+<p>Before you can use CVAT, you’ll need to get it installed. The document below
+contains instructions for the most popular operating systems. If your system is
+not covered by the document it should be relatively straightforward to adapt
+the instructions below for other systems.</p>
+<p>Probably you need to modify the instructions below in case you are behind a proxy
+server. Proxy is an advanced topic and it is not covered by the guide.</p>
+<p>For access from China, read <a href="#sources-for-users-from-china">sources for users from China</a> section.</p>
+<h2 id="ubuntu-22042004-x86_64amd64">Ubuntu 22.04/20.04 (x86_64/amd64)</h2>
+<ul>
+<li>
+<p>Open a terminal window. If you don&rsquo;t know how to open a terminal window on
+Ubuntu please read <a href="https://askubuntu.com/questions/183775/how-do-i-open-a-terminal">the answer</a>.</p>
+</li>
+<li>
+<p>Type commands below into the terminal window to install Docker and Docker Compose. More
+instructions can be found <a href="https://docs.docker.com/install/linux/docker-ce/ubuntu/">here</a>.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span>sudo apt-get update
+</span></span><span style="display:flex;"><span>sudo apt-get --no-install-recommends install -y <span style="color:#4e9a06">\
+</span></span></span><span style="display:flex;"><span><span style="color:#4e9a06"></span>  apt-transport-https <span style="color:#4e9a06">\
+</span></span></span><span style="display:flex;"><span><span style="color:#4e9a06"></span>  ca-certificates <span style="color:#4e9a06">\
+</span></span></span><span style="display:flex;"><span><span style="color:#4e9a06"></span>  curl <span style="color:#4e9a06">\
+</span></span></span><span style="display:flex;"><span><span style="color:#4e9a06"></span>  gnupg-agent <span style="color:#4e9a06">\
+</span></span></span><span style="display:flex;"><span><span style="color:#4e9a06"></span>  software-properties-common
+</span></span><span style="display:flex;"><span>curl -fsSL https://download.docker.com/linux/ubuntu/gpg <span style="color:#000;font-weight:bold">|</span> sudo apt-key add -
+</span></span><span style="display:flex;"><span>sudo add-apt-repository <span style="color:#4e9a06">\
+</span></span></span><span style="display:flex;"><span><span style="color:#4e9a06"></span>  <span style="color:#4e9a06">&#34;deb [arch=amd64] https://download.docker.com/linux/ubuntu \
+</span></span></span><span style="display:flex;"><span><span style="color:#4e9a06">  </span><span style="color:#204a87;font-weight:bold">$(</span>lsb_release -cs<span style="color:#204a87;font-weight:bold">)</span><span style="color:#4e9a06"> \
+</span></span></span><span style="display:flex;"><span><span style="color:#4e9a06">  stable&#34;</span>
+</span></span><span style="display:flex;"><span>sudo apt-get update
+</span></span><span style="display:flex;"><span>sudo apt-get --no-install-recommends install -y <span style="color:#4e9a06">\
+</span></span></span><span style="display:flex;"><span><span style="color:#4e9a06"></span>  docker-ce docker-ce-cli containerd.io docker-compose-plugin
+</span></span></code></pre></div></li>
+<li>
+<p>(Optional) To avoid prefacing Docker commands with <code>sudo</code>,
+you can perform the <a href="https://docs.docker.com/install/linux/linux-postinstall/">post-installation steps</a>.
+This involves creating a Unix group named <code>docker</code> and
+adding your current user to this group.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span>sudo groupadd docker
+</span></span><span style="display:flex;"><span>sudo usermod -aG docker <span style="color:#000">$USER</span>
+</span></span></code></pre></div><p>Log out and log back in (or reboot) so that your group membership is
+re-evaluated. You can type <code>groups</code> command in a terminal window after
+that and check if <code>docker</code> group is in its output.</p>
+</li>
+<li>
+<p>Clone <em>CVAT</em> source code from the
+<a href="https://github.com/cvat-ai/cvat">GitHub repository</a> with Git.</p>
+<p>Following command will clone the latest develop branch:</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span>git clone https://github.com/cvat-ai/cvat
+</span></span><span style="display:flex;"><span><span style="color:#204a87">cd</span> cvat
+</span></span></code></pre></div><p>See <a href="#how-to-get-cvat-source-code">alternatives</a> if you want to download one of the release
+versions or use the <code>wget</code> or <code>curl</code> tools.</p>
+</li>
+<li>
+<p>To access CVAT over a network or through a different system, export <code>CVAT_HOST</code> environment variable</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span><span style="color:#204a87">export</span> <span style="color:#000">CVAT_HOST</span><span style="color:#ce5c00;font-weight:bold">=</span>FQDN_or_YOUR-IP-ADDRESS
+</span></span></code></pre></div></li>
+<li>
+<p>Run docker containers. It will take some time to download the latest CVAT
+and other required images like postgres, redis, and start containers.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span>docker compose up -d
+</span></span></code></pre></div></li>
+<li>
+<p>(Optional) Use <code>CVAT_VERSION</code> environment variable to specify the version of CVAT you want to
+install specific version (e.g <code>v2.1.0</code>, <code>dev</code>).
+Default behavior: <code>dev</code> images will be pulled for develop branch,
+and corresponding release images for release versions.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span><span style="color:#000">CVAT_VERSION</span><span style="color:#ce5c00;font-weight:bold">=</span>dev docker compose up -d
+</span></span></code></pre></div></li>
+<li>
+<p>Alternative: if you want to build the images locally with unreleased changes
+see <a href="#how-to-pullbuildupdate-cvat-images">How to pull/build/update CVAT images section</a></p>
+</li>
+<li>
+<p>You can register a user but by default, it will not have rights even to view
+the list of tasks. Thus you should create a superuser. The superuser can use an
+admin panel to assign the correct groups to the user. Please use the command
+below:</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span>docker <span style="color:#204a87">exec</span> -it cvat_server bash -ic <span style="color:#4e9a06">&#39;python3 ~/manage.py createsuperuser&#39;</span>
+</span></span></code></pre></div><p>Choose a username and a password for your admin account. For more information
+please read <a href="https://docs.djangoproject.com/en/2.2/ref/django-admin/#createsuperuser">Django documentation</a>.</p>
+</li>
+<li>
+<p>Google Chrome is the only browser that is supported by CVAT. You need to
+install it as well. Type commands below in a terminal window:</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span>curl https://dl-ssl.google.com/linux/linux_signing_key.pub <span style="color:#000;font-weight:bold">|</span> sudo apt-key add -
+</span></span><span style="display:flex;"><span>sudo sh -c <span style="color:#4e9a06">&#39;echo &#34;deb [arch=amd64] http://dl.google.com/linux/chrome/deb/ stable main&#34; &gt;&gt; /etc/apt/sources.list.d/google-chrome.list&#39;</span>
+</span></span><span style="display:flex;"><span>sudo apt-get update
+</span></span><span style="display:flex;"><span>sudo apt-get --no-install-recommends install -y google-chrome-stable
+</span></span></code></pre></div></li>
+<li>
+<p>Open the installed Google Chrome browser and go to <a href="http://localhost:8080">localhost:8080</a>.
+Type your login/password for the superuser on the login page and press the <em>Login</em>
+button. Now you should be able to create a new annotation task. Please read the
+<a href="../../../../docs/manual/">CVAT manual</a> for more details.</p>
+</li>
+</ul>
+<h2 id="windows-10">Windows 10</h2>
+<ul>
+<li>
+<p>Install WSL2 (Windows subsystem for Linux) refer to <a href="https://docs.microsoft.com/windows/wsl/install-win10">this official guide</a>.
+WSL2 requires Windows 10, version 2004 or higher. After installing WSL2, install a Linux Distribution of your choice.</p>
+</li>
+<li>
+<p>Download and install <a href="https://desktop.docker.com/win/main/amd64/Docker%20Desktop%20Installer.exe">Docker Desktop for Windows</a>.
+Double-click <code>Docker for Windows Installer</code> to run the installer.
+More instructions can be found <a href="https://docs.docker.com/docker-for-windows/install/">here</a>.
+Official guide for docker WSL2 backend can be found
+<a href="https://docs.docker.com/docker-for-windows/wsl/">here</a>. Note: Check that you are specifically using WSL2 backend
+for Docker.</p>
+</li>
+<li>
+<p>In Docker Desktop, go to <code>Settings &gt;&gt; Resources &gt;&gt; WSL Integration</code>, and
+enable integration with the Linux Distribution that you chose.</p>
+</li>
+<li>
+<p>Download and install
+<a href="https://github.com/git-for-windows/git/releases/download/v2.21.0.windows.1/Git-2.21.0-64-bit.exe">Git for Windows</a>.
+When installing the package please keep all options by default.
+More information about the package can be found <a href="https://gitforwindows.org">here</a>.</p>
+</li>
+<li>
+<p>Download and install <a href="https://www.google.com/chrome/">Google Chrome</a>. It is the only browser
+which is supported by CVAT.</p>
+</li>
+<li>
+<p>Go to windows menu, find the Linux distribution you installed and run it. You should see a terminal window.</p>
+</li>
+<li>
+<p>Clone <em>CVAT</em> source code from the
+<a href="https://github.com/cvat-ai/cvat">GitHub repository</a>.</p>
+<p>The following command will clone the latest develop branch:</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span>git clone https://github.com/cvat-ai/cvat
+</span></span><span style="display:flex;"><span><span style="color:#204a87">cd</span> cvat
+</span></span></code></pre></div><p>See <a href="#how-to-get-cvat-source-code">alternatives</a> if you want to download one of the release
+versions.</p>
+</li>
+<li>
+<p>Run docker containers. It will take some time to download the latest CVAT
+release and other required images like postgres, redis, etc. from DockerHub and create containers.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span>docker compose up -d
+</span></span></code></pre></div></li>
+<li>
+<p>(Optional) Use <code>CVAT_VERSION</code> environment variable to specify the version of CVAT you want to
+install specific version (e.g <code>v2.1.0</code>, <code>dev</code>).
+Default behavior: <code>dev</code> images will be pulled for develop branch,
+and corresponding release images for release versions.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span><span style="color:#000">CVAT_VERSION</span><span style="color:#ce5c00;font-weight:bold">=</span>dev docker compose up -d
+</span></span></code></pre></div></li>
+<li>
+<p>Alternative: if you want to build the images locally with unreleased changes
+see <a href="#how-to-pullbuildupdate-cvat-images">How to pull/build/update CVAT images section</a></p>
+</li>
+<li>
+<p>You can register a user but by default, it will not have rights even to view
+the list of tasks. Thus you should create a superuser. A superuser can use an
+admin panel to assign correct groups to other users. Please use the command
+below:</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span>sudo docker <span style="color:#204a87">exec</span> -it cvat_server bash -ic <span style="color:#4e9a06">&#39;python3 ~/manage.py createsuperuser&#39;</span>
+</span></span></code></pre></div><p>If you don&rsquo;t have winpty installed or the above command does not work, you may also try the following:</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span><span style="color:#8f5902;font-style:italic"># enter docker image first</span>
+</span></span><span style="display:flex;"><span>docker <span style="color:#204a87">exec</span> -it cvat_server /bin/bash
+</span></span><span style="display:flex;"><span><span style="color:#8f5902;font-style:italic"># then run</span>
+</span></span><span style="display:flex;"><span>python3 ~/manage.py createsuperuser
+</span></span></code></pre></div><p>Choose a username and a password for your admin account. For more information
+please read <a href="https://docs.djangoproject.com/en/2.2/ref/django-admin/#createsuperuser">Django documentation</a>.</p>
+</li>
+<li>
+<p>Open the installed Google Chrome browser and go to <a href="http://localhost:8080">localhost:8080</a>.
+Type your login/password for the superuser on the login page and press the <em>Login</em>
+button. Now you should be able to create a new annotation task. Please read the
+<a href="../../../../docs/manual/">CVAT manual</a> for more details.</p>
+</li>
+</ul>
+<h2 id="mac-os-mojave">Mac OS Mojave</h2>
+<ul>
+<li>
+<p>Download <a href="https://download.docker.com/mac/stable/Docker.dmg">Docker for Mac</a>.
+Double-click Docker.dmg to open the installer, then drag Moby the whale
+to the Applications folder. Double-click Docker.app in the Applications
+folder to start Docker. More instructions can be found
+<a href="https://docs.docker.com/v17.12/docker-for-mac/install/#install-and-run-docker-for-mac">here</a>.</p>
+</li>
+<li>
+<p>There are several ways to install Git on a Mac. The easiest is probably to
+install the Xcode Command Line Tools. On Mavericks (10.9) or above you can
+do this simply by trying to run git from the Terminal the very first time.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span>git --version
+</span></span></code></pre></div><p>If you don’t have it installed already, it will prompt you to install it.
+More instructions can be found <a href="https://git-scm.com/book/en/v2/Getting-Started-Installing-Git">here</a>.</p>
+</li>
+<li>
+<p>Download and install <a href="https://www.google.com/chrome/">Google Chrome</a>. It
+is the only browser which is supported by CVAT.</p>
+</li>
+<li>
+<p>Open a terminal window. The terminal app is in the Utilities folder in
+Applications. To open it, either open your Applications folder, then open
+Utilities and double-click on Terminal, or press Command - spacebar to
+launch Spotlight and type &ldquo;Terminal,&rdquo; then double-click the search result.</p>
+</li>
+<li>
+<p>Clone <em>CVAT</em> source code from the
+<a href="https://github.com/cvat-ai/cvat">GitHub repository</a> with Git.</p>
+<p>The following command will clone the latest develop branch:</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span>git clone https://github.com/cvat-ai/cvat
+</span></span><span style="display:flex;"><span><span style="color:#204a87">cd</span> cvat
+</span></span></code></pre></div><p>See <a href="#how-to-get-cvat-source-code">alternatives</a> if you want to download one of the release
+versions or use the <code>wget</code> or <code>curl</code> tools.</p>
+</li>
+<li>
+<p>Run docker containers. It will take some time to download the latest CVAT
+release and other required images like postgres, redis, etc. from DockerHub and create containers.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span>docker compose up -d
+</span></span></code></pre></div></li>
+<li>
+<p>(Optional) Use <code>CVAT_VERSION</code> environment variable to specify the version of CVAT you want to
+install specific version (e.g <code>v2.1.0</code>, <code>dev</code>).
+Default behavior: <code>dev</code> images will be pulled for develop branch,
+and corresponding release images for release versions.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span><span style="color:#000">CVAT_VERSION</span><span style="color:#ce5c00;font-weight:bold">=</span>dev docker compose up -d
+</span></span></code></pre></div></li>
+<li>
+<p>Alternative: if you want to build the images locally with unreleased changes
+see <a href="#how-to-pullbuildupdate-cvat-images">How to pull/build/update CVAT images section</a></p>
+</li>
+<li>
+<p>You can register a user but by default, it will not have rights even to view
+the list of tasks. Thus you should create a superuser. A superuser can use an
+admin panel to assign correct groups to other users. Please use the command
+below:</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span>docker <span style="color:#204a87">exec</span> -it cvat_server bash -ic <span style="color:#4e9a06">&#39;python3 ~/manage.py createsuperuser&#39;</span>
+</span></span></code></pre></div><p>Choose a username and a password for your admin account. For more information
+please read <a href="https://docs.djangoproject.com/en/2.2/ref/django-admin/#createsuperuser">Django documentation</a>.</p>
+</li>
+<li>
+<p>Open the installed Google Chrome browser and go to <a href="http://localhost:8080">localhost:8080</a>.
+Type your login/password for the superuser on the login page and press the <em>Login</em>
+button. Now you should be able to create a new annotation task. Please read the
+<a href="../../../../docs/manual/">CVAT manual</a> for more details.</p>
+</li>
+</ul>
+<h2 id="advanced-topics">Advanced Topics</h2>
+<h3 id="how-to-get-cvat-source-code">How to get CVAT source code</h3>
+<h4 id="git-linux-mac-windows">Git (Linux, Mac, Windows)</h4>
+<ol>
+<li>
+<p>Install Git on your system if it&rsquo;s not already installed</p>
+<ul>
+<li>Ubuntu:</li>
+</ul>
+<div class="highlight"><pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span>sudo apt-get --no-install-recommends install -y git
+</span></span></code></pre></div><ul>
+<li>Windows:
+Follow instructions from <a href="https://git-scm.com/download/win">https://git-scm.com/download/win</a></li>
+</ul>
+</li>
+<li>
+<p>Clone <em>CVAT</em> source code from the
+<a href="https://github.com/cvat-ai/cvat">GitHub repository</a>.</p>
+<p>The command below will clone the default branch (develop):</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span>git clone https://github.com/cvat-ai/cvat
+</span></span><span style="display:flex;"><span><span style="color:#204a87">cd</span> cvat
+</span></span></code></pre></div><p>To clone specific tag, e.g. v2.1.0:</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span>git clone -b v2.1.0 https://github.com/cvat-ai/cvat
+</span></span><span style="display:flex;"><span><span style="color:#204a87">cd</span> cvat
+</span></span></code></pre></div></li>
+</ol>
+<h4 id="wget-linux-mac">Wget (Linux, Mac)</h4>
+<p>To download latest develop branch:</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span>wget https://github.com/cvat-ai/cvat/archive/refs/heads/develop.zip
+</span></span><span style="display:flex;"><span>unzip develop.zip <span style="color:#ce5c00;font-weight:bold">&amp;&amp;</span> mv cvat-develop cvat
+</span></span><span style="display:flex;"><span><span style="color:#204a87">cd</span> cvat
+</span></span></code></pre></div><p>To download specific tag:</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span>wget https://github.com/cvat-ai/cvat/archive/refs/tags/v1.7.0.zip
+</span></span><span style="display:flex;"><span>unzip v1.7.0.zip <span style="color:#ce5c00;font-weight:bold">&amp;&amp;</span> mv cvat-1.7.0 cvat
+</span></span><span style="display:flex;"><span><span style="color:#204a87">cd</span> cvat
+</span></span></code></pre></div><h4 id="curl-linux-mac">Curl (Linux, Mac)</h4>
+<p>To download the latest develop branch:</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span>curl -LO https://github.com/cvat-ai/cvat/archive/refs/heads/develop.zip
+</span></span><span style="display:flex;"><span>unzip develop.zip <span style="color:#ce5c00;font-weight:bold">&amp;&amp;</span> mv cvat-develop cvat
+</span></span><span style="display:flex;"><span><span style="color:#204a87">cd</span> cvat
+</span></span></code></pre></div><p>To download specific tag:</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span>curl -LO https://github.com/cvat-ai/cvat/archive/refs/tags/v1.7.0.zip
+</span></span><span style="display:flex;"><span>unzip v1.7.0.zip <span style="color:#ce5c00;font-weight:bold">&amp;&amp;</span> mv cvat-1.7.0 cvat
+</span></span><span style="display:flex;"><span><span style="color:#204a87">cd</span> cvat
+</span></span></code></pre></div><h3 id="cvat-healthcheck-command">CVAT healthcheck command</h3>
+<p>The following command allows testing the CVAT container to make sure it works.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span>docker <span style="color:#204a87">exec</span> -t cvat_server python manage.py health_check
+</span></span></code></pre></div><p>The expected output of a healthy CVAT container:</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span>Cache backend: default   ... working
+</span></span><span style="display:flex;"><span>DatabaseBackend          ... working
+</span></span><span style="display:flex;"><span>DiskUsage                ... working
+</span></span><span style="display:flex;"><span>MemoryUsage              ... working
+</span></span><span style="display:flex;"><span>MigrationsHealthCheck    ... working
+</span></span><span style="display:flex;"><span>OPAHealthCheck           ... working
+</span></span></code></pre></div><h3 id="deploying-cvat-behind-a-proxy">Deploying CVAT behind a proxy</h3>
+<p>If you deploy CVAT behind a proxy and do not plan to use any of <a href="#semi-automatic-and-automatic-annotation">serverless functions</a>
+for automatic annotation, the exported environment variables
+<code>http_proxy</code>, <code>https_proxy</code> and <code>no_proxy</code> should be enough to build images.
+Otherwise please create or edit the file <code>~/.docker/config.json</code> in the home directory of the user
+which starts containers and add JSON such as the following:</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-json" data-lang="json"><span style="display:flex;"><span><span style="color:#000;font-weight:bold">{</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#204a87;font-weight:bold">&#34;proxies&#34;</span><span style="color:#000;font-weight:bold">:</span> <span style="color:#000;font-weight:bold">{</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#204a87;font-weight:bold">&#34;default&#34;</span><span style="color:#000;font-weight:bold">:</span> <span style="color:#000;font-weight:bold">{</span>
+</span></span><span style="display:flex;"><span>      <span style="color:#204a87;font-weight:bold">&#34;httpProxy&#34;</span><span style="color:#000;font-weight:bold">:</span> <span style="color:#4e9a06">&#34;http://proxy_server:port&#34;</span><span style="color:#000;font-weight:bold">,</span>
+</span></span><span style="display:flex;"><span>      <span style="color:#204a87;font-weight:bold">&#34;httpsProxy&#34;</span><span style="color:#000;font-weight:bold">:</span> <span style="color:#4e9a06">&#34;http://proxy_server:port&#34;</span><span style="color:#000;font-weight:bold">,</span>
+</span></span><span style="display:flex;"><span>      <span style="color:#204a87;font-weight:bold">&#34;noProxy&#34;</span><span style="color:#000;font-weight:bold">:</span> <span style="color:#4e9a06">&#34;*.test.example.com,.example2.com&#34;</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#000;font-weight:bold">}</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#000;font-weight:bold">}</span>
+</span></span><span style="display:flex;"><span><span style="color:#000;font-weight:bold">}</span>
+</span></span></code></pre></div><p>These environment variables are set automatically within any container.
+Please see the <a href="https://docs.docker.com/network/proxy/">Docker documentation</a> for more details.</p>
+<h3 id="using-the-traefik-dashboard">Using the Traefik dashboard</h3>
+<p>If you are customizing the docker compose files and you come upon some unexpected issues, using the Traefik
+dashboard might be very useful to see if the problem is with Traefik configuration, or with some of the services.</p>
+<p>You can enable the Traefik dashboard by uncommenting the following lines from <code>docker-compose.yml</code></p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-yml" data-lang="yml"><span style="display:flex;"><span><span style="color:#204a87;font-weight:bold">services</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">  </span><span style="color:#204a87;font-weight:bold">traefik</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">    </span><span style="color:#8f5902;font-style:italic"># Uncomment to get Traefik dashboard</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">    </span><span style="color:#8f5902;font-style:italic">#   - &#34;--entryPoints.dashboard.address=:8090&#34;</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">    </span><span style="color:#8f5902;font-style:italic">#   - &#34;--api.dashboard=true&#34;</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">    </span><span style="color:#8f5902;font-style:italic"># labels:</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">    </span><span style="color:#8f5902;font-style:italic">#   - traefik.enable=true</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">    </span><span style="color:#8f5902;font-style:italic">#   - traefik.http.routers.dashboard.entrypoints=dashboard</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">    </span><span style="color:#8f5902;font-style:italic">#   - traefik.http.routers.dashboard.service=api@internal</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">    </span><span style="color:#8f5902;font-style:italic">#   - traefik.http.routers.dashboard.rule=Host(`${CVAT_HOST:-localhost}`)</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span></code></pre></div><p>and if you are using <code>docker-compose.https.yml</code>, also uncomment these lines</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-yml" data-lang="yml"><span style="display:flex;"><span><span style="color:#204a87;font-weight:bold">services</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">  </span><span style="color:#204a87;font-weight:bold">traefik</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">    </span><span style="color:#204a87;font-weight:bold">command</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">      </span><span style="color:#8f5902;font-style:italic"># Uncomment to get Traefik dashboard</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">      </span><span style="color:#8f5902;font-style:italic"># - &#34;--entryPoints.dashboard.address=:8090&#34;</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">      </span><span style="color:#8f5902;font-style:italic"># - &#34;--api.dashboard=true&#34;</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span></code></pre></div><p>Note that this &ldquo;insecure&rdquo; dashboard is not recommended in production (and if your instance is publicly available);
+if you want to keep the dashboard in production you should read Traefik&rsquo;s
+<a href="https://doc.traefik.io/traefik/operations/dashboard/">documentation</a> on how to properly secure it.</p>
+<h3 id="additional-components">Additional components</h3>
+<h4 id="semi-automatic-and-automatic-annotation">Semi-automatic and automatic annotation</h4>
+<p>Please follow this <a href="../../../../docs/administration/advanced/installation_automatic_annotation/">guide</a>.</p>
+<h3 id="stop-all-containers">Stop all containers</h3>
+<p>The command below stops and removes containers and networks created by <code>up</code>.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span>docker compose down
+</span></span></code></pre></div><h3 id="use-your-own-domain">Use your own domain</h3>
+<p>If you want to access your instance of CVAT outside of your localhost (on another domain),
+you should specify the <code>CVAT_HOST</code> environment variable, like this:</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span><span style="color:#204a87">export</span> <span style="color:#000">CVAT_HOST</span><span style="color:#ce5c00;font-weight:bold">=</span>&lt;YOUR_DOMAIN&gt;
+</span></span></code></pre></div><h3 id="share-path">Share path</h3>
+<p>You can use shared storage for uploading data when you create a task.
+To do that, you must mount the shared storage to the CVAT docker container. Example of
+docker-compose.override.yml for this purpose:</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-yml" data-lang="yml"><span style="display:flex;"><span><span style="color:#204a87;font-weight:bold">services</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">  </span><span style="color:#204a87;font-weight:bold">cvat_server</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">    </span><span style="color:#204a87;font-weight:bold">volumes</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">      </span>- <span style="color:#000">cvat_share:/home/django/share:ro</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">  </span><span style="color:#204a87;font-weight:bold">cvat_worker_import</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">    </span><span style="color:#204a87;font-weight:bold">volumes</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">      </span>- <span style="color:#000">cvat_share:/home/django/share:ro</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">  </span><span style="color:#204a87;font-weight:bold">cvat_worker_export</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">    </span><span style="color:#204a87;font-weight:bold">volumes</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">      </span>- <span style="color:#000">cvat_share:/home/django/share:ro</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">  </span><span style="color:#204a87;font-weight:bold">cvat_worker_annotation</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">    </span><span style="color:#204a87;font-weight:bold">volumes</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">      </span>- <span style="color:#000">cvat_share:/home/django/share:ro</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline"></span><span style="color:#204a87;font-weight:bold">volumes</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">  </span><span style="color:#204a87;font-weight:bold">cvat_share</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">    </span><span style="color:#204a87;font-weight:bold">driver_opts</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">      </span><span style="color:#204a87;font-weight:bold">type</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline"> </span><span style="color:#000">none</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">      </span><span style="color:#204a87;font-weight:bold">device</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline"> </span><span style="color:#000">/mnt/share</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">      </span><span style="color:#204a87;font-weight:bold">o</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline"> </span><span style="color:#000">bind</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span></code></pre></div><p>You can change the share device path to your actual share.</p>
+<p>You can <a href="../../../../docs/administration/advanced/mounting_cloud_storages/">mount</a>
+your cloud storage as a FUSE and use it later as a share.</p>
+<h3 id="email-verification">Email verification</h3>
+<p>You can enable email verification for newly registered users.
+Specify these options in the
+<a href="https://github.com/cvat-ai/cvat/blob/develop/cvat/settings/base.py">settings file</a> to configure Django allauth
+to enable email verification (ACCOUNT_EMAIL_VERIFICATION = &lsquo;mandatory&rsquo;).
+Access is denied until the user&rsquo;s email address is verified.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span><span style="color:#000">ACCOUNT_AUTHENTICATION_METHOD</span> <span style="color:#ce5c00;font-weight:bold">=</span> <span style="color:#4e9a06">&#39;username_email&#39;</span>
+</span></span><span style="display:flex;"><span><span style="color:#000">ACCOUNT_CONFIRM_EMAIL_ON_GET</span> <span style="color:#ce5c00;font-weight:bold">=</span> <span style="color:#204a87;font-weight:bold">True</span>
+</span></span><span style="display:flex;"><span><span style="color:#000">ACCOUNT_EMAIL_REQUIRED</span> <span style="color:#ce5c00;font-weight:bold">=</span> <span style="color:#204a87;font-weight:bold">True</span>
+</span></span><span style="display:flex;"><span><span style="color:#000">ACCOUNT_EMAIL_VERIFICATION</span> <span style="color:#ce5c00;font-weight:bold">=</span> <span style="color:#4e9a06">&#39;mandatory&#39;</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#8f5902;font-style:italic"># Email backend settings for Django</span>
+</span></span><span style="display:flex;"><span><span style="color:#000">EMAIL_BACKEND</span> <span style="color:#ce5c00;font-weight:bold">=</span> <span style="color:#4e9a06">&#39;django.core.mail.backends.smtp.EmailBackend&#39;</span>
+</span></span></code></pre></div><p>Also, you need to configure the Django email backend to send emails.
+This depends on the email server you are using and is not covered in this tutorial, please see
+<a href="https://docs.djangoproject.com/en/3.1/topics/email/#django.core.mail.backends.smtp.EmailBackend">Django SMTP backend configuration</a>
+for details.</p>
+<h3 id="deploy-cvat-on-the-scaleway-public-cloud">Deploy CVAT on the Scaleway public cloud</h3>
+<p>Please follow
+<a href="https://blog.scaleway.com/smart-data-annotation-for-your-computer-vision-projects-cvat-on-scaleway/">this tutorial</a>
+to install and set up remote access to CVAT on a Scaleway cloud instance with data in a mounted object storage bucket.</p>
+<h3 id="deploy-secure-cvat-instance-with-https">Deploy secure CVAT instance with HTTPS</h3>
+<p>Using Traefik, you can automatically obtain a TLS certificate for your domain from Let&rsquo;s Encrypt,
+enabling you to use HTTPS protocol to access your website.</p>
+<p>To enable this, first set the <code>CVAT_HOST</code> (the domain of your website) and <code>ACME_EMAIL</code>
+(contact email for Let&rsquo;s Encrypt) environment variables:</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span><span style="color:#204a87">export</span> <span style="color:#000">CVAT_HOST</span><span style="color:#ce5c00;font-weight:bold">=</span>&lt;YOUR_DOMAIN&gt;
+</span></span><span style="display:flex;"><span><span style="color:#204a87">export</span> <span style="color:#000">ACME_EMAIL</span><span style="color:#ce5c00;font-weight:bold">=</span>&lt;YOUR_EMAIL&gt;
+</span></span></code></pre></div><p>Then, use the <code>docker-compose.https.yml</code> file to override the base <code>docker-compose.yml</code> file:</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span>docker compose -f docker-compose.yml -f docker-compose.https.yml up -d
+</span></span></code></pre></div><blockquote>
+<p>In the firewall, ports 80 and 443 must be open for inbound connections from any</p>
+</blockquote>
+<p>Then, the CVAT instance will be available at your domain on ports 443 (HTTPS) and 80 (HTTP, redirects to 443).</p>
+<h3 id="deploy-cvat-with-an-external-database">Deploy CVAT with an external database</h3>
+<p>By default, <code>docker compose up</code> will start a PostgreSQL database server,
+which will be used to store CVAT&rsquo;s data.
+If you&rsquo;d like to use your own PostgreSQL instance instead, you can do so as follows.
+Note that CVAT only supports the same major version of PostgreSQL
+as is used in <code>docker-compose.yml</code>.</p>
+<p>First, define environment variables with database connection settings:</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span><span style="color:#204a87">export</span> <span style="color:#000">CVAT_POSTGRES_HOST</span><span style="color:#ce5c00;font-weight:bold">=</span>&lt;PostgreSQL hostname&gt; <span style="color:#8f5902;font-style:italic"># mandatory</span>
+</span></span><span style="display:flex;"><span><span style="color:#204a87">export</span> <span style="color:#000">CVAT_POSTGRES_PORT</span><span style="color:#ce5c00;font-weight:bold">=</span>&lt;PostgreSQL port&gt; <span style="color:#8f5902;font-style:italic"># defaults to 5432</span>
+</span></span><span style="display:flex;"><span><span style="color:#204a87">export</span> <span style="color:#000">CVAT_POSTGRES_DBNAME</span><span style="color:#ce5c00;font-weight:bold">=</span>&lt;PostgreSQL database name&gt; <span style="color:#8f5902;font-style:italic"># defaults to &#34;cvat&#34;</span>
+</span></span><span style="display:flex;"><span><span style="color:#204a87">export</span> <span style="color:#000">CVAT_POSTGRES_USER</span><span style="color:#ce5c00;font-weight:bold">=</span>&lt;PostgreSQL role name&gt; <span style="color:#8f5902;font-style:italic"># defaults to &#34;root&#34;</span>
+</span></span><span style="display:flex;"><span><span style="color:#204a87">export</span> <span style="color:#000">CVAT_POSTGRES_PASSWORD</span><span style="color:#ce5c00;font-weight:bold">=</span>&lt;PostgreSQL role password&gt; <span style="color:#8f5902;font-style:italic"># mandatory</span>
+</span></span></code></pre></div><p>Then, add the <code>docker-compose.external_db.yml</code> file to your <code>docker compose up</code> command:</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span>docker compose -f docker-compose.yml -f docker-compose.external_db.yml up -d
+</span></span></code></pre></div><h3 id="how-to-pullbuildupdate-cvat-images">How to pull/build/update CVAT images</h3>
+<ul>
+<li>
+<p><strong>For a CVAT version lower or equal to 2.1.0</strong>, you need to pull images using docker because
+the compose configuration always points to the latest image tag, e.g.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span>docker pull cvat/server:v1.7.0
+</span></span><span style="display:flex;"><span>docker tag cvat/server:v1.7.0 openvino/cvat_server:latest
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>docker pull cvat/ui:v1.7.0
+</span></span><span style="display:flex;"><span>docker tag cvat/ui:v1.7.0 openvino/cvat_ui:latest
+</span></span></code></pre></div><p><strong>For CVAT version more than v2.1.0</strong> it&rsquo;s possible to pull specific version of
+prebuilt images from DockerHub using <code>CVAT_VERSION</code> environment variable to specify
+the version (e.g. <code>dev</code>):</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span><span style="color:#000">CVAT_VERSION</span><span style="color:#ce5c00;font-weight:bold">=</span>dev docker compose pull
+</span></span></code></pre></div></li>
+<li>
+<p>To build images yourself include <code>docker-compose.dev.yml</code> compose config file to <code>docker compose</code> command.
+This can be useful if you want to build a CVAT with some source code changes.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span>docker compose -f docker-compose.yml -f docker-compose.dev.yml build
+</span></span></code></pre></div></li>
+<li>
+<p>To update local images to <code>latest</code> or <code>dev</code> tags run:</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span><span style="color:#000">CVAT_VERSION</span><span style="color:#ce5c00;font-weight:bold">=</span>dev docker compose pull
+</span></span></code></pre></div><p>or</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span><span style="color:#000">CVAT_VERSION</span><span style="color:#ce5c00;font-weight:bold">=</span>latest docker compose pull
+</span></span></code></pre></div></li>
+</ul>
+<h2 id="troubleshooting">Troubleshooting</h2>
+<h3 id="sources-for-users-from-china">Sources for users from China</h3>
+<p>If you stay in China, for installation you need to override the following sources.</p>
+<ul>
+<li>
+<p>For use <code>apt update</code> using:</p>
+<p><a href="https://mirrors.tuna.tsinghua.edu.cn/help/ubuntu/">Ubuntu mirroring help</a></p>
+<p>Pre-compiled packages:</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span>deb https://mirrors.tuna.tsinghua.edu.cn/ubuntu/ focal main restricted universe multiverse
+</span></span><span style="display:flex;"><span>deb https://mirrors.tuna.tsinghua.edu.cn/ubuntu/ focal-updates main restricted universe multiverse
+</span></span><span style="display:flex;"><span>deb https://mirrors.tuna.tsinghua.edu.cn/ubuntu/ focal-backports main restricted universe multiverse
+</span></span><span style="display:flex;"><span>deb https://mirrors.tuna.tsinghua.edu.cn/ubuntu/ focal-security main restricted universe multiverse
+</span></span></code></pre></div><p>Or source packages:</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span>deb-src https://mirrors.tuna.tsinghua.edu.cn/ubuntu/ focal main restricted universe multiverse
+</span></span><span style="display:flex;"><span>deb-src https://mirrors.tuna.tsinghua.edu.cn/ubuntu/ focal-updates main restricted universe multiverse
+</span></span><span style="display:flex;"><span>deb-src https://mirrors.tuna.tsinghua.edu.cn/ubuntu/ focal-backports main restricted universe multiverse
+</span></span><span style="display:flex;"><span>deb-src https://mirrors.tuna.tsinghua.edu.cn/ubuntu/ focal-security main restricted universe multiverse
+</span></span></code></pre></div></li>
+<li>
+<p><a href="https://www.daocloud.io/mirror">Docker mirror station</a></p>
+<p>Add registry mirrors into <code>daemon.json</code> file:</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-json" data-lang="json"><span style="display:flex;"><span><span style="color:#000;font-weight:bold">{</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#204a87;font-weight:bold">&#34;registry-mirrors&#34;</span><span style="color:#000;font-weight:bold">:</span> <span style="color:#000;font-weight:bold">[</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#4e9a06">&#34;http://f1361db2.m.daocloud.io&#34;</span><span style="color:#000;font-weight:bold">,</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#4e9a06">&#34;https://docker.mirrors.ustc.edu.cn&#34;</span><span style="color:#000;font-weight:bold">,</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#4e9a06">&#34;https://hub-mirror.c.163.com&#34;</span><span style="color:#000;font-weight:bold">,</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#4e9a06">&#34;https://mirror.ccs.tencentyun.com&#34;</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#000;font-weight:bold">]</span>
+</span></span><span style="display:flex;"><span><span style="color:#000;font-weight:bold">}</span>
+</span></span></code></pre></div></li>
+<li>
+<p>For using <code>pip</code>:</p>
+<p><a href="https://mirrors.tuna.tsinghua.edu.cn/help/pypi/">PyPI mirroring help</a></p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span>pip config <span style="color:#204a87">set</span> global.index-url https://pypi.tuna.tsinghua.edu.cn/simple
+</span></span></code></pre></div></li>
+<li>
+<p>For using <code>npm</code>:</p>
+<p><a href="https://npmmirror.com/">npm mirroring help</a></p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span>npm config <span style="color:#204a87">set</span> registry https://registry.npm.taobao.org/
+</span></span></code></pre></div></li>
+<li>
+<p>Instead of <code>git</code> using <a href="https://gitee.com/"><code>gitee</code></a>:</p>
+<p><a href="https://gitee.com/monkeycc/cvat">CVAT repository on gitee.com</a></p>
+</li>
+<li>
+<p>For replace acceleration source <code>docker.com</code> run:</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span>curl -fsSL https://download.docker.com/linux/ubuntu/gpg <span style="color:#000;font-weight:bold">|</span> sudo apt-key add -
+</span></span><span style="display:flex;"><span>sudo add-apt-repository <span style="color:#4e9a06">\
+</span></span></span><span style="display:flex;"><span><span style="color:#4e9a06"></span>  <span style="color:#4e9a06">&#34;deb [arch=amd64] https://download.docker.com/linux/ubuntu \
+</span></span></span><span style="display:flex;"><span><span style="color:#4e9a06">  </span><span style="color:#204a87;font-weight:bold">$(</span>lsb_release -cs<span style="color:#204a87;font-weight:bold">)</span><span style="color:#4e9a06"> \
+</span></span></span></code></pre></div></li>
+<li>
+<p>For replace acceleration source <code>google.com</code> run:</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span>curl https://dl-ssl.google.com/linux/linux_signing_key.pub <span style="color:#000;font-weight:bold">|</span> sudo apt-key add -
+</span></span></code></pre></div></li>
+</ul>
+<h3 id="https-is-not-working-because-of-a-certificate">HTTPS is not working because of a certificate</h3>
+<p>If you&rsquo;re having trouble with an SSL connection, to find the cause,
+you&rsquo;ll need to get the logs from traefik by running:</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span>docker logs traefik
+</span></span></code></pre></div><p>The logs will help you find out the problem.</p>
+<p>If the error is related to a firewall, then:</p>
+<ul>
+<li>Open ports 80 and 443 for inbound connections from any.</li>
+<li>Delete <code>acme.json</code>.
+The location should be something like: <code>/var/lib/docker/volumes/cvat_cvat_letsencrypt/_data/acme.json</code>.</li>
+</ul>
+<p>After <code>acme.json</code> is removed, stop all cvat docker containers:</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span>docker compose -f docker-compose.yml -f docker-compose.https.yml down
+</span></span></code></pre></div><p>Make sure variables set (with your values):</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span><span style="color:#204a87">export</span> <span style="color:#000">CVAT_HOST</span><span style="color:#ce5c00;font-weight:bold">=</span>&lt;YOUR_DOMAIN&gt;
+</span></span><span style="display:flex;"><span><span style="color:#204a87">export</span> <span style="color:#000">ACME_EMAIL</span><span style="color:#ce5c00;font-weight:bold">=</span>&lt;YOUR_EMAIL&gt;
+</span></span></code></pre></div><p>and restart docker:</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span>docker compose -f docker-compose.yml -f docker-compose.https.yml up -d
+</span></span></code></pre></div>
+</div>
+
+
+
+    
+	
+  
+    
+    
+	
+    
+
+<div class="td-content" style="page-break-before: always">
+    
+	<h1 id="pg-4efbab3bd12a91d702f7e3c75e7e5aa2">2 - Superuser registration</h1>
+    <div class="lead">A CVAT installation guide to create a superuser.</div>
+	<p>This section is for users who want to be a bit more flexible with CVAT use.</p>
+<p>The user you register by default does not have full permissions on the instance,
+so you must create a superuser.
+The superuser can use <a href="http://localhost:8080/admin">Django administration panel</a>
+to assign groups (roles) to other users.
+<br>Available roles are: user (default), admin, business, worker.</p>
+<h3 id="prerequisites">Prerequisites</h3>
+<p>Before you register an admin account (superuser), you need to install CVAT locally,
+see <a href="../../../../docs/administration/basics/installation/">Installation Guide</a>.</p>
+<p>Steps of installation are partly different, depending on the type of operation system (OS).</p>
+<p>This section starts with <strong>Create superuser</strong> step that is common for all OS.</p>
+<h3 id="register-as-a-superuser">Register as a superuser</h3>
+<p>In the process of installation you need to create a superuser:</p>
+<ol>
+<li>In a terminal run the following command:</li>
+</ol>
+<div class="highlight"><pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>  docker <span style="color:#204a87">exec</span> -it cvat_server bash -ic <span style="color:#4e9a06">&#39;python3 ~/manage.py createsuperuser&#39;</span>
+</span></span></code></pre></div><ol start="2">
+<li>Set up username, email address, and password.</li>
+<li>Go to <a href="http://localhost:8080"><code>localhost:8080</code></a>, and log in with credentials from step 2.</li>
+<li>(Optional) Go to <a href="http://localhost:8080/admin">Django administration panel</a> panel to:
+<ul>
+<li>Create/edit/delete users</li>
+<li>Control permissions of users and access to the tool.</li>
+</ul>
+</li>
+</ol>
+<p><img src="../../../../images/image115.jpg" alt="Django panel"></p>
+<p>To manage users&rsquo; permission, in the <a href="http://localhost:8080/admin">Django administration panel</a>:</p>
+<ol>
+<li>On the left menu click <strong>Users</strong>.</li>
+<li>On the main pane click <strong>Admin</strong> and scroll down to <strong>Permissions</strong> section.</li>
+<li>Select user groups and add/remove permissions.</li>
+</ol>
+
+</div>
+
+
+
+    
+	
+  
+    
+    
+	
+    
+
+<div class="td-content" style="page-break-before: always">
+    
+	<h1 id="pg-e0876969fd23d4213b245cf0d69ca6d3">3 - AWS-Deployment Guide</h1>
+    <div class="lead">Instructions for deploying CVAT on Nvidia GPU and other AWS machines.</div>
+	<p>There are two ways of deploying the CVAT.</p>
+<ol>
+<li>
+<p><strong>On Nvidia GPU Machine:</strong> Tensorflow annotation feature is dependent on GPU hardware.
+One of the easy ways to launch CVAT with the tf-annotation app is to use AWS P3 instances,
+which provides the NVIDIA GPU.
+Read more about <a href="https://aws.amazon.com/about-aws/whats-new/2017/10/introducing-amazon-ec2-p3-instances/">P3 instances here.</a>
+Overall setup instruction is explained in <a href="https://github.com/cvat-ai/cvat/">main readme file</a>,
+except Installing Nvidia drivers.
+So we need to download the drivers and install it.
+For Amazon P3 instances, download the Nvidia Drivers from Nvidia website.
+For more check <a href="https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/install-nvidia-driver.html">Installing the NVIDIA Driver on Linux Instances</a>
+link.</p>
+</li>
+<li>
+<p><strong>On Any other AWS Machine:</strong> We can follow the same instruction guide mentioned in the
+<a href="../../../../docs/administration/basics/installation/">installation instructions</a>.
+The additional step is to add a <a href="https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/using-network-security.html">security group and rule to allow incoming connections</a>.</p>
+</li>
+</ol>
+<p>For any of above, don&rsquo;t forget to set the <code>CVAT_HOST</code> environment variable to the exposed
+AWS public IP address or hostname:</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span><span style="color:#204a87">export</span> <span style="color:#000">CVAT_HOST</span><span style="color:#ce5c00;font-weight:bold">=</span>your-instance.amazonaws.com
+</span></span></code></pre></div><p>In case of problems with using hostname, you can also use the public IPV4 instead of hostname.
+For AWS or any cloud based machines where the instances need to be terminated or stopped,
+the public IPV4 and hostname changes with every stop and reboot.
+To address this efficiently, avoid using spot instances that cannot be stopped,
+since copying the EBS to an AMI and restarting it throws problems.
+On the other hand, when a regular instance is stopped and restarted,
+the new hostname/IPV4 can be used to set the  <code>CVAT_HOST</code> environment variable.</p>
+
+</div>
+
+
+
+    
+	
+  
+    
+    
+	
+    
+
+<div class="td-content" style="page-break-before: always">
+    
+	<h1 id="pg-fe76cc8b9c063eb6606ea27948386ce7">4 - REST API guide</h1>
+    <div class="lead">Instructions on how to interact with REST API and getting swagger documentation.</div>
+	<p>To access swagger documentation you need to be authorized.</p>
+<p>Automatically generated Swagger documentation for Django REST API is available
+on <code>&lt;cvat_origin&gt;/api/swagger</code>(default: <code>localhost:8080/api/swagger</code>).</p>
+<p>Swagger documentation is visible on allowed hosts, Update environment
+variable in docker-compose.yml file with cvat hosted machine IP or domain
+name. Example - <code>ALLOWED_HOSTS: 'localhost, 127.0.0.1'</code>.</p>
+<p>Make a request to a resource stored on a server and the server will respond with the requested information.
+The HTTP protocol is used to transport a data.
+Requests are divided into groups:</p>
+<ul>
+<li><code>auth</code> - user authentication queries</li>
+<li><code>comments</code> - requests to post/delete comments to issues</li>
+<li><code>issues</code> - update, delete and view problem comments</li>
+<li><code>jobs</code> -requests to manage the job</li>
+<li><code>lambda</code> - requests to work with lambda function</li>
+<li><code>projects</code> - project management queries</li>
+<li><code>reviews</code> -adding and removing the review of the job</li>
+<li><code>server</code> - server information requests</li>
+<li><code>tasks</code> - requests to manage tasks</li>
+<li><code>users</code> -  user management queries</li>
+</ul>
+<p>Besides it contains <code>Models</code>.
+Models - the data type is described using a 
+<a href="https://github.com/OAI/OpenAPI-Specification/blob/master/versions/3.0.3.md#schemaObject">schema object</a>.</p>
+<p>Each group contains queries related to a different types of HTTP methods such as: <code>GET</code>, <code>POST</code>, <code>PATCH</code>, <code>DELETE</code>, etc.
+Different methods are highlighted in different color. Each item has a name and description.
+Clicking on an element opens a form with a name, description and settings input field or an example of json values.</p>
+<p>To find out more, read <a href="https://swagger.io/docs/specification/about/">swagger specification</a>.</p>
+<p>To try to send a request, click <code>Try it now </code>and type <code>Execute</code>.
+You&rsquo;ll get a response in the form of <a href="https://curl.se/"><code>Curl</code></a>, <code>Request URL</code> and <code>Server response</code>.</p>
+
+</div>
+
+
+
+    
+	
+  
+
+
+
+          </main>
+        </div>
+      </div>
+      <footer class="bg-dark py-5 row d-print-none" style="min-height: 0">
+  <div class="container-fluid">
+    <div class="row">
+      <div class="col text-center">
+        
+        
+        
+<ul class="list-inline mb-0">
+  
+  <li class="list-inline-item mx-2 h3" data-bs-toggle="tooltip" data-placement="top" title="Gitter public chat" aria-label="Gitter public chat">
+    <a class="text-white" rel="noopener noreferrer" href="https://gitter.im/opencv-cvat/public">
+      <i class="fab fa-gitter"></i>
+    </a>
+  </li>
+  
+  <li class="list-inline-item mx-2 h3" data-bs-toggle="tooltip" data-placement="top" title="Stack Overflow" aria-label="Stack Overflow">
+    <a class="text-white" rel="noopener noreferrer" href="https://stackoverflow.com/search?q=%23cvat">
+      <i class="fab fa-stack-overflow"></i>
+    </a>
+  </li>
+  
+  <li class="list-inline-item mx-2 h3" data-bs-toggle="tooltip" data-placement="top" title="YouTube" aria-label="YouTube">
+    <a class="text-white" rel="noopener noreferrer" href="https://www.youtube.com/@cvat-ai">
+      <i class="fab fa-youtube"></i>
+    </a>
+  </li>
+  
+</ul>
+
+        
+        
+      </div>
+      <div class="col-4 text-center">
+        <div class="row">
+          <a href="https://www.cvat.ai/privacy">Privacy Policy</a>
+        </div>
+        <div class="row">
+          <a href="https://www.cvat.ai/terms-of-use">Terms of Use</a>
+        </div>
+        <div class="row">
+          
+            <p><a href="../../../../about/">About</a></p>
+          
+        </div>
+      </div>
+      <div class="col text-right text-center">
+        
+        
+        
+<ul class="list-inline mb-0">
+  
+  <li class="list-inline-item mx-2 h3" data-bs-toggle="tooltip" data-placement="top" title="GitHub" aria-label="GitHub">
+    <a class="text-white" rel="noopener noreferrer" href="https://github.com/cvat-ai/cvat">
+      <i class="fab fa-github"></i>
+    </a>
+  </li>
+  
+  <li class="list-inline-item mx-2 h3" data-bs-toggle="tooltip" data-placement="top" title="Gitter developers chat" aria-label="Gitter developers chat">
+    <a class="text-white" rel="noopener noreferrer" href="https://gitter.im/opencv-cvat/dev">
+      <i class="fab fa-gitter"></i>
+    </a>
+  </li>
+  
+  <li class="list-inline-item mx-2 h3" data-bs-toggle="tooltip" data-placement="top" title="Discord chat" aria-label="Discord chat">
+    <a class="text-white" rel="noopener noreferrer" href="https://discord.gg/fNR3eXfk6C">
+      <i class="fab fa-discord"></i>
+    </a>
+  </li>
+  
+</ul>
+
+        
+        
+      </div>
+    </div>
+  </div>
+</footer>
+
+
+
+    </div>
+    
+  <script src="../../../../js/main.min.99abe30f7fb05785a480d405ee1665ebd520cec6bbadffe966b7737e103675b8.js" integrity="sha256-mavjD3&#43;wV4WkgNQF7hZl69Ugzsa7rf/pZrdzfhA2dbg=" crossorigin="anonymous"></script>
+<script src='../../../../js/prism.js'></script>
+<script src='../../../../js/tabpane-persist.js'></script>
+
+  </body>
+</html>

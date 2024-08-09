@@ -1,0 +1,4238 @@
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    <meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+<meta name="generator" content="Hugo 0.83.0" /><META NAME="ROBOTS" CONTENT="INDEX, FOLLOW">
+
+
+<link rel="shortcut icon" href="../../../../favicons/favicon.ico" >
+<link rel="apple-touch-icon" href="../../../../favicons/apple-touch-icon-180x180.png" sizes="180x180">
+<link rel="icon" type="image/png" href="../../../../favicons/favicon-16x16.png" sizes="16x16">
+<link rel="icon" type="image/png" href="../../../../favicons/favicon-32x32.png" sizes="32x32">
+<link rel="icon" type="image/png" href="../../../../favicons/android-36x36.png" sizes="36x36">
+<link rel="icon" type="image/png" href="../../../../favicons/android-48x48.png" sizes="48x48">
+<link rel="icon" type="image/png" href="../../../../favicons/android-72x72.png" sizes="72x72">
+<link rel="icon" type="image/png" href="../../../../favicons/android-96x96.png" sizes="96x96">
+<link rel="icon" type="image/png" href="../../../../favicons/android-144x144.png" sizes="144x144">
+<link rel="icon" type="image/png" href="../../../../favicons/android-192x192.png" sizes="192x192">
+
+<title>Review | CVAT</title>
+<meta name="description" content=""><meta property="og:title" content="Review" />
+<meta property="og:description" content="Guide to using the Review mode for task validation." />
+<meta property="og:type" content="article" />
+<meta property="og:url" content="/docs/manual/advanced/review/" /><meta property="article:section" content="docs" />
+
+<meta property="og:site_name" content="CVAT" />
+
+<meta itemprop="name" content="Review">
+<meta itemprop="description" content="Guide to using the Review mode for task validation.">
+
+<meta itemprop="wordCount" content="283">
+<meta itemprop="keywords" content="" /><meta name="twitter:card" content="summary"/>
+<meta name="twitter:title" content="Review"/>
+<meta name="twitter:description" content="Guide to using the Review mode for task validation."/>
+
+
+
+
+<link rel="preload" href="../../../../scss/main.min.7d40567d2bfdc132ae37f2d4d23254cb8593710eeeb5f2a77e835c32da26a448.css" as="style">
+<link href="../../../../scss/main.min.7d40567d2bfdc132ae37f2d4d23254cb8593710eeeb5f2a77e835c32da26a448.css" rel="stylesheet" integrity="">
+
+
+<script
+  src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"
+  integrity="sha256-9/aliU8dGd2tb6OSsuzixeV4y/faTqgFtohetphbbj0="
+  crossorigin="anonymous"></script>
+
+<script
+  src="https://unpkg.com/lunr@2.3.8/lunr.min.js"
+  integrity="sha384-vRQ9bDyE0Wnu+lMfm57BlYLO0/XauFuKpVsZPs7KEDwYKktWi5+Kz3MP8++DFlRY"
+  crossorigin="anonymous"></script>
+
+
+
+<link rel="stylesheet" href="../../../../css/prism.css"/>
+
+
+
+
+
+
+  </head>
+  <body class="td-page">
+    <header>
+      
+<nav class="js-navbar-scroll navbar navbar-expand navbar-dark flex-column flex-md-row td-navbar">
+        <a class="navbar-brand" href="../../../../about/">
+    <span class="navbar-logo"><svg width="98" height="27" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink"><defs><path d="M101 0v29l-52.544.001C44.326 35.511 35.598 40 25.5 40 11.417 40 0 31.27.0 20.5S11.417 1 25.5 1c4.542.0 8.807.908 12.5 2.5V0h63z" id="logoA"/></defs><g transform="translate(-2 -1)" fill="none" fill-rule="evenodd"><mask id="logoB" fill="#fff"><use xlink:href="#logoA"/></mask><path d="M48.142 1c4.736.0 6.879 3.234 6.879 5.904v2.068h-4.737V6.904c0-.79-.789-2.144-2.142-2.144-1.654.0-2.368 1.354-2.368 2.144v15.192c0 .79.714 2.144 2.368 2.144 1.353.0 2.142-1.354 2.142-2.144v-2.068h4.737v2.068c0 2.67-2.143 5.904-6.88 5.904C42.956 28 41 24.766 41 22.134V6.904C41 4.234 42.955 1 48.142 1zM19-6c9.389.0 17 7.611 17 17s-7.611 17-17 17S2 20.389 2 11 9.611-6 19-6zm42.256 7.338 3.345 19.48h.075l3.42-19.48h5l-6.052 26.324h-5L56.22 1.338h5.037zm20.706.0 5.413 26.324h-4.699l-.94-6.13h-4.548l-.902 6.13h-4.435l5.413-26.324h4.698zm18.038.0v3.723h-4.849v22.6h-4.699v-22.6h-4.81V1.338H1e2zM19 4a7 7 0 100 14 7 7 0 000-14zm60.557 4.295h-.113l-1.466 9.439h3.007l-1.428-9.439z" fill="#fff" fill-rule="nonzero" mask="url(#logoB)"/></g></svg></span>
+  </a>
+  <div class="td-navbar-nav-scroll ml-md-auto" id="main_navbar">
+    <ul class="navbar-nav mt-2 mt-lg-0">
+      
+      
+      <li class="nav-item mr-4 mb-2 mb-lg-0">
+        
+        
+        
+        
+        
+        
+        
+        
+        <a class="nav-link active" href="../../../../docs/" ><span class="active">Documentation</span></a>
+      </li>
+      
+      <li class="nav-item mr-4 mb-2 mb-lg-0">
+        
+        
+        
+        
+        
+        
+        
+        
+        <a class="nav-link" href="../../../../about/" ><span>About</span></a>
+      </li>
+      
+      <li class="nav-item mr-4 mb-2 mb-lg-0">
+        
+        
+        
+        
+        
+        
+        <a class="nav-link" href="https://app.cvat.ai" target="_blank" ><span>Try it now</span></a>
+      </li>
+      
+      <li class="nav-item mr-4 mb-2 mb-lg-0">
+        
+        
+        
+        
+        
+        
+        <a class="nav-link" href="https://github.com/cvat-ai/cvat" target="_blank" ><i class='fab fa-github'></i><span>GitHub</span></a>
+      </li>
+      
+      
+      <li class="nav-item dropdown d-none d-lg-block">
+        
+
+<a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+  v1.6.0
+</a>
+<div class="dropdown-menu" aria-labelledby="navbarDropdownMenuLink">
+  
+    
+      <a class="dropdown-item" href="../../../../..//docs/manual/advanced/review/">Latest version</a>
+  
+    
+      <a class="dropdown-item" href="../../../../../v1.5.0/docs/manual/advanced/review/">v1.5.0</a>
+  
+    
+      <a class="dropdown-item" href="../../../../../v1.6.0/docs/manual/advanced/review/">v1.6.0</a>
+  
+    
+      <a class="dropdown-item" href="../../../../../v1.7.0/docs/manual/advanced/review/">v1.7.0</a>
+  
+    
+      <a class="dropdown-item" href="../../../../../v2.0.0/docs/manual/advanced/review/">v2.0.0</a>
+  
+    
+      <a class="dropdown-item" href="../../../../../v2.1.0/docs/manual/advanced/review/">v2.1.0</a>
+  
+    
+      <a class="dropdown-item" href="../../../../../v2.10.3/docs/manual/advanced/review/">v2.10.3</a>
+  
+    
+      <a class="dropdown-item" href="../../../../../v2.11.3/docs/manual/advanced/review/">v2.11.3</a>
+  
+    
+      <a class="dropdown-item" href="../../../../../v2.12.1/docs/manual/advanced/review/">v2.12.1</a>
+  
+    
+      <a class="dropdown-item" href="../../../../../v2.13.0/docs/manual/advanced/review/">v2.13.0</a>
+  
+    
+      <a class="dropdown-item" href="../../../../../v2.14.4/docs/manual/advanced/review/">v2.14.4</a>
+  
+    
+      <a class="dropdown-item" href="../../../../../v2.15.0/docs/manual/advanced/review/">v2.15.0</a>
+  
+    
+      <a class="dropdown-item" href="../../../../../v2.16.2/docs/manual/advanced/review/">v2.16.2</a>
+  
+    
+      <a class="dropdown-item" href="../../../../../v2.2.0/docs/manual/advanced/review/">v2.2.0</a>
+  
+    
+      <a class="dropdown-item" href="../../../../../v2.3.0/docs/manual/advanced/review/">v2.3.0</a>
+  
+    
+      <a class="dropdown-item" href="../../../../../v2.4.9/docs/manual/advanced/review/">v2.4.9</a>
+  
+    
+      <a class="dropdown-item" href="../../../../../v2.5.2/docs/manual/advanced/review/">v2.5.2</a>
+  
+    
+      <a class="dropdown-item" href="../../../../../v2.6.2/docs/manual/advanced/review/">v2.6.2</a>
+  
+    
+      <a class="dropdown-item" href="../../../../../v2.7.6/docs/manual/advanced/review/">v2.7.6</a>
+  
+    
+      <a class="dropdown-item" href="../../../../../v2.8.2/docs/manual/advanced/review/">v2.8.2</a>
+  
+    
+      <a class="dropdown-item" href="../../../../../v2.9.2/docs/manual/advanced/review/">v2.9.2</a>
+  
+</div>
+
+      </li>
+      
+      
+    </ul>
+  </div>
+  <div class="navbar-nav d-none d-lg-block">
+
+
+
+<input
+  type="search"
+  class="form-control td-search-input"
+  placeholder="&#xf002; Search this site…"
+  aria-label="Search this site…"
+  autocomplete="off"
+  
+  data-offline-search-index-json-src="../../../../offline-search-index.34a5723669d5234401fb67990e702b15.json"
+  data-offline-search-base-href="../../../../"
+  data-offline-search-max-results="10"
+>
+
+</div>
+</nav>
+
+    </header>
+    <div class="container-fluid td-outer">
+      <div class="td-main">
+        <div class="row flex-xl-nowrap">
+          <div class="col-12 col-md-3 col-xl-2 td-sidebar d-print-none">
+            
+
+
+
+
+  
+
+
+<div id="td-sidebar-menu" class="td-sidebar__inner">
+  
+  <div id="content-mobile">
+  <form class="td-sidebar__search d-flex align-items-center">
+    
+
+
+
+<input
+  type="search"
+  class="form-control td-search-input"
+  placeholder="&#xf002; Search this site…"
+  aria-label="Search this site…"
+  autocomplete="off"
+  
+  data-offline-search-index-json-src="../../../../offline-search-index.34a5723669d5234401fb67990e702b15.json"
+  data-offline-search-base-href="../../../../"
+  data-offline-search-max-results="10"
+>
+
+
+    <button class="btn btn-link td-sidebar__toggle d-md-none p-0 ml-3 fas fa-bars" type="button" data-toggle="collapse" data-target="#td-section-nav" aria-controls="td-docs-nav" aria-expanded="false" aria-label="Toggle section navigation">
+    </button>
+  </form>
+  </div>
+  <div id="content-desktop"></div>
+  
+  <nav class="collapse td-sidebar-nav" id="td-section-nav">
+    
+    
+    
+    
+    
+    <ul class="td-sidebar-nav__section pr-md-3 ul-0">
+      
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  <li class="td-sidebar-nav__section-title td-sidebar-nav__section with-child active-path" id="m-docs-li">
+    <a href="../../../../docs/" class="align-left pl-0 pr-2 td-sidebar-link td-sidebar-link__section tree-root" id="m-docs"><span class="">Documentation</span></a>
+    
+      
+      <ul class="pr-md-3 ul-1">
+        
+          
+            
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  <li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child" id="m-docsgetting_started-li">
+    <a href="../../../../docs/getting_started/" class="align-left pl-0 pr-2 td-sidebar-link td-sidebar-link__page" id="m-docsgetting_started"><span class="">Getting started</span></a>
+    
+  </li>
+
+          
+        
+          
+            
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  <li class="td-sidebar-nav__section-title td-sidebar-nav__section with-child active-path" id="m-docsmanual-li">
+    <a href="../../../../docs/manual/" class="align-left pl-0 pr-2 td-sidebar-link td-sidebar-link__section" id="m-docsmanual"><span class="">Manual</span></a>
+    
+      
+      <ul class="pr-md-3 ul-2">
+        
+          
+            
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  <li class="td-sidebar-nav__section-title td-sidebar-nav__section with-child" id="m-docsmanualbasics-li">
+    <a href="../../../../docs/manual/basics/" class="align-left pl-0 pr-2 td-sidebar-link td-sidebar-link__section" id="m-docsmanualbasics"><span class="">Basics</span></a>
+    
+      
+      <ul class="pr-md-3 ul-3">
+        
+          
+            
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  <li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child collapse" id="m-docsmanualbasicsauthorization-li">
+    <a href="../../../../docs/manual/basics/authorization/" class="align-left pl-0 pr-2 td-sidebar-link td-sidebar-link__page" id="m-docsmanualbasicsauthorization"><span class="">Authorization</span></a>
+    
+  </li>
+
+          
+        
+          
+            
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  <li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child collapse" id="m-docsmanualbasicscreating_an_annotation_task-li">
+    <a href="../../../../docs/manual/basics/creating_an_annotation_task/" class="align-left pl-0 pr-2 td-sidebar-link td-sidebar-link__page" id="m-docsmanualbasicscreating_an_annotation_task"><span class="">Creating an annotation task</span></a>
+    
+  </li>
+
+          
+        
+          
+            
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  <li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child collapse" id="m-docsmanualbasicstasks-page-li">
+    <a href="../../../../docs/manual/basics/tasks-page/" class="align-left pl-0 pr-2 td-sidebar-link td-sidebar-link__page" id="m-docsmanualbasicstasks-page"><span class="">Tasks page</span></a>
+    
+  </li>
+
+          
+        
+          
+            
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  <li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child collapse" id="m-docsmanualbasicstask-details-li">
+    <a href="../../../../docs/manual/basics/task-details/" class="align-left pl-0 pr-2 td-sidebar-link td-sidebar-link__page" id="m-docsmanualbasicstask-details"><span class="">Task details</span></a>
+    
+  </li>
+
+          
+        
+          
+            
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  <li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child collapse" id="m-docsmanualbasicsinterface-li">
+    <a href="../../../../docs/manual/basics/interface/" title="Interface of the annotation tool" class="align-left pl-0 pr-2 td-sidebar-link td-sidebar-link__page" id="m-docsmanualbasicsinterface"><span class="">Interface</span></a>
+    
+  </li>
+
+          
+        
+          
+            
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  <li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child collapse" id="m-docsmanualbasics3d-task-workspace-li">
+    <a href="../../../../docs/manual/basics/3d-task-workspace/" class="align-left pl-0 pr-2 td-sidebar-link td-sidebar-link__page" id="m-docsmanualbasics3d-task-workspace"><span class="">3D task workspace</span></a>
+    
+  </li>
+
+          
+        
+          
+            
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  <li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child collapse" id="m-docsmanualbasicstypes-of-shapes-li">
+    <a href="../../../../docs/manual/basics/types-of-shapes/" class="align-left pl-0 pr-2 td-sidebar-link td-sidebar-link__page" id="m-docsmanualbasicstypes-of-shapes"><span class="">Types of shapes</span></a>
+    
+  </li>
+
+          
+        
+          
+            
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  <li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child collapse" id="m-docsmanualbasicsbasic-navigation-li">
+    <a href="../../../../docs/manual/basics/basic-navigation/" class="align-left pl-0 pr-2 td-sidebar-link td-sidebar-link__page" id="m-docsmanualbasicsbasic-navigation"><span class="">Basic navigation</span></a>
+    
+  </li>
+
+          
+        
+          
+            
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  <li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child collapse" id="m-docsmanualbasicsshape-mode-basics-li">
+    <a href="../../../../docs/manual/basics/shape-mode-basics/" title="Shape mode (basics)" class="align-left pl-0 pr-2 td-sidebar-link td-sidebar-link__page" id="m-docsmanualbasicsshape-mode-basics"><span class="">Shape mode</span></a>
+    
+  </li>
+
+          
+        
+          
+            
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  <li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child collapse" id="m-docsmanualbasicstrack-mode-basics-li">
+    <a href="../../../../docs/manual/basics/track-mode-basics/" title="Track mode (basics)" class="align-left pl-0 pr-2 td-sidebar-link td-sidebar-link__page" id="m-docsmanualbasicstrack-mode-basics"><span class="">Track mode</span></a>
+    
+  </li>
+
+          
+        
+          
+            
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  <li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child collapse" id="m-docsmanualbasicsattribute-annotation-mode-basics-li">
+    <a href="../../../../docs/manual/basics/attribute-annotation-mode-basics/" title="Attribute annotation mode (basics)" class="align-left pl-0 pr-2 td-sidebar-link td-sidebar-link__page" id="m-docsmanualbasicsattribute-annotation-mode-basics"><span class="">Attribute annotation mode</span></a>
+    
+  </li>
+
+          
+        
+          
+            
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  <li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child collapse" id="m-docsmanualbasicsstandard-3d-mode-basics-li">
+    <a href="../../../../docs/manual/basics/standard-3d-mode-basics/" title="Standard 3D mode (basics)" class="align-left pl-0 pr-2 td-sidebar-link td-sidebar-link__page" id="m-docsmanualbasicsstandard-3d-mode-basics"><span class="">Standard 3D mode</span></a>
+    
+  </li>
+
+          
+        
+          
+            
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  <li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child collapse" id="m-docsmanualbasics3d-object-annotation-basics-li">
+    <a href="../../../../docs/manual/basics/3d-object-annotation-basics/" title="3D Object annotation (basics)" class="align-left pl-0 pr-2 td-sidebar-link td-sidebar-link__page" id="m-docsmanualbasics3d-object-annotation-basics"><span class="">3D Object annotation</span></a>
+    
+  </li>
+
+          
+        
+          
+            
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  <li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child collapse" id="m-docsmanualbasicssettings-li">
+    <a href="../../../../docs/manual/basics/settings/" class="align-left pl-0 pr-2 td-sidebar-link td-sidebar-link__page" id="m-docsmanualbasicssettings"><span class="">Settings</span></a>
+    
+  </li>
+
+          
+        
+          
+            
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  <li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child collapse" id="m-docsmanualbasicsvocabulary-li">
+    <a href="../../../../docs/manual/basics/vocabulary/" class="align-left pl-0 pr-2 td-sidebar-link td-sidebar-link__page" id="m-docsmanualbasicsvocabulary"><span class="">Vocabulary</span></a>
+    
+  </li>
+
+          
+        
+          
+            
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  <li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child collapse" id="m-docsmanualbasicstop-panel-li">
+    <a href="../../../../docs/manual/basics/top-panel/" class="align-left pl-0 pr-2 td-sidebar-link td-sidebar-link__page" id="m-docsmanualbasicstop-panel"><span class="">Top Panel</span></a>
+    
+  </li>
+
+          
+        
+          
+            
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  <li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child collapse" id="m-docsmanualbasicsworkspace-li">
+    <a href="../../../../docs/manual/basics/workspace/" class="align-left pl-0 pr-2 td-sidebar-link td-sidebar-link__page" id="m-docsmanualbasicsworkspace"><span class="">Workspace</span></a>
+    
+  </li>
+
+          
+        
+          
+            
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  <li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child collapse" id="m-docsmanualbasicscontrols-sidebar-li">
+    <a href="../../../../docs/manual/basics/controls-sidebar/" class="align-left pl-0 pr-2 td-sidebar-link td-sidebar-link__page" id="m-docsmanualbasicscontrols-sidebar"><span class="">Controls sidebar</span></a>
+    
+  </li>
+
+          
+        
+          
+            
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  <li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child collapse" id="m-docsmanualbasicsobjects-sidebar-li">
+    <a href="../../../../docs/manual/basics/objects-sidebar/" class="align-left pl-0 pr-2 td-sidebar-link td-sidebar-link__page" id="m-docsmanualbasicsobjects-sidebar"><span class="">Objects sidebar</span></a>
+    
+  </li>
+
+          
+        
+      </ul>
+    
+  </li>
+
+          
+        
+          
+            
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  <li class="td-sidebar-nav__section-title td-sidebar-nav__section with-child active-path" id="m-docsmanualadvanced-li">
+    <a href="../../../../docs/manual/advanced/" class="align-left pl-0 pr-2 td-sidebar-link td-sidebar-link__section" id="m-docsmanualadvanced"><span class="">Advanced</span></a>
+    
+      
+      <ul class="pr-md-3 ul-3">
+        
+          
+            
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  <li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child" id="m-docsmanualadvanceddownloading-annotations-li">
+    <a href="../../../../docs/manual/advanced/downloading-annotations/" class="align-left pl-0 pr-2 td-sidebar-link td-sidebar-link__page" id="m-docsmanualadvanceddownloading-annotations"><span class="">Downloading annotations</span></a>
+    
+  </li>
+
+          
+        
+          
+            
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  <li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child" id="m-docsmanualadvancedsearch-li">
+    <a href="../../../../docs/manual/advanced/search/" class="align-left pl-0 pr-2 td-sidebar-link td-sidebar-link__page" id="m-docsmanualadvancedsearch"><span class="">Search</span></a>
+    
+  </li>
+
+          
+        
+          
+            
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  <li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child" id="m-docsmanualadvancedprojects-li">
+    <a href="../../../../docs/manual/advanced/projects/" class="align-left pl-0 pr-2 td-sidebar-link td-sidebar-link__page" id="m-docsmanualadvancedprojects"><span class="">Projects</span></a>
+    
+  </li>
+
+          
+        
+          
+            
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  <li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child" id="m-docsmanualadvancedshape-mode-advanced-li">
+    <a href="../../../../docs/manual/advanced/shape-mode-advanced/" title="Shape mode (advanced)" class="align-left pl-0 pr-2 td-sidebar-link td-sidebar-link__page" id="m-docsmanualadvancedshape-mode-advanced"><span class="">Shape mode</span></a>
+    
+  </li>
+
+          
+        
+          
+            
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  <li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child" id="m-docsmanualadvancedtrack-mode-advanced-li">
+    <a href="../../../../docs/manual/advanced/track-mode-advanced/" title="Track mode (advanced)" class="align-left pl-0 pr-2 td-sidebar-link td-sidebar-link__page" id="m-docsmanualadvancedtrack-mode-advanced"><span class="">Track mode</span></a>
+    
+  </li>
+
+          
+        
+          
+            
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  <li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child" id="m-docsmanualadvancedattribute-annotation-mode-advanced-li">
+    <a href="../../../../docs/manual/advanced/attribute-annotation-mode-advanced/" title="Attribute annotation mode (advanced)" class="align-left pl-0 pr-2 td-sidebar-link td-sidebar-link__page" id="m-docsmanualadvancedattribute-annotation-mode-advanced"><span class="">Attribute annotation mode</span></a>
+    
+  </li>
+
+          
+        
+          
+            
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  <li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child" id="m-docsmanualadvancedannotation-with-rectangle-by-4-points-li">
+    <a href="../../../../docs/manual/advanced/annotation-with-rectangle-by-4-points/" class="align-left pl-0 pr-2 td-sidebar-link td-sidebar-link__page" id="m-docsmanualadvancedannotation-with-rectangle-by-4-points"><span class="">Annotation with rectangle by 4 points</span></a>
+    
+  </li>
+
+          
+        
+          
+            
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  <li class="td-sidebar-nav__section-title td-sidebar-nav__section with-child" id="m-docsmanualadvancedannotation-with-points-li">
+    <a href="../../../../docs/manual/advanced/annotation-with-points/" class="align-left pl-0 pr-2 td-sidebar-link td-sidebar-link__section" id="m-docsmanualadvancedannotation-with-points"><span class="">Annotation with points</span></a>
+    
+      
+      <ul class="pr-md-3 ul-4">
+        
+          
+            
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  <li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child collapse" id="m-docsmanualadvancedannotation-with-pointspoints-in-shape-mode-li">
+    <a href="../../../../docs/manual/advanced/annotation-with-points/points-in-shape-mode/" class="align-left pl-0 pr-2 td-sidebar-link td-sidebar-link__page" id="m-docsmanualadvancedannotation-with-pointspoints-in-shape-mode"><span class="">Points in shape mode</span></a>
+    
+  </li>
+
+          
+        
+          
+            
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  <li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child collapse" id="m-docsmanualadvancedannotation-with-pointsliner-interpolation-with-one-point-li">
+    <a href="../../../../docs/manual/advanced/annotation-with-points/liner-interpolation-with-one-point/" class="align-left pl-0 pr-2 td-sidebar-link td-sidebar-link__page" id="m-docsmanualadvancedannotation-with-pointsliner-interpolation-with-one-point"><span class="">Linear interpolation with one point</span></a>
+    
+  </li>
+
+          
+        
+      </ul>
+    
+  </li>
+
+          
+        
+          
+            
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  <li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child" id="m-docsmanualadvancedannotation-with-polylines-li">
+    <a href="../../../../docs/manual/advanced/annotation-with-polylines/" class="align-left pl-0 pr-2 td-sidebar-link td-sidebar-link__page" id="m-docsmanualadvancedannotation-with-polylines"><span class="">Annotation with polylines</span></a>
+    
+  </li>
+
+          
+        
+          
+            
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  <li class="td-sidebar-nav__section-title td-sidebar-nav__section with-child" id="m-docsmanualadvancedannotation-with-polygons-li">
+    <a href="../../../../docs/manual/advanced/annotation-with-polygons/" class="align-left pl-0 pr-2 td-sidebar-link td-sidebar-link__section" id="m-docsmanualadvancedannotation-with-polygons"><span class="">Annotation with polygons</span></a>
+    
+      
+      <ul class="pr-md-3 ul-4">
+        
+          
+            
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  <li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child collapse" id="m-docsmanualadvancedannotation-with-polygonsmanual-drawing-li">
+    <a href="../../../../docs/manual/advanced/annotation-with-polygons/manual-drawing/" class="align-left pl-0 pr-2 td-sidebar-link td-sidebar-link__page" id="m-docsmanualadvancedannotation-with-polygonsmanual-drawing"><span class="">Manual drawing</span></a>
+    
+  </li>
+
+          
+        
+          
+            
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  <li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child collapse" id="m-docsmanualadvancedannotation-with-polygonsautomatic-borders-li">
+    <a href="../../../../docs/manual/advanced/annotation-with-polygons/automatic-borders/" title="Drawing using automatic borders" class="align-left pl-0 pr-2 td-sidebar-link td-sidebar-link__page" id="m-docsmanualadvancedannotation-with-polygonsautomatic-borders"><span class="">Automatic borders</span></a>
+    
+  </li>
+
+          
+        
+          
+            
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  <li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child collapse" id="m-docsmanualadvancedannotation-with-polygonsedit-polygon-li">
+    <a href="../../../../docs/manual/advanced/annotation-with-polygons/edit-polygon/" class="align-left pl-0 pr-2 td-sidebar-link td-sidebar-link__page" id="m-docsmanualadvancedannotation-with-polygonsedit-polygon"><span class="">Edit polygon</span></a>
+    
+  </li>
+
+          
+        
+          
+            
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  <li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child collapse" id="m-docsmanualadvancedannotation-with-polygonstrack-mode-with-polygons-li">
+    <a href="../../../../docs/manual/advanced/annotation-with-polygons/track-mode-with-polygons/" class="align-left pl-0 pr-2 td-sidebar-link td-sidebar-link__page" id="m-docsmanualadvancedannotation-with-polygonstrack-mode-with-polygons"><span class="">Track mode with polygons</span></a>
+    
+  </li>
+
+          
+        
+          
+            
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  <li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child collapse" id="m-docsmanualadvancedannotation-with-polygonscreating-mask-li">
+    <a href="../../../../docs/manual/advanced/annotation-with-polygons/creating-mask/" class="align-left pl-0 pr-2 td-sidebar-link td-sidebar-link__page" id="m-docsmanualadvancedannotation-with-polygonscreating-mask"><span class="">Creating masks</span></a>
+    
+  </li>
+
+          
+        
+      </ul>
+    
+  </li>
+
+          
+        
+          
+            
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  <li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child" id="m-docsmanualadvancedopencv-tools-li">
+    <a href="../../../../docs/manual/advanced/opencv-tools/" class="align-left pl-0 pr-2 td-sidebar-link td-sidebar-link__page" id="m-docsmanualadvancedopencv-tools"><span class="">OpenCV tools</span></a>
+    
+  </li>
+
+          
+        
+          
+            
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  <li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child" id="m-docsmanualadvancedai-tools-li">
+    <a href="../../../../docs/manual/advanced/ai-tools/" class="align-left pl-0 pr-2 td-sidebar-link td-sidebar-link__page" id="m-docsmanualadvancedai-tools"><span class="">AI Tools</span></a>
+    
+  </li>
+
+          
+        
+          
+            
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  <li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child" id="m-docsmanualadvancedannotation-with-tags-li">
+    <a href="../../../../docs/manual/advanced/annotation-with-tags/" class="align-left pl-0 pr-2 td-sidebar-link td-sidebar-link__page" id="m-docsmanualadvancedannotation-with-tags"><span class="">Annotation with Tags</span></a>
+    
+  </li>
+
+          
+        
+          
+            
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  <li class="td-sidebar-nav__section-title td-sidebar-nav__section with-child" id="m-docsmanualadvancedannotation-with-cuboids-li">
+    <a href="../../../../docs/manual/advanced/annotation-with-cuboids/" class="align-left pl-0 pr-2 td-sidebar-link td-sidebar-link__section" id="m-docsmanualadvancedannotation-with-cuboids"><span class="">Annotation with cuboids</span></a>
+    
+      
+      <ul class="pr-md-3 ul-4">
+        
+          
+            
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  <li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child collapse" id="m-docsmanualadvancedannotation-with-cuboidscreating-the-cuboid-li">
+    <a href="../../../../docs/manual/advanced/annotation-with-cuboids/creating-the-cuboid/" class="align-left pl-0 pr-2 td-sidebar-link td-sidebar-link__page" id="m-docsmanualadvancedannotation-with-cuboidscreating-the-cuboid"><span class="">Creating the cuboid</span></a>
+    
+  </li>
+
+          
+        
+          
+            
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  <li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child collapse" id="m-docsmanualadvancedannotation-with-cuboidsediting-the-cuboid-li">
+    <a href="../../../../docs/manual/advanced/annotation-with-cuboids/editing-the-cuboid/" class="align-left pl-0 pr-2 td-sidebar-link td-sidebar-link__page" id="m-docsmanualadvancedannotation-with-cuboidsediting-the-cuboid"><span class="">Editing the cuboid</span></a>
+    
+  </li>
+
+          
+        
+      </ul>
+    
+  </li>
+
+          
+        
+          
+            
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  <li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child" id="m-docsmanualadvanced3d-object-annotation-advanced-li">
+    <a href="../../../../docs/manual/advanced/3d-object-annotation-advanced/" title="3D Object annotation (advanced)" class="align-left pl-0 pr-2 td-sidebar-link td-sidebar-link__page" id="m-docsmanualadvanced3d-object-annotation-advanced"><span class="">3D Object annotation</span></a>
+    
+  </li>
+
+          
+        
+          
+            
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  <li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child" id="m-docsmanualadvancedfilter-li">
+    <a href="../../../../docs/manual/advanced/filter/" class="align-left pl-0 pr-2 td-sidebar-link td-sidebar-link__page" id="m-docsmanualadvancedfilter"><span class="">Filter</span></a>
+    
+  </li>
+
+          
+        
+          
+            
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  <li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child" id="m-docsmanualadvancedshape-grouping-li">
+    <a href="../../../../docs/manual/advanced/shape-grouping/" class="align-left pl-0 pr-2 td-sidebar-link td-sidebar-link__page" id="m-docsmanualadvancedshape-grouping"><span class="">Shape grouping</span></a>
+    
+  </li>
+
+          
+        
+          
+            
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  <li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child active-path" id="m-docsmanualadvancedreview-li">
+    <a href="../../../../docs/manual/advanced/review/" class="align-left pl-0 pr-2 active td-sidebar-link td-sidebar-link__page" id="m-docsmanualadvancedreview"><span class="td-sidebar-nav-active-item">Review</span></a>
+    
+  </li>
+
+          
+        
+          
+            
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  <li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child" id="m-docsmanualadvancedcontext-images-li">
+    <a href="../../../../docs/manual/advanced/context-images/" title="Context images for 2d task" class="align-left pl-0 pr-2 td-sidebar-link td-sidebar-link__page" id="m-docsmanualadvancedcontext-images"><span class="">Context images</span></a>
+    
+  </li>
+
+          
+        
+          
+            
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  <li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child" id="m-docsmanualadvancedshortcuts-li">
+    <a href="../../../../docs/manual/advanced/shortcuts/" class="align-left pl-0 pr-2 td-sidebar-link td-sidebar-link__page" id="m-docsmanualadvancedshortcuts"><span class="">Shortcuts</span></a>
+    
+  </li>
+
+          
+        
+          
+            
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  <li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child" id="m-docsmanualadvancedexport-import-li">
+    <a href="../../../../docs/manual/advanced/export-import/" title="Export/import a task" class="align-left pl-0 pr-2 td-sidebar-link td-sidebar-link__page" id="m-docsmanualadvancedexport-import"><span class="">Export/import</span></a>
+    
+  </li>
+
+          
+        
+          
+            
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  <li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child" id="m-docsmanualadvancedtask-synchronization-li">
+    <a href="../../../../docs/manual/advanced/task-synchronization/" title="Task synchronization with a repository" class="align-left pl-0 pr-2 td-sidebar-link td-sidebar-link__page" id="m-docsmanualadvancedtask-synchronization"><span class="">Task synchronization</span></a>
+    
+  </li>
+
+          
+        
+          
+            
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  <li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child" id="m-docsmanualadvancedmodels-li">
+    <a href="../../../../docs/manual/advanced/models/" class="align-left pl-0 pr-2 td-sidebar-link td-sidebar-link__page" id="m-docsmanualadvancedmodels"><span class="">Models</span></a>
+    
+  </li>
+
+          
+        
+          
+            
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  <li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child" id="m-docsmanualadvancedautomatic-annotation-li">
+    <a href="../../../../docs/manual/advanced/automatic-annotation/" class="align-left pl-0 pr-2 td-sidebar-link td-sidebar-link__page" id="m-docsmanualadvancedautomatic-annotation"><span class="">Automatic annotation</span></a>
+    
+  </li>
+
+          
+        
+          
+            
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  <li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child" id="m-docsmanualadvancedanalytics-li">
+    <a href="../../../../docs/manual/advanced/analytics/" class="align-left pl-0 pr-2 td-sidebar-link td-sidebar-link__page" id="m-docsmanualadvancedanalytics"><span class="">Analytics Monitoring</span></a>
+    
+  </li>
+
+          
+        
+          
+            
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  <li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child" id="m-docsmanualadvancedxml_format-li">
+    <a href="../../../../docs/manual/advanced/xml_format/" class="align-left pl-0 pr-2 td-sidebar-link td-sidebar-link__page" id="m-docsmanualadvancedxml_format"><span class="">XML annotation format</span></a>
+    
+  </li>
+
+          
+        
+          
+            
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  <li class="td-sidebar-nav__section-title td-sidebar-nav__section with-child" id="m-docsmanualadvancedformats-li">
+    <a href="../../../../docs/manual/advanced/formats/" class="align-left pl-0 pr-2 td-sidebar-link td-sidebar-link__section" id="m-docsmanualadvancedformats"><span class="">Formats</span></a>
+    
+      
+      <ul class="pr-md-3 ul-4">
+        
+          
+            
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  <li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child collapse" id="m-docsmanualadvancedformatsformat-cvat-li">
+    <a href="../../../../docs/manual/advanced/formats/format-cvat/" title="" class="align-left pl-0 pr-2 td-sidebar-link td-sidebar-link__page" id="m-docsmanualadvancedformatsformat-cvat"><span class="">CVAT</span></a>
+    
+  </li>
+
+          
+        
+          
+            
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  <li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child collapse" id="m-docsmanualadvancedformatsformat-datumaro-li">
+    <a href="../../../../docs/manual/advanced/formats/format-datumaro/" title="" class="align-left pl-0 pr-2 td-sidebar-link td-sidebar-link__page" id="m-docsmanualadvancedformatsformat-datumaro"><span class="">Datumaro</span></a>
+    
+  </li>
+
+          
+        
+          
+            
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  <li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child collapse" id="m-docsmanualadvancedformatsformat-labelme-li">
+    <a href="../../../../docs/manual/advanced/formats/format-labelme/" title="" class="align-left pl-0 pr-2 td-sidebar-link td-sidebar-link__page" id="m-docsmanualadvancedformatsformat-labelme"><span class="">LabelMe</span></a>
+    
+  </li>
+
+          
+        
+          
+            
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  <li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child collapse" id="m-docsmanualadvancedformatsformat-mot-li">
+    <a href="../../../../docs/manual/advanced/formats/format-mot/" title="" class="align-left pl-0 pr-2 td-sidebar-link td-sidebar-link__page" id="m-docsmanualadvancedformatsformat-mot"><span class="">MOT</span></a>
+    
+  </li>
+
+          
+        
+          
+            
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  <li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child collapse" id="m-docsmanualadvancedformatsformat-mots-li">
+    <a href="../../../../docs/manual/advanced/formats/format-mots/" title="" class="align-left pl-0 pr-2 td-sidebar-link td-sidebar-link__page" id="m-docsmanualadvancedformatsformat-mots"><span class="">MOTS</span></a>
+    
+  </li>
+
+          
+        
+          
+            
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  <li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child collapse" id="m-docsmanualadvancedformatsformat-coco-li">
+    <a href="../../../../docs/manual/advanced/formats/format-coco/" title="" class="align-left pl-0 pr-2 td-sidebar-link td-sidebar-link__page" id="m-docsmanualadvancedformatsformat-coco"><span class="">MS COCO</span></a>
+    
+  </li>
+
+          
+        
+          
+            
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  <li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child collapse" id="m-docsmanualadvancedformatsformat-voc-li">
+    <a href="../../../../docs/manual/advanced/formats/format-voc/" title="" class="align-left pl-0 pr-2 td-sidebar-link td-sidebar-link__page" id="m-docsmanualadvancedformatsformat-voc"><span class="">Pascal VOC</span></a>
+    
+  </li>
+
+          
+        
+          
+            
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  <li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child collapse" id="m-docsmanualadvancedformatsformat-yolo-li">
+    <a href="../../../../docs/manual/advanced/formats/format-yolo/" title="" class="align-left pl-0 pr-2 td-sidebar-link td-sidebar-link__page" id="m-docsmanualadvancedformatsformat-yolo"><span class="">YOLO</span></a>
+    
+  </li>
+
+          
+        
+          
+            
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  <li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child collapse" id="m-docsmanualadvancedformatsformat-tfrecord-li">
+    <a href="../../../../docs/manual/advanced/formats/format-tfrecord/" title="" class="align-left pl-0 pr-2 td-sidebar-link td-sidebar-link__page" id="m-docsmanualadvancedformatsformat-tfrecord"><span class="">TFRecord</span></a>
+    
+  </li>
+
+          
+        
+          
+            
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  <li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child collapse" id="m-docsmanualadvancedformatsformat-imagenet-li">
+    <a href="../../../../docs/manual/advanced/formats/format-imagenet/" title="" class="align-left pl-0 pr-2 td-sidebar-link td-sidebar-link__page" id="m-docsmanualadvancedformatsformat-imagenet"><span class="">ImageNet</span></a>
+    
+  </li>
+
+          
+        
+          
+            
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  <li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child collapse" id="m-docsmanualadvancedformatsformat-widerface-li">
+    <a href="../../../../docs/manual/advanced/formats/format-widerface/" title="" class="align-left pl-0 pr-2 td-sidebar-link td-sidebar-link__page" id="m-docsmanualadvancedformatsformat-widerface"><span class="">Wider Face</span></a>
+    
+  </li>
+
+          
+        
+          
+            
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  <li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child collapse" id="m-docsmanualadvancedformatsformat-camvid-li">
+    <a href="../../../../docs/manual/advanced/formats/format-camvid/" title="" class="align-left pl-0 pr-2 td-sidebar-link td-sidebar-link__page" id="m-docsmanualadvancedformatsformat-camvid"><span class="">CamVid</span></a>
+    
+  </li>
+
+          
+        
+          
+            
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  <li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child collapse" id="m-docsmanualadvancedformatsformat-vggface2-li">
+    <a href="../../../../docs/manual/advanced/formats/format-vggface2/" title="" class="align-left pl-0 pr-2 td-sidebar-link td-sidebar-link__page" id="m-docsmanualadvancedformatsformat-vggface2"><span class="">VGGFace2</span></a>
+    
+  </li>
+
+          
+        
+          
+            
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  <li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child collapse" id="m-docsmanualadvancedformatsformat-market1501-li">
+    <a href="../../../../docs/manual/advanced/formats/format-market1501/" title="" class="align-left pl-0 pr-2 td-sidebar-link td-sidebar-link__page" id="m-docsmanualadvancedformatsformat-market1501"><span class="">Market-1501</span></a>
+    
+  </li>
+
+          
+        
+          
+            
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  <li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child collapse" id="m-docsmanualadvancedformatsformat-icdar-li">
+    <a href="../../../../docs/manual/advanced/formats/format-icdar/" title="" class="align-left pl-0 pr-2 td-sidebar-link td-sidebar-link__page" id="m-docsmanualadvancedformatsformat-icdar"><span class="">ICDAR13/15</span></a>
+    
+  </li>
+
+          
+        
+      </ul>
+    
+  </li>
+
+          
+        
+          
+            
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  <li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child" id="m-docsmanualadvancedcli-li">
+    <a href="../../../../docs/manual/advanced/cli/" title="Command line interface (CLI)" class="align-left pl-0 pr-2 td-sidebar-link td-sidebar-link__page" id="m-docsmanualadvancedcli"><span class="">CLI</span></a>
+    
+  </li>
+
+          
+        
+          
+            
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  <li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child" id="m-docsmanualadvanceddataset_manifest-li">
+    <a href="../../../../docs/manual/advanced/dataset_manifest/" title="Simple command line to prepare dataset manifest file" class="align-left pl-0 pr-2 td-sidebar-link td-sidebar-link__page" id="m-docsmanualadvanceddataset_manifest"><span class="">Dataset manifest</span></a>
+    
+  </li>
+
+          
+        
+          
+            
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  <li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child" id="m-docsmanualadvanceddata_on_fly-li">
+    <a href="../../../../docs/manual/advanced/data_on_fly/" class="align-left pl-0 pr-2 td-sidebar-link td-sidebar-link__page" id="m-docsmanualadvanceddata_on_fly"><span class="">Data preparation on the fly</span></a>
+    
+  </li>
+
+          
+        
+          
+            
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  <li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child" id="m-docsmanualadvancedserverless-tutorial-li">
+    <a href="../../../../docs/manual/advanced/serverless-tutorial/" class="align-left pl-0 pr-2 td-sidebar-link td-sidebar-link__page" id="m-docsmanualadvancedserverless-tutorial"><span class="">Serverless tutorial</span></a>
+    
+  </li>
+
+          
+        
+      </ul>
+    
+  </li>
+
+          
+        
+      </ul>
+    
+  </li>
+
+          
+        
+          
+            
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  <li class="td-sidebar-nav__section-title td-sidebar-nav__section with-child" id="m-docsadministration-li">
+    <a href="../../../../docs/administration/" class="align-left pl-0 pr-2 td-sidebar-link td-sidebar-link__section" id="m-docsadministration"><span class="">Administration</span></a>
+    
+      
+      <ul class="pr-md-3 ul-2">
+        
+          
+            
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  <li class="td-sidebar-nav__section-title td-sidebar-nav__section with-child" id="m-docsadministrationbasics-li">
+    <a href="../../../../docs/administration/basics/" class="align-left pl-0 pr-2 td-sidebar-link td-sidebar-link__section" id="m-docsadministrationbasics"><span class="">Basics</span></a>
+    
+      
+      <ul class="pr-md-3 ul-3">
+        
+          
+            
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  <li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child collapse" id="m-docsadministrationbasicsinstallation-li">
+    <a href="../../../../docs/administration/basics/installation/" class="align-left pl-0 pr-2 td-sidebar-link td-sidebar-link__page" id="m-docsadministrationbasicsinstallation"><span class="">Installation Guide</span></a>
+    
+  </li>
+
+          
+        
+          
+            
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  <li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child collapse" id="m-docsadministrationbasicsaws-deployment-guide-li">
+    <a href="../../../../docs/administration/basics/aws-deployment-guide/" class="align-left pl-0 pr-2 td-sidebar-link td-sidebar-link__page" id="m-docsadministrationbasicsaws-deployment-guide"><span class="">AWS-Deployment Guide</span></a>
+    
+  </li>
+
+          
+        
+          
+            
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  <li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child collapse" id="m-docsadministrationbasicsrest_api_guide-li">
+    <a href="../../../../docs/administration/basics/rest_api_guide/" title="REST API guide" class="align-left pl-0 pr-2 td-sidebar-link td-sidebar-link__page" id="m-docsadministrationbasicsrest_api_guide"><span class="">REST API</span></a>
+    
+  </li>
+
+          
+        
+      </ul>
+    
+  </li>
+
+          
+        
+          
+            
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  <li class="td-sidebar-nav__section-title td-sidebar-nav__section with-child" id="m-docsadministrationadvanced-li">
+    <a href="../../../../docs/administration/advanced/" class="align-left pl-0 pr-2 td-sidebar-link td-sidebar-link__section" id="m-docsadministrationadvanced"><span class="">Advanced</span></a>
+    
+      
+      <ul class="pr-md-3 ul-3">
+        
+          
+            
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  <li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child collapse" id="m-docsadministrationadvancedanalytics-li">
+    <a href="../../../../docs/administration/advanced/analytics/" class="align-left pl-0 pr-2 td-sidebar-link td-sidebar-link__page" id="m-docsadministrationadvancedanalytics"><span class="">Installation Analytics</span></a>
+    
+  </li>
+
+          
+        
+          
+            
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  <li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child collapse" id="m-docsadministrationadvancedinstallation_automatic_annotation-li">
+    <a href="../../../../docs/administration/advanced/installation_automatic_annotation/" title="Semi-automatic and Automatic Annotation" class="align-left pl-0 pr-2 td-sidebar-link td-sidebar-link__page" id="m-docsadministrationadvancedinstallation_automatic_annotation"><span class="">Installation Auto Annotation</span></a>
+    
+  </li>
+
+          
+        
+          
+            
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  <li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child collapse" id="m-docsadministrationadvancedmounting_cloud_storages-li">
+    <a href="../../../../docs/administration/advanced/mounting_cloud_storages/" class="align-left pl-0 pr-2 td-sidebar-link td-sidebar-link__page" id="m-docsadministrationadvancedmounting_cloud_storages"><span class="">Mounting cloud storage</span></a>
+    
+  </li>
+
+          
+        
+          
+            
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  <li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child collapse" id="m-docsadministrationadvancedbackup_guide-li">
+    <a href="../../../../docs/administration/advanced/backup_guide/" class="align-left pl-0 pr-2 td-sidebar-link td-sidebar-link__page" id="m-docsadministrationadvancedbackup_guide"><span class="">Backup guide</span></a>
+    
+  </li>
+
+          
+        
+      </ul>
+    
+  </li>
+
+          
+        
+      </ul>
+    
+  </li>
+
+          
+        
+          
+            
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  <li class="td-sidebar-nav__section-title td-sidebar-nav__section with-child" id="m-docscontributing-li">
+    <a href="../../../../docs/contributing/" title="Contributing to this project" class="align-left pl-0 pr-2 td-sidebar-link td-sidebar-link__section" id="m-docscontributing"><span class="">Contributing</span></a>
+    
+      
+      <ul class="pr-md-3 ul-2">
+        
+          
+            
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  <li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child" id="m-docscontributingdevelopment-environment-li">
+    <a href="../../../../docs/contributing/development-environment/" class="align-left pl-0 pr-2 td-sidebar-link td-sidebar-link__page" id="m-docscontributingdevelopment-environment"><span class="">Development environment</span></a>
+    
+  </li>
+
+          
+        
+          
+            
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  <li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child" id="m-docscontributingsetup-additional-components-li">
+    <a href="../../../../docs/contributing/setup-additional-components/" class="align-left pl-0 pr-2 td-sidebar-link td-sidebar-link__page" id="m-docscontributingsetup-additional-components"><span class="">Setup additional components in development environment</span></a>
+    
+  </li>
+
+          
+        
+          
+            
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  <li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child" id="m-docscontributingcoding-style-li">
+    <a href="../../../../docs/contributing/coding-style/" class="align-left pl-0 pr-2 td-sidebar-link td-sidebar-link__page" id="m-docscontributingcoding-style"><span class="">JavaScript/Typescript coding style</span></a>
+    
+  </li>
+
+          
+        
+          
+            
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  <li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child" id="m-docscontributingbranching-model-li">
+    <a href="../../../../docs/contributing/branching-model/" class="align-left pl-0 pr-2 td-sidebar-link td-sidebar-link__page" id="m-docscontributingbranching-model"><span class="">Branching model</span></a>
+    
+  </li>
+
+          
+        
+          
+            
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  <li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child" id="m-docscontributingusing-the-issue-tracker-li">
+    <a href="../../../../docs/contributing/using-the-issue-tracker/" class="align-left pl-0 pr-2 td-sidebar-link td-sidebar-link__page" id="m-docscontributingusing-the-issue-tracker"><span class="">Using the issue tracker</span></a>
+    
+  </li>
+
+          
+        
+          
+            
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  <li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child" id="m-docscontributingbug-reports-li">
+    <a href="../../../../docs/contributing/bug-reports/" class="align-left pl-0 pr-2 td-sidebar-link td-sidebar-link__page" id="m-docscontributingbug-reports"><span class="">Bug reports</span></a>
+    
+  </li>
+
+          
+        
+          
+            
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  <li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child" id="m-docscontributingfeature-requests-li">
+    <a href="../../../../docs/contributing/feature-requests/" class="align-left pl-0 pr-2 td-sidebar-link td-sidebar-link__page" id="m-docscontributingfeature-requests"><span class="">Feature requests</span></a>
+    
+  </li>
+
+          
+        
+          
+            
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  <li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child" id="m-docscontributingpull-requests-li">
+    <a href="../../../../docs/contributing/pull-requests/" class="align-left pl-0 pr-2 td-sidebar-link td-sidebar-link__page" id="m-docscontributingpull-requests"><span class="">Pull requests</span></a>
+    
+  </li>
+
+          
+        
+          
+            
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  <li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child" id="m-docscontributingnew-annotation-format-li">
+    <a href="../../../../docs/contributing/new-annotation-format/" title="How to add a new annotation format support" class="align-left pl-0 pr-2 td-sidebar-link td-sidebar-link__page" id="m-docscontributingnew-annotation-format"><span class="">New annotation format support</span></a>
+    
+  </li>
+
+          
+        
+          
+            
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  <li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child" id="m-docscontributingrest-api-design-li">
+    <a href="../../../../docs/contributing/rest-api-design/" class="align-left pl-0 pr-2 td-sidebar-link td-sidebar-link__page" id="m-docscontributingrest-api-design"><span class="">REST API design principles</span></a>
+    
+  </li>
+
+          
+        
+      </ul>
+    
+  </li>
+
+          
+        
+          
+            
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  <li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child" id="m-docsapi_sdksdkreferencemodelsabout-li">
+    <a href="../../../../docs/api_sdk/sdk/reference/models/about/" title="About class reference" class="align-left pl-0 pr-2 td-sidebar-link td-sidebar-link__page" id="m-docsapi_sdksdkreferencemodelsabout"><span class="">About</span></a>
+    
+  </li>
+
+          
+        
+          
+            
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  <li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child" id="m-docsapi_sdksdkreferencemodelsaccept-invitation-read-li">
+    <a href="../../../../docs/api_sdk/sdk/reference/models/accept-invitation-read/" title="AcceptInvitationRead class reference" class="align-left pl-0 pr-2 td-sidebar-link td-sidebar-link__page" id="m-docsapi_sdksdkreferencemodelsaccept-invitation-read"><span class="">AcceptInvitationRead</span></a>
+    
+  </li>
+
+          
+        
+          
+            
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  <li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child" id="m-docsapi_sdksdkreferencemodelsanalytics-report-li">
+    <a href="../../../../docs/api_sdk/sdk/reference/models/analytics-report/" title="AnalyticsReport class reference" class="align-left pl-0 pr-2 td-sidebar-link td-sidebar-link__page" id="m-docsapi_sdksdkreferencemodelsanalytics-report"><span class="">AnalyticsReport</span></a>
+    
+  </li>
+
+          
+        
+          
+            
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  <li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child" id="m-docsapi_sdksdkreferencemodelsanalytics-report-create-request-li">
+    <a href="../../../../docs/api_sdk/sdk/reference/models/analytics-report-create-request/" title="AnalyticsReportCreateRequest class reference" class="align-left pl-0 pr-2 td-sidebar-link td-sidebar-link__page" id="m-docsapi_sdksdkreferencemodelsanalytics-report-create-request"><span class="">AnalyticsReportCreateRequest</span></a>
+    
+  </li>
+
+          
+        
+          
+            
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  <li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child" id="m-docsapi_sdksdkreferencemodelsanalytics-report-target-enum-li">
+    <a href="../../../../docs/api_sdk/sdk/reference/models/analytics-report-target-enum/" title="AnalyticsReportTargetEnum class reference" class="align-left pl-0 pr-2 td-sidebar-link td-sidebar-link__page" id="m-docsapi_sdksdkreferencemodelsanalytics-report-target-enum"><span class="">AnalyticsReportTargetEnum</span></a>
+    
+  </li>
+
+          
+        
+          
+            
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  <li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child" id="m-docsapi_sdksdkreferencemodelsannotation-conflict-li">
+    <a href="../../../../docs/api_sdk/sdk/reference/models/annotation-conflict/" title="AnnotationConflict class reference" class="align-left pl-0 pr-2 td-sidebar-link td-sidebar-link__page" id="m-docsapi_sdksdkreferencemodelsannotation-conflict"><span class="">AnnotationConflict</span></a>
+    
+  </li>
+
+          
+        
+          
+            
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  <li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child" id="m-docsapi_sdksdkreferencemodelsannotation-conflict-type-enum-li">
+    <a href="../../../../docs/api_sdk/sdk/reference/models/annotation-conflict-type-enum/" title="AnnotationConflictTypeEnum class reference" class="align-left pl-0 pr-2 td-sidebar-link td-sidebar-link__page" id="m-docsapi_sdksdkreferencemodelsannotation-conflict-type-enum"><span class="">AnnotationConflictTypeEnum</span></a>
+    
+  </li>
+
+          
+        
+          
+            
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  <li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child" id="m-docsapi_sdksdkreferencemodelsannotation-file-request-li">
+    <a href="../../../../docs/api_sdk/sdk/reference/models/annotation-file-request/" title="AnnotationFileRequest class reference" class="align-left pl-0 pr-2 td-sidebar-link td-sidebar-link__page" id="m-docsapi_sdksdkreferencemodelsannotation-file-request"><span class="">AnnotationFileRequest</span></a>
+    
+  </li>
+
+          
+        
+          
+            
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  <li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child" id="m-docsapi_sdksdkreferencemodelsannotation-guide-read-li">
+    <a href="../../../../docs/api_sdk/sdk/reference/models/annotation-guide-read/" title="AnnotationGuideRead class reference" class="align-left pl-0 pr-2 td-sidebar-link td-sidebar-link__page" id="m-docsapi_sdksdkreferencemodelsannotation-guide-read"><span class="">AnnotationGuideRead</span></a>
+    
+  </li>
+
+          
+        
+          
+            
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  <li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child" id="m-docsapi_sdksdkreferencemodelsannotation-guide-write-request-li">
+    <a href="../../../../docs/api_sdk/sdk/reference/models/annotation-guide-write-request/" title="AnnotationGuideWriteRequest class reference" class="align-left pl-0 pr-2 td-sidebar-link td-sidebar-link__page" id="m-docsapi_sdksdkreferencemodelsannotation-guide-write-request"><span class="">AnnotationGuideWriteRequest</span></a>
+    
+  </li>
+
+          
+        
+          
+            
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  <li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child" id="m-docsapi_sdksdkreferencemodelsannotation-id-li">
+    <a href="../../../../docs/api_sdk/sdk/reference/models/annotation-id/" title="AnnotationId class reference" class="align-left pl-0 pr-2 td-sidebar-link td-sidebar-link__page" id="m-docsapi_sdksdkreferencemodelsannotation-id"><span class="">AnnotationId</span></a>
+    
+  </li>
+
+          
+        
+          
+            
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  <li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child" id="m-docsapi_sdksdkreferencemodelsannotation-id-shape-type-li">
+    <a href="../../../../docs/api_sdk/sdk/reference/models/annotation-id-shape-type/" title="AnnotationIdShapeType class reference" class="align-left pl-0 pr-2 td-sidebar-link td-sidebar-link__page" id="m-docsapi_sdksdkreferencemodelsannotation-id-shape-type"><span class="">AnnotationIdShapeType</span></a>
+    
+  </li>
+
+          
+        
+          
+            
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  <li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child" id="m-docsapi_sdksdkreferencemodelsannotation-id-type-enum-li">
+    <a href="../../../../docs/api_sdk/sdk/reference/models/annotation-id-type-enum/" title="AnnotationIdTypeEnum class reference" class="align-left pl-0 pr-2 td-sidebar-link td-sidebar-link__page" id="m-docsapi_sdksdkreferencemodelsannotation-id-type-enum"><span class="">AnnotationIdTypeEnum</span></a>
+    
+  </li>
+
+          
+        
+          
+            
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  <li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child" id="m-docsapi_sdksdkreferencemodelsannotations-read-li">
+    <a href="../../../../docs/api_sdk/sdk/reference/models/annotations-read/" title="AnnotationsRead class reference" class="align-left pl-0 pr-2 td-sidebar-link td-sidebar-link__page" id="m-docsapi_sdksdkreferencemodelsannotations-read"><span class="">AnnotationsRead</span></a>
+    
+  </li>
+
+          
+        
+          
+            
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  <li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child" id="m-docsapi_sdksdkreferencemodelsasset-read-li">
+    <a href="../../../../docs/api_sdk/sdk/reference/models/asset-read/" title="AssetRead class reference" class="align-left pl-0 pr-2 td-sidebar-link td-sidebar-link__page" id="m-docsapi_sdksdkreferencemodelsasset-read"><span class="">AssetRead</span></a>
+    
+  </li>
+
+          
+        
+          
+            
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  <li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child" id="m-docsapi_sdksdkreferencemodelsattribute-li">
+    <a href="../../../../docs/api_sdk/sdk/reference/models/attribute/" title="Attribute class reference" class="align-left pl-0 pr-2 td-sidebar-link td-sidebar-link__page" id="m-docsapi_sdksdkreferencemodelsattribute"><span class="">Attribute</span></a>
+    
+  </li>
+
+          
+        
+          
+            
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  <li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child" id="m-docsapi_sdksdkreferencemodelsattribute-request-li">
+    <a href="../../../../docs/api_sdk/sdk/reference/models/attribute-request/" title="AttributeRequest class reference" class="align-left pl-0 pr-2 td-sidebar-link td-sidebar-link__page" id="m-docsapi_sdksdkreferencemodelsattribute-request"><span class="">AttributeRequest</span></a>
+    
+  </li>
+
+          
+        
+          
+            
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  <li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child" id="m-docsapi_sdksdkreferencemodelsattribute-val-li">
+    <a href="../../../../docs/api_sdk/sdk/reference/models/attribute-val/" title="AttributeVal class reference" class="align-left pl-0 pr-2 td-sidebar-link td-sidebar-link__page" id="m-docsapi_sdksdkreferencemodelsattribute-val"><span class="">AttributeVal</span></a>
+    
+  </li>
+
+          
+        
+          
+            
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  <li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child" id="m-docsapi_sdksdkreferencemodelsattribute-val-request-li">
+    <a href="../../../../docs/api_sdk/sdk/reference/models/attribute-val-request/" title="AttributeValRequest class reference" class="align-left pl-0 pr-2 td-sidebar-link td-sidebar-link__page" id="m-docsapi_sdksdkreferencemodelsattribute-val-request"><span class="">AttributeValRequest</span></a>
+    
+  </li>
+
+          
+        
+          
+            
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  <li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child" id="m-docsapi_sdksdkreferencemodelsbackup-write-request-li">
+    <a href="../../../../docs/api_sdk/sdk/reference/models/backup-write-request/" title="BackupWriteRequest class reference" class="align-left pl-0 pr-2 td-sidebar-link td-sidebar-link__page" id="m-docsapi_sdksdkreferencemodelsbackup-write-request"><span class="">BackupWriteRequest</span></a>
+    
+  </li>
+
+          
+        
+          
+            
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  <li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child" id="m-docsapi_sdksdkreferencemodelsbasic-organization-li">
+    <a href="../../../../docs/api_sdk/sdk/reference/models/basic-organization/" title="BasicOrganization class reference" class="align-left pl-0 pr-2 td-sidebar-link td-sidebar-link__page" id="m-docsapi_sdksdkreferencemodelsbasic-organization"><span class="">BasicOrganization</span></a>
+    
+  </li>
+
+          
+        
+          
+            
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  <li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child" id="m-docsapi_sdksdkreferencemodelsbasic-user-li">
+    <a href="../../../../docs/api_sdk/sdk/reference/models/basic-user/" title="BasicUser class reference" class="align-left pl-0 pr-2 td-sidebar-link td-sidebar-link__page" id="m-docsapi_sdksdkreferencemodelsbasic-user"><span class="">BasicUser</span></a>
+    
+  </li>
+
+          
+        
+          
+            
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  <li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child" id="m-docsapi_sdksdkreferencemodelsbasic-user-request-li">
+    <a href="../../../../docs/api_sdk/sdk/reference/models/basic-user-request/" title="BasicUserRequest class reference" class="align-left pl-0 pr-2 td-sidebar-link td-sidebar-link__page" id="m-docsapi_sdksdkreferencemodelsbasic-user-request"><span class="">BasicUserRequest</span></a>
+    
+  </li>
+
+          
+        
+          
+            
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  <li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child" id="m-docsapi_sdksdkreferencemodelsbinary-operation-li">
+    <a href="../../../../docs/api_sdk/sdk/reference/models/binary-operation/" title="BinaryOperation class reference" class="align-left pl-0 pr-2 td-sidebar-link td-sidebar-link__page" id="m-docsapi_sdksdkreferencemodelsbinary-operation"><span class="">BinaryOperation</span></a>
+    
+  </li>
+
+          
+        
+          
+            
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  <li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child" id="m-docsapi_sdksdkreferencemodelschunk-type-li">
+    <a href="../../../../docs/api_sdk/sdk/reference/models/chunk-type/" title="ChunkType class reference" class="align-left pl-0 pr-2 td-sidebar-link td-sidebar-link__page" id="m-docsapi_sdksdkreferencemodelschunk-type"><span class="">ChunkType</span></a>
+    
+  </li>
+
+          
+        
+          
+            
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  <li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child" id="m-docsapi_sdksdkreferencemodelsclient-events-li">
+    <a href="../../../../docs/api_sdk/sdk/reference/models/client-events/" title="ClientEvents class reference" class="align-left pl-0 pr-2 td-sidebar-link td-sidebar-link__page" id="m-docsapi_sdksdkreferencemodelsclient-events"><span class="">ClientEvents</span></a>
+    
+  </li>
+
+          
+        
+          
+            
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  <li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child" id="m-docsapi_sdksdkreferencemodelsclient-events-request-li">
+    <a href="../../../../docs/api_sdk/sdk/reference/models/client-events-request/" title="ClientEventsRequest class reference" class="align-left pl-0 pr-2 td-sidebar-link td-sidebar-link__page" id="m-docsapi_sdksdkreferencemodelsclient-events-request"><span class="">ClientEventsRequest</span></a>
+    
+  </li>
+
+          
+        
+          
+            
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  <li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child" id="m-docsapi_sdksdkreferencemodelsclient-events-request-previous-event-li">
+    <a href="../../../../docs/api_sdk/sdk/reference/models/client-events-request-previous-event/" title="ClientEventsRequestPreviousEvent class reference" class="align-left pl-0 pr-2 td-sidebar-link td-sidebar-link__page" id="m-docsapi_sdksdkreferencemodelsclient-events-request-previous-event"><span class="">ClientEventsRequestPreviousEvent</span></a>
+    
+  </li>
+
+          
+        
+          
+            
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  <li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child" id="m-docsapi_sdksdkreferencemodelscloud-storage-content-li">
+    <a href="../../../../docs/api_sdk/sdk/reference/models/cloud-storage-content/" title="CloudStorageContent class reference" class="align-left pl-0 pr-2 td-sidebar-link td-sidebar-link__page" id="m-docsapi_sdksdkreferencemodelscloud-storage-content"><span class="">CloudStorageContent</span></a>
+    
+  </li>
+
+          
+        
+          
+            
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  <li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child" id="m-docsapi_sdksdkreferencemodelscloud-storage-read-li">
+    <a href="../../../../docs/api_sdk/sdk/reference/models/cloud-storage-read/" title="CloudStorageRead class reference" class="align-left pl-0 pr-2 td-sidebar-link td-sidebar-link__page" id="m-docsapi_sdksdkreferencemodelscloud-storage-read"><span class="">CloudStorageRead</span></a>
+    
+  </li>
+
+          
+        
+          
+            
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  <li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child" id="m-docsapi_sdksdkreferencemodelscloud-storage-read-owner-li">
+    <a href="../../../../docs/api_sdk/sdk/reference/models/cloud-storage-read-owner/" title="CloudStorageReadOwner class reference" class="align-left pl-0 pr-2 td-sidebar-link td-sidebar-link__page" id="m-docsapi_sdksdkreferencemodelscloud-storage-read-owner"><span class="">CloudStorageReadOwner</span></a>
+    
+  </li>
+
+          
+        
+          
+            
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  <li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child" id="m-docsapi_sdksdkreferencemodelscloud-storage-write-request-li">
+    <a href="../../../../docs/api_sdk/sdk/reference/models/cloud-storage-write-request/" title="CloudStorageWriteRequest class reference" class="align-left pl-0 pr-2 td-sidebar-link td-sidebar-link__page" id="m-docsapi_sdksdkreferencemodelscloud-storage-write-request"><span class="">CloudStorageWriteRequest</span></a>
+    
+  </li>
+
+          
+        
+          
+            
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  <li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child" id="m-docsapi_sdksdkreferencemodelscomment-read-li">
+    <a href="../../../../docs/api_sdk/sdk/reference/models/comment-read/" title="CommentRead class reference" class="align-left pl-0 pr-2 td-sidebar-link td-sidebar-link__page" id="m-docsapi_sdksdkreferencemodelscomment-read"><span class="">CommentRead</span></a>
+    
+  </li>
+
+          
+        
+          
+            
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  <li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child" id="m-docsapi_sdksdkreferencemodelscomments-summary-li">
+    <a href="../../../../docs/api_sdk/sdk/reference/models/comments-summary/" title="CommentsSummary class reference" class="align-left pl-0 pr-2 td-sidebar-link td-sidebar-link__page" id="m-docsapi_sdksdkreferencemodelscomments-summary"><span class="">CommentsSummary</span></a>
+    
+  </li>
+
+          
+        
+          
+            
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  <li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child" id="m-docsapi_sdksdkreferencemodelscomment-write-request-li">
+    <a href="../../../../docs/api_sdk/sdk/reference/models/comment-write-request/" title="CommentWriteRequest class reference" class="align-left pl-0 pr-2 td-sidebar-link td-sidebar-link__page" id="m-docsapi_sdksdkreferencemodelscomment-write-request"><span class="">CommentWriteRequest</span></a>
+    
+  </li>
+
+          
+        
+          
+            
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  <li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child" id="m-docsapi_sdksdkreferencemodelscredentials-type-enum-li">
+    <a href="../../../../docs/api_sdk/sdk/reference/models/credentials-type-enum/" title="CredentialsTypeEnum class reference" class="align-left pl-0 pr-2 td-sidebar-link td-sidebar-link__page" id="m-docsapi_sdksdkreferencemodelscredentials-type-enum"><span class="">CredentialsTypeEnum</span></a>
+    
+  </li>
+
+          
+        
+          
+            
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  <li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child" id="m-docsapi_sdksdkreferencemodelsdata-frame-li">
+    <a href="../../../../docs/api_sdk/sdk/reference/models/data-frame/" title="DataFrame class reference" class="align-left pl-0 pr-2 td-sidebar-link td-sidebar-link__page" id="m-docsapi_sdksdkreferencemodelsdata-frame"><span class="">DataFrame</span></a>
+    
+  </li>
+
+          
+        
+          
+            
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  <li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child" id="m-docsapi_sdksdkreferencemodelsdata-meta-read-li">
+    <a href="../../../../docs/api_sdk/sdk/reference/models/data-meta-read/" title="DataMetaRead class reference" class="align-left pl-0 pr-2 td-sidebar-link td-sidebar-link__page" id="m-docsapi_sdksdkreferencemodelsdata-meta-read"><span class="">DataMetaRead</span></a>
+    
+  </li>
+
+          
+        
+          
+            
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  <li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child" id="m-docsapi_sdksdkreferencemodelsdata-request-li">
+    <a href="../../../../docs/api_sdk/sdk/reference/models/data-request/" title="DataRequest class reference" class="align-left pl-0 pr-2 td-sidebar-link td-sidebar-link__page" id="m-docsapi_sdksdkreferencemodelsdata-request"><span class="">DataRequest</span></a>
+    
+  </li>
+
+          
+        
+          
+            
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  <li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child" id="m-docsapi_sdksdkreferencemodelsdata-response-li">
+    <a href="../../../../docs/api_sdk/sdk/reference/models/data-response/" title="DataResponse class reference" class="align-left pl-0 pr-2 td-sidebar-link td-sidebar-link__page" id="m-docsapi_sdksdkreferencemodelsdata-response"><span class="">DataResponse</span></a>
+    
+  </li>
+
+          
+        
+          
+            
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  <li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child" id="m-docsapi_sdksdkreferencemodelsdataset-file-request-li">
+    <a href="../../../../docs/api_sdk/sdk/reference/models/dataset-file-request/" title="DatasetFileRequest class reference" class="align-left pl-0 pr-2 td-sidebar-link td-sidebar-link__page" id="m-docsapi_sdksdkreferencemodelsdataset-file-request"><span class="">DatasetFileRequest</span></a>
+    
+  </li>
+
+          
+        
+          
+            
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  <li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child" id="m-docsapi_sdksdkreferencemodelsdataset-format-li">
+    <a href="../../../../docs/api_sdk/sdk/reference/models/dataset-format/" title="DatasetFormat class reference" class="align-left pl-0 pr-2 td-sidebar-link td-sidebar-link__page" id="m-docsapi_sdksdkreferencemodelsdataset-format"><span class="">DatasetFormat</span></a>
+    
+  </li>
+
+          
+        
+          
+            
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  <li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child" id="m-docsapi_sdksdkreferencemodelsdataset-formats-li">
+    <a href="../../../../docs/api_sdk/sdk/reference/models/dataset-formats/" title="DatasetFormats class reference" class="align-left pl-0 pr-2 td-sidebar-link td-sidebar-link__page" id="m-docsapi_sdksdkreferencemodelsdataset-formats"><span class="">DatasetFormats</span></a>
+    
+  </li>
+
+          
+        
+          
+            
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  <li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child" id="m-docsapi_sdksdkreferencemodelsdataset-write-request-li">
+    <a href="../../../../docs/api_sdk/sdk/reference/models/dataset-write-request/" title="DatasetWriteRequest class reference" class="align-left pl-0 pr-2 td-sidebar-link td-sidebar-link__page" id="m-docsapi_sdksdkreferencemodelsdataset-write-request"><span class="">DatasetWriteRequest</span></a>
+    
+  </li>
+
+          
+        
+          
+            
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  <li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child" id="m-docsapi_sdksdkreferencemodelsdefault-view-enum-li">
+    <a href="../../../../docs/api_sdk/sdk/reference/models/default-view-enum/" title="DefaultViewEnum class reference" class="align-left pl-0 pr-2 td-sidebar-link td-sidebar-link__page" id="m-docsapi_sdksdkreferencemodelsdefault-view-enum"><span class="">DefaultViewEnum</span></a>
+    
+  </li>
+
+          
+        
+          
+            
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  <li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child" id="m-docsapi_sdksdkreferencemodelsevent-li">
+    <a href="../../../../docs/api_sdk/sdk/reference/models/event/" title="Event class reference" class="align-left pl-0 pr-2 td-sidebar-link td-sidebar-link__page" id="m-docsapi_sdksdkreferencemodelsevent"><span class="">Event</span></a>
+    
+  </li>
+
+          
+        
+      </ul>
+    
+  </li>
+
+    </ul>
+  </nav>
+</div>
+
+
+
+
+          </div>
+          <div class="d-none d-xl-block col-xl-2 td-toc d-print-none">
+            
+  
+  
+  
+  
+  
+  <div class="td-page-meta ml-2 pb-1 pt-2 mb-0">
+  
+    
+    
+      
+    
+    
+    
+    
+    
+    
+    
+
+    <a href="https://github.com/cvat-ai/cvat/edit/develop/site/content/en/docs/manual/advanced/review.md" target="_blank"><i class="fa fa-edit fa-fw"></i> Edit this page</a>
+    <a href="https://github.com/cvat-ai/cvat/new/develop/site/content/en/docs/manual/advanced/review.md?filename=change-me.md&amp;value=---%0Atitle%3A&#43;%22Long&#43;Page&#43;Title%22%0AlinkTitle%3A&#43;%22Short&#43;Nav&#43;Title%22%0Aweight%3A&#43;100%0Adescription%3A&#43;%3E-%0A&#43;&#43;&#43;&#43;&#43;Page&#43;description&#43;for&#43;heading&#43;and&#43;indexes.%0A---%0A%0A%23%23&#43;Heading%0A%0AEdit&#43;this&#43;template&#43;to&#43;create&#43;your&#43;new&#43;page.%0A%0A%2A&#43;Give&#43;it&#43;a&#43;good&#43;name%2C&#43;ending&#43;in&#43;%60.md%60&#43;-&#43;e.g.&#43;%60getting-started.md%60%0A%2A&#43;Edit&#43;the&#43;%22front&#43;matter%22&#43;section&#43;at&#43;the&#43;top&#43;of&#43;the&#43;page&#43;%28weight&#43;controls&#43;how&#43;its&#43;ordered&#43;amongst&#43;other&#43;pages&#43;in&#43;the&#43;same&#43;directory%3B&#43;lowest&#43;number&#43;first%29.%0A%2A&#43;Add&#43;a&#43;good&#43;commit&#43;message&#43;at&#43;the&#43;bottom&#43;of&#43;the&#43;page&#43;%28%3C80&#43;characters%3B&#43;use&#43;the&#43;extended&#43;description&#43;field&#43;for&#43;more&#43;detail%29.%0A%2A&#43;Create&#43;a&#43;new&#43;branch&#43;so&#43;you&#43;can&#43;preview&#43;your&#43;new&#43;file&#43;and&#43;request&#43;a&#43;review&#43;via&#43;Pull&#43;Request.%0A" target="_blank"><i class="fa fa-edit fa-fw"></i> Create child page</a>
+    <a href="https://github.com/cvat-ai/cvat/issues/new?title=Review" target="_blank"><i class="fab fa-github fa-fw"></i> Create documentation issue</a>
+    
+      
+      <a href="https://github.com/cvat-ai/cvat/issues/new" target="_blank"><i class="fas fa-tasks fa-fw"></i> Create project issue</a>
+    
+
+  
+  
+    <a id="print" href="../../../../docs/manual/advanced/_print/"><i class="fa fa-print fa-fw"></i> Print entire section</a>
+  
+  </div>
+
+
+
+
+
+
+
+          </div>
+          <main class="col-12 col-md-9 col-xl-8 pl-md-5" role="main">
+            
+  
+
+            <nav aria-label="breadcrumb" class="d-none d-md-block d-print-none">
+	<ol class="breadcrumb spb-1">
+		
+
+
+
+
+
+
+
+
+
+
+
+
+
+<li class="breadcrumb-item" >
+	<a href="../../../../docs/">Documentation</a>
+</li>
+
+
+
+
+<li class="breadcrumb-item" >
+	<a href="../../../../docs/manual/">Manual</a>
+</li>
+
+
+
+
+<li class="breadcrumb-item" >
+	<a href="../../../../docs/manual/advanced/">Advanced</a>
+</li>
+
+
+
+
+<li class="breadcrumb-item active" aria-current="page">
+	<a href="../../../../docs/manual/advanced/review/">Review</a>
+</li>
+
+	</ol>
+</nav	>
+
+            
+<div class="td-content">
+	<h1>Review</h1>
+    <div class="lead">Guide to using the Review mode for task validation.</div>
+	
+	<p>A special mode to check the annotation allows you to point to an object or area in the frame containing an error.
+<code>Review mode</code> is not available in 3D tasks.
+To go into review mode, you need to select <code>Request a review</code> in the menu and assign the user to run a check.</p>
+<p><img src="../../../../images/image194.jpg" alt=""></p>
+<p>After that, the job status will be changed to <code>validation</code>
+and the reviewer will be able to open the task in review mode.
+Review mode is a UI mode, there is a special &ldquo;issue&rdquo; tool which you can use to identify objects
+or areas in the frame and describe the problem.</p>
+<ul>
+<li>
+<p>To do this, first click <code>open an issue</code> icon on the controls sidebar:</p>
+<p><img src="../../../../images/image195.jpg" alt=""></p>
+</li>
+<li>
+<p>Then click on an object in the frame to highlight the object or highlight the area by holding the left mouse button
+and describe the problem. The object or area will be shaded in red.</p>
+</li>
+<li>
+<p>The created issue will appear in the workspace and in the <code>issues</code> tab on the objects sidebar.</p>
+</li>
+<li>
+<p>After you save the annotation, other users will be able to see the problem, comment on each issue
+and change the status of the problem to <code>resolved</code>.</p>
+</li>
+<li>
+<p>You can use the arrows on the issues tab to navigate the frames that contain problems.</p>
+<p><img src="../../../../images/image196_detrac.jpg" alt=""></p>
+</li>
+<li>
+<p>Once all the problems are marked, save the annotation, open the menu and select &ldquo;submit the review&rdquo;.
+After that you&rsquo;ll see a form containing the verification statistics,
+here you can give an assessment of the job and choose further actions:</p>
+<ul>
+<li>Accept - changes the status of the job to <code>completed</code>.</li>
+<li>Review next – passes the job to another user for re-review.</li>
+<li>Reject - changes the status of the job to <code>annotation</code>.</li>
+</ul>
+<p><img src="../../../../images/image197.jpg" alt=""></p>
+</li>
+</ul>
+
+	
+	
+	<div class="text-muted mt-5 pt-3 border-top">
+
+</div>
+
+</div>
+
+
+          </main>
+        </div>
+      </div>
+      
+<footer class="bg-dark py-5 row d-print-none">
+  <div class="container-fluid mx-sm-5">
+    <div class="row">
+      <div class="col-6 col-sm-2 text-xs-center order-sm-2">
+        
+        
+        
+<ul class="list-inline mb-0">
+  
+  <li class="list-inline-item mx-2 h3" data-toggle="tooltip" data-placement="top" title="Gitter public chat" aria-label="Gitter public chat">
+    <a class="text-white" target="_blank" rel="noopener noreferrer" href="https://gitter.im/opencv-cvat/public">
+      <i class="fab fa-gitter"></i>
+    </a>
+  </li>
+  
+  <li class="list-inline-item mx-2 h3" data-toggle="tooltip" data-placement="top" title="Stack Overflow" aria-label="Stack Overflow">
+    <a class="text-white" target="_blank" rel="noopener noreferrer" href="https://stackoverflow.com/search?q=%23cvat">
+      <i class="fab fa-stack-overflow"></i>
+    </a>
+  </li>
+  
+  <li class="list-inline-item mx-2 h3" data-toggle="tooltip" data-placement="top" title="YouTube" aria-label="YouTube">
+    <a class="text-white" target="_blank" rel="noopener noreferrer" href="https://www.youtube.com/@cvat-ai">
+      <i class="fab fa-youtube"></i>
+    </a>
+  </li>
+  
+</ul>
+
+        
+        
+      </div>
+      <div class="col-6 col-sm-2 text-right text-xs-center order-sm-3">
+        
+        
+        
+<ul class="list-inline mb-0">
+  
+  <li class="list-inline-item mx-2 h3" data-toggle="tooltip" data-placement="top" title="GitHub" aria-label="GitHub">
+    <a class="text-white" target="_blank" rel="noopener noreferrer" href="https://github.com/cvat-ai/cvat">
+      <i class="fab fa-github"></i>
+    </a>
+  </li>
+  
+  <li class="list-inline-item mx-2 h3" data-toggle="tooltip" data-placement="top" title="Gitter developers chat" aria-label="Gitter developers chat">
+    <a class="text-white" target="_blank" rel="noopener noreferrer" href="https://gitter.im/opencv-cvat/dev">
+      <i class="fab fa-gitter"></i>
+    </a>
+  </li>
+  
+  <li class="list-inline-item mx-2 h3" data-toggle="tooltip" data-placement="top" title="Discord chat" aria-label="Discord chat">
+    <a class="text-white" target="_blank" rel="noopener noreferrer" href="https://discord.gg/fNR3eXfk6C">
+      <i class="fab fa-discord"></i>
+    </a>
+  </li>
+  
+</ul>
+
+        
+        
+      </div>
+      <div class="col-12 col-sm-8 text-center order-sm-2">
+        
+        |
+        
+        |
+        
+        <br/>
+        <div class="footer-disclaimer text-white ">
+          <small>Intel technologies may require enabled hardware, software or service activation. // No product or component can be absolutely secure. // Your costs and results may vary. // Performance varies by use, configuration and other factors. // See our complete legal <u><a href="https://edc.intel.com/content/www/us/en/products/performance/benchmarks/overview/?r=219444055">Notices and Disclaimers</a></u>. // Intel is committed to respecting human rights and avoiding complicity in human rights abuses. See Intel’s <a href="https://www.intel.com/content/www/us/en/policy/policy-human-rights.html"><u>Global Human Rights Principles</u></a>. Intel’s products and software are intended only to be used in applications that do not cause or contribute to a violation of an internationally recognized human right.</small>
+      </div>
+  
+    <p class="mt-2"><a href="../../../../about/">About</a></p>
+  
+      </div>
+    </div>
+  </div>
+</footer>
+
+
+    </div>
+    <script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.1/dist/umd/popper.min.js" integrity="sha384-9/reFTGAW83EW2RDu2S0VKaIzap3H66lZH81PoYlFhbGU+6BZp6G7niu735Sk7lN" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@4.6.0/dist/js/bootstrap.min.js" integrity="sha384-+YQ4JLhjyBLPDQt//I+STsc9iw4uQqACwlvpslubQzn4u2UU2UFM80nGisd026JF" crossorigin="anonymous"></script>
+
+
+
+
+
+
+ 
+
+
+
+
+
+
+
+
+
+
+
+
+
+<script src="../../../../js/main.min.3b172c13b62c2bea8b1c9d2599cddc8cf89718a92d792c680871c81ba43d8c85.js" integrity="sha256-OxcsE7YsK&#43;qLHJ0lmc3cjPiXGKkteSxoCHHIG6Q9jIU=" crossorigin="anonymous"></script>
+
+
+
+<script src='../../../../js/prism.js'></script>
+
+
+
+  </body>
+</html>

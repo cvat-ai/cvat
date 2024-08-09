@@ -1,0 +1,621 @@
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    <meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+<meta name="generator" content="Hugo 0.83.0" /><link rel="canonical" type="text/html" href="../../../../docs/api_sdk/cli/">
+<META NAME="ROBOTS" CONTENT="NOINDEX, NOFOLLOW">
+
+
+<link rel="shortcut icon" href="../../../../favicons/favicon.ico" >
+<link rel="apple-touch-icon" href="../../../../favicons/apple-touch-icon-180x180.png" sizes="180x180">
+<link rel="icon" type="image/png" href="../../../../favicons/favicon-16x16.png" sizes="16x16">
+<link rel="icon" type="image/png" href="../../../../favicons/favicon-32x32.png" sizes="32x32">
+<link rel="icon" type="image/png" href="../../../../favicons/android-36x36.png" sizes="36x36">
+<link rel="icon" type="image/png" href="../../../../favicons/android-48x48.png" sizes="48x48">
+<link rel="icon" type="image/png" href="../../../../favicons/android-72x72.png" sizes="72x72">
+<link rel="icon" type="image/png" href="../../../../favicons/android-96x96.png" sizes="96x96">
+<link rel="icon" type="image/png" href="../../../../favicons/android-144x144.png" sizes="144x144">
+<link rel="icon" type="image/png" href="../../../../favicons/android-192x192.png" sizes="192x192">
+
+<title>Command line interface (CLI) | CVAT</title>
+<meta name="description" content=""><meta property="og:title" content="Command line interface (CLI)" />
+<meta property="og:description" content="" />
+<meta property="og:type" content="website" />
+<meta property="og:url" content="/docs/api_sdk/cli/" /><meta property="og:site_name" content="CVAT" />
+
+<meta itemprop="name" content="Command line interface (CLI)">
+<meta itemprop="description" content=""><meta name="twitter:card" content="summary"/>
+<meta name="twitter:title" content="Command line interface (CLI)"/>
+<meta name="twitter:description" content=""/>
+
+
+
+
+<link rel="preload" href="../../../../scss/main.min.6c5c9450c6df778171581cbf2aa82ce445787ffee7a644313041b00ff75d710d.css" as="style">
+<link href="../../../../scss/main.min.6c5c9450c6df778171581cbf2aa82ce445787ffee7a644313041b00ff75d710d.css" rel="stylesheet" integrity="">
+
+
+<script
+  src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"
+  integrity="sha256-9/aliU8dGd2tb6OSsuzixeV4y/faTqgFtohetphbbj0="
+  crossorigin="anonymous"></script>
+
+<script
+  src="https://unpkg.com/lunr@2.3.8/lunr.min.js"
+  integrity="sha384-vRQ9bDyE0Wnu+lMfm57BlYLO0/XauFuKpVsZPs7KEDwYKktWi5+Kz3MP8++DFlRY"
+  crossorigin="anonymous"></script>
+
+
+
+<link rel="stylesheet" href="../../../../css/prism.css"/>
+
+
+
+
+
+
+  </head>
+  <body class="td-section">
+    <header>
+      
+
+
+<nav class="js-navbar-scroll navbar navbar-expand navbar-dark flex-column flex-md-row td-navbar">
+        <a class="navbar-brand" href="../../../../about/">
+    <span class="navbar-logo"><svg width="80" height="15" viewBox="0 0 80 15" xmlns="http://www.w3.org/2000/svg"><path d="M6.63399 15C2.37083 15 0 12.5333.0 7.48889.0 2.46667 2.34908.0 6.63399.0H10.6576V2.62222H6.63399c-2.84935.0-4.0674 1.44445-4.0674 4.86667.0 3.44441 1.2398 4.88891 4.0674 4.88891H15.0638V15H6.63399z"/><path d="M22.412.0l4.8346 13.1004C27.7814 14.5415 28.8724 15 30.2842 15 31.7817 15 32.7657 14.476 33.3005 13.1004L38.3918.0H35.5895L30.9902 11.8559C30.8404 12.2052 30.6265 12.3581 30.2842 12.3581 29.942 12.3581 29.7067 12.2052 29.5783 11.8559L25.1929.0H22.412z"/><path d="M53.0989 3.1441C53.2487 2.79476 53.484 2.64192 53.8262 2.64192 54.1685 2.64192 54.4038 2.79476 54.5322 3.1441L58.9176 15h2.8023L56.8425 1.89956C56.3291.524017 55.3451.0 53.8476.0 52.3288.0 51.3448.524017 50.81 1.89956L45.74 15h2.781L53.0989 3.1441z"/><path d="M69.0681.0V2.5665H73.2661V15H75.802V2.5665H80V0H69.0681z"/></svg></span>
+  </a>
+  <div class="td-navbar-nav-scroll ml-md-auto" id="main_navbar">
+    <ul class="navbar-nav mt-2 mt-lg-0">
+      
+      
+      <li class="nav-item mr-4 mb-2 mb-lg-0">
+        
+        
+        
+        
+        
+        
+        
+        
+        <a class="nav-link active" href="../../../../docs/" ><span class="active">Documentation</span></a>
+      </li>
+      
+      <li class="nav-item mr-4 mb-2 mb-lg-0">
+        
+        
+        
+        
+        
+        
+        
+        
+        <a class="nav-link" href="../../../../about/" ><span>About</span></a>
+      </li>
+      
+      <li class="nav-item mr-4 mb-2 mb-lg-0">
+        
+        
+        
+        
+        
+        
+        <a class="nav-link" href="https://app.cvat.ai"  ><span>Try it now</span></a>
+      </li>
+      
+      <li class="nav-item mr-4 mb-2 mb-lg-0">
+        
+        
+        
+        
+        
+        
+        <a class="nav-link" href="https://github.com/cvat-ai/cvat"  ><i class='fab fa-github'></i><span>GitHub</span></a>
+      </li>
+      
+      
+        
+        <li class="nav-item dropdown">
+          <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-target="#dropdown_ver" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+            v2.7.6
+          </a>
+        </li>
+        
+      
+      
+    </ul>
+  </div>
+  <div class="dropdown-menu" id="dropdown_ver" aria-labelledby="navbarDropdownMenuLink">
+    
+      
+        <a class="dropdown-item" href="../../../../../docs/api_sdk/cli/">Latest version</a>
+    
+      
+        <a class="dropdown-item" href="../../../../../v1.5.0/docs/api_sdk/cli/">v1.5.0</a>
+    
+      
+        <a class="dropdown-item" href="../../../../../v1.6.0/docs/api_sdk/cli/">v1.6.0</a>
+    
+      
+        <a class="dropdown-item" href="../../../../../v1.7.0/docs/api_sdk/cli/">v1.7.0</a>
+    
+      
+        <a class="dropdown-item" href="../../../../../v2.0.0/docs/api_sdk/cli/">v2.0.0</a>
+    
+      
+        <a class="dropdown-item" href="../../../../../v2.1.0/docs/api_sdk/cli/">v2.1.0</a>
+    
+      
+        <a class="dropdown-item" href="../../../../../v2.10.3/docs/api_sdk/cli/">v2.10.3</a>
+    
+      
+        <a class="dropdown-item" href="../../../../../v2.11.3/docs/api_sdk/cli/">v2.11.3</a>
+    
+      
+        <a class="dropdown-item" href="../../../../../v2.12.1/docs/api_sdk/cli/">v2.12.1</a>
+    
+      
+        <a class="dropdown-item" href="../../../../../v2.13.0/docs/api_sdk/cli/">v2.13.0</a>
+    
+      
+        <a class="dropdown-item" href="../../../../../v2.14.4/docs/api_sdk/cli/">v2.14.4</a>
+    
+      
+        <a class="dropdown-item" href="../../../../../v2.15.0/docs/api_sdk/cli/">v2.15.0</a>
+    
+      
+        <a class="dropdown-item" href="../../../../../v2.16.2/docs/api_sdk/cli/">v2.16.2</a>
+    
+      
+        <a class="dropdown-item" href="../../../../../v2.2.0/docs/api_sdk/cli/">v2.2.0</a>
+    
+      
+        <a class="dropdown-item" href="../../../../../v2.3.0/docs/api_sdk/cli/">v2.3.0</a>
+    
+      
+        <a class="dropdown-item" href="../../../../../v2.4.9/docs/api_sdk/cli/">v2.4.9</a>
+    
+      
+        <a class="dropdown-item" href="../../../../../v2.5.2/docs/api_sdk/cli/">v2.5.2</a>
+    
+      
+        <a class="dropdown-item" href="../../../../../v2.6.2/docs/api_sdk/cli/">v2.6.2</a>
+    
+      
+        <a class="dropdown-item" href="../../../../../v2.7.6/docs/api_sdk/cli/">v2.7.6</a>
+    
+      
+        <a class="dropdown-item" href="../../../../../v2.8.2/docs/api_sdk/cli/">v2.8.2</a>
+    
+      
+        <a class="dropdown-item" href="../../../../../v2.9.2/docs/api_sdk/cli/">v2.9.2</a>
+    
+  </div>
+  <div class="navbar-nav d-none d-lg-block">
+
+
+
+<input
+  type="search"
+  class="form-control td-search-input"
+  placeholder="&#xf002; Search this site…"
+  aria-label="Search this site…"
+  autocomplete="off"
+  
+  data-offline-search-index-json-src="../../../../offline-search-index.ee1a7ff2c76966b2c9d263ff4ae97b3b.json"
+  data-offline-search-base-href="../../../../"
+  data-offline-search-max-results="10"
+>
+
+</div>
+</nav>
+
+    </header>
+    <div class="container-fluid td-outer">
+      <div class="td-main">
+        <div class="row flex-xl-nowrap">
+          <div class="col-12 col-md-3 col-xl-2 td-sidebar d-print-none">
+          </div>
+          <div class="d-none d-xl-block col-xl-2 td-toc d-print-none">
+          </div>
+          <main class="col-12 col-md-9 col-xl-8 pl-md-5" role="main">
+            
+
+
+
+
+<div class="td-content">
+<div class="pageinfo pageinfo-primary d-print-none">
+<p>
+This the multi-page printable view of this section.
+<a href="#" onclick="print();return false;">Click here to print</a>.
+</p><p>
+<a href="../../../../docs/api_sdk/cli/">Return to the regular view of this page</a>.
+</p>
+</div>
+
+
+
+<h1 class="title">Command line interface (CLI)</h1>
+
+
+
+
+
+    <ul>
+    
+  
+  
+  
+  
+
+  
+
+    </ul>
+
+
+<div class="content">
+      <h2 id="overview">Overview</h2>
+<p>A simple command line interface for working with CVAT tasks. At the moment it
+implements a basic feature set but may serve as the starting point for a more
+comprehensive CVAT administration tool in the future.</p>
+<p>Overview of functionality:</p>
+<ul>
+<li>Create a new task (supports name, bug tracker, project, labels JSON, local/share/remote files)</li>
+<li>Delete tasks (supports deleting a list of task IDs)</li>
+<li>List all tasks (supports basic CSV or JSON output)</li>
+<li>Download JPEG frames (supports a list of frame IDs)</li>
+<li>Dump annotations (supports all formats via format string)</li>
+<li>Upload annotations for a task in the specified format (e.g. &lsquo;YOLO ZIP 1.0&rsquo;)</li>
+<li>Export and download a whole task</li>
+<li>Import a task</li>
+</ul>
+<h2 id="installation">Installation</h2>
+<p>To install an <a href="https://pypi.org/project/cvat-cli/">official release of CVAT CLI</a>, use this command:</p>
+<div class="highlight"><pre style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">pip install cvat-cli
+</code></pre></div><p>We support Python versions 3.8 and higher.</p>
+<h2 id="usage">Usage</h2>
+<p>You can get help with <code>cvat-cli --help</code>.</p>
+<pre><code>usage: cvat-cli [-h] [--version] [--insecure] [--auth USER:[PASS]] [--server-host SERVER_HOST]
+                [--server-port SERVER_PORT] [--organization SLUG] [--debug]
+                {create,delete,ls,frames,dump,upload,export,import,auto-annotate} ...
+
+Perform common operations related to CVAT tasks.
+
+positional arguments:
+  {create,delete,ls,frames,dump,upload,export,import,auto-annotate}
+
+options:
+  -h, --help            show this help message and exit
+  --version             show program's version number and exit
+  --insecure            Allows to disable SSL certificate check
+  --auth USER:[PASS]    defaults to the current user and supports the PASS environment variable or password
+                        prompt (default user: ...).
+  --server-host SERVER_HOST
+                        host (default: localhost)
+  --server-port SERVER_PORT
+                        port (default: 80 for http and 443 for https connections)
+  --organization SLUG, --org SLUG
+                        short name (slug) of the organization to use when listing or creating resources; set
+                        to blank string to use the personal workspace (default: list all accessible objects,
+                        create in personal workspace)
+  --debug               show debug output
+</code></pre><p>You can get help for each positional argument, e.g. <code>ls</code>:</p>
+<div class="highlight"><pre style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">cvat-cli ls -h
+</code></pre></div><pre><code>usage: cvat-cli ls [-h] [--json]
+
+List all CVAT tasks in simple or JSON format.
+
+optional arguments:
+  -h, --help  show this help message and exit
+  --json      output JSON data
+</code></pre><h2 id="examples">Examples</h2>
+<h3 id="create">Create</h3>
+<p>Description of the options you can find in
+<a href="../../../../docs/manual/basics/creating_an_annotation_task/">Creating an annotation task</a> section.</p>
+<p>For create a task you need file contain labels in the <code>json</code> format, you can create a JSON label specification
+by using the <a href="../../../../docs/manual/basics/creating_an_annotation_task/#labels">label constructor</a>.</p>
+<details>
+<summary>Example JSON labels file</summary>
+<div class="highlight"><pre style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-json" data-lang="json"><span style="color:#000;font-weight:bold">[</span>
+    <span style="color:#000;font-weight:bold">{</span>
+        <span style="color:#204a87;font-weight:bold">&#34;name&#34;</span><span style="color:#000;font-weight:bold">:</span> <span style="color:#4e9a06">&#34;cat&#34;</span><span style="color:#000;font-weight:bold">,</span>
+        <span style="color:#204a87;font-weight:bold">&#34;attributes&#34;</span><span style="color:#000;font-weight:bold">:</span> <span style="color:#000;font-weight:bold">[]</span>
+    <span style="color:#000;font-weight:bold">},</span>
+    <span style="color:#000;font-weight:bold">{</span>
+        <span style="color:#204a87;font-weight:bold">&#34;name&#34;</span><span style="color:#000;font-weight:bold">:</span> <span style="color:#4e9a06">&#34;dog&#34;</span><span style="color:#000;font-weight:bold">,</span>
+        <span style="color:#204a87;font-weight:bold">&#34;attributes&#34;</span><span style="color:#000;font-weight:bold">:</span> <span style="color:#000;font-weight:bold">[]</span>
+    <span style="color:#000;font-weight:bold">}</span>
+<span style="color:#000;font-weight:bold">]</span>
+</code></pre></div></details>
+<br>
+<ul>
+<li>Create a task named &ldquo;new task&rdquo; on the default server &ldquo;localhost:8080&rdquo;, labels from the file &ldquo;labels.json&rdquo;
+and local images &ldquo;file1.jpg&rdquo; and &ldquo;file2.jpg&rdquo;, the task will be created as current user:
+<div class="highlight"><pre style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">cvat-cli create <span style="color:#4e9a06">&#34;new task&#34;</span> --labels labels.json <span style="color:#204a87">local</span> file1.jpg file2.jpg
+</code></pre></div></li>
+<li>Create a task named &ldquo;task 1&rdquo; on the server &ldquo;example.com&rdquo; labels from the file &ldquo;labels.json&rdquo;
+and local image &ldquo;image1.jpg&rdquo;, the task will be created as user &ldquo;user-1&rdquo;:
+<div class="highlight"><pre style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">cvat-cli --server-host example.com --auth user-1 create <span style="color:#4e9a06">&#34;task 1&#34;</span> <span style="color:#4e9a06">\
+</span><span style="color:#4e9a06"></span>--labels labels.json <span style="color:#204a87">local</span> image1.jpg
+</code></pre></div></li>
+<li>Create a task named &ldquo;task 1&rdquo; on the default server, with labels from &ldquo;labels.json&rdquo;
+and local image &ldquo;file1.jpg&rdquo;, as the current user, in organization &ldquo;myorg&rdquo;:
+<div class="highlight"><pre style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">cvat-cli --org myorg create <span style="color:#4e9a06">&#34;task 1&#34;</span> --labels labels.json <span style="color:#204a87">local</span> file1.jpg
+</code></pre></div></li>
+<li>Create a task named &ldquo;task 1&rdquo;, labels from the project with id 1 and with a remote video file,
+the task will be created as user &ldquo;user-1&rdquo;:
+<div class="highlight"><pre style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">cvat-cli --auth user-1:password create <span style="color:#4e9a06">&#34;task 1&#34;</span> --project_id <span style="color:#0000cf;font-weight:bold">1</span> <span style="color:#4e9a06">\
+</span><span style="color:#4e9a06"></span>remote https://github.com/opencv/opencv/blob/master/samples/data/vtest.avi?raw<span style="color:#ce5c00;font-weight:bold">=</span><span style="color:#204a87">true</span>
+</code></pre></div></li>
+<li>Create a task named &ldquo;task 1 sort random&rdquo;, with labels &ldquo;cat&rdquo; and &ldquo;dog&rdquo;, with chunk size 8,
+with sorting-method random, frame step 10, copy the data on the CVAT server,
+with use zip chunks and the video file will be taken from the shared resource:
+<div class="highlight"><pre style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">cvat-cli create <span style="color:#4e9a06">&#34;task 1 sort random&#34;</span> --labels <span style="color:#4e9a06">&#39;[{&#34;name&#34;: &#34;cat&#34;},{&#34;name&#34;: &#34;dog&#34;}]&#39;</span> --chunk_size <span style="color:#0000cf;font-weight:bold">8</span> <span style="color:#4e9a06">\
+</span><span style="color:#4e9a06"></span>--sorting-method random --frame_step <span style="color:#0000cf;font-weight:bold">10</span> --copy_data --use_zip_chunks share //share/dataset_1/video.avi
+</code></pre></div></li>
+<li>Create a task named &ldquo;task from dataset_1&rdquo;, labels from the file &ldquo;labels.json&rdquo;, with link to bug tracker,
+image quality will be reduced to 75, annotation in the format &ldquo;CVAT 1.1&rdquo; will be taken
+from the file &ldquo;annotation.xml&rdquo;, the data will be loaded from &ldquo;dataset_1/images/&rdquo;,
+the task will be created as user &ldquo;user-2&rdquo;, and the password will need to be entered additionally:
+<div class="highlight"><pre style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">cvat-cli --auth user-2 create <span style="color:#4e9a06">&#34;task from dataset_1&#34;</span> --labels labels.json <span style="color:#4e9a06">\
+</span><span style="color:#4e9a06"></span>--bug_tracker https://bug-tracker.com/0001 --image_quality <span style="color:#0000cf;font-weight:bold">75</span> --annotation_path annotation.xml <span style="color:#4e9a06">\
+</span><span style="color:#4e9a06"></span>--annotation_format <span style="color:#4e9a06">&#34;CVAT 1.1&#34;</span> <span style="color:#204a87">local</span> dataset_1/images/
+</code></pre></div></li>
+<li>Create a task named &ldquo;segmented task 1&rdquo;, labels from the file &ldquo;labels.json&rdquo;, with overlay size 5,
+segment size 100, with frames 5 through 705, using cache and with a remote video file:
+<div class="highlight"><pre style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">cvat-cli create <span style="color:#4e9a06">&#34;segmented task 1&#34;</span> --labels labels.json --overlap <span style="color:#0000cf;font-weight:bold">5</span> --segment_size <span style="color:#0000cf;font-weight:bold">100</span> <span style="color:#4e9a06">\
+</span><span style="color:#4e9a06"></span>--start_frame <span style="color:#0000cf;font-weight:bold">5</span> --stop_frame <span style="color:#0000cf;font-weight:bold">705</span> --use_cache <span style="color:#4e9a06">\
+</span><span style="color:#4e9a06"></span>remote https://github.com/opencv/opencv/blob/master/samples/data/vtest.avi?raw<span style="color:#ce5c00;font-weight:bold">=</span><span style="color:#204a87">true</span>
+</code></pre></div></li>
+<li>Create a task named &ldquo;task with filtered cloud storage data&rdquo;, with filename_pattern <code>test_images/*.jpeg</code>
+and using the data from the cloud storage resource described in the manifest.jsonl:
+<div class="highlight"><pre style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">cvat-cli create <span style="color:#4e9a06">&#34;task with filtered cloud storage data&#34;</span> --labels <span style="color:#4e9a06">&#39;[{&#34;name&#34;: &#34;car&#34;}]&#39;</span><span style="color:#4e9a06">\
+</span><span style="color:#4e9a06"></span>--use_cache --cloud_storage_id <span style="color:#0000cf;font-weight:bold">1</span> --filename_pattern <span style="color:#4e9a06">&#34;test_images/*.jpeg&#34;</span> share manifest.jsonl
+</code></pre></div></li>
+<li>Create a task named &ldquo;task with filtered cloud storage data&rdquo; using all data from the cloud storage resource
+described in the manifest.jsonl by specifying filename_pattern <code>*</code>:
+<div class="highlight"><pre style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">cvat-cli create <span style="color:#4e9a06">&#34;task with filtered cloud storage data&#34;</span> --labels <span style="color:#4e9a06">&#39;[{&#34;name&#34;: &#34;car&#34;}]&#39;</span><span style="color:#4e9a06">\
+</span><span style="color:#4e9a06"></span>--use_cache --cloud_storage_id <span style="color:#0000cf;font-weight:bold">1</span> --filename_pattern <span style="color:#4e9a06">&#34;*&#34;</span> share manifest.jsonl
+</code></pre></div></li>
+</ul>
+<h3 id="delete">Delete</h3>
+<ul>
+<li>Delete tasks with id &ldquo;100&rdquo;, &ldquo;101&rdquo;, &ldquo;102&rdquo; , the command will be executed from &ldquo;user-1&rdquo; having delete permissions:
+<div class="highlight"><pre style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">cvat-cli --auth user-1:password delete <span style="color:#0000cf;font-weight:bold">100</span> <span style="color:#0000cf;font-weight:bold">101</span> <span style="color:#0000cf;font-weight:bold">102</span>
+</code></pre></div></li>
+</ul>
+<h3 id="list">List</h3>
+<ul>
+<li>List all tasks:
+<div class="highlight"><pre style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">cvat-cli ls
+</code></pre></div></li>
+<li>List all tasks in organization &ldquo;myorg&rdquo;:
+<div class="highlight"><pre style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">cvat-cli --org myorg ls
+</code></pre></div></li>
+<li>Save list of all tasks into file &ldquo;list_of_tasks.json&rdquo;:
+<div class="highlight"><pre style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">cvat-cli ls --json &gt; list_of_tasks.json
+</code></pre></div></li>
+</ul>
+<h3 id="frames">Frames</h3>
+<ul>
+<li>Save frame 12, 15, 22 from task with id 119, into &ldquo;images&rdquo; folder with compressed quality:
+<div class="highlight"><pre style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">cvat-cli frames --outdir images --quality compressed <span style="color:#0000cf;font-weight:bold">119</span> <span style="color:#0000cf;font-weight:bold">12</span> <span style="color:#0000cf;font-weight:bold">15</span> <span style="color:#0000cf;font-weight:bold">22</span>
+</code></pre></div></li>
+</ul>
+<h3 id="dump-annotation">Dump annotation</h3>
+<ul>
+<li>Dump annotation task with id 103, in the format <code>CVAT for images 1.1</code> and save to the file &ldquo;output.zip&rdquo;:
+<div class="highlight"><pre style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">cvat-cli dump --format <span style="color:#4e9a06">&#34;CVAT for images 1.1&#34;</span> <span style="color:#0000cf;font-weight:bold">103</span> output.zip
+</code></pre></div></li>
+<li>Dump annotation task with id 104, in the format <code>COCO 1.0</code> and save to the file &ldquo;output.zip&rdquo;:
+<div class="highlight"><pre style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">cvat-cli dump --format <span style="color:#4e9a06">&#34;COCO 1.0&#34;</span> <span style="color:#0000cf;font-weight:bold">104</span> output.zip
+</code></pre></div></li>
+</ul>
+<h3 id="upload-annotation">Upload annotation</h3>
+<ul>
+<li>Upload annotation into task with id 105, in the format <code>CVAT 1.1</code> from the file &ldquo;annotation.xml&rdquo;:
+<div class="highlight"><pre style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">cvat-cli upload --format <span style="color:#4e9a06">&#34;CVAT 1.1&#34;</span> <span style="color:#0000cf;font-weight:bold">105</span> annotation.xml
+</code></pre></div></li>
+</ul>
+<h3 id="export-task">Export task</h3>
+<ul>
+<li>Export task with id 136 to file &ldquo;task_136.zip&rdquo;:
+<div class="highlight"><pre style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">cvat-cli <span style="color:#204a87">export</span> <span style="color:#0000cf;font-weight:bold">136</span> task_136.zip
+</code></pre></div></li>
+</ul>
+<h3 id="import">Import</h3>
+<ul>
+<li>Import task from file &ldquo;task_backup.zip&rdquo;:
+<div class="highlight"><pre style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">cvat-cli import task_backup.zip
+</code></pre></div></li>
+</ul>
+<h3 id="auto-annotate">Auto-annotate</h3>
+<p>This command provides a command-line interface
+to the <a href="../../../../docs/api_sdk/sdk/auto-annotation">auto-annotation API</a>.</p>
+<p>It can auto-annotate using AA functions implemented in one of the following ways:</p>
+<ol>
+<li>
+<p>As a Python module directly implementing the AA function protocol.
+Such a module must define the required attributes at the module level.</p>
+<p>For example:</p>
+<div class="highlight"><pre style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-python" data-lang="python"><span style="color:#204a87;font-weight:bold">import</span> <span style="color:#000">cvat_sdk.auto_annotation</span> <span style="color:#204a87;font-weight:bold">as</span> <span style="color:#000">cvataa</span>
+
+<span style="color:#000">spec</span> <span style="color:#ce5c00;font-weight:bold">=</span> <span style="color:#000">cvataa</span><span style="color:#ce5c00;font-weight:bold">.</span><span style="color:#000">DetectionFunctionSpec</span><span style="color:#000;font-weight:bold">(</span><span style="color:#ce5c00;font-weight:bold">...</span><span style="color:#000;font-weight:bold">)</span>
+
+<span style="color:#204a87;font-weight:bold">def</span> <span style="color:#000">detect</span><span style="color:#000;font-weight:bold">(</span><span style="color:#000">context</span><span style="color:#000;font-weight:bold">,</span> <span style="color:#000">image</span><span style="color:#000;font-weight:bold">):</span>
+    <span style="color:#ce5c00;font-weight:bold">...</span>
+</code></pre></div></li>
+<li>
+<p>As a Python module implementing a factory function named <code>create</code>.
+This function must return an object implementing the AA function protocol.
+Any parameters specified on the command line using the <code>-p</code> option
+will be passed to <code>create</code>.</p>
+<p>For example:</p>
+<div class="highlight"><pre style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-python" data-lang="python"><span style="color:#204a87;font-weight:bold">import</span> <span style="color:#000">cvat_sdk.auto_annotation</span> <span style="color:#204a87;font-weight:bold">as</span> <span style="color:#000">cvataa</span>
+
+<span style="color:#204a87;font-weight:bold">class</span> <span style="color:#000">_MyFunction</span><span style="color:#000;font-weight:bold">:</span>
+    <span style="color:#204a87;font-weight:bold">def</span> <span style="color:#000">__init__</span><span style="color:#000;font-weight:bold">(</span><span style="color:#ce5c00;font-weight:bold">...</span><span style="color:#000;font-weight:bold">):</span>
+        <span style="color:#ce5c00;font-weight:bold">...</span>
+
+    <span style="color:#000">spec</span> <span style="color:#ce5c00;font-weight:bold">=</span> <span style="color:#000">cvataa</span><span style="color:#ce5c00;font-weight:bold">.</span><span style="color:#000">DetectionFunctionSpec</span><span style="color:#000;font-weight:bold">(</span><span style="color:#ce5c00;font-weight:bold">...</span><span style="color:#000;font-weight:bold">)</span>
+
+    <span style="color:#204a87;font-weight:bold">def</span> <span style="color:#000">detect</span><span style="color:#000;font-weight:bold">(</span><span style="color:#000">context</span><span style="color:#000;font-weight:bold">,</span> <span style="color:#000">image</span><span style="color:#000;font-weight:bold">):</span>
+        <span style="color:#ce5c00;font-weight:bold">...</span>
+
+<span style="color:#204a87;font-weight:bold">def</span> <span style="color:#000">create</span><span style="color:#000;font-weight:bold">(</span><span style="color:#ce5c00;font-weight:bold">...</span><span style="color:#000;font-weight:bold">)</span> <span style="color:#ce5c00;font-weight:bold">-&gt;</span> <span style="color:#000">cvataa</span><span style="color:#ce5c00;font-weight:bold">.</span><span style="color:#000">DetectionFunction</span><span style="color:#000;font-weight:bold">:</span>
+    <span style="color:#204a87;font-weight:bold">return</span> <span style="color:#000">_MyFunction</span><span style="color:#000;font-weight:bold">(</span><span style="color:#ce5c00;font-weight:bold">...</span><span style="color:#000;font-weight:bold">)</span>
+</code></pre></div></li>
+</ol>
+<ul>
+<li>
+<p>Annotate the task with id 137 with the predefined torchvision detection function,
+which is parameterized:</p>
+<div class="highlight"><pre style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">cvat-cli auto-annotate <span style="color:#0000cf;font-weight:bold">137</span> --function-module cvat_sdk.auto_annotation.functions.torchvision_detection <span style="color:#4e9a06">\
+</span><span style="color:#4e9a06"></span>    -p <span style="color:#000">model_name</span><span style="color:#ce5c00;font-weight:bold">=</span>str:fasterrcnn_resnet50_fpn_v2 -p <span style="color:#000">box_score_thresh</span><span style="color:#ce5c00;font-weight:bold">=</span>float:0.5
+</code></pre></div></li>
+<li>
+<p>Annotate the task with id 138 with an AA function defined in <code>my_func.py</code>:</p>
+<div class="highlight"><pre style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">cvat-cli auto-annotate <span style="color:#0000cf;font-weight:bold">138</span> --function-file path/to/my_func.py
+</code></pre></div></li>
+</ul>
+<p>Note that this command does not modify the Python module search path.
+If your function module needs to import other local modules,
+you must add your module directory to the search path
+if it isn&rsquo;t there already.</p>
+<ul>
+<li>Annotate the task with id 139 with a function defined in the <code>my_func</code> module
+located in the <code>my-project</code> directory,
+letting it import other modules from that directory.
+<div class="highlight"><pre style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash"><span style="color:#000">PYTHONPATH</span><span style="color:#ce5c00;font-weight:bold">=</span>path/to/my-project cvat-cli auto-annotate <span style="color:#0000cf;font-weight:bold">139</span> --function-module my_func
+</code></pre></div></li>
+</ul>
+
+</div>
+</div>
+
+
+  
+  
+  
+  
+
+  
+  
+
+  
+
+
+
+          </main>
+        </div>
+      </div>
+      
+<footer class="bg-dark py-5 row d-print-none">
+  <div class="container-fluid mx-sm-5">
+    <div class="row">
+      <div class="col-6 col-sm-2 text-xs-center order-sm-2">
+        
+        
+        
+<ul class="list-inline mb-0">
+  
+  <li class="list-inline-item mx-2 h3" data-toggle="tooltip" data-placement="top" title="Gitter public chat" aria-label="Gitter public chat">
+    <a class="text-white" rel="noopener noreferrer" href="https://gitter.im/opencv-cvat/public">
+      <i class="fab fa-gitter"></i>
+    </a>
+  </li>
+  
+  <li class="list-inline-item mx-2 h3" data-toggle="tooltip" data-placement="top" title="Stack Overflow" aria-label="Stack Overflow">
+    <a class="text-white" rel="noopener noreferrer" href="https://stackoverflow.com/search?q=%23cvat">
+      <i class="fab fa-stack-overflow"></i>
+    </a>
+  </li>
+  
+  <li class="list-inline-item mx-2 h3" data-toggle="tooltip" data-placement="top" title="YouTube" aria-label="YouTube">
+    <a class="text-white" rel="noopener noreferrer" href="https://www.youtube.com/@cvat-ai">
+      <i class="fab fa-youtube"></i>
+    </a>
+  </li>
+  
+</ul>
+
+        
+        
+      </div>
+      <div class="col-6 col-sm-2 text-right text-xs-center order-sm-3">
+        
+        
+        
+<ul class="list-inline mb-0">
+  
+  <li class="list-inline-item mx-2 h3" data-toggle="tooltip" data-placement="top" title="GitHub" aria-label="GitHub">
+    <a class="text-white" rel="noopener noreferrer" href="https://github.com/cvat-ai/cvat">
+      <i class="fab fa-github"></i>
+    </a>
+  </li>
+  
+  <li class="list-inline-item mx-2 h3" data-toggle="tooltip" data-placement="top" title="Gitter developers chat" aria-label="Gitter developers chat">
+    <a class="text-white" rel="noopener noreferrer" href="https://gitter.im/opencv-cvat/dev">
+      <i class="fab fa-gitter"></i>
+    </a>
+  </li>
+  
+  <li class="list-inline-item mx-2 h3" data-toggle="tooltip" data-placement="top" title="Discord chat" aria-label="Discord chat">
+    <a class="text-white" rel="noopener noreferrer" href="https://discord.gg/fNR3eXfk6C">
+      <i class="fab fa-discord"></i>
+    </a>
+  </li>
+  
+</ul>
+
+        
+        
+      </div>
+      <div class="col-12 col-sm-8 text-center order-sm-2">
+        <small class="mr-1"><a href="https://www.cvat.ai/privacy">Privacy Policy</a></small>
+        |
+        <small class="mx-1"><a href="https://www.cvat.ai/terms-of-use">Terms of Use</a></small>
+      </div>
+  
+    <p class="mt-2"><a href="../../../../about/">About</a></p>
+  
+      </div>
+    </div>
+  </div>
+</footer>
+
+
+    </div>
+    <script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.1/dist/umd/popper.min.js" integrity="sha384-9/reFTGAW83EW2RDu2S0VKaIzap3H66lZH81PoYlFhbGU+6BZp6G7niu735Sk7lN" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@4.6.0/dist/js/bootstrap.min.js" integrity="sha384-+YQ4JLhjyBLPDQt//I+STsc9iw4uQqACwlvpslubQzn4u2UU2UFM80nGisd026JF" crossorigin="anonymous"></script>
+
+
+
+
+
+
+ 
+
+
+
+
+
+
+
+
+
+
+
+
+
+<script src="../../../../js/main.min.3b172c13b62c2bea8b1c9d2599cddc8cf89718a92d792c680871c81ba43d8c85.js" integrity="sha256-OxcsE7YsK&#43;qLHJ0lmc3cjPiXGKkteSxoCHHIG6Q9jIU=" crossorigin="anonymous"></script>
+
+
+
+<script src='../../../../js/prism.js'></script>
+
+
+
+  </body>
+</html>

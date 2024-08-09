@@ -1,0 +1,718 @@
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    <meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+<meta name="generator" content="Hugo 0.83.0" /><link rel="canonical" type="text/html" href="../../../docs/enterprise/">
+<META NAME="ROBOTS" CONTENT="NOINDEX, NOFOLLOW">
+
+
+<link rel="shortcut icon" href="../../../favicons/favicon.ico" >
+<link rel="apple-touch-icon" href="../../../favicons/apple-touch-icon-180x180.png" sizes="180x180">
+<link rel="icon" type="image/png" href="../../../favicons/favicon-16x16.png" sizes="16x16">
+<link rel="icon" type="image/png" href="../../../favicons/favicon-32x32.png" sizes="32x32">
+<link rel="icon" type="image/png" href="../../../favicons/android-36x36.png" sizes="36x36">
+<link rel="icon" type="image/png" href="../../../favicons/android-48x48.png" sizes="48x48">
+<link rel="icon" type="image/png" href="../../../favicons/android-72x72.png" sizes="72x72">
+<link rel="icon" type="image/png" href="../../../favicons/android-96x96.png" sizes="96x96">
+<link rel="icon" type="image/png" href="../../../favicons/android-144x144.png" sizes="144x144">
+<link rel="icon" type="image/png" href="../../../favicons/android-192x192.png" sizes="192x192">
+
+<title>Paid features | CVAT</title>
+<meta name="description" content=""><meta property="og:title" content="Paid features" />
+<meta property="og:description" content="Setting up paid features in CVAT." />
+<meta property="og:type" content="website" />
+<meta property="og:url" content="/docs/enterprise/" /><meta property="og:site_name" content="CVAT" />
+
+<meta itemprop="name" content="Paid features">
+<meta itemprop="description" content="Setting up paid features in CVAT."><meta name="twitter:card" content="summary"/>
+<meta name="twitter:title" content="Paid features"/>
+<meta name="twitter:description" content="Setting up paid features in CVAT."/>
+
+
+
+
+<link rel="preload" href="../../../scss/main.min.6c5c9450c6df778171581cbf2aa82ce445787ffee7a644313041b00ff75d710d.css" as="style">
+<link href="../../../scss/main.min.6c5c9450c6df778171581cbf2aa82ce445787ffee7a644313041b00ff75d710d.css" rel="stylesheet" integrity="">
+
+
+<script
+  src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"
+  integrity="sha256-9/aliU8dGd2tb6OSsuzixeV4y/faTqgFtohetphbbj0="
+  crossorigin="anonymous"></script>
+
+<script
+  src="https://unpkg.com/lunr@2.3.8/lunr.min.js"
+  integrity="sha384-vRQ9bDyE0Wnu+lMfm57BlYLO0/XauFuKpVsZPs7KEDwYKktWi5+Kz3MP8++DFlRY"
+  crossorigin="anonymous"></script>
+
+
+
+<link rel="stylesheet" href="../../../css/prism.css"/>
+
+
+
+
+
+
+  </head>
+  <body class="td-section">
+    <header>
+      
+
+
+<nav class="js-navbar-scroll navbar navbar-expand navbar-dark flex-column flex-md-row td-navbar">
+        <a class="navbar-brand" href="../../../about/">
+    <span class="navbar-logo"><svg width="80" height="15" viewBox="0 0 80 15" xmlns="http://www.w3.org/2000/svg"><path d="M6.63399 15C2.37083 15 0 12.5333.0 7.48889.0 2.46667 2.34908.0 6.63399.0H10.6576V2.62222H6.63399c-2.84935.0-4.0674 1.44445-4.0674 4.86667.0 3.44441 1.2398 4.88891 4.0674 4.88891H15.0638V15H6.63399z"/><path d="M22.412.0l4.8346 13.1004C27.7814 14.5415 28.8724 15 30.2842 15 31.7817 15 32.7657 14.476 33.3005 13.1004L38.3918.0H35.5895L30.9902 11.8559C30.8404 12.2052 30.6265 12.3581 30.2842 12.3581 29.942 12.3581 29.7067 12.2052 29.5783 11.8559L25.1929.0H22.412z"/><path d="M53.0989 3.1441C53.2487 2.79476 53.484 2.64192 53.8262 2.64192 54.1685 2.64192 54.4038 2.79476 54.5322 3.1441L58.9176 15h2.8023L56.8425 1.89956C56.3291.524017 55.3451.0 53.8476.0 52.3288.0 51.3448.524017 50.81 1.89956L45.74 15h2.781L53.0989 3.1441z"/><path d="M69.0681.0V2.5665H73.2661V15H75.802V2.5665H80V0H69.0681z"/></svg></span>
+  </a>
+  <div class="td-navbar-nav-scroll ml-md-auto" id="main_navbar">
+    <ul class="navbar-nav mt-2 mt-lg-0">
+      
+      
+      <li class="nav-item mr-4 mb-2 mb-lg-0">
+        
+        
+        
+        
+        
+        
+        
+        
+        <a class="nav-link active" href="../../../docs/" ><span class="active">Documentation</span></a>
+      </li>
+      
+      <li class="nav-item mr-4 mb-2 mb-lg-0">
+        
+        
+        
+        
+        
+        
+        
+        
+        <a class="nav-link" href="../../../about/" ><span>About</span></a>
+      </li>
+      
+      <li class="nav-item mr-4 mb-2 mb-lg-0">
+        
+        
+        
+        
+        
+        
+        <a class="nav-link" href="https://app.cvat.ai"  ><span>Try it now</span></a>
+      </li>
+      
+      <li class="nav-item mr-4 mb-2 mb-lg-0">
+        
+        
+        
+        
+        
+        
+        <a class="nav-link" href="https://github.com/cvat-ai/cvat"  ><i class='fab fa-github'></i><span>GitHub</span></a>
+      </li>
+      
+      
+        
+        <li class="nav-item dropdown">
+          <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-target="#dropdown_ver" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+            v2.5.2
+          </a>
+        </li>
+        
+      
+      
+    </ul>
+  </div>
+  <div class="dropdown-menu" id="dropdown_ver" aria-labelledby="navbarDropdownMenuLink">
+    
+      
+        <a class="dropdown-item" href="../../../../docs/enterprise/">Latest version</a>
+    
+      
+        <a class="dropdown-item" href="../../../../v1.5.0/docs/enterprise/">v1.5.0</a>
+    
+      
+        <a class="dropdown-item" href="../../../../v1.6.0/docs/enterprise/">v1.6.0</a>
+    
+      
+        <a class="dropdown-item" href="../../../../v1.7.0/docs/enterprise/">v1.7.0</a>
+    
+      
+        <a class="dropdown-item" href="../../../../v2.0.0/docs/enterprise/">v2.0.0</a>
+    
+      
+        <a class="dropdown-item" href="../../../../v2.1.0/docs/enterprise/">v2.1.0</a>
+    
+      
+        <a class="dropdown-item" href="../../../../v2.10.3/docs/enterprise/">v2.10.3</a>
+    
+      
+        <a class="dropdown-item" href="../../../../v2.11.3/docs/enterprise/">v2.11.3</a>
+    
+      
+        <a class="dropdown-item" href="../../../../v2.12.1/docs/enterprise/">v2.12.1</a>
+    
+      
+        <a class="dropdown-item" href="../../../../v2.13.0/docs/enterprise/">v2.13.0</a>
+    
+      
+        <a class="dropdown-item" href="../../../../v2.14.4/docs/enterprise/">v2.14.4</a>
+    
+      
+        <a class="dropdown-item" href="../../../../v2.15.0/docs/enterprise/">v2.15.0</a>
+    
+      
+        <a class="dropdown-item" href="../../../../v2.16.2/docs/enterprise/">v2.16.2</a>
+    
+      
+        <a class="dropdown-item" href="../../../../v2.2.0/docs/enterprise/">v2.2.0</a>
+    
+      
+        <a class="dropdown-item" href="../../../../v2.3.0/docs/enterprise/">v2.3.0</a>
+    
+      
+        <a class="dropdown-item" href="../../../../v2.4.9/docs/enterprise/">v2.4.9</a>
+    
+      
+        <a class="dropdown-item" href="../../../../v2.5.2/docs/enterprise/">v2.5.2</a>
+    
+      
+        <a class="dropdown-item" href="../../../../v2.6.2/docs/enterprise/">v2.6.2</a>
+    
+      
+        <a class="dropdown-item" href="../../../../v2.7.6/docs/enterprise/">v2.7.6</a>
+    
+      
+        <a class="dropdown-item" href="../../../../v2.8.2/docs/enterprise/">v2.8.2</a>
+    
+      
+        <a class="dropdown-item" href="../../../../v2.9.2/docs/enterprise/">v2.9.2</a>
+    
+  </div>
+  <div class="navbar-nav d-none d-lg-block">
+
+
+
+<input
+  type="search"
+  class="form-control td-search-input"
+  placeholder="&#xf002; Search this site…"
+  aria-label="Search this site…"
+  autocomplete="off"
+  
+  data-offline-search-index-json-src="../../../offline-search-index.bfe29e5c7cfbf96481e85d2e722e8a47.json"
+  data-offline-search-base-href="../../../"
+  data-offline-search-max-results="10"
+>
+
+</div>
+</nav>
+
+    </header>
+    <div class="container-fluid td-outer">
+      <div class="td-main">
+        <div class="row flex-xl-nowrap">
+          <div class="col-12 col-md-3 col-xl-2 td-sidebar d-print-none">
+          </div>
+          <div class="d-none d-xl-block col-xl-2 td-toc d-print-none">
+          </div>
+          <main class="col-12 col-md-9 col-xl-8 pl-md-5" role="main">
+            
+
+
+
+
+<div class="td-content">
+<div class="pageinfo pageinfo-primary d-print-none">
+<p>
+This the multi-page printable view of this section.
+<a href="#" onclick="print();return false;">Click here to print</a>.
+</p><p>
+<a href="../../../docs/enterprise/">Return to the regular view of this page</a>.
+</p>
+</div>
+
+
+
+<h1 class="title">Paid features</h1>
+<div class="lead">Setting up paid features in CVAT.</div>
+
+
+
+
+    <ul>
+    
+  
+  
+  
+  
+
+  
+    
+    
+	
+<li>1: <a href="#pg-aa7fba43d58c8ac3a5dd331fa3d2b056">Subscription management</a></li>
+
+
+    
+  
+    
+    
+	
+<li>2: <a href="#pg-de9c5bc5c1db845b6a6a71588659b371">Social auth configuration</a></li>
+
+
+    
+  
+
+    </ul>
+
+
+<div class="content">
+      <p>We provide a variety of premium features exclusively for our paying customers.</p>
+<p>For further details, please visit:</p>
+<ul>
+<li><a href="https://www.cvat.ai/pricing/cloud">Tailored Cloud Plans for individuals and teams</a>
+to explore paid plans on <a href="https://app.cvat.ai/">CVAT.ai</a>.</li>
+<li><a href="https://www.cvat.ai/pricing/on-prem">Self-hosted Pricing Plans</a> to
+discover pricing options for community and enterprise self-hosted solutions.</li>
+<li><a href="https://www.cvat.ai/post/new-pricing-plans">All about Pricing Plans</a> to
+determine the Cloud Plan that best fits your needs.</li>
+<li><a href="https://www.cvat.ai/post/benefits-of-being-an-enterprise-client">Advantages for Enterprise Clients</a> to
+learn about the exclusive features available to Enterprise clients.</li>
+</ul>
+
+</div>
+</div>
+
+
+  
+  
+  
+  
+
+  
+  
+
+  
+    
+    
+	
+    
+
+<div class="td-content" style="page-break-before: always">
+    
+	<h1 id="pg-aa7fba43d58c8ac3a5dd331fa3d2b056">1 - Subscription management</h1>
+    <div class="lead">How to manage your subscription</div>
+	<p>This article provides tips on how to effectively manage your
+CVAT subscriptions, including tracking expenses and canceling
+unnecessary subscriptions, to optimize your finances and save time.</p>
+<p>Whether you&rsquo;re a business owner or an individual,
+you&rsquo;ll learn how to take control of your subscriptions and manage them.</p>
+<p>See:</p>
+<ul>
+<li><a href="#billing">Billing</a>
+<ul>
+<li><a href="#pro-plan">Pro plan</a></li>
+<li><a href="#team-plan">Team plan</a></li>
+</ul>
+</li>
+<li><a href="#change-payment-method">Change payment method</a>
+<ul>
+<li><a href="#pro-plan-1">Pro plan</a></li>
+<li><a href="#team-plan-1">Team plan</a></li>
+</ul>
+</li>
+<li><a href="#adding-and-removing-team-members">Adding and removing team members</a>
+<ul>
+<li><a href="#pro-plan-2">Pro plan</a></li>
+<li><a href="#team-plan-2">Team plan</a></li>
+</ul>
+</li>
+<li><a href="#change-plan">Change plan</a></li>
+<li><a href="#can-i-subscribe-to-several-plans">Can I subscribe to several plans?</a></li>
+<li><a href="#cancel-plan">Cancel plan</a>
+<ul>
+<li><a href="#what-will-happen-to-my-data">What will happen to my data?</a></li>
+<li><a href="#pro-plan-3">Pro plan</a></li>
+<li><a href="#team-plan-3">Team plan</a></li>
+</ul>
+</li>
+<li><a href="#plan-renewal">Plan renewal</a>
+<ul>
+<li><a href="#pro-plan-4">Pro plan</a></li>
+<li><a href="#team-plan-4">Team plan</a></li>
+</ul>
+</li>
+</ul>
+<h2 id="billing">Billing</h2>
+<p>This section describes the billing model and gives short a
+description of limitations for each plan.</p>
+<p>For more information,
+see: <a href="https://www.cvat.ai/post/new-pricing-plans">Pricing Plans</a></p>
+<h3 id="pro-plan">Pro plan</h3>
+<p><strong>Account/Month</strong>: The <strong>Pro</strong> plan has a fixed price and is
+designed for personal use only.  It doesn&rsquo;t allow collaboration with team members,
+but removes all the other limits of the <strong>Free</strong> plan.</p>
+<h3 id="team-plan">Team plan</h3>
+<p><strong>Member/month</strong>: The <strong>Team</strong> plan allows you to create
+an organization and add team members who can collaborate on projects.
+The <strong>monthly payment for the plan depends on the number of team members you&rsquo;ve added</strong>.
+All limits of the <strong>Free</strong> plan will be removed.</p>
+<h2 id="change-payment-method">Change payment method</h2>
+<p>This section describes how to change or add payment methods.</p>
+<h3 id="pro-plan-1">Pro plan</h3>
+<p>Access Manage <strong>Pro Plan</strong> &gt; <strong>Manage</strong> and click <strong>+Add Payment Method</strong></p>
+<p><img src="../../../images/update_payment_pro.png" alt="Payment pro"></p>
+<h3 id="team-plan-1">Team plan</h3>
+<p>Access <strong>Manage Team Plan</strong> &gt; <strong>Manage</strong> and click <strong>+Add Payment Method</strong>.</p>
+<p><img src="../../../images/update_payment_team.png" alt="Payment team"></p>
+<h2 id="adding-and-removing-team-members">Adding and removing team members</h2>
+<p>This section describes how to add team members
+to collaborate within one team.</p>
+<h3 id="pro-plan-2">Pro plan</h3>
+<p>Not available.</p>
+<h3 id="team-plan-2">Team plan</h3>
+<p>Go to the <strong>Manage Team plan</strong> &gt; <strong>Manage</strong> &gt; <strong>Update quantity</strong>.</p>
+<p><img src="../../../images/change_members_number_team.gif" alt="Add members"></p>
+<p>If you&rsquo;ve added a user <strong>before the current billing period ends</strong>,
+the payment will be prorated for the remaining time until the
+next billing cycle begins. From the following month onward,
+the full payment will be charged.</p>
+<p>In case you <strong>removed the user before the current billing period ends</strong>,
+funds will not be returned to your account,
+but next month you will pay less by the amount of unused funds.</p>
+<h2 id="change-plan">Change plan</h2>
+<p>The procedure is the same for both <strong>Pro</strong> and <strong>Team</strong> plans.</p>
+<p>If for some reason you want to change your plan, you need to:</p>
+<ol>
+<li>Unsubscribe from the previous plan.</li>
+<li>If you need a refund, contact us at <a href="mailto:accounting@cvat.ai">accounting@cvat.ai</a>.</li>
+<li>Subscribe to a new plan.</li>
+</ol>
+<h2 id="can-i-subscribe-to-several-plans">Can I subscribe to several plans?</h2>
+<p>Paid plans are not mutually exclusive.
+You can have several active subscriptions,
+for example, the <strong>Pro</strong> plan and several <strong>Team</strong>
+plans for different organizations.</p>
+<h2 id="cancel-plan">Cancel plan</h2>
+<p>This section describes how to cancel your CVAT subscription
+and what will happen to your data.</p>
+<h3 id="what-will-happen-to-my-data">What will happen to my data?</h3>
+<p>Once you have terminated your subscription, your data will remain
+accessible within the system for a month. During this period,
+you will be unable to add new tasks and free plan limits will be applied.</p>
+<p>In case you possess a substantial amount of data,
+it will be switched to read-only mode. It means
+you will not be able to save annotations, add any resources,
+and so on.</p>
+<p>Following the one month, you will receive a
+notification requesting you to either remove the
+excess data or it will be deleted automatically.</p>
+<h3 id="pro-plan-3">Pro plan</h3>
+<p>Access <strong>Manage Pro Plan</strong> &gt; <strong>Manage</strong> &gt; <strong>Cancel plan</strong></p>
+<p>Please, fill out the feedback form, to help us improve our platform.</p>
+<p><img src="../../../images/cancel_pro.gif" alt="Cancel pro"></p>
+<h3 id="team-plan-3">Team plan</h3>
+<p>Access <strong>Manage Team plan</strong> &gt; <strong>Manage</strong> -&gt; <strong>Cancel plan</strong></p>
+<p>Please, fill out the feedback form, to help us improve our platform.</p>
+<p><img src="../../../images/cancel_team.gif" alt="Cancel team"></p>
+<h2 id="plan-renewal">Plan renewal</h2>
+<p>This section describes how to renew your
+CVAT subscription</p>
+<h3 id="pro-plan-4">Pro plan</h3>
+<p>Access <strong>Manage Pro Plan</strong> &gt; <strong>Manage</strong> &gt; <strong>Renew plan</strong></p>
+<h3 id="team-plan-4">Team plan</h3>
+<p>Access <strong>Manage Team Plan</strong> &gt; <strong>Manage</strong> &gt; <strong>Renew plan</strong></p>
+
+</div>
+
+
+
+    
+	
+  
+    
+    
+	
+    
+
+<div class="td-content" style="page-break-before: always">
+    
+	<h1 id="pg-de9c5bc5c1db845b6a6a71588659b371">2 - Social auth configuration</h1>
+    <div class="lead">Social accounts authentication for Self-Hosted solution</div>
+	<blockquote>
+<p><strong>Note:</strong> This is a paid feature available for <a href="https://www.cvat.ai/pricing/on-prem">Enterprise clients</a>.</p>
+</blockquote>
+<p>You can now easily set up authentication with popular social services, which opens doors to
+such benefits as:</p>
+<ul>
+<li>Convenience: you can use the existing
+social service credentials to sign in to CVAT.</li>
+<li>Time-saving: with just two clicks, you can
+sign in without the hassle of typing in сredentials, saving time and effort.</li>
+<li>Security: social auth service providers have
+high-level security measures in place to protect your accounts.</li>
+</ul>
+<p>Currently, we offer three options:</p>
+<ul>
+<li>Authentication with Github.</li>
+<li>Authentication with Google.</li>
+<li>Authentication with Amazon Cognito.</li>
+</ul>
+<p>With more to come soon. Stay tuned!</p>
+<p>See:</p>
+<ul>
+<li><a href="#enable-authentication-with-a-google-account">Enable authentication with a Google account</a></li>
+<li><a href="#enable-authentication-with-a-github-account">Enable authentication with a GitHub account</a></li>
+<li><a href="#enable-authentication-with-an-amazon-cognito">Enable authentication with an Amazon Cognito</a></li>
+</ul>
+<h2 id="enable-authentication-with-a-google-account">Enable authentication with a Google account</h2>
+<p>To enable authentication, do the following:</p>
+<ol>
+<li>
+<p>Log in to the <a href="https://console.cloud.google.com/">Google Cloud console</a></p>
+</li>
+<li>
+<p><a href="https://cloud.google.com/resource-manager/docs/creating-managing-projects">Create a project</a>,
+and go to <a href="https://console.cloud.google.com/apis/">APIs &amp; Services</a></p>
+</li>
+<li>
+<p>On the left menu, select <strong>OAuth consent</strong>, then select
+<strong>User type</strong> (<strong>Internal</strong> or <strong>External</strong>), and click <strong>Create</strong>.</p>
+</li>
+<li>
+<p>On the <strong>OAuth consent screen</strong> fill all required fields, and click <strong>Save and Continue</strong>.</p>
+</li>
+<li>
+<p>On the <strong>Scopes</strong> screen, click <strong>Add or remove scopes</strong> and
+select <code>auth/userinfo.email</code>, <code>auth/userinfo.profile</code>, and <code>openid</code>.
+Click <strong>Update</strong>, and <strong>Save and Continue</strong>.
+<br>For more information, see <a href="https://developers.google.com/workspace/guides/configure-oauth-consent">Configure Auth Consent</a>.</p>
+</li>
+<li>
+<p>On the left menu, click <strong>Credentials</strong>, on the top
+menu click <strong>+ Create credentials</strong>, and select <strong>OAuth client ID</strong>.</p>
+</li>
+<li>
+<p>From the <strong>Application Type</strong> select <strong>Web application</strong> and
+configure: <strong>Application name</strong>, <strong>Authorized JavaScript origins</strong>, <strong>Authorized redirect URIs</strong>.
+<br> For example, if you plan to deploy CVAT instance on <code>https://localhost:8080</code>, add <code>https://localhost:8080</code>
+to authorized JS origins and <code>https://localhost:8080/api/auth/social/goolge/login/callback/</code> to redirect URIs.</p>
+</li>
+<li>
+<p>Create conпiguration file in CVAT:</p>
+<ol>
+<li>Create the <code>auth_config.yml</code> file with the following content:</li>
+</ol>
+<div class="highlight"><pre style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-yaml" data-lang="yaml"><span style="color:#000">---</span><span style="color:#f8f8f8;text-decoration:underline">
+</span><span style="color:#f8f8f8;text-decoration:underline"></span><span style="color:#204a87;font-weight:bold">social_account</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline">
+</span><span style="color:#f8f8f8;text-decoration:underline">  </span><span style="color:#204a87;font-weight:bold">enabled</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline"> </span><span style="color:#204a87;font-weight:bold">true</span><span style="color:#f8f8f8;text-decoration:underline">
+</span><span style="color:#f8f8f8;text-decoration:underline">  </span><span style="color:#204a87;font-weight:bold">google</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline">
+</span><span style="color:#f8f8f8;text-decoration:underline">    </span><span style="color:#204a87;font-weight:bold">client_id</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline"> </span><span style="color:#000">&lt;some_client_id&gt;</span><span style="color:#f8f8f8;text-decoration:underline">
+</span><span style="color:#f8f8f8;text-decoration:underline">    </span><span style="color:#204a87;font-weight:bold">client_secret</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline"> </span><span style="color:#000">&lt;some_client_secret&gt;</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></code></pre></div><ol start="2">
+<li>Set <code>AUTH_CONFIG_PATH=&quot;&lt;path_to_auth_config&gt;</code> environment variable.</li>
+</ol>
+</li>
+<li>
+<p>In a terminal, run the following command:</p>
+<div class="highlight"><pre style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">docker compose -f docker-compose.yml -f docker-compose.dev.yml -f docker-compose.override.yml up -d --build
+</code></pre></div></li>
+</ol>
+<h2 id="enable-authentication-with-a-github-account">Enable authentication with a GitHub account</h2>
+<p>There are 2 basic steps to enable GitHub account authentication.</p>
+<ol>
+<li>
+<p>Open the GitHub settings page.</p>
+</li>
+<li>
+<p>On the left menu, click <strong>&lt;&gt; Developer settings</strong> &gt; <strong>OAuth Apps</strong> &gt; <strong>Register new application</strong>.
+<br>For more information, see <a href="https://docs.github.com/en/developers/apps/building-oauth-apps/creating-an-oauth-app">Creating an OAuth App</a></p>
+</li>
+<li>
+<p>Fill in the name field, set the homepage URL (for example: <code>https://localhost:8080</code>),
+and authorization callback URL (for example: <code>https://localhost:8080/api/auth/social/github/login/callback/</code>).</p>
+</li>
+<li>
+<p>Create conпiguration file in CVAT:</p>
+<ol>
+<li>Create the <code>auth_config.yml</code> file with the following content:</li>
+</ol>
+<div class="highlight"><pre style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-yaml" data-lang="yaml"><span style="color:#000">---</span><span style="color:#f8f8f8;text-decoration:underline">
+</span><span style="color:#f8f8f8;text-decoration:underline"></span><span style="color:#204a87;font-weight:bold">social_account</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline">
+</span><span style="color:#f8f8f8;text-decoration:underline">  </span><span style="color:#204a87;font-weight:bold">enabled</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline"> </span><span style="color:#204a87;font-weight:bold">true</span><span style="color:#f8f8f8;text-decoration:underline">
+</span><span style="color:#f8f8f8;text-decoration:underline">  </span><span style="color:#204a87;font-weight:bold">github</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline">
+</span><span style="color:#f8f8f8;text-decoration:underline">    </span><span style="color:#204a87;font-weight:bold">client_id</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline"> </span><span style="color:#000">&lt;some_client_id&gt;</span><span style="color:#f8f8f8;text-decoration:underline">
+</span><span style="color:#f8f8f8;text-decoration:underline">    </span><span style="color:#204a87;font-weight:bold">client_secret</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline"> </span><span style="color:#000">&lt;some_client_secret&gt;</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></code></pre></div><ol start="2">
+<li>Set <code>AUTH_CONFIG_PATH=&quot;&lt;path_to_auth_config&gt;</code> environment variable.</li>
+</ol>
+</li>
+<li>
+<p>In a terminal, run the following command:</p>
+<div class="highlight"><pre style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">docker compose -f docker-compose.yml -f docker-compose.dev.yml -f docker-compose.override.yml up -d --build
+</code></pre></div></li>
+</ol>
+<blockquote>
+<p><strong>Note:</strong> You can also configure <a href="https://docs.github.com/en/developers/apps/building-github-apps/creating-a-github-app">GitHub App</a>,
+but don&rsquo;t forget to add required permissions.
+<br>In the <strong>Permission</strong> &gt; <strong>Account permissions</strong> &gt; <strong>Email addresses</strong> must be set to <strong>read-only</strong>.</p>
+</blockquote>
+<h2 id="enable-authentication-with-an-amazon-cognito">Enable authentication with an Amazon Cognito</h2>
+<p>To enable authentication, do the following:</p>
+<ol>
+<li>
+<p>Create a user pool. For more information,
+see <a href="https://docs.aws.amazon.com/cognito/latest/developerguide/cognito-user-identity-pools.html">Amazon Cognito user pools</a></p>
+</li>
+<li>
+<p>Fill in the name field, set the homepage URL (for example: <code>https://localhost:8080</code>),
+and authorization callback URL (for example: <code>https://localhost:8080/api/auth/social/amazon-cognito/login/callback/</code>).</p>
+</li>
+<li>
+<p>Create conпiguration file in CVAT:</p>
+<ol>
+<li>Create the <code>auth_config.yml</code> file with the following content:</li>
+</ol>
+<div class="highlight"><pre style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-yaml" data-lang="yaml"><span style="color:#000">---</span><span style="color:#f8f8f8;text-decoration:underline">
+</span><span style="color:#f8f8f8;text-decoration:underline"></span><span style="color:#204a87;font-weight:bold">social_account</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline">
+</span><span style="color:#f8f8f8;text-decoration:underline">  </span><span style="color:#204a87;font-weight:bold">enabled</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline"> </span><span style="color:#204a87;font-weight:bold">true</span><span style="color:#f8f8f8;text-decoration:underline">
+</span><span style="color:#f8f8f8;text-decoration:underline">  </span><span style="color:#204a87;font-weight:bold">amazon_cognito</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline">
+</span><span style="color:#f8f8f8;text-decoration:underline">    </span><span style="color:#204a87;font-weight:bold">client_id</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline"> </span><span style="color:#000">&lt;some_client_id&gt;</span><span style="color:#f8f8f8;text-decoration:underline">
+</span><span style="color:#f8f8f8;text-decoration:underline">    </span><span style="color:#204a87;font-weight:bold">client_secret</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline"> </span><span style="color:#000">&lt;some_client_secret&gt;</span><span style="color:#f8f8f8;text-decoration:underline">
+</span><span style="color:#f8f8f8;text-decoration:underline">    </span><span style="color:#204a87;font-weight:bold">domain</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline"> </span><span style="color:#000">https://&lt;domain-prefix&gt;.auth.us-east-1.amazoncognito.com</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></code></pre></div><ol start="2">
+<li>Set <code>AUTH_CONFIG_PATH=&quot;&lt;path_to_auth_config&gt;</code> environment variable.</li>
+</ol>
+</li>
+<li>
+<p>In a terminal, run the following command:</p>
+<div class="highlight"><pre style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">docker compose -f docker-compose.yml -f docker-compose.dev.yml -f docker-compose.override.yml up -d --build
+</code></pre></div></li>
+</ol>
+
+</div>
+
+
+
+    
+	
+  
+
+
+
+          </main>
+        </div>
+      </div>
+      
+<footer class="bg-dark py-5 row d-print-none">
+  <div class="container-fluid mx-sm-5">
+    <div class="row">
+      <div class="col-6 col-sm-2 text-xs-center order-sm-2">
+        
+        
+        
+<ul class="list-inline mb-0">
+  
+  <li class="list-inline-item mx-2 h3" data-toggle="tooltip" data-placement="top" title="Gitter public chat" aria-label="Gitter public chat">
+    <a class="text-white" rel="noopener noreferrer" href="https://gitter.im/opencv-cvat/public">
+      <i class="fab fa-gitter"></i>
+    </a>
+  </li>
+  
+  <li class="list-inline-item mx-2 h3" data-toggle="tooltip" data-placement="top" title="Stack Overflow" aria-label="Stack Overflow">
+    <a class="text-white" rel="noopener noreferrer" href="https://stackoverflow.com/search?q=%23cvat">
+      <i class="fab fa-stack-overflow"></i>
+    </a>
+  </li>
+  
+  <li class="list-inline-item mx-2 h3" data-toggle="tooltip" data-placement="top" title="YouTube" aria-label="YouTube">
+    <a class="text-white" rel="noopener noreferrer" href="https://www.youtube.com/@cvat-ai">
+      <i class="fab fa-youtube"></i>
+    </a>
+  </li>
+  
+</ul>
+
+        
+        
+      </div>
+      <div class="col-6 col-sm-2 text-right text-xs-center order-sm-3">
+        
+        
+        
+<ul class="list-inline mb-0">
+  
+  <li class="list-inline-item mx-2 h3" data-toggle="tooltip" data-placement="top" title="GitHub" aria-label="GitHub">
+    <a class="text-white" rel="noopener noreferrer" href="https://github.com/cvat-ai/cvat">
+      <i class="fab fa-github"></i>
+    </a>
+  </li>
+  
+  <li class="list-inline-item mx-2 h3" data-toggle="tooltip" data-placement="top" title="Gitter developers chat" aria-label="Gitter developers chat">
+    <a class="text-white" rel="noopener noreferrer" href="https://gitter.im/opencv-cvat/dev">
+      <i class="fab fa-gitter"></i>
+    </a>
+  </li>
+  
+  <li class="list-inline-item mx-2 h3" data-toggle="tooltip" data-placement="top" title="Discord chat" aria-label="Discord chat">
+    <a class="text-white" rel="noopener noreferrer" href="https://discord.gg/fNR3eXfk6C">
+      <i class="fab fa-discord"></i>
+    </a>
+  </li>
+  
+</ul>
+
+        
+        
+      </div>
+      <div class="col-12 col-sm-8 text-center order-sm-2">
+        <small class="mr-1"><a href="https://www.cvat.ai/privacy">Privacy Policy</a></small>
+        |
+        <small class="mx-1"><a href="https://www.cvat.ai/terms-of-use">Terms of Use</a></small>
+      </div>
+  
+    <p class="mt-2"><a href="../../../about/">About</a></p>
+  
+      </div>
+    </div>
+  </div>
+</footer>
+
+
+    </div>
+    <script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.1/dist/umd/popper.min.js" integrity="sha384-9/reFTGAW83EW2RDu2S0VKaIzap3H66lZH81PoYlFhbGU+6BZp6G7niu735Sk7lN" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@4.6.0/dist/js/bootstrap.min.js" integrity="sha384-+YQ4JLhjyBLPDQt//I+STsc9iw4uQqACwlvpslubQzn4u2UU2UFM80nGisd026JF" crossorigin="anonymous"></script>
+
+
+
+
+
+
+ 
+
+
+
+
+
+
+
+
+
+
+
+
+
+<script src="../../../js/main.min.3b172c13b62c2bea8b1c9d2599cddc8cf89718a92d792c680871c81ba43d8c85.js" integrity="sha256-OxcsE7YsK&#43;qLHJ0lmc3cjPiXGKkteSxoCHHIG6Q9jIU=" crossorigin="anonymous"></script>
+
+
+
+<script src='../../../js/prism.js'></script>
+
+
+
+  </body>
+</html>

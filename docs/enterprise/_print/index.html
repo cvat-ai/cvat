@@ -1,0 +1,881 @@
+<!doctype html>
+<html itemscope itemtype="http://schema.org/WebPage" lang="en" class="no-js">
+  <head>
+    <meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+<meta name="generator" content="Hugo 0.110.0">
+<link rel="canonical" type="text/html" href="../../../docs/enterprise/">
+<meta name="robots" content="noindex, nofollow">
+
+
+<link rel="shortcut icon" href="../../../favicons/favicon.ico" >
+<link rel="apple-touch-icon" href="../../../favicons/apple-touch-icon-180x180.png" sizes="180x180">
+<link rel="icon" type="image/png" href="../../../favicons/favicon-16x16.png" sizes="16x16">
+<link rel="icon" type="image/png" href="../../../favicons/favicon-32x32.png" sizes="32x32">
+<link rel="icon" type="image/png" href="../../../favicons/android-36x36.png" sizes="36x36">
+<link rel="icon" type="image/png" href="../../../favicons/android-48x48.png" sizes="48x48">
+<link rel="icon" type="image/png" href="../../../favicons/android-72x72.png" sizes="72x72">
+<link rel="icon" type="image/png" href="../../../favicons/android-96x96.png" sizes="96x96">
+<link rel="icon" type="image/png" href="../../../favicons/android-144x144.png" sizes="144x144">
+<link rel="icon" type="image/png" href="../../../favicons/android-192x192.png" sizes="192x192">
+
+<title>Paid features | CVAT</title>
+<meta name="description" content="Setting up paid features in CVAT.">
+<meta property="og:title" content="Paid features" />
+<meta property="og:description" content="Setting up paid features in CVAT." />
+<meta property="og:type" content="website" />
+<meta property="og:url" content="/docs/enterprise/" /><meta property="og:site_name" content="CVAT" />
+<meta itemprop="name" content="Paid features">
+<meta itemprop="description" content="Setting up paid features in CVAT."><meta name="twitter:card" content="summary"/>
+<meta name="twitter:title" content="Paid features"/>
+<meta name="twitter:description" content="Setting up paid features in CVAT."/>
+
+
+
+
+<link rel="preload" href="../../../scss/main.min.5176d9fef59ea153ab767b7b61a90b35fb24ef3fb7aef25530f05dcb464a2db0.css" as="style">
+<link href="../../../scss/main.min.5176d9fef59ea153ab767b7b61a90b35fb24ef3fb7aef25530f05dcb464a2db0.css" rel="stylesheet" integrity="">
+
+<script
+  src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.3/jquery.min.js"
+  integrity="sha512-STof4xm1wgkfm7heWqFJVn58Hm3EtS31XFaagaa8VMReCXAkQnJZ+jEy8PCC/iT18dFy95WcExNHFTqLyp72eQ=="
+  crossorigin="anonymous"></script>
+<script defer
+  src="https://unpkg.com/lunr@2.3.9/lunr.min.js"
+  integrity="sha384-203J0SNzyqHby3iU6hzvzltrWi/M41wOP5Gu+BiJMz5nwKykbkUx8Kp7iti0Lpli"
+  crossorigin="anonymous"></script>
+<link rel="stylesheet" href="../../../css/prism.css"/>
+
+  </head>
+  <body class="td-section">
+    <header>
+      <nav class="td-navbar navbar-dark js-navbar-scroll">
+<div class="container-fluid flex-column flex-md-row">
+  <a class="navbar-brand" href="../../../about/"><span class="navbar-brand__logo navbar-logo"><svg width="80" height="15" viewBox="0 0 80 15" xmlns="http://www.w3.org/2000/svg"><path d="M6.63399 15C2.37083 15 0 12.5333.0 7.48889.0 2.46667 2.34908.0 6.63399.0H10.6576V2.62222H6.63399c-2.84935.0-4.0674 1.44445-4.0674 4.86667.0 3.44441 1.2398 4.88891 4.0674 4.88891H15.0638V15H6.63399z"/><path d="M22.412.0l4.8346 13.1004C27.7814 14.5415 28.8724 15 30.2842 15 31.7817 15 32.7657 14.476 33.3005 13.1004L38.3918.0H35.5895L30.9902 11.8559C30.8404 12.2052 30.6265 12.3581 30.2842 12.3581 29.942 12.3581 29.7067 12.2052 29.5783 11.8559L25.1929.0H22.412z"/><path d="M53.0989 3.1441C53.2487 2.79476 53.484 2.64192 53.8262 2.64192 54.1685 2.64192 54.4038 2.79476 54.5322 3.1441L58.9176 15h2.8023L56.8425 1.89956C56.3291.524017 55.3451.0 53.8476.0 52.3288.0 51.3448.524017 50.81 1.89956L45.74 15h2.781L53.0989 3.1441z"/><path d="M69.0681.0V2.5665H73.2661V15H75.802V2.5665H80V0H69.0681z"/></svg></span></a>
+  <div class="td-navbar-nav-scroll ms-md-auto" style="height: auto;" id="main_navbar">
+    <ul class="navbar-nav d-flex flex-wrap" style="padding-bottom: 0;">
+      <li class="nav-item">
+        <a class="nav-link active" href="../../../docs/"><span>Documentation</span></a>
+      </li>
+      <li class="nav-item">
+        <a class="nav-link" href="../../../about/"><span>About</span></a>
+      </li>
+      <li class="nav-item">
+        <a class="nav-link" href="https://app.cvat.ai" rel="noopener"><span>Try it now</span></a>
+      </li>
+      <li class="nav-item">
+        <a class="nav-link" href="https://github.com/cvat-ai/cvat" rel="noopener"><i class='fab fa-github'></i><span>GitHub</span></a>
+      </li>
+      <li class="nav-item dropdown d-none d-lg-block">
+        <div class="dropdown">
+  <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">develop</a>
+  <ul class="dropdown-menu">
+    <li><a class="dropdown-item" href="../../../">Latest version</a></li>
+    <li><a class="dropdown-item" href="../../../v1.5.0">v1.5.0</a></li>
+    <li><a class="dropdown-item" href="../../../v1.6.0">v1.6.0</a></li>
+    <li><a class="dropdown-item" href="../../../v1.7.0">v1.7.0</a></li>
+    <li><a class="dropdown-item" href="../../../v2.0.0">v2.0.0</a></li>
+    <li><a class="dropdown-item" href="../../../v2.1.0">v2.1.0</a></li>
+    <li><a class="dropdown-item" href="../../../v2.10.3">v2.10.3</a></li>
+    <li><a class="dropdown-item" href="../../../v2.11.3">v2.11.3</a></li>
+    <li><a class="dropdown-item" href="../../../v2.12.1">v2.12.1</a></li>
+    <li><a class="dropdown-item" href="../../../v2.13.0">v2.13.0</a></li>
+    <li><a class="dropdown-item" href="../../../v2.14.4">v2.14.4</a></li>
+    <li><a class="dropdown-item" href="../../../v2.15.0">v2.15.0</a></li>
+    <li><a class="dropdown-item" href="../../../v2.16.2">v2.16.2</a></li>
+    <li><a class="dropdown-item" href="../../../v2.2.0">v2.2.0</a></li>
+    <li><a class="dropdown-item" href="../../../v2.3.0">v2.3.0</a></li>
+    <li><a class="dropdown-item" href="../../../v2.4.9">v2.4.9</a></li>
+    <li><a class="dropdown-item" href="../../../v2.5.2">v2.5.2</a></li>
+    <li><a class="dropdown-item" href="../../../v2.6.2">v2.6.2</a></li>
+    <li><a class="dropdown-item" href="../../../v2.7.6">v2.7.6</a></li>
+    <li><a class="dropdown-item" href="../../../v2.8.2">v2.8.2</a></li>
+    <li><a class="dropdown-item" href="../../../v2.9.2">v2.9.2</a></li>
+    </ul>
+</div></li>
+      </ul>
+  </div>
+  <div class="d-none d-lg-block">
+    <div class="td-search td-search--offline">
+  <div class="td-search__icon"></div>
+  <input
+    type="search"
+    class="td-search__input form-control"
+    placeholder="Search this site…"
+    aria-label="Search this site…"
+    autocomplete="off"
+    
+    data-offline-search-index-json-src="../../../offline-search-index.62229ea4ed65539ffa23d795ce918f46.json"
+    data-offline-search-base-href="../../../"
+    data-offline-search-max-results="10"
+  >
+</div>
+
+  </div>
+</div>
+</nav>
+    </header>
+    <div class="container-fluid td-outer">
+      <div class="td-main">
+        <div class="row flex-xl-nowrap">
+          <main class="col-12 col-md-9 col-xl-8 ps-md-5" role="main">
+            
+
+
+
+
+<div class="td-content">
+<div class="pageinfo pageinfo-primary d-print-none">
+<p>
+This is the multi-page printable view of this section.
+<a href="#" onclick="print();return false;">Click here to print</a>.
+</p><p>
+<a href="../../../docs/enterprise/">Return to the regular view of this page</a>.
+</p>
+</div>
+
+
+
+<h1 class="title">Paid features</h1>
+<div class="lead">Setting up paid features in CVAT.</div>
+
+
+
+
+    <ul>
+    
+  
+  
+  
+  
+
+  
+    
+    
+	
+<li>1: <a href="#pg-d3ff97fbefdbfbef7d02065540cf4c8b">Subscription management</a></li>
+
+
+    
+  
+    
+    
+	
+<li>2: <a href="#pg-de9c5bc5c1db845b6a6a71588659b371">Social auth configuration</a></li>
+
+
+    
+  
+    
+    
+	
+<li>3: <a href="#pg-9b94b96fdd6b03bc28c8241ba3e48b41">Shapes converter</a></li>
+
+
+    
+  
+
+    </ul>
+
+
+<div class="content">
+      <p>We provide a variety of premium features exclusively for our paying customers.</p>
+<p>For further details, please visit:</p>
+<ul>
+<li><a href="https://www.cvat.ai/pricing/cloud">Tailored Cloud Plans for individuals and teams</a>
+to explore paid plans on <a href="https://app.cvat.ai/">CVAT.ai</a>.</li>
+<li><a href="https://www.cvat.ai/pricing/on-prem">Self-hosted Pricing Plans</a> to
+discover pricing options for community and enterprise self-hosted solutions.</li>
+<li><a href="https://www.cvat.ai/post/new-pricing-plans">All about Pricing Plans</a> to
+determine the Cloud Plan that best fits your needs.</li>
+<li><a href="https://www.cvat.ai/post/benefits-of-being-an-enterprise-client">Advantages for Enterprise Clients</a> to
+learn about the exclusive features available to Enterprise clients.</li>
+</ul>
+
+</div>
+</div>
+
+
+  
+  
+  
+  
+
+  
+  
+
+  
+    
+    
+	
+    
+
+<div class="td-content" style="page-break-before: always">
+    
+	<h1 id="pg-d3ff97fbefdbfbef7d02065540cf4c8b">1 - Subscription management</h1>
+    <div class="lead">How to manage your subscription</div>
+	<p>This article provides tips on how to effectively manage your
+CVAT subscriptions, including tracking expenses and canceling
+unnecessary subscriptions, to optimize your finances and save time.</p>
+<p>Whether you&rsquo;re a business owner or an individual,
+you&rsquo;ll learn how to take control of your subscriptions and manage them.</p>
+<p>See:</p>
+<ul>
+<li><a href="#available-paid-plans">Available paid plans</a>
+<ul>
+<li><a href="#monthly-plans">Monthly plans</a></li>
+<li><a href="#annual-plans">Annual plans</a></li>
+</ul>
+</li>
+<li><a href="#billing">Billing</a>
+<ul>
+<li><a href="#how-to-add-vattax-and-other-information-to-the-cvatai-invoice-before-the-first-payment">How to add VAT/tax and other information to the CVAT.ai invoice before the first payment?</a></li>
+<li><a href="#how-to-update-vattax-information-and-other-details-for-upcoming-invoices-from-cvatai">How to update VAT/tax information and other details for upcoming invoices from CVAT.ai?</a></li>
+<li><a href="#can-a-paid-invoice-be-modified">Can a paid invoice be modified?</a></li>
+<li><a href="#how-can-i-get-a-quote-before-i-subscribe-how-to-add-a-po-number-to-my-invoices">How can I get a quote before I subscribe? How to add a PO number to my invoices?</a></li>
+<li><a href="#can-you-sign-an-agreement-before-i-subscribe">Can you sign an agreement before I subscribe?</a></li>
+<li><a href="#can-you-handle-a-bank-transfer-with-30-day-payment-terms">Can you handle a bank transfer with 30-day payment terms?</a></li>
+<li><a href="#where-can-i-find-my-invoices">Where can I find my invoices?</a></li>
+<li><a href="#i-am-a-student-can-i-have-a-discount-or-free-access">I am a student, can I have a discount or free access?</a></li>
+</ul>
+</li>
+<li><a href="#payment-methods">Payment methods</a>
+<ul>
+<li><a href="#paying-with-bank-transfer">Paying with bank transfer</a></li>
+<li><a href="#how-to-change-the-payment-method">How to change the payment method?</a></li>
+</ul>
+</li>
+<li><a href="#adding-and-removing-team-members">Adding and removing team members</a></li>
+<li><a href="#change-plan">Change plan</a>
+<ul>
+<li><a href="#how-to-change-the-plan-from-solo-to-team">How to change the plan from Solo to Team?</a></li>
+<li><a href="#how-to-switch-from-a-monthly-subscription-to-an-annual-one">How to switch from a monthly subscription to an annual one?</a></li>
+</ul>
+</li>
+<li><a href="#can-i-subscribe-to-several-plans">Can I subscribe to several plans?</a></li>
+<li><a href="#cancel-plan">Cancel plan</a>
+<ul>
+<li><a href="#what-will-happen-to-my-data">What will happen to my data?</a></li>
+<li><a href="#how-to-cancel-any-plan">How to cancel any plan?</a></li>
+<li><a href="#how-can-i-get-a-refund">How can I get a refund?</a></li>
+</ul>
+</li>
+<li><a href="#plan-renewal">Plan renewal</a></li>
+<li><a href="#subscription-management-video-tutorial">Subscription management video tutorial</a></li>
+</ul>
+<h2 id="available-paid-plans">Available paid plans</h2>
+<p>This section outlines the paid plans available on CVAT.ai.</p>
+<h3 id="monthly-plans">Monthly plans</h3>
+<!--lint disable maximum-line-length-->
+<table>
+<thead>
+<tr>
+<th>Name</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Solo</strong></td>
+<td>The <strong>Solo</strong> plan has a fixed price and is designed <strong>for personal use only</strong>. <br><br>It does not assume collaboration with team members and is not suitable for use within organizations, but it removes all other limitations of the <strong>Free</strong> plan. <Br><br> <strong>Note</strong>: Although it allows the creation of an organization and access for up to 2 members &ndash; it is <em>for trial purposes</em> only! <br>Organization and members <em>will have all the limitations of the <strong>Free</strong> plan</em>.</td>
+</tr>
+<tr>
+<td><strong>Team</strong></td>
+<td>The <strong>Team</strong> is <strong>for collaboration</strong>, it removes limitations of the <strong>Free</strong> plan for the whole organization, allowing you to share paid benefits with your colleagues. <br><br>The <strong>monthly payment for the plan depends on the number of team members you&rsquo;ve added</strong>. All limits of the <strong>Free</strong> plan will be removed. <Br><br> <strong>Note</strong>: The organization owner is also part of the team. So, if you have two annotators working, you&rsquo;ll need to pay for 3 seats (2 annotators + 1 organization owner).</td>
+</tr>
+</tbody>
+</table>
+<!--lint enable maximum-line-length-->
+<h3 id="annual-plans">Annual plans</h3>
+<p>Whether you&rsquo;re a new user, or have a subscription to <strong>Team</strong> or <strong>Solo</strong> plan, <a href="https://www.cvat.ai/post/cvat-annual-plans">you can
+subscribe to our annual plan</a>
+and save up to 30% on CVAT.ai usage costs.</p>
+<p>The annual subscription offers all the benefits of our paid plans but at
+a more affordable monthly rate.</p>
+<p>For more information, see <a href="#how-to-switch-from-monthly-subscription-to-annual">How to switch from monthly subscription to annual?</a></p>
+<h2 id="billing">Billing</h2>
+<p>This section describes the billing model and gives short a
+description of limitations for each plan.</p>
+<p>There are two types of subscriptions available for both the Solo
+and Team plans: monthly and annual.</p>
+<p>For more information,
+see: <a href="https://www.cvat.ai/post/new-pricing-plans">Pricing Plans</a></p>
+<h3 id="how-to-add-vattax-and-other-information-to-the-cvatai-invoice-before-the-first-payment">How to add VAT/tax and other information to the CVAT.ai invoice before the first payment?</h3>
+<p>To ensure VAT (tax) information and other relevant details are included on your CVAT.ai invoices,
+it&rsquo;s important to add this information before making the first payment.</p>
+<p>Here’s how you can do it:</p>
+<ol>
+<li>Sign up for a CVAT.ai account and log in.</li>
+<li>(Optional) If you add the VAT/tax number to the organization,
+first create an <a href="../../../docs/manual/advanced/organization/">organization</a> and
+switch to an <strong>Organization</strong> account.</li>
+<li>Navigate to the top right corner, next to the nickname,
+click on the arrow &gt; upgrade to the plan.</li>
+<li>Switch on the <strong>I would like the invoice to include additional
+data (address, phone number, VAT information)</strong> toggle, select the
+best payment period for you, and click <strong>Get Started</strong>.</li>
+</ol>
+<p><img src="../../../images/add-invoice.png" alt="Stripe Link"></p>
+<ol start="5">
+<li>You will see the billing page:</li>
+</ol>
+<p><img src="../../../images/add-vat.png" alt="Stripe Link"></p>
+<ul>
+<li>Phone number <strong>(1)</strong>.</li>
+<li><strong>Billing Address</strong>: Enter the billing address you want to appear on the invoice
+   in the address field <strong>(2)</strong>.</li>
+<li><strong>VAT Information</strong> and <strong>Business Name</strong>: Select the checkbox <strong>I am purchasing as a business</strong> and enter
+your VAT and business name information <strong>(3)</strong>.</li>
+</ul>
+<ol start="6">
+<li>
+<p>Select checkbox <strong>I agree to refund policy</strong> <strong>(4)</strong>.</p>
+<blockquote>
+<p><strong>Note:</strong> Please read the <strong>Refund policy</strong> before selecting the checkbox.</p>
+</blockquote>
+</li>
+<li>
+<p>Click <strong>Pay &amp; Subscribe</strong>.</p>
+</li>
+</ol>
+<p>All information you&rsquo;ve added will appear on the billing page and in the invoice.</p>
+<p><img src="../../../images/sm-profile-upd-inf.png" alt="Stripe Payment Info"></p>
+<p>By following these steps, you can seamlessly add VAT and other crucial information to your
+invoices, making your financial transactions with CVAT.ai transparent and compliant.</p>
+<h3 id="how-to-update-vattax-information-and-other-details-for-upcoming-invoices-from-cvatai">How to update VAT/tax information and other details for upcoming invoices from CVAT.ai?</h3>
+<p>In the top right corner, near the nickname, click on the arrow &gt; manage plan.</p>
+<p>You will see the Stripe page. Go to the <strong>Billing Information</strong> &gt; <strong>Update Information</strong>.</p>
+<p><img src="../../../images/sm-profile-upd-inf-2.png" alt="Stripe Payment Info"></p>
+<h3 id="can-a-paid-invoice-be-modified">Can a paid invoice be modified?</h3>
+<p>Once an invoice has been paid, it is not possible to modify it. This restriction is due to the
+limitations of the payment processing platform used, which in the case of CVAT.ai, is <a href="https://stripe.com/">Stripe</a>.</p>
+<p>Stripe&rsquo;s policy dictates that revisions to an invoice can only be made before payment.
+For more comprehensive information on this policy, please refer to Stripe&rsquo;s official documentation
+on <a href="https://docs.stripe.com/invoicing/invoice-edits#:~:text=Stripe%20lets%20you%20revise%20a,Edit%20the%20invoice%20description.">invoice edits</a>
+at their website.</p>
+<h3 id="how-can-i-get-a-quote-before-i-subscribe-how-to-add-a-po-number-to-my-invoices">How can I get a quote before I subscribe? How to add a PO number to my invoices?</h3>
+<p>If you require a quote from CVAT for payment via bank transfer, certain criteria must be met:</p>
+<ul>
+<li>The <strong>total subscription cost must be $396 and up per year</strong>.</li>
+<li>Quotes are available exclusively <strong>for annual subscriptions</strong>.</li>
+</ul>
+<p>Should you meet these requirements, please write to <a href="mailto:support@cvat.ai">support@cvat.ai</a></p>
+<h3 id="can-you-sign-an-agreement-before-i-subscribe">Can you sign an agreement before I subscribe?</h3>
+<p>Sign of specific agreements and approvals are available if you meet specific criteria
+(the <strong>total subscription cost must be $10,000 and up per year</strong>), for more details contact <a href="mailto:support@cvat.ai">support@cvat.ai</a></p>
+<h3 id="can-you-handle-a-bank-transfer-with-30-day-payment-terms">Can you handle a bank transfer with 30-day payment terms?</h3>
+<p>Yes, it is available if you fit the quota criteria, for details contact <a href="mailto:support@cvat.ai">support@cvat.ai</a>.</p>
+<h3 id="where-can-i-find-my-invoices">Where can I find my invoices?</h3>
+<p>In the top right corner, near the nickname, click on the arrow &gt; manage plan.</p>
+<p>You will see the Stripe page.
+At the bottom of the page, you will see the <strong>Invoice History</strong> section with all invoices.</p>
+<p>Invoices are automatically sent to the account owner&rsquo;s address used for the registration.</p>
+<p>To see the invoice click on the <strong>Show Invoice Icon</strong><img src="../../../images/invoice-icon.png" alt="Stripe Invoice Icon"> icon.</p>
+<p><img src="../../../images/show-invoice.png" alt="Show Invoice"></p>
+<h3 id="i-am-a-student-can-i-have-a-discount-or-free-access">I am a student, can I have a discount or free access?</h3>
+<p>To consider your request for a discount, we&rsquo;d need a few details from you:</p>
+<ul>
+<li>A copy of your valid student ID or any document confirming your university affiliation.</li>
+<li>Your university advisor&rsquo;s contact details.</li>
+<li>The name and contact information of the dean of your faculty.</li>
+<li>A brief outline of your project plan. This helps us understand how we might collaborate
+ on a joint marketing statement highlighting your use of CVAT.ai, and how it can benefit your project.</li>
+<li>We&rsquo;d also appreciate a positive LinkedIn post about your experience using CVAT, making sure to tag @CVAT.ai.</li>
+</ul>
+<p>All these details must be sent to <a href="mailto:support@cvat.ai">support@cvat.ai</a>. Once we have this
+information, we&rsquo;ll gladly offer you a 50% discount for one year.</p>
+<h2 id="payment-methods">Payment methods</h2>
+<p>This section describes how to change or add payment methods.</p>
+<h3 id="paying-with-bank-transfer">Paying with bank transfer</h3>
+<blockquote>
+<p><strong>Note</strong> At the moment this method of payment
+works only with US banks.</p>
+</blockquote>
+<p>To pay with a bank transfer:</p>
+<ol>
+<li>Go to the <strong>Upgrade to Solo</strong>/<strong>Team plan</strong>&gt; <strong>Get started</strong>.</li>
+<li>Click <strong>US Bank Transfer</strong>.</li>
+<li>Upon successful completion of the payment, you will receive a receipt via email.</li>
+</ol>
+<blockquote>
+<p><strong>Note</strong> that the completion of the payment process may take up to three banking days.</p>
+</blockquote>
+<p><img src="../../../images/bank_transfer_payment.png" alt="Bank Transfer Payment"></p>
+<h3 id="how-to-change-the-payment-method">How to change the payment method?</h3>
+<p>In the top right corner, near the nickname, click on the arrow &gt; manage plan &gt; <strong>+Add Payment Method</strong></p>
+<p><img src="../../../images/update_payment_team.png" alt="Payment team"></p>
+<h2 id="adding-and-removing-team-members">Adding and removing team members</h2>
+<blockquote>
+<p><strong>Solo plan</strong> is <strong>for personal use only</strong>, you cannot add or remove team members.</p>
+</blockquote>
+<p><strong>Team plan</strong> is for collaboration. To add members to your <a href="../../../docs/manual/advanced/organization/">Organization</a>,
+go to the <strong>Manage Team plan</strong> &gt; <strong>Update quantity</strong>.</p>
+<p><img src="../../../images/change_members_number_team.gif" alt="Add members"></p>
+<p>If you&rsquo;ve added a user <strong>before the current billing period ends</strong>,
+the payment will be prorated for the remaining time until the
+next billing cycle begins. From the following month onward,
+the full payment will be charged.</p>
+<p>In case you <strong>removed the user before the current billing period ends</strong>,
+funds will not be returned to your account,
+but next month you will pay less by the amount of unused funds.</p>
+<h2 id="change-plan">Change plan</h2>
+<h3 id="how-to-change-the-plan-from-solo-to-team">How to change the plan from Solo to Team?</h3>
+<p>The procedure is the same for both <strong>Solo</strong> and <strong>Team</strong> plans.</p>
+<p>If for some reason you want to change your plan, you need to:</p>
+<ol>
+<li>Unsubscribe from the previous plan.</li>
+<li>If you need a refund, contact us at <a href="mailto:support@cvat.ai">support@cvat.ai</a>.</li>
+<li>Subscribe to a new plan.</li>
+</ol>
+<h3 id="how-to-switch-from-a-monthly-subscription-to-an-annual-one">How to switch from a monthly subscription to an annual one?</h3>
+<p>If you have <strong>monthly subscription</strong>, and wish to switch to the
+<strong>Annual plan</strong>, please follow these steps:</p>
+<ol>
+<li>In the top-right corner, near the nickname, click on the arrow.</li>
+<li>Select <strong>Manage Solo</strong>/<strong>Team Plan</strong>.</li>
+<li>On the Stripe page that appears, click <strong>Update Plan</strong>.</li>
+</ol>
+<p><img src="../../../images/switch-to-annual.png" alt="Stripe Update Plan"></p>
+<ol start="4">
+<li>Choose <strong>Yearly</strong> and then click <strong>Continue</strong>.</li>
+</ol>
+<p><img src="../../../images/yearly-plan.png" alt="Stripe Yearly Plan"></p>
+<p>The price will be adjusted according to the number of members, selected in the
+<strong>Quantity</strong> field (if updated), taking into account the amount of money
+that was not spent in the current period.</p>
+<p>Upon payment, your subscription will be renewed and the start
+date will be reset to the day you switch to the new plan.</p>
+<h2 id="can-i-subscribe-to-several-plans">Can I subscribe to several plans?</h2>
+<p>Paid plans are not mutually exclusive.
+You can have several active subscriptions,
+for example, the <strong>Solo</strong> plan and several <strong>Team</strong>
+plans for different organizations.</p>
+<h2 id="cancel-plan">Cancel plan</h2>
+<p>This section describes how to cancel your CVAT subscription
+and what will happen to your data.</p>
+<h3 id="what-will-happen-to-my-data">What will happen to my data?</h3>
+<p>Once you have terminated your subscription, your data will remain
+accessible within the system for a month. During this period,
+you will be unable to add new tasks and free plan limits will be applied.</p>
+<p>In case you possess a substantial amount of data,
+it will be switched to read-only mode. It means
+you will not be able to save annotations, add any resources,
+and so on.</p>
+<p>Following the one month, you will receive a
+notification requesting you to either remove the
+excess data or it will be deleted automatically.</p>
+<h3 id="how-to-cancel-any-plan">How to cancel any plan?</h3>
+<p>To cancel the plan, in the top right corner, near the nickname,
+click on the arrow&gt; manage plan &gt; <strong>Cancel plan</strong></p>
+<p>Please, fill out the feedback form, to help us improve our platform.</p>
+<p><img src="../../../images/cancel-plan.png" alt="Cancel pro"></p>
+<h3 id="how-can-i-get-a-refund">How can I get a refund?</h3>
+<p>To understand if you are eligible for a refund,
+see <a href="https://www.cvat.ai/refund-policy">Refund policy</a>.</p>
+<ol>
+<li>Cancel the subscription before asking for a refund.</li>
+<li>Contact our support team at <a href="mailto:support@cvat.ai">support@cvat.ai</a>
+or use the &ldquo;Support&rdquo; option in the app.cvat.ai interface.</li>
+<li>Provide your account details and a brief explanation of the reason for the refund:
+<ul>
+<li>Send us your last invoice.</li>
+<li>Send us the username and e-mail address you’ve used to register in CVAT.ai.</li>
+</ul>
+</li>
+</ol>
+<p>Our team will review your request. We may request additional information if needed.
+Once approved, the refund will be processed to your original
+payment method <a href="https://docs.stripe.com/refunds#tracing-refunds">within 5-10 business days</a>.</p>
+<h2 id="plan-renewal">Plan renewal</h2>
+<p>To renew your CVAT.ai subscription, in the top right corner, near the nickname,
+click on the arrow&gt; manage plan &gt; <strong>Renew plan</strong>.</p>
+<h2 id="subscription-management-video-tutorial">Subscription management video tutorial</h2>
+<!--lint disable maximum-line-length-->
+<iframe width="560" height="315" src="https://www.youtube.com/embed/AMPtbmqZKNY?si=2TLhdytDIlSJ3Fwd" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>
+<!--lint enable maximum-line-length-->
+
+</div>
+
+
+
+    
+	
+  
+    
+    
+	
+    
+
+<div class="td-content" style="page-break-before: always">
+    
+	<h1 id="pg-de9c5bc5c1db845b6a6a71588659b371">2 - Social auth configuration</h1>
+    <div class="lead">Social accounts authentication for Self-Hosted solution</div>
+	<blockquote>
+<p><strong>Note:</strong> This is a paid feature available for <a href="https://www.cvat.ai/pricing/on-prem">Enterprise clients</a>.</p>
+</blockquote>
+<p>You can now easily set up authentication with popular social services, which opens doors to
+such benefits as:</p>
+<ul>
+<li>Convenience: you can use the existing
+social service credentials to sign in to CVAT.</li>
+<li>Time-saving: with just two clicks, you can
+sign in without the hassle of typing in сredentials, saving time and effort.</li>
+<li>Security: social auth service providers have
+high-level security measures in place to protect your accounts.</li>
+</ul>
+<p>Currently, we offer three options:</p>
+<ul>
+<li>Authentication with Github.</li>
+<li>Authentication with Google.</li>
+<li>Authentication with Amazon Cognito.</li>
+</ul>
+<p>With more to come soon. Stay tuned!</p>
+<p>See:</p>
+<ul>
+<li><a href="#enable-authentication-with-a-google-account">Enable authentication with a Google account</a></li>
+<li><a href="#enable-authentication-with-a-github-account">Enable authentication with a GitHub account</a></li>
+<li><a href="#enable-authentication-with-an-amazon-cognito">Enable authentication with an Amazon Cognito</a></li>
+</ul>
+<h2 id="enable-authentication-with-a-google-account">Enable authentication with a Google account</h2>
+<p>To enable authentication, do the following:</p>
+<ol>
+<li>
+<p>Log in to the <a href="https://console.cloud.google.com/">Google Cloud console</a></p>
+</li>
+<li>
+<p><a href="https://cloud.google.com/resource-manager/docs/creating-managing-projects">Create a project</a>,
+and go to <a href="https://console.cloud.google.com/apis/">APIs &amp; Services</a></p>
+</li>
+<li>
+<p>On the left menu, select <strong>OAuth consent</strong>, then select
+<strong>User type</strong> (<strong>Internal</strong> or <strong>External</strong>), and click <strong>Create</strong>.</p>
+</li>
+<li>
+<p>On the <strong>OAuth consent screen</strong> fill all required fields, and click <strong>Save and Continue</strong>.</p>
+</li>
+<li>
+<p>On the <strong>Scopes</strong> screen, click <strong>Add or remove scopes</strong> and
+select <code>auth/userinfo.email</code>, <code>auth/userinfo.profile</code>, and <code>openid</code>.
+Click <strong>Update</strong>, and <strong>Save and Continue</strong>.
+<br>For more information, see <a href="https://developers.google.com/workspace/guides/configure-oauth-consent">Configure Auth Consent</a>.</p>
+</li>
+<li>
+<p>On the left menu, click <strong>Credentials</strong>, on the top
+menu click <strong>+ Create credentials</strong>, and select <strong>OAuth client ID</strong>.</p>
+</li>
+<li>
+<p>From the <strong>Application Type</strong> select <strong>Web application</strong> and
+configure: <strong>Application name</strong>, <strong>Authorized JavaScript origins</strong>, <strong>Authorized redirect URIs</strong>.
+<br> For example, if you plan to deploy CVAT instance on <code>https://localhost:8080</code>, add <code>https://localhost:8080</code>
+to authorized JS origins and <code>https://localhost:8080/api/auth/social/goolge/login/callback/</code> to redirect URIs.</p>
+</li>
+<li>
+<p>Create conпiguration file in CVAT:</p>
+<ol>
+<li>Create the <code>auth_config.yml</code> file with the following content:</li>
+</ol>
+<div class="highlight"><pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-yaml" data-lang="yaml"><span style="display:flex;"><span><span style="color:#000">---</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline"></span><span style="color:#204a87;font-weight:bold">social_account</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">  </span><span style="color:#204a87;font-weight:bold">enabled</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline"> </span><span style="color:#204a87;font-weight:bold">true</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">  </span><span style="color:#204a87;font-weight:bold">google</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">    </span><span style="color:#204a87;font-weight:bold">client_id</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline"> </span><span style="color:#000">&lt;some_client_id&gt;</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">    </span><span style="color:#204a87;font-weight:bold">client_secret</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline"> </span><span style="color:#000">&lt;some_client_secret&gt;</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span></code></pre></div><ol start="2">
+<li>Set <code>AUTH_CONFIG_PATH=&quot;&lt;path_to_auth_config&gt;</code> environment variable.</li>
+</ol>
+</li>
+<li>
+<p>In a terminal, run the following command:</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>docker compose -f docker-compose.yml -f docker-compose.dev.yml -f docker-compose.override.yml up -d --build
+</span></span></code></pre></div></li>
+</ol>
+<h2 id="enable-authentication-with-a-github-account">Enable authentication with a GitHub account</h2>
+<p>There are 2 basic steps to enable GitHub account authentication.</p>
+<ol>
+<li>
+<p>Open the GitHub settings page.</p>
+</li>
+<li>
+<p>On the left menu, click <strong>&lt;&gt; Developer settings</strong> &gt; <strong>OAuth Apps</strong> &gt; <strong>Register new application</strong>.
+<br>For more information, see <a href="https://docs.github.com/en/developers/apps/building-oauth-apps/creating-an-oauth-app">Creating an OAuth App</a></p>
+</li>
+<li>
+<p>Fill in the name field, set the homepage URL (for example: <code>https://localhost:8080</code>),
+and authentication callback URL (for example: <code>https://localhost:8080/api/auth/social/github/login/callback/</code>).</p>
+</li>
+<li>
+<p>Create conпiguration file in CVAT:</p>
+<ol>
+<li>Create the <code>auth_config.yml</code> file with the following content:</li>
+</ol>
+<div class="highlight"><pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-yaml" data-lang="yaml"><span style="display:flex;"><span><span style="color:#000">---</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline"></span><span style="color:#204a87;font-weight:bold">social_account</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">  </span><span style="color:#204a87;font-weight:bold">enabled</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline"> </span><span style="color:#204a87;font-weight:bold">true</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">  </span><span style="color:#204a87;font-weight:bold">github</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">    </span><span style="color:#204a87;font-weight:bold">client_id</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline"> </span><span style="color:#000">&lt;some_client_id&gt;</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">    </span><span style="color:#204a87;font-weight:bold">client_secret</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline"> </span><span style="color:#000">&lt;some_client_secret&gt;</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span></code></pre></div><ol start="2">
+<li>Set <code>AUTH_CONFIG_PATH=&quot;&lt;path_to_auth_config&gt;</code> environment variable.</li>
+</ol>
+</li>
+<li>
+<p>In a terminal, run the following command:</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>docker compose -f docker-compose.yml -f docker-compose.dev.yml -f docker-compose.override.yml up -d --build
+</span></span></code></pre></div></li>
+</ol>
+<blockquote>
+<p><strong>Note:</strong> You can also configure <a href="https://docs.github.com/en/developers/apps/building-github-apps/creating-a-github-app">GitHub App</a>,
+but don&rsquo;t forget to add required permissions.
+<br>In the <strong>Permission</strong> &gt; <strong>Account permissions</strong> &gt; <strong>Email addresses</strong> must be set to <strong>read-only</strong>.</p>
+</blockquote>
+<h2 id="enable-authentication-with-an-amazon-cognito">Enable authentication with an Amazon Cognito</h2>
+<p>To enable authentication, do the following:</p>
+<ol>
+<li>
+<p>Create a user pool. For more information,
+see <a href="https://docs.aws.amazon.com/cognito/latest/developerguide/cognito-user-identity-pools.html">Amazon Cognito user pools</a></p>
+</li>
+<li>
+<p>Fill in the name field, set the homepage URL (for example: <code>https://localhost:8080</code>),
+and authentication callback URL (for example: <code>https://localhost:8080/api/auth/social/amazon-cognito/login/callback/</code>).</p>
+</li>
+<li>
+<p>Create conпiguration file in CVAT:</p>
+<ol>
+<li>Create the <code>auth_config.yml</code> file with the following content:</li>
+</ol>
+<div class="highlight"><pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-yaml" data-lang="yaml"><span style="display:flex;"><span><span style="color:#000">---</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline"></span><span style="color:#204a87;font-weight:bold">social_account</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">  </span><span style="color:#204a87;font-weight:bold">enabled</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline"> </span><span style="color:#204a87;font-weight:bold">true</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">  </span><span style="color:#204a87;font-weight:bold">amazon_cognito</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">    </span><span style="color:#204a87;font-weight:bold">client_id</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline"> </span><span style="color:#000">&lt;some_client_id&gt;</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">    </span><span style="color:#204a87;font-weight:bold">client_secret</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline"> </span><span style="color:#000">&lt;some_client_secret&gt;</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">    </span><span style="color:#204a87;font-weight:bold">domain</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline"> </span><span style="color:#000">https://&lt;domain-prefix&gt;.auth.us-east-1.amazoncognito.com</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span></code></pre></div><ol start="2">
+<li>Set <code>AUTH_CONFIG_PATH=&quot;&lt;path_to_auth_config&gt;</code> environment variable.</li>
+</ol>
+</li>
+<li>
+<p>In a terminal, run the following command:</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>docker compose -f docker-compose.yml -f docker-compose.dev.yml -f docker-compose.override.yml up -d --build
+</span></span></code></pre></div></li>
+</ol>
+
+</div>
+
+
+
+    
+	
+  
+    
+    
+	
+    
+
+<div class="td-content" style="page-break-before: always">
+    
+	<h1 id="pg-9b94b96fdd6b03bc28c8241ba3e48b41">3 - Shapes converter</h1>
+    <div class="lead">How to perform bulk actions on filtered shapes</div>
+	<p>The shapes converter is a feature that enables bulk actions on filtered <strong>shapes</strong>. It allows you to perform mutual
+conversion between masks, polygons and rectangles.</p>
+<blockquote>
+<p><strong>Note:</strong> All shapes converter work only when the filter is set up.</p>
+</blockquote>
+<p>See:</p>
+<ul>
+<li><a href="#run-actions-menu">Run actions menu</a></li>
+<li><a href="#convert-shapes">Convert shapes</a></li>
+<li><a href="#convert-shapes-video-tutorial">Convert shapes video tutorial</a></li>
+</ul>
+<h2 id="run-actions-menu">Run actions menu</h2>
+<p>Annotations actions can be accessed from the annotation menu.
+To access it, click on the burger icon
+and then select <strong>Run actions</strong>.</p>
+<blockquote>
+<p>Note: All <strong>Shapes converter</strong> functions work in alignment with set up filter.</p>
+</blockquote>
+<p><img src="../../../images/run-actions-menu.jpg" alt=""></p>
+<p>You will see the following dialog:</p>
+<p><img src="../../../images/shapes-converter-dialog.jpg" alt=""></p>
+<p>With the following fields:</p>
+<!--lint disable maximum-line-length-->
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Select action</strong></td>
+<td>Drop-down list with available actions: <br><li><strong>Remove filtered shapes</strong> - removes all shapes in alignment with the set-up filter. Doesn&rsquo;t work with tracks.</li><li><strong>Shapes converter: masks to polygons</strong> - converts all masks to polygons.</li><li><strong>Shapes converter: masks to rectangles</strong> - converts all masks to rectangles in alignment with the set-up filter.</li><li><strong>Shapes converter: polygon to masks</strong> - converts all polygons to masks.</li><li><strong>Shapes converter: polygon to rectangles</strong> - converts all polygons to rectangles.</li><li><strong>Shapes converter: rectangles to masks</strong> - converts all rectangles to masks.</li><li><strong>Shapes converter: rectangles to polygons</strong> - converts all rectangles to polygons.</li><br><strong>Note:</strong> only <strong>Remove filtered shapes</strong> is available on the <strong>Free</strong> plan.</td>
+</tr>
+<tr>
+<td><strong>Specify frames to run action</strong></td>
+<td>Field where you can specify the frame range for the selected action. Enter the starting frame in the <strong>Starting from frame:</strong> field, and the ending frame in the <strong>up to frame</strong> field. <br><br>If nothing is selected here or in <strong>Choose one of the predefined options</strong> section, the action will be applied to all fields.</td>
+</tr>
+<tr>
+<td><strong>Choose one of the predefined options</strong></td>
+<td>Predefined options to apply to frames. Selection here is mutually exclusive with <strong>Specify frames to run action</strong>. <br><br>If nothing is selected here or in <strong>Specify frames to run action</strong> section, the action will be applied to all fields.</td>
+</tr>
+</tbody>
+</table>
+<!--lint enable maximum-line-length-->
+<h2 id="convert-shapes">Convert shapes</h2>
+<p><strong>Recommended Precautions Before Running Annotation Actions</strong></p>
+<ul>
+<li>
+<p><strong>Saving changes:</strong> It is recommended to save all changes prior to initiating the annotation action.
+If unsaved changes are detected, a prompt will advise to save these changes
+to avoid any potential loss of data.</p>
+</li>
+<li>
+<p><strong>Disabу auto-save:</strong> Prior to running the annotation action, disabling the auto-save feature
+is advisable. A notification will suggest this action if auto-save is currently active.</p>
+</li>
+<li>
+<p><strong>Committing changes:</strong> Changes applied during the annotation session
+will not be committed to the server until the saving process is manually
+initiated. This can be done either by the user or through the
+auto-save feature, should it be enabled.</p>
+</li>
+</ul>
+<p>To convert shapes, do the following:</p>
+<ol>
+<li>
+<p>Annotate your dataset.</p>
+<p><img src="../../../images/shapes-converter-annotated-dataset.jpg" alt=""></p>
+</li>
+<li>
+<p>Set up <a href="../../../docs/manual/advanced/filter/">filters</a>.</p>
+<p><img src="../../../images/shapes-converter-setup-filter.png" alt=""></p>
+</li>
+<li>
+<p>From the burger menu, select <strong>Run actions</strong>.</p>
+</li>
+<li>
+<p>Choose the action you need from the <strong>Select action</strong> drop-down list.</p>
+</li>
+<li>
+<p>(Optional) In the <strong>Starting from frame</strong> field, enter the frame number where the action should begin,
+and in the <strong>up to frame</strong> field, specify the frame number where the action should end.</p>
+</li>
+<li>
+<p>(Optional) Select an option from <strong>Or choose one of the predefined options</strong> to apply the action.</p>
+</li>
+<li>
+<p>Click <strong>Run</strong>. <br> A progress bar will appear. You may abort the process by clicking <strong>Cancel</strong> until the process commits modified objects at the end of pipeline.</p>
+<p><img src="../../../images/shapes-coverter-action-run.jpg" alt=""></p>
+</li>
+</ol>
+<blockquote>
+<p><strong>Note:</strong> Once the action is applied, it cannot be undone.</p>
+</blockquote>
+<h2 id="convert-shapes-video-tutorial">Convert shapes video tutorial</h2>
+<!--lint disable maximum-line-length-->
+<iframe width="560" height="315" src="https://www.youtube.com/embed/sAVEdjmw0C0?si=ZhRuwdAMSNrdieBp" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>
+<!--lint enable maximum-line-length-->
+
+</div>
+
+
+
+    
+	
+  
+
+
+
+          </main>
+        </div>
+      </div>
+      <footer class="bg-dark py-5 row d-print-none" style="min-height: 0">
+  <div class="container-fluid">
+    <div class="row">
+      <div class="col text-center">
+        
+        
+        
+<ul class="list-inline mb-0">
+  
+  <li class="list-inline-item mx-2 h3" data-bs-toggle="tooltip" data-placement="top" title="Gitter public chat" aria-label="Gitter public chat">
+    <a class="text-white" rel="noopener noreferrer" href="https://gitter.im/opencv-cvat/public">
+      <i class="fab fa-gitter"></i>
+    </a>
+  </li>
+  
+  <li class="list-inline-item mx-2 h3" data-bs-toggle="tooltip" data-placement="top" title="Stack Overflow" aria-label="Stack Overflow">
+    <a class="text-white" rel="noopener noreferrer" href="https://stackoverflow.com/search?q=%23cvat">
+      <i class="fab fa-stack-overflow"></i>
+    </a>
+  </li>
+  
+  <li class="list-inline-item mx-2 h3" data-bs-toggle="tooltip" data-placement="top" title="YouTube" aria-label="YouTube">
+    <a class="text-white" rel="noopener noreferrer" href="https://www.youtube.com/@cvat-ai">
+      <i class="fab fa-youtube"></i>
+    </a>
+  </li>
+  
+</ul>
+
+        
+        
+      </div>
+      <div class="col-4 text-center">
+        <div class="row">
+          <a href="https://www.cvat.ai/privacy">Privacy Policy</a>
+        </div>
+        <div class="row">
+          <a href="https://www.cvat.ai/terms-of-use">Terms of Use</a>
+        </div>
+        <div class="row">
+          
+            <p><a href="../../../about/">About</a></p>
+          
+        </div>
+      </div>
+      <div class="col text-right text-center">
+        
+        
+        
+<ul class="list-inline mb-0">
+  
+  <li class="list-inline-item mx-2 h3" data-bs-toggle="tooltip" data-placement="top" title="GitHub" aria-label="GitHub">
+    <a class="text-white" rel="noopener noreferrer" href="https://github.com/cvat-ai/cvat">
+      <i class="fab fa-github"></i>
+    </a>
+  </li>
+  
+  <li class="list-inline-item mx-2 h3" data-bs-toggle="tooltip" data-placement="top" title="Gitter developers chat" aria-label="Gitter developers chat">
+    <a class="text-white" rel="noopener noreferrer" href="https://gitter.im/opencv-cvat/dev">
+      <i class="fab fa-gitter"></i>
+    </a>
+  </li>
+  
+  <li class="list-inline-item mx-2 h3" data-bs-toggle="tooltip" data-placement="top" title="Discord chat" aria-label="Discord chat">
+    <a class="text-white" rel="noopener noreferrer" href="https://discord.gg/fNR3eXfk6C">
+      <i class="fab fa-discord"></i>
+    </a>
+  </li>
+  
+</ul>
+
+        
+        
+      </div>
+    </div>
+  </div>
+</footer>
+
+
+
+    </div>
+    
+  <script src="../../../js/main.min.99abe30f7fb05785a480d405ee1665ebd520cec6bbadffe966b7737e103675b8.js" integrity="sha256-mavjD3&#43;wV4WkgNQF7hZl69Ugzsa7rf/pZrdzfhA2dbg=" crossorigin="anonymous"></script>
+<script src='../../../js/prism.js'></script>
+<script src='../../../js/tabpane-persist.js'></script>
+
+  </body>
+</html>

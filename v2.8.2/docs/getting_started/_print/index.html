@@ -1,0 +1,587 @@
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    <meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+<meta name="generator" content="Hugo 0.83.0" /><link rel="canonical" type="text/html" href="../../../docs/getting_started/">
+<META NAME="ROBOTS" CONTENT="NOINDEX, NOFOLLOW">
+
+
+<link rel="shortcut icon" href="../../../favicons/favicon.ico" >
+<link rel="apple-touch-icon" href="../../../favicons/apple-touch-icon-180x180.png" sizes="180x180">
+<link rel="icon" type="image/png" href="../../../favicons/favicon-16x16.png" sizes="16x16">
+<link rel="icon" type="image/png" href="../../../favicons/favicon-32x32.png" sizes="32x32">
+<link rel="icon" type="image/png" href="../../../favicons/android-36x36.png" sizes="36x36">
+<link rel="icon" type="image/png" href="../../../favicons/android-48x48.png" sizes="48x48">
+<link rel="icon" type="image/png" href="../../../favicons/android-72x72.png" sizes="72x72">
+<link rel="icon" type="image/png" href="../../../favicons/android-96x96.png" sizes="96x96">
+<link rel="icon" type="image/png" href="../../../favicons/android-144x144.png" sizes="144x144">
+<link rel="icon" type="image/png" href="../../../favicons/android-192x192.png" sizes="192x192">
+
+<title>Getting started | CVAT</title>
+<meta name="description" content=""><meta property="og:title" content="Getting started" />
+<meta property="og:description" content="" />
+<meta property="og:type" content="website" />
+<meta property="og:url" content="/docs/getting_started/" /><meta property="og:site_name" content="CVAT" />
+
+<meta itemprop="name" content="Getting started">
+<meta itemprop="description" content=""><meta name="twitter:card" content="summary"/>
+<meta name="twitter:title" content="Getting started"/>
+<meta name="twitter:description" content=""/>
+
+
+
+
+<link rel="preload" href="../../../scss/main.min.6c5c9450c6df778171581cbf2aa82ce445787ffee7a644313041b00ff75d710d.css" as="style">
+<link href="../../../scss/main.min.6c5c9450c6df778171581cbf2aa82ce445787ffee7a644313041b00ff75d710d.css" rel="stylesheet" integrity="">
+
+
+<script
+  src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"
+  integrity="sha256-9/aliU8dGd2tb6OSsuzixeV4y/faTqgFtohetphbbj0="
+  crossorigin="anonymous"></script>
+
+<script
+  src="https://unpkg.com/lunr@2.3.8/lunr.min.js"
+  integrity="sha384-vRQ9bDyE0Wnu+lMfm57BlYLO0/XauFuKpVsZPs7KEDwYKktWi5+Kz3MP8++DFlRY"
+  crossorigin="anonymous"></script>
+
+
+
+<link rel="stylesheet" href="../../../css/prism.css"/>
+
+
+
+
+
+
+  </head>
+  <body class="td-section">
+    <header>
+      
+
+
+<nav class="js-navbar-scroll navbar navbar-expand navbar-dark flex-column flex-md-row td-navbar">
+        <a class="navbar-brand" href="../../../about/">
+    <span class="navbar-logo"><svg width="80" height="15" viewBox="0 0 80 15" xmlns="http://www.w3.org/2000/svg"><path d="M6.63399 15C2.37083 15 0 12.5333.0 7.48889.0 2.46667 2.34908.0 6.63399.0H10.6576V2.62222H6.63399c-2.84935.0-4.0674 1.44445-4.0674 4.86667.0 3.44441 1.2398 4.88891 4.0674 4.88891H15.0638V15H6.63399z"/><path d="M22.412.0l4.8346 13.1004C27.7814 14.5415 28.8724 15 30.2842 15 31.7817 15 32.7657 14.476 33.3005 13.1004L38.3918.0H35.5895L30.9902 11.8559C30.8404 12.2052 30.6265 12.3581 30.2842 12.3581 29.942 12.3581 29.7067 12.2052 29.5783 11.8559L25.1929.0H22.412z"/><path d="M53.0989 3.1441C53.2487 2.79476 53.484 2.64192 53.8262 2.64192 54.1685 2.64192 54.4038 2.79476 54.5322 3.1441L58.9176 15h2.8023L56.8425 1.89956C56.3291.524017 55.3451.0 53.8476.0 52.3288.0 51.3448.524017 50.81 1.89956L45.74 15h2.781L53.0989 3.1441z"/><path d="M69.0681.0V2.5665H73.2661V15H75.802V2.5665H80V0H69.0681z"/></svg></span>
+  </a>
+  <div class="td-navbar-nav-scroll ml-md-auto" id="main_navbar">
+    <ul class="navbar-nav mt-2 mt-lg-0">
+      
+      
+      <li class="nav-item mr-4 mb-2 mb-lg-0">
+        
+        
+        
+        
+        
+        
+        
+        
+        <a class="nav-link active" href="../../../docs/" ><span class="active">Documentation</span></a>
+      </li>
+      
+      <li class="nav-item mr-4 mb-2 mb-lg-0">
+        
+        
+        
+        
+        
+        
+        
+        
+        <a class="nav-link" href="../../../about/" ><span>About</span></a>
+      </li>
+      
+      <li class="nav-item mr-4 mb-2 mb-lg-0">
+        
+        
+        
+        
+        
+        
+        <a class="nav-link" href="https://app.cvat.ai"  ><span>Try it now</span></a>
+      </li>
+      
+      <li class="nav-item mr-4 mb-2 mb-lg-0">
+        
+        
+        
+        
+        
+        
+        <a class="nav-link" href="https://github.com/cvat-ai/cvat"  ><i class='fab fa-github'></i><span>GitHub</span></a>
+      </li>
+      
+      
+        
+        <li class="nav-item dropdown">
+          <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-target="#dropdown_ver" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+            v2.8.2
+          </a>
+        </li>
+        
+      
+      
+    </ul>
+  </div>
+  <div class="dropdown-menu" id="dropdown_ver" aria-labelledby="navbarDropdownMenuLink">
+    
+      
+        <a class="dropdown-item" href="../../../../docs/getting_started/">Latest version</a>
+    
+      
+        <a class="dropdown-item" href="../../../../v1.5.0/docs/getting_started/">v1.5.0</a>
+    
+      
+        <a class="dropdown-item" href="../../../../v1.6.0/docs/getting_started/">v1.6.0</a>
+    
+      
+        <a class="dropdown-item" href="../../../../v1.7.0/docs/getting_started/">v1.7.0</a>
+    
+      
+        <a class="dropdown-item" href="../../../../v2.0.0/docs/getting_started/">v2.0.0</a>
+    
+      
+        <a class="dropdown-item" href="../../../../v2.1.0/docs/getting_started/">v2.1.0</a>
+    
+      
+        <a class="dropdown-item" href="../../../../v2.10.3/docs/getting_started/">v2.10.3</a>
+    
+      
+        <a class="dropdown-item" href="../../../../v2.11.3/docs/getting_started/">v2.11.3</a>
+    
+      
+        <a class="dropdown-item" href="../../../../v2.12.1/docs/getting_started/">v2.12.1</a>
+    
+      
+        <a class="dropdown-item" href="../../../../v2.13.0/docs/getting_started/">v2.13.0</a>
+    
+      
+        <a class="dropdown-item" href="../../../../v2.14.4/docs/getting_started/">v2.14.4</a>
+    
+      
+        <a class="dropdown-item" href="../../../../v2.15.0/docs/getting_started/">v2.15.0</a>
+    
+      
+        <a class="dropdown-item" href="../../../../v2.16.2/docs/getting_started/">v2.16.2</a>
+    
+      
+        <a class="dropdown-item" href="../../../../v2.2.0/docs/getting_started/">v2.2.0</a>
+    
+      
+        <a class="dropdown-item" href="../../../../v2.3.0/docs/getting_started/">v2.3.0</a>
+    
+      
+        <a class="dropdown-item" href="../../../../v2.4.9/docs/getting_started/">v2.4.9</a>
+    
+      
+        <a class="dropdown-item" href="../../../../v2.5.2/docs/getting_started/">v2.5.2</a>
+    
+      
+        <a class="dropdown-item" href="../../../../v2.6.2/docs/getting_started/">v2.6.2</a>
+    
+      
+        <a class="dropdown-item" href="../../../../v2.7.6/docs/getting_started/">v2.7.6</a>
+    
+      
+        <a class="dropdown-item" href="../../../../v2.8.2/docs/getting_started/">v2.8.2</a>
+    
+      
+        <a class="dropdown-item" href="../../../../v2.9.2/docs/getting_started/">v2.9.2</a>
+    
+  </div>
+  <div class="navbar-nav d-none d-lg-block">
+
+
+
+<input
+  type="search"
+  class="form-control td-search-input"
+  placeholder="&#xf002; Search this site…"
+  aria-label="Search this site…"
+  autocomplete="off"
+  
+  data-offline-search-index-json-src="../../../offline-search-index.fe04f9da1a620e4bae3fc45f6088b6b5.json"
+  data-offline-search-base-href="../../../"
+  data-offline-search-max-results="10"
+>
+
+</div>
+</nav>
+
+    </header>
+    <div class="container-fluid td-outer">
+      <div class="td-main">
+        <div class="row flex-xl-nowrap">
+          <div class="col-12 col-md-3 col-xl-2 td-sidebar d-print-none">
+          </div>
+          <div class="d-none d-xl-block col-xl-2 td-toc d-print-none">
+          </div>
+          <main class="col-12 col-md-9 col-xl-8 pl-md-5" role="main">
+            
+
+
+
+
+<div class="td-content">
+<div class="pageinfo pageinfo-primary d-print-none">
+<p>
+This the multi-page printable view of this section.
+<a href="#" onclick="print();return false;">Click here to print</a>.
+</p><p>
+<a href="../../../docs/getting_started/">Return to the regular view of this page</a>.
+</p>
+</div>
+
+
+
+<h1 class="title">Getting started</h1>
+
+
+
+
+
+    <ul>
+    
+  
+  
+  
+  
+
+  
+    
+    
+	
+<li>1: <a href="#pg-8035dad626ad4c51c2222198a8578586">Product tour</a></li>
+
+
+    
+    <ul>
+        
+  
+  
+  
+  
+
+  
+    
+    
+	
+<li>1.1: <a href="#pg-fe222c522e10f6571cb69e7c8f153816">CVAT intro</a></li>
+
+
+    
+  
+    
+    
+	
+<li>1.2: <a href="#pg-2a54aa2039884366a9f454e2d53899a1">Introduction to CVAT and Datumaro</a></li>
+
+
+    
+  
+
+    </ul>
+    
+  
+
+    </ul>
+
+
+<div class="content">
+      <p>This section contains basic information and links to sections necessary for a quick start.</p>
+<h2 id="installation">Installation</h2>
+<p>First step is to install CVAT on your system:</p>
+<ul>
+<li><a href="../../../docs/administration/basics/installation/#ubuntu-1804-x86_64amd64">Installation on Ubuntu</a></li>
+<li><a href="../../../docs/administration/basics/installation/#windows-10">Installation on Windows 10</a></li>
+<li><a href="../../../docs/administration/basics/installation/#mac-os-mojave">Installation on Mac OS</a></li>
+</ul>
+<p>To learn how to create a superuser and log in to CVAT,
+go to the <a href="../../../docs/manual/basics/authorization/">authorization</a> section.</p>
+<h2 id="getting-started-in-cvat">Getting started in CVAT</h2>
+<p>To create a task, go to <code>Tasks</code> section. Click <code>Create new task</code> to go to the task creation page.</p>
+<p>Set the name of the future task.</p>
+<p>Set the label using the constructor: first click <code>Add label</code>, then enter the name of the label and choose the color.</p>
+<p><img src="../../../images/create_a_new_task.gif" alt=""></p>
+<p>You need to upload images or videos for your future annotation. To do so, simply drag and drop the files.</p>
+<p>To learn more, go to <a href="../../../docs/manual/basics/creating_an_annotation_task/">creating an annotation task</a></p>
+<h2 id="annotation">Annotation</h2>
+<h3 id="basic">Basic</h3>
+<p>When the task is created, you will see a corresponding message in the top right corner.
+Click the <code>Open task</code> button to go to the task page.</p>
+<p>Once on the task page, open a link to the job in the jobs list.</p>
+<p>Choose a correct section for your type of the task and start annotation.</p>
+<table>
+<thead>
+<tr>
+<th>Shape</th>
+<th>Annotation</th>
+<th>Interpolation</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Rectangle</td>
+<td><a href="../../../docs/manual/basics/shape-mode-basics/">Shape mode (basics)</a></td>
+<td><a href="../../../docs/manual/basics/track-mode-basics/">Track mode (basics)</a></td>
+</tr>
+<tr>
+<td>Polygon</td>
+<td><a href="../../../docs/manual/advanced/annotation-with-polygons/">Annotation with polygons</a></td>
+<td><a href="../../../docs/manual/advanced/annotation-with-polygons/track-mode-with-polygons/">Track mode with polygons</a></td>
+</tr>
+<tr>
+<td>Polyline</td>
+<td><a href="../../../docs/manual/advanced/annotation-with-polylines/">Annotation with polylines</a></td>
+<td></td>
+</tr>
+<tr>
+<td>Points</td>
+<td><a href="../../../docs/manual/advanced/annotation-with-points/points-in-shape-mode/">Points in shape mode</a></td>
+<td><a href="../../../docs/manual/advanced/annotation-with-points/liner-interpolation-with-one-point/">Liner interpolation with one point</a></td>
+</tr>
+<tr>
+<td>Cuboids</td>
+<td><a href="../../../docs/manual/advanced/annotation-with-cuboids/">Annotation with cuboids</a></td>
+<td><a href="../../../docs/manual/advanced/annotation-with-cuboids/editing-the-cuboid/">Editing the cuboid</a></td>
+</tr>
+<tr>
+<td>Tag</td>
+<td><a href="../../../docs/manual/advanced/annotation-with-tags/">Annotation with tags</a></td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<h3 id="advanced">Advanced</h3>
+<p>In CVAT there is the possibility of using automatic and semi-automatic annotation what gives
+you the opportunity to speed up the execution of the annotation:</p>
+<ul>
+<li><a href="../../../docs/manual/advanced/opencv-tools/">OpenCV tools</a> - tools included in CVAT by default.</li>
+<li><a href="../../../docs/manual/advanced/ai-tools/">AI tools</a> - tools requiring installation.</li>
+<li><a href="../../../docs/manual/advanced/automatic-annotation/">Automatic annotation</a> - automatic annotation with using DL models.</li>
+</ul>
+<h2 id="export-dataset">Export dataset</h2>
+<p><img src="../../../images/image028.jpg" alt=""></p>
+<ol>
+<li>
+<p>To download the annotations, first you have to save all changes.
+Click the <code>Save</code> button or press <code>Ctrl+S</code>to save annotations quickly.</p>
+</li>
+<li>
+<p>After you saved the changes, click the <code>Menu</code> button.</p>
+</li>
+<li>
+<p>Then click the <code>Export dataset</code> button.</p>
+</li>
+<li>
+<p>Lastly choose a format of the dataset.
+Exporting is available in formats from the <a href="../../../docs/manual/advanced/formats/">list of supported formats</a>.</p>
+</li>
+</ol>
+<p>To learn more, go to <a href="../../../docs/manual/advanced/export-import-datasets/">export/import datasets</a> section.</p>
+
+</div>
+</div>
+
+
+  
+  
+  
+  
+
+  
+  
+
+  
+    
+    
+	
+    
+
+<div class="td-content" style="page-break-before: always">
+    
+	<h1 id="pg-8035dad626ad4c51c2222198a8578586">1 - Product tour</h1>
+    
+	
+</div>
+
+
+
+    
+      
+  
+  
+  
+  
+
+  
+  
+
+  
+    
+    
+	
+    
+
+<div class="td-content" style="">
+    
+	<h1 id="pg-fe222c522e10f6571cb69e7c8f153816">1.1 - CVAT intro</h1>
+    
+	<p>In this video, we show how to use CVAT - how to sign up, upload your data, annotate it, and download it.
+This video is the first one in a series that’ll guide you on our product and its many features.</p>
+<iframe width="560" height="315" src="https://www.youtube.com/embed/14Z1Ukynxd4" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+
+</div>
+
+
+
+    
+	
+  
+    
+    
+	
+    
+
+<div class="td-content" style="page-break-before: always">
+    
+	<h1 id="pg-2a54aa2039884366a9f454e2d53899a1">1.2 - Introduction to CVAT and Datumaro</h1>
+    
+	<p>We are excited to introduce the first video in our course series designed to help you
+annotate data faster and better using CVAT.
+In this introductory 4 minute video, we walk through:</p>
+<ol>
+<li>what problems CVAT and Datumaro solve,</li>
+<li>how they can speed up your model training process, and</li>
+<li>some resources you can use to learn more about how to use them.</li>
+</ol>
+<iframe width="560" height="315" src="https://www.youtube.com/embed/GgKIEFhd1CY" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+
+</div>
+
+
+
+    
+	
+  
+
+    
+	
+  
+
+
+
+          </main>
+        </div>
+      </div>
+      
+<footer class="bg-dark py-5 row d-print-none">
+  <div class="container-fluid mx-sm-5">
+    <div class="row">
+      <div class="col-6 col-sm-2 text-xs-center order-sm-2">
+        
+        
+        
+<ul class="list-inline mb-0">
+  
+  <li class="list-inline-item mx-2 h3" data-toggle="tooltip" data-placement="top" title="Gitter public chat" aria-label="Gitter public chat">
+    <a class="text-white" rel="noopener noreferrer" href="https://gitter.im/opencv-cvat/public">
+      <i class="fab fa-gitter"></i>
+    </a>
+  </li>
+  
+  <li class="list-inline-item mx-2 h3" data-toggle="tooltip" data-placement="top" title="Stack Overflow" aria-label="Stack Overflow">
+    <a class="text-white" rel="noopener noreferrer" href="https://stackoverflow.com/search?q=%23cvat">
+      <i class="fab fa-stack-overflow"></i>
+    </a>
+  </li>
+  
+  <li class="list-inline-item mx-2 h3" data-toggle="tooltip" data-placement="top" title="YouTube" aria-label="YouTube">
+    <a class="text-white" rel="noopener noreferrer" href="https://www.youtube.com/@cvat-ai">
+      <i class="fab fa-youtube"></i>
+    </a>
+  </li>
+  
+</ul>
+
+        
+        
+      </div>
+      <div class="col-6 col-sm-2 text-right text-xs-center order-sm-3">
+        
+        
+        
+<ul class="list-inline mb-0">
+  
+  <li class="list-inline-item mx-2 h3" data-toggle="tooltip" data-placement="top" title="GitHub" aria-label="GitHub">
+    <a class="text-white" rel="noopener noreferrer" href="https://github.com/cvat-ai/cvat">
+      <i class="fab fa-github"></i>
+    </a>
+  </li>
+  
+  <li class="list-inline-item mx-2 h3" data-toggle="tooltip" data-placement="top" title="Gitter developers chat" aria-label="Gitter developers chat">
+    <a class="text-white" rel="noopener noreferrer" href="https://gitter.im/opencv-cvat/dev">
+      <i class="fab fa-gitter"></i>
+    </a>
+  </li>
+  
+  <li class="list-inline-item mx-2 h3" data-toggle="tooltip" data-placement="top" title="Discord chat" aria-label="Discord chat">
+    <a class="text-white" rel="noopener noreferrer" href="https://discord.gg/fNR3eXfk6C">
+      <i class="fab fa-discord"></i>
+    </a>
+  </li>
+  
+</ul>
+
+        
+        
+      </div>
+      <div class="col-12 col-sm-8 text-center order-sm-2">
+        <small class="mr-1"><a href="https://www.cvat.ai/privacy">Privacy Policy</a></small>
+        |
+        <small class="mx-1"><a href="https://www.cvat.ai/terms-of-use">Terms of Use</a></small>
+      </div>
+  
+    <p class="mt-2"><a href="../../../about/">About</a></p>
+  
+      </div>
+    </div>
+  </div>
+</footer>
+
+
+    </div>
+    <script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.1/dist/umd/popper.min.js" integrity="sha384-9/reFTGAW83EW2RDu2S0VKaIzap3H66lZH81PoYlFhbGU+6BZp6G7niu735Sk7lN" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@4.6.0/dist/js/bootstrap.min.js" integrity="sha384-+YQ4JLhjyBLPDQt//I+STsc9iw4uQqACwlvpslubQzn4u2UU2UFM80nGisd026JF" crossorigin="anonymous"></script>
+
+
+
+
+
+
+ 
+
+
+
+
+
+
+
+
+
+
+
+
+
+<script src="../../../js/main.min.3b172c13b62c2bea8b1c9d2599cddc8cf89718a92d792c680871c81ba43d8c85.js" integrity="sha256-OxcsE7YsK&#43;qLHJ0lmc3cjPiXGKkteSxoCHHIG6Q9jIU=" crossorigin="anonymous"></script>
+
+
+
+<script src='../../../js/prism.js'></script>
+
+
+
+  </body>
+</html>

@@ -1,0 +1,2726 @@
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    <meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+<meta name="generator" content="Hugo 0.83.0" /><link rel="canonical" type="text/html" href="../../../../../docs/manual/advanced/formats/">
+<META NAME="ROBOTS" CONTENT="NOINDEX, NOFOLLOW">
+
+
+<link rel="shortcut icon" href="../../../../../favicons/favicon.ico" >
+<link rel="apple-touch-icon" href="../../../../../favicons/apple-touch-icon-180x180.png" sizes="180x180">
+<link rel="icon" type="image/png" href="../../../../../favicons/favicon-16x16.png" sizes="16x16">
+<link rel="icon" type="image/png" href="../../../../../favicons/favicon-32x32.png" sizes="32x32">
+<link rel="icon" type="image/png" href="../../../../../favicons/android-36x36.png" sizes="36x36">
+<link rel="icon" type="image/png" href="../../../../../favicons/android-48x48.png" sizes="48x48">
+<link rel="icon" type="image/png" href="../../../../../favicons/android-72x72.png" sizes="72x72">
+<link rel="icon" type="image/png" href="../../../../../favicons/android-96x96.png" sizes="96x96">
+<link rel="icon" type="image/png" href="../../../../../favicons/android-144x144.png" sizes="144x144">
+<link rel="icon" type="image/png" href="../../../../../favicons/android-192x192.png" sizes="192x192">
+
+<title>Export annotations and data from CVAT | CVAT</title>
+<meta name="description" content=""><meta property="og:title" content="Export annotations and data from CVAT" />
+<meta property="og:description" content="List of data export formats formats supported by CVAT." />
+<meta property="og:type" content="website" />
+<meta property="og:url" content="/docs/manual/advanced/formats/" /><meta property="og:site_name" content="CVAT" />
+
+<meta itemprop="name" content="Export annotations and data from CVAT">
+<meta itemprop="description" content="List of data export formats formats supported by CVAT."><meta name="twitter:card" content="summary"/>
+<meta name="twitter:title" content="Export annotations and data from CVAT"/>
+<meta name="twitter:description" content="List of data export formats formats supported by CVAT."/>
+
+
+
+
+<link rel="preload" href="../../../../../scss/main.min.6c5c9450c6df778171581cbf2aa82ce445787ffee7a644313041b00ff75d710d.css" as="style">
+<link href="../../../../../scss/main.min.6c5c9450c6df778171581cbf2aa82ce445787ffee7a644313041b00ff75d710d.css" rel="stylesheet" integrity="">
+
+
+<script
+  src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"
+  integrity="sha256-9/aliU8dGd2tb6OSsuzixeV4y/faTqgFtohetphbbj0="
+  crossorigin="anonymous"></script>
+
+<script
+  src="https://unpkg.com/lunr@2.3.8/lunr.min.js"
+  integrity="sha384-vRQ9bDyE0Wnu+lMfm57BlYLO0/XauFuKpVsZPs7KEDwYKktWi5+Kz3MP8++DFlRY"
+  crossorigin="anonymous"></script>
+
+
+
+<link rel="stylesheet" href="../../../../../css/prism.css"/>
+
+
+
+
+
+
+  </head>
+  <body class="td-section">
+    <header>
+      
+
+
+<nav class="js-navbar-scroll navbar navbar-expand navbar-dark flex-column flex-md-row td-navbar">
+        <a class="navbar-brand" href="../../../../../about/">
+    <span class="navbar-logo"><svg width="80" height="15" viewBox="0 0 80 15" xmlns="http://www.w3.org/2000/svg"><path d="M6.63399 15C2.37083 15 0 12.5333.0 7.48889.0 2.46667 2.34908.0 6.63399.0H10.6576V2.62222H6.63399c-2.84935.0-4.0674 1.44445-4.0674 4.86667.0 3.44441 1.2398 4.88891 4.0674 4.88891H15.0638V15H6.63399z"/><path d="M22.412.0l4.8346 13.1004C27.7814 14.5415 28.8724 15 30.2842 15 31.7817 15 32.7657 14.476 33.3005 13.1004L38.3918.0H35.5895L30.9902 11.8559C30.8404 12.2052 30.6265 12.3581 30.2842 12.3581 29.942 12.3581 29.7067 12.2052 29.5783 11.8559L25.1929.0H22.412z"/><path d="M53.0989 3.1441C53.2487 2.79476 53.484 2.64192 53.8262 2.64192 54.1685 2.64192 54.4038 2.79476 54.5322 3.1441L58.9176 15h2.8023L56.8425 1.89956C56.3291.524017 55.3451.0 53.8476.0 52.3288.0 51.3448.524017 50.81 1.89956L45.74 15h2.781L53.0989 3.1441z"/><path d="M69.0681.0V2.5665H73.2661V15H75.802V2.5665H80V0H69.0681z"/></svg></span>
+  </a>
+  <div class="td-navbar-nav-scroll ml-md-auto" id="main_navbar">
+    <ul class="navbar-nav mt-2 mt-lg-0">
+      
+      
+      <li class="nav-item mr-4 mb-2 mb-lg-0">
+        
+        
+        
+        
+        
+        
+        
+        
+        <a class="nav-link active" href="../../../../../docs/" ><span class="active">Documentation</span></a>
+      </li>
+      
+      <li class="nav-item mr-4 mb-2 mb-lg-0">
+        
+        
+        
+        
+        
+        
+        
+        
+        <a class="nav-link" href="../../../../../about/" ><span>About</span></a>
+      </li>
+      
+      <li class="nav-item mr-4 mb-2 mb-lg-0">
+        
+        
+        
+        
+        
+        
+        <a class="nav-link" href="https://app.cvat.ai"  ><span>Try it now</span></a>
+      </li>
+      
+      <li class="nav-item mr-4 mb-2 mb-lg-0">
+        
+        
+        
+        
+        
+        
+        <a class="nav-link" href="https://github.com/cvat-ai/cvat"  ><i class='fab fa-github'></i><span>GitHub</span></a>
+      </li>
+      
+      
+        
+        <li class="nav-item dropdown">
+          <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-target="#dropdown_ver" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+            v2.7.6
+          </a>
+        </li>
+        
+      
+      
+    </ul>
+  </div>
+  <div class="dropdown-menu" id="dropdown_ver" aria-labelledby="navbarDropdownMenuLink">
+    
+      
+        <a class="dropdown-item" href="../../../../../../docs/manual/advanced/formats/">Latest version</a>
+    
+      
+        <a class="dropdown-item" href="../../../../../../v1.5.0/docs/manual/advanced/formats/">v1.5.0</a>
+    
+      
+        <a class="dropdown-item" href="../../../../../../v1.6.0/docs/manual/advanced/formats/">v1.6.0</a>
+    
+      
+        <a class="dropdown-item" href="../../../../../../v1.7.0/docs/manual/advanced/formats/">v1.7.0</a>
+    
+      
+        <a class="dropdown-item" href="../../../../../../v2.0.0/docs/manual/advanced/formats/">v2.0.0</a>
+    
+      
+        <a class="dropdown-item" href="../../../../../../v2.1.0/docs/manual/advanced/formats/">v2.1.0</a>
+    
+      
+        <a class="dropdown-item" href="../../../../../../v2.10.3/docs/manual/advanced/formats/">v2.10.3</a>
+    
+      
+        <a class="dropdown-item" href="../../../../../../v2.11.3/docs/manual/advanced/formats/">v2.11.3</a>
+    
+      
+        <a class="dropdown-item" href="../../../../../../v2.12.1/docs/manual/advanced/formats/">v2.12.1</a>
+    
+      
+        <a class="dropdown-item" href="../../../../../../v2.13.0/docs/manual/advanced/formats/">v2.13.0</a>
+    
+      
+        <a class="dropdown-item" href="../../../../../../v2.14.4/docs/manual/advanced/formats/">v2.14.4</a>
+    
+      
+        <a class="dropdown-item" href="../../../../../../v2.15.0/docs/manual/advanced/formats/">v2.15.0</a>
+    
+      
+        <a class="dropdown-item" href="../../../../../../v2.16.2/docs/manual/advanced/formats/">v2.16.2</a>
+    
+      
+        <a class="dropdown-item" href="../../../../../../v2.2.0/docs/manual/advanced/formats/">v2.2.0</a>
+    
+      
+        <a class="dropdown-item" href="../../../../../../v2.3.0/docs/manual/advanced/formats/">v2.3.0</a>
+    
+      
+        <a class="dropdown-item" href="../../../../../../v2.4.9/docs/manual/advanced/formats/">v2.4.9</a>
+    
+      
+        <a class="dropdown-item" href="../../../../../../v2.5.2/docs/manual/advanced/formats/">v2.5.2</a>
+    
+      
+        <a class="dropdown-item" href="../../../../../../v2.6.2/docs/manual/advanced/formats/">v2.6.2</a>
+    
+      
+        <a class="dropdown-item" href="../../../../../../v2.7.6/docs/manual/advanced/formats/">v2.7.6</a>
+    
+      
+        <a class="dropdown-item" href="../../../../../../v2.8.2/docs/manual/advanced/formats/">v2.8.2</a>
+    
+      
+        <a class="dropdown-item" href="../../../../../../v2.9.2/docs/manual/advanced/formats/">v2.9.2</a>
+    
+  </div>
+  <div class="navbar-nav d-none d-lg-block">
+
+
+
+<input
+  type="search"
+  class="form-control td-search-input"
+  placeholder="&#xf002; Search this site…"
+  aria-label="Search this site…"
+  autocomplete="off"
+  
+  data-offline-search-index-json-src="../../../../../offline-search-index.ee1a7ff2c76966b2c9d263ff4ae97b3b.json"
+  data-offline-search-base-href="../../../../../"
+  data-offline-search-max-results="10"
+>
+
+</div>
+</nav>
+
+    </header>
+    <div class="container-fluid td-outer">
+      <div class="td-main">
+        <div class="row flex-xl-nowrap">
+          <div class="col-12 col-md-3 col-xl-2 td-sidebar d-print-none">
+          </div>
+          <div class="d-none d-xl-block col-xl-2 td-toc d-print-none">
+          </div>
+          <main class="col-12 col-md-9 col-xl-8 pl-md-5" role="main">
+            
+
+
+
+
+<div class="td-content">
+<div class="pageinfo pageinfo-primary d-print-none">
+<p>
+This the multi-page printable view of this section.
+<a href="#" onclick="print();return false;">Click here to print</a>.
+</p><p>
+<a href="../../../../../docs/manual/advanced/formats/">Return to the regular view of this page</a>.
+</p>
+</div>
+
+
+
+<h1 class="title">Export annotations and data from CVAT</h1>
+<div class="lead">List of data export formats formats supported by CVAT.</div>
+
+
+
+
+    <ul>
+    
+  
+  
+  
+  
+
+  
+    
+    
+	
+<li>1: <a href="#pg-bb85520cf3910fc2c5223b25cd27fb23"></a></li>
+
+
+    
+  
+    
+    
+	
+<li>2: <a href="#pg-56305e87b0babeca60c43bc357abdecd"></a></li>
+
+
+    
+  
+    
+    
+	
+<li>3: <a href="#pg-89565d26b6237565243f9fbdb1c69506"></a></li>
+
+
+    
+  
+    
+    
+	
+<li>4: <a href="#pg-684a69f071dbb7f0c74bfa7aa048bc55"></a></li>
+
+
+    
+  
+    
+    
+	
+<li>5: <a href="#pg-6d73c8045cca651d4c33c37c54bee1eb"></a></li>
+
+
+    
+  
+    
+    
+	
+<li>6: <a href="#pg-290a597e3f293c37b49f23700c1c7029"></a></li>
+
+
+    
+  
+    
+    
+	
+<li>7: <a href="#pg-b1da59e4956bad77b6489a96875a5ab0"></a></li>
+
+
+    
+  
+    
+    
+	
+<li>8: <a href="#pg-94f134e11587c913b9a0a9ea83f89beb"></a></li>
+
+
+    
+  
+    
+    
+	
+<li>9: <a href="#pg-0c5d17d5590514f46eebca33f1932956"></a></li>
+
+
+    
+  
+    
+    
+	
+<li>10: <a href="#pg-325950f41f3ace02cd43a9a49e738e12"></a></li>
+
+
+    
+  
+    
+    
+	
+<li>11: <a href="#pg-e3e1166f576647b7965c930f5091599f"></a></li>
+
+
+    
+  
+    
+    
+	
+<li>12: <a href="#pg-37ea47d7e7cb5ab2516a949cad325f19"></a></li>
+
+
+    
+  
+    
+    
+	
+<li>13: <a href="#pg-f3e3abb5b13d6f59f5100a9d8ae3645f"></a></li>
+
+
+    
+  
+    
+    
+	
+<li>14: <a href="#pg-bdc4a2c3af1233a5e9cdef14bd683a14"></a></li>
+
+
+    
+  
+    
+    
+	
+<li>15: <a href="#pg-e5cb2753d48cd08b4ee4ff9e10696658"></a></li>
+
+
+    
+  
+    
+    
+	
+<li>16: <a href="#pg-b43e1ff431da6854eb46bb51b712cc0b"></a></li>
+
+
+    
+  
+    
+    
+	
+<li>17: <a href="#pg-58cc638fb0d2a3516ec0e834a1eb3973"></a></li>
+
+
+    
+  
+    
+    
+	
+<li>18: <a href="#pg-30f91a45fc1a90a5d4185adb88f285cf"></a></li>
+
+
+    
+  
+    
+    
+	
+<li>19: <a href="#pg-f65edfb2f20864caafe1b7854693d809"></a></li>
+
+
+    
+  
+    
+    
+	
+<li>20: <a href="#pg-e59afed4c76bed95d3d4665d87dfe316"></a></li>
+
+
+    
+  
+    
+    
+	
+<li>21: <a href="#pg-d60ccc455bb490af89647d5fccd200ef"></a></li>
+
+
+    
+  
+
+    </ul>
+
+
+<div class="content">
+      <p>In CVAT, you have the option to export data in various formats.
+The choice of export format depends on the type of annotation as
+well as the intended future use of the dataset.</p>
+<p>See:</p>
+<ul>
+<li><a href="#data-export-formats">Data export formats</a></li>
+<li><a href="#exporting-dataset-in-cvat">Exporting dataset in CVAT</a>
+<ul>
+<li><a href="#exporting-dataset-from-task">Exporting dataset from Task</a></li>
+<li><a href="#exporting-dataset-from-job">Exporting dataset from Job</a></li>
+</ul>
+</li>
+<li><a href="#data-export-video-tutorial">Data export video tutorial</a></li>
+</ul>
+<h2 id="data-export-formats">Data export formats</h2>
+<p>The table below outlines the available formats for data export in CVAT.</p>
+<!--lint disable maximum-line-length-->
+<table>
+<thead>
+<tr>
+<th>Format</th>
+<th>Type</th>
+<th>Annotation Type</th>
+<th>Models</th>
+<th>Shapes</th>
+<th>Attributes</th>
+<th>Video Tracks</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><a href="format-camvid">CamVid 1.0</a></td>
+<td>.txt <br>.png</td>
+<td>Semantic <br>Segmentation</td>
+<td>U-Net, SegNet, DeepLab, <br>PSPNet, FCN, Mask R-CNN, <br>ICNet, ERFNet, HRNet, <br>V-Net, and others.</td>
+<td>Polygons</td>
+<td>Not supported</td>
+<td>Not supported</td>
+</tr>
+<tr>
+<td><a href="format-cityscapes">Cityscapes 1.0</a></td>
+<td>.txt<br>.png</td>
+<td>Semantic<br>Segmentation</td>
+<td>U-Net, SegNet, DeepLab, <br>PSPNet, FCN, ERFNet, <br>ICNet, Mask R-CNN, HRNet, <br>ENet, and others.</td>
+<td>Polygons</td>
+<td>Specific attributes</td>
+<td>Not supported</td>
+</tr>
+<tr>
+<td><a href="format-coco">COCO 1.0</a></td>
+<td>JSON</td>
+<td>Detection, Semantic <br>Segmentation</td>
+<td>YOLO (You Only Look Once), <br>Faster R-CNN, Mask R-CNN, SSD (Single Shot MultiBox Detector), <br> RetinaNet, EfficientDet, UNet, <br>DeepLabv3+, CenterNet, Cascade R-CNN, and others.</td>
+<td>Bounding Boxes, Polygons</td>
+<td>Specific attributes</td>
+<td>Not supported</td>
+</tr>
+<tr>
+<td><a href="coco-keypoints">COCO Keypoings 1.0</a></td>
+<td>.xml</td>
+<td>Keypoints</td>
+<td>OpenPose, PoseNet, AlphaPose, <br> SPM (Single Person Model), <br>Mask R-CNN with Keypoint Detection:, and others.</td>
+<td>Skeletons</td>
+<td>Specific attributes</td>
+<td>Not supported</td>
+</tr>
+<tr>
+<td><a href="../../../../../docs/manual/advanced/formats/format-cvat/#cvat-for-videos-export">CVAT for images 1.1</a></td>
+<td>.xml</td>
+<td>Universal format<br> for all types of <br>annotations.</td>
+<td>Universal format<br> for all types of <br>models.</td>
+<td>Bounding Boxes, Polygons, <br>Polylines, Points, Cuboids, <br>Skeletons, Tags.</td>
+<td>All attributes</td>
+<td>Not supported</td>
+</tr>
+<tr>
+<td><a href="../../../../../docs/manual/advanced/formats/format-cvat/#cvat-for-videos-export">CVAT for video 1.1</a></td>
+<td>.xml</td>
+<td>Universal format<br> for all types of <br>annotations.</td>
+<td>Universal format<br> for all types of <br>annotations.</td>
+<td>Bounding Boxes, Polygons, <br>Polylines, Points, Cuboids, <br>Skeletons, Tags, Tracks.</td>
+<td>All attributes</td>
+<td>Supported</td>
+</tr>
+<tr>
+<td><a href="format-datumaro">Datumaro 1.0</a></td>
+<td>JSON</td>
+<td>Universal format<br> for all types of <br>annotations.</td>
+<td>Universal format<br> for all types of <br>models.</td>
+<td>Bounding Boxes, Polygons, <br>Polylines, Points, Cuboids, <br>Skeletons, Tags, Tracks.</td>
+<td>All attributes</td>
+<td>Supported</td>
+</tr>
+<tr>
+<td><a href="format-icdar">ICDAR</a><br> Includes ICDAR Recognition 1.0, <br>ICDAR Detection 1.0, <br>and ICDAR Segmentation 1.0 <br>descriptions.</td>
+<td>.txt</td>
+<td>Text recognition, <br>Text detection, <br>Text segmentation</td>
+<td>EAST: Efficient and Accurate <br>Scene Text Detector, CRNN, Mask TextSpotter, TextSnake, <br>and others.</td>
+<td>Tag, Bounding Boxes, Polygons</td>
+<td>Specific attributes</td>
+<td>Not supported</td>
+</tr>
+<tr>
+<td><a href="format-imagenet">ImageNet 1.0</a></td>
+<td>.jpg <br>.txt</td>
+<td>Semantic Segmentation, <br>Classification, <br>Detection</td>
+<td>VGG (VGG16, VGG19), Inception, YOLO, Faster R-CNN , U-Net, and others</td>
+<td>Tags</td>
+<td>No attributes</td>
+<td>Not supported</td>
+</tr>
+<tr>
+<td><a href="format-kitti">KITTI 1.0</a></td>
+<td>.txt <br>.png</td>
+<td>Semantic Segmentation, Detection, 3D</td>
+<td>PointPillars, SECOND, AVOD, YOLO, DeepSORT, PWC-Net, ORB-SLAM, and others.</td>
+<td>Bounding Boxes, Polygons</td>
+<td>Specific attributes</td>
+<td>Not supported</td>
+</tr>
+<tr>
+<td><a href="format-labelme">LabelMe 3.0</a></td>
+<td>.xml</td>
+<td>Compatibility, <br>Semantic Segmentation</td>
+<td>U-Net, Mask R-CNN, Fast R-CNN,<br> Faster R-CNN, DeepLab, YOLO, <br>and others.</td>
+<td>Bounding Boxes, Polygons</td>
+<td>Supported (Polygons)</td>
+<td>Not supported</td>
+</tr>
+<tr>
+<td><a href="format-lfw">LFW 1.0</a></td>
+<td>.txt</td>
+<td>Verification, <br>Face recognition</td>
+<td>OpenFace, VGGFace &amp; VGGFace2, <br>FaceNet, ArcFace, <br>and others.</td>
+<td>Tags, Skeletons</td>
+<td>Specific attributes</td>
+<td>Not supported</td>
+</tr>
+<tr>
+<td><a href="format-market1501">Market-1501 1.0</a></td>
+<td>.txt</td>
+<td>Re-identification</td>
+<td>Triplet Loss Networks, <br>Deep ReID models, and others.</td>
+<td>Bounding Boxes</td>
+<td>Specific attributes</td>
+<td>Not supported</td>
+</tr>
+<tr>
+<td><a href="format-mot">MOT 1.0</a></td>
+<td>.txt</td>
+<td>Video Tracking, <br>Detection</td>
+<td>SORT, MOT-Net, IOU Tracker, <br>and others.</td>
+<td>Bounding Boxes, Tracks</td>
+<td>Specific attributes</td>
+<td>Supported</td>
+</tr>
+<tr>
+<td><a href="format-mots">MOTS PNG 1.0</a></td>
+<td>.png<br>.txt</td>
+<td>Video Tracking, <br>Detection</td>
+<td>SORT, MOT-Net, IOU Tracker, <br>and others.</td>
+<td>Bounding Boxes, Tracks, Masks</td>
+<td>Specific attributes</td>
+<td>Supported</td>
+</tr>
+<tr>
+<td><a href="format-openimages">Open Images 1.0</a></td>
+<td>.csv</td>
+<td>Detection, <br>Classification, <br>Semantic Segmentaion</td>
+<td>Faster R-CNN, YOLO, U-Net, <br>CornerNet, and others.</td>
+<td>Bounding Boxes, Tags, Polygons</td>
+<td>Specific attributes</td>
+<td>Not supported</td>
+</tr>
+<tr>
+<td><a href="format-voc">PASCAL VOC 1.0</a></td>
+<td>.xml</td>
+<td>Classification, Detection</td>
+<td>Faster R-CNN, SSD, YOLO, <br>AlexNet, and others.</td>
+<td>Bounding Boxes, Tags, Polygons</td>
+<td>Specific attributes</td>
+<td>Not supported</td>
+</tr>
+<tr>
+<td><a href="format-smask">Segmentation Mask 1.0</a></td>
+<td>.txt</td>
+<td>Semantic Segmentation</td>
+<td>Faster R-CNN, SSD, YOLO, <br>AlexNet, and others.</td>
+<td>Polygons</td>
+<td>No attributes</td>
+<td>Not supported</td>
+</tr>
+<tr>
+<td><a href="format-tfrecord">TFRecord 1.0</a></td>
+<td>.pbtxt</td>
+<td>Detection<br>Classification</td>
+<td>SSD, Faster R-CNN, YOLO, <br>GG16, ResNet, Inception, MobileNet, <br>and others.</td>
+<td>Bounding Boxes, Polygons</td>
+<td>No attributes</td>
+<td>Not supported</td>
+</tr>
+<tr>
+<td><a href="format-vggface2">VGGFace2 1.0</a></td>
+<td>.csv</td>
+<td>Face recognition</td>
+<td>VGGFace, ResNet, Inception, <br> and others.</td>
+<td>Bounding Boxes, Points</td>
+<td>No attributes</td>
+<td>Not supported</td>
+</tr>
+<tr>
+<td><a href="format-widerface">WIDER Face 1.0</a></td>
+<td>.txt</td>
+<td>Detection</td>
+<td>SSD (Single Shot MultiBox Detector), Faster R-CNN, YOLO, <br>and others.</td>
+<td>Bounding Boxes, Tags</td>
+<td>Specific attributes</td>
+<td>Not supported</td>
+</tr>
+<tr>
+<td><a href="format-yolo">YOLO 1.0</a></td>
+<td>.txt</td>
+<td>Detection</td>
+<td>YOLOv1, YOLOv2 (YOLO9000), <br>YOLOv3, YOLOv4, and others.</td>
+<td>Bounding Boxes</td>
+<td>No attributes</td>
+<td>Not supported</td>
+</tr>
+</tbody>
+</table>
+<!--lint enable maximum-line-length-->
+<h2 id="exporting-dataset-in-cvat">Exporting dataset in CVAT</h2>
+<h3 id="exporting-dataset-from-task">Exporting dataset from Task</h3>
+<p>To export the dataset from the task, follow these steps:</p>
+<ol>
+<li>
+<p>Open Task.</p>
+</li>
+<li>
+<p>Go to <strong>Actions</strong> &gt; <strong>Export task dataset.</strong></p>
+</li>
+<li>
+<p>Choose the desired format from the list of available options.</p>
+</li>
+<li>
+<p>(Optional) Toggle the <strong>Save images</strong> switch if you
+wish to include images in the export.</p>
+<blockquote>
+<p><strong>Note</strong>: The <strong>Save images</strong> option is a <strong>paid feature</strong>.</p>
+</blockquote>
+<p><img src="../../../../../images/export_job_as_dataset_dialog.png" alt="Save images option"></p>
+</li>
+<li>
+<p>Input a name for the resulting <code>.zip</code> archive.</p>
+</li>
+<li>
+<p>Click <strong>OK</strong> to initiate the export.</p>
+</li>
+</ol>
+<h3 id="exporting-dataset-from-job">Exporting dataset from Job</h3>
+<p>To export a dataset from Job follow these steps:</p>
+<ol>
+<li>
+<p>Navigate to <strong>Menu</strong> &gt; <strong>Export job dataset</strong>.</p>
+<p><img src="../../../../../images/export_job_as_dataset_menu.png" alt="Export dataset"></p>
+</li>
+<li>
+<p>Choose the desired format from the list of available options.</p>
+</li>
+<li>
+<p>(Optional) Toggle the <strong>Save images</strong> switch
+if you wish to include images in the export.</p>
+<blockquote>
+<p><strong>Note</strong>: The <strong>Save images</strong> option is a <strong>paid feature</strong>.</p>
+</blockquote>
+<p><img src="../../../../../images/export_job_as_dataset_dialog.png" alt="Save images option"></p>
+</li>
+<li>
+<p>Input a name for the resulting <code>.zip</code> archive.</p>
+</li>
+<li>
+<p>Click <strong>OK</strong> to initiate the export.</p>
+</li>
+</ol>
+<h2 id="data-export-video-tutorial">Data export video tutorial</h2>
+<p>For more information on the process, see the following tutorial:</p>
+<!--lint disable maximum-line-length-->
+<iframe width="560" height="315" src="https://www.youtube.com/embed/gzjVpVV9orE?si=2tiBIqts8nk_byTH" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>
+<!--lint enable maximum-line-length-->
+
+</div>
+</div>
+
+
+  
+  
+  
+  
+
+  
+  
+
+  
+    
+    
+	
+    
+
+<div class="td-content" style="page-break-before: always">
+    
+	<h1 id="pg-bb85520cf3910fc2c5223b25cd27fb23">1 - </h1>
+    
+	<p>This is CVAT&rsquo;s native annotation format,
+which fully supports all of CVAT&rsquo;s annotation features.
+It is ideal for creating data backups.</p>
+<p>For more information, see:</p>
+<ul>
+<li><a href="../../../../../docs/manual/advanced/xml_format/">Format specification</a></li>
+<li><a href="https://github.com/cvat-ai/datumaro/tree/v0.3/tests/assets/cvat_dataset">Dataset examples</a></li>
+</ul>
+<h2 id="cvat-for-image-export">CVAT for image export</h2>
+<p>For export of images:</p>
+<ul>
+<li>Supported annotations: Bounding Boxes, Polygons, Polylines,
+Points, Cuboids, Skeletons, Tags, Tracks</li>
+<li>Attributes: Supported.</li>
+<li>Tracks: Supported (tracks are split by frames).</li>
+</ul>
+<p>The downloaded file is a zip archive with following structure:</p>
+<div class="highlight"><pre style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">taskname.zip/
+├── images/
+<span style="color:#000;font-weight:bold">|</span>   ├── img1.png
+<span style="color:#000;font-weight:bold">|</span>   └── img2.jpg
+└── annotations.xml
+</code></pre></div><h2 id="cvat-for-video-export">CVAT for video export</h2>
+<p>For export of images:</p>
+<ul>
+<li>Supported annotations: Bounding Boxes, Polygons, Polylines,
+Points, Cuboids, Skeletons, Tags, Tracks</li>
+<li>Attributes: Supported.</li>
+<li>Tracks: Supported (tracks are split by frames).</li>
+<li>Shapes are exported as single-frame tracks</li>
+</ul>
+<p>Downloaded file is a zip archive with following structure:</p>
+<div class="highlight"><pre style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">taskname.zip/
+├── images/
+<span style="color:#000;font-weight:bold">|</span>   ├── frame_000000.png
+<span style="color:#000;font-weight:bold">|</span>   └── frame_000001.png
+└── annotations.xml
+</code></pre></div><h2 id="cvat-loader">CVAT loader</h2>
+<p>Uploaded file: either an XML file or a
+.zip file containing the aforementioned structures.</p>
+
+</div>
+
+
+
+    
+	
+  
+    
+    
+	
+    
+
+<div class="td-content" style="page-break-before: always">
+    
+	<h1 id="pg-56305e87b0babeca60c43bc357abdecd">2 - </h1>
+    
+	<p>Datumaro serves as a versatile format capable of handling complex
+dataset and annotation transformations,
+format conversions, dataset statistics, and merging, among other features.
+It functions as the dataset support provider within CVAT.
+Essentially, anything you can do in CVAT, you can also achieve
+in Datumaro, but with the added benefit of specialized dataset operations.</p>
+<p>For more information, see:</p>
+<ul>
+<li><a href="https://github.com/cvat-ai/datumaro/">Datumaro specification</a></li>
+</ul>
+<h1 id="export-annotations-in-datumaro-format">Export annotations in Datumaro format</h1>
+<p>For export of images: any 2D shapes, tags</p>
+<ul>
+<li>Supported annotations: Bounding Boxes, Polygons.</li>
+<li>Attributes: Supported.</li>
+<li>Tracks: Supported.</li>
+</ul>
+<p>The downloaded file is a zip archive with the following structure:</p>
+<div class="highlight"><pre style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">taskname.zip/
+├── annotations/
+│   └── default.json <span style="color:#8f5902;font-style:italic"># fully description of classes and all dataset items</span>
+└── images/ <span style="color:#8f5902;font-style:italic"># if the option `save images` was selected</span>
+    └── default
+        ├── image1.jpg
+        ├── image2.jpg
+        ├── ...
+</code></pre></div><h1 id="import-annotations-in-datumaro-format">Import annotations in Datumaro format</h1>
+<ul>
+<li>supported annotations: any 2D shapes, labels</li>
+<li>supported attributes: any</li>
+</ul>
+<p>Uploaded file: a zip archive of the following structure:</p>
+<div class="highlight"><pre style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">&lt;archive_name&gt;.zip/
+└── annotations/
+    ├── subset1.json <span style="color:#8f5902;font-style:italic"># fully description of classes and all dataset items</span>
+    └── subset2.json <span style="color:#8f5902;font-style:italic"># fully description of classes and all dataset items</span>
+</code></pre></div><p>JSON annotations files in the <code>annotations</code> directory should have similar structure:</p>
+<div class="highlight"><pre style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-json" data-lang="json"><span style="color:#000;font-weight:bold">{</span>
+  <span style="color:#204a87;font-weight:bold">&#34;info&#34;</span><span style="color:#000;font-weight:bold">:</span> <span style="color:#000;font-weight:bold">{},</span>
+  <span style="color:#204a87;font-weight:bold">&#34;categories&#34;</span><span style="color:#000;font-weight:bold">:</span> <span style="color:#000;font-weight:bold">{</span>
+    <span style="color:#204a87;font-weight:bold">&#34;label&#34;</span><span style="color:#000;font-weight:bold">:</span> <span style="color:#000;font-weight:bold">{</span>
+      <span style="color:#204a87;font-weight:bold">&#34;labels&#34;</span><span style="color:#000;font-weight:bold">:</span> <span style="color:#000;font-weight:bold">[</span>
+        <span style="color:#000;font-weight:bold">{</span>
+          <span style="color:#204a87;font-weight:bold">&#34;name&#34;</span><span style="color:#000;font-weight:bold">:</span> <span style="color:#4e9a06">&#34;label_0&#34;</span><span style="color:#000;font-weight:bold">,</span>
+          <span style="color:#204a87;font-weight:bold">&#34;parent&#34;</span><span style="color:#000;font-weight:bold">:</span> <span style="color:#4e9a06">&#34;&#34;</span><span style="color:#000;font-weight:bold">,</span>
+          <span style="color:#204a87;font-weight:bold">&#34;attributes&#34;</span><span style="color:#000;font-weight:bold">:</span> <span style="color:#000;font-weight:bold">[]</span>
+        <span style="color:#000;font-weight:bold">},</span>
+        <span style="color:#000;font-weight:bold">{</span>
+          <span style="color:#204a87;font-weight:bold">&#34;name&#34;</span><span style="color:#000;font-weight:bold">:</span> <span style="color:#4e9a06">&#34;label_1&#34;</span><span style="color:#000;font-weight:bold">,</span>
+          <span style="color:#204a87;font-weight:bold">&#34;parent&#34;</span><span style="color:#000;font-weight:bold">:</span> <span style="color:#4e9a06">&#34;&#34;</span><span style="color:#000;font-weight:bold">,</span>
+          <span style="color:#204a87;font-weight:bold">&#34;attributes&#34;</span><span style="color:#000;font-weight:bold">:</span> <span style="color:#000;font-weight:bold">[]</span>
+        <span style="color:#000;font-weight:bold">}</span>
+      <span style="color:#000;font-weight:bold">],</span>
+      <span style="color:#204a87;font-weight:bold">&#34;attributes&#34;</span><span style="color:#000;font-weight:bold">:</span> <span style="color:#000;font-weight:bold">[]</span>
+    <span style="color:#000;font-weight:bold">}</span>
+  <span style="color:#000;font-weight:bold">},</span>
+  <span style="color:#204a87;font-weight:bold">&#34;items&#34;</span><span style="color:#000;font-weight:bold">:</span> <span style="color:#000;font-weight:bold">[</span>
+    <span style="color:#000;font-weight:bold">{</span>
+      <span style="color:#204a87;font-weight:bold">&#34;id&#34;</span><span style="color:#000;font-weight:bold">:</span> <span style="color:#4e9a06">&#34;img1&#34;</span><span style="color:#000;font-weight:bold">,</span>
+      <span style="color:#204a87;font-weight:bold">&#34;annotations&#34;</span><span style="color:#000;font-weight:bold">:</span> <span style="color:#000;font-weight:bold">[</span>
+        <span style="color:#000;font-weight:bold">{</span>
+          <span style="color:#204a87;font-weight:bold">&#34;id&#34;</span><span style="color:#000;font-weight:bold">:</span> <span style="color:#0000cf;font-weight:bold">0</span><span style="color:#000;font-weight:bold">,</span>
+          <span style="color:#204a87;font-weight:bold">&#34;type&#34;</span><span style="color:#000;font-weight:bold">:</span> <span style="color:#4e9a06">&#34;polygon&#34;</span><span style="color:#000;font-weight:bold">,</span>
+          <span style="color:#204a87;font-weight:bold">&#34;attributes&#34;</span><span style="color:#000;font-weight:bold">:</span> <span style="color:#000;font-weight:bold">{},</span>
+          <span style="color:#204a87;font-weight:bold">&#34;group&#34;</span><span style="color:#000;font-weight:bold">:</span> <span style="color:#0000cf;font-weight:bold">0</span><span style="color:#000;font-weight:bold">,</span>
+          <span style="color:#204a87;font-weight:bold">&#34;label_id&#34;</span><span style="color:#000;font-weight:bold">:</span> <span style="color:#0000cf;font-weight:bold">1</span><span style="color:#000;font-weight:bold">,</span>
+          <span style="color:#204a87;font-weight:bold">&#34;points&#34;</span><span style="color:#000;font-weight:bold">:</span> <span style="color:#000;font-weight:bold">[</span><span style="color:#0000cf;font-weight:bold">1.0</span><span style="color:#000;font-weight:bold">,</span> <span style="color:#0000cf;font-weight:bold">2.0</span><span style="color:#000;font-weight:bold">,</span> <span style="color:#0000cf;font-weight:bold">3.0</span><span style="color:#000;font-weight:bold">,</span> <span style="color:#0000cf;font-weight:bold">4.0</span><span style="color:#000;font-weight:bold">,</span> <span style="color:#0000cf;font-weight:bold">5.0</span><span style="color:#000;font-weight:bold">,</span> <span style="color:#0000cf;font-weight:bold">6.0</span><span style="color:#000;font-weight:bold">,</span> <span style="color:#0000cf;font-weight:bold">7.0</span><span style="color:#000;font-weight:bold">,</span> <span style="color:#0000cf;font-weight:bold">8.0</span><span style="color:#000;font-weight:bold">],</span>
+          <span style="color:#204a87;font-weight:bold">&#34;z_order&#34;</span><span style="color:#000;font-weight:bold">:</span> <span style="color:#0000cf;font-weight:bold">0</span>
+        <span style="color:#000;font-weight:bold">},</span>
+        <span style="color:#000;font-weight:bold">{</span>
+          <span style="color:#204a87;font-weight:bold">&#34;id&#34;</span><span style="color:#000;font-weight:bold">:</span> <span style="color:#0000cf;font-weight:bold">1</span><span style="color:#000;font-weight:bold">,</span>
+          <span style="color:#204a87;font-weight:bold">&#34;type&#34;</span><span style="color:#000;font-weight:bold">:</span> <span style="color:#4e9a06">&#34;bbox&#34;</span><span style="color:#000;font-weight:bold">,</span>
+          <span style="color:#204a87;font-weight:bold">&#34;attributes&#34;</span><span style="color:#000;font-weight:bold">:</span> <span style="color:#000;font-weight:bold">{},</span>
+          <span style="color:#204a87;font-weight:bold">&#34;group&#34;</span><span style="color:#000;font-weight:bold">:</span> <span style="color:#0000cf;font-weight:bold">1</span><span style="color:#000;font-weight:bold">,</span>
+          <span style="color:#204a87;font-weight:bold">&#34;label_id&#34;</span><span style="color:#000;font-weight:bold">:</span> <span style="color:#0000cf;font-weight:bold">0</span><span style="color:#000;font-weight:bold">,</span>
+          <span style="color:#204a87;font-weight:bold">&#34;z_order&#34;</span><span style="color:#000;font-weight:bold">:</span> <span style="color:#0000cf;font-weight:bold">0</span><span style="color:#000;font-weight:bold">,</span>
+          <span style="color:#204a87;font-weight:bold">&#34;bbox&#34;</span><span style="color:#000;font-weight:bold">:</span> <span style="color:#000;font-weight:bold">[</span><span style="color:#0000cf;font-weight:bold">1.0</span><span style="color:#000;font-weight:bold">,</span> <span style="color:#0000cf;font-weight:bold">2.0</span><span style="color:#000;font-weight:bold">,</span> <span style="color:#0000cf;font-weight:bold">3.0</span><span style="color:#000;font-weight:bold">,</span> <span style="color:#0000cf;font-weight:bold">4.0</span><span style="color:#000;font-weight:bold">]</span>
+        <span style="color:#000;font-weight:bold">},</span>
+        <span style="color:#000;font-weight:bold">{</span>
+          <span style="color:#204a87;font-weight:bold">&#34;id&#34;</span><span style="color:#000;font-weight:bold">:</span> <span style="color:#0000cf;font-weight:bold">2</span><span style="color:#000;font-weight:bold">,</span>
+          <span style="color:#204a87;font-weight:bold">&#34;type&#34;</span><span style="color:#000;font-weight:bold">:</span> <span style="color:#4e9a06">&#34;mask&#34;</span><span style="color:#000;font-weight:bold">,</span>
+          <span style="color:#204a87;font-weight:bold">&#34;attributes&#34;</span><span style="color:#000;font-weight:bold">:</span> <span style="color:#000;font-weight:bold">{},</span>
+          <span style="color:#204a87;font-weight:bold">&#34;group&#34;</span><span style="color:#000;font-weight:bold">:</span> <span style="color:#0000cf;font-weight:bold">1</span><span style="color:#000;font-weight:bold">,</span>
+          <span style="color:#204a87;font-weight:bold">&#34;label_id&#34;</span><span style="color:#000;font-weight:bold">:</span> <span style="color:#0000cf;font-weight:bold">0</span><span style="color:#000;font-weight:bold">,</span>
+          <span style="color:#204a87;font-weight:bold">&#34;rle&#34;</span><span style="color:#000;font-weight:bold">:</span> <span style="color:#000;font-weight:bold">{</span>
+            <span style="color:#204a87;font-weight:bold">&#34;counts&#34;</span><span style="color:#000;font-weight:bold">:</span> <span style="color:#4e9a06">&#34;d0d0:F\\0&#34;</span><span style="color:#000;font-weight:bold">,</span>
+            <span style="color:#204a87;font-weight:bold">&#34;size&#34;</span><span style="color:#000;font-weight:bold">:</span> <span style="color:#000;font-weight:bold">[</span><span style="color:#0000cf;font-weight:bold">10</span><span style="color:#000;font-weight:bold">,</span> <span style="color:#0000cf;font-weight:bold">10</span><span style="color:#000;font-weight:bold">]</span>
+          <span style="color:#000;font-weight:bold">},</span>
+          <span style="color:#204a87;font-weight:bold">&#34;z_order&#34;</span><span style="color:#000;font-weight:bold">:</span> <span style="color:#0000cf;font-weight:bold">0</span>
+        <span style="color:#000;font-weight:bold">}</span>
+      <span style="color:#000;font-weight:bold">]</span>
+    <span style="color:#000;font-weight:bold">}</span>
+  <span style="color:#000;font-weight:bold">]</span>
+<span style="color:#000;font-weight:bold">}</span>
+</code></pre></div>
+</div>
+
+
+
+    
+	
+  
+    
+    
+	
+    
+
+<div class="td-content" style="page-break-before: always">
+    
+	<h1 id="pg-89565d26b6237565243f9fbdb1c69506">3 - </h1>
+    
+	<p>The LabelMe format is often used for image segmentation tasks in computer vision.
+While it may not be specifically tied to any particular models,
+it&rsquo;s designed to be versatile and can be easily converted to formats
+that are compatible with popular frameworks like TensorFlow or PyTorch.</p>
+<p>For more information, see:</p>
+<ul>
+<li><a href="http://labelme.csail.mit.edu/Release3.0">LabelMe</a></li>
+<li><a href="https://github.com/cvat-ai/datumaro/tree/v0.3/tests/assets/labelme_dataset">Dataset examples</a></li>
+</ul>
+<h2 id="labelme-export">LabelMe export</h2>
+<p>For export of images:</p>
+<ul>
+<li>Supported annotations: Bounding Boxes, Polygons.</li>
+<li>Attributes: Supported for Polygons.</li>
+<li>Tracks: Not supported.</li>
+</ul>
+<p>The downloaded file is a .zip archive with the following structure:</p>
+<div class="highlight"><pre style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">taskname.zip/
+├── img1.jpg
+└── img1.xml
+</code></pre></div><h2 id="labelme-import">LabelMe import</h2>
+<p>Uploaded file: a zip archive of the following structure:</p>
+<div class="highlight"><pre style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">taskname.zip/
+├── Masks/
+<span style="color:#000;font-weight:bold">|</span>   ├── img1_mask1.png
+<span style="color:#000;font-weight:bold">|</span>   └── img1_mask2.png
+├── img1.xml
+├── img2.xml
+└── img3.xml
+</code></pre></div><ul>
+<li>supported annotations: Rectangles, Polygons, Masks (as polygons)</li>
+</ul>
+
+</div>
+
+
+
+    
+	
+  
+    
+    
+	
+    
+
+<div class="td-content" style="page-break-before: always">
+    
+	<h1 id="pg-684a69f071dbb7f0c74bfa7aa048bc55">4 - </h1>
+    
+	<p>The MOT (Multiple Object Tracking) sequence format is widely
+used for evaluating multi-object tracking algorithms, particularly in
+the domains of pedestrian tracking, vehicle tracking, and more.
+The MOT sequence format essentially contains frames of video
+along with annotations that specify object locations and identities over time.</p>
+<p>For more information, see:</p>
+<ul>
+<li><a href="https://arxiv.org/pdf/1906.04567.pdf">MOT sequence paper</a></li>
+<li><a href="https://github.com/cvat-ai/datumaro/tree/v0.3/tests/assets/mot_dataset">Dataset examples</a></li>
+</ul>
+<h2 id="mot-export">MOT export</h2>
+<p>For export of images and videos:</p>
+<ul>
+<li>Supported annotations: Bounding Boxes, Tracks.</li>
+<li>Attributes: <code>visibility</code> (number), <code>ignored</code> (checkbox)</li>
+<li>Tracks: Supported.</li>
+</ul>
+<p>The downloaded file is a .zip archive with the following structure:</p>
+<div class="highlight"><pre style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">taskname.zip/
+├── img1/
+<span style="color:#000;font-weight:bold">|</span>   ├── image1.jpg
+<span style="color:#000;font-weight:bold">|</span>   └── image2.jpg
+└── gt/
+    ├── labels.txt
+    └── gt.txt
+
+<span style="color:#8f5902;font-style:italic"># labels.txt</span>
+cat
+dog
+person
+...
+
+<span style="color:#8f5902;font-style:italic"># gt.txt</span>
+<span style="color:#8f5902;font-style:italic"># frame_id, track_id, x, y, w, h, &#34;not ignored&#34;, class_id, visibility, &lt;skipped&gt;</span>
+1,1,1363,569,103,241,1,1,0.86014
+...
+
+</code></pre></div><h2 id="mot-import">MOT import</h2>
+<p>Uploaded file: a zip archive of the structure above or:</p>
+<div class="highlight"><pre style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">taskname.zip/
+├── labels.txt <span style="color:#8f5902;font-style:italic"># optional, mandatory for non-official labels</span>
+└── gt.txt
+</code></pre></div><ul>
+<li>supported annotations: Rectangle tracks</li>
+</ul>
+
+</div>
+
+
+
+    
+	
+  
+    
+    
+	
+    
+
+<div class="td-content" style="page-break-before: always">
+    
+	<h1 id="pg-6d73c8045cca651d4c33c37c54bee1eb">5 - </h1>
+    
+	<p>The MOT (Multiple Object Tracking) sequence format is widely
+used for evaluating multi-object tracking algorithms, particularly in
+the domains of pedestrian tracking, vehicle tracking, and more.
+The MOT sequence format essentially contains frames of video
+along with annotations that specify object locations and identities over time.</p>
+<p>This version encoded as .png. Supports masks.</p>
+<p>For more information, see:</p>
+<ul>
+<li><a href="https://www.vision.rwth-aachen.de/page/mots">MOTS PNG Specification</a></li>
+<li><a href="https://github.com/cvat-ai/datumaro/tree/v0.3/tests/assets/mots_dataset">Dataset examples</a></li>
+</ul>
+<h2 id="mots-png-export">MOTS PNG export</h2>
+<p>For export of images and videos:</p>
+<ul>
+<li>Supported annotations: Bounding Boxes, Tracks.</li>
+<li>Attributes: <code>visibility</code> (number), <code>ignored</code> (checkbox).</li>
+<li>Tracks: Supported.</li>
+</ul>
+<p>The downloaded file is a .zip archive with the following structure:</p>
+<div class="highlight"><pre style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">taskname.zip/
+└── &lt;any_subset_name&gt;/
+    <span style="color:#000;font-weight:bold">|</span>   images/
+    <span style="color:#000;font-weight:bold">|</span>   ├── image1.jpg
+    <span style="color:#000;font-weight:bold">|</span>   └── image2.jpg
+    └── instances/
+        ├── labels.txt
+        ├── image1.png
+        └── image2.png
+
+<span style="color:#8f5902;font-style:italic"># labels.txt</span>
+cat
+dog
+person
+...
+</code></pre></div><ul>
+<li>supported annotations: Rectangle and Polygon tracks</li>
+</ul>
+<h2 id="mots-png-import">MOTS PNG import</h2>
+<p>Uploaded file: a zip archive of the structure above</p>
+<ul>
+<li>supported annotations: Polygon tracks</li>
+</ul>
+
+</div>
+
+
+
+    
+	
+  
+    
+    
+	
+    
+
+<div class="td-content" style="page-break-before: always">
+    
+	<h1 id="pg-290a597e3f293c37b49f23700c1c7029">6 - </h1>
+    
+	<p>A widely-used machine learning structure, the COCO dataset is instrumental
+for tasks involving object identification and image segmentation.
+This format is compatible with projects that employ bounding boxes or
+polygonal image annotations.</p>
+<p>For more information, see:</p>
+<ul>
+<li><a href="http://cocodataset.org/#format-data">COCO Object Detection site</a></li>
+<li><a href="https://openvinotoolkit.github.io/datumaro/stable/docs/data-formats/formats/coco.html">Format specification</a></li>
+<li><a href="https://github.com/cvat-ai/datumaro/tree/v0.3/tests/assets/coco_dataset">Dataset examples</a></li>
+</ul>
+<h2 id="coco-export">COCO export</h2>
+<p>For export of images and videos:</p>
+<ul>
+<li>Supported annotations: Bounding Boxes, Polygons.</li>
+<li>Attributes:
+<ul>
+<li><code>is_crowd</code> This can either be a checkbox or an integer
+(with values of 0 or 1). It indicates that the instance
+(or group of objects) should include an RLE-encoded mask in the <code>segmentation</code> field.
+All shapes within the group coalesce into a single, overarching mask,
+with the largest shape setting the properties for the entire object group.</li>
+<li><code>score</code>: This numerical field represents the annotation <code>score</code>.</li>
+<li>Arbitrary attributes: These will be stored within the <code>attributes</code>
+section of the annotation.</li>
+</ul>
+</li>
+<li>Tracks: Not supported.</li>
+</ul>
+<p>The downloaded file is a .zip archive with the following structure:</p>
+<pre><code>archive.zip/
+├── images/
+│   ├── train/
+│   │   ├── &lt;image_name1.ext&gt;
+│   │   ├── &lt;image_name2.ext&gt;
+│   │   └── ...
+│   └── val/
+│       ├── &lt;image_name1.ext&gt;
+│       ├── &lt;image_name2.ext&gt;
+│       └── ...
+└── annotations/
+   ├── &lt;task&gt;_&lt;subset_name&gt;.json
+   └── ...
+</code></pre><p>When exporting a dataset from a Project, subset names will mirror those used within the project itself.
+Otherwise, a singular default subset will be created to house all the dataset information.
+The <task> section aligns with one of the specific COCO tasks,
+such as <code>instances</code>, <code>panoptic</code>, <code>image_info</code>, <code>labels</code>, <code>captions</code>, or <code>stuff</code>.</p>
+<h2 id="coco-import">COCO import</h2>
+<p>Uplod format: a single unpacked <code>*.json</code> or a zip archive with the structure described above or
+<a href="https://openvinotoolkit.github.io/datumaro/latest/docs/data-formats/formats/coco.html#import-coco-dataset">here</a>
+(without images).</p>
+<ul>
+<li>supported annotations: Polygons, Rectangles (if the <code>segmentation</code> field is empty)</li>
+<li>supported tasks: <code>instances</code>, <code>person_keypoints</code> (only segmentations will be imported), <code>panoptic</code></li>
+</ul>
+<h2 id="how-to-create-a-task-from-ms-coco-dataset">How to create a task from MS COCO dataset</h2>
+<ol>
+<li>
+<p>Download the <a href="https://openvinotoolkit.github.io/datumaro/latest/docs/data-formats/formats/coco.html#import-coco-dataset">MS COCO dataset</a>.</p>
+<p>For example <code>val images</code> and <code>instances</code> annotations</p>
+</li>
+<li>
+<p>Create a CVAT task with the following labels:</p>
+<div class="highlight"><pre style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">person bicycle car motorcycle airplane bus train truck boat <span style="color:#4e9a06">&#34;traffic light&#34;</span> <span style="color:#4e9a06">&#34;fire hydrant&#34;</span> <span style="color:#4e9a06">&#34;stop sign&#34;</span> <span style="color:#4e9a06">&#34;parking meter&#34;</span> bench bird cat dog horse sheep cow elephant bear zebra giraffe backpack umbrella handbag tie suitcase frisbee skis snowboard <span style="color:#4e9a06">&#34;sports ball&#34;</span> kite <span style="color:#4e9a06">&#34;baseball bat&#34;</span> <span style="color:#4e9a06">&#34;baseball glove&#34;</span> skateboard surfboard <span style="color:#4e9a06">&#34;tennis racket&#34;</span> bottle <span style="color:#4e9a06">&#34;wine glass&#34;</span> cup fork knife spoon bowl banana apple sandwich orange broccoli carrot <span style="color:#4e9a06">&#34;hot dog&#34;</span> pizza donut cake chair couch <span style="color:#4e9a06">&#34;potted plant&#34;</span> bed <span style="color:#4e9a06">&#34;dining table&#34;</span> toilet tv laptop mouse remote keyboard <span style="color:#4e9a06">&#34;cell phone&#34;</span> microwave oven toaster sink refrigerator book clock vase scissors <span style="color:#4e9a06">&#34;teddy bear&#34;</span> <span style="color:#4e9a06">&#34;hair drier&#34;</span> toothbrush
+</code></pre></div></li>
+<li>
+<p>Select <code>val2017.zip</code> as data
+(See <a href="../../../../../docs/manual/basics/creating_an_annotation_task/">Creating an annotation task</a>
+guide for details)</p>
+</li>
+<li>
+<p>Unpack <code>annotations_trainval2017.zip</code></p>
+</li>
+<li>
+<p>click <code>Upload annotation</code> button,
+choose <code>COCO 1.1</code> and select <code>instances_val2017.json</code>
+annotation file. It can take some time.</p>
+</li>
+</ol>
+
+</div>
+
+
+
+    
+	
+  
+    
+    
+	
+    
+
+<div class="td-content" style="page-break-before: always">
+    
+	<h1 id="pg-b1da59e4956bad77b6489a96875a5ab0">7 - </h1>
+    
+	<p>The COCO Keypoints format is designed specifically for human pose estimation tasks, where the objective
+is to identify and localize body joints (keypoints) on a human figure within an image.</p>
+<p>This specialized format is used with a variety of state-of-the-art models focused on pose estimation.</p>
+<p>For more information, see:</p>
+<ul>
+<li><a href="https://cocodataset.org/#keypoints-2020">COCO Keypoint site</a></li>
+<li><a href="https://openvinotoolkit.github.io/datumaro/latest/docs/data-formats/formats/coco.html">Format specification</a></li>
+<li><a href="https://openvinotoolkit.github.io/datumaro/latest/docs/data-formats/formats/coco.html#import-coco-dataset">Example of the archive</a></li>
+</ul>
+<h2 id="coco-keypoints-export">COCO Keypoints export</h2>
+<p>For export of images:</p>
+<ul>
+<li>Supported annotations: Skeletons</li>
+<li>Attributes:
+<ul>
+<li><code>is_crowd</code> This can either be a checkbox or an integer
+(with values of 0 or 1). It indicates that the instance
+(or group of objects) should include an RLE-encoded mask in the <code>segmentation</code> field.
+All shapes within the group coalesce into a single, overarching mask,
+with the largest shape setting the properties for the entire object group.</li>
+<li><code>score</code>: This numerical field represents the annotation <code>score</code>.</li>
+<li>Arbitrary attributes: These will be stored within the <code>attributes</code>
+section of the annotation.</li>
+</ul>
+</li>
+<li>Tracks: Not supported.</li>
+</ul>
+<p>Downloaded file is a .zip archive with the following structure:</p>
+<pre><code>archive.zip/
+├── images/
+│
+│   ├── &lt;image_name1.ext&gt;
+│   ├── &lt;image_name2.ext&gt;
+│   └── ...
+├──&lt;annotations&gt;.xml
+</code></pre><h2 id="coco-import">COCO import</h2>
+<p>Uploaded file: a single unpacked <code>*.json</code> or a zip archive with the structure described
+<a href="https://openvinotoolkit.github.io/datumaro/latest/docs/data-formats/formats/coco.html#import-coco-dataset">here</a>
+(without images).</p>
+<ul>
+<li>supported annotations: Skeletons</li>
+</ul>
+<p><code>person_keypoints</code>,</p>
+<p>Support for COCO tasks via Datumaro is described <a href="https://openvinotoolkit.github.io/datumaro/latest/docs/data-formats/formats/coco.html#export-to-other-formats">here</a>
+For example, <a href="https://github.com/openvinotoolkit/cvat/issues/2910#issuecomment-726077582">support for COCO keypoints over Datumaro</a>:</p>
+<ol>
+<li>Install <a href="https://github.com/openvinotoolkit/datumaro">Datumaro</a>
+<code>pip install datumaro</code></li>
+<li>Export the task in the <code>Datumaro</code> format, unzip</li>
+<li>Export the Datumaro project in <code>coco</code> / <code>coco_person_keypoints</code> formats
+<code>datum export -f coco -p path/to/project [-- --save-images]</code></li>
+</ol>
+<p>This way, one can export CVAT points as single keypoints or
+keypoint lists (without the <code>visibility</code> COCO flag).</p>
+
+</div>
+
+
+
+    
+	
+  
+    
+    
+	
+    
+
+<div class="td-content" style="page-break-before: always">
+    
+	<h1 id="pg-94f134e11587c913b9a0a9ea83f89beb">8 - </h1>
+    
+	<p>he Pascal VOC (Visual Object Classes) format
+is one of the earlier established benchmarks for object classification and detection,
+which provides a standardized image data set for object class recognition.</p>
+<p>The export data format is XML-based and has been widely adopted in computer vision tasks.</p>
+<p>For more information, see:</p>
+<ul>
+<li><a href="http://host.robots.ox.ac.uk/pascal/VOC/">Pascal VOC</a></li>
+<li><a href="http://host.robots.ox.ac.uk/pascal/VOC/voc2012/devkit_doc.pdf">Format specification</a></li>
+<li><a href="https://github.com/cvat-ai/datumaro/tree/v0.3/tests/assets/voc_dataset">Dataset examples</a></li>
+</ul>
+<h2 id="pascal-voc-export">Pascal VOC export</h2>
+<p>For export of images:</p>
+<ul>
+<li>Supported annotations: Bounding Boxes (detection),
+Tags (classification), Polygons (segmentation)</li>
+<li>Attributes:
+<ul>
+<li><code>occluded</code> as both UI option and a separate attribute.</li>
+<li><code>truncated</code> and <code>difficult</code> must be defined for labels as <code>checkbox</code>.</li>
+<li>Arbitrary attributes in the <code>attributes</code> section of XML files.</li>
+</ul>
+</li>
+<li>Tracks: Not supported.</li>
+</ul>
+<p>The downloaded file is a .zip archive with the following structure:</p>
+<div class="highlight"><pre style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">taskname.zip/
+├── JPEGImages/
+│   ├── &lt;image_name1&gt;.jpg
+│   ├── &lt;image_name2&gt;.jpg
+│   └── &lt;image_nameN&gt;.jpg
+├── Annotations/
+│   ├── &lt;image_name1&gt;.xml
+│   ├── &lt;image_name2&gt;.xml
+│   └── &lt;image_nameN&gt;.xml
+├── ImageSets/
+│   └── Main/
+│       └── default.txt
+└── labelmap.txt
+
+<span style="color:#8f5902;font-style:italic"># labelmap.txt</span>
+<span style="color:#8f5902;font-style:italic"># label : color_rgb : &#39;body&#39; parts : actions</span>
+background:::
+aeroplane:::
+bicycle:::
+bird:::
+</code></pre></div><h2 id="pascal-voc-import">Pascal VOC import</h2>
+<p>Supported attributes: action attributes (import only, should be defined as <code>checkbox</code> -es)</p>
+<p>Uploaded file: a zip archive of the structure declared above or the following:</p>
+<div class="highlight"><pre style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">taskname.zip/
+├── &lt;image_name1&gt;.xml
+├── &lt;image_name2&gt;.xml
+└── &lt;image_nameN&gt;.xml
+</code></pre></div><p>It must be possible for CVAT to match the frame name and file name
+from annotation <code>.xml</code> file (the <code>filename</code> tag, e. g.
+<code>&lt;filename&gt;2008_004457.jpg&lt;/filename&gt;</code> ).</p>
+<p>There are 2 options:</p>
+<ol>
+<li>
+<p>full match between frame name and file name from annotation <code>.xml</code>
+(in cases when task was created from images or image archive).</p>
+</li>
+<li>
+<p>match by frame number. File name should be <code>&lt;number&gt;.jpg</code>
+or <code>frame_000000.jpg</code>. It should be used when task was created from video.</p>
+</li>
+</ol>
+<h2 id="how-to-create-a-task-from-pascal-voc-dataset">How to create a task from Pascal VOC dataset</h2>
+<ol>
+<li>
+<p>Download the Pascal Voc dataset (Can be downloaded from the
+<a href="http://host.robots.ox.ac.uk/pascal/VOC/">PASCAL VOC website</a>)</p>
+</li>
+<li>
+<p>Create a CVAT task with the following labels:</p>
+<div class="highlight"><pre style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">aeroplane bicycle bird boat bottle bus car cat chair cow diningtable
+dog horse motorbike person pottedplant sheep sofa train tvmonitor
+</code></pre></div><p>You can add <code>~checkbox=difficult:false ~checkbox=truncated:false</code>
+attributes for each label if you want to use them.</p>
+<p>Select interesting image files
+(See <a href="../../../../../docs/manual/basics/creating_an_annotation_task/">Creating an annotation task</a> guide for details)</p>
+</li>
+<li>
+<p>zip the corresponding annotation files</p>
+</li>
+<li>
+<p>click <code>Upload annotation</code> button, choose <code>Pascal VOC ZIP 1.1</code></p>
+<p>and select the zip file with annotations from previous step.
+It may take some time.</p>
+</li>
+</ol>
+
+</div>
+
+
+
+    
+	
+  
+    
+    
+	
+    
+
+<div class="td-content" style="page-break-before: always">
+    
+	<h1 id="pg-0c5d17d5590514f46eebca33f1932956">9 - </h1>
+    
+	<p>Segmentation masks format is often used in the training of models for tasks
+like semantic segmentation, instance segmentation, and panoptic segmentation.</p>
+<p>Segmentation Mask in CVAT is
+a format created by CVAT engineers
+inside the <a href="docs/manual/advanced/formats/format-voc/">Pascal VOC</a></p>
+<h2 id="segmentation-mask-export">Segmentation mask export</h2>
+<p>For export of images:</p>
+<ul>
+<li>Supported annotations: Bounding Boxes, Polygons.</li>
+<li>Attributes: Not supported.</li>
+<li>Tracks: Not supported.</li>
+</ul>
+<p>The downloaded file is a .zip archive with the following structure:</p>
+<div class="highlight"><pre style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">taskname.zip/
+├── labelmap.txt <span style="color:#8f5902;font-style:italic"># optional, required for non-VOC labels</span>
+├── ImageSets/
+│   └── Segmentation/
+│       └── default.txt <span style="color:#8f5902;font-style:italic"># list of image names without extension</span>
+├── SegmentationClass/ <span style="color:#8f5902;font-style:italic"># merged class masks</span>
+│   ├── image1.png
+│   └── image2.png
+└── SegmentationObject/ <span style="color:#8f5902;font-style:italic"># merged instance masks</span>
+    ├── image1.png
+    └── image2.png
+
+<span style="color:#8f5902;font-style:italic"># labelmap.txt</span>
+<span style="color:#8f5902;font-style:italic"># label : color (RGB) : &#39;body&#39; parts : actions</span>
+background:0,128,0::
+aeroplane:10,10,128::
+bicycle:10,128,0::
+bird:0,108,128::
+boat:108,0,100::
+bottle:18,0,8::
+bus:12,28,0::
+</code></pre></div><p>The mask is a <code>png</code> image that can have either 1 or 3 channels.
+Each pixel in the image has a color that corresponds to a specific label.
+The colors are generated according to the Pascal VOC <a href="http://host.robots.ox.ac.uk/pascal/VOC/voc2012/htmldoc/devkit_doc.html#sec:voclabelcolormap">
+algorithm</a>.
+By default, the color <code>(0, 0, 0)</code> is used to represent the background.</p>
+<h2 id="segmentation-mask-import">Segmentation mask import</h2>
+<p>Uploaded file: a zip archive of the following structure:</p>
+<div class="highlight"><pre style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">  taskname.zip/
+  ├── labelmap.txt <span style="color:#8f5902;font-style:italic"># optional, required for non-VOC labels</span>
+  ├── ImageSets/
+  │   └── Segmentation/
+  │       └── &lt;any_subset_name&gt;.txt
+  ├── SegmentationClass/
+  │   ├── image1.png
+  │   └── image2.png
+  └── SegmentationObject/
+      ├── image1.png
+      └── image2.png
+</code></pre></div><p>It is also possible to import grayscale (1-channel) PNG masks.
+For grayscale masks provide a list of labels with the number of lines equal
+to the maximum color index on images. The lines must be in the right order
+so that line index is equal to the color index. Lines can have arbitrary,
+but different, colors. If there are gaps in the used color
+indices in the annotations, they must be filled with arbitrary dummy labels.
+Example:</p>
+<pre><code>q:0,128,0:: # color index 0
+aeroplane:10,10,128:: # color index 1
+_dummy2:2,2,2:: # filler for color index 2
+_dummy3:3,3,3:: # filler for color index 3
+boat:108,0,100:: # color index 3
+...
+_dummy198:198,198,198:: # filler for color index 198
+_dummy199:199,199,199:: # filler for color index 199
+...
+the last label:12,28,0:: # color index 200
+</code></pre><ul>
+<li>supported shapes: Polygons</li>
+</ul>
+
+</div>
+
+
+
+    
+	
+  
+    
+    
+	
+    
+
+<div class="td-content" style="page-break-before: always">
+    
+	<h1 id="pg-325950f41f3ace02cd43a9a49e738e12">10 - </h1>
+    
+	<p>models, which are designed for real-time object detection tasks.
+However, the format can also be adapted for use with other object detection models.</p>
+<p>For more information, see:</p>
+<ul>
+<li><a href="https://pjreddie.com/darknet/yolo/">YOLO Specification</a></li>
+<li><a href="https://github.com/AlexeyAB/darknet#how-to-train-to-detect-your-custom-objects">Format specification</a></li>
+<li><a href="https://github.com/cvat-ai/datumaro/tree/v0.3/tests/assets/yolo_dataset">Dataset examples</a></li>
+</ul>
+<h2 id="yolo-export">YOLO export</h2>
+<p>For export of images:</p>
+<ul>
+<li>Supported annotations: Bounding Boxes.</li>
+<li>Attributes: Not supported.</li>
+<li>Tracks: Not supported.</li>
+</ul>
+<p>The downloaded file is a .zip archive with the following structure:</p>
+<div class="highlight"><pre style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">archive.zip/
+├── obj.data
+├── obj.names
+├── obj_&lt;subset&gt;_data
+│   ├── image1.txt
+│   └── image2.txt
+└── train.txt <span style="color:#8f5902;font-style:italic"># list of subset image paths</span>
+
+<span style="color:#8f5902;font-style:italic"># the only valid subsets are: train, valid</span>
+<span style="color:#8f5902;font-style:italic"># train.txt and valid.txt:</span>
+obj_&lt;subset&gt;_data/image1.jpg
+obj_&lt;subset&gt;_data/image2.jpg
+
+<span style="color:#8f5902;font-style:italic"># obj.data:</span>
+<span style="color:#000">classes</span> <span style="color:#ce5c00;font-weight:bold">=</span> <span style="color:#0000cf;font-weight:bold">3</span> <span style="color:#8f5902;font-style:italic"># optional</span>
+<span style="color:#000">names</span> <span style="color:#ce5c00;font-weight:bold">=</span> obj.names
+<span style="color:#000">train</span> <span style="color:#ce5c00;font-weight:bold">=</span> train.txt
+<span style="color:#000">valid</span> <span style="color:#ce5c00;font-weight:bold">=</span> valid.txt <span style="color:#8f5902;font-style:italic"># optional</span>
+<span style="color:#000">backup</span> <span style="color:#ce5c00;font-weight:bold">=</span> backup/ <span style="color:#8f5902;font-style:italic"># optional</span>
+
+<span style="color:#8f5902;font-style:italic"># obj.names:</span>
+cat
+dog
+airplane
+
+<span style="color:#8f5902;font-style:italic"># image_name.txt:</span>
+<span style="color:#8f5902;font-style:italic"># label_id - id from obj.names</span>
+<span style="color:#8f5902;font-style:italic"># cx, cy - relative coordinates of the bbox center</span>
+<span style="color:#8f5902;font-style:italic"># rw, rh - relative size of the bbox</span>
+<span style="color:#8f5902;font-style:italic"># label_id cx cy rw rh</span>
+<span style="color:#0000cf;font-weight:bold">1</span> 0.3 0.8 0.1 0.3
+<span style="color:#0000cf;font-weight:bold">2</span> 0.7 0.2 0.3 0.1
+</code></pre></div><p>Each annotation file, with the <code>.txt</code> extension,
+is named to correspond with its associated image file.</p>
+<p>For example, <code>frame_000001.txt</code> serves as the annotation for the
+<code>frame_000001.jpg</code> image.</p>
+<p>The structure of the <code>.txt</code> file is as follows:
+each line describes a label and a bounding box
+in the format <code>label_id cx cy w h</code>.
+The file <code>obj.names</code> contains an ordered list of label names.</p>
+<h2 id="yolo-import">YOLO import</h2>
+<p>Uploaded file: a zip archive of the same structure as above
+It must be possible to match the CVAT frame (image name)
+and annotation file name. There are 2 options:</p>
+<ol>
+<li>
+<p>full match between image name and name of annotation <code>*.txt</code> file
+(in cases when a task was created from images or archive of images).</p>
+</li>
+<li>
+<p>match by frame number (if CVAT cannot match by name). File name
+should be in the following format <code>&lt;number&gt;.jpg</code> .
+It should be used when task was created from a video.</p>
+</li>
+</ol>
+<h2 id="how-to-create-a-task-from-yolo-formatted-dataset-from-voc-for-example">How to create a task from YOLO formatted dataset (from VOC for example)</h2>
+<ol>
+<li>
+<p>Follow the official <a href="https://pjreddie.com/darknet/yolo/">guide</a>(see Training YOLO on VOC section)
+and prepare the YOLO formatted annotation files.</p>
+</li>
+<li>
+<p>Zip train images</p>
+</li>
+</ol>
+<div class="highlight"><pre style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">zip images.zip -j -@ &lt; train.txt
+</code></pre></div><ol>
+<li>
+<p>Create a CVAT task with the following labels:</p>
+<div class="highlight"><pre style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">aeroplane bicycle bird boat bottle bus car cat chair cow diningtable dog
+horse motorbike person pottedplant sheep sofa train tvmonitor
+</code></pre></div><p>Select images. zip as data. Most likely you should use <code>share</code>
+functionality because size of images. zip is more than 500Mb.
+See <a href="../../../../../docs/manual/basics/creating_an_annotation_task/">Creating an annotation task</a>
+guide for details.</p>
+</li>
+<li>
+<p>Create <code>obj.names</code> with the following content:</p>
+<div class="highlight"><pre style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">aeroplane
+bicycle
+bird
+boat
+bottle
+bus
+car
+cat
+chair
+cow
+diningtable
+dog
+horse
+motorbike
+person
+pottedplant
+sheep
+sofa
+train
+tvmonitor
+</code></pre></div></li>
+<li>
+<p>Zip all label files together (we need to add only label files that correspond to the train subset)</p>
+<div class="highlight"><pre style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">cat train.txt <span style="color:#000;font-weight:bold">|</span> <span style="color:#204a87;font-weight:bold">while</span> <span style="color:#204a87">read</span> p<span style="color:#000;font-weight:bold">;</span> <span style="color:#204a87;font-weight:bold">do</span> <span style="color:#204a87">echo</span> <span style="color:#4e9a06">${</span><span style="color:#000">p</span><span style="color:#000;font-weight:bold">%/*/*</span><span style="color:#4e9a06">}</span>/labels/<span style="color:#4e9a06">${${</span><span style="color:#000">p</span><span style="color:#000;font-weight:bold">##*/</span><span style="color:#4e9a06">}</span><span style="color:#000;font-weight:bold">%%.*</span><span style="color:#4e9a06">}</span>.txt<span style="color:#000;font-weight:bold">;</span> <span style="color:#204a87;font-weight:bold">done</span> <span style="color:#000;font-weight:bold">|</span> zip labels.zip -j -@ obj.names
+</code></pre></div></li>
+<li>
+<p>Click <code>Upload annotation</code> button, choose <code>YOLO 1.1</code> and select the zip</p>
+<p>file with labels from the previous step.</p>
+</li>
+</ol>
+
+</div>
+
+
+
+    
+	
+  
+    
+    
+	
+    
+
+<div class="td-content" style="page-break-before: always">
+    
+	<h1 id="pg-e3e1166f576647b7965c930f5091599f">11 - </h1>
+    
+	<p>The TFRecord format is tightly integrated with TensorFlow
+and is commonly used for training models within the TensorFlow ecosystem.</p>
+<p>TFRecord is an incredibly flexible data format.
+We strive to align our implementation with the
+format employed by the <a href="https://github.com/tensorflow/models/tree/master/research/object_detection">TensorFlow Object Detection API</a>,
+making only minimal changes as necessary.</p>
+<p>For more information, see:</p>
+<ul>
+<li><a href="https://www.tensorflow.org/tutorials/load_data/tfrecord">TFRecord</a></li>
+<li><a href="https://github.com/cvat-ai/datumaro/tree/v0.3/tests/assets/tf_detection_api_dataset">Dataset examples</a></li>
+</ul>
+<p>This format does not have a fixed structure, so in
+CVAT the following structure is used:</p>
+<div class="highlight"><pre style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-python" data-lang="python"><span style="color:#000">image_feature_description</span> <span style="color:#ce5c00;font-weight:bold">=</span> <span style="color:#000;font-weight:bold">{</span>
+    <span style="color:#4e9a06">&#39;image/filename&#39;</span><span style="color:#000;font-weight:bold">:</span> <span style="color:#000">tf</span><span style="color:#ce5c00;font-weight:bold">.</span><span style="color:#000">io</span><span style="color:#ce5c00;font-weight:bold">.</span><span style="color:#000">FixedLenFeature</span><span style="color:#000;font-weight:bold">([],</span> <span style="color:#000">tf</span><span style="color:#ce5c00;font-weight:bold">.</span><span style="color:#000">string</span><span style="color:#000;font-weight:bold">),</span>
+    <span style="color:#4e9a06">&#39;image/source_id&#39;</span><span style="color:#000;font-weight:bold">:</span> <span style="color:#000">tf</span><span style="color:#ce5c00;font-weight:bold">.</span><span style="color:#000">io</span><span style="color:#ce5c00;font-weight:bold">.</span><span style="color:#000">FixedLenFeature</span><span style="color:#000;font-weight:bold">([],</span> <span style="color:#000">tf</span><span style="color:#ce5c00;font-weight:bold">.</span><span style="color:#000">string</span><span style="color:#000;font-weight:bold">),</span>
+    <span style="color:#4e9a06">&#39;image/height&#39;</span><span style="color:#000;font-weight:bold">:</span> <span style="color:#000">tf</span><span style="color:#ce5c00;font-weight:bold">.</span><span style="color:#000">io</span><span style="color:#ce5c00;font-weight:bold">.</span><span style="color:#000">FixedLenFeature</span><span style="color:#000;font-weight:bold">([],</span> <span style="color:#000">tf</span><span style="color:#ce5c00;font-weight:bold">.</span><span style="color:#000">int64</span><span style="color:#000;font-weight:bold">),</span>
+    <span style="color:#4e9a06">&#39;image/width&#39;</span><span style="color:#000;font-weight:bold">:</span> <span style="color:#000">tf</span><span style="color:#ce5c00;font-weight:bold">.</span><span style="color:#000">io</span><span style="color:#ce5c00;font-weight:bold">.</span><span style="color:#000">FixedLenFeature</span><span style="color:#000;font-weight:bold">([],</span> <span style="color:#000">tf</span><span style="color:#ce5c00;font-weight:bold">.</span><span style="color:#000">int64</span><span style="color:#000;font-weight:bold">),</span>
+    <span style="color:#8f5902;font-style:italic"># Object boxes and classes.</span>
+    <span style="color:#4e9a06">&#39;image/object/bbox/xmin&#39;</span><span style="color:#000;font-weight:bold">:</span> <span style="color:#000">tf</span><span style="color:#ce5c00;font-weight:bold">.</span><span style="color:#000">io</span><span style="color:#ce5c00;font-weight:bold">.</span><span style="color:#000">VarLenFeature</span><span style="color:#000;font-weight:bold">(</span><span style="color:#000">tf</span><span style="color:#ce5c00;font-weight:bold">.</span><span style="color:#000">float32</span><span style="color:#000;font-weight:bold">),</span>
+    <span style="color:#4e9a06">&#39;image/object/bbox/xmax&#39;</span><span style="color:#000;font-weight:bold">:</span> <span style="color:#000">tf</span><span style="color:#ce5c00;font-weight:bold">.</span><span style="color:#000">io</span><span style="color:#ce5c00;font-weight:bold">.</span><span style="color:#000">VarLenFeature</span><span style="color:#000;font-weight:bold">(</span><span style="color:#000">tf</span><span style="color:#ce5c00;font-weight:bold">.</span><span style="color:#000">float32</span><span style="color:#000;font-weight:bold">),</span>
+    <span style="color:#4e9a06">&#39;image/object/bbox/ymin&#39;</span><span style="color:#000;font-weight:bold">:</span> <span style="color:#000">tf</span><span style="color:#ce5c00;font-weight:bold">.</span><span style="color:#000">io</span><span style="color:#ce5c00;font-weight:bold">.</span><span style="color:#000">VarLenFeature</span><span style="color:#000;font-weight:bold">(</span><span style="color:#000">tf</span><span style="color:#ce5c00;font-weight:bold">.</span><span style="color:#000">float32</span><span style="color:#000;font-weight:bold">),</span>
+    <span style="color:#4e9a06">&#39;image/object/bbox/ymax&#39;</span><span style="color:#000;font-weight:bold">:</span> <span style="color:#000">tf</span><span style="color:#ce5c00;font-weight:bold">.</span><span style="color:#000">io</span><span style="color:#ce5c00;font-weight:bold">.</span><span style="color:#000">VarLenFeature</span><span style="color:#000;font-weight:bold">(</span><span style="color:#000">tf</span><span style="color:#ce5c00;font-weight:bold">.</span><span style="color:#000">float32</span><span style="color:#000;font-weight:bold">),</span>
+    <span style="color:#4e9a06">&#39;image/object/class/label&#39;</span><span style="color:#000;font-weight:bold">:</span> <span style="color:#000">tf</span><span style="color:#ce5c00;font-weight:bold">.</span><span style="color:#000">io</span><span style="color:#ce5c00;font-weight:bold">.</span><span style="color:#000">VarLenFeature</span><span style="color:#000;font-weight:bold">(</span><span style="color:#000">tf</span><span style="color:#ce5c00;font-weight:bold">.</span><span style="color:#000">int64</span><span style="color:#000;font-weight:bold">),</span>
+    <span style="color:#4e9a06">&#39;image/object/class/text&#39;</span><span style="color:#000;font-weight:bold">:</span> <span style="color:#000">tf</span><span style="color:#ce5c00;font-weight:bold">.</span><span style="color:#000">io</span><span style="color:#ce5c00;font-weight:bold">.</span><span style="color:#000">VarLenFeature</span><span style="color:#000;font-weight:bold">(</span><span style="color:#000">tf</span><span style="color:#ce5c00;font-weight:bold">.</span><span style="color:#000">string</span><span style="color:#000;font-weight:bold">),</span>
+<span style="color:#000;font-weight:bold">}</span>
+</code></pre></div><h2 id="tfrecord-export">TFRecord export</h2>
+<p>For export of images:</p>
+<ul>
+<li>Supported annotations: Bounding Boxes, Polygons
+(as masks, manually over <a href="https://github.com/cvat-ai/datumaro/blob/develop/docs/user_manual.md">Datumaro</a>)</li>
+<li>Attributes: Not supported.</li>
+<li>Tracks: Not supported.</li>
+</ul>
+<p>The downloaded file is a .zip archive with the following structure:</p>
+<div class="highlight"><pre style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">taskname.zip/
+├── default.tfrecord
+└── label_map.pbtxt
+
+<span style="color:#8f5902;font-style:italic"># label_map.pbtxt</span>
+item <span style="color:#ce5c00;font-weight:bold">{</span>
+	id: <span style="color:#0000cf;font-weight:bold">1</span>
+	name: <span style="color:#4e9a06">&#39;label_0&#39;</span>
+<span style="color:#ce5c00;font-weight:bold">}</span>
+item <span style="color:#ce5c00;font-weight:bold">{</span>
+	id: <span style="color:#0000cf;font-weight:bold">2</span>
+	name: <span style="color:#4e9a06">&#39;label_1&#39;</span>
+<span style="color:#ce5c00;font-weight:bold">}</span>
+...
+</code></pre></div><p>How to export masks:</p>
+<ol>
+<li>
+<p>Export annotations in <a href="../../../../../docs/manual/advanced/formats/format-datumaro/">Datumaro</a> format.</p>
+</li>
+<li>
+<p>Apply <code>polygons_to_masks</code> and <code>boxes_to_masks</code> transforms:</p>
+<div class="highlight"><pre style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">datum transform -t polygons_to_masks -p path/to/proj -o ptm
+datum transform -t boxes_to_masks -p ptm -o btm
+</code></pre></div></li>
+<li>
+<p>Export in the <code>TF Detection API</code> format:</p>
+<div class="highlight"><pre style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">datum <span style="color:#204a87">export</span> -f tf_detection_api -p btm <span style="color:#ce5c00;font-weight:bold">[</span>-- --save-images<span style="color:#ce5c00;font-weight:bold">]</span>
+</code></pre></div></li>
+</ol>
+<h2 id="tfrecord-import">TFRecord import</h2>
+<p>Uploaded file: a zip archive of following structure:</p>
+<div class="highlight"><pre style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">taskname.zip/
+└── &lt;any name&gt;.tfrecord
+</code></pre></div><ul>
+<li>supported annotations: Rectangles</li>
+</ul>
+<h2 id="how-to-create-a-task-from-tfrecord-dataset-from-voc2007-for-example">How to create a task from TFRecord dataset (from VOC2007 for example)</h2>
+<ol>
+<li>Create <code>label_map.pbtxt</code> file with the following content:</li>
+</ol>
+<div class="highlight"><pre style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-js" data-lang="js"><span style="color:#000">item</span> <span style="color:#000;font-weight:bold">{</span>
+    <span style="color:#000">id</span><span style="color:#ce5c00;font-weight:bold">:</span> <span style="color:#0000cf;font-weight:bold">1</span>
+    <span style="color:#000">name</span><span style="color:#ce5c00;font-weight:bold">:</span> <span style="color:#4e9a06">&#39;aeroplane&#39;</span>
+<span style="color:#000;font-weight:bold">}</span>
+<span style="color:#000">item</span> <span style="color:#000;font-weight:bold">{</span>
+    <span style="color:#000">id</span><span style="color:#ce5c00;font-weight:bold">:</span> <span style="color:#0000cf;font-weight:bold">2</span>
+    <span style="color:#000">name</span><span style="color:#ce5c00;font-weight:bold">:</span> <span style="color:#4e9a06">&#39;bicycle&#39;</span>
+<span style="color:#000;font-weight:bold">}</span>
+<span style="color:#000">item</span> <span style="color:#000;font-weight:bold">{</span>
+    <span style="color:#000">id</span><span style="color:#ce5c00;font-weight:bold">:</span> <span style="color:#0000cf;font-weight:bold">3</span>
+    <span style="color:#000">name</span><span style="color:#ce5c00;font-weight:bold">:</span> <span style="color:#4e9a06">&#39;bird&#39;</span>
+<span style="color:#000;font-weight:bold">}</span>
+<span style="color:#000">item</span> <span style="color:#000;font-weight:bold">{</span>
+    <span style="color:#000">id</span><span style="color:#ce5c00;font-weight:bold">:</span> <span style="color:#0000cf;font-weight:bold">4</span>
+    <span style="color:#000">name</span><span style="color:#ce5c00;font-weight:bold">:</span> <span style="color:#4e9a06">&#39;boat&#39;</span>
+<span style="color:#000;font-weight:bold">}</span>
+<span style="color:#000">item</span> <span style="color:#000;font-weight:bold">{</span>
+    <span style="color:#000">id</span><span style="color:#ce5c00;font-weight:bold">:</span> <span style="color:#0000cf;font-weight:bold">5</span>
+    <span style="color:#000">name</span><span style="color:#ce5c00;font-weight:bold">:</span> <span style="color:#4e9a06">&#39;bottle&#39;</span>
+<span style="color:#000;font-weight:bold">}</span>
+<span style="color:#000">item</span> <span style="color:#000;font-weight:bold">{</span>
+    <span style="color:#000">id</span><span style="color:#ce5c00;font-weight:bold">:</span> <span style="color:#0000cf;font-weight:bold">6</span>
+    <span style="color:#000">name</span><span style="color:#ce5c00;font-weight:bold">:</span> <span style="color:#4e9a06">&#39;bus&#39;</span>
+<span style="color:#000;font-weight:bold">}</span>
+<span style="color:#000">item</span> <span style="color:#000;font-weight:bold">{</span>
+    <span style="color:#000">id</span><span style="color:#ce5c00;font-weight:bold">:</span> <span style="color:#0000cf;font-weight:bold">7</span>
+    <span style="color:#000">name</span><span style="color:#ce5c00;font-weight:bold">:</span> <span style="color:#4e9a06">&#39;car&#39;</span>
+<span style="color:#000;font-weight:bold">}</span>
+<span style="color:#000">item</span> <span style="color:#000;font-weight:bold">{</span>
+    <span style="color:#000">id</span><span style="color:#ce5c00;font-weight:bold">:</span> <span style="color:#0000cf;font-weight:bold">8</span>
+    <span style="color:#000">name</span><span style="color:#ce5c00;font-weight:bold">:</span> <span style="color:#4e9a06">&#39;cat&#39;</span>
+<span style="color:#000;font-weight:bold">}</span>
+<span style="color:#000">item</span> <span style="color:#000;font-weight:bold">{</span>
+    <span style="color:#000">id</span><span style="color:#ce5c00;font-weight:bold">:</span> <span style="color:#0000cf;font-weight:bold">9</span>
+    <span style="color:#000">name</span><span style="color:#ce5c00;font-weight:bold">:</span> <span style="color:#4e9a06">&#39;chair&#39;</span>
+<span style="color:#000;font-weight:bold">}</span>
+<span style="color:#000">item</span> <span style="color:#000;font-weight:bold">{</span>
+    <span style="color:#000">id</span><span style="color:#ce5c00;font-weight:bold">:</span> <span style="color:#0000cf;font-weight:bold">10</span>
+    <span style="color:#000">name</span><span style="color:#ce5c00;font-weight:bold">:</span> <span style="color:#4e9a06">&#39;cow&#39;</span>
+<span style="color:#000;font-weight:bold">}</span>
+<span style="color:#000">item</span> <span style="color:#000;font-weight:bold">{</span>
+    <span style="color:#000">id</span><span style="color:#ce5c00;font-weight:bold">:</span> <span style="color:#0000cf;font-weight:bold">11</span>
+    <span style="color:#000">name</span><span style="color:#ce5c00;font-weight:bold">:</span> <span style="color:#4e9a06">&#39;diningtable&#39;</span>
+<span style="color:#000;font-weight:bold">}</span>
+<span style="color:#000">item</span> <span style="color:#000;font-weight:bold">{</span>
+    <span style="color:#000">id</span><span style="color:#ce5c00;font-weight:bold">:</span> <span style="color:#0000cf;font-weight:bold">12</span>
+    <span style="color:#000">name</span><span style="color:#ce5c00;font-weight:bold">:</span> <span style="color:#4e9a06">&#39;dog&#39;</span>
+<span style="color:#000;font-weight:bold">}</span>
+<span style="color:#000">item</span> <span style="color:#000;font-weight:bold">{</span>
+    <span style="color:#000">id</span><span style="color:#ce5c00;font-weight:bold">:</span> <span style="color:#0000cf;font-weight:bold">13</span>
+    <span style="color:#000">name</span><span style="color:#ce5c00;font-weight:bold">:</span> <span style="color:#4e9a06">&#39;horse&#39;</span>
+<span style="color:#000;font-weight:bold">}</span>
+<span style="color:#000">item</span> <span style="color:#000;font-weight:bold">{</span>
+    <span style="color:#000">id</span><span style="color:#ce5c00;font-weight:bold">:</span> <span style="color:#0000cf;font-weight:bold">14</span>
+    <span style="color:#000">name</span><span style="color:#ce5c00;font-weight:bold">:</span> <span style="color:#4e9a06">&#39;motorbike&#39;</span>
+<span style="color:#000;font-weight:bold">}</span>
+<span style="color:#000">item</span> <span style="color:#000;font-weight:bold">{</span>
+    <span style="color:#000">id</span><span style="color:#ce5c00;font-weight:bold">:</span> <span style="color:#0000cf;font-weight:bold">15</span>
+    <span style="color:#000">name</span><span style="color:#ce5c00;font-weight:bold">:</span> <span style="color:#4e9a06">&#39;person&#39;</span>
+<span style="color:#000;font-weight:bold">}</span>
+<span style="color:#000">item</span> <span style="color:#000;font-weight:bold">{</span>
+    <span style="color:#000">id</span><span style="color:#ce5c00;font-weight:bold">:</span> <span style="color:#0000cf;font-weight:bold">16</span>
+    <span style="color:#000">name</span><span style="color:#ce5c00;font-weight:bold">:</span> <span style="color:#4e9a06">&#39;pottedplant&#39;</span>
+<span style="color:#000;font-weight:bold">}</span>
+<span style="color:#000">item</span> <span style="color:#000;font-weight:bold">{</span>
+    <span style="color:#000">id</span><span style="color:#ce5c00;font-weight:bold">:</span> <span style="color:#0000cf;font-weight:bold">17</span>
+    <span style="color:#000">name</span><span style="color:#ce5c00;font-weight:bold">:</span> <span style="color:#4e9a06">&#39;sheep&#39;</span>
+<span style="color:#000;font-weight:bold">}</span>
+<span style="color:#000">item</span> <span style="color:#000;font-weight:bold">{</span>
+    <span style="color:#000">id</span><span style="color:#ce5c00;font-weight:bold">:</span> <span style="color:#0000cf;font-weight:bold">18</span>
+    <span style="color:#000">name</span><span style="color:#ce5c00;font-weight:bold">:</span> <span style="color:#4e9a06">&#39;sofa&#39;</span>
+<span style="color:#000;font-weight:bold">}</span>
+<span style="color:#000">item</span> <span style="color:#000;font-weight:bold">{</span>
+    <span style="color:#000">id</span><span style="color:#ce5c00;font-weight:bold">:</span> <span style="color:#0000cf;font-weight:bold">19</span>
+    <span style="color:#000">name</span><span style="color:#ce5c00;font-weight:bold">:</span> <span style="color:#4e9a06">&#39;train&#39;</span>
+<span style="color:#000;font-weight:bold">}</span>
+<span style="color:#000">item</span> <span style="color:#000;font-weight:bold">{</span>
+    <span style="color:#000">id</span><span style="color:#ce5c00;font-weight:bold">:</span> <span style="color:#0000cf;font-weight:bold">20</span>
+    <span style="color:#000">name</span><span style="color:#ce5c00;font-weight:bold">:</span> <span style="color:#4e9a06">&#39;tvmonitor&#39;</span>
+<span style="color:#000;font-weight:bold">}</span>
+</code></pre></div><ol>
+<li>Use <a href="https://github.com/tensorflow/models/blob/master/research/object_detection/dataset_tools/create_pascal_tf_record.py">create_pascal_tf_record.py</a></li>
+</ol>
+<p>to convert VOC2007 dataset to TFRecord format.
+As example:</p>
+<div class="highlight"><pre style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">python create_pascal_tf_record.py --data_dir &lt;path to VOCdevkit&gt; --set train --year VOC2007 --output_path pascal.tfrecord --label_map_path label_map.pbtxt
+</code></pre></div><ol>
+<li>
+<p>Zip train images</p>
+<div class="highlight"><pre style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">cat &lt;path to VOCdevkit&gt;/VOC2007/ImageSets/Main/train.txt <span style="color:#000;font-weight:bold">|</span> <span style="color:#204a87;font-weight:bold">while</span> <span style="color:#204a87">read</span> p<span style="color:#000;font-weight:bold">;</span> <span style="color:#204a87;font-weight:bold">do</span> <span style="color:#204a87">echo</span> &lt;path to VOCdevkit&gt;/VOC2007/JPEGImages/<span style="color:#4e9a06">${</span><span style="color:#000">p</span><span style="color:#4e9a06">}</span>.jpg  <span style="color:#000;font-weight:bold">;</span> <span style="color:#204a87;font-weight:bold">done</span> <span style="color:#000;font-weight:bold">|</span> zip images.zip -j -@
+</code></pre></div></li>
+<li>
+<p>Create a CVAT task with the following labels:</p>
+<div class="highlight"><pre style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">aeroplane bicycle bird boat bottle bus car cat chair cow diningtable dog horse motorbike person pottedplant sheep sofa train tvmonitor
+</code></pre></div><p>Select images. zip as data.
+See <a href="../../../../../docs/manual/basics/creating_an_annotation_task/">Creating an annotation task</a>
+guide for details.</p>
+</li>
+<li>
+<p>Zip <code>pascal.tfrecord</code> and <code>label_map.pbtxt</code> files together</p>
+<div class="highlight"><pre style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">zip anno.zip -j &lt;path to pascal.tfrecord&gt; &lt;path to label_map.pbtxt&gt;
+</code></pre></div></li>
+<li>
+<p>Click <code>Upload annotation</code> button, choose <code>TFRecord 1.0</code> and select the zip file</p>
+<p>with labels from the previous step. It may take some time.</p>
+</li>
+</ol>
+
+</div>
+
+
+
+    
+	
+  
+    
+    
+	
+    
+
+<div class="td-content" style="page-break-before: always">
+    
+	<h1 id="pg-37ea47d7e7cb5ab2516a949cad325f19">12 - </h1>
+    
+	<p>The ImageNet is typically used for a variety of computer vision tasks,
+including but not limited to image classification, object detection,
+and segmentation.</p>
+<p>It is widely recognized and used in the training and
+benchmarking of various machine learning models.</p>
+<p>For more information, see:</p>
+<ul>
+<li><a href="http://www.image-net.org">ImageNet site</a></li>
+<li><a href="https://github.com/cvat-ai/datumaro/tree/v0.3/tests/assets/imagenet_dataset">Dataset examples</a></li>
+</ul>
+<h2 id="imagenet-export">ImageNet export</h2>
+<p>For export of images:</p>
+<ul>
+<li>Supported annotations: Tags.</li>
+<li>Attributes: Not supported.</li>
+<li>Tracks: Not supported.</li>
+</ul>
+<p>The downloaded file is a .zip archive with the following structure:</p>
+<div class="highlight"><pre style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash"><span style="color:#8f5902;font-style:italic"># if we save images:</span>
+taskname.zip/
+├── label1/
+<span style="color:#000;font-weight:bold">|</span>   ├── label1_image1.jpg
+<span style="color:#000;font-weight:bold">|</span>   └── label1_image2.jpg
+└── label2/
+    ├── label2_image1.jpg
+    ├── label2_image3.jpg
+    └── label2_image4.jpg
+
+<span style="color:#8f5902;font-style:italic"># if we keep only annotation:</span>
+taskname.zip/
+├── &lt;any_subset_name&gt;.txt
+└── synsets.txt
+
+</code></pre></div><h2 id="imagenet-import">ImageNet import</h2>
+<p>Uploaded file: a zip archive of the structure above</p>
+<ul>
+<li>supported annotations: Labels</li>
+</ul>
+
+</div>
+
+
+
+    
+	
+  
+    
+    
+	
+    
+
+<div class="td-content" style="page-break-before: always">
+    
+	<h1 id="pg-f3e3abb5b13d6f59f5100a9d8ae3645f">13 - </h1>
+    
+	<p>he WIDER Face dataset is widely used for face detection tasks.
+Many popular models for object detection and face detection
+specifically are trained on this dataset for benchmarking and deployment.</p>
+<p>For more information, see:</p>
+<ul>
+<li><a href="http://shuoyang1213.me/WIDERFACE/">WIDER Face Specification</a></li>
+<li><a href="https://github.com/cvat-ai/datumaro/tree/v0.3/tests/assets/widerface_dataset">Dataset examples</a></li>
+</ul>
+<h2 id="wider-face-export">WIDER Face export</h2>
+<p>For export of images:</p>
+<ul>
+<li>Supported annotations: Bounding Boxes (with attributes), Tags.</li>
+<li>Attributes:
+<ul>
+<li><code>blur</code>, <code>expression</code>, <code>illumination</code>, <code>pose</code>, <code>invalid</code></li>
+<li><code>occluded</code> (both the annotation property &amp; an attribute).</li>
+</ul>
+</li>
+<li>Tracks: Not supported.</li>
+</ul>
+<p>The downloaded file is a .zip archive with the following structure:</p>
+<div class="highlight"><pre style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">taskname.zip/
+├── labels.txt <span style="color:#8f5902;font-style:italic"># optional</span>
+├── wider_face_split/
+│   └── wider_face_&lt;any_subset_name&gt;_bbx_gt.txt
+└── WIDER_&lt;any_subset_name&gt;/
+    └── images/
+        ├── 0--label0/
+        │   └── 0_label0_image1.jpg
+        └── 1--label1/
+            └── 1_label1_image2.jpg
+</code></pre></div><h2 id="wider-face-import">WIDER Face import</h2>
+<p>Uploaded file: a zip archive of the structure above</p>
+<ul>
+<li>supported annotations: Rectangles (with attributes), Labels</li>
+<li>supported attributes:
+<ul>
+<li><code>blur</code>, <code>expression</code>, <code>illumination</code>, <code>occluded</code>, <code>pose</code>, <code>invalid</code></li>
+</ul>
+</li>
+</ul>
+
+</div>
+
+
+
+    
+	
+  
+    
+    
+	
+    
+
+<div class="td-content" style="page-break-before: always">
+    
+	<h1 id="pg-bdc4a2c3af1233a5e9cdef14bd683a14">14 - </h1>
+    
+	<p>The CamVid (Cambridge-driving Labeled Video Database) format is most commonly used
+in the realm of semantic segmentation tasks. It is particularly useful for training
+and evaluating models for autonomous driving and other vision-based robotics
+applications.</p>
+<p>For more information, see:</p>
+<ul>
+<li><a href="http://mi.eng.cam.ac.uk/research/projects/VideoRec/CamVid/">CamVid Specification</a></li>
+<li><a href="https://github.com/cvat-ai/datumaro/tree/v0.3/tests/assets/camvid_dataset">Dataset examples</a></li>
+</ul>
+<h2 id="camvid-export">CamVid export</h2>
+<p>For export of images and videos:</p>
+<ul>
+<li>Supported annotations: Bounding Boxes, Polygons.</li>
+<li>Attributes: Not supported.</li>
+<li>Tracks: Not supported.</li>
+</ul>
+<p>The downloaded file is a .zip archive with the following structure:</p>
+<div class="highlight"><pre style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">taskname.zip/
+├── label_colors.txt <span style="color:#8f5902;font-style:italic"># optional, required for non-CamVid labels</span>
+├── &lt;any_subset_name&gt;/
+<span style="color:#000;font-weight:bold">|</span>   ├── image1.png
+<span style="color:#000;font-weight:bold">|</span>   └── image2.png
+├── &lt;any_subset_name&gt;annot/
+<span style="color:#000;font-weight:bold">|</span>   ├── image1.png
+<span style="color:#000;font-weight:bold">|</span>   └── image2.png
+└── &lt;any_subset_name&gt;.txt
+
+<span style="color:#8f5902;font-style:italic"># label_colors.txt (with color value type)</span>
+<span style="color:#8f5902;font-style:italic"># if you want to manually set the color for labels, configure label_colors.txt as follows:</span>
+<span style="color:#8f5902;font-style:italic"># color (RGB) label</span>
+<span style="color:#0000cf;font-weight:bold">0</span> <span style="color:#0000cf;font-weight:bold">0</span> <span style="color:#0000cf;font-weight:bold">0</span> Void
+<span style="color:#0000cf;font-weight:bold">64</span> <span style="color:#0000cf;font-weight:bold">128</span> <span style="color:#0000cf;font-weight:bold">64</span> Animal
+<span style="color:#0000cf;font-weight:bold">192</span> <span style="color:#0000cf;font-weight:bold">0</span> <span style="color:#0000cf;font-weight:bold">128</span> Archway
+<span style="color:#0000cf;font-weight:bold">0</span> <span style="color:#0000cf;font-weight:bold">128</span> <span style="color:#0000cf;font-weight:bold">192</span> Bicyclist
+<span style="color:#0000cf;font-weight:bold">0</span> <span style="color:#0000cf;font-weight:bold">128</span> <span style="color:#0000cf;font-weight:bold">64</span> Bridge
+
+<span style="color:#8f5902;font-style:italic"># label_colors.txt (without color value type)</span>
+<span style="color:#8f5902;font-style:italic"># if you do not manually set the color for labels, it will be set automatically:</span>
+<span style="color:#8f5902;font-style:italic"># label</span>
+Void
+Animal
+Archway
+Bicyclist
+Bridge
+</code></pre></div><p>A mask in the CamVid dataset is typically a <strong>.png</strong>
+image with either one or three channels.</p>
+<p>In this image, each pixel is assigned a specific color
+that corresponds to a particular label.</p>
+<p>By default, the color <code>(0, 0, 0)</code>—or <code>black</code>—is used
+to represent the background.</p>
+<h2 id="camvid-import">CamVid import</h2>
+<p>For import of images:</p>
+<ul>
+<li>Uploaded file: a <em>.zip</em> archive of the structure above</li>
+<li>supported annotations: Polygons</li>
+</ul>
+
+</div>
+
+
+
+    
+	
+  
+    
+    
+	
+    
+
+<div class="td-content" style="page-break-before: always">
+    
+	<h1 id="pg-e5cb2753d48cd08b4ee4ff9e10696658">15 - </h1>
+    
+	<p>The VGGFace2 is primarily designed for face recognition tasks and is
+most commonly used with deep learning models specifically designed for face recognition,
+verification, and similar tasks.</p>
+<p>For more information, see:</p>
+<ul>
+<li><a href="https://github.com/ox-vgg/vgg_face2">VGGFace2 Github</a></li>
+<li><a href="https://github.com/cvat-ai/datumaro/tree/v0.3/tests/assets/vgg_face2_dataset">Dataset examples</a></li>
+</ul>
+<h2 id="vggface2-export">VGGFace2 export</h2>
+<p>For export of images:</p>
+<ul>
+<li>Supported annotations: Bounding Boxes, Points (landmarks - groups of 5 points).</li>
+<li>Attributes: Not supported.</li>
+<li>Tracks: Not supported.</li>
+</ul>
+<p>The downloaded file is a .zip archive with the following structure:</p>
+<div class="highlight"><pre style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">taskname.zip/
+├── labels.txt <span style="color:#8f5902;font-style:italic"># optional</span>
+├── &lt;any_subset_name&gt;/
+<span style="color:#000;font-weight:bold">|</span>   ├── label0/
+<span style="color:#000;font-weight:bold">|</span>   <span style="color:#000;font-weight:bold">|</span>   └── image1.jpg
+<span style="color:#000;font-weight:bold">|</span>   └── label1/
+<span style="color:#000;font-weight:bold">|</span>       └── image2.jpg
+└── bb_landmark/
+    ├── loose_bb_&lt;any_subset_name&gt;.csv
+    └── loose_landmark_&lt;any_subset_name&gt;.csv
+<span style="color:#8f5902;font-style:italic"># labels.txt</span>
+<span style="color:#8f5902;font-style:italic"># n000001 car</span>
+label0 &lt;class0&gt;
+label1 &lt;class1&gt;
+</code></pre></div><h2 id="vggface2-import">VGGFace2 import</h2>
+<p>Uploaded file: a zip archive of the structure above</p>
+<ul>
+<li>supported annotations: Rectangles, Points (landmarks - groups of 5 points)</li>
+</ul>
+
+</div>
+
+
+
+    
+	
+  
+    
+    
+	
+    
+
+<div class="td-content" style="page-break-before: always">
+    
+	<h1 id="pg-b43e1ff431da6854eb46bb51b712cc0b">16 - </h1>
+    
+	<p>The Market-1501 dataset is widely used for person re-identification tasks.
+It is a challenging dataset that has gained significant attention
+in the computer vision community.</p>
+<p>For more information, see:</p>
+<ul>
+<li><a href="https://www.aitribune.com/dataset/2018051063">Market-1501</a></li>
+<li><a href="https://github.com/cvat-ai/datumaro/tree/v0.3/tests/assets/market1501_dataset">Dataset examples</a></li>
+</ul>
+<h2 id="market-1501-export">Market-1501 export</h2>
+<p>For export of images:</p>
+<ul>
+<li>Supported annotations: Bounding Boxes</li>
+<li>Attributes: <code>query</code> (checkbox), <code>person_id</code> (number), <code>camera_id</code>(number).</li>
+<li>Tracks: Not supported.</li>
+</ul>
+<p>Th downloaded file is a .zip archive with the following structure:</p>
+<div class="highlight"><pre style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">taskname.zip/
+├── bounding_box_&lt;any_subset_name&gt;/
+│   └── image_name_1.jpg
+└── query
+    ├── image_name_2.jpg
+    └── image_name_3.jpg
+<span style="color:#8f5902;font-style:italic"># if we keep only annotation:</span>
+taskname.zip/
+└── images_&lt;any_subset_name&gt;.txt
+<span style="color:#8f5902;font-style:italic"># images_&lt;any_subset_name&gt;.txt</span>
+query/image_name_1.jpg
+bounding_box_&lt;any_subset_name&gt;/image_name_2.jpg
+bounding_box_&lt;any_subset_name&gt;/image_name_3.jpg
+<span style="color:#8f5902;font-style:italic"># image_name = 0001_c1s1_000015_00.jpg</span>
+<span style="color:#0000cf;font-weight:bold">0001</span> - person id
+c1 - camera id <span style="color:#ce5c00;font-weight:bold">(</span>there are totally <span style="color:#0000cf;font-weight:bold">6</span> cameras<span style="color:#ce5c00;font-weight:bold">)</span>
+s1 - sequence
+<span style="color:#0000cf;font-weight:bold">000015</span> - frame number in sequence
+<span style="color:#0000cf;font-weight:bold">00</span> - means that this bounding box is the first one among the several
+</code></pre></div><h2 id="market-1501-import">Market-1501 import</h2>
+<p>Uploaded file: a zip archive of the structure above</p>
+<ul>
+<li>supported annotations: Label <code>market-1501</code> with attributes (<code>query</code>, <code>person_id</code>, <code>camera_id</code>)</li>
+</ul>
+
+</div>
+
+
+
+    
+	
+  
+    
+    
+	
+    
+
+<div class="td-content" style="page-break-before: always">
+    
+	<h1 id="pg-58cc638fb0d2a3516ec0e834a1eb3973">17 - </h1>
+    
+	<p>ICDAR 13/15 formats are typically used for text detection and recognition tasks
+and OCR (Optical Character Recognition).</p>
+<p>These formats are usually paired with specialized text detection and recognition models.</p>
+<p>For more information, see:</p>
+<ul>
+<li><a href="https://rrc.cvc.uab.es/?ch=2">ICDAR13/15</a></li>
+<li><a href="https://github.com/cvat-ai/datumaro/tree/v0.3/tests/assets/icdar_dataset">Dataset examples</a></li>
+</ul>
+<h2 id="icdar1315-export">ICDAR13/15 export</h2>
+<p>For export of images:</p>
+<ul>
+<li><strong>ICDAR Recognition 1.0</strong> (Text recognition):
+<ul>
+<li>Supported annotations: Tag <code>icdar</code></li>
+<li>Attributes: <code>caption</code>.</li>
+</ul>
+</li>
+<li><strong>ICDAR Detection 1.0</strong> (Text detection):
+<ul>
+<li>Supported annotations: Bounding Boxes, Polygons with lavel <code>icdar</code>
+added in constructor.</li>
+<li>Attributes: <code>text</code>.</li>
+</ul>
+</li>
+<li><strong>ICDAR Segmentation 1.0</strong> (Text segmentation):
+<ul>
+<li>Supported annotations: Bounding Boxes, Polygons with label <code>icdar</code>
+added in constructor.</li>
+<li>Attributes: <code>index</code>, <code>text</code>, <code>color</code>, <code>center</code></li>
+</ul>
+</li>
+<li>Tracks: Not supported.</li>
+</ul>
+<p>The downloaded file is a .zip archive with the following structure:</p>
+<div class="highlight"><pre style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash"><span style="color:#8f5902;font-style:italic"># text recognition task</span>
+taskname.zip/
+└── word_recognition/
+    └── &lt;any_subset_name&gt;/
+        ├── images
+        <span style="color:#000;font-weight:bold">|</span>   ├── word1.png
+        <span style="color:#000;font-weight:bold">|</span>   └── word2.png
+        └── gt.txt
+<span style="color:#8f5902;font-style:italic"># text localization task</span>
+taskname.zip/
+└── text_localization/
+    └── &lt;any_subset_name&gt;/
+        ├── images
+        <span style="color:#000;font-weight:bold">|</span>   ├── img_1.png
+        <span style="color:#000;font-weight:bold">|</span>   └── img_2.png
+        ├── gt_img_1.txt
+        └── gt_img_1.txt
+<span style="color:#8f5902;font-style:italic">#text segmentation task</span>
+taskname.zip/
+└── text_localization/
+    └── &lt;any_subset_name&gt;/
+        ├── images
+        <span style="color:#000;font-weight:bold">|</span>   ├── 1.png
+        <span style="color:#000;font-weight:bold">|</span>   └── 2.png
+        ├── 1_GT.bmp
+        ├── 1_GT.txt
+        ├── 2_GT.bmp
+        └── 2_GT.txt
+</code></pre></div><h2 id="icdar1315-import">ICDAR13/15 import</h2>
+<p>Uploaded file: a zip archive of the structure above</p>
+<p><strong>Word recognition task</strong>:</p>
+<ul>
+<li>supported annotations: Label <code>icdar</code> with attribute <code>caption</code></li>
+</ul>
+<p><strong>Text localization task</strong>:</p>
+<ul>
+<li>supported annotations: Rectangles and Polygons with label <code>icdar</code>
+and attribute <code>text</code></li>
+</ul>
+<p><strong>Text segmentation task</strong>:</p>
+<ul>
+<li>supported annotations: Rectangles and Polygons with label <code>icdar</code>
+and attributes <code>index</code>, <code>text</code>, <code>color</code>, <code>center</code></li>
+</ul>
+
+</div>
+
+
+
+    
+	
+  
+    
+    
+	
+    
+
+<div class="td-content" style="page-break-before: always">
+    
+	<h1 id="pg-30f91a45fc1a90a5d4185adb88f285cf">18 - </h1>
+    
+	<p>The Open Images format is based on a large-scale, diverse dataset
+that contains object detection, object segmentation, visual relationship,
+and localized narratives annotations.</p>
+<p>Its export data format is compatible with many object detection and segmentation models.</p>
+<p>For more information, see:</p>
+<ul>
+<li><a href="https://storage.googleapis.com/openimages/web/index.html">Open Images site</a></li>
+<li><a href="https://storage.googleapis.com/openimages/web/download.html">Format specification</a></li>
+<li><a href="https://github.com/cvat-ai/datumaro/tree/v0.3/tests/assets/open_images_dataset">Dataset examples</a></li>
+</ul>
+<h2 id="open-images-export">Open Images export</h2>
+<p>For export of images:</p>
+<ul>
+<li>
+<p>Supported annotations: Bounding Boxes (detection),
+Tags (classification), Polygons (segmentation).</p>
+</li>
+<li>
+<p>Supported attributes:</p>
+<ul>
+<li>Tags: <code>score</code> must be defined for labels as <code>text</code> or <code>number</code>.
+The confidence level from 0 to 1.</li>
+<li>Bounding boxes: <br><code>score</code> must be defined for labels as <code>text</code> or <code>number</code>.
+The confidence level from 0 to 1. <br> <code>occluded</code> as both UI option
+and a separate attribute. Whether the object is occluded by another object. <br><code>truncated</code>
+must be defined for labels as <code>checkbox</code>. Whether the object extends beyond the boundary of the image.
+<br><code>is_group_of</code> must be defined for labels as <code>checkbox</code>. Whether the object
+represents a group of objects of the same class. <br><code>is_depiction</code> must be
+defined for labels as <code>checkbox</code>. Whether the object is a depiction (such as a drawing)
+rather than a real object. <br><code>is_inside</code> must be defined
+for labels as <code>checkbox</code>. Whether the object is seen from the inside.</li>
+<li>Masks:
+<br><code>box_id</code> must be defined for labels as <code>text</code>. An identifier for
+the bounding box associated with the mask.
+<br><code>predicted_iou</code> must be defined for labels as <code>text</code> or <code>number</code>.
+Predicted IoU value with respect to the ground truth.</li>
+</ul>
+</li>
+<li>
+<p>Tracks: Not supported.</p>
+</li>
+</ul>
+<p>The downloaded file is a .zip archive with the following structure:</p>
+<pre><code>└─ taskname.zip/
+    ├── annotations/
+    │   ├── bbox_labels_600_hierarchy.json
+    │   ├── class-descriptions.csv
+    |   ├── images.meta  # additional file with information about image sizes
+    │   ├── &lt;subset_name&gt;-image_ids_and_rotation.csv
+    │   ├── &lt;subset_name&gt;-annotations-bbox.csv
+    │   ├── &lt;subset_name&gt;-annotations-human-imagelabels.csv
+    │   └── &lt;subset_name&gt;-annotations-object-segmentation.csv
+    ├── images/
+    │   ├── subset1/
+    │   │   ├── &lt;image_name101.jpg&gt;
+    │   │   ├── &lt;image_name102.jpg&gt;
+    │   │   └── ...
+    │   ├── subset2/
+    │   │   ├── &lt;image_name201.jpg&gt;
+    │   │   ├── &lt;image_name202.jpg&gt;
+    │   │   └── ...
+    |   ├── ...
+    └── masks/
+        ├── subset1/
+        │   ├── &lt;mask_name101.png&gt;
+        │   ├── &lt;mask_name102.png&gt;
+        │   └── ...
+        ├── subset2/
+        │   ├── &lt;mask_name201.png&gt;
+        │   ├── &lt;mask_name202.png&gt;
+        │   └── ...
+        ├── ...
+</code></pre><h2 id="open-images-import">Open Images import</h2>
+<p>Uploaded file: a zip archive of the following structure:</p>
+<pre><code>└─ upload.zip/
+    ├── annotations/
+    │   ├── bbox_labels_600_hierarchy.json
+    │   ├── class-descriptions.csv
+    |   ├── images.meta  # optional, file with information about image sizes
+    │   ├── &lt;subset_name&gt;-image_ids_and_rotation.csv
+    │   ├── &lt;subset_name&gt;-annotations-bbox.csv
+    │   ├── &lt;subset_name&gt;-annotations-human-imagelabels.csv
+    │   └── &lt;subset_name&gt;-annotations-object-segmentation.csv
+    └── masks/
+        ├── subset1/
+        │   ├── &lt;mask_name101.png&gt;
+        │   ├── &lt;mask_name102.png&gt;
+        │   └── ...
+        ├── subset2/
+        │   ├── &lt;mask_name201.png&gt;
+        │   ├── &lt;mask_name202.png&gt;
+        │   └── ...
+        ├── ...
+</code></pre><p>Image ids in the <code>&lt;subset_name&gt;-image_ids_and_rotation.csv</code> should match with
+image names in the task.</p>
+
+</div>
+
+
+
+    
+	
+  
+    
+    
+	
+    
+
+<div class="td-content" style="page-break-before: always">
+    
+	<h1 id="pg-f65edfb2f20864caafe1b7854693d809">19 - </h1>
+    
+	<p>The Cityscapes format is a widely-used standard in the field of computer vision,
+particularly for tasks involving semantic and instance segmentation in urban scenes.
+This dataset format typically comprises high-resolution images of
+cityscapes along with detailed pixel-level annotations.</p>
+<p>Each pixel is labeled with a category such as &ldquo;road,&rdquo; &ldquo;pedestrian,&rdquo; or &ldquo;vehicle,&rdquo; making
+it a valuable resource for training and validating machine learning
+models aimed at understanding urban environments. It&rsquo;s a go-to choice
+for researchers and professionals working on autonomous vehicles,
+robotics, and smart cities.</p>
+<p>For more information, see:</p>
+<ul>
+<li><a href="https://www.cityscapes-dataset.com/login/">Cityscapes site</a></li>
+<li><a href="https://github.com/mcordts/cityscapesScripts#the-cityscapes-dataset">Cityscapes format specification</a></li>
+<li><a href="https://github.com/cvat-ai/datumaro/tree/v0.3/tests/assets/cityscapes_dataset">Cityscapes dataset examples</a></li>
+</ul>
+<h1 id="cityscapes-export">Cityscapes export</h1>
+<p>For export of images:</p>
+<ul>
+<li>Supported annotations: Polygons (segmentation), Bounding Boxes.</li>
+<li>Attributes:
+<ul>
+<li><code>is_crowd</code> boolean, should be defined for labels as <code>checkbox</code>.
+Specifies if the annotation label can distinguish between different instances.
+If False, the annotation id field encodes the instance id.</li>
+</ul>
+</li>
+<li>Tracks: Not supported.</li>
+</ul>
+<p>The downloaded file is a .zip archive with the following structure:</p>
+<pre><code>.
+├── label_color.txt
+├── gtFine
+│   ├── &lt;subset_name&gt;
+│   │   └── &lt;city_name&gt;
+│   │       ├── image_0_gtFine_instanceIds.png
+│   │       ├── image_0_gtFine_color.png
+│   │       ├── image_0_gtFine_labelIds.png
+│   │       ├── image_1_gtFine_instanceIds.png
+│   │       ├── image_1_gtFine_color.png
+│   │       ├── image_1_gtFine_labelIds.png
+│   │       ├── ...
+└── imgsFine  # if saving images was requested
+    └── leftImg8bit
+        ├── &lt;subset_name&gt;
+        │   └── &lt;city_name&gt;
+        │       ├── image_0_leftImg8bit.png
+        │       ├── image_1_leftImg8bit.png
+        │       ├── ...
+</code></pre><ul>
+<li><code>label_color.txt</code> a file that describes the color for each label</li>
+</ul>
+<pre><code># label_color.txt example
+# r g b label_name
+0 0 0 background
+0 255 0 tree
+...
+</code></pre><ul>
+<li><code>*_gtFine_color.png</code> class labels encoded by its color.</li>
+<li><code>*_gtFine_labelIds.png</code> class labels are encoded by its index.</li>
+<li><code>*_gtFine_instanceIds.png</code> class and instance labels encoded
+by an instance ID. The pixel values encode class and the individual instance:
+the integer part of a division by 1000 of each ID provides class ID,
+the remainder is the instance ID. If a certain annotation describes multiple
+instances, then the pixels have the regular ID of that class</li>
+</ul>
+<h1 id="cityscapes-annotations-import">Cityscapes annotations import</h1>
+<p>Uploaded file: a zip archive with the following structure:</p>
+<pre><code>.
+├── label_color.txt # optional
+└── gtFine
+    └── &lt;city_name&gt;
+        ├── image_0_gtFine_instanceIds.png
+        ├── image_1_gtFine_instanceIds.png
+        ├── ...
+</code></pre><h1 id="creating-task-with-cityscapes-dataset">Creating task with Cityscapes dataset</h1>
+<p>Create a task with the labels you need
+or you can use the labels and colors of the original dataset.
+To work with the Cityscapes format, you must have a black color label
+for the background.</p>
+<p>Original Cityscapes color map:</p>
+<details>
+<div class="highlight"><pre style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-JSON" data-lang="JSON"><span style="color:#000;font-weight:bold">[</span>
+    <span style="color:#000;font-weight:bold">{</span><span style="color:#204a87;font-weight:bold">&#34;name&#34;</span><span style="color:#000;font-weight:bold">:</span> <span style="color:#4e9a06">&#34;unlabeled&#34;</span><span style="color:#000;font-weight:bold">,</span> <span style="color:#204a87;font-weight:bold">&#34;color&#34;</span><span style="color:#000;font-weight:bold">:</span> <span style="color:#4e9a06">&#34;#000000&#34;</span><span style="color:#000;font-weight:bold">,</span> <span style="color:#204a87;font-weight:bold">&#34;attributes&#34;</span><span style="color:#000;font-weight:bold">:</span> <span style="color:#000;font-weight:bold">[]},</span>
+    <span style="color:#000;font-weight:bold">{</span><span style="color:#204a87;font-weight:bold">&#34;name&#34;</span><span style="color:#000;font-weight:bold">:</span> <span style="color:#4e9a06">&#34;egovehicle&#34;</span><span style="color:#000;font-weight:bold">,</span> <span style="color:#204a87;font-weight:bold">&#34;color&#34;</span><span style="color:#000;font-weight:bold">:</span> <span style="color:#4e9a06">&#34;#000000&#34;</span><span style="color:#000;font-weight:bold">,</span> <span style="color:#204a87;font-weight:bold">&#34;attributes&#34;</span><span style="color:#000;font-weight:bold">:</span> <span style="color:#000;font-weight:bold">[]},</span>
+    <span style="color:#000;font-weight:bold">{</span><span style="color:#204a87;font-weight:bold">&#34;name&#34;</span><span style="color:#000;font-weight:bold">:</span> <span style="color:#4e9a06">&#34;rectificationborder&#34;</span><span style="color:#000;font-weight:bold">,</span> <span style="color:#204a87;font-weight:bold">&#34;color&#34;</span><span style="color:#000;font-weight:bold">:</span> <span style="color:#4e9a06">&#34;#000000&#34;</span><span style="color:#000;font-weight:bold">,</span> <span style="color:#204a87;font-weight:bold">&#34;attributes&#34;</span><span style="color:#000;font-weight:bold">:</span> <span style="color:#000;font-weight:bold">[]},</span>
+    <span style="color:#000;font-weight:bold">{</span><span style="color:#204a87;font-weight:bold">&#34;name&#34;</span><span style="color:#000;font-weight:bold">:</span> <span style="color:#4e9a06">&#34;outofroi&#34;</span><span style="color:#000;font-weight:bold">,</span> <span style="color:#204a87;font-weight:bold">&#34;color&#34;</span><span style="color:#000;font-weight:bold">:</span> <span style="color:#4e9a06">&#34;#000000&#34;</span><span style="color:#000;font-weight:bold">,</span> <span style="color:#204a87;font-weight:bold">&#34;attributes&#34;</span><span style="color:#000;font-weight:bold">:</span> <span style="color:#000;font-weight:bold">[]},</span>
+    <span style="color:#000;font-weight:bold">{</span><span style="color:#204a87;font-weight:bold">&#34;name&#34;</span><span style="color:#000;font-weight:bold">:</span> <span style="color:#4e9a06">&#34;static&#34;</span><span style="color:#000;font-weight:bold">,</span> <span style="color:#204a87;font-weight:bold">&#34;color&#34;</span><span style="color:#000;font-weight:bold">:</span> <span style="color:#4e9a06">&#34;#000000&#34;</span><span style="color:#000;font-weight:bold">,</span> <span style="color:#204a87;font-weight:bold">&#34;attributes&#34;</span><span style="color:#000;font-weight:bold">:</span> <span style="color:#000;font-weight:bold">[]},</span>
+    <span style="color:#000;font-weight:bold">{</span><span style="color:#204a87;font-weight:bold">&#34;name&#34;</span><span style="color:#000;font-weight:bold">:</span> <span style="color:#4e9a06">&#34;dynamic&#34;</span><span style="color:#000;font-weight:bold">,</span> <span style="color:#204a87;font-weight:bold">&#34;color&#34;</span><span style="color:#000;font-weight:bold">:</span> <span style="color:#4e9a06">&#34;#6f4a00&#34;</span><span style="color:#000;font-weight:bold">,</span> <span style="color:#204a87;font-weight:bold">&#34;attributes&#34;</span><span style="color:#000;font-weight:bold">:</span> <span style="color:#000;font-weight:bold">[]},</span>
+    <span style="color:#000;font-weight:bold">{</span><span style="color:#204a87;font-weight:bold">&#34;name&#34;</span><span style="color:#000;font-weight:bold">:</span> <span style="color:#4e9a06">&#34;ground&#34;</span><span style="color:#000;font-weight:bold">,</span> <span style="color:#204a87;font-weight:bold">&#34;color&#34;</span><span style="color:#000;font-weight:bold">:</span> <span style="color:#4e9a06">&#34;#510051&#34;</span><span style="color:#000;font-weight:bold">,</span> <span style="color:#204a87;font-weight:bold">&#34;attributes&#34;</span><span style="color:#000;font-weight:bold">:</span> <span style="color:#000;font-weight:bold">[]},</span>
+    <span style="color:#000;font-weight:bold">{</span><span style="color:#204a87;font-weight:bold">&#34;name&#34;</span><span style="color:#000;font-weight:bold">:</span> <span style="color:#4e9a06">&#34;road&#34;</span><span style="color:#000;font-weight:bold">,</span> <span style="color:#204a87;font-weight:bold">&#34;color&#34;</span><span style="color:#000;font-weight:bold">:</span> <span style="color:#4e9a06">&#34;#804080&#34;</span><span style="color:#000;font-weight:bold">,</span> <span style="color:#204a87;font-weight:bold">&#34;attributes&#34;</span><span style="color:#000;font-weight:bold">:</span> <span style="color:#000;font-weight:bold">[]},</span>
+    <span style="color:#000;font-weight:bold">{</span><span style="color:#204a87;font-weight:bold">&#34;name&#34;</span><span style="color:#000;font-weight:bold">:</span> <span style="color:#4e9a06">&#34;sidewalk&#34;</span><span style="color:#000;font-weight:bold">,</span> <span style="color:#204a87;font-weight:bold">&#34;color&#34;</span><span style="color:#000;font-weight:bold">:</span> <span style="color:#4e9a06">&#34;#f423e8&#34;</span><span style="color:#000;font-weight:bold">,</span> <span style="color:#204a87;font-weight:bold">&#34;attributes&#34;</span><span style="color:#000;font-weight:bold">:</span> <span style="color:#000;font-weight:bold">[]},</span>
+    <span style="color:#000;font-weight:bold">{</span><span style="color:#204a87;font-weight:bold">&#34;name&#34;</span><span style="color:#000;font-weight:bold">:</span> <span style="color:#4e9a06">&#34;parking&#34;</span><span style="color:#000;font-weight:bold">,</span> <span style="color:#204a87;font-weight:bold">&#34;color&#34;</span><span style="color:#000;font-weight:bold">:</span> <span style="color:#4e9a06">&#34;#faaaa0&#34;</span><span style="color:#000;font-weight:bold">,</span> <span style="color:#204a87;font-weight:bold">&#34;attributes&#34;</span><span style="color:#000;font-weight:bold">:</span> <span style="color:#000;font-weight:bold">[]},</span>
+    <span style="color:#000;font-weight:bold">{</span><span style="color:#204a87;font-weight:bold">&#34;name&#34;</span><span style="color:#000;font-weight:bold">:</span> <span style="color:#4e9a06">&#34;railtrack&#34;</span><span style="color:#000;font-weight:bold">,</span> <span style="color:#204a87;font-weight:bold">&#34;color&#34;</span><span style="color:#000;font-weight:bold">:</span> <span style="color:#4e9a06">&#34;#e6968c&#34;</span><span style="color:#000;font-weight:bold">,</span> <span style="color:#204a87;font-weight:bold">&#34;attributes&#34;</span><span style="color:#000;font-weight:bold">:</span> <span style="color:#000;font-weight:bold">[]},</span>
+    <span style="color:#000;font-weight:bold">{</span><span style="color:#204a87;font-weight:bold">&#34;name&#34;</span><span style="color:#000;font-weight:bold">:</span> <span style="color:#4e9a06">&#34;building&#34;</span><span style="color:#000;font-weight:bold">,</span> <span style="color:#204a87;font-weight:bold">&#34;color&#34;</span><span style="color:#000;font-weight:bold">:</span> <span style="color:#4e9a06">&#34;#464646&#34;</span><span style="color:#000;font-weight:bold">,</span> <span style="color:#204a87;font-weight:bold">&#34;attributes&#34;</span><span style="color:#000;font-weight:bold">:</span> <span style="color:#000;font-weight:bold">[]},</span>
+    <span style="color:#000;font-weight:bold">{</span><span style="color:#204a87;font-weight:bold">&#34;name&#34;</span><span style="color:#000;font-weight:bold">:</span> <span style="color:#4e9a06">&#34;wall&#34;</span><span style="color:#000;font-weight:bold">,</span> <span style="color:#204a87;font-weight:bold">&#34;color&#34;</span><span style="color:#000;font-weight:bold">:</span> <span style="color:#4e9a06">&#34;#66669c&#34;</span><span style="color:#000;font-weight:bold">,</span> <span style="color:#204a87;font-weight:bold">&#34;attributes&#34;</span><span style="color:#000;font-weight:bold">:</span> <span style="color:#000;font-weight:bold">[]},</span>
+    <span style="color:#000;font-weight:bold">{</span><span style="color:#204a87;font-weight:bold">&#34;name&#34;</span><span style="color:#000;font-weight:bold">:</span> <span style="color:#4e9a06">&#34;fence&#34;</span><span style="color:#000;font-weight:bold">,</span> <span style="color:#204a87;font-weight:bold">&#34;color&#34;</span><span style="color:#000;font-weight:bold">:</span> <span style="color:#4e9a06">&#34;#be9999&#34;</span><span style="color:#000;font-weight:bold">,</span> <span style="color:#204a87;font-weight:bold">&#34;attributes&#34;</span><span style="color:#000;font-weight:bold">:</span> <span style="color:#000;font-weight:bold">[]},</span>
+    <span style="color:#000;font-weight:bold">{</span><span style="color:#204a87;font-weight:bold">&#34;name&#34;</span><span style="color:#000;font-weight:bold">:</span> <span style="color:#4e9a06">&#34;guardrail&#34;</span><span style="color:#000;font-weight:bold">,</span> <span style="color:#204a87;font-weight:bold">&#34;color&#34;</span><span style="color:#000;font-weight:bold">:</span> <span style="color:#4e9a06">&#34;#b4a5b4&#34;</span><span style="color:#000;font-weight:bold">,</span> <span style="color:#204a87;font-weight:bold">&#34;attributes&#34;</span><span style="color:#000;font-weight:bold">:</span> <span style="color:#000;font-weight:bold">[]},</span>
+    <span style="color:#000;font-weight:bold">{</span><span style="color:#204a87;font-weight:bold">&#34;name&#34;</span><span style="color:#000;font-weight:bold">:</span> <span style="color:#4e9a06">&#34;bridge&#34;</span><span style="color:#000;font-weight:bold">,</span> <span style="color:#204a87;font-weight:bold">&#34;color&#34;</span><span style="color:#000;font-weight:bold">:</span> <span style="color:#4e9a06">&#34;#966464&#34;</span><span style="color:#000;font-weight:bold">,</span> <span style="color:#204a87;font-weight:bold">&#34;attributes&#34;</span><span style="color:#000;font-weight:bold">:</span> <span style="color:#000;font-weight:bold">[]},</span>
+    <span style="color:#000;font-weight:bold">{</span><span style="color:#204a87;font-weight:bold">&#34;name&#34;</span><span style="color:#000;font-weight:bold">:</span> <span style="color:#4e9a06">&#34;tunnel&#34;</span><span style="color:#000;font-weight:bold">,</span> <span style="color:#204a87;font-weight:bold">&#34;color&#34;</span><span style="color:#000;font-weight:bold">:</span> <span style="color:#4e9a06">&#34;#96785a&#34;</span><span style="color:#000;font-weight:bold">,</span> <span style="color:#204a87;font-weight:bold">&#34;attributes&#34;</span><span style="color:#000;font-weight:bold">:</span> <span style="color:#000;font-weight:bold">[]},</span>
+    <span style="color:#000;font-weight:bold">{</span><span style="color:#204a87;font-weight:bold">&#34;name&#34;</span><span style="color:#000;font-weight:bold">:</span> <span style="color:#4e9a06">&#34;pole&#34;</span><span style="color:#000;font-weight:bold">,</span> <span style="color:#204a87;font-weight:bold">&#34;color&#34;</span><span style="color:#000;font-weight:bold">:</span> <span style="color:#4e9a06">&#34;#999999&#34;</span><span style="color:#000;font-weight:bold">,</span> <span style="color:#204a87;font-weight:bold">&#34;attributes&#34;</span><span style="color:#000;font-weight:bold">:</span> <span style="color:#000;font-weight:bold">[]},</span>
+    <span style="color:#000;font-weight:bold">{</span><span style="color:#204a87;font-weight:bold">&#34;name&#34;</span><span style="color:#000;font-weight:bold">:</span> <span style="color:#4e9a06">&#34;polegroup&#34;</span><span style="color:#000;font-weight:bold">,</span> <span style="color:#204a87;font-weight:bold">&#34;color&#34;</span><span style="color:#000;font-weight:bold">:</span> <span style="color:#4e9a06">&#34;#999999&#34;</span><span style="color:#000;font-weight:bold">,</span> <span style="color:#204a87;font-weight:bold">&#34;attributes&#34;</span><span style="color:#000;font-weight:bold">:</span> <span style="color:#000;font-weight:bold">[]},</span>
+    <span style="color:#000;font-weight:bold">{</span><span style="color:#204a87;font-weight:bold">&#34;name&#34;</span><span style="color:#000;font-weight:bold">:</span> <span style="color:#4e9a06">&#34;trafficlight&#34;</span><span style="color:#000;font-weight:bold">,</span> <span style="color:#204a87;font-weight:bold">&#34;color&#34;</span><span style="color:#000;font-weight:bold">:</span> <span style="color:#4e9a06">&#34;#faaa1e&#34;</span><span style="color:#000;font-weight:bold">,</span> <span style="color:#204a87;font-weight:bold">&#34;attributes&#34;</span><span style="color:#000;font-weight:bold">:</span> <span style="color:#000;font-weight:bold">[]},</span>
+    <span style="color:#000;font-weight:bold">{</span><span style="color:#204a87;font-weight:bold">&#34;name&#34;</span><span style="color:#000;font-weight:bold">:</span> <span style="color:#4e9a06">&#34;trafficsign&#34;</span><span style="color:#000;font-weight:bold">,</span> <span style="color:#204a87;font-weight:bold">&#34;color&#34;</span><span style="color:#000;font-weight:bold">:</span> <span style="color:#4e9a06">&#34;#dcdc00&#34;</span><span style="color:#000;font-weight:bold">,</span> <span style="color:#204a87;font-weight:bold">&#34;attributes&#34;</span><span style="color:#000;font-weight:bold">:</span> <span style="color:#000;font-weight:bold">[]},</span>
+    <span style="color:#000;font-weight:bold">{</span><span style="color:#204a87;font-weight:bold">&#34;name&#34;</span><span style="color:#000;font-weight:bold">:</span> <span style="color:#4e9a06">&#34;vegetation&#34;</span><span style="color:#000;font-weight:bold">,</span> <span style="color:#204a87;font-weight:bold">&#34;color&#34;</span><span style="color:#000;font-weight:bold">:</span> <span style="color:#4e9a06">&#34;#6b8e23&#34;</span><span style="color:#000;font-weight:bold">,</span> <span style="color:#204a87;font-weight:bold">&#34;attributes&#34;</span><span style="color:#000;font-weight:bold">:</span> <span style="color:#000;font-weight:bold">[]},</span>
+    <span style="color:#000;font-weight:bold">{</span><span style="color:#204a87;font-weight:bold">&#34;name&#34;</span><span style="color:#000;font-weight:bold">:</span> <span style="color:#4e9a06">&#34;terrain&#34;</span><span style="color:#000;font-weight:bold">,</span> <span style="color:#204a87;font-weight:bold">&#34;color&#34;</span><span style="color:#000;font-weight:bold">:</span> <span style="color:#4e9a06">&#34;#98fb98&#34;</span><span style="color:#000;font-weight:bold">,</span> <span style="color:#204a87;font-weight:bold">&#34;attributes&#34;</span><span style="color:#000;font-weight:bold">:</span> <span style="color:#000;font-weight:bold">[]},</span>
+    <span style="color:#000;font-weight:bold">{</span><span style="color:#204a87;font-weight:bold">&#34;name&#34;</span><span style="color:#000;font-weight:bold">:</span> <span style="color:#4e9a06">&#34;sky&#34;</span><span style="color:#000;font-weight:bold">,</span> <span style="color:#204a87;font-weight:bold">&#34;color&#34;</span><span style="color:#000;font-weight:bold">:</span> <span style="color:#4e9a06">&#34;#4682b4&#34;</span><span style="color:#000;font-weight:bold">,</span> <span style="color:#204a87;font-weight:bold">&#34;attributes&#34;</span><span style="color:#000;font-weight:bold">:</span> <span style="color:#000;font-weight:bold">[]},</span>
+    <span style="color:#000;font-weight:bold">{</span><span style="color:#204a87;font-weight:bold">&#34;name&#34;</span><span style="color:#000;font-weight:bold">:</span> <span style="color:#4e9a06">&#34;person&#34;</span><span style="color:#000;font-weight:bold">,</span> <span style="color:#204a87;font-weight:bold">&#34;color&#34;</span><span style="color:#000;font-weight:bold">:</span> <span style="color:#4e9a06">&#34;#dc143c&#34;</span><span style="color:#000;font-weight:bold">,</span> <span style="color:#204a87;font-weight:bold">&#34;attributes&#34;</span><span style="color:#000;font-weight:bold">:</span> <span style="color:#000;font-weight:bold">[]},</span>
+    <span style="color:#000;font-weight:bold">{</span><span style="color:#204a87;font-weight:bold">&#34;name&#34;</span><span style="color:#000;font-weight:bold">:</span> <span style="color:#4e9a06">&#34;rider&#34;</span><span style="color:#000;font-weight:bold">,</span> <span style="color:#204a87;font-weight:bold">&#34;color&#34;</span><span style="color:#000;font-weight:bold">:</span> <span style="color:#4e9a06">&#34;#ff0000&#34;</span><span style="color:#000;font-weight:bold">,</span> <span style="color:#204a87;font-weight:bold">&#34;attributes&#34;</span><span style="color:#000;font-weight:bold">:</span> <span style="color:#000;font-weight:bold">[]},</span>
+    <span style="color:#000;font-weight:bold">{</span><span style="color:#204a87;font-weight:bold">&#34;name&#34;</span><span style="color:#000;font-weight:bold">:</span> <span style="color:#4e9a06">&#34;car&#34;</span><span style="color:#000;font-weight:bold">,</span> <span style="color:#204a87;font-weight:bold">&#34;color&#34;</span><span style="color:#000;font-weight:bold">:</span> <span style="color:#4e9a06">&#34;#00008e&#34;</span><span style="color:#000;font-weight:bold">,</span> <span style="color:#204a87;font-weight:bold">&#34;attributes&#34;</span><span style="color:#000;font-weight:bold">:</span> <span style="color:#000;font-weight:bold">[]},</span>
+    <span style="color:#000;font-weight:bold">{</span><span style="color:#204a87;font-weight:bold">&#34;name&#34;</span><span style="color:#000;font-weight:bold">:</span> <span style="color:#4e9a06">&#34;truck&#34;</span><span style="color:#000;font-weight:bold">,</span> <span style="color:#204a87;font-weight:bold">&#34;color&#34;</span><span style="color:#000;font-weight:bold">:</span> <span style="color:#4e9a06">&#34;#000046&#34;</span><span style="color:#000;font-weight:bold">,</span> <span style="color:#204a87;font-weight:bold">&#34;attributes&#34;</span><span style="color:#000;font-weight:bold">:</span> <span style="color:#000;font-weight:bold">[]},</span>
+    <span style="color:#000;font-weight:bold">{</span><span style="color:#204a87;font-weight:bold">&#34;name&#34;</span><span style="color:#000;font-weight:bold">:</span> <span style="color:#4e9a06">&#34;bus&#34;</span><span style="color:#000;font-weight:bold">,</span> <span style="color:#204a87;font-weight:bold">&#34;color&#34;</span><span style="color:#000;font-weight:bold">:</span> <span style="color:#4e9a06">&#34;#003c64&#34;</span><span style="color:#000;font-weight:bold">,</span> <span style="color:#204a87;font-weight:bold">&#34;attributes&#34;</span><span style="color:#000;font-weight:bold">:</span> <span style="color:#000;font-weight:bold">[]},</span>
+    <span style="color:#000;font-weight:bold">{</span><span style="color:#204a87;font-weight:bold">&#34;name&#34;</span><span style="color:#000;font-weight:bold">:</span> <span style="color:#4e9a06">&#34;caravan&#34;</span><span style="color:#000;font-weight:bold">,</span> <span style="color:#204a87;font-weight:bold">&#34;color&#34;</span><span style="color:#000;font-weight:bold">:</span> <span style="color:#4e9a06">&#34;#00005a&#34;</span><span style="color:#000;font-weight:bold">,</span> <span style="color:#204a87;font-weight:bold">&#34;attributes&#34;</span><span style="color:#000;font-weight:bold">:</span> <span style="color:#000;font-weight:bold">[]},</span>
+    <span style="color:#000;font-weight:bold">{</span><span style="color:#204a87;font-weight:bold">&#34;name&#34;</span><span style="color:#000;font-weight:bold">:</span> <span style="color:#4e9a06">&#34;trailer&#34;</span><span style="color:#000;font-weight:bold">,</span> <span style="color:#204a87;font-weight:bold">&#34;color&#34;</span><span style="color:#000;font-weight:bold">:</span> <span style="color:#4e9a06">&#34;#00006e&#34;</span><span style="color:#000;font-weight:bold">,</span> <span style="color:#204a87;font-weight:bold">&#34;attributes&#34;</span><span style="color:#000;font-weight:bold">:</span> <span style="color:#000;font-weight:bold">[]},</span>
+    <span style="color:#000;font-weight:bold">{</span><span style="color:#204a87;font-weight:bold">&#34;name&#34;</span><span style="color:#000;font-weight:bold">:</span> <span style="color:#4e9a06">&#34;train&#34;</span><span style="color:#000;font-weight:bold">,</span> <span style="color:#204a87;font-weight:bold">&#34;color&#34;</span><span style="color:#000;font-weight:bold">:</span> <span style="color:#4e9a06">&#34;#005064&#34;</span><span style="color:#000;font-weight:bold">,</span> <span style="color:#204a87;font-weight:bold">&#34;attributes&#34;</span><span style="color:#000;font-weight:bold">:</span> <span style="color:#000;font-weight:bold">[]},</span>
+    <span style="color:#000;font-weight:bold">{</span><span style="color:#204a87;font-weight:bold">&#34;name&#34;</span><span style="color:#000;font-weight:bold">:</span> <span style="color:#4e9a06">&#34;motorcycle&#34;</span><span style="color:#000;font-weight:bold">,</span> <span style="color:#204a87;font-weight:bold">&#34;color&#34;</span><span style="color:#000;font-weight:bold">:</span> <span style="color:#4e9a06">&#34;#0000e6&#34;</span><span style="color:#000;font-weight:bold">,</span> <span style="color:#204a87;font-weight:bold">&#34;attributes&#34;</span><span style="color:#000;font-weight:bold">:</span> <span style="color:#000;font-weight:bold">[]},</span>
+    <span style="color:#000;font-weight:bold">{</span><span style="color:#204a87;font-weight:bold">&#34;name&#34;</span><span style="color:#000;font-weight:bold">:</span> <span style="color:#4e9a06">&#34;bicycle&#34;</span><span style="color:#000;font-weight:bold">,</span> <span style="color:#204a87;font-weight:bold">&#34;color&#34;</span><span style="color:#000;font-weight:bold">:</span> <span style="color:#4e9a06">&#34;#770b20&#34;</span><span style="color:#000;font-weight:bold">,</span> <span style="color:#204a87;font-weight:bold">&#34;attributes&#34;</span><span style="color:#000;font-weight:bold">:</span> <span style="color:#000;font-weight:bold">[]},</span>
+    <span style="color:#000;font-weight:bold">{</span><span style="color:#204a87;font-weight:bold">&#34;name&#34;</span><span style="color:#000;font-weight:bold">:</span> <span style="color:#4e9a06">&#34;licenseplate&#34;</span><span style="color:#000;font-weight:bold">,</span> <span style="color:#204a87;font-weight:bold">&#34;color&#34;</span><span style="color:#000;font-weight:bold">:</span> <span style="color:#4e9a06">&#34;#00000e&#34;</span><span style="color:#000;font-weight:bold">,</span> <span style="color:#204a87;font-weight:bold">&#34;attributes&#34;</span><span style="color:#000;font-weight:bold">:</span> <span style="color:#000;font-weight:bold">[]}</span>
+<span style="color:#000;font-weight:bold">]</span>
+
+</code></pre></div></details>
+<p>Upload images when creating a task:</p>
+<pre><code>images.zip/
+    ├── image_0.jpg
+    ├── image_1.jpg
+    ├── ...
+
+</code></pre><p>After creating the task, upload the Cityscapes annotations as described
+in the previous section.</p>
+
+</div>
+
+
+
+    
+	
+  
+    
+    
+	
+    
+
+<div class="td-content" style="page-break-before: always">
+    
+	<h1 id="pg-e59afed4c76bed95d3d4665d87dfe316">20 - </h1>
+    
+	<p>The KITTI format is widely used for a range of computer
+vision tasks related to autonomous driving, including
+but not limited to 3D object detection, multi-object tracking,
+and scene flow estimation. Given its special focus on
+automotive scenes, the KITTI format is generally
+used with models that are designed or adapted for these types of tasks.</p>
+<p>For more information, see:</p>
+<ul>
+<li><a href="http://www.cvlibs.net/datasets/kitti/">KITTI site</a></li>
+<li><a href="https://s3.eu-central-1.amazonaws.com/avg-kitti/devkit_object.zip">Format specification for KITTI detection</a></li>
+<li><a href="https://s3.eu-central-1.amazonaws.com/avg-kitti/devkit_semantics.zip">Format specification for KITTI segmentation</a></li>
+<li><a href="https://github.com/cvat-ai/datumaro/tree/v0.3/tests/assets/kitti_dataset">Dataset examples</a></li>
+</ul>
+<h2 id="kitti-annotations-export">KITTI annotations export</h2>
+<p>For export of images:</p>
+<ul>
+<li>Supported annotations: Bounding Boxes (detection), Polygons (segmentation).</li>
+<li>Supported attributes:
+<ul>
+<li><code>occluded</code> (Available both as a UI option and a separate attribute)
+Denotes that a major portion of the object within
+the bounding box is obstructed by another object.</li>
+<li><code>truncated</code> (Only applicable to bounding boxes)
+Must be represented as <code>checkboxes</code> for labels.
+Suggests that the bounding box does not
+encompass the entire object; some part is cut off.</li>
+<li><code>is_crowd</code> (Only valid for polygons). Should be indicated
+using <code>checkboxes</code> for labels.
+Signifies that the annotation encapsulates
+multiple instances of the same object class.</li>
+</ul>
+</li>
+<li>Tracks: Not supported.</li>
+</ul>
+<p>The downloaded file is a .zip archive with the following structure:</p>
+<pre><code>└─ annotations.zip/
+    ├── label_colors.txt # list of pairs r g b label_name
+    ├── labels.txt # list of labels
+    └── default/
+        ├── label_2/ # left color camera label files
+        │   ├── &lt;image_name_1&gt;.txt
+        │   ├── &lt;image_name_2&gt;.txt
+        │   └── ...
+        ├── instance/ # instance segmentation masks
+        │   ├── &lt;image_name_1&gt;.png
+        │   ├── &lt;image_name_2&gt;.png
+        │   └── ...
+        ├── semantic/ # semantic segmentation masks (labels are encoded by its id)
+        │   ├── &lt;image_name_1&gt;.png
+        │   ├── &lt;image_name_2&gt;.png
+        │   └── ...
+        └── semantic_rgb/ # semantic segmentation masks (labels are encoded by its color)
+            ├── &lt;image_name_1&gt;.png
+            ├── &lt;image_name_2&gt;.png
+            └── ...
+</code></pre><h2 id="kitti-annotations-import">KITTI annotations import</h2>
+<p>You can upload KITTI annotations in two ways:
+rectangles for the detection task and
+masks for the segmentation task.</p>
+<p>For detection tasks the uploading archive should have the following structure:</p>
+<pre><code>└─ annotations.zip/
+    ├── labels.txt # optional, labels list for non-original detection labels
+    └── &lt;subset_name&gt;/
+        ├── label_2/ # left color camera label files
+        │   ├── &lt;image_name_1&gt;.txt
+        │   ├── &lt;image_name_2&gt;.txt
+        │   └── ...
+</code></pre><p>For segmentation tasks the uploading archive should have the following structure:</p>
+<pre><code>└─ annotations.zip/
+    ├── label_colors.txt # optional, color map for non-original segmentation labels
+    └── &lt;subset_name&gt;/
+        ├── instance/ # instance segmentation masks
+        │   ├── &lt;image_name_1&gt;.png
+        │   ├── &lt;image_name_2&gt;.png
+        │   └── ...
+        ├── semantic/ # optional, semantic segmentation masks (labels are encoded by its id)
+        │   ├── &lt;image_name_1&gt;.png
+        │   ├── &lt;image_name_2&gt;.png
+        │   └── ...
+        └── semantic_rgb/ # optional, semantic segmentation masks (labels are encoded by its color)
+            ├── &lt;image_name_1&gt;.png
+            ├── &lt;image_name_2&gt;.png
+            └── ...
+</code></pre><p>All annotation files and masks should have structures
+that are described in the original format specification.</p>
+
+</div>
+
+
+
+    
+	
+  
+    
+    
+	
+    
+
+<div class="td-content" style="page-break-before: always">
+    
+	<h1 id="pg-d60ccc455bb490af89647d5fccd200ef">21 - </h1>
+    
+	<p>The Labeled Faces in the Wild (LFW) format
+is primarily used for face verification and face recognition tasks.
+The LFW format is designed to be straightforward and
+is compatible with a variety of machine learning and deep learning frameworks.</p>
+<p>For more information, see:</p>
+<ul>
+<li><a href="http://vis-www.cs.umass.edu/lfw/">LFW site</a></li>
+<li><a href="http://vis-www.cs.umass.edu/lfw/README.txt">Format specification</a></li>
+<li><a href="https://github.com/cvat-ai/datumaro/tree/v0.3/tests/assets/lfw_dataset">Dataset examples</a></li>
+</ul>
+<h1 id="export-lfw-annotation">Export LFW annotation</h1>
+<p>For export of images:</p>
+<ul>
+<li>
+<p>Supported annotations: Tags, Skeletons.</p>
+</li>
+<li>
+<p>Attributes:</p>
+<ul>
+<li><code>negative_pairs</code> (should be defined for labels as <code>text</code>):
+list of image names with mismatched persons.</li>
+<li><code>positive_pairs</code> (should be defined for labels as <code>text</code>):
+list of image names with matched persons.</li>
+</ul>
+</li>
+<li>
+<p>Tracks: Not supported.</p>
+</li>
+</ul>
+<p>The downloaded file is a .zip archive with the following structure:</p>
+<div class="highlight"><pre style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">&lt;archive_name&gt;.zip/
+    └── images/ <span style="color:#8f5902;font-style:italic"># if the option save images was selected</span>
+    │    ├── name1/
+    │    │   ├── name1_0001.jpg
+    │    │   ├── name1_0002.jpg
+    │    │   ├── ...
+    │    ├── name2/
+    │    │   ├── name2_0001.jpg
+    │    │   ├── name2_0002.jpg
+    │    │   ├── ...
+    │    ├── ...
+    ├── landmarks.txt
+    ├── pairs.txt
+    └── people.txt
+</code></pre></div><h1 id="import-lfw-annotation">Import LFW annotation</h1>
+<p>The uploaded annotations file should be a zip file with the following structure:</p>
+<div class="highlight"><pre style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">&lt;archive_name&gt;.zip/
+    └── annotations/
+        ├── landmarks.txt <span style="color:#8f5902;font-style:italic"># list with landmark points for each image</span>
+        ├── pairs.txt <span style="color:#8f5902;font-style:italic"># list of matched and mismatched pairs of person</span>
+        └── people.txt <span style="color:#8f5902;font-style:italic"># optional file with a list of persons name</span>
+</code></pre></div><p>Full information about the content of annotation files is available
+<a href="http://vis-www.cs.umass.edu/lfw/README.txt">here</a></p>
+<h1 id="example-create-task-with-images-and-upload-lfw-annotations-into-it">Example: create task with images and upload LFW annotations into it</h1>
+<p>This is one of the possible ways to create a task and add LFW annotations for it.</p>
+<ul>
+<li>On the task creation page:
+<ul>
+<li>Add labels that correspond to the names of the persons.</li>
+<li>For each label define <code>text</code> attributes with names <code>positive_pairs</code> and
+<code>negative_pairs</code></li>
+<li>Add images using zip archive from local repository:</li>
+</ul>
+</li>
+</ul>
+<div class="highlight"><pre style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">images.zip/
+    ├── name1_0001.jpg
+    ├── name1_0002.jpg
+    ├── ...
+    ├── name1_&lt;N&gt;.jpg
+    ├── name2_0001.jpg
+    ├── ...
+</code></pre></div><ul>
+<li>On the annotation page:
+Upload annotation -&gt; LFW 1.0 -&gt; choose archive with structure
+that described in the <a href="#import-lfw-annotation">import section</a>.</li>
+</ul>
+
+</div>
+
+
+
+    
+	
+  
+
+
+
+          </main>
+        </div>
+      </div>
+      
+<footer class="bg-dark py-5 row d-print-none">
+  <div class="container-fluid mx-sm-5">
+    <div class="row">
+      <div class="col-6 col-sm-2 text-xs-center order-sm-2">
+        
+        
+        
+<ul class="list-inline mb-0">
+  
+  <li class="list-inline-item mx-2 h3" data-toggle="tooltip" data-placement="top" title="Gitter public chat" aria-label="Gitter public chat">
+    <a class="text-white" rel="noopener noreferrer" href="https://gitter.im/opencv-cvat/public">
+      <i class="fab fa-gitter"></i>
+    </a>
+  </li>
+  
+  <li class="list-inline-item mx-2 h3" data-toggle="tooltip" data-placement="top" title="Stack Overflow" aria-label="Stack Overflow">
+    <a class="text-white" rel="noopener noreferrer" href="https://stackoverflow.com/search?q=%23cvat">
+      <i class="fab fa-stack-overflow"></i>
+    </a>
+  </li>
+  
+  <li class="list-inline-item mx-2 h3" data-toggle="tooltip" data-placement="top" title="YouTube" aria-label="YouTube">
+    <a class="text-white" rel="noopener noreferrer" href="https://www.youtube.com/@cvat-ai">
+      <i class="fab fa-youtube"></i>
+    </a>
+  </li>
+  
+</ul>
+
+        
+        
+      </div>
+      <div class="col-6 col-sm-2 text-right text-xs-center order-sm-3">
+        
+        
+        
+<ul class="list-inline mb-0">
+  
+  <li class="list-inline-item mx-2 h3" data-toggle="tooltip" data-placement="top" title="GitHub" aria-label="GitHub">
+    <a class="text-white" rel="noopener noreferrer" href="https://github.com/cvat-ai/cvat">
+      <i class="fab fa-github"></i>
+    </a>
+  </li>
+  
+  <li class="list-inline-item mx-2 h3" data-toggle="tooltip" data-placement="top" title="Gitter developers chat" aria-label="Gitter developers chat">
+    <a class="text-white" rel="noopener noreferrer" href="https://gitter.im/opencv-cvat/dev">
+      <i class="fab fa-gitter"></i>
+    </a>
+  </li>
+  
+  <li class="list-inline-item mx-2 h3" data-toggle="tooltip" data-placement="top" title="Discord chat" aria-label="Discord chat">
+    <a class="text-white" rel="noopener noreferrer" href="https://discord.gg/fNR3eXfk6C">
+      <i class="fab fa-discord"></i>
+    </a>
+  </li>
+  
+</ul>
+
+        
+        
+      </div>
+      <div class="col-12 col-sm-8 text-center order-sm-2">
+        <small class="mr-1"><a href="https://www.cvat.ai/privacy">Privacy Policy</a></small>
+        |
+        <small class="mx-1"><a href="https://www.cvat.ai/terms-of-use">Terms of Use</a></small>
+      </div>
+  
+    <p class="mt-2"><a href="../../../../../about/">About</a></p>
+  
+      </div>
+    </div>
+  </div>
+</footer>
+
+
+    </div>
+    <script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.1/dist/umd/popper.min.js" integrity="sha384-9/reFTGAW83EW2RDu2S0VKaIzap3H66lZH81PoYlFhbGU+6BZp6G7niu735Sk7lN" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@4.6.0/dist/js/bootstrap.min.js" integrity="sha384-+YQ4JLhjyBLPDQt//I+STsc9iw4uQqACwlvpslubQzn4u2UU2UFM80nGisd026JF" crossorigin="anonymous"></script>
+
+
+
+
+
+
+ 
+
+
+
+
+
+
+
+
+
+
+
+
+
+<script src="../../../../../js/main.min.3b172c13b62c2bea8b1c9d2599cddc8cf89718a92d792c680871c81ba43d8c85.js" integrity="sha256-OxcsE7YsK&#43;qLHJ0lmc3cjPiXGKkteSxoCHHIG6Q9jIU=" crossorigin="anonymous"></script>
+
+
+
+<script src='../../../../../js/prism.js'></script>
+
+
+
+  </body>
+</html>

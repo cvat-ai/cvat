@@ -1,0 +1,945 @@
+<!doctype html>
+<html itemscope itemtype="http://schema.org/WebPage" lang="en" class="no-js">
+  <head>
+    <meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+<meta name="generator" content="Hugo 0.110.0">
+<link rel="canonical" type="text/html" href="../../../../../docs/manual/basics/cvat-annotation-interface/">
+<meta name="robots" content="noindex, nofollow">
+
+
+<link rel="shortcut icon" href="../../../../../favicons/favicon.ico" >
+<link rel="apple-touch-icon" href="../../../../../favicons/apple-touch-icon-180x180.png" sizes="180x180">
+<link rel="icon" type="image/png" href="../../../../../favicons/favicon-16x16.png" sizes="16x16">
+<link rel="icon" type="image/png" href="../../../../../favicons/favicon-32x32.png" sizes="32x32">
+<link rel="icon" type="image/png" href="../../../../../favicons/android-36x36.png" sizes="36x36">
+<link rel="icon" type="image/png" href="../../../../../favicons/android-48x48.png" sizes="48x48">
+<link rel="icon" type="image/png" href="../../../../../favicons/android-72x72.png" sizes="72x72">
+<link rel="icon" type="image/png" href="../../../../../favicons/android-96x96.png" sizes="96x96">
+<link rel="icon" type="image/png" href="../../../../../favicons/android-144x144.png" sizes="144x144">
+<link rel="icon" type="image/png" href="../../../../../favicons/android-192x192.png" sizes="192x192">
+
+<title>CVAT Annotation Interface | CVAT</title>
+<meta name="description" content="This section describes CVAT annotation interface and it&#39;s features">
+<meta property="og:title" content="CVAT Annotation Interface" />
+<meta property="og:description" content="This section describes CVAT annotation interface and it&#39;s features" />
+<meta property="og:type" content="website" />
+<meta property="og:url" content="/docs/manual/basics/cvat-annotation-interface/" /><meta property="og:site_name" content="CVAT" />
+<meta itemprop="name" content="CVAT Annotation Interface">
+<meta itemprop="description" content="This section describes CVAT annotation interface and it&#39;s features"><meta name="twitter:card" content="summary"/>
+<meta name="twitter:title" content="CVAT Annotation Interface"/>
+<meta name="twitter:description" content="This section describes CVAT annotation interface and it&#39;s features"/>
+
+
+
+
+<link rel="preload" href="../../../../../scss/main.min.5176d9fef59ea153ab767b7b61a90b35fb24ef3fb7aef25530f05dcb464a2db0.css" as="style">
+<link href="../../../../../scss/main.min.5176d9fef59ea153ab767b7b61a90b35fb24ef3fb7aef25530f05dcb464a2db0.css" rel="stylesheet" integrity="">
+
+<script
+  src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.3/jquery.min.js"
+  integrity="sha512-STof4xm1wgkfm7heWqFJVn58Hm3EtS31XFaagaa8VMReCXAkQnJZ+jEy8PCC/iT18dFy95WcExNHFTqLyp72eQ=="
+  crossorigin="anonymous"></script>
+<script defer
+  src="https://unpkg.com/lunr@2.3.9/lunr.min.js"
+  integrity="sha384-203J0SNzyqHby3iU6hzvzltrWi/M41wOP5Gu+BiJMz5nwKykbkUx8Kp7iti0Lpli"
+  crossorigin="anonymous"></script>
+<link rel="stylesheet" href="../../../../../css/prism.css"/>
+
+  </head>
+  <body class="td-section">
+    <header>
+      <nav class="td-navbar navbar-dark js-navbar-scroll">
+<div class="container-fluid flex-column flex-md-row">
+  <a class="navbar-brand" href="../../../../../about/"><span class="navbar-brand__logo navbar-logo"><svg width="80" height="15" viewBox="0 0 80 15" xmlns="http://www.w3.org/2000/svg"><path d="M6.63399 15C2.37083 15 0 12.5333.0 7.48889.0 2.46667 2.34908.0 6.63399.0H10.6576V2.62222H6.63399c-2.84935.0-4.0674 1.44445-4.0674 4.86667.0 3.44441 1.2398 4.88891 4.0674 4.88891H15.0638V15H6.63399z"/><path d="M22.412.0l4.8346 13.1004C27.7814 14.5415 28.8724 15 30.2842 15 31.7817 15 32.7657 14.476 33.3005 13.1004L38.3918.0H35.5895L30.9902 11.8559C30.8404 12.2052 30.6265 12.3581 30.2842 12.3581 29.942 12.3581 29.7067 12.2052 29.5783 11.8559L25.1929.0H22.412z"/><path d="M53.0989 3.1441C53.2487 2.79476 53.484 2.64192 53.8262 2.64192 54.1685 2.64192 54.4038 2.79476 54.5322 3.1441L58.9176 15h2.8023L56.8425 1.89956C56.3291.524017 55.3451.0 53.8476.0 52.3288.0 51.3448.524017 50.81 1.89956L45.74 15h2.781L53.0989 3.1441z"/><path d="M69.0681.0V2.5665H73.2661V15H75.802V2.5665H80V0H69.0681z"/></svg></span></a>
+  <div class="td-navbar-nav-scroll ms-md-auto" style="height: auto;" id="main_navbar">
+    <ul class="navbar-nav d-flex flex-wrap" style="padding-bottom: 0;">
+      <li class="nav-item">
+        <a class="nav-link active" href="../../../../../docs/"><span>Documentation</span></a>
+      </li>
+      <li class="nav-item">
+        <a class="nav-link" href="../../../../../about/"><span>About</span></a>
+      </li>
+      <li class="nav-item">
+        <a class="nav-link" href="https://app.cvat.ai" rel="noopener"><span>Try it now</span></a>
+      </li>
+      <li class="nav-item">
+        <a class="nav-link" href="https://github.com/cvat-ai/cvat" rel="noopener"><i class='fab fa-github'></i><span>GitHub</span></a>
+      </li>
+      <li class="nav-item dropdown d-none d-lg-block">
+        <div class="dropdown">
+  <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">v2.16.2</a>
+  <ul class="dropdown-menu">
+    <li><a class="dropdown-item" href="../../../../../../">Latest version</a></li>
+    <li><a class="dropdown-item" href="../../../../../../v1.5.0">v1.5.0</a></li>
+    <li><a class="dropdown-item" href="../../../../../../v1.6.0">v1.6.0</a></li>
+    <li><a class="dropdown-item" href="../../../../../../v1.7.0">v1.7.0</a></li>
+    <li><a class="dropdown-item" href="../../../../../../v2.0.0">v2.0.0</a></li>
+    <li><a class="dropdown-item" href="../../../../../../v2.1.0">v2.1.0</a></li>
+    <li><a class="dropdown-item" href="../../../../../../v2.10.3">v2.10.3</a></li>
+    <li><a class="dropdown-item" href="../../../../../../v2.11.3">v2.11.3</a></li>
+    <li><a class="dropdown-item" href="../../../../../../v2.12.1">v2.12.1</a></li>
+    <li><a class="dropdown-item" href="../../../../../../v2.13.0">v2.13.0</a></li>
+    <li><a class="dropdown-item" href="../../../../../../v2.14.4">v2.14.4</a></li>
+    <li><a class="dropdown-item" href="../../../../../../v2.15.0">v2.15.0</a></li>
+    <li><a class="dropdown-item" href="../../../../../../v2.16.2">v2.16.2</a></li>
+    <li><a class="dropdown-item" href="../../../../../../v2.2.0">v2.2.0</a></li>
+    <li><a class="dropdown-item" href="../../../../../../v2.3.0">v2.3.0</a></li>
+    <li><a class="dropdown-item" href="../../../../../../v2.4.9">v2.4.9</a></li>
+    <li><a class="dropdown-item" href="../../../../../../v2.5.2">v2.5.2</a></li>
+    <li><a class="dropdown-item" href="../../../../../../v2.6.2">v2.6.2</a></li>
+    <li><a class="dropdown-item" href="../../../../../../v2.7.6">v2.7.6</a></li>
+    <li><a class="dropdown-item" href="../../../../../../v2.8.2">v2.8.2</a></li>
+    <li><a class="dropdown-item" href="../../../../../../v2.9.2">v2.9.2</a></li>
+    </ul>
+</div></li>
+      </ul>
+  </div>
+  <div class="d-none d-lg-block">
+    <div class="td-search td-search--offline">
+  <div class="td-search__icon"></div>
+  <input
+    type="search"
+    class="td-search__input form-control"
+    placeholder="Search this site…"
+    aria-label="Search this site…"
+    autocomplete="off"
+    
+    data-offline-search-index-json-src="../../../../../offline-search-index.62229ea4ed65539ffa23d795ce918f46.json"
+    data-offline-search-base-href="../../../../../"
+    data-offline-search-max-results="10"
+  >
+</div>
+
+  </div>
+</div>
+</nav>
+    </header>
+    <div class="container-fluid td-outer">
+      <div class="td-main">
+        <div class="row flex-xl-nowrap">
+          <main class="col-12 col-md-9 col-xl-8 ps-md-5" role="main">
+            
+
+
+
+
+<div class="td-content">
+<div class="pageinfo pageinfo-primary d-print-none">
+<p>
+This is the multi-page printable view of this section.
+<a href="#" onclick="print();return false;">Click here to print</a>.
+</p><p>
+<a href="../../../../../docs/manual/basics/cvat-annotation-interface/">Return to the regular view of this page</a>.
+</p>
+</div>
+
+
+
+<h1 class="title">CVAT Annotation Interface</h1>
+<div class="lead">This section describes CVAT annotation interface and it&rsquo;s features</div>
+
+
+
+
+    <ul>
+    
+  
+  
+  
+  
+
+  
+    
+    
+	
+<li>1: <a href="#pg-922c5d47480c99cf3614b6f500c5d0c3">Navigation bar &amp; Menu</a></li>
+
+
+    
+  
+    
+    
+	
+<li>2: <a href="#pg-18903279da6da67e5fb98f322c69ea9e">Controls sidebar</a></li>
+
+
+    
+  
+    
+    
+	
+<li>3: <a href="#pg-9ae0058430a67ceb033bbb12f7ef9e8c">Objects sidebar</a></li>
+
+
+    
+  
+    
+    
+	
+<li>4: <a href="#pg-81cc76d6f4c7b882c9cdfe4235707dd7">CVAT Workspace</a></li>
+
+
+    
+  
+
+    </ul>
+
+
+<div class="content">
+      <p>This section of the documentation describes the annotation interface and
+all available options that you can use to annotate image data accurately and quickly.</p>
+<p>The interface includes the following areas:</p>
+<p><img src="../../../../../images/image034_detrac.png" alt="CVAT Interfaces"></p>
+
+</div>
+</div>
+
+
+  
+  
+  
+  
+
+  
+  
+
+  
+    
+    
+	
+    
+
+<div class="td-content" style="">
+    
+	<h1 id="pg-922c5d47480c99cf3614b6f500c5d0c3">1 - Navigation bar &amp; Menu</h1>
+    <div class="lead">Features navigation arrows to switch between frames, provides access to main functions, and Menu.</div>
+	<p>The navigation panel and drop-down <strong>Menu</strong>, allow you to switch
+between frames, change the annotation mode, save your work, and more.</p>
+<p><img src="../../../../../images/image035.png" alt="CVAT Navbar"></p>
+<p>See:</p>
+<ul>
+<li><a href="#menu">Menu</a></li>
+<li><a href="#navigation-bar">Navigation bar</a>
+<ul>
+<li><a href="#save-undo-done">Save, Undo, Done</a></li>
+<li><a href="#navigation-controls">Navigation controls</a></li>
+</ul>
+</li>
+<li><a href="#job-information-and-annotation-mode-switcher">Job information and Annotation Mode switcher</a></li>
+</ul>
+<h2 id="menu">Menu</h2>
+<p>Use the <strong>Menu</strong> options to upload and download annotations, change the status of the job,
+and access other features listed in the table below:</p>
+<!--lint disable maximum-line-length-->
+<table>
+<thead>
+<tr>
+<th>Panel Item                            </th>
+<th>Description                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  </th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Upload annotations</strong></td>
+<td>Upload annotations into a task.                                                                                                                                                                                                                                                                                                                                                                                                                                                              </td>
+</tr>
+<tr>
+<td><strong>Export as a dataset</strong></td>
+<td>Download a dataset in one of the <a href="../../../../../docs/manual/advanced/formats/">supported formats</a>.                                                                                                                                                                                                                                                                                                                                                                                          </td>
+</tr>
+<tr>
+<td><strong>Remove annotations</strong></td>
+<td>Delete all annotations for the current job. <br> Use <strong>Select range</strong> to remove annotations for a specific range of frames.<br>Enable the <strong>Delete only keyframe for tracks</strong> checkbox to delete only keyframes from the tracks within the selected range. <br><br><center><img src="../../../../../images/image229.png" alt=""></center>                                                                                                                                                                                </td>
+</tr>
+<tr>
+<td><strong>Run actions</strong></td>
+<td>Run annotation actions on the annotated dataset. <a href="../../../../../docs/enterprise/shapes-converter/">Annotations action</a> is a feature that allows you to modify a bulk of annotations on many frames. It supports only <code>shape</code> objects.                                                                                                                                                                                                                                                                      </td>
+</tr>
+<tr>
+<td><strong>Open the task</strong></td>
+<td>Opens a page with details about the task.                                                                                                                                                                                                                                                                                                                                                                                                                                                    </td>
+</tr>
+<tr>
+<td><strong>Change job state</strong></td>
+<td>Changes the state of the job: <br><ul><li><strong>New</strong>: The job is newly created and has not been started yet. It is waiting for annotation work to begin.<li> <strong>In Progress</strong>: The job is currently being worked on. Annotations are being added or edited.<li><strong>Rejected</strong>: The job has been reviewed and deemed unsatisfactory or incorrect. It requires revisions and further work.<li><strong>Completed</strong>: The job has been finished, reviewed, and approved. No further changes are necessary.<ul></td>
+</tr>
+<tr>
+<td><strong>Finish the job</strong></td>
+<td>Saves annotations and sets <strong>job state</strong> to <strong>Completed</strong>.</td>
+</tr>
+</tbody>
+</table>
+<!--lint enable maximum-line-length-->
+<h2 id="navigation-bar">Navigation bar</h2>
+<p>Use the navigation bar to save annotation results, switch between frames,
+and access other features listed in the tables below.</p>
+<!--lint disable maximum-line-length-->
+<h3 id="save-undo-done">Save, Undo, Done</h3>
+<p>Use the following buttons, to save your work, undo changes, and move tasks to done.</p>
+<table>
+<thead>
+<tr>
+<th>Function                                          </th>
+<th>Description                                                                                                                                                                                                                                                                                                </th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Save work</strong><br><br><img src="../../../../../images/image141.jpg" alt="">    </td>
+<td>Saves annotations for the current job. The button indicates the saving process.                                                                                                                                                                                                                </td>
+</tr>
+<tr>
+<td><strong>Undo</strong>/<strong>Redo</strong><br><br><img src="../../../../../images/image061.jpg" alt=""></td>
+<td>Use buttons to undo actions or redo them.                                                                                                                                                                                                                                                                  </td>
+</tr>
+<tr>
+<td><strong>Done</strong><br><br><img src="../../../../../images/image223.jpg" alt="">          </td>
+<td>Used to complete the creation of the object. This button appears only when the object is being created.                                                                                                                                                                                                    </td>
+</tr>
+<tr>
+<td><strong>Block</strong><br><br><img src="../../../../../images/image226.jpg" alt="">        </td>
+<td>Used to pause automatic line creation when drawing a polygon with <a href="../../../../../docs/manual/advanced/ai-tools/#opencv-intelligent-scissors">OpenCV Intelligent scissors</a>. Also used to postpone server requests when creating an object using <a href="../../../../../docs/manual/advanced/ai-tools/">AI Tools</a>.</td>
+</tr>
+</tbody>
+</table>
+<h3 id="navigation-controls">Navigation controls</h3>
+<p>Overview of how to navigate through frames within the interface,
+with detailed descriptions provided in the table below.</p>
+<p><img src="../../../../../images/image008.jpg" alt="Navigation Controls"></p>
+<table>
+<thead>
+<tr>
+<th>Function                                                                        </th>
+<th>Description                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    </th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Go to the first</strong>/<strong>last frame</strong><br><br> <img src="../../../../../images/image036.jpg" alt="First last frame controls">            </td>
+<td>Navigate to the first or the last frame of the sequence.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      </td>
+</tr>
+<tr>
+<td><strong>Go back with a step</strong>/<strong>Go next with a step</strong><br><br><img src="../../../../../images/image037.jpg" alt="Go to a step controls"></td>
+<td>Move to the previous or next frame by a predefined step. <br><br>Shortcuts:<br><li><strong>C</strong> — previous frame. <li><strong>V</strong> — next frame. <br><br>Default step size is <code>10</code> frames. To modify this, navigate to <strong>Nickname</strong> &gt; <strong>Settings</strong> &gt; <strong>Player Step</strong>.                                                                                                                                                                                                                                                                                                                                                                                                                                        </td>
+</tr>
+<tr>
+<td><strong>Go back</strong>/<strong>Go next</strong><br><br><img src="../../../../../images/go_back_next.png" alt="Go back and go forth controls">                    </td>
+<td>Navigate to the neighboring frames. <br><br>Shortcuts:<br><li> <strong>D</strong> — previous frame. <li><strong>F</strong> — next frame.<br><br><strong>Go back</strong>/<strong>Go next</strong> buttons are customizable: <br><br><img src="../../../../../images/go_back_custom.png" alt=""><br><br>To customize, right-click on the button and select one of three options (left to right): <ol><li>The default setting moves to the next or previous frame (step size is 1 frame).</li><li>Move to the next or previous frame that contains objects (e.g., filtered). For more information, refer to <a href="../../../../../docs/manual/advanced/filter">Filters</a>.</li><li>Move to the next or previous frame without annotations. Use this option to quickly locate missed frames.</li></ol>.</td>
+</tr>
+<tr>
+<td><strong>Play</strong>/<strong>Pause</strong><br><br><img src="../../../../../images/image041.jpg" alt="Play and pause">                              </td>
+<td>Switch between playing and pausing the sequence of frames or set of images. <br>Shortcut: <strong>Space</strong>. <br>To adjust the playback speed, go to <strong>Nickname</strong> &gt; <strong>Settings</strong> &gt; <strong>Player Speed</strong>.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  </td>
+</tr>
+<tr>
+<td><strong>Go to the specific frame</strong><br><br><img src="../../../../../images/image060.jpg" alt="Go to the specific frame">                    </td>
+<td>Enter the number of the frame you want to go to and press <strong>Enter</strong>.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              </td>
+</tr>
+<tr>
+<td><strong>Delete frame</strong><br><br><img src="../../../../../images/delete_frame.png" alt="Delete frame">                            </td>
+<td>Click to delete current frame.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                </td>
+</tr>
+</tbody>
+</table>
+<h2 id="job-information-and-annotation-mode-switcher">Job information and Annotation Mode switcher</h2>
+<p>This section outlines various functionalities, including how to switch to the
+fullscreen player mode, access job information, and use the Workspace Switcher to
+toggle between different annotation and QA modes.</p>
+<table>
+<thead>
+<tr>
+<th>Function                                        </th>
+<th>Description                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      </th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Fullscreen</strong><br><br><img src="../../../../../images/image143.jpg" alt="Fullscreen"></td>
+<td>The fullscreen player mode. The keyboard shortcut is <strong>F11</strong>.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    </td>
+</tr>
+<tr>
+<td><strong>Info</strong><br><br><img src="../../../../../images/image143_2.png" alt="Info">    </td>
+<td>Open the job info. <br><br><img src="../../../../../images/image144_detrac.png" alt=""><br><br>Overview:<ul><li><strong>Assignee</strong> - the individual to whom the job is assigned.</li> <li><strong>Reviewer</strong>– the user tasked with conducting the review. For more information, see <a href="../../../../../docs/manual/advanced/analytics-and-monitoring/manual-qa%22"><strong>Manual QA</strong></a></li><li><strong>Start frame</strong> - the number of the first frame in this job.</li><li><strong>Stop frame</strong> - the number of the last frame in this job.</li><li><strong>Frames</strong> - the total number of frames in the job.</li></ul><br><strong>Annotations Statistics</strong> table displays the number of created shapes, categorized by labels (e.g., vehicle, person) and the type of annotation (shape, track), as well as the count of manual and interpolated frames.</td>
+</tr>
+<tr>
+<td><strong>Filters</strong><br><br><img src="../../../../../images/image143_3.png" alt="">  </td>
+<td>Switches on <a href="../../../../../docs/manual/advanced/filter/"><strong>Filters</strong></a>.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        </td>
+</tr>
+<tr>
+<td><strong>Workplace Switcher</strong></td>
+<td>The drop-down list to swithc between different annotation modes: <br><br><img src="../../../../../images/ui-swithcer.png" alt=""><br><br>Overview:<ul><li><strong>Standart</strong> &ndash; default mode.</li><li><strong>Attribute</strong> &ndash; annotation with <a href="docs/manual/advanced/attribute-annotation-mode-advanced/"><strong>Attributes</strong></a></li><li><strong>Single Shape</strong> &ndash; <a href="../../../../../docs/manual/advanced/single-shape/"><strong>Single shape</strong></a> annotation mode.</li><li><strong>Tag annotation</strong>- annotation with <a href="../../../../../docs/manual/advanced/annotation-with-tags/">Tags</a></li><li><strong>Review</strong> &ndash; <a href="../../../../../manual/advanced/analytics-and-monitoring/manual-qa/"><strong>Manual QA</strong></a> mode.                                                                                                                                                                              </td>
+</tr>
+</tbody>
+</table>
+<!--lint enable maximum-line-length-->
+
+</div>
+
+
+
+    
+	
+  
+    
+    
+	
+    
+
+<div class="td-content" style="page-break-before: always">
+    
+	<h1 id="pg-18903279da6da67e5fb98f322c69ea9e">2 - Controls sidebar</h1>
+    <div class="lead">Offers tools for navigating within the image, annotation tools, and additional options to merge, split, and group labels.</div>
+	<h2 id="navigation">Navigation</h2>
+<p><strong>Navigation block</strong> - contains tools for moving and rotating images.</p>
+<table>
+<thead>
+<tr>
+<th>Icon</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><img src="../../../../../images/image148.jpg" alt=""></td>
+<td><code>Cursor</code> (<code>Esc</code>)- a basic annotation pedacting tool.</td>
+</tr>
+<tr>
+<td><img src="../../../../../images/image149.jpg" alt=""></td>
+<td><code>Move the image</code>- a tool for moving around the image without<br/> the possibility of editing.</td>
+</tr>
+<tr>
+<td><img src="../../../../../images/image102.jpg" alt=""></td>
+<td><code>Rotate</code>- two buttons to rotate the current frame<br/> a clockwise (<code>Ctrl+R</code>) and anticlockwise (<code>Ctrl+Shift+R</code>).<br/> You can enable <code>Rotate all images</code> in the settings to rotate all the images in the job</td>
+</tr>
+</tbody>
+</table>
+<hr>
+<h2 id="zoom">Zoom</h2>
+<p><strong>Zoom block</strong> - contains tools for image zoom.</p>
+<table>
+<thead>
+<tr>
+<th>Icon</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><img src="../../../../../images/image151.jpg" alt=""></td>
+<td><code>Fit image</code>- fits image into the workspace size.<br/> Shortcut - double click on an image</td>
+</tr>
+<tr>
+<td><img src="../../../../../images/image166.jpg" alt=""></td>
+<td><code>Select a region of interest</code>- zooms in on a selected region.<br/> You can use this tool to quickly zoom in on a specific part of the frame.</td>
+</tr>
+</tbody>
+</table>
+<hr>
+<h2 id="shapes">Shapes</h2>
+<p><strong>Shapes block</strong> - contains all the tools for creating shapes.</p>
+<table>
+<thead>
+<tr>
+<th>Icon</th>
+<th>Description</th>
+<th>Links to section</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><img src="../../../../../images/image189.jpg" alt=""></td>
+<td><code>AI Tools</code></td>
+<td><a href="../../../../../docs/manual/advanced/ai-tools/">AI Tools</a></td>
+</tr>
+<tr>
+<td><img src="../../../../../images/image201.jpg" alt=""></td>
+<td><code>OpenCV</code></td>
+<td><a href="../../../../../docs/manual/advanced/ai-tools/">OpenCV</a></td>
+</tr>
+<tr>
+<td><img src="../../../../../images/image167.jpg" alt=""></td>
+<td><code>Rectangle</code></td>
+<td><a href="../../../../../docs/manual/basics/shape-mode-basics/">Shape mode</a>; <a href="../../../../../docs/manual/basics/track-mode-basics/">Track mode</a>;<br/> <a href="../../../../../docs/manual/advanced/annotation-with-rectangles/">Drawing by 4 points</a></td>
+</tr>
+<tr>
+<td><img src="../../../../../images/image168.jpg" alt=""></td>
+<td><code>Polygon</code></td>
+<td><a href="../../../../../docs/manual/advanced/annotation-with-polygons/">Annotation with polygons</a>; <a href="../../../../../docs/manual/advanced/annotation-with-polygons/track-mode-with-polygons/">Track mode with polygons</a></td>
+</tr>
+<tr>
+<td><img src="../../../../../images/image169.jpg" alt=""></td>
+<td><code>Polyline</code></td>
+<td><a href="../../../../../docs/manual/advanced/annotation-with-polylines/">Annotation with polylines</a></td>
+</tr>
+<tr>
+<td><img src="../../../../../images/image170.jpg" alt=""></td>
+<td><code>Points</code></td>
+<td><a href="../../../../../docs/manual/advanced/annotation-with-points/">Annotation with points</a></td>
+</tr>
+<tr>
+<td><img src="../../../../../images/image241.jpg" alt=""></td>
+<td><code>Ellipses</code></td>
+<td><a href="../../../../../docs/manual/advanced/annotation-with-ellipses/">Annotation with ellipses</a></td>
+</tr>
+<tr>
+<td><img src="../../../../../images/image176.jpg" alt=""></td>
+<td><code>Cuboid</code></td>
+<td><a href="../../../../../docs/manual/advanced/annotation-with-cuboids/">Annotation with cuboids</a></td>
+</tr>
+<tr>
+<td><img src="../../../../../images/brushing_tools_icon.png" alt=""></td>
+<td><code>Brushing tools</code></td>
+<td><a href="../../../../../docs/manual/advanced/annotation-with-brush-tool/">Annotation with brushing</a></td>
+</tr>
+<tr>
+<td><img src="../../../../../images/image171.jpg" alt=""></td>
+<td><code>Tag</code></td>
+<td><a href="../../../../../docs/manual/advanced/annotation-with-tags/">Annotation with tags</a></td>
+</tr>
+<tr>
+<td><img src="../../../../../images/image195.jpg" alt=""></td>
+<td><code>Open an issue</code></td>
+<td><a href="../../../../../docs/manual/advanced/analytics-and-monitoring/manual-qa/">Review</a> (available only in review mode)</td>
+</tr>
+</tbody>
+</table>
+<hr>
+<h2 id="edit">Edit</h2>
+<p><strong>Edit block</strong> - contains tools for editing tracks and shapes.</p>
+<table>
+<thead>
+<tr>
+<th>Icon</th>
+<th>Description</th>
+<th>Links to section</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><img src="../../../../../images/image172.jpg" alt=""></td>
+<td><code>Merge Shapes</code>(<code>M</code>) - starts/stops the merging shapes mode.</td>
+<td><a href="../../../../../docs/manual/basics/track-mode-basics/">Track mode (basics)</a></td>
+</tr>
+<tr>
+<td><img src="../../../../../images/image173.jpg" alt=""></td>
+<td><code>Group Shapes</code> (<code>G</code>) - starts/stops the grouping shapes mode.</td>
+<td><a href="../../../../../docs/manual/advanced/shape-grouping/">Shape grouping</a></td>
+</tr>
+<tr>
+<td><img src="../../../../../images/image174.jpg" alt=""></td>
+<td><code>Split</code> - splits a track.</td>
+<td><a href="../../../../../docs/manual/advanced/track-mode-advanced/">Track mode (advanced)</a></td>
+</tr>
+<tr>
+<td><img src="../../../../../images/image174.jpg" alt=""></td>
+<td><code>Split</code> - splits a track.</td>
+<td><a href="../../../../../docs/manual/advanced/track-mode-advanced/">Track mode (advanced)</a></td>
+</tr>
+<tr>
+<td><img src="../../../../../images/join-masks-icon.jpg" alt=""></td>
+<td>Joins multiple labels into one</td>
+<td><a href="../../../../../docs/manual/advanced/slice-and-join/#joining-cvat-labels"><strong>Joining mask tool</strong></a></td>
+</tr>
+<tr>
+<td><img src="../../../../../images/slicing-tool-icon.jpg" alt=""></td>
+<td>Slices one label into several.</td>
+<td><a href="../../../../../docs/manual/advanced/slice-and-join/#slicing-cvat-labels"><strong>Slice mask/polygon</strong></a></td>
+</tr>
+</tbody>
+</table>
+<hr>
+<h2 id="move-image">Move image</h2>
+<p>Switching between user interface modes.</p>
+<p><img src="../../../../../images/image145.jpg" alt=""></p>
+<ol>
+<li>
+<p>Use arrows below to move to the next/previous frame.
+Use the scroll bar slider to scroll through frames.
+Almost every button has a shortcut.
+To get a hint about a shortcut, just move your mouse pointer over an UI element.</p>
+</li>
+<li>
+<p>To navigate the image, use the button on the controls sidebar.
+Another way an image can be moved/shifted is by holding the left mouse button inside
+an area without annotated objects.
+If the <code>Mouse Wheel</code> is pressed, then all annotated objects are ignored. Otherwise the
+a highlighted bounding box will be moved instead of the image itself.</p>
+<p><img src="../../../../../images/image136.jpg" alt=""></p>
+</li>
+<li>
+<p>You can use the button on the sidebar controls to zoom on a region of interest.
+Use the button <code>Fit the image</code> to fit the image in the workspace.
+You can also use the mouse wheel to scale the image
+(the image will be zoomed relatively to your current cursor position).</p>
+<p><img src="../../../../../images/image137.jpg" alt=""></p>
+</li>
+</ol>
+
+</div>
+
+
+
+    
+	
+  
+    
+    
+	
+    
+
+<div class="td-content" style="page-break-before: always">
+    
+	<h1 id="pg-9ae0058430a67ceb033bbb12f7ef9e8c">3 - Objects sidebar</h1>
+    <div class="lead">Displays annotated objects and includes a label filter, lists of objects (current frame) and labels (objects on the frame), and appearance settings.</div>
+	<p>In the objects sidebar, you can see the list of available objects on the current
+frame. The following figure is an example of how the list might look like:</p>
+<table>
+<thead>
+<tr>
+<th>Shape mode</th>
+<th>Track mode</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><img src="../../../../../images/image044.jpg" alt=""></td>
+<td><img src="../../../../../images/image045.jpg" alt=""></td>
+</tr>
+</tbody>
+</table>
+<h2 id="objects-properties">Objects properties</h2>
+<p><strong>Filter</strong> input box</p>
+<p><img src="../../../../../images/image059.jpg" alt=""></p>
+<p>The way how to use filters is described in the advanced guide <a href="../../../../../docs/manual/advanced/filter/">here</a>.</p>
+<p><strong>List of objects</strong></p>
+<p><img src="../../../../../images/image147.jpg" alt=""></p>
+<ul>
+<li>Switch lock property for all - switches lock property of all objects in the frame.</li>
+<li>Switch hidden property for all - switches hide the property of all objects in the frame.</li>
+<li>Expand/collapse all - collapses/expands the details field of all objects in the frame.</li>
+<li>Sorting - sort the list of objects: updated time, ID - accent, ID - descent</li>
+</ul>
+<hr>
+<p><strong>Objects</strong> on the sidebar</p>
+<p>The type of shape can be changed by selecting the <strong>Label</strong> property.
+For instance, it can look like shown in the figure below:</p>
+<p><img src="../../../../../images/image050.jpg" alt=""></p>
+<p><strong>Object action menu</strong></p>
+<p>The action menu calls up the button:</p>
+<p><img src="../../../../../images/image047.jpg" alt=""></p>
+<p>The action menu contains:</p>
+<ul>
+<li>
+<p><strong>Create object URL</strong> - puts a link to an object on the clipboard.
+After you open the link, this object will be filtered.</p>
+</li>
+<li>
+<p><strong>Make a copy</strong> - copies an object. The keyboard shortcut is <strong>Ctrl</strong> + <strong>C</strong> &gt; <strong>Ctrl</strong> + <strong>V</strong>.</p>
+</li>
+<li>
+<p><strong>Propagate</strong> function copies the form to multiple frames
+and displays a dialog box where you can specify the number
+of copies or the frame to which you want to copy the object.
+The keyboard shortcut is <strong>Ctr</strong>l + <strong>B</strong>. <br>There are two options available:</p>
+<ul>
+<li><strong>Propagate forward</strong> (<img src="../../../../../images/propagate_fw.png" alt="Fw propagate">) creates a
+copy of the object on <code>N</code> <em>subsequent</em> frames at the same position.</li>
+<li><strong>Propagate backward</strong> (<img src="../../../../../images/propagate_back.png" alt="Back propagate">) creates
+a copy of the object on <code>N</code> <em>previous</em> frames at the same position.</li>
+</ul>
+<p><img src="../../../../../images/image053.jpg" alt=""></p>
+</li>
+<li>
+<p><strong>To background</strong> - moves the object to the background. The keyboard shortcut <strong>-</strong> or <strong>_</strong></p>
+</li>
+<li>
+<p><strong>To foreground</strong> - moves the object to the foreground. The keyboard shortcut <strong>+</strong> or <strong>=</strong></p>
+</li>
+<li>
+<p><strong>Change instance color</strong>- choosing a color using the color picker (available only in instance mode).</p>
+<p><img src="../../../../../images/image153.jpg" alt=""></p>
+</li>
+<li>
+<p><strong>Remove</strong> - removes the object. The keyboard shortcut <strong>Del</strong>, <strong>Shift+Del</strong>.</p>
+</li>
+</ul>
+<p>A shape can be locked to prevent its modification or moving by an accident. Shortcut to lock an object: <strong>L</strong>.</p>
+<p><img src="../../../../../images/image046.jpg" alt=""></p>
+<p>A shape can be <strong>Occluded</strong>. Shortcut: <strong>Q</strong>. Such shapes have dashed boundaries.</p>
+<p><img src="../../../../../images/image048.jpg" alt=""></p>
+<p><img src="../../../../../images/image049_detrac.jpg" alt=""></p>
+<p>You can change the way an object is displayed on a frame (show or hide).</p>
+<p><img src="../../../../../images/image055.jpg" alt=""></p>
+<p><strong>Switch pinned property</strong> - when enabled, a shape cannot be moved by dragging or dropping.</p>
+<p><img src="../../../../../images/image052.jpg" alt=""></p>
+<p>**Tracker switcher **- enable/disable <a href="../../../../../docs/manual/advanced/ai-tools/#trackers">tracking</a> for the object.</p>
+<p><img src="../../../../../images/tracker_switcher.jpg" alt=""></p>
+<p>By clicking on the <strong>Details</strong> button you can collapse or expand the field with all the attributes of the object.</p>
+<p><img src="../../../../../images/image154.jpg" alt=""></p>
+<hr>
+<h2 id="labels">Labels</h2>
+<p>In this tab, you can lock or hide objects of a certain label.
+To change the color for a specific label,
+you need to go to the task page and select the color by clicking the edit button,
+this way you will change the label color for all jobs in the task.</p>
+<p><img src="../../../../../images/image062.jpg" alt=""></p>
+<p><strong>Fast label change</strong></p>
+<p>You can change the label of an object using hotkeys.
+In order to do it, you need to assign a number (from 0 to 9) to labels.
+By default numbers 1,2&hellip;0 are assigned to the first ten labels.
+To assign a number, click on the button placed at the right of a label name on the sidebar.</p>
+<p><img src="../../../../../images/image210.jpg" alt=""></p>
+<p>After that, you will be able to assign a corresponding label to an object
+by hovering your mouse cursor over it and pressing <strong>Ctrl</strong> + <strong>Num(0..9)</strong>.</p>
+<p>In case you do not point the cursor to the object, pressing <strong>Ctrl</strong> + <strong>Num(0..9)</strong> will set a chosen label as default,
+so that the next object you create (use the <code>N</code> key) will automatically have this label assigned.</p>
+<p><img src="../../../../../images/image211.jpg" alt=""></p>
+<hr>
+<h2 id="appearance">Appearance</h2>
+<p><strong>Color By</strong> options</p>
+<p>Change the color scheme of the annotation:</p>
+<ul>
+<li>
+<p><code>Instance</code> — every shape has a random color</p>
+<p><img src="../../../../../images/image095_detrac.jpg" alt=""></p>
+</li>
+<li>
+<p><code>Group</code> — every group of shape has its own random color, ungrouped shapes are white</p>
+<p><img src="../../../../../images/image094_detrac.jpg" alt=""></p>
+</li>
+<li>
+<p><code>Label</code> — every label (e.g. car, person) has its own random color</p>
+<p><img src="../../../../../images/image093_detrac.jpg" alt=""></p>
+<p>You can change any random color pointing to a needed box on a frame or on an
+object sidebar.</p>
+</li>
+</ul>
+<p><strong>Fill Opacity</strong> slider</p>
+<p>Change the opacity of every shape in the annotation.</p>
+<p><img src="../../../../../images/image086_detrac.jpg" alt=""></p>
+<p><strong>Selected Fill Opacity</strong> slider</p>
+<p>Change the opacity of the selected object&rsquo;s fill. It is possible
+to change the opacity while drawing an object in the case
+of rectangles, polygons, and cuboids.</p>
+<p><img src="../../../../../images/image089_detrac.jpg" alt=""></p>
+<p><strong>Outlines borders</strong> checkbox</p>
+<p>You can change a special shape border color by clicking on the <strong>Eyedropper</strong> icon.</p>
+<p><img src="../../../../../images/image088_detrac.jpg" alt=""></p>
+<p><strong>Show bitmap</strong> checkbox</p>
+<p>If enabled all shapes are displayed in white and the background is black.</p>
+<p><img src="../../../../../images/image087_detrac.jpg" alt=""></p>
+<p><strong>Show projections</strong> checkbox</p>
+<p>Enables/disables the display of auxiliary perspective lines. Only relevant for cuboids</p>
+<p><img src="../../../../../images/image090_detrac.jpg" alt=""></p>
+<h2 id="hide-objects-sidebar">Hide objects sidebar</h2>
+<p><strong>Hide</strong> - the button hides the object&rsquo;s sidebar.</p>
+<p><img src="../../../../../images/image146.jpg" alt=""></p>
+
+</div>
+
+
+
+    
+	
+  
+    
+    
+	
+    
+
+<div class="td-content" style="page-break-before: always">
+    
+	<h1 id="pg-81cc76d6f4c7b882c9cdfe4235707dd7">4 - CVAT Workspace</h1>
+    <div class="lead">The main annotation area where images and videos are displayed for annotation..</div>
+	<p>In CVAT the Workspace serves as a work area where annotators
+interact with images, videos, and the various tools
+available to create high-quality annotations.</p>
+<p><img src="../../../../../images/workspace.png" alt="Image quality panel"></p>
+<p>See:</p>
+<ul>
+<li><a href="#image-settings-in-cvat">Image settings in CVAT</a>
+<ul>
+<li><a href="#adding-grid-overlay-to-image-in-cvat">Adding grid overlay to image in CVAT</a></li>
+<li><a href="#changing-color-settings-of-image-in-cvat">Changing color settings of image in CVAT</a></li>
+</ul>
+</li>
+<li><a href="#adding-layers-and-z-axis-slider">Adding layers and Z-axis slider</a></li>
+<li><a href="#interacting-with-objects">Interacting with Objects</a></li>
+</ul>
+<h2 id="image-settings-in-cvat">Image settings in CVAT</h2>
+<p>The <strong>Image settings</strong> panel serves
+as a versatile tool for fine-tuning the visual aspects of your image.
+Whether you need to brighten the image,
+increase contrast, or make other adjustments, this panel is your go-to.</p>
+<p>Additionally, the panel allows you
+to overlay a grid on the image for more precise annotation.</p>
+<blockquote>
+<p><strong>Note</strong>: Adjusting the image settings only
+alters how the pictures are displayed.
+The images themselves will remain unmodified and unchanged.</p>
+</blockquote>
+<p>By default, the <strong>Image settings</strong> panel is not visible. To access
+it, click on the <strong>Arrow Up</strong> (<img src="../../../../../images/image-grid-icon.jpg" alt="Image Grid Icon">)
+icon located at the bottom of the workspace.</p>
+<p><img src="../../../../../images/image-quality-panel.jpg" alt="Image quality panel"></p>
+<h3 id="adding-grid-overlay-to-image-in-cvat">Adding grid overlay to image in CVAT</h3>
+<p>To add the grid to the image, do the following:</p>
+<ol>
+<li>Open the <strong>Image Settings</strong> panel.</li>
+<li>Locate and check the box that
+allows you to overlay a grid on the image.</li>
+<li>Specify the grid cell size in square millimeters
+by entering the desired number in the <strong>Size</strong> field.</li>
+<li>From the <strong>Color</strong> drop-down list,
+select the color of the grid.</li>
+<li>Use the Opacity slider to change the
+transparency of the grid overlay.</li>
+</ol>
+<h3 id="changing-color-settings-of-image-in-cvat">Changing color settings of image in CVAT</h3>
+<p>To change the color setting of the image is CVAT, do the following:</p>
+<ol>
+<li>Open the <strong>Image Settings</strong> panel.</li>
+<li>Use the slider to change the color quality.</li>
+</ol>
+<p>There are four color quality settings in CVAT:</p>
+<p><strong>Brightness</strong> increases and decreases
+the overall lightness of the image:</p>
+<p><img src="../../../../../images/image-settings-brightness.png" alt="Image Brightness"></p>
+<p><strong>Contrast</strong> is the range of brightness,
+from lightest to darkest, in an image.</p>
+<p><img src="../../../../../images/image-settings-contrast.png" alt="Image Brightness"></p>
+<p><strong>Saturation</strong> describes the intensity of the color.</p>
+<p><img src="../../../../../images/image-settings-saturation.png" alt="Image Saturation"></p>
+<p><strong>Gamma</strong> correction can be used to
+control the overall brightness of an image</p>
+<p><img src="../../../../../images/image-settings-gamma.jpg" alt="Gamma Correction"></p>
+<p>To reset the setting to default values, click
+<strong>Reset color settings</strong></p>
+<h2 id="adding-layers-and-z-axis-slider">Adding layers and Z-axis slider</h2>
+<p><strong>Z-axis Slider</strong> enables you to add annotation layers while
+hiding the layers positioned beyond.</p>
+<p>You can also move between layers by moving the slider
+to the layer you need.</p>
+<p>The slider becomes active when multiple Z-layers are present within a frame.
+Click <strong>+</strong> on the slider to add a new layer;
+upon pressing it, a new layer is automatically created and activated.</p>
+<p>You can also relocate objects between layers using the <strong>+</strong> and <strong>-</strong> keys.</p>
+<p><img src="../../../../../images/image140.jpg" alt="Z-Order Slider"></p>
+<h2 id="interacting-with-objects">Interacting with Objects</h2>
+<p>The workspace is also equipped with the following features:</p>
+<ul>
+<li>
+<p>Right-clicking an object opens the Object Card.
+This interface contains essential controls
+for modifying the object&rsquo;s label and attributes,
+as well as providing access to an action menu.</p>
+<p><img src="../../../../../images/image138_mapillary_vistas.jpg" alt="Object card"></p>
+</li>
+<li>
+<p>Right-clicking on a polygon point will open a menu, from which you can
+<strong>Delete point</strong> or <strong>Set start point</strong>.</p>
+<p><img src="../../../../../images/image139_mapillary_vistas.jpg" alt="Polygon menu"></p>
+</li>
+</ul>
+
+</div>
+
+
+
+    
+	
+  
+
+
+
+          </main>
+        </div>
+      </div>
+      <footer class="bg-dark py-5 row d-print-none" style="min-height: 0">
+  <div class="container-fluid">
+    <div class="row">
+      <div class="col text-center">
+        
+        
+        
+<ul class="list-inline mb-0">
+  
+  <li class="list-inline-item mx-2 h3" data-bs-toggle="tooltip" data-placement="top" title="Gitter public chat" aria-label="Gitter public chat">
+    <a class="text-white" rel="noopener noreferrer" href="https://gitter.im/opencv-cvat/public">
+      <i class="fab fa-gitter"></i>
+    </a>
+  </li>
+  
+  <li class="list-inline-item mx-2 h3" data-bs-toggle="tooltip" data-placement="top" title="Stack Overflow" aria-label="Stack Overflow">
+    <a class="text-white" rel="noopener noreferrer" href="https://stackoverflow.com/search?q=%23cvat">
+      <i class="fab fa-stack-overflow"></i>
+    </a>
+  </li>
+  
+  <li class="list-inline-item mx-2 h3" data-bs-toggle="tooltip" data-placement="top" title="YouTube" aria-label="YouTube">
+    <a class="text-white" rel="noopener noreferrer" href="https://www.youtube.com/@cvat-ai">
+      <i class="fab fa-youtube"></i>
+    </a>
+  </li>
+  
+</ul>
+
+        
+        
+      </div>
+      <div class="col-4 text-center">
+        <div class="row">
+          <a href="https://www.cvat.ai/privacy">Privacy Policy</a>
+        </div>
+        <div class="row">
+          <a href="https://www.cvat.ai/terms-of-use">Terms of Use</a>
+        </div>
+        <div class="row">
+          
+            <p><a href="../../../../../about/">About</a></p>
+          
+        </div>
+      </div>
+      <div class="col text-right text-center">
+        
+        
+        
+<ul class="list-inline mb-0">
+  
+  <li class="list-inline-item mx-2 h3" data-bs-toggle="tooltip" data-placement="top" title="GitHub" aria-label="GitHub">
+    <a class="text-white" rel="noopener noreferrer" href="https://github.com/cvat-ai/cvat">
+      <i class="fab fa-github"></i>
+    </a>
+  </li>
+  
+  <li class="list-inline-item mx-2 h3" data-bs-toggle="tooltip" data-placement="top" title="Gitter developers chat" aria-label="Gitter developers chat">
+    <a class="text-white" rel="noopener noreferrer" href="https://gitter.im/opencv-cvat/dev">
+      <i class="fab fa-gitter"></i>
+    </a>
+  </li>
+  
+  <li class="list-inline-item mx-2 h3" data-bs-toggle="tooltip" data-placement="top" title="Discord chat" aria-label="Discord chat">
+    <a class="text-white" rel="noopener noreferrer" href="https://discord.gg/fNR3eXfk6C">
+      <i class="fab fa-discord"></i>
+    </a>
+  </li>
+  
+</ul>
+
+        
+        
+      </div>
+    </div>
+  </div>
+</footer>
+
+
+
+    </div>
+    
+  <script src="../../../../../js/main.min.99abe30f7fb05785a480d405ee1665ebd520cec6bbadffe966b7737e103675b8.js" integrity="sha256-mavjD3&#43;wV4WkgNQF7hZl69Ugzsa7rf/pZrdzfhA2dbg=" crossorigin="anonymous"></script>
+<script src='../../../../../js/prism.js'></script>
+<script src='../../../../../js/tabpane-persist.js'></script>
+
+  </body>
+</html>
