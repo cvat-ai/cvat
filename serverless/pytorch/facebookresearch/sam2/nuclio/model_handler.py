@@ -9,10 +9,17 @@ from sam2.sam2_image_predictor import SAM2ImagePredictor
 
 class ModelHandler:
     def __init__(self):
-        self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+        self.device = torch.device('cpu')
+        if torch.cuda.is_available():
+            self.device = torch.device('cuda')
+            if torch.cuda.get_device_properties(0).major >= 8:
+                # turn on tfloat32 for Ampere GPUs (https://pytorch.org/docs/stable/notes/cuda.html#tensorfloat-32-tf32-on-ampere-devices)
+                torch.backends.cuda.matmul.allow_tf32 = True
+                torch.backends.cudnn.allow_tf32 = True
+
         self.sam_checkpoint = "./sam2_hiera_large.pt"
         self.model_cfg = "sam2_hiera_l.yaml"
-        self.predictor = SAM2ImagePredictor(build_sam2(self.model_cfg, self.sam_checkpoint, device="cuda"))
+        self.predictor = SAM2ImagePredictor(build_sam2(self.model_cfg, self.sam_checkpoint, device=self.device))
 
     def handle(self, image, pos_points, neg_points):
         pos_points, neg_points = list(pos_points), list(neg_points)
