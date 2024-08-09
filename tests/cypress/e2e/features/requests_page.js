@@ -14,6 +14,13 @@ context('Requests page', () => {
         { name: secondLabelName, attributes: [], type: 'any' },
     ];
 
+    const cloudStorageData = {
+        displayName: 'Demo bucket',
+        resource: 'public',
+        manifest: 'manifest.jsonl',
+        endpointUrl: Cypress.config('minioUrl'),
+    };
+
     const attrName = 'requests_attr';
     const imagesCount = 1;
     const imageFileName = `image_${mainLabelName}`;
@@ -27,6 +34,7 @@ context('Requests page', () => {
     const imagesFolder = `cypress/fixtures/${imageFileName}`;
     const directoryToArchive = imagesFolder;
     const annotationsArchiveNameLocal = 'requests_annotations_archive_local';
+    const annotationsArchiveNameCloud = 'requests_annotations_archive_cloud';
     const exportFormat = 'CVAT for images';
 
     const taskName = 'Annotation task for testing requests page';
@@ -35,6 +43,7 @@ context('Requests page', () => {
         projectID: null,
         taskID: null,
         jobID: null,
+        cloudStorageID: null,
     };
 
     before(() => {
@@ -80,11 +89,17 @@ context('Requests page', () => {
             });
         });
 
+        data.cloudStorageID = cy.attachS3Bucket(cloudStorageData);
+
         cy.imageGenerator(imagesFolder, imageFileName, width, height, color, posX, posY, mainLabelName, imagesCount);
         cy.createZipArchive(directoryToArchive, badArchivePath);
     });
 
     after(() => {
+        cy.contains('.cvat-header-button', 'Cloud Storages').should('be.visible').click();
+        cy.url().should('include', '/cloudstorages');
+        cy.deleteCloudStorage(cloudStorageData.displayName);
+
         cy.headlessDeleteProject(data.projectID);
     });
 
@@ -150,6 +165,35 @@ context('Requests page', () => {
             cy.downloadExport({ expectNotification: false }).then((file) => {
                 cy.verifyDownload(file);
             });
+        });
+
+        it('Export on cloud storage creates a request. Expire field does not exist', () => {
+            cy.visit('/tasks');
+            cy.get('.cvat-spinner').should('not.exist');
+            cy.openTask(taskName);
+            const exportParams = {
+                type: 'annotations',
+                format: exportFormat,
+                archiveCustomName: annotationsArchiveNameCloud,
+                targetStorage: {
+                    location: 'Cloud storage',
+                    cloudStorageId: data.cloudStorageID,
+                },
+                useDefaultLocation: false,
+            };
+            cy.exportTask(exportParams);
+            cy.waitForFileUploadToCloudStorage();
+
+            cy.contains('.cvat-header-button', 'Requests').click();
+            cy.contains('.cvat-requests-card', 'Export Annotations')
+                .within(() => {
+                    cy.contains('Finished').should('exist');
+                    cy.contains('Expires').should('not.exist');
+                    cy.contains(exportFormat).should('exist');
+                    cy.get('.cvat-requests-name').click();
+                });
+            cy.get('.cvat-spinner').should('not.exist');
+            cy.url().should('include', `/tasks/${data.taskID}`);
         });
     });
 });
