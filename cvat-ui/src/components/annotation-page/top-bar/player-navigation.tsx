@@ -39,6 +39,7 @@ interface Props {
     workspace: Workspace;
     onSliderChange(value: number): void;
     onInputChange(value: number): void;
+    onURLIconClick(): void;
     onDeleteFrame(): void;
     onRestoreFrame(): void;
     switchNavigationBlocked(blocked: boolean): void;
@@ -79,6 +80,7 @@ function PlayerNavigation(props: Props): JSX.Element {
         deleteFrameAvailable,
         onSliderChange,
         onInputChange,
+        onURLIconClick,
         onDeleteFrame,
         onRestoreFrame,
         switchNavigationBlocked,
@@ -149,8 +151,6 @@ function PlayerNavigation(props: Props): JSX.Element {
         </CVATTooltip>
     );
 
-    const { origin, pathname } = window.location;
-    const frameURL = `${origin}${pathname}?frame=${frameNumber}`;
     return (
         <>
             { workspace !== Workspace.SINGLE_SHAPE && (
@@ -192,13 +192,8 @@ function PlayerNavigation(props: Props): JSX.Element {
                         </CVATTooltip>
                     </Col>
                     <Col offset={1}>
-                        <CVATTooltip mouseLeaveDelay={0.75} title={`Create frame URL: ${frameURL}`}>
-                            <LinkOutlined
-                                className='cvat-player-frame-url-icon'
-                                onClick={() => {
-                                    window.navigator.clipboard.writeText(frameURL);
-                                }}
-                            />
+                        <CVATTooltip title='Create frame URL'>
+                            <LinkOutlined className='cvat-player-frame-url-icon' onClick={onURLIconClick} />
                         </CVATTooltip>
                         {
                             deleteFrameAvailable && deleteFrameIcon

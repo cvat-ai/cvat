@@ -226,6 +226,25 @@ class ObjectItemContainer extends React.PureComponent<Props, State> {
         }
     };
 
+    private createURL = (): void => {
+        const { objectState, frameNumber } = this.props;
+        const { origin, pathname } = window.location;
+
+        const search = `frame=${frameNumber}&type=${objectState.objectType}&serverID=${objectState.serverID}`;
+        const url = `${origin}${pathname}?${search}`;
+
+        const fallback = (): void => {
+            // eslint-disable-next-line
+            window.prompt('Browser Clipboard API not allowed, please copy manually', url);
+        };
+
+        if (window.isSecureContext) {
+            window.navigator.clipboard.writeText(url).catch(fallback);
+        } else {
+            fallback();
+        }
+    };
+
     private switchOrientation = (): void => {
         const { objectState, readonly, updateState } = this.props;
         if (readonly) {
@@ -403,6 +422,7 @@ class ObjectItemContainer extends React.PureComponent<Props, State> {
                 activate={this.activate}
                 remove={this.remove}
                 copy={this.copy}
+                createURL={this.createURL}
                 propagate={this.propagate}
                 switchOrientation={this.switchOrientation}
                 toBackground={this.toBackground}

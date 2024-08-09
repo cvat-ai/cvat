@@ -547,6 +547,23 @@ class AnnotationTopBarContainer extends React.PureComponent<Props> {
         onSwitchToolsBlockerState({ algorithmsLocked: !toolsBlockerState.algorithmsLocked });
     };
 
+    private onURLIconClick = (): void => {
+        const { frameNumber } = this.props;
+        const { origin, pathname } = window.location;
+        const url = `${origin}${pathname}?frame=${frameNumber}`;
+
+        const fallback = (): void => {
+            // eslint-disable-next-line
+            window.prompt('Browser Clipboard API not allowed, please copy manually', url);
+        };
+
+        if (window.isSecureContext) {
+            window.navigator.clipboard.writeText(url).catch(fallback);
+        } else {
+            fallback();
+        }
+    };
+
     private onDeleteFrame = (): void => {
         const {
             deleteFrame, frameNumber, jobInstance, canvasIsReady,
@@ -694,6 +711,7 @@ class AnnotationTopBarContainer extends React.PureComponent<Props> {
                 setNavigationType={setNavigationType}
                 onSliderChange={this.onChangePlayerSliderValue}
                 onInputChange={this.onChangePlayerInputValue}
+                onURLIconClick={this.onURLIconClick}
                 onDeleteFrame={this.onDeleteFrame}
                 onRestoreFrame={this.onRestoreFrame}
                 changeWorkspace={this.changeWorkspace}

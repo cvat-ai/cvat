@@ -42,6 +42,7 @@ interface Props {
     copy(): void;
     remove(): void;
     propagate(): void;
+    createURL(): void;
     switchOrientation(): void;
     toBackground(): void;
     toForeground(): void;
@@ -77,6 +78,7 @@ function ItemTopComponent(props: Props): JSX.Element {
         copy,
         remove,
         propagate,
+        createURL,
         switchOrientation,
         toBackground,
         toForeground,
@@ -156,6 +158,7 @@ function ItemTopComponent(props: Props): JSX.Element {
                             copy,
                             remove,
                             propagate,
+                            createURL,
                             switchOrientation,
                             toBackground,
                             toForeground,
