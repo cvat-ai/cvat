@@ -335,7 +335,7 @@ class DatasetExportManager(_ResourceExportManager):
         if is_result_outdated():
             cancel_and_reenqueue(rq_job)
 
-        return Response(status=status.HTTP_202_ACCEPTED)
+        return Response(RqIdSerializer({"rq_id": rq_job.id}).data, status=status.HTTP_202_ACCEPTED)
 
 
     def export(self) -> Response:
@@ -515,8 +515,8 @@ class BackupExportManager(_ResourceExportManager):
         if not rq_job:
             return None if action != "download" else \
                 HttpResponseBadRequest(
-                    "Result file cannot be send since there is no related job on the server. "
-                    "Initialize background process first without sending action=download parameter."
+                    "Unknown export request id. "
+                    "Please request export first by sending a request without the action=download parameter."
                 )
 
         # define status once to not refresh it on each check
@@ -587,7 +587,7 @@ class BackupExportManager(_ResourceExportManager):
             # so the current job can be blocked indefinitely.
             cancel_and_reenqueue(rq_job)
 
-        return Response(status=status.HTTP_202_ACCEPTED)
+        return Response(RqIdSerializer({"rq_id": rq_job.id}).data, status=status.HTTP_202_ACCEPTED)
 
 
     def export(self) -> Response:
