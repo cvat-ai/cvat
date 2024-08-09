@@ -1,0 +1,9 @@
+tls:
+  certificates:
+    - certFile: /certs/your-crt.pem
+      keyFile: /certs/your-key.pem
+  stores:
+    default:
+      defaultCertificate:
+        certFile: /certs/your-crt.pem
+        keyFile: /certs/your-key.pem

@@ -249,12 +249,14 @@ services:
       DJANGO_LOG_VIEWER_HOST: grafana
       DJANGO_LOG_VIEWER_PORT: 3000
 
+      TRAEFIK_ACCESSLOG: true
       TRAEFIK_ACCESSLOG_FORMAT: json
       # We ought to restrict which fields get logged, so as to avoid redundant information,
       # but it doesn't work when configuring with environment variables:
       # <https://github.com/traefik/traefik/issues/9755>.
       # And we want to use environment variables to allow individual settings to be
       # overridden by other Compose files.
+      TRAEFIK_LOG: true
       TRAEFIK_LOG_FORMAT: json
       TRAEFIK_ENTRYPOINTS_web_ADDRESS: :8080
       TRAEFIK_PROVIDERS_DOCKER_EXPOSEDBYDEFAULT: "false"
