@@ -26,7 +26,6 @@ from unittest.mock import MagicMock, patch, DEFAULT as MOCK_DEFAULT
 
 from attr import define, field
 from datumaro.components.dataset import Dataset
-from datumaro.util.test_utils import compare_datasets, TestDir
 from django.contrib.auth.models import Group, User
 from PIL import Image
 from rest_framework import status
@@ -34,6 +33,7 @@ from rest_framework import status
 import cvat.apps.dataset_manager as dm
 from cvat.apps.dataset_manager.bindings import CvatTaskOrJobDataExtractor, TaskData
 from cvat.apps.dataset_manager.task import TaskAnnotation
+from cvat.apps.dataset_manager.tests.utils import compare_datasets, TestDir
 from cvat.apps.dataset_manager.util import get_export_cache_lock
 from cvat.apps.dataset_manager.views import clear_export_cache, export, parse_export_file_path
 from cvat.apps.engine.models import Task
@@ -1034,7 +1034,7 @@ class TaskDumpUploadTest(_DbTestBase):
 
                     # equals annotations
                     data_from_task_after_upload = self._get_data_from_task(task_id, include_images)
-                    compare_datasets(self, data_from_task_before_upload, data_from_task_after_upload)
+                    compare_datasets(data_from_task_before_upload, data_from_task_after_upload)
 
     def test_api_v2_tasks_annotations_dump_and_upload_with_datumaro(self):
         test_name = self._testMethodName
@@ -1110,7 +1110,7 @@ class TaskDumpUploadTest(_DbTestBase):
 
                             # equals annotations
                         data_from_task_after_upload = self._get_data_from_task(task_id, include_images)
-                        compare_datasets(self, data_from_task_before_upload, data_from_task_after_upload)
+                        compare_datasets(data_from_task_before_upload, data_from_task_after_upload)
 
     def test_api_v2_check_duplicated_polygon_points(self):
         test_name = self._testMethodName
@@ -1176,7 +1176,7 @@ class TaskDumpUploadTest(_DbTestBase):
 
                     # equals annotations
                     data_from_task_after_upload = self._get_data_from_task(task_id, include_images)
-                    compare_datasets(self, data_from_task_before_upload, data_from_task_after_upload)
+                    compare_datasets(data_from_task_before_upload, data_from_task_after_upload)
 
     def test_api_v2_check_mot_with_shapes_only(self):
         test_name = self._testMethodName
@@ -1212,7 +1212,7 @@ class TaskDumpUploadTest(_DbTestBase):
 
                     # equals annotations
                     data_from_task_after_upload = self._get_data_from_task(task_id, include_images)
-                    compare_datasets(self, data_from_task_before_upload, data_from_task_after_upload)
+                    compare_datasets(data_from_task_before_upload, data_from_task_after_upload)
 
     def test_api_v2_check_attribute_import_in_tracks(self):
         test_name = self._testMethodName
@@ -1249,7 +1249,7 @@ class TaskDumpUploadTest(_DbTestBase):
 
                     # equals annotations
                     data_from_task_after_upload = self._get_data_from_task(task_id, include_images)
-                    compare_datasets(self, data_from_task_before_upload, data_from_task_after_upload)
+                    compare_datasets(data_from_task_before_upload, data_from_task_after_upload)
 
 class ExportBehaviorTest(_DbTestBase):
     @define
