@@ -8,6 +8,7 @@ import { AuthActions, AuthActionTypes } from 'actions/auth-actions';
 import { ShortcutsActions, ShortcutsActionsTypes } from 'actions/shortcuts-actions';
 import { KeyMap, KeyMapItem } from 'utils/mousetrap-react';
 import { ShortcutScope } from 'utils/enums';
+import { isEqual } from 'lodash';
 import { ShortcutsState } from '.';
 
 const capitalize = (text: string): string => text.slice(0, 1).toUpperCase() + text.slice(1);
@@ -51,6 +52,24 @@ const defaultState: ShortcutsState = {
     }, {}),
     defaultState: { ...defaultKeyMap },
 };
+
+function conflict(sequence: string, existingSequence: string): boolean {
+    if (isEqual(sequence, existingSequence)) {
+        return true;
+    }
+    const splitSequence = sequence.split(' ');
+    const splitExistingSequence = existingSequence.split(' ');
+
+    for (let i = 0; i < Math.max(splitSequence.length, splitExistingSequence.length); i++) {
+        if (!splitSequence[i] || !splitExistingSequence[i]) {
+            return true;
+        }
+        if (splitSequence[i] !== splitExistingSequence[i]) {
+            return false;
+        }
+    }
+    return true;
+}
 
 export function conflictDetector(
     shortcuts: Record<string, KeyMapItem>,
@@ -96,7 +115,6 @@ export function conflictDetector(
                 ...globalScope.items,
                 ...annotationScope.items,
             },
-
         };
 
         if (flatKeyMapUpdated.items[action]) {
@@ -109,10 +127,7 @@ export function conflictDetector(
 
         for (const sequence of sequences) {
             for (const existingSequence of flatKeyMapUpdated.sequences) {
-                // const sequenceOverlap = sequence.split(' ').some((key) => existingSequence.split(' ').includes(key));
-                const sequenceOverlap = sequence === existingSequence;
-                console.log(sequence.split(' '), existingSequence.split(' '));
-                if (sequenceOverlap) {
+                if (conflict(sequence, existingSequence)) {
                     const conflictingAction = Object.keys(flatKeyMapUpdated.items)
                         .find((a) => flatKeyMapUpdated.items[a].sequences.includes(existingSequence));
                     const conflictingItem = flatKeyMapUpdated.items[conflictingAction!];
