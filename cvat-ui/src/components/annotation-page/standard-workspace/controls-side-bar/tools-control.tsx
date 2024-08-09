@@ -269,6 +269,7 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
         });
         canvasInstance.html().addEventListener('canvas.interacted', this.interactionListener);
         canvasInstance.html().addEventListener('canvas.canceled', this.cancelListener);
+        canvasInstance.html().addEventListener('canvas.drawn', this.interactionListener);
     }
 
     public componentDidUpdate(prevProps: Props, prevState: State): void {
@@ -333,6 +334,7 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
         onRemoveAnnotations(null);
         canvasInstance.html().removeEventListener('canvas.interacted', this.interactionListener);
         canvasInstance.html().removeEventListener('canvas.canceled', this.cancelListener);
+        canvasInstance.html().removeEventListener('canvas.drawn', this.interactionListener);
     }
 
     private contextmenuDisabler = (e: MouseEvent): void => {
@@ -503,8 +505,9 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
 
         try {
             const { points } = (e as CustomEvent).detail.shapes[0];
+            const shapeType = points.length === 4 ? ShapeType.RECTANGLE : ShapeType.POLYGON;
             const state = new core.classes.ObjectState({
-                shapeType: ShapeType.RECTANGLE,
+                shapeType, // changed by aashutosh
                 objectType: ObjectType.TRACK,
                 source: core.enums.Source.SEMI_AUTO,
                 zOrder: curZOrder,
@@ -592,7 +595,7 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
         const portals = !activeTracker ?
             [] :
             states
-                .filter((objectState) => objectState.objectType === 'track' && objectState.shapeType === 'rectangle')
+                .filter((objectState) => objectState.objectType === 'track' && objectState.shapeType === 'polygon') // changed by aashutosh
                 .map((objectState: any): React.ReactPortal | null => {
                     const { clientID } = objectState;
                     const selectorID = `#cvat-objects-sidebar-state-item-${clientID}`;
@@ -821,7 +824,9 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
                             job: jobInstance.id,
                         }) as TrackerResults;
 
-                        response.shapes = response.shapes.map(trackedRectangleMapper);
+                        if (response.shapes[0].length === 4) {
+                            response.shapes = response.shapes.map(trackedRectangleMapper);
+                        }
                         for (let i = 0; i < trackableObjects.clientIDs.length; i++) {
                             const clientID = trackableObjects.clientIDs[i];
                             const shape = response.shapes[i];
@@ -1046,7 +1051,32 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
                                 }
                             }}
                         >
-                            Track
+                            Track Rectangle
+                        </Button>
+                    </Col>
+                    <Col>
+                        <Button
+                            type='primary'
+                            loading={fetching}
+                            className='cvat-tools-track-button'
+                            disabled={!activeTracker || fetching || frame === jobInstance.stopFrame}
+                            onClick={() => {
+                                if (activeTracker && activeLabelID) {
+                                    this.setState({ mode: 'tracking' });
+
+                                    canvasInstance.cancel();
+                                    canvasInstance.draw({
+                                        shapeType: 'polygon',
+                                        enabled: true,
+                                    });
+
+                                    onInteractionStart(activeTracker, activeLabelID);
+                                    const { onSwitchToolsBlockerState } = this.props;
+                                    onSwitchToolsBlockerState({ buttonVisible: false });
+                                }
+                            }}
+                        >
+                            Track Polygon
                         </Button>
                     </Col>
                 </Row>

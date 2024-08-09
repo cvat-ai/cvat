@@ -1,0 +1,147 @@
+defaults:
+  - _self_
+  - model: base
+  - override hydra/job_logging: custom-no-rank.yaml
+
+hydra:
+  run:
+    dir: ../output/${exp_id}/${dataset}
+  output_subdir: ${now:%Y-%m-%d_%H-%M-%S}-hydra
+
+exp_id: default
+dataset: d17-val
+amp: False
+weights: /opt/nuclio/cutie/cutie-base-mega.pth
+output_dir: null # defaults to run_dir; specify this to override
+flip_aug: False
+
+# maximum shortest side of the input; -1 means no resizing
+# With eval_vos.py, we usually just use the dataset's size (resizing done in dataloader)
+# this parameter is added for the sole purpose for the GUI in the current codebase
+# InferenceCore will downsize the input and restore the output to the original size if needed
+# if you are using this code for some other project, you can also utilize this parameter
+max_internal_size: -1
+
+# these parameters, when set, override the dataset's default; useful for debugging
+image_directory: null
+mask_directory: null
+json_directory: null
+size: null
+save_all: null
+use_all_masks: null
+use_long_term: null
+mem_every: null
+
+# only relevant when long_term is not enabled
+max_mem_frames: 5
+
+# only relevant when long_term is enabled
+long_term:
+  count_usage: True
+  max_mem_frames: 10
+  min_mem_frames: 5
+  num_prototypes: 128
+  max_num_tokens: 10000
+  buffer_tokens: 2000
+
+top_k: 30
+stagger_updates: 5
+chunk_size: -1 # number of objects to process in parallel; -1 means unlimited
+save_scores: False
+save_aux: False
+visualize: False
+
+datasets:
+  d16-val:
+    image_directory: ../DAVIS/2016/JPEGImages/480p
+    mask_directory: ../DAVIS/2016/Annotations/480p
+    subset: ../DAVIS/2017/trainval/ImageSets/2016/val.txt
+    size: 480
+    save_all: True
+    use_all_masks: False
+    use_long_term: False
+    mem_every: 5
+  d17-val:
+    image_directory: ../DAVIS/2017/trainval/JPEGImages/480p
+    mask_directory: ../DAVIS/2017/trainval/Annotations/480p
+    subset: ../DAVIS/2017/trainval/ImageSets/2017/val.txt
+    size: 480
+    save_all: True
+    use_all_masks: False
+    use_long_term: False
+    mem_every: 5
+  d17-test-dev:
+    image_directory: ../DAVIS/2017/test-dev/JPEGImages/480p
+    mask_directory: ../DAVIS/2017/test-dev/Annotations/480p
+    subset: ../DAVIS/2017/test-dev/ImageSets/2017/test-dev.txt
+    size: 480
+    save_all: True
+    use_all_masks: False
+    use_long_term: False
+    mem_every: 5
+  y18-val:
+    image_directory: ../YouTube2018/all_frames/valid_all_frames/JPEGImages
+    mask_directory: ../YouTube2018/valid/Annotations
+    json_directory: ../YouTube2018/valid/meta.json
+    size: 480
+    save_all: False
+    use_all_masks: True
+    use_long_term: False
+    mem_every: 5
+  y19-val:
+    image_directory: ../YouTube/all_frames/valid_all_frames/JPEGImages
+    mask_directory: ../YouTube/valid/Annotations
+    json_directory: ../YouTube/valid/meta.json
+    size: 480
+    save_all: False
+    use_all_masks: True
+    use_long_term: False
+    mem_every: 5
+  mose-val:
+    image_directory: ../MOSE/valid/JPEGImages
+    mask_directory: ../MOSE/valid/Annotations
+    size: 480
+    save_all: True
+    use_all_masks: False
+    use_long_term: False
+    mem_every: 5
+  generic:
+    image_directory: null
+    mask_directory: null
+    size: -1
+    save_all: True
+    use_all_masks: False
+    use_long_term: True
+    mem_every: 5
+  burst-val:
+    skip_frames: -1
+    image_directory: ../BURST/frames/val
+    json_directory: ../BURST/val/first_frame_annotations.json
+    size: 600
+    save_all: False
+    use_long_term: True
+    mem_every: 10
+  burst-test:
+    skip_frames: -1
+    image_directory: ../BURST/frames/test
+    json_directory: ../BURST/test/first_frame_annotations.json
+    size: 600
+    save_all: False
+    use_long_term: True
+    mem_every: 10
+  lvos-val:
+    image_directory: ../LVOS/valid/JPEGImages
+    mask_directory: ../LVOS/valid/Annotations_first_only
+    size: 480
+    save_all: False
+    use_all_masks: True
+    use_long_term: True
+    mem_every: 5
+  lvos-test:
+    image_directory: ../LVOS/test/JPEGImages
+    mask_directory: ../LVOS/test/Annotations
+    size: 480
+    save_all: False
+    use_all_masks: True
+    use_long_term: True
+    mem_every: 5
