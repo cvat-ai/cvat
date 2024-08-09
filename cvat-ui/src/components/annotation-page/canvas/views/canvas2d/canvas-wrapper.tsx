@@ -740,10 +740,9 @@ class CanvasWrapperComponent extends React.PureComponent<Props> {
     };
 
     private onCanvasPositionSelected = (event: any): void => {
-        const { onResetCanvas, onStartIssue } = this.props;
+        const { onStartIssue } = this.props;
         const { points } = event.detail;
         onStartIssue(points);
-        onResetCanvas();
     };
 
     private onCanvasMouseDown = (e: MouseEvent): void => {
@@ -843,8 +842,11 @@ class CanvasWrapperComponent extends React.PureComponent<Props> {
     private onCanvasEditDone = (event: any): void => {
         const { activeControl, onUpdateAnnotations, updateActiveControl } = this.props;
         const { state, points, rotation } = event.detail;
-        state.points = points;
-        state.rotation = rotation;
+        if (state.rotation !== rotation) {
+            state.rotation = rotation;
+        } else {
+            state.points = points;
+        }
 
         if (activeControl !== ActiveControl.CURSOR) {
             // do not need to reset and deactivate if it was just resizing/dragging and other simple actions
@@ -924,7 +926,7 @@ class CanvasWrapperComponent extends React.PureComponent<Props> {
 
         if (activatedStateID !== null) {
             const [activatedState] = annotations.filter((state: any): boolean => state.clientID === activatedStateID);
-            if (workspace === Workspace.ATTRIBUTES) {
+            if (activatedState && workspace === Workspace.ATTRIBUTES) {
                 if (activatedState.objectType !== ObjectType.TAG) {
                     canvasInstance.focus(activatedStateID, aamZoomMargin);
                 } else {
@@ -957,8 +959,8 @@ class CanvasWrapperComponent extends React.PureComponent<Props> {
             const proxy = new Proxy(frameData, {
                 get: (_frameData, prop, receiver) => {
                     if (prop === 'data') {
-                        return async () => {
-                            const originalImage = await _frameData.data();
+                        return async (...args: any[]) => {
+                            const originalImage = await _frameData.data(...args);
                             const imageIsNotProcessed = imageFilters.some((imageFilter: ImageFilter) => (
                                 imageFilter.modifier.currentProcessedImage !== frame
                             ));

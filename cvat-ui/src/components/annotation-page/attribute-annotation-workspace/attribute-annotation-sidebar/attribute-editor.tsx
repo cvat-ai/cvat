@@ -16,9 +16,9 @@ import config from 'config';
 import { ShortcutScope } from 'utils/enums';
 import { registerComponentShortcuts } from 'actions/shortcuts-actions';
 import { subKeyMap } from 'utils/component-subkeymap';
+import { isEqual } from 'lodash';
 import { CombinedState } from 'reducers';
 import { useSelector } from 'react-redux';
-import { isEqual } from 'lodash';
 
 interface InputElementParameters {
     clientID: number;

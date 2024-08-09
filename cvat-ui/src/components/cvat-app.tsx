@@ -14,7 +14,6 @@ import Spin from 'antd/lib/spin';
 import { DisconnectOutlined } from '@ant-design/icons';
 import Space from 'antd/lib/space';
 import Text from 'antd/lib/typography/Text';
-import ReactMarkdown from 'react-markdown';
 
 import LogoutComponent from 'components/logout-component';
 import LoginPageContainer from 'containers/login-page/login-page';
@@ -56,7 +55,7 @@ import WebhooksPage from 'components/webhooks-page/webhooks-page';
 import CreateWebhookPage from 'components/setup-webhook-pages/create-webhook-page';
 import UpdateWebhookPage from 'components/setup-webhook-pages/update-webhook-page';
 
-import GuidePage from 'components/md-guide/guide-page';
+import AnnotationGuidePage from 'components/md-guide/annotation-guide-page';
 
 import InvitationsPage from 'components/invitations-page/invitations-page';
 
@@ -77,6 +76,7 @@ import '../styles.scss';
 import appConfig from 'config';
 import EventRecorder from 'utils/event-recorder';
 import { authQuery } from 'utils/auth-query';
+import CVATMarkdown from './common/cvat-markdown';
 import EmailConfirmationPage from './email-confirmation-pages/email-confirmed';
 import EmailVerificationSentPage from './email-confirmation-pages/email-verification-sent';
 import IncorrectEmailConfirmationPage from './email-confirmation-pages/incorrect-email-confirmation';
@@ -358,19 +358,19 @@ class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentP
     }
 
     private showMessages(): void {
+        const { notifications, resetMessages, history } = this.props;
+
         function showMessage(notificationState: NotificationState): void {
             notification.info({
                 message: (
-                    <ReactMarkdown>{notificationState.message}</ReactMarkdown>
+                    <CVATMarkdown history={history}>{notificationState.message}</CVATMarkdown>
                 ),
                 description: notificationState?.description && (
-                    <ReactMarkdown>{notificationState?.description}</ReactMarkdown>
+                    <CVATMarkdown history={history}>{notificationState?.description}</CVATMarkdown>
                 ),
                 duration: notificationState.duration || null,
             });
         }
-
-        const { notifications, resetMessages } = this.props;
 
         let shown = false;
         for (const where of Object.keys(notifications.messages)) {
@@ -389,6 +389,8 @@ class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentP
     }
 
     private showErrors(): void {
+        const { notifications, resetErrors, history } = this.props;
+
         function showError(title: string, _error: Error, shouldLog?: boolean, className?: string): void {
             const error = _error?.message || _error.toString();
             const dynamicProps = typeof className === 'undefined' ? {} : { className };
@@ -400,10 +402,10 @@ class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentP
             notification.error({
                 ...dynamicProps,
                 message: (
-                    <ReactMarkdown>{title}</ReactMarkdown>
+                    <CVATMarkdown history={history}>{title}</CVATMarkdown>
                 ),
                 duration: null,
-                description: errorLength > 300 ? 'Open the Browser Console to get details' : <ReactMarkdown>{error}</ReactMarkdown>,
+                description: errorLength > 300 ? 'Open the Browser Console to get details' : <CVATMarkdown history={history}>{error}</CVATMarkdown>,
             });
 
             if (shouldLog) {
@@ -415,8 +417,6 @@ class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentP
                 console.error(error);
             }
         }
-
-        const { notifications, resetErrors } = this.props;
 
         let shown = false;
         for (const where of Object.keys(notifications.errors)) {
@@ -507,14 +507,14 @@ class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentP
                                         <Route exact path='/projects/create' component={CreateProjectPageComponent} />
                                         <Route exact path='/projects/:id' component={ProjectPageComponent} />
                                         <Route exact path='/projects/:id/webhooks' component={WebhooksPage} />
-                                        <Route exact path='/projects/:id/guide' component={GuidePage} />
+                                        <Route exact path='/projects/:id/guide' component={AnnotationGuidePage} />
                                         <Route exact path='/projects/:pid/analytics' component={AnalyticsPage} />
                                         <Route exact path='/tasks' component={TasksPageContainer} />
                                         <Route exact path='/tasks/create' component={CreateTaskPageContainer} />
                                         <Route exact path='/tasks/:id' component={TaskPageComponent} />
                                         <Route exact path='/tasks/:tid/analytics' component={AnalyticsPage} />
                                         <Route exact path='/tasks/:id/jobs/create' component={CreateJobPage} />
-                                        <Route exact path='/tasks/:id/guide' component={GuidePage} />
+                                        <Route exact path='/tasks/:id/guide' component={AnnotationGuidePage} />
                                         <Route exact path='/tasks/:tid/jobs/:jid' component={AnnotationPageContainer} />
                                         <Route exact path='/tasks/:tid/jobs/:jid/analytics' component={AnalyticsPage} />
                                         <Route exact path='/jobs' component={JobsPageComponent} />

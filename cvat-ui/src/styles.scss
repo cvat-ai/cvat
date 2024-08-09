@@ -39,6 +39,16 @@ html, body {
     left: 0;
 }
 
+.cvat-notification-link {
+    padding: 0;
+    display: inline;
+    height: auto;
+
+    span {
+        display: inline;
+    }
+}
+
 .cvat-not-found {
     margin: 10% 25%;
 }

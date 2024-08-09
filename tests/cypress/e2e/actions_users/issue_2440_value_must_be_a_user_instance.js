@@ -19,7 +19,7 @@ context('Value must be a user instance.', () => {
             cy.get('.cvat-task-details-user-block').within(() => {
                 cy.get('.cvat-user-search-field').click();
             });
-            cy.get('.ant-select-dropdown')
+            cy.get('.cvat-user-search-dropdown')
                 .not('.ant-select-dropdown-hidden')
                 .within(() => {
                     cy.get(`.ant-select-item-option[title="${Cypress.env('user')}"]`).click();
@@ -30,7 +30,7 @@ context('Value must be a user instance.', () => {
             cy.get('.cvat-task-details-user-block').within(() => {
                 cy.get('.cvat-user-search-field').click();
             });
-            cy.get('.ant-select-dropdown')
+            cy.get('.cvat-user-search-dropdown')
                 .not('.ant-select-dropdown-hidden')
                 .within(() => {
                     cy.get(`.ant-select-item-option[title="${Cypress.env('user')}"]`).click();
