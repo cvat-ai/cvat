@@ -26,6 +26,8 @@ context('Requests page', () => {
     const badArchivePath = `cypress/fixtures/${badArchiveName}`;
     const imagesFolder = `cypress/fixtures/${imageFileName}`;
     const directoryToArchive = imagesFolder;
+    const annotationsArchiveNameLocal = 'requests_annotations_archive_local';
+    const exportFormat = 'CVAT for images';
 
     const taskName = 'Annotation task for testing requests page';
 
@@ -121,6 +123,33 @@ context('Requests page', () => {
                 });
             cy.get('.cvat-spinner').should('not.exist');
             cy.url().should('include', '/requests');
+        });
+
+        it('Export creates a request. Task can be opened from request. Export can be downloaded after page reload.', () => {
+            cy.visit('/tasks');
+            cy.get('.cvat-spinner').should('not.exist');
+            cy.openTask(taskName);
+            const exportParams = {
+                type: 'annotations',
+                format: exportFormat,
+                archiveCustomName: annotationsArchiveNameLocal,
+            };
+            cy.exportTask(exportParams);
+            cy.contains('.cvat-header-button', 'Requests').click();
+            cy.contains('.cvat-requests-card', 'Export Annotations')
+                .within(() => {
+                    cy.contains('Finished').should('exist');
+                    cy.contains('Expires').should('exist');
+                    cy.contains(exportFormat).should('exist');
+                    cy.get('.cvat-requests-name').click();
+                });
+            cy.get('.cvat-spinner').should('not.exist');
+            cy.url().should('include', `/tasks/${data.taskID}`);
+
+            cy.visit('/requests');
+            cy.downloadExport({ expectNotification: false }).then((file) => {
+                cy.verifyDownload(file);
+            });
         });
     });
 });
