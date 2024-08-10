@@ -195,7 +195,7 @@ export default (state = defaultState, action: ShortcutsActions | BoundariesActio
                 visibleShortcutsHelp: action.payload.visible,
             };
         }
-        case ShortcutsActionsTypes.UPDATE_SEQUNCE: {
+        case ShortcutsActionsTypes.UPDATE_SEQUENCE: {
             const { keyMapId, updatedSequence } = action.payload;
             let keyMap = { ...state.keyMap };
             const shortcut = {
