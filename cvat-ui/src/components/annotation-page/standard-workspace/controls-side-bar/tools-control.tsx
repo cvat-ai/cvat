@@ -593,13 +593,17 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
 
     private onChangeToolsBlockerState = (event: string): void => {
         const { isActivated, onSwitchToolsBlockerState } = this.props;
-        if (isActivated && event === 'keydown') {
-            this.interaction.latestPostponedEvent = null;
-            onSwitchToolsBlockerState({ algorithmsLocked: true });
-        } else if (isActivated && event === 'keyup') {
-            onSwitchToolsBlockerState({ algorithmsLocked: false });
-            if (this.interaction.latestPostponedEvent) {
-                this.onInteraction(this.interaction.latestPostponedEvent);
+        const { mode } = this.state;
+
+        if (isActivated && mode === 'interaction') {
+            if (event === 'keydown') {
+                this.interaction.latestPostponedEvent = null;
+                onSwitchToolsBlockerState({ algorithmsLocked: true });
+            } else if (event === 'keyup') {
+                onSwitchToolsBlockerState({ algorithmsLocked: false });
+                if (this.interaction.latestPostponedEvent) {
+                    this.onInteraction(this.interaction.latestPostponedEvent);
+                }
             }
         }
     };
