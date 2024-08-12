@@ -38,6 +38,7 @@ context('Requests page', () => {
     const emptyDirectoryToArchive = `${imagesFolder}_empty`;
     const annotationsArchiveNameLocal = 'requests_annotations_archive_local';
     const annotationsArchiveNameCloud = 'requests_annotations_archive_cloud';
+    const backupArchiveName = 'requests_backup';
     const exportFormat = 'CVAT for images';
     let exportFileName;
 
@@ -50,7 +51,11 @@ context('Requests page', () => {
         cloudStorageID: null,
     };
 
-    function checkRequestStatus(requestAction, innerCheck, shouldOpenTask = true) {
+    function checkRequestStatus(
+        requestAction,
+        innerCheck,
+        resourceLink = `/tasks/${data.taskID}`,
+    ) {
         cy.contains('.cvat-header-button', 'Requests').click();
         cy.contains('.cvat-requests-card', requestAction)
             .within(() => {
@@ -59,8 +64,8 @@ context('Requests page', () => {
             });
         cy.get('.cvat-spinner').should('not.exist');
 
-        if (shouldOpenTask) {
-            cy.url().should('include', `/tasks/${data.taskID}`);
+        if (resourceLink) {
+            cy.url().should('include', resourceLink);
         } else {
             cy.url().should('include', '/requests');
         }
@@ -230,6 +235,34 @@ context('Requests page', () => {
             checkRequestStatus('Import Annotations', () => {
                 cy.get('.cvat-request-item-progress-failed').should('exist');
             });
+        });
+
+        it('Export backup creates a request. Project can be opened.', () => {
+            cy.contains('.cvat-header-button', 'Projects').should('be.visible').click();
+            cy.backupProject(
+                projectName,
+                backupArchiveName,
+            );
+
+            checkRequestStatus('Export Backup', () => {
+                cy.get('.cvat-request-item-progress-success').should('exist');
+            }, `/projects/${data.projectID}`);
+            cy.downloadExport().then((file) => {
+                cy.verifyDownload(file);
+            });
+        });
+
+        // There is a bug with importing a backup archive.
+        // The backup file tree is wrong in case of creating a project from file share
+        it.skip('Import backup creates a request. Project cant be opened.', () => {
+            cy.contains('.cvat-header-button', 'Projects').should('be.visible').click();
+            cy.restoreProject(
+                `${backupArchiveName}.zip`,
+            );
+
+            checkRequestStatus('Import Backup', () => {
+                cy.get('.cvat-request-item-progress-success').should('exist');
+            }, false);
         });
     });
 });
