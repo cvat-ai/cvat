@@ -3,8 +3,10 @@
 // SPDX-License-Identifier: MIT
 
 import ConsensusConflict from 'consensus-conflict';
+import AssigneeConsensusReport from 'assignee-consensus-report';
 import {
     AnalyticsReportFilter, ConflictsFilter, QualityReportsFilter, SettingsFilter, ConsensusReportsFilter,
+    AssigneeConsensusReportsFilter,
 } from './server-response-types';
 import PluginRegistry from './plugins';
 import serverProxy from './server-proxy';
@@ -137,6 +139,9 @@ export default interface CVATCore {
     };
     consensus: {
         reports: (filter: ConsensusReportsFilter) => Promise<PaginatedResource<ConsensusReport>>;
+        assignee_reports: (
+            filter: AssigneeConsensusReportsFilter
+        ) => Promise<PaginatedResource<AssigneeConsensusReport>>;
         conflicts: (filter: ConflictsFilter) => Promise<ConsensusConflict[]>;
         settings: {
             get: (filter: SettingsFilter) => Promise<ConsensusSettings>;

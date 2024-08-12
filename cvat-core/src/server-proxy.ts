@@ -18,8 +18,8 @@ import {
     SerializedInvitationData, SerializedCloudStorage, SerializedFramesMetaData, SerializedCollection,
     SerializedQualitySettingsData, APISettingsFilter, SerializedQualityConflictData, APIConflictsFilter,
     SerializedQualityReportData, APIQualityReportsFilter, SerializedAnalyticsReport, APIAnalyticsReportFilter,
-    SerializedConsensusSettingsData, SerializedRequest,
-    SerializedConsensusConflictData,
+    SerializedConsensusSettingsData, SerializedRequest, APIConsensusReportsFilter, APIAssigneeConsensusReportsFilter,
+    SerializedConsensusConflictData, SerializedAssigneeConsensusReportData, SerializedConsensusReportData,
 } from './server-response-types';
 import { PaginatedResource } from './core-types';
 import { Request } from './request';
@@ -2297,12 +2297,31 @@ async function getConsensusConflicts(
 }
 
 async function getConsensusReports(
-    filter: APIQualityReportsFilter,
-): Promise<PaginatedResource<SerializedConsensusSettingsData>> {
+    filter: APIConsensusReportsFilter,
+): Promise<PaginatedResource<SerializedConsensusReportData>> {
     const { backendAPI } = config;
 
     try {
         const response = await Axios.get(`${backendAPI}/consensus/reports`, {
+            params: {
+                ...filter,
+            },
+        });
+
+        response.data.results.count = response.data.count;
+        return response.data.results;
+    } catch (errorData) {
+        throw generateError(errorData);
+    }
+}
+
+async function getAssigneeConsensusReports(
+    filter: APIAssigneeConsensusReportsFilter,
+): Promise<PaginatedResource<SerializedAssigneeConsensusReportData>> {
+    const { backendAPI } = config;
+
+    try {
+        const response = await Axios.get(`${backendAPI}/consensus/assignee_reports`, {
             params: {
                 ...filter,
             },
@@ -2612,6 +2631,7 @@ export default Object.freeze({
     }),
 
     consensus: Object.freeze({
+        assignee_reports: getAssigneeConsensusReports,
         reports: getConsensusReports,
         conflicts: getConsensusConflicts,
         settings: Object.freeze({

@@ -34,6 +34,7 @@ import {
     AnalyticsReportFilter, ConflictsFilter, QualityReportsFilter,
     SettingsFilter, SerializedAsset,
     ConsensusReportsFilter,
+    AssigneeConsensusReportsFilter,
 } from './server-response-types';
 import QualityReport from './quality-report';
 import QualityConflict, { ConflictSeverity } from './quality-conflict';
@@ -46,6 +47,7 @@ import { PaginatedResource } from './core-types';
 import CVATCore from '.';
 import ConsensusSettings from './consensus-settings';
 import ConsensusReport from './consensus-report';
+import AssigneeConsensusReport from './assignee-consensus-report';
 import ConsensusConflict from './consensus-conflict';
 
 function implementationMixin(func: Function, implementation: Function): void {
@@ -543,6 +545,27 @@ export default function implementAPI(cvat: CVATCore): CVATCore {
         console.log(reportsData);
         const reports = Object.assign(
             reportsData.map((report) => new ConsensusReport({ ...report })),
+            { count: reportsData.count },
+        );
+        return reports;
+    });
+    implementationMixin(cvat.consensus.assignee_reports, async (filter: AssigneeConsensusReportsFilter) => {
+        checkFilter(filter, {
+            page: isInteger,
+            pageSize: isPageSize,
+            taskID: isInteger,
+            filter: isString,
+            consensusReportID: isInteger,
+            search: isString,
+            sort: isString,
+        });
+
+        const params = fieldsToSnakeCase({ ...filter, sort: '-id' });
+
+        const reportsData = await serverProxy.consensus.assignee_reports(params);
+        console.log(reportsData);
+        const reports = Object.assign(
+            reportsData.map((report) => new AssigneeConsensusReport({ ...report })),
             { count: reportsData.count },
         );
         return reports;

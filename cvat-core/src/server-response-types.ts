@@ -378,6 +378,21 @@ export interface SerializedConsensusReportData {
     };
 }
 
+export interface APIAssigneeConsensusReportsFilter extends APICommonFilterParams {
+    task_id?: number;
+    consensus_report_id?: number;
+}
+
+export type AssigneeConsensusReportsFilter = Camelized<APIAssigneeConsensusReportsFilter>;
+
+export interface SerializedAssigneeConsensusReportData {
+    id?: number;
+    task_id?: number;
+    consensus_report_id?: number;
+    assignee?: SerializedUser | null;
+    consensus_score?: number;
+}
+
 export interface SerializedDataEntry {
     date?: string;
     value?: number | Record<string, number>

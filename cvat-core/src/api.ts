@@ -402,6 +402,10 @@ function build(): CVATCore {
             },
         },
         consensus: {
+            async assignee_reports(filter = {}) {
+                const result = await PluginRegistry.apiWrapper(cvat.consensus.assignee_reports, filter);
+                return result;
+            },
             async reports(filter = {}) {
                 const result = await PluginRegistry.apiWrapper(cvat.consensus.reports, filter);
                 return result;
