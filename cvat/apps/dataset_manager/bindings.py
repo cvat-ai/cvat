@@ -1333,7 +1333,7 @@ class ProjectData(InstanceLabelData):
 
 @attrs(frozen=True, auto_attribs=True)
 class ImageSource:
-    db_data: Data
+    db_task: Task
     is_video: bool = attrib(kw_only=True)
 
 class ImageProvider:
@@ -1363,7 +1363,9 @@ class ImageProvider2D(ImageProvider):
                 # some formats or transforms can require image data
                 return self._frame_provider.get_frame(frame_index,
                     quality=FrameQuality.ORIGINAL,
-                    out_type=FrameOutputType.NUMPY_ARRAY).data
+                    out_type=FrameOutputType.NUMPY_ARRAY
+                ).data
+
             return dm.Image(data=video_frame_loader, **image_kwargs)
         else:
             def image_loader(_):
@@ -1372,7 +1374,9 @@ class ImageProvider2D(ImageProvider):
                 # for images use encoded data to avoid recoding
                 return self._frame_provider.get_frame(frame_index,
                     quality=FrameQuality.ORIGINAL,
-                    out_type=FrameOutputType.BUFFER).data.getvalue()
+                    out_type=FrameOutputType.BUFFER
+                ).data.getvalue()
+
             return dm.ByteImage(data=image_loader, **image_kwargs)
 
     def _load_source(self, source_id: int, source: ImageSource) -> None:
@@ -1380,7 +1384,7 @@ class ImageProvider2D(ImageProvider):
             return
 
         self._unload_source()
-        self._frame_provider = TaskFrameProvider(next(iter(source.db_data.tasks))) # TODO: refactor
+        self._frame_provider = TaskFrameProvider(source.db_task)
         self._current_source_id = source_id
 
     def _unload_source(self) -> None:
@@ -1396,7 +1400,7 @@ class ImageProvider3D(ImageProvider):
         self._images_per_source = {
             source_id: {
                 image.id: image
-                for image in source.db_data.images.prefetch_related('related_files')
+                for image in source.db_task.data.images.prefetch_related('related_files')
             }
             for source_id, source in sources.items()
         }
@@ -1405,7 +1409,7 @@ class ImageProvider3D(ImageProvider):
         source = self._sources[source_id]
 
         point_cloud_path = osp.join(
-            source.db_data.get_upload_dirname(), image_kwargs['path'],
+            source.db_task.data.get_upload_dirname(), image_kwargs['path'],
         )
 
         image = self._images_per_source[source_id][frame_id]
@@ -1521,8 +1525,15 @@ class CvatTaskOrJobDataExtractor(dm.SourceExtractor, CVATDataExtractorMixin):
             ext = TaskFrameProvider.VIDEO_FRAME_EXT
 
         if dimension == DimensionType.DIM_3D or include_images:
+            if isinstance(instance_data, TaskData):
+                db_task = instance_data.db_instance
+            elif isinstance(instance_data, JobData):
+                db_task = instance_data.db_instance.segment.task
+            else:
+                assert False
+
             self._image_provider = IMAGE_PROVIDERS_BY_DIMENSION[dimension](
-                {0: ImageSource(instance_data.db_data, is_video=is_video)}
+                {0: ImageSource(db_task, is_video=is_video)}
             )
 
         for frame_data in instance_data.group_by_frame(include_empty=True):
@@ -1604,7 +1615,7 @@ class CVATProjectDataExtractor(dm.Extractor, CVATDataExtractorMixin):
         if self._dimension == DimensionType.DIM_3D or include_images:
             self._image_provider = IMAGE_PROVIDERS_BY_DIMENSION[self._dimension](
                 {
-                    task.id: ImageSource(task.data, is_video=task.mode == 'interpolation')
+                    task.id: ImageSource(task, is_video=task.mode == 'interpolation')
                     for task in project_data.tasks
                 }
             )
