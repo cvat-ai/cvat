@@ -23,6 +23,7 @@ for paths in \
     "tests/python/" \
     "cvat/apps/quality_control" \
     "cvat/apps/analytics_report" \
+    "cvat/apps/engine/lazy_list.py" \
     "cvat/apps/engine/frame_provider.py" \
     "cvat/apps/engine/cache.py" \
     "cvat/apps/engine/default_settings.py" \

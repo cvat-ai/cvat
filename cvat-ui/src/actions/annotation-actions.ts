@@ -265,6 +265,20 @@ export function highlightConflict(conflict: QualityConflict | null): AnyAction {
     };
 }
 
+function wrapAnnotationsInGTJob(states: ObjectState[]): ObjectState[] {
+    return states.map((state: ObjectState) => new Proxy(state, {
+        get(_state, prop) {
+            if (prop === 'isGroundTruth') {
+                // ground truth objects are not considered as gt objects, relatively to a gt jobs
+                // to avoid extra css styles, or restrictions applied
+                return false;
+            }
+
+            return Reflect.get(_state, prop);
+        },
+    }));
+}
+
 async function fetchAnnotations(predefinedFrame?: number): Promise<{
     states: CombinedState['annotation']['annotations']['states'];
     history: CombinedState['annotation']['annotations']['history'];
@@ -279,18 +293,9 @@ async function fetchAnnotations(predefinedFrame?: number): Promise<{
     const fetchFrame = typeof predefinedFrame === 'undefined' ? frame : predefinedFrame;
     let states = await jobInstance.annotations.get(fetchFrame, showAllInterpolationTracks, filters);
     const [minZ, maxZ] = computeZRange(states);
-    if (jobInstance.type === JobType.GROUND_TRUTH) {
-        states = states.map((state: ObjectState) => new Proxy(state, {
-            get(_state, prop) {
-                if (prop === 'isGroundTruth') {
-                    // ground truth objects are not considered as gt objects, relatively to a gt jobs
-                    // to avoid extra css styles, or restrictions applied
-                    return false;
-                }
 
-                return Reflect.get(_state, prop);
-            },
-        }));
+    if (jobInstance.type === JobType.GROUND_TRUTH) {
+        states = wrapAnnotationsInGTJob(states);
     } else if (showGroundTruth && groundTruthInstance) {
         const gtStates = await groundTruthInstance.annotations.get(fetchFrame, showAllInterpolationTracks, filters);
         states.push(...gtStates);
@@ -1110,7 +1115,11 @@ export function updateAnnotationsAsync(statesToUpdate: any[]): ThunkAction {
             }
 
             const promises = statesToUpdate.map((objectState: any): Promise<any> => objectState.save());
-            const states = await Promise.all(promises);
+            let states = await Promise.all(promises);
+
+            if (jobInstance.type === JobType.GROUND_TRUTH) {
+                states = wrapAnnotationsInGTJob(states);
+            }
 
             const needToUpdateAll = states
                 .some((state: any) => state.shapeType === ShapeType.MASK || state.parentID !== null);
@@ -1376,12 +1385,17 @@ export function pasteShapeAsync(): ThunkAction {
     };
 }
 
-export function interactWithCanvas(activeInteractor: MLModel | OpenCVTool, activeLabelID: number): AnyAction {
+export function interactWithCanvas(
+    activeInteractor: MLModel | OpenCVTool,
+    activeLabelID: number,
+    activeInteractorParameters: MLModel['params']['canvas'],
+): AnyAction {
     return {
         type: AnnotationActionTypes.INTERACT_WITH_CANVAS,
         payload: {
             activeInteractor,
             activeLabelID,
+            activeInteractorParameters,
         },
     };
 }
@@ -1397,6 +1411,7 @@ export function repeatDrawShapeAsync(): ThunkAction {
             },
             drawing: {
                 activeInteractor,
+                activeInteractorParameters,
                 activeObjectType,
                 activeLabelID,
                 activeShapeType,
@@ -1407,21 +1422,21 @@ export function repeatDrawShapeAsync(): ThunkAction {
         } = getStore().getState().annotation;
 
         let activeControl = ActiveControl.CURSOR;
-        if (activeInteractor && canvasInstance instanceof Canvas) {
+        if (activeInteractor && activeInteractorParameters && activeLabelID && canvasInstance instanceof Canvas) {
             if (activeInteractor.kind.includes('tracker')) {
                 canvasInstance.interact({
                     enabled: true,
                     shapeType: 'rectangle',
                 });
-                dispatch(interactWithCanvas(activeInteractor, activeLabelID));
+                dispatch(interactWithCanvas(activeInteractor, activeLabelID, {}));
                 dispatch(switchToolsBlockerState({ buttonVisible: false }));
             } else {
                 canvasInstance.interact({
                     enabled: true,
                     shapeType: 'points',
-                    ...activeInteractor.params.canvas,
+                    ...activeInteractorParameters,
                 });
-                dispatch(interactWithCanvas(activeInteractor, activeLabelID));
+                dispatch(interactWithCanvas(activeInteractor, activeLabelID, activeInteractorParameters));
             }
 
             return;

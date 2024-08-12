@@ -3,6 +3,7 @@
 // SPDX-License-Identifier: MIT
 
 import { SerializedQualityReportData } from './server-response-types';
+import User from './user';
 
 export interface QualitySummary {
     frameCount: number;
@@ -36,6 +37,7 @@ export default class QualityReport {
     #target: string;
     #createdDate: string;
     #gtLastUpdated: string;
+    #assignee: User | null;
     #summary: Partial<SerializedQualityReportData['summary']>;
 
     constructor(initialData: SerializedQualityReportData) {
@@ -47,6 +49,12 @@ export default class QualityReport {
         this.#gtLastUpdated = initialData.gt_last_updated;
         this.#createdDate = initialData.created_date;
         this.#summary = initialData.summary;
+
+        if (initialData.assignee) {
+            this.#assignee = new User(initialData.assignee);
+        } else {
+            this.#assignee = null;
+        }
     }
 
     get id(): number {
@@ -75,6 +83,10 @@ export default class QualityReport {
 
     get createdDate(): string {
         return this.#createdDate;
+    }
+
+    get assignee(): User | null {
+        return this.#assignee;
     }
 
     get summary(): QualitySummary {

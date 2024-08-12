@@ -29,7 +29,7 @@ Cypress.Commands.add('assignJobToUser', (jobID, user) => {
         cy.intercept('GET', `/api/users?**search=${user}**`).as('searchUsers');
         cy.get(`.cvat-job-item[data-row-id="${jobID}"]`).find('.cvat-job-assignee-selector input').type(user);
         cy.wait('@searchUsers').its('response.statusCode').should('equal', 200);
-        cy.get('.ant-select-dropdown')
+        cy.get('.cvat-user-search-dropdown')
             .should('be.visible')
             .not('.ant-select-dropdown-hidden')
             .contains(new RegExp(`^${user}$`, 'g'))
