@@ -23,6 +23,9 @@ import { ThunkDispatch } from 'utils/redux';
 import AppearanceBlock from 'components/annotation-page/appearance-block';
 import ObjectButtonsContainer from 'containers/annotation-page/standard-workspace/objects-side-bar/object-buttons';
 import { CombinedState, ObjectType } from 'reducers';
+import { registerComponentShortcuts } from 'actions/shortcuts-actions';
+import { ShortcutScope } from 'utils/enums';
+import { subKeyMap } from 'utils/component-subkeymap';
 import AttributeEditor from './attribute-editor';
 import AttributeSwitcher from './attribute-switcher';
 import ObjectBasicsEditor from './object-basics-edtior';
@@ -49,6 +52,65 @@ interface DispatchToProps {
 interface LabelAttrMap {
     [index: number]: any;
 }
+
+const componentShortcuts = {
+    NEXT_ATTRIBUTE: {
+        name: 'Next attribute',
+        description: 'Go to the next attribute',
+        sequences: ['down'],
+        scope: ShortcutScope.ALL,
+    },
+    PREVIOUS_ATTRIBUTE: {
+        name: 'Previous attribute',
+        description: 'Go to the previous attribute',
+        sequences: ['up'],
+        scope: ShortcutScope.ALL,
+    },
+    NEXT_OBJECT: {
+        name: 'Next object',
+        description: 'Go to the next object',
+        sequences: ['tab'],
+        scope: ShortcutScope.ALL,
+    },
+    PREVIOUS_OBJECT: {
+        name: 'Previous object',
+        description: 'Go to the previous object',
+        sequences: ['shift+tab'],
+        scope: ShortcutScope.ALL,
+    },
+    SWITCH_LOCK: {
+        name: 'Lock/unlock an object',
+        description: 'Change locked state for an active object',
+        sequences: ['l'],
+        scope: ShortcutScope.ALL,
+    },
+    SWITCH_OCCLUDED: {
+        name: 'Switch occluded',
+        description: 'Change occluded property for an active object',
+        sequences: ['q', '/'],
+        scope: ShortcutScope.ALL,
+    },
+    SWITCH_PINNED: {
+        name: 'Switch pinned property',
+        description: 'Change pinned property for an active object',
+        sequences: ['p'],
+        scope: ShortcutScope.ALL,
+    },
+    NEXT_KEY_FRAME: {
+        name: 'Next keyframe',
+        description: 'Go to the next keyframe of an active track',
+        sequences: ['r'],
+        scope: ShortcutScope.ALL,
+    },
+    PREV_KEY_FRAME: {
+        name: 'Previous keyframe',
+        description: 'Go to the previous keyframe of an active track',
+        sequences: ['e'],
+        scope: ShortcutScope.ALL,
+    },
+};
+
+registerComponentShortcuts(componentShortcuts);
 
 function mapStateToProps(state: CombinedState): StateToProps {
     const {
@@ -215,19 +277,7 @@ function AttributeAnnotationSidebar(props: StateToProps & DispatchToProps): JSX.
         }
     };
 
-    const subKeyMap = {
-        NEXT_ATTRIBUTE: keyMap.NEXT_ATTRIBUTE,
-        PREVIOUS_ATTRIBUTE: keyMap.PREVIOUS_ATTRIBUTE,
-        NEXT_OBJECT: keyMap.NEXT_OBJECT,
-        PREVIOUS_OBJECT: keyMap.PREVIOUS_OBJECT,
-        SWITCH_LOCK: keyMap.SWITCH_LOCK,
-        SWITCH_OCCLUDED: keyMap.SWITCH_OCCLUDED,
-        SWITCH_PINNED: keyMap.SWITCH_PINNED,
-        NEXT_KEY_FRAME: keyMap.NEXT_KEY_FRAME,
-        PREV_KEY_FRAME: keyMap.PREV_KEY_FRAME,
-    };
-
-    const handlers = {
+    const handlers: Record<keyof typeof componentShortcuts, (event?: KeyboardEvent) => void> = {
         NEXT_ATTRIBUTE: (event: KeyboardEvent | undefined) => {
             preventDefault(event);
             nextAttribute(1);
@@ -297,7 +347,7 @@ function AttributeAnnotationSidebar(props: StateToProps & DispatchToProps): JSX.
                 >
                     {sidebarCollapsed ? <MenuFoldOutlined title='Show' /> : <MenuUnfoldOutlined title='Hide' />}
                 </span>
-                <GlobalHotKeys keyMap={subKeyMap} handlers={handlers} />
+                <GlobalHotKeys keyMap={subKeyMap(componentShortcuts, keyMap)} handlers={handlers} />
                 <div className='cvat-sidebar-collapse-button-spacer' />
                 <ObjectSwitcher
                     currentLabel={activeObjectState.label.name}

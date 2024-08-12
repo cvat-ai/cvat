@@ -1035,7 +1035,7 @@ export default class Collection {
                         z_order: state.zOrder,
                         source: state.source,
                         elements: state.shapeType === 'skeleton' ? state.elements.map((element) => ({
-                            attributes: [],
+                            attributes: validateAttributesList(objectAttributesAsList(element)),
                             frame: element.frame,
                             group: 0,
                             label_id: element.label.id,

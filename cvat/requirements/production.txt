@@ -9,11 +9,11 @@
 --no-binary lxml
 --no-binary xmlsec
 
-anyio==4.3.0
+anyio==4.4.0
     # via watchfiles
 coverage==7.2.3
     # via -r cvat/requirements/production.in
-exceptiongroup==1.2.1
+exceptiongroup==1.2.2
     # via anyio
 h11==0.14.0
     # via uvicorn
@@ -27,7 +27,7 @@ uvicorn[standard]==0.22.0
     # via -r cvat/requirements/production.in
 uvloop==0.19.0
     # via uvicorn
-watchfiles==0.21.0
+watchfiles==0.22.0
     # via uvicorn
 websockets==12.0
     # via uvicorn

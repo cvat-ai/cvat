@@ -10,8 +10,9 @@ metadata:
     version: 2
     type: interactor
     spec:
-    min_pos_points: 1
+    min_pos_points: 0
     min_neg_points: 0
+    startswith_box_optional: true
     animated_gif: https://raw.githubusercontent.com/cvat-ai/cvat/develop/site/content/en/images/hrnet_example.gif
     help_message: The interactor allows to get a mask of an object using at least one positive, and any negative points inside it
 
