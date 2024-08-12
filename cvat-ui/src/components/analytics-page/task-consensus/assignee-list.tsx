@@ -2,14 +2,13 @@
 //
 // SPDX-License-Identifier: MIT
 
-import React, { useState } from 'react';
-import { Row, Col } from 'antd/lib/grid';
+import React from 'react';
 import { ColumnFilterItem, Key } from 'antd/lib/table/interface';
 import Table from 'antd/lib/table';
 import Text from 'antd/lib/typography/Text';
 
 import {
-    Task, Job, JobType, ConsensusReport, User,
+    Task, User, AssigneeConsensusReport,
 } from 'cvat-core-wrapper';
 import { getQualityColor } from 'utils/quality-color';
 import Tag from 'antd/lib/tag';
@@ -17,24 +16,16 @@ import { toRepresentation } from '../utils/text-formatting';
 
 interface Props {
     task: Task;
-    jobsReports: ConsensusReport[];
+    assigneeReports: AssigneeConsensusReport[];
 }
 
 function AssigneeListComponent(props: Props): JSX.Element {
-    const { task: taskInstance, jobsReports: jobsReportsArray } = props;
+    const { assigneeReports: assigneeReportsArray } = props;
+    console.log('assigneeReportsArray', assigneeReportsArray);
+    const assigneeReports: Record<number, AssigneeConsensusReport> = assigneeReportsArray
+        .reduce((acc, report) => ({ ...acc, [report.assignee_id]: report }), {});
 
-    const jobsReports: Record<number, ConsensusReport> = jobsReportsArray.reduce(
-        (acc, report) => {
-            if (!acc[report.jobID]) {
-                acc[report.jobID] = report;
-            }
-            return acc;
-        },
-        {},
-    );
-
-    const { jobs } = taskInstance;
-    const [renderedJobs] = useState<Job[]>(jobs.filter((job: Job) => job.type === JobType.ANNOTATION));
+    console.log('as', assigneeReports);
 
     function sorter(path: string) {
         return (obj1: any, obj2: any): number => {
@@ -72,7 +63,7 @@ function AssigneeListComponent(props: Props): JSX.Element {
     function collectUsers(path: string): ColumnFilterItem[] {
         return Array.from<string | null>(
             new Set(
-                Object.values(jobsReports).map((report: ConsensusReport) => {
+                Object.values(assigneeReports).map((report: AssigneeConsensusReport) => {
                     if (report[path] === null) {
                         return null;
                     }
@@ -90,32 +81,16 @@ function AssigneeListComponent(props: Props): JSX.Element {
             key: 'assignee',
             className: 'cvat-job-item-assignee',
             render: (assignee: User): JSX.Element => <Text>{assignee?.username}</Text>,
-            sorter: sorter('assignee.assignee.username'),
+            sorter: sorter('assignee.username'),
             filters: collectUsers('assignee'),
             onFilter: (value: boolean | Key, assignee: any) => (assignee.assignee?.username || false) === value,
-        },
-        {
-            title: 'Conflicts',
-            dataIndex: 'conflicts',
-            key: 'conflicts',
-            className: 'cvat-job-item-conflicts',
-            sorter: sorter('conflicts.summary.conflictCount'),
-            render: (value: number): JSX.Element => {
-                const conflictCount = value;
-                return (
-                    <div className='cvat-job-list-item-conflicts'>
-                        <Text>{conflictCount || 0}</Text>
-                    </div>
-                );
-            },
         },
         {
             title: 'Score',
             dataIndex: 'quality',
             key: 'quality',
-            align: 'center' as const,
             className: 'cvat-job-item-quality',
-            sorter: sorter('quality.summary.accuracy'),
+            sorter: sorter('quality'),
             render: (value: number): JSX.Element => {
                 const meanConsensusScore = value;
                 const consensusScoreRepresentation = toRepresentation(meanConsensusScore);
@@ -133,42 +108,26 @@ function AssigneeListComponent(props: Props): JSX.Element {
             },
         },
     ];
-    const data = renderedJobs.reduce((acc: any[], job: any) => {
-        const report = jobsReports[job.id];
-        const { assignee } = job;
-        const existingEntry = acc.find((entry) => entry.assignee === assignee);
-
-        if (existingEntry) {
-            existingEntry.conflicts += report?.summary?.conflictCount || 0;
-            existingEntry.consensusScore += report?.consensus_score || 0;
-        } else {
-            acc.push({
-                key: job.id,
-                job: job.id,
-                assignee,
-                conflicts: report?.summary?.conflictCount,
-                consensusScore: report?.consensus_score,
-            });
-        }
+    const data = assigneeReportsArray.reduce((acc: any[], assigneeReport: any) => {
+        const report = assigneeReports[assigneeReport.assignee.id];
+        acc.push({
+            key: report.assignee_id,
+            assignee: report.assignee,
+            quality: report.consensus_score,
+        });
 
         return acc;
     }, []);
 
-    console.log('data', data);
-
     return (
         <div className='cvat-task-job-list'>
-            <Row justify='space-between' align='middle'>
-                <Col>
-                    <Text className='cvat-text-color cvat-jobs-header'> Assignees </Text>
-                </Col>
-            </Row>
             <Table
                 className='cvat-task-jobs-table'
                 rowClassName={() => 'cvat-task-jobs-table-row'}
                 columns={columns}
                 dataSource={data}
                 size='small'
+                style={{ width: '100%' }}
             />
         </div>
     );
