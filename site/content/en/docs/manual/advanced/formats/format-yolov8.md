@@ -18,7 +18,7 @@ For export of images:
 - Supported annotations
   - Detection: Bounding Boxes
   - Oriented bounding box: Oriented Bounding Boxes
-  - Segmentation: Polygons
+  - Segmentation: Polygons, Masks
   - Pose: Skeletons
 - Attributes: Not supported.
 - Tracks: Not supported.
