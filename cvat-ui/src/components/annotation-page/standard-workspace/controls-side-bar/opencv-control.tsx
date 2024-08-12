@@ -161,15 +161,14 @@ class OpenCVControlComponent extends React.PureComponent<Props & DispatchToProps
 
     public componentDidMount(): void {
         const { canvasInstance } = this.props;
-
-        window.document.addEventListener('keyup', this.onKeyUp);
         canvasInstance.html().addEventListener('canvas.interacted', this.interactionListener);
     }
 
     public componentDidUpdate(prevProps: Props, prevState: State): void {
         const { approxPolyAccuracy } = this.state;
         const {
-            isActivated, defaultApproxPolyAccuracy, canvasInstance, canvasReady, toolsBlockerState,
+            isActivated, defaultApproxPolyAccuracy,
+            canvasInstance, canvasReady, toolsBlockerState,
         } = this.props;
 
         if (!prevProps.isActivated && isActivated) {
@@ -178,6 +177,7 @@ class OpenCVControlComponent extends React.PureComponent<Props & DispatchToProps
             this.setState({
                 approxPolyAccuracy: defaultApproxPolyAccuracy,
             });
+
             if (this.activeTool) {
                 this.activeTool.switchBlockMode(toolsBlockerState.algorithmsLocked);
                 this.activeTool.reset();
@@ -225,7 +225,6 @@ class OpenCVControlComponent extends React.PureComponent<Props & DispatchToProps
         const { canvasInstance } = this.props;
         const { trackedShapes } = this.state;
 
-        window.document.removeEventListener('keyup', this.onKeyUp);
         canvasInstance.html().removeEventListener('canvas.interacted', this.interactionListener);
         openCVWrapper.removeProgressCallback();
         trackedShapes.forEach((shape: TrackedShape) => shape.trackerModel.delete());
@@ -382,28 +381,6 @@ class OpenCVControlComponent extends React.PureComponent<Props & DispatchToProps
             throw new Error('Canvas context is empty');
         }
         return context.getImageData(0, 0, width, height);
-    };
-
-    private onChangeToolsBlockerState = (): void => {
-        const {
-            toolsBlockerState, canvasInstance,
-            isActivated, onSwitchToolsBlockerState,
-        } = this.props;
-
-        if (isActivated) {
-            const isLocked = !toolsBlockerState.algorithmsLocked;
-            onSwitchToolsBlockerState({ algorithmsLocked: isLocked });
-            canvasInstance.interact({
-                enabled: true,
-                crosshair: !isLocked,
-            });
-        }
-    };
-
-    private onKeyUp = (e: KeyboardEvent): void => {
-        if (e.key === 'Control') {
-            this.onChangeToolsBlockerState();
-        }
     };
 
     private applyTracking = (imageData: ImageData, shape: TrackedShape,
