@@ -74,6 +74,7 @@ export class InteractionHandlerImpl implements InteractionHandler {
             (shape: SVG.Shape): boolean => (shape as any).attr('stroke') !== 'green',
         );
 
+        const somethingWasDrawn = interactionShapes.some((shape) => shape.type === 'rect') || positiveShapes.length;
         if (interactionData.shapeType === 'rectangle') {
             return enabled && !!interactionShapes.length;
         }
@@ -83,7 +84,7 @@ export class InteractionHandlerImpl implements InteractionHandler {
         const minPosVerticesAchieved = !minPosVerticesDefined || minPosVertices <= positiveShapes.length;
         const minNegVerticesAchieved = !minNegVerticesDefined || minNegVertices <= negativeShapes.length;
         const minimumVerticesAchieved = minPosVerticesAchieved && minNegVerticesAchieved;
-        return enabled && positiveShapes.length && minimumVerticesAchieved && shapesWereUpdated;
+        return enabled && somethingWasDrawn && minimumVerticesAchieved && shapesWereUpdated;
     }
 
     private addThreshold(): void {
