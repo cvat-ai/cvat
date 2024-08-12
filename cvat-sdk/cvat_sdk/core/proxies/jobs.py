@@ -12,16 +12,15 @@ from typing import TYPE_CHECKING, List, Optional, Sequence
 from PIL import Image
 
 from cvat_sdk.api_client import apis, models
-from cvat_sdk.core.downloading import Downloader
 from cvat_sdk.core.helpers import get_paginated_collection
 from cvat_sdk.core.progress import ProgressReporter
 from cvat_sdk.core.proxies.annotations import AnnotationCrudMixin
 from cvat_sdk.core.proxies.issues import Issue
 from cvat_sdk.core.proxies.model_proxy import (
+    ExportDatasetMixin,
     ModelListMixin,
     ModelRetrieveMixin,
     ModelUpdateMixin,
-    ExportDatasetMixin,
     build_model_bases,
 )
 from cvat_sdk.core.uploading import AnnotationUploader

@@ -10,17 +10,16 @@ from pathlib import Path
 from typing import TYPE_CHECKING, List, Optional
 
 from cvat_sdk.api_client import apis, models
-from cvat_sdk.core.downloading import Downloader
 from cvat_sdk.core.helpers import get_paginated_collection
 from cvat_sdk.core.progress import ProgressReporter
 from cvat_sdk.core.proxies.model_proxy import (
+    DownloadBackupMixin,
+    ExportDatasetMixin,
     ModelCreateMixin,
     ModelDeleteMixin,
     ModelListMixin,
     ModelRetrieveMixin,
     ModelUpdateMixin,
-    ExportDatasetMixin,
-    DownloadBackupMixin,
     build_model_bases,
 )
 from cvat_sdk.core.proxies.tasks import Task

@@ -16,19 +16,18 @@ from typing import TYPE_CHECKING, Any, Dict, List, Optional, Sequence
 from PIL import Image
 
 from cvat_sdk.api_client import apis, exceptions, models
-from cvat_sdk.core.downloading import Downloader
 from cvat_sdk.core.helpers import get_paginated_collection
 from cvat_sdk.core.progress import ProgressReporter
 from cvat_sdk.core.proxies.annotations import AnnotationCrudMixin
 from cvat_sdk.core.proxies.jobs import Job
 from cvat_sdk.core.proxies.model_proxy import (
+    DownloadBackupMixin,
+    ExportDatasetMixin,
     ModelCreateMixin,
     ModelDeleteMixin,
     ModelListMixin,
     ModelRetrieveMixin,
     ModelUpdateMixin,
-    ExportDatasetMixin,
-    DownloadBackupMixin,
     build_model_bases,
 )
 from cvat_sdk.core.uploading import AnnotationUploader, DataUploader, Uploader

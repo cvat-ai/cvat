@@ -7,6 +7,7 @@ from __future__ import annotations
 import json
 from abc import ABC
 from copy import deepcopy
+from pathlib import Path
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -21,18 +22,18 @@ from typing import (
     Union,
     overload,
 )
-from pathlib import Path
 
 from typing_extensions import Self
 
 from cvat_sdk.api_client.model_utils import IModelData, ModelNormal, to_json
+from cvat_sdk.core.downloading import Downloader
 from cvat_sdk.core.helpers import get_paginated_collection
 from cvat_sdk.core.progress import ProgressReporter
-from cvat_sdk.core.downloading import Downloader
 
 if TYPE_CHECKING:
-    from cvat_sdk.core.client import Client
     from _typeshed import StrPath
+
+    from cvat_sdk.core.client import Client
 
 IModel = TypeVar("IModel", bound=IModelData)
 ModelType = TypeVar("ModelType", bound=ModelNormal)
