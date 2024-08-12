@@ -2,7 +2,7 @@
 #
 # SPDX-License-Identifier: MIT
 
-from typing import Dict, List, Tuple
+from typing import Dict, List, Tuple, Union
 
 import datumaro as dm
 import django_rq
@@ -24,7 +24,7 @@ from cvat.apps.consensus.models import ConsensusSettings
 from cvat.apps.consensus.new_intersect_merge import IntersectMerge
 from cvat.apps.dataset_manager.bindings import import_dm_annotations
 from cvat.apps.dataset_manager.task import PatchAction, patch_job_data
-from cvat.apps.engine.models import Job, JobType, StageChoice, StateChoice, Task
+from cvat.apps.engine.models import Job, JobType, StageChoice, StateChoice, Task, User
 from cvat.apps.engine.utils import (
     define_dependent_job,
     get_rq_job_meta,
@@ -34,7 +34,7 @@ from cvat.apps.engine.utils import (
 from cvat.apps.quality_control.quality_reports import JobDataProvider
 
 
-def get_consensus_jobs(task_id: int) -> Tuple[Dict[int, List[int]], List[Job]]:
+def get_consensus_jobs(task_id: int) -> Tuple[Dict[int, List[Tuple[int, User]]], List[Job]]:
     jobs = {}  # parent_job_id -> [(consensus_job_id, assignee)]
 
     for job in Job.objects.select_related("segment").filter(
@@ -45,7 +45,7 @@ def get_consensus_jobs(task_id: int) -> Tuple[Dict[int, List[int]], List[Job]]:
         # if the job is in NEW state, it means that the job isn't annotated
         if job.state == StateChoice.NEW.value:
             continue
-        jobs.setdefault(job.parent_job_id, []).append((job.id, job.assignee_id))
+        jobs.setdefault(job.parent_job_id, []).append((job.id, job.assignee))
 
     parent_job_ids = list(jobs.keys())
 
@@ -53,10 +53,9 @@ def get_consensus_jobs(task_id: int) -> Tuple[Dict[int, List[int]], List[Job]]:
     # remove parent jobs that are not in annotation stage
     for parent_job_id in parent_job_ids:
         parent_job = Job.objects.filter(id=parent_job_id, type=JobType.ANNOTATION.value).first()
-        parent_jobs.append(parent_job)
 
         if parent_job.stage == StageChoice.ANNOTATION.value:
-            continue
+            parent_jobs.append(parent_job)
         else:
             jobs.pop(parent_job_id)
 
@@ -87,15 +86,27 @@ def _merge_consensus_jobs(task_id: int) -> None:
 
     job_comparison_reports: Dict[int, ComparisonReport] = {}
 
-    for parent_job_id, job_info in jobs.items():
-        job_ids = [job_id for job_id, _ in job_info]
-        consensus_job_data_providers = list(map(JobDataProvider, job_ids))
+    for parent_job_id, consensus_job_info in jobs.items():
+        consensus_job_ids = [consensus_job_id for consensus_job_id, _ in consensus_job_info]
+        assignees = [assignee for _, assignee in consensus_job_info]
+
+        consensus_job_data_providers = list(map(JobDataProvider, consensus_job_ids))
         consensus_datasets = [
             consensus_job_data_provider.dm_dataset
             for consensus_job_data_provider in consensus_job_data_providers
         ]
 
         merged_dataset = merger(consensus_datasets)
+
+        assignee_consensus_score: Dict[User, Union[List[float], float]] = {}
+
+        for idx, _ in enumerate(consensus_job_ids):
+            assignee_consensus_score.setdefault(assignees[idx], []).append(
+                merger._dataset_mean_consensus_score[id(consensus_datasets[idx])]
+            )
+
+        for assignee_id, consensus_scores in assignee_consensus_score.items():
+            assignee_consensus_score[assignee_id] = sum(consensus_scores) / len(consensus_scores)
 
         # delete the existing annotations in the job
         patch_job_data(parent_job_id, None, PatchAction.DELETE)
@@ -118,12 +129,13 @@ def _merge_consensus_jobs(task_id: int) -> None:
             consensus_job_data_providers=consensus_job_data_providers,
             merged_dataset=merged_dataset,
         )
-        parent_job = Job.objects.filter(id=parent_job_id, type=JobType.ANNOTATION.value).first()
-        parent_job.state = StateChoice.COMPLETED.value
-        parent_job.save()
+        for parent_job in parent_jobs:
+            if parent_job.id == parent_job_id and parent_job.type == JobType.ANNOTATION.value:
+                parent_job.state = StateChoice.COMPLETED.value
+                parent_job.save()
 
     task_report_data = generate_task_consensus_report(list(job_comparison_reports.values()))
-    return save_report(task_id, parent_jobs, task_report_data, job_comparison_reports)
+    return save_report(task_id, parent_jobs, task_report_data, job_comparison_reports, assignee_consensus_score)
 
 
 def merge_task(task: Task, request) -> Response:

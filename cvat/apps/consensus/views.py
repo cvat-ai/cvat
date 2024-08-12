@@ -27,17 +27,20 @@ from cvat.apps.consensus.models import (
     ConsensusReport,
     ConsensusReportTarget,
     ConsensusSettings,
+    AssigneeConsensusReport,
 )
 from cvat.apps.consensus.permissions import (
     ConsensusConflictPermission,
     ConsensusReportPermission,
     ConsensusSettingPermission,
+    AssigneeConsensusReportPermission,
 )
 from cvat.apps.consensus.serializers import (
     ConsensusConflictSerializer,
     ConsensusReportCreateSerializer,
     ConsensusReportSerializer,
     ConsensusSettingsSerializer,
+    AssigneeConsensusReportSerializer,
 )
 from cvat.apps.engine.mixins import PartialUpdateModelMixin
 from cvat.apps.engine.models import Task
@@ -384,3 +387,90 @@ class ConsensusSettingsViewSet(
             queryset = permissions.filter(queryset)
 
         return queryset
+
+
+@extend_schema(tags=["consensus"])
+@extend_schema_view(
+    retrieve=extend_schema(
+        operation_id="assignee_consensus_retrieve_report",
+        summary="Get assignee consensus report details",
+        responses={
+            "200": AssigneeConsensusReportSerializer,
+        },
+    ),
+    list=extend_schema(
+        summary="List assignee consensus reports",
+        parameters=[
+            # These filters are implemented differently from others
+            OpenApiParameter(
+                "task_id", type=OpenApiTypes.INT, description="A simple equality filter for task id"
+            ),
+            OpenApiParameter(
+                "consensus_report_id", type=OpenApiTypes.INT, description="A simple equality filter for target"
+            ),
+        ],
+        responses={
+            "200": AssigneeConsensusReportSerializer(many=True),
+        },
+    ),
+)
+class AssigneeConsensusReportViewSet(
+    viewsets.GenericViewSet,
+    mixins.ListModelMixin,
+    mixins.RetrieveModelMixin,
+    mixins.CreateModelMixin,
+):
+    queryset = AssigneeConsensusReport.objects.prefetch_related(
+        "task",
+        "task__organization",
+    ).all()
+
+    iam_organization_field = ["task__organization"]
+
+    search_fields = []
+    filter_fields = list(search_fields) + [
+        "id",
+    ]
+    simple_filters = list(set(filter_fields) - {"id"})
+    ordering_fields = list(filter_fields)
+    ordering = "id"
+
+    def get_serializer_class(self):
+        # a separate method is required for drf-spectacular to work
+        return AssigneeConsensusReportSerializer
+
+    def get_queryset(self):
+        queryset = super().get_queryset()
+
+        if self.action == "list":
+            if task_id := self.request.query_params.get("task_id", None):
+                # NOTE: This filter is too complex to be implemented by other means
+                try:
+                    task = Task.objects.get(id=task_id)
+                except Task.DoesNotExist as ex:
+                    raise NotFound(f"Task {task_id} does not exist") from ex
+
+                self.check_object_permissions(self.request, task)
+
+                queryset = queryset.filter(
+                    Q(task__id=task_id)
+                ).distinct()
+            else:
+                perm = AssigneeConsensusReportPermission.create_scope_list(self.request)
+                queryset = perm.filter(queryset)
+
+        if consensus_report_id := self.request.query_params.get("consensus_report_id", None):
+            queryset = queryset.filter(consensus_report_id=consensus_report_id)
+
+        return queryset
+
+    @extend_schema(
+        operation_id="assignee_consensus_retrieve_report_data",
+        summary="Get assignee consensus report contents",
+        responses={"200": OpenApiTypes.OBJECT},
+    )
+    @action(detail=True, methods=["GET"], url_path="data", serializer_class=None)
+    def data(self, request, pk):
+        report = self.get_object()  # check permissions
+        json_report = prepare_report_for_downloading(report, host=get_server_url(request))
+        return HttpResponse(json_report.encode())

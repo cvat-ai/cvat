@@ -21,13 +21,14 @@ from django.utils import timezone
 
 from cvat.apps.consensus import models
 from cvat.apps.consensus.models import (
+    AssigneeConsensusReport,
     ConsensusConflict,
     ConsensusConflictType,
     ConsensusReport,
     ConsensusSettings,
 )
 from cvat.apps.dataset_manager.util import bulk_create
-from cvat.apps.engine.models import Job, Task
+from cvat.apps.engine.models import Job, Task, User
 from cvat.apps.quality_control.quality_reports import AnnotationId, JobDataProvider, _Serializable
 
 
@@ -42,9 +43,6 @@ class AnnotationConflict(_Serializable):
             return str(v)
         else:
             return super()._value_serializer(v)
-
-    # def _fields_dict(self, *, include_properties: Optional[List[str]] = None) -> dict:
-    #     return super()._fields_dict(include_properties=include_properties or ["severity"])
 
     @classmethod
     def from_dict(cls, d: dict):
@@ -278,6 +276,7 @@ def generate_job_consensus_report(
             )
         )
 
+    # dataset item is a frame in the merged dataset, which corresponds to regular job
     for dataset_item in merged_dataset:
         frame_id = consensus_job_data_providers[0].dm_item_id_to_frame_id(dataset_item)
         frames.add(frame_id)
@@ -348,6 +347,7 @@ def save_report(
     jobs: List[Job],
     task_report_data: ComparisonReport,
     job_report_data: Dict[int, ComparisonReport],
+    assignee_report_data: Dict[User, float],
 ):
     try:
         Task.objects.get(id=task_id)
@@ -356,7 +356,7 @@ def save_report(
 
     task = Task.objects.filter(id=task_id).first()
 
-    mean_consensus_score = 0
+    task_mean_consensus_score = 0
 
     job_reports = {}
     for job in jobs:
@@ -370,10 +370,10 @@ def save_report(
             consensus_score=job_consensus_score,
             assignee=job.assignee,
         )
-        mean_consensus_score += job_consensus_score
+        task_mean_consensus_score += job_consensus_score
         job_reports[job.id] = job_report
 
-    mean_consensus_score /= len(jobs)
+    task_mean_consensus_score /= len(jobs)
 
     job_reports = list(job_reports.values())
 
@@ -382,7 +382,7 @@ def save_report(
         target_last_updated=task.updated_date,
         data=task_report_data.to_json(),
         conflicts=[],  # the task doesn't have own conflicts
-        consensus_score=mean_consensus_score,
+        consensus_score=task_mean_consensus_score,
         assignee=task.assignee,
     )
 
@@ -408,6 +408,16 @@ def save_report(
         db_job_reports.append(db_job_report)
 
     db_job_reports = bulk_create(db_model=ConsensusReport, objects=db_job_reports, flt_param={})
+
+    for assignee, assignee_mean_consensus_score in assignee_report_data.items():
+        # db_assignee = models.User.objects.get(id=)
+        db_assignee_report = AssigneeConsensusReport(
+            task=task_report["task"],
+            consensus_score=np.round(100*assignee_mean_consensus_score),
+            assignee=assignee,
+            consensus_report_id=db_task_report.id
+        )
+        db_assignee_report.save()
 
     db_conflicts = []
     db_report_iter = itertools.chain([db_task_report], db_job_reports)

@@ -181,3 +181,29 @@ class AnnotationId(models.Model):
                 raise ValidationError("Annotation kind must be empty")
         else:
             raise ValidationError(f"Unexpected type value '{self.type}'")
+
+class AssigneeConsensusReport(models.Model):
+    task = models.ForeignKey(
+        Task,
+        on_delete=models.CASCADE,
+        related_name="assignee_consensus_reports",
+        null=True,
+        blank=True,
+    )
+    assignee = models.ForeignKey(
+        User, on_delete=models.CASCADE, related_name="assignee_consensus_reports"
+    )
+    consensus_score = models.IntegerField()
+    consensus_report_id = models.PositiveIntegerField()
+
+    def get_task(self) -> Task:
+        return self.task
+
+    def to_dict(self):
+        return model_to_dict(self)
+
+    @property
+    def organization_id(self):
+        if task := self.get_task():
+            return getattr(task.organization, "id", None)
+        return None

@@ -1842,7 +1842,7 @@ class _ShapeMerger(_ShapeMatcher):
         for ann in cluster:
             dataset_id = self._context._item_map[self._context._ann_map[id(ann)][1]][1]
             self._context._dataset_mean_consensus_score.setdefault(dataset_id, []).append(
-                sum(max(0, distance(ann, s)) for s in cluster) / len(cluster)
+                max(0, distance(ann, shape))
             )
         shape_score = sum(max(0, distance(shape, s)) for s in cluster) / len(cluster)
         return shape, shape_score

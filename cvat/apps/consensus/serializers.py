@@ -32,13 +32,6 @@ class ConsensusReportSummarySerializer(serializers.Serializer):
     conflict_count = serializers.IntegerField()
     conflicts_by_type = serializers.DictField(child=serializers.IntegerField())
 
-    # This set is enough for basic characteristics, such as
-    # DS_unmatched, GT_unmatched, accuracy, precision and recall
-    # valid_count = serializers.IntegerField(source="annotations.valid_count")
-    # ds_count = serializers.IntegerField(source="annotations.ds_count")
-    # gt_count = serializers.IntegerField(source="annotations.gt_count")
-    # total_count = serializers.IntegerField(source="annotations.total_count")
-
 
 class ConsensusReportSerializer(serializers.ModelSerializer):
     target = serializers.ChoiceField(models.ConsensusReportTarget.choices())
@@ -63,6 +56,20 @@ class ConsensusReportSerializer(serializers.ModelSerializer):
 
 class ConsensusReportCreateSerializer(serializers.Serializer):
     task_id = serializers.IntegerField(write_only=True)
+
+
+class AssigneeConsensusReportSerializer(serializers.ModelSerializer):
+    assignee = engine_serializers.BasicUserSerializer(allow_null=True, read_only=True)
+
+    class Meta:
+        model = models.AssigneeConsensusReport
+        fields = (
+            "task_id",
+            "assignee",
+            "consensus_score",
+            "consensus_report_id",
+        )
+        read_only_fields = fields
 
 
 class ConsensusSettingsSerializer(serializers.ModelSerializer):
