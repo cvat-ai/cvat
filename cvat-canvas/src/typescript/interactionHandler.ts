@@ -111,7 +111,6 @@ export class InteractionHandlerImpl implements InteractionHandler {
                 e.preventDefault();
                 const [cx, cy] = translateToSVG((this.canvas.node as any) as SVGSVGElement, [e.clientX, e.clientY]);
                 if (!this.isWithinFrame(cx, cy)) return;
-                if (!this.isWithinThreshold(cx, cy)) return;
 
                 this.currentInteractionShape = this.canvas
                     .circle((this.controlPointsSize * 2) / this.geometry.scale)
@@ -225,12 +224,6 @@ export class InteractionHandlerImpl implements InteractionHandler {
         } else if (this.crosshair) {
             this.removeCrosshair();
         }
-        if (this.interactionData.enableThreshold) {
-            this.addThreshold();
-        } else if (this.threshold) {
-            this.threshold.remove();
-            this.threshold = null;
-        }
     }
 
     private startInteraction(): void {
@@ -275,19 +268,6 @@ export class InteractionHandlerImpl implements InteractionHandler {
             this.currentInteractionShape.remove();
             this.currentInteractionShape = null;
         }
-    }
-
-    private isWithinThreshold(x: number, y: number): boolean {
-        const [prev] = this.interactionShapes.slice(-1);
-        if (!this.interactionData.enableThreshold || !prev) {
-            return true;
-        }
-
-        const [prevCx, prevCy] = [(prev as SVG.Circle).cx(), (prev as SVG.Circle).cy()];
-        const xDiff = Math.abs(prevCx - x);
-        const yDiff = Math.abs(prevCy - y);
-
-        return xDiff < this.thresholdRectSize / 2 && yDiff < this.thresholdRectSize / 2;
     }
 
     private isWithinFrame(x: number, y: number): boolean {
@@ -391,12 +371,8 @@ export class InteractionHandlerImpl implements InteractionHandler {
     }
 
     private visualComponentsChanged(interactionData: InteractionData): boolean {
-        const allowedKeys = ['enabled', 'crosshair', 'enableThreshold'];
+        const allowedKeys = ['enabled', 'crosshair'];
         if (Object.keys(interactionData).every((key: string): boolean => allowedKeys.includes(key))) {
-            if (this.interactionData.enableThreshold !== undefined && interactionData.enableThreshold !== undefined &&
-                this.interactionData.enableThreshold !== interactionData.enableThreshold) {
-                return true;
-            }
             if (this.interactionData.crosshair !== undefined && interactionData.crosshair !== undefined &&
                 this.interactionData.crosshair !== interactionData.crosshair) {
                 return true;
@@ -449,7 +425,6 @@ export class InteractionHandlerImpl implements InteractionHandler {
             }
             if (this.interactionData.enableSliding && this.interactionShapes.length) {
                 if (this.isWithinFrame(x, y)) {
-                    if (this.interactionData.enableThreshold && !this.isWithinThreshold(x, y)) return;
                     this.onInteraction(
                         [
                             ...this.prepareResult(),

@@ -539,7 +539,6 @@ class AnnotationTopBarContainer extends React.PureComponent<Props> {
                 canvasInstance.interact({
                     enabled: true,
                     crosshair: toolsBlockerState.algorithmsLocked,
-                    enableThreshold: toolsBlockerState.algorithmsLocked,
                 });
             }
         }

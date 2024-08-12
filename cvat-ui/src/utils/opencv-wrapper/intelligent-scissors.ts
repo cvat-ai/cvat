@@ -11,7 +11,6 @@ export interface IntelligentScissorsParams {
     };
     canvas: {
         shapeType: 'points';
-        enableThreshold: boolean;
         enableSliding: boolean;
         allowRemoveOnlyLast: boolean;
         minPosVertices: number;
@@ -26,22 +25,21 @@ export interface IntelligentScissors {
     switchBlockMode(mode?:boolean):void;
 }
 
-function applyOffset(points: Point[], offsetX: number, offsetY: number): Point[] {
-    return points.map(
-        (point: Point): Point => ({
-            x: point.x - offsetX,
-            y: point.y - offsetY,
-        }),
-    );
-}
-
 export default class IntelligentScissorsImplementation implements IntelligentScissors {
     public kind = 'opencv_intelligent_scissors';
     private cv: any;
     private scissors: {
         tool: any;
         state: {
-            path: number[];
+            prevPoints: Point[];
+            curPoints: Point[];
+
+            points: Point[];
+
+            slicingPoint: Point | null;
+            predictedPoints: Point[];
+            lastAnchor: number;
+
             anchors: Record<
             number,
             {
@@ -72,6 +70,14 @@ export default class IntelligentScissorsImplementation implements IntelligentSci
             // eslint-disable-next-line new-cap
             tool: new this.cv.segmentation_IntelligentScissorsMB(),
             state: {
+                prevPoints: [],
+                curPoints: [],
+
+                points: [],
+                slicingPoint: null,
+                predictedPoints: [],
+                lastAnchor: -1,
+
                 path: [],
                 anchors: {},
                 image: null,
@@ -83,7 +89,7 @@ export default class IntelligentScissorsImplementation implements IntelligentSci
         this.scissors.tool.setGradientMagnitudeMaxLimit(200);
     }
 
-    public run(coordinates: number[], image: ImageData, offsetX: number, offsetY: number): number[] {
+    public run(coordinates: number[], image: ImageData): number[] {
         if (!Array.isArray(coordinates)) {
             throw new Error('Coordinates is expected to be an array');
         }
@@ -97,67 +103,45 @@ export default class IntelligentScissorsImplementation implements IntelligentSci
         const { cv, scissors } = this;
         const { tool, state } = scissors;
 
-        const points = applyOffset(numberArrayToPoints(coordinates), offsetX, offsetY);
-        if (points.length > 1) {
-            let matImage = null;
-            const contour = new cv.Mat();
+        const points = numberArrayToPoints(coordinates);
+        if (points.length === 1) {
+            const matImage = cv.matFromImageData(image);
 
             try {
-                const [prev, cur] = points.slice(-2);
-                const { x: prevX, y: prevY } = prev;
-                const { x: curX, y: curY } = cur;
-
-                const latestPointRemoved = points.length < Object.keys(state.anchors).length;
-                const latestPointReplaced = points.length === Object.keys(state.anchors).length;
-
-                if (latestPointRemoved) {
-                    for (const i of Object.keys(state.anchors).sort((a, b) => +b - +a)) {
-                        if (+i >= points.length) {
-                            state.path = state.path.slice(0, state.anchors[points.length].start);
-                            delete state.anchors[+i];
-                        }
-                    }
-                    return [...state.path];
-                }
-
-                matImage = cv.matFromImageData(image);
-
-                if (latestPointReplaced) {
-                    state.path = state.path.slice(0, state.anchors[points.length - 1].start);
-                    delete state.anchors[points.length - 1];
-                }
-                const pathSegment = [];
-                if (!state.blocked) {
-                    tool.applyImage(matImage);
-                    tool.buildMap(new cv.Point(prevX, prevY));
-                    tool.getContour(new cv.Point(curX, curY), contour);
-
-                    for (let row = 0; row < contour.rows; row++) {
-                        pathSegment.push(contour.intAt(row, 0) + offsetX, contour.intAt(row, 1) + offsetY);
-                    }
-                } else {
-                    pathSegment.push(curX + offsetX, curY + offsetY);
-                }
-                state.anchors[points.length - 1] = {
-                    point: cur,
-                    start: state.path.length,
-                };
-                state.path.push(...pathSegment);
+                state.prevPoints = points;
+                state.curPoints = points;
+                tool.applyImage(matImage);
+                tool.buildMap(new cv.Point(points[0].x, points[0].y));
+                return coordinates;
             } finally {
                 if (matImage) {
                     matImage.delete();
                 }
-
-                contour.delete();
             }
         } else {
-            state.path = [];
-            state.path.push(...pointsToNumberArray(applyOffset(points.slice(-1), -offsetX, -offsetY)));
-            state.anchors[0] = {
-                point: points[0],
-                start: 0,
-            };
+            let contour = new cv.Mat();
+
+            const path = [];
+            for (let i = 1; i < points.length; i++) {
+                const prevPoint = points[i - 1];
+                const curPoint = points[i];
+
+                // tool.buildMap(new cv.Point(prevPoint.x, prevPoint.y));
+                tool.getContour(new cv.Point(curPoint.x, curPoint.y), contour);
+
+                for (let row = 0; row < contour.rows; row++) {
+                    path.push(contour.intAt(row, 0), contour.intAt(row, 1));
+                }
+
+                contour.delete();
+                contour = new cv.Mat();
+            }
+
+            contour.delete();
+
+            return path;
         }
+
         return [...state.path];
     }
 
@@ -174,7 +158,6 @@ export default class IntelligentScissorsImplementation implements IntelligentSci
             },
             canvas: {
                 shapeType: 'points',
-                enableThreshold: true,
                 enableSliding: true,
                 allowRemoveOnlyLast: true,
                 minPosVertices: 1,

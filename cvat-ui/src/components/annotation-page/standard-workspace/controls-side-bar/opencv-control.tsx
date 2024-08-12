@@ -240,13 +240,12 @@ class OpenCVControlComponent extends React.PureComponent<Props & DispatchToProps
         }
 
         const {
-            shapesUpdated, isDone, threshold, shapes,
+            shapesUpdated, isDone, shapes,
         } = (e as CustomEvent).detail;
         const pressedPoints = convertShapesForInteractor(shapes, 'points', 0).flat();
         try {
             if (shapesUpdated) {
-                this.latestPoints = await this.runCVAlgorithm(pressedPoints,
-                    toolsBlockerState.algorithmsLocked ? 0 : threshold);
+                this.latestPoints = await this.runCVAlgorithm(pressedPoints);
                 let points = [];
                 if (toolsBlockerState.algorithmsLocked && this.latestPoints.length > 2) {
                     // disable approximation for latest two points to disable fickering
@@ -276,8 +275,7 @@ class OpenCVControlComponent extends React.PureComponent<Props & DispatchToProps
 
             if (isDone) {
                 // need to recalculate without the latest sliding point
-                const finalPoints = await this.runCVAlgorithm(pressedPoints,
-                    toolsBlockerState.algorithmsLocked ? 0 : threshold);
+                const finalPoints = await this.runCVAlgorithm(pressedPoints);
                 const finalObject = new core.classes.ObjectState({
                     frame,
                     objectType: ObjectType.SHAPE,
@@ -384,7 +382,6 @@ class OpenCVControlComponent extends React.PureComponent<Props & DispatchToProps
             canvasInstance.interact({
                 enabled: true,
                 crosshair: !isLocked,
-                enableThreshold: !isLocked,
             });
         }
     };
@@ -511,7 +508,7 @@ class OpenCVControlComponent extends React.PureComponent<Props & DispatchToProps
         }
     }
 
-    private async runCVAlgorithm(pressedPoints: number[], threshold: number): Promise<number[]> {
+    private async runCVAlgorithm(pressedPoints: number[]): Promise<number[]> {
         // Getting image data
         const canvas: HTMLCanvasElement | undefined = window.document.getElementById('cvat_canvas_background') as
             | HTMLCanvasElement
@@ -526,17 +523,11 @@ class OpenCVControlComponent extends React.PureComponent<Props & DispatchToProps
         if (!context) {
             throw new Error('Canvas context is empty');
         }
-        let imageData;
         const [x, y] = pressedPoints.slice(-2);
-        const startX = Math.round(Math.max(0, x - threshold));
-        const startY = Math.round(Math.max(0, y - threshold));
-        if (threshold !== 0) {
-            const segmentWidth = Math.min(2 * threshold, width - startX);
-            const segmentHeight = Math.min(2 * threshold, height - startY);
-            imageData = context.getImageData(startX, startY, segmentWidth, segmentHeight);
-        } else {
-            imageData = context.getImageData(0, 0, width, height);
-        }
+        const startX = Math.round(x);
+        const startY = Math.round(y);
+        const imageData = context.getImageData(0, 0, width, height);
+
         // Handling via OpenCV.js
         const points = await this.activeTool.run(pressedPoints, imageData, startX, startY);
         return points;
