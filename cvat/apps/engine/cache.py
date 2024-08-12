@@ -15,7 +15,7 @@ import zlib
 from contextlib import ExitStack, closing
 from datetime import datetime, timezone
 from itertools import pairwise
-from typing import Any, Callable, Iterator, Optional, Sequence, Tuple, Type, Union
+from typing import Callable, Iterator, Optional, Sequence, Tuple, Type, Union
 
 import av
 import cv2
@@ -57,8 +57,6 @@ _CacheItem = Tuple[io.BytesIO, str, int]
 class MediaCache:
     def __init__(self) -> None:
         self._cache = caches["media"]
-
-        # TODO migrate keys (check if they will be removed)
 
     def get_checksum(self, value: bytes) -> int:
         return zlib.crc32(value)
@@ -180,10 +178,12 @@ class MediaCache:
             )
             if not os.path.isfile(manifest_path):
                 try:
-                    reader._manifest.link(source_path, force=True)
-                    reader._manifest.create()
+                    reader.manifest.link(source_path, force=True)
+                    reader.manifest.create()
                 except Exception as e:
-                    # TODO: improve logging
+                    slogger.task[db_task.id].warning(
+                        f"Failed to create video manifest: {e}", exc_info=True
+                    )
                     reader = None
 
             if reader:

@@ -723,15 +723,15 @@ class VideoReaderWithManifest:
     # TODO: merge this class with VideoReader
 
     def __init__(self, manifest_path: str, source_path: str, *, allow_threading: bool = False):
-        self._source_path = source_path
-        self._manifest = VideoManifestManager(manifest_path)
-        if self._manifest.exists:
-            self._manifest.init_index()
+        self.source_path = source_path
+        self.manifest = VideoManifestManager(manifest_path)
+        if self.manifest.exists:
+            self.manifest.init_index()
 
         self.allow_threading = allow_threading
 
     def _read_av_container(self) -> ContextManager[av.container.InputContainer]:
-        return _AvVideoReading().read_av_container(self._source_path)
+        return _AvVideoReading().read_av_container(self.source_path)
 
     def _decode_stream(
         self, container: av.container.Container, video_stream: av.video.stream.VideoStream
@@ -740,11 +740,11 @@ class VideoReaderWithManifest:
 
     def _get_nearest_left_key_frame(self, frame_id: int) -> tuple[int, int]:
         nearest_left_keyframe_pos = bisect(
-            self._manifest, frame_id, key=lambda entry: entry.get('number')
+            self.manifest, frame_id, key=lambda entry: entry.get('number')
         )
         if nearest_left_keyframe_pos:
-            frame_number = self._manifest[nearest_left_keyframe_pos - 1].get('number')
-            timestamp = self._manifest[nearest_left_keyframe_pos - 1].get('pts')
+            frame_number = self.manifest[nearest_left_keyframe_pos - 1].get('number')
+            timestamp = self.manifest[nearest_left_keyframe_pos - 1].get('pts')
         else:
             frame_number = 0
             timestamp = 0

@@ -60,7 +60,7 @@ from cvat.apps.events.handlers import handle_dataset_import
 from cvat.apps.dataset_manager.bindings import CvatImportError
 from cvat.apps.dataset_manager.serializers import DatasetFormatsSerializer
 from cvat.apps.engine.frame_provider import (
-    IFrameProvider, TaskFrameProvider, JobFrameProvider, FrameQuality, FrameOutputType
+    IFrameProvider, TaskFrameProvider, JobFrameProvider, FrameQuality
 )
 from cvat.apps.engine.filters import NonModelSimpleFilter, NonModelOrderingFilter, NonModelJsonLogicFilter
 from cvat.apps.engine.media_extractors import get_mime

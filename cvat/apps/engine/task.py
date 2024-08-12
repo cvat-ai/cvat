@@ -13,7 +13,7 @@ import shutil
 from contextlib import closing
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Any, Dict, Iterator, List, NamedTuple, Optional, Sequence, Tuple, Union, Iterable
+from typing import Any, Dict, Iterator, List, NamedTuple, Optional, Sequence, Tuple, Union
 from urllib import parse as urlparse
 from urllib import request as urlrequest
 

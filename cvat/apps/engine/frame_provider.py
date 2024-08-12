@@ -224,7 +224,7 @@ class TaskFrameProvider(IFrameProvider):
 
     def validate_chunk_number(self, chunk_number: int) -> int:
         last_chunk = math.ceil(self._db_task.data.size / self._db_task.data.chunk_size) - 1
-        if not (0 <= chunk_number <= last_chunk):
+        if not 0 <= chunk_number <= last_chunk:
             raise ValidationError(
                 f"Invalid chunk number '{chunk_number}'. "
                 f"The chunk number should be in the [0, {last_chunk}] range"
@@ -463,7 +463,7 @@ class SegmentFrameProvider(IFrameProvider):
     def validate_chunk_number(self, chunk_number: int) -> int:
         segment_size = self._db_segment.frame_count
         last_chunk = math.ceil(segment_size / self._db_segment.task.data.chunk_size) - 1
-        if not (0 <= chunk_number <= last_chunk):
+        if not 0 <= chunk_number <= last_chunk:
             raise ValidationError(
                 f"Invalid chunk number '{chunk_number}'. "
                 f"The chunk number should be in the [0, {last_chunk}] range"
