@@ -219,6 +219,7 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
             points: [number, number][];
             bounds?: [number, number, number, number];
         };
+        latestPostponedEvent: Event | null;
         lastestApproximatedPoints: number[][];
         latestRequest: null | {
             interactor: MLModel;
@@ -251,6 +252,7 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
         this.interaction = {
             id: null,
             isAborted: false,
+            latestPostponedEvent: null,
             latestResponse: {
                 rle: [],
                 points: [],
@@ -270,6 +272,9 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
         this.setState({
             portals: this.collectTrackerPortals(),
         });
+
+        window.document.addEventListener('keydown', this.onKeyDown);
+        window.document.addEventListener('keyup', this.onKeyUp);
         canvasInstance.html().addEventListener('canvas.interacted', this.interactionListener);
         canvasInstance.html().addEventListener('canvas.canceled', this.cancelListener);
     }
@@ -298,6 +303,7 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
             this.interaction = {
                 id: null,
                 isAborted: false,
+                latestPostponedEvent: null,
                 latestResponse: { rle: [], points: [] },
                 lastestApproximatedPoints: [],
                 latestRequest: null,
@@ -322,7 +328,6 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
                                 shapeType: ShapeType.POLYGON,
                                 points: this.interaction.lastestApproximatedPoints.flat(),
                             },
-                            onChangeToolsBlockerState: this.onChangeToolsBlockerState,
                         });
                     });
             }
@@ -334,6 +339,8 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
     public componentWillUnmount(): void {
         const { canvasInstance } = this.props;
         onRemoveAnnotations(null);
+        window.document.removeEventListener('keydown', this.onKeyDown);
+        window.document.removeEventListener('keyup', this.onKeyUp);
         canvasInstance.html().removeEventListener('canvas.interacted', this.interactionListener);
         canvasInstance.html().removeEventListener('canvas.canceled', this.cancelListener);
     }
@@ -436,7 +443,6 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
                         points: convertMasksToPolygons ? this.interaction.lastestApproximatedPoints.flat() :
                             this.interaction.latestResponse.rle,
                     },
-                    onChangeToolsBlockerState: this.onChangeToolsBlockerState,
                 });
             }
 
@@ -545,9 +551,15 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
     };
 
     private interactionListener = async (e: Event): Promise<void> => {
+        const { toolsBlockerState } = this.props;
         const { mode } = this.state;
 
         if (mode === 'interaction') {
+            if (toolsBlockerState.algorithmsLocked) {
+                this.interaction.latestPostponedEvent = e;
+                return;
+            }
+
             await this.onInteraction(e);
         }
 
@@ -581,10 +593,30 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
 
     private onChangeToolsBlockerState = (event: string): void => {
         const { isActivated, onSwitchToolsBlockerState } = this.props;
-        if (isActivated && event === 'keydown') {
-            onSwitchToolsBlockerState({ algorithmsLocked: true });
-        } else if (isActivated && event === 'keyup') {
-            onSwitchToolsBlockerState({ algorithmsLocked: false });
+        const { mode } = this.state;
+
+        if (isActivated && mode === 'interaction') {
+            if (event === 'keydown') {
+                this.interaction.latestPostponedEvent = null;
+                onSwitchToolsBlockerState({ algorithmsLocked: true });
+            } else if (event === 'keyup') {
+                onSwitchToolsBlockerState({ algorithmsLocked: false });
+                if (this.interaction.latestPostponedEvent) {
+                    this.onInteraction(this.interaction.latestPostponedEvent);
+                }
+            }
+        }
+    };
+
+    private onKeyUp = (e: KeyboardEvent): void => {
+        if (e.key === 'Control') {
+            this.onChangeToolsBlockerState('keyup');
+        }
+    };
+
+    private onKeyDown = (e: KeyboardEvent): void => {
+        if (!e.repeat && e.key === 'Control') {
+            this.onChangeToolsBlockerState('keydown');
         }
     };
 
@@ -1141,10 +1173,7 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
                             onClick={() => {
                                 if (activeInteractor && activeLabelID && labels.length) {
                                     this.setState({ mode: 'interaction' });
-
                                     canvasInstance.cancel();
-                                    activeInteractor.onChangeToolsBlockerState = this.onChangeToolsBlockerState;
-
                                     const interactorParameters = {
                                         ...omit(activeInteractor.params.canvas, 'startWithBoxOptional'),
                                         // replace 'optional' with true or false depending on user specified setting

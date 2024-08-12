@@ -1,4 +1,5 @@
 // Copyright (C) 2021-2022 Intel Corporation
+// Copyright (C) 2024 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -14,7 +15,6 @@ export interface IntelligentScissorsParams {
         enableSliding: boolean;
         allowRemoveOnlyLast: boolean;
         minPosVertices: number;
-        onChangeToolsBlockerState: (event:string)=>void;
     };
 }
 
@@ -38,7 +38,6 @@ function applyOffset(points: Point[], offsetX: number, offsetY: number): Point[]
 export default class IntelligentScissorsImplementation implements IntelligentScissors {
     public kind = 'opencv_intelligent_scissors';
     private cv: any;
-    private onChangeToolsBlockerState: (event:string)=>void;
     private scissors: {
         tool: any;
         state: {
@@ -55,9 +54,8 @@ export default class IntelligentScissorsImplementation implements IntelligentSci
         };
     };
 
-    public constructor(cv: any, onChangeToolsBlockerState:(event:string)=>void) {
+    public constructor(cv: any) {
         this.cv = cv;
-        this.onChangeToolsBlockerState = onChangeToolsBlockerState;
         this.reset();
     }
 
@@ -180,7 +178,6 @@ export default class IntelligentScissorsImplementation implements IntelligentSci
                 enableSliding: true,
                 allowRemoveOnlyLast: true,
                 minPosVertices: 1,
-                onChangeToolsBlockerState: this.onChangeToolsBlockerState,
             },
         };
     }

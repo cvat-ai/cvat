@@ -136,7 +136,6 @@ export interface InteractionData {
         shapeType: string;
         points: number[];
     };
-    onChangeToolsBlockerState?: (event: string) => void;
 }
 
 export interface InteractionResult {
