@@ -21,6 +21,9 @@ import CVATTooltip from 'components/common/cvat-tooltip';
 import ShortcutsContext from 'components/shortcuts.context';
 import { LabelType, ShapeType } from 'cvat-core-wrapper';
 import config from 'config';
+import { ShortcutScope } from 'utils/enums';
+import { registerComponentShortcuts } from 'actions/shortcuts-actions';
+import { subKeyMap } from 'utils/component-subkeymap';
 import {
     idGenerator, LabelOptColor, SkeletonConfiguration, toSVGCoord,
 } from './common';
@@ -46,6 +49,17 @@ interface State {
     image: RcFile | null;
     error: null | string;
 }
+
+const componentShortcuts = {
+    CANCEL_SKELETON_EDGE: {
+        name: 'Cancel skeleton drawing',
+        description: 'Interrupts drawing a new skeleton edge',
+        sequences: ['esc'],
+        scope: ShortcutScope.ALL,
+    },
+};
+
+registerComponentShortcuts(componentShortcuts);
 
 export default class SkeletonConfigurator extends React.PureComponent<Props, State> {
     static contextType = ShortcutsContext;
@@ -659,23 +673,23 @@ export default class SkeletonConfigurator extends React.PureComponent<Props, Sta
         const keyMap = this.context;
         const disabledStyle: CSSProperties = disabled ? { opacity: 0.5, pointerEvents: 'none' } : {};
 
+        const handlers: Record<keyof typeof componentShortcuts, (event?: KeyboardEvent) => void> = {
+            CANCEL_SKELETON_EDGE: () => {
+                const { activeTool: currentActiveTool } = this.state;
+                if (currentActiveTool === 'join') {
+                    const shape = this.findNotFinishedEdge();
+                    if (shape) {
+                        shape.remove();
+                    }
+                }
+            },
+        };
+
         return (
             <Row className='cvat-skeleton-configurator'>
                 <GlobalHotKeys
-                    keyMap={{
-                        CANCEL_SKELETON_EDGE: keyMap.CANCEL_SKELETON_EDGE,
-                    }}
-                    handlers={{
-                        CANCEL_SKELETON_EDGE: () => {
-                            const { activeTool: currentActiveTool } = this.state;
-                            if (currentActiveTool === 'join') {
-                                const shape = this.findNotFinishedEdge();
-                                if (shape) {
-                                    shape.remove();
-                                }
-                            }
-                        },
-                    }}
+                    keyMap={subKeyMap(componentShortcuts, keyMap)}
+                    handlers={handlers}
                 />
                 { svgRef.current && contextMenuVisible && contextMenuElement !== null ? (
                     <SkeletonElementContextMenu

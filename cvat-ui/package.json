@@ -1,6 +1,6 @@
 {
   "name": "cvat-ui",
-  "version": "1.64.3",
+  "version": "1.64.4",
   "description": "CVAT single-page application",
   "main": "src/index.tsx",
   "scripts": {
@@ -38,7 +38,6 @@
     "@uiw/react-md-editor": "^3.22.0",
     "antd": "5.17.1",
     "chart.js": "^4.3.0",
-    "copy-to-clipboard": "^3.3.1",
     "cvat-canvas": "link:./../cvat-canvas",
     "cvat-canvas3d": "link:./../cvat-canvas3d",
     "cvat-core": "link:./../cvat-core",

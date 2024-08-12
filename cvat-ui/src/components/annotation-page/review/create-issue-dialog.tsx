@@ -77,6 +77,7 @@ interface Props {
     left: number;
     angle: number;
     scale: number;
+    onCreateIssue: () => void;
 }
 
 export default function CreateIssueDialog(props: Props): ReactPortal {
@@ -84,7 +85,7 @@ export default function CreateIssueDialog(props: Props): ReactPortal {
     const isMounted = useIsMounted();
     const dispatch = useDispatch();
     const {
-        top, left, angle, scale,
+        top, left, angle, scale, onCreateIssue,
     } = props;
 
     return ReactDOM.createPortal(
@@ -100,6 +101,7 @@ export default function CreateIssueDialog(props: Props): ReactPortal {
                     if (isMounted()) {
                         setFetching(false);
                     }
+                    onCreateIssue();
                 });
             }}
             cancel={() => {

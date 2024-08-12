@@ -9,9 +9,13 @@ import Icon from '@ant-design/icons';
 import { SplitIcon } from 'icons';
 import { Canvas } from 'cvat-canvas-wrapper';
 import { Canvas3d } from 'cvat-canvas3d-wrapper';
-import { ActiveControl } from 'reducers';
+import { ActiveControl, CombinedState } from 'reducers';
 import CVATTooltip from 'components/common/cvat-tooltip';
 import GlobalHotKeys, { KeyMapItem } from 'utils/mousetrap-react';
+import { registerComponentShortcuts } from 'actions/shortcuts-actions';
+import { ShortcutScope } from 'utils/enums';
+import { useSelector } from 'react-redux';
+import { subKeyMap } from 'utils/component-subkeymap';
 
 export interface Props {
     updateActiveControl(activeControl: ActiveControl): void;
@@ -26,10 +30,23 @@ export interface Props {
     };
 }
 
+const componentShortcuts = {
+    SWITCH_SPLIT_MODE: {
+        name: 'Split mode',
+        description: 'Activate or deactivate mode to splitting shapes',
+        sequences: ['alt+m'],
+        scope: ShortcutScope.ALL,
+    },
+};
+
+registerComponentShortcuts(componentShortcuts);
+
 function SplitControl(props: Props): JSX.Element {
     const {
         shortcuts, activeControl, canvasInstance, updateActiveControl, disabled,
     } = props;
+
+    const { keyMap } = useSelector((state: CombinedState) => state.shortcuts);
 
     const dynamicIconProps = activeControl === ActiveControl.SPLIT ?
         {
@@ -47,18 +64,20 @@ function SplitControl(props: Props): JSX.Element {
             },
         };
 
+    const handlers: Record<keyof typeof componentShortcuts, (event?: KeyboardEvent) => void> = {
+        SWITCH_SPLIT_MODE: (event: KeyboardEvent | undefined) => {
+            if (event) event.preventDefault();
+            dynamicIconProps.onClick();
+        },
+    };
+
     return disabled ? (
         <Icon className='cvat-split-track-control cvat-disabled-canvas-control' component={SplitIcon} />
     ) : (
         <>
             <GlobalHotKeys
-                keyMap={{ SWITCH_SPLIT_MODE: shortcuts.SWITCH_SPLIT_MODE.details }}
-                handlers={{
-                    SWITCH_SPLIT_MODE: (event: KeyboardEvent | undefined) => {
-                        if (event) event.preventDefault();
-                        dynamicIconProps.onClick();
-                    },
-                }}
+                keyMap={subKeyMap(componentShortcuts, keyMap)}
+                handlers={handlers}
             />
             <CVATTooltip title={`Split a track ${shortcuts.SWITCH_SPLIT_MODE.displayValue}`} placement='right'>
                 <Icon {...dynamicIconProps} component={SplitIcon} />
