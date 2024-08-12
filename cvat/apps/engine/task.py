@@ -686,14 +686,10 @@ def _create_thread(
     is_media_sorted = False
 
     if is_data_in_cloud:
-        # first we need to filter files and keep only supported ones
-        if any([v for k, v in media.items() if k != 'image']) and db_data.storage_method == models.StorageMethodChoice.CACHE:
-            # FUTURE-FIXME: This is a temporary workaround for creating tasks
-            # with unsupported cloud storage data (video, archive, pdf) when use_cache is enabled
-            db_data.storage_method = models.StorageMethodChoice.FILE_SYSTEM
-            _update_status("The 'use cache' option is ignored")
+        # Packed media must be downloaded for task creation
+        if any(v for k, v in media.items() if k != 'image'):
+            _update_status("The input media is packed - downloading it for further processing")
 
-        if db_data.storage_method == models.StorageMethodChoice.FILE_SYSTEM or not settings.USE_CACHE:
             filtered_data = []
             for files in (i for i in media.values() if i):
                 filtered_data.extend(files)
@@ -708,9 +704,11 @@ def _create_thread(
                 step = db_data.get_frame_step()
                 if start_frame or step != 1 or stop_frame != len(filtered_data) - 1:
                     media_to_download = filtered_data[start_frame : stop_frame + 1: step]
+
             _download_data_from_cloud_storage(db_data.cloud_storage, media_to_download, upload_dir)
             del media_to_download
             del filtered_data
+
             is_data_in_cloud = False
             db_data.storage = models.StorageChoice.LOCAL
         else:
