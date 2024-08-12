@@ -365,7 +365,7 @@ class MediaCache:
             frame_bytes = None
 
             if frame_idx in frame_set:
-                frame_bytes = frame_provider.get_frame(frame_idx, quality=quality)[0]
+                frame_bytes = frame_provider.get_frame(frame_idx, quality=quality).data
 
                 if frame_size is not None:
                     # Decoded video frames can have different size, restore the original one
