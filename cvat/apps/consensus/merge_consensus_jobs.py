@@ -135,7 +135,9 @@ def _merge_consensus_jobs(task_id: int) -> None:
                 parent_job.save()
 
     task_report_data = generate_task_consensus_report(list(job_comparison_reports.values()))
-    return save_report(task_id, parent_jobs, task_report_data, job_comparison_reports, assignee_consensus_score)
+    return save_report(
+        task_id, parent_jobs, task_report_data, job_comparison_reports, assignee_consensus_score
+    )
 
 
 def merge_task(task: Task, request) -> Response:

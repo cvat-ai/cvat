@@ -23,24 +23,24 @@ from rest_framework.response import Response
 from cvat.apps.consensus.consensus_reports import prepare_report_for_downloading
 from cvat.apps.consensus.merge_consensus_jobs import merge_task
 from cvat.apps.consensus.models import (
+    AssigneeConsensusReport,
     ConsensusConflict,
     ConsensusReport,
     ConsensusReportTarget,
     ConsensusSettings,
-    AssigneeConsensusReport,
 )
 from cvat.apps.consensus.permissions import (
+    AssigneeConsensusReportPermission,
     ConsensusConflictPermission,
     ConsensusReportPermission,
     ConsensusSettingPermission,
-    AssigneeConsensusReportPermission,
 )
 from cvat.apps.consensus.serializers import (
+    AssigneeConsensusReportSerializer,
     ConsensusConflictSerializer,
     ConsensusReportCreateSerializer,
     ConsensusReportSerializer,
     ConsensusSettingsSerializer,
-    AssigneeConsensusReportSerializer,
 )
 from cvat.apps.engine.mixins import PartialUpdateModelMixin
 from cvat.apps.engine.models import Task
@@ -406,7 +406,9 @@ class ConsensusSettingsViewSet(
                 "task_id", type=OpenApiTypes.INT, description="A simple equality filter for task id"
             ),
             OpenApiParameter(
-                "consensus_report_id", type=OpenApiTypes.INT, description="A simple equality filter for target"
+                "consensus_report_id",
+                type=OpenApiTypes.INT,
+                description="A simple equality filter for target",
             ),
         ],
         responses={
@@ -452,9 +454,7 @@ class AssigneeConsensusReportViewSet(
 
                 self.check_object_permissions(self.request, task)
 
-                queryset = queryset.filter(
-                    Q(task__id=task_id)
-                ).distinct()
+                queryset = queryset.filter(Q(task__id=task_id)).distinct()
             else:
                 perm = AssigneeConsensusReportPermission.create_scope_list(self.request)
                 queryset = perm.filter(queryset)

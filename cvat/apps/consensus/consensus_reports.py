@@ -413,9 +413,9 @@ def save_report(
         # db_assignee = models.User.objects.get(id=)
         db_assignee_report = AssigneeConsensusReport(
             task=task_report["task"],
-            consensus_score=np.round(100*assignee_mean_consensus_score),
+            consensus_score=np.round(100 * assignee_mean_consensus_score),
             assignee=assignee,
-            consensus_report_id=db_task_report.id
+            consensus_report_id=db_task_report.id,
         )
         db_assignee_report.save()
 

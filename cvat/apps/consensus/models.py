@@ -182,6 +182,7 @@ class AnnotationId(models.Model):
         else:
             raise ValidationError(f"Unexpected type value '{self.type}'")
 
+
 class AssigneeConsensusReport(models.Model):
     task = models.ForeignKey(
         Task,

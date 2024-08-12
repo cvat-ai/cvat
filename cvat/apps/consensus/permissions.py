@@ -11,7 +11,7 @@ from cvat.apps.engine.models import Task
 from cvat.apps.engine.permissions import TaskPermission
 from cvat.apps.iam.permissions import OpenPolicyAgentPermission, StrEnum, get_iam_context
 
-from .models import ConsensusConflict, ConsensusReport, ConsensusSettings, AssigneeConsensusReport
+from .models import AssigneeConsensusReport, ConsensusConflict, ConsensusReport, ConsensusSettings
 
 
 class ConsensusReportPermission(OpenPolicyAgentPermission):
@@ -261,6 +261,7 @@ class ConsensusSettingPermission(OpenPolicyAgentPermission):
             }
 
         return data
+
 
 class AssigneeConsensusReportPermission(OpenPolicyAgentPermission):
     obj: Optional[AssigneeConsensusReport]
