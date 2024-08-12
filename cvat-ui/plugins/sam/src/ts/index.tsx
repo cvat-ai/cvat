@@ -183,9 +183,9 @@ const samPlugin: SAMPlugin = {
                     taskID: number,
                     model: MLModel,
                     {
-                        frame, pos_points, neg_points, pos_boxes,
+                        frame, pos_points, neg_points, obj_bbox,
                     }: {
-                        frame: number, pos_points: number[][], neg_points: number[][], pos_boxes: number[][],
+                        frame: number, pos_points: number[][], neg_points: number[][], obj_bbox: number[][],
                     },
                 ): Promise<
                     {
@@ -232,11 +232,9 @@ const samPlugin: SAMPlugin = {
                                 };
 
                                 const clicks: ClickType[] = [];
-                                if (pos_boxes.length === 2) {
-                                    clicks.push({ clickType: 2, x: pos_boxes[0][0], y: pos_boxes[0][1] });
-                                    clicks.push({ clickType: 3, x: pos_boxes[1][0], y: pos_boxes[1][1] });
-                                } else if (pos_boxes.length > 2) {
-                                    reject(new Error('Segment Anything 2 only supports up to one bounding box as input'));
+                                if (obj_bbox.length) {
+                                    clicks.push({ clickType: 2, x: obj_bbox[0][0], y: obj_bbox[0][1] });
+                                    clicks.push({ clickType: 3, x: obj_bbox[1][0], y: obj_bbox[1][1] });
                                 }
 
                                 pos_points.forEach((point) => {

@@ -226,7 +226,7 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
                 frame: number;
                 neg_points: number[][];
                 pos_points: number[][];
-                pos_boxes: number[][];
+                obj_bbox: number[][];
             };
         } | null;
         hideMessage: (() => void) | null;
@@ -478,7 +478,7 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
                 interactor,
                 data: {
                     frame,
-                    pos_boxes: convertShapesForInteractor(shapes, 'rectangle', 0),
+                    obj_bbox: convertShapesForInteractor(shapes, 'rectangle', 0),
                     pos_points: convertShapesForInteractor(shapes, 'points', 0),
                     neg_points: convertShapesForInteractor(shapes, 'points', 2),
                 },
