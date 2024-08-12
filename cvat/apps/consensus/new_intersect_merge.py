@@ -294,7 +294,7 @@ class ExactMerge:
             else:
                 assert False, "Unknown image field combination"
 
-            if not media.has_data or not media.has_size:
+            if media and not media.has_data or not media.has_size:
                 if item_a.media._size:
                     media._size = item_a.media._size
                 elif item_b.media._size:
