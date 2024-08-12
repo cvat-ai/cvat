@@ -66,7 +66,7 @@ from cvat.apps.engine.filters import NonModelSimpleFilter, NonModelOrderingFilte
 from cvat.apps.engine.media_extractors import get_mime
 from cvat.apps.engine.permissions import AnnotationGuidePermission, get_iam_context
 from cvat.apps.engine.models import (
-    ClientFile, Job, JobType, Label, SegmentType, Task, Project, Issue, Data,
+    ClientFile, Job, JobType, Label, Task, Project, Issue, Data,
     Comment, StorageMethodChoice, StorageChoice,
     CloudProviderChoice, Location, CloudStorage as CloudStorageModel,
     Asset, AnnotationGuide)
