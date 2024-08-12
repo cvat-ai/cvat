@@ -144,18 +144,25 @@ context('Requests page', () => {
         });
 
         it('Creating a task creates a request. Incorrect task cant be opened.', () => {
+            const defaultAttrValue = 'Requests attr';
+            const multiAttrParams = false;
+            const advancedConfigurationParams = false;
+            const forProject = false;
+            const attachToProject = false;
+            const expectedResult = 'fail';
+
             cy.createAnnotationTask(
                 taskName,
                 mainLabelName,
                 attrName,
-                attrName,
+                defaultAttrValue,
                 badArchiveName,
-                false,
-                false,
-                false,
-                false,
-                false,
-                'fail',
+                multiAttrParams,
+                advancedConfigurationParams,
+                forProject,
+                attachToProject,
+                projectName,
+                expectedResult,
             );
             checkRequestStatus('Create Task', () => {
                 cy.get('.cvat-request-item-progress-failed').should('exist');
@@ -238,7 +245,8 @@ context('Requests page', () => {
         });
 
         it('Export backup creates a request. Project can be opened.', () => {
-            cy.contains('.cvat-header-button', 'Projects').should('be.visible').click();
+            cy.visit('/projects');
+            cy.get('.cvat-spinner').should('not.exist');
             cy.backupProject(
                 projectName,
                 backupArchiveName,
@@ -255,7 +263,8 @@ context('Requests page', () => {
         // There is a bug with importing a backup archive.
         // The backup file tree is wrong in case of creating a project from file share
         it.skip('Import backup creates a request. Project cant be opened.', () => {
-            cy.contains('.cvat-header-button', 'Projects').should('be.visible').click();
+            cy.visit('/projects');
+            cy.get('.cvat-spinner').should('not.exist');
             cy.restoreProject(
                 `${backupArchiveName}.zip`,
             );
