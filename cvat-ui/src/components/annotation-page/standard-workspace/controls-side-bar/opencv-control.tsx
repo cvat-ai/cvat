@@ -138,14 +138,12 @@ const mapDispatchToProps = {
 class OpenCVControlComponent extends React.PureComponent<Props & DispatchToProps, State> {
     private activeTool: IntelligentScissors | null;
     private latestPoints: number[];
-    private latestPostponedEvent: Event | null;
 
     public constructor(props: Props & DispatchToProps) {
         super(props);
         const { labels, defaultApproxPolyAccuracy } = props;
         this.activeTool = null;
         this.latestPoints = [];
-        this.latestPostponedEvent = null;
 
         this.state = {
             libraryInitialized: openCVWrapper.isInitialized,
@@ -383,13 +381,6 @@ class OpenCVControlComponent extends React.PureComponent<Props & DispatchToProps
         if (isActivated) {
             const isLocked = !toolsBlockerState.algorithmsLocked;
             onSwitchToolsBlockerState({ algorithmsLocked: isLocked });
-
-            if (isLocked) {
-                this.latestPostponedEvent = null;
-            } else if (this.latestPostponedEvent) {
-                this.onInteraction(this.latestPostponedEvent);
-            }
-
             canvasInstance.interact({
                 enabled: true,
                 crosshair: !isLocked,

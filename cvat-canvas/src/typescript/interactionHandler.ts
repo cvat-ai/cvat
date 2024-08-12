@@ -467,7 +467,7 @@ export class InteractionHandlerImpl implements InteractionHandler {
         });
 
         this.canvas.on('wheel.interaction', (e: WheelEvent): void => {
-            if (e.altKey || e.ctrlKey) {
+            if (e.altKey) {
                 e.stopPropagation();
                 e.preventDefault();
                 if (this.threshold) {
