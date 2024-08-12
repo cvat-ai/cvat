@@ -199,7 +199,7 @@ class MediaCache:
                 os.path.isfile(manifest_path)
                 and db_data.storage == models.StorageChoice.CLOUD_STORAGE
             ):
-                reader = ImageReaderWithManifest()
+                reader = ImageReaderWithManifest(manifest_path)
                 with ExitStack() as es:
                     db_cloud_storage = db_data.cloud_storage
                     assert db_cloud_storage, "Cloud storage instance was deleted"
