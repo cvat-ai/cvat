@@ -7,8 +7,7 @@ import { BoundariesActions, BoundariesActionTypes } from 'actions/boundaries-act
 import { AuthActions, AuthActionTypes } from 'actions/auth-actions';
 import { ShortcutsActions, ShortcutsActionsTypes } from 'actions/shortcuts-actions';
 import { KeyMap, KeyMapItem } from 'utils/mousetrap-react';
-import { ShortcutScope } from 'utils/enums';
-import { isEqual } from 'lodash';
+import { conflictDetector } from 'utils/conflict-detector';
 import { ShortcutsState } from '.';
 
 const capitalize = (text: string): string => text.slice(0, 1).toUpperCase() + text.slice(1);
@@ -52,118 +51,6 @@ const defaultState: ShortcutsState = {
     }, {}),
     defaultState: { ...defaultKeyMap },
 };
-
-function conflict(sequence: string, existingSequence: string): boolean {
-    if (isEqual(sequence, existingSequence)) {
-        return true;
-    }
-    const splitSequence = sequence.split(' ');
-    const splitExistingSequence = existingSequence.split(' ');
-
-    for (let i = 0; i < Math.max(splitSequence.length, splitExistingSequence.length); i++) {
-        if (!splitSequence[i] || !splitExistingSequence[i]) {
-            return true;
-        }
-        if (splitSequence[i] !== splitExistingSequence[i]) {
-            return false;
-        }
-    }
-    return true;
-}
-
-export function conflictDetector(
-    shortcuts: Record<string, KeyMapItem>,
-    keyMap: KeyMap): Record<string, KeyMapItem> | null {
-    const flatKeyMap: { [scope: string]: { sequences: string[], items: Record<string, KeyMapItem> } } = {};
-    const conflictingItems: Record<string, KeyMapItem> = {};
-
-    for (const [action, keyMapItem] of Object.entries(keyMap)) {
-        const { scope } = keyMapItem;
-        if (!flatKeyMap[scope]) {
-            flatKeyMap[scope] = { sequences: [], items: {} };
-        }
-        flatKeyMap[scope].sequences.push(...keyMapItem.sequences);
-        flatKeyMap[scope].items[action] = keyMapItem;
-    }
-
-    for (const [action, keyMapItem] of Object.entries(shortcuts)) {
-        const { scope } = keyMapItem;
-        const { sequences } = keyMapItem;
-
-        if (!flatKeyMap[scope]) {
-            flatKeyMap[scope] = { sequences: [], items: {} };
-        }
-
-        const flatKeyMapUpdated = {
-            sequences: [...flatKeyMap[scope].sequences],
-            items: { ...flatKeyMap[scope].items },
-        };
-
-        if (scope && flatKeyMap[scope]) {
-            if (scope === ShortcutScope.GLOBAL) {
-                const otherScopes = Object.keys(flatKeyMap).filter((s) => s !== ShortcutScope.GLOBAL);
-                for (const s of otherScopes) {
-                    if (flatKeyMap[s]) {
-                        flatKeyMapUpdated.sequences.push(...flatKeyMap[s].sequences);
-                        flatKeyMapUpdated.items = { ...flatKeyMapUpdated.items, ...flatKeyMap[s].items };
-                    }
-                }
-            } else {
-                const globalSequences = flatKeyMap[ShortcutScope.GLOBAL]?.sequences || [];
-                flatKeyMapUpdated.sequences.push(...globalSequences);
-                flatKeyMapUpdated.items = {
-                    ...flatKeyMapUpdated.items,
-                    ...flatKeyMap[ShortcutScope.GLOBAL]?.items || {},
-                };
-
-                if (scope === ShortcutScope.ANNOTATION_PAGE) {
-                    const otherAnnotationScopes = Object.keys(flatKeyMap).filter(
-                        (s) => s.includes(ShortcutScope.ANNOTATION_PAGE) && s !== ShortcutScope.ANNOTATION_PAGE,
-                    );
-                    for (const s of otherAnnotationScopes) {
-                        if (flatKeyMap[s]) {
-                            flatKeyMapUpdated.sequences.push(...flatKeyMap[s].sequences);
-                            flatKeyMapUpdated.items = { ...flatKeyMapUpdated.items, ...flatKeyMap[s].items };
-                        }
-                    }
-                } else if (scope.includes(ShortcutScope.ANNOTATION_PAGE)) {
-                    const annotationSequences = flatKeyMap[ShortcutScope.ANNOTATION_PAGE]?.sequences || [];
-                    flatKeyMapUpdated.sequences.push(...annotationSequences);
-                    flatKeyMapUpdated.items = {
-                        ...flatKeyMapUpdated.items,
-                        ...flatKeyMap[ShortcutScope.ANNOTATION_PAGE]?.items || {},
-                    };
-                }
-            }
-        }
-
-        if (flatKeyMapUpdated.items[action]) {
-            const currentSequences = flatKeyMapUpdated.items[action].sequences;
-            delete flatKeyMapUpdated.items[action];
-            flatKeyMapUpdated.sequences = flatKeyMapUpdated.sequences.filter(
-                (s: any) => !currentSequences.includes(s),
-            );
-        }
-
-        for (const sequence of sequences) {
-            for (const existingSequence of flatKeyMapUpdated.sequences) {
-                if (conflict(sequence, existingSequence)) {
-                    const conflictingAction = Object.keys(flatKeyMapUpdated.items)
-                        .find((a) => flatKeyMapUpdated.items[a].sequences.includes(existingSequence));
-                    const conflictingItem = flatKeyMapUpdated.items[conflictingAction!];
-                    if (conflictingAction) {
-                        conflictingItems[conflictingAction] = conflictingItem;
-                    }
-                }
-            }
-        }
-
-        flatKeyMap[scope].sequences.push(...sequences);
-        flatKeyMap[scope].items[action] = keyMapItem;
-    }
-
-    return Object.keys(conflictingItems).length ? conflictingItems : null;
-}
 
 export default (state = defaultState, action: ShortcutsActions | BoundariesActions | AuthActions): ShortcutsState => {
     switch (action.type) {
