@@ -1,5 +1,5 @@
 // Copyright (C) 2020-2022 Intel Corporation
-// Copyright (C) 2022-2023 CVAT.ai Corporation
+// Copyright (C) 2022-2024 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -11,7 +11,9 @@ import Text from 'antd/lib/typography/Text';
 import InputNumber from 'antd/lib/input-number';
 import Button from 'antd/lib/button';
 import Switch from 'antd/lib/switch';
+import Tag from 'antd/lib/tag';
 import notification from 'antd/lib/notification';
+import { ArrowRightOutlined } from '@ant-design/icons';
 
 import CVATTooltip from 'components/common/cvat-tooltip';
 import { clamp } from 'utils/math';
@@ -138,17 +140,27 @@ function DetectorRunner(props: Props): JSX.Element {
                 </Col>
             </Row>
             {isDetector && (
-                <Row justify='start' align='middle'>
+                <div>
+                    <div className='cvat-detector-runner-mapping-header'>
+                        <div>
+                            <Text strong>Setup mapping between labels and attributes</Text>
+                        </div>
+                        <div>
+                            <Tag>Model Spec</Tag>
+                            <ArrowRightOutlined />
+                            <Tag>CVAT Spec</Tag>
+                        </div>
+                    </div>
                     <LabelsMapperComponent
                         key={modelID} // rerender when model switched
                         onUpdateMapping={(_mapping: FullMapping) => setMapping(_mapping)}
                         modelLabels={modelLabels}
                         taskLabels={taskLabels}
                     />
-                </Row>
+                </div>
             )}
             {convertMasks2PolygonVisible && (
-                <div className='detector-runner-convert-masks-to-polygons-wrapper'>
+                <div className='cvat-detector-runner-convert-masks-to-polygons-wrapper'>
                     <Switch
                         checked={convertMasksToPolygons}
                         onChange={(checked: boolean) => {
@@ -159,7 +171,7 @@ function DetectorRunner(props: Props): JSX.Element {
                 </div>
             )}
             {isDetector && withCleanup && (
-                <div className='detector-runner-clean-previous-annotations-wrapper'>
+                <div className='cvat-detector-runner-clean-previous-annotations-wrapper'>
                     <Switch
                         checked={cleanup}
                         onChange={(checked: boolean): void => setCleanup(checked)}

@@ -59,6 +59,9 @@ import { reviewActions } from 'actions/review-actions';
 
 import { filterAnnotations } from 'utils/filter-annotations';
 import { ImageFilter } from 'utils/image-processing';
+import { ShortcutScope } from 'utils/enums';
+import { registerComponentShortcuts } from 'actions/shortcuts-actions';
+import { subKeyMap } from 'utils/component-subkeymap';
 import ImageSetupsContent from './image-setups-content';
 import BrushTools from './brush-tools';
 import CanvasTipsComponent from './canvas-hints';
@@ -256,6 +259,17 @@ function mapStateToProps(state: CombinedState): StateToProps {
         imageFilters,
     };
 }
+
+const componentShortcuts = {
+    SWITCH_AUTOMATIC_BORDERING: {
+        name: 'Switch automatic bordering',
+        description: 'Switch automatic bordering for polygons and polylines during drawing/editing',
+        sequences: ['ctrl'],
+        scope: ShortcutScope.ALL,
+    },
+};
+
+registerComponentShortcuts(componentShortcuts);
 
 function mapDispatchToProps(dispatch: any): DispatchToProps {
     return {
@@ -726,10 +740,9 @@ class CanvasWrapperComponent extends React.PureComponent<Props> {
     };
 
     private onCanvasPositionSelected = (event: any): void => {
-        const { onResetCanvas, onStartIssue } = this.props;
+        const { onStartIssue } = this.props;
         const { points } = event.detail;
         onStartIssue(points);
-        onResetCanvas();
     };
 
     private onCanvasMouseDown = (e: MouseEvent): void => {
@@ -913,7 +926,7 @@ class CanvasWrapperComponent extends React.PureComponent<Props> {
 
         if (activatedStateID !== null) {
             const [activatedState] = annotations.filter((state: any): boolean => state.clientID === activatedStateID);
-            if (workspace === Workspace.ATTRIBUTES) {
+            if (activatedState && workspace === Workspace.ATTRIBUTES) {
                 if (activatedState.objectType !== ObjectType.TAG) {
                     canvasInstance.focus(activatedStateID, aamZoomMargin);
                 } else {
@@ -946,8 +959,8 @@ class CanvasWrapperComponent extends React.PureComponent<Props> {
             const proxy = new Proxy(frameData, {
                 get: (_frameData, prop, receiver) => {
                     if (prop === 'data') {
-                        return async () => {
-                            const originalImage = await _frameData.data();
+                        return async (...args: any[]) => {
+                            const originalImage = await _frameData.data(...args);
                             const imageIsNotProcessed = imageFilters.some((imageFilter: ImageFilter) => (
                                 imageFilter.modifier.currentProcessedImage !== frame
                             ));
@@ -1086,11 +1099,7 @@ class CanvasWrapperComponent extends React.PureComponent<Props> {
             }
         };
 
-        const subKeyMap = {
-            SWITCH_AUTOMATIC_BORDERING: keyMap.SWITCH_AUTOMATIC_BORDERING,
-        };
-
-        const handlers = {
+        const handlers: Record<keyof typeof componentShortcuts, (event?: KeyboardEvent) => void> = {
             SWITCH_AUTOMATIC_BORDERING: (event: KeyboardEvent | undefined) => {
                 if (switchableAutomaticBordering) {
                     preventDefault(event);
@@ -1101,7 +1110,7 @@ class CanvasWrapperComponent extends React.PureComponent<Props> {
 
         return (
             <>
-                <GlobalHotKeys keyMap={subKeyMap} handlers={handlers} />
+                <GlobalHotKeys keyMap={subKeyMap(componentShortcuts, keyMap)} handlers={handlers} />
                 <CanvasTipsComponent ref={this.canvasTipsRef} />
                 {
                     !canvasIsReady && (
