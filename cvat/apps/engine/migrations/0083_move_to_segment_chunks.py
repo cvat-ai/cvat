@@ -44,7 +44,7 @@ def switch_tasks_with_static_chunks_to_dynamic_chunks(apps, schema_editor):
 class Migration(migrations.Migration):
 
     dependencies = [
-        ("engine", "0081_job_assignee_updated_date_and_more"),
+        ("engine", "0082_alter_labeledimage_job_and_more"),
     ]
 
     operations = [
