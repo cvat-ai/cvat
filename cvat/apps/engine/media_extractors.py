@@ -18,7 +18,10 @@ from bisect import bisect
 from contextlib import ExitStack, closing, contextmanager
 from dataclasses import dataclass
 from enum import IntEnum
-from typing import Any, Callable, Iterable, Iterator, Optional, Protocol, Sequence, Tuple, TypeVar, Union
+from typing import (
+    Any, Callable, ContextManager, Generator, Iterable, Iterator, Optional, Protocol,
+    Sequence, Tuple, TypeVar, Union
+)
 
 import av
 import av.codec
@@ -505,6 +508,43 @@ class ZipReader(ImageListReader):
         if not self.extract_dir:
             os.remove(self._zip_source.filename)
 
+class _AvVideoReading:
+    @contextmanager
+    def read_av_container(self, source: Union[str, io.BytesIO]) -> av.container.InputContainer:
+        if isinstance(source, io.BytesIO):
+            source.seek(0) # required for re-reading
+
+        container = av.open(source)
+        try:
+            yield container
+        finally:
+            # fixes a memory leak in input container closing
+            # https://github.com/PyAV-Org/PyAV/issues/1117
+            for stream in container.streams:
+                context = stream.codec_context
+                if context and context.is_open:
+                    context.close()
+
+            if container.open_files:
+                container.close()
+
+    def decode_stream(
+        self, container: av.container.Container, video_stream: av.video.stream.VideoStream
+    ) -> Generator[av.VideoFrame, None, None]:
+        demux_iter = container.demux(video_stream)
+        try:
+            for packet in demux_iter:
+                yield from packet.decode()
+        finally:
+            # av v9.2.0 seems to have a memory corruption or a deadlock
+            # in exception handling for demux() in the multithreaded mode.
+            # Instead of breaking the iteration, we iterate over packets till the end.
+            # Fixed in av v12.2.0.
+            if av.__version__ == "9.2.0" and video_stream.thread_type == 'AUTO':
+                exhausted = object()
+                while next(demux_iter, exhausted) is not exhausted:
+                    pass
+
 class VideoReader(IMediaReader):
     def __init__(
         self,
@@ -567,72 +607,45 @@ class VideoReader(IMediaReader):
                 if self.allow_threading:
                     video_stream.thread_type = 'AUTO'
 
-            exception = None
-            frame_number = 0
-            for packet in container.demux(video_stream):
-                try:
-                    for frame in packet.decode():
-                        if frame_number == next_frame_filter_frame:
-                            if video_stream.metadata.get('rotate'):
-                                pts = frame.pts
-                                frame = av.VideoFrame().from_ndarray(
-                                    rotate_image(
-                                        frame.to_ndarray(format='bgr24'),
-                                        360 - int(video_stream.metadata.get('rotate'))
-                                    ),
-                                    format ='bgr24'
-                                )
-                                frame.pts = pts
+            frame_counter = itertools.count()
+            with closing(self._decode_stream(container, video_stream)) as stream_decoder:
+                for frame, frame_number in zip(stream_decoder, frame_counter):
+                    if frame_number == next_frame_filter_frame:
+                        if video_stream.metadata.get('rotate'):
+                            pts = frame.pts
+                            frame = av.VideoFrame().from_ndarray(
+                                rotate_image(
+                                    frame.to_ndarray(format='bgr24'),
+                                    360 - int(video_stream.metadata.get('rotate'))
+                                ),
+                                format ='bgr24'
+                            )
+                            frame.pts = pts
 
-                            if self._frame_size is None:
-                                self._frame_size = (frame.width, frame.height)
+                        if self._frame_size is None:
+                            self._frame_size = (frame.width, frame.height)
 
-                            yield (frame, self._source_path[0], frame.pts)
+                        yield (frame, self._source_path[0], frame.pts)
 
-                            next_frame_filter_frame = next(frame_filter_iter, None)
+                        next_frame_filter_frame = next(frame_filter_iter, None)
 
-                        if next_frame_filter_frame is None:
-                            return
+                    if next_frame_filter_frame is None:
+                        return
 
-                        frame_number += 1
-                except Exception as e:
-                    if av.__version__ == "9.2.0":
-                        # av v9.2.0 seems to have a memory corruption
-                        # in exception handling for demux() in the multithreaded mode.
-                        # Instead of breaking the iteration, we iterate over packets till the end.
-                        # Fixed in v12.2.0.
-                        exception = e
-                        if video_stream.thread_type != 'AUTO':
-                            break
-
-            if exception:
-                raise exception
-
-    def __iter__(self):
+    def __iter__(self) -> Iterator[Tuple[av.VideoFrame, str, int]]:
         return self.iterate_frames()
 
     def get_progress(self, pos):
         duration = self._get_duration()
         return pos / duration if duration else None
 
-    @contextmanager
-    def _read_av_container(self):
-        if isinstance(self._source_path[0], io.BytesIO):
-            self._source_path[0].seek(0) # required for re-reading
+    def _read_av_container(self) -> ContextManager[av.container.InputContainer]:
+        return _AvVideoReading().read_av_container(self._source_path[0])
 
-        container = av.open(self._source_path[0])
-        try:
-            yield container
-        finally:
-            # fixes a memory leak in input container closing
-            # https://github.com/PyAV-Org/PyAV/issues/1117
-            for stream in container.streams:
-                context = stream.codec_context
-                if context and context.is_open:
-                    context.close()
-
-            if container.open_files:
-                container.close()
+    def _decode_stream(
+        self, container: av.container.Container, video_stream: av.video.stream.VideoStream
+    ) -> Generator[av.VideoFrame, None, None]:
+        return _AvVideoReading().decode_stream(container, video_stream)
 
     def _get_duration(self):
         with self._read_av_container() as container:
@@ -717,20 +730,13 @@ class VideoReaderWithManifest:
 
         self.allow_threading = allow_threading
 
-    @contextmanager
-    def _read_av_container(self):
-        container = av.open(self._source_path)
-        try:
-            yield container
-        finally:
-            # fixes a memory leak in input container closing
-            # https://github.com/PyAV-Org/PyAV/issues/1117
-            for stream in container.streams:
-                context = stream.codec_context
-                if context and context.is_open:
-                    context.close()
+    def _read_av_container(self) -> ContextManager[av.container.InputContainer]:
+        return _AvVideoReading().read_av_container(self._source_path)
 
-            container.close()
+    def _decode_stream(
+        self, container: av.container.Container, video_stream: av.video.stream.VideoStream
+    ) -> Generator[av.VideoFrame, None, None]:
+        return _AvVideoReading().decode_stream(container, video_stream)
 
     def _get_nearest_left_key_frame(self, frame_id: int) -> tuple[int, int]:
         nearest_left_keyframe_pos = bisect(
@@ -763,40 +769,25 @@ class VideoReaderWithManifest:
 
             container.seek(offset=start_decode_timestamp, stream=video_stream)
 
-            frame_number = start_decode_frame_number - 1
-            for packet in container.demux(video_stream):
-                try:
-                    for frame in packet.decode():
-                        if frame_number == next_frame_filter_frame:
-                            if video_stream.metadata.get('rotate'):
-                                frame = av.VideoFrame().from_ndarray(
-                                    rotate_image(
-                                        frame.to_ndarray(format='bgr24'),
-                                        360 - int(video_stream.metadata.get('rotate'))
-                                    ),
-                                    format ='bgr24'
-                                )
+            frame_counter = itertools.count(start_decode_frame_number - 1)
+            with closing(self._decode_stream(container, video_stream)) as stream_decoder:
+                for frame, frame_number in zip(stream_decoder, frame_counter):
+                    if frame_number == next_frame_filter_frame:
+                        if video_stream.metadata.get('rotate'):
+                            frame = av.VideoFrame().from_ndarray(
+                                rotate_image(
+                                    frame.to_ndarray(format='bgr24'),
+                                    360 - int(video_stream.metadata.get('rotate'))
+                                ),
+                                format ='bgr24'
+                            )
 
-                            yield frame
+                        yield frame
 
-                            next_frame_filter_frame = next(frame_filter_iter, None)
+                        next_frame_filter_frame = next(frame_filter_iter, None)
 
-                        if next_frame_filter_frame is None:
-                            return
-
-                        frame_number += 1
-                except Exception as e:
-                    if av.__version__ == "9.2.0":
-                        # av v9.2.0 seems to have a memory corruption
-                        # in exception handling for demux() in the multithreaded mode.
-                        # Instead of breaking the iteration, we iterate over packets till the end.
-                        # Fixed in v12.2.0.
-                        exception = e
-                        if video_stream.thread_type != 'AUTO':
-                            break
-
-            if exception:
-                raise exception
+                    if next_frame_filter_frame is None:
+                        return
 
 class IChunkWriter(ABC):
     def __init__(self, quality, dimension=DimensionType.DIM_2D):
