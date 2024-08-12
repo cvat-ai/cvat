@@ -181,6 +181,20 @@ class OpenCVControlComponent extends React.PureComponent<Props & DispatchToProps
             if (this.activeTool) {
                 this.activeTool.switchBlockMode(toolsBlockerState.algorithmsLocked);
                 this.activeTool.reset();
+
+                // Getting image data
+                type CanvasType = HTMLCanvasElement | undefined;
+                const canvas: CanvasType = window.document.getElementById('cvat_canvas_background') as CanvasType;
+                if (!canvas) {
+                    throw new Error('Element #cvat_canvas_background was not found');
+                }
+
+                const { width, height } = canvas;
+                const context = canvas.getContext('2d');
+                if (!context) {
+                    throw new Error('Canvas context is empty');
+                }
+                this.activeTool.setImage(context.getImageData(0, 0, width, height));
             }
         }
 
@@ -509,27 +523,10 @@ class OpenCVControlComponent extends React.PureComponent<Props & DispatchToProps
     }
 
     private async runCVAlgorithm(pressedPoints: number[]): Promise<number[]> {
-        // Getting image data
-        const canvas: HTMLCanvasElement | undefined = window.document.getElementById('cvat_canvas_background') as
-            | HTMLCanvasElement
-            | undefined;
-        if (!canvas) {
-            throw new Error('Element #cvat_canvas_background was not found');
+        if (!this.activeTool || pressedPoints.length === 0) {
+            return [];
         }
-        if (!this.activeTool || pressedPoints.length === 0) return [];
-
-        const { width, height } = canvas;
-        const context = canvas.getContext('2d');
-        if (!context) {
-            throw new Error('Canvas context is empty');
-        }
-        const [x, y] = pressedPoints.slice(-2);
-        const startX = Math.round(x);
-        const startY = Math.round(y);
-        const imageData = context.getImageData(0, 0, width, height);
-
-        // Handling via OpenCV.js
-        const points = await this.activeTool.run(pressedPoints, imageData, startX, startY);
+        const points = await this.activeTool.run(pressedPoints);
         return points;
     }
 
@@ -584,8 +581,8 @@ class OpenCVControlComponent extends React.PureComponent<Props & DispatchToProps
                                 onClick={() => {
                                     this.setState({ mode: 'interaction' });
                                     this.activeTool = openCVWrapper.segmentation.intelligentScissorsFactory();
-                                    canvasInstance.cancel();
 
+                                    canvasInstance.cancel();
                                     const interactorParameters = this.activeTool.params.canvas;
                                     onInteractionStart(this.activeTool, activeLabelID, interactorParameters);
                                     canvasInstance.interact({
