@@ -138,12 +138,14 @@ const mapDispatchToProps = {
 class OpenCVControlComponent extends React.PureComponent<Props & DispatchToProps, State> {
     private activeTool: IntelligentScissors | null;
     private latestPoints: number[];
+    private latestPostponedEvent: Event | null;
 
     public constructor(props: Props & DispatchToProps) {
         super(props);
         const { labels, defaultApproxPolyAccuracy } = props;
         this.activeTool = null;
         this.latestPoints = [];
+        this.latestPostponedEvent = null;
 
         this.state = {
             libraryInitialized: openCVWrapper.isInitialized,
@@ -161,6 +163,8 @@ class OpenCVControlComponent extends React.PureComponent<Props & DispatchToProps
 
     public componentDidMount(): void {
         const { canvasInstance } = this.props;
+
+        window.document.addEventListener('keyup', this.onKeyUp);
         canvasInstance.html().addEventListener('canvas.interacted', this.interactionListener);
     }
 
@@ -208,6 +212,8 @@ class OpenCVControlComponent extends React.PureComponent<Props & DispatchToProps
     public componentWillUnmount(): void {
         const { canvasInstance } = this.props;
         const { trackedShapes } = this.state;
+
+        window.document.removeEventListener('keyup', this.onKeyUp);
         canvasInstance.html().removeEventListener('canvas.interacted', this.interactionListener);
         openCVWrapper.removeProgressCallback();
         trackedShapes.forEach((shape: TrackedShape) => shape.trackerModel.delete());
@@ -368,18 +374,33 @@ class OpenCVControlComponent extends React.PureComponent<Props & DispatchToProps
         return context.getImageData(0, 0, width, height);
     };
 
-    private onChangeToolsBlockerState = (event:string):void => {
+    private onChangeToolsBlockerState = (): void => {
         const {
-            isActivated, toolsBlockerState, onSwitchToolsBlockerState, canvasInstance,
+            toolsBlockerState, canvasInstance,
+            isActivated, onSwitchToolsBlockerState,
         } = this.props;
-        if (isActivated && event === 'keyup') {
-            onSwitchToolsBlockerState({ algorithmsLocked: !toolsBlockerState.algorithmsLocked });
+
+        if (isActivated) {
+            const isLocked = !toolsBlockerState.algorithmsLocked;
+            onSwitchToolsBlockerState({ algorithmsLocked: isLocked });
+
+            if (isLocked) {
+                this.latestPostponedEvent = null;
+            } else if (this.latestPostponedEvent) {
+                this.onInteraction(this.latestPostponedEvent);
+            }
+
             canvasInstance.interact({
                 enabled: true,
-                crosshair: toolsBlockerState.algorithmsLocked,
-                enableThreshold: toolsBlockerState.algorithmsLocked,
-                onChangeToolsBlockerState: this.onChangeToolsBlockerState,
+                crosshair: !isLocked,
+                enableThreshold: !isLocked,
             });
+        }
+    };
+
+    private onKeyUp = (e: KeyboardEvent): void => {
+        if (e.key === 'Control') {
+            this.onChangeToolsBlockerState();
         }
     };
 
@@ -580,8 +601,7 @@ class OpenCVControlComponent extends React.PureComponent<Props & DispatchToProps
                                 className='cvat-opencv-scissors-tool-button'
                                 onClick={() => {
                                     this.setState({ mode: 'interaction' });
-                                    this.activeTool = openCVWrapper.segmentation
-                                        .intelligentScissorsFactory(this.onChangeToolsBlockerState);
+                                    this.activeTool = openCVWrapper.segmentation.intelligentScissorsFactory();
                                     canvasInstance.cancel();
 
                                     const interactorParameters = this.activeTool.params.canvas;

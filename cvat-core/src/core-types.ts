@@ -16,7 +16,6 @@ export interface ModelParams {
         minNegVertices?: number;
         startWithBox?: boolean;
         startWithBoxOptional?: boolean;
-        onChangeToolsBlockerState?: (event: string) => void;
     };
 }
 

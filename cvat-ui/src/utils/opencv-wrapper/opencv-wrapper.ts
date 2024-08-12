@@ -14,7 +14,7 @@ import { OpenCVTracker } from './opencv-interfaces';
 const core = getCore();
 
 export interface Segmentation {
-    intelligentScissorsFactory: (onChangeToolsBlockerState:(event:string)=>void) => IntelligentScissors;
+    intelligentScissorsFactory: () => IntelligentScissors;
 }
 
 export interface MatSpace {
@@ -291,9 +291,7 @@ export class OpenCVWrapper {
     public get segmentation(): Segmentation {
         this.checkInitialization();
         return {
-            intelligentScissorsFactory:
-            (onChangeToolsBlockerState:
-            (event:string)=>void) => new IntelligentScissorsImplementation(this.cv, onChangeToolsBlockerState),
+            intelligentScissorsFactory: () => new IntelligentScissorsImplementation(this.cv),
         };
     }
 
