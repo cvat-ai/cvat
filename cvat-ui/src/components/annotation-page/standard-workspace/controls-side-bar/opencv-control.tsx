@@ -252,9 +252,7 @@ class OpenCVControlComponent extends React.PureComponent<Props & DispatchToProps
             return;
         }
 
-        const {
-            shapesUpdated, isDone, shapes,
-        } = (e as CustomEvent).detail;
+        const { shapesUpdated, isDone, shapes } = (e as CustomEvent).detail;
         const pressedPoints = convertShapesForInteractor(shapes, 'points', 0).flat();
         try {
             if (shapesUpdated) {
@@ -289,19 +287,21 @@ class OpenCVControlComponent extends React.PureComponent<Props & DispatchToProps
             if (isDone) {
                 // need to recalculate without the latest sliding point
                 const finalPoints = await this.runCVAlgorithm(pressedPoints);
-                const finalObject = new core.classes.ObjectState({
-                    frame,
-                    objectType: ObjectType.SHAPE,
-                    shapeType: ShapeType.POLYGON,
-                    source: core.enums.Source.SEMI_AUTO,
-                    label: labels.filter((label: any) => label.id === activeLabelID)[0],
-                    points: openCVWrapper.contours
-                        .approxPoly(finalPoints, thresholdFromAccuracy(approxPolyAccuracy))
-                        .flat(),
-                    occluded: false,
-                    zOrder: curZOrder,
-                });
-                createAnnotations([finalObject]);
+                if (finalPoints.length >= 6) {
+                    const finalObject = new core.classes.ObjectState({
+                        frame,
+                        objectType: ObjectType.SHAPE,
+                        shapeType: ShapeType.POLYGON,
+                        source: core.enums.Source.SEMI_AUTO,
+                        label: labels.filter((label: any) => label.id === activeLabelID)[0],
+                        points: openCVWrapper.contours
+                            .approxPoly(finalPoints, thresholdFromAccuracy(approxPolyAccuracy))
+                            .flat(),
+                        occluded: false,
+                        zOrder: curZOrder,
+                    });
+                    createAnnotations([finalObject]);
+                }
             }
         } catch (error: any) {
             notification.error({
