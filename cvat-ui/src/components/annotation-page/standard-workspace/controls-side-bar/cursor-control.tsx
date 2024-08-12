@@ -28,7 +28,7 @@ const componentShortcuts = {
         name: 'Cancel',
         description: 'Cancel any active canvas mode',
         sequences: ['esc'],
-        scope: ShortcutScope.ANNOTATION_PAGE_STANDARD_WORKSPACE,
+        scope: ShortcutScope.STANDARD_WORKSPACE,
     },
 };
 

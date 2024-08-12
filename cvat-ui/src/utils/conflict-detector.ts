@@ -49,13 +49,13 @@ function updatedFlatKeyMap(scope: string, flatKeyMap: FlatKeyMap): FlatKeyMapIte
     };
     const scopes = [];
 
-    if (isEqual(scope, ShortcutScope.GLOBAL)) {
+    if (scope === ShortcutScope.GLOBAL) {
         scopes.push(...Object.keys(flatKeyMap));
     } else {
         scopes.push(ShortcutScope.GLOBAL);
         if (scope === ShortcutScope.ANNOTATION_PAGE) {
-            scopes.push(...Object.keys(flatKeyMap).filter((s) => s.includes(ShortcutScope.ANNOTATION_PAGE)));
-        } else if (scope.includes(ShortcutScope.ANNOTATION_PAGE)) {
+            scopes.push(scope, ...Object.keys(flatKeyMap).filter((s) => s.includes('WORKSPACE')));
+        } else if (scope.includes('WORKSPACE')) {
             scopes.push(ShortcutScope.ANNOTATION_PAGE, scope);
         } else {
             scopes.push(scope);
