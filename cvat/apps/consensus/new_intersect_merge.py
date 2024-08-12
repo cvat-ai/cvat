@@ -446,7 +446,7 @@ def _to_rle(ann: dm.Annotation, *, img_h: int, img_w: int):
         assert False
 
 
-def segment_iou(a: dm.Annotation, b: dm.Annotation, *, img_h: int, img_w: int) -> float:
+def segment_iou(a: dm.Annotation, b: dm.Annotation, *, img_h: Union[int, None] = None, img_w: Union[int, None] = None) -> float:
     """
     Generic IoU computation with masks and polygons.
     Returns -1 if no intersection, [0; 1] otherwise
@@ -460,6 +460,7 @@ def segment_iou(a: dm.Annotation, b: dm.Annotation, *, img_h: int, img_w: int) -
     is_bbox = AnnotationType.bbox in [a.type, b.type]
 
     if not is_bbox:
+        assert img_h is not None and img_w is not None
         a = _to_rle(a, img_h=img_h, img_w=img_w)
         b = _to_rle(b, img_h=img_h, img_w=img_w)
     else:
