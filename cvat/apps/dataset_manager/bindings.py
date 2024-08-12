@@ -240,7 +240,7 @@ class CommonData(InstanceLabelData):
 
     @property
     def stop(self) -> int:
-        return len(self)
+        return max(0, len(self) - 1)
 
     def _get_queryset(self):
         raise NotImplementedError()
@@ -376,7 +376,7 @@ class CommonData(InstanceLabelData):
     def _export_track(self, track, idx):
         track['shapes'] = list(filter(lambda x: not self._is_frame_deleted(x['frame']), track['shapes']))
         tracked_shapes = TrackManager.get_interpolated_shapes(
-            track, 0, self.stop, self._annotation_ir.dimension)
+            track, 0, self.stop + 1, self._annotation_ir.dimension)
         for tracked_shape in tracked_shapes:
             tracked_shape["attributes"] += track["attributes"]
             tracked_shape["track_id"] = track["track_id"] if self._use_server_track_ids else idx
@@ -432,7 +432,7 @@ class CommonData(InstanceLabelData):
 
         anno_manager = AnnotationManager(self._annotation_ir)
         for shape in sorted(
-            anno_manager.to_shapes(self.stop, self._annotation_ir.dimension,
+            anno_manager.to_shapes(self.stop + 1, self._annotation_ir.dimension,
                 # Skip outside, deleted and excluded frames
                 included_frames=included_frames,
                 include_outside=False,
@@ -763,7 +763,7 @@ class JobData(CommonData):
     @property
     def stop(self) -> int:
         segment = self._db_job.segment
-        return segment.stop_frame + 1
+        return segment.stop_frame
 
     @property
     def db_instance(self):

@@ -6,6 +6,7 @@
 from __future__ import annotations
 
 import io
+import itertools
 import math
 from abc import ABCMeta, abstractmethod
 from dataclasses import dataclass
@@ -360,9 +361,25 @@ class TaskFrameProvider(IFrameProvider):
         quality: FrameQuality = FrameQuality.ORIGINAL,
         out_type: FrameOutputType = FrameOutputType.BUFFER,
     ) -> Iterator[DataWithMeta[AnyFrame]]:
-        # TODO: optimize segment access
-        for idx in range(start_frame, (stop_frame + 1) if stop_frame else None):
-            yield self.get_frame(idx, quality=quality, out_type=out_type)
+        frame_range = itertools.count(start_frame, self._db_task.data.get_frame_step())
+        if stop_frame:
+            frame_range = itertools.takewhile(lambda x: x <= stop_frame, frame_range)
+
+        db_segment = None
+        db_segment_frame_set = None
+        db_segment_frame_provider = None
+        for idx in frame_range:
+            if db_segment and idx not in db_segment_frame_set:
+                db_segment = None
+                db_segment_frame_set = None
+                db_segment_frame_provider = None
+
+            if not db_segment:
+                db_segment = self._get_segment(idx)
+                db_segment_frame_set = set(db_segment.frame_set)
+                db_segment_frame_provider = SegmentFrameProvider(db_segment)
+
+            yield db_segment_frame_provider.get_frame(idx, quality=quality, out_type=out_type)
 
     def _get_segment(self, validated_frame_number: int) -> models.Segment:
         if not self._db_task.data or not self._db_task.data.size:
@@ -537,8 +554,14 @@ class SegmentFrameProvider(IFrameProvider):
         quality: FrameQuality = FrameQuality.ORIGINAL,
         out_type: FrameOutputType = FrameOutputType.BUFFER,
     ) -> Iterator[DataWithMeta[AnyFrame]]:
-        for idx in range(start_frame, (stop_frame + 1) if stop_frame else None):
-            yield self.get_frame(idx, quality=quality, out_type=out_type)
+        frame_range = itertools.count(start_frame, self._db_segment.task.data.get_frame_step())
+        if stop_frame:
+            frame_range = itertools.takewhile(lambda x: x <= stop_frame, frame_range)
+
+        segment_frame_set = set(self._db_segment.frame_set)
+        for idx in frame_range:
+            if idx in segment_frame_set:
+                yield self.get_frame(idx, quality=quality, out_type=out_type)
 
 
 class JobFrameProvider(SegmentFrameProvider):
