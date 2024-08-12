@@ -4,7 +4,6 @@
 
 import React, { useState } from 'react';
 import { useHistory } from 'react-router';
-import { Row, Col } from 'antd/lib/grid';
 import { DownloadOutlined, QuestionCircleOutlined } from '@ant-design/icons';
 import { ColumnFilterItem, Key } from 'antd/lib/table/interface';
 import Table from 'antd/lib/table';
@@ -27,7 +26,6 @@ interface Props {
 
 function JobListComponent(props: Props): JSX.Element {
     const { task: taskInstance, jobsReports: jobsReportsArray } = props;
-    console.log('jobsReportsArray', jobsReportsArray);
     const jobsReports: Record<number, ConsensusReport> = jobsReportsArray.reduce(
         (acc, report) => {
             if (!acc[report.jobID]) {
@@ -37,7 +35,6 @@ function JobListComponent(props: Props): JSX.Element {
         },
         {},
     );
-    console.log('jobsReports in JobListComp', jobsReports);
     const history = useHistory();
     const { id: taskId, jobs } = taskInstance;
     const [renderedJobs] = useState<Job[]>(jobs.filter((job: Job) => job.type === JobType.ANNOTATION));
@@ -139,7 +136,7 @@ function JobListComponent(props: Props): JSX.Element {
             key: 'assignee',
             className: 'cvat-job-item-assignee',
             render: (report: ConsensusReport): JSX.Element => <Text>{report?.assignee?.username}</Text>,
-            sorter: sorter('assignee.assignee.username'),
+            sorter: sorter('assignee.username'),
             filters: collectUsers('assignee'),
             onFilter: (value: boolean | Key, record: any) => (record.assignee.assignee?.username || false) === value,
         },
@@ -171,7 +168,7 @@ function JobListComponent(props: Props): JSX.Element {
             key: 'quality',
             align: 'center' as const,
             className: 'cvat-job-item-quality',
-            sorter: sorter('quality.summary.accuracy'),
+            sorter: sorter('quality.consensus_score'),
             render: (report?: ConsensusReport): JSX.Element => {
                 const meanConsensusScore = report?.consensus_score;
                 const consensusScoreRepresentation = toRepresentation(meanConsensusScore);
@@ -212,7 +209,7 @@ function JobListComponent(props: Props): JSX.Element {
     ];
     const data = renderedJobs.reduce((acc: any[], job: any) => {
         const report = jobsReports[job.id];
-        console.log('repo', report);
+
         acc.push({
             key: job.id,
             job: job.id,
@@ -228,11 +225,6 @@ function JobListComponent(props: Props): JSX.Element {
 
     return (
         <div className='cvat-task-job-list'>
-            <Row justify='space-between' align='middle'>
-                <Col>
-                    <Text className='cvat-text-color cvat-jobs-header'> Jobs </Text>
-                </Col>
-            </Row>
             <Table
                 className='cvat-task-jobs-table'
                 rowClassName={() => 'cvat-task-jobs-table-row'}
