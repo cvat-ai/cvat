@@ -553,23 +553,6 @@ export default function implementAPI(cvat: CVATCore): CVATCore {
         const params = fieldsToSnakeCase(body);
         await serverProxy.analytics.performance.calculate(params, onUpdate);
     });
-    implementationMixin(cvat.analytics.quality.calculate, async (
-        body: Parameters<CVATCore['analytics']['quality']['calculate']>[0],
-        onUpdate: Parameters<CVATCore['analytics']['quality']['calculate']>[1],
-    ) => {
-        checkFilter(body, {
-            jobID: isInteger,
-            taskID: isInteger,
-            projectID: isInteger,
-        });
-
-        if (!('taskID' in body)) {
-            throw new ArgumentError('One "taskID" is not provided');
-        }
-
-        const params = fieldsToSnakeCase(body);
-        await serverProxy.analytics.quality.calculate(params, onUpdate);
-    });
     implementationMixin(cvat.frames.getMeta, async (type, id) => {
         const result = await serverProxy.frames.getMeta(type, id);
         return new FramesMetaData({

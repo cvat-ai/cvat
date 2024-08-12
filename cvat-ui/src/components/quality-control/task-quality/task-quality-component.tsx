@@ -6,7 +6,7 @@ import {
     Task,
 } from 'cvat-core-wrapper';
 import React from 'react';
-import { QualityColors } from 'utils/quality-color';
+import { QualityColors } from 'utils/quality';
 import PaidFeaturePlaceholder from 'components/paid-feature-placeholder/paid-feature-placeholder';
 import { usePlugins } from 'utils/hooks';
 
