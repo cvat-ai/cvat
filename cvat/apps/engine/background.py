@@ -97,7 +97,7 @@ class _ResourceExportManager(ABC):
                 status=status.HTTP_409_CONFLICT,
             )
 
-        if rq_job_status == RQJobStatus.SCHEDULED:
+        if rq_job_status in (RQJobStatus.SCHEDULED, RQJobStatus.DEFERRED):
             rq_job.cancel(enqueue_dependents=settings.ONE_RUNNING_JOB_IN_QUEUE_PER_USER)
 
         rq_job.delete()
