@@ -244,10 +244,31 @@ class MediaCache:
 
                     yield from media
             else:
+                requested_frame_iter = iter(frame_ids)
+                next_requested_frame_id = next(requested_frame_iter, None)
+                if next_requested_frame_id is None:
+                    return
+
+                # TODO: find a way to use prefetched results, if provided
+                db_images = (
+                    db_data.images.order_by("frame")
+                    .filter(frame__gte=frame_ids[0], frame__lte=frame_ids[-1])
+                    .values_list("frame", "path")
+                    .all()
+                )
+
                 media = []
-                for image in sorted(db_data.images.all(), key=lambda image: image.frame):
-                    source_path = os.path.join(raw_data_dir, image.path)
-                    media.append((source_path, source_path, None))
+                for frame_id, frame_path in db_images:
+                    if frame_id == next_requested_frame_id:
+                        source_path = os.path.join(raw_data_dir, frame_path)
+                        media.append((source_path, source_path, None))
+
+                        next_requested_frame_id = next(requested_frame_iter, None)
+
+                    if next_requested_frame_id is None:
+                        break
+
+                assert next_requested_frame_id is None
 
                 if dimension == models.DimensionType.DIM_2D:
                     media = preload_images(media)
