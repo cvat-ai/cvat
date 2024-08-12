@@ -16,12 +16,6 @@ export enum ConsensusActionTypes {
 }
 
 export const consensusActions = {
-    openConsensusModal: (instance: any) => (
-        createAction(ConsensusActionTypes.OPEN_CONSENSUS_MODAL, { instance })
-    ),
-    closeConsensusModal: (instance: any) => (
-        createAction(ConsensusActionTypes.CLOSE_CONSENSUS_MODAL, { instance })
-    ),
     setFetching: (fetching: boolean) => (
         createAction(ConsensusActionTypes.SET_FETCHING, { fetching })
     ),

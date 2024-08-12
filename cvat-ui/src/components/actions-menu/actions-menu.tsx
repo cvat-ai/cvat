@@ -35,7 +35,6 @@ export enum Actions {
     OPEN_BUG_TRACKER = 'open_bug_tracker',
     BACKUP_TASK = 'backup_task',
     VIEW_ANALYTICS = 'view_analytics',
-    SHOW_TASK_CONSENSUS_CONFIGURATION = 'show_task_consensus_configuration',
     VIEW_CONSENSUS_ANALYTICS = 'view_consensus_analytics',
     MERGE_CONSENSUS_JOBS = 'merge_consensus_jobs',
 }
@@ -131,13 +130,6 @@ function ActionsMenuComponent(props: Props): JSX.Element {
     ), 50]);
 
     if (consensusJobsPerRegularJob) {
-        menuItems.push([(
-            <Menu.Item
-                key={Actions.SHOW_TASK_CONSENSUS_CONFIGURATION}
-            >
-                Consensus configuration
-            </Menu.Item>
-        ), 55]);
         menuItems.push([(
             <Menu.Item
                 key={Actions.VIEW_CONSENSUS_ANALYTICS}

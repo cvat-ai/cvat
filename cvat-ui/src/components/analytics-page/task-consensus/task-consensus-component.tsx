@@ -7,7 +7,9 @@ import { Row } from 'antd/lib/grid';
 import Text from 'antd/lib/typography/Text';
 import notification from 'antd/lib/notification';
 import CVATLoadingSpinner from 'components/common/loading-spinner';
-import { ConsensusReport, Task, getCore } from 'cvat-core-wrapper';
+import {
+    AssigneeConsensusReport, ConsensusReport, Task, getCore,
+} from 'cvat-core-wrapper';
 import React, {
     useCallback, useEffect, useReducer, useState,
 } from 'react';
@@ -35,12 +37,14 @@ interface State {
     fetching: boolean;
     taskReport: ConsensusReport | null;
     jobsReports: ConsensusReport[];
+    assigneeReports: AssigneeConsensusReport[];
 }
 
 enum ReducerActionType {
     SET_FETCHING = 'SET_FETCHING',
     SET_TASK_REPORT = 'SET_TASK_REPORT',
     SET_JOBS_REPORTS = 'SET_JOBS_REPORTS',
+    SET_ASSIGNEE_REPORTS = 'SET_ASSIGNEE_REPORTS',
 }
 
 export const reducerActions = {
@@ -52,6 +56,9 @@ export const reducerActions = {
     ),
     setJobsReports: (consensusReports: ConsensusReport[]) => (
         createAction(ReducerActionType.SET_JOBS_REPORTS, { consensusReports })
+    ),
+    setAssigneeReports: (assigneeconsensusReports: AssigneeConsensusReport[]) => (
+        createAction(ReducerActionType.SET_ASSIGNEE_REPORTS, { assigneeconsensusReports })
     ),
 };
 
@@ -79,6 +86,14 @@ const reducer = (state: State, action: ActionUnion<typeof reducerActions>): Stat
         };
     }
 
+    if (action.type === ReducerActionType.SET_ASSIGNEE_REPORTS) {
+        const assigneeReports = action.payload.assigneeconsensusReports;
+        return {
+            ...state,
+            assigneeReports,
+        };
+    }
+
     return state;
 };
 
@@ -96,6 +111,7 @@ function TaskConsensusComponent(props: Props): JSX.Element {
         fetching: true,
         taskReport: null,
         jobsReports: [],
+        assigneeReports: [],
     });
     const [activeTab, setTab] = useState(getTabFromHash());
 
@@ -117,12 +133,16 @@ function TaskConsensusComponent(props: Props): JSX.Element {
             })
             .then(([report]) => {
                 let reportRequest = Promise.resolve<ConsensusReport[]>([]);
+                let assigneeReportRequest = Promise.resolve<AssigneeConsensusReport[]>([]);
                 if (report) {
-                    console.log('the report', report);
                     reportRequest = core.consensus.reports({
                         pageSize: task.jobs.length,
                         taskID: task.id,
                         target: 'job',
+                    });
+                    assigneeReportRequest = core.consensus.assignee_reports({
+                        taskID: task.id,
+                        consensusReportID: report.id,
                     });
                 }
 
@@ -130,6 +150,10 @@ function TaskConsensusComponent(props: Props): JSX.Element {
                     .then(([jobReports]) => {
                         dispatch(reducerActions.setTaskReport(report || null));
                         dispatch(reducerActions.setJobsReports(jobReports));
+                        Promise.all([assigneeReportRequest])
+                            .then(([assigneeReports]) => {
+                                dispatch(reducerActions.setAssigneeReports(assigneeReports));
+                            });
                     })
                     .catch(handleError)
                     .finally(() => {
@@ -139,7 +163,9 @@ function TaskConsensusComponent(props: Props): JSX.Element {
             .catch(handleError);
     }, [task?.id]);
 
-    const { fetching, taskReport, jobsReports } = state;
+    const {
+        fetching, taskReport, jobsReports, assigneeReports,
+    } = state;
 
     const onTabKeyChange = useCallback((key: string): void => {
         setTab(key as DetailsTabs);
@@ -161,14 +187,11 @@ function TaskConsensusComponent(props: Props): JSX.Element {
                 {
                     key: DetailsTabs.ASSIGNEES,
                     label: 'Assignees',
-                    children: <AssigneeListComponent jobsReports={jobsReports} task={task} />,
+                    children: <AssigneeListComponent assigneeReports={assigneeReports} task={task} />,
                 },
             ]}
         />
     );
-
-    console.log('taskReport', taskReport);
-    console.log('jobsReports', jobsReports);
 
     return (
         <div className='cvat-task-quality-page'>
