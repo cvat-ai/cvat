@@ -5,14 +5,8 @@
 /// <reference types="cypress" />
 
 context('Requests page', () => {
-    const serverFiles = ['images/image_1.jpg', 'images/image_2.jpg', 'images/image_3.jpg'];
     const projectName = 'Project for testing requests page';
     const mainLabelName = 'requests_page_label';
-    const secondLabelName = 'requests_page_label_2';
-    const projectLabels = [
-        { name: mainLabelName, attributes: [], type: 'any' },
-        { name: secondLabelName, attributes: [], type: 'any' },
-    ];
 
     const cloudStorageData = {
         displayName: 'Demo bucket',
@@ -20,15 +14,24 @@ context('Requests page', () => {
         manifest: 'manifest.jsonl',
         endpointUrl: Cypress.config('minioUrl'),
     };
-
+    const rectanglePayload = {
+        frame: 0,
+        objectType: 'shape',
+        shapeType: 'rectangle',
+        points: [250, 64, 491, 228],
+        occluded: false,
+        labelName: mainLabelName,
+    };
     const attrName = 'requests_attr';
-    const imagesCount = 1;
+    const imagesCount = 3;
     const imageFileName = `image_${mainLabelName}`;
     const width = 800;
     const height = 800;
     const posX = 10;
     const posY = 10;
     const color = 'gray';
+    const archiveName = `${imageFileName}.zip`;
+    const archivePath = `cypress/fixtures/${archiveName}`;
     const badArchiveName = `${imageFileName}_empty.zip`;
     const badArchivePath = `cypress/fixtures/${badArchiveName}`;
     const badAnnotationsName = `${imageFileName}_incorrect.xml`;
@@ -47,27 +50,31 @@ context('Requests page', () => {
     const data = {
         projectID: null,
         taskID: null,
-        jobID: null,
         cloudStorageID: null,
     };
 
     function checkRequestStatus(
         requestAction,
         innerCheck,
-        resourceLink = `/tasks/${data.taskID}`,
+        { checkResourceLink, resourceLink } = { checkResourceLink: true, resourceLink: `/tasks/${data.taskID}` },
     ) {
         cy.contains('.cvat-header-button', 'Requests').click();
         cy.contains('.cvat-requests-card', requestAction)
             .within(() => {
                 innerCheck();
-                cy.get('.cvat-requests-name').click();
+                if (checkResourceLink) {
+                    cy.get('.cvat-requests-name').click();
+                }
             });
-        cy.get('.cvat-spinner').should('not.exist');
 
-        if (resourceLink) {
-            cy.url().should('include', resourceLink);
-        } else {
-            cy.url().should('include', '/requests');
+        if (checkResourceLink) {
+            cy.get('.cvat-spinner').should('not.exist');
+
+            if (resourceLink) {
+                cy.url().should('include', resourceLink);
+            } else {
+                cy.url().should('include', '/requests');
+            }
         }
     }
 
@@ -75,50 +82,68 @@ context('Requests page', () => {
         cy.visit('/auth/login');
         cy.login();
 
-        cy.headlessCreateProject({
-            labels: projectLabels,
-            name: projectName,
-        }).then((response) => {
-            data.projectID = response.projectID;
-
-            cy.headlessCreateTask({
-                name: taskName,
-                project_id: data.projectID,
-                source_storage: { location: 'local' },
-                target_storage: { location: 'local' },
-            }, {
-                server_files: serverFiles,
-                image_quality: 70,
-                use_zip_chunks: true,
-                use_cache: true,
-                sorting_method: 'lexicographical',
-            }).then((taskResponse) => {
-                data.taskID = taskResponse.taskID;
-                [data.jobID] = taskResponse.jobIDs;
-
-                const cuboidPayload = {
-                    frame: 0,
-                    objectType: 'shape',
-                    shapeType: 'cuboid',
-                    labelName: mainLabelName,
-                    points: [
-                        38, 58, 38, 174, 173,
-                        58, 173, 174, 186, 46,
-                        186, 162, 52, 46, 52, 162,
-                    ],
-                    occluded: false,
-                };
-
-                cy.headlessCreateObjects([cuboidPayload], data.jobID);
-            });
-        });
+        cy.imageGenerator(imagesFolder, imageFileName, width, height, color, posX, posY, mainLabelName, imagesCount);
+        cy.createZipArchive(directoryToArchive, badAnnotationsPath);
+        cy.createZipArchive(directoryToArchive, archivePath);
+        cy.createZipArchive(emptyDirectoryToArchive, badArchivePath);
 
         data.cloudStorageID = cy.attachS3Bucket(cloudStorageData);
 
-        cy.createZipArchive(emptyDirectoryToArchive, badArchivePath);
+        const project = {
+            name: projectName,
+            label: mainLabelName,
+            attrName,
+            attrVaue: 'Requests attr',
+            multiAttrParams: false,
+            advancedConfiguration: false,
+        };
+        cy.goToProjectsList();
+        cy.createProjects(
+            project.name,
+            project.label,
+            project.attrName,
+            project.attrVaue,
+            project.multiAttrParams,
+            project.advancedConfiguration,
+        );
+        cy.openProject(project.name);
+        cy.url().then((url) => {
+            data.projectID = Number(url.split('/').slice(-1)[0].split('?')[0]);
 
-        cy.imageGenerator(imagesFolder, imageFileName, width, height, color, posX, posY, mainLabelName, imagesCount);
-        cy.createZipArchive(directoryToArchive, badAnnotationsPath);
+            const task = {
+                name: taskName,
+                label: mainLabelName,
+                attrName,
+                textDefaultValue: 'Requests attr',
+                dataArchiveName: `${imageFileName}.zip`,
+                multiAttrParams: false,
+                forProject: true,
+                attachToProject: true,
+                projectName,
+            };
+            cy.goToTaskList();
+            cy.createAnnotationTask(
+                task.name,
+                task.label,
+                task.attrName,
+                task.textDefaultValue,
+                archiveName,
+                task.multiAttrParams,
+                null,
+                task.forProject,
+                task.attachToProject,
+                task.projectName,
+            );
+
+            cy.goToTaskList();
+            cy.openTask(taskName);
+            cy.url().then((taskUrl) => {
+                data.taskID = Number(taskUrl.split('/').slice(-1)[0].split('?')[0]);
+                cy.getJobIDFromIdx(0).then((jobID) => {
+                    cy.headlessCreateObjects([rectanglePayload], jobID);
+                });
+            });
+        });
     });
 
     after(() => {
@@ -143,7 +168,7 @@ context('Requests page', () => {
             });
         });
 
-        it('Creating a task creates a request. Incorrect task cant be opened.', () => {
+        it('Creating a task creates a request. Incorrect task can not be opened.', () => {
             const defaultAttrValue = 'Requests attr';
             const multiAttrParams = false;
             const advancedConfigurationParams = false;
@@ -166,7 +191,7 @@ context('Requests page', () => {
             );
             checkRequestStatus('Create Task', () => {
                 cy.get('.cvat-request-item-progress-failed').should('exist');
-            }, false);
+            }, { resourceLink: '' });
         });
 
         it('Export creates a request. Task can be opened from request. Export can be downloaded after page reload.', () => {
@@ -254,15 +279,14 @@ context('Requests page', () => {
 
             checkRequestStatus('Export Backup', () => {
                 cy.get('.cvat-request-item-progress-success').should('exist');
+                cy.contains('Expires').should('exist');
             }, `/projects/${data.projectID}`);
             cy.downloadExport().then((file) => {
                 cy.verifyDownload(file);
             });
         });
 
-        // There is a bug with importing a backup archive.
-        // The backup file tree is wrong in case of creating a project from file share
-        it.skip('Import backup creates a request. Project cant be opened.', () => {
+        it('Import backup creates a request. Project  can not be opened.', () => {
             cy.visit('/projects');
             cy.get('.cvat-spinner').should('not.exist');
             cy.restoreProject(
@@ -271,7 +295,8 @@ context('Requests page', () => {
 
             checkRequestStatus('Import Backup', () => {
                 cy.get('.cvat-request-item-progress-success').should('exist');
-            }, false);
+                cy.get('.cvat-requests-name').should('not.exist');
+            }, { checkResourceLink: false });
         });
     });
 });
