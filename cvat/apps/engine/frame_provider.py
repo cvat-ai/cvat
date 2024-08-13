@@ -314,10 +314,10 @@ class TaskFrameProvider(IFrameProvider):
                 ):
                     continue
 
-                frame, _, _ = segment_frame_provider._get_raw_frame(
+                frame, frame_name, _ = segment_frame_provider._get_raw_frame(
                     task_chunk_frame_id, quality=quality
                 )
-                task_chunk_frames[task_chunk_frame_id] = (frame, None, None)
+                task_chunk_frames[task_chunk_frame_id] = (frame, frame_name, None)
 
         writer_kwargs = {}
         if self._db_task.dimension == models.DimensionType.DIM_3D:

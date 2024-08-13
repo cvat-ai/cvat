@@ -92,13 +92,13 @@ def sort(images, sorting_method=SortingMethod.LEXICOGRAPHICAL, func=None):
     else:
         raise NotImplementedError()
 
-def image_size_within_orientation(img: Image):
+def image_size_within_orientation(img: Image.Image):
     orientation = img.getexif().get(ORIENTATION_EXIF_TAG, ORIENTATION.NORMAL_HORIZONTAL)
     if orientation > 4:
         return img.height, img.width
     return img.width, img.height
 
-def has_exif_rotation(img: Image):
+def has_exif_rotation(img: Image.Image):
     return img.getexif().get(ORIENTATION_EXIF_TAG, ORIENTATION.NORMAL_HORIZONTAL) != ORIENTATION.NORMAL_HORIZONTAL
 
 _T = TypeVar("_T")
@@ -851,33 +851,37 @@ class ZipChunkWriter(IChunkWriter):
     POINT_CLOUD_EXT = 'pcd'
 
     def _write_pcd_file(self, image: str|io.BytesIO) -> tuple[io.BytesIO, str, int, int]:
-        image_buf = open(image, "rb") if isinstance(image, str) else image
-        try:
+        with ExitStack() as es:
+            if isinstance(image, str):
+                image_buf = es.enter_context(open(image, "rb"))
+            else:
+                image_buf = image
+
             properties = ValidateDimension.get_pcd_properties(image_buf)
             w, h = int(properties["WIDTH"]), int(properties["HEIGHT"])
             image_buf.seek(0, 0)
             return io.BytesIO(image_buf.read()), self.POINT_CLOUD_EXT, w, h
-        finally:
-            if isinstance(image, str):
-                image_buf.close()
 
     def save_as_chunk(self, images: Iterator[tuple[Image.Image|io.IOBase|str, str, str]], chunk_path: str):
         with zipfile.ZipFile(chunk_path, 'x') as zip_chunk:
             for idx, (image, path, _) in enumerate(images):
                 ext = os.path.splitext(path)[1].replace('.', '')
-                output = io.BytesIO()
+
                 if self._dimension == DimensionType.DIM_2D:
                     # current version of Pillow applies exif rotation immediately when TIFF image opened
                     # and it removes rotation tag after that
                     # so, has_exif_rotation(image) will return False for TIFF images even if they were actually rotated
                     # and original files will be added to the archive (without applied rotation)
                     # that is why we need the second part of the condition
-                    if has_exif_rotation(image) or image.format == 'TIFF':
+                    if isinstance(image, Image.Image) and (
+                        has_exif_rotation(image) or image.format == 'TIFF'
+                    ):
+                        output = io.BytesIO()
                         rot_image = ImageOps.exif_transpose(image)
                         try:
                             if image.format == 'TIFF':
                                 # https://pillow.readthedocs.io/en/stable/handbook/image-file-formats.html
-                                # use loseless lzw compression for tiff images
+                                # use lossless lzw compression for tiff images
                                 rot_image.save(output, format='TIFF', compression='tiff_lzw')
                             else:
                                 rot_image.save(
@@ -889,16 +893,19 @@ class ZipChunkWriter(IChunkWriter):
                                 )
                         finally:
                             rot_image.close()
+                    elif isinstance(image, io.IOBase):
+                        output = image
                     else:
                         output = path
                 else:
                     output, ext = self._write_pcd_file(path)[0:2]
-                arcname = '{:06d}.{}'.format(idx, ext)
 
+                arcname = '{:06d}.{}'.format(idx, ext)
                 if isinstance(output, io.BytesIO):
                     zip_chunk.writestr(arcname, output.getvalue())
                 else:
                     zip_chunk.write(filename=output, arcname=arcname)
+
         # return empty list because ZipChunkWriter write files as is
         # and does not decode it to know img size.
         return []

@@ -29,6 +29,7 @@ def _common_setup(
     tmp_path: Path,
     fxt_login: Tuple[Client, str],
     fxt_logger: Tuple[Logger, io.StringIO],
+    restore_redis_ondisk_per_function,
 ):
     logger = fxt_logger[0]
     client = fxt_login[0]
