@@ -11,12 +11,7 @@ T = TypeVar('T')
 class TestLazyList(unittest.TestCase):
 
     def setUp(self):
-        self.lazy_list = LazyList(string="1,2,3", converter=int)
-
-    def test_skipped_values(self):
-        ll = LazyList("1,2,,4", converter=int)
-        self.assertEqual(len(ll), 3)
-        self.assertEqual(ll, [1, 2, 4])
+        self.lazy_list = LazyList(string="1,2,,3", converter=int)
 
     def test_len(self):
         self.assertEqual(len(self.lazy_list), 3)
@@ -24,9 +19,9 @@ class TestLazyList(unittest.TestCase):
         self.assertEqual(len(self.lazy_list), 3)
 
     def test_repr(self):
-        self.assertEqual(repr(self.lazy_list), "LazyList([... + 1,2,3', (0.00% parsed))")
+        self.assertEqual(repr(self.lazy_list), "LazyList([... + 1,2,,3', (0.00% parsed))")
         next(iter(self.lazy_list))  # Trigger parsing of the first element
-        self.assertIn("1... + 2,3", repr(self.lazy_list))
+        self.assertIn("1... + 2,,3", repr(self.lazy_list))
         list(self.lazy_list)
         self.assertEqual(repr(self.lazy_list), "LazyList([1, 2, 3])")
 
@@ -170,7 +165,7 @@ class TestLazyList(unittest.TestCase):
         self.assertEqual(elements, [1, 2, 3])
 
     def test_str(self):
-        self.assertEqual(str(self.lazy_list), "1,2,3")
+        self.assertEqual(str(self.lazy_list), "1,2,,3")
         self.assertEqual(self.lazy_list, LazyList(str(self.lazy_list), converter=int))
 
     def test_str_parsed(self):

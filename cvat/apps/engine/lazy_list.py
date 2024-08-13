@@ -208,7 +208,8 @@ class LazyList(list[T], metaclass=LazyListMeta):
         for _ in range(current_index):
             current_position = string.find(self._separator, current_position) + separator_offset
 
-        while current_index < self._compute_max_length(string):
+        probable_length = self._compute_max_length(string)
+        while current_index < probable_length:
             end = string.find(self._separator, current_position, string_length)
             if end == -1:
                 end = string_length
@@ -217,7 +218,7 @@ class LazyList(list[T], metaclass=LazyListMeta):
             element_str = string[current_position:end]
             current_position = end + separator_offset
             if not element_str:
-                self._probable_length -= 1
+                probable_length -= 1
                 continue
             element = self._converter(element_str)
             if list.__len__(self) <= current_index:
