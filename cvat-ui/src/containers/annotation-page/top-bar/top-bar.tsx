@@ -41,7 +41,6 @@ import isAbleToChangeFrame from 'utils/is-able-to-change-frame';
 import { KeyMap } from 'utils/mousetrap-react';
 import { switchToolsBlockerState } from 'actions/settings-actions';
 import { writeLatestFrame } from 'utils/remember-latest-frame';
-import { ShortcutScope } from 'utils/enums';
 import { registerComponentShortcuts } from 'actions/shortcuts-actions';
 
 interface StateToProps {
@@ -531,18 +530,7 @@ class AnnotationTopBarContainer extends React.PureComponent<Props> {
     };
 
     private onSwitchToolsBlockerState = (): void => {
-        const {
-            toolsBlockerState, onSwitchToolsBlockerState, canvasInstance, activeControl,
-        } = this.props;
-        if (canvasInstance instanceof Canvas) {
-            if (activeControl.includes(ActiveControl.OPENCV_TOOLS)) {
-                canvasInstance.interact({
-                    enabled: true,
-                    crosshair: toolsBlockerState.algorithmsLocked,
-                    enableThreshold: toolsBlockerState.algorithmsLocked,
-                });
-            }
-        }
+        const { toolsBlockerState, onSwitchToolsBlockerState } = this.props;
         onSwitchToolsBlockerState({ algorithmsLocked: !toolsBlockerState.algorithmsLocked });
     };
 
@@ -733,7 +721,6 @@ class AnnotationTopBarContainer extends React.PureComponent<Props> {
                 undoShortcut={normalizedKeyMap.UNDO}
                 redoShortcut={normalizedKeyMap.REDO}
                 drawShortcut={normalizedKeyMap.SWITCH_DRAW_MODE}
-                // this shortcut is handled in interactionHandler.ts separately
                 switchToolsBlockerShortcut={normalizedKeyMap.SWITCH_TOOLS_BLOCKER_STATE}
                 playPauseShortcut={normalizedKeyMap.PLAY_PAUSE}
                 deleteFrameShortcut={normalizedKeyMap.DELETE_FRAME}

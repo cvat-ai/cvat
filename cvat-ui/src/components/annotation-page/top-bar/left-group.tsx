@@ -51,6 +51,12 @@ const componentShortcuts = {
         sequences: ['ctrl+shift+z', 'ctrl+y'],
         scope: ShortcutScope.ANNOTATION_PAGE,
     },
+    SWITCH_TOOLS_BLOCKER_STATE: {
+        name: 'Switch algorithm blocker',
+        description: 'Postpone running the algorithm for interaction tools',
+        sequences: ['tab'],
+        scope: ShortcutScope.ALL,
+    },
 };
 
 registerComponentShortcuts(componentShortcuts);
@@ -85,7 +91,6 @@ function LeftGroup(props: Props): JSX.Element {
     const includesToolsBlockerButton =
         [ActiveControl.OPENCV_TOOLS, ActiveControl.AI_TOOLS].includes(activeControl) && toolsBlockerState.buttonVisible;
 
-    const shouldEnableToolsBlockerOnClick = [ActiveControl.OPENCV_TOOLS].includes(activeControl);
     const SaveButtonComponent = customizableComponents.SAVE_ANNOTATION_BUTTON;
 
     const handlers: Record<keyof typeof componentShortcuts, (event?: KeyboardEvent) => void> = {
@@ -100,6 +105,10 @@ function LeftGroup(props: Props): JSX.Element {
             if (redoAction) {
                 onRedoClick();
             }
+        },
+        SWITCH_TOOLS_BLOCKER_STATE: (event: KeyboardEvent | undefined) => {
+            event?.preventDefault();
+            onSwitchToolsBlockerState();
         },
     };
 
@@ -164,7 +173,7 @@ function LeftGroup(props: Props): JSX.Element {
                             className={`cvat-annotation-header-block-tool-button cvat-annotation-header-button ${
                                 toolsBlockerState.algorithmsLocked ? 'cvat-button-active' : ''
                             }`}
-                            onClick={shouldEnableToolsBlockerOnClick ? onSwitchToolsBlockerState : undefined}
+                            onClick={onSwitchToolsBlockerState}
                         >
                             <StopOutlined />
                             Block
