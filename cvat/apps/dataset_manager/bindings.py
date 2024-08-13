@@ -32,7 +32,7 @@ from django.conf import settings
 from cvat.apps.dataset_manager.formats.utils import get_label_color
 from cvat.apps.dataset_manager.util import add_prefetch_fields
 from cvat.apps.engine.frame_provider import TaskFrameProvider, FrameQuality, FrameOutputType
-from cvat.apps.engine.models import (AttributeSpec, AttributeType, Data, DimensionType, Job,
+from cvat.apps.engine.models import (AttributeSpec, AttributeType, DimensionType, Job,
                                      JobType, Label, LabelType, Project, SegmentType, ShapeType,
                                      Task)
 from cvat.apps.engine.rq_job_handler import RQJobMetaField
