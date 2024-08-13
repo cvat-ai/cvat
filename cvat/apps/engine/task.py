@@ -569,6 +569,12 @@ def _create_thread(
     else:
         assert False, f"Unknown file storage {db_data.storage}"
 
+    if (
+        db_data.storage_method == models.StorageMethodChoice.FILE_SYSTEM and
+        not settings.MEDIA_CACHE_ALLOW_STATIC_CACHE
+    ):
+        db_data.storage_method = models.StorageMethodChoice.CACHE
+
     manifest_file = _validate_manifest(
         manifest_files,
         manifest_root,
