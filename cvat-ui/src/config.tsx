@@ -136,7 +136,6 @@ const REQUEST_SUCCESS_NOTIFICATION_DURATION = 5; // seconds
 
 const BACKLINK_PATHS = [
     '/analytics',
-    '/guide',
 ];
 
 export default {

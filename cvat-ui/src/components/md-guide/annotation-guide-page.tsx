@@ -21,12 +21,7 @@ import dimensions from 'utils/dimensions';
 
 const core = getCore();
 
-export interface Props {
-    backLink?: string;
-}
-
-function AnnotationGuidePage(props: Props): JSX.Element {
-    const { backLink } = props;
+function AnnotationGuidePage(): JSX.Element {
     const mdEditorRef = useRef<typeof MDEditor & { commandOrchestrator: commands.TextAreaCommandOrchestrator }>(null);
     const location = useLocation();
     const [value, setValue] = useState('');
@@ -141,7 +136,7 @@ function AnnotationGuidePage(props: Props): JSX.Element {
             { fetching && <CVATLoadingSpinner /> }
             <Col {...dimensions}>
                 <div className='cvat-guide-page-top'>
-                    <GoBackButton backLink={backLink} />
+                    <GoBackButton />
                 </div>
                 <div className='cvat-guide-page-editor-wrapper'>
                     <MDEditor
