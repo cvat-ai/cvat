@@ -230,7 +230,7 @@ services:
     depends_on: *backend-deps
     environment:
       <<: *backend-env
-      NUMPROCS: 2
+      NUMPROCS: 1
     command: run worker.consensus
     volumes:
       - cvat_data:/home/django/data
