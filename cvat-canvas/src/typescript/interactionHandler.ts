@@ -1,5 +1,5 @@
 // Copyright (C) 2020-2022 Intel Corporation
-// Copyright (C) 2023 CVAT.ai Corporation
+// Copyright (C) 2023-2024 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -36,7 +36,6 @@ export class InteractionHandlerImpl implements InteractionHandler {
     private thresholdRectSize: number;
     private intermediateShape: PropType<InteractionData, 'intermediateShape'>;
     private drawnIntermediateShape: SVG.Shape;
-    private thresholdWasModified: boolean;
     private controlPointsSize: number;
     private selectedShapeOpacity: number;
     private cancelled: boolean;
@@ -64,7 +63,7 @@ export class InteractionHandlerImpl implements InteractionHandler {
         );
     }
 
-    private shouldRaiseEvent(ctrlKey: boolean): boolean {
+    private shouldRaiseEvent(): boolean {
         const { interactionData, interactionShapes, shapesWereUpdated } = this;
         const { minPosVertices, minNegVertices, enabled } = interactionData;
 
@@ -75,8 +74,9 @@ export class InteractionHandlerImpl implements InteractionHandler {
             (shape: SVG.Shape): boolean => (shape as any).attr('stroke') !== 'green',
         );
 
+        const somethingWasDrawn = interactionShapes.some((shape) => shape.type === 'rect') || positiveShapes.length;
         if (interactionData.shapeType === 'rectangle') {
-            return enabled && !ctrlKey && !!interactionShapes.length;
+            return enabled && !!interactionShapes.length;
         }
 
         const minPosVerticesDefined = Number.isInteger(minPosVertices);
@@ -84,7 +84,7 @@ export class InteractionHandlerImpl implements InteractionHandler {
         const minPosVerticesAchieved = !minPosVerticesDefined || minPosVertices <= positiveShapes.length;
         const minNegVerticesAchieved = !minNegVerticesDefined || minNegVertices <= negativeShapes.length;
         const minimumVerticesAchieved = minPosVerticesAchieved && minNegVerticesAchieved;
-        return enabled && !ctrlKey && minimumVerticesAchieved && shapesWereUpdated;
+        return enabled && somethingWasDrawn && minimumVerticesAchieved && shapesWereUpdated;
     }
 
     private addThreshold(): void {
@@ -125,7 +125,7 @@ export class InteractionHandlerImpl implements InteractionHandler {
 
                 this.interactionShapes.push(this.currentInteractionShape);
                 this.shapesWereUpdated = true;
-                if (this.shouldRaiseEvent(e.ctrlKey)) {
+                if (this.shouldRaiseEvent()) {
                     this.onInteraction(this.prepareResult(), true, false);
                 }
 
@@ -154,7 +154,7 @@ export class InteractionHandlerImpl implements InteractionHandler {
                         if (this.interactionData.startWithBox && this.interactionShapes.length === 1) {
                             this.interactionShapes[0].style({ visibility: '' });
                         }
-                        const shouldRaiseEvent = this.shouldRaiseEvent(_e.ctrlKey);
+                        const shouldRaiseEvent = this.shouldRaiseEvent();
                         if (shouldRaiseEvent) {
                             this.onInteraction(this.prepareResult(), true, false);
                         }
@@ -204,7 +204,11 @@ export class InteractionHandlerImpl implements InteractionHandler {
 
                 if (shouldFinish) {
                     this.interact({ enabled: false });
-                } else if (onContinue) {
+                } else if (this.shouldRaiseEvent()) {
+                    this.onInteraction(this.prepareResult(), true, false);
+                }
+
+                if (onContinue) {
                     onContinue();
                 }
             })
@@ -387,7 +391,7 @@ export class InteractionHandlerImpl implements InteractionHandler {
     }
 
     private visualComponentsChanged(interactionData: InteractionData): boolean {
-        const allowedKeys = ['enabled', 'crosshair', 'enableThreshold', 'onChangeToolsBlockerState'];
+        const allowedKeys = ['enabled', 'crosshair', 'enableThreshold'];
         if (Object.keys(interactionData).every((key: string): boolean => allowedKeys.includes(key))) {
             if (this.interactionData.enableThreshold !== undefined && interactionData.enableThreshold !== undefined &&
                 this.interactionData.enableThreshold !== interactionData.enableThreshold) {
@@ -400,27 +404,6 @@ export class InteractionHandlerImpl implements InteractionHandler {
         }
         return false;
     }
-
-    private onKeyUp = (e: KeyboardEvent): void => {
-        if (this.interactionData.enabled && e.keyCode === 17) {
-            if (this.interactionData.onChangeToolsBlockerState && !this.thresholdWasModified) {
-                this.interactionData.onChangeToolsBlockerState('keyup');
-            }
-            if (this.shouldRaiseEvent(false)) {
-                // 17 is ctrl
-                this.onInteraction(this.prepareResult(), true, false);
-            }
-        }
-    };
-
-    private onKeyDown = (e: KeyboardEvent): void => {
-        if (!e.repeat && this.interactionData.enabled && e.keyCode === 17) {
-            if (this.interactionData.onChangeToolsBlockerState && !this.thresholdWasModified) {
-                this.interactionData.onChangeToolsBlockerState('keydown');
-            }
-            this.thresholdWasModified = false;
-        }
-    };
 
     public constructor(
         onInteraction: (
@@ -484,11 +467,11 @@ export class InteractionHandlerImpl implements InteractionHandler {
         });
 
         this.canvas.on('wheel.interaction', (e: WheelEvent): void => {
-            if (e.ctrlKey) {
+            if (e.altKey) {
+                e.stopPropagation();
+                e.preventDefault();
                 if (this.threshold) {
-                    this.thresholdWasModified = true;
                     const { x, y } = this.cursorPosition;
-                    e.preventDefault();
                     if (e.deltaY > 0) {
                         this.thresholdRectSize *= 6 / 5;
                     } else {
@@ -499,9 +482,6 @@ export class InteractionHandlerImpl implements InteractionHandler {
                 }
             }
         });
-
-        window.document.addEventListener('keyup', this.onKeyUp);
-        window.document.addEventListener('keydown', this.onKeyDown);
     }
 
     public transform(geometry: Geometry): void {
@@ -561,7 +541,7 @@ export class InteractionHandlerImpl implements InteractionHandler {
                 (this.currentInteractionShape as any).draw('stop');
             }
 
-            this.onInteraction(this.prepareResult(), this.shouldRaiseEvent(false), true);
+            this.onInteraction(this.prepareResult(), this.shouldRaiseEvent(), true);
             this.release();
             this.interactionData = interactionData;
         }
@@ -595,7 +575,6 @@ export class InteractionHandlerImpl implements InteractionHandler {
     }
 
     public destroy(): void {
-        window.document.removeEventListener('keyup', this.onKeyUp);
-        window.document.removeEventListener('keydown', this.onKeyDown);
+        // nothing to release
     }
 }
