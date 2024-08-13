@@ -54,8 +54,8 @@ const componentShortcuts = {
     SWITCH_TOOLS_BLOCKER_STATE: {
         name: 'Switch algorithm blocker',
         description: 'Postpone running the algorithm for interaction tools',
-        sequences: ['tab'],
-        scope: ShortcutScope.ALL,
+        sequences: ['ctrl+tab'],
+        scope: ShortcutScope.ANNOTATION_PAGE,
     },
 };
 
