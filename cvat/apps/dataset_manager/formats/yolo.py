@@ -2,7 +2,6 @@
 # Copyright (C) 2023-2024 CVAT.ai Corporation
 #
 # SPDX-License-Identifier: MIT
-import defusedxml.ElementTree as ET
 import os.path as osp
 from glob import glob
 
@@ -16,11 +15,11 @@ from cvat.apps.dataset_manager.bindings import (
     find_dataset_root,
 )
 from cvat.apps.dataset_manager.util import make_zip_archive
+from datumaro.components.annotation import AnnotationType
 from datumaro.components.extractor import DatasetItem
 from datumaro.components.project import Dataset
 
 from .registry import dm_env, exporter, importer
-from ...engine.models import LabelType
 
 
 def _export_common(dst_file, temp_dir, instance_data, format_name, *, save_images=False):
@@ -139,17 +138,13 @@ def _import_yolov8_oriented_boxes(src_file, temp_dir, instance_data, **kwargs):
 
 @importer(name='YOLOv8 Pose', ext="ZIP", version="1.0")
 def _import_yolov8_pose(src_file, temp_dir, instance_data, **kwargs):
-    labels_meta = instance_data.meta[instance_data.META_FIELD]['labels']
-
-    true_skeleton_point_labels = {
-        skeleton_label["name"]: [
-            el.attrib["data-label-name"]
-            for el in ET.fromstring("<root>" + skeleton_label.get("svg", "") + "</root>")
-            if el.tag == "circle"
-        ]
-        for _, skeleton_label in labels_meta
-        if skeleton_label["type"] == str(LabelType.SKELETON)
-    }
+    with GetCVATDataExtractor(instance_data) as extractor:
+        point_categories = extractor.categories().get(AnnotationType.points)
+        label_categories = extractor.categories().get(AnnotationType.label)
+        true_skeleton_point_labels = {
+            label_categories[label_id].name: category.labels
+            for label_id, category in point_categories.items.items()
+        }
     _import_common(
         src_file,
         temp_dir,
