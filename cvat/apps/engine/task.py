@@ -540,17 +540,17 @@ def _create_thread(
 
     slogger.glob.info("create task #{}".format(db_task.id))
 
-    job_file_mapping = _validate_job_file_mapping(db_task, data)
-
-    db_data = db_task.data
-    upload_dir = db_data.get_upload_dirname() if db_data.storage != models.StorageChoice.SHARE else settings.SHARE_ROOT
-    is_data_in_cloud = db_data.storage == models.StorageChoice.CLOUD_STORAGE
-
     job = rq.get_current_job()
 
     def _update_status(msg: str) -> None:
         job.meta['status'] = msg
         job.save_meta()
+
+    job_file_mapping = _validate_job_file_mapping(db_task, data)
+
+    db_data = db_task.data
+    upload_dir = db_data.get_upload_dirname() if db_data.storage != models.StorageChoice.SHARE else settings.SHARE_ROOT
+    is_data_in_cloud = db_data.storage == models.StorageChoice.CLOUD_STORAGE
 
     if data['remote_files'] and not isDatasetImport:
         data['remote_files'] = _download_data(data['remote_files'], upload_dir)
