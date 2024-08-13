@@ -25,7 +25,7 @@ class ModelHandler:
         pos_points, neg_points = list(pos_points), list(neg_points)
         with torch.inference_mode():
             self.predictor.set_image(np.array(image))
-            masks, scores, logits = self.predictor.predict(
+            masks, scores, _ = self.predictor.predict(
                 point_coords=np.array(pos_points + neg_points),
                 point_labels=np.array([1]*len(pos_points) + [0]*len(neg_points)),
                 multimask_output=True,

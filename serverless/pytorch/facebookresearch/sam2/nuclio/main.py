@@ -6,7 +6,6 @@ import json
 import base64
 from PIL import Image
 import io
-import torch
 from model_handler import ModelHandler
 
 def init_context(context):
