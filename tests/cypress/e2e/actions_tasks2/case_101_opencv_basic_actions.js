@@ -149,20 +149,29 @@ context('OpenCV. Intelligent scissors. Histogram Equalization. TrackerMIL.', () 
         it('Check "Intelligent scissors blocking feature". Cancel drawing.', () => {
             cy.interactOpenCVControlButton();
             cy.get('.cvat-opencv-drawing-tool').click();
-            cy.contains('span', 'Block').click();
-            cy.get('.cvat_canvas_threshold').should('not.exist');
+            cy.get('.cvat-annotation-header-block-tool-button').click();
+            cy.get('.cvat-annotation-header-block-tool-button').should('have.class', 'cvat-button-active');
+
             pointsMap.forEach((element) => {
                 cy.get('.cvat-canvas-container').click(element.x, element.y);
             });
+
             cy.get('.cvat_canvas_interact_intermediate_shape').then((intermediateShape) => {
-                // Get count of points
-                const intermediateShapeNumberPoints = intermediateShape.attr('points').split(' ').length;
                 // The last point on the crosshair
-                expect(intermediateShapeNumberPoints - 1).to.be.equal(pointsMap.length);
+                expect(intermediateShape.attr('points').split(' ').length - 1).to.be.equal(pointsMap.length);
             });
-            cy.get('body').type('{Ctrl}'); // Checking hotkey
-            cy.get('.cvat_canvas_threshold').should('exist');
-            cy.get('body').type('{Esc}'); // Cancel drawing
+
+            cy.get('.cvat-annotation-header-block-tool-button').click();
+            cy.get('.cvat-annotation-header-block-tool-button').should('not.have.class', 'cvat-button-active');
+            cy.get('.cvat-canvas-container').click(600, 600);
+
+            cy.get('.cvat_canvas_interact_intermediate_shape').then((intermediateShape) => {
+                // The last point on the crosshair
+                expect(intermediateShape.attr('points').split(' ').length).to.be.gt(pointsMap.length);
+            });
+
+            // Cancel drawing
+            cy.get('body').type('{Esc}');
         });
 
         it('Check "Histogram Equalization" feature.', () => {
