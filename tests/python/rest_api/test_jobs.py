@@ -629,11 +629,10 @@ class TestGetGtJobData:
             :job_frame_count
         ]
         gt_job = self._create_gt_job(admin_user, task_id, job_frame_ids)
+        request.addfinalizer(lambda: self._delete_gt_job(user, gt_job.id))
 
         with make_api_client(user) as api_client:
             (gt_job_meta, _) = api_client.jobs_api.retrieve_data_meta(gt_job.id)
-
-        request.addfinalizer(lambda: self._delete_gt_job(user, gt_job.id))
 
         # These values are relative to the resulting task frames, unlike meta values
         assert 0 == gt_job.start_frame
@@ -684,11 +683,10 @@ class TestGetGtJobData:
         task_frame_ids = range(start_frame, stop_frame, frame_step)
         job_frame_ids = list(task_frame_ids[::3])
         gt_job = self._create_gt_job(admin_user, task_id, job_frame_ids)
+        request.addfinalizer(lambda: self._delete_gt_job(admin_user, gt_job.id))
 
         with make_api_client(admin_user) as api_client:
             (gt_job_meta, _) = api_client.jobs_api.retrieve_data_meta(gt_job.id)
-
-        request.addfinalizer(lambda: self._delete_gt_job(admin_user, gt_job.id))
 
         # These values are relative to the resulting task frames, unlike meta values
         assert 0 == gt_job.start_frame
@@ -731,14 +729,13 @@ class TestGetGtJobData:
             :job_frame_count
         ]
         gt_job = self._create_gt_job(admin_user, task_id, job_frame_ids)
+        request.addfinalizer(lambda: self._delete_gt_job(admin_user, gt_job.id))
 
         with make_api_client(admin_user) as api_client:
             (chunk_file, response) = api_client.jobs_api.retrieve_data(
                 gt_job.id, number=0, quality=quality, type="chunk"
             )
             assert response.status == HTTPStatus.OK
-
-        request.addfinalizer(lambda: self._delete_gt_job(admin_user, gt_job.id))
 
         frame_range = range(
             task_meta.start_frame, min(task_meta.stop_frame + 1, task_meta.chunk_size), frame_step
@@ -806,6 +803,7 @@ class TestGetGtJobData:
             :job_frame_count
         ]
         gt_job = self._create_gt_job(admin_user, task_id, job_frame_ids)
+        request.addfinalizer(lambda: self._delete_gt_job(admin_user, gt_job.id))
 
         frame_range = range(
             task_meta.start_frame, min(task_meta.stop_frame + 1, task_meta.chunk_size), frame_step
@@ -829,8 +827,6 @@ class TestGetGtJobData:
                 gt_job.id, number=included_frames[0], quality=quality, type="frame"
             )
             assert response.status == HTTPStatus.OK
-
-        request.addfinalizer(lambda: self._delete_gt_job(admin_user, gt_job.id))
 
 
 @pytest.mark.usefixtures("restore_db_per_class")
