@@ -178,6 +178,23 @@ class TestLazyList(unittest.TestCase):
         self.assertEqual(str(self.lazy_list), "1,2,3")
         self.assertEqual(self.lazy_list, LazyList(str(self.lazy_list), converter=int))
 
+    def test_slice(self):
+        self.assertEqual(self.lazy_list[1:], [2, 3])
+        self.assertEqual(self.lazy_list[:2], [1, 2])
+        self.assertEqual(self.lazy_list[::2], [1, 3])
+        self.assertEqual(self.lazy_list[1::2], [2])
+        self.assertEqual(self.lazy_list[::-1], [3, 2, 1])
+        self.assertEqual(self.lazy_list[-2:], [2, 3])
+        self.assertEqual(self.lazy_list[:-2], [1])
+        self.assertEqual(self.lazy_list[:-1], [1, 2])
+        self.assertEqual(self.lazy_list[-2::-1], [2, 1])
+
+    def test_slice_with_stride(self):
+        self.assertEqual(self.lazy_list[::2], [1, 3])
+        self.assertEqual(self.lazy_list[::-2], [3, 1])
+        self.assertEqual(self.lazy_list[1::-1], [2, 1])
+        self.assertEqual(self.lazy_list[1:3:2], [2])
+
 
 if __name__ == "__main__":
     unittest.main()

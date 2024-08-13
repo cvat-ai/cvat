@@ -146,7 +146,21 @@ class LazyList(list[T], metaclass=LazyListMeta):
             return list.__getitem__(self, index)
 
         if isinstance(index, slice):
-            self._parse_up_to(index.indices(self._compute_max_length(self._string))[1] - 1)
+            if (
+                index.start is not None
+                and index.start < 0
+                or index.stop is not None
+                and index.stop < 0
+                or index.step is not None
+                and index.step < 0
+            ):
+                # to compute negative indices we must know the exact length in advance
+                # which is impossible if we take into account missing elements,
+                # so we have to parse the full list
+                self._parse_up_to(-1)
+            else:
+                self._parse_up_to(index.indices(self._compute_max_length(self._string))[1] - 1)
+
             return list.__getitem__(self, index)
 
         self._parse_up_to(index)
