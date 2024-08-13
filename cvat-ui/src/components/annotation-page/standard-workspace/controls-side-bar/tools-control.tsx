@@ -22,7 +22,7 @@ import { Row, Col } from 'antd/lib/grid';
 import notification from 'antd/lib/notification';
 import message from 'antd/lib/message';
 import Switch from 'antd/lib/switch';
-import lodash from 'lodash';
+import lodash, { omit } from 'lodash';
 
 import { AIToolsIcon } from 'icons';
 import { Canvas, convertShapesForInteractor } from 'cvat-canvas-wrapper';
@@ -71,12 +71,12 @@ interface StateToProps {
 }
 
 interface DispatchToProps {
-    onInteractionStart(activeInteractor: MLModel, activeLabelID: number): void;
-    updateAnnotations(statesToUpdate: any[]): void;
-    createAnnotations(statesToCreate: any[]): void;
-    fetchAnnotations(): void;
-    onSwitchToolsBlockerState(toolsBlockerState: ToolsBlockerState): void;
-    switchNavigationBlocked(navigationBlocked: boolean): void;
+    updateAnnotations: (states: ObjectState[]) => Promise<void>;
+    createAnnotations: (states: ObjectState[]) => Promise<void>;
+    fetchAnnotations: () => Promise<void>;
+    onInteractionStart: typeof interactWithCanvas;
+    onSwitchToolsBlockerState: typeof switchToolsBlockerState;
+    switchNavigationBlocked: typeof switchNavigationBlockedAction;
 }
 
 const MIN_SUPPORTED_INTERACTOR_VERSION = 2;
@@ -144,6 +144,7 @@ interface State {
     activeInteractor: MLModel | null;
     activeLabelID: number | null;
     activeTracker: MLModel | null;
+    startInteractingWithBox: boolean;
     convertMasksToPolygons: boolean;
     trackedShapes: TrackedShape[];
     fetching: boolean;
@@ -218,6 +219,7 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
             points: [number, number][];
             bounds?: [number, number, number, number];
         };
+        latestPostponedEvent: Event | null;
         lastestApproximatedPoints: number[][];
         latestRequest: null | {
             interactor: MLModel;
@@ -225,6 +227,7 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
                 frame: number;
                 neg_points: number[][];
                 pos_points: number[][];
+                obj_bbox: number[][];
             };
         } | null;
         hideMessage: (() => void) | null;
@@ -234,6 +237,7 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
         super(props);
         this.state = {
             convertMasksToPolygons: false,
+            startInteractingWithBox: false,
             activeInteractor: props.interactors.length ? props.interactors[0] : null,
             activeTracker: props.trackers.length ? props.trackers[0] : null,
             activeLabelID: props.labels.length ? props.labels[0].id as number : null,
@@ -248,6 +252,7 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
         this.interaction = {
             id: null,
             isAborted: false,
+            latestPostponedEvent: null,
             latestResponse: {
                 rle: [],
                 points: [],
@@ -267,6 +272,9 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
         this.setState({
             portals: this.collectTrackerPortals(),
         });
+
+        window.document.addEventListener('keydown', this.onKeyDown);
+        window.document.addEventListener('keyup', this.onKeyUp);
         canvasInstance.html().addEventListener('canvas.interacted', this.interactionListener);
         canvasInstance.html().addEventListener('canvas.canceled', this.cancelListener);
     }
@@ -295,6 +303,7 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
             this.interaction = {
                 id: null,
                 isAborted: false,
+                latestPostponedEvent: null,
                 latestResponse: { rle: [], points: [] },
                 lastestApproximatedPoints: [],
                 latestRequest: null,
@@ -319,7 +328,6 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
                                 shapeType: ShapeType.POLYGON,
                                 points: this.interaction.lastestApproximatedPoints.flat(),
                             },
-                            onChangeToolsBlockerState: this.onChangeToolsBlockerState,
                         });
                     });
             }
@@ -331,6 +339,8 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
     public componentWillUnmount(): void {
         const { canvasInstance } = this.props;
         onRemoveAnnotations(null);
+        window.document.removeEventListener('keydown', this.onKeyDown);
+        window.document.removeEventListener('keyup', this.onKeyUp);
         canvasInstance.html().removeEventListener('canvas.interacted', this.interactionListener);
         canvasInstance.html().removeEventListener('canvas.canceled', this.cancelListener);
     }
@@ -433,7 +443,6 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
                         points: convertMasksToPolygons ? this.interaction.lastestApproximatedPoints.flat() :
                             this.interaction.latestResponse.rle,
                     },
-                    onChangeToolsBlockerState: this.onChangeToolsBlockerState,
                 });
             }
 
@@ -475,8 +484,9 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
                 interactor,
                 data: {
                     frame,
-                    pos_points: convertShapesForInteractor(shapes, 0),
-                    neg_points: convertShapesForInteractor(shapes, 2),
+                    obj_bbox: convertShapesForInteractor(shapes, 'rectangle', 0),
+                    pos_points: convertShapesForInteractor(shapes, 'points', 0),
+                    neg_points: convertShapesForInteractor(shapes, 'points', 2),
                 },
             };
 
@@ -541,9 +551,15 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
     };
 
     private interactionListener = async (e: Event): Promise<void> => {
+        const { toolsBlockerState } = this.props;
         const { mode } = this.state;
 
         if (mode === 'interaction') {
+            if (toolsBlockerState.algorithmsLocked) {
+                this.interaction.latestPostponedEvent = e;
+                return;
+            }
+
             await this.onInteraction(e);
         }
 
@@ -577,10 +593,30 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
 
     private onChangeToolsBlockerState = (event: string): void => {
         const { isActivated, onSwitchToolsBlockerState } = this.props;
-        if (isActivated && event === 'keydown') {
-            onSwitchToolsBlockerState({ algorithmsLocked: true });
-        } else if (isActivated && event === 'keyup') {
-            onSwitchToolsBlockerState({ algorithmsLocked: false });
+        const { mode } = this.state;
+
+        if (isActivated && mode === 'interaction') {
+            if (event === 'keydown') {
+                this.interaction.latestPostponedEvent = null;
+                onSwitchToolsBlockerState({ algorithmsLocked: true });
+            } else if (event === 'keyup') {
+                onSwitchToolsBlockerState({ algorithmsLocked: false });
+                if (this.interaction.latestPostponedEvent) {
+                    this.onInteraction(this.interaction.latestPostponedEvent);
+                }
+            }
+        }
+    };
+
+    private onKeyUp = (e: KeyboardEvent): void => {
+        if (e.key === 'Control') {
+            this.onChangeToolsBlockerState('keyup');
+        }
+    };
+
+    private onKeyDown = (e: KeyboardEvent): void => {
+        if (!e.repeat && e.key === 'Control') {
+            this.onChangeToolsBlockerState('keydown');
         }
     };
 
@@ -942,21 +978,6 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
         return points;
     }
 
-    private renderMasksConvertingBlock(): JSX.Element {
-        const { convertMasksToPolygons } = this.state;
-        return (
-            <Row className='cvat-interactors-setups-container'>
-                <Switch
-                    checked={convertMasksToPolygons}
-                    onChange={(checked: boolean) => {
-                        this.setState({ convertMasksToPolygons: checked });
-                    }}
-                />
-                <Text>Convert masks to polygons</Text>
-            </Row>
-        );
-    }
-
     private renderLabelBlock(): JSX.Element {
         const { labels } = this.props;
         const { activeLabelID } = this.state;
@@ -1040,8 +1061,8 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
                                         enabled: true,
                                     });
 
-                                    onInteractionStart(activeTracker, activeLabelID);
                                     const { onSwitchToolsBlockerState } = this.props;
+                                    onInteractionStart(activeTracker, activeLabelID, {});
                                     onSwitchToolsBlockerState({ buttonVisible: false });
                                 }
                             }}
@@ -1059,7 +1080,7 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
             interactors, canvasInstance, labels, onInteractionStart,
         } = this.props;
         const {
-            activeInteractor, activeLabelID, fetching,
+            activeInteractor, activeLabelID, fetching, startInteractingWithBox, convertMasksToPolygons,
         } = this.state;
 
         if (!interactors.length) {
@@ -1074,7 +1095,8 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
             );
         }
 
-        const minNegVertices = activeInteractor ? (activeInteractor.params.canvas.minNegVertices as number) : -1;
+        const minNegVertices = activeInteractor?.params?.canvas?.minNegVertices ?? -1;
+        const renderStartWithBox = activeInteractor?.params?.canvas?.startWithBoxOptional ?? false;
 
         return (
             <>
@@ -1118,6 +1140,27 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
                         </Popover>
                     </Col>
                 </Row>
+                <div className='cvat-tools-interactor-setups'>
+                    <div>
+                        <Switch
+                            checked={convertMasksToPolygons}
+                            onChange={(checked: boolean) => {
+                                this.setState({ convertMasksToPolygons: checked });
+                            }}
+                        />
+                        <Text>Convert masks to polygons</Text>
+                    </div>
+
+                    {renderStartWithBox && (
+                        <div>
+                            <Switch
+                                checked={startInteractingWithBox}
+                                onChange={(value: boolean) => this.setState({ startInteractingWithBox: value })}
+                            />
+                            <Text>Start with a bounding box</Text>
+                        </div>
+                    )}
+                </div>
                 <Row align='middle' justify='end'>
                     <Col>
                         <Button
@@ -1130,15 +1173,19 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
                             onClick={() => {
                                 if (activeInteractor && activeLabelID && labels.length) {
                                     this.setState({ mode: 'interaction' });
-
                                     canvasInstance.cancel();
-                                    activeInteractor.onChangeToolsBlockerState = this.onChangeToolsBlockerState;
-                                    canvasInstance.interact({
-                                        shapeType: 'points',
-                                        enabled: true,
-                                        ...activeInteractor.params.canvas,
-                                    });
-                                    onInteractionStart(activeInteractor, activeLabelID);
+                                    const interactorParameters = {
+                                        ...omit(activeInteractor.params.canvas, 'startWithBoxOptional'),
+                                        // replace 'optional' with true or false depending on user specified setting
+                                        ...(activeInteractor.params.canvas.startWithBoxOptional ? {
+                                            startWithBox: startInteractingWithBox,
+                                        } : {
+                                            startWithBox: activeInteractor.params.canvas.startWithBox,
+                                        }),
+                                    };
+
+                                    canvasInstance.interact({ shapeType: 'points', enabled: true, ...interactorParameters });
+                                    onInteractionStart(activeInteractor, activeLabelID, interactorParameters);
                                 }
                             }}
                         >
@@ -1376,7 +1423,6 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
                         label: 'Interactors',
                         children: (
                             <>
-                                {this.renderMasksConvertingBlock()}
                                 {this.renderLabelBlock()}
                                 {this.renderInteractorBlock()}
                             </>
