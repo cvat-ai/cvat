@@ -420,7 +420,6 @@ class AssigneeConsensusReportViewSet(
     viewsets.GenericViewSet,
     mixins.ListModelMixin,
     mixins.RetrieveModelMixin,
-    mixins.CreateModelMixin,
 ):
     queryset = AssigneeConsensusReport.objects.prefetch_related(
         "task",
