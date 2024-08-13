@@ -84,7 +84,7 @@ function ShortcutsDialog(props: StateToProps & DispatchToProps): JSX.Element | n
             name: keyMap[key].name || key,
             description: keyMap[key].description || '',
             shortcut: keyMap[key].sequences,
-            action: [keyMap[key].action],
+            action: ['keydown'],
         }));
 
     return (

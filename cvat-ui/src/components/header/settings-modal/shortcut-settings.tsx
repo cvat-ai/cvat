@@ -13,7 +13,7 @@ import React, {
 } from 'react';
 import { ShortcutScope } from 'utils/enums';
 import { KeyMap } from 'utils/mousetrap-react';
-import { Empty } from 'antd';
+import { Empty, Modal } from 'antd';
 import { shortcutsActions } from 'actions/shortcuts-actions';
 import { useDispatch, useSelector } from 'react-redux';
 import { CombinedState } from 'reducers';
@@ -29,6 +29,7 @@ function ShortcutsSettingsComponent(props: Props): JSX.Element {
     const { keyMap, onKeySequenceUpdate } = props;
     const [searchValue, setSearchValue] = useState('');
     const shortcuts = useSelector((state: CombinedState) => state.shortcuts);
+    const [activeKeys, setActiveKeys] = useState<string[]>(Object.values(ShortcutScope));
     const dispatch = useDispatch();
 
     const onSearchChange = (event: React.ChangeEvent<HTMLInputElement>): void => {
@@ -36,16 +37,24 @@ function ShortcutsSettingsComponent(props: Props): JSX.Element {
     };
 
     const onRestoreDefaults = useCallback(() => {
-        const currentSettings = localStorage.getItem('clientSettings');
-        dispatch(shortcutsActions.setShortcuts({
-            ...shortcuts,
-            keyMap: { ...shortcuts.defaultState },
-        }));
-        if (currentSettings) {
-            const parsedSettings = JSON.parse(currentSettings);
-            delete parsedSettings.shortcuts;
-            localStorage.setItem('clientSettings', JSON.stringify(parsedSettings));
-        }
+        Modal.confirm({
+            title: 'Are you sure you want to restore defaults?',
+            okText: 'Yes',
+            cancelText: 'No',
+            onOk: () => {
+                const currentSettings = localStorage.getItem('clientSettings');
+                dispatch(shortcutsActions.setShortcuts({
+                    ...shortcuts,
+                    keyMap: { ...shortcuts.defaultState },
+                }));
+                if (currentSettings) {
+                    const parsedSettings = JSON.parse(currentSettings);
+                    delete parsedSettings.shortcuts;
+                    localStorage.setItem('clientSettings', JSON.stringify(parsedSettings));
+                }
+            },
+            onCancel: () => {},
+        });
     }, [shortcuts.defaultState]);
 
     const filteredKeyMap = useMemo(() => Object.entries(keyMap).filter(
@@ -64,8 +73,9 @@ function ShortcutsSettingsComponent(props: Props): JSX.Element {
                 return null;
             }
             return {
-                label: <span className='cvat-shortcuts-settings-label'>{`${scope.split('_').join(' ').toLowerCase()} Shortcuts`}</span>,
+                label: <span className='cvat-shortcuts-settings-label'>{`${scope.split('_').join(' ').toLowerCase()}`}</span>,
                 key: scope,
+                showArrow: !searchValue,
                 children: (
                     <List
                         dataSource={viewFilteredItems}
@@ -96,6 +106,12 @@ function ShortcutsSettingsComponent(props: Props): JSX.Element {
         return scopeItems;
     }, [filteredKeyMap]);
 
+    const handleCollapseChange = (keys: string[] | string): void => {
+        if (!searchValue) {
+            setActiveKeys(Array.isArray(keys) ? keys : [keys]);
+        }
+    };
+
     return (
         <div className='cvat-shortcuts-settings'>
             <Row className='cvat-shortcuts-setting'>
@@ -118,7 +134,8 @@ function ShortcutsSettingsComponent(props: Props): JSX.Element {
                         <Collapse
                             items={items}
                             bordered={false}
-                            defaultActiveKey={Object.values(ShortcutScope).map((scope: string) => scope)}
+                            activeKey={searchValue ? Object.values(ShortcutScope) : activeKeys}
+                            onChange={handleCollapseChange}
                             className='cvat-shortcuts-settings-collapse'
                         />
                     ) : (

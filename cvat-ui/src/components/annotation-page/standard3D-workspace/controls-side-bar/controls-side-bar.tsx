@@ -48,18 +48,18 @@ interface Props {
 }
 
 const componentShortcuts = {
-    PASTE_SHAPE: {
+    PASTE_3D_SHAPE: {
         name: 'Paste shape',
         description: 'Paste a shape from internal CVAT clipboard',
         sequences: ['ctrl+v'],
-        scope: ShortcutScope.ANNOTATION_PAGE,
+        scope: ShortcutScope.STANDARD_3D_WORKSPACE,
     },
-    SWITCH_DRAW_MODE: {
+    SWITCH_3D_DRAW_MODE: {
         name: 'Draw mode',
         description:
             'Repeat the latest procedure of drawing with the same parameters (shift to redraw an existing shape)',
         sequences: ['shift+n', 'n'],
-        scope: ShortcutScope.ANNOTATION_PAGE,
+        scope: ShortcutScope.STANDARD_3D_WORKSPACE,
     },
 };
 
@@ -94,12 +94,12 @@ export default function ControlsSideBarComponent(props: Props): JSX.Element {
     };
 
     const handlers: any = applicableLabels.length ? {
-        PASTE_SHAPE: (event: KeyboardEvent | undefined) => {
+        PASTE_3D_SHAPE: (event: KeyboardEvent | undefined) => {
             preventDefault(event);
             canvasInstance.cancel();
             pasteShape();
         },
-        SWITCH_DRAW_MODE: (event: KeyboardEvent | undefined) => {
+        SWITCH_3D_DRAW_MODE: (event: KeyboardEvent | undefined) => {
             preventDefault(event);
             const drawing = [ActiveControl.DRAW_CUBOID].includes(activeControl);
 

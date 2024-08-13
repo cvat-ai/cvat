@@ -18,10 +18,64 @@ import { registerComponentShortcuts } from 'actions/shortcuts-actions';
 import { subKeyMap } from 'utils/component-subkeymap';
 
 const componentShortcuts = {
-    SWITCH_LABEL: {
-        name: 'Switch label',
-        description: 'Changes a label for an activated object or for the next drawn object if no objects are activated',
-        sequences: ['1', '2', '3', '4', '5', '6', '7', '8', '9', '0'].map((val: string): string => `ctrl+${val}`),
+    SWITCH_LABEL_1: {
+        name: 'Switch label 1',
+        description: 'Changes the label to label 1 for the activated object or for the next drawn object if no objects are activated',
+        sequences: ['ctrl+1'],
+        scope: ShortcutScope.STANDARD_WORKSPACE,
+    },
+    SWITCH_LABEL_2: {
+        name: 'Switch label 2',
+        description: 'Changes the label to label 2 for the activated object or for the next drawn object if no objects are activated',
+        sequences: ['ctrl+2'],
+        scope: ShortcutScope.STANDARD_WORKSPACE,
+    },
+    SWITCH_LABEL_3: {
+        name: 'Switch label 3',
+        description: 'Changes the label to label 3 for the activated object or for the next drawn object if no objects are activated',
+        sequences: ['ctrl+3'],
+        scope: ShortcutScope.STANDARD_WORKSPACE,
+    },
+    SWITCH_LABEL_4: {
+        name: 'Switch label 4',
+        description: 'Changes the label to label 4 for the activated object or for the next drawn object if no objects are activated',
+        sequences: ['ctrl+4'],
+        scope: ShortcutScope.STANDARD_WORKSPACE,
+    },
+    SWITCH_LABEL_5: {
+        name: 'Switch label 5',
+        description: 'Changes the label to label 5 for the activated object or for the next drawn object if no objects are activated',
+        sequences: ['ctrl+5'],
+        scope: ShortcutScope.STANDARD_WORKSPACE,
+    },
+    SWITCH_LABEL_6: {
+        name: 'Switch label 6',
+        description: 'Changes the label to label 6 for the activated object or for the next drawn object if no objects are activated',
+        sequences: ['ctrl+6'],
+        scope: ShortcutScope.STANDARD_WORKSPACE,
+    },
+    SWITCH_LABEL_7: {
+        name: 'Switch label 7',
+        description: 'Changes the label to label 7 for the activated object or for the next drawn object if no objects are activated',
+        sequences: ['ctrl+7'],
+        scope: ShortcutScope.STANDARD_WORKSPACE,
+    },
+    SWITCH_LABEL_8: {
+        name: 'Switch label 8',
+        description: 'Changes the label to label 8 for the activated object or for the next drawn object if no objects are activated',
+        sequences: ['ctrl+8'],
+        scope: ShortcutScope.STANDARD_WORKSPACE,
+    },
+    SWITCH_LABEL_9: {
+        name: 'Switch label 9',
+        description: 'Changes a label for object 9 for the activated object or for the next drawn object if no objects are activated',
+        sequences: ['ctrl+9'],
+        scope: ShortcutScope.STANDARD_WORKSPACE,
+    },
+    SWITCH_LABEL_0: {
+        name: 'Switch label 0',
+        description: 'Changes the label to label 0 for the activated object or for the next drawn object if no objects are activated',
+        sequences: ['ctrl+0'],
         scope: ShortcutScope.STANDARD_WORKSPACE,
     },
 };
@@ -78,31 +132,109 @@ function LabelsListComponent(): JSX.Element {
         [keyToLabelMapping],
     );
 
+    const handleHelper = (labelID: number): void => {
+        if (Number.isInteger(activatedStateID)) {
+            const activatedState = states.filter((state: any) => state.clientID === activatedStateID)[0];
+            const label = labels.filter((_label: any) => _label.id === labelID)[0];
+            const bothAreTags = activatedState.objectType === ObjectType.TAG && label.type === ObjectType.TAG;
+            const labelIsApplicable = label.type === LabelType.ANY ||
+                activatedState.shapeType === label.type || bothAreTags;
+            if (activatedState && labelIsApplicable) {
+                activatedState.label = label;
+                dispatch(updateAnnotationsAsync([activatedState]));
+            }
+        } else {
+            const label = labels.filter((_label: any) => _label.id === labelID)[0];
+            const bothAreTags = activeObjectType === ObjectType.TAG && label.type === ObjectType.TAG;
+            const labelIsApplicable = label.type === LabelType.ANY ||
+                activeShapeType === label.type || bothAreTags;
+            if (labelIsApplicable) {
+                dispatch(rememberObject({ activeLabelID: labelID }));
+                message.destroy();
+                message.success(`Default label has been changed to "${label.name}"`);
+            }
+        }
+    };
+
     const handlers: Record<keyof typeof componentShortcuts, (event: KeyboardEvent, shortcut: string) => void> = {
-        SWITCH_LABEL: (event: KeyboardEvent | undefined, shortcut: string) => {
+        SWITCH_LABEL_1: (event: KeyboardEvent) => {
             if (event) event.preventDefault();
-            const labelID = keyToLabelMapping[shortcut.split('+')[1].trim()];
+            const labelID = keyToLabelMapping[1];
             const label = labels.filter((_label: any) => _label.id === labelID)[0];
             if (Number.isInteger(labelID) && label) {
-                if (Number.isInteger(activatedStateID)) {
-                    const activatedState = states.filter((state: any) => state.clientID === activatedStateID)[0];
-                    const bothAreTags = activatedState.objectType === ObjectType.TAG && label.type === ObjectType.TAG;
-                    const labelIsApplicable = label.type === LabelType.ANY ||
-                        activatedState.shapeType === label.type || bothAreTags;
-                    if (activatedState && labelIsApplicable) {
-                        activatedState.label = label;
-                        dispatch(updateAnnotationsAsync([activatedState]));
-                    }
-                } else {
-                    const bothAreTags = activeObjectType === ObjectType.TAG && label.type === ObjectType.TAG;
-                    const labelIsApplicable = label.type === LabelType.ANY ||
-                        activeShapeType === label.type || bothAreTags;
-                    if (labelIsApplicable) {
-                        dispatch(rememberObject({ activeLabelID: labelID }));
-                        message.destroy();
-                        message.success(`Default label has been changed to "${label.name}"`);
-                    }
-                }
+                handleHelper(labelID);
+            }
+        },
+        SWITCH_LABEL_2: (event: KeyboardEvent) => {
+            if (event) event.preventDefault();
+            const labelID = keyToLabelMapping[2];
+            const label = labels.filter((_label: any) => _label.id === labelID)[0];
+            if (Number.isInteger(labelID) && label) {
+                handleHelper(labelID);
+            }
+        },
+        SWITCH_LABEL_3: (event: KeyboardEvent) => {
+            if (event) event.preventDefault();
+            const labelID = keyToLabelMapping[3];
+            const label = labels.filter((_label: any) => _label.id === labelID)[0];
+            if (Number.isInteger(labelID) && label) {
+                handleHelper(labelID);
+            }
+        },
+        SWITCH_LABEL_4: (event: KeyboardEvent) => {
+            if (event) event.preventDefault();
+            const labelID = keyToLabelMapping[4];
+            const label = labels.filter((_label: any) => _label.id === labelID)[0];
+            if (Number.isInteger(labelID) && label) {
+                handleHelper(labelID);
+            }
+        },
+        SWITCH_LABEL_5: (event: KeyboardEvent) => {
+            if (event) event.preventDefault();
+            const labelID = keyToLabelMapping[5];
+            const label = labels.filter((_label: any) => _label.id === labelID)[0];
+            if (Number.isInteger(labelID) && label) {
+                handleHelper(labelID);
+            }
+        },
+        SWITCH_LABEL_6: (event: KeyboardEvent) => {
+            if (event) event.preventDefault();
+            const labelID = keyToLabelMapping[6];
+            const label = labels.filter((_label: any) => _label.id === labelID)[0];
+            if (Number.isInteger(labelID) && label) {
+                handleHelper(labelID);
+            }
+        },
+        SWITCH_LABEL_7: (event: KeyboardEvent) => {
+            if (event) event.preventDefault();
+            const labelID = keyToLabelMapping[7];
+            const label = labels.filter((_label: any) => _label.id === labelID)[0];
+            if (Number.isInteger(labelID) && label) {
+                handleHelper(labelID);
+            }
+        },
+        SWITCH_LABEL_8: (event: KeyboardEvent) => {
+            if (event) event.preventDefault();
+            const labelID = keyToLabelMapping[8];
+            const label = labels.filter((_label: any) => _label.id === labelID)[0];
+            if (Number.isInteger(labelID) && label) {
+                handleHelper(labelID);
+            }
+        },
+        SWITCH_LABEL_9: (event: KeyboardEvent) => {
+            if (event) event.preventDefault();
+            const labelID = keyToLabelMapping[9];
+            const label = labels.filter((_label: any) => _label.id === labelID)[0];
+            if (Number.isInteger(labelID) && label) {
+                handleHelper(labelID);
+            }
+        },
+        SWITCH_LABEL_0: (event: KeyboardEvent) => {
+            if (event) event.preventDefault();
+            const labelID = keyToLabelMapping[0];
+            const label = labels.filter((_label: any) => _label.id === labelID)[0];
+            if (Number.isInteger(labelID) && label) {
+                handleHelper(labelID);
             }
         },
     };

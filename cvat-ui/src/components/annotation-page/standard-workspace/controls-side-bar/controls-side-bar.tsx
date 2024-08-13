@@ -70,13 +70,13 @@ const componentShortcuts = {
         sequences: ['ctrl+shift+r'],
         scope: ShortcutScope.STANDARD_WORKSPACE,
     },
-    PASTE_SHAPE: {
+    STANDARD_PASTE_SHAPE: {
         name: 'Paste shape',
         description: 'Paste a shape from internal CVAT clipboard',
         sequences: ['ctrl+v'],
         scope: ShortcutScope.STANDARD_WORKSPACE,
     },
-    SWITCH_DRAW_MODE: {
+    STANDARD_SWITCH_DRAW_MODE: {
         name: 'Draw mode',
         description:
             'Repeat the latest procedure of drawing with the same parameters (shift to redraw an existing shape)',
@@ -169,12 +169,12 @@ export default function ControlsSideBarComponent(props: Props): JSX.Element {
     if (!controlsDisabled) {
         handlers = {
             ...handlers,
-            PASTE_SHAPE: (event: KeyboardEvent | undefined) => {
+            STANDARD_PASTE_SHAPE: (event: KeyboardEvent | undefined) => {
                 preventDefault(event);
                 canvasInstance.cancel();
                 pasteShape();
             },
-            SWITCH_DRAW_MODE: (event: KeyboardEvent | undefined) => {
+            STANDARD_SWITCH_DRAW_MODE: (event: KeyboardEvent | undefined) => {
                 preventDefault(event);
                 const drawing = [
                     ActiveControl.DRAW_POINTS,

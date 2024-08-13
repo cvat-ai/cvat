@@ -77,7 +77,7 @@ const componentShortcuts = {
         sequences: ['t l'],
         scope: ShortcutScope.STANDARD_WORKSPACE,
     },
-    SWITCH_LOCK: {
+    SWITCH_STANDARD_LOCK: {
         name: 'Lock/unlock an object',
         description: 'Change locked state for an active object',
         sequences: ['l'],
@@ -95,13 +95,13 @@ const componentShortcuts = {
         sequences: ['h'],
         scope: ShortcutScope.STANDARD_WORKSPACE,
     },
-    SWITCH_OCCLUDED: {
+    SWITCH_STANDARD_OCCLUDED: {
         name: 'Switch occluded',
         description: 'Change occluded property for an active object',
         sequences: ['q', '/'],
         scope: ShortcutScope.STANDARD_WORKSPACE,
     },
-    SWITCH_PINNED: {
+    SWITCH_STANDARD_PINNED: {
         name: 'Switch pinned property',
         description: 'Change pinned property for an active object',
         sequences: ['p'],
@@ -119,7 +119,7 @@ const componentShortcuts = {
         sequences: ['o'],
         scope: ShortcutScope.STANDARD_WORKSPACE,
     },
-    DELETE_OBJECT: {
+    DELETE_STANDARD_OBJECT: {
         name: 'Delete object',
         description: 'Delete an active object. Use shift to force delete of locked objects',
         sequences: ['del', 'shift+del'],
@@ -149,13 +149,13 @@ const componentShortcuts = {
         sequences: ['ctrl+b'],
         scope: ShortcutScope.STANDARD_WORKSPACE,
     },
-    NEXT_KEY_FRAME: {
+    STANDARD_NEXT_KEY_FRAME: {
         name: 'Next keyframe',
         description: 'Go to the next keyframe of an active track',
         sequences: ['r'],
         scope: ShortcutScope.STANDARD_WORKSPACE,
     },
-    PREV_KEY_FRAME: {
+    STANDARD_PREV_KEY_FRAME: {
         name: 'Previous keyframe',
         description: 'Go to the previous keyframe of an active track',
         sequences: ['e'],
@@ -463,7 +463,7 @@ class ObjectsListContainer extends React.PureComponent<Props, State> {
                 preventDefault(event);
                 this.lockAllStates(!statesLocked);
             },
-            SWITCH_LOCK: (event: KeyboardEvent | undefined) => {
+            SWITCH_STANDARD_LOCK: (event: KeyboardEvent | undefined) => {
                 preventDefault(event);
                 const state = activatedState();
                 if (state && !readonly) {
@@ -483,7 +483,7 @@ class ObjectsListContainer extends React.PureComponent<Props, State> {
                     updateAnnotations([state]);
                 }
             },
-            SWITCH_OCCLUDED: (event: KeyboardEvent | undefined) => {
+            SWITCH_STANDARD_OCCLUDED: (event: KeyboardEvent | undefined) => {
                 preventDefault(event);
                 const state = activatedState();
                 if (state && !readonly && state.objectType !== ObjectType.TAG) {
@@ -491,7 +491,7 @@ class ObjectsListContainer extends React.PureComponent<Props, State> {
                     updateAnnotations([state]);
                 }
             },
-            SWITCH_PINNED: (event: KeyboardEvent | undefined) => {
+            SWITCH_STANDARD_PINNED: (event: KeyboardEvent | undefined) => {
                 preventDefault(event);
                 const state = activatedState(true);
                 if (state && !readonly) {
@@ -518,7 +518,7 @@ class ObjectsListContainer extends React.PureComponent<Props, State> {
                     updateAnnotations([state]);
                 }
             },
-            DELETE_OBJECT: (event: KeyboardEvent | undefined) => {
+            DELETE_STANDARD_OBJECT: (event: KeyboardEvent | undefined) => {
                 preventDefault(event);
                 const state = activatedState(true);
                 if (state && !readonly) {
@@ -571,7 +571,7 @@ class ObjectsListContainer extends React.PureComponent<Props, State> {
                     switchPropagateVisibility(true);
                 }
             },
-            NEXT_KEY_FRAME: (event: KeyboardEvent | undefined) => {
+            STANDARD_NEXT_KEY_FRAME: (event: KeyboardEvent | undefined) => {
                 preventDefault(event);
                 const state = activatedState();
                 if (state && state.keyframes) {
@@ -581,7 +581,7 @@ class ObjectsListContainer extends React.PureComponent<Props, State> {
                     }
                 }
             },
-            PREV_KEY_FRAME: (event: KeyboardEvent | undefined) => {
+            STANDARD_PREV_KEY_FRAME: (event: KeyboardEvent | undefined) => {
                 preventDefault(event);
                 const state = activatedState();
                 if (state && state.keyframes) {

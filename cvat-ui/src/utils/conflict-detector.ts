@@ -11,7 +11,7 @@ interface FlatKeyMap {
     [scope:string]: FlatKeyMapItem
 }
 
-function conflict(sequence: string, existingSequence: string): boolean {
+export function conflict(sequence: string, existingSequence: string): boolean {
     if (isEqual(sequence, existingSequence)) {
         return true;
     }
@@ -80,16 +80,12 @@ export function conflictDetector(
         const { scope } = keyMapItem;
         const { sequences } = keyMapItem;
         const flatKeyMapUpdated: FlatKeyMapItem = updatedFlatKeyMap(scope, flatKeyMap);
-
+        let currentSequences: string[] = [];
         if (flatKeyMapUpdated.items[label]) {
-            const currentSequences = flatKeyMapUpdated.items[label].sequences;
-            delete flatKeyMapUpdated.items[label];
-            flatKeyMapUpdated.sequences = flatKeyMapUpdated.sequences.filter(
-                (s: any) => !currentSequences.includes(s),
-            );
+            currentSequences = flatKeyMapUpdated.items[label].sequences;
         }
 
-        for (const sequence of sequences) {
+        for (const sequence of sequences.filter((seq) => !currentSequences.includes(seq))) {
             for (const existingSequence of flatKeyMapUpdated.sequences) {
                 if (conflict(sequence, existingSequence)) {
                     const conflictingAction = Object.keys(flatKeyMapUpdated.items)

@@ -58,7 +58,7 @@ export function getKeyfromCode(code: string): string | null {
         Enter: 'enter',
         Tab: 'tab',
         Backspace: 'backspace',
-        Delete: 'delete',
+        Delete: 'del',
         ArrowUp: 'up',
         ArrowDown: 'down',
         ArrowLeft: 'left',

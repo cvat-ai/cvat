@@ -84,6 +84,8 @@
 
 .cvat-settings-modal .ant-modal-body {
     padding-top: 0;
+    max-height: calc(100vh - 300px);
+    overflow-y: auto;
 }
 
 .cvat-organizations-settings-list {

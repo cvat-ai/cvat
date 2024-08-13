@@ -44,25 +44,25 @@ const componentShortcuts = {
     TILT_UP: {
         name: 'Camera Roll Angle Up',
         description: 'Increases camera roll angle',
-        sequences: ['shift+arrowup'],
+        sequences: ['shift+up'],
         scope: ShortcutScope.STANDARD_3D_WORKSPACE,
     },
     TILT_DOWN: {
         name: 'Camera Roll Angle Down',
         description: 'Decreases camera roll angle',
-        sequences: ['shift+arrowdown'],
+        sequences: ['shift+down'],
         scope: ShortcutScope.STANDARD_3D_WORKSPACE,
     },
     ROTATE_LEFT: {
         name: 'Camera Pitch Angle Left',
         description: 'Decreases camera pitch angle',
-        sequences: ['shift+arrowleft'],
+        sequences: ['shift+left'],
         scope: ShortcutScope.STANDARD_3D_WORKSPACE,
     },
     ROTATE_RIGHT: {
         name: 'Camera Pitch Angle Right',
         description: 'Increases camera pitch angle',
-        sequences: ['shift+arrowright'],
+        sequences: ['shift+right'],
         scope: ShortcutScope.STANDARD_3D_WORKSPACE,
     },
     MOVE_UP: {

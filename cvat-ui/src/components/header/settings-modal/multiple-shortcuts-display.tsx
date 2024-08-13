@@ -1,10 +1,11 @@
 import React, { useRef, useState, useEffect } from 'react';
 import { Select, Modal } from 'antd/lib';
-import { conflictDetector } from 'utils/conflict-detector';
+import { conflict, conflictDetector } from 'utils/conflict-detector';
 import { ShortcutScope } from 'utils/enums';
 import { KeyMapItem } from 'utils/mousetrap-react';
 import { registerComponentShortcuts } from 'actions/shortcuts-actions';
 import { getKeyfromCode } from 'utils/key-code-mapper';
+import { isEqual } from 'lodash';
 
 interface Props {
     id: string;
@@ -31,13 +32,34 @@ function MultipleShortcutsDisplay(props: Props): JSX.Element {
         if (timer) clearTimeout(timer);
     }, [timer]);
 
-    function unsetExistingShortcut(conflictingShortcuts: Record<string, KeyMapItem>, updatedSequence: string[]): void {
-        const commonSequence = updatedSequence.filter(
-            (s) => Object.values(conflictingShortcuts).some((cs) => cs.sequences.includes(s)));
+    function unsetExistingShortcut(
+        conflictingShortcuts: Record<string, KeyMapItem>,
+        updatedSequence: string[],
+        shortcut: Record<string, KeyMapItem>): void {
         const updatedShortcuts: Record<string, KeyMapItem> = {};
         for (const [key, value] of Object.entries(conflictingShortcuts)) {
-            const newSequences = value.sequences.filter((s) => !commonSequence.includes(s));
-            updatedShortcuts[key] = { ...value, sequences: newSequences };
+            const currentItem: Record<string, KeyMapItem> = {
+                [key]: value,
+            };
+            if (isEqual(Object.keys(currentItem), Object.keys(shortcut))) {
+                const currentSequence = currentItem[Object.keys(shortcut)[0]].sequences;
+                const newSequence = updatedSequence.filter((s) => !currentSequence.includes(s))[0];
+                updatedShortcuts[key] = {
+                    ...value,
+                    sequences: [...currentSequence.filter((s) => !conflict(s, newSequence)), newSequence],
+                };
+            } else {
+                const commonSequence = updatedSequence.map((s) => {
+                    for (const seq of value.sequences) {
+                        if (conflict(seq, s)) {
+                            return seq;
+                        }
+                    }
+                    return '';
+                });
+                const newSequences = value.sequences.filter((s) => !commonSequence.includes(s));
+                updatedShortcuts[key] = { ...value, sequences: newSequences };
+            }
         }
         registerComponentShortcuts(updatedShortcuts);
     }
@@ -72,7 +94,7 @@ function MultipleShortcutsDisplay(props: Props): JSX.Element {
                 ),
                 onOk: () => {
                     onKeySequenceUpdate(keyMapId, updatedSequence);
-                    unsetExistingShortcut(conflictingShortcuts, updatedSequence);
+                    unsetExistingShortcut(conflictingShortcuts, updatedSequence, shortcut);
                 },
                 onCancel: () => {},
             });

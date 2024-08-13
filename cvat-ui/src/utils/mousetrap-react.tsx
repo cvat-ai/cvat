@@ -5,6 +5,7 @@
 
 import React, { useEffect } from 'react';
 import Mousetrap from 'mousetrap';
+import { getCVATStore } from 'cvat-store';
 import { ShortcutScope } from './enums';
 
 export interface KeyMapItem {
@@ -62,11 +63,20 @@ export default function GlobalHotKeys(props: Props): JSX.Element {
 }
 
 Mousetrap.prototype.stopCallback = function (e: KeyboardEvent, element: Element, combo: string): boolean {
+    const store = getCVATStore();
+    const { keyMap } = store.getState().shortcuts;
+    const shortcuts = [];
+    const keys: string[] = ['SWITCH_SHORTCUTS', 'SWITCH_SETTINGS'];
+    for (const key of keys) {
+        if (keyMap[key]) {
+            shortcuts.push(...keyMap[key].sequences);
+        }
+    }
     // stop when modals are opened
     const someModalsOpened = Array.from(
         window.document.getElementsByClassName('ant-modal'),
     ).some((el) => (el as HTMLElement).style.display !== 'none');
-    if (someModalsOpened && !['f1', 'f2'].includes(combo)) {
+    if (someModalsOpened && !shortcuts.includes(combo)) {
         return true;
     }
 

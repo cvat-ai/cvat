@@ -22,7 +22,7 @@ export enum StorageStatuses {
     NOT_FOUND = 'NOT_FOUND',
 }
 
-// if this enum is changed, kindly update the conflictDetector as well
+// if this enum is changed, kindly update the conflictDetector and it's helpers as well
 export enum ShortcutScope {
     GLOBAL = 'GLOBAL',
     ANNOTATION_PAGE = 'ANNOTATION_PAGE',

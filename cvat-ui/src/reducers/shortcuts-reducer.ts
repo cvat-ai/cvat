@@ -13,6 +13,14 @@ import { ShortcutsState } from '.';
 const capitalize = (text: string): string => text.slice(0, 1).toUpperCase() + text.slice(1);
 const prettify = (key: string): string => {
     switch (key.toLowerCase()) {
+        case 'up':
+            return 'Arrow Up';
+        case 'down':
+            return 'Arrow Down';
+        case 'left':
+            return 'Arrow Left';
+        case 'right':
+            return 'Arrow Right';
         case 'arrowup':
             return 'Arrow Up';
         case 'arrowdown':
@@ -62,7 +70,7 @@ export default (state = defaultState, action: ShortcutsActions | BoundariesActio
             }
             const conflictingShortcut = conflictDetector(shortcuts, state.keyMap);
             if (conflictingShortcut) {
-                throw new Error(`The shortcuts: ${JSON.stringify(shortcuts)}
+                console.warn(`The shortcuts: ${JSON.stringify(shortcuts)}
                     have conflicts with these shortcut: ${JSON.stringify(conflictingShortcut)}.`);
             }
             return {
