@@ -236,7 +236,6 @@ export class InteractionHandlerImpl implements InteractionHandler {
         }
 
         if (this.drawnIntermediateShape) {
-            this.selectize(false, this.drawnIntermediateShape);
             this.drawnIntermediateShape.remove();
             this.drawnIntermediateShape = null;
         }
@@ -263,26 +262,36 @@ export class InteractionHandlerImpl implements InteractionHandler {
 
     private updateIntermediateShape(): void {
         const { intermediateShape, geometry } = this;
-        if (this.drawnIntermediateShape) {
-            this.selectize(false, this.drawnIntermediateShape);
-            this.drawnIntermediateShape.remove();
+        if (!intermediateShape) {
+            if (this.drawnIntermediateShape) {
+                this.drawnIntermediateShape.remove();
+            }
+
+            return;
         }
 
-        if (!intermediateShape) return;
         const { shapeType, points } = intermediateShape;
+        if (this.drawnIntermediateShape?.type === 'polygon' && shapeType === 'polygon') {
+            const isInvalidShape = shapeType === 'polygon' && points.length < 3 * 2;
+            this.drawnIntermediateShape.attr('points', stringifyPoints(translateToCanvas(geometry.offset, points)));
+            this.drawnIntermediateShape.stroke(isInvalidShape ? 'red' : 'black');
+            return;
+        }
+
+        this.drawnIntermediateShape?.remove();
         if (shapeType === 'polygon') {
-            const erroredShape = shapeType === 'polygon' && points.length < 3 * 2;
+            const isInvalidShape = shapeType === 'polygon' && points.length < 3 * 2;
             this.drawnIntermediateShape = this.canvas
                 .polygon(stringifyPoints(translateToCanvas(geometry.offset, points)))
                 .attr({
                     'color-rendering': 'optimizeQuality',
                     'shape-rendering': 'geometricprecision',
                     'stroke-width': consts.BASE_STROKE_WIDTH / this.geometry.scale,
-                    stroke: erroredShape ? 'red' : 'black',
+                    stroke: isInvalidShape ? 'red' : 'black',
                 })
                 .fill({ opacity: this.selectedShapeOpacity, color: 'white' })
                 .addClass('cvat_canvas_interact_intermediate_shape');
-            this.selectize(true, this.drawnIntermediateShape, erroredShape);
+            this.canvas.node.prepend(this.drawnIntermediateShape.node);
         } else if (shapeType === 'mask') {
             const [left, top, right, bottom] = points.slice(-4);
             const imageBitmap = expandChannels(255, 255, 255, points);
@@ -295,6 +304,7 @@ export class InteractionHandlerImpl implements InteractionHandler {
             }).addClass('cvat_canvas_interact_intermediate_shape');
             image.move(this.geometry.offset + left, this.geometry.offset + top);
             this.drawnIntermediateShape = image;
+            this.canvas.node.prepend(this.drawnIntermediateShape.node);
 
             imageDataToDataURL(
                 imageBitmap,
@@ -314,43 +324,6 @@ export class InteractionHandlerImpl implements InteractionHandler {
             throw new Error(
                 `Shape type "${shapeType}" was not implemented at interactionHandler::updateIntermediateShape`,
             );
-        }
-    }
-
-    private selectize(value: boolean, shape: SVG.Element, erroredShape = false): void {
-        // eslint-disable-next-line @typescript-eslint/no-this-alias
-        const self = this;
-
-        if (value) {
-            (shape as any).selectize(value, {
-                deepSelect: true,
-                pointSize: this.controlPointsSize / self.geometry.scale,
-                rotationPoint: false,
-                classPoints: 'cvat_canvas_interact_intermediate_shape_point',
-                pointType(cx: number, cy: number): SVG.Circle {
-                    return this.nested
-                        .circle(this.options.pointSize)
-                        .stroke(erroredShape ? 'red' : 'black')
-                        .fill('black')
-                        .center(cx, cy)
-                        .attr({
-                            'fill-opacity': 1,
-                            'stroke-width': consts.POINTS_STROKE_WIDTH / self.geometry.scale,
-                        });
-                },
-            });
-        } else {
-            (shape as any).selectize(false, {
-                deepSelect: true,
-            });
-        }
-
-        const handler = shape.remember('_selectHandler');
-        if (handler && handler.nested) {
-            handler.nested.fill(shape.attr('fill'));
-            // move green circle group(anchors) and polygon(lastChild) to the top of svg to make anchors hoverable
-            handler.parent.node.prepend(handler.nested.node);
-            handler.parent.node.prepend(handler.parent.node.lastChild);
         }
     }
 
@@ -443,11 +416,6 @@ export class InteractionHandlerImpl implements InteractionHandler {
             } else {
                 shape.attr('stroke-width', consts.BASE_STROKE_WIDTH / this.geometry.scale);
             }
-        }
-
-        for (const element of window.document.getElementsByClassName('cvat_canvas_interact_intermediate_shape_point')) {
-            element.setAttribute('stroke-width', `${consts.POINTS_STROKE_WIDTH / (2 * this.geometry.scale)}`);
-            element.setAttribute('r', `${this.controlPointsSize / this.geometry.scale}`);
         }
 
         if (this.drawnIntermediateShape) {
