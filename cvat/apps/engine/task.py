@@ -692,9 +692,15 @@ def _create_thread(
     is_media_sorted = False
 
     if is_data_in_cloud:
-        # Packed media must be downloaded for task creation
-        if any(v for k, v in media.items() if k != 'image'):
-            _update_status("The input media is packed - downloading it for further processing")
+        if (
+            # Download remote data if local storage is requested
+            # TODO: maybe move into cache building to fail faster on invalid task configurations
+            db_data.storage_method == models.StorageMethodChoice.FILE_SYSTEM or
+
+            # Packed media must be downloaded for task creation
+            any(v for k, v in media.items() if k != 'image')
+        ):
+            _update_status("Downloading input media")
 
             filtered_data = []
             for files in (i for i in media.values() if i):
