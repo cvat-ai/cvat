@@ -7,7 +7,6 @@ import './styles.scss';
 import React, {
     useCallback, useEffect, useReducer, useState,
 } from 'react';
-import { useDispatch } from 'react-redux';
 import { useParams } from 'react-router';
 import { Link } from 'react-router-dom';
 import { Row, Col } from 'antd/lib/grid';
@@ -16,9 +15,8 @@ import Title from 'antd/lib/typography/Title';
 import notification from 'antd/lib/notification';
 import { useIsMounted } from 'utils/hooks';
 import {
-    Job, JobType, QualityReport, QualitySettings, RQStatus, Task, getCore,
+    Job, JobType, QualityReport, QualitySettings, Task, getCore,
 } from 'cvat-core-wrapper';
-import { updateJobAsync } from 'actions/jobs-actions';
 import CVATLoadingSpinner from 'components/common/loading-spinner';
 import GoBackButton from 'components/common/go-back-button';
 import { ActionUnion, createAction } from 'utils/redux';
@@ -129,7 +127,6 @@ const reducer = (state: State, action: ActionUnion<typeof reducerActions>): Stat
 };
 
 function QualityControlPage(): JSX.Element {
-    const appDispatch = useDispatch();
     const [state, dispatch] = useReducer(reducer, {
         fetching: true,
         reportRefreshingStatus: null,
@@ -203,30 +200,7 @@ function QualityControlPage(): JSX.Element {
         }
     }, [instance]);
 
-    const onCreateReport = useCallback(() => {
-        if (instance) {
-            const onUpdate = (status: RQStatus, progress: number, message: string): void => {
-                dispatch(reducerActions.setReportRefreshingStatus(message));
-            };
-
-            const body = { taskID: instance.id };
-
-            core.analytics.quality.calculate(body, onUpdate).then(() => {
-                receiveSettings(instance);
-            }).finally(() => {
-                dispatch(reducerActions.setReportRefreshingStatus(null));
-            }).catch((error: unknown) => {
-                if (isMounted()) {
-                    notification.error({
-                        message: 'Error occurred during requesting performance report',
-                        description: error instanceof Error ? error.message : '',
-                    });
-                }
-            });
-        }
-    }, [instance]);
-
-    const onSaveQualitySettings = useCallback(async (values) => {
+    const onSaveQualitySettings = useCallback(async (values, fields) => {
         try {
             const { settings } = state.qualitySettings;
             if (settings) {
@@ -247,10 +221,9 @@ function QualityControlPage(): JSX.Element {
                 settings.objectVisibilityThreshold = values.objectVisibilityThreshold / 100;
 
                 settings.panopticComparison = values.panopticComparison;
-
                 try {
                     dispatch(reducerActions.setQualitySettingsFetching(true));
-                    const responseSettings = await settings.save();
+                    const responseSettings = await settings.save(fields || {});
                     dispatch(reducerActions.setQualitySettings(responseSettings));
                 } catch (error: unknown) {
                     notification.error({
@@ -301,15 +274,6 @@ function QualityControlPage(): JSX.Element {
         window.location.hash = activeTab;
     }, [activeTab]);
 
-    const onJobUpdate = useCallback((job: Job, data: Parameters<Job['save']>[0]): void => {
-        dispatch(reducerActions.setFetching(true));
-        appDispatch(updateJobAsync(job, data)).finally(() => {
-            if (isMounted()) {
-                dispatch(reducerActions.setFetching(false));
-            }
-        });
-    }, []);
-
     const onTabKeyChange = useCallback((key: string): void => {
         setTab(key);
     }, []);
@@ -343,9 +307,6 @@ function QualityControlPage(): JSX.Element {
             children: (
                 <TaskQualityComponent
                     task={instance}
-                    onJobUpdate={onJobUpdate}
-                    onCreateReport={onCreateReport}
-                    reportRefreshingStatus={state.reportRefreshingStatus}
                     getQualityColor={state.qualitySettings.getQualityColor}
                 />
             ),
@@ -357,9 +318,6 @@ function QualityControlPage(): JSX.Element {
             children: (
                 <TaskQualityManagementComponent
                     task={instance}
-                    onJobUpdate={onJobUpdate}
-                    onCreateReport={onCreateReport}
-                    reportRefreshingStatus={state.reportRefreshingStatus}
                     getQualityColor={state.qualitySettings.getQualityColor}
                 />
             ),

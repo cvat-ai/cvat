@@ -51,6 +51,11 @@ const defaultState: PluginsState = {
             tabs: {
                 overview: [],
                 management: [],
+                settings: {
+                    form: {
+                        items: [],
+                    },
+                },
             },
         },
         projectActions: {

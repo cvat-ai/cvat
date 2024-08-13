@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: MIT
 
-import React, { useCallback } from 'react';
+import React, { useCallback, useState } from 'react';
 import Text from 'antd/lib/typography/Text';
 import Form from 'antd/lib/form';
 import { QualitySettings } from 'cvat-core-wrapper';
@@ -12,7 +12,7 @@ import QualitySettingsForm from './task-quality/quality-settings-form';
 interface Props {
     fetching: boolean;
     qualitySettings: QualitySettings | null;
-    setQualitySettings: (settings: QualitySettings) => void;
+    setQualitySettings: (settings: QualitySettings, fields: any) => void;
 }
 
 export default function QualitySettingsComponent(props: Props): JSX.Element | null {
@@ -22,11 +22,16 @@ export default function QualitySettingsComponent(props: Props): JSX.Element | nu
         setQualitySettings,
     } = props;
 
+    const [additionalSettings, setAdditinalSettings] = useState({});
+    const onAdditionalValueChanged = (key: string, value: number): void => {
+        setAdditinalSettings({ ...additionalSettings, [key]: value });
+    };
+
     const [form] = Form.useForm();
     const onSave = useCallback(async () => {
         const values = await form.validateFields();
-        setQualitySettings(values);
-    }, [form]);
+        setQualitySettings(values, additionalSettings);
+    }, [form, additionalSettings]);
 
     if (fetching) {
         return (
@@ -37,7 +42,12 @@ export default function QualitySettingsComponent(props: Props): JSX.Element | nu
     }
 
     return settings ? (
-        <QualitySettingsForm form={form} settings={settings} onSave={onSave} />
+        <QualitySettingsForm
+            form={form}
+            settings={settings}
+            onSave={onSave}
+            onAdditionalValueChanged={onAdditionalValueChanged}
+        />
     ) : (
         <Text>No quality settings</Text>
     );

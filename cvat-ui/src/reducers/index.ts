@@ -288,6 +288,11 @@ export interface PluginsState {
             tabs: {
                 overview: PluginComponent[];
                 management: PluginComponent[];
+                settings: {
+                    form: {
+                        items: PluginComponent[];
+                    },
+                }
             },
         };
         projectActions: {

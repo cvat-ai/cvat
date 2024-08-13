@@ -191,8 +191,8 @@ export default class QualitySettings {
         return result;
     }
 
-    public async save(): Promise<QualitySettings> {
-        const result = await PluginRegistry.apiWrapper.call(this, QualitySettings.prototype.save);
+    public async save(fields: any): Promise<QualitySettings> {
+        const result = await PluginRegistry.apiWrapper.call(this, QualitySettings.prototype.save, fields);
         return result;
     }
 }
@@ -201,8 +201,10 @@ Object.defineProperties(QualitySettings.prototype.save, {
     implementation: {
         writable: false,
         enumerable: false,
-        value: async function implementation() {
-            const result = await serverProxy.analytics.quality.settings.update(this.id, this.toJSON());
+        value: async function implementation(fields: any): Promise<QualitySettings> {
+            const result = await serverProxy.analytics.quality.settings.update(
+                this.id, { ...this.toJSON(), ...fields },
+            );
             return new QualitySettings(result);
         },
     },

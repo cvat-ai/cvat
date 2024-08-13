@@ -13,21 +13,30 @@ import Checkbox from 'antd/lib/checkbox/Checkbox';
 import CVATTooltip from 'components/common/cvat-tooltip';
 import { QualitySettings, TargetMetric } from 'cvat-core-wrapper';
 import { Button, Select } from 'antd/lib';
+import { usePlugins } from 'utils/hooks';
+import { CombinedState } from 'reducers';
 
 interface FormProps {
     form: FormInstance;
     settings: QualitySettings;
     onSave: () => void;
+    onAdditionalValueChanged: (key: string, value: any) => void;
 }
 
 export default function QualitySettingsForm(props: FormProps): JSX.Element | null {
-    const { form, settings, onSave } = props;
+    const {
+        form, settings, onSave, onAdditionalValueChanged,
+    } = props;
+
+    const pluginsToRender = usePlugins(
+        (state: CombinedState) => state.plugins.components.qualityControlPage.tabs.settings.form.items,
+        props,
+        { onAdditionalValueChanged },
+    );
 
     const initialValues = {
         targetMetric: 'accuracy_micro',
         targetMetricThreshold: 80,
-
-        jobValidationCount: 3,
 
         lowOverlapThreshold: settings.lowOverlapThreshold * 100,
         iouThreshold: settings.iouThreshold * 100,
@@ -45,6 +54,8 @@ export default function QualitySettingsForm(props: FormProps): JSX.Element | nul
         checkCoveredAnnotations: settings.checkCoveredAnnotations,
         objectVisibilityThreshold: settings.objectVisibilityThreshold * 100,
         panopticComparison: settings.panopticComparison,
+
+        fields: 1,
     };
 
     const generalTooltip = (
@@ -124,23 +135,12 @@ export default function QualitySettingsForm(props: FormProps): JSX.Element | nul
         </div>
     );
 
-    return (
-        <Form
-            form={form}
-            layout='vertical'
-            className='cvat-quality-settings-form'
-            initialValues={initialValues}
-        >
-            <Row justify='end' className='cvat-quality-settings-save-btn'>
-                <Col>
-                    <Button onClick={onSave} type='primary'>
-                        Save
-                    </Button>
-                </Col>
-            </Row>
+    const formItems: [JSX.Element, number][] = [];
+    formItems.push([
+        <>
             <Row className='cvat-quality-settings-title'>
                 <Text strong>
-                    General
+                General
                 </Text>
             </Row>
             <Row>
@@ -180,23 +180,10 @@ export default function QualitySettingsForm(props: FormProps): JSX.Element | nul
                 </Col>
             </Row>
             <Divider />
-            <Row className='cvat-quality-settings-title'>
-                <Text strong>
-                    Job validation
-                </Text>
-            </Row>
-            <Row>
-                <Col span={7}>
-                    <Form.Item
-                        name='jobValidationCount'
-                        label='Job validation count'
-                        rules={[{ required: true }]}
-                    >
-                        <InputNumber min={0} max={100} precision={0} />
-                    </Form.Item>
-                </Col>
-            </Row>
-            <Divider />
+        </>,
+        10]);
+    formItems.push([
+        <>
             <Row className='cvat-quality-settings-title'>
                 <Text strong>
                     Shape comparison
@@ -228,6 +215,11 @@ export default function QualitySettingsForm(props: FormProps): JSX.Element | nul
                 </Col>
             </Row>
             <Divider />
+        </>,
+        20]);
+
+    formItems.push([
+        <>
             <Row className='cvat-quality-settings-title'>
                 <Text strong>
                     Keypoint Comparison
@@ -250,6 +242,11 @@ export default function QualitySettingsForm(props: FormProps): JSX.Element | nul
                 </Col>
             </Row>
             <Divider />
+        </>,
+        30]);
+
+    formItems.push([
+        <>
             <Row className='cvat-quality-settings-title'>
                 <Text strong>
                     Line Comparison
@@ -294,6 +291,11 @@ export default function QualitySettingsForm(props: FormProps): JSX.Element | nul
                 </Col>
             </Row>
             <Divider />
+        </>,
+        40]);
+
+    formItems.push([
+        <>
             <Row className='cvat-quality-settings-title'>
                 <Text strong>
                     Group Comparison
@@ -327,6 +329,11 @@ export default function QualitySettingsForm(props: FormProps): JSX.Element | nul
                 </Col>
             </Row>
             <Divider />
+        </>,
+        50]);
+
+    formItems.push([
+        <>
             <Row className='cvat-quality-settings-title'>
                 <Text strong>
                     Segmentation Comparison
@@ -372,6 +379,35 @@ export default function QualitySettingsForm(props: FormProps): JSX.Element | nul
                     </Form.Item>
                 </Col>
             </Row>
+        </>,
+        60]);
+
+    formItems.push(
+        ...pluginsToRender.map(({ component: Component, weight }, index) => (
+            [<Component
+                key={index}
+                targetProps={props}
+                targetState={{ onAdditionalValueChanged }}
+            />, weight] as [JSX.Element, number]
+        )),
+    );
+
+    return (
+        <Form
+            form={form}
+            layout='vertical'
+            className='cvat-quality-settings-form'
+            initialValues={initialValues}
+        >
+            <Row justify='end' className='cvat-quality-settings-save-btn'>
+                <Col>
+                    <Button onClick={onSave} type='primary'>
+                        Save
+                    </Button>
+                </Col>
+            </Row>
+            { formItems.sort((item1, item2) => item1[1] - item2[1])
+                .map((item) => item[0]) }
         </Form>
     );
 }
