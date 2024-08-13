@@ -823,7 +823,7 @@ class TestGetGtJobData:
                 _check_status=False,
             )
             assert response.status == HTTPStatus.BAD_REQUEST
-            assert b"The frame number doesn't belong to the job" in response.data
+            assert b"Incorrect requested frame number" in response.data
 
             (_, response) = api_client.jobs_api.retrieve_data(
                 gt_job.id, number=included_frames[0], quality=quality, type="frame"
