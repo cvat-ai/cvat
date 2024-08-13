@@ -216,7 +216,7 @@ class TestGetPostProjectBackup:
         **kwargs,
     ):
         with pytest.raises(ForbiddenException):
-            export_project_backup(username, api_version, id=pid, forbidden=True, **kwargs)
+            export_project_backup(username, api_version, id=pid, expect_forbidden=True, **kwargs)
 
     @pytest.mark.parametrize("api_version", (1, 2))
     def test_admin_can_get_project_backup(self, api_version: int):

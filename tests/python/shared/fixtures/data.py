@@ -68,10 +68,11 @@ def filter_assets(resources: Iterable, **kwargs):
 
     for resource in resources:
         for key, value in kwargs.items():
-            if exclude := key.startswith(exclude_prefix):
+            op = operator.eq
+            if key.startswith(exclude_prefix):
                 key = key[len(exclude_prefix) :]
+                op = operator.ne
 
-            op = operator.ne if exclude else operator.eq
             cur_value, rest = resource, key
             while rest:
                 field_and_rest = rest.split("__", maxsplit=1)

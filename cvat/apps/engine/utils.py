@@ -203,6 +203,11 @@ def get_rq_lock_by_user(queue: DjangoRQ, user_id: int) -> Union[Lock, nullcontex
         return queue.connection.lock(f'{queue.name}-lock-{user_id}', timeout=30)
     return nullcontext()
 
+def get_rq_lock_by_job(rq_job: Optional[Job]) -> Union[Lock, nullcontext]:
+    if rq_job:
+        return rq_job.connection.lock(f'lock-for-job-{rq_job.id}'.lower(), timeout=50)
+    return nullcontext()
+
 def get_rq_job_meta(
     request: HttpRequest,
     db_obj: Any,

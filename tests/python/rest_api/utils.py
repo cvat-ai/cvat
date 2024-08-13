@@ -22,11 +22,11 @@ from deepdiff import DeepDiff
 from shared.utils.config import make_api_client
 
 
-def initialize_export(endpoint: Endpoint, *, forbidden: bool = False, **kwargs) -> str:
+def initialize_export(endpoint: Endpoint, *, expect_forbidden: bool = False, **kwargs) -> str:
     (_, response) = endpoint.call_with_http_info(
         **kwargs, _parse_response=False, _check_status=False
     )
-    if forbidden:
+    if expect_forbidden:
         assert (
             response.status == HTTPStatus.FORBIDDEN
         ), f"Request should be forbidden, status: {response.status}"
@@ -76,7 +76,7 @@ def export_v1(
     *,
     max_retries: int = 30,
     interval: float = 0.1,
-    forbidden: bool = False,
+    expect_forbidden: bool = False,
     wait_result: bool = True,
     download_result: bool = True,
     **kwargs,
@@ -87,7 +87,7 @@ def export_v1(
         endpoint (Endpoint): Export endpoint, will be called to initialize export process and to check status
         max_retries (int, optional): Number of retries when checking process status. Defaults to 30.
         interval (float, optional): Interval in seconds between retries. Defaults to 0.1.
-        forbidden (bool, optional): Should export request be forbidden or not. Defaults to False.
+        expect_forbidden (bool, optional): Should export request be forbidden or not. Defaults to False.
         wait_result (bool, optional): Wait until export process will be finished. Defaults to True.
         download_result (bool, optional): Download exported file. Defaults to True.
 
@@ -96,7 +96,7 @@ def export_v1(
         None: If `wait_result` or `download_result` were False or the file is downloaded to cloud storage.
     """
     # initialize background process and ensure that the first request returns 403 code if request should be forbidden
-    initialize_export(endpoint, forbidden=forbidden, **kwargs)
+    initialize_export(endpoint, expect_forbidden=expect_forbidden, **kwargs)
 
     if not wait_result:
         return None
@@ -154,7 +154,7 @@ def export_v2(
     *,
     max_retries: int = 30,
     interval: float = 0.1,
-    forbidden: bool = False,
+    expect_forbidden: bool = False,
     wait_result: bool = True,
     download_result: bool = True,
     **kwargs,
@@ -165,7 +165,7 @@ def export_v2(
         endpoint (Endpoint): Export endpoint, will be called only to initialize export process
         max_retries (int, optional): Number of retries when checking process status. Defaults to 30.
         interval (float, optional): Interval in seconds between retries. Defaults to 0.1.
-        forbidden (bool, optional): Should export request be forbidden or not. Defaults to False.
+        expect_forbidden (bool, optional): Should export request be forbidden or not. Defaults to False.
         download_result (bool, optional): Download exported file. Defaults to True.
 
     Returns:
@@ -173,7 +173,7 @@ def export_v2(
         None: If `wait_result` or `download_result` were False or the file is downloaded to cloud storage.
     """
     # initialize background process and ensure that the first request returns 403 code if request should be forbidden
-    rq_id = initialize_export(endpoint, forbidden=forbidden, **kwargs)
+    rq_id = initialize_export(endpoint, expect_forbidden=expect_forbidden, **kwargs)
 
     if not wait_result:
         return None
@@ -327,7 +327,7 @@ def import_resource(
     *,
     max_retries: int = 30,
     interval: float = 0.1,
-    forbidden: bool = False,
+    expect_forbidden: bool = False,
     wait_result: bool = True,
     **kwargs,
 ) -> None:
@@ -338,7 +338,7 @@ def import_resource(
         _check_status=False,
         _content_type="multipart/form-data",
     )
-    if forbidden:
+    if expect_forbidden:
         assert response.status == HTTPStatus.FORBIDDEN, "Request should be forbidden"
         raise ForbiddenException()
 
