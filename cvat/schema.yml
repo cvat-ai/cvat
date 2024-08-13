@@ -1,7 +1,7 @@
 openapi: 3.0.3
 info:
   title: CVAT REST API
-  version: 2.17.0
+  version: 2.17.0.dev20240812234331
   description: REST API for Computer Vision Annotation Tool (CVAT)
   termsOfService: https://www.google.com/policies/terms/
   contact:
@@ -1049,6 +1049,138 @@ paths:
       responses:
         '204':
           description: The comment has been deleted
+  /api/consensus/assignee_reports:
+    get:
+      operationId: consensus_list_assignee_reports
+      summary: List assignee consensus reports
+      parameters:
+      - name: X-Organization
+        in: header
+        description: Organization unique slug
+        schema:
+          type: string
+      - in: query
+        name: consensus_report_id
+        schema:
+          type: integer
+        description: A simple equality filter for target
+      - name: filter
+        required: false
+        in: query
+        description: |2-
+
+          JSON Logic filter. This filter can be used to perform complex filtering by grouping rules.
+
+          For example, using such a filter you can get all resources created by you:
+
+              - {"and":[{"==":[{"var":"owner"},"<user>"]}]}
+
+          Details about the syntax used can be found at the link: https://jsonlogic.com/
+
+           Available filter_fields: ['id'].
+        schema:
+          type: string
+      - name: org
+        in: query
+        description: Organization unique slug
+        schema:
+          type: string
+      - name: org_id
+        in: query
+        description: Organization identifier
+        schema:
+          type: integer
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      - name: page_size
+        required: false
+        in: query
+        description: Number of results to return per page.
+        schema:
+          type: integer
+      - name: sort
+        required: false
+        in: query
+        description: 'Which field to use when ordering the results. Available ordering_fields:
+          [''id'']'
+        schema:
+          type: string
+      - in: query
+        name: task_id
+        schema:
+          type: integer
+        description: A simple equality filter for task id
+      tags:
+      - consensus
+      security:
+      - sessionAuth: []
+        csrfAuth: []
+        tokenAuth: []
+      - signatureAuth: []
+      - basicAuth: []
+      responses:
+        '200':
+          content:
+            application/vnd.cvat+json:
+              schema:
+                $ref: '#/components/schemas/PaginatedAssigneeConsensusReportList'
+          description: ''
+  /api/consensus/assignee_reports/{id}:
+    get:
+      operationId: assignee_consensus_retrieve_report
+      summary: Get assignee consensus report details
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this assignee consensus report.
+        required: true
+      tags:
+      - consensus
+      security:
+      - sessionAuth: []
+        csrfAuth: []
+        tokenAuth: []
+      - signatureAuth: []
+      - basicAuth: []
+      responses:
+        '200':
+          content:
+            application/vnd.cvat+json:
+              schema:
+                $ref: '#/components/schemas/AssigneeConsensusReport'
+          description: ''
+  /api/consensus/assignee_reports/{id}/data:
+    get:
+      operationId: assignee_consensus_retrieve_report_data
+      summary: Get assignee consensus report contents
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this assignee consensus report.
+        required: true
+      tags:
+      - consensus
+      security:
+      - sessionAuth: []
+        csrfAuth: []
+        tokenAuth: []
+      - signatureAuth: []
+      - basicAuth: []
+      responses:
+        '200':
+          content:
+            application/vnd.cvat+json:
+              schema:
+                type: object
+          description: ''
   /api/consensus/conflicts:
     get:
       operationId: consensus_list_conflicts
@@ -7298,6 +7430,24 @@ components:
           readOnly: true
       required:
       - filename
+    AssigneeConsensusReport:
+      type: object
+      properties:
+        task_id:
+          type: integer
+          nullable: true
+          readOnly: true
+        assignee:
+          allOf:
+          - $ref: '#/components/schemas/BasicUser'
+          readOnly: true
+          nullable: true
+        consensus_score:
+          type: integer
+          readOnly: true
+        consensus_report_id:
+          type: integer
+          readOnly: true
     Attribute:
       type: object
       properties:
@@ -8692,11 +8842,6 @@ components:
           minimum: 0
           nullable: true
           readOnly: true
-        assignee_updated_date:
-          type: string
-          format: date-time
-          readOnly: true
-          nullable: true
       required:
       - issues
       - labels
@@ -9331,6 +9476,26 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/AnnotationConflict'
+    PaginatedAssigneeConsensusReportList:
+      type: object
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/AssigneeConsensusReport'
     PaginatedCloudStorageReadList:
       type: object
       properties:
@@ -11140,11 +11305,6 @@ components:
           type: integer
           maximum: 2147483647
           minimum: -2147483648
-          readOnly: true
-          nullable: true
-        assignee_updated_date:
-          type: string
-          format: date-time
           readOnly: true
           nullable: true
       required:
