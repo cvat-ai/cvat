@@ -637,7 +637,7 @@ SPECTACULAR_SETTINGS = {
         'SortingMethod': 'cvat.apps.engine.models.SortingMethod',
         'WebhookType': 'cvat.apps.webhooks.models.WebhookTypeChoice',
         'WebhookContentType': 'cvat.apps.webhooks.models.WebhookContentTypeChoice',
-        'RequestStatus': 'cvat.apps.engine.serializers.RequestStatus',
+        'RequestStatus': 'cvat.apps.engine.models.RequestStatus',
     },
 
     # Coercion of {pk} to {id} is controlled by SCHEMA_COERCE_PATH_PK. Additionally,

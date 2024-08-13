@@ -66,7 +66,8 @@ from cvat.apps.engine.models import (
     ClientFile, Job, JobType, Label, SegmentType, Task, Project, Issue, Data,
     Comment, StorageMethodChoice, StorageChoice,
     CloudProviderChoice, Location, CloudStorage as CloudStorageModel,
-    Asset, AnnotationGuide)
+    Asset, AnnotationGuide, RequestStatus, RequestAction, RequestTarget, RequestSubresource
+)
 from cvat.apps.engine.serializers import (
     AboutSerializer, AnnotationFileSerializer, BasicUserSerializer,
     DataMetaReadSerializer, DataMetaWriteSerializer, DataSerializer,
@@ -80,7 +81,7 @@ from cvat.apps.engine.serializers import (
     IssueWriteSerializer, CommentReadSerializer, CommentWriteSerializer, CloudStorageWriteSerializer,
     CloudStorageReadSerializer, DatasetFileSerializer,
     ProjectFileSerializer, TaskFileSerializer, RqIdSerializer, CloudStorageContentSerializer,
-    RequestSerializer, RequestStatus, RequestAction, RequestSubresource,
+    RequestSerializer,
 )
 from cvat.apps.engine.permissions import get_cloud_storage_for_import_or_export
 
@@ -90,7 +91,7 @@ from cvat.apps.engine.utils import (
     parse_exception_message, get_rq_job_meta,
     import_resource_with_clean_up_after, sendfile, define_dependent_job, get_rq_lock_by_user,
 )
-from cvat.apps.engine.rq_job_handler import RQIdManager, is_rq_job_owner, RQJobMetaField
+from cvat.apps.engine.rq_job_handler import RQId, is_rq_job_owner, RQJobMetaField
 from cvat.apps.engine import backup
 from cvat.apps.engine.mixins import (
     PartialUpdateModelMixin, UploadMixin, DatasetMixin, BackupMixin, CsrfWorkaroundMixin
@@ -279,8 +280,8 @@ class ProjectViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
     ordering = "-id"
     lookup_fields = {'owner': 'owner__username', 'assignee': 'assignee__username'}
     iam_organization_field = 'organization'
-    IMPORT_RQ_ID_TEMPLATE = RQIdManager.build(
-        'import', 'project', {}, subresource='dataset'
+    IMPORT_RQ_ID_FACTORY = functools.partial(RQId,
+        RequestAction.IMPORT, RequestTarget.PROJECT, subresource=RequestSubresource.DATASET
     )
 
     def get_serializer_class(self):
@@ -401,7 +402,7 @@ class ProjectViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
                 db_obj=self._object,
                 import_func=_import_project_dataset,
                 rq_func=dm.project.import_dataset_as_project,
-                rq_id_template=self.IMPORT_RQ_ID_TEMPLATE
+                rq_id_factory=self.IMPORT_RQ_ID_FACTORY,
             )
         else:
             action = request.query_params.get("action", "").lower()
@@ -467,7 +468,7 @@ class ProjectViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
             return _import_project_dataset(
                 request=request,
                 filename=uploaded_file,
-                rq_id_template=self.IMPORT_RQ_ID_TEMPLATE,
+                rq_id_factory=self.IMPORT_RQ_ID_FACTORY,
                 rq_func=dm.project.import_dataset_as_project,
                 db_obj=self._object,
                 format_name=format_name,
@@ -857,8 +858,8 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
     ordering_fields = list(filter_fields)
     ordering = "-id"
     iam_organization_field = 'organization'
-    IMPORT_RQ_ID_TEMPLATE = RQIdManager.build(
-        'import', 'task', {}, subresource='annotations'
+    IMPORT_RQ_ID_FACTORY = functools.partial(RQId,
+        RequestAction.IMPORT, RequestTarget.TASK, subresource=RequestSubresource.ANNOTATIONS,
     )
 
     def get_serializer_class(self):
@@ -1085,7 +1086,7 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
                 return _import_annotations(
                         request=request,
                         filename=annotation_file,
-                        rq_id_template=self.IMPORT_RQ_ID_TEMPLATE,
+                        rq_id_factory=self.IMPORT_RQ_ID_FACTORY,
                         rq_func=dm.task.import_task_annotations,
                         db_obj=self._object,
                         format_name=format_name,
@@ -1456,7 +1457,7 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
                 db_obj=self._object,
                 import_func=_import_annotations,
                 rq_func=dm.task.import_task_annotations,
-                rq_id_template=self.IMPORT_RQ_ID_TEMPLATE
+                rq_id_factory=self.IMPORT_RQ_ID_FACTORY,
             )
         elif request.method == 'PUT':
             format_name = request.query_params.get('format', '')
@@ -1468,7 +1469,7 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
                 )
                 return _import_annotations(
                     request=request,
-                    rq_id_template=self.IMPORT_RQ_ID_TEMPLATE,
+                    rq_id_factory=self.IMPORT_RQ_ID_FACTORY,
                     rq_func=dm.task.import_task_annotations,
                     db_obj=self._object,
                     format_name=format_name,
@@ -1517,7 +1518,7 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
         self.get_object() # force call of check_object_permissions()
         response = self._get_rq_response(
             queue=settings.CVAT_QUEUES.IMPORT_DATA.value,
-            job_id=RQIdManager.build('create', 'task', pk)
+            job_id=RQId(RequestAction.CREATE, RequestTarget.TASK, pk).render()
         )
         serializer = RqStatusSerializer(data=response)
 
@@ -1727,8 +1728,8 @@ class JobViewSet(viewsets.GenericViewSet, mixins.ListModelMixin, mixins.CreateMo
         'project_name': 'segment__task__project__name',
         'assignee': 'assignee__username'
     }
-    IMPORT_RQ_ID_TEMPLATE = RQIdManager.build(
-        'import', 'job', {}, subresource='annotations'
+    IMPORT_RQ_ID_FACTORY = functools.partial(RQId,
+        RequestAction.IMPORT, RequestTarget.JOB, subresource=RequestSubresource.ANNOTATIONS
     )
 
     def get_queryset(self):
@@ -1775,7 +1776,7 @@ class JobViewSet(viewsets.GenericViewSet, mixins.ListModelMixin, mixins.CreateMo
                 return _import_annotations(
                         request=request,
                         filename=annotation_file,
-                        rq_id_template=self.IMPORT_RQ_ID_TEMPLATE,
+                        rq_id_factory=self.IMPORT_RQ_ID_FACTORY,
                         rq_func=dm.task.import_job_annotations,
                         db_obj=self._object,
                         format_name=format_name,
@@ -1926,7 +1927,7 @@ class JobViewSet(viewsets.GenericViewSet, mixins.ListModelMixin, mixins.CreateMo
                 db_obj=self._object,
                 import_func=_import_annotations,
                 rq_func=dm.task.import_job_annotations,
-                rq_id_template=self.IMPORT_RQ_ID_TEMPLATE
+                rq_id_factory=self.IMPORT_RQ_ID_FACTORY,
             )
 
         elif request.method == 'PUT':
@@ -1938,7 +1939,7 @@ class JobViewSet(viewsets.GenericViewSet, mixins.ListModelMixin, mixins.CreateMo
                 )
                 return _import_annotations(
                     request=request,
-                    rq_id_template=self.IMPORT_RQ_ID_TEMPLATE,
+                    rq_id_factory=self.IMPORT_RQ_ID_FACTORY,
                     rq_func=dm.task.import_job_annotations,
                     db_obj=self._object,
                     format_name=format_name,
@@ -3025,7 +3026,7 @@ def rq_exception_handler(rq_job, exc_type, exc_value, tb):
 
     return True
 
-def _import_annotations(request, rq_id_template, rq_func, db_obj, format_name,
+def _import_annotations(request, rq_id_factory, rq_func, db_obj, format_name,
                         filename=None, location_conf=None, conv_mask_to_poly=True):
 
     format_desc = {f.DISPLAY_NAME: f
@@ -3039,7 +3040,7 @@ def _import_annotations(request, rq_id_template, rq_func, db_obj, format_name,
     rq_id = request.query_params.get('rq_id')
     rq_id_should_be_checked = bool(rq_id)
     if not rq_id:
-        rq_id = rq_id_template.format(db_obj.pk)
+        rq_id = rq_id_factory(db_obj.pk).render()
 
     queue = django_rq.get_queue(settings.CVAT_QUEUES.IMPORT_DATA.value)
     rq_job = queue.fetch_job(rq_id)
@@ -3141,7 +3142,10 @@ def _import_annotations(request, rq_id_template, rq_func, db_obj, format_name,
 
     return Response(status=status.HTTP_202_ACCEPTED)
 
-def _import_project_dataset(request, rq_id_template, rq_func, db_obj, format_name, filename=None, conv_mask_to_poly=True, location_conf=None):
+def _import_project_dataset(
+    request, rq_id_factory, rq_func, db_obj, format_name,
+    filename=None, conv_mask_to_poly=True, location_conf=None
+):
     format_desc = {f.DISPLAY_NAME: f
         for f in dm.views.get_import_formats()}.get(format_name)
     if format_desc is None:
@@ -3150,7 +3154,7 @@ def _import_project_dataset(request, rq_id_template, rq_func, db_obj, format_nam
     elif not format_desc.ENABLED:
         return Response(status=status.HTTP_405_METHOD_NOT_ALLOWED)
 
-    rq_id = rq_id_template.format(db_obj.pk)
+    rq_id = rq_id_factory(db_obj.pk).render()
 
     queue = django_rq.get_queue(settings.CVAT_QUEUES.IMPORT_DATA.value)
     rq_job = queue.fetch_job(rq_id)
@@ -3319,7 +3323,7 @@ class RequestViewSet(viewsets.GenericViewSet):
         for job in queue.job_class.fetch_many(job_ids, queue.connection):
             if job and is_rq_job_owner(job, user_id):
                 try:
-                    parsed_rq_id = RQIdManager.parse(job.id)
+                    parsed_rq_id = RQId.parse(job.id)
                 except Exception: # nosec B112
                     continue
                 job.parsed_rq_id = parsed_rq_id
@@ -3356,7 +3360,7 @@ class RequestViewSet(viewsets.GenericViewSet):
             Optional[RQJob]: The retrieved RQJob, or None if not found.
         """
         try:
-            parsed_rq_id = RQIdManager.parse(rq_id)
+            parsed_rq_id = RQId.parse(rq_id)
         except Exception:
             return None
 
