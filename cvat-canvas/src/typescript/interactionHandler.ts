@@ -32,8 +32,6 @@ export class InteractionHandlerImpl implements InteractionHandler {
     private interactionShapes: SVG.Shape[];
     private currentInteractionShape: SVG.Shape | null;
     private crosshair: Crosshair;
-    private threshold: SVG.Rect | null;
-    private thresholdRectSize: number;
     private intermediateShape: PropType<InteractionData, 'intermediateShape'>;
     private drawnIntermediateShape: SVG.Shape;
     private controlPointsSize: number;
@@ -85,15 +83,6 @@ export class InteractionHandlerImpl implements InteractionHandler {
         const minNegVerticesAchieved = !minNegVerticesDefined || minNegVertices <= negativeShapes.length;
         const minimumVerticesAchieved = minPosVerticesAchieved && minNegVerticesAchieved;
         return enabled && somethingWasDrawn && minimumVerticesAchieved && shapesWereUpdated;
-    }
-
-    private addThreshold(): void {
-        const { x, y } = this.cursorPosition;
-        this.threshold = this.canvas
-            .rect(this.thresholdRectSize, this.thresholdRectSize)
-            .fill('none')
-            .addClass('cvat_canvas_threshold');
-        this.threshold.center(x, y);
     }
 
     private addCrosshair(): void {
@@ -256,11 +245,6 @@ export class InteractionHandlerImpl implements InteractionHandler {
             this.removeCrosshair();
         }
 
-        if (this.threshold) {
-            this.threshold.remove();
-            this.threshold = null;
-        }
-
         this.canvas.off('mousedown.interaction');
         this.interactionShapes.forEach((shape: SVG.Shape): SVG.Shape => shape.remove());
         this.interactionShapes = [];
@@ -386,7 +370,6 @@ export class InteractionHandlerImpl implements InteractionHandler {
             shapes: InteractionResult[] | null,
             shapesUpdated?: boolean,
             isDone?: boolean,
-            threshold?: number,
         ) => void,
         canvas: SVG.Container,
         geometry: Geometry,
@@ -394,7 +377,7 @@ export class InteractionHandlerImpl implements InteractionHandler {
     ) {
         this.onInteraction = (shapes: InteractionResult[] | null, shapesUpdated?: boolean, isDone?: boolean): void => {
             this.shapesWereUpdated = false;
-            onInteraction(shapes, shapesUpdated, isDone, this.threshold ? this.thresholdRectSize / 2 : null);
+            onInteraction(shapes, shapesUpdated, isDone);
         };
         this.canvas = canvas;
         this.geometry = geometry;
@@ -403,8 +386,6 @@ export class InteractionHandlerImpl implements InteractionHandler {
         this.interactionData = { enabled: false };
         this.currentInteractionShape = null;
         this.crosshair = new Crosshair();
-        this.threshold = null;
-        this.thresholdRectSize = 300;
         this.intermediateShape = null;
         this.drawnIntermediateShape = null;
         this.controlPointsSize = configuration.controlPointsSize;
@@ -420,9 +401,7 @@ export class InteractionHandlerImpl implements InteractionHandler {
             if (this.crosshair) {
                 this.crosshair.move(x, y);
             }
-            if (this.threshold) {
-                this.threshold.center(x, y);
-            }
+
             if (this.interactionData.enableSliding && this.interactionShapes.length) {
                 if (this.isWithinFrame(x, y)) {
                     this.onInteraction(
@@ -437,23 +416,6 @@ export class InteractionHandlerImpl implements InteractionHandler {
                         true,
                         false,
                     );
-                }
-            }
-        });
-
-        this.canvas.on('wheel.interaction', (e: WheelEvent): void => {
-            if (e.altKey) {
-                e.stopPropagation();
-                e.preventDefault();
-                if (this.threshold) {
-                    const { x, y } = this.cursorPosition;
-                    if (e.deltaY > 0) {
-                        this.thresholdRectSize *= 6 / 5;
-                    } else {
-                        this.thresholdRectSize *= 5 / 6;
-                    }
-                    this.threshold.size(this.thresholdRectSize, this.thresholdRectSize);
-                    this.threshold.center(x, y);
                 }
             }
         });

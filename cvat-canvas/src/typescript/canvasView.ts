@@ -249,7 +249,6 @@ export class CanvasViewImpl implements CanvasView, Listener {
         shapes: InteractionResult[] | null,
         shapesUpdated = true,
         isDone = false,
-        threshold: number | null = null,
     ): void => {
         const { zLayer } = this.controller;
         if (Array.isArray(shapes)) {
@@ -261,7 +260,6 @@ export class CanvasViewImpl implements CanvasView, Listener {
                     isDone,
                     shapes,
                     zOrder: zLayer || 0,
-                    threshold,
                 },
             });
 

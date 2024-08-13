@@ -245,8 +245,10 @@ class OpenCVControlComponent extends React.PureComponent<Props & DispatchToProps
     private onInteraction = async (e: Event): Promise<void> => {
         const { approxPolyAccuracy } = this.state;
         const {
-            createAnnotations, isActivated, frame, labels, curZOrder, canvasInstance, toolsBlockerState,
+            createAnnotations, isActivated, frame,
+            labels, curZOrder, canvasInstance, toolsBlockerState,
         } = this.props;
+
         const { activeLabelID } = this.state;
         if (!isActivated || !this.activeTool) {
             return;
