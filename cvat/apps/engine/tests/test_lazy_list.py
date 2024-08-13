@@ -14,6 +14,7 @@ class SliceGetter:
             raise TypeError("Use slice_getter only for slices")
         return slice_
 
+
 class TestLazyList(unittest.TestCase):
 
     def setUp(self):
