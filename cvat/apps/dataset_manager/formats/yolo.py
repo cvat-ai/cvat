@@ -31,8 +31,8 @@ def _export_common(dst_file, temp_dir, instance_data, format_name, *, save_image
 
 
 @exporter(name='YOLO', ext='ZIP', version='1.1')
-def _export_yolo(dst_file, temp_dir, instance_data, save_images=False):
-    _export_common(dst_file, temp_dir, instance_data, 'yolo', save_images=save_images)
+def _export_yolo(*args, **kwargs):
+    _export_common(*args, format_name='yolo', **kwargs)
 
 
 def _import_common(
@@ -73,67 +73,43 @@ def _import_common(
 
 
 @importer(name='YOLO', ext='ZIP', version='1.1')
-def _import_yolo(src_file, temp_dir, instance_data, **kwargs):
-    _import_common(
-        src_file,
-        temp_dir,
-        instance_data,
-        format_name="yolo",
-        **kwargs
-    )
+def _import_yolo(*args, **kwargs):
+    _import_common(*args, format_name="yolo", **kwargs)
 
 
 @exporter(name='YOLOv8 Detection', ext='ZIP', version='1.0')
-def _export_yolov8_detection(dst_file, temp_dir, instance_data, save_images=False):
-    _export_common(dst_file, temp_dir, instance_data, 'yolov8_detection', save_images=save_images)
+def _export_yolov8_detection(*args, **kwargs):
+    _export_common(*args, format_name='yolov8_detection', **kwargs)
 
 
 @exporter(name='YOLOv8 Oriented Bounding Boxes', ext='ZIP', version='1.0')
-def _export_yolov8_oriented_boxes(dst_file, temp_dir, instance_data, save_images=False):
-    _export_common(dst_file, temp_dir, instance_data, 'yolov8_oriented_boxes', save_images=save_images)
+def _export_yolov8_oriented_boxes(*args, **kwargs):
+    _export_common(*args, format_name='yolov8_oriented_boxes', **kwargs)
 
 
 @exporter(name='YOLOv8 Segmentation', ext='ZIP', version='1.0')
-def _export_yolov8_segmentation(dst_file, temp_dir, instance_data, save_images=False):
-    _export_common(dst_file, temp_dir, instance_data, 'yolov8_segmentation', save_images=save_images)
+def _export_yolov8_segmentation(*args, **kwargs):
+    _export_common(*args, format_name='yolov8_segmentation', **kwargs)
 
 
 @exporter(name='YOLOv8 Pose', ext='ZIP', version='1.0')
-def _export_yolov8_pose(dst_file, temp_dir, instance_data, save_images=False):
-    _export_common(dst_file, temp_dir, instance_data, 'yolov8_pose', save_images=save_images)
+def _export_yolov8_pose(*args, **kwargs):
+    _export_common(*args, format_name='yolov8_pose', **kwargs)
 
 
 @importer(name='YOLOv8 Detection', ext="ZIP", version="1.0")
-def _import_yolov8_detection(src_file, temp_dir, instance_data, **kwargs):
-    _import_common(
-        src_file,
-        temp_dir,
-        instance_data,
-        format_name="yolov8_detection",
-        **kwargs
-    )
+def _import_yolov8_detection(*args, **kwargs):
+    _import_common(*args, format_name="yolov8_detection", **kwargs)
 
 
 @importer(name='YOLOv8 Segmentation', ext="ZIP", version="1.0")
-def _import_yolov8_segmentation(src_file, temp_dir, instance_data, **kwargs):
-    _import_common(
-        src_file,
-        temp_dir,
-        instance_data,
-        format_name="yolov8_segmentation",
-        **kwargs
-    )
+def _import_yolov8_segmentation(*args, **kwargs):
+    _import_common(*args, format_name="yolov8_segmentation", **kwargs)
 
 
 @importer(name='YOLOv8 Oriented Bounding Boxes', ext="ZIP", version="1.0")
-def _import_yolov8_oriented_boxes(src_file, temp_dir, instance_data, **kwargs):
-    _import_common(
-        src_file,
-        temp_dir,
-        instance_data,
-        format_name="yolov8_oriented_boxes",
-        **kwargs
-    )
+def _import_yolov8_oriented_boxes(*args, **kwargs):
+    _import_common(*args, format_name="yolov8_oriented_boxes", **kwargs)
 
 
 @importer(name='YOLOv8 Pose', ext="ZIP", version="1.0")
