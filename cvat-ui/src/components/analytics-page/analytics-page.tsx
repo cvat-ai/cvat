@@ -79,11 +79,11 @@ function readInstanceId(type: InstanceType): number {
 
 type InstanceType = 'project' | 'task' | 'job';
 
-export interface Props {
+export interface BacklinkProps {
     backLink?: string;
 }
 
-function AnalyticsPage(props: Props): JSX.Element {
+function AnalyticsPage(props: BacklinkProps): JSX.Element {
     const { backLink } = props;
     const dispatch = useDispatch();
     const location = useLocation();

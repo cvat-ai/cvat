@@ -81,7 +81,7 @@ import EmailConfirmationPage from './email-confirmation-pages/email-confirmed';
 import EmailVerificationSentPage from './email-confirmation-pages/email-verification-sent';
 import IncorrectEmailConfirmationPage from './email-confirmation-pages/incorrect-email-confirmation';
 import CreateJobPage from './create-job-page/create-job-page';
-import AnalyticsPage from './analytics-page/analytics-page';
+import AnalyticsPage, { BacklinkProps } from './analytics-page/analytics-page';
 import InvitationWatcher from './invitation-watcher/invitation-watcher';
 
 interface CVATAppProps {
@@ -146,7 +146,7 @@ class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentP
         const { history, location } = this.props;
         const {
             HEALTH_CHECK_RETRIES, HEALTH_CHECK_PERIOD, HEALTH_CHECK_REQUEST_TIMEOUT,
-            SERVER_UNAVAILABLE_COMPONENT, RESET_NOTIFICATIONS_PATHS,
+            SERVER_UNAVAILABLE_COMPONENT, RESET_NOTIFICATIONS_PATHS, BACKLINK_PATHS,
         } = appConfig;
 
         // Logger configuration
@@ -175,11 +175,16 @@ class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentP
         history.listen((newLocation) => {
             customWaViewHit(newLocation.pathname, newLocation.search, newLocation.hash);
             const { location: prevLocation } = this.props;
-            if (!prevLocation.pathname.includes('analytics') && newLocation.pathname.includes('analytics')) {
-                this.setState({
-                    goBackLink: prevLocation.pathname,
-                });
+
+            for (const path of BACKLINK_PATHS) {
+                if (!prevLocation.pathname.includes(path) && newLocation.pathname.includes(path)) {
+                    this.setState({
+                        goBackLink: prevLocation.pathname,
+                    });
+                    break;
+                }
             }
+
             const shouldResetNotifications = RESET_NOTIFICATIONS_PATHS.from.some(
                 (pathname) => prevLocation.pathname === pathname,
             );
@@ -491,6 +496,14 @@ class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentP
             .filter(({ data: { shouldBeRendered } }) => shouldBeRendered(this.props, this.state))
             .map(({ component: Component }) => Component);
 
+        const componentWithBackLink = (Component: (props: BacklinkProps) => React.ReactNode) => {
+            const { goBackLink } = this.state;
+            const creator = (): JSX.Element => (
+                (<Component backLink={goBackLink} />)
+            );
+            return creator;
+        };
+
         const queryParams = new URLSearchParams(location.search);
         const authParams = authQuery(queryParams);
 
@@ -514,37 +527,16 @@ class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentP
                                         <Route exact path='/projects/create' component={CreateProjectPageComponent} />
                                         <Route exact path='/projects/:id' component={ProjectPageComponent} />
                                         <Route exact path='/projects/:id/webhooks' component={WebhooksPage} />
-                                        <Route exact path='/projects/:id/guide' component={AnnotationGuidePage} />
-                                        <Route
-                                            exact
-                                            path='/projects/:pid/analytics'
-                                            render={() => {
-                                                const { goBackLink } = this.state;
-                                                return (<AnalyticsPage backLink={goBackLink} />);
-                                            }}
-                                        />
+                                        <Route exact path='/projects/:id/guide' render={componentWithBackLink(AnnotationGuidePage)} />
+                                        <Route exact path='/projects/:pid/analytics' render={componentWithBackLink(AnalyticsPage)} />
                                         <Route exact path='/tasks' component={TasksPageContainer} />
                                         <Route exact path='/tasks/create' component={CreateTaskPageContainer} />
                                         <Route exact path='/tasks/:id' component={TaskPageComponent} />
-                                        <Route
-                                            exact
-                                            path='/tasks/:tid/analytics'
-                                            render={() => {
-                                                const { goBackLink } = this.state;
-                                                return (<AnalyticsPage backLink={goBackLink} />);
-                                            }}
-                                        />
+                                        <Route exact path='/tasks/:tid/analytics' render={componentWithBackLink(AnalyticsPage)} />
                                         <Route exact path='/tasks/:id/jobs/create' component={CreateJobPage} />
-                                        <Route exact path='/tasks/:id/guide' component={AnnotationGuidePage} />
+                                        <Route exact path='/tasks/:id/guide' render={componentWithBackLink(AnnotationGuidePage)} />
                                         <Route exact path='/tasks/:tid/jobs/:jid' component={AnnotationPageContainer} />
-                                        <Route
-                                            exact
-                                            path='/tasks/:tid/jobs/:jid/analytics'
-                                            render={() => {
-                                                const { goBackLink } = this.state;
-                                                return (<AnalyticsPage backLink={goBackLink} />);
-                                            }}
-                                        />
+                                        <Route exact path='/tasks/:tid/jobs/:jid/analytics' render={componentWithBackLink(AnalyticsPage)} />
                                         <Route exact path='/jobs' component={JobsPageComponent} />
                                         <Route exact path='/cloudstorages' component={CloudStoragesPageComponent} />
                                         <Route
