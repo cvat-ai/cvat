@@ -647,7 +647,7 @@ class ProjectViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
             data_quality='compressed',
         )
 
-        return data_getter(request)
+        return data_getter()
 
     @staticmethod
     def _get_rq_response(queue, job_id):
