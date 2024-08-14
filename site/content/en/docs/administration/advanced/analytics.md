@@ -133,7 +133,7 @@ Client events:
 
 - `load:cvat`
 
-- `load:job`, `save:job`, `restore:job`
+- `load:job`, `save:job`
 
 - `upload:annotations`
 
