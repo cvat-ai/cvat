@@ -29,11 +29,12 @@ class EventRecorder {
         core.logger.log(EventScope.loadTool, {
             location: window.location.pathname,
             platform: platformInfo(),
-            screen_width: window.screen.width,
-            screen_height: window.screen.height,
+            screenWidth: window.screen.width,
+            screenHeight: window.screen.height,
             language: window.navigator.language,
-            cpus: _.get(window.navigator, 'hardwareConcurrency', null),
-            memory: _.get(window.navigator, 'deviceMemory', null),
+            hardwareConcurrency: _.get(window.navigator, 'hardwareConcurrency', null),
+            deviceMemory: _.get(window.navigator, 'deviceMemory', null),
+            jsHeapSizeLimit: _.get(window.performance, 'memory', { jsHeapSizeLimit: null }).jsHeapSizeLimit,
         });
     }
 
