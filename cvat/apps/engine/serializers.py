@@ -141,7 +141,8 @@ class _CollectionSummarySerializer(serializers.Serializer):
     def get_fields(self):
         fields = super().get_fields()
         fields['url'] = HyperlinkedEndpointSerializer(self._model, filter_key=self._url_filter_key)
-        fields['count'].source = self._collection_key + '.count'
+        if not fields['count'].source:
+            fields['count'].source = self._collection_key + '.count'
         return fields
 
     def get_attribute(self, instance):
