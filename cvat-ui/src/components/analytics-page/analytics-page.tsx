@@ -23,14 +23,12 @@ import CVATLoadingSpinner from 'components/common/loading-spinner';
 import GoBackButton from 'components/common/go-back-button';
 import AnalyticsOverview, { DateIntervals } from './analytics-performance';
 import TaskQualityComponent from './task-quality/task-quality-component';
-import TaskConsensusComponent from './task-consensus/task-consensus-component';
 
 const core = getCore();
 
 enum AnalyticsTabs {
     OVERVIEW = 'overview',
     QUALITY = 'quality',
-    CONSENSUS = 'consensus',
 }
 
 function getTabFromHash(): AnalyticsTabs {
@@ -289,11 +287,6 @@ function AnalyticsPage(): JSX.Element {
                     key: AnalyticsTabs.QUALITY,
                     label: 'Quality',
                     children: <TaskQualityComponent task={instance} onJobUpdate={onJobUpdate} />,
-                }] : []),
-                ...((instanceType === 'task' && instance.consensusJobsPerRegularJob) ? [{
-                    key: AnalyticsTabs.CONSENSUS,
-                    label: 'Consensus',
-                    children: <TaskConsensusComponent task={instance} onJobUpdate={onJobUpdate} />,
                 }] : [])]}
             />
         );
