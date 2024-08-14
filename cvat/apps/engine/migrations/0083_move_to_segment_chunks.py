@@ -2,10 +2,11 @@
 
 import os
 from django.db import migrations
-from cvat.apps.engine.log import get_migration_logger
+from cvat.apps.engine.log import get_migration_logger, get_migration_log_dir
 
 def switch_tasks_with_static_chunks_to_dynamic_chunks(apps, schema_editor):
     migration_name = os.path.splitext(os.path.basename(__file__))[0]
+    migration_log_dir = get_migration_log_dir()
     with get_migration_logger(migration_name) as common_logger:
         Data = apps.get_model("engine", "Data")
 
@@ -26,8 +27,8 @@ def switch_tasks_with_static_chunks_to_dynamic_chunks(apps, schema_editor):
 
         data_with_static_cache_query.update(storage_method="cache")
 
-        updated_data_ids_filename = migration_name + "-data_ids.log"
-        with open(updated_data_ids_filename, "w") as data_ids_file:
+        updated_ids_filename = os.path.join(migration_log_dir, migration_name + "-data_ids.log")
+        with open(updated_ids_filename, "w") as data_ids_file:
             print(
                 "The following Data ids have been switched from using \"filesystem\" chunk storage "
                 "to \"cache\":",
@@ -38,7 +39,9 @@ def switch_tasks_with_static_chunks_to_dynamic_chunks(apps, schema_editor):
 
         common_logger.info(
             "Information about migrated tasks is available in the migration log file: "
-            f"{updated_data_ids_filename}. You will need to remove data manually for these tasks."
+            "{}. You will need to remove data manually for these tasks.".format(
+                updated_ids_filename
+            )
         )
 
 class Migration(migrations.Migration):
