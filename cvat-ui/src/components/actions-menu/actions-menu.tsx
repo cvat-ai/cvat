@@ -74,7 +74,7 @@ function ActionsMenuComponent(props: Props): JSX.Element {
             } if (params.key === Actions.MERGE_CONSENSUS_JOBS) {
                 Modal.confirm({
                     title: 'The consensus jobs will be merged',
-                    content: 'Existing data (images, annotations) in regular jobs will be updated. Continue?',
+                    content: 'Existing annotations in regular jobs will be updated. Continue?',
                     className: 'cvat-modal-confirm-delete-task',
                     onOk: () => {
                         onClickMenu(params);
