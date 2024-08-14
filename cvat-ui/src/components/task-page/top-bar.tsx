@@ -27,7 +27,7 @@ export default function DetailsComponent(props: DetailsComponentProps): JSX.Elem
     }, [history]);
 
     const onViewConsensusAnalytics = (): void => {
-        history.push(`/tasks/${taskInstance.id}/analytics/consensus`);
+        history.push(`/tasks/${taskInstance.id}/consensus`);
     };
 
     return (
