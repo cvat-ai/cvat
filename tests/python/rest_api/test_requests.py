@@ -33,7 +33,7 @@ from .utils import (
 class TestRequestsListFilters(CollectionSimpleFilterTestBase):
 
     field_lookups = {
-        "resource": ["operation", "target"],
+        "target": ["operation", "target"],
         "subresource": ["operation", "type", lambda x: x.split(":")[1]],
         "action": ["operation", "type", lambda x: x.split(":")[0]],
         "project_id": ["operation", "project_id"],

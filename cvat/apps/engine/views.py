@@ -3267,7 +3267,7 @@ class RequestViewSet(viewsets.GenericViewSet):
         'job_id',
         # derivatives fields (from parsed rq_id)
         'action',
-        'resource',
+        'target',
         'subresource',
         'format',
     ]
@@ -3277,7 +3277,7 @@ class RequestViewSet(viewsets.GenericViewSet):
     lookup_fields = {
         'created_date': 'created_at',
         'action': 'parsed_rq_id.action',
-        'resource': 'parsed_rq_id.resource',
+        'target': 'parsed_rq_id.resource',
         'subresource': 'parsed_rq_id.subresource',
         'format': 'parsed_rq_id.format',
         'status': 'get_status',
@@ -3295,7 +3295,7 @@ class RequestViewSet(viewsets.GenericViewSet):
         'task_id': SchemaField('integer'),
         'job_id': SchemaField('integer'),
         'action': SchemaField('string', RequestAction.choices),
-        'resource': SchemaField('string', RequestTarget.choices),
+        'target': SchemaField('string', RequestTarget.choices),
         'subresource': SchemaField('string', RequestSubresource.choices),
         'format': SchemaField('string'),
         'org': SchemaField('string'),

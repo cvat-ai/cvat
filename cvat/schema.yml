@@ -4541,7 +4541,7 @@ paths:
 
           Details about the syntax used can be found at the link: https://jsonlogic.com/
 
-           Available filter_fields: ['status', 'project_id', 'task_id', 'job_id', 'action', 'resource', 'subresource', 'format'].
+           Available filter_fields: ['status', 'project_id', 'task_id', 'job_id', 'action', 'target', 'subresource', 'format'].
         schema:
           type: string
       - name: format
@@ -4576,15 +4576,6 @@ paths:
         description: A simple equality filter for the project_id field
         schema:
           type: integer
-      - name: resource
-        in: query
-        description: A simple equality filter for the resource field
-        schema:
-          type: string
-          enum:
-          - project
-          - task
-          - job
       - name: sort
         required: false
         in: query
@@ -4611,6 +4602,15 @@ paths:
           - annotations
           - dataset
           - backup
+      - name: target
+        in: query
+        description: A simple equality filter for the target field
+        schema:
+          type: string
+          enum:
+          - project
+          - task
+          - job
       - name: task_id
         in: query
         description: A simple equality filter for the task_id field
