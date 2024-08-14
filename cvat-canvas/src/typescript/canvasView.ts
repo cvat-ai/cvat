@@ -1158,9 +1158,6 @@ export class CanvasViewImpl implements CanvasView, Listener {
                         new CustomEvent('canvas.dragshape', {
                             bubbles: false,
                             cancelable: true,
-                            detail: {
-                                id: state.clientID,
-                            },
                         }),
                     );
                 }
@@ -1343,9 +1340,6 @@ export class CanvasViewImpl implements CanvasView, Listener {
                             new CustomEvent('canvas.resizeshape', {
                                 bubbles: false,
                                 cancelable: true,
-                                detail: {
-                                    id: state.clientID,
-                                },
                             }),
                         );
                     }
