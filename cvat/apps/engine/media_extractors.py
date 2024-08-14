@@ -250,7 +250,7 @@ class IMediaReader(ABC):
 
     @property
     def frame_range(self):
-        return range(self._start, self._stop, self._step)
+        return range(self._start, self._stop + 1, self._step)
 
 class ImageListReader(IMediaReader):
     def __init__(self,
@@ -264,9 +264,9 @@ class ImageListReader(IMediaReader):
             raise Exception('No image found')
 
         if not stop:
-            stop = len(source_path)
+            stop = max(0, len(source_path) - 1)
         else:
-            stop = min(len(source_path), stop + 1)
+            stop = max(0, min(len(source_path), stop + 1) - 1)
         step = max(step, 1)
         assert stop > start
 
@@ -281,7 +281,7 @@ class ImageListReader(IMediaReader):
         self._sorting_method = sorting_method
 
     def __iter__(self):
-        for i in range(self._start, self._stop, self._step):
+        for i in range(self._start, self._stop + 1, self._step):
             yield (self.get_image(i), self.get_path(i), i)
 
     def __contains__(self, media_file):
@@ -294,7 +294,7 @@ class ImageListReader(IMediaReader):
             source_path,
             step=self._step,
             start=self._start,
-            stop=self._stop - 1,
+            stop=self._stop,
             dimension=self._dimension,
             sorting_method=self._sorting_method
         )
@@ -306,7 +306,7 @@ class ImageListReader(IMediaReader):
         return self._source_path[i]
 
     def get_progress(self, pos):
-        return (pos - self._start + 1) / (self._stop - self._start)
+        return (pos + 1) / (len(self.frame_range) or 1)
 
     def get_preview(self, frame):
         if self._dimension == DimensionType.DIM_3D:
@@ -560,7 +560,7 @@ class VideoReader(IMediaReader):
             source_path=source_path,
             step=step,
             start=start,
-            stop=stop + 1 if stop is not None else stop,
+            stop=stop if stop is not None else stop,
             dimension=dimension,
         )
 
