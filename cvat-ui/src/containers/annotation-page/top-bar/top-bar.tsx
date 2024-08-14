@@ -7,7 +7,6 @@ import React from 'react';
 import { connect } from 'react-redux';
 import { withRouter } from 'react-router';
 import { RouteComponentProps } from 'react-router-dom';
-import copy from 'copy-to-clipboard';
 
 import {
     changeFrameAsync,
@@ -42,7 +41,6 @@ import isAbleToChangeFrame from 'utils/is-able-to-change-frame';
 import { KeyMap } from 'utils/mousetrap-react';
 import { switchToolsBlockerState } from 'actions/settings-actions';
 import { writeLatestFrame } from 'utils/remember-latest-frame';
-import { ShortcutScope } from 'utils/enums';
 import { registerComponentShortcuts } from 'actions/shortcuts-actions';
 
 interface StateToProps {
@@ -102,12 +100,7 @@ interface DispatchToProps {
 
 // this shortcut is declared here because the shortcut handler is in a file which doesn't belong to cvat-ui
 const componentShortcuts = {
-    SWITCH_TOOLS_BLOCKER_STATE: {
-        name: 'Switch algorithm blocker',
-        description: 'Postpone running the algorithm for interaction tools',
-        sequences: ['ctrl'],
-        scope: ShortcutScope.ALL,
-    },
+
 };
 
 registerComponentShortcuts(componentShortcuts);
@@ -532,18 +525,7 @@ class AnnotationTopBarContainer extends React.PureComponent<Props> {
     };
 
     private onSwitchToolsBlockerState = (): void => {
-        const {
-            toolsBlockerState, onSwitchToolsBlockerState, canvasInstance, activeControl,
-        } = this.props;
-        if (canvasInstance instanceof Canvas) {
-            if (activeControl.includes(ActiveControl.OPENCV_TOOLS)) {
-                canvasInstance.interact({
-                    enabled: true,
-                    crosshair: toolsBlockerState.algorithmsLocked,
-                    enableThreshold: toolsBlockerState.algorithmsLocked,
-                });
-            }
-        }
+        const { toolsBlockerState, onSwitchToolsBlockerState } = this.props;
         onSwitchToolsBlockerState({ algorithmsLocked: !toolsBlockerState.algorithmsLocked });
     };
 
@@ -551,7 +533,17 @@ class AnnotationTopBarContainer extends React.PureComponent<Props> {
         const { frameNumber } = this.props;
         const { origin, pathname } = window.location;
         const url = `${origin}${pathname}?frame=${frameNumber}`;
-        copy(url);
+
+        const fallback = (): void => {
+            // eslint-disable-next-line
+            window.prompt('Browser Clipboard API not allowed, please copy manually', url);
+        };
+
+        if (window.isSecureContext) {
+            window.navigator.clipboard.writeText(url).catch(fallback);
+        } else {
+            fallback();
+        }
     };
 
     private onDeleteFrame = (): void => {
@@ -724,7 +716,6 @@ class AnnotationTopBarContainer extends React.PureComponent<Props> {
                 undoShortcut={normalizedKeyMap.UNDO}
                 redoShortcut={normalizedKeyMap.REDO}
                 drawShortcut={normalizedKeyMap.SWITCH_DRAW_MODE}
-                // this shortcut is handled in interactionHandler.ts separately
                 switchToolsBlockerShortcut={normalizedKeyMap.SWITCH_TOOLS_BLOCKER_STATE}
                 playPauseShortcut={normalizedKeyMap.PLAY_PAUSE}
                 deleteFrameShortcut={normalizedKeyMap.DELETE_FRAME}
