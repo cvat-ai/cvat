@@ -23,14 +23,14 @@ import TaskConsensusAnalyticsComponent from './task-consensus/task-consensus-com
 
 const core = getCore();
 
-enum AnalyticsTabs {
+enum ConsensusAnalyticsTabs {
     OVERVIEW = 'overview',
     SETTINGS = 'settings',
 }
 
-function getTabFromHash(): AnalyticsTabs {
-    const tab = window.location.hash.slice(1) as AnalyticsTabs;
-    return Object.values(AnalyticsTabs).includes(tab) ? tab : AnalyticsTabs.OVERVIEW;
+function getTabFromHash(): ConsensusAnalyticsTabs {
+    const tab = window.location.hash.slice(1) as ConsensusAnalyticsTabs;
+    return Object.values(ConsensusAnalyticsTabs).includes(tab) ? tab : ConsensusAnalyticsTabs.OVERVIEW;
 }
 
 function readInstanceType(location: ReturnType<typeof useLocation>): InstanceType {
@@ -70,7 +70,7 @@ function TaskConsensusAnalyticsPage(): JSX.Element {
     const consensusSettings = useSelector((state: CombinedState) => state.consensus?.consensusSettings);
 
     const onTabKeyChange = useCallback((key: string): void => {
-        setTab(key as AnalyticsTabs);
+        setTab(key as ConsensusAnalyticsTabs);
     }, []);
 
     const receiveInstance = async (type: InstanceType, id: number): Promise<void> => {
@@ -184,7 +184,7 @@ function TaskConsensusAnalyticsPage(): JSX.Element {
         title = (
             <Col>
                 <Title level={4} className='cvat-text-color'>
-                    Analytics for
+                    Consensus Analytics for
                     {' '}
                     {analyticsFor}
                 </Title>
@@ -202,14 +202,14 @@ function TaskConsensusAnalyticsPage(): JSX.Element {
             <Tabs
                 type='card'
                 activeKey={activeTab}
-                defaultActiveKey={AnalyticsTabs.OVERVIEW}
+                defaultActiveKey={ConsensusAnalyticsTabs.OVERVIEW}
                 onChange={onTabKeyChange}
                 className='cvat-task-analytics-tabs'
                 items={[
                     ...(instanceType === 'task' ?
                         [
                             {
-                                key: AnalyticsTabs.OVERVIEW,
+                                key: ConsensusAnalyticsTabs.OVERVIEW,
                                 label: 'Overview',
                                 children: (
                                     <TaskConsensusAnalyticsComponent task={instance} />
@@ -220,7 +220,7 @@ function TaskConsensusAnalyticsPage(): JSX.Element {
                     ...(instanceType === 'task' && instance.consensusJobsPerRegularJob ?
                         [
                             {
-                                key: AnalyticsTabs.SETTINGS,
+                                key: ConsensusAnalyticsTabs.SETTINGS,
                                 label: 'Settings',
                                 children: (
                                     consensusSettingsForm
