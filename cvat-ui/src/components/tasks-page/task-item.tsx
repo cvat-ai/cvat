@@ -240,7 +240,7 @@ class TaskItemComponent extends React.PureComponent<TaskItemProps & RouteCompone
         };
 
         const onViewConsensusAnalytics = (): void => {
-            history.push(`/tasks/${taskInstance.id}/analytics/consensus`);
+            history.push(`/tasks/${taskInstance.id}/consensus`);
         };
 
         return (
