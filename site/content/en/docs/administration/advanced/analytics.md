@@ -135,8 +135,6 @@ Client events:
 
 - `load:job`, `save:job`
 
-- `upload:annotations`
-
 - `send:exception`
 
 - `draw:object`, `paste:object`, `copy:object`, `propagate:object`, `drag:object`, `resize:object`, `delete:object`, `lock:object`, `merge:objects`, `split:objects`, `group:objects`, `slice:object`,

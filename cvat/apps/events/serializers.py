@@ -30,7 +30,8 @@ class EventSerializer(serializers.Serializer):
 class ClientEventsSerializer(serializers.Serializer):
     ALLOWED_SCOPES = frozenset((
         'load:cvat', 'load:job', 'save:job',
-        'upload:annotations', 'send:exception',
+        'upload:annotations', # TODO: remove in next release
+        'send:exception',
         'draw:object', 'paste:object', 'copy:object', 'propagate:object',
         'drag:object', 'resize:object', 'delete:object', 'lock:object',
         'merge:objects', 'split:objects', 'group:objects', 'slice:object',
