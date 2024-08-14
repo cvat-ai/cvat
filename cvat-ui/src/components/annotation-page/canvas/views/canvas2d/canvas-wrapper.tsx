@@ -663,20 +663,10 @@ class CanvasWrapperComponent extends React.PureComponent<Props> {
             });
         }
 
-        const payload = {
-            object_type: state.objectType,
-            label: state.label.name,
-            frame: state.frame,
-            rotation: state.rotation,
-            occluded: state.occluded,
-            outside: state.outside,
-            shape_type: state.shapeType,
-        };
-
         if (isDrawnFromScratch) {
-            jobInstance.logger.log(EventScope.drawObject, { count: 1, duration, ...payload });
+            jobInstance.logger.log(EventScope.drawObject, { count: 1, duration });
         } else {
-            jobInstance.logger.log(EventScope.pasteObject, { count: 1, duration, ...payload });
+            jobInstance.logger.log(EventScope.pasteObject, { count: 1, duration });
         }
 
         const objectState = new cvat.classes.ObjectState(state);
