@@ -207,18 +207,22 @@ class IFrameProvider(metaclass=ABCMeta):
         out_type: FrameOutputType = FrameOutputType.BUFFER,
     ) -> Iterator[DataWithMeta[AnyFrame]]: ...
 
+    def _get_abs_frame_number(self, db_data: models.Data, rel_frame_number: int) -> int:
+        return db_data.start_frame + rel_frame_number * db_data.get_frame_step()
+
+    def _get_rel_frame_number(self, db_data: models.Data, abs_frame_number: int) -> int:
+        return (abs_frame_number - db_data.start_frame) // db_data.get_frame_step()
+
 
 class TaskFrameProvider(IFrameProvider):
     def __init__(self, db_task: models.Task) -> None:
         self._db_task = db_task
 
     def validate_frame_number(self, frame_number: int) -> int:
-        start = self._db_task.data.start_frame
-        stop = self._db_task.data.stop_frame
-        if frame_number not in range(start, stop + 1, self._db_task.data.get_frame_step()):
+        if frame_number not in range(0, self._db_task.data.size):
             raise ValidationError(
                 f"Invalid frame '{frame_number}'. "
-                f"The frame number should be in the [{start}, {stop}] range"
+                f"The frame number should be in the [0, {self._db_task.data.size}] range"
             )
 
         return frame_number
@@ -235,6 +239,17 @@ class TaskFrameProvider(IFrameProvider):
 
     def get_chunk_number(self, frame_number: int) -> int:
         return int(frame_number) // self._db_task.data.chunk_size
+
+    def get_abs_frame_number(self, rel_frame_number: int) -> int:
+        "Returns absolute frame number in the task (in the range [start, stop, step])"
+        return super()._get_abs_frame_number(self._db_task.data, rel_frame_number)
+
+    def get_rel_frame_number(self, abs_frame_number: int) -> int:
+        """
+        Returns relative frame number in the task (in the range [0, task_size - 1]).
+        This is the "normal" frame number, expected in other methods.
+        """
+        return super()._get_rel_frame_number(self._db_task.data, abs_frame_number)
 
     def get_preview(self) -> DataWithMeta[BytesIO]:
         return self._get_segment_frame_provider(self._db_task.data.start_frame).get_preview()
@@ -315,7 +330,7 @@ class TaskFrameProvider(IFrameProvider):
                     continue
 
                 frame, frame_name, _ = segment_frame_provider._get_raw_frame(
-                    task_chunk_frame_id, quality=quality
+                    self.get_rel_frame_number(task_chunk_frame_id), quality=quality
                 )
                 task_chunk_frames[task_chunk_frame_id] = (frame, frame_name, None)
 
@@ -385,11 +400,13 @@ class TaskFrameProvider(IFrameProvider):
         if not self._db_task.data or not self._db_task.data.size:
             raise ValidationError("Task has no data")
 
+        abs_frame_number = self.get_abs_frame_number(validated_frame_number)
+
         return next(
             s
             for s in self._db_task.segment_set.all()
             if s.type == models.SegmentType.RANGE
-            if validated_frame_number in s.frame_set
+            if abs_frame_number in s.frame_set
         )
 
     def _get_segment_frame_provider(self, frame_number: int) -> SegmentFrameProvider:
@@ -465,12 +482,13 @@ class SegmentFrameProvider(IFrameProvider):
 
     def validate_frame_number(self, frame_number: int) -> Tuple[int, int, int]:
         frame_sequence = list(self._db_segment.frame_set)
-        if frame_number not in frame_sequence:
+        abs_frame_number = self._get_abs_frame_number(self._db_segment.task.data, frame_number)
+        if abs_frame_number not in frame_sequence:
             raise ValidationError(f"Incorrect requested frame number: {frame_number}")
 
         # TODO: maybe optimize search
         chunk_number, frame_position = divmod(
-            frame_sequence.index(frame_number), self._db_segment.task.data.chunk_size
+            frame_sequence.index(abs_frame_number), self._db_segment.task.data.chunk_size
         )
         return frame_number, chunk_number, frame_position
 
@@ -554,13 +572,13 @@ class SegmentFrameProvider(IFrameProvider):
         quality: FrameQuality = FrameQuality.ORIGINAL,
         out_type: FrameOutputType = FrameOutputType.BUFFER,
     ) -> Iterator[DataWithMeta[AnyFrame]]:
-        frame_range = itertools.count(start_frame, self._db_segment.task.data.get_frame_step())
+        frame_range = itertools.count(start_frame)
         if stop_frame:
             frame_range = itertools.takewhile(lambda x: x <= stop_frame, frame_range)
 
         segment_frame_set = set(self._db_segment.frame_set)
         for idx in frame_range:
-            if idx in segment_frame_set:
+            if self._get_abs_frame_number(self._db_segment.task.data, idx) in segment_frame_set:
                 yield self.get_frame(idx, quality=quality, out_type=out_type)
 
 

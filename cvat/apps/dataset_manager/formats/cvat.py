@@ -1378,8 +1378,8 @@ def dump_media_files(instance_data: CommonData, img_dir: str, project_data: Proj
         ext = frame_provider.VIDEO_FRAME_EXT
 
     frames = frame_provider.iterate_frames(
-        start_frame=instance_data.abs_frame_id(instance_data.start),
-        stop_frame=instance_data.abs_frame_id(instance_data.stop),
+        start_frame=instance_data.start,
+        stop_frame=instance_data.stop,
         quality=FrameQuality.ORIGINAL,
         out_type=FrameOutputType.BUFFER,
     )
