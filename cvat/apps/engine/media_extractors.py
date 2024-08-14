@@ -769,7 +769,7 @@ class VideoReaderWithManifest:
 
             container.seek(offset=start_decode_timestamp, stream=video_stream)
 
-            frame_counter = itertools.count(start_decode_frame_number - 1)
+            frame_counter = itertools.count(start_decode_frame_number)
             with closing(self._decode_stream(container, video_stream)) as stream_decoder:
                 for frame, frame_number in zip(stream_decoder, frame_counter):
                     if frame_number == next_frame_filter_frame:
