@@ -97,7 +97,6 @@ export enum EventScope {
     saveJob = 'save:job',
     uploadAnnotations = 'upload:annotations',
     exception = 'send:exception',
-    sendTaskInfo = 'send:task_info',
 
     drawObject = 'draw:object',
     pasteObject = 'paste:object',
