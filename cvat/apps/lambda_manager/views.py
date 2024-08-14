@@ -499,7 +499,7 @@ class LambdaFunction:
         frame_provider = TaskFrameProvider(db_task)
         image = frame_provider.get_frame(frame, quality=quality)
 
-        return base64.b64encode(image[0].getvalue()).decode('utf-8')
+        return base64.b64encode(image.data.getvalue()).decode('utf-8')
 
 class LambdaQueue:
     RESULT_TTL = timedelta(minutes=30)
