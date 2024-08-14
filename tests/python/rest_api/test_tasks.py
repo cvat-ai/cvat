@@ -452,8 +452,8 @@ class TestPostTasks:
                 assert task.consensus_jobs_per_regular_job == consensus_jobs_per_regular_job
             else:
                 with pytest.raises(ApiException) as exc:
-                    (task, response) = api_client.tasks_api.create(task_write_request=task_spec)
-                    assert exc.status == HTTPStatus.BAD_REQUEST
+                    _ = api_client.tasks_api.create(task_write_request=task_spec)
+                assert exc.status == HTTPStatus.BAD_REQUEST
 
 
 @pytest.mark.usefixtures("restore_db_per_class")
@@ -2316,8 +2316,6 @@ class TestTaskBackups:
         old_jobs = task.get_jobs()
         new_jobs = restored_task.get_jobs()
         assert len(old_jobs) == len(new_jobs)
-        # print(old_jobs)
-        # print(new_jobs)
 
         for old_job, new_job in zip(old_jobs, new_jobs):
             assert old_job.status == new_job.status
