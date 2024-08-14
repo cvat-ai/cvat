@@ -13,7 +13,6 @@ from typing import Any, Callable, Dict, Optional, Union
 
 import django_rq
 from attrs.converters import to_bool
-from contextlib import suppress
 from django.conf import settings
 from rest_framework.request import Request
 from django.http.response import HttpResponseBadRequest
