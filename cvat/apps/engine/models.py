@@ -22,8 +22,9 @@ from django.db.models.fields import FloatField
 from django.db.models import Q
 from drf_spectacular.types import OpenApiTypes
 from drf_spectacular.utils import extend_schema_field
+from cvat.apps.engine.lazy_list import LazyList
 
-from cvat.apps.engine.utils import parse_specific_attributes
+from cvat.apps.engine.utils import parse_specific_attributes, chunked_list
 from cvat.apps.events.utils import cache_deleted
 
 class SafeCharField(models.CharField):
@@ -182,6 +183,7 @@ class JobFrameSelectionMethod(str, Enum):
     def __str__(self):
         return self.value
 
+
 class AbstractArrayField(models.TextField):
     separator = ","
     converter = staticmethod(lambda x: x)
@@ -194,19 +196,20 @@ class AbstractArrayField(models.TextField):
     def from_db_value(self, value, expression, connection):
         if not value:
             return []
-        if value.startswith('[') and value.endswith(']'):
-            value = value[1:-1]
-        return [self.converter(v) for v in value.split(self.separator) if v]
+        return LazyList(string=value, separator=self.separator, converter=self.converter)
 
     def to_python(self, value):
-        if isinstance(value, list):
+        if isinstance(value, list | LazyList):
             return value
 
         return self.from_db_value(value, None, None)
 
     def get_prep_value(self, value):
+        if isinstance(value, LazyList) and not (self._unique_values or self._store_sorted):
+            return str(value)
+
         if self._unique_values:
-            value = list(dict.fromkeys(value))
+            value = dict.fromkeys(value)
         if self._store_sorted:
             value = sorted(value)
         return self.separator.join(map(str, value))
@@ -326,6 +329,18 @@ class TimestampedModel(models.Model):
     def touch(self) -> None:
         self.save(update_fields=["updated_date"])
 
+@transaction.atomic(savepoint=False)
+def clear_annotations_in_jobs(job_ids):
+    for job_ids_chunk in chunked_list(job_ids, chunk_size=1000):
+        TrackedShapeAttributeVal.objects.filter(shape__track__job_id__in=job_ids_chunk).delete()
+        TrackedShape.objects.filter(track__job_id__in=job_ids_chunk).delete()
+        LabeledTrackAttributeVal.objects.filter(track__job_id__in=job_ids_chunk).delete()
+        LabeledTrack.objects.filter(job_id__in=job_ids_chunk).delete()
+        LabeledShapeAttributeVal.objects.filter(shape__job_id__in=job_ids_chunk).delete()
+        LabeledShape.objects.filter(job_id__in=job_ids_chunk).delete()
+        LabeledImageAttributeVal.objects.filter(image__job_id__in=job_ids_chunk).delete()
+        LabeledImage.objects.filter(job_id__in=job_ids_chunk).delete()
+
 class Project(TimestampedModel):
     name = SafeCharField(max_length=256)
     owner = models.ForeignKey(User, null=True, blank=True,
@@ -344,8 +359,11 @@ class Project(TimestampedModel):
     target_storage = models.ForeignKey('Storage', null=True, default=None,
         blank=True, on_delete=models.SET_NULL, related_name='+')
 
-    def get_labels(self):
-        return self.label_set.filter(parent__isnull=True)
+    def get_labels(self, prefetch=False):
+        queryset = self.label_set.filter(parent__isnull=True).select_related('skeleton')
+        return queryset.prefetch_related(
+            'attributespec_set', 'sublabels__attributespec_set',
+        ) if prefetch else queryset
 
     def get_dirname(self):
         return os.path.join(settings.PROJECTS_ROOT, str(self.id))
@@ -365,7 +383,15 @@ class Project(TimestampedModel):
         ).count() > 0
 
     @cache_deleted
+    @transaction.atomic(savepoint=False)
     def delete(self, using=None, keep_parents=False):
+        # quicker way to remove annotations and a way to reduce number of queries
+        # is to remove labels and attributes first, it will remove annotations cascadely
+
+        # child objects must be removed first
+        if self.label_set.exclude(parent=None).count():
+            self.label_set.exclude(parent=None).delete()
+        self.label_set.filter(parent=None).delete()
         super().delete(using, keep_parents)
 
     # Extend default permission model
@@ -428,11 +454,15 @@ class Task(TimestampedModel):
     class Meta:
         default_permissions = ()
 
-    def get_labels(self):
+    def get_labels(self, prefetch=False):
         project = self.project
         if project:
-            return project.get_labels()
-        return self.label_set.filter(parent__isnull=True)
+            return project.get_labels(prefetch)
+
+        queryset = self.label_set.filter(parent__isnull=True).select_related('skeleton')
+        return queryset.prefetch_related(
+            'attributespec_set', 'sublabels__attributespec_set',
+        ) if prefetch else queryset
 
     def get_dirname(self):
         return os.path.join(settings.TASKS_ROOT, str(self.id))
@@ -472,7 +502,19 @@ class Task(TimestampedModel):
         return self.name
 
     @cache_deleted
+    @transaction.atomic(savepoint=False)
     def delete(self, using=None, keep_parents=False):
+        if not self.project:
+            # quicker way to remove annotations and a way to reduce number of queries
+            # is to remove labels and attributes first, it will remove annotations cascadely
+
+            # child objects must be removed first
+            if self.label_set.exclude(parent=None).count():
+                self.label_set.exclude(parent=None).delete()
+            self.label_set.filter(parent=None).delete()
+        else:
+            job_ids = list(self.segment_set.values_list('job__id', flat=True))
+            clear_annotations_in_jobs(job_ids)
         super().delete(using, keep_parents)
 
 # Redefined a couple of operation for FileSystemStorage to avoid renaming
@@ -728,10 +770,10 @@ class Job(TimestampedModel):
         project = task.project
         return task.bug_tracker or getattr(project, 'bug_tracker', None)
 
-    def get_labels(self):
+    def get_labels(self, prefetch=False):
         task = self.segment.task
         project = task.project
-        return project.get_labels() if project else task.get_labels()
+        return project.get_labels(prefetch) if project else task.get_labels(prefetch)
 
     class Meta:
         default_permissions = ()
@@ -752,18 +794,13 @@ class Job(TimestampedModel):
         return super().clean()
 
     @cache_deleted
+    @transaction.atomic(savepoint=False)
     def delete(self, using=None, keep_parents=False):
-        if self.segment:
-            self.segment.delete(using=using, keep_parents=keep_parents)
-
+        clear_annotations_in_jobs([self.id])
+        segment = self.segment
         super().delete(using, keep_parents)
-
-        self.delete_dirs()
-
-    def delete_dirs(self):
-        job_path = self.get_dirname()
-        if os.path.isdir(job_path):
-            shutil.rmtree(job_path)
+        if segment:
+            segment.delete()
 
     def make_dirs(self):
         job_path = self.get_dirname()
@@ -915,7 +952,7 @@ class SourceType(str, Enum):
 
 class Annotation(models.Model):
     id = models.BigAutoField(primary_key=True)
-    job = models.ForeignKey(Job, on_delete=models.CASCADE)
+    job = models.ForeignKey(Job, on_delete=models.DO_NOTHING)
     label = models.ForeignKey(Label, on_delete=models.CASCADE)
     frame = models.PositiveIntegerField()
     group = models.PositiveIntegerField(null=True)
@@ -942,21 +979,21 @@ class LabeledImage(Annotation):
     pass
 
 class LabeledImageAttributeVal(AttributeVal):
-    image = models.ForeignKey(LabeledImage, on_delete=models.CASCADE,
+    image = models.ForeignKey(LabeledImage, on_delete=models.DO_NOTHING,
         related_name='attributes', related_query_name='attribute')
 
 class LabeledShape(Annotation, Shape):
-    parent = models.ForeignKey('self', on_delete=models.CASCADE, null=True, related_name='elements')
+    parent = models.ForeignKey('self', on_delete=models.DO_NOTHING, null=True, related_name='elements')
 
 class LabeledShapeAttributeVal(AttributeVal):
-    shape = models.ForeignKey(LabeledShape, on_delete=models.CASCADE,
+    shape = models.ForeignKey(LabeledShape, on_delete=models.DO_NOTHING,
         related_name='attributes', related_query_name='attribute')
 
 class LabeledTrack(Annotation):
-    parent = models.ForeignKey('self', on_delete=models.CASCADE, null=True, related_name='elements')
+    parent = models.ForeignKey('self', on_delete=models.DO_NOTHING, null=True, related_name='elements')
 
 class LabeledTrackAttributeVal(AttributeVal):
-    track = models.ForeignKey(LabeledTrack, on_delete=models.CASCADE,
+    track = models.ForeignKey(LabeledTrack, on_delete=models.DO_NOTHING,
         related_name='attributes', related_query_name='attribute')
 
 class TrackedShape(Shape):
@@ -966,7 +1003,7 @@ class TrackedShape(Shape):
     frame = models.PositiveIntegerField()
 
 class TrackedShapeAttributeVal(AttributeVal):
-    shape = models.ForeignKey(TrackedShape, on_delete=models.CASCADE,
+    shape = models.ForeignKey(TrackedShape, on_delete=models.DO_NOTHING,
         related_name='attributes', related_query_name='attribute')
 
 class Profile(models.Model):

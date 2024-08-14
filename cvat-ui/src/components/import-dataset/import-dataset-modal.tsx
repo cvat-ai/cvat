@@ -6,7 +6,7 @@
 import './styles.scss';
 import React, { useCallback, useEffect, useReducer } from 'react';
 import { connect, useDispatch } from 'react-redux';
-import ReactMarkdown from 'react-markdown';
+import { useHistory } from 'react-router';
 import Modal from 'antd/lib/modal';
 import Form, { RuleObject } from 'antd/lib/form';
 import Text from 'antd/lib/typography/Text';
@@ -19,6 +19,7 @@ import {
     UploadOutlined, InboxOutlined, QuestionCircleOutlined,
 } from '@ant-design/icons';
 import CVATTooltip from 'components/common/cvat-tooltip';
+import CVATMarkdown from 'components/common/cvat-markdown';
 import { CombinedState, StorageLocation } from 'reducers';
 import { importActions, importDatasetAsync } from 'actions/import-actions';
 import Space from 'antd/lib/space';
@@ -278,6 +279,7 @@ function ImportDatasetModal(props: StateToProps): JSX.Element {
     } = props;
     const [form] = Form.useForm();
     const appDispatch = useDispatch();
+    const history = useHistory();
 
     const [state, dispatch] = useReducer(reducer, {
         instanceType: '',
@@ -462,11 +464,11 @@ function ImportDatasetModal(props: StateToProps): JSX.Element {
                 ));
             const resToPrint = uploadParams.resource.charAt(0).toUpperCase() + uploadParams.resource.slice(1);
             const description = `${resToPrint} import was started for ${instanceType}.` +
-            ' You can check progress [here](/requests)';
+            ' You can check progress [here](/requests).';
             Notification.info({
                 message: `${resToPrint} import started`,
                 description: (
-                    <ReactMarkdown>{description}</ReactMarkdown>
+                    <CVATMarkdown history={history}>{description}</CVATMarkdown>
                 ),
                 className: `cvat-notification-notice-import-${uploadParams.resource}-start`,
             });

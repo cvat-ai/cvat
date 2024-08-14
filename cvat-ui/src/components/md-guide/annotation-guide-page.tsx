@@ -1,4 +1,4 @@
-// Copyright (C) 2023 CVAT.ai Corporation
+// Copyright (C) 2023-2024 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -14,110 +14,96 @@ import Button from 'antd/lib/button';
 import Space from 'antd/lib/space';
 import MDEditor, { commands } from '@uiw/react-md-editor';
 
-import {
-    getCore, Task, Project, AnnotationGuide,
-} from 'cvat-core-wrapper';
-import { useIsMounted } from 'utils/hooks';
+import { getCore, AnnotationGuide } from 'cvat-core-wrapper';
 import CVATLoadingSpinner from 'components/common/loading-spinner';
 import GoBackButton from 'components/common/go-back-button';
+import dimensions from 'utils/dimensions';
 
 const core = getCore();
 
-function GuidePage(): JSX.Element {
+function AnnotationGuidePage(): JSX.Element {
     const mdEditorRef = useRef<typeof MDEditor & { commandOrchestrator: commands.TextAreaCommandOrchestrator }>(null);
     const location = useLocation();
-    const isMounted = useIsMounted();
     const [value, setValue] = useState('');
     const instanceType = location.pathname.includes('projects') ? 'project' : 'task';
     const id = +useParams<{ id: string }>().id;
-    const [guide, setGuide] = useState<AnnotationGuide>(
-        new AnnotationGuide({
-            ...(instanceType === 'project' ? { project_id: id } : { task_id: id }),
-            markdown: value,
-        }),
-    );
+    const [guide, setGuide] = useState<AnnotationGuide | null>(null);
     const [fetching, setFetching] = useState(true);
 
     useEffect(() => {
         const promise = instanceType === 'project' ? core.projects.get({ id }) : core.tasks.get({ id });
-        promise.then(([instance]: [Task | Project]) => (
-            instance.guide()
-        )).then(async (guideInstance: AnnotationGuide | null) => {
-            if (!guideInstance) {
-                const createdGuide = await guide.save();
-                return createdGuide;
-            }
+        promise.then((result) => result[0].guide())
+            .then((existingGuide: AnnotationGuide | null) => {
+                if (!existingGuide) {
+                    const newGuide = new AnnotationGuide({
+                        ...(instanceType === 'project' ? { project_id: id } : { task_id: id }),
+                        markdown: '',
+                    });
+                    return newGuide.save();
+                }
 
-            return guideInstance;
-        }).then((guideInstance: AnnotationGuide) => {
-            if (isMounted()) {
+                return existingGuide;
+            }).then((guideInstance: AnnotationGuide) => {
                 setValue(guideInstance.markdown);
                 setGuide(guideInstance);
-            }
-        }).catch((error: any) => {
-            if (isMounted()) {
+            }).catch((error: unknown) => {
                 notification.error({
                     message: `Could not receive guide for the ${instanceType} ${id}`,
-                    description: error.toString(),
+                    description: error instanceof Error ? error.message : '',
                 });
-            }
-        }).finally(() => {
-            if (isMounted()) {
+            }).finally(() => {
                 setFetching(false);
-            }
-        });
+            });
     }, []);
 
-    const submit = useCallback((currentValue: string) => {
-        guide.markdown = currentValue;
-        setFetching(true);
-        guide.save().then((result: AnnotationGuide) => {
-            if (isMounted()) {
+    const submit = useCallback((updatedValue: string) => {
+        if (guide) {
+            guide.markdown = updatedValue;
+            setFetching(true);
+            guide.save().then((result: AnnotationGuide) => {
                 setValue(result.markdown);
                 setGuide(result);
-            }
-        }).catch((error: any) => {
-            if (isMounted()) {
+            }).catch((error: unknown) => {
                 notification.error({
                     message: 'Could not save guide on the server',
-                    description: error.toString(),
+                    description: error instanceof Error ? error.message : '',
                 });
-            }
-        }).finally(() => {
-            if (isMounted()) {
+            }).finally(() => {
                 setFetching(false);
-            }
-        });
-    }, [guide, fetching]);
+            });
+        }
+    }, [guide]);
 
-    const handleInsert = async (event: React.ClipboardEvent | React.DragEvent, files: FileList): Promise<void> => {
-        if (files.length && guide.id) {
-            event.preventDefault();
+    const handleInsertFiles = useCallback(async (files: FileList): Promise<void> => {
+        if (mdEditorRef.current && guide?.id) {
             const assetsToAdd = Array.from(files);
             const addedAssets: [File, string][] = [];
+            const { textArea } = mdEditorRef.current.commandOrchestrator;
+            const { selectionStart, selectionEnd, value: textAreaValue } = textArea;
+            const computeNewValue = (): string => {
+                const addedStrings = addedAssets.map(([file, uuid]) => {
+                    if (file.type.startsWith('image/')) {
+                        return (`![image](/api/assets/${uuid})`);
+                    }
+                    return (`[${file.name}](/api/assets/${uuid})`);
+                });
 
-            if (mdEditorRef.current) {
-                const { textArea } = mdEditorRef.current.commandOrchestrator;
-                const { selectionStart, selectionEnd } = textArea;
-                const computeNewValue = (): string => {
-                    const addedStrings = addedAssets.map(([file, uuid]) => {
-                        if (file.type.startsWith('image/')) {
-                            return (`![image](/api/assets/${uuid})`);
-                        }
-                        return (`[${file.name}](/api/assets/${uuid})`);
-                    });
+                const stringsToAdd = assetsToAdd.map((file: File) => {
+                    if (file.type.startsWith('image/')) {
+                        return '![image](Loading...)';
+                    }
+                    return `![${file.name}](Loading...)`;
+                });
 
-                    const stringsToAdd = assetsToAdd.map((file: File) => {
-                        if (file.type.startsWith('image/')) {
-                            return '![image](Loading...)';
-                        }
-                        return `![${file.name}](Loading...)`;
-                    });
+                const beforeSelection = textAreaValue.slice(0, selectionStart);
+                const selection = addedStrings.concat(stringsToAdd).join('\n');
+                const afterSelection = textAreaValue.slice(selectionEnd);
+                return `${beforeSelection}${selection}${afterSelection}`;
+            };
 
-                    return `${value.slice(0, selectionStart)}\n${addedStrings.concat(stringsToAdd).join('\n')}\n${value.slice(selectionEnd)}`;
-                };
-
-                setValue(computeNewValue());
+            setValue(computeNewValue());
+            setFetching(true);
+            try {
                 let file = assetsToAdd.shift();
                 while (file) {
                     try {
@@ -133,13 +119,13 @@ function GuidePage(): JSX.Element {
                         file = assetsToAdd.shift();
                     }
                 }
-
-                const finalValue = computeNewValue();
-                setValue(finalValue);
-                submit(finalValue);
+            } finally {
+                setFetching(false);
             }
+
+            await submit(computeNewValue());
         }
-    };
+    }, [guide, value]);
 
     return (
         <Row
@@ -148,7 +134,7 @@ function GuidePage(): JSX.Element {
             className='cvat-guide-page'
         >
             { fetching && <CVATLoadingSpinner /> }
-            <Col md={22} lg={18} xl={16} xxl={14}>
+            <Col {...dimensions}>
                 <div className='cvat-guide-page-top'>
                     <GoBackButton />
                 </div>
@@ -162,15 +148,21 @@ function GuidePage(): JSX.Element {
                         onChange={(val: string | undefined) => {
                             setValue(val || '');
                         }}
-                        onPaste={async (event: React.ClipboardEvent) => {
+                        onPaste={(event: React.ClipboardEvent) => {
                             const { clipboardData } = event;
                             const { files } = clipboardData;
-                            handleInsert(event, files);
+                            if (files.length) {
+                                event.preventDefault();
+                                handleInsertFiles(files);
+                            }
                         }}
-                        onDrop={async (event: React.DragEvent) => {
+                        onDrop={(event: React.DragEvent) => {
                             const { dataTransfer } = event;
                             const { files } = dataTransfer;
-                            handleInsert(event, files);
+                            if (files.length) {
+                                event.preventDefault();
+                                handleInsertFiles(files);
+                            }
                         }}
                         style={{ whiteSpace: 'pre-wrap' }}
                     />
@@ -178,7 +170,7 @@ function GuidePage(): JSX.Element {
                 <Space align='end' className='cvat-guide-page-bottom'>
                     <Button
                         type='primary'
-                        disabled={fetching || !guide.id}
+                        disabled={fetching || !guide?.id}
                         onClick={() => submit(value)}
                     >
                         Submit
@@ -189,4 +181,4 @@ function GuidePage(): JSX.Element {
     );
 }
 
-export default React.memo(GuidePage);
+export default React.memo(AnnotationGuidePage);
