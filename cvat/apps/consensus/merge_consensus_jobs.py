@@ -98,15 +98,18 @@ def _merge_consensus_jobs(task_id: int) -> None:
 
         merged_dataset = merger(consensus_datasets)
 
-        assignee_consensus_score: Dict[User, Union[List[float], float]] = {}
+        assignee_report_data: Dict[User, Dict[str, Union[List[float], float]]] = {}
 
         for idx, _ in enumerate(consensus_job_ids):
-            assignee_consensus_score.setdefault(assignees[idx], []).append(
+            assignee_report_data.setdefault(assignees[idx], {})
+            assignee_report_data[assignees[idx]].setdefault("consensus_score", []).append(
                 merger._dataset_mean_consensus_score[id(consensus_datasets[idx])]
             )
 
-        for assignee_id, consensus_scores in assignee_consensus_score.items():
-            assignee_consensus_score[assignee_id] = sum(consensus_scores) / len(consensus_scores)
+        for assignee_id, assignee_info in assignee_report_data.items():
+            assignee_report_data[assignee_id]["consensus_score"] = sum(
+                assignee_info["consensus_score"]
+            ) / len(assignee_info["consensus_score"])
 
         # delete the existing annotations in the job
         patch_job_data(parent_job_id, None, PatchAction.DELETE)
@@ -123,11 +126,14 @@ def _merge_consensus_jobs(task_id: int) -> None:
         # updates the annotations in the job
         patch_job_data(parent_job_id, parent_job.job_data.data.serialize(), PatchAction.UPDATE)
 
-        job_comparison_reports[parent_job_id] = generate_job_consensus_report(
+        job_comparison_reports[parent_job_id], assignee_report_data = generate_job_consensus_report(
             consensus_settings=consensus_settings,
             errors=merger.errors,
             consensus_job_data_providers=consensus_job_data_providers,
             merged_dataset=merged_dataset,
+            merger=merger,
+            assignees=assignees,
+            assignee_report_data=assignee_report_data,
         )
         for parent_job in parent_jobs:
             if parent_job.id == parent_job_id and parent_job.type == JobType.ANNOTATION.value:
@@ -136,7 +142,7 @@ def _merge_consensus_jobs(task_id: int) -> None:
 
     task_report_data = generate_task_consensus_report(list(job_comparison_reports.values()))
     return save_report(
-        task_id, parent_jobs, task_report_data, job_comparison_reports, assignee_consensus_score
+        task_id, parent_jobs, task_report_data, job_comparison_reports, assignee_report_data
     )
 
 

@@ -446,7 +446,13 @@ def _to_rle(ann: dm.Annotation, *, img_h: int, img_w: int):
         assert False
 
 
-def segment_iou(a: dm.Annotation, b: dm.Annotation, *, img_h: Union[int, None] = None, img_w: Union[int, None] = None) -> float:
+def segment_iou(
+    a: dm.Annotation,
+    b: dm.Annotation,
+    *,
+    img_h: Union[int, None] = None,
+    img_w: Union[int, None] = None,
+) -> float:
     """
     Generic IoU computation with masks and polygons.
     Returns -1 if no intersection, [0; 1] otherwise
@@ -528,6 +534,7 @@ class IntersectMerge(MergingStrategy):
         self._item_map = item_map
         self._dataset_mean_consensus_score = {id(d): [] for d in datasets}
         self._dataset_map = {id(d): (d, i) for i, d in enumerate(datasets)}
+        self._ann_map = {}
 
         for item_id, items in item_matches.items():
             self._item_id = item_id
@@ -552,7 +559,7 @@ class IntersectMerge(MergingStrategy):
     def merge_items(self, items):
         self._item = next(iter(items.values()))
 
-        self._ann_map = {}  # id(annotation) -> (annotation, id(frame/item))
+        # self._ann_map = {}  # id(annotation) -> (annotation, id(frame/item))
         sources = []  # [annotation of frame 0, frame 1, ...]
         for item in items.values():
             self._ann_map.update({id(a): (a, id(item)) for a in item.annotations})

@@ -68,6 +68,7 @@ class AssigneeConsensusReportSerializer(serializers.ModelSerializer):
             "assignee",
             "consensus_score",
             "consensus_report_id",
+            "conflict_count",
         )
         read_only_fields = fields
 

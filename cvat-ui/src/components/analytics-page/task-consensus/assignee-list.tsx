@@ -86,6 +86,14 @@ function AssigneeListComponent(props: Props): JSX.Element {
             onFilter: (value: boolean | Key, assignee: any) => (assignee.assignee?.username || false) === value,
         },
         {
+            title: 'Conflicts',
+            dataIndex: 'conflict_count',
+            key: 'conflict_count',
+            className: 'cvat-job-item-conflict',
+            sorter: sorter('conflict_count'),
+            render: (value: number): JSX.Element => <Text>{value}</Text>,
+        },
+        {
             title: 'Score',
             dataIndex: 'quality',
             key: 'quality',
@@ -114,6 +122,7 @@ function AssigneeListComponent(props: Props): JSX.Element {
             key: report.assignee_id,
             assignee: report.assignee,
             quality: report.consensus_score,
+            conflict_count: report.conflict_count,
         });
 
         return acc;

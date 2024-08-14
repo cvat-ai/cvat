@@ -27,6 +27,7 @@ from cvat.apps.consensus.models import (
     ConsensusReport,
     ConsensusSettings,
 )
+from cvat.apps.consensus.new_intersect_merge import IntersectMerge
 from cvat.apps.dataset_manager.util import bulk_create
 from cvat.apps.engine.models import Job, Task, User
 from cvat.apps.quality_control.quality_reports import AnnotationId, JobDataProvider, _Serializable
@@ -237,6 +238,9 @@ def generate_job_consensus_report(
     errors,
     consensus_job_data_providers: List[JobDataProvider],
     merged_dataset: dm.Dataset,
+    merger: IntersectMerge,
+    assignees: List[User],
+    assignee_report_data: Dict[User, Dict[str, float]],
 ) -> ComparisonReport:
 
     frame_results: Dict[int, ComparisonReportFrameSummary] = {}
@@ -257,14 +261,12 @@ def generate_job_consensus_report(
                 error_annotations.append(arg)
 
         for annotation in error_annotations:
-            for consensus_job_data_provider in consensus_job_data_providers:
-                try:
-                    annotation_id = consensus_job_data_provider.dm_ann_to_ann_id(annotation)
-                    break
-                except KeyError:
-                    pass
+            # the annotation belongs to which consensus dataset
+            idx = merger._dataset_map[merger._item_map[merger._ann_map[id(annotation)][1]][1]][1]
+            annotation_ids.append(consensus_job_data_providers[idx].dm_ann_to_ann_id(annotation))
+            assignee_report_data[assignees[idx]].setdefault("conflict_count", 0)
+            assignee_report_data[assignees[idx]]["conflict_count"] += 1
 
-            annotation_ids.append(annotation_id)
         dm_item = consensus_job_data_providers[0].dm_dataset.get(error.item_id[0])
         frame_id: int = consensus_job_data_providers[0].dm_item_id_to_frame_id(dm_item)
         frames.add(frame_id)
@@ -299,7 +301,7 @@ def generate_job_consensus_report(
             conflicts_by_type=Counter(c.type for c in conflicts),
         ),
         frame_results=frame_results,
-    )
+    ), assignee_report_data
 
 
 def generate_task_consensus_report(job_reports: List[ComparisonReport]) -> ComparisonReport:
@@ -409,11 +411,12 @@ def save_report(
 
     db_job_reports = bulk_create(db_model=ConsensusReport, objects=db_job_reports, flt_param={})
 
-    for assignee, assignee_mean_consensus_score in assignee_report_data.items():
+    for assignee, assignee_info in assignee_report_data.items():
         # db_assignee = models.User.objects.get(id=)
         db_assignee_report = AssigneeConsensusReport(
             task=task_report["task"],
-            consensus_score=np.round(100 * assignee_mean_consensus_score),
+            consensus_score=np.round(100 * assignee_info["consensus_score"]),
+            conflict_count=assignee_info["conflict_count"],
             assignee=assignee,
             consensus_report_id=db_task_report.id,
         )

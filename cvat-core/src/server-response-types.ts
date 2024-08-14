@@ -391,6 +391,7 @@ export interface SerializedAssigneeConsensusReportData {
     consensus_report_id?: number;
     assignee?: SerializedUser | null;
     consensus_score?: number;
+    conflict_count?: number;
 }
 
 export interface SerializedDataEntry {

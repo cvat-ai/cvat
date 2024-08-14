@@ -195,6 +195,7 @@ class AssigneeConsensusReport(models.Model):
         User, on_delete=models.CASCADE, related_name="assignee_consensus_reports"
     )
     consensus_score = models.IntegerField()
+    conflict_count = models.IntegerField()
     consensus_report_id = models.PositiveIntegerField()
 
     def get_task(self) -> Task:
