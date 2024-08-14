@@ -109,7 +109,6 @@ export enum EventScope {
     groupObjects = 'group:objects',
     sliceObject = 'slice:object',
     joinObjects = 'join:objects',
-    changeLabel = 'change:label',
 
     changeFrame = 'change:frame',
     zoomImage = 'zoom:image',
