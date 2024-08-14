@@ -226,7 +226,7 @@ class TestRequestsListFilters(CollectionSimpleFilterTestBase):
             ("task_id", []),
             ("job_id", []),
             ("format", ["CVAT for images 1.1", "COCO 1.0", "YOLO 1.1"]),
-            ("resource", ["project", "task", "job"]),
+            ("target", ["project", "task", "job"]),
         ],
     )
     def test_can_use_simple_filter_for_object_list(
