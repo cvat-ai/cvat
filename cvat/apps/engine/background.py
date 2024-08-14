@@ -4,8 +4,6 @@
 
 import os
 import os.path as osp
-import cvat.apps.dataset_manager as dm
-
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from datetime import datetime
@@ -14,16 +12,17 @@ from typing import Any, Callable, Dict, Optional, Union
 import django_rq
 from attrs.converters import to_bool
 from django.conf import settings
-from rest_framework.request import Request
 from django.http.response import HttpResponseBadRequest
 from django.utils import timezone
 from django_rq.queues import DjangoRQ
 from rest_framework import serializers, status
+from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.reverse import reverse
 from rq.job import Job as RQJob
 from rq.job import JobStatus as RQJobStatus
 
+import cvat.apps.dataset_manager as dm
 from cvat.apps.engine import models
 from cvat.apps.engine.backup import ProjectExporter, TaskExporter, create_backup
 from cvat.apps.engine.cloud_provider import export_resource_to_cloud_storage
@@ -43,7 +42,6 @@ from cvat.apps.engine.utils import (
     sendfile,
 )
 from cvat.apps.events.handlers import handle_dataset_export
-
 
 slogger = ServerLogManager(__name__)
 
@@ -68,9 +66,7 @@ class _ResourceExportManager(ABC):
         self.db_instance = db_instance
         self.resource = db_instance.__class__.__name__.lower()
         if self.resource not in self.SUPPORTED_RESOURCES:
-            raise ValueError(
-                "Unexpected type of db_instance: {}".format(type(db_instance))
-            )
+            raise ValueError("Unexpected type of db_instance: {}".format(type(db_instance)))
 
         self.export_callback = export_callback
 
@@ -118,9 +114,7 @@ class _ResourceExportManager(ABC):
 
     def make_result_url(self) -> str:
         view_name = self.get_v1_endpoint_view_name()
-        result_url = reverse(
-            view_name, args=[self.db_instance.pk], request=self.request
-        )
+        result_url = reverse(view_name, args=[self.db_instance.pk], request=self.request)
         query_dict = self.request.query_params.copy()
         query_dict["action"] = "download"
         result_url += "?" + query_dict.urlencode()
@@ -141,6 +135,7 @@ class _ResourceExportManager(ABC):
 
     def get_timestamp(self, time_: datetime) -> str:
         return datetime.strftime(time_, "%Y_%m_%d_%H_%M_%S")
+
 
 def cancel_and_delete(rq_job: RQJob) -> None:
     # In the case the server is configured with ONE_RUNNING_JOB_IN_QUEUE_PER_USER
@@ -254,11 +249,14 @@ class DatasetExportManager(_ResourceExportManager):
             )
 
         if not rq_job:
-            return None if action != "download" else \
-                HttpResponseBadRequest(
+            return (
+                None
+                if action != "download"
+                else HttpResponseBadRequest(
                     "Unknown export request id. "
                     "Please request export first by sending a request without the action=download parameter."
                 )
+            )
 
         # define status once to avoid refreshing it on each check
         # FUTURE-TODO: get_status will raise InvalidJobOperation exception instead of returning None in one of the next releases
@@ -267,18 +265,26 @@ class DatasetExportManager(_ResourceExportManager):
         # handle cases where the status is None for some reason
         if not rq_job_status:
             rq_job.delete()
-            return None if action != "download" else \
-                HttpResponseBadRequest(
+            return (
+                None
+                if action != "download"
+                else HttpResponseBadRequest(
                     "Unknown export request id. "
                     "Please request export first by sending a request without the action=download parameter."
                 )
+            )
 
         if action == "download":
             if self.export_args.location != Location.LOCAL:
                 return HttpResponseBadRequest(
                     'Action "download" is only supported for a local dataset location'
                 )
-            if rq_job_status not in {RQJobStatus.FINISHED, RQJobStatus.FAILED, RQJobStatus.CANCELED, RQJobStatus.STOPPED}:
+            if rq_job_status not in {
+                RQJobStatus.FINISHED,
+                RQJobStatus.FAILED,
+                RQJobStatus.CANCELED,
+                RQJobStatus.STOPPED,
+            }:
                 return HttpResponseBadRequest("Dataset export has not been finished yet")
 
         instance_update_time = self.get_instance_update_time()
@@ -299,7 +305,7 @@ class DatasetExportManager(_ResourceExportManager):
                         status=status.HTTP_500_INTERNAL_SERVER_ERROR,
                     )
 
-                if action == 'download':
+                if action == "download":
                     return handle_local_download()
                 else:
                     with dm.util.get_export_cache_lock(file_path, ttl=REQUEST_TIMEOUT):
@@ -337,9 +343,14 @@ class DatasetExportManager(_ResourceExportManager):
 
         elif rq_job_status in {RQJobStatus.CANCELED, RQJobStatus.STOPPED}:
             rq_job.delete()
-            return None if action != "download" \
-                else Response("Export was cancelled, please request it one more time", status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-
+            return (
+                None
+                if action != "download"
+                else Response(
+                    "Export was cancelled, please request it one more time",
+                    status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                )
+            )
 
         if is_result_outdated():
             cancel_and_delete(rq_job)
@@ -347,15 +358,12 @@ class DatasetExportManager(_ResourceExportManager):
 
         return Response(RqIdSerializer({"rq_id": rq_job.id}).data, status=status.HTTP_202_ACCEPTED)
 
-
     def export(self) -> Response:
         format_desc = {f.DISPLAY_NAME: f for f in dm.views.get_export_formats()}.get(
             self.export_args.format
         )
         if format_desc is None:
-            raise serializers.ValidationError(
-                "Unknown format specified for the request"
-            )
+            raise serializers.ValidationError("Unknown format specified for the request")
         elif not format_desc.ENABLED:
             return Response(status=status.HTTP_405_METHOD_NOT_ALLOWED)
 
@@ -522,11 +530,14 @@ class BackupExportManager(_ResourceExportManager):
             )
 
         if not rq_job:
-            return None if action != "download" else \
-                HttpResponseBadRequest(
+            return (
+                None
+                if action != "download"
+                else HttpResponseBadRequest(
                     "Unknown export request id. "
                     "Please request export first by sending a request without the action=download parameter."
                 )
+            )
 
         # define status once to avoid refreshing it on each check
         # FUTURE-TODO: get_status will raise InvalidJobOperation exception instead of None in one of the next releases
@@ -535,18 +546,26 @@ class BackupExportManager(_ResourceExportManager):
         # handle cases where the status is None for some reason
         if not rq_job_status:
             rq_job.delete()
-            return None if action != "download" else \
-                HttpResponseBadRequest(
+            return (
+                None
+                if action != "download"
+                else HttpResponseBadRequest(
                     "Unknown export request id. "
                     "Please request export first by sending a request without the action=download parameter."
                 )
+            )
 
         if action == "download":
             if self.export_args.location != Location.LOCAL:
                 return HttpResponseBadRequest(
                     'Action "download" is only supported for a local backup location'
                 )
-            if rq_job_status not in {RQJobStatus.FINISHED, RQJobStatus.FAILED, RQJobStatus.CANCELED, RQJobStatus.STOPPED}:
+            if rq_job_status not in {
+                RQJobStatus.FINISHED,
+                RQJobStatus.FAILED,
+                RQJobStatus.CANCELED,
+                RQJobStatus.STOPPED,
+            }:
                 return HttpResponseBadRequest("Backup export has not been finished yet")
 
         if rq_job_status == RQJobStatus.FINISHED:
@@ -606,11 +625,16 @@ class BackupExportManager(_ResourceExportManager):
 
         elif rq_job_status in {RQJobStatus.CANCELED, RQJobStatus.STOPPED}:
             rq_job.delete()
-            return None if action != "download" \
-                else Response("Export was cancelled, please request it one more time", status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            return (
+                None
+                if action != "download"
+                else Response(
+                    "Export was cancelled, please request it one more time",
+                    status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                )
+            )
 
         return Response(RqIdSerializer({"rq_id": rq_job.id}).data, status=status.HTTP_202_ACCEPTED)
-
 
     def export(self) -> Response:
         queue: DjangoRQ = django_rq.get_queue(self.QUEUE_NAME)
@@ -673,9 +697,7 @@ class BackupExportManager(_ResourceExportManager):
                 is_default=self.export_args.location_config["is_default"],
             )
 
-            last_instance_update_time = timezone.localtime(
-                self.db_instance.updated_date
-            )
+            last_instance_update_time = timezone.localtime(self.db_instance.updated_date)
             timestamp = self.get_timestamp(last_instance_update_time)
 
             filename_pattern = build_backup_file_name(
