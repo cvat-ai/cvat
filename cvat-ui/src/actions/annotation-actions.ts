@@ -937,7 +937,7 @@ export function getJobAsync({
                 }
             }
 
-            job.logger.log(EventScope.loadJob, { duration: Date.now() - start });
+            await job.logger.log(EventScope.loadJob, { duration: Date.now() - start });
 
             const openTime = Date.now();
             dispatch({
