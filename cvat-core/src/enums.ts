@@ -94,6 +94,7 @@ export enum EventScope {
     loadTool = 'load:cvat',
 
     loadJob = 'load:job',
+    loadWorkspace = 'load:workspace',
     saveJob = 'save:job',
     exception = 'send:exception',
 
