@@ -199,11 +199,13 @@ function TaskConsensusComponent(props: Props): JSX.Element {
                 <CVATLoadingSpinner size='large' />
             ) : (
                 <>
-                    <Row>
-                        <Text type='secondary'>
-                            {`Created ${taskReport?.id ? moment(taskReport.createdDate).fromNow() : ''}`}
-                        </Text>
-                    </Row>
+                    {taskReport?.id && (
+                        <Row>
+                            <Text type='secondary'>
+                                {`Created ${taskReport?.id ? moment(taskReport.createdDate).fromNow() : ''}`}
+                            </Text>
+                        </Row>
+                    )}
                     <Row>
                         <MeanQuality taskReport={taskReport} taskID={task.id} />
                     </Row>
