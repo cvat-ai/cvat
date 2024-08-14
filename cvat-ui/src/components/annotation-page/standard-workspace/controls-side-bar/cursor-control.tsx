@@ -24,11 +24,11 @@ export interface Props {
 }
 
 const componentShortcuts = {
-    STANDARD_CANCEL: {
+    CANCEL: {
         name: 'Cancel',
         description: 'Cancel any active canvas mode',
         sequences: ['esc'],
-        scope: ShortcutScope.STANDARD_WORKSPACE,
+        scope: ShortcutScope.CONTROLS_SIDE_BAR,
     },
 };
 
@@ -48,7 +48,7 @@ function CursorControl(props: Props): JSX.Element {
     };
 
     const handlers: Record<keyof typeof componentShortcuts, (event?: KeyboardEvent) => void> = {
-        STANDARD_CANCEL: (event: KeyboardEvent | undefined) => {
+        CANCEL: (event: KeyboardEvent | undefined) => {
             if (event) event.preventDefault();
             handler();
         },

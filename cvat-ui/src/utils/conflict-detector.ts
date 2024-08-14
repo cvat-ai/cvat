@@ -54,9 +54,26 @@ function updatedFlatKeyMap(scope: string, flatKeyMap: FlatKeyMap): FlatKeyMapIte
     } else {
         scopes.push(ShortcutScope.GLOBAL);
         if (scope === ShortcutScope.ANNOTATION_PAGE) {
-            scopes.push(scope, ...Object.keys(flatKeyMap).filter((s) => s.includes('WORKSPACE')));
+            scopes.push(
+                scope,
+                ...Object.keys(flatKeyMap).filter(
+                    (s) => s.includes('WORKSPACE') || s.includes('SIDE_BAR'),
+                ),
+            );
         } else if (scope.includes('WORKSPACE')) {
-            scopes.push(ShortcutScope.ANNOTATION_PAGE, scope);
+            scopes.push(
+                scope,
+                ShortcutScope.ANNOTATION_PAGE,
+                ShortcutScope.CONTROLS_SIDE_BAR,
+                ShortcutScope.OBJECTS_SIDE_BAR,
+            );
+        } else if (scope.includes('SIDE_BAR')) {
+            scopes.push(
+                ShortcutScope.ANNOTATION_PAGE,
+                ShortcutScope.CONTROLS_SIDE_BAR,
+                ShortcutScope.OBJECTS_SIDE_BAR,
+                ...Object.keys(flatKeyMap).filter((s) => s.includes('WORKSPACE')),
+            );
         } else {
             scopes.push(scope);
         }

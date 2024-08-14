@@ -29,8 +29,6 @@ import SplitControl, {
 import GlobalHotKeys, { KeyMap } from 'utils/mousetrap-react';
 import ControlVisibilityObserver from 'components/annotation-page/standard-workspace/controls-side-bar/control-visibility-observer';
 import { filterApplicableForType } from 'utils/filter-applicable-labels';
-import { ShortcutScope } from 'utils/enums';
-import { registerComponentShortcuts } from 'actions/shortcuts-actions';
 import { subKeyMap } from 'utils/component-subkeymap';
 
 interface Props {
@@ -46,24 +44,6 @@ interface Props {
     resetGroup(): void;
     updateActiveControl(activeControl: ActiveControl): void;
 }
-
-const componentShortcuts = {
-    PASTE_3D_SHAPE: {
-        name: 'Paste shape',
-        description: 'Paste a shape from internal CVAT clipboard',
-        sequences: ['ctrl+v'],
-        scope: ShortcutScope.STANDARD_3D_WORKSPACE,
-    },
-    SWITCH_3D_DRAW_MODE: {
-        name: 'Draw mode',
-        description:
-            'Repeat the latest procedure of drawing with the same parameters (shift to redraw an existing shape)',
-        sequences: ['shift+n', 'n'],
-        scope: ShortcutScope.STANDARD_3D_WORKSPACE,
-    },
-};
-
-registerComponentShortcuts(componentShortcuts);
 
 const ObservedCursorControl = ControlVisibilityObserver<CursorControlProps>(CursorControl);
 const ObservedMoveControl = ControlVisibilityObserver<MoveControlProps>(MoveControl);
@@ -94,12 +74,12 @@ export default function ControlsSideBarComponent(props: Props): JSX.Element {
     };
 
     const handlers: any = applicableLabels.length ? {
-        PASTE_3D_SHAPE: (event: KeyboardEvent | undefined) => {
+        PASTE_SHAPE: (event: KeyboardEvent | undefined) => {
             preventDefault(event);
             canvasInstance.cancel();
             pasteShape();
         },
-        SWITCH_3D_DRAW_MODE: (event: KeyboardEvent | undefined) => {
+        SWITCH_DRAW_MODE: (event: KeyboardEvent | undefined) => {
             preventDefault(event);
             const drawing = [ActiveControl.DRAW_CUBOID].includes(activeControl);
 

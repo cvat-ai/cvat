@@ -62,26 +62,26 @@ const componentShortcuts = {
         name: 'Rotate clockwise',
         description: 'Change image angle (add 90 degrees)',
         sequences: ['ctrl+r'],
-        scope: ShortcutScope.STANDARD_WORKSPACE,
+        scope: ShortcutScope.CONTROLS_SIDE_BAR,
     },
     ANTICLOCKWISE_ROTATION: {
         name: 'Rotate anticlockwise',
         description: 'Change image angle (subtract 90 degrees)',
         sequences: ['ctrl+shift+r'],
-        scope: ShortcutScope.STANDARD_WORKSPACE,
+        scope: ShortcutScope.CONTROLS_SIDE_BAR,
     },
-    STANDARD_PASTE_SHAPE: {
+    PASTE_SHAPE: {
         name: 'Paste shape',
         description: 'Paste a shape from internal CVAT clipboard',
         sequences: ['ctrl+v'],
-        scope: ShortcutScope.STANDARD_WORKSPACE,
+        scope: ShortcutScope.CONTROLS_SIDE_BAR,
     },
-    STANDARD_SWITCH_DRAW_MODE: {
+    SWITCH_DRAW_MODE: {
         name: 'Draw mode',
         description:
             'Repeat the latest procedure of drawing with the same parameters (shift to redraw an existing shape)',
         sequences: ['shift+n', 'n'],
-        scope: ShortcutScope.STANDARD_WORKSPACE,
+        scope: ShortcutScope.CONTROLS_SIDE_BAR,
     },
 };
 
@@ -169,12 +169,12 @@ export default function ControlsSideBarComponent(props: Props): JSX.Element {
     if (!controlsDisabled) {
         handlers = {
             ...handlers,
-            STANDARD_PASTE_SHAPE: (event: KeyboardEvent | undefined) => {
+            PASTE_SHAPE: (event: KeyboardEvent | undefined) => {
                 preventDefault(event);
                 canvasInstance.cancel();
                 pasteShape();
             },
-            STANDARD_SWITCH_DRAW_MODE: (event: KeyboardEvent | undefined) => {
+            SWITCH_DRAW_MODE: (event: KeyboardEvent | undefined) => {
                 preventDefault(event);
                 const drawing = [
                     ActiveControl.DRAW_POINTS,

@@ -76,20 +76,16 @@ function MultipleShortcutsDisplay(props: Props): JSX.Element {
                     <p>
                         This sequence conflicts with the following shortcuts:
                         <br />
-                        {Object.values(conflictingShortcuts).map((s, idx) => (
-                            <span key={idx}>
-                                <strong>{s.name}</strong>
-                                <br />
-                            </span>
-                        ))}
-                        in the scope:
-                        <br />
+                        <strong>{Object.values(conflictingShortcuts)[0].name}</strong>
+                        {' '}
+                        in the scope
+                        {' '}
                         <strong>
                             {ShortcutScope[
                                 Object.values(conflictingShortcuts)[0].scope].split('_').join(' ')}
                         </strong>
                         <br />
-                        Do you want to unset the conflicting shortcuts?
+                        Would you like to unset the conflicting shortcuts?
                     </p>
                 ),
                 onOk: () => {

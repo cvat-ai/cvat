@@ -3,7 +3,12 @@
 //
 // SPDX-License-Identifier: MIT
 
-import React, { useCallback, useState } from 'react';
+import React, {
+    useCallback,
+    useEffect,
+    useRef,
+    useState,
+} from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import message from 'antd/lib/message';
 
@@ -11,72 +16,72 @@ import { LabelType } from 'cvat-core-wrapper';
 import { CombinedState, ObjectType } from 'reducers';
 import { rememberObject, updateAnnotationsAsync } from 'actions/annotation-actions';
 import LabelItemContainer from 'containers/annotation-page/standard-workspace/objects-side-bar/label-item';
-import GlobalHotKeys from 'utils/mousetrap-react';
+import GlobalHotKeys, { KeyMapItem } from 'utils/mousetrap-react';
 import Text from 'antd/lib/typography/Text';
 import { ShortcutScope } from 'utils/enums';
 import { registerComponentShortcuts } from 'actions/shortcuts-actions';
 import { subKeyMap } from 'utils/component-subkeymap';
 
-const componentShortcuts = {
+const componentShortcuts: Record<string, KeyMapItem> = {
     SWITCH_LABEL_1: {
         name: 'Switch label 1',
         description: 'Changes the label to label 1 for the activated object or for the next drawn object if no objects are activated',
         sequences: ['ctrl+1'],
-        scope: ShortcutScope.STANDARD_WORKSPACE,
+        scope: ShortcutScope.OBJECTS_SIDE_BAR,
     },
     SWITCH_LABEL_2: {
         name: 'Switch label 2',
         description: 'Changes the label to label 2 for the activated object or for the next drawn object if no objects are activated',
         sequences: ['ctrl+2'],
-        scope: ShortcutScope.STANDARD_WORKSPACE,
+        scope: ShortcutScope.OBJECTS_SIDE_BAR,
     },
     SWITCH_LABEL_3: {
         name: 'Switch label 3',
         description: 'Changes the label to label 3 for the activated object or for the next drawn object if no objects are activated',
         sequences: ['ctrl+3'],
-        scope: ShortcutScope.STANDARD_WORKSPACE,
+        scope: ShortcutScope.OBJECTS_SIDE_BAR,
     },
     SWITCH_LABEL_4: {
         name: 'Switch label 4',
         description: 'Changes the label to label 4 for the activated object or for the next drawn object if no objects are activated',
         sequences: ['ctrl+4'],
-        scope: ShortcutScope.STANDARD_WORKSPACE,
+        scope: ShortcutScope.OBJECTS_SIDE_BAR,
     },
     SWITCH_LABEL_5: {
         name: 'Switch label 5',
         description: 'Changes the label to label 5 for the activated object or for the next drawn object if no objects are activated',
         sequences: ['ctrl+5'],
-        scope: ShortcutScope.STANDARD_WORKSPACE,
+        scope: ShortcutScope.OBJECTS_SIDE_BAR,
     },
     SWITCH_LABEL_6: {
         name: 'Switch label 6',
         description: 'Changes the label to label 6 for the activated object or for the next drawn object if no objects are activated',
         sequences: ['ctrl+6'],
-        scope: ShortcutScope.STANDARD_WORKSPACE,
+        scope: ShortcutScope.OBJECTS_SIDE_BAR,
     },
     SWITCH_LABEL_7: {
         name: 'Switch label 7',
         description: 'Changes the label to label 7 for the activated object or for the next drawn object if no objects are activated',
         sequences: ['ctrl+7'],
-        scope: ShortcutScope.STANDARD_WORKSPACE,
+        scope: ShortcutScope.OBJECTS_SIDE_BAR,
     },
     SWITCH_LABEL_8: {
         name: 'Switch label 8',
         description: 'Changes the label to label 8 for the activated object or for the next drawn object if no objects are activated',
         sequences: ['ctrl+8'],
-        scope: ShortcutScope.STANDARD_WORKSPACE,
+        scope: ShortcutScope.OBJECTS_SIDE_BAR,
     },
     SWITCH_LABEL_9: {
         name: 'Switch label 9',
         description: 'Changes a label for object 9 for the activated object or for the next drawn object if no objects are activated',
         sequences: ['ctrl+9'],
-        scope: ShortcutScope.STANDARD_WORKSPACE,
+        scope: ShortcutScope.OBJECTS_SIDE_BAR,
     },
     SWITCH_LABEL_0: {
         name: 'Switch label 0',
         description: 'Changes the label to label 0 for the activated object or for the next drawn object if no objects are activated',
         sequences: ['ctrl+0'],
-        scope: ShortcutScope.STANDARD_WORKSPACE,
+        scope: ShortcutScope.OBJECTS_SIDE_BAR,
     },
 };
 
@@ -91,10 +96,53 @@ function LabelsListComponent(): JSX.Element {
     const states = useSelector((state: CombinedState) => state.annotation.annotations.states);
     const keyMap = useSelector((state: CombinedState) => state.shortcuts.keyMap);
     const labelIDs = labels.map((label: any): number => label.id);
-
     const [keyToLabelMapping, setKeyToLabelMapping] = useState<Record<string, number>>(
         Object.fromEntries(labelIDs.slice(0, 10).map((labelID: number, idx: number) => [(idx + 1) % 10, labelID])),
     );
+    const keyMapRef = useRef(keyMap);
+
+    useEffect(() => () => {
+        const revertedShortcuts = Object.entries(componentShortcuts).reduce((acc: any, [key, value]) => {
+            acc[key] = {
+                ...value,
+                sequences: keyMapRef.current[key] ? keyMapRef.current[key].sequences : value.sequences,
+            };
+            return acc;
+        }, {});
+        registerComponentShortcuts(revertedShortcuts);
+    }, []);
+
+    useEffect(() => {
+        keyMapRef.current = keyMap;
+    }, [keyMap]);
+
+    useEffect(() => {
+        const updatedComponentShortcuts = {
+            ...Object.keys(componentShortcuts).reduce((acc: any, key) => {
+                if (keyMap[key]) {
+                    acc[key] = {
+                        ...componentShortcuts[key],
+                        sequences: keyMap[key].sequences,
+                    };
+                }
+                return acc;
+            }, {}),
+        };
+
+        for (const [id, labelID] of Object.entries(keyToLabelMapping)) {
+            if (labelID) {
+                updatedComponentShortcuts[`SWITCH_LABEL_${id}`] = {
+                    ...updatedComponentShortcuts[`SWITCH_LABEL_${id}`],
+                    name: `Switch label to ${labels.filter((label: any) => label.id === labelID)[0].name}`,
+                    description: `Changes the label to ${
+                        labels.filter((label: any) => label.id === labelID)[0].name
+                    } for the activated object or for the next drawn object if no objects are activated`,
+                };
+            }
+        }
+
+        registerComponentShortcuts(updatedComponentShortcuts);
+    }, [keyToLabelMapping]);
 
     const updateLabelShortcutKey = useCallback(
         (key: string, labelID: number) => {

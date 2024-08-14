@@ -310,7 +310,7 @@ function RenderList(parameters: ListParameters): JSX.Element | null {
                     const key = `SET_${index}_VALUE`;
                     updatedComponentShortcuts[key] = {
                         ...updatedComponentShortcuts[key],
-                        name: `Set radio/select to ${value}`,
+                        name: `Assign attribute value ${value}`,
                         description: `Change current value for the attribute to ${value}`,
                     };
                 });

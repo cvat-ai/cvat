@@ -75,97 +75,97 @@ const componentShortcuts = {
         name: 'Lock/unlock all objects',
         description: 'Change locked state for all objects in the side bar',
         sequences: ['t l'],
-        scope: ShortcutScope.STANDARD_WORKSPACE,
+        scope: ShortcutScope.OBJECTS_SIDE_BAR,
     },
-    SWITCH_STANDARD_LOCK: {
+    SWITCH_LOCK: {
         name: 'Lock/unlock an object',
         description: 'Change locked state for an active object',
         sequences: ['l'],
-        scope: ShortcutScope.STANDARD_WORKSPACE,
+        scope: ShortcutScope.OBJECTS_SIDE_BAR,
     },
     SWITCH_ALL_HIDDEN: {
         name: 'Hide/show all objects',
         description: 'Change hidden state for objects in the side bar',
         sequences: ['t h'],
-        scope: ShortcutScope.STANDARD_WORKSPACE,
+        scope: ShortcutScope.OBJECTS_SIDE_BAR,
     },
     SWITCH_HIDDEN: {
         name: 'Hide/show an object',
         description: 'Change hidden state for an active object',
         sequences: ['h'],
-        scope: ShortcutScope.STANDARD_WORKSPACE,
+        scope: ShortcutScope.OBJECTS_SIDE_BAR,
     },
-    SWITCH_STANDARD_OCCLUDED: {
+    SWITCH_OCCLUDED: {
         name: 'Switch occluded',
         description: 'Change occluded property for an active object',
         sequences: ['q', '/'],
-        scope: ShortcutScope.STANDARD_WORKSPACE,
+        scope: ShortcutScope.OBJECTS_SIDE_BAR,
     },
-    SWITCH_STANDARD_PINNED: {
+    SWITCH_PINNED: {
         name: 'Switch pinned property',
         description: 'Change pinned property for an active object',
         sequences: ['p'],
-        scope: ShortcutScope.STANDARD_WORKSPACE,
+        scope: ShortcutScope.OBJECTS_SIDE_BAR,
     },
     SWITCH_KEYFRAME: {
         name: 'Switch keyframe',
         description: 'Change keyframe property for an active track',
         sequences: ['k'],
-        scope: ShortcutScope.STANDARD_WORKSPACE,
+        scope: ShortcutScope.OBJECTS_SIDE_BAR,
     },
     SWITCH_OUTSIDE: {
         name: 'Switch outside',
         description: 'Change outside property for an active track',
         sequences: ['o'],
-        scope: ShortcutScope.STANDARD_WORKSPACE,
+        scope: ShortcutScope.OBJECTS_SIDE_BAR,
     },
-    DELETE_STANDARD_OBJECT: {
+    DELETE_OBJECT: {
         name: 'Delete object',
         description: 'Delete an active object. Use shift to force delete of locked objects',
         sequences: ['del', 'shift+del'],
-        scope: ShortcutScope.STANDARD_WORKSPACE,
+        scope: ShortcutScope.OBJECTS_SIDE_BAR,
     },
     TO_BACKGROUND: {
         name: 'To background',
         description: 'Put an active object "farther" from the user (decrease z axis value)',
         sequences: ['-', '_'],
-        scope: ShortcutScope.STANDARD_WORKSPACE,
+        scope: ShortcutScope.OBJECTS_SIDE_BAR,
     },
     TO_FOREGROUND: {
         name: 'To foreground',
         description: 'Put an active object "closer" to the user (increase z axis value)',
         sequences: ['+', '='],
-        scope: ShortcutScope.STANDARD_WORKSPACE,
+        scope: ShortcutScope.OBJECTS_SIDE_BAR,
     },
     COPY_SHAPE: {
         name: 'Copy shape',
         description: 'Copy shape to CVAT internal clipboard',
         sequences: ['ctrl+c'],
-        scope: ShortcutScope.STANDARD_WORKSPACE,
+        scope: ShortcutScope.OBJECTS_SIDE_BAR,
     },
     PROPAGATE_OBJECT: {
         name: 'Propagate object',
         description: 'Make a copy of the object on the following frames',
         sequences: ['ctrl+b'],
-        scope: ShortcutScope.STANDARD_WORKSPACE,
+        scope: ShortcutScope.OBJECTS_SIDE_BAR,
     },
-    STANDARD_NEXT_KEY_FRAME: {
+    NEXT_KEY_FRAME: {
         name: 'Next keyframe',
         description: 'Go to the next keyframe of an active track',
         sequences: ['r'],
-        scope: ShortcutScope.STANDARD_WORKSPACE,
+        scope: ShortcutScope.OBJECTS_SIDE_BAR,
     },
-    STANDARD_PREV_KEY_FRAME: {
+    PREV_KEY_FRAME: {
         name: 'Previous keyframe',
         description: 'Go to the previous keyframe of an active track',
         sequences: ['e'],
-        scope: ShortcutScope.STANDARD_WORKSPACE,
+        scope: ShortcutScope.OBJECTS_SIDE_BAR,
     },
     CHANGE_OBJECT_COLOR: {
         name: 'Change color',
         description: 'Set the next color for an activated shape',
         sequences: ['enter'],
-        scope: ShortcutScope.STANDARD_WORKSPACE,
+        scope: ShortcutScope.OBJECTS_SIDE_BAR,
     },
 };
 
@@ -463,7 +463,7 @@ class ObjectsListContainer extends React.PureComponent<Props, State> {
                 preventDefault(event);
                 this.lockAllStates(!statesLocked);
             },
-            SWITCH_STANDARD_LOCK: (event: KeyboardEvent | undefined) => {
+            SWITCH_LOCK: (event: KeyboardEvent | undefined) => {
                 preventDefault(event);
                 const state = activatedState();
                 if (state && !readonly) {
@@ -483,7 +483,7 @@ class ObjectsListContainer extends React.PureComponent<Props, State> {
                     updateAnnotations([state]);
                 }
             },
-            SWITCH_STANDARD_OCCLUDED: (event: KeyboardEvent | undefined) => {
+            SWITCH_OCCLUDED: (event: KeyboardEvent | undefined) => {
                 preventDefault(event);
                 const state = activatedState();
                 if (state && !readonly && state.objectType !== ObjectType.TAG) {
@@ -491,7 +491,7 @@ class ObjectsListContainer extends React.PureComponent<Props, State> {
                     updateAnnotations([state]);
                 }
             },
-            SWITCH_STANDARD_PINNED: (event: KeyboardEvent | undefined) => {
+            SWITCH_PINNED: (event: KeyboardEvent | undefined) => {
                 preventDefault(event);
                 const state = activatedState(true);
                 if (state && !readonly) {
@@ -518,7 +518,7 @@ class ObjectsListContainer extends React.PureComponent<Props, State> {
                     updateAnnotations([state]);
                 }
             },
-            DELETE_STANDARD_OBJECT: (event: KeyboardEvent | undefined) => {
+            DELETE_OBJECT: (event: KeyboardEvent | undefined) => {
                 preventDefault(event);
                 const state = activatedState(true);
                 if (state && !readonly) {
@@ -571,7 +571,7 @@ class ObjectsListContainer extends React.PureComponent<Props, State> {
                     switchPropagateVisibility(true);
                 }
             },
-            STANDARD_NEXT_KEY_FRAME: (event: KeyboardEvent | undefined) => {
+            NEXT_KEY_FRAME: (event: KeyboardEvent | undefined) => {
                 preventDefault(event);
                 const state = activatedState();
                 if (state && state.keyframes) {
@@ -581,7 +581,7 @@ class ObjectsListContainer extends React.PureComponent<Props, State> {
                     }
                 }
             },
-            STANDARD_PREV_KEY_FRAME: (event: KeyboardEvent | undefined) => {
+            PREV_KEY_FRAME: (event: KeyboardEvent | undefined) => {
                 preventDefault(event);
                 const state = activatedState();
                 if (state && state.keyframes) {

@@ -29,7 +29,7 @@ function ShortcutsSettingsComponent(props: Props): JSX.Element {
     const { keyMap, onKeySequenceUpdate } = props;
     const [searchValue, setSearchValue] = useState('');
     const shortcuts = useSelector((state: CombinedState) => state.shortcuts);
-    const [activeKeys, setActiveKeys] = useState<string[]>(Object.values(ShortcutScope));
+    const [activeKeys, setActiveKeys] = useState<string[]>([]);
     const dispatch = useDispatch();
 
     const onSearchChange = (event: React.ChangeEvent<HTMLInputElement>): void => {

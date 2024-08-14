@@ -82,31 +82,31 @@ const componentShortcuts = {
         name: 'Lock/unlock an object',
         description: 'Change locked state for an active object',
         sequences: ['l'],
-        scope: ShortcutScope.ATTRIBUTE_ANNOTATION_WORKSPACE,
+        scope: ShortcutScope.OBJECTS_SIDE_BAR,
     },
     SWITCH_OCCLUDED: {
         name: 'Switch occluded',
         description: 'Change occluded property for an active object',
         sequences: ['q', '/'],
-        scope: ShortcutScope.ATTRIBUTE_ANNOTATION_WORKSPACE,
+        scope: ShortcutScope.OBJECTS_SIDE_BAR,
     },
     SWITCH_PINNED: {
         name: 'Switch pinned property',
         description: 'Change pinned property for an active object',
         sequences: ['p'],
-        scope: ShortcutScope.ATTRIBUTE_ANNOTATION_WORKSPACE,
+        scope: ShortcutScope.OBJECTS_SIDE_BAR,
     },
     NEXT_KEY_FRAME: {
         name: 'Next keyframe',
         description: 'Go to the next keyframe of an active track',
         sequences: ['r'],
-        scope: ShortcutScope.ATTRIBUTE_ANNOTATION_WORKSPACE,
+        scope: ShortcutScope.OBJECTS_SIDE_BAR,
     },
     PREV_KEY_FRAME: {
         name: 'Previous keyframe',
         description: 'Go to the previous keyframe of an active track',
         sequences: ['e'],
-        scope: ShortcutScope.ATTRIBUTE_ANNOTATION_WORKSPACE,
+        scope: ShortcutScope.OBJECTS_SIDE_BAR,
     },
 };
 

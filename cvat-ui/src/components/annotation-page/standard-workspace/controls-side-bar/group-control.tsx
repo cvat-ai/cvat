@@ -40,13 +40,13 @@ const componentShortcuts = {
         name: 'Group mode',
         description: 'Activate or deactivate mode to grouping shapes',
         sequences: ['g'],
-        scope: ShortcutScope.STANDARD_WORKSPACE,
+        scope: ShortcutScope.CONTROLS_SIDE_BAR,
     },
     RESET_GROUP: {
         name: 'Reset group',
         description: 'Reset group for selected shapes (in group mode)',
         sequences: ['shift+g'],
-        scope: ShortcutScope.STANDARD_WORKSPACE,
+        scope: ShortcutScope.CONTROLS_SIDE_BAR,
     },
 };
 

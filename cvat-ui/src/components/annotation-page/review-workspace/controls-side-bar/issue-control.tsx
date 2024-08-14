@@ -27,7 +27,7 @@ const componentShortcuts = {
     OPEN_REVIEW_ISSUE: {
         name: 'Open an issue',
         description: 'Create a new issues in the review workspace',
-        sequences: ['n'],
+        sequences: ['i'],
         scope: ShortcutScope.REVIEW_WORKSPACE,
     },
 };
