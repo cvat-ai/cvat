@@ -9,16 +9,16 @@ export default class AssigneeConsensusReport {
     #id: number;
     #taskID: number;
     #assignee: User | null;
-    #consensus_score: number;
-    #conflict_count: number;
-    #consensus_report_id: number;
+    #consensusScore: number;
+    #conflictCount: number;
+    #consensusReportID: number;
 
     constructor(initialData: SerializedAssigneeConsensusReportData) {
         this.#id = initialData.id;
         this.#taskID = initialData.task_id;
-        this.#consensus_score = initialData.consensus_score;
-        this.#consensus_report_id = initialData.consensus_report_id;
-        this.#conflict_count = initialData.conflict_count;
+        this.#consensusScore = initialData.consensus_score;
+        this.#consensusReportID = initialData.consensus_report_id;
+        this.#conflictCount = initialData.conflict_count;
 
         if (initialData.assignee) {
             this.#assignee = new User(initialData.assignee);
@@ -39,19 +39,19 @@ export default class AssigneeConsensusReport {
         return this.#assignee;
     }
 
-    get assignee_id(): number {
+    get assigneeID(): number {
         return this.#assignee ? this.#assignee.id : 0;
     }
 
-    get consensus_score(): number {
-        return this.#consensus_score;
+    get consensusScore(): number {
+        return this.#consensusScore;
     }
 
-    get conflict_count(): number {
-        return this.#conflict_count;
+    get conflictCount(): number {
+        return this.#conflictCount;
     }
 
-    get consensus_report_id(): number {
-        return this.#consensus_report_id;
+    get consensusReportID(): number {
+        return this.#consensusReportID;
     }
 }

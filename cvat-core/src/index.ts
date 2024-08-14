@@ -139,7 +139,7 @@ export default interface CVATCore {
     };
     consensus: {
         reports: (filter: ConsensusReportsFilter) => Promise<PaginatedResource<ConsensusReport>>;
-        assignee_reports: (
+        assigneeReports: (
             filter: AssigneeConsensusReportsFilter
         ) => Promise<PaginatedResource<AssigneeConsensusReport>>;
         conflicts: (filter: ConflictsFilter) => Promise<ConsensusConflict[]>;

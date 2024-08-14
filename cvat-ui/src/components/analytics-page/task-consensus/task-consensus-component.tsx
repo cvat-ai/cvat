@@ -140,7 +140,7 @@ function TaskConsensusComponent(props: Props): JSX.Element {
                         taskID: task.id,
                         target: 'job',
                     });
-                    assigneeReportRequest = core.consensus.assignee_reports({
+                    assigneeReportRequest = core.consensus.assigneeReports({
                         taskID: task.id,
                         consensusReportID: report.id,
                     });

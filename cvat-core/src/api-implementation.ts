@@ -549,7 +549,7 @@ export default function implementAPI(cvat: CVATCore): CVATCore {
         );
         return reports;
     });
-    implementationMixin(cvat.consensus.assignee_reports, async (filter: AssigneeConsensusReportsFilter) => {
+    implementationMixin(cvat.consensus.assigneeReports, async (filter: AssigneeConsensusReportsFilter) => {
         checkFilter(filter, {
             page: isInteger,
             pageSize: isPageSize,
