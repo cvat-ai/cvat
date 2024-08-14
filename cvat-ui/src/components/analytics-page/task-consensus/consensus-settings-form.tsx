@@ -2,7 +2,6 @@
 //
 // SPDX-License-Identifier: MIT
 
-import './styles.scss';
 import React, { useCallback, useState } from 'react';
 import { QuestionCircleOutlined } from '@ant-design/icons/lib/icons';
 import Text from 'antd/lib/typography/Text';
