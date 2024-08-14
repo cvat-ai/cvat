@@ -28,6 +28,9 @@ import {
 } from 'actions/annotation-actions';
 import LabelSelector from 'components/label-selector/label-selector';
 import GlobalHotKeys from 'utils/mousetrap-react';
+import { ShortcutScope } from 'utils/enums';
+import { registerComponentShortcuts } from 'actions/shortcuts-actions';
+import { subKeyMap } from 'utils/component-subkeymap';
 
 enum ReducerActionType {
     SWITCH_AUTO_NEXT_FRAME = 'SWITCH_AUTO_NEXT_FRAME',
@@ -161,6 +164,30 @@ const reducer = (state: State, action: ActionUnion<typeof actionCreators>): Stat
 
     return state;
 };
+
+const componentShortcuts = {
+    SWITCH_DRAW_MODE: {
+        name: 'Draw mode',
+        description:
+            'Repeat the latest procedure of drawing with the same parameters (shift to redraw an existing shape)',
+        sequences: ['shift+n', 'n'],
+        scope: ShortcutScope.ALL,
+    },
+    CANCEL: {
+        name: 'Cancel',
+        description: 'Cancel any active canvas mode',
+        sequences: ['esc'],
+        scope: ShortcutScope.ALL,
+    },
+    DELETE_OBJECT: {
+        name: 'Delete object',
+        description: 'Delete an active object. Use shift to force delete of locked objects',
+        sequences: ['del', 'shift+del'],
+        scope: ShortcutScope.ALL,
+    },
+};
+
+registerComponentShortcuts(componentShortcuts);
 
 function SingleShapeSidebar(): JSX.Element {
     const appDispatch = useDispatch();
@@ -344,13 +371,7 @@ function SingleShapeSidebar(): JSX.Element {
         trigger: null,
     };
 
-    const subKeyMap = {
-        CANCEL: keyMap.CANCEL,
-        DELETE_OBJECT: keyMap.DELETE_OBJECT,
-        SWITCH_DRAW_MODE: keyMap.SWITCH_DRAW_MODE,
-    };
-
-    const handlers = {
+    const handlers: Record<keyof typeof componentShortcuts, (event?: KeyboardEvent) => void> = {
         CANCEL: (event: KeyboardEvent | undefined) => {
             event?.preventDefault();
             (store.getState().annotation.canvas.instance as Canvas).cancel();
@@ -385,7 +406,7 @@ function SingleShapeSidebar(): JSX.Element {
 
     return (
         <Layout.Sider {...siderProps}>
-            <GlobalHotKeys keyMap={subKeyMap} handlers={handlers} />
+            <GlobalHotKeys keyMap={subKeyMap(componentShortcuts, keyMap)} handlers={handlers} />
             { state.label !== null && state.labelType !== LabelType.ANY && (
                 <Row>
                     <Col>

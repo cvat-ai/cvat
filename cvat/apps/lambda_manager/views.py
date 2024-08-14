@@ -194,6 +194,7 @@ class LambdaFunction:
         self.min_pos_points = int(meta_anno.get('min_pos_points', 1))
         self.min_neg_points = int(meta_anno.get('min_neg_points', -1))
         self.startswith_box = bool(meta_anno.get('startswith_box', False))
+        self.startswith_box_optional = bool(meta_anno.get('startswith_box_optional', False))
         self.animated_gif = meta_anno.get('animated_gif', '')
         self.version = int(meta_anno.get('version', '1'))
         self.help_message = meta_anno.get('help_message', '')
@@ -214,6 +215,7 @@ class LambdaFunction:
                 'min_pos_points': self.min_pos_points,
                 'min_neg_points': self.min_neg_points,
                 'startswith_box': self.startswith_box,
+                'startswith_box_optional': self.startswith_box_optional,
                 'help_message': self.help_message,
                 'animated_gif': self.animated_gif
             })
@@ -253,7 +255,7 @@ class LambdaFunction:
         mapping = data.get("mapping", {})
 
         model_labels = self.labels
-        task_labels = db_task.get_labels().prefetch_related('attributespec_set')
+        task_labels = db_task.get_labels(prefetch=True)
 
         def labels_compatible(model_label: Dict, task_label: Label) -> bool:
             model_type = model_label['type']
@@ -271,9 +273,9 @@ class LambdaFunction:
                     if task_label.name == model_label['name'] and labels_compatible(model_label, task_label):
                         attributes_default_mapping = {}
                         for model_attr in model_label.get('attributes', {}):
-                            for db_attr in model_label.attributespec_set.all():
+                            for db_attr in task_label.attributespec_set.all():
                                 if db_attr.name == model_attr['name']:
-                                    attributes_default_mapping[model_attr] = db_attr.name
+                                    attributes_default_mapping[model_attr['name']] = db_attr.name
 
                         mapping_by_default[model_label['name']] = {
                             'name': task_label.name,
@@ -343,6 +345,11 @@ class LambdaFunction:
                 )
 
                 if md_label['type'] == 'skeleton' and db_label.type == 'skeleton':
+                    if 'sublabels' not in mapping_item:
+                        raise ValidationError(
+                            f'Mapping for elements was not specified in skeleton "{model_label_name}" '
+                        )
+
                     validate_labels_mapping(
                         mapping_item['sublabels'],
                         md_label['sublabels'],
@@ -383,9 +390,9 @@ class LambdaFunction:
         elif self.kind == LambdaType.INTERACTOR:
             payload.update({
                 "image": self._get_image(db_task, mandatory_arg("frame"), quality),
-                "pos_points": mandatory_arg("pos_points")[2:] if self.startswith_box else mandatory_arg("pos_points"),
+                "pos_points": mandatory_arg("pos_points"),
                 "neg_points": mandatory_arg("neg_points"),
-                "obj_bbox": mandatory_arg("pos_points")[0:2] if self.startswith_box else None
+                "obj_bbox": data.get("obj_bbox", None)
             })
         elif self.kind == LambdaType.REID:
             payload.update({
@@ -948,7 +955,7 @@ class LambdaJob:
                     labels[label.name]['attributes'][attr['name']] = attr['id']
             return labels
 
-        labels = convert_labels(db_task.get_labels().prefetch_related('attributespec_set'))
+        labels = convert_labels(db_task.get_labels(prefetch=True))
 
         if function.kind == LambdaType.DETECTOR:
             cls._call_detector(function, db_task, labels, quality,
