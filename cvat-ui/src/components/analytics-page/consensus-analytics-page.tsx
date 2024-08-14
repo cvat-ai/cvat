@@ -17,8 +17,8 @@ import { CombinedState, Project, Task } from 'reducers';
 import { Job, getCore } from 'cvat-core-wrapper';
 import CVATLoadingSpinner from 'components/common/loading-spinner';
 import GoBackButton from 'components/common/go-back-button';
-import ConsensusSettingsForm from 'components/consensus/consensus-settings-form';
 import { consensusActions } from 'actions/consensus-actions';
+import ConsensusSettingsForm from './task-consensus/consensus-settings-form';
 import TaskConsensusAnalyticsComponent from './task-consensus/task-consensus-component';
 
 const core = getCore();
