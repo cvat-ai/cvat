@@ -1,15 +1,14 @@
-// Copyright (C) 2021-2022 CVAT.ai Corporation
+// Copyright (C) 2021-2024 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
-import React, { Dispatch } from 'react';
+import React from 'react';
 import { ObjectState } from 'cvat-core-wrapper';
 import { CombinedState } from 'reducers';
 import ObjectItemDetails from 'components/annotation-page/standard-workspace/objects-side-bar/object-item-details';
-import { AnyAction } from 'redux';
 import { updateAnnotationsAsync, collapseObjectItems } from 'actions/annotation-actions';
-import { EventScope } from 'cvat-logger';
 import { connect } from 'react-redux';
+import { ThunkDispatch } from 'utils/redux';
 
 interface OwnProps {
     readonly: boolean;
@@ -63,7 +62,7 @@ function mapStateToProps(state: CombinedState, own: OwnProps): StateToProps {
     };
 }
 
-function mapDispatchToProps(dispatch: Dispatch<AnyAction>): DispatchToProps {
+function mapDispatchToProps(dispatch: ThunkDispatch): DispatchToProps {
     return {
         updateState(state: ObjectState): void {
             dispatch(updateAnnotationsAsync([state]));
@@ -78,14 +77,9 @@ type Props = StateToProps & DispatchToProps & OwnProps;
 class ObjectItemDetailsContainer extends React.PureComponent<Props> {
     private changeAttribute = (id: number, value: string): void => {
         const {
-            state, readonly, jobInstance, updateState,
+            state, readonly, updateState,
         } = this.props;
         if (!readonly && state) {
-            jobInstance.logger.log(EventScope.changeAttribute, {
-                id,
-                value,
-                object_id: state.clientID,
-            });
             const attr: Record<number, string> = {};
             attr[id] = value;
             state.attributes = attr;

@@ -104,13 +104,11 @@ export enum EventScope {
     dragObject = 'drag:object',
     resizeObject = 'resize:object',
     deleteObject = 'delete:object',
-    lockObject = 'lock:object',
     mergeObjects = 'merge:objects',
     splitObjects = 'split:objects',
     groupObjects = 'group:objects',
     sliceObject = 'slice:object',
     joinObjects = 'join:objects',
-    changeAttribute = 'change:attribute',
     changeLabel = 'change:label',
 
     changeFrame = 'change:frame',

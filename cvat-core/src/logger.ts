@@ -29,10 +29,7 @@ interface IgnoreRule {
     update: (previousEvent: Event, currentPayload: JSONEventPayload) => JSONEventPayload;
 }
 
-type IgnoredRules = (
-    EventScope.zoomImage | EventScope.changeAttribute |
-    EventScope.changeFrame | EventScope.exception
-);
+type IgnoredRules = EventScope.zoomImage | EventScope.changeFrame | EventScope.exception;
 
 class Logger {
     public clientID: string;
@@ -77,16 +74,6 @@ class Logger {
                         lastTimestamp: new Date().toISOString(),
                     };
                 },
-            },
-            [EventScope.changeAttribute]: {
-                lastEvent: null,
-                ignore(previousEvent: Event, currentPayload: JSONEventPayload): boolean {
-                    return (
-                        currentPayload.object_id === previousEvent.payload.object_id &&
-                        currentPayload.id === previousEvent.payload.id
-                    );
-                },
-                update: defaultUpdate,
             },
             [EventScope.changeFrame]: {
                 lastEvent: null,

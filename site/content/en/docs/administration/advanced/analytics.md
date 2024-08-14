@@ -137,12 +137,8 @@ Client events:
 
 - `send:exception`
 
-- `draw:object`, `paste:object`, `copy:object`, `propagate:object`, `drag:object`, `resize:object`, `delete:object`, `lock:object`, `merge:objects`, `split:objects`, `group:objects`, `slice:object`,
+- `draw:object`, `paste:object`, `copy:object`, `propagate:object`, `drag:object`, `resize:object`, `delete:object`, `merge:objects`, `split:objects`, `group:objects`, `slice:object`,
 `join:objects`
-
-- `change:attribute`
-
-- `change:label`
 
 - `change:frame`
 
