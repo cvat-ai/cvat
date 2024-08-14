@@ -19,6 +19,7 @@ import { subKeyMap } from 'utils/component-subkeymap';
 import { isEqual } from 'lodash';
 import { CombinedState } from 'reducers';
 import { useSelector } from 'react-redux';
+import { useDynamicLabels } from 'utils/hooks';
 
 interface InputElementParameters {
     clientID: number;
@@ -263,22 +264,8 @@ function RenderList(parameters: ListParameters): JSX.Element | null {
     const sortedValues = ['true', 'false'];
     const filteredValues = values.filter((value: string): boolean => value !== config.UNDEFINED_ATTRIBUTE_VALUE);
     const prevValuesRef = useRef<string[] | null>(null);
-    const keyMapRef = useRef(keyMap);
 
-    useEffect(() => {
-        keyMapRef.current = keyMap;
-    }, [keyMap]);
-
-    useEffect(() => () => {
-        const revertedShortcuts = Object.entries(componentShortcuts).reduce((acc: any, [key, value]) => {
-            acc[key] = {
-                ...value,
-                sequences: keyMapRef.current[key] ? keyMapRef.current[key].sequences : value.sequences,
-            };
-            return acc;
-        }, {});
-        registerComponentShortcuts(revertedShortcuts);
-    }, []);
+    useDynamicLabels(componentShortcuts);
 
     useEffect(() => {
         if (!isEqual(values, prevValuesRef.current)) {

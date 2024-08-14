@@ -3,7 +3,7 @@
 //
 // SPDX-License-Identifier: MIT
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Row, Col } from 'antd/lib/grid';
 import Text from 'antd/lib/typography/Text';
 import Select from 'antd/lib/select';
@@ -15,6 +15,7 @@ import { ShortcutScope } from 'utils/enums';
 import { subKeyMap } from 'utils/component-subkeymap';
 import { useSelector } from 'react-redux';
 import { CombinedState } from 'reducers';
+import { useDynamicLabels } from 'utils/hooks';
 
 interface ShortcutLabelMap {
     [index: number]: any;
@@ -57,7 +58,6 @@ function ShortcutsSelect(props: Props): JSX.Element {
     const [shortcutLabelMap, setShortcutLabelMap] = useState(defaultShortcutLabelMap);
 
     const keyMap: KeyMap = useSelector((state: CombinedState) => state.shortcuts.keyMap);
-    const keyMapRef = useRef(keyMap);
     const handlers: {
         [key: string]: (keyEvent?: KeyboardEvent) => void;
     } = {};
@@ -70,21 +70,7 @@ function ShortcutsSelect(props: Props): JSX.Element {
         setShortcutLabelMap(newShortcutLabelMap);
     }, []);
 
-    // This effect is used to revert the shortcuts to their original state when the component is unmounted
-    useEffect(() => () => {
-        const revertedShortcuts = Object.entries(componentShortcuts).reduce((acc: any, [key, value]) => {
-            acc[key] = {
-                ...value,
-                sequences: keyMapRef.current[key] ? keyMapRef.current[key].sequences : value.sequences,
-            };
-            return acc;
-        }, {});
-        registerComponentShortcuts(revertedShortcuts);
-    }, []);
-
-    useEffect(() => {
-        keyMapRef.current = keyMap;
-    }, [keyMap]);
+    useDynamicLabels(componentShortcuts);
 
     useEffect(() => {
         const updatedComponentShortcuts = {

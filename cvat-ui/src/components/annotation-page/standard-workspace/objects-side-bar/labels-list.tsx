@@ -6,7 +6,6 @@
 import React, {
     useCallback,
     useEffect,
-    useRef,
     useState,
 } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
@@ -21,6 +20,7 @@ import Text from 'antd/lib/typography/Text';
 import { ShortcutScope } from 'utils/enums';
 import { registerComponentShortcuts } from 'actions/shortcuts-actions';
 import { subKeyMap } from 'utils/component-subkeymap';
+import { useDynamicLabels } from 'utils/hooks';
 
 const componentShortcuts: Record<string, KeyMapItem> = {};
 
@@ -48,22 +48,8 @@ function LabelsListComponent(): JSX.Element {
     const [keyToLabelMapping, setKeyToLabelMapping] = useState<Record<string, number>>(
         Object.fromEntries(labelIDs.slice(0, 10).map((labelID: number, idx: number) => [(idx + 1) % 10, labelID])),
     );
-    const keyMapRef = useRef(keyMap);
 
-    useEffect(() => () => {
-        const revertedShortcuts = Object.entries(componentShortcuts).reduce((acc: any, [key, value]) => {
-            acc[key] = {
-                ...value,
-                sequences: keyMapRef.current[key] ? keyMapRef.current[key].sequences : value.sequences,
-            };
-            return acc;
-        }, {});
-        registerComponentShortcuts(revertedShortcuts);
-    }, []);
-
-    useEffect(() => {
-        keyMapRef.current = keyMap;
-    }, [keyMap]);
+    useDynamicLabels(componentShortcuts);
 
     useEffect(() => {
         const updatedComponentShortcuts = {
