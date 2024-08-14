@@ -6,8 +6,6 @@ import { ActionUnion, createAction, ThunkAction } from 'utils/redux';
 import { ConsensusSettings, Task } from 'cvat-core-wrapper';
 
 export enum ConsensusActionTypes {
-    OPEN_CONSENSUS_MODAL = 'OPEN_CONSENSUS_MODAL',
-    CLOSE_CONSENSUS_MODAL = 'CLOSE_CONSENSUS_MODAL',
     SET_FETCHING = 'SET_FETCHING',
     SET_CONSENSUS_SETTINGS = 'SET_CONSENSUS_SETTINGS',
     MERGE_CONSENSUS_JOBS = 'MERGE_CONSENSUS_JOBS',
