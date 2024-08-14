@@ -734,9 +734,6 @@ export default function (state = defaultState, action: AnyAction): Notifications
         }
         case ConsensusActionTypes.MERGE_CONSENSUS_JOBS_FAILED: {
             const { taskID } = action.payload;
-            if (action.payload.error.code === 400) {
-                action.payload.error.message = "Consensus Jobs aren't annotated.";
-            }
             return {
                 ...state,
                 errors: {
