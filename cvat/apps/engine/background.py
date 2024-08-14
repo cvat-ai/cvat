@@ -95,7 +95,7 @@ class _ResourceExportManager(ABC):
 
         if rq_job_status in {RQJobStatus.STARTED, RQJobStatus.QUEUED}:
             return Response(
-                data=f"Export process is already {rq_job_status}",
+                data=f"Export request is being processed",
                 status=status.HTTP_409_CONFLICT,
             )
 
