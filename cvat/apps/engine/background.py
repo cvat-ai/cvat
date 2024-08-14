@@ -40,7 +40,7 @@ from cvat.apps.engine.utils import (
     define_dependent_job,
     get_rq_job_meta,
     get_rq_lock_by_user,
-    get_rq_lock_by_job,
+    get_rq_lock_for_job,
     sendfile,
 )
 from cvat.apps.events.handlers import handle_dataset_export
@@ -91,7 +91,7 @@ class _ResourceExportManager(ABC):
         if not rq_job:
             return None
 
-        rq_job_status = rq_job.get_status()
+        rq_job_status = rq_job.get_status(refresh=False)
 
         if rq_job_status in {RQJobStatus.STARTED, RQJobStatus.QUEUED}:
             return Response(
@@ -143,19 +143,11 @@ class _ResourceExportManager(ABC):
     def get_timestamp(self, time_: datetime) -> str:
         return datetime.strftime(time_, "%Y_%m_%d_%H_%M_%S")
 
-class ReenqueueJobException(Exception):
-    pass
-
-def recreate(rq_job: RQJob, should_be_canceled: bool = True) -> None:
-    # Cancel and delete a job and then raise ReenqueueJobException
-    # to indicate that the job should be re-created
-    if should_be_canceled:
-        # In the case the server is configured with ONE_RUNNING_JOB_IN_QUEUE_PER_USER
-        # we have to enqueue dependent jobs after canceling one.
-        rq_job.cancel(enqueue_dependents=settings.ONE_RUNNING_JOB_IN_QUEUE_PER_USER)
-
+def cancel_and_delete(rq_job: RQJob) -> None:
+    # In the case the server is configured with ONE_RUNNING_JOB_IN_QUEUE_PER_USER
+    # we have to enqueue dependent jobs after canceling one.
+    rq_job.cancel(enqueue_dependents=settings.ONE_RUNNING_JOB_IN_QUEUE_PER_USER)
     rq_job.delete()
-    raise ReenqueueJobException()
 
 
 class DatasetExportManager(_ResourceExportManager):
@@ -269,11 +261,11 @@ class DatasetExportManager(_ResourceExportManager):
                     "Please request export first by sending a request without the action=download parameter."
                 )
 
-        # get the actual status once and do not refresh it on each check
+        # define status once to avoid refreshing it on each check
         # FUTURE-TODO: get_status will raise InvalidJobOperation exception instead of returning None in one of the next releases
-        rq_job_status = rq_job.get_status()
+        rq_job_status = rq_job.get_status(refresh=False)
 
-        # rq job can be deleted after processing the same parallel request
+        # handle cases where the status is None for some reason
         if not rq_job_status:
             rq_job.delete()
             return None if action != "download" else \
@@ -319,7 +311,8 @@ class DatasetExportManager(_ResourceExportManager):
 
                             return Response(status=status.HTTP_201_CREATED)
 
-                        recreate(rq_job)
+                        cancel_and_delete(rq_job)
+                        return None
             else:
                 raise NotImplementedError(
                     f"Export to {self.export_args.location} location is not implemented yet"
@@ -340,16 +333,18 @@ class DatasetExportManager(_ResourceExportManager):
             # Such dependencies are never removed or finished,
             # as there is no TTL for deferred jobs,
             # so the current job can be blocked indefinitely.
-            recreate(rq_job)
-        elif rq_job_status in {RQJobStatus.CANCELED, RQJobStatus.STOPPED}:
-            if action == "download":
-                rq_job.delete()
-                return Response("Export was cancelled, please request it one more time", status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            cancel_and_delete(rq_job)
+            return None
 
-            recreate(rq_job, should_be_canceled=False)
+        elif rq_job_status in {RQJobStatus.CANCELED, RQJobStatus.STOPPED}:
+            rq_job.delete()
+            return None if action != "download" \
+                else Response("Export was cancelled, please request it one more time", status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
 
         if is_result_outdated():
-            recreate(rq_job)
+            cancel_and_delete(rq_job)
+            return None
 
         return Response(RqIdSerializer({"rq_id": rq_job.id}).data, status=status.HTTP_202_ACCEPTED)
 
@@ -375,10 +370,9 @@ class DatasetExportManager(_ResourceExportManager):
             user_id=self.request.user.id,
         )
 
-        rq_job = queue.fetch_job(rq_id)
-
         # ensure that there is no race condition when processing parallel requests
-        with get_rq_lock_by_job(rq_job), suppress(ReenqueueJobException):
+        with get_rq_lock_for_job(queue, rq_id):
+            rq_job = queue.fetch_job(rq_id)
             if response := self.handle_rq_job(rq_job, queue):
                 return response
             self.setup_background_job(queue, rq_id)
@@ -535,11 +529,11 @@ class BackupExportManager(_ResourceExportManager):
                     "Please request export first by sending a request without the action=download parameter."
                 )
 
-        # get the actual status once and do not refresh it on each check
+        # define status once to avoid refreshing it on each check
         # FUTURE-TODO: get_status will raise InvalidJobOperation exception instead of None in one of the next releases
-        rq_job_status = rq_job.get_status()
+        rq_job_status = rq_job.get_status(refresh=False)
 
-        # rq job can be deleted after processing the same parallel request
+        # handle cases where the status is None for some reason
         if not rq_job_status:
             rq_job.delete()
             return None if action != "download" else \
@@ -608,13 +602,13 @@ class BackupExportManager(_ResourceExportManager):
             # Such dependencies are never removed or finished,
             # as there is no TTL for deferred jobs,
             # so the current job can be blocked indefinitely.
-            recreate(rq_job)
-        elif rq_job_status in {RQJobStatus.CANCELED, RQJobStatus.STOPPED}:
-            if action == "download":
-                rq_job.delete()
-                return Response("Export was cancelled, please request it one more time", status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            cancel_and_delete(rq_job)
+            return None
 
-            recreate(rq_job, should_be_canceled=False)
+        elif rq_job_status in {RQJobStatus.CANCELED, RQJobStatus.STOPPED}:
+            rq_job.delete()
+            return None if action != "download" \
+                else Response("Export was cancelled, please request it one more time", status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
         return Response(RqIdSerializer({"rq_id": rq_job.id}).data, status=status.HTTP_202_ACCEPTED)
 
@@ -628,10 +622,10 @@ class BackupExportManager(_ResourceExportManager):
             subresource="backup",
             user_id=self.request.user.id,
         )
-        rq_job = queue.fetch_job(rq_id)
 
         # ensure that there is no race condition when processing parallel requests
-        with get_rq_lock_by_job(rq_job), suppress(ReenqueueJobException):
+        with get_rq_lock_for_job(queue, rq_id):
+            rq_job = queue.fetch_job(rq_id)
             if response := self.handle_rq_job(rq_job, queue):
                 return response
             self.setup_background_job(queue, rq_id)
