@@ -25,78 +25,17 @@ type Props = {
     labels: Label[];
 };
 
-const componentShortcuts: Record<string, KeyMapItem> = {
-    SETUP_0_TAG: {
+const componentShortcuts: Record<string, KeyMapItem> = {};
+
+for (const idx of Array.from({ length: 10 }, (_, i) => i)) {
+    componentShortcuts[`SETUP_${idx}_TAG`] = {
         name: 'Create a new tag',
         description: 'Create a new tag with corresponding class. The class may be setup in tag annotation sidebar',
-        sequences: ['0', 'shift+0'],
+        sequences: [`${idx}`, `shift+${idx}`],
         scope: ShortcutScope.TAG_ANNOTATION_WORKSPACE,
         applicable: [DimensionType.DIMENSION_2D, DimensionType.DIMENSION_3D],
-    },
-    SETUP_1_TAG: {
-        name: 'Create a new tag',
-        description: 'Create a new tag with corresponding class. The class may be setup in tag annotation sidebar',
-        sequences: ['1', 'shift+1'],
-        scope: ShortcutScope.TAG_ANNOTATION_WORKSPACE,
-        applicable: [DimensionType.DIMENSION_2D, DimensionType.DIMENSION_3D],
-    },
-    SETUP_2_TAG: {
-        name: 'Create a new tag',
-        description: 'Create a new tag with corresponding class. The class may be setup in tag annotation sidebar',
-        sequences: ['2', 'shift+2'],
-        scope: ShortcutScope.TAG_ANNOTATION_WORKSPACE,
-        applicable: [DimensionType.DIMENSION_2D, DimensionType.DIMENSION_3D],
-    },
-    SETUP_3_TAG: {
-        name: 'Create a new tag',
-        description: 'Create a new tag with corresponding class. The class may be setup in tag annotation sidebar',
-        sequences: ['3', 'shift+3'],
-        scope: ShortcutScope.TAG_ANNOTATION_WORKSPACE,
-        applicable: [DimensionType.DIMENSION_2D, DimensionType.DIMENSION_3D],
-    },
-    SETUP_4_TAG: {
-        name: 'Create a new tag',
-        description: 'Create a new tag with corresponding class. The class may be setup in tag annotation sidebar',
-        sequences: ['4', 'shift+4'],
-        scope: ShortcutScope.TAG_ANNOTATION_WORKSPACE,
-        applicable: [DimensionType.DIMENSION_2D, DimensionType.DIMENSION_3D],
-    },
-    SETUP_5_TAG: {
-        name: 'Create a new tag',
-        description: 'Create a new tag with corresponding class. The class may be setup in tag annotation sidebar',
-        sequences: ['5', 'shift+5'],
-        scope: ShortcutScope.TAG_ANNOTATION_WORKSPACE,
-        applicable: [DimensionType.DIMENSION_2D, DimensionType.DIMENSION_3D],
-    },
-    SETUP_6_TAG: {
-        name: 'Create a new tag',
-        description: 'Create a new tag with corresponding class. The class may be setup in tag annotation sidebar',
-        sequences: ['6', 'shift+6'],
-        scope: ShortcutScope.TAG_ANNOTATION_WORKSPACE,
-        applicable: [DimensionType.DIMENSION_2D, DimensionType.DIMENSION_3D],
-    },
-    SETUP_7_TAG: {
-        name: 'Create a new tag',
-        description: 'Create a new tag with corresponding class. The class may be setup in tag annotation sidebar',
-        sequences: ['7', 'shift+7'],
-        scope: ShortcutScope.TAG_ANNOTATION_WORKSPACE,
-        applicable: [DimensionType.DIMENSION_2D, DimensionType.DIMENSION_3D],
-    },
-    SETUP_8_TAG: {
-        name: 'Create a new tag',
-        description: 'Create a new tag with corresponding class. The class may be setup in tag annotation sidebar',
-        sequences: ['8', 'shift+8'],
-        scope: ShortcutScope.TAG_ANNOTATION_WORKSPACE,
-        applicable: [DimensionType.DIMENSION_2D, DimensionType.DIMENSION_3D],
-    },
-    SETUP_9_TAG: {
-        name: 'Create a new tag',
-        description: 'Create a new tag with corresponding class. The class may be setup in tag annotation sidebar',
-        sequences: ['9', 'shift+9'],
-        scope: ShortcutScope.TAG_ANNOTATION_WORKSPACE,
-        applicable: [DimensionType.DIMENSION_2D, DimensionType.DIMENSION_3D],
-    },
-};
+    };
+}
 
 registerComponentShortcuts(componentShortcuts);
 
