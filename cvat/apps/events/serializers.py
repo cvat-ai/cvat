@@ -34,11 +34,10 @@ class ClientEventsSerializer(serializers.Serializer):
         'lock:object', # TODO: remove in next releases
         'change:attribute', # TODO: remove in next releases
         'change:label', # TODO: remove in next releases
-        'send:exception', 
+        'send:exception', 'join:objects', 'change:frame',
         'draw:object', 'paste:object', 'copy:object', 'propagate:object',
         'drag:object', 'resize:object', 'delete:object',
         'merge:objects', 'split:objects', 'group:objects', 'slice:object',
-        'join:objects', ,  'change:frame',
         'zoom:image', 'fit:image', 'rotate:image', 'action:undo', 'action:redo',
         'debug:info', 'run:annotations_action', 'click:element'
     ))
