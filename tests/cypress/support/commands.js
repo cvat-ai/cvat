@@ -1261,9 +1261,17 @@ Cypress.Commands.add('exportTask', ({
 
 Cypress.Commands.add('exportJob', ({
     type, format, archiveCustomName,
-    targetStorage = null, useDefaultLocation = true,
+    targetStorage = null, useDefaultLocation = true, jobOnTaskPage = null,
 }) => {
-    cy.interactMenu('Export job dataset');
+    if (!jobOnTaskPage) {
+        cy.interactMenu('Export job dataset');
+    } else {
+        cy.get('.cvat-job-item').contains('a', `Job #${jobOnTaskPage}`)
+            .parents('.cvat-job-item')
+            .find('.cvat-job-item-more-button')
+            .click();
+        cy.contains('Export annotations').click();
+    }
     cy.get('.cvat-modal-export-job').should('be.visible').find('.cvat-modal-export-select').click();
     cy.get('.ant-select-dropdown')
         .not('.ant-select-dropdown-hidden')

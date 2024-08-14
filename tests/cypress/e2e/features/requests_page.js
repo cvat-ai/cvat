@@ -299,4 +299,46 @@ context('Requests page', () => {
             }, { checkResourceLink: false });
         });
     });
+
+    describe('Regression tests', () => {
+        it('Export job in different formats from task page simultaneously.', () => {
+            cy.openTask(taskName);
+            cy.intercept('GET', '/api/requests/**', (req) => {
+                req.on('response', (res) => {
+                    res.setDelay(5000);
+                });
+            });
+            cy.getJobIDFromIdx(0).then((jobID) => {
+                const exportParams = {
+                    type: 'dataset',
+                    format: exportFormat,
+                    archiveCustomName: 'job_annotations_cvat',
+                    jobOnTaskPage: jobID,
+                };
+
+                cy.exportJob(exportParams);
+                const newExportParams = {
+                    ...exportParams,
+                    format: 'COCO',
+                    archiveCustomName: 'job_annotations_coco',
+                };
+                cy.exportJob(newExportParams);
+
+                cy.contains('Export is finished').should('be.visible');
+                cy.closeNotification('.ant-notification-notice-info');
+
+                cy.contains('.cvat-header-button', 'Requests').should('be.visible').click();
+                cy.url().should('include', '/requests');
+
+                cy.get(`.cvat-requests-card:contains("Job #${jobID}")`)
+                    .should('have.length', 2)
+                    .each((card) => {
+                        cy.wrap(card).within(() => {
+                            cy.get('.cvat-request-item-progress-success').should('exist');
+                            cy.contains('Expires').should('exist');
+                        });
+                    });
+            });
+        });
+    });
 });
