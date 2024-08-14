@@ -10,6 +10,8 @@ import { DimensionType, CVATCore } from 'cvat-core-wrapper';
 import Menu, { MenuInfo } from 'components/dropdown-menu';
 import { usePlugins } from 'utils/hooks';
 import { CombinedState } from 'reducers';
+import { useSelector } from 'react-redux';
+import { LoadingOutlined } from '@ant-design/icons';
 
 type AnnotationFormats = Awaited<ReturnType<CVATCore['server']['formats']>>;
 
@@ -50,6 +52,9 @@ function ActionsMenuComponent(props: Props): JSX.Element {
     } = props;
 
     const plugins = usePlugins((state: CombinedState) => state.plugins.components.taskActions.items, props);
+
+    const mergingConsensus = useSelector((state: CombinedState) => state.consensus.mergingConsensus);
+    const isTaskInMergingConsensus = mergingConsensus[taskID];
 
     const onClickMenuWrapper = useCallback(
         (params: MenuInfo) => {
@@ -140,6 +145,8 @@ function ActionsMenuComponent(props: Props): JSX.Element {
         menuItems.push([(
             <Menu.Item
                 key={Actions.MERGE_CONSENSUS_JOBS}
+                disabled={isTaskInMergingConsensus}
+                icon={isTaskInMergingConsensus && <LoadingOutlined />}
             >
                 Merge Consensus Jobs
             </Menu.Item>
