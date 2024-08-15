@@ -208,7 +208,7 @@ Cypress.Commands.add(
                 cy.get('.cvat-project-search-field').first().within(() => {
                     cy.get('[type="search"]').should('have.value', projectName);
                 });
-                cy.get('.cvat-project-subset-field').type(projectSubsetFieldValue);
+                cy.get('.cvat-project-subset-field').type(`${projectSubsetFieldValue}{Enter}`);
                 cy.get('.cvat-constructor-viewer-new-item').should('not.exist');
             }
             cy.get('input[type="file"]').attachFile(image, { subjectType: 'drag-n-drop' });
@@ -219,6 +219,8 @@ Cypress.Commands.add(
             cy.get('.cvat-submit-continue-task-button').click();
             if (expectedResult === 'success') {
                 cy.get('.cvat-notification-create-task-success').should('exist').find('[data-icon="close"]').click();
+            } else if (expectedResult === 'fail') {
+                cy.get('.cvat-notification-notice-create-task-failed').should('exist').find('[data-icon="close"]').click();
             }
             if (!forProject) {
                 cy.goToTaskList();
@@ -942,6 +944,9 @@ Cypress.Commands.add(
         if (expectedResult === 'success') {
             cy.contains('Annotations have been loaded').should('be.visible');
             cy.closeNotification('.ant-notification-notice-info');
+        } else if (expectedResult === 'fail') {
+            cy.contains('Could not upload annotation').should('be.visible');
+            cy.closeNotification('.ant-notification-notice-error');
         }
     },
 );
@@ -1299,7 +1304,7 @@ Cypress.Commands.add('exportJob', ({
             cy.get('.cvat-cloud-storage-select-provider').click();
         }
     }
-    cy.contains('button', 'OK').click();
+    cy.get('.cvat-modal-export-job').contains('button', 'OK').click();
     cy.get('.cvat-notification-notice-export-job-start').should('be.visible');
     cy.closeNotification('.cvat-notification-notice-export-job-start');
 });
