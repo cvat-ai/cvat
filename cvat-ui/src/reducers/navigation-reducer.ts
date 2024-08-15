@@ -17,7 +17,12 @@ export default function (
     switch (action.type) {
         case NavigationActionTypes.CHANGE_LOCATION: {
             const { BLACKLISTED_GO_BACK_PATHS } = config;
-            const { from } = action.payload;
+            const { from, to } = action.payload;
+
+            if (from === to) {
+                return state;
+            }
+
             for (const path of BLACKLISTED_GO_BACK_PATHS) {
                 if (path.test(from)) {
                     return {
@@ -26,6 +31,7 @@ export default function (
                     };
                 }
             }
+
             return {
                 ...state,
                 prevLocation: from,
