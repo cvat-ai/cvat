@@ -132,9 +132,16 @@ def _merge_consensus_jobs(task_id: int) -> None:
                 parent_job.state = StateChoice.COMPLETED.value
                 parent_job.save()
 
-    task_report_data = generate_task_consensus_report(list(job_comparison_reports.values()))
+    task_report_data, task_mean_consensus_score = generate_task_consensus_report(
+        list(job_comparison_reports.values())
+    )
     return save_report(
-        task_id, parent_jobs, task_report_data, job_comparison_reports, assignee_report_data
+        task_id,
+        parent_jobs,
+        task_report_data,
+        job_comparison_reports,
+        assignee_report_data,
+        task_mean_consensus_score,
     )
 
 

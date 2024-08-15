@@ -334,9 +334,11 @@ def generate_task_consensus_report(job_reports: List[ComparisonReport]) -> Compa
     task_conflicts: List[AnnotationConflict] = []
     task_frame_results = {}
     task_frame_results_counts = {}
+    task_mean_consensus_score = 0
     for r in job_reports:
         task_frames.update(r.comparison_summary.frames)
         task_conflicts.extend(r.conflicts)
+        task_mean_consensus_score += r.consensus_score
 
         for frame_id, job_frame_result in r.frame_results.items():
             task_frame_result = cast(
@@ -356,6 +358,7 @@ def generate_task_consensus_report(job_reports: List[ComparisonReport]) -> Compa
             task_frame_results_counts[frame_id] = 1 + frame_results_count
             task_frame_results[frame_id] = task_frame_result
 
+    task_mean_consensus_score /= len(job_reports)
     task_report_data = ComparisonReport(
         parameters=job_reports[0].parameters,
         comparison_summary=ComparisonReportComparisonSummary(
@@ -365,7 +368,7 @@ def generate_task_consensus_report(job_reports: List[ComparisonReport]) -> Compa
         ),
         frame_results=task_frame_results,
     )
-    return task_report_data
+    return task_report_data, np.round(task_mean_consensus_score)
 
 
 @transaction.atomic
@@ -375,6 +378,7 @@ def save_report(
     task_report_data: ComparisonReport,
     job_report_data: Dict[int, ComparisonReport],
     assignee_report_data: Dict[User, float],
+    task_mean_consensus_score: int,
 ):
     try:
         Task.objects.get(id=task_id)
@@ -382,8 +386,6 @@ def save_report(
         return
 
     task = Task.objects.filter(id=task_id).first()
-
-    task_mean_consensus_score = 0
 
     job_reports = {}
     for job in jobs:
@@ -397,10 +399,7 @@ def save_report(
             consensus_score=job_consensus_score,
             assignee=job.assignee,
         )
-        task_mean_consensus_score += job_consensus_score
         job_reports[job.id] = job_report
-
-    task_mean_consensus_score /= len(jobs)
 
     job_reports = list(job_reports.values())
 
