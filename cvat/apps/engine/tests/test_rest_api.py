@@ -4136,48 +4136,6 @@ class TaskDataAPITestCase(ApiTestBase):
                 expected_task_creation_status_state='Failed',
                 expected_task_creation_status_reason='Incorrect file mapping to manifest content')
 
-        for copy_data in [True, False]:
-            with self.subTest(current_function_name(), copy=copy_data):
-                task_spec = task_spec_common.copy()
-                task_spec['name'] = task_spec['name'] + f' copy={copy_data}'
-                task_data['copy_data'] = copy_data
-                self._test_api_v2_tasks_id_data_spec(user, task_spec, task_data,
-                    self.ChunkType.IMAGESET, self.ChunkType.IMAGESET,
-                    image_sizes, StorageMethodChoice.CACHE,
-                    StorageChoice.LOCAL if copy_data else StorageChoice.SHARE)
-
-        with self.subTest(current_function_name() + ' file order mismatch'):
-            task_spec = task_spec_common.copy()
-            task_spec['name'] = task_spec['name'] + f' mismatching file order'
-            task_data_copy = task_data.copy()
-            task_data_copy[f'server_files[{len(images)}]'] = "images_manifest.jsonl"
-            self._test_api_v2_tasks_id_data_spec(user, task_spec, task_data_copy,
-                self.ChunkType.IMAGESET, self.ChunkType.IMAGESET,
-                image_sizes, StorageMethodChoice.CACHE, StorageChoice.SHARE,
-                expected_task_creation_status_state='Failed',
-                expected_task_creation_status_reason='Incorrect file mapping to manifest content')
-
-        for copy_data in [True, False]:
-            with self.subTest(current_function_name(), copy=copy_data):
-                task_spec = task_spec_common.copy()
-                task_spec['name'] = task_spec['name'] + f' copy={copy_data}'
-                task_data['copy_data'] = copy_data
-                self._test_api_v2_tasks_id_data_spec(user, task_spec, task_data,
-                    self.ChunkType.IMAGESET, self.ChunkType.IMAGESET,
-                    image_sizes, StorageMethodChoice.CACHE,
-                    StorageChoice.LOCAL if copy_data else StorageChoice.SHARE)
-
-        with self.subTest(current_function_name() + ' file order mismatch'):
-            task_spec = task_spec_common.copy()
-            task_spec['name'] = task_spec['name'] + f' mismatching file order'
-            task_data_copy = task_data.copy()
-            task_data_copy[f'server_files[{len(images)}]'] = "images_manifest.jsonl"
-            self._test_api_v2_tasks_id_data_spec(user, task_spec, task_data_copy,
-                self.ChunkType.IMAGESET, self.ChunkType.IMAGESET,
-                image_sizes, StorageMethodChoice.CACHE, StorageChoice.SHARE,
-                expected_task_creation_status_state='Failed',
-                expected_task_creation_status_reason='Incorrect file mapping to manifest content')
-
         with self.subTest(current_function_name() + ' without use cache'):
             task_spec = task_spec_common.copy()
             task_spec['name'] = task_spec['name'] + f' manifest without cache'
