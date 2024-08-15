@@ -193,12 +193,11 @@ context('Requests page', () => {
         beforeEach(openTask);
 
         it('Export creates a request. Task can be opened from request. Export can be downloaded after page reload.', () => {
-            const exportParams = {
+            cy.exportTask({
                 type: 'annotations',
                 format: exportFormat,
                 archiveCustomName: annotationsArchiveNameLocal,
-            };
-            cy.exportTask(exportParams);
+            });
 
             checkRequestStatus(`Task #${data.taskID}`, () => {
                 cy.contains('Export Annotations').should('exist');
@@ -215,7 +214,7 @@ context('Requests page', () => {
         });
 
         it('Export on cloud storage creates a request. Expire field does not exist.', () => {
-            const exportParams = {
+            cy.exportTask({
                 type: 'annotations',
                 format: exportFormat,
                 archiveCustomName: annotationsArchiveNameCloud,
@@ -224,8 +223,7 @@ context('Requests page', () => {
                     cloudStorageId: data.cloudStorageID,
                 },
                 useDefaultLocation: false,
-            };
-            cy.exportTask(exportParams);
+            });
             cy.waitForFileUploadToCloudStorage();
 
             checkRequestStatus(`Task #${data.taskID}`, () => {
