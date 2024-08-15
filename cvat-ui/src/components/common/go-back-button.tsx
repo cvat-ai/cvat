@@ -8,13 +8,8 @@ import Text from 'antd/lib/typography/Text';
 import { LeftOutlined } from '@ant-design/icons';
 import { useGoBack } from 'utils/hooks';
 
-interface Props {
-    backLink?: string;
-}
-
-function GoBackButton(props: Props): JSX.Element {
-    const { backLink } = props;
-    const goBack = useGoBack(backLink);
+function GoBackButton(): JSX.Element {
+    const goBack = useGoBack();
 
     return (
         <>

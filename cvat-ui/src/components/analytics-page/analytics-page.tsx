@@ -79,12 +79,7 @@ function readInstanceId(type: InstanceType): number {
 
 type InstanceType = 'project' | 'task' | 'job';
 
-export interface BacklinkProps {
-    backLink?: string;
-}
-
-function AnalyticsPage(props: BacklinkProps): JSX.Element {
-    const { backLink } = props;
+function AnalyticsPage(): JSX.Element {
     const dispatch = useDispatch();
     const location = useLocation();
 
@@ -248,7 +243,7 @@ function AnalyticsPage(props: BacklinkProps): JSX.Element {
     if (instanceType && instance) {
         backNavigation = (
             <Col span={22} xl={18} xxl={14} className='cvat-task-top-bar'>
-                <GoBackButton backLink={backLink} />
+                <GoBackButton />
             </Col>
         );
 

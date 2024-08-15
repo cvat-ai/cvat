@@ -62,17 +62,12 @@ export function usePlugins(
     return ref.current;
 }
 
-export function useGoBack(backLink?: string): () => void {
+export function useGoBack(): () => void {
     const history = useHistory();
+    const prevLocation = useSelector((state: CombinedState) => state.navigation.prevLocation) ?? '/tasks';
     const goBack = useCallback(() => {
-        if (backLink) {
-            history.push(backLink);
-        } else if (history.action !== 'POP') {
-            history.goBack();
-        } else {
-            history.push('/');
-        }
-    }, []);
+        history.push(prevLocation);
+    }, [prevLocation]);
 
     return goBack;
 }

@@ -81,7 +81,7 @@ import EmailConfirmationPage from './email-confirmation-pages/email-confirmed';
 import EmailVerificationSentPage from './email-confirmation-pages/email-verification-sent';
 import IncorrectEmailConfirmationPage from './email-confirmation-pages/incorrect-email-confirmation';
 import CreateJobPage from './create-job-page/create-job-page';
-import AnalyticsPage, { BacklinkProps } from './analytics-page/analytics-page';
+import AnalyticsPage from './analytics-page/analytics-page';
 import InvitationWatcher from './invitation-watcher/invitation-watcher';
 
 interface CVATAppProps {
@@ -97,6 +97,7 @@ interface CVATAppProps {
     initInvitations: () => void;
     initRequests: () => void;
     loadServerAPISchema: () => void;
+    onChangeLocation: (from: string, to: string) => void;
     userInitialized: boolean;
     userFetching: boolean;
     organizationFetching: boolean;
@@ -128,7 +129,6 @@ interface CVATAppProps {
 interface CVATAppState {
     healthIinitialized: boolean;
     backendIsHealthy: boolean;
-    goBackLink: string | undefined,
 }
 class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentProps, CVATAppState> {
     constructor(props: CVATAppProps & RouteComponentProps) {
@@ -137,16 +137,15 @@ class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentP
         this.state = {
             healthIinitialized: false,
             backendIsHealthy: false,
-            goBackLink: undefined,
         };
     }
 
     public componentDidMount(): void {
         const core = getCore();
-        const { history, location } = this.props;
+        const { history, location, onChangeLocation } = this.props;
         const {
             HEALTH_CHECK_RETRIES, HEALTH_CHECK_PERIOD, HEALTH_CHECK_REQUEST_TIMEOUT,
-            SERVER_UNAVAILABLE_COMPONENT, RESET_NOTIFICATIONS_PATHS, BACKLINK_PATHS,
+            SERVER_UNAVAILABLE_COMPONENT, RESET_NOTIFICATIONS_PATHS,
         } = appConfig;
 
         // Logger configuration
@@ -176,14 +175,7 @@ class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentP
             customWaViewHit(newLocation.pathname, newLocation.search, newLocation.hash);
             const { location: prevLocation } = this.props;
 
-            for (const path of BACKLINK_PATHS) {
-                if (!prevLocation.pathname.includes(path) && newLocation.pathname.includes(path)) {
-                    this.setState({
-                        goBackLink: prevLocation.pathname,
-                    });
-                    break;
-                }
-            }
+            onChangeLocation(prevLocation.pathname, newLocation.pathname);
 
             const shouldResetNotifications = RESET_NOTIFICATIONS_PATHS.from.some(
                 (pathname) => prevLocation.pathname === pathname,
@@ -496,14 +488,6 @@ class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentP
             .filter(({ data: { shouldBeRendered } }) => shouldBeRendered(this.props, this.state))
             .map(({ component: Component }) => Component);
 
-        const componentWithBackLink = (Component: (props: BacklinkProps) => React.ReactNode) => {
-            const { goBackLink } = this.state;
-            const creator = (): JSX.Element => (
-                (<Component backLink={goBackLink} />)
-            );
-            return creator;
-        };
-
         const queryParams = new URLSearchParams(location.search);
         const authParams = authQuery(queryParams);
 
@@ -528,15 +512,15 @@ class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentP
                                         <Route exact path='/projects/:id' component={ProjectPageComponent} />
                                         <Route exact path='/projects/:id/webhooks' component={WebhooksPage} />
                                         <Route exact path='/projects/:id/guide' component={AnnotationGuidePage} />
-                                        <Route exact path='/projects/:pid/analytics' render={componentWithBackLink(AnalyticsPage)} />
+                                        <Route exact path='/projects/:pid/analytics' component={AnalyticsPage} />
                                         <Route exact path='/tasks' component={TasksPageContainer} />
                                         <Route exact path='/tasks/create' component={CreateTaskPageContainer} />
                                         <Route exact path='/tasks/:id' component={TaskPageComponent} />
-                                        <Route exact path='/tasks/:tid/analytics' render={componentWithBackLink(AnalyticsPage)} />
+                                        <Route exact path='/tasks/:tid/analytics' component={AnalyticsPage} />
                                         <Route exact path='/tasks/:id/jobs/create' component={CreateJobPage} />
                                         <Route exact path='/tasks/:id/guide' component={AnnotationGuidePage} />
                                         <Route exact path='/tasks/:tid/jobs/:jid' component={AnnotationPageContainer} />
-                                        <Route exact path='/tasks/:tid/jobs/:jid/analytics' render={componentWithBackLink(AnalyticsPage)} />
+                                        <Route exact path='/tasks/:tid/jobs/:jid/analytics' component={AnalyticsPage} />
                                         <Route exact path='/jobs' component={JobsPageComponent} />
                                         <Route exact path='/cloudstorages' component={CloudStoragesPageComponent} />
                                         <Route
