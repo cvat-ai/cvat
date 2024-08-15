@@ -8,7 +8,7 @@ import User from './user';
 export default class AssigneeConsensusReport {
     #id: number;
     #taskID: number;
-    #assignee: User | null;
+    #assignee: User;
     #consensusScore: number;
     #conflictCount: number;
     #consensusReportID: number;
@@ -35,12 +35,12 @@ export default class AssigneeConsensusReport {
         return this.#taskID;
     }
 
-    get assignee(): User | null {
+    get assignee(): User {
         return this.#assignee;
     }
 
     get assigneeID(): number {
-        return this.#assignee ? this.#assignee.id : 0;
+        return this.#assignee.id;
     }
 
     get consensusScore(): number {

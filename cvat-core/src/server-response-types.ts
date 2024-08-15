@@ -390,7 +390,7 @@ export interface SerializedAssigneeConsensusReportData {
     id?: number;
     task_id?: number;
     consensus_report_id?: number;
-    assignee?: SerializedUser | null;
+    assignee?: SerializedUser;
     consensus_score?: number;
     conflict_count?: number;
 }
