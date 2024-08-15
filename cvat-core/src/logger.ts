@@ -52,17 +52,12 @@ class Logger {
         this.ignoreRules = {
             [EventScope.zoomImage]: {
                 lastEvent: null,
-                ignore: this.defaultIgnore,
-                update: defaultUpdate,
-            },
-            [EventScope.dragObject]: {
-                lastEvent: null,
-                ignore: this.defaultIgnore,
-                update: defaultUpdate,
-            },
-            [EventScope.resizeObject]: {
-                lastEvent: null,
-                ignore: this.defaultIgnore,
+                ignore: (previousEvent: Event): boolean => {
+                    // previous event from the same scope is the latest push event in the collection
+                    // it means, no more events were pushed between the previous and this one
+                    const [lastCollectionEvent] = this.collection.slice(-1);
+                    return previousEvent === lastCollectionEvent;
+                },
                 update: defaultUpdate,
             },
             [EventScope.exception]: {
@@ -121,13 +116,6 @@ class Logger {
         const result = await PluginRegistry.apiWrapper.call(this, Logger.prototype.save);
         return result;
     }
-
-    private defaultIgnore = (previousEvent: Event): boolean => {
-        // previous event from the same scope is the latest push event in the collection
-        // it means, no more events were pushed between the previous and this one
-        const [lastCollectionEvent] = this.collection.slice(-1);
-        return previousEvent === lastCollectionEvent;
-    };
 }
 
 Object.defineProperties(Logger.prototype.configure, {
