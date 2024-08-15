@@ -30,11 +30,11 @@ from cvat.apps.consensus.models import (
 from cvat.apps.consensus.new_intersect_merge import IntersectMerge
 from cvat.apps.dataset_manager.util import bulk_create
 from cvat.apps.engine.models import Job, Task, User
-from cvat.apps.quality_control.quality_reports import AnnotationId, JobDataProvider, _Serializable
+from cvat.apps.quality_control.quality_reports import AnnotationId, JobDataProvider, Serializable
 
 
 @define(kw_only=True)
-class AnnotationConflict(_Serializable):
+class AnnotationConflict(Serializable):
     frame_id: int
     type: models.ConsensusConflictType
     annotation_ids: List[AnnotationId]
@@ -55,7 +55,7 @@ class AnnotationConflict(_Serializable):
 
 
 @define(kw_only=True)
-class ComparisonReportComparisonSummary(_Serializable):
+class ComparisonReportComparisonSummary(Serializable):
     frames: List[str]
 
     @property
@@ -99,7 +99,7 @@ class ComparisonReportComparisonSummary(_Serializable):
 
 
 @define(kw_only=True, init=False)
-class ComparisonReportFrameSummary(_Serializable):
+class ComparisonReportFrameSummary(Serializable):
     conflicts: List[AnnotationConflict]
     consensus_score: float
 
@@ -153,7 +153,7 @@ class ComparisonReportFrameSummary(_Serializable):
 
 
 @define(kw_only=True)
-class ComparisonParameters(_Serializable):
+class ComparisonParameters(Serializable):
     included_annotation_types: List[dm.AnnotationType] = [
         dm.AnnotationType.bbox,
         dm.AnnotationType.points,
@@ -182,7 +182,7 @@ class ComparisonParameters(_Serializable):
 
 
 @define(kw_only=True)
-class ComparisonReport(_Serializable):
+class ComparisonReport(Serializable):
     parameters: ComparisonParameters
     comparison_summary: ComparisonReportComparisonSummary
     frame_results: Dict[int, ComparisonReportFrameSummary]

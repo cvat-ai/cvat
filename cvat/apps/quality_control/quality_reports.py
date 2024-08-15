@@ -55,9 +55,9 @@ from cvat.apps.quality_control.models import (
 from cvat.utils.background_jobs import schedule_job_with_throttling
 
 
-class _Serializable:
+class Serializable:
     def _value_serializer(self, v):
-        if isinstance(v, _Serializable):
+        if isinstance(v, Serializable):
             return v.to_dict()
         elif isinstance(v, (list, tuple, set, frozenset)):
             return [self._value_serializer(vv) for vv in v]
@@ -83,7 +83,7 @@ class _Serializable:
 
 
 @define(kw_only=True)
-class AnnotationId(_Serializable):
+class AnnotationId(Serializable):
     obj_id: int
     job_id: int
     type: AnnotationType
@@ -106,7 +106,7 @@ class AnnotationId(_Serializable):
 
 
 @define(kw_only=True)
-class AnnotationConflict(_Serializable):
+class AnnotationConflict(Serializable):
     frame_id: int
     type: AnnotationConflictType
     annotation_ids: List[AnnotationId]
@@ -151,7 +151,7 @@ class AnnotationConflict(_Serializable):
 
 
 @define(kw_only=True)
-class ComparisonParameters(_Serializable):
+class ComparisonParameters(Serializable):
     included_annotation_types: List[dm.AnnotationType] = [
         dm.AnnotationType.bbox,
         dm.AnnotationType.points,
@@ -219,7 +219,7 @@ class ComparisonParameters(_Serializable):
 
 
 @define(kw_only=True)
-class ConfusionMatrix(_Serializable):
+class ConfusionMatrix(Serializable):
     labels: List[str]
     rows: np.array
     precision: np.array
@@ -255,7 +255,7 @@ class ConfusionMatrix(_Serializable):
 
 
 @define(kw_only=True)
-class ComparisonReportAnnotationsSummary(_Serializable):
+class ComparisonReportAnnotationsSummary(Serializable):
     valid_count: int
     missing_count: int
     extra_count: int
@@ -306,7 +306,7 @@ class ComparisonReportAnnotationsSummary(_Serializable):
 
 
 @define(kw_only=True)
-class ComparisonReportAnnotationShapeSummary(_Serializable):
+class ComparisonReportAnnotationShapeSummary(Serializable):
     valid_count: int
     missing_count: int
     extra_count: int
@@ -347,7 +347,7 @@ class ComparisonReportAnnotationShapeSummary(_Serializable):
 
 
 @define(kw_only=True)
-class ComparisonReportAnnotationLabelSummary(_Serializable):
+class ComparisonReportAnnotationLabelSummary(Serializable):
     valid_count: int
     invalid_count: int
     total_count: int
@@ -373,7 +373,7 @@ class ComparisonReportAnnotationLabelSummary(_Serializable):
 
 
 @define(kw_only=True)
-class ComparisonReportAnnotationComponentsSummary(_Serializable):
+class ComparisonReportAnnotationComponentsSummary(Serializable):
     shape: ComparisonReportAnnotationShapeSummary
     label: ComparisonReportAnnotationLabelSummary
 
@@ -390,7 +390,7 @@ class ComparisonReportAnnotationComponentsSummary(_Serializable):
 
 
 @define(kw_only=True)
-class ComparisonReportComparisonSummary(_Serializable):
+class ComparisonReportComparisonSummary(Serializable):
     frame_share: float
     frames: List[str]
 
@@ -447,7 +447,7 @@ class ComparisonReportComparisonSummary(_Serializable):
 
 
 @define(kw_only=True, init=False)
-class ComparisonReportFrameSummary(_Serializable):
+class ComparisonReportFrameSummary(Serializable):
     conflicts: List[AnnotationConflict]
 
     @cached_property
@@ -513,7 +513,7 @@ class ComparisonReportFrameSummary(_Serializable):
 
 
 @define(kw_only=True)
-class ComparisonReport(_Serializable):
+class ComparisonReport(Serializable):
     parameters: ComparisonParameters
     comparison_summary: ComparisonReportComparisonSummary
     frame_results: Dict[int, ComparisonReportFrameSummary]
@@ -700,7 +700,7 @@ def match_segments(
     return matches, mispred, a_unmatched, b_unmatched
 
 
-def _OKS(a, b, sigma=0.1, bbox=None, scale=None, visibility_a=None, visibility_b=None):
+def OKS(a, b, sigma=0.1, bbox=None, scale=None, visibility_a=None, visibility_b=None):
     """
     Object Keypoint Similarity metric.
     https://cocodataset.org/#keypoints-eval
@@ -735,7 +735,7 @@ def _OKS(a, b, sigma=0.1, bbox=None, scale=None, visibility_a=None, visibility_b
 
 
 @define(kw_only=True)
-class _KeypointsMatcher(dm.ops.PointsMatcher):
+class KeypointsMatcher(dm.ops.PointsMatcher):
     def distance(self, a: dm.Points, b: dm.Points) -> float:
         a_bbox = self.instance_map[id(a)][1]
         b_bbox = self.instance_map[id(b)][1]
@@ -743,7 +743,7 @@ class _KeypointsMatcher(dm.ops.PointsMatcher):
             return 0
 
         bbox = dm.ops.mean_bbox([a_bbox, b_bbox])
-        return _OKS(
+        return OKS(
             a,
             b,
             sigma=self.sigma,
@@ -759,7 +759,7 @@ def _arr_div(a_arr: np.ndarray, b_arr: np.ndarray) -> np.ndarray:
     return a_arr / divisor
 
 
-def _to_rle(ann: dm.Annotation, *, img_h: int, img_w: int):
+def to_rle(ann: dm.Annotation, *, img_h: int, img_w: int):
     from pycocotools import mask as mask_utils
 
     if ann.type == dm.AnnotationType.polygon:
@@ -783,8 +783,8 @@ def _segment_iou(a: dm.Annotation, b: dm.Annotation, *, img_h: int, img_w: int) 
 
     from pycocotools import mask as mask_utils
 
-    a = _to_rle(a, img_h=img_h, img_w=img_w)
-    b = _to_rle(b, img_h=img_h, img_w=img_w)
+    a = to_rle(a, img_h=img_h, img_w=img_w)
+    b = to_rle(b, img_h=img_h, img_w=img_w)
 
     # Note that mask_utils.iou expects (dt, gt). Check this if the 3rd param is True
     return float(mask_utils.iou(b, a, [0]))
@@ -1128,7 +1128,7 @@ class _DistanceComparator(dm.ops.DistanceComparator):
 
             from pycocotools import mask as mask_utils
 
-            object_rle_groups = [_to_rle(ann, img_h=img_h, img_w=img_w) for ann in anns]
+            object_rle_groups = [to_rle(ann, img_h=img_h, img_w=img_w) for ann in anns]
             object_rles = [mask_utils.merge(g) for g in object_rle_groups]
             object_masks = mask_utils.decode(object_rles)
 
@@ -1180,7 +1180,7 @@ class _DistanceComparator(dm.ops.DistanceComparator):
                     # Create merged RLE for the instance shapes
                     object_anns = instances[obj_id]
                     object_rle_groups = [
-                        _to_rle(ann, img_h=img_h, img_w=img_w) for ann in object_anns
+                        to_rle(ann, img_h=img_h, img_w=img_w) for ann in object_anns
                     ]
                     rle = mask_utils.merge(list(itertools.chain.from_iterable(object_rle_groups)))
 
@@ -1282,7 +1282,7 @@ class _DistanceComparator(dm.ops.DistanceComparator):
             if a_area == 0 and b_area == 0:
                 # Simple case: singular points without bbox
                 # match them in the image space
-                return _OKS(a, b, sigma=self.oks_sigma, scale=img_h * img_w)
+                return OKS(a, b, sigma=self.oks_sigma, scale=img_h * img_w)
 
             else:
                 # Complex case: multiple points, grouped points, points with a bbox
@@ -1301,7 +1301,7 @@ class _DistanceComparator(dm.ops.DistanceComparator):
                 matches, mismatches, a_extra, b_extra = match_segments(
                     range(len(a_points)),
                     range(len(b_points)),
-                    distance=lambda ai, bi: _OKS(
+                    distance=lambda ai, bi: OKS(
                         dm.Points(a_points[ai]),
                         dm.Points(b_points[bi]),
                         sigma=self.oks_sigma,
@@ -1412,7 +1412,7 @@ class _DistanceComparator(dm.ops.DistanceComparator):
                 for ann in instance_group:
                     instance_map[id(ann)] = [instance_group, instance_bbox]
 
-        matcher = _KeypointsMatcher(instance_map=instance_map, sigma=self.oks_sigma)
+        matcher = KeypointsMatcher(instance_map=instance_map, sigma=self.oks_sigma)
 
         results = self._match_segments(
             dm.AnnotationType.points,
