@@ -150,7 +150,7 @@ function ActionsMenuComponent(props: Props): JSX.Element {
             >
                 Merge Consensus Jobs
             </Menu.Item>
-        ), 55]);
+        ), 60]);
     }
 
     if (projectID === null) {
