@@ -259,10 +259,6 @@ class IMediaReader(ABC):
     def get_image_size(self, i):
         pass
 
-    @abstractmethod
-    def __len__(self):
-        pass
-
 class ImageListReader(IMediaReader):
     def __init__(self,
         source_path,
@@ -281,7 +277,7 @@ class ImageListReader(IMediaReader):
             stop = min(len(source_path) - 1, stop)
 
         step = max(step, 1)
-        assert stop > start
+        assert stop >= start
 
         super().__init__(
             source_path=sort(source_path, sorting_method),

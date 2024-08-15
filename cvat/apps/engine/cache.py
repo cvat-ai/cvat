@@ -146,7 +146,7 @@ class MediaCache:
     def get_frame_context_images(self, db_data: models.Data, frame_number: int) -> DataWithMime:
         return self._get_or_set_cache_item(
             key=f"context_image_{db_data.id}_{frame_number}",
-            create_callback=lambda: self._prepare_context_image(db_data, frame_number),
+            create_callback=lambda: self.prepare_context_images(db_data, frame_number),
         )
 
     def _read_raw_frames(
