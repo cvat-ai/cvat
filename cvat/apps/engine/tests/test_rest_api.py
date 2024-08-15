@@ -3451,7 +3451,7 @@ class TaskDataAPITestCase(ApiTestBase):
                                         expected_compressed_type,
                                         expected_original_type,
                                         expected_image_sizes,
-                                        expected_storage_method=StorageMethodChoice.FILE_SYSTEM,
+                                        expected_storage_method=None,
                                         expected_uploaded_data_location=StorageChoice.LOCAL,
                                         dimension=DimensionType.DIM_2D,
                                         expected_task_creation_status_state='Finished',
@@ -3465,6 +3465,12 @@ class TaskDataAPITestCase(ApiTestBase):
 
         if get_status_callback is None:
             get_status_callback = self._get_task_creation_status
+
+        if expected_storage_method is None:
+            if settings.MEDIA_CACHE_ALLOW_STATIC_CACHE:
+                expected_storage_method = StorageMethodChoice.FILE_SYSTEM
+            else:
+                expected_storage_method = StorageMethodChoice.CACHE
 
         # create task
         response = self._create_task(user, spec)
@@ -4025,7 +4031,7 @@ class TaskDataAPITestCase(ApiTestBase):
 
         image_sizes = self._share_image_sizes['test_rotated_90_video.mp4']
         self._test_api_v2_tasks_id_data_spec(user, task_spec, task_data, self.ChunkType.IMAGESET,
-            self.ChunkType.VIDEO, image_sizes, StorageMethodChoice.FILE_SYSTEM)
+            self.ChunkType.VIDEO, image_sizes, StorageMethodChoice.CACHE)
 
     def _test_api_v2_tasks_id_data_create_can_use_chunked_cached_local_video(self, user):
         task_spec = {
@@ -4195,7 +4201,7 @@ class TaskDataAPITestCase(ApiTestBase):
                 task_data = task_data_common.copy()
 
                 task_data["use_cache"] = caching_enabled
-                if caching_enabled:
+                if caching_enabled or not settings.MEDIA_CACHE_ALLOW_STATIC_CACHE:
                     storage_method = StorageMethodChoice.CACHE
                 else:
                     storage_method = StorageMethodChoice.FILE_SYSTEM
@@ -4254,7 +4260,7 @@ class TaskDataAPITestCase(ApiTestBase):
                     sorting_method=SortingMethod.PREDEFINED)
 
                 task_data_common["use_cache"] = caching_enabled
-                if caching_enabled:
+                if caching_enabled or not settings.MEDIA_CACHE_ALLOW_STATIC_CACHE:
                     storage_method = StorageMethodChoice.CACHE
                 else:
                     storage_method = StorageMethodChoice.FILE_SYSTEM
@@ -4315,7 +4321,7 @@ class TaskDataAPITestCase(ApiTestBase):
                 task_data = task_data_common.copy()
 
                 task_data["use_cache"] = caching_enabled
-                if caching_enabled:
+                if caching_enabled or not settings.MEDIA_CACHE_ALLOW_STATIC_CACHE:
                     storage_method = StorageMethodChoice.CACHE
                 else:
                     storage_method = StorageMethodChoice.FILE_SYSTEM
@@ -4388,7 +4394,7 @@ class TaskDataAPITestCase(ApiTestBase):
                         sorting_method=SortingMethod.PREDEFINED)
 
                     task_data["use_cache"] = caching_enabled
-                    if caching_enabled:
+                    if caching_enabled or not settings.MEDIA_CACHE_ALLOW_STATIC_CACHE:
                         storage_method = StorageMethodChoice.CACHE
                     else:
                         storage_method = StorageMethodChoice.FILE_SYSTEM
@@ -4566,7 +4572,7 @@ class TaskDataAPITestCase(ApiTestBase):
 
                 self._test_api_v2_tasks_id_data_spec(user, task_spec, task_data,
                     self.ChunkType.IMAGESET, self.ChunkType.IMAGESET,
-                    image_sizes, StorageMethodChoice.FILE_SYSTEM, StorageChoice.LOCAL,
+                    image_sizes, expected_uploaded_data_location=StorageChoice.LOCAL,
                     send_data_callback=_send_data)
 
         with self.subTest(current_function_name() + ' mismatching file sets - extra files'):
@@ -4580,7 +4586,7 @@ class TaskDataAPITestCase(ApiTestBase):
             with self.assertRaisesMessage(Exception, "(extra)"):
                 self._test_api_v2_tasks_id_data_spec(user, task_spec, task_data,
                     self.ChunkType.IMAGESET, self.ChunkType.IMAGESET,
-                    image_sizes, StorageMethodChoice.FILE_SYSTEM, StorageChoice.LOCAL,
+                    image_sizes, expected_uploaded_data_location=StorageChoice.LOCAL,
                     send_data_callback=_send_data_and_fail)
 
         with self.subTest(current_function_name() + ' mismatching file sets - missing files'):
@@ -4594,7 +4600,7 @@ class TaskDataAPITestCase(ApiTestBase):
             with self.assertRaisesMessage(Exception, "(missing)"):
                 self._test_api_v2_tasks_id_data_spec(user, task_spec, task_data,
                     self.ChunkType.IMAGESET, self.ChunkType.IMAGESET,
-                    image_sizes, StorageMethodChoice.FILE_SYSTEM, StorageChoice.LOCAL,
+                    image_sizes, expected_uploaded_data_location=StorageChoice.LOCAL,
                     send_data_callback=_send_data_and_fail)
 
     def _test_api_v2_tasks_id_data_create_can_use_server_rar(self, user):
