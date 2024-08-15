@@ -15,8 +15,14 @@ export function conflict(sequence: string, existingSequence: string): boolean {
     if (isEqual(sequence, existingSequence)) {
         return true;
     }
-    const splitSequence = sequence.split(' ');
-    const splitExistingSequence = existingSequence.split(' ');
+    if (!sequence.trim() || !existingSequence.trim()) {
+        return false;
+    }
+    if (sequence === '+' || existingSequence === '+') {
+        return false;
+    }
+    const splitSequence = sequence.split('+').join(' ').split(' ');
+    const splitExistingSequence = existingSequence.split('+').join(' ').split(' ');
 
     for (let i = 0; i < Math.max(splitSequence.length, splitExistingSequence.length); i++) {
         if (!splitSequence[i] || !splitExistingSequence[i]) {
