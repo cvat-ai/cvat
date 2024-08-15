@@ -130,7 +130,7 @@ export default function AnnotationPageComponent(props: Props): JSX.Element {
 
     useEffect(() => {
         if (job) {
-            job.logger.log(EventScope.loadWorkspace, { workspace });
+            job.logger.log(EventScope.loadWorkspace, { obj_name: workspace });
         }
     }, [job, workspace]);
 

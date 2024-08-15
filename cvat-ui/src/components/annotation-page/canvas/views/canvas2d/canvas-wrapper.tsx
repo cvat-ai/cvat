@@ -752,14 +752,23 @@ class CanvasWrapperComponent extends React.PureComponent<Props> {
         }
     };
 
-    private onCanvasShapeDragged = (e: CustomEvent<{ duration: number }>): void => {
+    private onCanvasShapeDragged = (e: CustomEvent<{ duration: number; state: ObjectState }>): void => {
         const { jobInstance } = this.props;
-        jobInstance.logger.log(EventScope.dragObject, { duration: e.detail.duration });
+        const { detail: { duration, state: { serverID } } } = e;
+        jobInstance.logger.log(
+            EventScope.dragObject,
+            { duration, ...(serverID ? { obj_id: serverID } : {}) },
+        );
     };
 
-    private onCanvasShapeResized = (e: CustomEvent<{ duration: number }>): void => {
+    private onCanvasShapeResized = (e: CustomEvent<{ duration: number; state: ObjectState }>): void => {
         const { jobInstance } = this.props;
-        jobInstance.logger.log(EventScope.resizeObject, { duration: e.detail.duration });
+        const { detail: { duration, state: { serverID } } } = e;
+
+        jobInstance.logger.log(
+            EventScope.resizeObject,
+            { duration, ...(serverID ? { obj_id: serverID } : {}) },
+        );
     };
 
     private onCanvasImageFitted = (): void => {
