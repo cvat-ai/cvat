@@ -14,7 +14,6 @@ import { Job, JobType } from 'cvat-core-wrapper';
 import { useCardHeightHOC } from 'utils/hooks';
 import Preview from 'components/common/preview';
 import JobActionsMenu from 'components/job-item/job-actions-menu';
-import { Tag } from 'antd';
 
 const useCardHeight = useCardHeightHOC({
     containerClassName: 'cvat-jobs-page',
@@ -44,9 +43,9 @@ function JobCardComponent(props: Props): JSX.Element {
 
     let tag = null;
     if (job.type === JobType.GROUND_TRUTH) {
-        tag = <Tag color='#ED9C00'>Ground truth</Tag>;
+        tag = 'Ground truth';
     } else if (job.type === JobType.CONSENSUS) {
-        tag = <Tag color='#1890FF'>Consensus</Tag>;
+        tag = 'Consensus';
     }
 
     return (
@@ -67,6 +66,7 @@ function JobCardComponent(props: Props): JSX.Element {
                         ID:
                         {` ${job.id}`}
                     </div>
+                    {tag && <div className='cvat-job-page-list-item-type'>{tag}</div>}
                     <div className='cvat-job-page-list-item-dimension'>{job.dimension.toUpperCase()}</div>
                 </>
             )}
@@ -80,7 +80,6 @@ function JobCardComponent(props: Props): JSX.Element {
                 ) : (
                     <Descriptions.Item label='Assignee'> </Descriptions.Item>
                 )}
-                <Descriptions.Item>{tag}</Descriptions.Item>
             </Descriptions>
             <Dropdown
                 trigger={['click']}
