@@ -273,15 +273,13 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
             portals: this.collectTrackerPortals(),
         });
 
-        window.document.addEventListener('keydown', this.onKeyDown);
-        window.document.addEventListener('keyup', this.onKeyUp);
         canvasInstance.html().addEventListener('canvas.interacted', this.interactionListener);
         canvasInstance.html().addEventListener('canvas.canceled', this.cancelListener);
     }
 
     public componentDidUpdate(prevProps: Props, prevState: State): void {
         const {
-            isActivated, defaultApproxPolyAccuracy, canvasInstance, states,
+            isActivated, defaultApproxPolyAccuracy, canvasInstance, states, toolsBlockerState,
         } = this.props;
         const { approxPolyAccuracy, mode, activeTracker } = this.state;
 
@@ -317,6 +315,14 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
             window.addEventListener('contextmenu', this.contextmenuDisabler);
         }
 
+        if (
+            prevProps.toolsBlockerState.algorithmsLocked &&
+            !toolsBlockerState.algorithmsLocked &&
+            isActivated && mode === 'interaction' && this.interaction.latestPostponedEvent
+        ) {
+            this.onInteraction(this.interaction.latestPostponedEvent);
+        }
+
         if (prevState.approxPolyAccuracy !== approxPolyAccuracy) {
             if (isActivated && mode === 'interaction' && this.interaction.latestResponse.points.length) {
                 this.approximateResponsePoints(this.interaction.latestResponse.points)
@@ -339,8 +345,6 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
     public componentWillUnmount(): void {
         const { canvasInstance } = this.props;
         onRemoveAnnotations(null);
-        window.document.removeEventListener('keydown', this.onKeyDown);
-        window.document.removeEventListener('keyup', this.onKeyUp);
         canvasInstance.html().removeEventListener('canvas.interacted', this.interactionListener);
         canvasInstance.html().removeEventListener('canvas.canceled', this.cancelListener);
     }
@@ -589,35 +593,6 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
         this.setState({
             activeTracker: trackers.filter((tracker: MLModel) => tracker.id === value)[0],
         });
-    };
-
-    private onChangeToolsBlockerState = (event: string): void => {
-        const { isActivated, onSwitchToolsBlockerState } = this.props;
-        const { mode } = this.state;
-
-        if (isActivated && mode === 'interaction') {
-            if (event === 'keydown') {
-                this.interaction.latestPostponedEvent = null;
-                onSwitchToolsBlockerState({ algorithmsLocked: true });
-            } else if (event === 'keyup') {
-                onSwitchToolsBlockerState({ algorithmsLocked: false });
-                if (this.interaction.latestPostponedEvent) {
-                    this.onInteraction(this.interaction.latestPostponedEvent);
-                }
-            }
-        }
-    };
-
-    private onKeyUp = (e: KeyboardEvent): void => {
-        if (e.key === 'Control') {
-            this.onChangeToolsBlockerState('keyup');
-        }
-    };
-
-    private onKeyDown = (e: KeyboardEvent): void => {
-        if (!e.repeat && e.key === 'Control') {
-            this.onChangeToolsBlockerState('keydown');
-        }
     };
 
     private collectTrackerPortals(): React.ReactPortal[] {
@@ -1389,8 +1364,6 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
                         ).filter((state: any) => state);
 
                         createAnnotations(states.filter((state: ObjectState | null) => !!state));
-                        const { onSwitchToolsBlockerState } = this.props;
-                        onSwitchToolsBlockerState({ buttonVisible: false });
                     } catch (error: any) {
                         notification.error({
                             description: <CVATMarkdown>{error.message}</CVATMarkdown>,
