@@ -19,7 +19,6 @@ interface OwnProps {
 interface StateToProps {
     collapsed: boolean;
     state: ObjectState | null;
-    jobInstance: any;
 }
 
 interface DispatchToProps {
@@ -47,9 +46,6 @@ function mapStateToProps(state: CombinedState, own: OwnProps): StateToProps {
                 collapsedAll,
                 collapsed: statesCollapsed,
             },
-            job: {
-                instance: jobInstance,
-            },
         },
     } = state;
 
@@ -58,7 +54,6 @@ function mapStateToProps(state: CombinedState, own: OwnProps): StateToProps {
     return {
         collapsed,
         state: objectState,
-        jobInstance,
     };
 }
 
@@ -76,9 +71,7 @@ function mapDispatchToProps(dispatch: ThunkDispatch): DispatchToProps {
 type Props = StateToProps & DispatchToProps & OwnProps;
 class ObjectItemDetailsContainer extends React.PureComponent<Props> {
     private changeAttribute = (id: number, value: string): void => {
-        const {
-            state, readonly, updateState,
-        } = this.props;
+        const { state, readonly, updateState } = this.props;
         if (!readonly && state) {
             const attr: Record<number, string> = {};
             attr[id] = value;
