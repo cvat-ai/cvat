@@ -1117,7 +1117,6 @@ def _create_thread(
             models.RelatedFile(data=image.data, primary_image=image, path=os.path.join(upload_dir, related_file_path))
             for image in images
             for related_file_path in related_images.get(image.path, [])
-            if not image.is_placeholder # TODO
         ]
         models.RelatedFile.objects.bulk_create(db_related_files)
     else:
