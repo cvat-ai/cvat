@@ -9,7 +9,7 @@ from collections import Counter
 from copy import deepcopy
 from functools import cached_property
 from types import NoneType
-from typing import Any, Dict, List, Optional, cast
+from typing import Any, Dict, List, Optional, Union, cast
 
 import datumaro as dm
 import numpy as np
@@ -290,7 +290,8 @@ def generate_job_consensus_report(
             # the annotation belongs to which consensus dataset
             idx = merger._dataset_map[merger._item_map[merger._ann_map[id(annotation)][1]][1]][1]
             annotation_ids.append(consensus_job_data_providers[idx].dm_ann_to_ann_id(annotation))
-            assignee_report_data[assignees[idx]]["conflict_count"] += 1
+            if assignees[idx]:
+                assignee_report_data[assignees[idx]]["conflict_count"] += 1
 
         dm_item = consensus_job_data_providers[0].dm_dataset.get(error.item_id[0])
         frame_id: int = consensus_job_data_providers[0].dm_item_id_to_frame_id(dm_item)
@@ -318,15 +319,18 @@ def generate_job_consensus_report(
             consensus_score=np.mean(frame_wise_consensus_score.get(frame_id, [0])),
         )
 
-    return ComparisonReport(
-        parameters=ComparisonParameters.from_dict(consensus_settings.to_dict()),
-        comparison_summary=ComparisonReportComparisonSummary(
-            frames=list(frames),
-            conflict_count=conflicts_count,
-            conflicts_by_type=Counter(c.type for c in conflicts),
+    return (
+        ComparisonReport(
+            parameters=ComparisonParameters.from_dict(consensus_settings.to_dict()),
+            comparison_summary=ComparisonReportComparisonSummary(
+                frames=list(frames),
+                conflict_count=conflicts_count,
+                conflicts_by_type=Counter(c.type for c in conflicts),
+            ),
+            frame_results=frame_results,
         ),
-        frame_results=frame_results,
-    ), assignee_report_data
+        assignee_report_data,
+    )
 
 
 def generate_task_consensus_report(job_reports: List[ComparisonReport]) -> ComparisonReport:

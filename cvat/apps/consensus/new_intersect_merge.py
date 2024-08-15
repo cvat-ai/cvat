@@ -5,445 +5,25 @@
 import itertools
 import logging as log
 import math
-from collections import OrderedDict
-from typing import Any, Callable, Dict, Iterable, List, Optional, Sequence, Tuple, Type, Union, cast
+from typing import Any, Callable, Dict, Optional, Sequence, Tuple, Union, cast
 
 import attr
 import datumaro as dm
 import numpy as np
 from attr import attrib, attrs
-from datumaro.components.annotation import (
-    Annotation,
-    AnnotationType,
-    Bbox,
-    Label,
-    LabelCategories,
-    MaskCategories,
-    PointsCategories,
+from datumaro.components.annotation import AnnotationType, Bbox
+from datumaro.components.dataset import Dataset
+from datumaro.components.errors import FailedLabelVotingError, NoMatchingItemError
+from datumaro.components.operations import (
+    ExactMerge,
+    LabelMerger,
 )
-from datumaro.components.cli_plugin import CliPlugin
-from datumaro.components.dataset import Dataset, DatasetItemStorage, IDataset
-from datumaro.components.errors import (
-    AnnotationsTooCloseError,
-    ConflictingCategoriesError,
-    DatasetMergeError,
-    FailedAttrVotingError,
-    FailedLabelVotingError,
-    MediaTypeError,
-    MismatchingAttributesError,
-    MismatchingImageInfoError,
-    MismatchingMediaError,
-    MismatchingMediaPathError,
-    NoMatchingAnnError,
-    NoMatchingItemError,
-    VideoMergeError,
-    WrongGroupError,
-)
-from datumaro.components.extractor import CategoriesInfo, DatasetItem
-from datumaro.components.media import Image, MediaElement, MultiframeImage, PointCloud, Video
-from datumaro.util import find
+from datumaro.components.operations import IntersectMerge as ClassicIntersectMerge
 from datumaro.util.annotation_util import find_instances, max_bbox, mean_bbox
 from datumaro.util.attrs_util import ensure_cls
-from scipy.optimize import linear_sum_assignment
 
-
-def OKS(a, b, sigma=0.1, bbox=None, scale=None, visibility_a=None, visibility_b=None):
-    """
-    Object Keypoint Similarity metric.
-    https://cocodataset.org/#keypoints-eval
-    """
-
-    p1 = np.array(a.points).reshape((-1, 2))
-    p2 = np.array(b.points).reshape((-1, 2))
-    if len(p1) != len(p2):
-        return 0
-
-    if visibility_a is None:
-        visibility_a = np.full(len(p1), True)
-    else:
-        visibility_a = np.asarray(visibility_a, dtype=bool)
-
-    if visibility_b is None:
-        visibility_b = np.full(len(p2), True)
-    else:
-        visibility_b = np.asarray(visibility_b, dtype=bool)
-
-    if not scale:
-        if bbox is None:
-            bbox = dm.ops.mean_bbox([a, b])
-        scale = bbox[2] * bbox[3]
-
-    dists = np.linalg.norm(p1 - p2, axis=1)
-    return np.sum(
-        visibility_a
-        * visibility_b
-        * np.exp((visibility_a == visibility_b) * (-(dists**2) / (2 * scale * (2 * sigma) ** 2)))
-    ) / np.sum(visibility_a | visibility_b, dtype=float)
-
-
-def match_annotations_equal(a, b):
-    matches = []
-    a_unmatched = a[:]
-    b_unmatched = b[:]
-    for a_ann in a:
-        for b_ann in b_unmatched:
-            if a_ann != b_ann:
-                continue
-
-            matches.append((a_ann, b_ann))
-            a_unmatched.remove(a_ann)
-            b_unmatched.remove(b_ann)
-            break
-
-    return matches, a_unmatched, b_unmatched
-
-
-def merge_annotations_equal(a, b):
-    matches, a_unmatched, b_unmatched = match_annotations_equal(a, b)
-    return [ann_a for (ann_a, _) in matches] + a_unmatched + b_unmatched
-
-
-def merge_categories(sources):
-    categories = {}
-    for source_idx, source in enumerate(sources):
-        for cat_type, source_cat in source.items():
-            existing_cat = categories.setdefault(cat_type, source_cat)
-            if existing_cat != source_cat and len(source_cat) != 0:
-                if len(existing_cat) == 0:
-                    categories[cat_type] = source_cat
-                else:
-                    raise ConflictingCategoriesError(
-                        "Merging of datasets with different categories is "
-                        "only allowed in 'merge' command.",
-                        sources=list(range(source_idx)),
-                    )
-    return categories
-
-
-class MergingStrategy(CliPlugin):
-    @classmethod
-    def merge(cls, sources, **options):
-        instance = cls(**options)
-        return instance(sources)
-
-    def __init__(self, **options):
-        super().__init__(**options)
-        self.__dict__["_sources"] = None
-
-    def __call__(self, sources):
-        raise NotImplementedError()
-
-
-class ExactMerge:
-    """
-    Merges several datasets using the "simple" algorithm:
-        - items are matched by (id, subset) pairs
-        - matching items share the media info available:
-
-            - nothing + nothing = nothing
-            - nothing + something = something
-            - something A + something B = conflict
-        - annotations are matched by value and shared
-        - in case of conflicts, throws an error
-    """
-
-    @classmethod
-    def merge(cls, *sources: IDataset) -> DatasetItemStorage:
-        items = DatasetItemStorage()
-        for source_idx, source in enumerate(sources):
-            for item in source:
-                existing_item = items.get(item.id, item.subset)
-                if existing_item is not None:
-                    try:
-                        item = cls._merge_items(existing_item, item)
-                    except DatasetMergeError as e:
-                        e.sources = set(range(source_idx))
-                        raise e
-
-                items.put(item)
-        return items
-
-    @classmethod
-    def _merge_items(cls, existing_item: DatasetItem, current_item: DatasetItem) -> DatasetItem:
-        return existing_item.wrap(
-            media=cls._merge_media(existing_item, current_item),
-            attributes=cls._merge_attrs(
-                existing_item.attributes,
-                current_item.attributes,
-                item_id=(existing_item.id, existing_item.subset),
-            ),
-            annotations=cls._merge_anno(existing_item.annotations, current_item.annotations),
-        )
-
-    @staticmethod
-    def _merge_attrs(a: Dict[str, Any], b: Dict[str, Any], item_id: Tuple[str, str]) -> Dict:
-        merged = {}
-
-        for name in a.keys() | b.keys():
-            a_val = a.get(name, None)
-            b_val = b.get(name, None)
-
-            if name not in a:
-                m_val = b_val
-            elif name not in b:
-                m_val = a_val
-            elif a_val != b_val:
-                raise MismatchingAttributesError(item_id, name, a_val, b_val)
-            else:
-                m_val = a_val
-
-            merged[name] = m_val
-
-        return merged
-
-    @classmethod
-    def _merge_media(
-        cls, item_a: DatasetItem, item_b: DatasetItem
-    ) -> Union[Image, PointCloud, Video]:
-        if (not item_a.media or isinstance(item_a.media, Image)) and (
-            not item_b.media or isinstance(item_b.media, Image)
-        ):
-            media = cls._merge_images(item_a, item_b)
-        elif (not item_a.media or isinstance(item_a.media, PointCloud)) and (
-            not item_b.media or isinstance(item_b.media, PointCloud)
-        ):
-            media = cls._merge_point_clouds(item_a, item_b)
-        elif (not item_a.media or isinstance(item_a.media, Video)) and (
-            not item_b.media or isinstance(item_b.media, Video)
-        ):
-            media = cls._merge_videos(item_a, item_b)
-        elif (not item_a.media or isinstance(item_a.media, MultiframeImage)) and (
-            not item_b.media or isinstance(item_b.media, MultiframeImage)
-        ):
-            media = cls._merge_multiframe_images(item_a, item_b)
-        elif (not item_a.media or isinstance(item_a.media, MediaElement)) and (
-            not item_b.media or isinstance(item_b.media, MediaElement)
-        ):
-            if isinstance(item_a.media, MediaElement) and isinstance(item_b.media, MediaElement):
-                if (
-                    item_a.media.path
-                    and item_b.media.path
-                    and item_a.media.path != item_b.media.path
-                ):
-                    raise MismatchingMediaPathError(
-                        (item_a.id, item_a.subset), item_a.media.path, item_b.media.path
-                    )
-
-                if item_a.media.path:
-                    media = item_a.media
-                else:
-                    media = item_b.media
-
-            elif isinstance(item_a.media, MediaElement):
-                media = item_a.media
-            else:
-                media = item_b.media
-        else:
-            raise MismatchingMediaError((item_a.id, item_a.subset), item_a.media, item_b.media)
-        return media
-
-    @staticmethod
-    def _merge_images(item_a: DatasetItem, item_b: DatasetItem) -> Image:
-        media = None
-
-        if isinstance(item_a.media, Image) and isinstance(item_b.media, Image):
-            if (
-                item_a.media.path
-                and item_b.media.path
-                and item_a.media.path != item_b.media.path
-                and item_a.media.has_data is item_b.media.has_data
-            ):
-                # We use has_data as a replacement for path existence check
-                # - If only one image has data, we'll use it. The other
-                #   one is just a path metainfo, which is not significant
-                #   in this case.
-                # - If both images have data or both don't, we need
-                #   to compare paths.
-                #
-                # Different paths can aclually point to the same file,
-                # but it's not the case we'd like to allow here to be
-                # a "simple" merging strategy used for extractor joining
-                raise MismatchingMediaPathError(
-                    (item_a.id, item_a.subset), item_a.media.path, item_b.media.path
-                )
-
-            if (
-                item_a.media.has_size
-                and item_b.media.has_size
-                and item_a.media.size != item_b.media.size
-            ):
-                raise MismatchingImageInfoError(
-                    (item_a.id, item_a.subset), item_a.media.size, item_b.media.size
-                )
-
-            # Avoid direct comparison here for better performance
-            # If there are 2 "data-only" images, they won't be compared and
-            # we just use the first one
-            if item_a.media.has_data:
-                media = item_a.media
-            elif item_b.media.has_data:
-                media = item_b.media
-            elif item_a.media.path:
-                media = item_a.media
-            elif item_b.media.path:
-                media = item_b.media
-            elif item_a.media.has_size:
-                media = item_a.media
-            elif item_b.media.has_size:
-                media = item_b.media
-            else:
-                assert False, "Unknown image field combination"
-
-            if media and not media.has_data or not media.has_size:
-                if item_a.media._size:
-                    media._size = item_a.media._size
-                elif item_b.media._size:
-                    media._size = item_b.media._size
-        elif isinstance(item_a.media, Image):
-            media = item_a.media
-        else:
-            media = item_b.media
-
-        return media
-
-    @staticmethod
-    def _merge_point_clouds(item_a: DatasetItem, item_b: DatasetItem) -> PointCloud:
-        media = None
-
-        if isinstance(item_a.media, PointCloud) and isinstance(item_b.media, PointCloud):
-            if item_a.media.path and item_b.media.path and item_a.media.path != item_b.media.path:
-                raise MismatchingMediaPathError(
-                    (item_a.id, item_a.subset), item_a.media.path, item_b.media.path
-                )
-
-            if item_a.media.path or item_a.media.extra_images:
-                media = item_a.media
-
-                if item_b.media.extra_images:
-                    for image in item_b.media.extra_images:
-                        if image not in media.extra_images:
-                            media.extra_images.append(image)
-            else:
-                media = item_b.media
-
-                if item_a.media.extra_images:
-                    for image in item_a.media.extra_images:
-                        if image not in media.extra_images:
-                            media.extra_images.append(image)
-
-        elif isinstance(item_a.media, PointCloud):
-            media = item_a.media
-        else:
-            media = item_b.media
-
-        return media
-
-    @staticmethod
-    def _merge_videos(item_a: DatasetItem, item_b: DatasetItem) -> Video:
-        media = None
-
-        if isinstance(item_a.media, Video) and isinstance(item_b.media, Video):
-            if (
-                item_a.media.path is not item_b.media.path
-                or item_a.media._start_frame is not item_b.media._start_frame
-                or item_a.media._end_frame is not item_b.media._end_frame
-                or item_a.media._step is not item_b.media._step
-            ):
-                raise VideoMergeError(item_a.id)
-
-            media = item_a.media
-        elif isinstance(item_a.media, Video):
-            media = item_a.media
-        else:
-            media = item_b.media
-
-        return media
-
-    @staticmethod
-    def _merge_multiframe_images(item_a: DatasetItem, item_b: DatasetItem) -> MultiframeImage:
-        media = None
-
-        if isinstance(item_a.media, MultiframeImage) and isinstance(item_b.media, MultiframeImage):
-            if item_a.media.path and item_b.media.path and item_a.media.path != item_b.media.path:
-                raise MismatchingMediaPathError(
-                    (item_a.id, item_a.subset), item_a.media.path, item_b.media.path
-                )
-
-            if item_a.media.path or item_a.media.data:
-                media = item_a.media
-
-                if item_b.media.data:
-                    for image in item_b.media.data:
-                        if image not in media.data:
-                            media.data.append(image)
-            else:
-                media = item_b.media
-
-                if item_a.media.data:
-                    for image in item_a.media.data:
-                        if image not in media.data:
-                            media.data.append(image)
-
-        elif isinstance(item_a.media, MultiframeImage):
-            media = item_a.media
-        else:
-            media = item_b.media
-
-        return media
-
-    @staticmethod
-    def _merge_anno(a: Iterable[Annotation], b: Iterable[Annotation]) -> List[Annotation]:
-        return merge_annotations_equal(a, b)
-
-    @staticmethod
-    def merge_categories(sources: Iterable[IDataset]) -> CategoriesInfo:
-        return merge_categories(sources)
-
-    @staticmethod
-    def merge_media_types(sources: Iterable[IDataset]) -> Type[MediaElement]:
-        if sources:
-            media_type = sources[0].media_type()
-            for s in sources:
-                if not issubclass(s.media_type(), media_type) or not issubclass(
-                    media_type, s.media_type()
-                ):
-                    # Symmetric comparision is needed in the case of subclasses:
-                    # eg. Image and ByteImage
-                    raise MediaTypeError("Datasets have different media types")
-            return media_type
-
-        return None
-
-
-class _KeypointsMatcher(dm.ops.PointsMatcher):
-    def distance(self, a: dm.Points, b: dm.Points) -> float:
-        a_bbox = self.instance_map[id(a)][1]
-        b_bbox = self.instance_map[id(b)][1]
-        if dm.ops.bbox_iou(a_bbox, b_bbox) <= 0:
-            return 0
-
-        bbox = dm.ops.mean_bbox([a_bbox, b_bbox])
-        return OKS(
-            a,
-            b,
-            sigma=self.sigma,
-            bbox=bbox,
-            visibility_a=[v == dm.Points.Visibility.visible for v in a.visibility],
-            visibility_b=[v == dm.Points.Visibility.visible for v in b.visibility],
-        )
-
-
-def _to_rle(ann: dm.Annotation, *, img_h: int, img_w: int):
-    from pycocotools import mask as mask_utils
-
-    if ann.type == dm.AnnotationType.polygon:
-        return mask_utils.frPyObjects([ann.points], img_h, img_w)
-    elif isinstance(ann, dm.RleMask):
-        return [ann.rle]
-    elif ann.type == dm.AnnotationType.mask:
-        return [mask_utils.encode(ann.image)]
-    else:
-        assert False
+from cvat.apps.engine.models import Label
+from cvat.apps.quality_control.quality_reports import OKS, KeypointsMatcher, match_segments, to_rle
 
 
 def segment_iou(
@@ -467,8 +47,8 @@ def segment_iou(
 
     if not is_bbox:
         assert img_h is not None and img_w is not None
-        a = _to_rle(a, img_h=img_h, img_w=img_w)
-        b = _to_rle(b, img_h=img_h, img_w=img_w)
+        a = to_rle(a, img_h=img_h, img_w=img_w)
+        b = to_rle(b, img_h=img_h, img_w=img_w)
     else:
         a = [list(a.get_bbox())]
         b = [list(b.get_bbox())]
@@ -478,7 +58,7 @@ def segment_iou(
 
 
 @attrs
-class IntersectMerge(MergingStrategy):
+class IntersectMerge(ClassicIntersectMerge):
     @attrs(repr_ns="IntersectMerge", kw_only=True)
     class Conf:
         pairwise_dist = attrib(converter=float, default=0.5)
@@ -516,7 +96,7 @@ class IntersectMerge(MergingStrategy):
     _ann_map = attrib(init=False)  # id(ann) -> (ann, id(item))
     _item_id = attrib(init=False)
     _item = attrib(init=False)
-    _dataset_mean_consensus_score = attrib(init=False)  # id(dataset) -> mean consensus score: float
+    dataset_mean_consensus_score = attrib(init=False)  # id(dataset) -> mean consensus score: float
 
     # Misc.
     _categories = attrib(init=False)  # merged categories
@@ -532,7 +112,7 @@ class IntersectMerge(MergingStrategy):
 
         item_matches, item_map = self.match_items(datasets)
         self._item_map = item_map
-        self._dataset_mean_consensus_score = {id(d): [] for d in datasets}
+        self.dataset_mean_consensus_score = {id(d): [] for d in datasets}
         self._dataset_map = {id(d): (d, i) for i, d in enumerate(datasets)}
         self._ann_map = {}
 
@@ -546,20 +126,17 @@ class IntersectMerge(MergingStrategy):
             merged.put(self.merge_items(items))
 
         # now we have conensus score for all annotations in
-        for dataset_id in self._dataset_mean_consensus_score:
-            self._dataset_mean_consensus_score[dataset_id] = np.mean(
-                self._dataset_mean_consensus_score[dataset_id]
+        for dataset_id in self.dataset_mean_consensus_score:
+            self.dataset_mean_consensus_score[dataset_id] = np.mean(
+                self.dataset_mean_consensus_score[dataset_id]
             )
 
         return merged
 
-    def get_ann_source(self, ann_id):
-        return self._item_map[self._ann_map[ann_id][1]][1]
-
     def merge_items(self, items):
         self._item = next(iter(items.values()))
 
-        # self._ann_map = {}  # id(annotation) -> (annotation, id(frame/item))
+        # self.ann_map = {}  # id(annotation) -> (annotation, id(frame/item))
         sources = []  # [annotation of frame 0, frame 1, ...]
         for item in items.values():
             self._ann_map.update({id(a): (a, id(item)) for a in item.annotations})
@@ -575,208 +152,6 @@ class IntersectMerge(MergingStrategy):
         ]
 
         return self._item.wrap(annotations=annotations)
-
-    def merge_annotations(self, sources):
-        self._make_mergers(sources)
-
-        clusters = self._match_annotations(sources)
-
-        joined_clusters = sum(clusters.values(), [])
-        group_map = self._find_cluster_groups(joined_clusters)
-
-        annotations = []
-        for t, clusters in clusters.items():
-            for cluster in clusters:
-                self._check_cluster_sources(cluster)
-
-            merged_clusters = self._merge_clusters(t, clusters)
-
-            for merged_ann, cluster in zip(merged_clusters, clusters):
-                attributes = self._find_cluster_attrs(cluster, merged_ann)
-                attributes = {
-                    k: v for k, v in attributes.items() if k not in self.conf.ignored_attributes
-                }
-                attributes.update(merged_ann.attributes)
-                merged_ann.attributes = attributes
-
-                new_group_id = find(enumerate(group_map), lambda e: id(cluster) in e[1][0])
-                if new_group_id is None:
-                    new_group_id = 0
-                else:
-                    new_group_id = new_group_id[0] + 1
-                merged_ann.group = new_group_id
-
-            if self.conf.close_distance:
-                self._check_annotation_distance(t, merged_clusters)
-
-            annotations += merged_clusters
-
-        if self.conf.groups:
-            self._check_groups(annotations)
-
-        return annotations
-
-    @staticmethod
-    def match_items(datasets):
-        item_ids = set((item.id, item.subset) for d in datasets for item in d)
-
-        item_map = {}  # id(item) -> (item, id(dataset))
-
-        matches = OrderedDict()
-        for item_id, item_subset in sorted(item_ids, key=lambda e: e[0]):
-            items = {}
-            for d in datasets:
-                item = d.get(item_id, subset=item_subset)
-                if item:
-                    items[id(d)] = item
-                    item_map[id(item)] = (item, id(d))
-            matches[(item_id, item_subset)] = items
-
-        return matches, item_map
-
-    def _merge_label_categories(self, sources):
-        same = True
-        common = None
-        for src_categories in sources:
-            src_cat = src_categories.get(AnnotationType.label)
-            if common is None:
-                common = src_cat
-            elif common != src_cat:
-                same = False
-                break
-
-        if same:
-            return common
-
-        dst_cat = LabelCategories()
-        for src_id, src_categories in enumerate(sources):
-            src_cat = src_categories.get(AnnotationType.label)
-            if src_cat is None:
-                continue
-
-            for src_label in src_cat.items:
-                dst_label = dst_cat.find(src_label.name, src_label.parent)[1]
-                if dst_label is not None:
-                    if dst_label != src_label:
-                        if (
-                            src_label.parent
-                            and dst_label.parent
-                            and src_label.parent != dst_label.parent
-                        ):
-                            raise ConflictingCategoriesError(
-                                "Can't merge label category %s (from #%s): "
-                                "parent label conflict: %s vs. %s"
-                                % (
-                                    src_label.name,
-                                    src_id,
-                                    src_label.parent,
-                                    dst_label.parent,
-                                ),
-                                sources=list(range(src_id)),
-                            )
-                        dst_label.parent = dst_label.parent or src_label.parent
-                        dst_label.attributes |= src_label.attributes
-                    else:
-                        pass
-                else:
-                    dst_cat.add(src_label.name, src_label.parent, src_label.attributes)
-
-        return dst_cat
-
-    def _merge_point_categories(self, sources, label_cat):
-        dst_point_cat = PointsCategories()
-
-        for src_id, src_categories in enumerate(sources):
-            src_label_cat = src_categories.get(AnnotationType.label)
-            src_point_cat = src_categories.get(AnnotationType.points)
-            if src_label_cat is None or src_point_cat is None:
-                continue
-
-            for src_label_id, src_cat in src_point_cat.items.items():
-                src_label = src_label_cat.items[src_label_id].name
-                src_parent_label = src_label_cat.items[src_label_id].parent
-                dst_label_id = label_cat.find(src_label, src_parent_label)[0]
-                dst_cat = dst_point_cat.items.get(dst_label_id)
-                if dst_cat is not None:
-                    if dst_cat != src_cat:
-                        raise ConflictingCategoriesError(
-                            "Can't merge point category for label "
-                            "%s (from #%s): %s vs. %s" % (src_label, src_id, src_cat, dst_cat),
-                            sources=list(range(src_id)),
-                        )
-                    else:
-                        pass
-                else:
-                    dst_point_cat.add(dst_label_id, src_cat.labels, src_cat.joints)
-
-        if len(dst_point_cat.items) == 0:
-            return None
-
-        return dst_point_cat
-
-    def _merge_mask_categories(self, sources, label_cat):
-        dst_mask_cat = MaskCategories()
-
-        for src_id, src_categories in enumerate(sources):
-            src_label_cat = src_categories.get(AnnotationType.label)
-            src_mask_cat = src_categories.get(AnnotationType.mask)
-            if src_label_cat is None or src_mask_cat is None:
-                continue
-
-            for src_label_id, src_cat in src_mask_cat.colormap.items():
-                src_label = src_label_cat.items[src_label_id].name
-                src_parent_label = src_label_cat.items[src_label_id].parent
-                dst_label_id = label_cat.find(src_label, src_parent_label)[0]
-                dst_cat = dst_mask_cat.colormap.get(dst_label_id)
-                if dst_cat is not None:
-                    if dst_cat != src_cat:
-                        raise ConflictingCategoriesError(
-                            "Can't merge mask category for label "
-                            "%s (from #%s): %s vs. %s" % (src_label, src_id, src_cat, dst_cat),
-                            sources=list(range(src_id)),
-                        )
-                    else:
-                        pass
-                else:
-                    dst_mask_cat.colormap[dst_label_id] = src_cat
-
-        if len(dst_mask_cat.colormap) == 0:
-            return None
-
-        return dst_mask_cat
-
-    def _merge_categories(self, sources):
-        dst_categories = {}
-
-        label_cat = self._merge_label_categories(sources)
-        if label_cat is None:
-            label_cat = LabelCategories()
-        dst_categories[AnnotationType.label] = label_cat
-
-        points_cat = self._merge_point_categories(sources, label_cat)
-        if points_cat is not None:
-            dst_categories[AnnotationType.points] = points_cat
-
-        mask_cat = self._merge_mask_categories(sources, label_cat)
-        if mask_cat is not None:
-            dst_categories[AnnotationType.mask] = mask_cat
-
-        return dst_categories
-
-    def _match_annotations(self, sources):
-        all_by_type = {}  # annotation type -> [[annotations from frame 0], [frame 1]]
-        for s in sources:
-            src_by_type = {}
-            for a in s:
-                src_by_type.setdefault(a.type, []).append(a)
-            for k, v in src_by_type.items():
-                all_by_type.setdefault(k, []).append(v)
-
-        clusters = {}
-        for k, v in all_by_type.items():
-            clusters.setdefault(k, []).extend(self._match_ann_type(k, v))
-
-        return clusters
 
     def _make_mergers(self, sources):
         def _make(c, **kwargs):
@@ -826,183 +201,6 @@ class IntersectMerge(MergingStrategy):
             t: _for_type(t, instance_map=instance_map, categories=self._categories)
             for t in AnnotationType
         }
-
-    def _match_ann_type(self, t, sources):
-        return self._mergers[t].match_annotations(sources)
-
-    def _merge_clusters(self, t, clusters):
-        return self._mergers[t].merge_clusters(clusters)
-
-    @staticmethod
-    def _find_cluster_groups(clusters):
-        cluster_groups = []
-        visited = set()
-        for a_idx, cluster_a in enumerate(clusters):
-            if a_idx in visited:
-                continue
-            visited.add(a_idx)
-
-            cluster_group = {id(cluster_a)}
-
-            # find segment groups in the cluster group
-            a_groups = set(ann.group for ann in cluster_a)
-            for cluster_b in clusters[a_idx + 1 :]:
-                b_groups = set(ann.group for ann in cluster_b)
-                if a_groups & b_groups:
-                    a_groups |= b_groups
-
-            # now we know all the segment groups in this cluster group
-            # so we can find adjacent clusters
-            for b_idx, cluster_b in enumerate(clusters[a_idx + 1 :]):
-                b_idx = a_idx + 1 + b_idx
-                b_groups = set(ann.group for ann in cluster_b)
-                if a_groups & b_groups:
-                    cluster_group.add(id(cluster_b))
-                    visited.add(b_idx)
-
-            if a_groups == {0}:
-                continue  # skip annotations without a group
-            cluster_groups.append((cluster_group, a_groups))
-        return cluster_groups
-
-    def _find_cluster_attrs(self, cluster, ann):
-        quorum = self.conf.quorum or 0
-
-        # TODO: when attribute types are implemented, add linear
-        # interpolation for contiguous values
-
-        attr_votes = {}  # name -> { value: score , ... }
-        for s in cluster:
-            for name, value in s.attributes.items():
-                votes = attr_votes.get(name, {})
-                votes[value] = 1 + votes.get(value, 0)
-                attr_votes[name] = votes
-
-        attributes = {}
-        for name, votes in attr_votes.items():
-            winner, count = max(votes.items(), key=lambda e: e[1])
-            if count < quorum:
-                if sum(votes.values()) < quorum:
-                    # blame provokers
-                    missing_sources = set(
-                        self.get_ann_source(id(a))
-                        for a in cluster
-                        if s.attributes.get(name) == winner
-                    )
-                else:
-                    # blame outliers
-                    missing_sources = set(
-                        self.get_ann_source(id(a))
-                        for a in cluster
-                        if s.attributes.get(name) != winner
-                    )
-                missing_sources = [self._dataset_map[s][1] for s in missing_sources]
-                self.add_item_error(
-                    FailedAttrVotingError, name, votes, ann, sources=missing_sources
-                )
-                continue
-            attributes[name] = winner
-
-        return attributes
-
-    def _check_cluster_sources(self, cluster):
-        if len(cluster) == len(self._dataset_map):
-            return
-
-        def _has_item(s):
-            item = self._dataset_map[s][0].get(*self._item_id)
-            if not item:
-                return False
-            if len(item.annotations) == 0:
-                return False
-            return True
-
-        missing_sources = set(self._dataset_map) - set(self.get_ann_source(id(a)) for a in cluster)
-        missing_sources = [self._dataset_map[s][1] for s in missing_sources if _has_item(s)]
-        if missing_sources:
-            self.add_item_error(NoMatchingAnnError, cluster[0], sources=missing_sources)
-
-    def _check_annotation_distance(self, t, annotations):
-        for a_idx, a_ann in enumerate(annotations):
-            for b_ann in annotations[a_idx + 1 :]:
-                d = self._mergers[t].distance(a_ann, b_ann)
-                if self.conf.close_distance < d:
-                    self.add_item_error(AnnotationsTooCloseError, a_ann, b_ann, d)
-
-    def _check_groups(self, annotations):
-        check_groups = []
-        for check_group_raw in self.conf.groups:
-            check_group = set(l[0] for l in check_group_raw)
-            optional = set(l[0] for l in check_group_raw if l[1])
-            check_groups.append((check_group, optional))
-
-        def _check_group(group_labels, group):
-            for check_group, optional in check_groups:
-                common = check_group & group_labels
-                real_miss = check_group - common - optional
-                extra = group_labels - check_group
-                if common and (extra or real_miss):
-                    self.add_item_error(WrongGroupError, group_labels, check_group, group)
-                    break
-
-        groups = find_instances(annotations)
-        for group in groups:
-            group_labels = set()
-            for ann in group:
-                if not hasattr(ann, "label"):
-                    continue
-                label = self._get_label_name(ann.label)
-
-                if ann.group:
-                    group_labels.add(label)
-                else:
-                    _check_group({label}, [ann])
-
-            if not group_labels:
-                continue
-            _check_group(group_labels, group)
-
-    def _get_label_name(self, label_id):
-        if label_id is None:
-            return None
-        return self._categories[AnnotationType.label].items[label_id].name
-
-    def _get_label_id(self, label, parent=""):
-        if label is not None:
-            return self._categories[AnnotationType.label].find(label, parent)[0]
-        return None
-
-    def _get_src_label_name(self, ann, label_id):
-        if label_id is None:
-            return None
-        item_id = self._ann_map[id(ann)][1]
-        dataset_id = self._item_map[item_id][1]
-        return (
-            self._dataset_map[dataset_id][0].categories()[AnnotationType.label].items[label_id].name
-        )
-
-    def _get_any_label_name(self, ann, label_id):
-        if label_id is None:
-            return None
-        try:
-            return self._get_src_label_name(ann, label_id)
-        except KeyError:
-            return self._get_label_name(label_id)
-
-    def _check_groups_definition(self):
-        for group in self.conf.groups:
-            for label, _ in group:
-                _, entry = self._categories[AnnotationType.label].find(label)
-                if entry is None:
-                    raise ValueError(
-                        "Datasets do not contain "
-                        "label '%s', available labels %s"
-                        % (
-                            label,
-                            [i.name for i in self._categories[AnnotationType.label].items],
-                        )
-                    )
-
 
 @attrs(kw_only=True)
 class AnnotationMatcher:
@@ -1248,7 +446,7 @@ class PolygonMatcher(_ShapeMatcher):
         def _get_segment(item):
             dataitem_id = self._context._ann_map[id(item)][1]
             img_h, img_w = self._context._item_map[dataitem_id][0].image.size
-            object_rle_groups = [_to_rle(item, img_h=img_h, img_w=img_w)]
+            object_rle_groups = [to_rle(item, img_h=img_h, img_w=img_w)]
             rle = mask_utils.merge(list(itertools.chain.from_iterable(object_rle_groups)))
             return rle
 
@@ -1290,7 +488,7 @@ class PolygonMatcher(_ShapeMatcher):
 
             from pycocotools import mask as mask_utils
 
-            object_rle_groups = [_to_rle(ann, img_h=img_h, img_w=img_w) for ann in anns]
+            object_rle_groups = [to_rle(ann, img_h=img_h, img_w=img_w) for ann in anns]
             object_rles = [mask_utils.merge(g) for g in object_rle_groups]
             object_masks = mask_utils.decode(object_rles)
 
@@ -1306,20 +504,6 @@ class PolygonMatcher(_ShapeMatcher):
         a_instances, a_instance_map = _find_instances(_get_segmentations(item_a))
         b_instances, b_instance_map = _find_instances(_get_segmentations(item_b))
 
-        # if self.panoptic_comparison:
-        #     a_compiled_mask = _get_compiled_mask(
-        #         list(itertools.chain.from_iterable(a_instances)),
-        #         instance_ids=[
-        #             a_instance_map[id(ann)] for ann in itertools.chain.from_iterable(a_instances)
-        #         ],
-        #     )
-        #     b_compiled_mask = _get_compiled_mask(
-        #         list(itertools.chain.from_iterable(b_instances)),
-        #         instance_ids=[
-        #             b_instance_map[id(ann)] for ann in itertools.chain.from_iterable(b_instances)
-        #         ],
-        #     )
-        # else:
         a_compiled_mask = None
         b_compiled_mask = None
 
@@ -1342,7 +526,7 @@ class PolygonMatcher(_ShapeMatcher):
                     # Create merged RLE for the instance shapes
                     object_anns = instances[obj_id]
                     object_rle_groups = [
-                        _to_rle(ann, img_h=img_h, img_w=img_w) for ann in object_anns
+                        to_rle(ann, img_h=img_h, img_w=img_w) for ann in object_anns
                     ]
                     rle = mask_utils.merge(list(itertools.chain.from_iterable(object_rle_groups)))
 
@@ -1509,7 +693,7 @@ class SkeletonMatcher(_ShapeMatcher):
     distances = {}
 
     def distance(self, a, b):
-        matcher = _KeypointsMatcher(instance_map=self.instance_map, sigma=self.sigma)
+        matcher = KeypointsMatcher(instance_map=self.instance_map, sigma=self.sigma)
         if isinstance(a, dm.Skeleton) and isinstance(b, dm.Skeleton):
             if a == b:
                 return 1
@@ -1849,7 +1033,7 @@ class _ShapeMerger(_ShapeMatcher):
         distance, _ = self._make_memoizing_distance(self.distance)
         for ann in cluster:
             dataset_id = self._context._item_map[self._context._ann_map[id(ann)][1]][1]
-            self._context._dataset_mean_consensus_score.setdefault(dataset_id, []).append(
+            self._context.dataset_mean_consensus_score.setdefault(dataset_id, []).append(
                 max(0, distance(ann, shape))
             )
         shape_score = sum(max(0, distance(shape, s)) for s in cluster) / len(cluster)
@@ -1918,66 +1102,3 @@ class SkeletonMerger(_ShapeMerger, SkeletonMatcher):
         shape = self._merge_cluster_shape_nearest(cluster)
         shape_score = sum(max(0, self.distance(shape, s)) for s in cluster) / len(cluster)
         return shape, shape_score
-
-    # def __init__(self, categories=None):
-    #     _ShapeMerger.__init__(self)
-    #     SkeletonMatcher.__init__(self, categories)
-
-
-def match_segments(
-    a_segms,
-    b_segms,
-    distance=dm.ops.segment_iou,
-    dist_thresh=1.0,
-    label_matcher=lambda a, b: a.label == b.label,
-):
-    assert callable(distance), distance
-    assert callable(label_matcher), label_matcher
-
-    max_anns = max(len(a_segms), len(b_segms))
-    distances = np.array(
-        [
-            [
-                1 - distance(a, b) if a is not None and b is not None else 1
-                for b, _ in itertools.zip_longest(b_segms, range(max_anns), fillvalue=None)
-            ]
-            for a, _ in itertools.zip_longest(a_segms, range(max_anns), fillvalue=None)
-        ]
-    )
-    distances[~np.isfinite(distances)] = 1
-    distances[distances > 1 - dist_thresh] = 1
-
-    if a_segms and b_segms:
-        a_matches, b_matches = linear_sum_assignment(distances)
-    else:
-        a_matches = []
-        b_matches = []
-
-    # matches: boxes we succeeded to match completely
-    # mispred: boxes we succeeded to match, having label mismatch
-    matches = []
-    mispred = []
-    # *_umatched: boxes of (*) we failed to match
-    a_unmatched = []
-    b_unmatched = []
-
-    for a_idx, b_idx in zip(a_matches, b_matches):
-        dist = distances[a_idx, b_idx]
-        if dist > 1 - dist_thresh or dist == 1:
-            if a_idx < len(a_segms):
-                a_unmatched.append(a_segms[a_idx])
-            if b_idx < len(b_segms):
-                b_unmatched.append(b_segms[b_idx])
-        else:
-            a_ann = a_segms[a_idx]
-            b_ann = b_segms[b_idx]
-            if label_matcher(a_ann, b_ann):
-                matches.append((a_ann, b_ann))
-            else:
-                mispred.append((a_ann, b_ann))
-
-    if not len(a_matches) and not len(b_matches):
-        a_unmatched = list(a_segms)
-        b_unmatched = list(b_segms)
-
-    return matches, mispred, a_unmatched, b_unmatched
