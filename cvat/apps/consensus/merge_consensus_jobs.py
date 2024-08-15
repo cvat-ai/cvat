@@ -101,9 +101,10 @@ def _merge_consensus_jobs(task_id: int) -> None:
         assignee_report_data: Dict[User, Dict[str, Union[List[float], float]]] = {}
 
         for idx, _ in enumerate(consensus_job_ids):
-            assignee_report_data.setdefault(assignees[idx], {})
-            assignee_report_data[assignees[idx]].setdefault("consensus_score", []).append(
-                merger._dataset_mean_consensus_score[id(consensus_datasets[idx])]
+            assignee_report_data.setdefault(assignees[idx], {"consensus_score": [],
+                                                             "conflict_count": 0})
+            assignee_report_data[assignees[idx]]["consensus_score"].append(
+                merger.dataset_mean_consensus_score[id(consensus_datasets[idx])]
             )
 
         for assignee_id, assignee_info in assignee_report_data.items():

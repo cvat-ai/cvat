@@ -264,7 +264,6 @@ def generate_job_consensus_report(
             # the annotation belongs to which consensus dataset
             idx = merger._dataset_map[merger._item_map[merger._ann_map[id(annotation)][1]][1]][1]
             annotation_ids.append(consensus_job_data_providers[idx].dm_ann_to_ann_id(annotation))
-            assignee_report_data[assignees[idx]].setdefault("conflict_count", 0)
             assignee_report_data[assignees[idx]]["conflict_count"] += 1
 
         dm_item = consensus_job_data_providers[0].dm_dataset.get(error.item_id[0])
