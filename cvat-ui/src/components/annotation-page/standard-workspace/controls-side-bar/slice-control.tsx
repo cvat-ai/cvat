@@ -34,7 +34,7 @@ const componentShortcuts = {
     SWITCH_SLICE_MODE: {
         name: 'Slice mode',
         description: 'Activate or deactivate a mode to slice a polygon/mask',
-        sequences: ['alt+s'],
+        sequences: ['alt+j'],
         scope: ShortcutScope.CONTROLS_SIDE_BAR,
     },
 };
