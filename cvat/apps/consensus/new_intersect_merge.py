@@ -14,11 +14,9 @@ from attr import attrib, attrs
 from datumaro.components.annotation import AnnotationType, Bbox
 from datumaro.components.dataset import Dataset
 from datumaro.components.errors import FailedLabelVotingError, NoMatchingItemError
-from datumaro.components.operations import (
-    ExactMerge,
-    LabelMerger,
-)
+from datumaro.components.operations import ExactMerge
 from datumaro.components.operations import IntersectMerge as ClassicIntersectMerge
+from datumaro.components.operations import LabelMerger
 from datumaro.util.annotation_util import find_instances, max_bbox, mean_bbox
 from datumaro.util.attrs_util import ensure_cls
 
@@ -201,6 +199,7 @@ class IntersectMerge(ClassicIntersectMerge):
             t: _for_type(t, instance_map=instance_map, categories=self._categories)
             for t in AnnotationType
         }
+
 
 @attrs(kw_only=True)
 class AnnotationMatcher:
