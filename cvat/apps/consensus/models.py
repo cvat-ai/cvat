@@ -189,7 +189,11 @@ class AssigneeConsensusReport(models.Model):
         blank=True,
     )
     assignee = models.ForeignKey(
-        User, on_delete=models.SET_NULL, related_name="assignee_consensus_reports", null=True, blank=True
+        User,
+        on_delete=models.SET_NULL,
+        related_name="assignee_consensus_reports",
+        null=True,
+        blank=True,
     )
     consensus_score = models.IntegerField()
     conflict_count = models.IntegerField()
