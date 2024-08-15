@@ -1074,6 +1074,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
         }
 
         if (state) {
+            let start = Date.now();
             let aborted = false;
             let skeletonSVGTemplate: SVG.G = null;
             shape.addClass('cvat_canvas_shape_draggable');
@@ -1084,6 +1085,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
             draggableInstance.on('dragstart', (): void => {
                 onDragStart();
                 this.draggableShape = shape;
+                start = Date.now();
             }).on('dragmove', (e: CustomEvent): void => {
                 onDragMove();
                 if (state.shapeType === 'skeleton' && e.target) {
@@ -1158,6 +1160,10 @@ export class CanvasViewImpl implements CanvasView, Listener {
                         new CustomEvent('canvas.dragshape', {
                             bubbles: false,
                             cancelable: true,
+                            detail: {
+                                state,
+                                duration: Date.now() - start,
+                            },
                         }),
                     );
                 }
@@ -1240,6 +1246,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
         if (state) {
             let resized = false;
             let aborted = false;
+            let start = Date.now();
 
             (resizableInstance as any)
                 .resize({
@@ -1249,6 +1256,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
                 .on('resizestart', (): void => {
                     onResizeStart();
                     resized = false;
+                    start = Date.now();
                     this.resizableShape = shape;
                 })
                 .on('resizing', (e: CustomEvent): void => {
@@ -1340,6 +1348,10 @@ export class CanvasViewImpl implements CanvasView, Listener {
                             new CustomEvent('canvas.resizeshape', {
                                 bubbles: false,
                                 cancelable: true,
+                                detail: {
+                                    state,
+                                    duration: Date.now() - start,
+                                },
                             }),
                         );
                     }

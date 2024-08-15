@@ -16,9 +16,13 @@ function sleep(ms): Promise<void> {
 }
 
 function defaultUpdate(previousEvent: Event, currentPayload: JSONEventPayload): JSONEventPayload {
+    const count = Number.isInteger(previousEvent.payload.count) ? previousEvent.payload.count as number : 1;
+
     return {
         ...previousEvent.payload,
         ...currentPayload,
+        count: count + 1,
+        duration: Date.now() - previousEvent.timestamp.getTime(),
     };
 }
 
@@ -29,16 +33,14 @@ interface IgnoreRule {
     update: (previousEvent: Event, currentPayload: JSONEventPayload) => JSONEventPayload;
 }
 
-type IgnoredRules = EventScope.zoomImage | EventScope.changeFrame | EventScope.exception;
-
 class Logger {
     public clientID: string;
     public collection: Array<Event>;
     public lastSentEvent: Event | null;
-    public ignoreRules: Record<IgnoredRules, IgnoreRule>;
+    public ignoreRules: Record<string, IgnoreRule>;
     public isActiveChecker: () => boolean;
     public saving: boolean;
-    public compressedScopes: Array<IgnoredRules>;
+    public compressedScopes: Array<EventScope>;
 
     constructor() {
         this.clientID = Date.now().toString().substr(-6);
@@ -49,6 +51,22 @@ class Logger {
         this.compressedScopes = [EventScope.changeFrame];
         this.ignoreRules = {
             [EventScope.zoomImage]: {
+                lastEvent: null,
+                ignore: (previousEvent: Event): boolean => {
+                    const [lastCollectionEvent] = this.collection.slice(-1);
+                    return previousEvent === lastCollectionEvent;
+                },
+                update: defaultUpdate,
+            },
+            [EventScope.dragObject]: {
+                lastEvent: null,
+                ignore: (previousEvent: Event): boolean => {
+                    const [lastCollectionEvent] = this.collection.slice(-1);
+                    return previousEvent === lastCollectionEvent;
+                },
+                update: defaultUpdate,
+            },
+            [EventScope.resizeObject]: {
                 lastEvent: null,
                 ignore: (previousEvent: Event): boolean => {
                     const [lastCollectionEvent] = this.collection.slice(-1);
@@ -155,7 +173,7 @@ Object.defineProperties(Logger.prototype.log, {
             }
 
             if (scope in this.ignoreRules) {
-                const ignoreRule = this.ignoreRules[scope as IgnoredRules];
+                const ignoreRule = this.ignoreRules[scope];
                 const { lastEvent } = ignoreRule;
                 if (lastEvent && ignoreRule.ignore(lastEvent, payload)) {
                     lastEvent.payload = ignoreRule.update(lastEvent, payload);
@@ -176,7 +194,7 @@ Object.defineProperties(Logger.prototype.log, {
                 this.collection.push(event);
 
                 if (scope in this.ignoreRules) {
-                    this.ignoreRules[scope as IgnoredRules].lastEvent = event;
+                    this.ignoreRules[scope].lastEvent = event;
                 }
             };
 

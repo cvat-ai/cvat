@@ -603,8 +603,8 @@ class CanvasWrapperComponent extends React.PureComponent<Props> {
 
         canvasInstance.html().removeEventListener('canvas.zoom', this.onCanvasZoomChanged);
         canvasInstance.html().removeEventListener('canvas.fit', this.onCanvasImageFitted);
-        canvasInstance.html().removeEventListener('canvas.dragshape', this.onCanvasShapeDragged);
-        canvasInstance.html().removeEventListener('canvas.resizeshape', this.onCanvasShapeResized);
+        canvasInstance.html().removeEventListener('canvas.dragshape', this.onCanvasShapeDragged as EventListener);
+        canvasInstance.html().removeEventListener('canvas.resizeshape', this.onCanvasShapeResized as EventListener);
         canvasInstance.html().removeEventListener('canvas.clicked', this.onCanvasShapeClicked);
         canvasInstance.html().removeEventListener('canvas.drawn', this.onCanvasShapeDrawn);
         canvasInstance.html().removeEventListener('canvas.merged', this.onCanvasObjectsMerged);
@@ -752,14 +752,14 @@ class CanvasWrapperComponent extends React.PureComponent<Props> {
         }
     };
 
-    private onCanvasShapeDragged = (): void => {
+    private onCanvasShapeDragged = (e: CustomEvent<{ duration: number }>): void => {
         const { jobInstance } = this.props;
-        jobInstance.logger.log(EventScope.dragObject);
+        jobInstance.logger.log(EventScope.dragObject, { duration: e.detail.duration });
     };
 
-    private onCanvasShapeResized = (): void => {
+    private onCanvasShapeResized = (e: CustomEvent<{ duration: number }>): void => {
         const { jobInstance } = this.props;
-        jobInstance.logger.log(EventScope.resizeObject);
+        jobInstance.logger.log(EventScope.resizeObject, { duration: e.detail.duration });
     };
 
     private onCanvasImageFitted = (): void => {
@@ -1051,8 +1051,8 @@ class CanvasWrapperComponent extends React.PureComponent<Props> {
 
         canvasInstance.html().addEventListener('canvas.zoom', this.onCanvasZoomChanged);
         canvasInstance.html().addEventListener('canvas.fit', this.onCanvasImageFitted);
-        canvasInstance.html().addEventListener('canvas.dragshape', this.onCanvasShapeDragged);
-        canvasInstance.html().addEventListener('canvas.resizeshape', this.onCanvasShapeResized);
+        canvasInstance.html().addEventListener('canvas.dragshape', this.onCanvasShapeDragged as EventListener);
+        canvasInstance.html().addEventListener('canvas.resizeshape', this.onCanvasShapeResized as EventListener);
         canvasInstance.html().addEventListener('canvas.clicked', this.onCanvasShapeClicked);
         canvasInstance.html().addEventListener('canvas.drawn', this.onCanvasShapeDrawn);
         canvasInstance.html().addEventListener('canvas.merged', this.onCanvasObjectsMerged);
