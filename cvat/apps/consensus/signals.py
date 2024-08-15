@@ -32,4 +32,6 @@ def __save_task__initialize_consensus_settings(instance, created, **kwargs):
         else:
             assert False
 
-        ConsensusSettings.objects.get_or_create(task=task)
+        ConsensusSettings.objects.get_or_create(
+            task=task, quorum=task.consensus_jobs_per_regular_job // 2
+        )

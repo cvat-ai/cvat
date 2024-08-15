@@ -71,9 +71,6 @@ class ConsensusSettings(models.Model):
     def __init__(self, *args: Any, **kwargs: Any) -> None:
         super().__init__(*args, **kwargs)
 
-        if self.quorum == -1:
-            self.quorum = self.task.consensus_jobs_per_regular_job // 2
-
     def to_dict(self):
         return model_to_dict(self)
 
