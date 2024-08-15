@@ -527,7 +527,7 @@ class Task3DTest(_DbTestBase):
 
                 for user, edata in list(self.expected_dump_upload.items()):
                     with self.subTest(format=f"{format_name}_{edata['name']}_dump"):
-                        self._clear_rq_jobs() # clean up from previous tests and iterations
+                        self._clear_temp_data() # clean up from previous tests and iterations
 
                         url = self._generate_url_dump_tasks_annotations(task_id)
                         file_name = osp.join(test_dir, f"{format_name}_{edata['name']}.zip")
@@ -718,7 +718,7 @@ class Task3DTest(_DbTestBase):
 
                 for user, edata in list(self.expected_dump_upload.items()):
                     with self.subTest(format=f"{format_name}_{edata['name']}_export"):
-                        self._clear_rq_jobs() # clean up from previous tests and iterations
+                        self._clear_temp_data() # clean up from previous tests and iterations
 
                         url = self._generate_url_dump_dataset(task_id)
                         file_name = osp.join(test_dir, f"{format_name}_{edata['name']}.zip")

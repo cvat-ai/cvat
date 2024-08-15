@@ -50,6 +50,8 @@ with open(path) as f:
 
 class _LambdaTestCaseBase(ApiTestBase):
     def setUp(self):
+        super().setUp()
+
         http_patcher = mock.patch('cvat.apps.lambda_manager.views.LambdaGateway._http', side_effect = self._get_data_from_lambda_manager_http)
         self.addCleanup(http_patcher.stop)
         http_patcher.start()

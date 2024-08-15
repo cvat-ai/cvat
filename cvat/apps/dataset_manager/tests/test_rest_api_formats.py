@@ -419,7 +419,7 @@ class TaskDumpUploadTest(_DbTestBase):
                     url = self._generate_url_dump_tasks_annotations(task_id)
 
                     for user, edata in list(expected.items()):
-                        self._clear_rq_jobs() # clean up from previous tests and iterations
+                        self._clear_temp_data() # clean up from previous tests and iterations
 
                         user_name = edata['name']
                         file_zip_name = osp.join(test_dir, f'{test_name}_{user_name}_{dump_format_name}.zip')
@@ -526,7 +526,7 @@ class TaskDumpUploadTest(_DbTestBase):
                     url = self._generate_url_dump_tasks_annotations(task_id)
 
                     for user, edata in list(expected.items()):
-                        self._clear_rq_jobs() # clean up from previous tests and iterations
+                        self._clear_temp_data() # clean up from previous tests and iterations
 
                         user_name = edata['name']
                         file_zip_name = osp.join(test_dir, f'{test_name}_{user_name}_{dump_format_name}.zip')
@@ -613,7 +613,7 @@ class TaskDumpUploadTest(_DbTestBase):
             for user, edata in list(expected.items()):
                 with self.subTest(format=f"{edata['name']}"):
                     with TestDir() as test_dir:
-                        self._clear_rq_jobs() # clean up from previous tests and iterations
+                        self._clear_temp_data() # clean up from previous tests and iterations
 
                         user_name = edata['name']
                         url = self._generate_url_dump_tasks_annotations(task_id)
@@ -857,7 +857,7 @@ class TaskDumpUploadTest(_DbTestBase):
                     # dump annotations
                     url = self._generate_url_dump_task_dataset(task_id)
                     for user, edata in list(expected.items()):
-                        self._clear_rq_jobs() # clean up from previous tests and iterations
+                        self._clear_temp_data() # clean up from previous tests and iterations
 
                         user_name = edata['name']
                         file_zip_name = osp.join(test_dir, f'{test_name}_{user_name}_{dump_format_name}.zip')
@@ -2058,7 +2058,7 @@ class ProjectDumpUpload(_DbTestBase):
                     self._create_annotations(task, dump_format_name, "random")
 
                 for user, edata in list(expected.items()):
-                    self._clear_rq_jobs() # clean up from previous tests and iterations
+                    self._clear_temp_data() # clean up from previous tests and iterations
 
                     user_name = edata['name']
                     file_zip_name = osp.join(test_dir, f'{test_name}_{user_name}_{dump_format_name}.zip')
@@ -2140,7 +2140,7 @@ class ProjectDumpUpload(_DbTestBase):
                     url = self._generate_url_dump_project_annotations(project['id'], dump_format_name)
 
                     for user, edata in list(expected.items()):
-                        self._clear_rq_jobs() # clean up from previous tests and iterations
+                        self._clear_temp_data() # clean up from previous tests and iterations
 
                         user_name = edata['name']
                         file_zip_name = osp.join(test_dir, f'{test_name}_{user_name}_{dump_format_name}.zip')
