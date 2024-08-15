@@ -39,10 +39,6 @@ export default class AssigneeConsensusReport {
         return this.#assignee;
     }
 
-    get assigneeID(): number {
-        return this.#assignee.id;
-    }
-
     get consensusScore(): number {
         return this.#consensusScore;
     }

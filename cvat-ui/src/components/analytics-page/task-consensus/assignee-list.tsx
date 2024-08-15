@@ -23,9 +23,7 @@ function AssigneeListComponent(props: Props): JSX.Element {
     const { assigneeReports: assigneeReportsArray } = props;
     console.log('assigneeReportsArray', assigneeReportsArray);
     const assigneeReports: Record<number, AssigneeConsensusReport> = assigneeReportsArray
-        .reduce((acc, report) => ({ ...acc, [report.assigneeID]: report }), {});
-
-    console.log('as', assigneeReports);
+        .reduce((acc, report) => ({ ...acc, [report.assignee.id]: report }), {});
 
     function sorter(path: string) {
         return (obj1: any, obj2: any): number => {
@@ -119,7 +117,7 @@ function AssigneeListComponent(props: Props): JSX.Element {
     const data = assigneeReportsArray.reduce((acc: any[], assigneeReport: any) => {
         const report = assigneeReports[assigneeReport.assignee.id];
         acc.push({
-            key: report.assigneeID,
+            key: report.assignee.id,
             assignee: report.assignee,
             quality: report.consensusScore,
             conflict_count: report.conflictCount,
