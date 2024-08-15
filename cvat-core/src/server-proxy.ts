@@ -16,7 +16,7 @@ import {
     SerializedAbout, SerializedRemoteFile, SerializedUserAgreement,
     SerializedRegister, JobsFilter, SerializedJob, SerializedGuide, SerializedAsset, SerializedAPISchema,
     SerializedInvitationData, SerializedCloudStorage, SerializedFramesMetaData, SerializedCollection,
-    SerializedQualitySettingsData, APISettingsFilter, SerializedQualityConflictData, APIConflictsFilter,
+    SerializedQualitySettingsData, APIQualitySettingsFilter, SerializedQualityConflictData, APIConflictsFilter,
     SerializedQualityReportData, APIQualityReportsFilter, SerializedAnalyticsReport, APIAnalyticsReportFilter,
     SerializedConsensusSettingsData, SerializedRequest, APIConsensusReportsFilter, APIAssigneeConsensusReportsFilter,
     SerializedConsensusConflictData, SerializedAssigneeConsensusReportData, SerializedConsensusReportData,
@@ -2170,7 +2170,7 @@ async function createAsset(file: File, guideId: number): Promise<SerializedAsset
 }
 
 async function getQualitySettings(
-    filter: APISettingsFilter,
+    filter: APIQualitySettingsFilter,
 ): Promise<SerializedQualitySettingsData> {
     const { backendAPI } = config;
 
@@ -2206,7 +2206,7 @@ async function updateQualitySettings(
 }
 
 async function getConsensusSettings(
-    filter: APISettingsFilter,
+    filter: APIQualitySettingsFilter,
 ): Promise<SerializedConsensusSettingsData> {
     const { backendAPI } = config;
 

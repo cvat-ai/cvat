@@ -235,10 +235,11 @@ export interface SerializedOrganization {
     contact?: SerializedOrganizationContact,
 }
 
-export interface APISettingsFilter extends APICommonFilterParams {
+export interface APIQualitySettingsFilter extends APICommonFilterParams {
     task_id?: number;
 }
-export type SettingsFilter = Camelized<APISettingsFilter>;
+export type QualitySettingsFilter = Camelized<APIQualitySettingsFilter>;
+export type ConsensusSettingsFilter = QualitySettingsFilter;
 
 export interface SerializedQualitySettingsData {
     id?: number;

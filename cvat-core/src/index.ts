@@ -5,8 +5,9 @@
 import ConsensusConflict from 'consensus-conflict';
 import AssigneeConsensusReport from 'assignee-consensus-report';
 import {
-    AnalyticsReportFilter, ConflictsFilter, QualityReportsFilter, SettingsFilter, ConsensusReportsFilter,
+    AnalyticsReportFilter, ConflictsFilter, QualityReportsFilter, QualitySettingsFilter, ConsensusReportsFilter,
     AssigneeConsensusReportsFilter,
+    ConsensusSettingsFilter,
 } from './server-response-types';
 import PluginRegistry from './plugins';
 import serverProxy from './server-proxy';
@@ -144,7 +145,7 @@ export default interface CVATCore {
         ) => Promise<PaginatedResource<AssigneeConsensusReport>>;
         conflicts: (filter: ConflictsFilter) => Promise<ConsensusConflict[]>;
         settings: {
-            get: (filter: SettingsFilter) => Promise<ConsensusSettings>;
+            get: (filter: ConsensusSettingsFilter) => Promise<ConsensusSettings>;
         };
     }
     analytics: {
@@ -152,7 +153,7 @@ export default interface CVATCore {
             reports: (filter: QualityReportsFilter) => Promise<PaginatedResource<QualityReport>>;
             conflicts: (filter: ConflictsFilter) => Promise<QualityConflict[]>;
             settings: {
-                get: (filter: SettingsFilter) => Promise<QualitySettings>;
+                get: (filter: QualitySettingsFilter) => Promise<QualitySettings>;
             };
         };
         performance: {

@@ -32,9 +32,10 @@ import Webhook from './webhook';
 import { ArgumentError } from './exceptions';
 import {
     AnalyticsReportFilter, ConflictsFilter, QualityReportsFilter,
-    SettingsFilter, SerializedAsset,
+    QualitySettingsFilter, SerializedAsset,
     ConsensusReportsFilter,
     AssigneeConsensusReportsFilter,
+    ConsensusSettingsFilter,
 } from './server-response-types';
 import QualityReport from './quality-report';
 import QualityConflict, { ConflictSeverity } from './quality-conflict';
@@ -516,7 +517,7 @@ export default function implementAPI(cvat: CVATCore): CVATCore {
 
         return mergedConflicts;
     });
-    implementationMixin(cvat.analytics.quality.settings.get, async (filter: SettingsFilter) => {
+    implementationMixin(cvat.analytics.quality.settings.get, async (filter: QualitySettingsFilter) => {
         checkFilter(filter, {
             taskID: isInteger,
         });
@@ -570,7 +571,7 @@ export default function implementAPI(cvat: CVATCore): CVATCore {
         );
         return reports;
     });
-    implementationMixin(cvat.consensus.settings.get, async (filter: SettingsFilter) => {
+    implementationMixin(cvat.consensus.settings.get, async (filter: ConsensusSettingsFilter) => {
         checkFilter(filter, {
             taskID: isInteger,
         });
