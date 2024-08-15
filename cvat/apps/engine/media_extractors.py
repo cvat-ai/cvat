@@ -193,11 +193,25 @@ class CachingMediaIterator(RandomAccessIterator[_MediaT]):
 
 
 class IMediaReader(ABC):
-    def __init__(self, source_path, step, start, stop, dimension):
+    def __init__(
+        self,
+        source_path,
+        *,
+        start: int = 0,
+        stop: Optional[int] = None,
+        step: int = 1,
+        dimension: DimensionType = DimensionType.DIM_2D
+    ):
         self._source_path = source_path
+
         self._step = step
+
         self._start = start
+        "The first included index"
+
         self._stop = stop
+        "The last included index"
+
         self._dimension = dimension
 
     @abstractmethod
@@ -245,28 +259,27 @@ class IMediaReader(ABC):
     def get_image_size(self, i):
         pass
 
+    @abstractmethod
     def __len__(self):
-        return len(self.frame_range)
-
-    @property
-    def frame_range(self):
-        return range(self._start, self._stop + 1, self._step)
+        pass
 
 class ImageListReader(IMediaReader):
     def __init__(self,
-                source_path,
-                step=1,
-                start=0,
-                stop=None,
-                dimension=DimensionType.DIM_2D,
-                sorting_method=SortingMethod.LEXICOGRAPHICAL):
+        source_path,
+        step: int = 1,
+        start: int = 0,
+        stop: Optional[int] = None,
+        dimension: DimensionType = DimensionType.DIM_2D,
+        sorting_method: SortingMethod = SortingMethod.LEXICOGRAPHICAL,
+    ):
         if not source_path:
             raise Exception('No image found')
 
         if not stop:
-            stop = max(0, len(source_path) - 1)
+            stop = len(source_path) - 1
         else:
-            stop = max(0, min(len(source_path), stop + 1) - 1)
+            stop = min(len(source_path) - 1, stop)
+
         step = max(step, 1)
         assert stop > start
 
@@ -281,7 +294,7 @@ class ImageListReader(IMediaReader):
         self._sorting_method = sorting_method
 
     def __iter__(self):
-        for i in range(self._start, self._stop + 1, self._step):
+        for i in self.frame_range:
             yield (self.get_image(i), self.get_path(i), i)
 
     def __contains__(self, media_file):
@@ -337,6 +350,13 @@ class ImageListReader(IMediaReader):
     @property
     def absolute_source_paths(self):
         return [self.get_path(idx) for idx, _ in enumerate(self._source_path)]
+
+    def __len__(self):
+        return len(self.frame_range)
+
+    @property
+    def frame_range(self):
+        return range(self._start, self._stop + 1, self._step)
 
 class DirectoryReader(ImageListReader):
     def __init__(self,
