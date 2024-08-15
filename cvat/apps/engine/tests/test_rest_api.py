@@ -1422,7 +1422,13 @@ class ProjectBackupAPITestCase(ApiTestBase):
                 if isinstance(media, io.BytesIO):
                     media.seek(0)
             response = cls.client.post("/api/tasks/{}/data".format(tid), data=media_data)
-            assert response.status_code == status.HTTP_202_ACCEPTED
+            assert response.status_code == status.HTTP_202_ACCEPTED, response.status_code
+            rq_id = response.json()["rq_id"]
+
+            response = cls.client.get(f"/api/requests/{rq_id}")
+            assert response.status_code == status.HTTP_200_OK, response.status_code
+            assert response.json()["status"] == "finished", response.json().get("status")
+
             response = cls.client.get("/api/tasks/{}".format(tid))
             data_id = response.data["data"]
             cls.tasks.append({
@@ -1766,6 +1772,12 @@ class ProjectImportExportAPITestCase(ApiTestBase):
                     media.seek(0)
             response = self.client.post("/api/tasks/{}/data".format(tid), data=media_data)
             assert response.status_code == status.HTTP_202_ACCEPTED
+            rq_id = response.json()["rq_id"]
+
+            response = self.client.get(f"/api/requests/{rq_id}")
+            assert response.status_code == status.HTTP_200_OK, response.status_code
+            assert response.json()["status"] == "finished", response.json().get("status")
+
             response = self.client.get("/api/tasks/{}".format(tid))
             data_id = response.data["data"]
             self.tasks.append({
@@ -2882,6 +2894,12 @@ class TaskImportExportAPITestCase(ApiTestBase):
                     media.seek(0)
             response = self.client.post("/api/tasks/{}/data".format(tid), data=media_data)
             assert response.status_code == status.HTTP_202_ACCEPTED
+            rq_id = response.json()["rq_id"]
+
+            response = self.client.get(f"/api/requests/{rq_id}")
+            assert response.status_code == status.HTTP_200_OK, response.status_code
+            assert response.json()["status"] == "finished", response.json().get("status")
+
             response = self.client.get("/api/tasks/{}".format(tid))
             data_id = response.data["data"]
             self.tasks.append({

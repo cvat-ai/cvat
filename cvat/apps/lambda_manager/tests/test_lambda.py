@@ -155,6 +155,11 @@ class _LambdaTestCaseBase(ApiTestBase):
                 data=data,
                 QUERY_STRING=f'org_id={org_id}' if org_id is not None else None)
             assert response.status_code == status.HTTP_202_ACCEPTED, response.status_code
+            rq_id = response.json()["rq_id"]
+
+            response = self.client.get(f"/api/requests/{rq_id}")
+            assert response.status_code == status.HTTP_200_OK, response.status_code
+            assert response.json()["status"] == "finished", response.json().get("status")
 
             response = self.client.get("/api/tasks/%s" % tid,
                 QUERY_STRING=f'org_id={org_id}' if org_id is not None else None)
