@@ -744,6 +744,8 @@ class Task3DTest(_DbTestBase):
                             content = io.BytesIO(b"".join(response.streaming_content))
                             with open(file_name, "wb") as f:
                                 f.write(content.getvalue())
-                        self.assertEqual(osp.exists(file_name), edata['file_exists'])
-                        self._check_dump_content(content, task_ann_prev.data, format_name,related_files=False)
+                            self.assertEqual(osp.exists(file_name), edata['file_exists'])
+                            self._check_dump_content(
+                                content, task_ann_prev.data, format_name, related_files=False
+                            )
 
