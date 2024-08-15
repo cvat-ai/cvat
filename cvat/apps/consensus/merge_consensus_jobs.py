@@ -14,6 +14,7 @@ from rest_framework.response import Response
 
 from cvat.apps.consensus.consensus_reports import (
     ComparisonReport,
+    generate_assignee_consensus_report,
     generate_job_consensus_report,
     generate_task_consensus_report,
     save_report,
@@ -35,19 +36,31 @@ from cvat.apps.quality_control.quality_reports import JobDataProvider
 
 
 def get_consensus_jobs(task_id: int) -> Tuple[Dict[int, List[Tuple[int, User]]], List[Job]]:
-    job_map = {}  # parent_job_id -> [(consensus_job_id, assignee)]
+    jobs = {}  # parent_job_id -> [(consensus_job_id, assignee)]
 
-    parent_jobs: dict[int, Job] = {}
-    for job in Job.objects.prefetch_related("segment", "parent_job", "assignee").filter(
-        segment__task_id=task_id,
-        type=JobType.CONSENSUS.value,
-        parent_job__stage=StageChoice.ANNOTATION.value,
-        parent_job__isnull=False,
-    ).exclude(state=StateChoice.NEW.value):
-        job_map.setdefault(job.parent_job_id, []).append((job.id, job.assignee))
-        parent_jobs.setdefault(job.parent_job_id, job.parent_job)
+    for job in Job.objects.select_related("segment").filter(
+        segment__task_id=task_id, type=JobType.CONSENSUS.value
+    ):
+        assert job.parent_job_id
 
-    return job_map, list(parent_jobs.values())
+        # if the job is in NEW state, it means that the job isn't annotated
+        if job.state == StateChoice.NEW.value:
+            continue
+        jobs.setdefault(job.parent_job_id, []).append((job.id, job.assignee))
+
+    parent_job_ids = list(jobs.keys())
+
+    parent_jobs: List[Job] = []
+    # remove parent jobs that are not in annotation stage
+    for parent_job_id in parent_job_ids:
+        parent_job = Job.objects.filter(id=parent_job_id, type=JobType.ANNOTATION.value).first()
+
+        if parent_job.stage == StageChoice.ANNOTATION.value:
+            parent_jobs.append(parent_job)
+        else:
+            jobs.pop(parent_job_id)
+
+    return jobs, parent_jobs
 
 
 def get_annotations(job_id: int) -> dm.Dataset:
@@ -86,19 +99,9 @@ def _merge_consensus_jobs(task_id: int) -> None:
 
         merged_dataset = merger(consensus_datasets)
 
-        assignee_report_data: Dict[User, Dict[str, Union[List[float], float]]] = {}
-
-        for idx, _ in enumerate(consensus_job_ids):
-            assignee_report_data.setdefault(assignees[idx], {"consensus_score": [],
-                                                             "conflict_count": 0})
-            assignee_report_data[assignees[idx]]["consensus_score"].append(
-                merger.dataset_mean_consensus_score[id(consensus_datasets[idx])]
-            )
-
-        for assignee_id, assignee_info in assignee_report_data.items():
-            assignee_report_data[assignee_id]["consensus_score"] = sum(
-                assignee_info["consensus_score"]
-            ) / len(assignee_info["consensus_score"])
+        assignee_report_data = generate_assignee_consensus_report(
+            consensus_job_ids, assignees, consensus_datasets, merger.dataset_mean_consensus_score
+        )
 
         # delete the existing annotations in the job
         patch_job_data(parent_job_id, None, PatchAction.DELETE)

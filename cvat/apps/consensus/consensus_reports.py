@@ -233,6 +233,32 @@ class ComparisonReport(Serializable):
         return cls.from_dict(parse_json(data))
 
 
+def generate_assignee_consensus_report(
+    consensus_job_ids: List[int],
+    assignees: List[User],
+    consensus_datasets: List[dm.Dataset],
+    dataset_mean_consensus_score: Dict[int, float],
+):
+    assignee_report_data: Dict[User, Dict[str, Union[List[float], float]]] = {}
+    for idx, _ in enumerate(consensus_job_ids):
+        if not assignees[idx]:
+
+            continue
+        assignee_report_data.setdefault(
+            assignees[idx], {"consensus_score": [], "conflict_count": 0}
+        )
+        assignee_report_data[assignees[idx]]["consensus_score"].append(
+            dataset_mean_consensus_score[id(consensus_datasets[idx])]
+        )
+
+    for assignee_id, assignee_info in assignee_report_data.items():
+        assignee_report_data[assignee_id]["consensus_score"] = sum(
+            assignee_info["consensus_score"]
+        ) / len(assignee_info["consensus_score"])
+
+    return assignee_report_data
+
+
 def generate_job_consensus_report(
     consensus_settings: ConsensusSettings,
     errors,
