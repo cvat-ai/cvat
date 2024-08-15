@@ -184,6 +184,7 @@ if to_bool(os.getenv('CVAT_ANALYTICS', False)):
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
+    'cvat.apps.iam.middleware.SessionRefreshMiddleware',
     'corsheaders.middleware.CorsMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
@@ -642,7 +643,7 @@ SPECTACULAR_SETTINGS = {
         'SortingMethod': 'cvat.apps.engine.models.SortingMethod',
         'WebhookType': 'cvat.apps.webhooks.models.WebhookTypeChoice',
         'WebhookContentType': 'cvat.apps.webhooks.models.WebhookContentTypeChoice',
-        'RequestStatus': 'cvat.apps.engine.serializers.RequestStatus',
+        'RequestStatus': 'cvat.apps.engine.models.RequestStatus',
     },
 
     # Coercion of {pk} to {id} is controlled by SCHEMA_COERCE_PATH_PK. Additionally,

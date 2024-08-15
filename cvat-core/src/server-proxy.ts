@@ -10,6 +10,7 @@ import * as tus from 'tus-js-client';
 import { ChunkQuality } from 'cvat-data';
 
 import './axios-config';
+import { axiosTusHttpStack } from './axios-tus';
 import {
     SerializedLabel, SerializedAnnotationFormats, ProjectsFilter,
     SerializedProject, SerializedTask, TasksFilter, SerializedUser, SerializedOrganization,
@@ -118,7 +119,6 @@ function fetchAll(url, filter = {}): Promise<any> {
 }
 
 async function chunkUpload(file: File, uploadConfig): Promise<{ uploadSentSize: number; filename: string }> {
-    const params = enableOrganization();
     const {
         endpoint, chunkSize, totalSize, onUpdate, metadata, totalSentSize,
     } = uploadConfig;
@@ -131,9 +131,7 @@ async function chunkUpload(file: File, uploadConfig): Promise<{ uploadSentSize: 
                 filetype: file.type,
                 ...metadata,
             },
-            headers: {
-                Authorization: Axios.defaults.headers.common.Authorization,
-            },
+            httpStack: axiosTusHttpStack,
             chunkSize,
             retryDelays: [2000, 4000, 8000, 16000, 32000, 64000],
             onShouldRetry(err: tus.DetailedError | Error): boolean {
@@ -151,12 +149,6 @@ async function chunkUpload(file: File, uploadConfig): Promise<{ uploadSentSize: 
             },
             onError(error) {
                 reject(error);
-            },
-            onBeforeRequest(req) {
-                const xhr = req.getUnderlyingObject();
-                const { org } = params;
-                req.setHeader('X-Organization', org);
-                xhr.withCredentials = true;
             },
             onProgress(bytesUploaded) {
                 if (onUpdate && Number.isInteger(totalSentSize) && Number.isInteger(totalSize)) {
