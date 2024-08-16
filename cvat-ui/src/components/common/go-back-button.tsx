@@ -10,7 +10,6 @@ import { useGoBack } from 'utils/hooks';
 
 function GoBackButton(): JSX.Element {
     const goBack = useGoBack();
-
     return (
         <>
             <Button style={{ marginRight: 8 }} onClick={goBack}>
