@@ -1981,66 +1981,70 @@ class _SourceDataType(str, Enum):
     video = "video"
 
 
+class _TaskSpec(models.ITaskWriteRequest, models.IDataRequest, metaclass=ABCMeta):
+    size: int
+    frame_step: int
+    source_data_type: _SourceDataType
+
+    @abstractmethod
+    def read_frame(self, i: int) -> Image.Image: ...
+
+
+@attrs.define
+class _TaskSpecBase(_TaskSpec):
+    _params: dict | models.TaskWriteRequest
+    _data_params: dict | models.DataRequest
+    size: int = attrs.field(kw_only=True)
+
+    @property
+    def frame_step(self) -> int:
+        v = getattr(self, "frame_filter", "step=1")
+        return int(v.split("=")[-1])
+
+    def __getattr__(self, k: str) -> Any:
+        notfound = object()
+
+        for params in [self._params, self._data_params]:
+            if isinstance(params, dict):
+                v = params.get(k, notfound)
+            else:
+                v = getattr(params, k, notfound)
+
+            if v is not notfound:
+                return v
+
+        raise AttributeError(k)
+
+
+@attrs.define
+class _ImagesTaskSpec(_TaskSpecBase):
+    source_data_type: ClassVar[_SourceDataType] = _SourceDataType.images
+
+    _get_frame: Callable[[int], bytes] = attrs.field(kw_only=True)
+
+    def read_frame(self, i: int) -> Image.Image:
+        return Image.open(io.BytesIO(self._get_frame(i)))
+
+
+@attrs.define
+class _VideoTaskSpec(_TaskSpecBase):
+    source_data_type: ClassVar[_SourceDataType] = _SourceDataType.video
+
+    _get_video_file: Callable[[], io.IOBase] = attrs.field(kw_only=True)
+
+    def read_frame(self, i: int) -> Image.Image:
+        with closing(read_video_file(self._get_video_file())) as reader:
+            for _ in range(i + 1):
+                frame = next(reader)
+
+            return frame
+
+
 @pytest.mark.usefixtures("restore_db_per_class")
 @pytest.mark.usefixtures("restore_redis_ondisk_per_class")
 @pytest.mark.usefixtures("restore_cvat_data")
 class TestTaskData:
     _USERNAME = "admin1"
-
-    class _TaskSpec(models.ITaskWriteRequest, models.IDataRequest, metaclass=ABCMeta):
-        size: int
-        frame_step: int
-        source_data_type: _SourceDataType
-
-        @abstractmethod
-        def read_frame(self, i: int) -> Image.Image: ...
-
-    @attrs.define
-    class _TaskSpecBase(_TaskSpec):
-        _params: dict | models.TaskWriteRequest
-        _data_params: dict | models.DataRequest
-        size: int = attrs.field(kw_only=True)
-
-        @property
-        def frame_step(self) -> int:
-            v = getattr(self, "frame_filter", "step=1")
-            return int(v.split("=")[-1])
-
-        def __getattr__(self, k: str) -> Any:
-            notfound = object()
-
-            for params in [self._params, self._data_params]:
-                if isinstance(params, dict):
-                    v = params.get(k, notfound)
-                else:
-                    v = getattr(params, k, notfound)
-
-                if v is not notfound:
-                    return v
-
-            raise AttributeError(k)
-
-    @attrs.define
-    class _ImagesTaskSpec(_TaskSpecBase):
-        source_data_type: ClassVar[_SourceDataType] = _SourceDataType.images
-
-        _get_frame: Callable[[int], bytes] = attrs.field(kw_only=True)
-
-        def read_frame(self, i: int) -> Image.Image:
-            return Image.open(io.BytesIO(self._get_frame(i)))
-
-    @attrs.define
-    class _VideoTaskSpec(_TaskSpecBase):
-        source_data_type: ClassVar[_SourceDataType] = _SourceDataType.video
-
-        _get_video_file: Callable[[], io.IOBase] = attrs.field(kw_only=True)
-
-        def read_frame(self, i: int) -> Image.Image:
-            with closing(read_video_file(self._get_video_file())) as reader:
-                for _ in range(i + 1):
-                    frame = next(reader)
-
-                return frame
 
     def _uploaded_images_task_fxt_base(
         self,
@@ -2067,7 +2071,7 @@ class TestTaskData:
             return images_data[i]
 
         task_id, _ = create_task(self._USERNAME, spec=task_params, data=data_params)
-        yield self._ImagesTaskSpec(
+        yield _ImagesTaskSpec(
             models.TaskWriteRequest._from_openapi_data(**task_params),
             models.DataRequest._from_openapi_data(**data_params),
             get_frame=get_frame,
@@ -2111,7 +2115,7 @@ class TestTaskData:
             return io.BytesIO(video_data)
 
         task_id, _ = create_task(self._USERNAME, spec=task_params, data=data_params)
-        yield self._VideoTaskSpec(
+        yield _VideoTaskSpec(
             models.TaskWriteRequest._from_openapi_data(**task_params),
             models.DataRequest._from_openapi_data(**data_params),
             get_video_file=get_video_file,
