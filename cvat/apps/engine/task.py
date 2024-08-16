@@ -32,10 +32,11 @@ from cvat.apps.engine.media_extractors import (
     Mpeg4ChunkWriter, Mpeg4CompressedChunkWriter, RandomAccessIterator,
     ValidateDimension, ZipChunkWriter, ZipCompressedChunkWriter, get_mime, sort
 )
+from cvat.apps.engine.models import RequestAction, RequestTarget
 from cvat.apps.engine.utils import (
     av_scan_paths,get_rq_job_meta, define_dependent_job, get_rq_lock_by_user, preload_images
 )
-from cvat.apps.engine.rq_job_handler import RQIdManager
+from cvat.apps.engine.rq_job_handler import RQId
 from cvat.utils.http import make_requests_session, PROXIES_FOR_UNTRUSTED_URLS
 from utils.dataset_manifest import ImageManifestManager, VideoManifestManager, is_manifest
 from utils.dataset_manifest.core import VideoManifestValidator, is_dataset_manifest
@@ -54,7 +55,7 @@ def create(
     """Schedule a background job to create a task and return that job's identifier"""
     q = django_rq.get_queue(settings.CVAT_QUEUES.IMPORT_DATA.value)
     user_id = request.user.id
-    rq_id = RQIdManager.build('create', 'task', db_task.pk)
+    rq_id = RQId(RequestAction.CREATE, RequestTarget.TASK, db_task.pk).render()
 
     with get_rq_lock_by_user(q, user_id):
         q.enqueue_call(
