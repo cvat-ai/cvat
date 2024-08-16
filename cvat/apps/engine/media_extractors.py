@@ -576,7 +576,7 @@ class VideoReader(IMediaReader):
             source_path=source_path,
             step=step,
             start=start,
-            stop=stop if stop is not None else stop,
+            stop=stop,
             dimension=dimension,
         )
 

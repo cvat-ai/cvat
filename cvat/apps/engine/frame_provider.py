@@ -312,7 +312,9 @@ class TaskFrameProvider(IFrameProvider):
                     )
                     task_chunk_frames[task_chunk_frame_id] = (frame, frame_name, None)
 
-            return prepare_chunk(task_chunk_frames.values(), quality=quality, db_task=self._db_task)
+            return prepare_chunk(
+                task_chunk_frames.values(), quality=quality, db_task=self._db_task, dump=True
+            )
 
         buffer, mime_type = cache.get_or_set_task_chunk(
             self._db_task, chunk_number, quality=quality, set_callback=_set_callback

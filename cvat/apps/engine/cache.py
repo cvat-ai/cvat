@@ -305,7 +305,7 @@ class MediaCache:
                 for frame_tuple in reader.iterate_frames(frame_filter=frame_ids):
                     yield frame_tuple
         else:
-            return self._read_raw_images(
+            yield from self._read_raw_images(
                 db_task, frame_ids, raw_data_dir=raw_data_dir, manifest_path=manifest_path
             )
 
@@ -506,6 +506,7 @@ def prepare_chunk(
     *,
     quality: FrameQuality,
     db_task: models.Task,
+    dump: bool = False,
 ) -> DataWithMime:
     # TODO: refactor all chunk building into another class
 
@@ -534,7 +535,7 @@ def prepare_chunk(
     merged_chunk_writer = writer_class(image_quality, **writer_kwargs)
 
     writer_kwargs = {}
-    if isinstance(merged_chunk_writer, ZipCompressedChunkWriter):
+    if dump and isinstance(merged_chunk_writer, ZipCompressedChunkWriter):
         writer_kwargs = dict(compress_frames=False, zip_compress_level=1)
 
     buffer = io.BytesIO()
@@ -547,6 +548,8 @@ def prepare_chunk(
 def get_chunk_mime_type_for_writer(writer: Union[IChunkWriter, Type[IChunkWriter]]) -> str:
     if isinstance(writer, IChunkWriter):
         writer_class = type(writer)
+    else:
+        writer_class = writer
 
     if issubclass(writer_class, ZipChunkWriter):
         return "application/zip"
