@@ -340,48 +340,28 @@ def _validate_manifest(
     *,
     is_in_cloud: bool,
     db_cloud_storage: Optional[Any],
-    data_storage_method: str,
-    data_sorting_method: str,
-    isBackupRestore: bool,
 ) -> Optional[str]:
-    if manifests:
-        if len(manifests) != 1:
-            raise ValidationError('Only one manifest file can be attached to data')
-        manifest_file = manifests[0]
-        full_manifest_path = os.path.join(root_dir, manifests[0])
+    if not manifests:
+        return None
 
-        if is_in_cloud:
-            cloud_storage_instance = db_storage_to_storage_instance(db_cloud_storage)
-            # check that cloud storage manifest file exists and is up to date
-            if not os.path.exists(full_manifest_path) or \
-                    datetime.fromtimestamp(os.path.getmtime(full_manifest_path), tz=timezone.utc) \
-                    < cloud_storage_instance.get_file_last_modified(manifest_file):
-                cloud_storage_instance.download_file(manifest_file, full_manifest_path)
+    if len(manifests) != 1:
+        raise ValidationError('Only one manifest file can be attached to data')
+    manifest_file = manifests[0]
+    full_manifest_path = os.path.join(root_dir, manifests[0])
 
-        if is_manifest(full_manifest_path):
-            if not (
-                data_sorting_method == models.SortingMethod.PREDEFINED or
-                (settings.USE_CACHE and data_storage_method == models.StorageMethodChoice.CACHE) or
-                isBackupRestore or is_in_cloud
-            ):
-                cache_disabled_message = ""
-                if data_storage_method == models.StorageMethodChoice.CACHE and not settings.USE_CACHE:
-                    cache_disabled_message = (
-                        "This server doesn't allow to use cache for data. "
-                        "Please turn 'use cache' off and try to recreate the task"
-                    )
-                    slogger.glob.warning(cache_disabled_message)
+    if is_in_cloud:
+        cloud_storage_instance = db_storage_to_storage_instance(db_cloud_storage)
+        # check that cloud storage manifest file exists and is up to date
+        if not os.path.exists(full_manifest_path) or (
+            datetime.fromtimestamp(os.path.getmtime(full_manifest_path), tz=timezone.utc) \
+                < cloud_storage_instance.get_file_last_modified(manifest_file)
+        ):
+            cloud_storage_instance.download_file(manifest_file, full_manifest_path)
 
-                raise ValidationError(
-                    "A manifest file can only be used with the 'use cache' option "
-                    "or when 'sorting_method' is 'predefined'" + \
-                    (". " + cache_disabled_message if cache_disabled_message else "")
-                )
-            return manifest_file
-
+    if not is_manifest(full_manifest_path):
         raise ValidationError('Invalid manifest was uploaded')
 
-    return None
+    return manifest_file
 
 def _validate_scheme(url):
     ALLOWED_SCHEMES = ['http', 'https']
@@ -580,9 +560,6 @@ def _create_thread(
         manifest_root,
         is_in_cloud=is_data_in_cloud,
         db_cloud_storage=db_data.cloud_storage if is_data_in_cloud else None,
-        data_storage_method=db_data.storage_method,
-        data_sorting_method=data['sorting_method'],
-        isBackupRestore=isBackupRestore,
     )
 
     manifest = None
