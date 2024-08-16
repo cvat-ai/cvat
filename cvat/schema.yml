@@ -8064,6 +8064,10 @@ components:
           allOf:
           - $ref: '#/components/schemas/ChunkType'
           readOnly: true
+        data_original_chunk_type:
+          allOf:
+          - $ref: '#/components/schemas/ChunkType'
+          readOnly: true
         created_date:
           type: string
           format: date-time
