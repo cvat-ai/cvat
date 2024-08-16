@@ -138,7 +138,7 @@ class MediaCache:
     ) -> DataWithMime:
         return self._get_or_set_cache_item(
             key=self._make_task_chunk_key(db_task, chunk_number, quality=quality),
-            create_callback=lambda: set_callback(db_task, chunk_number, quality=quality),
+            create_callback=set_callback,
         )
 
     def get_selective_job_chunk(
