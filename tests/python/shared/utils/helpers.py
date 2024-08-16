@@ -67,13 +67,11 @@ def read_video_file(file: BytesIO) -> Generator[Image.Image, None, None]:
     with av.open(file) as container:
         video_stream = container.streams.video[0]
 
-        with (
-            closing(video_stream.codec_context),  # pyav has a memory leak in stream.close()
-            closing(container.demux(video_stream)) as demux_iter,
-        ):
-            for packet in demux_iter:
-                for frame in packet.decode():
-                    yield frame.to_image()
+        with closing(video_stream.codec_context):  # pyav has a memory leak in stream.close()
+            with closing(container.demux(video_stream)) as demux_iter:
+                for packet in demux_iter:
+                    for frame in packet.decode():
+                        yield frame.to_image()
 
 
 def generate_manifest(path: str) -> None:
