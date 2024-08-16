@@ -22,7 +22,7 @@ from operator import itemgetter
 from pathlib import Path
 from tempfile import NamedTemporaryFile, TemporaryDirectory
 from time import sleep, time
-from typing import Any, Callable, ClassVar, Dict, Generator, List, Optional, Tuple, cast
+from typing import Any, Callable, ClassVar, Dict, Generator, List, Optional, Tuple
 
 import attrs
 import numpy as np
