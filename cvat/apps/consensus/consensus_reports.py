@@ -252,9 +252,12 @@ def generate_assignee_consensus_report(
         )
 
     for assignee_id, assignee_info in assignee_report_data.items():
-        assignee_report_data[assignee_id]["consensus_score"] = sum(
+        assignee_consensus_score = sum(assignee_info["consensus_score"]) / len(
             assignee_info["consensus_score"]
-        ) / len(assignee_info["consensus_score"])
+        )
+        assignee_report_data[assignee_id]["consensus_score"] = (
+            0 if np.isnan(assignee_consensus_score) else assignee_consensus_score
+        )
 
     return assignee_report_data
 
