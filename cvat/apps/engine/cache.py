@@ -15,7 +15,7 @@ import zlib
 from contextlib import ExitStack, closing
 from datetime import datetime, timezone
 from itertools import pairwise
-from typing import Callable, Iterator, Optional, Sequence, Tuple, Type, Union
+from typing import Any, Callable, Iterator, Optional, Sequence, Tuple, Type, Union
 
 import av
 import cv2
@@ -116,6 +116,29 @@ class MediaCache:
             create_callback=lambda: self.prepare_segment_chunk(
                 db_segment, chunk_number, quality=quality
             ),
+        )
+
+    def _make_task_chunk_key(
+        self, db_task: models.Task, chunk_number: int, *, quality: FrameQuality
+    ) -> str:
+        return f"task_{db_task.id}_{chunk_number}_{quality}"
+
+    def get_task_chunk(
+        self, db_task: models.Task, chunk_number: int, *, quality: FrameQuality
+    ) -> Optional[DataWithMime]:
+        return self._get(key=self._make_task_chunk_key(db_task, chunk_number, quality=quality))
+
+    def get_or_set_task_chunk(
+        self,
+        db_task: models.Task,
+        chunk_number: int,
+        *,
+        quality: FrameQuality,
+        set_callback: Callable[[], DataWithMime],
+    ) -> DataWithMime:
+        return self._get_or_set_cache_item(
+            key=self._make_task_chunk_key(db_task, chunk_number, quality=quality),
+            create_callback=lambda: set_callback(db_task, chunk_number, quality=quality),
         )
 
     def get_selective_job_chunk(
@@ -298,43 +321,12 @@ class MediaCache:
             chunk_size * chunk_number : chunk_size * (chunk_number + 1)
         ]
 
-        writer_classes: dict[FrameQuality, Type[IChunkWriter]] = {
-            FrameQuality.COMPRESSED: (
-                Mpeg4CompressedChunkWriter
-                if db_data.compressed_chunk_type == models.DataChoice.VIDEO
-                else ZipCompressedChunkWriter
-            ),
-            FrameQuality.ORIGINAL: (
-                Mpeg4ChunkWriter
-                if db_data.original_chunk_type == models.DataChoice.VIDEO
-                else ZipChunkWriter
-            ),
-        }
-
-        image_quality = 100 if quality == FrameQuality.ORIGINAL else db_data.image_quality
-
-        mime_type = (
-            "video/mp4"
-            if writer_classes[quality] in [Mpeg4ChunkWriter, Mpeg4CompressedChunkWriter]
-            else "application/zip"
-        )
-
-        kwargs = {}
-        if db_segment.task.dimension == models.DimensionType.DIM_3D:
-            kwargs["dimension"] = models.DimensionType.DIM_3D
-        writer = writer_classes[quality](image_quality, **kwargs)
-
-        buffer = io.BytesIO()
         with closing(self._read_raw_frames(db_task, frame_ids=chunk_frame_ids)) as frame_iter:
-            writer.save_as_chunk(frame_iter, buffer)
-
-        buffer.seek(0)
-        return buffer, mime_type
+            return prepare_chunk(frame_iter, quality=quality, db_task=db_task)
 
     def prepare_masked_range_segment_chunk(
         self, db_segment: models.Segment, chunk_number: int, *, quality: FrameQuality
     ) -> DataWithMime:
-        # TODO: try to refactor into 1 function with prepare_range_segment_chunk()
         db_task = db_segment.task
         db_data = db_task.data
 
@@ -395,7 +387,7 @@ class MediaCache:
         )
         buff.seek(0)
 
-        return buff, "application/zip"
+        return buff, get_chunk_mime_type_for_writer(writer)
 
     def _prepare_segment_preview(self, db_segment: models.Segment) -> DataWithMime:
         if db_segment.task.dimension == models.DimensionType.DIM_3D:
@@ -405,7 +397,9 @@ class MediaCache:
             )
         else:
             from cvat.apps.engine.frame_provider import (
-                FrameOutputType, SegmentFrameProvider, TaskFrameProvider
+                FrameOutputType,
+                SegmentFrameProvider,
+                TaskFrameProvider,
             )
 
             task_frame_provider = TaskFrameProvider(db_segment.task)
@@ -494,3 +488,58 @@ def prepare_preview_image(image: PIL.Image.Image) -> DataWithMime:
     output_buf = io.BytesIO()
     image.convert("RGB").save(output_buf, format="JPEG")
     return output_buf, PREVIEW_MIME
+
+
+def prepare_chunk(
+    task_chunk_frames: Iterator[Tuple[Any, str, int]],
+    *,
+    quality: FrameQuality,
+    db_task: models.Task,
+) -> DataWithMime:
+    # TODO: refactor all chunk building into another class
+
+    db_data = db_task.data
+
+    writer_classes: dict[FrameQuality, Type[IChunkWriter]] = {
+        FrameQuality.COMPRESSED: (
+            Mpeg4CompressedChunkWriter
+            if db_data.compressed_chunk_type == models.DataChoice.VIDEO
+            else ZipCompressedChunkWriter
+        ),
+        FrameQuality.ORIGINAL: (
+            Mpeg4ChunkWriter
+            if db_data.original_chunk_type == models.DataChoice.VIDEO
+            else ZipChunkWriter
+        ),
+    }
+
+    writer_class = writer_classes[quality]
+
+    image_quality = 100 if quality == FrameQuality.ORIGINAL else db_data.image_quality
+
+    writer_kwargs = {}
+    if db_task.dimension == models.DimensionType.DIM_3D:
+        writer_kwargs["dimension"] = models.DimensionType.DIM_3D
+    merged_chunk_writer = writer_class(image_quality, **writer_kwargs)
+
+    writer_kwargs = {}
+    if isinstance(merged_chunk_writer, ZipCompressedChunkWriter):
+        writer_kwargs = dict(compress_frames=False, zip_compress_level=1)
+
+    buffer = io.BytesIO()
+    merged_chunk_writer.save_as_chunk(task_chunk_frames, buffer, **writer_kwargs)
+
+    buffer.seek(0)
+    return buffer, get_chunk_mime_type_for_writer(writer_class)
+
+
+def get_chunk_mime_type_for_writer(writer: Union[IChunkWriter, Type[IChunkWriter]]) -> str:
+    if isinstance(writer, IChunkWriter):
+        writer_class = type(writer)
+
+    if issubclass(writer_class, ZipChunkWriter):
+        return "application/zip"
+    elif issubclass(writer_class, Mpeg4ChunkWriter):
+        return "video/mp4"
+    else:
+        assert False, f"Unknown chunk writer class {writer_class}"

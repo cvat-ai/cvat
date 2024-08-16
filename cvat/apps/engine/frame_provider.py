@@ -22,17 +22,12 @@ from PIL import Image
 from rest_framework.exceptions import ValidationError
 
 from cvat.apps.engine import models
-from cvat.apps.engine.cache import DataWithMime, MediaCache
+from cvat.apps.engine.cache import DataWithMime, MediaCache, prepare_chunk
 from cvat.apps.engine.media_extractors import (
     FrameQuality,
-    IChunkWriter,
     IMediaReader,
-    Mpeg4ChunkWriter,
-    Mpeg4CompressedChunkWriter,
     RandomAccessIterator,
     VideoReader,
-    ZipChunkWriter,
-    ZipCompressedChunkWriter,
     ZipReader,
 )
 from cvat.apps.engine.mime_types import mimetypes
@@ -261,6 +256,12 @@ class TaskFrameProvider(IFrameProvider):
         chunk_number = self.validate_chunk_number(chunk_number)
 
         db_data = self._db_task.data
+
+        cache = MediaCache()
+        cached_chunk = cache.get_task_chunk(self._db_task, chunk_number, quality=quality)
+        if cached_chunk:
+            return return_type(cached_chunk[0], cached_chunk[1])
+
         step = db_data.get_frame_step()
         task_chunk_start_frame = chunk_number * db_data.chunk_size
         task_chunk_stop_frame = (chunk_number + 1) * db_data.chunk_size - 1
@@ -283,6 +284,7 @@ class TaskFrameProvider(IFrameProvider):
         )
         assert matching_segments
 
+        # Don't put this into set_callback to avoid data duplication in the cache
         if len(matching_segments) == 1 and task_chunk_frame_set == set(
             matching_segments[0].frame_set
         ):
@@ -291,63 +293,30 @@ class TaskFrameProvider(IFrameProvider):
                 segment_frame_provider.get_chunk_number(task_chunk_start_frame), quality=quality
             )
 
-        # Create and return a joined / cleaned chunk
-        # TODO: refactor into another class, maybe optimize
+        def _set_callback() -> DataWithMime:
+            # Create and return a joined / cleaned chunk
+            task_chunk_frames = {}
+            for db_segment in matching_segments:
+                segment_frame_provider = SegmentFrameProvider(db_segment)
+                segment_frame_set = db_segment.frame_set
 
-        writer_classes: dict[FrameQuality, Type[IChunkWriter]] = {
-            FrameQuality.COMPRESSED: (
-                Mpeg4CompressedChunkWriter
-                if db_data.compressed_chunk_type == models.DataChoice.VIDEO
-                else ZipCompressedChunkWriter
-            ),
-            FrameQuality.ORIGINAL: (
-                Mpeg4ChunkWriter
-                if db_data.original_chunk_type == models.DataChoice.VIDEO
-                else ZipChunkWriter
-            ),
-        }
+                for task_chunk_frame_id in sorted(task_chunk_frame_set):
+                    if (
+                        task_chunk_frame_id not in segment_frame_set
+                        or task_chunk_frame_id in task_chunk_frames
+                    ):
+                        continue
 
-        writer_class = writer_classes[quality]
+                    frame, frame_name, _ = segment_frame_provider._get_raw_frame(
+                        self.get_rel_frame_number(task_chunk_frame_id), quality=quality
+                    )
+                    task_chunk_frames[task_chunk_frame_id] = (frame, frame_name, None)
 
-        image_quality = 100 if quality == FrameQuality.ORIGINAL else db_data.image_quality
+            return prepare_chunk(task_chunk_frames.values(), quality=quality, db_task=self._db_task)
 
-        mime_type = (
-            "video/mp4"
-            if writer_classes[quality] in [Mpeg4ChunkWriter, Mpeg4CompressedChunkWriter]
-            else "application/zip"
+        buffer, mime_type = cache.get_or_set_task_chunk(
+            self._db_task, chunk_number, quality=quality, set_callback=_set_callback
         )
-
-        task_chunk_frames = {}
-        for db_segment in matching_segments:
-            segment_frame_provider = SegmentFrameProvider(db_segment)
-            segment_frame_set = db_segment.frame_set
-
-            for task_chunk_frame_id in sorted(task_chunk_frame_set):
-                if (
-                    task_chunk_frame_id not in segment_frame_set
-                    or task_chunk_frame_id in task_chunk_frames
-                ):
-                    continue
-
-                frame, frame_name, _ = segment_frame_provider._get_raw_frame(
-                    self.get_rel_frame_number(task_chunk_frame_id), quality=quality
-                )
-                task_chunk_frames[task_chunk_frame_id] = (frame, frame_name, None)
-
-        writer_kwargs = {}
-        if self._db_task.dimension == models.DimensionType.DIM_3D:
-            writer_kwargs["dimension"] = models.DimensionType.DIM_3D
-        merged_chunk_writer = writer_class(image_quality, **writer_kwargs)
-
-        writer_kwargs = {}
-        if isinstance(merged_chunk_writer, ZipCompressedChunkWriter):
-            writer_kwargs = dict(compress_frames=False, zip_compress_level=1)
-
-        buffer = io.BytesIO()
-        merged_chunk_writer.save_as_chunk(task_chunk_frames.values(), buffer, **writer_kwargs)
-        buffer.seek(0)
-
-        # TODO: add caching in media cache for the resulting chunk
 
         return return_type(data=buffer, mime=mime_type)
 
