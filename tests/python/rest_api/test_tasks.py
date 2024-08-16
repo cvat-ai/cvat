@@ -22,7 +22,7 @@ from operator import itemgetter
 from pathlib import Path
 from tempfile import NamedTemporaryFile, TemporaryDirectory
 from time import sleep, time
-from typing import Any, Callable, ClassVar, Dict, Generator, List, Optional, Tuple
+from typing import Any, Callable, ClassVar, Dict, Generator, List, Optional, Tuple, cast
 
 import attrs
 import numpy as np
@@ -2135,6 +2135,46 @@ class TestTaskData:
     ) -> Generator[tuple[_TaskSpec, int], None, None]:
         yield from self._uploaded_video_task_fxt_base(request=request, segment_size=4)
 
+    def _compute_segment_params(self, task_spec: _TaskSpec) -> list[tuple[int, int]]:
+        segment_params = []
+        segment_size = getattr(task_spec, "segment_size", 0) or task_spec.size
+        start_frame = getattr(task_spec, "start_frame", 0)
+        end_frame = (getattr(task_spec, "stop_frame", None) or (task_spec.size - 1)) + 1
+        overlap = min(
+            (
+                getattr(task_spec, "overlap", None) or 0
+                if task_spec.source_data_type == _SourceDataType.images
+                else 5
+            ),
+            segment_size // 2,
+        )
+        segment_start = start_frame
+        while segment_start < end_frame:
+            if start_frame < segment_start:
+                segment_start -= overlap * task_spec.frame_step
+
+            segment_end = segment_start + task_spec.frame_step * segment_size
+
+            segment_params.append((segment_start, min(segment_end, end_frame) - 1))
+            segment_start = segment_end
+
+        return segment_params
+
+    @staticmethod
+    def _compare_images(
+        expected: Image.Image, actual: Image.Image, *, must_be_identical: bool = True
+    ):
+        expected_pixels = np.array(expected)
+        chunk_frame_pixels = np.array(actual)
+        assert expected_pixels.shape == chunk_frame_pixels.shape
+
+        if not must_be_identical:
+            # video chunks can have slightly changed colors, due to codec specifics
+            # compressed images can also be distorted
+            assert np.allclose(chunk_frame_pixels, expected_pixels, atol=2)
+        else:
+            assert np.array_equal(chunk_frame_pixels, expected_pixels)
+
     _default_task_cases = [
         fixture_ref("fxt_uploaded_images_task"),
         fixture_ref("fxt_uploaded_images_task_with_segments"),
@@ -2148,12 +2188,8 @@ class TestTaskData:
             (task_meta, _) = api_client.tasks_api.retrieve_data_meta(task_id)
 
             assert task_meta.size == task_spec.size
-
             assert task_meta.start_frame == getattr(task_spec, "start_frame", 0)
-
-            if getattr(task_spec, "stop_frame", None):
-                assert task_meta.stop_frame == task_spec.stop_frame
-
+            assert task_meta.stop_frame == getattr(task_spec, "stop_frame", None) or task_spec.size
             assert task_meta.frame_filter == getattr(task_spec, "frame_filter", "")
 
             task_frame_set = set(
@@ -2174,35 +2210,40 @@ class TestTaskData:
         with make_api_client(self._USERNAME) as api_client:
             (task_meta, _) = api_client.tasks_api.retrieve_data_meta(task_id)
 
-            for quality, frame_id in product(["original", "compressed"], range(task_meta.size)):
+            for quality, abs_frame_id in product(
+                ["original", "compressed"],
+                range(task_meta.start_frame, task_meta.stop_frame + 1, task_spec.frame_step),
+            ):
+                rel_frame_id = (
+                    abs_frame_id - getattr(task_spec, "start_frame", 0) // task_spec.frame_step
+                )
                 (_, response) = api_client.tasks_api.retrieve_data(
                     task_id,
                     type="frame",
                     quality=quality,
-                    number=frame_id,
+                    number=rel_frame_id,
                     _parse_response=False,
                 )
 
                 if task_spec.source_data_type == _SourceDataType.video:
-                    frame_size = (task_meta.frames[0].height, task_meta.frames[0].width)
+                    frame_size = (task_meta.frames[0].width, task_meta.frames[0].height)
                 else:
                     frame_size = (
-                        task_meta.frames[frame_id].height,
-                        task_meta.frames[frame_id].width,
+                        task_meta.frames[rel_frame_id].width,
+                        task_meta.frames[rel_frame_id].height,
                     )
 
-                expected_pixels = np.array(task_spec.read_frame(frame_id))
-                assert frame_size == expected_pixels.shape[:2]
+                frame = Image.open(io.BytesIO(response.data))
+                assert frame_size == frame.size
 
-                frame_pixels = np.array(Image.open(io.BytesIO(response.data)))
-                assert frame_size == frame_pixels.shape[:2]
-
-                if (
-                    quality == "original"
-                    and task_spec.source_data_type == _SourceDataType.images
-                    # video chunks can have slightly changed colors, due to codec specifics
-                ):
-                    assert np.array_equal(frame_pixels, expected_pixels)
+                self._compare_images(
+                    task_spec.read_frame(abs_frame_id),
+                    frame,
+                    must_be_identical=(
+                        task_spec.source_data_type == _SourceDataType.images
+                        and quality == "original"
+                    ),
+                )
 
     @parametrize("task_spec, task_id", _default_task_cases)
     def test_can_get_task_chunks(self, task_spec: _TaskSpec, task_id: int):
@@ -2243,25 +2284,166 @@ class TestTaskData:
                             )
                             for name in chunk_archive.namelist()
                         }
-
+                        chunk_images = dict(sorted(chunk_images.items(), key=lambda e: e[0]))
                 else:
                     chunk_images = dict(enumerate(read_video_file(chunk_file)))
 
-                assert sorted(chunk_images.keys()) == list(
-                    v - chunk_id * task_meta.chunk_size for v in expected_chunk_frame_ids
+                assert sorted(chunk_images.keys()) == list(range(len(expected_chunk_frame_ids)))
+
+                for chunk_frame, abs_frame_id in zip(chunk_images, expected_chunk_frame_ids):
+                    self._compare_images(
+                        task_spec.read_frame(abs_frame_id),
+                        chunk_images[chunk_frame],
+                        must_be_identical=(
+                            task_spec.source_data_type == _SourceDataType.images
+                            and quality == "original"
+                        ),
+                    )
+
+    @parametrize("task_spec, task_id", _default_task_cases)
+    def test_can_get_job_meta(self, task_spec: _TaskSpec, task_id: int):
+        segment_params = self._compute_segment_params(task_spec)
+        with make_api_client(self._USERNAME) as api_client:
+            jobs = sorted(
+                get_paginated_collection(api_client.jobs_api.list_endpoint, task_id=task_id),
+                key=lambda j: j.start_frame,
+            )
+            assert len(jobs) == len(segment_params)
+
+            for (segment_start, segment_end), job in zip(segment_params, jobs):
+                (job_meta, _) = api_client.jobs_api.retrieve_data_meta(job.id)
+
+                assert (job_meta.start_frame, job_meta.stop_frame) == (segment_start, segment_end)
+                assert job_meta.frame_filter == getattr(task_spec, "frame_filter", "")
+
+                segment_size = segment_end - segment_start + 1
+                assert job_meta.size == segment_size
+
+                task_frame_set = set(
+                    range(job_meta.start_frame, job_meta.stop_frame + 1, task_spec.frame_step)
                 )
+                assert len(task_frame_set) == job_meta.size
 
-                for chunk_frame, frame_id in zip(chunk_images, expected_chunk_frame_ids):
-                    expected_pixels = np.array(task_spec.read_frame(frame_id))
-                    chunk_frame_pixels = np.array(chunk_images[chunk_frame])
-                    assert expected_pixels.shape == chunk_frame_pixels.shape
+                if getattr(task_spec, "chunk_size", None):
+                    assert job_meta.chunk_size == task_spec.chunk_size
 
-                    if (
-                        quality == "original"
-                        and task_spec.source_data_type == _SourceDataType.images
-                        # video chunks can have slightly changed colors, due to codec specifics
+                if task_spec.source_data_type == _SourceDataType.video:
+                    assert len(job_meta.frames) == 1
+                else:
+                    assert len(job_meta.frames) == job_meta.size
+
+    @parametrize("task_spec, task_id", _default_task_cases)
+    def test_can_get_job_frames(self, task_spec: _TaskSpec, task_id: int):
+        with make_api_client(self._USERNAME) as api_client:
+            jobs = sorted(
+                get_paginated_collection(api_client.jobs_api.list_endpoint, task_id=task_id),
+                key=lambda j: j.start_frame,
+            )
+            for job in jobs:
+                (job_meta, _) = api_client.jobs_api.retrieve_data_meta(job.id)
+
+                for quality, (frame_pos, abs_frame_id) in product(
+                    ["original", "compressed"],
+                    enumerate(range(job_meta.start_frame, job_meta.stop_frame)),
+                ):
+                    rel_frame_id = (
+                        abs_frame_id - getattr(task_spec, "start_frame", 0) // task_spec.frame_step
+                    )
+                    (_, response) = api_client.jobs_api.retrieve_data(
+                        job.id,
+                        type="frame",
+                        quality=quality,
+                        number=rel_frame_id,
+                        _parse_response=False,
+                    )
+
+                    if task_spec.source_data_type == _SourceDataType.video:
+                        frame_size = (job_meta.frames[0].width, job_meta.frames[0].height)
+                    else:
+                        frame_size = (
+                            job_meta.frames[frame_pos].width,
+                            job_meta.frames[frame_pos].height,
+                        )
+
+                    frame = Image.open(io.BytesIO(response.data))
+                    assert frame_size == frame.size
+
+                    self._compare_images(
+                        task_spec.read_frame(abs_frame_id),
+                        frame,
+                        must_be_identical=(
+                            task_spec.source_data_type == _SourceDataType.images
+                            and quality == "original"
+                        ),
+                    )
+
+    @parametrize("task_spec, task_id", _default_task_cases)
+    def test_can_get_job_chunks(self, task_spec: _TaskSpec, task_id: int):
+        with make_api_client(self._USERNAME) as api_client:
+            jobs = sorted(
+                get_paginated_collection(api_client.jobs_api.list_endpoint, task_id=task_id),
+                key=lambda j: j.start_frame,
+            )
+            for job in jobs:
+                (job_meta, _) = api_client.jobs_api.retrieve_data_meta(job.id)
+
+                if task_spec.source_data_type == _SourceDataType.images:
+                    assert job.data_original_chunk_type == "imageset"
+                    assert job.data_compressed_chunk_type == "imageset"
+                elif task_spec.source_data_type == _SourceDataType.video:
+                    assert job.data_original_chunk_type == "video"
+
+                    if getattr(task_spec, "use_zip_chunks", False):
+                        assert job.data_compressed_chunk_type == "imageset"
+                    else:
+                        assert job.data_compressed_chunk_type == "video"
+                else:
+                    assert False
+
+                chunk_count = math.ceil(job_meta.size / job_meta.chunk_size)
+                for quality, chunk_id in product(["original", "compressed"], range(chunk_count)):
+                    expected_chunk_abs_frame_ids = range(
+                        job_meta.start_frame
+                        + chunk_id * job_meta.chunk_size * task_spec.frame_step,
+                        job_meta.start_frame
+                        + min((chunk_id + 1) * job_meta.chunk_size, job_meta.size)
+                        * task_spec.frame_step,
+                    )
+
+                    (_, response) = api_client.jobs_api.retrieve_data(
+                        job.id,
+                        type="chunk",
+                        quality=quality,
+                        number=chunk_id,
+                        _parse_response=False,
+                    )
+
+                    chunk_file = io.BytesIO(response.data)
+                    if zipfile.is_zipfile(chunk_file):
+                        with zipfile.ZipFile(chunk_file, "r") as chunk_archive:
+                            chunk_images = {
+                                int(os.path.splitext(name)[0]): np.array(
+                                    Image.open(io.BytesIO(chunk_archive.read(name)))
+                                )
+                                for name in chunk_archive.namelist()
+                            }
+                            chunk_images = dict(sorted(chunk_images.items(), key=lambda e: e[0]))
+                    else:
+                        chunk_images = dict(enumerate(read_video_file(chunk_file)))
+
+                    assert sorted(chunk_images.keys()) == list(range(job_meta.size))
+
+                    for chunk_frame, abs_frame_id in zip(
+                        chunk_images, expected_chunk_abs_frame_ids
                     ):
-                        assert np.array_equal(chunk_frame_pixels, expected_pixels)
+                        self._compare_images(
+                            task_spec.read_frame(abs_frame_id),
+                            chunk_images[chunk_frame],
+                            must_be_identical=(
+                                task_spec.source_data_type == _SourceDataType.images
+                                and quality == "original"
+                            ),
+                        )
 
 
 @pytest.mark.usefixtures("restore_db_per_function")
