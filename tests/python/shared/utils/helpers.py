@@ -1,10 +1,11 @@
-# Copyright (C) 2022 CVAT.ai Corporation
+# Copyright (C) 2022-2024 CVAT.ai Corporation
 #
 # SPDX-License-Identifier: MIT
 
 import subprocess
+from contextlib import closing
 from io import BytesIO
-from typing import List, Optional
+from typing import Generator, List, Optional
 
 import av
 import av.video.reformatter
@@ -13,7 +14,7 @@ from PIL import Image
 from shared.fixtures.init import get_server_image_tag
 
 
-def generate_image_file(filename="image.png", size=(50, 50), color=(0, 0, 0)):
+def generate_image_file(filename="image.png", size=(100, 50), color=(0, 0, 0)):
     f = BytesIO()
     f.name = filename
     image = Image.new("RGB", size=size, color=color)
@@ -40,7 +41,7 @@ def generate_image_files(
     return images
 
 
-def generate_video_file(num_frames: int, size=(50, 50)) -> BytesIO:
+def generate_video_file(num_frames: int, size=(100, 50)) -> BytesIO:
     f = BytesIO()
     f.name = "video.avi"
 
@@ -58,6 +59,21 @@ def generate_video_file(num_frames: int, size=(50, 50)) -> BytesIO:
     f.seek(0)
 
     return f
+
+
+def read_video_file(file: BytesIO) -> Generator[Image.Image, None, None]:
+    file.seek(0)
+
+    with av.open(file) as container:
+        video_stream = container.streams.video[0]
+
+        with (
+            closing(video_stream.codec_context),  # pyav has a memory leak in stream.close()
+            closing(container.demux(video_stream)) as demux_iter,
+        ):
+            for packet in demux_iter:
+                for frame in packet.decode():
+                    yield frame.to_image()
 
 
 def generate_manifest(path: str) -> None:

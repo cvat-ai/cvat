@@ -6,10 +6,14 @@
 import io
 import itertools
 import json
+import math
 import os
 import os.path as osp
 import zipfile
+from abc import ABCMeta, abstractmethod
+from contextlib import closing
 from copy import deepcopy
+from enum import Enum
 from functools import partial
 from http import HTTPStatus
 from itertools import chain, product
@@ -18,8 +22,10 @@ from operator import itemgetter
 from pathlib import Path
 from tempfile import NamedTemporaryFile, TemporaryDirectory
 from time import sleep, time
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Callable, ClassVar, Dict, Generator, List, Optional, Tuple
 
+import attrs
+import numpy as np
 import pytest
 from cvat_sdk import Client, Config, exceptions
 from cvat_sdk.api_client import models
@@ -30,6 +36,7 @@ from cvat_sdk.core.proxies.tasks import ResourceType, Task
 from cvat_sdk.core.uploading import Uploader
 from deepdiff import DeepDiff
 from PIL import Image
+from pytest_cases import fixture_ref, parametrize
 
 import shared.utils.s3 as s3
 from shared.fixtures.init import docker_exec_cvat, kube_exec_cvat
@@ -48,6 +55,7 @@ from shared.utils.helpers import (
     generate_image_files,
     generate_manifest,
     generate_video_file,
+    read_video_file,
 )
 
 from .utils import (
@@ -1966,6 +1974,290 @@ class TestPostTaskData:
             (task, response) = api_client.tasks_api.retrieve(task_id)
             assert response.status == HTTPStatus.OK
             assert task.size == expected_task_size
+
+
+class _SourceDataType(str, Enum):
+    images = "images"
+    video = "video"
+
+
+@pytest.mark.usefixtures("restore_db_per_class")
+@pytest.mark.usefixtures("restore_redis_ondisk_per_class")
+@pytest.mark.usefixtures("restore_cvat_data")
+class TestTaskData:
+    _USERNAME = "admin1"
+
+    class _TaskSpec(models.ITaskWriteRequest, models.IDataRequest, metaclass=ABCMeta):
+        size: int
+        frame_step: int
+        source_data_type: _SourceDataType
+
+        @abstractmethod
+        def read_frame(self, i: int) -> Image.Image: ...
+
+    @attrs.define
+    class _TaskSpecBase(_TaskSpec):
+        _params: dict | models.TaskWriteRequest
+        _data_params: dict | models.DataRequest
+        size: int = attrs.field(kw_only=True)
+
+        @property
+        def frame_step(self) -> int:
+            v = getattr(self, "frame_filter", "step=1")
+            return int(v.split("=")[-1])
+
+        def __getattr__(self, k: str) -> Any:
+            notfound = object()
+
+            for params in [self._params, self._data_params]:
+                if isinstance(params, dict):
+                    v = params.get(k, notfound)
+                else:
+                    v = getattr(params, k, notfound)
+
+                if v is not notfound:
+                    return v
+
+            raise AttributeError(k)
+
+    @attrs.define
+    class _ImagesTaskSpec(_TaskSpecBase):
+        source_data_type: ClassVar[_SourceDataType] = _SourceDataType.images
+
+        _get_frame: Callable[[int], bytes] = attrs.field(kw_only=True)
+
+        def read_frame(self, i: int) -> Image.Image:
+            return Image.open(io.BytesIO(self._get_frame(i)))
+
+    @attrs.define
+    class _VideoTaskSpec(_TaskSpecBase):
+        source_data_type: ClassVar[_SourceDataType] = _SourceDataType.video
+
+        _get_video_file: Callable[[], io.IOBase] = attrs.field(kw_only=True)
+
+        def read_frame(self, i: int) -> Image.Image:
+            with closing(read_video_file(self._get_video_file())) as reader:
+                for _ in range(i + 1):
+                    frame = next(reader)
+
+                return frame
+
+    def _uploaded_images_task_fxt_base(
+        self,
+        request: pytest.FixtureRequest,
+        *,
+        frame_count: int = 10,
+        segment_size: Optional[int] = None,
+    ) -> Generator[tuple[_TaskSpec, int], None, None]:
+        task_params = {
+            "name": request.node.name,
+            "labels": [{"name": "a"}],
+        }
+        if segment_size:
+            task_params["segment_size"] = segment_size
+
+        image_files = generate_image_files(frame_count)
+        images_data = [f.getvalue() for f in image_files]
+        data_params = {
+            "image_quality": 70,
+            "client_files": image_files,
+        }
+
+        def get_frame(i: int) -> bytes:
+            return images_data[i]
+
+        task_id, _ = create_task(self._USERNAME, spec=task_params, data=data_params)
+        yield self._ImagesTaskSpec(
+            models.TaskWriteRequest._from_openapi_data(**task_params),
+            models.DataRequest._from_openapi_data(**data_params),
+            get_frame=get_frame,
+            size=len(images_data),
+        ), task_id
+
+    @pytest.fixture(scope="class")
+    def fxt_uploaded_images_task(
+        self, request: pytest.FixtureRequest
+    ) -> Generator[tuple[_TaskSpec, int], None, None]:
+        yield from self._uploaded_images_task_fxt_base(request=request)
+
+    @pytest.fixture(scope="class")
+    def fxt_uploaded_images_task_with_segments(
+        self, request: pytest.FixtureRequest
+    ) -> Generator[tuple[_TaskSpec, int], None, None]:
+        yield from self._uploaded_images_task_fxt_base(request=request, segment_size=4)
+
+    def _uploaded_video_task_fxt_base(
+        self,
+        request: pytest.FixtureRequest,
+        *,
+        frame_count: int = 10,
+        segment_size: Optional[int] = None,
+    ) -> Generator[tuple[_TaskSpec, int], None, None]:
+        task_params = {
+            "name": request.node.name,
+            "labels": [{"name": "a"}],
+        }
+        if segment_size:
+            task_params["segment_size"] = segment_size
+
+        video_file = generate_video_file(frame_count)
+        video_data = video_file.getvalue()
+        data_params = {
+            "image_quality": 70,
+            "client_files": [video_file],
+        }
+
+        def get_video_file() -> io.BytesIO:
+            return io.BytesIO(video_data)
+
+        task_id, _ = create_task(self._USERNAME, spec=task_params, data=data_params)
+        yield self._VideoTaskSpec(
+            models.TaskWriteRequest._from_openapi_data(**task_params),
+            models.DataRequest._from_openapi_data(**data_params),
+            get_video_file=get_video_file,
+            size=frame_count,
+        ), task_id
+
+    @pytest.fixture(scope="class")
+    def fxt_uploaded_video_task(
+        self,
+        request: pytest.FixtureRequest,
+    ) -> Generator[tuple[_TaskSpec, int], None, None]:
+        yield from self._uploaded_video_task_fxt_base(request=request)
+
+    @pytest.fixture(scope="class")
+    def fxt_uploaded_video_task_with_segments(
+        self, request: pytest.FixtureRequest
+    ) -> Generator[tuple[_TaskSpec, int], None, None]:
+        yield from self._uploaded_video_task_fxt_base(request=request, segment_size=4)
+
+    _default_task_cases = [
+        fixture_ref("fxt_uploaded_images_task"),
+        fixture_ref("fxt_uploaded_images_task_with_segments"),
+        fixture_ref("fxt_uploaded_video_task"),
+        fixture_ref("fxt_uploaded_video_task_with_segments"),
+    ]
+
+    @parametrize("task_spec, task_id", _default_task_cases)
+    def test_can_get_task_meta(self, task_spec: _TaskSpec, task_id: int):
+        with make_api_client(self._USERNAME) as api_client:
+            (task_meta, _) = api_client.tasks_api.retrieve_data_meta(task_id)
+
+            assert task_meta.size == task_spec.size
+
+            assert task_meta.start_frame == getattr(task_spec, "start_frame", 0)
+
+            if getattr(task_spec, "stop_frame", None):
+                assert task_meta.stop_frame == task_spec.stop_frame
+
+            assert task_meta.frame_filter == getattr(task_spec, "frame_filter", "")
+
+            task_frame_set = set(
+                range(task_meta.start_frame, task_meta.stop_frame + 1, task_spec.frame_step)
+            )
+            assert len(task_frame_set) == task_meta.size
+
+            if getattr(task_spec, "chunk_size", None):
+                assert task_meta.chunk_size == task_spec.chunk_size
+
+            if task_spec.source_data_type == _SourceDataType.video:
+                assert len(task_meta.frames) == 1
+            else:
+                assert len(task_meta.frames) == task_meta.size
+
+    @parametrize("task_spec, task_id", _default_task_cases)
+    def test_can_get_task_frames(self, task_spec: _TaskSpec, task_id: int):
+        with make_api_client(self._USERNAME) as api_client:
+            (task_meta, _) = api_client.tasks_api.retrieve_data_meta(task_id)
+
+            for quality, frame_id in product(["original", "compressed"], range(task_meta.size)):
+                (_, response) = api_client.tasks_api.retrieve_data(
+                    task_id,
+                    type="frame",
+                    quality=quality,
+                    number=frame_id,
+                    _parse_response=False,
+                )
+
+                if task_spec.source_data_type == _SourceDataType.video:
+                    frame_size = (task_meta.frames[0].height, task_meta.frames[0].width)
+                else:
+                    frame_size = (
+                        task_meta.frames[frame_id].height,
+                        task_meta.frames[frame_id].width,
+                    )
+
+                expected_pixels = np.array(task_spec.read_frame(frame_id))
+                assert frame_size == expected_pixels.shape[:2]
+
+                frame_pixels = np.array(Image.open(io.BytesIO(response.data)))
+                assert frame_size == frame_pixels.shape[:2]
+
+                if (
+                    quality == "original"
+                    and task_spec.source_data_type == _SourceDataType.images
+                    # video chunks can have slightly changed colors, due to codec specifics
+                ):
+                    assert np.array_equal(frame_pixels, expected_pixels)
+
+    @parametrize("task_spec, task_id", _default_task_cases)
+    def test_can_get_task_chunks(self, task_spec: _TaskSpec, task_id: int):
+        with make_api_client(self._USERNAME) as api_client:
+            (task, _) = api_client.tasks_api.retrieve(task_id)
+            (task_meta, _) = api_client.tasks_api.retrieve_data_meta(task_id)
+
+            if task_spec.source_data_type == _SourceDataType.images:
+                assert task.data_original_chunk_type == "imageset"
+                assert task.data_compressed_chunk_type == "imageset"
+            elif task_spec.source_data_type == _SourceDataType.video:
+                assert task.data_original_chunk_type == "video"
+
+                if getattr(task_spec, "use_zip_chunks", False):
+                    assert task.data_compressed_chunk_type == "imageset"
+                else:
+                    assert task.data_compressed_chunk_type == "video"
+            else:
+                assert False
+
+            chunk_count = math.ceil(task_meta.size / task_meta.chunk_size)
+            for quality, chunk_id in product(["original", "compressed"], range(chunk_count)):
+                expected_chunk_frame_ids = range(
+                    chunk_id * task_meta.chunk_size,
+                    min((chunk_id + 1) * task_meta.chunk_size, task_meta.size),
+                )
+
+                (_, response) = api_client.tasks_api.retrieve_data(
+                    task_id, type="chunk", quality=quality, number=chunk_id, _parse_response=False
+                )
+
+                chunk_file = io.BytesIO(response.data)
+                if zipfile.is_zipfile(chunk_file):
+                    with zipfile.ZipFile(chunk_file, "r") as chunk_archive:
+                        chunk_images = {
+                            int(os.path.splitext(name)[0]): np.array(
+                                Image.open(io.BytesIO(chunk_archive.read(name)))
+                            )
+                            for name in chunk_archive.namelist()
+                        }
+
+                else:
+                    chunk_images = dict(enumerate(read_video_file(chunk_file)))
+
+                assert sorted(chunk_images.keys()) == list(
+                    v - chunk_id * task_meta.chunk_size for v in expected_chunk_frame_ids
+                )
+
+                for chunk_frame, frame_id in zip(chunk_images, expected_chunk_frame_ids):
+                    expected_pixels = np.array(task_spec.read_frame(frame_id))
+                    chunk_frame_pixels = np.array(chunk_images[chunk_frame])
+                    assert expected_pixels.shape == chunk_frame_pixels.shape
+
+                    if (
+                        quality == "original"
+                        and task_spec.source_data_type == _SourceDataType.images
+                        # video chunks can have slightly changed colors, due to codec specifics
+                    ):
+                        assert np.array_equal(chunk_frame_pixels, expected_pixels)
 
 
 @pytest.mark.usefixtures("restore_db_per_function")

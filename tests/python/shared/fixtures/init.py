@@ -592,8 +592,26 @@ def restore_redis_inmem_per_function(request):
         kube_restore_redis_inmem()
 
 
+@pytest.fixture(scope="class")
+def restore_redis_inmem_per_class(request):
+    platform = request.config.getoption("--platform")
+    if platform == "local":
+        docker_restore_redis_inmem()
+    else:
+        kube_restore_redis_inmem()
+
+
 @pytest.fixture(scope="function")
 def restore_redis_ondisk_per_function(request):
+    platform = request.config.getoption("--platform")
+    if platform == "local":
+        docker_restore_redis_ondisk()
+    else:
+        kube_restore_redis_ondisk()
+
+
+@pytest.fixture(scope="class")
+def restore_redis_ondisk_per_class(request):
     platform = request.config.getoption("--platform")
     if platform == "local":
         docker_restore_redis_ondisk()
