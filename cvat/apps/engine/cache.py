@@ -506,7 +506,7 @@ def prepare_chunk(
     *,
     quality: FrameQuality,
     db_task: models.Task,
-    dump: bool = False,
+    dump_unchanged: bool = False,
 ) -> DataWithMime:
     # TODO: refactor all chunk building into another class
 
@@ -535,7 +535,7 @@ def prepare_chunk(
     merged_chunk_writer = writer_class(image_quality, **writer_kwargs)
 
     writer_kwargs = {}
-    if dump and isinstance(merged_chunk_writer, ZipCompressedChunkWriter):
+    if dump_unchanged and isinstance(merged_chunk_writer, ZipCompressedChunkWriter):
         writer_kwargs = dict(compress_frames=False, zip_compress_level=1)
 
     buffer = io.BytesIO()
