@@ -17,7 +17,6 @@ from attrs import define, fields_dict
 from datumaro.components.annotation import Annotation
 from datumaro.util import dump_json, parse_json
 from django.db import transaction
-from django.utils import timezone
 
 from cvat.apps.consensus import models
 from cvat.apps.consensus.models import (

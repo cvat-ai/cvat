@@ -2,7 +2,7 @@
 #
 # SPDX-License-Identifier: MIT
 
-from typing import Dict, List, Tuple, Union
+from typing import Dict, List, Tuple
 
 import datumaro as dm
 import django_rq
