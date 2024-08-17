@@ -1992,8 +1992,8 @@ class _TaskSpec(models.ITaskWriteRequest, models.IDataRequest, metaclass=ABCMeta
 
 @attrs.define
 class _TaskSpecBase(_TaskSpec):
-    _params: Union[dict, models.TaskWriteRequest]
-    _data_params: Union[dict, models.DataRequest]
+    _params: Union[Dict, models.TaskWriteRequest]
+    _data_params: Union[Dict, models.DataRequest]
     size: int = attrs.field(kw_only=True)
 
     @property
@@ -2052,7 +2052,7 @@ class TestTaskData:
         *,
         frame_count: int = 10,
         segment_size: Optional[int] = None,
-    ) -> Generator[tuple[_TaskSpec, int], None, None]:
+    ) -> Generator[Tuple[_TaskSpec, int], None, None]:
         task_params = {
             "name": request.node.name,
             "labels": [{"name": "a"}],
@@ -2081,13 +2081,13 @@ class TestTaskData:
     @pytest.fixture(scope="class")
     def fxt_uploaded_images_task(
         self, request: pytest.FixtureRequest
-    ) -> Generator[tuple[_TaskSpec, int], None, None]:
+    ) -> Generator[Tuple[_TaskSpec, int], None, None]:
         yield from self._uploaded_images_task_fxt_base(request=request)
 
     @pytest.fixture(scope="class")
     def fxt_uploaded_images_task_with_segments(
         self, request: pytest.FixtureRequest
-    ) -> Generator[tuple[_TaskSpec, int], None, None]:
+    ) -> Generator[Tuple[_TaskSpec, int], None, None]:
         yield from self._uploaded_images_task_fxt_base(request=request, segment_size=4)
 
     def _uploaded_video_task_fxt_base(
@@ -2096,7 +2096,7 @@ class TestTaskData:
         *,
         frame_count: int = 10,
         segment_size: Optional[int] = None,
-    ) -> Generator[tuple[_TaskSpec, int], None, None]:
+    ) -> Generator[Tuple[_TaskSpec, int], None, None]:
         task_params = {
             "name": request.node.name,
             "labels": [{"name": "a"}],
@@ -2126,16 +2126,16 @@ class TestTaskData:
     def fxt_uploaded_video_task(
         self,
         request: pytest.FixtureRequest,
-    ) -> Generator[tuple[_TaskSpec, int], None, None]:
+    ) -> Generator[Tuple[_TaskSpec, int], None, None]:
         yield from self._uploaded_video_task_fxt_base(request=request)
 
     @pytest.fixture(scope="class")
     def fxt_uploaded_video_task_with_segments(
         self, request: pytest.FixtureRequest
-    ) -> Generator[tuple[_TaskSpec, int], None, None]:
+    ) -> Generator[Tuple[_TaskSpec, int], None, None]:
         yield from self._uploaded_video_task_fxt_base(request=request, segment_size=4)
 
-    def _compute_segment_params(self, task_spec: _TaskSpec) -> list[tuple[int, int]]:
+    def _compute_segment_params(self, task_spec: _TaskSpec) -> List[Tuple[int, int]]:
         segment_params = []
         segment_size = getattr(task_spec, "segment_size", 0) or task_spec.size
         start_frame = getattr(task_spec, "start_frame", 0)
