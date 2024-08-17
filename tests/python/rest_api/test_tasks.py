@@ -22,7 +22,7 @@ from operator import itemgetter
 from pathlib import Path
 from tempfile import NamedTemporaryFile, TemporaryDirectory
 from time import sleep, time
-from typing import Any, Callable, ClassVar, Dict, Generator, List, Optional, Tuple
+from typing import Any, Callable, ClassVar, Dict, Generator, List, Optional, Tuple, Union
 
 import attrs
 import numpy as np
@@ -1992,8 +1992,8 @@ class _TaskSpec(models.ITaskWriteRequest, models.IDataRequest, metaclass=ABCMeta
 
 @attrs.define
 class _TaskSpecBase(_TaskSpec):
-    _params: dict | models.TaskWriteRequest
-    _data_params: dict | models.DataRequest
+    _params: Union[dict, models.TaskWriteRequest]
+    _data_params: Union[dict, models.DataRequest]
     size: int = attrs.field(kw_only=True)
 
     @property
