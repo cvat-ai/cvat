@@ -14,6 +14,7 @@ export interface KeyMapItem {
     sequences: string[];
     displayedSequences?: string[];
     scope: ShortcutScope;
+    nonActive?: boolean;
     applicable?: string[];
 }
 
@@ -68,9 +69,7 @@ Mousetrap.prototype.stopCallback = function (e: KeyboardEvent, element: Element,
     const shortcuts = [];
     const keys: string[] = ['SWITCH_SHORTCUTS', 'SWITCH_SETTINGS'];
     for (const key of keys) {
-        if (keyMap[key]) {
-            shortcuts.push(...keyMap[key].sequences);
-        }
+        shortcuts.push(...keyMap[key].sequences);
     }
     // stop when modals are opened
     const someModalsOpened = Array.from(

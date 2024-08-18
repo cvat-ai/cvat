@@ -1,3 +1,7 @@
+// Copyright (C) 2024 CVAT.ai Corporation
+//
+// SPDX-License-Identifier: MIT
+
 import {
     Button,
     Col,
@@ -5,6 +9,7 @@ import {
     Row,
     Collapse,
     List,
+    Alert,
 } from 'antd/lib';
 import Search from 'antd/lib/input/Search';
 import React, {
@@ -22,7 +27,7 @@ import MultipleShortcutsDisplay from './multiple-shortcuts-display';
 interface Props {
     keyMap: KeyMap;
     normalizedKeyMap: Record<string, string>;
-    onKeySequenceUpdate(keyMapId: string, updatedSequence: string[]): void;
+    onKeySequenceUpdate(shortcutID: string, updatedSequence: string[]): void;
 }
 
 function ShortcutsSettingsComponent(props: Props): JSX.Element {
@@ -53,7 +58,6 @@ function ShortcutsSettingsComponent(props: Props): JSX.Element {
                     localStorage.setItem('clientSettings', JSON.stringify(parsedSettings));
                 }
             },
-            onCancel: () => {},
         });
     }, [shortcuts.defaultState]);
 
@@ -82,6 +86,7 @@ function ShortcutsSettingsComponent(props: Props): JSX.Element {
                         renderItem={([id, item]) => (
                             <List.Item>
                                 <List.Item.Meta
+                                    className={`${item.nonActive ? 'cvat-shortcuts-settings-item-non-active' : ''}`}
                                     title={<p className='cvat-shortcuts-settings-item-title'>{item.name}</p>}
                                     description={<span className='cvat-shortcuts-settings-item-description'>{item.description}</span>}
                                 />
@@ -130,6 +135,7 @@ function ShortcutsSettingsComponent(props: Props): JSX.Element {
             </Row>
             <Row className='cvat-shortcuts-setting'>
                 <Col span={24}>
+                    <Alert message='Some key combinations may be reserved by the browser and cannot be overridden in CVAT.' type='warning' showIcon />
                     {items ? (
                         <Collapse
                             items={items}

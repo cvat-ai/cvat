@@ -1,3 +1,7 @@
+// Copyright (C) 2024 CVAT.ai Corporation
+//
+// SPDX-License-Identifier: MIT
+
 import { isEqual } from 'lodash';
 import { KeyMap, KeyMapItem } from './mousetrap-react';
 import { ShortcutScope } from './enums';
@@ -111,9 +115,11 @@ export function conflictDetector(
         for (const sequence of sequences.filter((seq) => !currentSequences.includes(seq))) {
             for (const existingSequence of flatKeyMapUpdated.sequences) {
                 if (conflict(sequence, existingSequence)) {
-                    const conflictingAction = Object.keys(flatKeyMapUpdated.items)
-                        .find((a) => flatKeyMapUpdated.items[a].sequences.includes(existingSequence));
-                    conflictingItems[conflictingAction!] = flatKeyMapUpdated.items[conflictingAction!];
+                    const conflictingActions = Object.keys(flatKeyMapUpdated.items)
+                        .filter((a) => flatKeyMapUpdated.items[a].sequences.includes(existingSequence));
+                    conflictingActions.forEach((conflictingAction) => {
+                        conflictingItems[conflictingAction] = flatKeyMapUpdated.items[conflictingAction];
+                    });
                 }
             }
         }

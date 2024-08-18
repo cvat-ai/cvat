@@ -15,7 +15,7 @@ import { ShortcutScope } from 'utils/enums';
 import { subKeyMap } from 'utils/component-subkeymap';
 import { useSelector } from 'react-redux';
 import { CombinedState } from 'reducers';
-import { useDynamicLabels } from 'utils/hooks';
+import { useResetShortcutsOnUnmount } from 'utils/hooks';
 
 interface ShortcutLabelMap {
     [index: number]: any;
@@ -28,11 +28,12 @@ type Props = {
 
 const componentShortcuts: Record<string, KeyMapItem> = {};
 
-for (const idx of Array.from({ length: 10 }, (_, i) => i)) {
+for (const idx of [1, 2, 3, 4, 5, 6, 7, 8, 9, 0]) {
     componentShortcuts[`SETUP_${idx}_TAG`] = {
         name: 'Create a new tag',
         description: 'Create a new tag with corresponding class. The class may be setup in tag annotation sidebar',
         sequences: [`${idx}`, `shift+${idx}`],
+        nonActive: true,
         scope: ShortcutScope.TAG_ANNOTATION_WORKSPACE,
         applicable: [DimensionType.DIMENSION_2D, DimensionType.DIMENSION_3D],
     };
@@ -70,20 +71,16 @@ function ShortcutsSelect(props: Props): JSX.Element {
         setShortcutLabelMap(newShortcutLabelMap);
     }, []);
 
-    useDynamicLabels(componentShortcuts);
+    useResetShortcutsOnUnmount(componentShortcuts);
 
     useEffect(() => {
-        const updatedComponentShortcuts = {
-            ...Object.keys(componentShortcuts).reduce((acc: any, key) => {
-                if (keyMap[key]) {
-                    acc[key] = {
-                        ...componentShortcuts[key],
-                        sequences: keyMap[key].sequences,
-                    };
-                }
-                return acc;
-            }, {}),
-        };
+        const updatedComponentShortcuts = Object.keys(componentShortcuts).reduce((acc: KeyMap, key: string) => {
+            acc[key] = {
+                ...componentShortcuts[key],
+                sequences: keyMap[key].sequences,
+            };
+            return acc;
+        }, {});
 
         for (const [id, labelID] of Object.entries(shortcutLabelMap)) {
             if (labelID) {
@@ -91,6 +88,7 @@ function ShortcutsSelect(props: Props): JSX.Element {
                 const key = `SETUP_${id}_TAG`;
                 updatedComponentShortcuts[key] = {
                     ...updatedComponentShortcuts[key],
+                    nonActive: false,
                     name: `Create a new tag "${label.name}"`,
                     description: `Create a new tag having class "${label.name}"`,
                 };
@@ -106,7 +104,6 @@ function ShortcutsSelect(props: Props): JSX.Element {
         .forEach((id: number): void => {
             const [label] = labels.filter((_label) => _label.id === shortcutLabelMap[id]);
             const key = `SETUP_${id}_TAG`;
-
             handlers[key] = (event: KeyboardEvent | undefined) => {
                 if (event) {
                     event.preventDefault();

@@ -1,4 +1,4 @@
-// Copyright (C) 2020-2022 Intel Corporation
+// Copyright (C) 2024 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -17,7 +17,7 @@ interface StateToProps {
 }
 
 interface DispatchToProps {
-    onKeySequenceUpdate(keyMapId: string, updatedSequence: string[]): void;
+    onKeySequenceUpdate(shortcutID: string, updatedSequence: string[]): void;
 }
 
 function mapStateToProps(state: CombinedState): StateToProps {
@@ -32,8 +32,8 @@ function mapStateToProps(state: CombinedState): StateToProps {
 
 function mapDispatchToProps(dispatch: any): DispatchToProps {
     return {
-        onKeySequenceUpdate: (keyMapId: string, updatedSequence: string[]): void => {
-            dispatch(shortcutsActions.updateSequence(keyMapId, updatedSequence));
+        onKeySequenceUpdate: (shortcutID: string, updatedSequence: string[]): void => {
+            dispatch(shortcutsActions.updateSequence(shortcutID, updatedSequence));
         },
     };
 }

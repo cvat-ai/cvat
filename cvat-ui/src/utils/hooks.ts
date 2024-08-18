@@ -12,7 +12,7 @@ import { useHistory } from 'react-router';
 import { CombinedState, PluginComponent } from 'reducers';
 import { registerComponentShortcuts } from 'actions/shortcuts-actions';
 import { authQuery } from './auth-query';
-import { KeyMapItem } from './mousetrap-react';
+import { KeyMap, KeyMapItem } from './mousetrap-react';
 
 // eslint-disable-next-line import/prefer-default-export
 export function usePrevious<T>(value: T): T | undefined {
@@ -133,7 +133,7 @@ export function useAuthQuery(): Record<string, string> | null {
     return authQuery(queryParams);
 }
 
-export function useDynamicLabels(componentShortcuts: Record<string, KeyMapItem>): void {
+export function useResetShortcutsOnUnmount(componentShortcuts: Record<string, KeyMapItem>): void {
     const keyMap = useSelector((state: CombinedState) => state.shortcuts.keyMap);
     const keyMapRef = useRef(keyMap);
 
@@ -142,10 +142,10 @@ export function useDynamicLabels(componentShortcuts: Record<string, KeyMapItem>)
     }, [keyMap]);
 
     useEffect(() => () => {
-        const revertedShortcuts = Object.entries(componentShortcuts).reduce((acc: any, [key, value]) => {
+        const revertedShortcuts = Object.entries(componentShortcuts).reduce((acc: KeyMap, [key, value]) => {
             acc[key] = {
                 ...value,
-                sequences: keyMapRef.current[key] ? keyMapRef.current[key].sequences : value.sequences,
+                sequences: keyMapRef.current[key]?.sequences ?? [],
             };
             return acc;
         }, {});

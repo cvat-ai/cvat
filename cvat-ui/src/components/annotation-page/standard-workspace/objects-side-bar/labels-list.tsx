@@ -3,11 +3,7 @@
 //
 // SPDX-License-Identifier: MIT
 
-import React, {
-    useCallback,
-    useEffect,
-    useState,
-} from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import message from 'antd/lib/message';
 
@@ -15,21 +11,21 @@ import { LabelType } from 'cvat-core-wrapper';
 import { CombinedState, ObjectType } from 'reducers';
 import { rememberObject, updateAnnotationsAsync } from 'actions/annotation-actions';
 import LabelItemContainer from 'containers/annotation-page/standard-workspace/objects-side-bar/label-item';
-import GlobalHotKeys, { KeyMapItem } from 'utils/mousetrap-react';
+import GlobalHotKeys, { KeyMap, KeyMapItem } from 'utils/mousetrap-react';
 import Text from 'antd/lib/typography/Text';
 import { ShortcutScope } from 'utils/enums';
 import { registerComponentShortcuts } from 'actions/shortcuts-actions';
 import { subKeyMap } from 'utils/component-subkeymap';
-import { useDynamicLabels } from 'utils/hooks';
+import { useResetShortcutsOnUnmount } from 'utils/hooks';
 
 const componentShortcuts: Record<string, KeyMapItem> = {};
 
 for (const i of [1, 2, 3, 4, 5, 6, 7, 8, 9, 0]) {
     componentShortcuts[`SWITCH_LABEL_${i}`] = {
-        name: `Switch label ${i}`,
-        description: `Changes the label to label ${i} for the activated
-        object or for the next drawn object if no objects are activated`,
+        name: 'Switch label',
+        description: 'Change label of a selected object or default label of the next created object if no one object is activated',
         sequences: [`ctrl+${i}`],
+        nonActive: true,
         scope: ShortcutScope.OBJECTS_SIDE_BAR,
     };
 }
@@ -49,29 +45,26 @@ function LabelsListComponent(): JSX.Element {
         Object.fromEntries(labelIDs.slice(0, 10).map((labelID: number, idx: number) => [(idx + 1) % 10, labelID])),
     );
 
-    useDynamicLabels(componentShortcuts);
+    useResetShortcutsOnUnmount(componentShortcuts);
 
     useEffect(() => {
-        const updatedComponentShortcuts = {
-            ...Object.keys(componentShortcuts).reduce((acc: any, key) => {
-                if (keyMap[key]) {
-                    acc[key] = {
-                        ...componentShortcuts[key],
-                        sequences: keyMap[key].sequences,
-                    };
-                }
-                return acc;
-            }, {}),
-        };
+        const updatedComponentShortcuts = Object.keys(componentShortcuts).reduce((acc: KeyMap, key: string) => {
+            acc[key] = {
+                ...componentShortcuts[key],
+                sequences: keyMap[key].sequences,
+            };
+            return acc;
+        }, {});
 
         for (const [id, labelID] of Object.entries(keyToLabelMapping)) {
             if (labelID) {
+                const labelName = labels.find((label: any) => label.id === labelID)?.name;
                 updatedComponentShortcuts[`SWITCH_LABEL_${id}`] = {
                     ...updatedComponentShortcuts[`SWITCH_LABEL_${id}`],
-                    name: `Switch label to ${labels.filter((label: any) => label.id === labelID)[0].name}`,
-                    description: `Changes the label to ${
-                        labels.filter((label: any) => label.id === labelID)[0].name
-                    } for the activated object or for the next drawn object if no objects are activated`,
+                    nonActive: false,
+                    name: `Switch label to ${labelName}`,
+                    description: `Changes the label to ${labelName} for the activated
+                object or for the next drawn object if no objects are activated`,
                 };
             }
         }
@@ -115,10 +108,12 @@ function LabelsListComponent(): JSX.Element {
         [keyToLabelMapping],
     );
 
-    const handleHelper = (labelID: number): void => {
-        if (Number.isInteger(activatedStateID)) {
+    const handleHelper = (event: KeyboardEvent, i: number): void => {
+        if (event) event.preventDefault();
+        const labelID = keyToLabelMapping[i];
+        const label = labels.find((_label: any) => _label.id === labelID)!;
+        if (Number.isInteger(labelID) && label && Number.isInteger(activatedStateID)) {
             const activatedState = states.filter((state: any) => state.clientID === activatedStateID)[0];
-            const label = labels.filter((_label: any) => _label.id === labelID)[0];
             const bothAreTags = activatedState.objectType === ObjectType.TAG && label.type === ObjectType.TAG;
             const labelIsApplicable = label.type === LabelType.ANY ||
                 activatedState.shapeType === label.type || bothAreTags;
@@ -127,7 +122,6 @@ function LabelsListComponent(): JSX.Element {
                 dispatch(updateAnnotationsAsync([activatedState]));
             }
         } else {
-            const label = labels.filter((_label: any) => _label.id === labelID)[0];
             const bothAreTags = activeObjectType === ObjectType.TAG && label.type === ObjectType.TAG;
             const labelIsApplicable = label.type === LabelType.ANY ||
                 activeShapeType === label.type || bothAreTags;
@@ -143,12 +137,7 @@ function LabelsListComponent(): JSX.Element {
 
     for (const i of [1, 2, 3, 4, 5, 6, 7, 8, 9, 0]) {
         handlers[`SWITCH_LABEL_${i}`] = (event: KeyboardEvent) => {
-            if (event) event.preventDefault();
-            const labelID = keyToLabelMapping[i];
-            const label = labels.filter((_label: any) => _label.id === labelID)[0];
-            if (Number.isInteger(labelID) && label) {
-                handleHelper(labelID);
-            }
+            handleHelper(event, i);
         };
     }
 

@@ -1,5 +1,4 @@
-// Copyright (C) 2020-2022 Intel Corporation
-// Copyright (C) 2023 CVAT.ai Corporation
+// Copyright (C) 2024 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -91,21 +90,21 @@ export default (state = defaultState, action: ShortcutsActions | BoundariesActio
             };
         }
         case ShortcutsActionsTypes.UPDATE_SEQUENCE: {
-            const { keyMapId, updatedSequence } = action.payload;
+            const { shortcutID, updatedSequence } = action.payload;
             let keyMap = { ...state.keyMap };
             const shortcut = {
-                [keyMapId]: { ...keyMap[keyMapId], sequences: updatedSequence },
+                [shortcutID]: { ...keyMap[shortcutID], sequences: updatedSequence },
             };
             const conflictingShortcuts = conflictDetector(shortcut, keyMap);
             if (conflictingShortcuts) {
                 keyMap = { ...keyMap, ...conflictingShortcuts };
             }
-            keyMap[keyMapId] = { ...keyMap[keyMapId], sequences: updatedSequence };
-            const normalized = formatShortcuts(keyMap[keyMapId]);
+            keyMap[shortcutID] = { ...keyMap[shortcutID], sequences: updatedSequence };
+            const normalized = formatShortcuts(keyMap[shortcutID]);
             return {
                 ...state,
                 keyMap,
-                normalizedKeyMap: { ...state.normalizedKeyMap, [keyMapId]: normalized },
+                normalizedKeyMap: { ...state.normalizedKeyMap, [shortcutID]: normalized },
             };
         }
         case ShortcutsActionsTypes.SET_SHORTCUTS: {
