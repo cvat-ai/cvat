@@ -310,8 +310,9 @@ def generate_job_consensus_report(
     for dataset_item in merged_dataset:
         frame_id = consensus_job_data_providers[0].dm_item_id_to_frame_id(dataset_item)
         frames.add(frame_id)
+        consensus_score = np.mean([ann.attributes.get("score", 0) for ann in dataset_item.annotations])
         frame_wise_consensus_score.setdefault(frame_id, []).append(
-            np.mean([ann.attributes.get("score", 0) for ann in dataset_item.annotations])
+            0 if np.isnan(consensus_score) else consensus_score
         )
 
     for frame_id in frames:
