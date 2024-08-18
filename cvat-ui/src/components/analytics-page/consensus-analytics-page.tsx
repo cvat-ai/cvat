@@ -6,15 +6,15 @@ import './styles.scss';
 
 import React, { useCallback, useEffect, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import { useLocation, useParams } from 'react-router';
+import { useParams } from 'react-router';
 import { Link } from 'react-router-dom';
 import { Row, Col } from 'antd/lib/grid';
 import Tabs from 'antd/lib/tabs';
 import Title from 'antd/lib/typography/Title';
 import notification from 'antd/lib/notification';
 import { useIsMounted } from 'utils/hooks';
-import { CombinedState, Project, Task } from 'reducers';
-import { Job, getCore } from 'cvat-core-wrapper';
+import { CombinedState, Task } from 'reducers';
+import { getCore } from 'cvat-core-wrapper';
 import CVATLoadingSpinner from 'components/common/loading-spinner';
 import GoBackButton from 'components/common/go-back-button';
 import { consensusActions } from 'actions/consensus-actions';
@@ -33,38 +33,17 @@ function getTabFromHash(): ConsensusAnalyticsTabs {
     return Object.values(ConsensusAnalyticsTabs).includes(tab) ? tab : ConsensusAnalyticsTabs.OVERVIEW;
 }
 
-function readInstanceType(location: ReturnType<typeof useLocation>): InstanceType {
-    if (location.pathname.includes('projects')) {
-        return 'project';
-    }
-    if (location.pathname.includes('jobs')) {
-        return 'job';
-    }
-    return 'task';
-}
-
-function readInstanceId(type: InstanceType): number {
-    if (type === 'project') {
-        return +useParams<{ pid: string }>().pid;
-    }
-    if (type === 'job') {
-        return +useParams<{ jid: string }>().jid;
-    }
-    return +useParams<{ tid: string }>().tid;
-}
-
-type InstanceType = 'project' | 'task' | 'job';
+type InstanceType = 'task';
 
 function TaskConsensusAnalyticsPage(): JSX.Element {
     const dispatch = useDispatch();
-    const location = useLocation();
 
-    const requestedInstanceType: InstanceType = readInstanceType(location);
-    const requestedInstanceID = readInstanceId(requestedInstanceType);
+    const requestedInstanceType: InstanceType = 'task';
+    const requestedInstanceID = +useParams<{ tid: string }>().tid;
 
     const [activeTab, setTab] = useState(getTabFromHash());
     const [instanceType, setInstanceType] = useState<InstanceType | null>(null);
-    const [instance, setInstance] = useState<Project | Task | Job | null>(null);
+    const [instance, setInstance] = useState<Task | null>(null);
     const [fetching, setFetching] = useState(true);
     const isMounted = useIsMounted();
     const consensusSettings = useSelector((state: CombinedState) => state.consensus?.consensusSettings);
@@ -74,20 +53,12 @@ function TaskConsensusAnalyticsPage(): JSX.Element {
     }, []);
 
     const receiveInstance = async (type: InstanceType, id: number): Promise<void> => {
-        let receivedInstance: Task | Project | Job | null = null;
+        let receivedInstance: Task | null = null;
 
         try {
             switch (type) {
-                case 'project': {
-                    [receivedInstance] = await core.projects.get({ id });
-                    break;
-                }
                 case 'task': {
                     [receivedInstance] = await core.tasks.get({ id });
-                    break;
-                }
-                case 'job': {
-                    [receivedInstance] = await core.jobs.get({ jobID: id });
                     break;
                 }
                 default:
@@ -175,12 +146,7 @@ function TaskConsensusAnalyticsPage(): JSX.Element {
             </Col>
         );
 
-        let analyticsFor: JSX.Element | null = <Link to={`/projects/${instance.id}`}>{`Project #${instance.id}`}</Link>;
-        if (instanceType === 'task') {
-            analyticsFor = <Link to={`/tasks/${instance.id}`}>{`Task #${instance.id}`}</Link>;
-        } else if (instanceType === 'job') {
-            analyticsFor = <Link to={`/tasks/${instance.taskId}/jobs/${instance.id}`}>{`Job #${instance.id}`}</Link>;
-        }
+        const analyticsFor = <Link to={`/tasks/${instance.id}`}>{`Task #${instance.id}`}</Link>;
         title = (
             <Col>
                 <Title level={4} className='cvat-text-color'>
@@ -206,7 +172,7 @@ function TaskConsensusAnalyticsPage(): JSX.Element {
                 onChange={onTabKeyChange}
                 className='cvat-task-analytics-tabs'
                 items={[
-                    ...(instanceType === 'task' ?
+                    ...(
                         [
                             {
                                 key: ConsensusAnalyticsTabs.OVERVIEW,
@@ -215,9 +181,8 @@ function TaskConsensusAnalyticsPage(): JSX.Element {
                                     <TaskConsensusAnalyticsComponent task={instance} />
                                 ),
                             },
-                        ] :
-                        []),
-                    ...(instanceType === 'task' && instance.consensusJobsPerRegularJob ?
+                        ]),
+                    ...(instance.consensusJobsPerRegularJob ?
                         [
                             {
                                 key: ConsensusAnalyticsTabs.SETTINGS,
