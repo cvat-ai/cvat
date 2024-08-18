@@ -290,7 +290,7 @@ def generate_job_consensus_report(
 
         for annotation in error_annotations:
             # the annotation belongs to which consensus dataset
-            idx = merger._dataset_map[merger._item_map[merger._ann_map[id(annotation)][1]][1]][1]
+            idx = merger.get_ann_dataset_id(id(annotation))
             annotation_ids.append(consensus_job_data_providers[idx].dm_ann_to_ann_id(annotation))
             if assignees[idx]:
                 assignee_report_data[assignees[idx]]["conflict_count"] += 1
@@ -310,7 +310,9 @@ def generate_job_consensus_report(
     for dataset_item in merged_dataset:
         frame_id = consensus_job_data_providers[0].dm_item_id_to_frame_id(dataset_item)
         frames.add(frame_id)
-        consensus_score = np.mean([ann.attributes.get("score", 0) for ann in dataset_item.annotations])
+        consensus_score = np.mean(
+            [ann.attributes.get("score", 0) for ann in dataset_item.annotations]
+        )
         frame_wise_consensus_score.setdefault(frame_id, []).append(
             0 if np.isnan(consensus_score) else consensus_score
         )

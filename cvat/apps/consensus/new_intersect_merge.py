@@ -132,6 +132,9 @@ class IntersectMerge(ClassicIntersectMerge):
 
         return merged
 
+    def get_ann_dataset_id(self, ann_id):
+        return self._dataset_map[self.get_ann_source(ann_id)][1]
+
     def merge_items(self, items):
         self._item = next(iter(items.values()))
 
