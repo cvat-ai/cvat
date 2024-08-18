@@ -594,7 +594,7 @@ class PolygonMatcher(_ShapeMatcher):
 
 
 @attrs
-class MaskMatcher(_ShapeMatcher):
+class MaskMatcher(PolygonMatcher):
     pass
 
 
