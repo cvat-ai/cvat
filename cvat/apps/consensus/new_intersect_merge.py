@@ -100,6 +100,7 @@ class IntersectMerge(ClassicIntersectMerge):
     _categories = attrib(init=False)  # merged categories
 
     def __call__(self, datasets):
+        self.errors = []
         self._categories = self._merge_categories([d.categories() for d in datasets])
         merged = Dataset(
             categories=self._categories,
