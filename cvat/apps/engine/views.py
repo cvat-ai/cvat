@@ -3281,7 +3281,7 @@ class RequestViewSet(viewsets.GenericViewSet):
     lookup_fields = {
         'created_date': 'created_at',
         'action': 'parsed_rq_id.action',
-        'target': 'parsed_rq_id.resource',
+        'target': 'parsed_rq_id.target',
         'subresource': 'parsed_rq_id.subresource',
         'format': 'parsed_rq_id.format',
         'status': 'get_status',
