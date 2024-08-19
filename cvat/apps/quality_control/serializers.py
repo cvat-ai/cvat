@@ -34,12 +34,14 @@ class QualityReportSummarySerializer(serializers.Serializer):
     error_count = serializers.IntegerField()
     conflicts_by_type = serializers.DictField(child=serializers.IntegerField())
 
-    # This set is enough for basic characteristics, such as
-    # DS_unmatched, GT_unmatched, accuracy, precision and recall
     valid_count = serializers.IntegerField(source="annotations.valid_count")
     ds_count = serializers.IntegerField(source="annotations.ds_count")
     gt_count = serializers.IntegerField(source="annotations.gt_count")
     total_count = serializers.IntegerField(source="annotations.total_count")
+
+    accuracy = serializers.FloatField(source="annotations.accuracy")
+    precision = serializers.FloatField(source="annotations.precision")
+    recall = serializers.FloatField(source="annotations.recall")
 
 
 class QualityReportSerializer(serializers.ModelSerializer):
@@ -74,6 +76,9 @@ class QualitySettingsSerializer(serializers.ModelSerializer):
         fields = (
             "id",
             "task_id",
+            "target_metric",
+            "target_metric_threshold",
+            "max_validations_per_job",
             "iou_threshold",
             "oks_sigma",
             "line_thickness",
@@ -95,6 +100,15 @@ class QualitySettingsSerializer(serializers.ModelSerializer):
         extra_kwargs = {k: {"required": False} for k in fields}
 
         for field_name, help_text in {
+            "target_metric": "The primary metric used for quality estimation",
+            "target_metric_threshold": """
+                Defines the minimal quality requirements in terms of the selected target metric.
+            """,
+            "max_validations_per_job": """
+                The maximum number of job validation attempts for the job assignee.
+                The job can be automatically accepted if the job quality is above the required
+                threshold, defined by the target threshold parameter.
+            """,
             "iou_threshold": "Used for distinction between matched / unmatched shapes",
             "low_overlap_threshold": """
                 Used for distinction between strong / weak (low_overlap) matches
@@ -143,5 +157,8 @@ class QualitySettingsSerializer(serializers.ModelSerializer):
             if k.endswith("_threshold") or k in ["oks_sigma", "line_thickness"]:
                 if not 0 <= v <= 1:
                     raise serializers.ValidationError(f"{k} must be in the range [0; 1]")
+
+        if (max_validations := attrs.get("max_validations_per_job")) and max_validations < 0:
+            raise serializers.ValidationError("max_validations_per_job cannot be less than 0")
 
         return super().validate(attrs)
