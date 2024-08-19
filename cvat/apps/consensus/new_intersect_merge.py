@@ -241,7 +241,7 @@ class _ShapeMatcher(AnnotationMatcher):
             if hasattr(a, "get_bbox") and not a.attributes.get("outside", False)
         )
 
-    def distance(a, b):
+    def distance(self, a, b):
         return segment_iou(a, b)
 
     def label_matcher(self, a, b):
