@@ -34,8 +34,8 @@ from cvat.apps.engine.background_operations import (BackupExportManager,
 from cvat.apps.engine.handlers import clear_import_cache
 from cvat.apps.engine.location import StorageType, get_location_configuration
 from cvat.apps.engine.log import ServerLogManager
-from cvat.apps.engine.models import Location
-from cvat.apps.engine.rq_job_handler import RQIdManager
+from cvat.apps.engine.models import Location, RequestAction, RequestTarget, RequestSubresource
+from cvat.apps.engine.rq_job_handler import RQId
 from cvat.apps.engine.serializers import DataSerializer, RqIdSerializer
 from cvat.apps.engine.utils import is_dataset_export
 
@@ -276,7 +276,10 @@ class UploadMixin:
             if file_exists:
                 # check whether the rq_job is in progress or has been finished/failed
                 object_class_name = self._object.__class__.__name__.lower()
-                template = RQIdManager.build('import', object_class_name, self._object.pk, subresource=import_type)
+                template = RQId(
+                    RequestAction.IMPORT, RequestTarget(object_class_name), self._object.pk,
+                    subresource=RequestSubresource(import_type)
+                ).render()
                 queue = django_rq.get_queue(settings.CVAT_QUEUES.IMPORT_DATA.value)
                 finished_job_ids = queue.finished_job_registry.get_job_ids()
                 failed_job_ids = queue.failed_job_registry.get_job_ids()
@@ -474,7 +477,7 @@ class DatasetMixin:
         return dataset_export_manager.export()
 
     # FUTURE-TODO: migrate to new API
-    def import_annotations(self, request, db_obj, import_func, rq_func, rq_id_template):
+    def import_annotations(self, request, db_obj, import_func, rq_func, rq_id_factory):
         is_tus_request = request.headers.get('Upload-Length', None) is not None or \
             request.method == 'OPTIONS'
         if is_tus_request:
@@ -493,7 +496,7 @@ class DatasetMixin:
 
             return import_func(
                 request=request,
-                rq_id_template=rq_id_template,
+                rq_id_factory=rq_id_factory,
                 rq_func=rq_func,
                 db_obj=self._object,
                 format_name=format_name,
