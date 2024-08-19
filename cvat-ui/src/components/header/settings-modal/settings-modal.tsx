@@ -94,15 +94,6 @@ function SettingsModal(props: SettingsModalProps): JSX.Element {
                     };
                     const conflictingShortcuts = conflictDetector(currValue, shortcuts.keyMap);
                     if (conflictingShortcuts) {
-                        notification.warning({
-                            closable: true,
-                            closeIcon: true,
-                            message: `Due to conflicts in between the the saved shortcuts, some sequence of ${
-                                Object.values(conflictingShortcuts).map(
-                                    (conflictingShortcut) => conflictingShortcut.name).join(', ')
-                            } have been unset.`,
-                            duration: 5000,
-                        });
                         for (const conflictingShortcut of Object.keys(conflictingShortcuts)) {
                             for (const sequence of currValue[key].sequences) {
                                 for (const conflictingSequence of conflictingShortcuts[conflictingShortcut].sequences) {
