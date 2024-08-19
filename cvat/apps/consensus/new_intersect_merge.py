@@ -90,9 +90,9 @@ class IntersectMerge(ClassicIntersectMerge):
         self.errors.append(error(self._item_id, *args, **kwargs))
 
     # Indexes:
-    _dataset_map = attrib(init=False)  # id(dataset) -> (dataset, index)
-    _item_map = attrib(init=False)  # id(item) -> (item, id(dataset))
-    _ann_map = attrib(init=False)  # id(ann) -> (ann, id(item))
+    dataset_map = attrib(init=False)  # id(dataset) -> (dataset, index)
+    item_map = attrib(init=False)  # id(item) -> (item, id(dataset))
+    ann_map = attrib(init=False)  # id(ann) -> (ann, id(item))
     _item_id = attrib(init=False)
     _item = attrib(init=False)
     dataset_mean_consensus_score = attrib(init=False)  # id(dataset) -> mean consensus score: float
@@ -139,7 +139,6 @@ class IntersectMerge(ClassicIntersectMerge):
     def merge_items(self, items):
         self._item = next(iter(items.values()))
 
-        # self.ann_map = {}  # id(annotation) -> (annotation, id(frame/item))
         sources = []  # [annotation of frame 0, frame 1, ...]
         for item in items.values():
             self._ann_map.update({id(a): (a, id(item)) for a in item.annotations})
