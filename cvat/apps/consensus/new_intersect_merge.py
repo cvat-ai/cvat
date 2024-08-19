@@ -801,7 +801,7 @@ class SkeletonMatcher(_ShapeMatcher):
 
 @attrs
 class LineMatcher(_ShapeMatcher, LineMatcherQualityReports):
-    def match_annotations_two_sources(self, item_a: dm.Skeleton, item_b: dm.Skeleton):
+    def match_annotations_two_sources(self, item_a: dm.PolyLine, item_b: dm.PolyLine):
         return self._match_segments(
             dm.AnnotationType.polyline, item_a, item_b, distance=self.distance
         )
