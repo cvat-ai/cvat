@@ -243,12 +243,15 @@ class _ShapeMatcher(AnnotationMatcher, DistanceComparator):
             dist_thresh=dist_thresh,
         )
 
-    def match_annotations_two_sources(self, item_a: dm.Annotation, item_b: dm.Annotation) -> Tuple[
-        List[dm.Annotation],
-        List[dm.Annotation],
-        List[dm.Annotation],
-        List[dm.Annotation],
-        Optional[Dict[int, float]],
+    def match_annotations_two_sources(self, item_a: dm.Annotation, item_b: dm.Annotation) -> Union[
+        Tuple[List[dm.Annotation], List[dm.Annotation], List[dm.Annotation], List[dm.Annotation]],
+        Tuple[
+            List[dm.Annotation],
+            List[dm.Annotation],
+            List[dm.Annotation],
+            List[dm.Annotation],
+            Dict[int, float],
+        ],
     ]:
         if self.return_distances:
             return [], [], [], [], {}
