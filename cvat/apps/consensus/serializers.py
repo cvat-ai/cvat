@@ -102,15 +102,12 @@ class ConsensusSettingsSerializer(serializers.ModelSerializer):
 
     def validate(self, attrs):
         for k, v in attrs.items():
-            if k.endswith("_threshold"):
-                if not 0 <= v <= 1:
-                    raise serializers.ValidationError(f"{k} must be in the range [0; 1]")
-            elif k == "quorum":
+            if k.endswith("_threshold") and not 0 <= v <= 1:
+                raise serializers.ValidationError(f"{k} must be in the range [0; 1]")
+            elif k == "quorum" and not 0 <= v <= 10:
                 # since we have constrained max. consensus jobs per regular job to 10
-                if not 0 <= v <= 10:
-                    raise serializers.ValidationError(f"{k} must be in the range [0; 10]")
-            elif k == "sigma":
-                if not 0.05 <= v <= 0.2:
-                    raise serializers.ValidationError(f"{k} must be in the range [0.05; 0.2]")
+                raise serializers.ValidationError(f"{k} must be in the range [0; 10]")
+            elif k == "sigma" and not 0.05 <= v <= 0.2:
+                raise serializers.ValidationError(f"{k} must be in the range [0.05; 0.2]")
 
         return super().validate(attrs)
