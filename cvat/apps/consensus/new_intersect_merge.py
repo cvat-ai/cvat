@@ -111,10 +111,10 @@ class IntersectMerge(ClassicIntersectMerge):
         self._check_groups_definition()
 
         item_matches, item_map = self.match_items(datasets)
-        self._item_map = item_map
+        self.item_map = item_map
         self.dataset_mean_consensus_score = {id(d): [] for d in datasets}
-        self._dataset_map = {id(d): (d, i) for i, d in enumerate(datasets)}
-        self._ann_map = {}
+        self.dataset_map = {id(d): (d, i) for i, d in enumerate(datasets)}
+        self.ann_map = {}
 
         for item_id, items in item_matches.items():
             self._item_id = item_id
@@ -125,7 +125,7 @@ class IntersectMerge(ClassicIntersectMerge):
                 self.add_item_error(NoMatchingItemError, sources=missing_sources)
             merged.put(self.merge_items(items))
 
-        # now we have conensus score for all annotations in
+        # now we have consensus score for all annotations in
         for dataset_id in self.dataset_mean_consensus_score:
             self.dataset_mean_consensus_score[dataset_id] = np.mean(
                 self.dataset_mean_consensus_score[dataset_id]
@@ -415,7 +415,7 @@ class _ShapeMatcher(AnnotationMatcher):
 
 @attrs
 class BboxMatcher(_ShapeMatcher):
-    def distance(self, a, b):
+    def distance(self, item_a, item_b):
         def _to_polygon(bbox_ann: dm.Bbox):
             points = bbox_ann.as_polygon()
             angle = bbox_ann.attributes.get("rotation", 0) / 180 * math.pi
@@ -438,9 +438,9 @@ class BboxMatcher(_ShapeMatcher):
             else:
                 return segment_iou(_to_polygon(a), _to_polygon(b), img_h=img_h, img_w=img_w)
 
-        dataitem_id = self._context._ann_map[id(a)][1]
+        dataitem_id = self._context._ann_map[id(item_a)][1]
         img_h, img_w = self._context._item_map[dataitem_id][0].image.size
-        return _bbox_iou(a, b, img_h=img_h, img_w=img_w)
+        return _bbox_iou(item_a, item_b, img_h=img_h, img_w=img_w)
 
     def match_annotations_two_sources(self, item_a: dm.Bbox, item_b: dm.Bbox):
         return self._match_segments(
@@ -481,7 +481,7 @@ class PolygonMatcher(_ShapeMatcher):
         def _find_instances(annotations):
             # Group instance annotations by label.
             # Annotations with the same label and group will be merged,
-            # and considered a single object in comparison
+            # and considered item_a single object in comparison
             instances = []
             instance_map = {}  # ann id -> instance id
             for ann_group in dm.ops.find_instances(annotations):
@@ -621,7 +621,7 @@ class PointsMatcher(_ShapeMatcher):
             return OKS(a, b, sigma=self.sigma, scale=img_h * img_w)
 
         else:
-            # Complex case: multiple points, grouped points, points with a bbox
+            # Complex case: multiple points, grouped points, points with item_a bbox
             # Try to align points and then return the metric
             # match them in their bbox space
 
@@ -705,7 +705,7 @@ class SkeletonMatcher(_ShapeMatcher):
         if skeleton_info is None:
             skeleton_label_name = label_cat[skeleton_label_id].name
 
-            # Build a sorted list of sublabels to arrange skeleton points during comparison
+            # Build item_a sorted list of sub labels to arrange skeleton points during comparison
             skeleton_info = sorted(
                 idx for idx, label in enumerate(label_cat) if label.parent == skeleton_label_name
             )
@@ -730,14 +730,14 @@ class SkeletonMatcher(_ShapeMatcher):
                     skeleton.label, self._get_skeleton_info(skeleton.label)
                 )
 
-                # Merge skeleton points into a single list
+                # Merge skeleton points into item_a single list
                 # The list is ordered by skeleton_info
                 skeleton_points = [
                     next((p for p in skeleton.elements if p.label == sublabel), None)
                     for sublabel in skeleton_info
                 ]
 
-                # Build a single Points object for further comparisons
+                # Build item_a single Points object for further comparisons
                 merged_points = dm.Points()
                 merged_points.points = np.ravel(
                     [p.points if p else [0, 0] for p in skeleton_points]
