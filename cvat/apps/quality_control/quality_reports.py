@@ -1205,7 +1205,7 @@ class DistanceComparator(dm.ops.DistanceComparator):
             b = b_instances[b_inst_id][0]
             return a.label == b.label
 
-        results = self._match_segments(
+        results = self.match_segments(
             dm.AnnotationType.polygon,
             item_a,
             item_b,
