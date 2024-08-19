@@ -11,6 +11,13 @@ YOLOv8 is a format family which consists of four formats:
 - [Segmentation](https://docs.ultralytics.com/datasets/segment/)
 - [Pose](https://docs.ultralytics.com/datasets/pose/)
 
+Dataset examples:
+- [Detection](https://github.com/cvat-ai/datumaro/tree/develop/tests/assets/yolo_dataset/yolov8_detection)
+- [Oriented Bounding Boxes](https://github.com/cvat-ai/datumaro/tree/develop/tests/assets/yolo_dataset/yolov8_oriented_boxes)
+- [Segmentation](https://github.com/cvat-ai/datumaro/tree/develop/tests/assets/yolo_dataset/yolov8_segmentation)
+- [Pose](https://github.com/cvat-ai/datumaro/tree/develop/tests/assets/yolo_dataset/yolov8_pose)
+
+
 ## YOLOv8 export
 
 For export of images:

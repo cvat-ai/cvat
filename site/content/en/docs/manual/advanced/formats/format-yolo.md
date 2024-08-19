@@ -15,7 +15,7 @@ For more information, see:
 
 - [YOLO Specification](https://pjreddie.com/darknet/yolo/)
 - [Format specification](https://github.com/AlexeyAB/darknet#how-to-train-to-detect-your-custom-objects)
-- [Dataset examples](https://github.com/cvat-ai/datumaro/tree/v0.3/tests/assets/yolo_dataset/yolo)
+- [Dataset examples](https://github.com/cvat-ai/datumaro/tree/v0.3/tests/assets/yolo_dataset)
 
 ## YOLO export
 
