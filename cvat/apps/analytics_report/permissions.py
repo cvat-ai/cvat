@@ -7,9 +7,9 @@ from django.conf import settings
 from django.core.exceptions import ObjectDoesNotExist
 from rest_framework.exceptions import ValidationError
 
-from cvat.apps.engine.models import Job, Project, Task
+from cvat.apps.engine.models import Job
 from cvat.apps.engine.permissions import JobPermission, ProjectPermission, TaskPermission
-from cvat.apps.iam.permissions import OpenPolicyAgentPermission, StrEnum, get_iam_context
+from cvat.apps.iam.permissions import OpenPolicyAgentPermission, StrEnum
 
 
 class AnalyticsReportPermission(OpenPolicyAgentPermission):
