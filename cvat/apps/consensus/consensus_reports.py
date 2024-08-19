@@ -251,12 +251,9 @@ def generate_assignee_consensus_report(
         )
 
     for assignee_id, assignee_info in assignee_report_data.items():
-        assignee_consensus_score = sum(assignee_info["consensus_score"]) / len(
+        assignee_report_data[assignee_id]["consensus_score"] = sum(
             assignee_info["consensus_score"]
-        )
-        assignee_report_data[assignee_id]["consensus_score"] = (
-            0 if np.isnan(assignee_consensus_score) else assignee_consensus_score
-        )
+        ) / (len(assignee_info["consensus_score"]) or 1)
 
     return assignee_report_data
 
@@ -313,6 +310,7 @@ def generate_job_consensus_report(
         consensus_score = np.mean(
             [ann.attributes.get("score", 0) for ann in dataset_item.annotations]
         )
+        # if that frame has no annotations, the consensus score is NaN
         frame_wise_consensus_score.setdefault(frame_id, []).append(
             0 if np.isnan(consensus_score) else consensus_score
         )
@@ -338,7 +336,9 @@ def generate_job_consensus_report(
     )
 
 
-def generate_task_consensus_report(job_reports: List[ComparisonReport]) -> Tuple[ComparisonReport, int]:
+def generate_task_consensus_report(
+    job_reports: List[ComparisonReport],
+) -> Tuple[ComparisonReport, int]:
     task_frames = set()
     task_conflicts: List[AnnotationConflict] = []
     task_frame_results = {}
