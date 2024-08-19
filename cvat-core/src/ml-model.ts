@@ -1,5 +1,5 @@
 // Copyright (C) 2019-2022 Intel Corporation
-// Copyright (C) 2022-2023 CVAT.ai Corporation
+// Copyright (C) 2022-2024 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -13,7 +13,6 @@ import {
 
 export default class MLModel {
     private serialized: SerializedModel;
-    private changeToolsBlockerStateCallback?: (event: string) => void;
 
     constructor(serialized: SerializedModel) {
         this.serialized = { ...serialized };
@@ -61,10 +60,6 @@ export default class MLModel {
             },
         };
 
-        if (this.changeToolsBlockerStateCallback) {
-            result.canvas.onChangeToolsBlockerState = this.changeToolsBlockerStateCallback;
-        }
-
         return result;
     }
 
@@ -101,11 +96,6 @@ export default class MLModel {
 
     public get returnType(): ModelReturnType | undefined {
         return this.serialized?.return_type;
-    }
-
-    // Used to set a callback when the tool is blocked in UI
-    public set onChangeToolsBlockerState(onChangeToolsBlockerState: (event: string) => void) {
-        this.changeToolsBlockerStateCallback = onChangeToolsBlockerState;
     }
 
     public async preview(): Promise<string> {
