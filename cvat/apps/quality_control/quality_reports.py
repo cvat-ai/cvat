@@ -772,7 +772,7 @@ def to_rle(ann: dm.Annotation, *, img_h: int, img_w: int):
         assert False
 
 
-def _segment_iou(a: dm.Annotation, b: dm.Annotation, *, img_h: int, img_w: int) -> float:
+def segment_iou(a: dm.Annotation, b: dm.Annotation, *, img_h: int, img_w: int) -> float:
     """
     Generic IoU computation with masks and polygons.
     Returns -1 if no intersection, [0; 1] otherwise
@@ -938,7 +938,7 @@ class LineMatcher(dm.ops.LineMatcher):
         return a_new_points, b_new_points
 
 
-class _DistanceComparator(dm.ops.DistanceComparator):
+class DistanceComparator(dm.ops.DistanceComparator):
     def __init__(
         self,
         categories: dm.CategoriesInfo,
@@ -982,6 +982,23 @@ class _DistanceComparator(dm.ops.DistanceComparator):
         )
 
     @staticmethod
+    def to_polygon(bbox_ann: dm.Bbox):
+        points = bbox_ann.as_polygon()
+        angle = bbox_ann.attributes.get("rotation", 0) / 180 * math.pi
+
+        if angle:
+            points = np.reshape(points, (-1, 2))
+            center = (points[0] + points[2]) / 2
+            rel_points = points - center
+            cos = np.cos(angle)
+            sin = np.sin(angle)
+            rotation_matrix = ((cos, sin), (-sin, cos))
+            points = np.matmul(rel_points, rotation_matrix) + center
+            points = points.flatten()
+
+        return dm.Polygon(points)
+
+    @staticmethod
     def _get_ann_type(t, item: dm.Annotation) -> Sequence[dm.Annotation]:
         return [
             a for a in item.annotations if a.type == t and not a.attributes.get("outside", False)
@@ -1014,7 +1031,7 @@ class _DistanceComparator(dm.ops.DistanceComparator):
                 return 0
             return 0.5 + (a.label == b.label) / 2
 
-        return self._match_segments(
+        return self.match_segments(
             dm.AnnotationType.label,
             item_a,
             item_b,
@@ -1023,7 +1040,7 @@ class _DistanceComparator(dm.ops.DistanceComparator):
             dist_thresh=0.5,
         )
 
-    def _match_segments(
+    def match_segments(
         self,
         t,
         item_a,
@@ -1065,30 +1082,15 @@ class _DistanceComparator(dm.ops.DistanceComparator):
         return returned_values
 
     def match_boxes(self, item_a, item_b):
-        def _to_polygon(bbox_ann: dm.Bbox):
-            points = bbox_ann.as_polygon()
-            angle = bbox_ann.attributes.get("rotation", 0) / 180 * math.pi
-
-            if angle:
-                points = np.reshape(points, (-1, 2))
-                center = (points[0] + points[2]) / 2
-                rel_points = points - center
-                cos = np.cos(angle)
-                sin = np.sin(angle)
-                rotation_matrix = ((cos, sin), (-sin, cos))
-                points = np.matmul(rel_points, rotation_matrix) + center
-                points = points.flatten()
-
-            return dm.Polygon(points)
 
         def _bbox_iou(a: dm.Bbox, b: dm.Bbox, *, img_w: int, img_h: int) -> float:
             if a.attributes.get("rotation", 0) == b.attributes.get("rotation", 0):
                 return dm.ops.bbox_iou(a, b)
             else:
-                return _segment_iou(_to_polygon(a), _to_polygon(b), img_h=img_h, img_w=img_w)
+                return segment_iou(self.to_polygon(a), self.to_polygon(b), img_h=img_h, img_w=img_w)
 
         img_h, img_w = item_a.image.size
-        return self._match_segments(
+        return self.match_segments(
             dm.AnnotationType.bbox,
             item_a,
             item_b,
@@ -1253,7 +1255,7 @@ class _DistanceComparator(dm.ops.DistanceComparator):
             torso_r=self.line_torso_radius,
             scale=np.prod(item_a.image.size),
         )
-        return self._match_segments(
+        return self.match_segments(
             dm.AnnotationType.polyline, item_a, item_b, distance=matcher.distance
         )
 
@@ -1328,7 +1330,7 @@ class _DistanceComparator(dm.ops.DistanceComparator):
                     len(matched_points) + len(a_extra) + len(b_extra)
                 )
 
-        return self._match_segments(
+        return self.match_segments(
             dm.AnnotationType.points,
             item_a,
             item_b,
@@ -1414,7 +1416,7 @@ class _DistanceComparator(dm.ops.DistanceComparator):
 
         matcher = KeypointsMatcher(instance_map=instance_map, sigma=self.oks_sigma)
 
-        results = self._match_segments(
+        results = self.match_segments(
             dm.AnnotationType.points,
             item_a,
             item_b,
@@ -1511,7 +1513,7 @@ class _Comparator:
         }
         self.included_ann_types = settings.included_annotation_types
         self.non_groupable_ann_type = settings.non_groupable_ann_type
-        self._annotation_comparator = _DistanceComparator(
+        self._annotation_comparator = DistanceComparator(
             categories,
             included_ann_types=set(self.included_ann_types)
             - {dm.AnnotationType.mask},  # masks are compared together with polygons

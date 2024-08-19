@@ -4,8 +4,7 @@
 
 import itertools
 import logging as log
-import math
-from typing import Any, Callable, Dict, List, Optional, Sequence, Tuple, Union, cast
+from typing import Callable, Dict, List, Optional, Sequence, Tuple, Union, cast
 
 import attr
 import datumaro as dm
@@ -20,40 +19,9 @@ from datumaro.util.annotation_util import find_instances, max_bbox, mean_bbox
 from datumaro.util.attrs_util import ensure_cls
 
 from cvat.apps.engine.models import Label
-from cvat.apps.quality_control.quality_reports import OKS, KeypointsMatcher
+from cvat.apps.quality_control.quality_reports import OKS, DistanceComparator, KeypointsMatcher
 from cvat.apps.quality_control.quality_reports import LineMatcher as LineMatcherQualityReports
-from cvat.apps.quality_control.quality_reports import match_segments, to_rle
-
-
-def segment_iou(
-    a: dm.Annotation,
-    b: dm.Annotation,
-    *,
-    img_h: Union[int, None] = None,
-    img_w: Union[int, None] = None,
-) -> float:
-    """
-    Generic IoU computation with masks and polygons.
-    Returns -1 if no intersection, [0; 1] otherwise
-    """
-    # Comparing to the dm version, this fixes the comparison for segments,
-    # as the images size are required for correct decoding.
-    # Boxes are not included, because they are not needed
-
-    from pycocotools import mask as mask_utils
-
-    is_bbox = AnnotationType.bbox in [a.type, b.type]
-
-    if not is_bbox:
-        assert img_h is not None and img_w is not None
-        a = to_rle(a, img_h=img_h, img_w=img_w)
-        b = to_rle(b, img_h=img_h, img_w=img_w)
-    else:
-        a = [list(a.get_bbox())]
-        b = [list(b.get_bbox())]
-
-    # Note that mask_utils.iou expects (dt, gt). Check this if the 3rd param is True
-    return float(mask_utils.iou(b, a, [0]))
+from cvat.apps.quality_control.quality_reports import match_segments, segment_iou, to_rle
 
 
 @attrs
@@ -225,21 +193,12 @@ class LabelMatcher(AnnotationMatcher):
 
 
 @attrs(kw_only=True)
-class _ShapeMatcher(AnnotationMatcher):
+class _ShapeMatcher(AnnotationMatcher, DistanceComparator):
     pairwise_dist = attrib(converter=float, default=0.9)
     cluster_dist = attrib(converter=float, default=-1.0)
     return_distances = False
     categories = attrib(converter=dict, default={})
     distance_index = attrib(converter=dict, default={})
-
-    def _instance_bbox(
-        self, instance_anns: Sequence[dm.Annotation]
-    ) -> Tuple[float, float, float, float]:
-        return dm.ops.max_bbox(
-            a.get_bbox() if isinstance(a, dm.Skeleton) else a
-            for a in instance_anns
-            if hasattr(a, "get_bbox") and not a.attributes.get("outside", False)
-        )
 
     def distance(self, a, b):
         return segment_iou(a, b)
@@ -248,31 +207,6 @@ class _ShapeMatcher(AnnotationMatcher):
         a_label = self._context._get_any_label_name(a, a.label)
         b_label = self._context._get_any_label_name(b, b.label)
         return a_label == b_label
-
-    @classmethod
-    def _make_memoizing_distance(cls, distance_function: Callable[[Any, Any], float]):
-        distances = {}
-        notfound = object()
-
-        def memoizing_distance(a, b):
-            if isinstance(a, int) and isinstance(b, int):
-                key = (a, b)
-            else:
-                key = (id(a), id(b))
-
-            dist = distances.get(key, notfound)
-
-            if dist is notfound:
-                dist = distance_function(a, b)
-                distances[key] = dist
-
-            return dist
-
-        return memoizing_distance, distances
-
-    @staticmethod
-    def _get_ann_type(t, item: dm.Annotation) -> Sequence[dm.Annotation]:
-        return [a for a in item if a.type == t and not a.attributes.get("outside", False)]
 
     def _match_segments(
         self,
@@ -290,34 +224,16 @@ class _ShapeMatcher(AnnotationMatcher):
             label_matcher = self.label_matcher
         if dist_thresh is None:
             dist_thresh = self.pairwise_dist
-        if a_objs is None:
-            a_objs = self._get_ann_type(t, item_a)
-        if b_objs is None:
-            b_objs = self._get_ann_type(t, item_b)
-
-        if self.return_distances:
-            distance, distances = self._make_memoizing_distance(distance)
-
-        if not a_objs and not b_objs:
-            distances = {}
-            returned_values = [], [], [], []
-        else:
-            extra_args = {}
-            if label_matcher:
-                extra_args["label_matcher"] = label_matcher
-
-            returned_values = match_segments(
-                a_objs,
-                b_objs,
-                distance=distance,
-                dist_thresh=dist_thresh if dist_thresh is not None else self.iou_threshold,
-                **extra_args,
-            )
-
-        if self.return_distances:
-            returned_values = returned_values + (distances,)
-
-        return returned_values
+        return DistanceComparator.match_segments(
+            t,
+            item_a,
+            item_b,
+            distance=distance,
+            label_matcher=label_matcher,
+            a_objs=a_objs,
+            b_objs=b_objs,
+            dist_thresh=dist_thresh,
+        )
 
     def match_annotations_two_sources(self, item_a: dm.Annotation, item_b: dm.Annotation) -> Tuple[
         List[dm.Annotation],
@@ -415,27 +331,12 @@ class _ShapeMatcher(AnnotationMatcher):
 @attrs
 class BboxMatcher(_ShapeMatcher):
     def distance(self, item_a, item_b):
-        def _to_polygon(bbox_ann: dm.Bbox):
-            points = bbox_ann.as_polygon()
-            angle = bbox_ann.attributes.get("rotation", 0) / 180 * math.pi
-
-            if angle:
-                points = np.reshape(points, (-1, 2))
-                center = (points[0] + points[2]) / 2
-                rel_points = points - center
-                cos = np.cos(angle)
-                sin = np.sin(angle)
-                rotation_matrix = ((cos, sin), (-sin, cos))
-                points = np.matmul(rel_points, rotation_matrix) + center
-                points = points.flatten()
-
-            return dm.Polygon(points)
 
         def _bbox_iou(a: dm.Bbox, b: dm.Bbox, *, img_w: int, img_h: int) -> float:
             if a.attributes.get("rotation", 0) == b.attributes.get("rotation", 0):
                 return dm.ops.bbox_iou(a, b)
             else:
-                return segment_iou(_to_polygon(a), _to_polygon(b), img_h=img_h, img_w=img_w)
+                return segment_iou(self.to_polygon(a), self.to_polygon(b), img_h=img_h, img_w=img_w)
 
         dataitem_id = self._context._ann_map[id(item_a)][1]
         img_h, img_w = self._context._item_map[dataitem_id][0].image.size
