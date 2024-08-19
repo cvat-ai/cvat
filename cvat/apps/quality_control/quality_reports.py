@@ -791,7 +791,7 @@ def _segment_iou(a: dm.Annotation, b: dm.Annotation, *, img_h: int, img_w: int) 
 
 
 @define(kw_only=True)
-class _LineMatcher(dm.ops.LineMatcher):
+class LineMatcher(dm.ops.LineMatcher):
     EPSILON = 1e-7
 
     torso_r: float = 0.25
@@ -1248,7 +1248,7 @@ class _DistanceComparator(dm.ops.DistanceComparator):
         return returned_values
 
     def match_lines(self, item_a, item_b):
-        matcher = _LineMatcher(
+        matcher = LineMatcher(
             oriented=self.compare_line_orientation,
             torso_r=self.line_torso_radius,
             scale=np.prod(item_a.image.size),
@@ -1828,7 +1828,7 @@ class DatasetComparator:
             and dm.AnnotationType.polyline in self.comparator.included_ann_types
         ):
             # Check line directions
-            line_matcher = _LineMatcher(
+            line_matcher = LineMatcher(
                 torso_r=self.settings.line_thickness,
                 oriented=True,
                 scale=np.prod(gt_item.image.size),
