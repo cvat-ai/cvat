@@ -5,7 +5,7 @@
 import itertools
 import logging as log
 import math
-from typing import Any, Callable, Dict, Optional, Sequence, Tuple, Union, cast
+from typing import Any, Callable, Dict, List, Optional, Sequence, Tuple, Union, cast
 
 import attr
 import datumaro as dm
@@ -20,8 +20,9 @@ from datumaro.util.annotation_util import find_instances, max_bbox, mean_bbox
 from datumaro.util.attrs_util import ensure_cls
 
 from cvat.apps.engine.models import Label
-from cvat.apps.quality_control.quality_reports import OKS, KeypointsMatcher, match_segments, to_rle
+from cvat.apps.quality_control.quality_reports import OKS, KeypointsMatcher
 from cvat.apps.quality_control.quality_reports import LineMatcher as LineMatcherQualityReports
+from cvat.apps.quality_control.quality_reports import match_segments, to_rle
 
 
 def segment_iou(
@@ -319,7 +320,13 @@ class _ShapeMatcher(AnnotationMatcher):
 
         return returned_values
 
-    def match_annotations_two_sources(self, a, b):
+    def match_annotations_two_sources(self, item_a: dm.Annotation, item_b: dm.Annotation) -> Tuple[
+        List[dm.Annotation],
+        List[dm.Annotation],
+        List[dm.Annotation],
+        List[dm.Annotation],
+        Optional[Dict[int, float]],
+    ]:
         pass
 
     def match_annotations(self, sources):
@@ -432,11 +439,11 @@ class BboxMatcher(_ShapeMatcher):
         img_h, img_w = self._context._item_map[dataitem_id][0].image.size
         return _bbox_iou(a, b, img_h=img_h, img_w=img_w)
 
-    def match_annotations_two_sources(self, a, b):
+    def match_annotations_two_sources(self, item_a: dm.Bbox, item_b: dm.Bbox):
         return self._match_segments(
             dm.AnnotationType.bbox,
-            a,
-            b,
+            item_a,
+            item_b,
             distance=self.distance,
         )
 
@@ -457,7 +464,9 @@ class PolygonMatcher(_ShapeMatcher):
         b_segm = _get_segment(item_b)
         return float(mask_utils.iou([b_segm], [a_segm], [0])[0])
 
-    def match_annotations_two_sources(self, item_a, item_b):
+    def match_annotations_two_sources(
+        self, item_a: Union[dm.Polygon, dm.Mask], item_b: Union[dm.Polygon, dm.Mask]
+    ):
         def _get_segmentations(item):
             return self._get_ann_type(dm.AnnotationType.polygon, item) + self._get_ann_type(
                 dm.AnnotationType.mask, item
@@ -652,7 +661,7 @@ class PointsMatcher(_ShapeMatcher):
                 len(matched_points) + len(a_extra) + len(b_extra)
             )
 
-    def match_annotations_two_sources(self, item_a, item_b):
+    def match_annotations_two_sources(self, item_a: dm.Points, item_b: dm.Points):
         a_points = self._get_ann_type(dm.AnnotationType.points, item_a)
         b_points = self._get_ann_type(dm.AnnotationType.points, item_b)
 
@@ -701,7 +710,7 @@ class SkeletonMatcher(_ShapeMatcher):
 
         return skeleton_info
 
-    def match_annotations_two_sources(self, a_skeletons, b_skeletons):
+    def match_annotations_two_sources(self, a_skeletons: dm.Skeleton, b_skeletons: dm.Skeleton):
         if not a_skeletons and not b_skeletons:
             return [], [], [], []
 
@@ -792,7 +801,7 @@ class SkeletonMatcher(_ShapeMatcher):
 
 @attrs
 class LineMatcher(_ShapeMatcher, LineMatcherQualityReports):
-    def match_annotations_two_sources(self, item_a, item_b):
+    def match_annotations_two_sources(self, item_a: dm.Skeleton, item_b: dm.Skeleton):
         return self._match_segments(
             dm.AnnotationType.polyline, item_a, item_b, distance=self.distance
         )
