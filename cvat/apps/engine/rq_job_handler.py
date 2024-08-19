@@ -27,6 +27,7 @@ class RQJobMetaField:
     TASK_PROGRESS = 'task_progress'
     # export specific fields
     RESULT_URL = 'result_url'
+    FUNCTION_ID = 'function_id'
 
 
 def is_rq_job_owner(rq_job: RQJob, user_id: int) -> bool:
@@ -59,6 +60,7 @@ class RQId:
     )
 
     _OPTIONAL_FIELD_REQUIREMENTS = {
+        RequestAction.AUTOANNOTATE: {"subresource": False, "format": False, "user_id": False},
         RequestAction.CREATE: {"subresource": False, "format": False, "user_id": False},
         RequestAction.EXPORT: {"subresource": True, "user_id": True},
         RequestAction.IMPORT: {"subresource": True, "format": False, "user_id": False},
@@ -74,6 +76,7 @@ class RQId:
                     raise ValueError(f"{field} is not allowed for the {self.action} action")
 
     # RQ ID templates:
+    # autoannotate:task-<tid>
     # import:<task|project|job>-<id|uuid>-<annotations|dataset|backup>
     # create:task-<tid>
     # export:<project|task|job>-<id>-<annotations|dataset>-in-<format>-format-by-<user_id>
@@ -94,7 +97,7 @@ class RQId:
 
             format_to_be_used_in_urls = self.format.replace(" ", "_").replace(".", "@")
             return f"{common_prefix}-{self.subresource}-in-{format_to_be_used_in_urls}-format-by-{self.user_id}"
-        elif RequestAction.CREATE == self.action:
+        elif self.action in {RequestAction.CREATE, RequestAction.AUTOANNOTATE}:
             return common_prefix
         else:
             assert False, f"Unsupported action {self.action!r} was found"
@@ -112,7 +115,7 @@ class RQId:
             action = RequestAction(action_str)
             target = RequestTarget(target_str)
 
-            if RequestAction.CREATE == action:
+            if action in {RequestAction.CREATE, RequestAction.AUTOANNOTATE}:
                 identifier = unparsed
             elif RequestAction.IMPORT == action:
                 identifier, subresource_str = unparsed.rsplit("-", maxsplit=1)

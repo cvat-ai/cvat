@@ -4529,6 +4529,7 @@ paths:
         schema:
           type: string
           enum:
+          - autoannotate
           - create
           - import
           - export
@@ -9928,6 +9929,9 @@ components:
           type: integer
           nullable: true
         format:
+          type: string
+          nullable: true
+        function_id:
           type: string
           nullable: true
       required:
