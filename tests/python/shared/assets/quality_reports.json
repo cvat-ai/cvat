@@ -11,6 +11,7 @@
       "job_id": null,
       "parent_id": null,
       "summary": {
+        "accuracy": 0.4883720930232558,
         "conflict_count": 37,
         "conflicts_by_type": {
           "covered_annotation": 1,
@@ -27,6 +28,8 @@
         "frame_count": 3,
         "frame_share": 0.2727272727272727,
         "gt_count": 33,
+        "precision": 0.6176470588235294,
+        "recall": 0.6363636363636364,
         "total_count": 43,
         "valid_count": 21,
         "warning_count": 15
@@ -43,6 +46,7 @@
       "job_id": 27,
       "parent_id": 1,
       "summary": {
+        "accuracy": 0.4883720930232558,
         "conflict_count": 37,
         "conflicts_by_type": {
           "covered_annotation": 1,
@@ -59,6 +63,8 @@
         "frame_count": 3,
         "frame_share": 0.2727272727272727,
         "gt_count": 33,
+        "precision": 0.6176470588235294,
+        "recall": 0.6363636363636364,
         "total_count": 43,
         "valid_count": 21,
         "warning_count": 15
@@ -75,6 +81,7 @@
       "job_id": null,
       "parent_id": null,
       "summary": {
+        "accuracy": 0.4782608695652174,
         "conflict_count": 40,
         "conflicts_by_type": {
           "covered_annotation": 1,
@@ -91,6 +98,8 @@
         "frame_count": 3,
         "frame_share": 0.2727272727272727,
         "gt_count": 35,
+        "precision": 0.6111111111111112,
+        "recall": 0.6285714285714286,
         "total_count": 46,
         "valid_count": 22,
         "warning_count": 16
@@ -107,6 +116,7 @@
       "job_id": 27,
       "parent_id": 3,
       "summary": {
+        "accuracy": 0.4782608695652174,
         "conflict_count": 40,
         "conflicts_by_type": {
           "covered_annotation": 1,
@@ -123,6 +133,8 @@
         "frame_count": 3,
         "frame_share": 0.2727272727272727,
         "gt_count": 35,
+        "precision": 0.6111111111111112,
+        "recall": 0.6285714285714286,
         "total_count": 46,
         "valid_count": 22,
         "warning_count": 16
@@ -139,6 +151,7 @@
       "job_id": null,
       "parent_id": null,
       "summary": {
+        "accuracy": 0.4782608695652174,
         "conflict_count": 40,
         "conflicts_by_type": {
           "covered_annotation": 1,
@@ -155,6 +168,8 @@
         "frame_count": 3,
         "frame_share": 0.2727272727272727,
         "gt_count": 35,
+        "precision": 0.6111111111111112,
+        "recall": 0.6285714285714286,
         "total_count": 46,
         "valid_count": 22,
         "warning_count": 16
@@ -171,6 +186,7 @@
       "job_id": 27,
       "parent_id": 5,
       "summary": {
+        "accuracy": 0.4782608695652174,
         "conflict_count": 40,
         "conflicts_by_type": {
           "covered_annotation": 1,
@@ -187,6 +203,8 @@
         "frame_count": 3,
         "frame_share": 0.2727272727272727,
         "gt_count": 35,
+        "precision": 0.6111111111111112,
+        "recall": 0.6285714285714286,
         "total_count": 46,
         "valid_count": 22,
         "warning_count": 16
@@ -203,6 +221,7 @@
       "job_id": null,
       "parent_id": null,
       "summary": {
+        "accuracy": 0.5,
         "conflict_count": 3,
         "conflicts_by_type": {
           "extra_annotation": 1,
@@ -214,6 +233,8 @@
         "frame_count": 3,
         "frame_share": 0.2727272727272727,
         "gt_count": 3,
+        "precision": 0.6666666666666666,
+        "recall": 0.6666666666666666,
         "total_count": 4,
         "valid_count": 2,
         "warning_count": 1
@@ -230,6 +251,7 @@
       "job_id": 31,
       "parent_id": 7,
       "summary": {
+        "accuracy": 0.0,
         "conflict_count": 0,
         "conflicts_by_type": {},
         "ds_count": 0,
@@ -237,6 +259,8 @@
         "frame_count": 0,
         "frame_share": 0.0,
         "gt_count": 0,
+        "precision": 0.0,
+        "recall": 0.0,
         "total_count": 0,
         "valid_count": 0,
         "warning_count": 0
@@ -253,6 +277,7 @@
       "job_id": 30,
       "parent_id": 7,
       "summary": {
+        "accuracy": 1.0,
         "conflict_count": 1,
         "conflicts_by_type": {
           "low_overlap": 1
@@ -262,6 +287,8 @@
         "frame_count": 2,
         "frame_share": 0.4,
         "gt_count": 2,
+        "precision": 1.0,
+        "recall": 1.0,
         "total_count": 2,
         "valid_count": 2,
         "warning_count": 1
@@ -278,6 +305,7 @@
       "job_id": 29,
       "parent_id": 7,
       "summary": {
+        "accuracy": 0.0,
         "conflict_count": 2,
         "conflicts_by_type": {
           "extra_annotation": 1,
@@ -288,6 +316,8 @@
         "frame_count": 1,
         "frame_share": 0.2,
         "gt_count": 1,
+        "precision": 0.0,
+        "recall": 0.0,
         "total_count": 2,
         "valid_count": 0,
         "warning_count": 0
@@ -304,6 +334,7 @@
       "job_id": null,
       "parent_id": null,
       "summary": {
+        "accuracy": 0.4583333333333333,
         "conflict_count": 42,
         "conflicts_by_type": {
           "covered_annotation": 1,
@@ -320,6 +351,8 @@
         "frame_count": 3,
         "frame_share": 0.2727272727272727,
         "gt_count": 37,
+        "precision": 0.6111111111111112,
+        "recall": 0.5945945945945946,
         "total_count": 48,
         "valid_count": 22,
         "warning_count": 16
@@ -336,6 +369,7 @@
       "job_id": 27,
       "parent_id": 11,
       "summary": {
+        "accuracy": 0.4583333333333333,
         "conflict_count": 42,
         "conflicts_by_type": {
           "covered_annotation": 1,
@@ -352,6 +386,8 @@
         "frame_count": 3,
         "frame_share": 0.2727272727272727,
         "gt_count": 37,
+        "precision": 0.6111111111111112,
+        "recall": 0.5945945945945946,
         "total_count": 48,
         "valid_count": 22,
         "warning_count": 16
