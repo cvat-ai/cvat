@@ -327,7 +327,10 @@ class _ShapeMatcher(AnnotationMatcher):
         List[dm.Annotation],
         Optional[Dict[int, float]],
     ]:
-        pass
+        if self.return_distances:
+            return [], [], [], [], {}
+
+        return [], [], [], []
 
     def match_annotations(self, sources):
         distance = self.distance
