@@ -129,14 +129,12 @@ export interface InteractionData {
     minPosVertices?: number;
     minNegVertices?: number;
     startWithBox?: boolean;
-    enableThreshold?: boolean;
     enableSliding?: boolean;
     allowRemoveOnlyLast?: boolean;
     intermediateShape?: {
         shapeType: string;
         points: number[];
     };
-    onChangeToolsBlockerState?: (event: string) => void;
 }
 
 export interface InteractionResult {
@@ -816,11 +814,8 @@ export class CanvasModelImpl extends MasterImpl implements CanvasModel {
         if (![Mode.IDLE, Mode.INTERACT].includes(this.data.mode)) {
             throw Error(`Canvas is busy. Action: ${this.data.mode}`);
         }
-        const thresholdChanged = this.data.interactionData.enableThreshold !== interactionData.enableThreshold;
-        if (interactionData.enabled && !interactionData.intermediateShape && !thresholdChanged) {
-            if (this.data.interactionData.enabled) {
-                throw new Error('Interaction has been already started');
-            } else if (!interactionData.shapeType) {
+        if (interactionData.enabled) {
+            if (!this.data.interactionData.enabled && !interactionData.shapeType) {
                 throw new Error('A shape type was not specified');
             }
         }

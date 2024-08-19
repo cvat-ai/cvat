@@ -737,6 +737,7 @@ export interface AnnotationState {
     };
     drawing: {
         activeInteractor?: MLModel | OpenCVTool;
+        activeInteractorParameters?: MLModel['params']['canvas'];
         activeShapeType: ShapeType;
         activeRectDrawingMethod?: RectDrawingMethod;
         activeCuboidDrawingMethod?: CuboidDrawingMethod;
@@ -965,6 +966,10 @@ export interface RequestsState {
     query: RequestsQuery;
 }
 
+export interface NavigationState {
+    prevLocation: string | null;
+}
+
 export interface CombinedState {
     auth: AuthState;
     projects: ProjectsState;
@@ -988,6 +993,7 @@ export interface CombinedState {
     webhooks: WebhooksState;
     requests: RequestsState;
     serverAPI: ServerAPIState;
+    navigation: NavigationState;
 }
 
 export interface Indexable {

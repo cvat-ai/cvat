@@ -28,9 +28,11 @@ from cvat.apps.engine.backup import ProjectExporter, TaskExporter, create_backup
 from cvat.apps.engine.cloud_provider import export_resource_to_cloud_storage
 from cvat.apps.engine.location import StorageType, get_location_configuration
 from cvat.apps.engine.log import ServerLogManager
-from cvat.apps.engine.models import Location, Project, Task
+from cvat.apps.engine.models import (
+    Location, Project, Task, RequestAction, RequestTarget, RequestSubresource,
+)
 from cvat.apps.engine.permissions import get_cloud_storage_for_import_or_export
-from cvat.apps.engine.rq_job_handler import RQIdManager, RQJobMetaField
+from cvat.apps.engine.rq_job_handler import RQId, RQJobMetaField
 from cvat.apps.engine.serializers import RqIdSerializer
 from cvat.apps.engine.utils import (
     build_annotations_file_name,
@@ -368,14 +370,15 @@ class DatasetExportManager(_ResourceExportManager):
             return Response(status=status.HTTP_405_METHOD_NOT_ALLOWED)
 
         queue: DjangoRQ = django_rq.get_queue(self.QUEUE_NAME)
-        rq_id = RQIdManager.build(
-            "export",
-            self.resource,
+        rq_id = RQId(
+            RequestAction.EXPORT,
+            RequestTarget(self.resource),
             self.db_instance.pk,
-            subresource="dataset" if self.export_args.save_images else "annotations",
-            anno_format=self.export_args.format,
+            subresource=RequestSubresource.DATASET
+                if self.export_args.save_images else RequestSubresource.ANNOTATIONS,
+            format=self.export_args.format,
             user_id=self.request.user.id,
-        )
+        ).render()
 
         # ensure that there is no race condition when processing parallel requests
         with get_rq_lock_for_job(queue, rq_id):
@@ -638,13 +641,13 @@ class BackupExportManager(_ResourceExportManager):
 
     def export(self) -> Response:
         queue: DjangoRQ = django_rq.get_queue(self.QUEUE_NAME)
-        rq_id = RQIdManager.build(
-            "export",
-            self.resource,
+        rq_id = RQId(
+            RequestAction.EXPORT,
+            RequestTarget(self.resource),
             self.db_instance.pk,
-            subresource="backup",
+            subresource=RequestSubresource.BACKUP,
             user_id=self.request.user.id,
-        )
+        ).render()
 
         # ensure that there is no race condition when processing parallel requests
         with get_rq_lock_for_job(queue, rq_id):

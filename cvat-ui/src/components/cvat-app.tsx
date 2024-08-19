@@ -97,6 +97,7 @@ interface CVATAppProps {
     initInvitations: () => void;
     initRequests: () => void;
     loadServerAPISchema: () => void;
+    onChangeLocation: (from: string, to: string) => void;
     userInitialized: boolean;
     userFetching: boolean;
     organizationFetching: boolean;
@@ -141,7 +142,7 @@ class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentP
 
     public componentDidMount(): void {
         const core = getCore();
-        const { history, location } = this.props;
+        const { history, location, onChangeLocation } = this.props;
         const {
             HEALTH_CHECK_RETRIES, HEALTH_CHECK_PERIOD, HEALTH_CHECK_REQUEST_TIMEOUT,
             SERVER_UNAVAILABLE_COMPONENT, RESET_NOTIFICATIONS_PATHS,
@@ -173,6 +174,9 @@ class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentP
         history.listen((newLocation) => {
             customWaViewHit(newLocation.pathname, newLocation.search, newLocation.hash);
             const { location: prevLocation } = this.props;
+
+            onChangeLocation(prevLocation.pathname, newLocation.pathname);
+
             const shouldResetNotifications = RESET_NOTIFICATIONS_PATHS.from.some(
                 (pathname) => prevLocation.pathname === pathname,
             );
