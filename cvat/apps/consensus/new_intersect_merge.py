@@ -16,7 +16,6 @@ from datumaro.components.dataset import Dataset
 from datumaro.components.errors import FailedLabelVotingError, NoMatchingItemError
 from datumaro.components.operations import ExactMerge
 from datumaro.components.operations import IntersectMerge as ClassicIntersectMerge
-from datumaro.components.operations import LabelMerger
 from datumaro.util.annotation_util import find_instances, max_bbox, mean_bbox
 from datumaro.util.attrs_util import ensure_cls
 
@@ -484,29 +483,8 @@ class PolygonMatcher(_ShapeMatcher):
 
             return instances, instance_map
 
-        def _get_compiled_mask(
-            anns: Sequence[dm.Annotation], *, instance_ids: Dict[int, int]
-        ) -> dm.CompiledMask:
-            if not anns:
-                return None
-
-            from pycocotools import mask as mask_utils
-
-            object_rle_groups = [to_rle(ann, img_h=img_h, img_w=img_w) for ann in anns]
-            object_rles = [mask_utils.merge(g) for g in object_rle_groups]
-            object_masks = mask_utils.decode(object_rles)
-
-            return dm.CompiledMask.from_instance_masks(
-                # need to increment labels and instance ids by 1 to avoid confusion with background
-                instance_masks=(
-                    dm.Mask(image=object_masks[:, :, i], z_order=ann.z_order, label=ann.label + 1)
-                    for i, ann in enumerate(anns)
-                ),
-                instance_ids=(iid + 1 for iid in instance_ids),
-            )
-
-        a_instances, a_instance_map = _find_instances(_get_segmentations(item_a))
-        b_instances, b_instance_map = _find_instances(_get_segmentations(item_b))
+        a_instances, _ = _find_instances(_get_segmentations(item_a))
+        b_instances, _ = _find_instances(_get_segmentations(item_b))
 
         a_compiled_mask = None
         b_compiled_mask = None
