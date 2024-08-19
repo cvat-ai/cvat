@@ -88,8 +88,13 @@ def _export_yolov8_oriented_boxes(*args, **kwargs):
 
 
 @exporter(name='YOLOv8 Segmentation', ext='ZIP', version='1.0')
-def _export_yolov8_segmentation(*args, **kwargs):
-    _export_common(*args, format_name='yolov8_segmentation', **kwargs)
+def _export_yolov8_segmentation(dst_file, temp_dir, instance_data, *, save_images=False):
+    with GetCVATDataExtractor(instance_data, include_images=save_images) as extractor:
+        dataset = Dataset.from_extractors(extractor, env=dm_env)
+        dataset = dataset.transform('masks_to_polygons')
+        dataset.export(temp_dir, 'yolov8_segmentation', save_images=save_images)
+
+    make_zip_archive(temp_dir, dst_file)
 
 
 @exporter(name='YOLOv8 Pose', ext='ZIP', version='1.0')
