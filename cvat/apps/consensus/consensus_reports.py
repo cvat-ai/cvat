@@ -9,7 +9,7 @@ from collections import Counter
 from copy import deepcopy
 from functools import cached_property
 from types import NoneType
-from typing import Any, Dict, List, Optional, Union, cast
+from typing import Any, Dict, List, Optional, Tuple, Union, cast
 
 import datumaro as dm
 import numpy as np
@@ -338,7 +338,7 @@ def generate_job_consensus_report(
     )
 
 
-def generate_task_consensus_report(job_reports: List[ComparisonReport]) -> ComparisonReport:
+def generate_task_consensus_report(job_reports: List[ComparisonReport]) -> Tuple[ComparisonReport, int]:
     task_frames = set()
     task_conflicts: List[AnnotationConflict] = []
     task_frame_results = {}
