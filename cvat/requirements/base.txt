@@ -148,7 +148,7 @@ idna==3.7
     # via requests
 importlib-metadata==8.2.0
     # via clickhouse-connect
-importlib-resources==6.4.0
+importlib-resources==6.4.2
     # via limits
 inflection==0.5.1
     # via drf-spectacular

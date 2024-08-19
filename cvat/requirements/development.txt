@@ -57,11 +57,11 @@ tomli==2.0.1
     #   autopep8
     #   black
     #   pylint
-tomlkit==0.13.0
+tomlkit==0.13.2
     # via pylint
 tornado==6.4.1
     # via snakeviz
 
 # The following packages are considered to be unsafe in a requirements file:
-setuptools==72.1.0
+setuptools==72.2.0
     # via astroid
