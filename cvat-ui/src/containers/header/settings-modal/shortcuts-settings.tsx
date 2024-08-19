@@ -13,7 +13,6 @@ import { shortcutsActions } from 'actions/shortcuts-actions';
 
 interface StateToProps {
     keyMap: KeyMap;
-    normalizedKeyMap: Record<string, string>;
 }
 
 interface DispatchToProps {
@@ -22,11 +21,10 @@ interface DispatchToProps {
 
 function mapStateToProps(state: CombinedState): StateToProps {
     const {
-        shortcuts: { keyMap, normalizedKeyMap },
+        shortcuts: { keyMap },
     } = state;
     return {
         keyMap,
-        normalizedKeyMap,
     };
 }
 

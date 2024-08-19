@@ -26,7 +26,6 @@ import MultipleShortcutsDisplay from './multiple-shortcuts-display';
 
 interface Props {
     keyMap: KeyMap;
-    normalizedKeyMap: Record<string, string>;
     onKeySequenceUpdate(shortcutID: string, updatedSequence: string[]): void;
 }
 

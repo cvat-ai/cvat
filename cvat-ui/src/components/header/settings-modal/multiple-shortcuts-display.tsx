@@ -116,6 +116,7 @@ function MultipleShortcutsDisplay(props: Props): JSX.Element {
             allowClear
             onFocus={() => setFocus(true)}
             onBlur={() => {
+                finalizeCombination();
                 setFocus(false);
                 if (timer) {
                     clearTimeout(timer);
