@@ -96,12 +96,20 @@ def pytest_addoption(parser):
 def _run(command, capture_output=True):
     _command = command.split() if isinstance(command, str) else command
     try:
+        logger.debug(f"Executing a command: {_command}")
+
         stdout, stderr = "", ""
         if capture_output:
             proc = run(_command, check=True, stdout=PIPE, stderr=PIPE)  # nosec
             stdout, stderr = proc.stdout.decode(), proc.stderr.decode()
         else:
             proc = run(_command)  # nosec
+
+        if stdout:
+            logger.debug(f"Output (stdout): {stdout}")
+        if stderr:
+            logger.debug(f"Output (stderr): {stderr}")
+
         return stdout, stderr
     except CalledProcessError as exc:
         message = f"Command failed: {' '.join(map(shlex.quote, _command))}."
@@ -232,20 +240,20 @@ def kube_restore_clickhouse_db():
 
 
 def docker_restore_redis_inmem():
-    docker_exec_redis_inmem(["redis-cli", "flushall"])
+    docker_exec_redis_inmem(["redis-cli", "-e", "flushall"])
 
 
 def kube_restore_redis_inmem():
-    kube_exec_redis_inmem(["redis-cli", "flushall"])
+    kube_exec_redis_inmem(["redis-cli", "-e", "flushall"])
 
 
 def docker_restore_redis_ondisk():
-    docker_exec_redis_ondisk(["redis-cli", "-p", "6666", "flushall"])
+    docker_exec_redis_ondisk(["redis-cli", "-e", "-p", "6666", "flushall"])
 
 
 def kube_restore_redis_ondisk():
     kube_exec_redis_ondisk(
-        ["redis-cli", "-p", "6666", "-a", "${CVAT_REDIS_ONDISK_PASSWORD}", "flushall"]
+        ["sh", "-c", 'redis-cli -e -p 6666 -a "${CVAT_REDIS_ONDISK_PASSWORD}" flushall']
     )
 
 
