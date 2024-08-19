@@ -814,7 +814,7 @@ class _ShapeMerger(_ShapeMatcher):
         shape, shape_score = self.merge_cluster_shape(cluster)
         shape.z_order = max(cluster, key=lambda a: a.z_order).z_order
         shape.label = label
-        shape.attributes["score"] = label_score * shape_score if label is not None else shape_score
+        shape.attributes["score"] = label_score * shape_score
 
         return shape
 
