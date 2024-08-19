@@ -8,7 +8,6 @@ import { CombinedState } from 'reducers';
 import {
     getCore, Storage, Job, Task, Project, ProjectOrTaskOrJob,
 } from 'cvat-core-wrapper';
-import { EventScope } from 'cvat-logger';
 import { getProjectsAsync } from './projects-actions';
 import { AnnotationActionTypes, fetchAnnotationsAsync } from './annotation-actions';
 import {
@@ -136,7 +135,6 @@ export const importDatasetAsync = (
                 if (shouldListenForProgress(rqID, state.requests)) {
                     await listen(rqID, dispatch);
 
-                    await (instance as Job).logger.log(EventScope.uploadAnnotations);
                     await (instance as Job).annotations.clear({ reload: true });
                     await (instance as Job).actions.clear();
 
