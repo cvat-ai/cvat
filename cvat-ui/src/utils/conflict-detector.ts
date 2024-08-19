@@ -3,6 +3,7 @@
 // SPDX-License-Identifier: MIT
 
 import { isEqual } from 'lodash';
+import { registerComponentShortcuts } from 'actions/shortcuts-actions';
 import { KeyMap, KeyMapItem } from './mousetrap-react';
 import { ShortcutScope } from './enums';
 
@@ -129,4 +130,30 @@ export function conflictDetector(
     }
 
     return Object.keys(conflictingItems).length ? conflictingItems : null;
+}
+
+export function unsetExistingShortcuts(
+    conflictingShortcuts: Record<string, KeyMapItem>,
+    updatedSequence: string[],
+    shortcut: Record<string, KeyMapItem>): void {
+    const updatedShortcuts: Record<string, KeyMapItem> = {};
+    for (const key of Object.keys(conflictingShortcuts)) {
+        const conflictingItem: KeyMapItem = conflictingShortcuts[key];
+        if (isEqual(key, Object.keys(shortcut)[0])) {
+            const currentSequence = conflictingItem.sequences;
+            const newSequence = updatedSequence.filter((s) => !currentSequence.includes(s))[0];
+            updatedShortcuts[key] = {
+                ...conflictingItem,
+                sequences: [...currentSequence.filter((s) => !conflict(s, newSequence)), newSequence],
+            };
+        } else {
+            const commonSequence = updatedSequence.map((s) => (
+                conflictingItem.sequences.find((seq) => conflict(seq, s)) ?? ''
+            ));
+            const newSequences = conflictingItem.sequences.filter((s) => !commonSequence.includes(s));
+            updatedShortcuts[key] = { ...conflictingItem, sequences: newSequences };
+        }
+    }
+    console.log(updatedShortcuts);
+    registerComponentShortcuts(updatedShortcuts);
 }

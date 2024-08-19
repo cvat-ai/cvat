@@ -4,7 +4,6 @@
 // SPDX-License-Identifier: MIT
 
 import { getCVATStore } from 'cvat-store';
-import { ShortcutsState } from 'reducers';
 import { KeyMapItem } from 'utils/mousetrap-react';
 import { ActionUnion, createAction } from 'utils/redux';
 
@@ -25,9 +24,6 @@ export const shortcutsActions = {
     ),
     updateSequence: (shortcutID: string, updatedSequence: string[]) => (
         createAction(ShortcutsActionsTypes.UPDATE_SEQUENCE, { shortcutID, updatedSequence })
-    ),
-    setShortcuts: (shortcuts: ShortcutsState) => (
-        createAction(ShortcutsActionsTypes.SET_SHORTCUTS, { shortcuts })
     ),
     setDefaultShortcuts: (shortcuts: Record<string, KeyMapItem>) => (
         createAction(ShortcutsActionsTypes.SET_DEFAULT_SHORTCUTS, { shortcuts })

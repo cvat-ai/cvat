@@ -107,13 +107,6 @@ export default (state = defaultState, action: ShortcutsActions | BoundariesActio
                 normalizedKeyMap: { ...state.normalizedKeyMap, [shortcutID]: normalized },
             };
         }
-        case ShortcutsActionsTypes.SET_SHORTCUTS: {
-            const { shortcuts } = action.payload;
-            return {
-                ...state,
-                ...shortcuts,
-            };
-        }
         case ShortcutsActionsTypes.SET_DEFAULT_SHORTCUTS: {
             const { shortcuts } = action.payload;
             return {

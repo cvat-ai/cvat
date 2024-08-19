@@ -48,14 +48,15 @@ function ShortcutsSettingsComponent(props: Props): JSX.Element {
             cancelText: 'No',
             onOk: () => {
                 const currentSettings = localStorage.getItem('clientSettings');
-                dispatch(shortcutsActions.setShortcuts({
-                    ...shortcuts,
-                    keyMap: { ...shortcuts.defaultState },
-                }));
+                dispatch(shortcutsActions.registerShortcuts({ ...shortcuts.defaultState }));
                 if (currentSettings) {
-                    const parsedSettings = JSON.parse(currentSettings);
-                    delete parsedSettings.shortcuts;
-                    localStorage.setItem('clientSettings', JSON.stringify(parsedSettings));
+                    try {
+                        const parsedSettings = JSON.parse(currentSettings);
+                        delete parsedSettings.shortcuts;
+                        localStorage.setItem('clientSettings', JSON.stringify(parsedSettings));
+                    } catch (error) {
+                        localStorage.removeItem('clientSettings');
+                    }
                 }
             },
         });

@@ -21,6 +21,7 @@ import WorkspaceSettingsContainer from 'containers/header/settings-modal/workspa
 import PlayerSettingsContainer from 'containers/header/settings-modal/player-settings';
 import ShortcutsSettingsContainer from 'containers/header/settings-modal/shortcuts-settings';
 import { CombinedState } from 'reducers';
+import { conflict, conflictDetector } from 'utils/conflict-detector';
 
 interface SettingsModalProps {
     visible: boolean;
@@ -35,17 +36,19 @@ function SettingsModal(props: SettingsModalProps): JSX.Element {
     const dispatch = useDispatch();
 
     const onSaveSettings = useCallback(() => {
-        const settingsForSaving: any = {};
+        const settingsForSaving: any = {
+            shortcuts: {
+                keyMap: {},
+            },
+        };
         for (const [key, value] of Object.entries(settings)) {
             if (['player', 'workspace'].includes(key)) {
                 settingsForSaving[key] = value;
             }
         }
-        settingsForSaving.shortcuts = { ...shortcuts };
         for (const [key] of Object.entries(shortcuts.keyMap)) {
             if (key in shortcuts.defaultState) {
                 settingsForSaving.shortcuts.keyMap[key] = {
-                    ...shortcuts.defaultState[key],
                     sequences: shortcuts.keyMap[key].sequences,
                 };
             }
@@ -62,7 +65,7 @@ function SettingsModal(props: SettingsModalProps): JSX.Element {
 
     useEffect(() => {
         try {
-            dispatch(shortcutsActions.setDefaultShortcuts(shortcuts.keyMap));
+            dispatch(shortcutsActions.setDefaultShortcuts(structuredClone(shortcuts.keyMap)));
             const newSettings = _.pick(settings, 'player', 'workspace');
             const settingsString = localStorage.getItem('clientSettings') as string;
             if (!settingsString) return;
@@ -78,7 +81,44 @@ function SettingsModal(props: SettingsModalProps): JSX.Element {
             }
             dispatch(setSettings(newSettings));
             if ('shortcuts' in loadedSettings) {
-                dispatch(shortcutsActions.setShortcuts(loadedSettings.shortcuts));
+                const updateKeyMap = structuredClone(shortcuts.keyMap);
+                for (const key of Object.keys(loadedSettings.shortcuts.keyMap)) {
+                    const value = loadedSettings.shortcuts.keyMap[key];
+                    if (key in updateKeyMap) {
+                        updateKeyMap[key].sequences = value.sequences;
+                    }
+                }
+                for (const key of Object.keys(updateKeyMap)) {
+                    const currValue = {
+                        [key]: { ...updateKeyMap[key] },
+                    };
+                    const conflictingShortcuts = conflictDetector(currValue, shortcuts.keyMap);
+                    if (conflictingShortcuts) {
+                        notification.warning({
+                            closable: true,
+                            closeIcon: true,
+                            message: `Due to conflicts in between the the saved shortcuts, some sequence of ${
+                                Object.values(conflictingShortcuts).map(
+                                    (conflictingShortcut) => conflictingShortcut.name).join(', ')
+                            } have been unset.`,
+                            duration: 5000,
+                        });
+                        for (const conflictingShortcut of Object.keys(conflictingShortcuts)) {
+                            for (const sequence of currValue[key].sequences) {
+                                for (const conflictingSequence of conflictingShortcuts[conflictingShortcut].sequences) {
+                                    if (!conflict(sequence, conflictingSequence)) {
+                                        updateKeyMap[conflictingShortcut].sequences = [
+                                            ...updateKeyMap[conflictingShortcut].sequences.filter(
+                                                (s: string) => s !== conflictingSequence,
+                                            ),
+                                        ];
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+                dispatch(shortcutsActions.registerShortcuts(updateKeyMap));
             }
         } catch {
             notification.error({
