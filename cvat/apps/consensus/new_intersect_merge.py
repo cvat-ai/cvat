@@ -209,7 +209,7 @@ class _ShapeMatcher(AnnotationMatcher, DistanceComparator):
     distance_index = attrib(converter=dict, default={})
 
     def distance(self, a, b):
-        return segment_iou(a, b)
+        return dm.ops.segment_iou(a, b)
 
     def label_matcher(self, a, b):
         a_label = self._context.get_any_label_name(a, a.label)
