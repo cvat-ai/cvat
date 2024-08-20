@@ -71,17 +71,11 @@ Mousetrap.prototype.stopCallback = function (e: KeyboardEvent, element: Element,
         shortcuts.push(...keyMap[key].sequences);
     }
 
-    let comboStarted = false;
-    if (shortcuts.some((shortcut) => shortcut.startsWith(combo))) {
-        e?.preventDefault();
-        comboStarted = true;
-    }
-
     // stop when modals are opened
     const someModalsOpened = Array.from(
         window.document.getElementsByClassName('ant-modal'),
     ).some((el) => (el as HTMLElement).style.display !== 'none');
-    if (someModalsOpened && !comboStarted) {
+    if (someModalsOpened && !shortcuts.includes(combo)) {
         return true;
     }
 
