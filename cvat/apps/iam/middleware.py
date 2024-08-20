@@ -2,9 +2,13 @@
 #
 # SPDX-License-Identifier: MIT
 
+from datetime import timedelta
+from typing import Callable
+
 from django.utils.functional import SimpleLazyObject
 from rest_framework.exceptions import ValidationError, NotFound
 from django.conf import settings
+from django.http import HttpRequest, HttpResponse
 
 
 def get_organization(request):
@@ -57,3 +61,63 @@ class ContextMiddleware:
         request.iam_context = SimpleLazyObject(lambda: get_organization(request))
 
         return self.get_response(request)
+
+class SessionRefreshMiddleware:
+    """
+    Implements behavior similar to SESSION_SAVE_EVERY_REQUEST=True, but instead of
+    saving the session on every request, saves it at most once per REFRESH_INTERVAL.
+    This is accomplished by setting a parallel cookie that expires whenever the session
+    needs to be prolonged.
+
+    This ensures that user sessions are automatically prolonged while in use,
+    but avoids making an extra DB query on every HTTP request.
+
+    Must be listed after SessionMiddleware in the MIDDLEWARE list.
+    """
+
+    _REFRESH_INTERVAL = timedelta(days=1)
+    _COOKIE_NAME = "sessionfresh"
+
+    def __init__(self, get_response: Callable[[HttpRequest], HttpResponse]) -> None:
+        self.get_response = get_response
+
+    def __call__(self, request: HttpRequest) -> HttpResponse:
+        response = self.get_response(request)
+
+        shared_cookie_args = {
+            "key": self._COOKIE_NAME,
+            "domain": getattr(settings, "SESSION_COOKIE_DOMAIN"),
+            "path": getattr(settings, "SESSION_COOKIE_PATH", "/"),
+            "samesite": getattr(settings, "SESSION_COOKIE_SAMESITE", "Lax"),
+        }
+
+        if request.session.is_empty():
+            if self._COOKIE_NAME in request.COOKIES:
+                response.delete_cookie(**shared_cookie_args)
+            return response
+
+        if self._COOKIE_NAME in request.COOKIES:
+            # Session is still fresh.
+            return response
+
+        if response.status_code >= 500:
+            # SessionMiddleware does not save the session for 5xx responses,
+            # so we should not set our cookie either.
+            return response
+
+        response.set_cookie(
+            **shared_cookie_args,
+            value="1",
+            max_age=min(
+                self._REFRESH_INTERVAL,
+                # Refresh no later than after half of the session lifetime.
+                timedelta(seconds=request.session.get_expiry_age() // 2),
+            ),
+            httponly=True,
+            secure=getattr(settings, "SESSION_COOKIE_SECURE", False),
+        )
+
+        # Force SessionMiddleware to re-save the session.
+        request.session.modified = True
+
+        return response
