@@ -4,7 +4,8 @@
 
 import itertools
 import logging as log
-from typing import Callable, List, Optional, Sequence, Union, cast
+from functools import cache, cached_property
+from typing import Callable, Dict, List, Optional, Sequence, Tuple, Union, cast
 
 import attr
 import datumaro as dm
@@ -136,7 +137,7 @@ class IntersectMerge(ClassicIntersectMerge):
                 return _make(BboxMerger, **kwargs)
             elif t is AnnotationType.mask:
                 return _make(MaskMerger, **kwargs)
-            elif t is AnnotationType.polygon or AnnotationType.mask:
+            elif t is AnnotationType.polygon or t is AnnotationType.mask:
                 return _make(PolygonMerger, **kwargs)
             elif t is AnnotationType.polyline:
                 return _make(LineMerger, **kwargs)
@@ -200,15 +201,60 @@ class LabelMatcher(AnnotationMatcher):
         return [sum(sources, [])]
 
 
+class CachedSimilarityFunction:
+    def __init__(
+        self,
+        sim_fn: Callable[[dm.Annotation, dm.Annotation], float],
+        *,
+        cache: Optional[Dict[Tuple[int, int], float]] = None,
+    ) -> None:
+        self.cache: Dict[Tuple[int, int], float] = cache or {}
+        self.sim_fn = sim_fn
+
+    def __call__(self, gt_ann: dm.Annotation, ds_ann: dm.Annotation) -> float:
+        key = (
+            id(gt_ann),
+            id(ds_ann),
+        )  # make sure the annotations have stable ids before calling this
+        cached_value = self.cache.get(key)
+
+        if cached_value is None:
+            cached_value = self.sim_fn(gt_ann, ds_ann)
+            self.cache[key] = cached_value
+
+        return cached_value
+
+    def pop(self, key: Tuple[int, int]) -> float:
+        return self.cache.pop(key, None)
+
+    def set(self, key: Tuple[int, int], value: float):
+        self.cache[key] = value
+
+    def keys(self):
+        return self.cache.keys()
+
+    def clear_cache(self):
+        self.cache.clear()
+
+
 @attrs(kw_only=True)
 class _ShapeMatcher(AnnotationMatcher, DistanceComparator):
     pairwise_dist = attrib(converter=float, default=0.9)
     cluster_dist = attrib(converter=float, default=-1.0)
     categories = attrib(converter=dict, default={})
     distance_index = attrib(converter=dict, default={})
+    return_distances = False
+
+    def _distance_func(self, item_a, item_b):
+        return dm.ops.segment_iou(item_a, item_b)
+
+    @cached_property
+    def _distance(self) -> CachedSimilarityFunction:
+        return CachedSimilarityFunction(self._distance_func)
 
     def distance(self, a, b):
-        return dm.ops.segment_iou(a, b)
+        dist_fn = self._distance
+        return dist_fn(a, b)
 
     def label_matcher(self, a, b):
         a_label = self._context.get_any_label_name(a, a.label)
@@ -329,8 +375,7 @@ class _ShapeMatcher(AnnotationMatcher, DistanceComparator):
 
 @attrs
 class BboxMatcher(_ShapeMatcher):
-    def distance(self, item_a, item_b):
-
+    def _distance_func(self, item_a, item_b):
         def _bbox_iou(a: dm.Bbox, b: dm.Bbox, *, img_w: int, img_h: int) -> float:
             if a.attributes.get("rotation", 0) == b.attributes.get("rotation", 0):
                 return dm.ops.bbox_iou(a, b)
@@ -352,7 +397,7 @@ class BboxMatcher(_ShapeMatcher):
 
 @attrs
 class PolygonMatcher(_ShapeMatcher):
-    def distance(self, item_a, item_b):
+    def _distance_func(self, item_a, item_b):
         from pycocotools import mask as mask_utils
 
         def _get_segment(item):
@@ -476,7 +521,7 @@ class PointsMatcher(_ShapeMatcher):
     sigma: Optional[list] = attrib(default=None)
     instance_map = attrib(converter=dict)
 
-    def distance(self, a, b):
+    def _distance_func(self, a, b):
         for source_anns in [a.annotations, b.annotations]:
             source_instances = dm.ops.find_instances(source_anns)
             for instance_group in source_instances:
@@ -562,18 +607,16 @@ class SkeletonMatcher(_ShapeMatcher):
     instance_map = {}
     skeleton_map = {}
     _skeleton_info = {}
-    distances = {}
 
-    def distance(self, a, b):
+    def _distance_func(self, a, b):
         matcher = KeypointsMatcher(instance_map=self.instance_map, sigma=self.sigma)
         if isinstance(a, dm.Skeleton) and isinstance(b, dm.Skeleton):
             if a == b:
                 return 1
-            elif (id(b), id(a)) in self.distances:
-                return self.distances[(id(b), id(a))]
+            elif (id(b), id(a)) in self._distance.keys():
+                return self._distance[(id(b), id(a))]
             else:
                 return self.distances[(id(a), id(b))]
-
         return matcher.distance(a, b)
 
     def _get_skeleton_info(self, skeleton_label_id: int):
@@ -591,7 +634,9 @@ class SkeletonMatcher(_ShapeMatcher):
 
         return skeleton_info
 
-    def match_annotations_two_sources(self, a_skeletons: List[dm.Skeleton], b_skeletons: List[dm.Skeleton]):
+    def match_annotations_two_sources(
+        self, a_skeletons: List[dm.Skeleton], b_skeletons: List[dm.Skeleton]
+    ):
         if not a_skeletons and not b_skeletons:
             return []
 
@@ -658,7 +703,7 @@ class SkeletonMatcher(_ShapeMatcher):
 
         matched = results[0]
         if self.return_distances:
-            distances = results[4]
+            distances = self._distance
 
         matched = [(points_map[id(p_a)], points_map[id(p_b)]) for (p_a, p_b) in matched]
 
@@ -666,9 +711,7 @@ class SkeletonMatcher(_ShapeMatcher):
         if self.return_distances:
             for p_a_id, p_b_id in list(distances.keys()):
                 dist = distances.pop((p_a_id, p_b_id))
-                distances[(id(points_map[p_a_id]), id(points_map[p_b_id]))] = dist
-
-        self.distances.update(distances)
+                distances.set((id(points_map[p_a_id]), id(points_map[p_b_id])), dist)
 
         return matched
 
@@ -760,13 +803,12 @@ class _ShapeMerger(_ShapeMatcher):
 
     def merge_cluster_shape(self, cluster):
         shape = self._merge_cluster_shape_mean_box_nearest(cluster)
-        distance, _ = self._make_memoizing_distance(self.distance)
         for ann in cluster:
             dataset_id = self._context._item_map[self._context._ann_map[id(ann)][1]][1]
             self._context.dataset_mean_consensus_score.setdefault(dataset_id, []).append(
-                max(0, distance(ann, shape))
+                max(0, self.distance(ann, shape))
             )
-        shape_score = sum(max(0, distance(shape, s)) for s in cluster) / len(cluster)
+        shape_score = sum(max(0, self.distance(shape, s)) for s in cluster) / len(cluster)
         return shape, shape_score
 
     def merge_cluster(self, cluster):
@@ -817,10 +859,10 @@ class SkeletonMerger(_ShapeMerger, SkeletonMatcher):
             skeleton_distance = 0
             for skeleton2 in cluster:
                 id_skeleton2 = id(skeleton2)
-                if (id_skeleton1, id_skeleton2) in self.distances:
-                    skeleton_distance += self.distances[(id_skeleton1, id_skeleton2)]
-                elif (id_skeleton2, id_skeleton1) in self.distances:
-                    skeleton_distance += self.distances[(id_skeleton2, id_skeleton1)]
+                if (id_skeleton1, id_skeleton2) in self._distance.keys():
+                    skeleton_distance += self._distance.cache[id_skeleton1, id_skeleton2]
+                elif (id_skeleton2, id_skeleton1) in self._distance.keys():
+                    skeleton_distance += self._distance.cache[id_skeleton2, id_skeleton1]
                 else:
                     skeleton_distance += 1
 
