@@ -1181,7 +1181,7 @@ class AnnotationGuide(TimestampedModel):
 
     @property
     def organization_id(self):
-        return self.target.organization_id
+        return getattr(self.target, 'organization_id', None)
 
 class Asset(models.Model):
     uuid = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
