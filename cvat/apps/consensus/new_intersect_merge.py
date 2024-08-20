@@ -216,6 +216,11 @@ class _ShapeMatcher(AnnotationMatcher, DistanceComparator):
         b_label = self._context.get_any_label_name(b, b.label)
         return a_label == b_label
 
+
+    @staticmethod
+    def _get_ann_type(t, item: dm.Annotation) -> Sequence[dm.Annotation]:
+        return [a for a in item if a.type == t and not a.attributes.get("outside", False)]
+
     def _match_segments(
         self,
         t,
@@ -232,10 +237,10 @@ class _ShapeMatcher(AnnotationMatcher, DistanceComparator):
             label_matcher = self.label_matcher
         if dist_thresh is None:
             dist_thresh = self.pairwise_dist
-        return DistanceComparator.match_segments(
-            t,
-            item_a,
-            item_b,
+        return self.match_segments(
+            t=t,
+            item_a=item_a,
+            item_b=item_b,
             distance=distance,
             label_matcher=label_matcher,
             a_objs=a_objs,
