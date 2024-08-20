@@ -4,7 +4,7 @@
 
 import itertools
 import logging as log
-from functools import cache, cached_property
+from functools import cached_property
 from typing import Callable, Dict, List, Optional, Sequence, Tuple, Union, cast
 
 import attr
