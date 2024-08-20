@@ -780,6 +780,10 @@ job "{###JOB_UUID###}" {
     }
     
     task "ui" {
+      lifecycle {
+        hook = "poststart"
+        sidecar = "true"
+      }
       driver = "docker"
       config {
         image = "${NOMAD_META_ui_image}:${NOMAD_META_cvat_version}${NOMAD_META_cvat_version_custom}"
