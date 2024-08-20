@@ -29,7 +29,12 @@ from cvat.apps.engine.cloud_provider import export_resource_to_cloud_storage
 from cvat.apps.engine.location import StorageType, get_location_configuration
 from cvat.apps.engine.log import ServerLogManager
 from cvat.apps.engine.models import (
-    Location, Project, Task, RequestAction, RequestTarget, RequestSubresource,
+    Location,
+    Project,
+    RequestAction,
+    RequestSubresource,
+    RequestTarget,
+    Task,
 )
 from cvat.apps.engine.permissions import get_cloud_storage_for_import_or_export
 from cvat.apps.engine.rq_job_handler import RQId, RQJobMetaField
@@ -250,14 +255,15 @@ class DatasetExportManager(_ResourceExportManager):
                 f"Unexpected action {action!r} specified for the request"
             )
 
+        msg_no_such_job_when_downloading = (
+            "Unknown export request id. "
+            "Please request export first by sending a request without the action=download parameter."
+        )
         if not rq_job:
             return (
                 None
                 if action != "download"
-                else HttpResponseBadRequest(
-                    "Unknown export request id. "
-                    "Please request export first by sending a request without the action=download parameter."
-                )
+                else HttpResponseBadRequest(msg_no_such_job_when_downloading)
             )
 
         # define status once to avoid refreshing it on each check
@@ -270,10 +276,7 @@ class DatasetExportManager(_ResourceExportManager):
             return (
                 None
                 if action != "download"
-                else HttpResponseBadRequest(
-                    "Unknown export request id. "
-                    "Please request export first by sending a request without the action=download parameter."
-                )
+                else HttpResponseBadRequest(msg_no_such_job_when_downloading)
             )
 
         if action == "download":
@@ -374,8 +377,11 @@ class DatasetExportManager(_ResourceExportManager):
             RequestAction.EXPORT,
             RequestTarget(self.resource),
             self.db_instance.pk,
-            subresource=RequestSubresource.DATASET
-                if self.export_args.save_images else RequestSubresource.ANNOTATIONS,
+            subresource=(
+                RequestSubresource.DATASET
+                if self.export_args.save_images
+                else RequestSubresource.ANNOTATIONS
+            ),
             format=self.export_args.format,
             user_id=self.request.user.id,
         ).render()
@@ -532,14 +538,15 @@ class BackupExportManager(_ResourceExportManager):
                 f"Unexpected action {action!r} specified for the request"
             )
 
+        msg_no_such_job_when_downloading = (
+            "Unknown export request id. "
+            "Please request export first by sending a request without the action=download parameter."
+        )
         if not rq_job:
             return (
                 None
                 if action != "download"
-                else HttpResponseBadRequest(
-                    "Unknown export request id. "
-                    "Please request export first by sending a request without the action=download parameter."
-                )
+                else HttpResponseBadRequest(msg_no_such_job_when_downloading)
             )
 
         # define status once to avoid refreshing it on each check
@@ -552,10 +559,7 @@ class BackupExportManager(_ResourceExportManager):
             return (
                 None
                 if action != "download"
-                else HttpResponseBadRequest(
-                    "Unknown export request id. "
-                    "Please request export first by sending a request without the action=download parameter."
-                )
+                else HttpResponseBadRequest(msg_no_such_job_when_downloading)
             )
 
         if action == "download":
