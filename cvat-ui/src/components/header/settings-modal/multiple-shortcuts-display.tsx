@@ -29,6 +29,7 @@ function MultipleShortcutsDisplay(props: Props): JSX.Element {
     const [pressedKeys, setPressedKeys] = useState<string[][]>([[]]);
     const [currentIdx, setCurrentIdx] = useState<number>(0);
     const [timer, setTimer] = useState<ReturnType<typeof setTimeout> | null>(null);
+    const finalizedRef = useRef(false);
 
     useEffect(() => () => {
         if (timer) clearTimeout(timer);
@@ -79,6 +80,7 @@ function MultipleShortcutsDisplay(props: Props): JSX.Element {
         setPressedKeys([[]]);
         setCurrentIdx(0);
         setTimer(null);
+        finalizedRef.current = true;
         selectRef.current?.blur();
     };
 
@@ -116,7 +118,10 @@ function MultipleShortcutsDisplay(props: Props): JSX.Element {
             allowClear
             onFocus={() => setFocus(true)}
             onBlur={() => {
-                finalizeCombination();
+                if (pressedKeys[0].length && !finalizedRef.current) {
+                    finalizeCombination();
+                }
+                finalizedRef.current = false;
                 setFocus(false);
                 if (timer) {
                     clearTimeout(timer);

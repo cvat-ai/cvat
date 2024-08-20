@@ -97,7 +97,7 @@ function SettingsModal(props: SettingsModalProps): JSX.Element {
                         for (const conflictingShortcut of Object.keys(conflictingShortcuts)) {
                             for (const sequence of currValue[key].sequences) {
                                 for (const conflictingSequence of conflictingShortcuts[conflictingShortcut].sequences) {
-                                    if (!conflict(sequence, conflictingSequence)) {
+                                    if (conflict(sequence, conflictingSequence)) {
                                         updateKeyMap[conflictingShortcut].sequences = [
                                             ...updateKeyMap[conflictingShortcut].sequences.filter(
                                                 (s: string) => s !== conflictingSequence,

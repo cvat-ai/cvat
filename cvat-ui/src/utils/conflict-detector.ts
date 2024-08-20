@@ -154,6 +154,5 @@ export function unsetExistingShortcuts(
             updatedShortcuts[key] = { ...conflictingItem, sequences: newSequences };
         }
     }
-    console.log(updatedShortcuts);
     registerComponentShortcuts(updatedShortcuts);
 }
