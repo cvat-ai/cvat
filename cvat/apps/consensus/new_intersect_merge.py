@@ -215,7 +215,6 @@ class _ShapeMatcher(AnnotationMatcher, DistanceComparator):
         b_label = self._context.get_any_label_name(b, b.label)
         return a_label == b_label
 
-
     @staticmethod
     def _get_ann_type(t, item: dm.Annotation) -> Sequence[dm.Annotation]:
         return [a for a in item if a.type == t and not a.attributes.get("outside", False)]
@@ -247,7 +246,9 @@ class _ShapeMatcher(AnnotationMatcher, DistanceComparator):
             dist_thresh=dist_thresh,
         )
 
-    def match_annotations_two_sources(self, item_a: List[dm.Annotation], item_b: List[dm.Annotation]) -> List[dm.Annotation]:
+    def match_annotations_two_sources(
+        self, item_a: List[dm.Annotation], item_b: List[dm.Annotation]
+    ) -> List[dm.Annotation]:
         return []
 
     def match_annotations(self, sources):
@@ -461,7 +462,6 @@ class PolygonMatcher(_ShapeMatcher):
             for (i_a, i_b) in matched
             for (ia_a, ia_b) in itertools.product(a_instances[i_a], b_instances[i_b])
         ]
-
 
         return matched
 
@@ -749,12 +749,12 @@ class _ShapeMerger(_ShapeMatcher):
         for s in cluster:
             if isinstance(s, dm.Bbox):
                 dist.append(
-                    segment_iou(self.to_polygon(mbbox), self.to_polygon(s), img_h=img_h, img_w=img_w)
+                    segment_iou(
+                        self.to_polygon(mbbox), self.to_polygon(s), img_h=img_h, img_w=img_w
+                    )
                 )
             else:
-                dist.append(
-                    segment_iou(self.to_polygon(mbbox), s, img_h=img_h, img_w=img_w)
-                )
+                dist.append(segment_iou(self.to_polygon(mbbox), s, img_h=img_h, img_w=img_w))
         nearest_pos, _ = max(enumerate(dist), key=lambda e: e[1])
         return cluster[nearest_pos]
 

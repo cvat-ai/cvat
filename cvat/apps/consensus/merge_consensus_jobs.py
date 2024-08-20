@@ -36,12 +36,16 @@ from cvat.apps.quality_control.quality_reports import JobDataProvider
 def get_consensus_jobs(task_id: int) -> Tuple[Dict[int, List[Tuple[int, User]]], List[Job]]:
     job_map = {}  # parent_job_id -> [(consensus_job_id, assignee)]
     parent_jobs: dict[int, Job] = {}
-    for job in Job.objects.prefetch_related("segment", "parent_job", "assignee").filter(
-        segment__task_id=task_id,
-        type=JobType.CONSENSUS.value,
-        parent_job__stage=StageChoice.ANNOTATION.value,
-        parent_job__isnull=False,
-    ).exclude(state=StateChoice.NEW.value):
+    for job in (
+        Job.objects.prefetch_related("segment", "parent_job", "assignee")
+        .filter(
+            segment__task_id=task_id,
+            type=JobType.CONSENSUS.value,
+            parent_job__stage=StageChoice.ANNOTATION.value,
+            parent_job__isnull=False,
+        )
+        .exclude(state=StateChoice.NEW.value)
+    ):
         job_map.setdefault(job.parent_job_id, []).append((job.id, job.assignee))
         parent_jobs.setdefault(job.parent_job_id, job.parent_job)
 
