@@ -25,8 +25,10 @@ from typing import Any, Callable, ClassVar, Optional, overload
 from unittest.mock import MagicMock, patch, DEFAULT as MOCK_DEFAULT
 
 from attr import define, field
+from datumaro import AnnotationType, Points
 from datumaro.components.dataset import Dataset
-from datumaro.util.test_utils import compare_datasets as dm_compare_datasets, TestDir
+from datumaro.components.operations import ExactComparator
+from datumaro.util.test_utils import TestDir
 from django.contrib.auth.models import Group, User
 from PIL import Image
 from rest_framework import status
@@ -97,18 +99,27 @@ def generate_video_file(filename, width=1280, height=720, duration=1, fps=25, co
     return [(width, height)] * total_frames, f
 
 
-def compare_datasets(test, expected, actual):
-    # we need this function to allow for a bit of variation in a rotation attribute
-    # we need to copy a dataset, because dm_compare_datasets modifies it
-    actual_copy = copy.deepcopy(actual)
-    dm_compare_datasets(test, expected, actual, ignored_attrs=["rotation"])
-    for item_a, item_b in zip(expected, actual_copy):
+def compare_datasets(expected: Dataset, actual: Dataset):
+    # we need this function to allow for a bit of variation in a rotation attribute and in skeleton elements order
+    comparator = ExactComparator(ignored_fields=["elements"], ignored_attrs=["rotation"])
+    _, unmatched, expected_extra, actual_extra, errors = comparator.compare_datasets(
+        expected, actual
+    )
+    assert not unmatched, f"Datasets have unmatched items: {unmatched}"
+    assert not actual_extra, f"Actual has following extra items: {actual_extra}"
+    assert not expected_extra, f"Expected has following extra items: {expected_extra}"
+    assert not errors, f"There were following errors while comparing datasets: {errors}"
+
+    for item_a, item_b in zip(expected, actual):
         for ann_a, ann_b in zip(item_a.annotations, item_b.annotations):
-            assert ("rotation" in ann_a.attributes) == ("rotation" in ann_b.attributes)
             assert (
                 abs(ann_a.attributes.get("rotation", 0) - ann_b.attributes.get("rotation", 0))
                 < 0.01
             )
+            if ann_a.type == AnnotationType.skeleton:
+                elements_a = sorted(filter(lambda p: p.visibility[0] != Points.Visibility.absent, ann_a.elements), key=lambda s: s.label)
+                elements_b = sorted(filter(lambda p: p.visibility[0] != Points.Visibility.absent, ann_b.elements), key=lambda s: s.label)
+                assert elements_a == elements_b
 
 
 class _DbTestBase(ApiTestBase):
@@ -1059,7 +1070,7 @@ class TaskDumpUploadTest(_DbTestBase):
 
                     # equals annotations
                     data_from_task_after_upload = self._get_data_from_task(task_id, include_images)
-                    compare_datasets(self, data_from_task_before_upload, data_from_task_after_upload)
+                    compare_datasets(data_from_task_before_upload, data_from_task_after_upload)
 
     def test_api_v2_tasks_annotations_dump_and_upload_with_datumaro(self):
         test_name = self._testMethodName
@@ -1138,7 +1149,7 @@ class TaskDumpUploadTest(_DbTestBase):
 
                             # equals annotations
                         data_from_task_after_upload = self._get_data_from_task(task_id, include_images)
-                        compare_datasets(self, data_from_task_before_upload, data_from_task_after_upload)
+                        compare_datasets(data_from_task_before_upload, data_from_task_after_upload)
 
     def test_api_v2_check_duplicated_polygon_points(self):
         test_name = self._testMethodName
@@ -1204,7 +1215,7 @@ class TaskDumpUploadTest(_DbTestBase):
 
                     # equals annotations
                     data_from_task_after_upload = self._get_data_from_task(task_id, include_images)
-                    compare_datasets(self, data_from_task_before_upload, data_from_task_after_upload)
+                    compare_datasets(data_from_task_before_upload, data_from_task_after_upload)
 
     def test_api_v2_check_mot_with_shapes_only(self):
         test_name = self._testMethodName
@@ -1240,7 +1251,7 @@ class TaskDumpUploadTest(_DbTestBase):
 
                     # equals annotations
                     data_from_task_after_upload = self._get_data_from_task(task_id, include_images)
-                    compare_datasets(self, data_from_task_before_upload, data_from_task_after_upload)
+                    compare_datasets(data_from_task_before_upload, data_from_task_after_upload)
 
     def test_api_v2_check_attribute_import_in_tracks(self):
         test_name = self._testMethodName
@@ -1277,7 +1288,7 @@ class TaskDumpUploadTest(_DbTestBase):
 
                     # equals annotations
                     data_from_task_after_upload = self._get_data_from_task(task_id, include_images)
-                    compare_datasets(self, data_from_task_before_upload, data_from_task_after_upload)
+                    compare_datasets(data_from_task_before_upload, data_from_task_after_upload)
 
 class ExportBehaviorTest(_DbTestBase):
     @define
