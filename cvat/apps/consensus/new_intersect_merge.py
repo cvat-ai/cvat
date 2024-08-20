@@ -4,7 +4,7 @@
 
 import itertools
 import logging as log
-from typing import Callable, Dict, List, Optional, Sequence, Tuple, Union, cast
+from typing import Callable, List, Optional, Sequence, Union, cast
 
 import attr
 import datumaro as dm
@@ -204,7 +204,6 @@ class LabelMatcher(AnnotationMatcher):
 class _ShapeMatcher(AnnotationMatcher, DistanceComparator):
     pairwise_dist = attrib(converter=float, default=0.9)
     cluster_dist = attrib(converter=float, default=-1.0)
-    return_distances = False
     categories = attrib(converter=dict, default={})
     distance_index = attrib(converter=dict, default={})
 
@@ -248,20 +247,8 @@ class _ShapeMatcher(AnnotationMatcher, DistanceComparator):
             dist_thresh=dist_thresh,
         )
 
-    def match_annotations_two_sources(self, item_a: dm.Annotation, item_b: dm.Annotation) -> Union[
-        Tuple[List[dm.Annotation], List[dm.Annotation], List[dm.Annotation], List[dm.Annotation]],
-        Tuple[
-            List[dm.Annotation],
-            List[dm.Annotation],
-            List[dm.Annotation],
-            List[dm.Annotation],
-            Dict[int, float],
-        ],
-    ]:
-        if self.return_distances:
-            return [], [], [], [], {}
-
-        return [], [], [], []
+    def match_annotations_two_sources(self, item_a: List[dm.Annotation], item_b: List[dm.Annotation]) -> List[dm.Annotation]:
+        return []
 
     def match_annotations(self, sources):
         distance = self.distance
@@ -297,16 +284,10 @@ class _ShapeMatcher(AnnotationMatcher, DistanceComparator):
             # matches further sources of same frame for matching annotations
             for src_b in sources[a_idx + 1 :]:
                 # an annotation can be adjacent to multiple annotations
-                if self.return_distances:
-                    matches, _, _, _, _ = self.match_annotations_two_sources(
-                        src_a,
-                        src_b,
-                    )
-                else:
-                    matches, _, _, _ = self.match_annotations_two_sources(
-                        src_a,
-                        src_b,
-                    )
+                matches = self.match_annotations_two_sources(
+                    src_a,
+                    src_b,
+                )
                 for a, b in matches:
                     adjacent[id(a)].append(id(b))
 
@@ -359,13 +340,13 @@ class BboxMatcher(_ShapeMatcher):
         img_h, img_w = self._context._item_map[dataitem_id][0].image.size
         return _bbox_iou(item_a, item_b, img_h=img_h, img_w=img_w)
 
-    def match_annotations_two_sources(self, item_a: dm.Bbox, item_b: dm.Bbox):
+    def match_annotations_two_sources(self, item_a: List[dm.Bbox], item_b: List[dm.Bbox]):
         return self._match_segments(
             dm.AnnotationType.bbox,
             item_a,
             item_b,
             distance=self.distance,
-        )
+        )[0]
 
 
 @attrs
@@ -385,7 +366,7 @@ class PolygonMatcher(_ShapeMatcher):
         return float(mask_utils.iou([b_segm], [a_segm], [0])[0])
 
     def match_annotations_two_sources(
-        self, item_a: Union[dm.Polygon, dm.Mask], item_b: Union[dm.Polygon, dm.Mask]
+        self, item_a: List[Union[dm.Polygon, dm.Mask]], item_b: List[Union[dm.Polygon, dm.Mask]]
     ):
         def _get_segmentations(item):
             return self._get_ann_type(dm.AnnotationType.polygon, item) + self._get_ann_type(
@@ -471,9 +452,7 @@ class PolygonMatcher(_ShapeMatcher):
         )
 
         # restore results for original annotations
-        matched, mismatched, a_extra, b_extra = results[:4]
-        if self.return_distances:
-            distances = results[4]
+        matched = results[0]
 
         # i_x ~ instance idx in _x
         # ia_x ~ instance annotation in _x
@@ -482,27 +461,9 @@ class PolygonMatcher(_ShapeMatcher):
             for (i_a, i_b) in matched
             for (ia_a, ia_b) in itertools.product(a_instances[i_a], b_instances[i_b])
         ]
-        mismatched = [
-            (ia_a, ia_b)
-            for (i_a, i_b) in mismatched
-            for (ia_a, ia_b) in itertools.product(a_instances[i_a], b_instances[i_b])
-        ]
-        a_extra = [ia_a for i_a in a_extra for ia_a in a_instances[i_a]]
-        b_extra = [ia_b for i_b in b_extra for ia_b in b_instances[i_b]]
 
-        if self.return_distances:
-            for i_a, i_b in list(distances.keys()):
-                dist = distances.pop((i_a, i_b))
 
-                for ia_a, ia_b in itertools.product(a_instances[i_a], b_instances[i_b]):
-                    distances[(id(ia_a), id(ia_b))] = dist
-
-        returned_values = (matched, mismatched, a_extra, b_extra)
-
-        if self.return_distances:
-            returned_values = returned_values + (distances,)
-
-        return returned_values
+        return matched
 
 
 @attrs
@@ -581,7 +542,7 @@ class PointsMatcher(_ShapeMatcher):
                 len(matched_points) + len(a_extra) + len(b_extra)
             )
 
-    def match_annotations_two_sources(self, item_a: dm.Points, item_b: dm.Points):
+    def match_annotations_two_sources(self, item_a: List[dm.Points], item_b: List[dm.Points]):
         a_points = self._get_ann_type(dm.AnnotationType.points, item_a)
         b_points = self._get_ann_type(dm.AnnotationType.points, item_b)
 
@@ -592,7 +553,7 @@ class PointsMatcher(_ShapeMatcher):
             a_objs=a_points,
             b_objs=b_points,
             distance=self.distance,
-        )
+        )[0]
 
 
 class SkeletonMatcher(_ShapeMatcher):
@@ -630,9 +591,9 @@ class SkeletonMatcher(_ShapeMatcher):
 
         return skeleton_info
 
-    def match_annotations_two_sources(self, a_skeletons: dm.Skeleton, b_skeletons: dm.Skeleton):
+    def match_annotations_two_sources(self, a_skeletons: List[dm.Skeleton], b_skeletons: List[dm.Skeleton]):
         if not a_skeletons and not b_skeletons:
-            return [], [], [], []
+            return []
 
         # Convert skeletons to point lists for comparison
         # This is required to compute correct per-instance distance
@@ -695,14 +656,11 @@ class SkeletonMatcher(_ShapeMatcher):
             distance=self.distance,
         )
 
-        matched, mismatched, a_extra, b_extra = results[:4]
+        matched = results[0]
         if self.return_distances:
             distances = results[4]
 
         matched = [(points_map[id(p_a)], points_map[id(p_b)]) for (p_a, p_b) in matched]
-        mismatched = [(points_map[id(p_a)], points_map[id(p_b)]) for (p_a, p_b) in mismatched]
-        a_extra = [points_map[id(p_a)] for p_a in a_extra]
-        b_extra = [points_map[id(p_b)] for p_b in b_extra]
 
         # Map points back to skeletons
         if self.return_distances:
@@ -711,20 +669,16 @@ class SkeletonMatcher(_ShapeMatcher):
                 distances[(id(points_map[p_a_id]), id(points_map[p_b_id]))] = dist
 
         self.distances.update(distances)
-        returned_values = (matched, mismatched, a_extra, b_extra)
 
-        if self.return_distances:
-            returned_values = returned_values + (distances,)
-
-        return returned_values
+        return matched
 
 
 @attrs
 class LineMatcher(_ShapeMatcher, LineMatcherQualityReports):
-    def match_annotations_two_sources(self, item_a: dm.PolyLine, item_b: dm.PolyLine):
+    def match_annotations_two_sources(self, item_a: List[dm.PolyLine], item_b: List[dm.PolyLine]):
         return self._match_segments(
             dm.AnnotationType.polyline, item_a, item_b, distance=self.distance
-        )
+        )[0]
 
 
 @attrs(kw_only=True)
