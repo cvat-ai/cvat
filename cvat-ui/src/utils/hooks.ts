@@ -1,5 +1,5 @@
 // Copyright (C) 2021-2022 Intel Corporation
-// Copyright (C) 2023 CVAT.ai Corporation
+// Copyright (C) 2023-2024 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -64,13 +64,10 @@ export function usePlugins(
 
 export function useGoBack(): () => void {
     const history = useHistory();
+    const prevLocation = useSelector((state: CombinedState) => state.navigation.prevLocation) ?? '/tasks';
     const goBack = useCallback(() => {
-        if (history.action !== 'POP') {
-            history.goBack();
-        } else {
-            history.push('/');
-        }
-    }, []);
+        history.push(prevLocation);
+    }, [prevLocation]);
 
     return goBack;
 }

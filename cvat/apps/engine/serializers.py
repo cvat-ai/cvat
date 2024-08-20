@@ -23,7 +23,6 @@ from decimal import Decimal
 from rest_framework import serializers, exceptions
 from django.contrib.auth.models import User, Group
 from django.db import transaction
-from django.db.models import TextChoices
 from django.utils import timezone
 
 from cvat.apps.dataset_manager.formats.utils import get_label_color
@@ -2201,30 +2200,10 @@ class UserIdentifiersSerializer(BasicUserSerializer):
             "username",
         )
 
-class RequestStatus(TextChoices):
-    QUEUED = "queued"
-    STARTED = "started"
-    FAILED = "failed"
-    FINISHED = "finished"
-
-class RequestAction(TextChoices):
-    CREATE = "create"
-    IMPORT = "import"
-    EXPORT = "export"
-
-class RequestTarget(TextChoices):
-    PROJECT = "project"
-    TASK = "task"
-    JOB = "job"
-
-class RequestSubresource(TextChoices):
-    ANNOTATIONS = "annotations"
-    DATASET = "dataset"
-    BACKUP = "backup"
 
 class RequestDataOperationSerializer(serializers.Serializer):
     type = serializers.CharField()
-    target = serializers.ChoiceField(choices=RequestTarget.choices)
+    target = serializers.ChoiceField(choices=models.RequestTarget.choices)
     project_id = serializers.IntegerField(required=False, allow_null=True)
     task_id = serializers.IntegerField(required=False, allow_null=True)
     job_id = serializers.IntegerField(required=False, allow_null=True)
@@ -2237,10 +2216,10 @@ class RequestDataOperationSerializer(serializers.Serializer):
             "type": ":".join(
                 [
                     parsed_rq_id.action,
-                    parsed_rq_id.subresource or parsed_rq_id.resource,
+                    parsed_rq_id.subresource or parsed_rq_id.target,
                 ]
             ),
-            "target": parsed_rq_id.resource,
+            "target": parsed_rq_id.target,
             "project_id": rq_job.meta[RQJobMetaField.PROJECT_ID],
             "task_id": rq_job.meta[RQJobMetaField.TASK_ID],
             "job_id": rq_job.meta[RQJobMetaField.JOB_ID],
@@ -2252,7 +2231,7 @@ class RequestSerializer(serializers.Serializer):
     # Marking them as read_only leads to generating type as allOf with one reference to RequestStatus component.
     # The client generated using openapi-generator from such a schema contains wrong type like:
     # status (bool, date, datetime, dict, float, int, list, str, none_type): [optional]
-    status = serializers.ChoiceField(source="get_status", choices=RequestStatus.choices)
+    status = serializers.ChoiceField(source="get_status", choices=models.RequestStatus.choices)
     message = serializers.SerializerMethodField()
     id = serializers.CharField()
     operation = RequestDataOperationSerializer(source="*")
@@ -2320,7 +2299,10 @@ class RequestSerializer(serializers.Serializer):
             if result_url := rq_job.meta.get(RQJobMetaField.RESULT_URL):
                 representation["result_url"] = result_url
 
-            if rq_job.parsed_rq_id.action == RequestAction.IMPORT and rq_job.parsed_rq_id.subresource == RequestSubresource.BACKUP:
+            if (
+                rq_job.parsed_rq_id.action == models.RequestAction.IMPORT
+                and rq_job.parsed_rq_id.subresource == models.RequestSubresource.BACKUP
+            ):
                 representation["result_id"] = rq_job.return_value()
 
         return representation

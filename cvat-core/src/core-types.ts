@@ -1,4 +1,4 @@
-// Copyright (C) 2023 CVAT.ai Corporation
+// Copyright (C) 2023-2024 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -16,7 +16,6 @@ export interface ModelParams {
         minNegVertices?: number;
         startWithBox?: boolean;
         startWithBoxOptional?: boolean;
-        onChangeToolsBlockerState?: (event: string) => void;
     };
 }
 

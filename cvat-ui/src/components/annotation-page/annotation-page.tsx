@@ -25,6 +25,7 @@ import { Workspace } from 'reducers';
 import { usePrevious } from 'utils/hooks';
 import EventRecorder from 'utils/event-recorder';
 import { readLatestFrame } from 'utils/remember-latest-frame';
+import { EventScope } from 'cvat-core/src/enums';
 
 interface Props {
     job: Job | null | undefined;
@@ -40,7 +41,8 @@ interface Props {
 
 export default function AnnotationPageComponent(props: Props): JSX.Element {
     const {
-        job, fetching, annotationsInitialized, workspace, frameNumber, getJob, closeJob, saveLogs, changeFrame,
+        job, fetching, annotationsInitialized, workspace, frameNumber,
+        getJob, closeJob, saveLogs, changeFrame,
     } = props;
     const prevJob = usePrevious(job);
     const prevFetching = usePrevious(fetching);
@@ -125,6 +127,12 @@ export default function AnnotationPageComponent(props: Props): JSX.Element {
             }
         }
     }, [job, fetching, prevJob, prevFetching]);
+
+    useEffect(() => {
+        if (job) {
+            job.logger.log(EventScope.loadWorkspace, { obj_name: workspace });
+        }
+    }, [job, workspace]);
 
     if (job === null || !annotationsInitialized) {
         return <Spin size='large' className='cvat-spinner' />;
