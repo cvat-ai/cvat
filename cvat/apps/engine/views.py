@@ -494,7 +494,7 @@ class ProjectViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
         return Response(data='Unknown upload was finished',
                         status=status.HTTP_400_BAD_REQUEST)
 
-    @extend_schema(summary='Get project annotations or export them as a dataset',
+    @extend_schema(summary='Export project annotations as a dataset',
         description=textwrap.dedent("""\
             Deprecation warning:
 
@@ -538,11 +538,7 @@ class ProjectViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
     def annotations(self, request, pk):
         # FUTURE-TODO: mark exporting dataset using this endpoint as deprecated when new API for result file downloading will be implemented
         self._object = self.get_object() # force call of check_object_permissions()
-        return self.export_dataset_v1(
-            request=request,
-            save_images=False,
-            get_data=dm.task.get_job_data,
-        )
+        return self.export_dataset_v1(request=request, save_images=False)
 
     @extend_schema(summary='Back up a project',
         description=textwrap.dedent("""\
@@ -3233,6 +3229,7 @@ class RequestViewSet(viewsets.GenericViewSet):
         'job_id',
         # derivatives fields (from parsed rq_id)
         'action',
+        'target',
         'subresource',
         'format',
     ]
@@ -3242,7 +3239,9 @@ class RequestViewSet(viewsets.GenericViewSet):
     lookup_fields = {
         'created_date': 'created_at',
         'action': 'parsed_rq_id.action',
+        'target': 'parsed_rq_id.target',
         'subresource': 'parsed_rq_id.subresource',
+        'format': 'parsed_rq_id.format',
         'status': 'get_status',
         'project_id': 'meta.project_id',
         'task_id': 'meta.task_id',
@@ -3258,6 +3257,7 @@ class RequestViewSet(viewsets.GenericViewSet):
         'task_id': SchemaField('integer'),
         'job_id': SchemaField('integer'),
         'action': SchemaField('string', RequestAction.choices),
+        'target': SchemaField('string', RequestTarget.choices),
         'subresource': SchemaField('string', RequestSubresource.choices),
         'format': SchemaField('string'),
         'org': SchemaField('string'),
