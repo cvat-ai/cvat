@@ -29,6 +29,7 @@ from cvat_sdk.api_client.model_utils import IModelData, ModelNormal, to_json
 from cvat_sdk.core.downloading import Downloader
 from cvat_sdk.core.helpers import get_paginated_collection
 from cvat_sdk.core.progress import ProgressReporter
+from cvat_sdk.core.proxies.types import Location
 
 if TYPE_CHECKING:
     from _typeshed import StrPath
@@ -226,7 +227,7 @@ class ExportDatasetMixin(Generic[_EntityT]):
         pbar: Optional[ProgressReporter] = None,
         status_check_period: Optional[int] = None,
         include_images: bool = True,
-        location: Optional[str] = None,
+        location: Optional[Location] = None,
         cloud_storage_id: Optional[int] = None,
     ) -> None:
         """
@@ -234,10 +235,17 @@ class ExportDatasetMixin(Generic[_EntityT]):
         By default, a result file will be downloaded based on the default configuration.
         To download a file locally by force, pass `location=local`.
         To save a file to a specific cloud storage, use the `location` and `cloud_storage_id` arguments.
-        """
 
-        if location not in ("local", "cloud_storage", None):
-            raise ValueError(f"Unsupported location: {location!r}")
+        Args:
+            filename (StrPath): Path to file where a file will be downloaded
+            status_check_period (int, optional): Sleep interval in seconds between status checks. Defaults to None.
+            pbar (Optional[ProgressReporter], optional): Can be used to show a progress when downloading file locally. Defaults to None.
+            location (Optional[Location], optional): Location to which a file will be uploaded. Can be Location.LOCAL or Location.CLOUD_STORAGE. Defaults to None.
+            cloud_storage_id (Optional[int], optional): ID of cloud storage to which a file will be uploaded. Defaults to None.
+
+        Raises:
+            ValueError: When location is Location.CLOUD_STORAGE but no cloud_storage_id is passed
+        """
 
         query_params = {
             "format": format_name,
@@ -245,7 +253,7 @@ class ExportDatasetMixin(Generic[_EntityT]):
             **({"location": location} if location else {}),
         }
 
-        if location == "cloud_storage":
+        if location == Location.CLOUD_STORAGE:
             if not cloud_storage_id:
                 raise ValueError(
                     f"Cloud storage ID must be specified when {location!r} location is used"
@@ -257,9 +265,9 @@ class ExportDatasetMixin(Generic[_EntityT]):
             }
 
         is_cloud_used_by_default = (
-            self.target_storage and self.target_storage.location.value == "cloud_storage"
+            self.target_storage and self.target_storage.location.value == Location.CLOUD_STORAGE
         )
-        if is_cloud_used_by_default or location == "cloud_storage":
+        if is_cloud_used_by_default or location == Location.CLOUD_STORAGE:
             query_params["filename"] = str(filename)
 
         downloader = Downloader(self._client)
@@ -271,7 +279,7 @@ class ExportDatasetMixin(Generic[_EntityT]):
         )
 
         result_url = bg_request.result_url
-        if location == "local" or not location and not is_cloud_used_by_default:
+        if location == Location.LOCAL or not location and not is_cloud_used_by_default:
             assert result_url
         else:
             assert not result_url
