@@ -244,7 +244,7 @@ def docker_restore_redis_inmem():
 
 
 def kube_restore_redis_inmem():
-    kube_exec_redis_inmem(["redis-cli", "-e", "flushall"])
+    kube_exec_redis_inmem(["sh", "-c", 'redis-cli -e -a "${REDIS_PASSWORD}" flushall'])
 
 
 def docker_restore_redis_ondisk():
