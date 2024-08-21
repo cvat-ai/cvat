@@ -250,7 +250,12 @@ class TestProjectUsecases:
     )
     @pytest.mark.parametrize("location", (None, Location.LOCAL, Location.CLOUD_STORAGE))
     def test_can_export_dataset(
-        self, include_images: bool, fxt_name: str, location: Optional[Location], request, cloud_storages
+        self,
+        include_images: bool,
+        fxt_name: str,
+        location: Optional[Location],
+        request,
+        cloud_storages,
     ):
         project: Project = request.getfixturevalue(fxt_name)
         path = self.tmp_path / f"project_{project.id}-cvat.zip"
