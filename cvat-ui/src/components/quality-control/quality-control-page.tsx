@@ -200,10 +200,15 @@ function QualityControlPage(): JSX.Element {
         }
     }, [instance]);
 
-    const onSaveQualitySettings = useCallback(async (values, fields) => {
+    const onSaveQualitySettings = useCallback(async (values) => {
         try {
             const { settings } = state.qualitySettings;
             if (settings) {
+                settings.targetMetric = values.targetMetric;
+                settings.targetMetricThreshold = values.targetMetricThreshold / 100;
+
+                settings.maxValidationsPerJob = values.maxValidationsPerJob;
+
                 settings.lowOverlapThreshold = values.lowOverlapThreshold / 100;
                 settings.iouThreshold = values.iouThreshold / 100;
                 settings.compareAttributes = values.compareAttributes;
@@ -223,7 +228,7 @@ function QualityControlPage(): JSX.Element {
                 settings.panopticComparison = values.panopticComparison;
                 try {
                     dispatch(reducerActions.setQualitySettingsFetching(true));
-                    const responseSettings = await settings.save(fields || {});
+                    const responseSettings = await settings.save();
                     dispatch(reducerActions.setQualitySettings(responseSettings));
                 } catch (error: unknown) {
                     notification.error({
@@ -312,18 +317,18 @@ function QualityControlPage(): JSX.Element {
             ),
         }, 10]);
 
-        tabsItems.push([{
-            key: 'management',
-            label: 'Management',
-            children: (
-                <TaskQualityManagementComponent
-                    task={instance}
-                    getQualityColor={state.qualitySettings.getQualityColor}
-                />
-            ),
-        }, 20]);
-
         if (gtJob) {
+            tabsItems.push([{
+                key: 'management',
+                label: 'Management',
+                children: (
+                    <TaskQualityManagementComponent
+                        task={instance}
+                        getQualityColor={state.qualitySettings.getQualityColor}
+                    />
+                ),
+            }, 20]);
+
             tabsItems.push([{
                 key: 'settings',
                 label: 'Settings',

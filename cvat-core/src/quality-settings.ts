@@ -7,16 +7,16 @@ import PluginRegistry from './plugins';
 import serverProxy from './server-proxy';
 
 export enum TargetMetric {
-    ACCURACY_MICRO = 'accuracy_micro',
-    PRECISION_MICRO = 'precision_micro',
-    RECALL_MICRO = 'recall_micro',
-    DICE_MACRO = 'dice_macro',
+    ACCURACY = 'accuracy',
+    PRECISION = 'precision',
+    RECALL = 'recall',
 }
 
 export default class QualitySettings {
     #id: number;
     #targetMetric: TargetMetric;
     #targetMetricThreshold: number;
+    #maxValidationsPerJob: number;
     #task: number;
     #iouThreshold: number;
     #oksSigma: number;
@@ -36,6 +36,7 @@ export default class QualitySettings {
         this.#task = initialData.task;
         this.#targetMetric = initialData.target_metric as TargetMetric;
         this.#targetMetricThreshold = initialData.target_metric_threshold;
+        this.#maxValidationsPerJob = initialData.max_validations_per_job;
         this.#iouThreshold = initialData.iou_threshold;
         this.#oksSigma = initialData.oks_sigma;
         this.#lineThickness = initialData.line_thickness;
@@ -170,6 +171,14 @@ export default class QualitySettings {
         this.#targetMetricThreshold = newVal;
     }
 
+    get maxValidationsPerJob(): number {
+        return this.#maxValidationsPerJob;
+    }
+
+    set maxValidationsPerJob(newVal: number) {
+        this.#maxValidationsPerJob = newVal;
+    }
+
     public toJSON(): SerializedQualitySettingsData {
         const result: SerializedQualitySettingsData = {
             iou_threshold: this.#iouThreshold,
@@ -186,13 +195,14 @@ export default class QualitySettings {
             compare_attributes: this.#compareAttributes,
             target_metric: this.#targetMetric,
             target_metric_threshold: this.#targetMetricThreshold,
+            max_validations_per_job: this.#maxValidationsPerJob,
         };
 
         return result;
     }
 
-    public async save(fields: any): Promise<QualitySettings> {
-        const result = await PluginRegistry.apiWrapper.call(this, QualitySettings.prototype.save, fields);
+    public async save(): Promise<QualitySettings> {
+        const result = await PluginRegistry.apiWrapper.call(this, QualitySettings.prototype.save);
         return result;
     }
 }
@@ -201,9 +211,9 @@ Object.defineProperties(QualitySettings.prototype.save, {
     implementation: {
         writable: false,
         enumerable: false,
-        value: async function implementation(fields: any): Promise<QualitySettings> {
+        value: async function implementation(): Promise<QualitySettings> {
             const result = await serverProxy.analytics.quality.settings.update(
-                this.id, { ...this.toJSON(), ...fields },
+                this.id, this.toJSON(),
             );
             return new QualitySettings(result);
         },

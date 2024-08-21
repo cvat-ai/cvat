@@ -13,30 +13,23 @@ import Checkbox from 'antd/lib/checkbox/Checkbox';
 import CVATTooltip from 'components/common/cvat-tooltip';
 import { QualitySettings, TargetMetric } from 'cvat-core-wrapper';
 import { Button, Select } from 'antd/lib';
-import { usePlugins } from 'utils/hooks';
-import { CombinedState } from 'reducers';
 
 interface FormProps {
     form: FormInstance;
     settings: QualitySettings;
     onSave: () => void;
-    onAdditionalValueChanged: (key: string, value: any) => void;
 }
 
 export default function QualitySettingsForm(props: FormProps): JSX.Element | null {
     const {
-        form, settings, onSave, onAdditionalValueChanged,
+        form, settings, onSave,
     } = props;
 
-    const pluginsToRender = usePlugins(
-        (state: CombinedState) => state.plugins.components.qualityControlPage.tabs.settings.form.items,
-        props,
-        { onAdditionalValueChanged },
-    );
-
     const initialValues = {
-        targetMetric: 'accuracy_micro',
-        targetMetricThreshold: 80,
+        targetMetric: settings.targetMetric,
+        targetMetricThreshold: settings.targetMetricThreshold * 100,
+
+        maxValidationsPerJob: settings.maxValidationsPerJob,
 
         lowOverlapThreshold: settings.lowOverlapThreshold * 100,
         iouThreshold: settings.iouThreshold * 100,
@@ -54,8 +47,6 @@ export default function QualitySettingsForm(props: FormProps): JSX.Element | nul
         checkCoveredAnnotations: settings.checkCoveredAnnotations,
         objectVisibilityThreshold: settings.objectVisibilityThreshold * 100,
         panopticComparison: settings.panopticComparison,
-
-        fields: 1,
     };
 
     const generalTooltip = (
@@ -154,17 +145,14 @@ export default function QualitySettingsForm(props: FormProps): JSX.Element | nul
                             style={{ width: '70%' }}
                             virtual={false}
                         >
-                            <Select.Option value={TargetMetric.ACCURACY_MICRO}>
-                                Accuracy micro
+                            <Select.Option value={TargetMetric.ACCURACY}>
+                                Accuracy
                             </Select.Option>
-                            <Select.Option value={TargetMetric.PRECISION_MICRO}>
-                                Precision micro
+                            <Select.Option value={TargetMetric.PRECISION}>
+                                Precision
                             </Select.Option>
-                            <Select.Option value={TargetMetric.RECALL_MICRO}>
-                                Recall micro
-                            </Select.Option>
-                            <Select.Option value={TargetMetric.DICE_MACRO}>
-                                Dice macro
+                            <Select.Option value={TargetMetric.RECALL}>
+                                Recall
                             </Select.Option>
                         </Select>
                     </Form.Item>
@@ -182,6 +170,33 @@ export default function QualitySettingsForm(props: FormProps): JSX.Element | nul
             <Divider />
         </>,
         10]);
+
+    formItems.push([
+        <>
+            <Row className='cvat-quality-settings-title'>
+                <Text strong>
+                Job validation
+                </Text>
+            </Row>
+            <Row>
+                <Col span={7}>
+                    <Form.Item
+                        name='maxValidationsPerJob'
+                        label='Max validations per job'
+                        rules={[{ required: true }]}
+                    >
+                        <InputNumber
+                            min={0}
+                            max={100}
+                            precision={0}
+                        />
+                    </Form.Item>
+                </Col>
+            </Row>
+            <Divider />
+        </>,
+        20]);
+
     formItems.push([
         <>
             <Row className='cvat-quality-settings-title'>
@@ -216,7 +231,7 @@ export default function QualitySettingsForm(props: FormProps): JSX.Element | nul
             </Row>
             <Divider />
         </>,
-        20]);
+        30]);
 
     formItems.push([
         <>
@@ -243,7 +258,7 @@ export default function QualitySettingsForm(props: FormProps): JSX.Element | nul
             </Row>
             <Divider />
         </>,
-        30]);
+        40]);
 
     formItems.push([
         <>
@@ -292,7 +307,7 @@ export default function QualitySettingsForm(props: FormProps): JSX.Element | nul
             </Row>
             <Divider />
         </>,
-        40]);
+        50]);
 
     formItems.push([
         <>
@@ -330,7 +345,7 @@ export default function QualitySettingsForm(props: FormProps): JSX.Element | nul
             </Row>
             <Divider />
         </>,
-        50]);
+        60]);
 
     formItems.push([
         <>
@@ -380,17 +395,7 @@ export default function QualitySettingsForm(props: FormProps): JSX.Element | nul
                 </Col>
             </Row>
         </>,
-        60]);
-
-    formItems.push(
-        ...pluginsToRender.map(({ component: Component, weight }, index) => (
-            [<Component
-                key={index}
-                targetProps={props}
-                targetState={{ onAdditionalValueChanged }}
-            />, weight] as [JSX.Element, number]
-        )),
-    );
+        70]);
 
     return (
         <Form
