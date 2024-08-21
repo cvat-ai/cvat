@@ -4,30 +4,34 @@ linkTitle: 'Requests page'
 weight: 7
 ---
 
-The requests page allows users to track the status of data processing jobs such as exporting annotations or importing datasets. Users can monitor progress, download results, and check errors if they occur.
+The Requests page allows users to track the status of data processing jobs such as exporting annotations
+or importing datasets. Users can monitor progress, download results, and check for errors if they occur.
 
-![](/images/requests_page.png)
+![Requests page](/images/requests_page.png)
 
-On the requests page there is a list of requests presented in the form of cards.
-Each element contains (if applicable):
-- Operation name
-- Resource link
-- Status of the request
-- Timestamps:
-  - Enqueued date
-  - Started date
-  - Finished date
-  - Result expiration date
-- Annotations format
-- Menu to download result or cancel `queued` job
+## Requests List
 
-> Currently supported operations: Creating tasks, Import/Export of annotations and datasets, backups.
+On the Requests page, requests are displayed as cards. Each card contains the following details (if applicable):
+- **Operation Name**
+- **Resource Link**
+- **Status of the Request**
+- **Timestamps**:
+  - **Enqueued Date**
+  - **Started Date**
+  - **Finished Date**
+  - **Result Expiration Date**
+- **Annotations Format**
+- **Menu** to download the result or cancel a `Queued` job
 
-### Statuses for requests list
+> Currently supported operations include creating tasks, importing/exporting annotations and datasets, and backups.
 
-| Status         | Description                                 |
-| -------------- | ------------------------------------------- |
-| `In progress`  | The requested job is being executed, the progress percent is shown |
-| `Queued`       | The requested job is waiting to be picked up by worker |
-| `Finished`     | The requested job is finished, downloading the result is available |
-| `Failed`       | The requested job cant be executed due to unexpected error. The error description is available |
+## Statuses for Requests List
+
+The following statuses are used to indicate the state of each request:
+
+| Status        | Description                                                                 |
+| --------------| --------------------------------------------------------------------------- |
+| `In Progress` | The requested job is being executed. The progress percentage is shown.      |
+| `Queued`      | The requested job is waiting to be picked up by a worker.                   |
+| `Finished`    | The requested job is finished. Downloading the result is available.         |
+| `Failed`      | The requested job cannot be executed due to an unexpected error. The error description is available. |
