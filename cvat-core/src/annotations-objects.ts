@@ -2918,7 +2918,7 @@ export class SkeletonTrack extends Track {
                 parentID: this.clientID,
                 readOnlyFields: ['group', 'zOrder', 'source', 'rotation'],
             });
-        }).sort((a: Annotation, b: Annotation) => a.label.id - b.label.id);
+        }).filter(Boolean).sort((a: Annotation, b: Annotation) => a.label.id - b.label.id);
     }
 
     public updateFromServerResponse(body: SerializedTrack): void {
