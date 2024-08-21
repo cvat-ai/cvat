@@ -3,17 +3,22 @@
 # SPDX-License-Identifier: MIT
 
 import io
+import zipfile
 from logging import Logger
 from pathlib import Path
-from typing import Tuple
+from typing import Optional, Tuple
 
 import pytest
 from cvat_sdk import Client, models
 from cvat_sdk.api_client import exceptions
 from cvat_sdk.core.proxies.projects import Project
 from cvat_sdk.core.proxies.tasks import ResourceType, Task
+from cvat_sdk.core.proxies.types import Location
 from cvat_sdk.core.utils import filter_dict
 from PIL import Image
+
+from shared.utils.config import IMPORT_EXPORT_BUCKET_ID
+from shared.utils.s3 import make_client as make_s3_client
 
 from .util import make_pbar
 
@@ -75,6 +80,21 @@ class TestProjectUsecases:
             spec={
                 "name": "test_project",
                 "labels": [{"name": "car"}, {"name": "person"}],
+            },
+        )
+
+        return project
+
+    @pytest.fixture
+    def fxt_new_project_with_target_storage(self):
+        project = self.client.projects.create(
+            spec={
+                "name": "test_project",
+                "labels": [{"name": "car"}, {"name": "person"}],
+                "target_storage": {
+                    "location": Location.CLOUD_STORAGE,
+                    "cloud_storage_id": IMPORT_EXPORT_BUCKET_ID,
+                },
             },
         )
 
@@ -219,6 +239,71 @@ class TestProjectUsecases:
         assert restored_project.get_tasks()[0].size == 1
         assert "100%" in pbar_out.getvalue().strip("\r").split("\r")[-1]
         assert self.stdout.getvalue() == ""
+
+    @pytest.mark.parametrize("include_images", (True, False))
+    @pytest.mark.parametrize(
+        "fxt_name",
+        (
+            "fxt_new_project",
+            "fxt_new_project_with_target_storage",
+        ),
+    )
+    @pytest.mark.parametrize("location", (None, Location.LOCAL, Location.CLOUD_STORAGE))
+    def test_can_export_dataset(
+        self, include_images: bool, fxt_name: str, location: Optional[Location], request, cloud_storages
+    ):
+        project: Project = request.getfixturevalue(fxt_name)
+        path = self.tmp_path / f"project_{project.id}-cvat.zip"
+        kwargs = dict()
+
+        if (
+            location == Location.LOCAL
+            or not location
+            and (
+                not project.target_storage
+                or project.target_storage.location.value == Location.LOCAL
+            )
+        ):
+            pbar_out = io.StringIO()
+            pbar = make_pbar(file=pbar_out)
+            kwargs = {
+                **kwargs,
+                "pbar": pbar,
+            }
+
+            project.export_dataset(
+                format_name="CVAT for images 1.1",
+                filename=path,
+                include_images=include_images,
+                location=location,
+                **kwargs,
+            )
+            assert self.stdout.getvalue() == ""
+            assert "100%" in pbar_out.getvalue().strip("\r").split("\r")[-1]
+            assert path.is_file()
+        else:
+            s3_client = make_s3_client()
+            bucket = next(cs for cs in cloud_storages if cs["id"] == IMPORT_EXPORT_BUCKET_ID)[
+                "resource"
+            ]
+            request.addfinalizer(lambda: s3_client.remove_file(bucket, filename=str(path)))
+            kwargs = {
+                **kwargs,
+                "cloud_storage_id": (
+                    IMPORT_EXPORT_BUCKET_ID if location == Location.CLOUD_STORAGE else None
+                ),
+            }
+
+            project.export_dataset(
+                format_name="CVAT for images 1.1",
+                filename=path,
+                include_images=include_images,
+                location=location,
+                **kwargs,
+            )
+            assert self.stdout.getvalue() == ""
+            dataset = s3_client.download_fileobj(bucket, str(path))
+            assert zipfile.is_zipfile(io.BytesIO(dataset))
 
     def test_can_download_preview(self, fxt_project_with_shapes: Project):
         frame_encoded = fxt_project_with_shapes.get_preview()

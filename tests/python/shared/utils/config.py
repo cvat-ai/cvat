@@ -18,7 +18,7 @@ API_URL = BASE_URL + "/api/"
 MINIO_KEY = "minio_access_key"
 MINIO_SECRET_KEY = "minio_secret_key"  # nosec
 MINIO_ENDPOINT_URL = "http://localhost:9000"
-
+IMPORT_EXPORT_BUCKET_ID = 3
 
 def _to_query_params(**kwargs):
     return "&".join([f"{k}={v}" for k, v in kwargs.items()])
