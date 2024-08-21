@@ -147,10 +147,10 @@ export function unsetExistingShortcuts(
                 sequences: [...currentSequence.filter((s) => !conflict(s, newSequence)), newSequence],
             };
         } else {
-            const commonSequence = updatedSequence.map((s) => (
-                conflictingItem.sequences.find((seq) => conflict(seq, s)) ?? ''
+            const commonSequences = updatedSequence.map((s) => (
+                conflictingItem.sequences.filter((seq) => conflict(seq, s))
             ));
-            const newSequences = conflictingItem.sequences.filter((s) => !commonSequence.includes(s));
+            const newSequences = conflictingItem.sequences.filter((s) => !commonSequences.flat().includes(s));
             updatedShortcuts[key] = { ...conflictingItem, sequences: newSequences };
         }
     }
