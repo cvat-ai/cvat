@@ -675,14 +675,14 @@
       "segment_size": 11,
       "size": 11,
       "source_storage": {
-        "cloud_storage_id": 2,
+        "cloud_storage_id": 3,
         "id": 4,
         "location": "cloud_storage"
       },
       "status": "annotation",
       "subset": "Train",
       "target_storage": {
-        "cloud_storage_id": 2,
+        "cloud_storage_id": 3,
         "id": 2,
         "location": "cloud_storage"
       },
