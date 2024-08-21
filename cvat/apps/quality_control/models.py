@@ -226,7 +226,7 @@ class QualitySettings(models.Model):
 
     target_metric_threshold = models.FloatField(default=0.7)
 
-    max_validations_per_job = models.IntegerField(default=0)
+    max_validations_per_job = models.PositiveIntegerField(default=0)
 
     def __init__(self, *args: Any, **kwargs: Any) -> None:
         defaults = deepcopy(self.get_defaults())
