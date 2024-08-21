@@ -14,7 +14,7 @@ import notification from 'antd/lib/notification';
 import moment from 'moment';
 import { useIsMounted } from 'utils/hooks';
 import {
-    AnalyticsReport, Job, RQStatus, getCore, Project, Task,
+    AnalyticsReport, Job, Project, RQStatus, Task, getCore,
 } from 'cvat-core-wrapper';
 import CVATLoadingSpinner from 'components/common/loading-spinner';
 import GoBackButton from 'components/common/go-back-button';
