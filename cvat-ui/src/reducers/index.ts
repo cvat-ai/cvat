@@ -737,6 +737,7 @@ export interface AnnotationState {
     };
     drawing: {
         activeInteractor?: MLModel | OpenCVTool;
+        activeInteractorParameters?: MLModel['params']['canvas'];
         activeShapeType: ShapeType;
         activeRectDrawingMethod?: RectDrawingMethod;
         activeCuboidDrawingMethod?: CuboidDrawingMethod;
@@ -891,11 +892,19 @@ export enum ReviewStatus {
     REVIEW_FURTHER = 'review_further',
 }
 
+export enum NewIssueSource {
+    ISSUE_TOOL = 'tool',
+    QUICK_ISSUE = 'quick_issue',
+}
+
 export interface ReviewState {
     issues: any[];
     frameIssues: any[];
     latestComments: string[];
-    newIssuePosition: number[] | null;
+    newIssue: {
+        position: number[] | null;
+        source: NewIssueSource | null;
+    }
     issuesHidden: boolean;
     issuesResolvedHidden: boolean;
     conflicts: QualityConflict[];
@@ -957,6 +966,10 @@ export interface RequestsState {
     query: RequestsQuery;
 }
 
+export interface NavigationState {
+    prevLocation: string | null;
+}
+
 export interface CombinedState {
     auth: AuthState;
     projects: ProjectsState;
@@ -980,6 +993,7 @@ export interface CombinedState {
     webhooks: WebhooksState;
     requests: RequestsState;
     serverAPI: ServerAPIState;
+    navigation: NavigationState;
 }
 
 export interface Indexable {

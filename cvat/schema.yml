@@ -3552,7 +3552,7 @@ paths:
         - POST /api/projects/<project_id>/dataset/export?save_images=False to initiate exporting process
         - GET /api/requests/<rq_id> to check export status,
             where rq_id is request id returned on initializing request'
-      summary: Get project annotations or export them as a dataset
+      summary: Export project annotations as a dataset
       parameters:
       - in: query
         name: action
@@ -4541,7 +4541,7 @@ paths:
 
           Details about the syntax used can be found at the link: https://jsonlogic.com/
 
-           Available filter_fields: ['status', 'project_id', 'task_id', 'job_id', 'action', 'subresource', 'format'].
+           Available filter_fields: ['status', 'project_id', 'task_id', 'job_id', 'action', 'target', 'subresource', 'format'].
         schema:
           type: string
       - name: format
@@ -4602,6 +4602,15 @@ paths:
           - annotations
           - dataset
           - backup
+      - name: target
+        in: query
+        description: A simple equality filter for the target field
+        schema:
+          type: string
+          enum:
+          - project
+          - task
+          - job
       - name: task_id
         in: query
         description: A simple equality filter for the task_id field

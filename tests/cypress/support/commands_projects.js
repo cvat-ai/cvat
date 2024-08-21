@@ -253,11 +253,13 @@ Cypress.Commands.add('deleteProjectViaActions', (projectName) => {
 });
 
 Cypress.Commands.add('assignProjectToUser', (user) => {
+    cy.intercept('GET', `/api/users?**search=${user}**`).as('searchUsers');
     cy.get('.cvat-project-details').within(() => {
         cy.get('.cvat-user-search-field').click();
         cy.get('.cvat-user-search-field').type(user);
     });
-    cy.get('.ant-select-dropdown')
+    cy.wait('@searchUsers');
+    cy.get('.cvat-user-search-dropdown')
         .not('.ant-select-dropdown-hidden')
         .within(() => {
             cy.get(`.ant-select-item-option[title="${user}"]`).click();

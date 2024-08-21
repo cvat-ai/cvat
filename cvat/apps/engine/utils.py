@@ -203,6 +203,10 @@ def get_rq_lock_by_user(queue: DjangoRQ, user_id: int) -> Union[Lock, nullcontex
         return queue.connection.lock(f'{queue.name}-lock-{user_id}', timeout=30)
     return nullcontext()
 
+def get_rq_lock_for_job(queue: DjangoRQ, rq_id: str) -> Lock:
+    # lock timeout corresponds to the nginx request timeout (proxy_read_timeout)
+    return queue.connection.lock(f'lock-for-job-{rq_id}'.lower(), timeout=60)
+
 def get_rq_job_meta(
     request: HttpRequest,
     db_obj: Any,

@@ -1227,7 +1227,7 @@ class RequestPermission(OpenPolicyAgentPermission):
                         ('export', 'task', 'backup'): (TaskPermission, TaskPermission.Scopes.EXPORT_BACKUP),
                         ('export', 'job', 'annotations'): (JobPermission, JobPermission.Scopes.EXPORT_ANNOTATIONS),
                         ('export', 'job', 'dataset'): (JobPermission, JobPermission.Scopes.EXPORT_DATASET),
-                    }[(parsed_rq_id.action, parsed_rq_id.resource, parsed_rq_id.subresource)]
+                    }[(parsed_rq_id.action, parsed_rq_id.target, parsed_rq_id.subresource)]
 
 
                     resource = None
@@ -1236,12 +1236,12 @@ class RequestPermission(OpenPolicyAgentPermission):
                             'project': Project,
                             'task': Task,
                             'job': Job,
-                        }[parsed_rq_id.resource]
+                        }[parsed_rq_id.target]
 
                         try:
                             resource = resource_model.objects.get(id=resource_id)
                         except resource_model.DoesNotExist as ex:
-                            raise NotFound(f'The {parsed_rq_id.resource!r} with specified id#{resource_id} does not exist') from ex
+                            raise NotFound(f'The {parsed_rq_id.target!r} with specified id#{resource_id} does not exist') from ex
 
                     permissions.append(permission_class.create_base_perm(request, view, scope=resource_scope, iam_context=iam_context, obj=resource))
 

@@ -4,8 +4,6 @@
 
 import os
 import os.path as osp
-import cvat.apps.dataset_manager as dm
-
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from datetime import datetime
@@ -14,23 +12,32 @@ from typing import Any, Callable, Dict, Optional, Union
 import django_rq
 from attrs.converters import to_bool
 from django.conf import settings
-from django.http.request import HttpRequest
+from django.http.response import HttpResponseBadRequest
 from django.utils import timezone
 from django_rq.queues import DjangoRQ
 from rest_framework import serializers, status
+from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.reverse import reverse
 from rq.job import Job as RQJob
 from rq.job import JobStatus as RQJobStatus
 
+import cvat.apps.dataset_manager as dm
 from cvat.apps.engine import models
 from cvat.apps.engine.backup import ProjectExporter, TaskExporter, create_backup
 from cvat.apps.engine.cloud_provider import export_resource_to_cloud_storage
 from cvat.apps.engine.location import StorageType, get_location_configuration
 from cvat.apps.engine.log import ServerLogManager
-from cvat.apps.engine.models import Location, Project, Task
+from cvat.apps.engine.models import (
+    Location,
+    Project,
+    RequestAction,
+    RequestSubresource,
+    RequestTarget,
+    Task,
+)
 from cvat.apps.engine.permissions import get_cloud_storage_for_import_or_export
-from cvat.apps.engine.rq_job_handler import RQIdManager
+from cvat.apps.engine.rq_job_handler import RQId, RQJobMetaField
 from cvat.apps.engine.serializers import RqIdSerializer
 from cvat.apps.engine.utils import (
     build_annotations_file_name,
@@ -38,6 +45,7 @@ from cvat.apps.engine.utils import (
     define_dependent_job,
     get_rq_job_meta,
     get_rq_lock_by_user,
+    get_rq_lock_for_job,
     sendfile,
 )
 from cvat.apps.events.handlers import handle_dataset_export
@@ -65,9 +73,7 @@ class _ResourceExportManager(ABC):
         self.db_instance = db_instance
         self.resource = db_instance.__class__.__name__.lower()
         if self.resource not in self.SUPPORTED_RESOURCES:
-            raise ValueError(
-                "Unexpected type of db_instance: {}".format(type(db_instance))
-            )
+            raise ValueError("Unexpected type of db_instance: {}".format(type(db_instance)))
 
         self.export_callback = export_callback
 
@@ -80,24 +86,26 @@ class _ResourceExportManager(ABC):
         pass
 
     @abstractmethod
-    def _handle_rq_job_v1(self, rq_job: RQJob, queue: DjangoRQ) -> Optional[Response]:
+    def _handle_rq_job_v1(self, rq_job: Optional[RQJob], queue: DjangoRQ) -> Optional[Response]:
         pass
 
-    def _handle_rq_job_v2(self, rq_job: RQJob, *args, **kwargs) -> Optional[Response]:
-        rq_job_status = rq_job.get_status(refresh=False)
-        if rq_job_status in {
-            RQJobStatus.FINISHED,
-            RQJobStatus.FAILED,
-            RQJobStatus.CANCELED,
-            RQJobStatus.STOPPED,
-        }:
-            rq_job.delete()
+    def _handle_rq_job_v2(self, rq_job: Optional[RQJob], *args, **kwargs) -> Optional[Response]:
+        if not rq_job:
             return None
 
-        return Response(
-            data=f"Export process is already {'started' if rq_job_status == RQJobStatus.STARTED else 'queued'}",
-            status=status.HTTP_409_CONFLICT,
-        )
+        rq_job_status = rq_job.get_status(refresh=False)
+
+        if rq_job_status in {RQJobStatus.STARTED, RQJobStatus.QUEUED}:
+            return Response(
+                data="Export request is being processed",
+                status=status.HTTP_409_CONFLICT,
+            )
+
+        if rq_job_status in (RQJobStatus.SCHEDULED, RQJobStatus.DEFERRED):
+            rq_job.cancel(enqueue_dependents=settings.ONE_RUNNING_JOB_IN_QUEUE_PER_USER)
+
+        rq_job.delete()
+        return None
 
     def handle_rq_job(self, *args, **kwargs) -> Optional[Response]:
         if self.version == 1:
@@ -113,9 +121,7 @@ class _ResourceExportManager(ABC):
 
     def make_result_url(self) -> str:
         view_name = self.get_v1_endpoint_view_name()
-        result_url = reverse(
-            view_name, args=[self.db_instance.pk], request=self.request
-        )
+        result_url = reverse(view_name, args=[self.db_instance.pk], request=self.request)
         query_dict = self.request.query_params.copy()
         query_dict["action"] = "download"
         result_url += "?" + query_dict.urlencode()
@@ -137,6 +143,14 @@ class _ResourceExportManager(ABC):
     def get_timestamp(self, time_: datetime) -> str:
         return datetime.strftime(time_, "%Y_%m_%d_%H_%M_%S")
 
+
+def cancel_and_delete(rq_job: RQJob) -> None:
+    # In the case the server is configured with ONE_RUNNING_JOB_IN_QUEUE_PER_USER
+    # we have to enqueue dependent jobs after canceling one.
+    rq_job.cancel(enqueue_dependents=settings.ONE_RUNNING_JOB_IN_QUEUE_PER_USER)
+    rq_job.delete()
+
+
 class DatasetExportManager(_ResourceExportManager):
     SUPPORTED_RESOURCES = {"project", "task", "job"}
 
@@ -154,7 +168,7 @@ class DatasetExportManager(_ResourceExportManager):
     def __init__(
         self,
         db_instance: Union[models.Project, models.Task, models.Job],
-        request: HttpRequest,
+        request: Request,
         export_callback: Callable,
         save_images: Optional[bool] = None,
         *,
@@ -165,6 +179,7 @@ class DatasetExportManager(_ResourceExportManager):
 
         format_name = request.query_params.get("format", "")
         filename = request.query_params.get("filename", "")
+
         # can be passed directly when it is initialized based on API request, not query param
         save_images = (
             save_images
@@ -197,51 +212,14 @@ class DatasetExportManager(_ResourceExportManager):
 
     def _handle_rq_job_v1(
         self,
-        rq_job: RQJob,
+        rq_job: Optional[RQJob],
         queue: DjangoRQ,
     ) -> Optional[Response]:
-        action = self.request.query_params.get("action")
-        if action not in {None, "download"}:
-            raise serializers.ValidationError(
-                "Unexpected action specified for the request"
-            )
 
-        request_time = rq_job.meta.get("request", {}).get("timestamp")
-        instance_update_time = self.get_instance_update_time()
-        if request_time is None or request_time < instance_update_time:
-            # The result is outdated, need to restart the export.
-            # Cancel the current job.
-            # The new attempt will be made after the last existing job.
-            # In the case the server is configured with ONE_RUNNING_JOB_IN_QUEUE_PER_USER
-            # we have to enqueue dependent jobs after canceling one.
-            rq_job.cancel(enqueue_dependents=settings.ONE_RUNNING_JOB_IN_QUEUE_PER_USER)
-            rq_job.delete()
-            return None
+        def is_result_outdated() -> bool:
+            return rq_job.meta[RQJobMetaField.REQUEST]["timestamp"] < instance_update_time
 
-        instance_timestamp = self.get_timestamp(instance_update_time)
-
-        REQUEST_TIMEOUT = 60
-
-        if action == "download":
-            if self.export_args.location != Location.LOCAL:
-                return Response(
-                    'Action "download" is only supported for a local export location',
-                    status=status.HTTP_400_BAD_REQUEST,
-                )
-
-            if not rq_job.is_finished:
-                return Response(
-                    "Export has not finished", status=status.HTTP_400_BAD_REQUEST
-                )
-
-            file_path = rq_job.return_value()
-
-            if not file_path:
-                return Response(
-                    "A result for exporting job was not found for finished RQ job",
-                    status=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                )
-
+        def handle_local_download() -> Response:
             with dm.util.get_export_cache_lock(file_path, ttl=REQUEST_TIMEOUT):
                 if not osp.exists(file_path):
                     return Response(
@@ -270,11 +248,59 @@ class DatasetExportManager(_ResourceExportManager):
                     attachment_filename=filename,
                 )
 
-        if rq_job.is_finished:
+        action = self.request.query_params.get("action")
+
+        if action not in {None, "download"}:
+            raise serializers.ValidationError(
+                f"Unexpected action {action!r} specified for the request"
+            )
+
+        msg_no_such_job_when_downloading = (
+            "Unknown export request id. "
+            "Please request export first by sending a request without the action=download parameter."
+        )
+        if not rq_job:
+            return (
+                None
+                if action != "download"
+                else HttpResponseBadRequest(msg_no_such_job_when_downloading)
+            )
+
+        # define status once to avoid refreshing it on each check
+        # FUTURE-TODO: get_status will raise InvalidJobOperation exception instead of returning None in one of the next releases
+        rq_job_status = rq_job.get_status(refresh=False)
+
+        # handle cases where the status is None for some reason
+        if not rq_job_status:
+            rq_job.delete()
+            return (
+                None
+                if action != "download"
+                else HttpResponseBadRequest(msg_no_such_job_when_downloading)
+            )
+
+        if action == "download":
+            if self.export_args.location != Location.LOCAL:
+                return HttpResponseBadRequest(
+                    'Action "download" is only supported for a local dataset location'
+                )
+            if rq_job_status not in {
+                RQJobStatus.FINISHED,
+                RQJobStatus.FAILED,
+                RQJobStatus.CANCELED,
+                RQJobStatus.STOPPED,
+            }:
+                return HttpResponseBadRequest("Dataset export has not been finished yet")
+
+        instance_update_time = self.get_instance_update_time()
+        instance_timestamp = self.get_timestamp(instance_update_time)
+
+        REQUEST_TIMEOUT = 60
+
+        if rq_job_status == RQJobStatus.FINISHED:
             if self.export_args.location == Location.CLOUD_STORAGE:
                 rq_job.delete()
                 return Response(status=status.HTTP_200_OK)
-
             elif self.export_args.location == Location.LOCAL:
                 file_path = rq_job.return_value()
 
@@ -284,32 +310,29 @@ class DatasetExportManager(_ResourceExportManager):
                         status=status.HTTP_500_INTERNAL_SERVER_ERROR,
                     )
 
-                with dm.util.get_export_cache_lock(file_path, ttl=REQUEST_TIMEOUT):
-                    if osp.exists(file_path):
-                        # Update last update time to prolong the export lifetime
-                        # as the last access time is not available on every filesystem
-                        os.utime(file_path, None)
+                if action == "download":
+                    return handle_local_download()
+                else:
+                    with dm.util.get_export_cache_lock(file_path, ttl=REQUEST_TIMEOUT):
+                        if osp.exists(file_path) and not is_result_outdated():
+                            # Update last update time to prolong the export lifetime
+                            # as the last access time is not available on every filesystem
+                            os.utime(file_path, None)
 
-                        return Response(status=status.HTTP_201_CREATED)
-                    else:
-                        # Cancel and reenqueue the job.
-                        # The new attempt will be made after the last existing job.
-                        # In the case the server is configured with ONE_RUNNING_JOB_IN_QUEUE_PER_USER
-                        # we have to enqueue dependent jobs after canceling one.
-                        rq_job.cancel(
-                            enqueue_dependents=settings.ONE_RUNNING_JOB_IN_QUEUE_PER_USER
-                        )
-                        rq_job.delete()
+                            return Response(status=status.HTTP_201_CREATED)
+
+                        cancel_and_delete(rq_job)
+                        return None
             else:
                 raise NotImplementedError(
                     f"Export to {self.export_args.location} location is not implemented yet"
                 )
-        elif rq_job.is_failed:
-            exc_info = rq_job.meta.get("formatted_exception", str(rq_job.exc_info))
+        elif rq_job_status == RQJobStatus.FAILED:
+            exc_info = rq_job.meta.get(RQJobMetaField.FORMATTED_EXCEPTION, str(rq_job.exc_info))
             rq_job.delete()
             return Response(exc_info, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
         elif (
-            rq_job.is_deferred
+            rq_job_status == RQJobStatus.DEFERRED
             and rq_job.id not in queue.deferred_job_registry.get_job_ids()
         ):
             # Sometimes jobs can depend on outdated jobs in the deferred jobs registry.
@@ -320,45 +343,55 @@ class DatasetExportManager(_ResourceExportManager):
             # Such dependencies are never removed or finished,
             # as there is no TTL for deferred jobs,
             # so the current job can be blocked indefinitely.
+            cancel_and_delete(rq_job)
+            return None
 
-            # Cancel the current job and then reenqueue it, considering the current situation.
-            # The new attempt will be made after the last existing job.
-            # In the case the server is configured with ONE_RUNNING_JOB_IN_QUEUE_PER_USER
-            # we have to enqueue dependent jobs after canceling one.
-            rq_job.cancel(enqueue_dependents=settings.ONE_RUNNING_JOB_IN_QUEUE_PER_USER)
+        elif rq_job_status in {RQJobStatus.CANCELED, RQJobStatus.STOPPED}:
             rq_job.delete()
-        else:
-            return Response(status=status.HTTP_202_ACCEPTED)
+            return (
+                None
+                if action != "download"
+                else Response(
+                    "Export was cancelled, please request it one more time",
+                    status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                )
+            )
+
+        if is_result_outdated():
+            cancel_and_delete(rq_job)
+            return None
+
+        return Response(RqIdSerializer({"rq_id": rq_job.id}).data, status=status.HTTP_202_ACCEPTED)
 
     def export(self) -> Response:
         format_desc = {f.DISPLAY_NAME: f for f in dm.views.get_export_formats()}.get(
             self.export_args.format
         )
         if format_desc is None:
-            raise serializers.ValidationError(
-                "Unknown format specified for the request"
-            )
+            raise serializers.ValidationError("Unknown format specified for the request")
         elif not format_desc.ENABLED:
             return Response(status=status.HTTP_405_METHOD_NOT_ALLOWED)
 
         queue: DjangoRQ = django_rq.get_queue(self.QUEUE_NAME)
-        rq_id = RQIdManager.build(
-            "export",
-            self.resource,
+        rq_id = RQId(
+            RequestAction.EXPORT,
+            RequestTarget(self.resource),
             self.db_instance.pk,
-            subresource="dataset" if self.export_args.save_images else "annotations",
-            anno_format=self.export_args.format,
+            subresource=(
+                RequestSubresource.DATASET
+                if self.export_args.save_images
+                else RequestSubresource.ANNOTATIONS
+            ),
+            format=self.export_args.format,
             user_id=self.request.user.id,
-        )
+        ).render()
 
-        rq_job = queue.fetch_job(rq_id)
-
-        if rq_job:
-            response = self.handle_rq_job(rq_job, queue)
-            if response:
+        # ensure that there is no race condition when processing parallel requests
+        with get_rq_lock_for_job(queue, rq_id):
+            rq_job = queue.fetch_job(rq_id)
+            if response := self.handle_rq_job(rq_job, queue):
                 return response
-
-        self.setup_background_job(queue, rq_id)
+            self.setup_background_job(queue, rq_id)
 
         handle_dataset_export(
             self.db_instance,
@@ -475,7 +508,7 @@ class BackupExportManager(_ResourceExportManager):
     def __init__(
         self,
         db_instance: Union[models.Project, models.Task],
-        request: HttpRequest,
+        request: Request,
         *,
         version: int = 2,
     ) -> None:
@@ -483,6 +516,7 @@ class BackupExportManager(_ResourceExportManager):
         self.request = request
 
         filename = request.query_params.get("filename", "")
+
         location_config = get_location_configuration(
             db_instance=self.db_instance,
             query_params=self.request.query_params,
@@ -492,72 +526,97 @@ class BackupExportManager(_ResourceExportManager):
 
     def _handle_rq_job_v1(
         self,
-        rq_job: RQJob,
+        rq_job: Optional[RQJob],
         queue: DjangoRQ,
     ) -> Optional[Response]:
         last_instance_update_time = timezone.localtime(self.db_instance.updated_date)
         timestamp = self.get_timestamp(last_instance_update_time)
 
         action = self.request.query_params.get("action")
-
         if action not in (None, "download"):
             raise serializers.ValidationError(
-                "Unexpected action specified for the request"
+                f"Unexpected action {action!r} specified for the request"
+            )
+
+        msg_no_such_job_when_downloading = (
+            "Unknown export request id. "
+            "Please request export first by sending a request without the action=download parameter."
+        )
+        if not rq_job:
+            return (
+                None
+                if action != "download"
+                else HttpResponseBadRequest(msg_no_such_job_when_downloading)
+            )
+
+        # define status once to avoid refreshing it on each check
+        # FUTURE-TODO: get_status will raise InvalidJobOperation exception instead of None in one of the next releases
+        rq_job_status = rq_job.get_status(refresh=False)
+
+        # handle cases where the status is None for some reason
+        if not rq_job_status:
+            rq_job.delete()
+            return (
+                None
+                if action != "download"
+                else HttpResponseBadRequest(msg_no_such_job_when_downloading)
             )
 
         if action == "download":
             if self.export_args.location != Location.LOCAL:
-                return Response(
-                    'Action "download" is only supported for a local backup location',
-                    status=status.HTTP_400_BAD_REQUEST,
+                return HttpResponseBadRequest(
+                    'Action "download" is only supported for a local backup location'
                 )
+            if rq_job_status not in {
+                RQJobStatus.FINISHED,
+                RQJobStatus.FAILED,
+                RQJobStatus.CANCELED,
+                RQJobStatus.STOPPED,
+            }:
+                return HttpResponseBadRequest("Backup export has not been finished yet")
 
-            if not rq_job.is_finished:
-                return Response(
-                    "Backup has not finished", status=status.HTTP_400_BAD_REQUEST
-                )
-
-            file_path = rq_job.return_value()
-
-            if not file_path:
-                return Response(
-                    "A result for exporting job was not found for finished RQ job",
-                    status=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                )
-
-            elif not os.path.exists(file_path):
-                return Response(
-                    "The result file does not exist in export cache",
-                    status=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                )
-
-            filename = self.export_args.filename or build_backup_file_name(
-                class_name=self.resource,
-                identifier=self.db_instance.name,
-                timestamp=timestamp,
-                extension=os.path.splitext(file_path)[1],
-            )
-
-            rq_job.delete()
-            return sendfile(
-                self.request, file_path, attachment=True, attachment_filename=filename
-            )
-
-        if rq_job.is_finished:
-            if self.export_args.location == Location.LOCAL:
-                return Response(status=status.HTTP_201_CREATED)
-
-            elif self.export_args.location == Location.CLOUD_STORAGE:
+        if rq_job_status == RQJobStatus.FINISHED:
+            if self.export_args.location == Location.CLOUD_STORAGE:
                 rq_job.delete()
                 return Response(status=status.HTTP_200_OK)
+            elif self.export_args.location == Location.LOCAL:
+                file_path = rq_job.return_value()
+
+                if not file_path:
+                    return Response(
+                        "Export is completed, but has no results",
+                        status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                    )
+
+                elif not os.path.exists(file_path):
+                    return Response(
+                        "The export result is not found",
+                        status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                    )
+                if action == "download":
+                    filename = self.export_args.filename or build_backup_file_name(
+                        class_name=self.resource,
+                        identifier=self.db_instance.name,
+                        timestamp=timestamp,
+                        extension=os.path.splitext(file_path)[1],
+                    )
+
+                    rq_job.delete()
+                    return sendfile(
+                        self.request, file_path, attachment=True, attachment_filename=filename
+                    )
+
+                return Response(status=status.HTTP_201_CREATED)
             else:
-                raise NotImplementedError()
-        elif rq_job.is_failed:
-            exc_info = rq_job.meta.get("formatted_exception", str(rq_job.exc_info))
+                raise NotImplementedError(
+                    f"Export to {self.export_args.location} location is not implemented yet"
+                )
+        elif rq_job_status == RQJobStatus.FAILED:
+            exc_info = rq_job.meta.get(RQJobMetaField.FORMATTED_EXCEPTION, str(rq_job.exc_info))
             rq_job.delete()
             return Response(exc_info, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
         elif (
-            rq_job.is_deferred
+            rq_job_status == RQJobStatus.DEFERRED
             and rq_job.id not in queue.deferred_job_registry.get_job_ids()
         ):
             # Sometimes jobs can depend on outdated jobs in the deferred jobs registry.
@@ -568,33 +627,39 @@ class BackupExportManager(_ResourceExportManager):
             # Such dependencies are never removed or finished,
             # as there is no TTL for deferred jobs,
             # so the current job can be blocked indefinitely.
+            cancel_and_delete(rq_job)
+            return None
 
-            # Cancel the current job and then reenqueue it, considering the current situation.
-            # The new attempt will be made after the last existing job.
-            # In the case the server is configured with ONE_RUNNING_JOB_IN_QUEUE_PER_USER
-            # we have to enqueue dependent jobs after canceling one.
-            rq_job.cancel(enqueue_dependents=settings.ONE_RUNNING_JOB_IN_QUEUE_PER_USER)
+        elif rq_job_status in {RQJobStatus.CANCELED, RQJobStatus.STOPPED}:
             rq_job.delete()
-        else:
-            return Response(status=status.HTTP_202_ACCEPTED)
+            return (
+                None
+                if action != "download"
+                else Response(
+                    "Export was cancelled, please request it one more time",
+                    status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                )
+            )
+
+        return Response(RqIdSerializer({"rq_id": rq_job.id}).data, status=status.HTTP_202_ACCEPTED)
 
     def export(self) -> Response:
         queue: DjangoRQ = django_rq.get_queue(self.QUEUE_NAME)
-        rq_id = RQIdManager.build(
-            "export",
-            self.resource,
+        rq_id = RQId(
+            RequestAction.EXPORT,
+            RequestTarget(self.resource),
             self.db_instance.pk,
-            subresource="backup",
+            subresource=RequestSubresource.BACKUP,
             user_id=self.request.user.id,
-        )
-        rq_job = queue.fetch_job(rq_id)
+        ).render()
 
-        if rq_job:
-            response = self.handle_rq_job(rq_job, queue)
-            if response:
+        # ensure that there is no race condition when processing parallel requests
+        with get_rq_lock_for_job(queue, rq_id):
+            rq_job = queue.fetch_job(rq_id)
+            if response := self.handle_rq_job(rq_job, queue):
                 return response
+            self.setup_background_job(queue, rq_id)
 
-        self.setup_background_job(queue, rq_id)
         serializer = RqIdSerializer(data={"rq_id": rq_id})
         serializer.is_valid(raise_exception=True)
 
@@ -639,9 +704,7 @@ class BackupExportManager(_ResourceExportManager):
                 is_default=self.export_args.location_config["is_default"],
             )
 
-            last_instance_update_time = timezone.localtime(
-                self.db_instance.updated_date
-            )
+            last_instance_update_time = timezone.localtime(self.db_instance.updated_date)
             timestamp = self.get_timestamp(last_instance_update_time)
 
             filename_pattern = build_backup_file_name(
