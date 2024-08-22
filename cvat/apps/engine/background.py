@@ -461,6 +461,7 @@ class DatasetExportManager(_ResourceExportManager):
                 timestamp=instance_timestamp,
                 format_name=self.export_args.format,
                 is_annotation_file=not self.export_args.save_images,
+                all_images = self.export_args.all_images,                    
             )
             func = export_resource_to_cloud_storage
             func_args = (
