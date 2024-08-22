@@ -4,23 +4,25 @@
 
 import {
     FramesMetaData,
+    Job,
     Task,
 } from 'cvat-core-wrapper';
 import React from 'react';
 import { QualityColors } from 'utils/quality';
 import { Row } from 'antd/es/grid';
 import { SummaryComponent } from './summary';
-// import AllocationTableComponent from './allocation-table';
+import AllocationTableComponent from './allocation-table';
 
 interface Props {
     task: Task;
+    gtJob: Job;
     gtJobFramesMeta: FramesMetaData;
     getQualityColor: (value?: number) => QualityColors;
 }
 
 function TaskQualityManagementComponent(props: Props): JSX.Element {
     const {
-        task, getQualityColor, gtJobFramesMeta,
+        task, gtJob, getQualityColor, gtJobFramesMeta,
     } = props;
 
     return (
@@ -32,16 +34,14 @@ function TaskQualityManagementComponent(props: Props): JSX.Element {
                     totalCount={gtJobFramesMeta.size}
                 />
             </Row>
-            {/* <Row>
+            <Row>
                 <AllocationTableComponent
-                    report={report}
                     task={task}
                     gtJob={gtJob}
-                    generateReportLink={generateReportLink}
-                    updateFrames={updateFrames}
+                    gtJobFramesMeta={gtJobFramesMeta}
                     getQualityColor={getQualityColor}
                 />
-            </Row> */}
+            </Row>
         </div>
     );
 }

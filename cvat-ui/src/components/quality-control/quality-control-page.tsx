@@ -353,6 +353,7 @@ function QualityControlPage(): JSX.Element {
                 children: (
                     <TaskQualityManagementComponent
                         task={instance}
+                        gtJob={state.gtJob.instance}
                         gtJobFramesMeta={state.gtJob.meta}
                         getQualityColor={state.qualitySettings.getQualityColor}
                     />
