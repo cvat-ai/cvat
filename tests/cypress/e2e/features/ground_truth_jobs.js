@@ -324,11 +324,11 @@ context('Ground truth jobs', () => {
             });
 
             cy.saveJob();
-            cy.interactMenu('Finish the job');
-            cy.get('.cvat-modal-content-finish-job').within(() => {
-                cy.contains('button', 'Continue').click();
-            });
+            cy.interactMenu('Open the task');
 
+            // job index is 2 because one gt job has been removed
+            cy.getJobIDFromIdx(2).then((gtJobID) => cy.setJobStage(gtJobID, 'acceptance'));
+            cy.getJobIDFromIdx(2).then((gtJobID) => cy.setJobState(gtJobID, 'completed'));
             cy.get('.cvat-job-item').contains('a', `Job #${jobID}`).click();
             cy.changeWorkspace('Review');
 
@@ -366,7 +366,7 @@ context('Ground truth jobs', () => {
 
             cy.changeWorkspace('Review');
             cy.get('.cvat-objects-sidebar-tabs').within(() => {
-                cy.contains('span', 'Issues').click();
+                cy.contains('[role="tab"]', 'Issues').click();
             });
             cy.get('.cvat-objects-sidebar-show-ground-truth').filter(':visible').click();
 
@@ -550,7 +550,7 @@ context('Ground truth jobs', () => {
             cy.contains('button', 'Submit').should('be.disabled');
             cy.wait('@delayedRequest');
 
-            cy.get('.cvat-spinner').should('not.exist');
+            cy.get('.cvat-canvas-container').should('exist').and('be.visible');
             cy.url().then((url) => {
                 jobID = Number(url.split('/').slice(-1)[0].split('?')[0]);
             }).should('match', /\/tasks\/\d+\/jobs\/\d+/);

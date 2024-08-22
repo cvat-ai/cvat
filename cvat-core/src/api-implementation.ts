@@ -9,6 +9,7 @@ import config from './config';
 import PluginRegistry from './plugins';
 import serverProxy from './server-proxy';
 import lambdaManager from './lambda-manager';
+import requestsManager from './requests-manager';
 import {
     isBoolean,
     isInteger,
@@ -29,7 +30,10 @@ import CloudStorage from './cloud-storage';
 import Organization, { Invitation } from './organization';
 import Webhook from './webhook';
 import { ArgumentError } from './exceptions';
-import { SerializedAsset } from './server-response-types';
+import {
+    AnalyticsReportFilter, QualityConflictsFilter, QualityReportsFilter,
+    QualitySettingsFilter, SerializedAsset,
+} from './server-response-types';
 import QualityReport from './quality-report';
 import QualityConflict, { ConflictSeverity } from './quality-conflict';
 import QualitySettings from './quality-settings';
@@ -57,6 +61,10 @@ export default function implementAPI(cvat: CVATCore): CVATCore {
     implementationMixin(cvat.lambda.cancel, lambdaManager.cancel.bind(lambdaManager));
     implementationMixin(cvat.lambda.listen, lambdaManager.listen.bind(lambdaManager));
     implementationMixin(cvat.lambda.requests, lambdaManager.requests.bind(lambdaManager));
+
+    implementationMixin(cvat.requests.list, requestsManager.list.bind(requestsManager));
+    implementationMixin(cvat.requests.listen, requestsManager.listen.bind(requestsManager));
+    implementationMixin(cvat.requests.cancel, requestsManager.cancel.bind(requestsManager));
 
     implementationMixin(cvat.server.about, async () => {
         const result = await serverProxy.server.about();
@@ -108,15 +116,15 @@ export default function implementAPI(cvat: CVATCore): CVATCore {
     implementationMixin(cvat.server.resetPassword, async (newPassword1, newPassword2, uid, token) => {
         await serverProxy.server.resetPassword(newPassword1, newPassword2, uid, token);
     });
-    implementationMixin(cvat.server.authorized, async () => {
-        const result = await serverProxy.server.authorized();
+    implementationMixin(cvat.server.authenticated, async () => {
+        const result = await serverProxy.server.authenticated();
         return result;
     });
     implementationMixin(cvat.server.healthCheck, async (
-        maxRetries = 1,
-        checkPeriod = 3000,
-        requestTimeout = 5000,
-        progressCallback = undefined,
+        maxRetries: number,
+        checkPeriod: number,
+        requestTimeout: number,
+        progressCallback?: (message: string) => void,
     ) => {
         const result = await serverProxy.server.healthCheck(maxRetries, checkPeriod, requestTimeout, progressCallback);
         return result;
@@ -403,7 +411,7 @@ export default function implementAPI(cvat: CVATCore): CVATCore {
         return webhooks;
     });
 
-    implementationMixin(cvat.analytics.quality.reports, async (filter) => {
+    implementationMixin(cvat.analytics.quality.reports, async (filter: QualityReportsFilter) => {
         checkFilter(filter, {
             page: isInteger,
             pageSize: isPageSize,
@@ -426,7 +434,7 @@ export default function implementAPI(cvat: CVATCore): CVATCore {
         );
         return reports;
     });
-    implementationMixin(cvat.analytics.quality.conflicts, async (filter) => {
+    implementationMixin(cvat.analytics.quality.conflicts, async (filter: QualityConflictsFilter) => {
         checkFilter(filter, {
             reportID: isInteger,
         });
@@ -502,7 +510,7 @@ export default function implementAPI(cvat: CVATCore): CVATCore {
 
         return mergedConflicts;
     });
-    implementationMixin(cvat.analytics.quality.settings.get, async (filter) => {
+    implementationMixin(cvat.analytics.quality.settings.get, async (filter: QualitySettingsFilter) => {
         checkFilter(filter, {
             taskID: isInteger,
         });
@@ -512,7 +520,7 @@ export default function implementAPI(cvat: CVATCore): CVATCore {
         const settings = await serverProxy.analytics.quality.settings.get(params);
         return new QualitySettings({ ...settings });
     });
-    implementationMixin(cvat.analytics.performance.reports, async (filter) => {
+    implementationMixin(cvat.analytics.performance.reports, async (filter: AnalyticsReportFilter) => {
         checkFilter(filter, {
             jobID: isInteger,
             taskID: isInteger,
@@ -527,9 +535,30 @@ export default function implementAPI(cvat: CVATCore): CVATCore {
         const reportData = await serverProxy.analytics.performance.reports(params);
         return new AnalyticsReport(reportData);
     });
+    implementationMixin(cvat.analytics.performance.calculate, async (
+        body: Parameters<CVATCore['analytics']['performance']['calculate']>[0],
+        onUpdate: Parameters<CVATCore['analytics']['performance']['calculate']>[1],
+    ) => {
+        checkFilter(body, {
+            jobID: isInteger,
+            taskID: isInteger,
+            projectID: isInteger,
+        });
+
+        checkExclusiveFields(body, ['jobID', 'taskID', 'projectID'], []);
+        if (!('jobID' in body || 'taskID' in body || 'projectID' in body)) {
+            throw new ArgumentError('One of "jobID", "taskID", "projectID" is required, but not provided');
+        }
+
+        const params = fieldsToSnakeCase(body);
+        await serverProxy.analytics.performance.calculate(params, onUpdate);
+    });
     implementationMixin(cvat.frames.getMeta, async (type, id) => {
         const result = await serverProxy.frames.getMeta(type, id);
-        return new FramesMetaData({ ...result });
+        return new FramesMetaData({
+            ...result,
+            deleted_frames: Object.fromEntries(result.deleted_frames.map((_frame) => [_frame, true])),
+        });
     });
 
     return cvat;

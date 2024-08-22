@@ -15,6 +15,7 @@ spec:
       {{- include "cvat.labels" . | nindent 6 }}
       app: cvat-app
       tier: kvrocks
+  serviceName: {{ .Release.Name }}-kvrocks
   template:
     metadata:
       labels:
@@ -43,7 +44,8 @@ spec:
             {{- toYaml . | nindent 12 }}
           {{- end }}
           ports:
-          - containerPort: 6666
+          - name: kvrocks
+            containerPort: 6666
           env:
           - name: CVAT_REDIS_ONDISK_PASSWORD
             valueFrom:

@@ -45,7 +45,7 @@ export default function showPlatformNotification(): boolean {
 }
 
 export function showUnsupportedNotification(): boolean {
-    const necessaryFeatures = [window.ResizeObserver, Object.fromEntries];
+    const necessaryFeatures = [window.ResizeObserver, Object.fromEntries, Object.hasOwn];
 
     const unsupportedFeatures = necessaryFeatures.some((feature) => typeof feature === 'undefined');
     return !featuresNotificationShown && unsupportedFeatures;

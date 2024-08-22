@@ -1,0 +1,9 @@
+[tool.isort]
+profile = "black"
+forced_separate = ["tests"]
+line_length = 100
+skip_gitignore = true # align tool behavior with Black
+
+[tool.black]
+line-length = 100
+target-version = ['py38']

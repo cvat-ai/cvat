@@ -1,4 +1,5 @@
 # Copyright (C) 2020-2022 Intel Corporation
+# Copyright (C) 2024 CVAT.ai Corporation
 #
 # SPDX-License-Identifier: MIT
 
@@ -18,6 +19,8 @@ import re
 import logging
 import platform
 
+from attr.converters import to_bool
+from datumaro.util.os_util import walk
 from rq.job import Job, Dependency
 from django_rq.queues import DjangoRQ
 from pathlib import Path
@@ -163,25 +166,18 @@ def define_dependent_job(
     if not should_be_dependent:
         return None
 
-    started_user_jobs = [
-        job
-        for job in queue.job_class.fetch_many(
-            queue.started_job_registry.get_job_ids(), queue.connection
-        )
-        if job and job.meta.get("user", {}).get("id") == user_id
-    ]
-    deferred_user_jobs = [
-        job
-        for job in queue.job_class.fetch_many(
-            queue.deferred_job_registry.get_job_ids(), queue.connection
-        )
-        # Since there is no cleanup implementation in DeferredJobRegistry,
-        # this registry can contain "outdated" jobs that weren't deleted from it
-        # but were added to another registry. Probably such situations can occur
-        # if there are active or deferred jobs when restarting the worker container.
-        if job and job.meta.get("user", {}).get("id") == user_id and job.is_deferred
-    ]
-    all_user_jobs = started_user_jobs + deferred_user_jobs
+    queues = [queue.deferred_job_registry, queue, queue.started_job_registry]
+    # Since there is no cleanup implementation in DeferredJobRegistry,
+    # this registry can contain "outdated" jobs that weren't deleted from it
+    # but were added to another registry. Probably such situations can occur
+    # if there are active or deferred jobs when restarting the worker container.
+    filters = [lambda job: job.is_deferred, lambda _: True, lambda _: True]
+    all_user_jobs = []
+    for q, f in zip(queues, filters):
+        job_ids = q.get_job_ids()
+        jobs = q.job_class.fetch_many(job_ids, q.connection)
+        jobs = filter(lambda job: job and job.meta.get("user", {}).get("id") == user_id and f(job), jobs)
+        all_user_jobs.extend(jobs)
 
     # prevent possible cyclic dependencies
     if rq_id:
@@ -207,7 +203,16 @@ def get_rq_lock_by_user(queue: DjangoRQ, user_id: int) -> Union[Lock, nullcontex
         return queue.connection.lock(f'{queue.name}-lock-{user_id}', timeout=30)
     return nullcontext()
 
-def get_rq_job_meta(request, db_obj):
+def get_rq_lock_for_job(queue: DjangoRQ, rq_id: str) -> Lock:
+    # lock timeout corresponds to the nginx request timeout (proxy_read_timeout)
+    return queue.connection.lock(f'lock-for-job-{rq_id}'.lower(), timeout=60)
+
+def get_rq_job_meta(
+    request: HttpRequest,
+    db_obj: Any,
+    *,
+    result_url: Optional[str] = None,
+):
     # to prevent circular import
     from cvat.apps.webhooks.signals import project_id, organization_id
     from cvat.apps.events.handlers import task_id, job_id, organization_slug
@@ -218,7 +223,7 @@ def get_rq_job_meta(request, db_obj):
     tid = task_id(db_obj)
     jid = job_id(db_obj)
 
-    return {
+    meta = {
         'user': {
             'id': getattr(request.user, "id", None),
             'username': getattr(request.user, "username", None),
@@ -234,6 +239,12 @@ def get_rq_job_meta(request, db_obj):
         'task_id': tid,
         'job_id': jid,
     }
+
+
+    if result_url:
+        meta['result_url'] = result_url
+
+    return meta
 
 def reverse(viewname, *, args=None, kwargs=None,
     query_params: Optional[Dict[str, str]] = None,
@@ -271,15 +282,6 @@ def get_list_view_name(model):
     return '%(model_name)s-list' % {
         'model_name': model._meta.object_name.lower()
     }
-
-def get_import_rq_id(
-    resource_type: str,
-    resource_id: int,
-    subresource_type: str,
-    user: str,
-) -> str:
-    # import:<task|project|job>-<id|uuid>-<annotations|dataset|backup>-by-<user>
-    return f"import:{resource_type}-{resource_id}-{subresource_type}-by-{user}"
 
 def import_resource_with_clean_up_after(
     func: Union[Callable[[str, int, int], int], Callable[[str, int, str, bool], None]],
@@ -395,3 +397,26 @@ def build_annotations_file_name(
         class_name, identifier, 'annotations' if is_annotation_file else 'dataset',
         timestamp, format_name, extension,
     ).lower()
+
+
+def directory_tree(path, max_depth=None) -> str:
+    if not os.path.exists(path):
+        raise Exception(f"No such file or directory: {path}")
+
+    tree = ""
+
+    baselevel = path.count(os.sep)
+    for root, _, files in walk(path, max_depth=max_depth):
+        curlevel = root.count(os.sep)
+        indent = "|  " * (curlevel - baselevel) + "|-"
+        tree += f"{indent}{os.path.basename(root)}/\n"
+        for file in files:
+            tree += f"{indent}-{file}\n"
+    return tree
+
+def is_dataset_export(request: HttpRequest) -> bool:
+    return to_bool(request.query_params.get('save_images', False))
+
+def chunked_list(lst, chunk_size):
+    for i in range(0, len(lst), chunk_size):
+        yield lst[i:i + chunk_size]

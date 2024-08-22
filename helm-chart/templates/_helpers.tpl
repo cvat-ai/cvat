@@ -51,14 +51,10 @@ app.kubernetes.io/instance: {{ .Release.Name }}
 {{- end }}
 
 {{/*
-Create the name of the service account to use
+The name of the service account to use for backend pods
 */}}
-{{- define "cvat.serviceAccountName" -}}
-{{- if .Values.serviceAccount.create }}
-{{- default (include "cvat.fullname" .) .Values.serviceAccount.name }}
-{{- else }}
-{{- default "default" .Values.serviceAccount.name }}
-{{- end }}
+{{- define "cvat.backend.serviceAccountName" -}}
+{{- default "default" .Values.cvat.backend.serviceAccount.name }}
 {{- end }}
 
 {{- define "cvat.sharedBackendEnv" }}
@@ -98,10 +94,14 @@ Create the name of the service account to use
 - name: CVAT_POSTGRES_PORT
   value: "{{ .Values.postgresql.service.ports.postgresql }}"
 {{- else }}
+{{- if .Values.postgresql.external.host }}
 - name: CVAT_POSTGRES_HOST
   value: "{{ .Values.postgresql.external.host }}"
+{{- end }}
+{{- if .Values.postgresql.external.port }}
 - name: CVAT_POSTGRES_PORT
   value: "{{ .Values.postgresql.external.port }}"
+{{- end}}
 {{- end }}
 - name: CVAT_POSTGRES_USER
   valueFrom:
@@ -126,8 +126,6 @@ Create the name of the service account to use
   value: "{{ .Release.Name }}-vector"
 - name: DJANGO_LOG_SERVER_PORT
   value: "80"
-- name: CLICKHOUSE_HOST
-  value: "{{ .Release.Name }}-clickhouse"
 {{- end }}
 
 - name: SMOKESCREEN_OPTS
@@ -139,5 +137,35 @@ Create the name of the service account to use
   value: "{{ .Release.Name }}-nuclio-dashboard"
 - name: CVAT_NUCLIO_FUNCTION_NAMESPACE
   value: "{{ .Release.Namespace }}"
+{{- end }}
+{{- end }}
+
+{{- define "cvat.sharedClickhouseEnv" }}
+{{- if .Values.analytics.enabled }}
+- name: CLICKHOUSE_HOST
+  valueFrom:
+    secretKeyRef:
+      name: cvat-analytics-secret
+      key: CLICKHOUSE_HOST
+- name: CLICKHOUSE_PORT
+  valueFrom:
+    secretKeyRef:
+      name: cvat-analytics-secret
+      key: CLICKHOUSE_PORT
+- name: CLICKHOUSE_DB
+  valueFrom:
+    secretKeyRef:
+      name: cvat-analytics-secret
+      key: CLICKHOUSE_DB
+- name: CLICKHOUSE_USER
+  valueFrom:
+    secretKeyRef:
+      name: cvat-analytics-secret
+      key: CLICKHOUSE_USER
+- name: CLICKHOUSE_PASSWORD
+  valueFrom:
+    secretKeyRef:
+      name: cvat-analytics-secret
+      key: CLICKHOUSE_PASSWORD
 {{- end }}
 {{- end }}

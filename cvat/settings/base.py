@@ -1,5 +1,5 @@
 # Copyright (C) 2018-2022 Intel Corporation
-# Copyright (C) 2022-2023 CVAT.ai Corporation
+# Copyright (C) 2022-2024 CVAT.ai Corporation
 #
 # SPDX-License-Identifier: MIT
 
@@ -183,6 +183,7 @@ if to_bool(os.getenv('CVAT_ANALYTICS', False)):
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
+    'cvat.apps.iam.middleware.SessionRefreshMiddleware',
     'corsheaders.middleware.CorsMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
@@ -236,11 +237,10 @@ IAM_ADMIN_ROLE = 'admin'
 IAM_ROLES = [IAM_ADMIN_ROLE, 'business', 'user', 'worker']
 IAM_OPA_HOST = 'http://opa:8181'
 IAM_OPA_DATA_URL = f'{IAM_OPA_HOST}/v1/data'
-IAM_OPA_RULES_PATH = 'cvat/apps/iam/rules:'
 LOGIN_URL = 'rest_login'
 LOGIN_REDIRECT_URL = '/'
 
-OBJECTS_NOT_RELATED_WITH_ORG = ['user', 'function', 'request', 'server',]
+OBJECTS_NOT_RELATED_WITH_ORG = ['user', 'lambda_function', 'lambda_request', 'server', 'request']
 
 # ORG settings
 ORG_INVITATION_CONFIRM = 'No'
@@ -436,9 +436,6 @@ os.makedirs(CLOUD_STORAGE_ROOT, exist_ok=True)
 TMP_FILES_ROOT = os.path.join(DATA_ROOT, 'tmp')
 os.makedirs(TMP_FILES_ROOT, exist_ok=True)
 
-IAM_OPA_BUNDLE_PATH = os.path.join(STATIC_ROOT, 'opa', 'bundle.tar.gz')
-os.makedirs(Path(IAM_OPA_BUNDLE_PATH).parent, exist_ok=True)
-
 # logging is known to be unreliable with RQ when using async transports
 vector_log_handler = os.getenv('VECTOR_EVENT_HANDLER', 'AsynchronousLogstashHandler')
 
@@ -468,6 +465,14 @@ LOGGING = {
             'maxBytes': 1024*1024*50, # 50 MB
             'backupCount': 5,
         },
+        'dataset_handler': {
+            'class': 'logging.handlers.RotatingFileHandler',
+            'level': 'DEBUG',
+            'filename': os.path.join(BASE_DIR, 'logs', 'cvat_server_dataset.log'),
+            'formatter': 'standard',
+            'maxBytes': 1024*1024*50, # 50 MB
+            'backupCount': 3,
+        },
         'vector': {
             'level': 'INFO',
             'class': f'logstash_async.handler.{vector_log_handler}',
@@ -490,6 +495,10 @@ LOGGING = {
             'level': os.getenv('DJANGO_LOG_LEVEL', 'DEBUG'),
         },
 
+        'dataset_logger': {
+            'handlers': ['dataset_handler']
+        },
+
         'django': {
             'level': 'INFO',
         },
@@ -502,6 +511,8 @@ LOGGING = {
         }
     },
 }
+
+CVAT_LOG_IMPORT_ERRORS = to_bool(os.getenv('CVAT_LOG_IMPORT_ERRORS', False))
 
 if os.getenv('DJANGO_LOG_SERVER_HOST'):
     LOGGING['loggers']['vector']['handlers'] += ['vector']
@@ -566,6 +577,8 @@ USE_X_FORWARDED_HOST = True
 # https://github.com/moggers87/django-sendfile2
 SENDFILE_ROOT = BASE_DIR
 
+CVAT_DOCS_URL = "https://docs.cvat.ai/docs/"
+
 SPECTACULAR_SETTINGS = {
     'TITLE': 'CVAT REST API',
     'DESCRIPTION': 'REST API for Computer Vision Annotation Tool (CVAT)',
@@ -597,7 +610,7 @@ SPECTACULAR_SETTINGS = {
     'TOS': 'https://www.google.com/policies/terms/',
     'EXTERNAL_DOCS': {
         'description': 'CVAT documentation',
-        'url': 'https://docs.cvat.ai/docs/',
+        'url': CVAT_DOCS_URL,
     },
     # OTHER SETTINGS
     # https://drf-spectacular.readthedocs.io/en/latest/settings.html
@@ -624,6 +637,7 @@ SPECTACULAR_SETTINGS = {
         'SortingMethod': 'cvat.apps.engine.models.SortingMethod',
         'WebhookType': 'cvat.apps.webhooks.models.WebhookTypeChoice',
         'WebhookContentType': 'cvat.apps.webhooks.models.WebhookContentTypeChoice',
+        'RequestStatus': 'cvat.apps.engine.models.RequestStatus',
     },
 
     # Coercion of {pk} to {id} is controlled by SCHEMA_COERCE_PATH_PK. Additionally,
@@ -707,3 +721,6 @@ CVAT_CONCURRENT_CHUNK_PROCESSING = int(os.getenv('CVAT_CONCURRENT_CHUNK_PROCESSI
 
 from cvat.rq_patching import update_started_job_registry_cleanup
 update_started_job_registry_cleanup()
+
+CLOUD_DATA_DOWNLOADING_MAX_THREADS_NUMBER = 4
+CLOUD_DATA_DOWNLOADING_NUMBER_OF_FILES_PER_THREAD = 1000

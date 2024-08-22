@@ -1,29 +1,38 @@
 # Copyright (C) 2019-2022 Intel Corporation
-# Copyright (C) 2022-2023 CVAT.ai Corporation
+# Copyright (C) 2022-2024 CVAT.ai Corporation
 #
 # SPDX-License-Identifier: MIT
 
+import warnings
 from copy import copy
 from inspect import isclass
 import os
 import re
 import shutil
 import string
+import rq.defaults as rq_defaults
 
 from tempfile import NamedTemporaryFile
 import textwrap
 from typing import Any, Dict, Iterable, Optional, OrderedDict, Union
 
+from rq.job import Job as RQJob, JobStatus as RQJobStatus
+from datetime import timedelta
+from decimal import Decimal
+
 from rest_framework import serializers, exceptions
 from django.contrib.auth.models import User, Group
 from django.db import transaction
+from django.utils import timezone
 
 from cvat.apps.dataset_manager.formats.utils import get_label_color
+from cvat.apps.engine.utils import parse_exception_message
 from cvat.apps.engine import models
 from cvat.apps.engine.cloud_provider import get_cloud_storage_instance, Credentials, Status
 from cvat.apps.engine.log import ServerLogManager
+from cvat.apps.engine.permissions import TaskPermission
 from cvat.apps.engine.utils import parse_specific_attributes, build_field_filter_params, get_list_view_name, reverse
-from cvat.apps.iam.permissions import TaskPermission
+from cvat.apps.engine.rq_job_handler import RQJobMetaField, RQId
 
 from drf_spectacular.utils import OpenApiExample, extend_schema_field, extend_schema_serializer
 
@@ -321,6 +330,16 @@ class LabelSerializer(SublabelSerializer):
 
         return attrs
 
+    @staticmethod
+    def check_attribute_names_unique(attrs):
+        encountered_names = set()
+        for attribute in attrs:
+            attr_name = attribute.get('name')
+            if attr_name in encountered_names:
+                raise serializers.ValidationError(f"Duplicate attribute with name '{attr_name}' exists")
+            else:
+                encountered_names.add(attr_name)
+
     @classmethod
     @transaction.atomic
     def update_label(
@@ -335,6 +354,8 @@ class LabelSerializer(SublabelSerializer):
         parent_info, logger = cls._get_parent_info(parent_instance)
 
         attributes = validated_data.pop('attributespec_set', [])
+
+        cls.check_attribute_names_unique(attributes)
 
         if validated_data.get('id') is not None:
             try:
@@ -450,6 +471,8 @@ class LabelSerializer(SublabelSerializer):
 
         for label in labels:
             attributes = label.pop('attributespec_set')
+
+            cls.check_attribute_names_unique(attributes)
 
             if label.get('id', None):
                 del label['id']
@@ -586,7 +609,7 @@ class JobReadSerializer(serializers.ModelSerializer):
             'dimension', 'bug_tracker', 'status', 'stage', 'state', 'mode', 'frame_count',
             'start_frame', 'stop_frame', 'data_chunk_size', 'data_compressed_chunk_type',
             'created_date', 'updated_date', 'issues', 'labels', 'type', 'organization',
-            'target_storage', 'source_storage')
+            'target_storage', 'source_storage', 'assignee_updated_date')
         read_only_fields = fields
 
     def to_representation(self, instance):
@@ -724,36 +747,42 @@ class JobWriteSerializer(WriteOnceMixin, serializers.ModelSerializer):
             raise serializers.ValidationError(f"Unexpected job type '{validated_data['type']}'")
 
         validated_data['segment'] = segment
+        validated_data["assignee_id"] = validated_data.pop("assignee", None)
 
         try:
             job = super().create(validated_data)
         except models.TaskGroundTruthJobsLimitError as ex:
             raise serializers.ValidationError(ex.message) from ex
 
+        if validated_data.get("assignee_id"):
+            job.assignee_updated_date = job.updated_date
+            job.save(update_fields=["assignee_updated_date"])
+
         job.make_dirs()
         return job
 
     def update(self, instance, validated_data):
-        state = validated_data.get('state')
-        stage = validated_data.get('stage')
-        if stage:
+        stage = validated_data.get('stage', instance.stage)
+        state = validated_data.get('state', models.StateChoice.NEW if stage != instance.stage else instance.state)
+
+        if 'stage' in validated_data or 'state' in validated_data:
             if stage == models.StageChoice.ANNOTATION:
-                status = models.StatusChoice.ANNOTATION
+                validated_data['status'] = models.StatusChoice.ANNOTATION
             elif stage == models.StageChoice.ACCEPTANCE and state == models.StateChoice.COMPLETED:
-                status = models.StatusChoice.COMPLETED
+                validated_data['status'] = models.StatusChoice.COMPLETED
             else:
-                status = models.StatusChoice.VALIDATION
+                validated_data['status'] = models.StatusChoice.VALIDATION
 
-            validated_data['status'] = status
-            if stage != instance.stage and not state:
-                validated_data['state'] = models.StateChoice.NEW
+        if state != instance.state:
+            validated_data['state'] = state
 
-        assignee = validated_data.get('assignee')
-        if assignee is not None:
-            validated_data['assignee'] = User.objects.get(id=assignee)
+        if "assignee" in validated_data and (
+            (assignee_id := validated_data.pop("assignee")) != instance.assignee_id
+        ):
+            validated_data["assignee_id"] = assignee_id
+            validated_data["assignee_updated_date"] = timezone.now()
 
         instance = super().update(instance, validated_data)
-
         return instance
 
 class SimpleJobSerializer(serializers.ModelSerializer):
@@ -821,6 +850,11 @@ class RqStatusSerializer(serializers.Serializer):
         "Queued", "Started", "Finished", "Failed"])
     message = serializers.CharField(allow_blank=True, default="")
     progress = serializers.FloatField(max_value=100, default=0)
+
+    def __init__(self, instance=None, data=..., **kwargs):
+        warnings.warn("RqStatusSerializer is deprecated, "
+                      "use cvat.apps.engine.serializers.RequestSerializer instead", DeprecationWarning)
+        super().__init__(instance, data, **kwargs)
 
 class RqIdSerializer(serializers.Serializer):
     rq_id = serializers.CharField(help_text="Request id")
@@ -1090,6 +1124,7 @@ class TaskReadSerializer(serializers.ModelSerializer):
             'status', 'data_chunk_size', 'data_compressed_chunk_type', 'guide_id',
             'data_original_chunk_type', 'size', 'image_quality', 'data', 'dimension',
             'subset', 'organization', 'target_storage', 'source_storage', 'jobs', 'labels',
+            'assignee_updated_date'
         )
         read_only_fields = fields
         extra_kwargs = {
@@ -1157,7 +1192,10 @@ class TaskWriteSerializer(WriteOnceMixin, serializers.ModelSerializer):
 
         LabelSerializer.create_labels(labels, parent_instance=db_task)
 
-        db_task.save()
+        if validated_data.get('assignee_id'):
+            db_task.assignee_updated_date = db_task.updated_date
+            db_task.save(update_fields=["assignee_updated_date"])
+
         return db_task
 
     # pylint: disable=no-self-use
@@ -1165,11 +1203,16 @@ class TaskWriteSerializer(WriteOnceMixin, serializers.ModelSerializer):
     def update(self, instance, validated_data):
         instance.name = validated_data.get('name', instance.name)
         instance.owner_id = validated_data.get('owner_id', instance.owner_id)
-        instance.assignee_id = validated_data.get('assignee_id', instance.assignee_id)
-        instance.bug_tracker = validated_data.get('bug_tracker',
-            instance.bug_tracker)
+        instance.bug_tracker = validated_data.get('bug_tracker', instance.bug_tracker)
         instance.subset = validated_data.get('subset', instance.subset)
         labels = validated_data.get('label_set', [])
+
+        if (
+            "assignee_id" in validated_data and
+            validated_data["assignee_id"] != instance.assignee_id
+        ):
+            instance.assignee_id = validated_data.pop('assignee_id')
+            instance.assignee_updated_date = timezone.now()
 
         if instance.project_id is None:
             LabelSerializer.update_labels(labels, parent_instance=instance)
@@ -1208,7 +1251,8 @@ class TaskWriteSerializer(WriteOnceMixin, serializers.ModelSerializer):
                     for (model, model_name) in (
                         (models.LabeledTrackAttributeVal, 'track'),
                         (models.LabeledShapeAttributeVal, 'shape'),
-                        (models.LabeledImageAttributeVal, 'image')
+                        (models.LabeledImageAttributeVal, 'image'),
+                        (models.TrackedShapeAttributeVal, 'shape__track')
                     ):
                         model.objects.filter(**{
                             f'{model_name}__job__segment__task': instance,
@@ -1308,17 +1352,17 @@ class ProjectReadSerializer(serializers.ModelSerializer):
         fields = ('url', 'id', 'name', 'owner', 'assignee', 'guide_id',
             'bug_tracker', 'task_subsets', 'created_date', 'updated_date', 'status',
             'dimension', 'organization', 'target_storage', 'source_storage',
-            'tasks', 'labels',
+            'tasks', 'labels', 'assignee_updated_date'
         )
         read_only_fields = fields
         extra_kwargs = { 'organization': { 'allow_null': True } }
 
     def to_representation(self, instance):
         response = super().to_representation(instance)
-        task_subsets = set(instance.tasks.values_list('subset', flat=True))
+        task_subsets = {task.subset for task in instance.tasks.all()}
         task_subsets.discard('')
         response['task_subsets'] = list(task_subsets)
-        response['dimension'] = instance.tasks.first().dimension if instance.tasks.count() else None
+        response['dimension'] = getattr(instance.tasks.first(), 'dimension', None)
         return response
 
 class ProjectWriteSerializer(serializers.ModelSerializer):
@@ -1362,6 +1406,10 @@ class ProjectWriteSerializer(serializers.ModelSerializer):
 
         LabelSerializer.create_labels(labels, parent_instance=db_project)
 
+        if validated_data.get("assignee_id"):
+            db_project.assignee_updated_date = db_project.updated_date
+            db_project.save(update_fields=["assignee_updated_date"])
+
         return db_project
 
     # pylint: disable=no-self-use
@@ -1369,10 +1417,16 @@ class ProjectWriteSerializer(serializers.ModelSerializer):
     def update(self, instance, validated_data):
         instance.name = validated_data.get('name', instance.name)
         instance.owner_id = validated_data.get('owner_id', instance.owner_id)
-        instance.assignee_id = validated_data.get('assignee_id', instance.assignee_id)
         instance.bug_tracker = validated_data.get('bug_tracker', instance.bug_tracker)
-        labels = validated_data.get('label_set', [])
 
+        if (
+            "assignee_id" in validated_data and
+            validated_data['assignee_id'] != instance.assignee_id
+        ):
+            instance.assignee_id = validated_data.pop('assignee_id')
+            instance.assignee_updated_date = timezone.now()
+
+        labels = validated_data.get('label_set', [])
         LabelSerializer.update_labels(labels, parent_instance=instance)
 
         # update source and target storages
@@ -1475,8 +1529,7 @@ class AnnotationSerializer(serializers.Serializer):
     source = serializers.CharField(default='manual')
 
 class LabeledImageSerializer(AnnotationSerializer):
-    attributes = AttributeValSerializer(many=True,
-        source="labeledimageattributeval_set", default=[])
+    attributes = AttributeValSerializer(many=True, default=[])
 
 class OptimizedFloatListField(serializers.ListField):
     '''Default ListField is extremely slow when try to process long lists of points'''
@@ -1512,8 +1565,7 @@ class ShapeSerializer(serializers.Serializer):
     )
 
 class SubLabeledShapeSerializer(ShapeSerializer, AnnotationSerializer):
-    attributes = AttributeValSerializer(many=True,
-        source="labeledshapeattributeval_set", default=[])
+    attributes = AttributeValSerializer(many=True, default=[])
 
 class LabeledShapeSerializer(SubLabeledShapeSerializer):
     elements = SubLabeledShapeSerializer(many=True, required=False)
@@ -1533,7 +1585,7 @@ class LabeledImageSerializerFromDB(serializers.BaseSerializer):
     def to_representation(self, instance):
         def convert_tag(tag):
             result = _convert_annotation(tag, ['id', 'label_id', 'frame', 'group', 'source'])
-            result['attributes'] = _convert_attributes(tag['labeledimageattributeval_set'])
+            result['attributes'] = _convert_attributes(tag['attributes'])
             return result
 
         return convert_tag(instance)
@@ -1547,7 +1599,7 @@ class LabeledShapeSerializerFromDB(serializers.BaseSerializer):
                 'id', 'label_id', 'type', 'frame', 'group', 'source',
                 'occluded', 'outside', 'z_order', 'rotation', 'points',
             ])
-            result['attributes'] = _convert_attributes(shape['labeledshapeattributeval_set'])
+            result['attributes'] = _convert_attributes(shape['attributes'])
             if shape.get('elements', None) is not None and shape['parent'] is None:
                 result['elements'] = [convert_shape(element) for element in shape['elements']]
             return result
@@ -1561,14 +1613,13 @@ class LabeledTrackSerializerFromDB(serializers.BaseSerializer):
         def convert_track(track):
             shape_keys = [
                 'id', 'type', 'frame', 'occluded', 'outside', 'z_order',
-                'rotation', 'points', 'trackedshapeattributeval_set',
+                'rotation', 'points', 'attributes',
             ]
             result = _convert_annotation(track, ['id', 'label_id', 'frame', 'group', 'source'])
-            result['shapes'] = [_convert_annotation(shape, shape_keys) for shape in track['trackedshape_set']]
-            result['attributes'] = _convert_attributes(track['labeledtrackattributeval_set'])
+            result['shapes'] = [_convert_annotation(shape, shape_keys) for shape in track['shapes']]
+            result['attributes'] = _convert_attributes(track['attributes'])
             for shape in result['shapes']:
-                shape['attributes'] = _convert_attributes(shape['trackedshapeattributeval_set'])
-                shape.pop('trackedshapeattributeval_set', None)
+                shape['attributes'] = _convert_attributes(shape['attributes'])
             if track.get('elements', None) is not None and track['parent'] is None:
                 result['elements'] = [convert_track(element) for element in track['elements']]
             return result
@@ -1578,14 +1629,11 @@ class LabeledTrackSerializerFromDB(serializers.BaseSerializer):
 class TrackedShapeSerializer(ShapeSerializer):
     id = serializers.IntegerField(default=None, allow_null=True)
     frame = serializers.IntegerField(min_value=0)
-    attributes = AttributeValSerializer(many=True,
-        source="trackedshapeattributeval_set", default=[])
+    attributes = AttributeValSerializer(many=True, default=[])
 
 class SubLabeledTrackSerializer(AnnotationSerializer):
-    shapes = TrackedShapeSerializer(many=True, allow_empty=True,
-        source="trackedshape_set")
-    attributes = AttributeValSerializer(many=True,
-        source="labeledtrackattributeval_set", default=[])
+    shapes = TrackedShapeSerializer(many=True, allow_empty=True)
+    attributes = AttributeValSerializer(many=True, default=[])
 
 class LabeledTrackSerializer(SubLabeledTrackSerializer):
     elements = SubLabeledTrackSerializer(many=True, required=False)
@@ -2141,32 +2189,120 @@ class AnnotationGuideWriteSerializer(WriteOnceMixin, serializers.ModelSerializer
         db_data = models.AnnotationGuide.objects.create(**validated_data, project = project, task = task)
         return db_data
 
-    @transaction.atomic
-    def save(self, **kwargs):
-        instance = super().save(**kwargs)
-        def _update_assets(guide):
-            md_assets = []
-            current_assets = list(guide.assets.all())
-            markdown = guide.markdown
-
-            # pylint: disable=anomalous-backslash-in-string
-            pattern = re.compile(r'\(/api/assets/([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12})\)')
-            results = re.findall(pattern, markdown)
-
-            for asset_id in results:
-                db_asset = models.Asset.objects.get(pk=asset_id)
-                if db_asset.guide_id != guide.id:
-                    raise serializers.ValidationError('Asset is already related to another guide')
-                md_assets.append(db_asset)
-
-            for current_asset in current_assets:
-                if current_asset not in md_assets:
-                    current_asset.delete()
-
-        _update_assets(instance)
-        return instance
-
-
     class Meta:
         model = models.AnnotationGuide
         fields = ('id', 'task_id', 'project_id', 'markdown', )
+
+class UserIdentifiersSerializer(BasicUserSerializer):
+    class Meta(BasicUserSerializer.Meta):
+        fields = (
+            "id",
+            "username",
+        )
+
+
+class RequestDataOperationSerializer(serializers.Serializer):
+    type = serializers.CharField()
+    target = serializers.ChoiceField(choices=models.RequestTarget.choices)
+    project_id = serializers.IntegerField(required=False, allow_null=True)
+    task_id = serializers.IntegerField(required=False, allow_null=True)
+    job_id = serializers.IntegerField(required=False, allow_null=True)
+    format = serializers.CharField(required=False, allow_null=True)
+
+    def to_representation(self, rq_job: RQJob) -> Dict[str, Any]:
+        parsed_rq_id: RQId = rq_job.parsed_rq_id
+
+        return {
+            "type": ":".join(
+                [
+                    parsed_rq_id.action,
+                    parsed_rq_id.subresource or parsed_rq_id.target,
+                ]
+            ),
+            "target": parsed_rq_id.target,
+            "project_id": rq_job.meta[RQJobMetaField.PROJECT_ID],
+            "task_id": rq_job.meta[RQJobMetaField.TASK_ID],
+            "job_id": rq_job.meta[RQJobMetaField.JOB_ID],
+            "format": parsed_rq_id.format,
+        }
+
+class RequestSerializer(serializers.Serializer):
+    # SerializerMethodField is not used here to mark "status" field as required and fix schema generation.
+    # Marking them as read_only leads to generating type as allOf with one reference to RequestStatus component.
+    # The client generated using openapi-generator from such a schema contains wrong type like:
+    # status (bool, date, datetime, dict, float, int, list, str, none_type): [optional]
+    status = serializers.ChoiceField(source="get_status", choices=models.RequestStatus.choices)
+    message = serializers.SerializerMethodField()
+    id = serializers.CharField()
+    operation = RequestDataOperationSerializer(source="*")
+    progress = serializers.SerializerMethodField()
+    created_date = serializers.DateTimeField(source="created_at")
+    started_date = serializers.DateTimeField(
+        required=False, allow_null=True, source="started_at",
+    )
+    finished_date = serializers.DateTimeField(
+        required=False, allow_null=True, source="ended_at",
+    )
+    expiry_date = serializers.SerializerMethodField()
+    owner = serializers.SerializerMethodField()
+    result_url = serializers.URLField(required=False, allow_null=True)
+    result_id = serializers.IntegerField(required=False, allow_null=True)
+
+    @extend_schema_field(UserIdentifiersSerializer())
+    def get_owner(self, rq_job: RQJob) -> Dict[str, Any]:
+        return UserIdentifiersSerializer(rq_job.meta[RQJobMetaField.USER]).data
+
+    @extend_schema_field(
+        serializers.FloatField(min_value=0, max_value=1, required=False, allow_null=True)
+    )
+    def get_progress(self, rq_job: RQJob) -> Decimal:
+        # progress of task creation is stored in "task_progress" field
+        # progress of project import is stored in "progress" field
+        return Decimal(rq_job.meta.get(RQJobMetaField.PROGRESS) or rq_job.meta.get(RQJobMetaField.TASK_PROGRESS) or 0.)
+
+    @extend_schema_field(serializers.DateTimeField(required=False, allow_null=True))
+    def get_expiry_date(self, rq_job: RQJob) -> Optional[str]:
+        delta = None
+        if rq_job.is_finished:
+            delta = rq_job.result_ttl or rq_defaults.DEFAULT_RESULT_TTL
+        elif rq_job.is_failed:
+            delta = rq_job.failure_ttl or rq_defaults.DEFAULT_FAILURE_TTL
+
+        if rq_job.ended_at and delta:
+            expiry_date = rq_job.ended_at + timedelta(seconds=delta)
+            return expiry_date.replace(tzinfo=timezone.utc)
+
+        return None
+
+    @extend_schema_field(serializers.CharField(allow_blank=True))
+    def get_message(self, rq_job: RQJob) -> str:
+        rq_job_status = rq_job.get_status()
+        message = ''
+
+        if RQJobStatus.STARTED == rq_job_status:
+            message = rq_job.meta.get(RQJobMetaField.STATUS, '')
+        elif RQJobStatus.FAILED == rq_job_status:
+            message = rq_job.meta.get(
+                RQJobMetaField.FORMATTED_EXCEPTION,
+                parse_exception_message(str(rq_job.exc_info or "Unknown error")),
+            )
+
+        return message
+
+    def to_representation(self, rq_job: RQJob) -> Dict[str, Any]:
+        representation = super().to_representation(rq_job)
+
+        if representation["status"] == RQJobStatus.DEFERRED:
+            representation["status"] = RQJobStatus.QUEUED
+
+        if representation["status"] == RQJobStatus.FINISHED:
+            if result_url := rq_job.meta.get(RQJobMetaField.RESULT_URL):
+                representation["result_url"] = result_url
+
+            if (
+                rq_job.parsed_rq_id.action == models.RequestAction.IMPORT
+                and rq_job.parsed_rq_id.subresource == models.RequestSubresource.BACKUP
+            ):
+                representation["result_id"] = rq_job.return_value()
+
+        return representation

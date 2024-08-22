@@ -1,4 +1,4 @@
-# Copyright (C) 2023 CVAT.ai Corporation
+# Copyright (C) 2023-2024 CVAT.ai Corporation
 #
 # SPDX-License-Identifier: MIT
 
@@ -22,17 +22,17 @@ from cvat.apps.engine.mixins import PartialUpdateModelMixin
 from cvat.apps.engine.models import Task
 from cvat.apps.engine.serializers import RqIdSerializer
 from cvat.apps.engine.utils import get_server_url
-from cvat.apps.iam.permissions import (
-    AnnotationConflictPermission,
-    QualityReportPermission,
-    QualitySettingPermission,
-)
 from cvat.apps.quality_control import quality_reports as qc
 from cvat.apps.quality_control.models import (
     AnnotationConflict,
     QualityReport,
     QualityReportTarget,
     QualitySettings,
+)
+from cvat.apps.quality_control.permissions import (
+    AnnotationConflictPermission,
+    QualityReportPermission,
+    QualitySettingPermission,
 )
 from cvat.apps.quality_control.serializers import (
     AnnotationConflictSerializer,
@@ -311,7 +311,9 @@ class QualityReportViewSet(
                     raise ValidationError("No report has been computed")
 
                 report = self.get_queryset().get(pk=return_value)
-                report_serializer = QualityReportSerializer(instance=report)
+                report_serializer = QualityReportSerializer(
+                    instance=report, context={"request": request}
+                )
                 return Response(
                     data=report_serializer.data,
                     status=status.HTTP_201_CREATED,

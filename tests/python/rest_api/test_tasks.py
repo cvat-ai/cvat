@@ -1,9 +1,10 @@
 # Copyright (C) 2022 Intel Corporation
-# Copyright (C) 2022-2023 CVAT.ai Corporation
+# Copyright (C) 2022-2024 CVAT.ai Corporation
 #
 # SPDX-License-Identifier: MIT
 
 import io
+import itertools
 import json
 import os
 import os.path as osp
@@ -13,10 +14,11 @@ from functools import partial
 from http import HTTPStatus
 from itertools import chain, product
 from math import ceil
+from operator import itemgetter
 from pathlib import Path
 from tempfile import NamedTemporaryFile, TemporaryDirectory
 from time import sleep, time
-from typing import Any, List, Optional, Tuple
+from typing import Any, Dict, List, Optional, Tuple, Union
 
 import pytest
 from cvat_sdk import Client, Config, exceptions
@@ -39,6 +41,7 @@ from shared.utils.config import (
     make_api_client,
     patch_method,
     post_method,
+    put_method,
 )
 from shared.utils.helpers import (
     generate_image_file,
@@ -51,7 +54,8 @@ from .utils import (
     CollectionSimpleFilterTestBase,
     compare_annotations,
     create_task,
-    export_dataset,
+    export_task_backup,
+    export_task_dataset,
     wait_until_task_is_created,
 )
 
@@ -205,6 +209,7 @@ class TestGetTasks:
 
         assert server_task.jobs.completed == 1
 
+    @pytest.mark.usefixtures("restore_db_per_function")
     def test_can_remove_owner_and_fetch_with_sdk(self, admin_user, tasks):
         # test for API schema regressions
         source_task = next(
@@ -219,6 +224,26 @@ class TestGetTasks:
 
         source_task["owner"] = None
         assert DeepDiff(source_task, fetched_task, ignore_order=True) == {}
+
+    @pytest.mark.usefixtures("restore_db_per_function")
+    def test_check_task_status_after_changing_job_state(self, admin_user, tasks, jobs):
+        task = next(t for t in tasks if t["jobs"]["count"] == 1 if t["jobs"]["completed"] == 0)
+        job = next(j for j in jobs if j["task_id"] == task["id"])
+
+        with make_api_client(admin_user) as api_client:
+            api_client.jobs_api.partial_update(
+                job["id"],
+                patched_job_write_request=models.PatchedJobWriteRequest(stage="acceptance"),
+            )
+
+            api_client.jobs_api.partial_update(
+                job["id"],
+                patched_job_write_request=models.PatchedJobWriteRequest(state="completed"),
+            )
+
+            (server_task, _) = api_client.tasks_api.retrieve(task["id"])
+
+        assert server_task.status == "completed"
 
 
 class TestListTasksFilters(CollectionSimpleFilterTestBase):
@@ -251,7 +276,7 @@ class TestListTasksFilters(CollectionSimpleFilterTestBase):
         ),
     )
     def test_can_use_simple_filter_for_object_list(self, field):
-        return super().test_can_use_simple_filter_for_object_list(field)
+        return super()._test_can_use_simple_filter_for_object_list(field)
 
 
 @pytest.mark.usefixtures("restore_db_per_function")
@@ -390,6 +415,24 @@ class TestPostTasks:
         }
 
         self._test_create_task_201(username, spec)
+
+    @pytest.mark.parametrize("assignee", [None, "admin1"])
+    def test_can_create_with_assignee(self, admin_user, users_by_name, assignee):
+        task_spec = {
+            "name": "test task creation with assignee",
+            "labels": [{"name": "car"}],
+            "assignee_id": users_by_name[assignee]["id"] if assignee else None,
+        }
+
+        with make_api_client(admin_user) as api_client:
+            (task, _) = api_client.tasks_api.create(task_write_request=task_spec)
+
+            if assignee:
+                assert task.assignee.username == assignee
+                assert task.assignee_updated_date
+            else:
+                assert task.assignee is None
+                assert task.assignee_updated_date is None
 
 
 @pytest.mark.usefixtures("restore_db_per_class")
@@ -611,26 +654,70 @@ class TestPatchTaskAnnotations:
 
 
 @pytest.mark.usefixtures("restore_db_per_class")
+@pytest.mark.usefixtures("restore_redis_inmem_per_function")
 class TestGetTaskDataset:
-    def _test_export_task(self, username: str, tid: int, **kwargs):
-        with make_api_client(username) as api_client:
-            return export_dataset(api_client.tasks_api.retrieve_dataset_endpoint, id=tid, **kwargs)
 
-    def test_can_export_task_dataset(self, admin_user, tasks_with_shapes):
-        task = tasks_with_shapes[0]
-        response = self._test_export_task(admin_user, task["id"])
-        assert response.data
+    @staticmethod
+    def _test_can_export_dataset(
+        username: str,
+        task_id: int,
+        *,
+        api_version: Union[int, Tuple[int]],
+        local_download: bool = True,
+        **kwargs,
+    ) -> Optional[bytes]:
+        dataset = export_task_dataset(username, api_version, save_images=True, id=task_id, **kwargs)
+        if local_download:
+            assert zipfile.is_zipfile(io.BytesIO(dataset))
+        else:
+            assert dataset is None
 
+        return dataset
+
+    @pytest.mark.usefixtures("restore_db_per_function")
+    @pytest.mark.parametrize("api_version", product((1, 2), repeat=2))
+    @pytest.mark.parametrize(
+        "local_download", (True, pytest.param(False, marks=pytest.mark.with_external_services))
+    )
+    def test_can_export_task_dataset_locally_and_to_cloud_with_both_api_versions(
+        self,
+        admin_user,
+        tasks_with_shapes,
+        filter_tasks,
+        api_version: Tuple[int],
+        local_download: bool,
+    ):
+        filter_ = "target_storage__location"
+        if local_download:
+            filter_ = "exclude_" + filter_
+        filtered_ids = {t["id"] for t in filter_tasks(**{filter_: "cloud_storage"})}
+
+        task_id = next(iter(filtered_ids & {t["id"] for t in tasks_with_shapes}))
+        self._test_can_export_dataset(
+            admin_user,
+            task_id,
+            api_version=api_version,
+            local_download=local_download,
+        )
+
+    @pytest.mark.parametrize("api_version", (1, 2))
     @pytest.mark.parametrize("tid", [21])
     @pytest.mark.parametrize(
         "format_name", ["CVAT for images 1.1", "CVAT for video 1.1", "COCO Keypoints 1.0"]
     )
-    def test_can_export_task_with_several_jobs(self, admin_user, tid, format_name):
-        response = self._test_export_task(admin_user, tid, format=format_name)
-        assert response.data
+    def test_can_export_task_with_several_jobs(
+        self, admin_user, tid, format_name, api_version: int
+    ):
+        self._test_can_export_dataset(
+            admin_user,
+            tid,
+            format=format_name,
+            api_version=api_version,
+        )
 
+    @pytest.mark.parametrize("api_version", (1, 2))
     @pytest.mark.parametrize("tid", [8])
-    def test_can_export_task_to_coco_format(self, admin_user, tid):
+    def test_can_export_task_to_coco_format(self, admin_user: str, tid: int, api_version: int):
         # these annotations contains incorrect frame numbers
         # in order to check that server handle such cases
         annotations = {
@@ -714,9 +801,13 @@ class TestGetTaskDataset:
         )
         assert response.status_code == HTTPStatus.OK
 
-        # check that we can export task
-        response = self._test_export_task(admin_user, tid, format="COCO Keypoints 1.0")
-        assert response.status == HTTPStatus.OK
+        # check that we can export task dataset
+        self._test_can_export_dataset(
+            admin_user,
+            tid,
+            format="COCO Keypoints 1.0",
+            api_version=api_version,
+        )
 
         # check that server saved track annotations correctly
         response = get_method(admin_user, f"tasks/{tid}/annotations")
@@ -727,8 +818,9 @@ class TestGetTaskDataset:
         assert annotations["tracks"][0]["shapes"][0]["frame"] == 0
         assert annotations["tracks"][0]["elements"][0]["shapes"][0]["frame"] == 0
 
+    @pytest.mark.parametrize("api_version", (1, 2))
     @pytest.mark.usefixtures("restore_db_per_function")
-    def test_can_download_task_with_special_chars_in_name(self, admin_user):
+    def test_can_download_task_with_special_chars_in_name(self, admin_user: str, api_version: int):
         # Control characters in filenames may conflict with the Content-Disposition header
         # value restrictions, as it needs to include the downloaded file name.
 
@@ -744,11 +836,14 @@ class TestGetTaskDataset:
 
         task_id, _ = create_task(admin_user, task_spec, task_data)
 
-        response = self._test_export_task(admin_user, task_id)
-        assert response.status == HTTPStatus.OK
-        assert zipfile.is_zipfile(io.BytesIO(response.data))
+        dataset = self._test_can_export_dataset(admin_user, task_id, api_version=api_version)
+        assert zipfile.is_zipfile(io.BytesIO(dataset))
 
-    def test_export_dataset_after_deleting_related_cloud_storage(self, admin_user, tasks):
+    @pytest.mark.usefixtures("restore_db_per_function")
+    @pytest.mark.parametrize("api_version", (1, 2))
+    def test_export_dataset_after_deleting_related_cloud_storage(
+        self, admin_user: str, tasks, api_version: int
+    ):
         related_field = "target_storage"
 
         task = next(
@@ -764,8 +859,46 @@ class TestGetTaskDataset:
             result, response = api_client.tasks_api.retrieve(task_id)
             assert not result[related_field]
 
-            response = export_dataset(api_client.tasks_api.retrieve_dataset_endpoint, id=task["id"])
-            assert response.data
+            self._test_can_export_dataset(admin_user, task["id"], api_version=api_version)
+
+    @pytest.mark.parametrize(
+        "export_format, default_subset_name, subset_path_template",
+        [
+            ("Datumaro 1.0", "", "images/{subset}"),
+            ("YOLO 1.1", "train", "obj_{subset}_data"),
+        ],
+    )
+    @pytest.mark.parametrize("api_version", (1, 2))
+    def test_uses_subset_name(
+        self,
+        admin_user,
+        filter_tasks,
+        export_format,
+        default_subset_name,
+        subset_path_template,
+        api_version: int,
+    ):
+        tasks = filter_tasks(exclude_target_storage__location="cloud_storage")
+        group_key_func = itemgetter("subset")
+        subsets_and_tasks = [
+            (subset, next(group))
+            for subset, group in itertools.groupby(
+                sorted(tasks, key=group_key_func),
+                key=group_key_func,
+            )
+        ]
+        for subset_name, task in subsets_and_tasks:
+            dataset = self._test_can_export_dataset(
+                admin_user,
+                task["id"],
+                api_version=api_version,
+                format=export_format,
+            )
+            with zipfile.ZipFile(io.BytesIO(dataset)) as zip_file:
+                subset_path = subset_path_template.format(subset=subset_name or default_subset_name)
+                assert any(
+                    subset_path in path for path in zip_file.namelist()
+                ), f"No {subset_path} in {zip_file.namelist()}"
 
 
 @pytest.mark.usefixtures("restore_db_per_function")
@@ -779,15 +912,15 @@ class TestPostTaskData:
             (task, response) = api_client.tasks_api.create(spec, **kwargs)
             assert response.status == HTTPStatus.CREATED
 
-            (_, response) = api_client.tasks_api.create_data(
+            (result, response) = api_client.tasks_api.create_data(
                 task.id, data_request=deepcopy(data), _content_type="application/json", **kwargs
             )
             assert response.status == HTTPStatus.ACCEPTED
 
-            status = wait_until_task_is_created(api_client.tasks_api, task.id)
-            assert status.state.value == "Failed"
+            request_details = wait_until_task_is_created(api_client.requests_api, result.rq_id)
+            assert request_details.status.value == "failed"
 
-        return status
+        return request_details
 
     def test_can_create_task_with_defined_start_and_stop_frames(self):
         task_spec = {
@@ -1035,6 +1168,27 @@ class TestPostTaskData:
             # generate_image_files produces files that are already naturally sorted
             for image_file, frame in zip(image_files, data_meta.frames):
                 assert image_file.name == frame.name
+
+    def test_can_create_task_with_video_without_keyframes(self):
+        task_spec = {
+            "name": f"test {self._USERNAME} to create a task with a video without keyframes",
+            "labels": [
+                {
+                    "name": "label1",
+                }
+            ],
+        }
+
+        task_data = {
+            "server_files": [osp.join("videos", "video_without_valid_keyframes.mp4")],
+            "image_quality": 70,
+        }
+
+        task_id, _ = create_task(self._USERNAME, task_spec, task_data)
+
+        with make_api_client(self._USERNAME) as api_client:
+            (_, response) = api_client.tasks_api.retrieve(task_id)
+            assert response.status == HTTPStatus.OK
 
     @pytest.mark.parametrize("data_source", ["client_files", "server_files"])
     def test_can_create_task_with_sorting_method_predefined(self, data_source):
@@ -1290,27 +1444,48 @@ class TestPostTaskData:
         server_files: List[str],
         use_cache: bool = True,
         sorting_method: str = "lexicographical",
+        spec: Optional[Dict[str, Any]] = None,
+        data_type: str = "image",
+        video_frame_count: int = 10,
         server_files_exclude: Optional[List[str]] = None,
         org: Optional[str] = None,
+        filenames: Optional[List[str]] = None,
     ) -> Tuple[int, Any]:
         s3_client = s3.make_client()
-        images = generate_image_files(3, prefixes=["img_"] * 3)
-
-        for image in images:
-            for i in range(2):
-                image.seek(0)
-                s3_client.create_file(
-                    data=image,
+        if data_type == "video":
+            video = generate_video_file(video_frame_count)
+            s3_client.create_file(
+                data=video,
+                bucket=cloud_storage["resource"],
+                filename=f"test/video/{video.name}",
+            )
+            request.addfinalizer(
+                partial(
+                    s3_client.remove_file,
                     bucket=cloud_storage["resource"],
-                    filename=f"test/sub_{i}/{image.name}",
+                    filename=f"test/video/{video.name}",
                 )
-                request.addfinalizer(
-                    partial(
-                        s3_client.remove_file,
+            )
+        else:
+            images = generate_image_files(
+                3, **({"prefixes": ["img_"] * 3} if not filenames else {"filenames": filenames})
+            )
+
+            for image in images:
+                for i in range(2):
+                    image.seek(0)
+                    s3_client.create_file(
+                        data=image,
                         bucket=cloud_storage["resource"],
                         filename=f"test/sub_{i}/{image.name}",
                     )
-                )
+                    request.addfinalizer(
+                        partial(
+                            s3_client.remove_file,
+                            bucket=cloud_storage["resource"],
+                            filename=f"test/sub_{i}/{image.name}",
+                        )
+                    )
 
         if use_manifest:
             with TemporaryDirectory() as tmp_dir:
@@ -1355,6 +1530,9 @@ class TestPostTaskData:
             ),
             "sorting_method": sorting_method,
         }
+        if spec is not None:
+            data_spec.update(spec)
+
         if server_files_exclude:
             data_spec["server_files_exclude"] = server_files_exclude
 
@@ -1612,10 +1790,15 @@ class TestPostTaskData:
                 assert response.status == HTTPStatus.OK
                 assert task.size == task_size
         else:
-            status = self._test_cannot_create_task(self._USERNAME, task_spec, data_spec)
-            assert "No media data found" in status.message
+            rq_job_details = self._test_cannot_create_task(self._USERNAME, task_spec, data_spec)
+            assert "No media data found" in rq_job_details.message
 
     @pytest.mark.with_external_services
+    @pytest.mark.parametrize("use_manifest", [True, False])
+    @pytest.mark.parametrize("use_cache", [True, False])
+    @pytest.mark.parametrize(
+        "sorting_method", ["natural", "predefined", "lexicographical", "random"]
+    )
     @pytest.mark.parametrize(
         "cloud_storage_id, org",
         [
@@ -1624,19 +1807,24 @@ class TestPostTaskData:
     )
     def test_create_task_with_cloud_storage_and_retrieve_data(
         self,
-        cloud_storage_id,
+        use_manifest: bool,
+        use_cache: bool,
+        sorting_method: str,
+        cloud_storage_id: int,
+        org: str,
         cloud_storages,
         request,
-        org,
     ):
         cloud_storage = cloud_storages[cloud_storage_id]
         task_id, _ = self._create_task_with_cloud_data(
             request=request,
             cloud_storage=cloud_storage,
-            use_manifest=True,
-            use_cache=True,
-            server_files=[],
+            # manifest file should not be uploaded if random sorting is used or if cache is not used
+            use_manifest=use_manifest and use_cache and (sorting_method != "random"),
+            use_cache=use_cache,
+            server_files=[f"test/sub_{i}/img_{j}.jpeg" for i in range(2) for j in range(3)],
             org=org,
+            sorting_method=sorting_method,
         )
 
         with make_api_client(self._USERNAME) as api_client:
@@ -1644,6 +1832,89 @@ class TestPostTaskData:
                 task_id, type="chunk", quality="compressed", number=0
             )
             assert response.status == HTTPStatus.OK
+
+    @pytest.mark.with_external_services
+    @pytest.mark.parametrize(
+        "filenames, sorting_method",
+        [
+            (["img_1.jpeg", "img_2.jpeg", "img_10.jpeg"], "natural"),
+            (["img_10.jpeg", "img_1.jpeg", "img_2.jpeg"], "predefined"),
+            (["img_1.jpeg", "img_10.jpeg", "img_2.jpeg"], "lexicographical"),
+        ],
+    )
+    @pytest.mark.parametrize(
+        "cloud_storage_id, org",
+        [
+            (1, ""),
+        ],
+    )
+    def test_create_task_with_cloud_storage_and_check_data_sorting(
+        self,
+        filenames: List[str],
+        sorting_method: str,
+        cloud_storage_id: int,
+        org: str,
+        cloud_storages,
+        request,
+    ):
+        cloud_storage = cloud_storages[cloud_storage_id]
+
+        task_id, _ = self._create_task_with_cloud_data(
+            request=request,
+            cloud_storage=cloud_storage,
+            use_manifest=False,
+            use_cache=True,
+            server_files=["test/sub_0/" + f for f in filenames],
+            org=org,
+            sorting_method=sorting_method,
+            filenames=filenames,
+        )
+
+        with make_api_client(self._USERNAME) as api_client:
+            data_meta, _ = api_client.tasks_api.retrieve_data_meta(task_id)
+
+            for image_name, frame in zip(filenames, data_meta.frames):
+                assert frame.name.rsplit("/", maxsplit=1)[1] == image_name
+
+    @pytest.mark.with_external_services
+    @pytest.mark.parametrize(
+        "cloud_storage_id, org",
+        [
+            (1, ""),
+        ],
+    )
+    def test_create_task_with_cloud_storage_and_check_retrieve_data_meta(
+        self,
+        cloud_storage_id: int,
+        org: str,
+        cloud_storages,
+        request,
+    ):
+        cloud_storage = cloud_storages[cloud_storage_id]
+
+        data_spec = {
+            "start_frame": 2,
+            "stop_frame": 6,
+            "frame_filter": "step=2",
+        }
+
+        task_id, _ = self._create_task_with_cloud_data(
+            request=request,
+            cloud_storage=cloud_storage,
+            use_manifest=False,
+            use_cache=False,
+            server_files=["test/video/video.avi"],
+            org=org,
+            spec=data_spec,
+            data_type="video",
+        )
+
+        with make_api_client(self._USERNAME) as api_client:
+            data_meta, _ = api_client.tasks_api.retrieve_data_meta(task_id)
+
+        assert data_meta.start_frame == 2
+        assert data_meta.stop_frame == 6
+        assert data_meta.size == 3
 
     def test_can_specify_file_job_mapping(self):
         task_spec = {
@@ -2017,6 +2288,7 @@ class TestWorkWithTask:
                 assert image_name in ex.body
 
 
+@pytest.mark.usefixtures("restore_redis_inmem_per_function")
 class TestTaskBackups:
     def _make_client(self) -> Client:
         return Client(BASE_URL, config=Config(status_check_period=0.01))
@@ -2030,6 +2302,23 @@ class TestTaskBackups:
 
         with self.client:
             self.client.login((self.user, USER_PASS))
+
+    @pytest.mark.parametrize("api_version", product((1, 2), repeat=2))
+    @pytest.mark.parametrize(
+        "local_download", (True, pytest.param(False, marks=pytest.mark.with_external_services))
+    )
+    def test_can_export_backup_with_both_api_versions(
+        self, filter_tasks, api_version: Tuple[int], local_download: bool
+    ):
+        task = filter_tasks(
+            **{("exclude_" if local_download else "") + "target_storage__location": "cloud_storage"}
+        )[0]
+        backup = export_task_backup(self.user, api_version, id=task["id"])
+
+        if local_download:
+            assert zipfile.is_zipfile(io.BytesIO(backup))
+        else:
+            assert backup is None
 
     @pytest.mark.parametrize("mode", ["annotation", "interpolation"])
     def test_can_export_backup(self, tasks, mode):
@@ -2497,6 +2786,36 @@ class TestPatchTask:
             )
         assert response.status == HTTPStatus.FORBIDDEN
 
+    @pytest.mark.parametrize("has_old_assignee", [False, True])
+    @pytest.mark.parametrize("new_assignee", [None, "same", "different"])
+    def test_can_update_assignee_updated_date_on_assignee_updates(
+        self, admin_user, tasks, users, has_old_assignee, new_assignee
+    ):
+        task = next(t for t in tasks if bool(t.get("assignee")) == has_old_assignee)
+
+        old_assignee_id = (task.get("assignee") or {}).get("id")
+
+        new_assignee_id = None
+        if new_assignee == "same":
+            new_assignee_id = old_assignee_id
+        elif new_assignee == "different":
+            new_assignee_id = next(u for u in users if u["id"] != old_assignee_id)["id"]
+
+        with make_api_client(admin_user) as api_client:
+            (updated_task, _) = api_client.tasks_api.partial_update(
+                task["id"], patched_task_write_request={"assignee_id": new_assignee_id}
+            )
+
+            if new_assignee_id == old_assignee_id:
+                assert updated_task.assignee_updated_date == task["assignee_updated_date"]
+            else:
+                assert updated_task.assignee_updated_date != task["assignee_updated_date"]
+
+            if new_assignee_id:
+                assert updated_task.assignee.id == new_assignee_id
+            else:
+                assert updated_task.assignee is None
+
 
 @pytest.mark.usefixtures("restore_db_per_function")
 def test_can_report_correct_completed_jobs_count(tasks_wlc, jobs_wlc, admin_user):
@@ -2667,6 +2986,52 @@ class TestImportTaskAnnotations:
         task.import_annotations(self.import_format, file_path)
         self._check_annotations(task_id)
 
+    @pytest.mark.parametrize(
+        "format_name",
+        [
+            "COCO 1.0",
+            "COCO Keypoints 1.0",
+            "CVAT 1.1",
+            "LabelMe 3.0",
+            "MOT 1.1",
+            "MOTS PNG 1.0",
+            "PASCAL VOC 1.1",
+            "Segmentation mask 1.1",
+            "YOLO 1.1",
+            "WiderFace 1.0",
+            "VGGFace2 1.0",
+            "Market-1501 1.0",
+            "Kitti Raw Format 1.0",
+            "Sly Point Cloud Format 1.0",
+            "KITTI 1.0",
+            "LFW 1.0",
+            "Cityscapes 1.0",
+            "Open Images V6 1.0",
+            "Datumaro 1.0",
+            "Datumaro 3D 1.0",
+        ],
+    )
+    def test_check_import_error_on_wrong_file_structure(self, tasks_with_shapes, format_name):
+        task_id = tasks_with_shapes[0]["id"]
+
+        source_archive_path = self.tmp_dir / "incorrect_archive.zip"
+
+        incorrect_files = ["incorrect_file1.txt", "incorrect_file2.txt"]
+        for file in incorrect_files:
+            with open(self.tmp_dir / file, "w") as f:
+                f.write("Some text")
+
+        zip_file = zipfile.ZipFile(source_archive_path, mode="a")
+        for path in incorrect_files:
+            zip_file.write(self.tmp_dir / path, path)
+        task = self.client.tasks.retrieve(task_id)
+
+        with pytest.raises(exceptions.ApiException) as capture:
+            task.import_annotations(format_name, source_archive_path)
+
+            assert b"Check [format docs]" in capture.value.body
+            assert b"Dataset must contain a file:" in capture.value.body
+
 
 class TestImportWithComplexFilenames:
     @staticmethod
@@ -2819,42 +3184,880 @@ class TestImportWithComplexFilenames:
 
             assert b"Could not match item id" in capture.value.body
 
-    def test_can_export_and_import_skeleton_tracks_in_coco_format(self):
-        task = self.client.tasks.retrieve(14)
-        dataset_file = self.tmp_dir / "some_file.zip"
-        format_name = "COCO Keypoints 1.0"
+    def delete_annotation_and_import_annotations(
+        self, task_id, annotations, format_name, dataset_file
+    ):
+        task = self.client.tasks.retrieve(task_id)
+        labels = task.get_labels()
+        sublabels = labels[0].sublabels
 
-        original_annotations = task.get_annotations()
+        # if the annotations shapes label_id does not exist, the put it in the task
+        for shape in annotations["shapes"]:
+            if "label_id" not in shape:
+                shape["label_id"] = labels[0].id
+
+        for track in annotations["tracks"]:
+            if "label_id" not in track:
+                track["label_id"] = labels[0].id
+            for element_idx, element in enumerate(track["elements"]):
+                if "label_id" not in element:
+                    element["label_id"] = sublabels[element_idx].id
+
+        response = put_method(
+            "admin1", f"tasks/{task_id}/annotations", annotations, action="create"
+        )
+        assert response.status_code == 200, f"Cannot update task's annotations: {response.content}"
 
         task.export_dataset(format_name, dataset_file, include_images=False)
-        task.remove_annotations()
+
+        # get the original annotations
+        response = get_method("admin1", f"tasks/{task.id}/annotations")
+        assert response.status_code == 200, f"Cannot get task's annotations: {response.content}"
+        original_annotations = response.json()
+
+        # import the annotations
         task.import_annotations(format_name, dataset_file)
 
-        imported_annotations = task.get_annotations()
+        response = get_method("admin1", f"tasks/{task.id}/annotations")
+        assert response.status_code == 200, f"Cannot get task's annotations: {response.content}"
+        imported_annotations = response.json()
 
-        # Number of shapes and tracks hasn't changed
-        assert len(original_annotations.shapes) == len(imported_annotations.shapes)
-        assert len(original_annotations.tracks) == len(imported_annotations.tracks)
+        return original_annotations, imported_annotations
 
-        # Frames of shapes, tracks and track elements hasn't changed
-        assert set([s.frame for s in original_annotations.shapes]) == set(
-            [s.frame for s in imported_annotations.shapes]
+    def compare_original_and_import_annotations(self, original_annotations, imported_annotations):
+        assert (
+            DeepDiff(
+                original_annotations,
+                imported_annotations,
+                ignore_order=True,
+                exclude_regex_paths=[
+                    r"root(\['\w+'\]\[\d+\])+\['id'\]",
+                    r"root(\['\w+'\]\[\d+\])+\['label_id'\]",
+                    r"root(\['\w+'\]\[\d+\])+\['attributes'\]\[\d+\]\['spec_id'\]",
+                ],
+            )
+            == {}
         )
-        assert set([t.frame for t in original_annotations.tracks]) == set(
-            [t.frame for t in imported_annotations.tracks]
+
+    @pytest.mark.parametrize("format_name", ["Datumaro 1.0", "COCO 1.0", "PASCAL VOC 1.1"])
+    def test_export_and_import_tracked_format_with_outside_true(self, format_name):
+        task_id = 14
+        dataset_file = self.tmp_dir / (format_name + "outside_true_source_data.zip")
+        annotations = {
+            "shapes": [],
+            "tracks": [
+                {
+                    "frame": 0,
+                    "group": 0,
+                    "shapes": [
+                        {
+                            "type": "rectangle",
+                            "frame": 0,
+                            "points": [1.0, 2.0, 3.0, 2.0],
+                            "keyframe": True,
+                        },
+                        {
+                            "type": "rectangle",
+                            "frame": 3,
+                            "points": [1.0, 2.0, 3.0, 2.0],
+                            "keyframe": True,
+                            "outside": True,
+                        },
+                    ],
+                    "elements": [],
+                }
+            ],
+        }
+
+        original_annotations, imported_annotations = self.delete_annotation_and_import_annotations(
+            task_id, annotations, format_name, dataset_file
         )
-        assert set(
-            [
-                tes.frame
-                for t in original_annotations.tracks
-                for te in t.elements
-                for tes in te.shapes
-            ]
-        ) == set(
-            [
-                tes.frame
-                for t in imported_annotations.tracks
-                for te in t.elements
-                for tes in te.shapes
-            ]
+
+        self.compare_original_and_import_annotations(original_annotations, imported_annotations)
+
+        # check if frame 3 is imported correctly with outside = True
+        assert imported_annotations["tracks"][0]["shapes"][1]["outside"]
+
+    @pytest.mark.parametrize("format_name", ["Datumaro 1.0", "COCO 1.0", "PASCAL VOC 1.1"])
+    def test_export_and_import_tracked_format_with_intermediate_keyframe(self, format_name):
+        task_id = 14
+        dataset_file = self.tmp_dir / (format_name + "intermediate_keyframe_source_data.zip")
+        annotations = {
+            "shapes": [],
+            "tracks": [
+                {
+                    "frame": 0,
+                    "group": 0,
+                    "shapes": [
+                        {
+                            "type": "rectangle",
+                            "frame": 0,
+                            "points": [1.0, 2.0, 3.0, 2.0],
+                            "keyframe": True,
+                        },
+                        {
+                            "type": "rectangle",
+                            "frame": 3,
+                            "points": [1.0, 2.0, 3.0, 2.0],
+                            "keyframe": True,
+                        },
+                    ],
+                    "elements": [],
+                }
+            ],
+        }
+
+        original_annotations, imported_annotations = self.delete_annotation_and_import_annotations(
+            task_id, annotations, format_name, dataset_file
         )
+
+        self.compare_original_and_import_annotations(original_annotations, imported_annotations)
+
+        # check that all the keyframe is imported correctly
+        assert len(imported_annotations["tracks"][0]["shapes"]) == 2
+
+    @pytest.mark.parametrize("format_name", ["Datumaro 1.0", "COCO 1.0", "PASCAL VOC 1.1"])
+    def test_export_and_import_tracked_format_with_outside_without_keyframe(self, format_name):
+        task_id = 14
+        dataset_file = self.tmp_dir / (format_name + "outside_without_keyframe_source_data.zip")
+        annotations = {
+            "shapes": [],
+            "tracks": [
+                {
+                    "frame": 0,
+                    "group": 0,
+                    "shapes": [
+                        {
+                            "type": "rectangle",
+                            "frame": 0,
+                            "points": [1.0, 2.0, 3.0, 2.0],
+                            "keyframe": True,
+                        },
+                        {
+                            "type": "rectangle",
+                            "frame": 3,
+                            "points": [1.0, 2.0, 3.0, 2.0],
+                            "outside": True,
+                        },
+                    ],
+                    "elements": [],
+                }
+            ],
+        }
+
+        original_annotations, imported_annotations = self.delete_annotation_and_import_annotations(
+            task_id, annotations, format_name, dataset_file
+        )
+
+        self.compare_original_and_import_annotations(original_annotations, imported_annotations)
+
+        # check that all the keyframe is imported correctly
+        assert len(imported_annotations["tracks"][0]["shapes"]) == 2
+
+        # check that frame 3 is imported correctly with outside = True
+        assert imported_annotations["tracks"][0]["shapes"][1]["outside"]
+
+    @pytest.mark.parametrize("format_name", ["Datumaro 1.0", "COCO 1.0", "PASCAL VOC 1.1"])
+    def test_export_and_import_tracked_format_with_no_keyframe(self, format_name):
+        task_id = 14
+        dataset_file = self.tmp_dir / (format_name + "no_keyframe_source_data.zip")
+        annotations = {
+            "shapes": [],
+            "tracks": [
+                {
+                    "frame": 0,
+                    "group": 0,
+                    "shapes": [
+                        {
+                            "type": "rectangle",
+                            "frame": 0,
+                            "points": [1.0, 2.0, 3.0, 2.0],
+                        },
+                    ],
+                    "elements": [],
+                }
+            ],
+        }
+
+        original_annotations, imported_annotations = self.delete_annotation_and_import_annotations(
+            task_id, annotations, format_name, dataset_file
+        )
+
+        self.compare_original_and_import_annotations(original_annotations, imported_annotations)
+
+        # check if first frame is imported correctly with keyframe = True
+        assert len(imported_annotations["tracks"][0]["shapes"]) == 1
+
+    @pytest.mark.parametrize("format_name", ["Datumaro 1.0", "COCO 1.0", "PASCAL VOC 1.1"])
+    def test_export_and_import_tracked_format_with_one_outside(self, format_name):
+        task_id = 14
+        dataset_file = self.tmp_dir / (format_name + "one_outside_source_data.zip")
+        annotations = {
+            "shapes": [],
+            "tracks": [
+                {
+                    "frame": 0,
+                    "group": 0,
+                    "shapes": [
+                        {
+                            "type": "rectangle",
+                            "frame": 3,
+                            "points": [1.0, 2.0, 3.0, 2.0],
+                            "outside": True,
+                        },
+                    ],
+                    "elements": [],
+                }
+            ],
+        }
+
+        original_annotations, imported_annotations = self.delete_annotation_and_import_annotations(
+            task_id, annotations, format_name, dataset_file
+        )
+
+        self.compare_original_and_import_annotations(original_annotations, imported_annotations)
+
+        # only outside=True shape is imported, means there is no visible shape
+        assert len(imported_annotations["tracks"]) == 0
+
+    @pytest.mark.parametrize("format_name", ["Datumaro 1.0", "COCO 1.0", "PASCAL VOC 1.1"])
+    def test_export_and_import_tracked_format_with_gap(self, format_name):
+        task_id = 14
+        dataset_file = self.tmp_dir / (format_name + "with_gap_source_data.zip")
+        annotations = {
+            "shapes": [],
+            "tracks": [
+                {
+                    "frame": 0,
+                    "group": 0,
+                    "shapes": [
+                        {
+                            "type": "rectangle",
+                            "frame": 0,
+                            "points": [1.0, 2.0, 3.0, 2.0],
+                            "keyframe": True,
+                        },
+                        {
+                            "type": "rectangle",
+                            "frame": 2,
+                            "points": [1.0, 2.0, 3.0, 2.0],
+                            "outside": True,
+                        },
+                        {
+                            "type": "rectangle",
+                            "frame": 4,
+                            "points": [1.0, 2.0, 3.0, 2.0],
+                            "keyframe": True,
+                        },
+                        {
+                            "type": "rectangle",
+                            "frame": 5,
+                            "points": [1.0, 2.0, 3.0, 2.0],
+                            "outside": True,
+                        },
+                        {
+                            "type": "rectangle",
+                            "frame": 6,
+                            "points": [1.0, 2.0, 3.0, 2.0],
+                            "keyframe": True,
+                        },
+                    ],
+                    "elements": [],
+                }
+            ],
+        }
+
+        original_annotations, imported_annotations = self.delete_annotation_and_import_annotations(
+            task_id, annotations, format_name, dataset_file
+        )
+
+        self.compare_original_and_import_annotations(original_annotations, imported_annotations)
+
+        # check that all the keyframe is imported correctly
+        assert len(imported_annotations["tracks"][0]["shapes"]) == 5
+
+        outside_count = sum(
+            1 for shape in imported_annotations["tracks"][0]["shapes"] if shape["outside"]
+        )
+        assert outside_count == 2, "Outside shapes are not imported correctly"
+
+    def test_export_and_import_coco_keypoints_with_outside_true(self):
+        task_id = 14
+        format_name = "COCO Keypoints 1.0"
+        dataset_file = self.tmp_dir / (format_name + "outside_true_source_data.zip")
+        annotations = {
+            "shapes": [],
+            "tracks": [
+                {
+                    "frame": 0,
+                    "group": 0,
+                    "shapes": [
+                        {"type": "skeleton", "frame": 0, "points": [], "keyframe": True},
+                        {
+                            "type": "skeleton",
+                            "frame": 3,
+                            "points": [],
+                            "keyframe": True,
+                            "outside": True,
+                        },
+                    ],
+                    "elements": [
+                        {
+                            "frame": 0,
+                            "group": 0,
+                            "shapes": [
+                                {
+                                    "type": "points",
+                                    "frame": 0,
+                                    "points": [1.0, 2.0],
+                                    "keyframe": True,
+                                },
+                                {
+                                    "type": "points",
+                                    "frame": 3,
+                                    "points": [1.0, 2.0],
+                                    "keyframe": True,
+                                    "outside": True,
+                                },
+                            ],
+                        },
+                    ],
+                }
+            ],
+        }
+
+        original_annotations, imported_annotations = self.delete_annotation_and_import_annotations(
+            task_id, annotations, format_name, dataset_file
+        )
+
+        self.compare_original_and_import_annotations(original_annotations, imported_annotations)
+
+        # check if frame 3 is imported correctly with outside = True
+        assert imported_annotations["tracks"][0]["shapes"][1]["outside"]
+
+    def test_export_and_import_coco_keypoints_with_intermediate_keyframe(self):
+        task_id = 14
+        format_name = "COCO Keypoints 1.0"
+        dataset_file = self.tmp_dir / (format_name + "intermediate_keyframe_source_data.zip")
+        annotations = {
+            "shapes": [],
+            "tracks": [
+                {
+                    "frame": 0,
+                    "group": 0,
+                    "shapes": [
+                        {"type": "skeleton", "frame": 0, "points": [], "keyframe": True},
+                        {
+                            "type": "skeleton",
+                            "frame": 3,
+                            "points": [],
+                            "keyframe": True,
+                        },
+                    ],
+                    "elements": [
+                        {
+                            "frame": 0,
+                            "group": 0,
+                            "shapes": [
+                                {
+                                    "type": "points",
+                                    "frame": 0,
+                                    "points": [1.0, 2.0],
+                                    "keyframe": True,
+                                },
+                                {
+                                    "type": "points",
+                                    "frame": 3,
+                                    "points": [1.0, 2.0],
+                                    "keyframe": True,
+                                },
+                            ],
+                        },
+                    ],
+                }
+            ],
+        }
+
+        original_annotations, imported_annotations = self.delete_annotation_and_import_annotations(
+            task_id, annotations, format_name, dataset_file
+        )
+
+        self.compare_original_and_import_annotations(original_annotations, imported_annotations)
+
+        # check that all the keyframe is imported correctly
+        assert len(imported_annotations["tracks"][0]["shapes"]) == 2
+
+    def test_export_and_import_coco_keypoints_with_outside_without_keyframe(self):
+        task_id = 14
+        format_name = "COCO Keypoints 1.0"
+        dataset_file = self.tmp_dir / (format_name + "outside_without_keyframe_source_data.zip")
+        annotations = {
+            "shapes": [],
+            "tracks": [
+                {
+                    "frame": 0,
+                    "group": 0,
+                    "shapes": [
+                        {"type": "skeleton", "frame": 0, "points": [], "keyframe": True},
+                        {
+                            "type": "skeleton",
+                            "frame": 3,
+                            "points": [],
+                            "outside": True,
+                        },
+                    ],
+                    "elements": [
+                        {
+                            "frame": 0,
+                            "group": 0,
+                            "shapes": [
+                                {
+                                    "type": "points",
+                                    "frame": 0,
+                                    "points": [1.0, 2.0],
+                                    "keyframe": True,
+                                },
+                                {
+                                    "type": "points",
+                                    "frame": 3,
+                                    "points": [1.0, 2.0],
+                                    "outside": True,
+                                },
+                            ],
+                        },
+                    ],
+                }
+            ],
+        }
+
+        original_annotations, imported_annotations = self.delete_annotation_and_import_annotations(
+            task_id, annotations, format_name, dataset_file
+        )
+
+        self.compare_original_and_import_annotations(original_annotations, imported_annotations)
+
+        # check that all the keyframe is imported correctly
+        assert len(imported_annotations["tracks"][0]["shapes"]) == 2
+
+        # check that frame 3 is imported correctly with outside = True
+        assert imported_annotations["tracks"][0]["shapes"][1]["outside"]
+
+    def test_export_and_import_coco_keypoints_with_no_keyframe(self):
+        task_id = 14
+        format_name = "COCO Keypoints 1.0"
+        dataset_file = self.tmp_dir / (format_name + "with_no_keyframe_source_data.zip")
+        annotations = {
+            "shapes": [],
+            "tracks": [
+                {
+                    "frame": 0,
+                    "group": 0,
+                    "shapes": [
+                        {"type": "skeleton", "frame": 0, "points": []},
+                    ],
+                    "elements": [
+                        {
+                            "frame": 0,
+                            "group": 0,
+                            "shapes": [
+                                {
+                                    "type": "points",
+                                    "frame": 0,
+                                    "points": [1.0, 2.0],
+                                },
+                            ],
+                        },
+                    ],
+                }
+            ],
+        }
+
+        original_annotations, imported_annotations = self.delete_annotation_and_import_annotations(
+            task_id, annotations, format_name, dataset_file
+        )
+
+        self.compare_original_and_import_annotations(original_annotations, imported_annotations)
+
+        # check if first frame is imported correctly with keyframe = True
+        assert len(imported_annotations["tracks"][0]["shapes"]) == 1
+
+    def test_export_and_import_coco_keypoints_with_one_outside(self):
+        task_id = 14
+        format_name = "COCO Keypoints 1.0"
+        dataset_file = self.tmp_dir / (format_name + "with_one_outside_source_data.zip")
+        annotations = {
+            "shapes": [],
+            "tracks": [
+                {
+                    "frame": 0,
+                    "group": 0,
+                    "shapes": [
+                        {"type": "skeleton", "frame": 3, "points": [], "outside": True},
+                    ],
+                    "elements": [
+                        {
+                            "frame": 0,
+                            "group": 0,
+                            "shapes": [
+                                {
+                                    "type": "points",
+                                    "frame": 3,
+                                    "points": [1.0, 2.0],
+                                    "outside": True,
+                                },
+                            ],
+                        },
+                    ],
+                }
+            ],
+        }
+
+        original_annotations, imported_annotations = self.delete_annotation_and_import_annotations(
+            task_id, annotations, format_name, dataset_file
+        )
+
+        self.compare_original_and_import_annotations(original_annotations, imported_annotations)
+
+        # only outside=True shape is imported, means there is no visible shape
+        assert len(imported_annotations["tracks"]) == 0
+
+    def test_export_and_import_coco_keypoints_with_gap(self):
+        task_id = 14
+        format_name = "COCO Keypoints 1.0"
+        dataset_file = self.tmp_dir / (format_name + "with_gap_source_data.zip")
+        annotations = {
+            "shapes": [],
+            "tracks": [
+                {
+                    "frame": 0,
+                    "group": 0,
+                    "shapes": [
+                        {"type": "skeleton", "frame": 0, "points": [], "keyframe": True},
+                        {"type": "skeleton", "frame": 2, "points": [], "outside": True},
+                        {"type": "skeleton", "frame": 4, "points": [], "keyframe": True},
+                        {"type": "skeleton", "frame": 5, "points": [], "outside": True},
+                        {"type": "skeleton", "frame": 6, "points": [], "keyframe": True},
+                    ],
+                    "elements": [
+                        {
+                            "frame": 0,
+                            "group": 0,
+                            "shapes": [
+                                {
+                                    "type": "points",
+                                    "frame": 0,
+                                    "points": [1.0, 2.0],
+                                    "keyframe": True,
+                                },
+                                {
+                                    "type": "points",
+                                    "frame": 2,
+                                    "points": [1.0, 2.0],
+                                    "outside": True,
+                                },
+                                {
+                                    "type": "points",
+                                    "frame": 4,
+                                    "points": [1.0, 2.0],
+                                    "keyframe": True,
+                                },
+                                {
+                                    "type": "points",
+                                    "frame": 5,
+                                    "points": [1.0, 2.0],
+                                    "outside": True,
+                                },
+                                {
+                                    "type": "points",
+                                    "frame": 6,
+                                    "points": [1.0, 2.0],
+                                    "keyframe": True,
+                                },
+                            ],
+                        },
+                    ],
+                }
+            ],
+        }
+
+        original_annotations, imported_annotations = self.delete_annotation_and_import_annotations(
+            task_id, annotations, format_name, dataset_file
+        )
+
+        self.compare_original_and_import_annotations(original_annotations, imported_annotations)
+
+        # check if all the keyframes are imported correctly
+        assert len(imported_annotations["tracks"][0]["shapes"]) == 5
+
+        outside_count = sum(
+            1 for shape in imported_annotations["tracks"][0]["shapes"] if shape["outside"]
+        )
+        assert outside_count == 2, "Outside shapes are not imported correctly"
+
+    def test_export_and_import_complex_coco_keypoints_annotations(self):
+        task_id = 14
+        format_name = "COCO Keypoints 1.0"
+        dataset_file = self.tmp_dir / (format_name + "complex_annotations_source_data.zip")
+        annotations = {
+            "shapes": [],
+            "tracks": [
+                {
+                    "frame": 0,
+                    "group": 0,
+                    "shapes": [
+                        {"type": "skeleton", "outside": False, "frame": 0},
+                        {"type": "skeleton", "outside": False, "frame": 1},
+                        {"type": "skeleton", "outside": False, "frame": 2},
+                        {"type": "skeleton", "outside": False, "frame": 4},
+                        {"type": "skeleton", "outside": False, "frame": 5},
+                    ],
+                    "attributes": [],
+                    "elements": [
+                        {
+                            "frame": 0,
+                            "group": 0,
+                            "shapes": [
+                                {
+                                    "type": "points",
+                                    "outside": False,
+                                    "points": [256.67, 719.25],
+                                    "frame": 0,
+                                },
+                                {
+                                    "type": "points",
+                                    "outside": False,
+                                    "points": [256.67, 719.25],
+                                    "frame": 1,
+                                },
+                                {
+                                    "type": "points",
+                                    "outside": True,
+                                    "points": [256.67, 719.25],
+                                    "frame": 2,
+                                },
+                                {
+                                    "type": "points",
+                                    "outside": False,
+                                    "points": [256.67, 719.25],
+                                    "frame": 4,
+                                },
+                                {
+                                    "type": "points",
+                                    "outside": False,
+                                    "points": [256.67, 719.25],
+                                    "frame": 5,
+                                },
+                            ],
+                        },
+                        {
+                            "frame": 0,
+                            "group": 0,
+                            "shapes": [
+                                {
+                                    "type": "points",
+                                    "outside": False,
+                                    "points": [318.25, 842.06],
+                                    "frame": 0,
+                                },
+                                {
+                                    "type": "points",
+                                    "outside": True,
+                                    "points": [318.25, 842.06],
+                                    "frame": 1,
+                                },
+                                {
+                                    "type": "points",
+                                    "outside": False,
+                                    "points": [318.25, 842.06],
+                                    "frame": 2,
+                                },
+                                {
+                                    "type": "points",
+                                    "outside": True,
+                                    "points": [318.25, 842.06],
+                                    "frame": 4,
+                                },
+                            ],
+                        },
+                        {
+                            "frame": 0,
+                            "group": 0,
+                            "shapes": [
+                                {
+                                    "type": "points",
+                                    "outside": False,
+                                    "points": [199.2, 798.71],
+                                    "frame": 0,
+                                },
+                                {
+                                    "type": "points",
+                                    "outside": False,
+                                    "points": [199.2, 798.71],
+                                    "frame": 1,
+                                },
+                                {
+                                    "type": "points",
+                                    "outside": True,
+                                    "points": [199.2, 798.71],
+                                    "frame": 2,
+                                },
+                                {
+                                    "type": "points",
+                                    "outside": False,
+                                    "points": [199.2, 798.71],
+                                    "frame": 4,
+                                },
+                                {
+                                    "type": "points",
+                                    "outside": True,
+                                    "points": [199.2, 798.71],
+                                    "frame": 5,
+                                },
+                            ],
+                        },
+                    ],
+                },
+                {
+                    "frame": 0,
+                    "group": 0,
+                    "shapes": [
+                        {"type": "skeleton", "outside": False, "frame": 0},
+                        {"type": "skeleton", "outside": True, "frame": 1},
+                        {"type": "skeleton", "outside": False, "frame": 3},
+                        {"type": "skeleton", "outside": False, "frame": 4},
+                        {"type": "skeleton", "outside": False, "frame": 5},
+                    ],
+                    "attributes": [],
+                    "elements": [
+                        {
+                            "frame": 0,
+                            "group": 0,
+                            "shapes": [
+                                {
+                                    "type": "points",
+                                    "outside": False,
+                                    "points": [416.16, 244.31],
+                                    "frame": 0,
+                                },
+                                {
+                                    "type": "points",
+                                    "outside": True,
+                                    "points": [416.16, 244.31],
+                                    "frame": 1,
+                                },
+                                {
+                                    "type": "points",
+                                    "outside": False,
+                                    "points": [416.16, 244.31],
+                                    "frame": 3,
+                                },
+                                {
+                                    "type": "points",
+                                    "outside": False,
+                                    "points": [416.16, 244.31],
+                                    "frame": 4,
+                                },
+                                {
+                                    "type": "points",
+                                    "outside": False,
+                                    "points": [416.16, 244.31],
+                                    "frame": 5,
+                                },
+                            ],
+                        },
+                        {
+                            "frame": 0,
+                            "group": 0,
+                            "shapes": [
+                                {
+                                    "type": "points",
+                                    "outside": False,
+                                    "points": [486.17, 379.65],
+                                    "frame": 0,
+                                },
+                                {
+                                    "type": "points",
+                                    "outside": True,
+                                    "points": [486.17, 379.65],
+                                    "frame": 1,
+                                },
+                                {
+                                    "type": "points",
+                                    "outside": True,
+                                    "points": [486.17, 379.65],
+                                    "frame": 3,
+                                },
+                                {
+                                    "type": "points",
+                                    "outside": False,
+                                    "points": [486.17, 379.65],
+                                    "frame": 4,
+                                },
+                                {
+                                    "type": "points",
+                                    "outside": False,
+                                    "points": [486.17, 379.65],
+                                    "frame": 5,
+                                },
+                            ],
+                        },
+                        {
+                            "frame": 0,
+                            "group": 0,
+                            "shapes": [
+                                {
+                                    "type": "points",
+                                    "outside": False,
+                                    "points": [350.83, 331.88],
+                                    "frame": 0,
+                                },
+                                {
+                                    "type": "points",
+                                    "outside": True,
+                                    "points": [350.83, 331.88],
+                                    "frame": 1,
+                                },
+                                {
+                                    "type": "points",
+                                    "outside": True,
+                                    "points": [350.83, 331.88],
+                                    "frame": 3,
+                                },
+                                {
+                                    "type": "points",
+                                    "outside": False,
+                                    "points": [350.83, 331.88],
+                                    "frame": 5,
+                                },
+                            ],
+                        },
+                    ],
+                },
+            ],
+        }
+
+        original_annotations, imported_annotations = self.delete_annotation_and_import_annotations(
+            task_id, annotations, format_name, dataset_file
+        )
+
+        self.compare_original_and_import_annotations(original_annotations, imported_annotations)
+
+        def check_element_outside_count(track_idx, element_idx, expected_count):
+            outside_count = sum(
+                1
+                for shape in imported_annotations["tracks"][0]["elements"][element_idx]["shapes"]
+                if shape["outside"]
+            )
+            assert (
+                outside_count == expected_count
+            ), f"Outside shapes for track[{track_idx}]element[{element_idx}] are not imported correctly"
+
+        # check track[0] elements outside count
+        check_element_outside_count(0, 0, 1)
+        check_element_outside_count(0, 1, 2)
+        check_element_outside_count(0, 2, 2)
+
+        # check track[1] elements outside count
+        check_element_outside_count(1, 0, 1)
+        check_element_outside_count(1, 1, 2)
+        check_element_outside_count(1, 2, 2)

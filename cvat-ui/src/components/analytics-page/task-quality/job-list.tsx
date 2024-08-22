@@ -6,7 +6,7 @@ import React, { useState } from 'react';
 import { useHistory } from 'react-router';
 import { Row, Col } from 'antd/lib/grid';
 import { DownloadOutlined, QuestionCircleOutlined } from '@ant-design/icons';
-import { ColumnFilterItem } from 'antd/lib/table/interface';
+import { ColumnFilterItem, Key } from 'antd/lib/table/interface';
 import Table from 'antd/lib/table';
 import Button from 'antd/lib/button';
 import Text from 'antd/lib/typography/Text';
@@ -56,7 +56,9 @@ function JobListComponent(props: Props): JSX.Element {
                 Number.isFinite(field1) && Number.isFinite(field2)) return field1 - field2;
             }
 
-            if (field1 === null || !Number.isFinite(field1)) {
+            if (field1 === null && field2 === null) return 0;
+
+            if (field1 === null || (typeof field1 === 'number' && !Number.isFinite(field1))) {
                 return -1;
             }
 
@@ -67,12 +69,12 @@ function JobListComponent(props: Props): JSX.Element {
     function collectUsers(path: string): ColumnFilterItem[] {
         return Array.from<string | null>(
             new Set(
-                jobs.map((job: any) => {
-                    if (job[path] === null) {
+                Object.values(jobsReports).map((report: QualityReport) => {
+                    if (report[path] === null) {
                         return null;
                     }
 
-                    return job[path].username;
+                    return report[path].username;
                 }),
             ),
         ).map((value: string | null) => ({ text: value || 'Is Empty', value: value || false }));
@@ -120,19 +122,19 @@ function JobListComponent(props: Props): JSX.Element {
                 { text: 'validation', value: 'validation' },
                 { text: 'acceptance', value: 'acceptance' },
             ],
-            onFilter: (value: string | number | boolean, record: any) => record.stage.stage === value,
+            onFilter: (value: boolean | Key, record: any) => record.stage.stage === value,
         },
         {
             title: 'Assignee',
             dataIndex: 'assignee',
             key: 'assignee',
             className: 'cvat-job-item-assignee',
-            render: (jobInstance: any): JSX.Element => (
-                <Text>{jobInstance?.assignee?.username}</Text>
+            render: (report: QualityReport): JSX.Element => (
+                <Text>{report?.assignee?.username}</Text>
             ),
             sorter: sorter('assignee.assignee.username'),
             filters: collectUsers('assignee'),
-            onFilter: (value: string | number | boolean, record: any) => (
+            onFilter: (value: boolean | Key, record: any) => (
                 record.assignee.assignee?.username || false
             ) === value,
         },
@@ -141,7 +143,7 @@ function JobListComponent(props: Props): JSX.Element {
             dataIndex: 'frame_intersection',
             key: 'frame_intersection',
             className: 'cvat-job-item-frame-intersection',
-            sorter: sorter('frame_intersection'),
+            sorter: sorter('frame_intersection.summary.frameCount'),
             render: (report?: QualityReport): JSX.Element => {
                 const frames = report?.summary.frameCount;
                 const frameSharePercent = report?.summary?.frameSharePercent;
@@ -232,7 +234,7 @@ function JobListComponent(props: Props): JSX.Element {
             job: job.id,
             download: job,
             stage: job,
-            assignee: job,
+            assignee: report,
             quality: report,
             conflicts: report,
             frame_intersection: report,

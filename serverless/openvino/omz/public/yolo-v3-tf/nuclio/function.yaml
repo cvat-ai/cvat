@@ -4,7 +4,6 @@ metadata:
   annotations:
     name: YOLO v3
     type: detector
-    framework: openvino
     spec: |
       [
         { "id": 0, "name": "person", "type": "rectangle" },

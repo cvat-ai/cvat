@@ -1,5 +1,5 @@
 # Copyright (C) 2019-2022 Intel Corporation
-# Copyright (C) 2022-2023 CVAT.ai Corporation
+# Copyright (C) 2022-2024 CVAT.ai Corporation
 #
 # SPDX-License-Identifier: MIT
 
@@ -12,17 +12,22 @@ from datumaro.components.errors import DatasetError, DatasetImportError, Dataset
 
 from django.db import transaction
 from django.db.models.query import Prefetch
+from django.conf import settings
 from rest_framework.exceptions import ValidationError
 
 from cvat.apps.engine import models, serializers
 from cvat.apps.engine.plugins import plugin_decorator
+from cvat.apps.engine.log import DatasetLogManager
+from cvat.apps.engine.utils import chunked_list
 from cvat.apps.events.handlers import handle_annotations_change
 from cvat.apps.profiler import silk_profile
 
 from cvat.apps.dataset_manager.annotation import AnnotationIR, AnnotationManager
-from cvat.apps.dataset_manager.bindings import TaskData, JobData, CvatImportError
+from cvat.apps.dataset_manager.bindings import TaskData, JobData, CvatImportError, CvatDatasetNotFoundError
 from cvat.apps.dataset_manager.formats.registry import make_exporter, make_importer
 from cvat.apps.dataset_manager.util import add_prefetch_fields, bulk_create, get_cached
+
+dlogger = DatasetLogManager()
 
 class dotdict(OrderedDict):
     """dot.notation access to dictionary attributes"""
@@ -44,7 +49,7 @@ class PatchAction(str, Enum):
     def __str__(self):
         return self.value
 
-def _merge_table_rows(rows, keys_for_merge, field_id):
+def merge_table_rows(rows, keys_for_merge, field_id):
     # It is necessary to keep a stable order of original rows
     # (e.g. for tracked boxes). Otherwise prev_box.frame can be bigger
     # than next_box.frame.
@@ -88,6 +93,7 @@ class JobAnnotation:
             'segment',
             'segment__task',
         ).prefetch_related(
+            'segment__task__project',
             'segment__task__owner',
             'segment__task__assignee',
             'segment__task__project__owner',
@@ -193,7 +199,7 @@ class JobAnnotation:
 
         if min_frame < parent_track.frame:
             # parent track cannot have a frame greater than the frame of the child track
-            parent_tracked_shape = parent_track.trackedshape_set.first()
+            parent_tracked_shape = parent_track.shapes.first()
             parent_track.frame = min_frame
             parent_tracked_shape.frame = min_frame
 
@@ -388,8 +394,12 @@ class JobAnnotation:
         self.ir_data.tags = tags
 
     def _set_updated_date(self):
-        self.db_job.segment.task.touch()
-        self.db_job.touch()
+        db_task = self.db_job.segment.task
+        with transaction.atomic():
+            self.db_job.touch()
+            db_task.touch()
+            if db_project := db_task.project:
+                db_project.touch()
 
     @staticmethod
     def _data_is_empty(data):
@@ -428,24 +438,52 @@ class JobAnnotation:
         if not self._data_is_empty(self.data):
             self._set_updated_date()
 
+    def _delete_job_labeledimages(self, ids__UNSAFE: list[int]) -> None:
+        # ids__UNSAFE is a list, received from the user
+        # we MUST filter it by job_id additionally before applying to any queries
+        ids = self.db_job.labeledimage_set.filter(pk__in=ids__UNSAFE).values_list('id', flat=True)
+        models.LabeledImageAttributeVal.objects.filter(image_id__in=ids).delete()
+        self.db_job.labeledimage_set.filter(pk__in=ids).delete()
+
+    def _delete_job_labeledshapes(self, ids__UNSAFE: list[int], *, is_subcall: bool = False) -> None:
+        # ids__UNSAFE is a list, received from the user
+        # we MUST filter it by job_id additionally before applying to any queries
+        if is_subcall:
+            ids = ids__UNSAFE
+        else:
+            ids = self.db_job.labeledshape_set.filter(pk__in=ids__UNSAFE).values_list('id', flat=True)
+            child_ids = self.db_job.labeledshape_set.filter(parent_id__in=ids).values_list('id', flat=True)
+            if len(child_ids):
+                self._delete_job_labeledshapes(child_ids, is_subcall=True)
+
+        models.LabeledShapeAttributeVal.objects.filter(shape_id__in=ids).delete()
+        self.db_job.labeledshape_set.filter(pk__in=ids).delete()
+
+    def _delete_job_labeledtracks(self, ids__UNSAFE: list[int], *, is_subcall: bool = False) -> None:
+        # ids__UNSAFE is a list, received from the user
+        # we MUST filter it by job_id additionally before applying to any queries
+        if is_subcall:
+            ids = ids__UNSAFE
+        else:
+            ids = self.db_job.labeledtrack_set.filter(pk__in=ids__UNSAFE).values_list('id', flat=True)
+            child_ids = self.db_job.labeledtrack_set.filter(parent_id__in=ids).values_list('id', flat=True)
+            if len(child_ids):
+                self._delete_job_labeledtracks(child_ids, is_subcall=True)
+
+        models.TrackedShapeAttributeVal.objects.filter(shape__track_id__in=ids).delete()
+        models.LabeledTrackAttributeVal.objects.filter(track_id__in=ids).delete()
+        self.db_job.labeledtrack_set.filter(pk__in=ids).delete()
+
     def _delete(self, data=None):
         deleted_data = {}
         if data is None:
             self.init_from_db()
             deleted_data = self.data
-            self.db_job.labeledimage_set.all().delete()
-            self.db_job.labeledshape_set.all().delete()
-            self.db_job.labeledtrack_set.all().delete()
+            models.clear_annotations_in_jobs([self.db_job.id])
         else:
             labeledimage_ids = [image["id"] for image in data["tags"]]
             labeledshape_ids = [shape["id"] for shape in data["shapes"]]
             labeledtrack_ids = [track["id"] for track in data["tracks"]]
-            labeledimage_set = self.db_job.labeledimage_set
-            labeledimage_set = labeledimage_set.filter(pk__in=labeledimage_ids)
-            labeledshape_set = self.db_job.labeledshape_set
-            labeledshape_set = labeledshape_set.filter(pk__in=labeledshape_ids)
-            labeledtrack_set = self.db_job.labeledtrack_set
-            labeledtrack_set = labeledtrack_set.filter(pk__in=labeledtrack_ids)
 
             # It is not important for us that data had some "invalid" objects
             # which were skipped (not actually deleted). The main idea is to
@@ -454,9 +492,14 @@ class JobAnnotation:
             self.ir_data.shapes = data['shapes']
             self.ir_data.tracks = data['tracks']
 
-            labeledimage_set.delete()
-            labeledshape_set.delete()
-            labeledtrack_set.delete()
+            for labeledimage_ids_chunk in chunked_list(labeledimage_ids, chunk_size=1000):
+                self._delete_job_labeledimages(labeledimage_ids_chunk)
+
+            for labeledshape_ids_chunk in chunked_list(labeledshape_ids, chunk_size=1000):
+                self._delete_job_labeledshapes(labeledshape_ids_chunk)
+
+            for labeledtrack_ids_chunk in chunked_list(labeledtrack_ids, chunk_size=1000):
+                self._delete_job_labeledtracks(labeledtrack_ids_chunk)
 
             deleted_data = {
                 "tags": data["tags"],
@@ -468,10 +511,10 @@ class JobAnnotation:
 
     def delete(self, data=None):
         deleted_data = self._delete(data)
-        handle_annotations_change(self.db_job, deleted_data, "delete")
-
         if not self._data_is_empty(deleted_data):
             self._set_updated_date()
+
+        handle_annotations_change(self.db_job, deleted_data, "delete")
 
     @staticmethod
     def _extend_attributes(attributeval_set, default_attribute_values):
@@ -484,44 +527,42 @@ class JobAnnotation:
                 ]))
 
     def _init_tags_from_db(self):
-        db_tags = self.db_job.labeledimage_set.prefetch_related(
-            "label",
-            "labeledimageattributeval_set"
-        ).values(
+        # NOTE: do not use .prefetch_related() with .values() since it's useless:
+        # https://github.com/cvat-ai/cvat/pull/7748#issuecomment-2063695007
+        db_tags = self.db_job.labeledimage_set.values(
             'id',
             'frame',
             'label_id',
             'group',
             'source',
-            'labeledimageattributeval__spec_id',
-            'labeledimageattributeval__value',
-            'labeledimageattributeval__id',
-        ).order_by('frame')
+            'attribute__spec_id',
+            'attribute__value',
+            'attribute__id',
+        ).order_by('frame').iterator(chunk_size=2000)
 
-        db_tags = _merge_table_rows(
+        db_tags = merge_table_rows(
             rows=db_tags,
             keys_for_merge={
-                "labeledimageattributeval_set": [
-                    'labeledimageattributeval__spec_id',
-                    'labeledimageattributeval__value',
-                    'labeledimageattributeval__id',
+                "attributes": [
+                    'attribute__spec_id',
+                    'attribute__value',
+                    'attribute__id',
                 ],
             },
             field_id='id',
         )
 
         for db_tag in db_tags:
-            self._extend_attributes(db_tag.labeledimageattributeval_set,
+            self._extend_attributes(db_tag.attributes,
                 self.db_attributes[db_tag.label_id]["all"].values())
 
         serializer = serializers.LabeledImageSerializerFromDB(db_tags, many=True)
         self.ir_data.tags = serializer.data
 
     def _init_shapes_from_db(self):
-        db_shapes = self.db_job.labeledshape_set.prefetch_related(
-            "label",
-            "labeledshapeattributeval_set"
-        ).values(
+        # NOTE: do not use .prefetch_related() with .values() since it's useless:
+        # https://github.com/cvat-ai/cvat/pull/7748#issuecomment-2063695007
+        db_shapes = self.db_job.labeledshape_set.values(
             'id',
             'label_id',
             'type',
@@ -534,18 +575,18 @@ class JobAnnotation:
             'rotation',
             'points',
             'parent',
-            'labeledshapeattributeval__spec_id',
-            'labeledshapeattributeval__value',
-            'labeledshapeattributeval__id',
-            ).order_by('frame')
+            'attribute__spec_id',
+            'attribute__value',
+            'attribute__id',
+        ).order_by('frame').iterator(chunk_size=2000)
 
-        db_shapes = _merge_table_rows(
+        db_shapes = merge_table_rows(
             rows=db_shapes,
             keys_for_merge={
-                'labeledshapeattributeval_set': [
-                    'labeledshapeattributeval__spec_id',
-                    'labeledshapeattributeval__value',
-                    'labeledshapeattributeval__id',
+                'attributes': [
+                    'attribute__spec_id',
+                    'attribute__value',
+                    'attribute__id',
                 ],
             },
             field_id='id',
@@ -554,8 +595,12 @@ class JobAnnotation:
         shapes = {}
         elements = {}
         for db_shape in db_shapes:
-            self._extend_attributes(db_shape.labeledshapeattributeval_set,
+            self._extend_attributes(db_shape.attributes,
                 self.db_attributes[db_shape.label_id]["all"].values())
+            if db_shape['type'] == str(models.ShapeType.SKELETON):
+                # skeletons themselves should not have points as they consist of other elements
+                # here we ensure that it was initialized correctly
+                db_shape['points'] = []
 
             if db_shape.parent is None:
                 db_shape.elements = []
@@ -572,53 +617,51 @@ class JobAnnotation:
         self.ir_data.shapes = serializer.data
 
     def _init_tracks_from_db(self):
-        db_tracks = self.db_job.labeledtrack_set.prefetch_related(
-            "label",
-            "labeledtrackattributeval_set",
-            "trackedshape_set__trackedshapeattributeval_set"
-        ).values(
+        # NOTE: do not use .prefetch_related() with .values() since it's useless:
+        # https://github.com/cvat-ai/cvat/pull/7748#issuecomment-2063695007
+        db_tracks = self.db_job.labeledtrack_set.values(
             "id",
             "frame",
             "label_id",
             "group",
             "source",
             "parent",
-            "labeledtrackattributeval__spec_id",
-            "labeledtrackattributeval__value",
-            "labeledtrackattributeval__id",
-            "trackedshape__type",
-            "trackedshape__occluded",
-            "trackedshape__z_order",
-            "trackedshape__rotation",
-            "trackedshape__points",
-            "trackedshape__id",
-            "trackedshape__frame",
-            "trackedshape__outside",
-            "trackedshape__trackedshapeattributeval__spec_id",
-            "trackedshape__trackedshapeattributeval__value",
-            "trackedshape__trackedshapeattributeval__id",
-        ).order_by('id', 'trackedshape__frame')
+            "attribute__spec_id",
+            "attribute__value",
+            "attribute__id",
+            "shape__type",
+            "shape__occluded",
+            "shape__z_order",
+            "shape__rotation",
+            "shape__points",
+            "shape__id",
+            "shape__frame",
+            "shape__outside",
+            "shape__attribute__spec_id",
+            "shape__attribute__value",
+            "shape__attribute__id",
+        ).order_by('id', 'shape__frame').iterator(chunk_size=2000)
 
-        db_tracks = _merge_table_rows(
+        db_tracks = merge_table_rows(
             rows=db_tracks,
             keys_for_merge={
-                "labeledtrackattributeval_set": [
-                    "labeledtrackattributeval__spec_id",
-                    "labeledtrackattributeval__value",
-                    "labeledtrackattributeval__id",
+                "attributes": [
+                    "attribute__spec_id",
+                    "attribute__value",
+                    "attribute__id",
                 ],
-                "trackedshape_set":[
-                    "trackedshape__type",
-                    "trackedshape__occluded",
-                    "trackedshape__z_order",
-                    "trackedshape__points",
-                    "trackedshape__rotation",
-                    "trackedshape__id",
-                    "trackedshape__frame",
-                    "trackedshape__outside",
-                    "trackedshape__trackedshapeattributeval__spec_id",
-                    "trackedshape__trackedshapeattributeval__value",
-                    "trackedshape__trackedshapeattributeval__id",
+                "shapes":[
+                    "shape__type",
+                    "shape__occluded",
+                    "shape__z_order",
+                    "shape__points",
+                    "shape__rotation",
+                    "shape__id",
+                    "shape__frame",
+                    "shape__outside",
+                    "shape__attribute__spec_id",
+                    "shape__attribute__value",
+                    "shape__attribute__id",
                 ],
             },
             field_id="id",
@@ -627,29 +670,31 @@ class JobAnnotation:
         tracks = {}
         elements = {}
         for db_track in db_tracks:
-            db_track["trackedshape_set"] = _merge_table_rows(db_track["trackedshape_set"], {
-                'trackedshapeattributeval_set': [
-                    'trackedshapeattributeval__value',
-                    'trackedshapeattributeval__spec_id',
-                    'trackedshapeattributeval__id',
+            db_track["shapes"] = merge_table_rows(db_track["shapes"], {
+                'attributes': [
+                    'attribute__value',
+                    'attribute__spec_id',
+                    'attribute__id',
                 ]
             }, 'id')
 
             # A result table can consist many equal rows for track/shape attributes
             # We need filter unique attributes manually
-            db_track["labeledtrackattributeval_set"] = list(set(db_track["labeledtrackattributeval_set"]))
-            self._extend_attributes(db_track.labeledtrackattributeval_set,
+            db_track["attributes"] = list(set(db_track["attributes"]))
+            self._extend_attributes(db_track.attributes,
                 self.db_attributes[db_track.label_id]["immutable"].values())
 
             default_attribute_values = self.db_attributes[db_track.label_id]["mutable"].values()
-            for db_shape in db_track["trackedshape_set"]:
-                db_shape["trackedshapeattributeval_set"] = list(
-                    set(db_shape["trackedshapeattributeval_set"])
-                )
-                # in case of trackedshapes need to interpolate attriute values and extend it
+            for db_shape in db_track["shapes"]:
+                db_shape["attributes"] = list(set(db_shape["attributes"]))
+                # in case of trackedshapes need to interpolate attribute values and extend it
                 # by previous shape attribute values (not default values)
-                self._extend_attributes(db_shape["trackedshapeattributeval_set"], default_attribute_values)
-                default_attribute_values = db_shape["trackedshapeattributeval_set"]
+                self._extend_attributes(db_shape["attributes"], default_attribute_values)
+                if db_shape['type'] == str(models.ShapeType.SKELETON):
+                    # skeletons themselves should not have points as they consist of other elements
+                    # here we ensure that it was initialized correctly
+                    db_shape['points'] = []
+                default_attribute_values = db_shape["attributes"]
 
             if db_track.parent is None:
                 db_track.elements = []
@@ -701,7 +746,19 @@ class JobAnnotation:
         temp_dir_base = self.db_job.get_tmp_dirname()
         os.makedirs(temp_dir_base, exist_ok=True)
         with TemporaryDirectory(dir=temp_dir_base) as temp_dir:
-            importer(src_file, temp_dir, job_data, **options)
+            try:
+                importer(src_file, temp_dir, job_data, **options)
+            except (DatasetNotFoundError, CvatDatasetNotFoundError) as not_found:
+                if settings.CVAT_LOG_IMPORT_ERRORS:
+                    dlogger.log_import_error(
+                        entity="job",
+                        entity_id=self.db_job.id,
+                        format_name=importer.DISPLAY_NAME,
+                        base_error=str(not_found),
+                        dir_path=temp_dir,
+                    )
+
+                raise not_found
 
         self.create(job_data.data.slice(self.start_frame, self.stop_frame).serialize())
 
@@ -801,7 +858,19 @@ class TaskAnnotation:
         temp_dir_base = self.db_task.get_tmp_dirname()
         os.makedirs(temp_dir_base, exist_ok=True)
         with TemporaryDirectory(dir=temp_dir_base) as temp_dir:
-            importer(src_file, temp_dir, task_data, **options)
+            try:
+                importer(src_file, temp_dir, task_data, **options)
+            except (DatasetNotFoundError, CvatDatasetNotFoundError) as not_found:
+                if settings.CVAT_LOG_IMPORT_ERRORS:
+                    dlogger.log_import_error(
+                        entity="task",
+                        entity_id=self.db_task.id,
+                        format_name=importer.DISPLAY_NAME,
+                        base_error=str(not_found),
+                        dir_path=temp_dir,
+                    )
+
+                raise not_found
 
         self.create(task_data.data.serialize())
 
@@ -912,7 +981,6 @@ def export_task(task_id, dst_file, format_name, server_url=None, save_images=Fal
 @transaction.atomic
 def import_task_annotations(src_file, task_id, format_name, conv_mask_to_poly):
     task = TaskAnnotation(task_id)
-    task.init_from_db()
 
     importer = make_importer(format_name)
     with open(src_file, 'rb') as f:
@@ -924,7 +992,6 @@ def import_task_annotations(src_file, task_id, format_name, conv_mask_to_poly):
 @transaction.atomic
 def import_job_annotations(src_file, job_id, format_name, conv_mask_to_poly):
     job = JobAnnotation(job_id)
-    job.init_from_db()
 
     importer = make_importer(format_name)
     with open(src_file, 'rb') as f:
