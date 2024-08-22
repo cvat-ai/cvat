@@ -15,7 +15,7 @@ import Title from 'antd/lib/typography/Title';
 import notification from 'antd/lib/notification';
 import { useIsMounted } from 'utils/hooks';
 import {
-    Job, JobType, QualityReport, QualitySettings, Task, getCore,
+    Job, JobType, QualityReport, QualitySettings, Task, getCore, FramesMetaData,
 } from 'cvat-core-wrapper';
 import CVATLoadingSpinner from 'components/common/loading-spinner';
 import GoBackButton from 'components/common/go-back-button';
@@ -45,6 +45,10 @@ type InstanceType = 'project' | 'task' | 'job';
 interface State {
     fetching: boolean;
     reportRefreshingStatus: string | null;
+    gtJob: {
+        instance: Job | null,
+        meta: FramesMetaData | null,
+    },
     qualitySettings: {
         settings: QualitySettings | null;
         fetching: boolean;
@@ -61,6 +65,7 @@ enum ReducerActionType {
     SET_QUALITY_SETTINGS_VISIBLE = 'SET_QUALITY_SETTINGS_VISIBLE',
     SET_QUALITY_SETTINGS_FETCHING = 'SET_QUALITY_SETTINGS_FETCHING',
     SET_REPORT_REFRESHING_STATUS = 'SET_REPORT_REFRESHING_STATUS',
+    SET_GT_JOB = 'SET_GT_JOB',
 }
 
 export const reducerActions = {
@@ -84,6 +89,9 @@ export const reducerActions = {
     ),
     setReportRefreshingStatus: (status: string | null) => (
         createAction(ReducerActionType.SET_REPORT_REFRESHING_STATUS, { status })
+    ),
+    setGtJob: (job: Job | null, meta: FramesMetaData | null) => (
+        createAction(ReducerActionType.SET_GT_JOB, { job, meta })
     ),
 };
 
@@ -123,6 +131,17 @@ const reducer = (state: State, action: ActionUnion<typeof reducerActions>): Stat
         };
     }
 
+    if (action.type === ReducerActionType.SET_GT_JOB) {
+        return {
+            ...state,
+            gtJob: {
+                ...state.gtJob,
+                instance: action.payload.job,
+                meta: action.payload.meta,
+            },
+        };
+    }
+
     return state;
 };
 
@@ -130,6 +149,10 @@ function QualityControlPage(): JSX.Element {
     const [state, dispatch] = useReducer(reducer, {
         fetching: true,
         reportRefreshingStatus: null,
+        gtJob: {
+            instance: null,
+            meta: null,
+        },
         qualitySettings: {
             settings: null,
             fetching: true,
@@ -149,11 +172,17 @@ function QualityControlPage(): JSX.Element {
     const [activeTab, setTab] = useState(getTabFromHash(supportedTabs));
     const receiveInstance = async (type: InstanceType, id: number): Promise<Task | null> => {
         let receivedInstance: Task | null = null;
+        let gtJob: Job | null = null;
+        let gtJobMeta: any = null;
 
         try {
             switch (type) {
                 case 'task': {
                     [receivedInstance] = await core.tasks.get({ id });
+                    gtJob = receivedInstance.jobs.find((job: Job) => job.type === JobType.GROUND_TRUTH) ?? null;
+                    if (gtJob) {
+                        gtJobMeta = await core.frames.getMeta('job', gtJob.id);
+                    }
                     break;
                 }
                 default:
@@ -161,6 +190,7 @@ function QualityControlPage(): JSX.Element {
             }
 
             if (isMounted()) {
+                dispatch(reducerActions.setGtJob(gtJob, gtJobMeta));
                 setInstance(receivedInstance);
                 setInstanceType(type);
             }
@@ -247,7 +277,7 @@ function QualityControlPage(): JSX.Element {
     }, [state.qualitySettings.settings]);
 
     useEffect(() => {
-        if (Number.isInteger(requestedInstanceID) && ['project', 'task', 'job'].includes(requestedInstanceType)) {
+        if (Number.isInteger(requestedInstanceID) && ['task'].includes(requestedInstanceType)) {
             dispatch(reducerActions.setFetching(true));
             receiveInstance(requestedInstanceType, requestedInstanceID).then((task) => {
                 if (task) {
@@ -305,7 +335,6 @@ function QualityControlPage(): JSX.Element {
         );
 
         const tabsItems = [];
-        const gtJob = instance.jobs.find((job: Job) => job.type === JobType.GROUND_TRUTH);
         tabsItems.push([{
             key: 'overview',
             label: 'Overview',
@@ -317,13 +346,14 @@ function QualityControlPage(): JSX.Element {
             ),
         }, 10]);
 
-        if (gtJob) {
+        if (state.gtJob.instance && state.gtJob.meta) {
             tabsItems.push([{
                 key: 'management',
                 label: 'Management',
                 children: (
                     <TaskQualityManagementComponent
                         task={instance}
+                        gtJobFramesMeta={state.gtJob.meta}
                         getQualityColor={state.qualitySettings.getQualityColor}
                     />
                 ),
