@@ -394,7 +394,12 @@ def build_annotations_file_name(
     extension: str = "{}",
 ) -> str:
     # "<project|task|job>_<name|id>_<annotations|dataset|fulldataset>_<timestamp>_<format>.zip"
-    dataset_type = 'annotations' if is_annotation_file else ('fulldataset' if all_images else 'dataset')
+    if is_annotation_file:
+        dataset_type = 'annotations'
+    elif all_images:
+        dataset_type = 'fulldataset'
+    else:
+        dataset_type = 'dataset'
 
     return "{}_{}_{}_{}_{}{}".format(
         class_name, identifier, dataset_type,
