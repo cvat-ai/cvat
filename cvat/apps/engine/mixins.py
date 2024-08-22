@@ -427,9 +427,11 @@ class DatasetMixin:
         get_data: Optional[Callable[[int], Dict[str, Any]]] = None,
     ) -> Response:
         if request.query_params.get("format"):
-            callback = self.get_export_callback(save_images)
 
-            dataset_export_manager = DatasetExportManager(self._object, request, callback, save_images=save_images, version=1)
+            all_images = to_bool(request.query_params.get('all_images', False))
+            callback = self.get_export_callback(save_images, all_images)
+
+            dataset_export_manager = DatasetExportManager(self._object, request, callback, save_images=save_images, all_images=all_images, version=1)
             return dataset_export_manager.export()
 
         if not get_data:
@@ -458,6 +460,8 @@ class DatasetMixin:
                 location=OpenApiParameter.QUERY, type=OpenApiTypes.INT, required=False),
             OpenApiParameter('save_images', description='Include images or not',
                 location=OpenApiParameter.QUERY, type=OpenApiTypes.BOOL, required=False, default=False),
+            OpenApiParameter('all_images', description='Include all images or only annotated',
+                location=OpenApiParameter.QUERY, type=OpenApiTypes.BOOL, required=False, default=True),
         ],
         request=OpenApiTypes.NONE,
         responses={
@@ -471,9 +475,10 @@ class DatasetMixin:
         self._object = self.get_object() # force call of check_object_permissions()
 
         save_images = is_dataset_export(request)
-        callback = self.get_export_callback(save_images)
+        all_images = to_bool(request.query_params.get('all_images', False))
+        callback = self.get_export_callback(save_images, all_images)
 
-        dataset_export_manager = DatasetExportManager(self._object, request, callback, save_images=save_images, version=2)
+        dataset_export_manager = DatasetExportManager(self._object, request, callback, save_images=save_images, all_images=all_images, version=2)
         return dataset_export_manager.export()
 
     # FUTURE-TODO: migrate to new API

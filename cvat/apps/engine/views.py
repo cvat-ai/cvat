@@ -311,8 +311,13 @@ class ProjectViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
         # Required for the extra summary information added in the queryset
         serializer.instance = self.get_queryset().get(pk=serializer.instance.pk)
 
-    def get_export_callback(self, save_images: bool) -> Callable:
-        return dm.views.export_project_as_dataset if save_images else dm.views.export_project_annotations
+    def get_export_callback(self, save_images: bool, all_images: bool) -> Callable:
+        if save_images and all_images:
+            return dm.views.export_project_as_dataset_full
+        elif save_images:
+            return dm.views.export_project_as_dataset
+        else:
+            return dm.views.export_project_annotations
 
     @extend_schema(methods=['GET'], summary='Export a project as a dataset / Check dataset import status',
         description=textwrap.dedent("""
@@ -1317,8 +1322,13 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
         self._object = self.get_object()
         return self.append_tus_chunk(request, file_id)
 
-    def get_export_callback(self, save_images: bool) -> Callable:
-        return dm.views.export_task_as_dataset if save_images else dm.views.export_task_annotations
+    def get_export_callback(self, save_images: bool, all_images: bool) -> Callable:
+        if save_images and all_images:
+            return dm.views.export_task_as_dataset_full
+        elif save_images:
+            return dm.views.export_task_as_dataset
+        else:
+            return dm.views.export_task_annotations
 
     # TODO: mark this endpoint as deprecated when new endpoint for downloading results will be implemented
     @extend_schema(methods=['GET'], summary='Get task annotations or export them as a dataset in a specific format',
@@ -2015,8 +2025,13 @@ class JobViewSet(viewsets.GenericViewSet, mixins.ListModelMixin, mixins.CreateMo
 
         return self.export_dataset_v1(request=request, save_images=True)
 
-    def get_export_callback(self, save_images: bool) -> Callable:
-        return dm.views.export_job_as_dataset if save_images else dm.views.export_job_annotations
+    def get_export_callback(self, save_images: bool, all_images: bool) -> Callable:
+        if save_images and all_images:
+            return dm.views.export_job_as_dataset_full
+        elif save_images:
+            return dm.views.export_job_as_dataset
+        else:
+            return dm.views.export_job_annotations
 
     @extend_schema(summary='Get data of a job',
         parameters=[

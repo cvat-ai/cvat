@@ -38,6 +38,7 @@ type Params = {
     filename?: string,
     action?: string,
     save_images?: boolean,
+    all_images?: boolean,
 };
 
 tus.defaultOptions.storeFingerprintForResuming = false;
@@ -805,6 +806,7 @@ function exportDataset(instanceType: 'projects' | 'jobs' | 'tasks') {
         id: number,
         format: string,
         saveImages: boolean,
+        allImages: boolean,
         useDefaultSettings: boolean,
         targetStorage: Storage,
         name?: string,
@@ -817,6 +819,7 @@ function exportDataset(instanceType: 'projects' | 'jobs' | 'tasks') {
             ...(name ? { filename: name } : {}),
             format,
             save_images: saveImages,
+            all_images: allImages,
         };
         return new Promise<string | void>((resolve, reject) => {
             async function request() {

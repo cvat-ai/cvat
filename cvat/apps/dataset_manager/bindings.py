@@ -1497,6 +1497,7 @@ class CvatTaskOrJobDataExtractor(dm.SourceExtractor, CVATDataExtractorMixin):
         instance_data: CommonData,
         *,
         include_images: bool = False,
+        all_images: bool = True,
         format_type: str = None,
         dimension: DimensionType = DimensionType.DIM_2D,
         **kwargs
@@ -1563,7 +1564,8 @@ class CvatTaskOrJobDataExtractor(dm.SourceExtractor, CVATDataExtractorMixin):
                     attributes=attributes, subset=frame_data.subset,
                 )
 
-            dm_items.append(dm_item)
+            if all_images or len(dm_anno) > 0:
+                dm_items.append(dm_item)
 
         self._items = dm_items
 
@@ -1585,6 +1587,7 @@ class CVATProjectDataExtractor(dm.Extractor, CVATDataExtractorMixin):
         project_data: ProjectData,
         *,
         include_images: bool = False,
+        all_images: bool = True,
         format_type: str = None,
         dimension: DimensionType = DimensionType.DIM_2D,
         **kwargs
@@ -1652,8 +1655,10 @@ class CVATProjectDataExtractor(dm.Extractor, CVATDataExtractorMixin):
                     annotations=dm_anno, media=PointCloud(dm_image[0]), related_images=dm_image[1],
                     attributes=attributes, subset=frame_data.subset
                 )
-            dm_items.append(dm_item)
-
+                
+            if all_images or len(dm_anno) > 0:
+                dm_items.append(dm_item)
+                
         self._items = dm_items
 
     def categories(self):
@@ -1669,12 +1674,14 @@ class CVATProjectDataExtractor(dm.Extractor, CVATDataExtractorMixin):
 def GetCVATDataExtractor(
     instance_data: Union[ProjectData, CommonData],
     include_images: bool = False,
+    all_images: bool = True,
     format_type: str = None,
     dimension: DimensionType = DimensionType.DIM_2D,
     **kwargs
 ):
     kwargs.update({
         'include_images': include_images,
+        'all_images': all_images,
         'format_type': format_type,
         'dimension': dimension,
     })

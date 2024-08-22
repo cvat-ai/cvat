@@ -25,8 +25,8 @@ class DeleteImagePath(ItemTransform):
 
 
 @exporter(name="Datumaro", ext="ZIP", version="1.0")
-def _export(dst_file, temp_dir, instance_data, save_images=False):
-    with GetCVATDataExtractor(instance_data=instance_data, include_images=save_images) as extractor:
+def _export(dst_file, temp_dir, instance_data, save_images=False, all_images=True):
+    with GetCVATDataExtractor(instance_data=instance_data, include_images=save_images, all_images=all_images) as extractor:
         dataset = Dataset.from_extractors(extractor, env=dm_env)
         if not save_images:
             dataset.transform(DeleteImagePath)
@@ -46,9 +46,9 @@ def _import(src_file, temp_dir, instance_data, load_data_callback=None, **kwargs
     import_dm_annotations(dataset, instance_data)
 
 @exporter(name="Datumaro 3D", ext="ZIP", version="1.0", dimension=DimensionType.DIM_3D)
-def _export(dst_file, temp_dir, instance_data, save_images=False):
+def _export(dst_file, temp_dir, instance_data, save_images=False, all_images=True):
     with GetCVATDataExtractor(
-        instance_data=instance_data, include_images=save_images,
+        instance_data=instance_data, include_images=save_images, all_images=all_images,
         dimension=DimensionType.DIM_3D,
     ) as extractor:
         dataset = Dataset.from_extractors(extractor, env=dm_env)

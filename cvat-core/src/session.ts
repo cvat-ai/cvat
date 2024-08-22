@@ -173,6 +173,7 @@ function buildDuplicatedAPI(prototype) {
                 async exportDataset(
                     format: string,
                     saveImages: boolean,
+                    allImages: boolean,
                     useDefaultSettings: boolean,
                     targetStorage: Storage,
                     customName?: string,
@@ -182,6 +183,7 @@ function buildDuplicatedAPI(prototype) {
                         prototype.annotations.exportDataset,
                         format,
                         saveImages,
+                        allImages,
                         useDefaultSettings,
                         targetStorage,
                         customName,
@@ -359,6 +361,7 @@ export class Session {
         exportDataset: (
             format: string,
             saveImages: boolean,
+            allImages: boolean,
             useDefaultSettings: boolean,
             targetStorage: Storage,
             name?: string,

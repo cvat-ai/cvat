@@ -77,8 +77,8 @@ class LabelToCaption(ItemTransform):
         return item.wrap(annotations=annotations)
 
 @exporter(name='ICDAR Recognition', ext='ZIP', version='1.0')
-def _export_recognition(dst_file, temp_dir, instance_data, save_images=False):
-    with GetCVATDataExtractor(instance_data, include_images=save_images) as extractor:
+def _export_recognition(dst_file, temp_dir, instance_data, save_images=False, all_images=True):
+    with GetCVATDataExtractor(instance_data, include_images=save_images, all_images=all_images) as extractor:
         dataset = Dataset.from_extractors(extractor, env=dm_env)
         dataset.transform(LabelToCaption)
         dataset.export(temp_dir, 'icdar_word_recognition', save_images=save_images)
@@ -100,8 +100,8 @@ def _import(src_file, temp_dir, instance_data, load_data_callback=None, **kwargs
 
 
 @exporter(name='ICDAR Localization', ext='ZIP', version='1.0')
-def _export_localization(dst_file, temp_dir, instance_data, save_images=False):
-    with GetCVATDataExtractor(instance_data, include_images=save_images) as extractor:
+def _export_localization(dst_file, temp_dir, instance_data, save_images=False, all_images=True):
+    with GetCVATDataExtractor(instance_data, include_images=save_images, all_images=all_images) as extractor:
         dataset = Dataset.from_extractors(extractor, env=dm_env)
         dataset.export(temp_dir, 'icdar_text_localization', save_images=save_images)
 
@@ -122,8 +122,8 @@ def _import(src_file, temp_dir, instance_data, load_data_callback=None, **kwargs
 
 
 @exporter(name='ICDAR Segmentation', ext='ZIP', version='1.0')
-def _export_segmentation(dst_file, temp_dir, instance_data, save_images=False):
-    with GetCVATDataExtractor(instance_data, include_images=save_images) as extractor:
+def _export_segmentation(dst_file, temp_dir, instance_data, save_images=False, all_images=True):
+    with GetCVATDataExtractor(instance_data, include_images=save_images, all_images=all_images) as extractor:
         dataset = Dataset.from_extractors(extractor, env=dm_env)
         dataset.transform(RotatedBoxesToPolygons)
         dataset.transform('polygons_to_masks')

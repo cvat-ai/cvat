@@ -61,8 +61,8 @@ class LabelAttrToAttr(ItemTransform):
 
 
 @exporter(name='Market-1501', ext='ZIP', version='1.0')
-def _export(dst_file, temp_dir, instance_data, save_images=False):
-    with GetCVATDataExtractor(instance_data, include_images=save_images) as extractor:
+def _export(dst_file, temp_dir, instance_data, save_images=False, all_images=True):
+    with GetCVATDataExtractor(instance_data, include_images=save_images, all_images=all_images) as extractor:
         dataset = Dataset.from_extractors(extractor, env=dm_env)
 
         dataset.transform(LabelAttrToAttr, label='market-1501')

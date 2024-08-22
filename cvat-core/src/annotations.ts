@@ -137,6 +137,7 @@ export async function exportDataset(
     instance,
     format: string,
     saveImages: boolean,
+    allImages: boolean,
     useDefaultSettings: boolean,
     targetStorage: Storage,
     name?: string,
@@ -148,13 +149,13 @@ export async function exportDataset(
     let result = null;
     if (instance instanceof Task) {
         result = await serverProxy.tasks
-            .exportDataset(instance.id, format, saveImages, useDefaultSettings, targetStorage, name);
+            .exportDataset(instance.id, format, saveImages, allImages, useDefaultSettings, targetStorage, name);
     } else if (instance instanceof Job) {
         result = await serverProxy.jobs
-            .exportDataset(instance.id, format, saveImages, useDefaultSettings, targetStorage, name);
+            .exportDataset(instance.id, format, saveImages, allImages, useDefaultSettings, targetStorage, name);
     } else {
         result = await serverProxy.projects
-            .exportDataset(instance.id, format, saveImages, useDefaultSettings, targetStorage, name);
+            .exportDataset(instance.id, format, saveImages, allImages, useDefaultSettings, targetStorage, name);
     }
 
     return result;

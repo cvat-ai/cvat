@@ -103,6 +103,7 @@ export const exportDatasetAsync = (
     instance: ProjectOrTaskOrJob,
     format: string,
     saveImages: boolean,
+    allImages: boolean,
     useDefaultSettings: boolean,
     targetStorage: Storage,
     name?: string,
@@ -114,7 +115,7 @@ export const exportDatasetAsync = (
 
     try {
         const rqID = await instance.annotations
-            .exportDataset(format, saveImages, useDefaultSettings, targetStorage, name);
+            .exportDataset(format, saveImages, allImages, useDefaultSettings, targetStorage, name);
         if (shouldListenForProgress(rqID, state.requests)) {
             await listenExportDatasetAsync(rqID, dispatch, {
                 instance, format, saveImages,

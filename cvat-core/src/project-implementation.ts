@@ -111,11 +111,20 @@ export default function implementProject(Project: typeof ProjectClass): typeof P
             this: ProjectClass,
             format: Parameters<typeof ProjectClass.prototype.annotations.exportDataset>[0],
             saveImages: Parameters<typeof ProjectClass.prototype.annotations.exportDataset>[1],
-            useDefaultSettings: Parameters<typeof ProjectClass.prototype.annotations.exportDataset>[2],
-            targetStorage: Parameters<typeof ProjectClass.prototype.annotations.exportDataset>[3],
-            customName: Parameters<typeof ProjectClass.prototype.annotations.exportDataset>[4],
+            allImages: Parameters<typeof ProjectClass.prototype.annotations.exportDataset>[2],
+            useDefaultSettings: Parameters<typeof ProjectClass.prototype.annotations.exportDataset>[3],
+            targetStorage: Parameters<typeof ProjectClass.prototype.annotations.exportDataset>[4],
+            customName: Parameters<typeof ProjectClass.prototype.annotations.exportDataset>[5],
         ): ReturnType<typeof ProjectClass.prototype.annotations.exportDataset> {
-            const rqID = await exportDataset(this, format, saveImages, useDefaultSettings, targetStorage, customName);
+            const rqID = await exportDataset(
+                this,
+                format,
+                saveImages,
+                allImages,
+                useDefaultSettings,
+                targetStorage,
+                customName,
+            );
             return rqID;
         },
     });

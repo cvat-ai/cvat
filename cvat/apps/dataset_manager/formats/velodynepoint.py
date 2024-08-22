@@ -26,9 +26,9 @@ class RemoveTrackingInformation(ItemTransform):
         return item.wrap(annotations=annotations)
 
 @exporter(name='Kitti Raw Format', ext='ZIP', version='1.0', dimension=DimensionType.DIM_3D)
-def _export_images(dst_file, temp_dir, task_data, save_images=False):
+def _export_images(dst_file, temp_dir, task_data, save_images=False, all_images=True):
     with GetCVATDataExtractor(
-        task_data, include_images=save_images, format_type="kitti_raw",
+        task_data, include_images=save_images, all_images=all_images, format_type="kitti_raw",
         dimension=DimensionType.DIM_3D,
     ) as extractor:
         dataset = Dataset.from_extractors(extractor, env=dm_env)

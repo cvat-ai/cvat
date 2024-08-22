@@ -390,11 +390,14 @@ def build_annotations_file_name(
     timestamp: str,
     format_name: str,
     is_annotation_file: bool = True,
+    all_images: bool = False,
     extension: str = "{}",
 ) -> str:
-    # "<project|task|job>_<name|id>_<annotations|dataset>_<timestamp>_<format>.zip"
+    # "<project|task|job>_<name|id>_<annotations|dataset|fulldataset>_<timestamp>_<format>.zip"
+    dataset_type = 'annotations' if is_annotation_file else ('fulldataset' if all_images else 'dataset')
+
     return "{}_{}_{}_{}_{}{}".format(
-        class_name, identifier, 'annotations' if is_annotation_file else 'dataset',
+        class_name, identifier, dataset_type,
         timestamp, format_name, extension,
     ).lower()
 

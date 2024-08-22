@@ -16,6 +16,7 @@ import Input from 'antd/lib/input';
 import Form from 'antd/lib/form';
 import Switch from 'antd/lib/switch';
 import Space from 'antd/lib/space';
+import Radio from 'antd/lib/radio';
 import TargetStorageField from 'components/storage/target-storage-field';
 import CVATMarkdown from 'components/common/cvat-markdown';
 import { CombinedState, StorageLocation } from 'reducers';
@@ -24,9 +25,11 @@ import {
     Dumper, ProjectOrTaskOrJob, Job, Project, Storage, StorageData, Task,
 } from 'cvat-core-wrapper';
 
+
 type FormValues = {
     selectedFormat: string | undefined;
     saveImages: boolean;
+    allImages: boolean;
     customName: string | undefined;
     targetStorage: StorageData;
     useProjectTargetStorage: boolean;
@@ -35,6 +38,7 @@ type FormValues = {
 const initialValues: FormValues = {
     selectedFormat: undefined,
     saveImages: false,
+    allImages: true,
     customName: undefined,
     targetStorage: {
         location: StorageLocation.LOCAL,
@@ -52,6 +56,7 @@ function ExportDatasetModal(props: StateToProps): JSX.Element {
     const [instanceType, setInstanceType] = useState('');
 
     const [useDefaultTargetStorage, setUseDefaultTargetStorage] = useState(true);
+    const [saveImages, setSaveImages] = useState(false);
     const [form] = Form.useForm();
     const [targetStorage, setTargetStorage] = useState<StorageData>({
         location: StorageLocation.LOCAL,
@@ -94,6 +99,7 @@ function ExportDatasetModal(props: StateToProps): JSX.Element {
     const closeModal = (): void => {
         setUseDefaultTargetStorage(true);
         setTargetStorage({ location: StorageLocation.LOCAL });
+        setSaveImages(false);
         form.resetFields();
         if (instance) {
             dispatch(exportActions.closeExportDatasetModal(instance));
@@ -108,6 +114,7 @@ function ExportDatasetModal(props: StateToProps): JSX.Element {
                     instance as ProjectOrTaskOrJob,
                     values.selectedFormat as string,
                     values.saveImages,
+                    values.allImages,
                     useDefaultTargetStorage,
                     useDefaultTargetStorage ? new Storage({
                         location: defaultStorageLocation,
@@ -180,10 +187,27 @@ function ExportDatasetModal(props: StateToProps): JSX.Element {
                         name='saveImages'
                         valuePropName='checked'
                     >
-                        <Switch className='cvat-modal-export-save-images' />
-                    </Form.Item>
+                        <Switch
+                            className='cvat-modal-export-save-images'
+                            onChange={(checked: boolean) => {
+                                setSaveImages(checked);
+                                form.setFieldsValue({ saveImages: checked });
+                            }}
+                        />                    </Form.Item>
                     <Text strong>Save images</Text>
                 </Space>
+
+                {saveImages && (
+                    <Form.Item
+                        name='allImages'
+                        label={<Text strong>Image saving option</Text>}
+                    >
+                        <Radio.Group className='cvat-modal-export-image-saving-options'>
+                            <Radio value>All images</Radio>
+                            <Radio value={false}>Images with annotations only</Radio>
+                        </Radio.Group>
+                    </Form.Item>
+                )}
 
                 <Form.Item label={<Text strong>Custom name</Text>} name='customName'>
                     <Input

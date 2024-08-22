@@ -2546,6 +2546,12 @@ paths:
           type: boolean
           default: false
         description: Include images or not
+      - in: query
+        name: all_images
+        schema:
+          type: boolean
+          default: false
+        description: Whether to include all images in the export or only the ones with annotaions in the dataset
       tags:
       - jobs
       security:
@@ -3965,6 +3971,12 @@ paths:
           type: boolean
           default: false
         description: Include images or not
+      - in: query
+        name: all_images
+        schema:
+          type: boolean
+          default: false
+        description: Whether to include all images in the export or only the ones with annotations in the dataset
       tags:
       - projects
       security:
@@ -5908,6 +5920,12 @@ paths:
           type: boolean
           default: false
         description: Include images or not
+      - in: query
+        name: all_images
+        schema:
+          type: boolean
+          default: false
+        description: Whether to include all images in the export or only the ones with annotations in the dataset
       tags:
       - tasks
       security:
