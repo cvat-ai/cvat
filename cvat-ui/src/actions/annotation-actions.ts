@@ -1412,7 +1412,9 @@ export function repeatDrawShapeAsync(): ThunkAction {
             return;
         }
 
-        activeControl = ShapeTypeToControl[activeShapeType];
+        if (activeObjectType !== ObjectType.TAG) {
+            activeControl = ShapeTypeToControl[activeShapeType];
+        }
 
         if (canvasInstance instanceof Canvas) {
             canvasInstance.cancel();
