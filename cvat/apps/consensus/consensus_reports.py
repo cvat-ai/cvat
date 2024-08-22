@@ -18,6 +18,7 @@ from datumaro.components.annotation import Annotation
 from datumaro.util import dump_json, parse_json
 from django.db import transaction
 
+from cvat.apps.engine import serializers as engine_serializers
 from cvat.apps.consensus import models
 from cvat.apps.consensus.models import (
     AssigneeConsensusReport,
@@ -498,12 +499,23 @@ def prepare_report_for_downloading(db_report: ConsensusReport, *, host: str) -> 
     # - convert some fractions to percents
     # - add common report info
 
+    def _serialize_assignee(assignee: Optional[User]) -> Optional[dict]:
+        if not db_report.assignee:
+            return None
+
+        reported_keys = ["id", "username", "first_name", "last_name"]
+        assert set(reported_keys).issubset(engine_serializers.BasicUserSerializer.Meta.fields)
+        # check that only safe fields are reported
+
+        return {k: getattr(assignee, k) for k in reported_keys}
+
     task_id = db_report.get_task().id
     serialized_data = dict(
         job_id=db_report.job.id if db_report.job is not None else None,
         task_id=task_id,
         created_date=str(db_report.created_date),
         target_last_updated=str(db_report.target_last_updated),
+        assignee=_serialize_assignee(db_report.assignee),
     )
 
     comparison_report = ComparisonReport.from_json(db_report.get_json_report())
