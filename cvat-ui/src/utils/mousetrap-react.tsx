@@ -1,11 +1,10 @@
 // Copyright (C) 2021-2022 Intel Corporation
-// Copyright (C) 2023 CVAT.ai Corporation
+// Copyright (C) 2023-2024 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
 import React, { useEffect } from 'react';
 import Mousetrap from 'mousetrap';
-import { getCVATStore } from 'cvat-store';
 import { ShortcutScope } from './enums';
 
 export interface KeyMapItem {
@@ -63,32 +62,28 @@ export default function GlobalHotKeys(props: Props): JSX.Element {
 }
 
 Mousetrap.prototype.stopCallback = function (e: KeyboardEvent, element: Element, combo: string): boolean {
-    const store = getCVATStore();
-    const { keyMap } = store.getState().shortcuts;
-    const shortcuts = [];
-    const keys: string[] = ['SWITCH_SHORTCUTS', 'SWITCH_SETTINGS'];
-    for (const key of keys) {
-        shortcuts.push(...keyMap[key].sequences);
+    if (element.tagName === 'INPUT' || element.tagName === 'SELECT' || element.tagName === 'TEXTAREA') {
+        // stop for input, select, and textarea
+        return true;
     }
 
-    let comboStarted = false;
-    if (shortcuts.some((shortcut) => shortcut.startsWith(combo))) {
+    const activeSequences = Object.values(applicationKeyMap).map((keyMap) => [...keyMap.sequences]).flat();
+    if (activeSequences.some((sequence) => sequence.startsWith(combo))) {
         e?.preventDefault();
-        comboStarted = true;
     }
 
     // stop when modals are opened
     const someModalsOpened = Array.from(
         window.document.getElementsByClassName('ant-modal'),
     ).some((el) => (el as HTMLElement).style.display !== 'none');
-    if (someModalsOpened && !shortcuts.includes(combo) && !comboStarted) {
-        return true;
+
+    if (someModalsOpened) {
+        const modalClosingSequences = ['SWITCH_SHORTCUTS', 'SWITCH_SETTINGS']
+            .map((key) => [...(applicationKeyMap[key]?.sequences ?? [])]).flat();
+        return !modalClosingSequences.includes(combo) && !modalClosingSequences.some((seq) => seq.startsWith(combo));
     }
 
-    // stop for input, select, and textarea
-    return element.tagName === 'INPUT' ||
-        element.tagName === 'SELECT' ||
-        element.tagName === 'TEXTAREA';
+    return false;
 };
 
 export function getApplicationKeyMap(): KeyMap {
