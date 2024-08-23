@@ -39,7 +39,7 @@ class WebhookPermission(OpenPolicyAgentPermission):
                 permissions.append(perm)
 
             if project_id:
-                perm = ProjectPermission.create_scope_view(iam_context, project_id)
+                perm = ProjectPermission.create_scope_view(request, project_id, iam_context)
                 permissions.append(perm)
 
         return permissions
