@@ -100,10 +100,10 @@ function GroupControl(props: Props): JSX.Element {
     };
 
     const handlers: Partial<Record<keyof typeof componentShortcuts, (event?: KeyboardEvent) => void>> = {
-        SWITCH_GROUP_MODE_STANDARD_CONTROLS: canvasInstance instanceof Canvas3d ? undefined : handleSwitchGroupMode,
-        RESET_GROUP_STANDARD_CONTROLS: canvasInstance instanceof Canvas3d ? undefined : handleResetGroup,
-        SWITCH_GROUP_MODE_STANDARD_3D_CONTROLS: canvasInstance instanceof Canvas3d ? handleSwitchGroupMode : undefined,
-        RESET_GROUP_STANDARD_3D_CONTROLS: canvasInstance instanceof Canvas3d ? handleResetGroup : undefined,
+        SWITCH_GROUP_MODE_STANDARD_CONTROLS: handleSwitchGroupMode,
+        RESET_GROUP_STANDARD_CONTROLS: handleResetGroup,
+        SWITCH_GROUP_MODE_STANDARD_3D_CONTROLS: handleSwitchGroupMode,
+        RESET_GROUP_STANDARD_3D_CONTROLS: handleResetGroup,
     };
 
     const title = [

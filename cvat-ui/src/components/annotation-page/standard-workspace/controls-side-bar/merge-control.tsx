@@ -72,8 +72,8 @@ function MergeControl(props: Props): JSX.Element {
     };
 
     const handlers: Partial<Record<keyof typeof componentShortcuts, (event?: KeyboardEvent) => void>> = {
-        SWITCH_MERGE_MODE_STANDARD_CONTROLS: canvasInstance instanceof Canvas3d ? undefined : handleMergeMode,
-        SWITCH_MERGE_MODE_STANDARD_3D_CONTROLS: canvasInstance instanceof Canvas3d ? handleMergeMode : undefined,
+        SWITCH_MERGE_MODE_STANDARD_CONTROLS: handleMergeMode,
+        SWITCH_MERGE_MODE_STANDARD_3D_CONTROLS: handleMergeMode,
     };
 
     return disabled ? (
