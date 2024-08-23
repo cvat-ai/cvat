@@ -17,7 +17,6 @@ import Text from 'antd/lib/typography/Text';
 
 import LogoutComponent from 'components/logout-component';
 import LoginPageContainer from 'containers/login-page/login-page';
-import LoginWithTokenComponent from 'components/login-with-token/login-with-token';
 import RegisterPageContainer from 'containers/register-page/register-page';
 import ResetPasswordPageConfirmComponent from 'components/reset-password-confirm-page/reset-password-confirm-page';
 import ResetPasswordPageComponent from 'components/reset-password-page/reset-password-page';
@@ -502,11 +501,6 @@ class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentP
                                 <Layout.Content style={{ height: '100%' }}>
                                     <ShortcutsDialog />
                                     <Switch>
-                                        <Route
-                                            exact
-                                            path='/auth/login-with-token/:token'
-                                            component={LoginWithTokenComponent}
-                                        />
                                         <Route exact path='/auth/logout' component={LogoutComponent} />
                                         <Route exact path='/projects' component={ProjectsPageComponent} />
                                         <Route exact path='/projects/create' component={CreateProjectPageComponent} />
@@ -592,11 +586,6 @@ class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentP
                             <Route exact path='/auth/email-verification-sent' component={EmailVerificationSentPage} />
                             <Route exact path='/auth/incorrect-email-confirmation' component={IncorrectEmailConfirmationPage} />
                             <Route exact path='/auth/login' component={LoginPageContainer} />
-                            <Route
-                                exact
-                                path='/auth/login-with-token/:token'
-                                component={LoginWithTokenComponent}
-                            />
                             {isPasswordResetEnabled && (
                                 <Route exact path='/auth/password/reset' component={ResetPasswordPageComponent} />
                             )}

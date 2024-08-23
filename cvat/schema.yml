@@ -9346,7 +9346,7 @@ components:
         max_validations_per_job:
           type: integer
           maximum: 2147483647
-          minimum: -2147483648
+          minimum: 0
           description: |
             The maximum number of job validation attempts for the job assignee.
             The job can be automatically accepted if the job quality is above the required
@@ -9807,7 +9807,7 @@ components:
         max_validations_per_job:
           type: integer
           maximum: 2147483647
-          minimum: -2147483648
+          minimum: 0
           description: |
             The maximum number of job validation attempts for the job assignee.
             The job can be automatically accepted if the job quality is above the required

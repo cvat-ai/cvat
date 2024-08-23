@@ -158,7 +158,4 @@ class QualitySettingsSerializer(serializers.ModelSerializer):
                 if not 0 <= v <= 1:
                     raise serializers.ValidationError(f"{k} must be in the range [0; 1]")
 
-        if (max_validations := attrs.get("max_validations_per_job")) and max_validations < 0:
-            raise serializers.ValidationError("max_validations_per_job cannot be less than 0")
-
         return super().validate(attrs)
