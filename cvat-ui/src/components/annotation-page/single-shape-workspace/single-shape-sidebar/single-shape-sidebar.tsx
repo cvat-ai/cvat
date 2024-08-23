@@ -166,24 +166,24 @@ const reducer = (state: State, action: ActionUnion<typeof actionCreators>): Stat
 };
 
 const componentShortcuts = {
-    SWITCH_DRAW_MODE: {
+    SWITCH_DRAW_MODE_SINGLE_SHAPE_CONTROLS: {
         name: 'Draw mode',
         description:
             'Repeat the latest procedure of drawing with the same parameters (shift to redraw an existing shape)',
         sequences: ['shift+n', 'n'],
-        scope: ShortcutScope.CONTROLS_SIDE_BAR,
+        scope: ShortcutScope.SINGLE_SHAPE_WORKSPACE_CONTROLS,
     },
-    CANCEL: {
+    CANCEL_SINGLE_SHAPE_CONTROLS: {
         name: 'Cancel',
         description: 'Cancel any active canvas mode',
         sequences: ['esc'],
-        scope: ShortcutScope.CONTROLS_SIDE_BAR,
+        scope: ShortcutScope.SINGLE_SHAPE_WORKSPACE_CONTROLS,
     },
-    DELETE_OBJECT: {
+    DELETE_OBJECT_SINGLE_SHAPE: {
         name: 'Delete object',
         description: 'Delete an active object. Use shift to force delete of locked objects',
         sequences: ['del', 'shift+del'],
-        scope: ShortcutScope.OBJECTS_SIDE_BAR,
+        scope: ShortcutScope.SINGLE_SHAPE_WORKSPACE,
     },
 };
 
@@ -372,16 +372,16 @@ function SingleShapeSidebar(): JSX.Element {
     };
 
     const handlers: Record<keyof typeof componentShortcuts, (event?: KeyboardEvent) => void> = {
-        CANCEL: (event: KeyboardEvent | undefined) => {
+        CANCEL_SINGLE_SHAPE_CONTROLS: (event: KeyboardEvent | undefined) => {
             event?.preventDefault();
             (store.getState().annotation.canvas.instance as Canvas).cancel();
         },
-        SWITCH_DRAW_MODE: (event: KeyboardEvent | undefined) => {
+        SWITCH_DRAW_MODE_SINGLE_SHAPE_CONTROLS: (event: KeyboardEvent | undefined) => {
             event?.preventDefault();
             const canvas = store.getState().annotation.canvas.instance as Canvas;
             canvas.draw({ enabled: false });
         },
-        DELETE_OBJECT: (event: KeyboardEvent | undefined) => {
+        DELETE_OBJECT_SINGLE_SHAPE: (event: KeyboardEvent | undefined) => {
             event?.preventDefault();
             const objectStateToRemove = annotations.find((_state) => _state.clientID === activatedStateID);
             if (objectStateToRemove) {
@@ -468,7 +468,11 @@ function SingleShapeSidebar(): JSX.Element {
                                         <li>
                                             <Text>
                                                 Press
-                                                <Text strong>{` ${normalizedKeyMap.CANCEL} `}</Text>
+                                                <Text strong>
+                                                    {` ${
+                                                        normalizedKeyMap.CANCEL_SINGLE_SHAPE_CONTROLS
+                                                    } `}
+                                                </Text>
                                                 to reset drawing process
                                             </Text>
                                         </li>
@@ -478,7 +482,11 @@ function SingleShapeSidebar(): JSX.Element {
                                         <li>
                                             <Text>
                                                 Press
-                                                <Text strong>{` ${normalizedKeyMap.SWITCH_DRAW_MODE} `}</Text>
+                                                <Text strong>
+                                                    {` ${
+                                                        normalizedKeyMap.SWITCH_DRAW_MODE_SINGLE_SHAPE_CONTROLS
+                                                    } `}
+                                                </Text>
                                                 to finish drawing process
                                             </Text>
                                         </li>
@@ -487,7 +495,11 @@ function SingleShapeSidebar(): JSX.Element {
                                         <li>
                                             <Text>
                                                 Press
-                                                <Text strong>{` ${normalizedKeyMap.DELETE_OBJECT} `}</Text>
+                                                <Text strong>
+                                                    {` ${
+                                                        normalizedKeyMap.DELETE_OBJECT_SINGLE_SHAPE
+                                                    } `}
+                                                </Text>
                                                 to delete current object
                                             </Text>
                                         </li>

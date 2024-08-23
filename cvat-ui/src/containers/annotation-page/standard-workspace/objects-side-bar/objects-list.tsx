@@ -119,11 +119,11 @@ const componentShortcuts = {
         sequences: ['o'],
         scope: ShortcutScope.OBJECTS_SIDE_BAR,
     },
-    DELETE_OBJECT: {
+    DELETE_OBJECT_STANDARD_WORKSPACE: {
         name: 'Delete object',
         description: 'Delete an active object. Use shift to force delete of locked objects',
         sequences: ['del', 'shift+del'],
-        scope: ShortcutScope.OBJECTS_SIDE_BAR,
+        scope: ShortcutScope.STANDARD_WORKSPACE,
     },
     TO_BACKGROUND: {
         name: 'To background',
@@ -518,7 +518,7 @@ class ObjectsListContainer extends React.PureComponent<Props, State> {
                     updateAnnotations([state]);
                 }
             },
-            DELETE_OBJECT: (event: KeyboardEvent | undefined) => {
+            DELETE_OBJECT_STANDARD_WORKSPACE: (event: KeyboardEvent | undefined) => {
                 preventDefault(event);
                 const state = activatedState(true);
                 if (state && !readonly) {

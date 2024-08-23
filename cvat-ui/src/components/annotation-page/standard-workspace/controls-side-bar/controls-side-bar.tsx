@@ -58,30 +58,30 @@ interface Props {
 }
 
 const componentShortcuts = {
-    CLOCKWISE_ROTATION: {
+    CLOCKWISE_ROTATION_STANDARD_CONTROLS: {
         name: 'Rotate clockwise',
         description: 'Change image angle (add 90 degrees)',
         sequences: ['ctrl+r'],
-        scope: ShortcutScope.CONTROLS_SIDE_BAR,
+        scope: ShortcutScope.STANDARD_WORKSPACE_CONTROLS,
     },
-    ANTICLOCKWISE_ROTATION: {
+    ANTICLOCKWISE_ROTATION_STANDARD_CONTROLS: {
         name: 'Rotate anticlockwise',
         description: 'Change image angle (subtract 90 degrees)',
         sequences: ['ctrl+shift+r'],
-        scope: ShortcutScope.CONTROLS_SIDE_BAR,
+        scope: ShortcutScope.STANDARD_WORKSPACE_CONTROLS,
     },
-    PASTE_SHAPE: {
+    PASTE_SHAPE_STANDARD_CONTROLS: {
         name: 'Paste shape',
         description: 'Paste a shape from internal CVAT clipboard',
         sequences: ['ctrl+v'],
-        scope: ShortcutScope.CONTROLS_SIDE_BAR,
+        scope: ShortcutScope.STANDARD_WORKSPACE_CONTROLS,
     },
-    SWITCH_DRAW_MODE: {
+    SWITCH_DRAW_MODE_STANDARD_CONTROLS: {
         name: 'Draw mode',
         description:
             'Repeat the latest procedure of drawing with the same parameters (shift to redraw an existing shape)',
         sequences: ['shift+n', 'n'],
-        scope: ShortcutScope.CONTROLS_SIDE_BAR,
+        scope: ShortcutScope.STANDARD_WORKSPACE_CONTROLS,
     },
 };
 
@@ -156,11 +156,11 @@ export default function ControlsSideBarComponent(props: Props): JSX.Element {
     };
 
     let handlers: Partial<Record<keyof typeof componentShortcuts, (event?: KeyboardEvent) => void>> = {
-        CLOCKWISE_ROTATION: (event: KeyboardEvent | undefined) => {
+        CLOCKWISE_ROTATION_STANDARD_CONTROLS: (event: KeyboardEvent | undefined) => {
             preventDefault(event);
             rotateFrame(Rotation.CLOCKWISE90);
         },
-        ANTICLOCKWISE_ROTATION: (event: KeyboardEvent | undefined) => {
+        ANTICLOCKWISE_ROTATION_STANDARD_CONTROLS: (event: KeyboardEvent | undefined) => {
             preventDefault(event);
             rotateFrame(Rotation.ANTICLOCKWISE90);
         },
@@ -169,12 +169,12 @@ export default function ControlsSideBarComponent(props: Props): JSX.Element {
     if (!controlsDisabled) {
         handlers = {
             ...handlers,
-            PASTE_SHAPE: (event: KeyboardEvent | undefined) => {
+            PASTE_SHAPE_STANDARD_CONTROLS: (event: KeyboardEvent | undefined) => {
                 preventDefault(event);
                 canvasInstance.cancel();
                 pasteShape();
             },
-            SWITCH_DRAW_MODE: (event: KeyboardEvent | undefined) => {
+            SWITCH_DRAW_MODE_STANDARD_CONTROLS: (event: KeyboardEvent | undefined) => {
                 preventDefault(event);
                 const drawing = [
                     ActiveControl.DRAW_POINTS,
@@ -230,8 +230,8 @@ export default function ControlsSideBarComponent(props: Props): JSX.Element {
             />
             <ObservedMoveControl canvasInstance={canvasInstance} activeControl={activeControl} />
             <ObservedRotateControl
-                anticlockwiseShortcut={normalizedKeyMap.ANTICLOCKWISE_ROTATION}
-                clockwiseShortcut={normalizedKeyMap.CLOCKWISE_ROTATION}
+                anticlockwiseShortcut={normalizedKeyMap.ANTICLOCKWISE_ROTATION_STANDARD_CONTROLS}
+                clockwiseShortcut={normalizedKeyMap.CLOCKWISE_ROTATION_STANDARD_CONTROLS}
                 rotateFrame={rotateFrame}
             />
 
@@ -330,12 +330,6 @@ export default function ControlsSideBarComponent(props: Props): JSX.Element {
                 canvasInstance={canvasInstance}
                 activeControl={activeControl}
                 disabled={controlsDisabled}
-                shortcuts={{
-                    SWITCH_MERGE_MODE: {
-                        details: keyMap.SWITCH_MERGE_MODE,
-                        displayValue: normalizedKeyMap.SWITCH_MERGE_MODE,
-                    },
-                }}
             />
             <ObservedGroupControl
                 updateActiveControl={updateActiveControl}
@@ -343,52 +337,24 @@ export default function ControlsSideBarComponent(props: Props): JSX.Element {
                 canvasInstance={canvasInstance}
                 activeControl={activeControl}
                 disabled={controlsDisabled}
-                shortcuts={{
-                    SWITCH_GROUP_MODE: {
-                        details: keyMap.SWITCH_GROUP_MODE,
-                        displayValue: normalizedKeyMap.SWITCH_GROUP_MODE,
-                    },
-                    RESET_GROUP: {
-                        details: keyMap.RESET_GROUP,
-                        displayValue: normalizedKeyMap.RESET_GROUP,
-                    },
-                }}
             />
             <ObservedSplitControl
                 updateActiveControl={updateActiveControl}
                 canvasInstance={canvasInstance}
                 activeControl={activeControl}
                 disabled={controlsDisabled}
-                shortcuts={{
-                    SWITCH_SPLIT_MODE: {
-                        details: keyMap.SWITCH_SPLIT_MODE,
-                        displayValue: normalizedKeyMap.SWITCH_SPLIT_MODE,
-                    },
-                }}
             />
             <ObservedJoinControl
                 updateActiveControl={updateActiveControl}
                 canvasInstance={canvasInstance}
                 activeControl={activeControl}
                 disabled={controlsDisabled}
-                shortcuts={{
-                    SWITCH_JOIN_MODE: {
-                        details: keyMap.SWITCH_JOIN_MODE,
-                        displayValue: normalizedKeyMap.SWITCH_JOIN_MODE,
-                    },
-                }}
             />
             <ObservedSliceControl
                 updateActiveControl={updateActiveControl}
                 canvasInstance={canvasInstance}
                 activeControl={activeControl}
                 disabled={controlsDisabled}
-                shortcuts={{
-                    SWITCH_SLICE_MODE: {
-                        details: keyMap.SWITCH_SLICE_MODE,
-                        displayValue: normalizedKeyMap.SWITCH_SLICE_MODE,
-                    },
-                }}
             />
 
             <ExtraControlsControl />

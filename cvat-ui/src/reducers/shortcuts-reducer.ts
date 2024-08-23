@@ -67,11 +67,7 @@ export default (state = defaultState, action: ShortcutsActions | BoundariesActio
             if (!keys.length) {
                 return state;
             }
-            const conflictingShortcut = conflictDetector(shortcuts, state.keyMap);
-            if (conflictingShortcut) {
-                console.warn(`The shortcuts: ${JSON.stringify(shortcuts)}
-                    have conflicts with these shortcut: ${JSON.stringify(conflictingShortcut)}.`);
-            }
+            conflictDetector(shortcuts, state.keyMap);
             return {
                 ...state,
                 keyMap: { ...state.keyMap, ...shortcuts },

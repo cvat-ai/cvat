@@ -48,18 +48,18 @@ interface Props {
 }
 
 const componentShortcuts: Record<string, KeyMapItem> = {
-    PASTE_SHAPE: {
+    PASTE_SHAPE_STANDARD_3D_CONTROLS: {
         name: 'Paste shape',
         description: 'Paste a shape from internal CVAT clipboard',
         sequences: ['ctrl+v'],
-        scope: ShortcutScope.CONTROLS_SIDE_BAR,
+        scope: ShortcutScope.STANDARD_3D_WORKSPACE_CONTROLS,
     },
-    SWITCH_DRAW_MODE: {
+    SWITCH_DRAW_MODE_STANDARD_3D_CONTROLS: {
         name: 'Draw mode',
         description:
             'Repeat the latest procedure of drawing with the same parameters (shift to redraw an existing shape)',
         sequences: ['shift+n', 'n'],
-        scope: ShortcutScope.CONTROLS_SIDE_BAR,
+        scope: ShortcutScope.STANDARD_3D_WORKSPACE_CONTROLS,
     },
 };
 
@@ -94,12 +94,12 @@ export default function ControlsSideBarComponent(props: Props): JSX.Element {
     };
 
     const handlers: any = applicableLabels.length ? {
-        PASTE_SHAPE: (event: KeyboardEvent | undefined) => {
+        PASTE_SHAPE_STANDARD_3D_CONTROLS: (event: KeyboardEvent | undefined) => {
             preventDefault(event);
             canvasInstance.cancel();
             pasteShape();
         },
-        SWITCH_DRAW_MODE: (event: KeyboardEvent | undefined) => {
+        SWITCH_DRAW_MODE_STANDARD_3D_CONTROLS: (event: KeyboardEvent | undefined) => {
             preventDefault(event);
             const drawing = [ActiveControl.DRAW_CUBOID].includes(activeControl);
 
@@ -142,12 +142,6 @@ export default function ControlsSideBarComponent(props: Props): JSX.Element {
                 canvasInstance={canvasInstance}
                 activeControl={activeControl}
                 disabled={controlsDisabled}
-                shortcuts={{
-                    SWITCH_MERGE_MODE: {
-                        details: keyMap.SWITCH_MERGE_MODE,
-                        displayValue: normalizedKeyMap.SWITCH_MERGE_MODE,
-                    },
-                }}
             />
             <ObservedGroupControl
                 updateActiveControl={updateActiveControl}
@@ -155,28 +149,12 @@ export default function ControlsSideBarComponent(props: Props): JSX.Element {
                 canvasInstance={canvasInstance}
                 activeControl={activeControl}
                 disabled={controlsDisabled}
-                shortcuts={{
-                    SWITCH_GROUP_MODE: {
-                        details: keyMap.SWITCH_GROUP_MODE,
-                        displayValue: normalizedKeyMap.SWITCH_GROUP_MODE,
-                    },
-                    RESET_GROUP: {
-                        details: keyMap.RESET_GROUP,
-                        displayValue: normalizedKeyMap.RESET_GROUP,
-                    },
-                }}
             />
             <ObservedSplitControl
                 updateActiveControl={updateActiveControl}
                 canvasInstance={canvasInstance}
                 activeControl={activeControl}
                 disabled={controlsDisabled}
-                shortcuts={{
-                    SWITCH_SPLIT_MODE: {
-                        details: keyMap.SWITCH_SPLIT_MODE,
-                        displayValue: normalizedKeyMap.SWITCH_SPLIT_MODE,
-                    },
-                }}
             />
         </Layout.Sider>
     );

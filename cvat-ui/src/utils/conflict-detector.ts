@@ -59,31 +59,41 @@ function updatedFlatKeyMap(scope: string, flatKeyMap: FlatKeyMap): FlatKeyMapIte
         items: {},
     };
     const scopes = [];
-
     if (scope === ShortcutScope.GLOBAL) {
         scopes.push(...Object.keys(flatKeyMap));
     } else {
         scopes.push(ShortcutScope.GLOBAL);
-        if (scope === ShortcutScope.ANNOTATION_PAGE) {
+        if (scope === ShortcutScope.ANNOTATION_PAGE || scope === ShortcutScope.OBJECTS_SIDE_BAR) {
             scopes.push(
-                scope,
-                ...Object.keys(flatKeyMap).filter(
-                    (s) => s.includes('WORKSPACE') || s.includes('SIDE_BAR'),
-                ),
+                ShortcutScope.ANNOTATION_PAGE,
+                ShortcutScope.OBJECTS_SIDE_BAR,
+                ShortcutScope.CONTROLS_SIDE_BAR,
+                ...Object.keys(ShortcutScope).filter((s) => s.includes('WORKSPACE')),
             );
-        } else if (scope.includes('WORKSPACE')) {
+        } else if (scope.includes('WORKSPACE') && !scope.includes('CONTROLS')) {
+            const sidebar = `${scope}_CONTROLS`;
             scopes.push(
                 scope,
+                sidebar,
+                ShortcutScope.OBJECTS_SIDE_BAR,
+                ShortcutScope.CONTROLS_SIDE_BAR,
+                ShortcutScope.ANNOTATION_PAGE,
+            );
+        } else if (scope.includes('WORKSPACE') && scope.includes('CONTROLS')) {
+            const workspace = scope.split('_CONTROLS')[0];
+            scopes.push(
+                scope,
+                workspace,
                 ShortcutScope.ANNOTATION_PAGE,
                 ShortcutScope.CONTROLS_SIDE_BAR,
                 ShortcutScope.OBJECTS_SIDE_BAR,
             );
-        } else if (scope.includes('SIDE_BAR')) {
+        } else if (scope === ShortcutScope.CONTROLS_SIDE_BAR) {
             scopes.push(
-                ShortcutScope.ANNOTATION_PAGE,
                 ShortcutScope.CONTROLS_SIDE_BAR,
                 ShortcutScope.OBJECTS_SIDE_BAR,
-                ...Object.keys(flatKeyMap).filter((s) => s.includes('WORKSPACE')),
+                ShortcutScope.ANNOTATION_PAGE,
+                ...Object.keys(ShortcutScope).filter((s) => s.includes('WORKSPACE')),
             );
         } else {
             scopes.push(scope);
@@ -118,6 +128,7 @@ export function conflictDetector(
                 if (conflict(sequence, existingSequence)) {
                     const conflictingActions = Object.keys(flatKeyMapUpdated.items)
                         .filter((a) => flatKeyMapUpdated.items[a].sequences.includes(existingSequence));
+                    console.warn(`The shortcut: ${sequence} of ${label} have conflicts with these shortcuts: ${conflictingActions.join(', ')}`);
                     conflictingActions.forEach((conflictingAction) => {
                         conflictingItems[conflictingAction] = flatKeyMapUpdated.items[conflictingAction];
                     });

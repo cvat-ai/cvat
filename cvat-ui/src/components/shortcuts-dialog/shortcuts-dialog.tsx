@@ -66,12 +66,6 @@ function ShortcutsDialog(props: StateToProps & DispatchToProps): JSX.Element | n
             render: splitToRows,
         },
         {
-            title: 'Action',
-            dataIndex: 'action',
-            key: 'action',
-            render: splitToRows,
-        },
-        {
             title: 'Description',
             dataIndex: 'description',
             key: 'description',
@@ -85,7 +79,6 @@ function ShortcutsDialog(props: StateToProps & DispatchToProps): JSX.Element | n
             name: keyMap[key].name || key,
             description: keyMap[key].description || '',
             shortcut: keyMap[key].sequences,
-            action: ['keydown'],
         }));
 
     return (
