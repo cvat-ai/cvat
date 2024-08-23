@@ -39,7 +39,7 @@ from cvat.apps.engine.media_extractors import (
 )
 from cvat.apps.engine.models import RequestAction, RequestTarget
 from cvat.apps.engine.utils import (
-    av_scan_paths,get_rq_job_meta, define_dependent_job, get_rq_lock_by_user, preload_images
+    av_scan_paths, format_list,get_rq_job_meta, define_dependent_job, get_rq_lock_by_user, preload_images
 )
 from cvat.apps.engine.rq_job_handler import RQId
 from cvat.utils.http import make_requests_session, PROXIES_FOR_UNTRUSTED_URLS
@@ -1118,104 +1118,124 @@ def _create_thread(
                     )
                 )
 
-    # TODO:
+    # TODO: refactor, support regular gt job
     # Prepare jobs
-    # frame_idx_map = None
-    # if validation_params and validation_params['mode'] == models.ValidationMode.GT_POOL:
-    #     if db_task.mode != 'annotation':
-    #         raise ValidationError("gt pool can only be used with 'annotation' mode tasks")
+    if validation_params and validation_params['mode'] == models.ValidationMode.GT_POOL:
+        if db_task.mode != 'annotation':
+            raise ValidationError("gt pool can only be used with 'annotation' mode tasks")
 
-    #     # TODO: handle other input variants
-    #     seed = validation_params["random_seed"]
-    #     frames_count = validation_params["frames_count"]
-    #     frames_per_job_count = validation_params["frames_per_job_count"]
+        # 1. select pool frames
+        all_frames = range(len(images))
 
-    #     # 1. select pool frames
-    #     # The RNG backend must not change to yield reproducible results,
-    #     # so here we specify it explicitly
-    #     from numpy import random
-    #     rng = random.Generator(random.MT19937(seed=seed))
+        # The RNG backend must not change to yield reproducible frame picks,
+        # so here we specify it explicitly
+        from numpy import random
+        seed = validation_params["random_seed"]
+        rng = random.Generator(random.MT19937(seed=seed))
 
-    #     all_frames = range(len(images))
-    #     pool_frames: list[int] = rng.choice(
-    #         all_frames, size=frames_count, shuffle=False, replace=False
-    #     ).tolist()
-    #     non_pool_frames = set(all_frames).difference(pool_frames)
+        match validation_params["frame_selection_method"]:
+            case models.JobFrameSelectionMethod.RANDOM_UNIFORM:
+                frames_count = validation_params["frames_count"]
 
-    #     # 2. distribute pool frames
-    #     from datumaro.util import take_by
+                pool_frames: list[int] = rng.choice(
+                    all_frames, size=frames_count, shuffle=False, replace=False
+                ).tolist()
+            case models.JobFrameSelectionMethod.MANUAL:
+                pool_frames: list[int] = []
 
-    #     # Allocate frames for jobs
-    #     job_file_mapping: JobFileMapping = []
-    #     new_db_images: list[models.Image] = []
-    #     validation_frames: list[int] = []
-    #     frame_idx_map: dict[int, int] = {} # new to original id
-    #     for job_frames in take_by(non_pool_frames, count=db_task.segment_size or db_data.size):
-    #         job_validation_frames = rng.choice(pool_frames, size=frames_per_job_count, replace=False)
-    #         job_frames += job_validation_frames.tolist()
+                known_frame_names = {frame.path: frame.frame for frame in images}
+                unknown_requested_frames = []
+                for frame_name in db_data.validation_layout.frames.all():
+                    frame_id = known_frame_names.get(frame_name)
+                    if frame_id is None:
+                        unknown_requested_frames.append(frame_name)
+                        continue
 
-    #         random.shuffle(job_frames) # don't use the same rng
+                    pool_frames.append(frame_id)
 
-    #         job_images = []
-    #         for job_frame in job_frames:
-    #             # Insert placeholder frames into the frame sequence and shift frame ids
-    #             image = images[job_frame]
-    #             image = models.Image(
-    #                 data=db_data, **deepcopy(model_to_dict(image, exclude=["data"]))
-    #             )
-    #             image.frame = len(new_db_images)
+                if unknown_requested_frames:
+                    raise ValidationError("Unknown validation frames requested: {}".format(
+                        format_list(unknown_requested_frames))
+                    )
+            case _:
+                assert False
 
-    #             if job_frame in job_validation_frames:
-    #                 image.is_placeholder = True
-    #                 image.real_frame_id = job_frame
-    #                 validation_frames.append(image.frame)
+        non_pool_frames = set(all_frames).difference(pool_frames)
 
-    #             job_images.append(image.path)
-    #             new_db_images.append(image)
-    #             frame_idx_map[image.frame] = job_frame
+        # 2. distribute pool frames
+        from datumaro.util import take_by
+        frames_per_job_count = validation_params["frames_per_job_count"]
 
-    #         job_file_mapping.append(job_images)
+        # Allocate frames for jobs
+        job_file_mapping: JobFileMapping = []
+        new_db_images: list[models.Image] = []
+        validation_frames: list[int] = []
+        frame_idx_map: dict[int, int] = {} # new to original id
+        for job_frames in take_by(non_pool_frames, count=db_task.segment_size or db_data.size):
+            job_validation_frames = rng.choice(pool_frames, size=frames_per_job_count, replace=False)
+            job_frames += job_validation_frames.tolist()
 
-    #     # Append pool frames in the end, shift their ids, establish placeholder pointers
-    #     frame_id_map: dict[int, int] = {} # original to new id
-    #     for pool_frame in pool_frames:
-    #         # Insert placeholder frames into the frame sequence and shift frame ids
-    #         image = images[pool_frame]
-    #         image = models.Image(
-    #             data=db_data, **deepcopy(model_to_dict(image, exclude=["data"]))
-    #         )
-    #         new_frame_id = len(new_db_images)
-    #         image.frame = new_frame_id
+            random.shuffle(job_frames) # don't use the same rng
 
-    #         frame_id_map[pool_frame] = new_frame_id
+            job_images = []
+            for job_frame in job_frames:
+                # Insert placeholder frames into the frame sequence and shift frame ids
+                image = images[job_frame]
+                image = models.Image(
+                    data=db_data, **deepcopy(model_to_dict(image, exclude=["data"]))
+                )
+                image.frame = len(new_db_images)
 
-    #         new_db_images.append(image)
-    #         frame_idx_map[image.frame] = pool_frame
+                if job_frame in job_validation_frames:
+                    image.is_placeholder = True
+                    image.real_frame_id = job_frame
+                    validation_frames.append(image.frame)
 
-    #     pool_frames = [frame_id_map[i] for i in pool_frames if i in frame_id_map]
+                job_images.append(image.path)
+                new_db_images.append(image)
+                frame_idx_map[image.frame] = job_frame
 
-    #     # Store information about the real frame placement in the validation frames
-    #     for validation_frame in validation_frames:
-    #         image = new_db_images[validation_frame]
-    #         assert image.is_placeholder
-    #         image.real_frame_id = frame_id_map[image.real_frame_id] # TODO: maybe not needed
+            job_file_mapping.append(job_images)
 
-    #     db_data.size = len(new_db_images)
-    #     images = new_db_images
+        # Append pool frames in the end, shift their ids, establish placeholder pointers
+        frame_id_map: dict[int, int] = {} # original to new id
+        for pool_frame in pool_frames:
+            # Insert placeholder frames into the frame sequence and shift frame ids
+            image = images[pool_frame]
+            image = models.Image(
+                data=db_data, **deepcopy(model_to_dict(image, exclude=["data"]))
+            )
+            new_frame_id = len(new_db_images)
+            image.frame = new_frame_id
 
-    # # Update manifest
-    # if task_mode == "annotation" and frame_idx_map:
-    #     manifest = ImageManifestManager(db_data.get_manifest_path())
-    #     manifest.link(
-    #         sources=[extractor.get_path(frame_idx_map[image.frame]) for image in images],
-    #         meta={
-    #             k: {'related_images': related_images[k] }
-    #             for k in related_images
-    #         },
-    #         data_dir=upload_dir,
-    #         DIM_3D=(db_task.dimension == models.DimensionType.DIM_3D),
-    #     )
-    #     manifest.create()
+            frame_id_map[pool_frame] = new_frame_id
+
+            new_db_images.append(image)
+            frame_idx_map[image.frame] = pool_frame
+
+        pool_frames = [frame_id_map[i] for i in pool_frames if i in frame_id_map]
+
+        # Store information about the real frame placement in the validation frames
+        for validation_frame in validation_frames:
+            image = new_db_images[validation_frame]
+            assert image.is_placeholder
+            image.real_frame_id = frame_id_map[image.real_frame_id] # TODO: maybe not needed
+
+        images = new_db_images
+        db_data.size = len(images)
+
+        # Update manifest
+        manifest = ImageManifestManager(db_data.get_manifest_path())
+        manifest.link(
+            sources=[extractor.get_path(frame_idx_map[image.frame]) for image in images],
+            meta={
+                k: {'related_images': related_images[k] }
+                for k in related_images
+            },
+            data_dir=upload_dir,
+            DIM_3D=(db_task.dimension == models.DimensionType.DIM_3D),
+        )
+        manifest.create()
 
     if db_task.mode == 'annotation':
         models.Image.objects.bulk_create(images)
@@ -1250,20 +1270,20 @@ def _create_thread(
 
     _create_segments_and_jobs(db_task, job_file_mapping=job_file_mapping)
 
-    # TODO:
-    # if validation_params:
-    #     db_gt_segment = models.Segment(
-    #         task=db_task,
-    #         start_frame=0,
-    #         stop_frame=db_data.stop_frame,
-    #         frames=pool_frames,
-    #         type=models.SegmentType.SPECIFIC_FRAMES,
-    #     )
-    #     db_gt_segment.save()
+    # TODO: refactor, support simple gt
+    if validation_params and validation_params['mode'] == models.ValidationMode.GT_POOL:
+        db_gt_segment = models.Segment(
+            task=db_task,
+            start_frame=0,
+            stop_frame=db_data.stop_frame,
+            frames=pool_frames,
+            type=models.SegmentType.SPECIFIC_FRAMES,
+        )
+        db_gt_segment.save()
 
-    #     db_gt_job = models.Job(segment=db_gt_segment, type=models.JobType.GROUND_TRUTH)
-    #     db_gt_job.save()
-    #     db_gt_job.make_dirs()
+        db_gt_job = models.Job(segment=db_gt_segment, type=models.JobType.GROUND_TRUTH)
+        db_gt_job.save()
+        db_gt_job.make_dirs()
 
     if (
         settings.MEDIA_CACHE_ALLOW_STATIC_CACHE and
@@ -1376,18 +1396,6 @@ def _create_static_chunks(db_task: models.Task, *, media_extractor: IMediaReader
     else:
         media_iterator = RandomAccessIterator(media_extractor)
 
-    # if db_task.mode == "annotation" and frame_idx_map:
-    #         generator = (
-    #             (
-    #                 extractor.get_image(frame_idx_map[image.frame]),
-    #                 extractor.get_path(frame_idx_map[image.frame]),
-    #                 image.frame,
-    #             )
-    #             for image in images
-    #         )
-    #     else:
-    #         generator = extractor
-
     with closing(media_iterator):
         progress_updater = _ChunkProgressUpdater()
 
@@ -1407,7 +1415,6 @@ def _create_static_chunks(db_task: models.Task, *, media_extractor: IMediaReader
                         (
                             # Convert absolute to relative ids (extractor output positions)
                             # Extractor will skip frames outside requested
-                            # TODO: handle placeholder frames
                             (abs_frame_id - db_data.start_frame) // frame_step
                             for abs_frame_id in db_segment.frame_set
                         ),

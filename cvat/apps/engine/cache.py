@@ -350,7 +350,7 @@ class MediaCache:
         db_data = db_task.data
 
         chunk_size = db_data.chunk_size
-        chunk_frame_ids = db_segment.frame_set[
+        chunk_frame_ids = list(db_segment.frame_set)[
             chunk_size * chunk_number : chunk_size * (chunk_number + 1)
         ]
 
@@ -363,15 +363,14 @@ class MediaCache:
         db_task = db_segment.task
         db_data = db_task.data
 
-        from cvat.apps.engine.frame_provider import TaskFrameProvider
-
-        frame_provider = TaskFrameProvider(db_task)
-
-        frame_set = db_segment.frame_set
+        chunk_size = db_data.chunk_size
+        chunk_frame_ids = list(db_segment.frame_set)[
+            chunk_size * chunk_number : chunk_size * (chunk_number + 1)
+        ]
         frame_step = db_data.get_frame_step()
-        chunk_frames = []
 
         writer = ZipCompressedChunkWriter(db_data.image_quality, dimension=db_task.dimension)
+
         dummy_frame = io.BytesIO()
         PIL.Image.new("RGB", (1, 1)).save(dummy_frame, writer.IMAGE_EXT)
 
@@ -380,46 +379,46 @@ class MediaCache:
         else:
             frame_size = None
 
-        for frame_idx in range(db_data.chunk_size):
-            frame_idx = (
-                db_data.start_frame + chunk_number * db_data.chunk_size + frame_idx * frame_step
-            )
-            if db_data.stop_frame < frame_idx:
-                break
+        def get_frames():
+            with closing(
+                self._read_raw_frames(db_task, frame_ids=chunk_frame_ids)
+            ) as read_frame_iter:
+                for frame_idx in range(db_data.chunk_size):
+                    frame_idx = (
+                        db_data.start_frame +
+                        chunk_number * db_data.chunk_size + frame_idx * frame_step
+                    )
+                    if db_data.stop_frame < frame_idx:
+                        break
 
-            frame_bytes = None
+                    if frame_idx in chunk_frame_ids:
+                        frame = next(read_frame_iter)[0]
 
-            if frame_idx in frame_set:
-                frame_bytes = frame_provider.get_frame(frame_idx, quality=quality).data
+                        if hasattr(db_data, "video"):
+                            # Decoded video frames can have different size, restore the original one
 
-                if frame_size is not None:
-                    # Decoded video frames can have different size, restore the original one
+                            frame = frame.to_image()
+                            if frame.size != frame_size:
+                                frame = frame.resize(frame_size)
+                    else:
+                        # Populate skipped frames with placeholder data,
+                        # this is required for video chunk decoding implementation in UI
+                        # TODO: try to fix decoding in UI
+                        frame = io.BytesIO(dummy_frame.getvalue())
 
-                    frame = PIL.Image.open(frame_bytes)
-                    if frame.size != frame_size:
-                        frame = frame.resize(frame_size)
-
-                    frame_bytes = io.BytesIO()
-                    frame.save(frame_bytes, writer.IMAGE_EXT)
-                    frame_bytes.seek(0)
-
-            else:
-                # Populate skipped frames with placeholder data,
-                # this is required for video chunk decoding implementation in UI
-                frame_bytes = io.BytesIO(dummy_frame.getvalue())
-
-            if frame_bytes is not None:
-                chunk_frames.append((frame_bytes, None, None))
+                    yield (frame, None, None)
 
         buff = io.BytesIO()
-        writer.save_as_chunk(
-            chunk_frames,
-            buff,
-            compress_frames=False,
-            zip_compress_level=1,  # there are likely to be many skips in SPECIFIC_FRAMES segments
-        )
-        buff.seek(0)
+        with closing(get_frames()) as frame_iter:
+            writer.save_as_chunk(
+                frame_iter,
+                buff,
+                zip_compress_level=1,
+                # there are likely to be many skips with repeated placeholder frames
+                # in SPECIFIC_FRAMES segments, it makes sense to compress the archive
+            )
 
+        buff.seek(0)
         return buff, get_chunk_mime_type_for_writer(writer)
 
     def _prepare_segment_preview(self, db_segment: models.Segment) -> DataWithMime:

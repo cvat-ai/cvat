@@ -230,23 +230,26 @@ class ValidationMode(str, Enum):
     def __str__(self):
         return self.value
 
-class ValidationParams(models.Model):
+class ValidationLayout(models.Model):
+    task_data = models.OneToOneField(
+        'Data', on_delete=models.CASCADE, related_name="validation_layout"
+    )
+
     mode = models.CharField(max_length=32, choices=ValidationMode.choices())
 
-    # TODO: consider other storage options and ways to pass the parameters
     frame_selection_method = models.CharField(
         max_length=32, choices=JobFrameSelectionMethod.choices()
     )
     random_seed = models.IntegerField(null=True)
 
-    frames: list[ValidationImage]
+    frames: models.manager.RelatedManager[ValidationFrame]
     frames_count = models.IntegerField(null=True)
     frames_percent = models.FloatField(null=True)
     frames_per_job_count = models.IntegerField(null=True)
     frames_per_job_percent = models.FloatField(null=True)
 
-class ValidationImage(models.Model):
-    validation_params = models.ForeignKey(ValidationParams, on_delete=models.CASCADE)
+class ValidationFrame(models.Model):
+    validation_layout = models.ForeignKey(ValidationLayout, on_delete=models.CASCADE)
     path = models.CharField(max_length=1024, default='')
 
 class Data(models.Model):
@@ -265,9 +268,7 @@ class Data(models.Model):
     cloud_storage = models.ForeignKey('CloudStorage', on_delete=models.SET_NULL, null=True, related_name='data')
     sorting_method = models.CharField(max_length=15, choices=SortingMethod.choices(), default=SortingMethod.LEXICOGRAPHICAL)
     deleted_frames = IntArrayField(store_sorted=True, unique_values=True)
-    validation_params: Optional[ValidationParams] = models.OneToOneField(
-        'ValidationParams', on_delete=models.CASCADE, null=True, related_name="task_data"
-    )
+    validation_layout: ValidationLayout
 
     class Meta:
         default_permissions = ()

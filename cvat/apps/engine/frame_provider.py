@@ -277,10 +277,12 @@ class TaskFrameProvider(IFrameProvider):
             [
                 s
                 for s in self._db_task.segment_set.all()
-                if s.type == models.SegmentType.RANGE
                 if not task_chunk_frame_set.isdisjoint(s.frame_set)
             ],
-            key=lambda s: s.start_frame,
+            key=lambda s: (
+                s.type != models.SegmentType.RANGE, # prioritize RANGE segments,
+                s.start_frame,
+            ),
         )
         assert matching_segments
 
@@ -378,8 +380,10 @@ class TaskFrameProvider(IFrameProvider):
 
         return next(
             s
-            for s in self._db_task.segment_set.all()
-            if s.type == models.SegmentType.RANGE
+            for s in sorted(
+                self._db_task.segment_set.all(),
+                key=lambda s: s.type != models.SegmentType.RANGE # prioritize RANGE segments
+            )
             if abs_frame_number in s.frame_set
         )
 

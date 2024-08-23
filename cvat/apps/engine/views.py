@@ -2138,8 +2138,8 @@ class JobViewSet(viewsets.GenericViewSet, mixins.ListModelMixin, mixins.CreateMo
         ).get(pk=pk)
 
         if (
-            not db_job.segment.task.data.validation_params or
-            db_job.segment.task.data.validation_params.mode != models.ValidationMode.GT_POOL
+            not db_job.segment.task.data.validation_layout or
+            db_job.segment.task.data.validation_layout.mode != models.ValidationMode.GT_POOL
         ):
             raise ValidationError("Honeypots are not configured in the task")
 

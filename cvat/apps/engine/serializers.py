@@ -929,9 +929,11 @@ class JobFileMapping(serializers.ListField):
         kwargs.setdefault('help_text', textwrap.dedent(__class__.__doc__))
         super().__init__(*args, **kwargs)
 
-class ValidationParamsSerializer(serializers.Serializer):
+class ValidationLayoutParamsSerializer(serializers.Serializer):
     mode = serializers.ChoiceField(choices=models.ValidationMode.choices(), required=True)
-    frame_selection_method = serializers.ChoiceField(choices=models.JobFrameSelectionMethod.choices(), required=True)
+    frame_selection_method = serializers.ChoiceField(
+        choices=models.JobFrameSelectionMethod.choices(), required=True
+    )
     frames = serializers.ListSerializer(
         child=serializers.CharField(max_length=MAX_FILENAME_LENGTH),
         default=[], required=False, allow_null=True
@@ -941,7 +943,6 @@ class ValidationParamsSerializer(serializers.Serializer):
     random_seed = serializers.IntegerField(required=False, allow_null=True)
     frames_per_job_count = serializers.IntegerField(required=False, allow_null=True)
     frames_per_job_percent = serializers.FloatField(required=False, allow_null=True)
-
 
     # def validate(self, attrs):
     #     if attrs['mode'] == models.ValidationMode.GT:
@@ -964,17 +965,16 @@ class ValidationParamsSerializer(serializers.Serializer):
     #         ):
     #     return super().validate(attrs)
 
-
     @transaction.atomic
     def create(self, validated_data):
         frames = validated_data.pop('frames', None)
 
-        instance = models.ValidationParams(**validated_data)
+        instance = models.ValidationLayout(**validated_data)
         instance.save()
 
         if frames:
-            models.ValidationImage.objects.bulk_create(
-                { "validation_params_id": instance.id, "path": frame }
+            models.ValidationFrame.objects.bulk_create(
+                { "validation_layout": instance, "path": frame }
                 for frame in frames
             )
 
@@ -993,8 +993,8 @@ class ValidationParamsSerializer(serializers.Serializer):
                 for db_frame in instance.frames.all():
                     db_frame.delete()
 
-            models.ValidationImage.objects.bulk_create(
-                { "validation_params_id": instance.id, "path": frame }
+            models.ValidationFrame.objects.bulk_create(
+                { "validation_layout": instance, "path": frame }
                 for frame in frames
             )
 
@@ -1086,7 +1086,7 @@ class DataSerializer(serializers.ModelSerializer):
             pass the list of file names in the required order.
         """.format(models.SortingMethod.PREDEFINED))
     )
-    validation_params = ValidationParamsSerializer(allow_null=True, required=False)
+    validation_params = ValidationLayoutParamsSerializer(allow_null=True, required=False)
 
     class Meta:
         model = models.Data
@@ -1153,8 +1153,15 @@ class DataSerializer(serializers.ModelSerializer):
         if filename_pattern and server_files_exclude:
             raise serializers.ValidationError('The filename_pattern and server_files_exclude cannot be used together')
 
+        validation_params = attrs.pop('validation_params', None)
+        if validation_params:
+            validation_params_serializer = ValidationLayoutParamsSerializer(data=validation_params)
+            validation_params_serializer.is_valid(raise_exception=True)
+            attrs['validation_params'] = validation_params_serializer.validated_data
+
         return attrs
 
+    @transaction.atomic
     def create(self, validated_data):
         files = self._pop_data(validated_data)
 
@@ -1164,32 +1171,43 @@ class DataSerializer(serializers.ModelSerializer):
         self._create_files(db_data, files)
 
         db_data.save()
+
+        validation_params = validated_data.pop('validation_params', None)
+        if validation_params.get("mode"):
+            validation_params["task_data"] = db_data
+            validation_layout_params_serializer = ValidationLayoutParamsSerializer()
+            validation_layout_params_serializer.create(validation_params)
+
         return db_data
 
+    @transaction.atomic
     def update(self, instance, validated_data):
-        files = self._pop_data(validated_data)
         validation_params = validated_data.pop('validation_params', None)
+
+        files = self._pop_data(validated_data)
         for key, value in validated_data.items():
             setattr(instance, key, value)
         self._create_files(instance, files)
 
+        instance.save()
+
         if validation_params:
-            db_validation_params = instance.validation_params
-            validation_params_serializer = ValidationParamsSerializer(
-                instance=db_validation_params, data=validation_params
+            db_validation_layout = getattr(instance, "validation_layout", None)
+            validation_layout_params_serializer = ValidationLayoutParamsSerializer(
+                instance=db_validation_layout
             )
-            if not db_validation_params:
-                db_validation_params = validation_params_serializer.create(
+            if not db_validation_layout:
+                validation_params["task_data"] = instance
+                db_validation_layout = validation_layout_params_serializer.create(
                     validation_params
                 )
             else:
-                db_validation_params = validation_params_serializer.update(
-                    db_validation_params, validation_params
+                db_validation_layout = validation_layout_params_serializer.update(
+                    db_validation_layout, validation_params
                 )
 
-            instance.validation_params = db_validation_params
+            instance.validation_layout = db_validation_layout
 
-        instance.save()
         return instance
 
     # pylint: disable=no-self-use
@@ -1237,7 +1255,9 @@ class TaskReadSerializer(serializers.ModelSerializer):
     source_storage = StorageSerializer(required=False, allow_null=True)
     jobs = JobsSummarySerializer(url_filter_key='task_id', source='segment_set')
     labels = LabelsSummarySerializer(source='*')
-    validation_mode = serializers.CharField(source='validation_params.mode', required=False, allow_null=True)
+    validation_mode = serializers.CharField(
+        source='data.validation_layout.mode', required=False, allow_null=True
+    )
 
     class Meta:
         model = models.Task

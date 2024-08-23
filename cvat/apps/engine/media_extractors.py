@@ -87,7 +87,7 @@ def sort(images, sorting_method=SortingMethod.LEXICOGRAPHICAL, func=None):
     elif sorting_method == SortingMethod.PREDEFINED:
         return images
     elif sorting_method == SortingMethod.RANDOM:
-        shuffle(images)
+        shuffle(images) # TODO: support seed to create reproducible results
         return images
     else:
         raise NotImplementedError()

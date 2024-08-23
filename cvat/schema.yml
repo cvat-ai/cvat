@@ -7510,7 +7510,7 @@ components:
             pass the list of file names in the required order.
         validation_params:
           allOf:
-          - $ref: '#/components/schemas/ValidationParamsRequest'
+          - $ref: '#/components/schemas/ValidationLayoutParamsRequest'
           nullable: true
       required:
       - image_quality
@@ -10839,15 +10839,7 @@ components:
           maxLength: 150
       required:
       - username
-    ValidationMode:
-      enum:
-      - gt
-      - gt_pool
-      type: string
-      description: |-
-        * `gt` - GT
-        * `gt_pool` - GT_POOL
-    ValidationParamsRequest:
+    ValidationLayoutParamsRequest:
       type: object
       properties:
         mode:
@@ -10881,6 +10873,14 @@ components:
       required:
       - frame_selection_method
       - mode
+    ValidationMode:
+      enum:
+      - gt
+      - gt_pool
+      type: string
+      description: |-
+        * `gt` - GT
+        * `gt_pool` - GT_POOL
     WebhookContentType:
       enum:
       - application/json
