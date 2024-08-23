@@ -30,6 +30,14 @@ function TaskQualityManagementComponent(props: Props): JSX.Element {
         onDeleteFrames, onRestoreFrames, fetching,
     } = props;
 
+    const activeCount = gtJobMeta.includedFrames.reduce((acc: number, frameID: number) => (
+        !(frameID in gtJobMeta.deletedFrames) ? acc + 1 : acc
+    ), 0);
+
+    const excludedCount = Object.keys(gtJobMeta.deletedFrames).reduce((acc: number, frameID: string) => (
+        gtJobMeta.includedFrames.includes(+frameID) ? acc + 1 : acc
+    ), 0);
+
     return (
         <div className='cvat-task-quality-page'>
             {
@@ -41,8 +49,8 @@ function TaskQualityManagementComponent(props: Props): JSX.Element {
             }
             <Row>
                 <SummaryComponent
-                    excludedCount={Object.keys(gtJobMeta.deletedFrames).length}
-                    activeCount={gtJobMeta.includedFrames.length}
+                    excludedCount={excludedCount}
+                    activeCount={activeCount}
                     totalCount={gtJobMeta.includedFrames.length}
                 />
             </Row>
