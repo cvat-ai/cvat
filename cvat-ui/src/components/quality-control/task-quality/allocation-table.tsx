@@ -9,7 +9,6 @@ import { ResizableBox } from 'react-resizable';
 import Table from 'antd/lib/table';
 import Button from 'antd/lib/button';
 import Text from 'antd/lib/typography/Text';
-import Tag from 'antd/lib/tag';
 import Icon, { DeleteOutlined } from '@ant-design/icons';
 import { Task, Job, FramesMetaData } from 'cvat-core-wrapper';
 import { RestoreIcon } from 'icons';
@@ -27,6 +26,16 @@ interface Props {
     getQualityColor: (value?: number) => QualityColors;
     onDeleteFrames: (frames: number[]) => void;
     onRestoreFrames: (frames: number[]) => void;
+}
+
+interface RowData {
+    key: number;
+    frame: number;
+    name: { name: string, index: number },
+    useCount: number,
+    quality: number,
+    active: boolean,
+    actions: { frameID: number, active: boolean },
 }
 
 function ResizableTitle(props) {
@@ -58,14 +67,14 @@ export default function AllocationTableComponent(props: Props): JSX.Element {
 
     const history = useHistory();
 
-    const [select, setSelect] = useState({
+    const [select, setSelect] = useState<{ selectedRowKeys: string[], selectedRows: RowData[] }>({
         selectedRowKeys: [],
         selectedRows: [],
     });
 
     const rowSelection = {
         selectedRowKeys: select.selectedRowKeys,
-        onChange: (selectedRowKeys, selectedRows) => {
+        onChange: (selectedRowKeys: string[], selectedRows: RowData[]) => {
             setSelect({
                 ...select,
                 selectedRowKeys: [...selectedRowKeys],
@@ -219,7 +228,7 @@ export default function AllocationTableComponent(props: Props): JSX.Element {
         name: { name: gtJobMeta.frames[frameID].name, index: frameID },
         useCount: frameID,
         quality: frameID,
-        active: frameID in gtJobMeta.deletedFrames,
+        active: !(frameID in gtJobMeta.deletedFrames),
         actions: { frameID, active: frameID in gtJobMeta.deletedFrames },
     }),
     );
@@ -236,10 +245,10 @@ export default function AllocationTableComponent(props: Props): JSX.Element {
                             <Col>
                                 <DeleteOutlined
                                     onClick={() => {
-                                        // const framesToUpdate = selectedRows
-                                        //     .filter((frameData) => frameData.active)
-                                        //     .map((frameData) => frameData.frame);
-                                        // updateFrames(report, framesToUpdate, AllocationReportActions.EXCLUDE);
+                                        const framesToUpdate = select.selectedRows
+                                            .filter((frameData) => frameData.active)
+                                            .map((frameData) => frameData.frame);
+                                        onDeleteFrames(framesToUpdate);
                                         setSelect({
                                             ...select,
                                             selectedRowKeys: [],
@@ -251,10 +260,10 @@ export default function AllocationTableComponent(props: Props): JSX.Element {
                             <Col>
                                 <Icon
                                     onClick={() => {
-                                        // const framesToUpdate = selectedRows
-                                        //     .filter((frameData) => !frameData.active)
-                                        //     .map((frameData) => frameData.frame);
-                                        // updateFrames(report, framesToUpdate, AllocationReportActions.RESTORE);
+                                        const framesToUpdate = select.selectedRows
+                                            .filter((frameData) => !frameData.active)
+                                            .map((frameData) => frameData.frame);
+                                        onRestoreFrames(framesToUpdate);
                                         setSelect({
                                             ...select,
                                             selectedRowKeys: [],
@@ -271,7 +280,7 @@ export default function AllocationTableComponent(props: Props): JSX.Element {
             <Table
                 className='cvat-frame-allocation-table'
                 rowClassName={(rowData) => {
-                    if (rowData.active) {
+                    if (!rowData.active) {
                         return 'cvat-allocation-frame-row cvat-allocation-frame-row-excluded';
                     }
                     return 'cvat-allocation-frame';

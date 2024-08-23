@@ -24,7 +24,6 @@ import { BASE_TARGET_THRESHOLD, qualityColorGenerator, QualityColors } from 'uti
 import TaskQualityComponent from './task-quality/task-quality-component';
 import TaskQualityManagementComponent from './task-quality/task-quality-magement-component';
 import QualitySettingsComponent from './quality-settings';
-import { FramesAllocation } from './task-quality/allocation-table';
 
 const core = getCore();
 
@@ -39,16 +38,6 @@ function readInstanceType(): InstanceType {
 
 function readInstanceId(): number {
     return +useParams<{ tid: string }>().tid;
-}
-
-function getFramesAllocationFromMeta(meta: FramesMetaData): FramesAllocation {
-    return {
-        includedFrames: [...meta.includedFrames],
-        deletedFrames: { ...meta.deletedFrames },
-        names: meta.includedFrames.map((frameID: number) => (
-            meta.frames[frameID].name ?? meta.frames[0].name
-        )),
-    };
 }
 
 type InstanceType = 'project' | 'task' | 'job';
@@ -302,7 +291,6 @@ function QualityControlPage(): JSX.Element {
     }, [state.qualitySettings.settings]);
 
     const onDeleteFrames = useCallback(async (frameIDs: number[]): Promise<void> => {
-        console.log('delete', frameIDs);
         const { instance: gtJob } = state.gtJob;
         if (gtJob) {
             dispatch(reducerActions.setFetching(true));
@@ -410,6 +398,7 @@ function QualityControlPage(): JSX.Element {
                         onDeleteFrames={onDeleteFrames}
                         onRestoreFrames={onRestoreFrames}
                         getQualityColor={state.qualitySettings.getQualityColor}
+                        fetching={state.fetching}
                     />
                 ),
             }, 20]);
