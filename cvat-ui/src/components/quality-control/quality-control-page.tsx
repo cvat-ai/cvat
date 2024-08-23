@@ -32,15 +32,7 @@ function getTabFromHash(supportedTabs: string[]): string {
     return supportedTabs.includes(tab) ? tab : supportedTabs[0];
 }
 
-function readInstanceType(): InstanceType {
-    return 'task';
-}
-
-function readInstanceId(): number {
-    return +useParams<{ tid: string }>().tid;
-}
-
-type InstanceType = 'project' | 'task' | 'job';
+type InstanceType = 'task';
 
 interface State {
     fetching: boolean;
@@ -174,8 +166,8 @@ function QualityControlPage(): JSX.Element {
         },
     });
 
-    const requestedInstanceType: InstanceType = readInstanceType();
-    const requestedInstanceID = readInstanceId();
+    const requestedInstanceType: InstanceType = 'task' as InstanceType;
+    const requestedInstanceID = +useParams<{ tid: string }>().tid;
 
     const [instanceType, setInstanceType] = useState<InstanceType | null>(null);
     const [instance, setInstance] = useState<Task | null>(null);
@@ -290,31 +282,26 @@ function QualityControlPage(): JSX.Element {
         }
     }, [state.qualitySettings.settings]);
 
-    const onDeleteFrames = useCallback(async (frameIDs: number[]): Promise<void> => {
+    const updateMeta = (action: (frameID: number) => void) => async (frameIDs: number[]): Promise<void> => {
         const { instance: gtJob } = state.gtJob;
         if (gtJob) {
             dispatch(reducerActions.setFetching(true));
-            await Promise.all(frameIDs.map((frameID: number): Promise<void> => (
-                gtJob.frames.delete(frameID)
-            )));
+            await Promise.all(frameIDs.map((frameID: number): void => action(frameID)));
             const [newMeta] = await gtJob.frames.save();
             dispatch(reducerActions.setGtJobMeta(newMeta));
             dispatch(reducerActions.setFetching(false));
         }
-    }, [state.gtJob.instance]);
+    };
 
-    const onRestoreFrames = useCallback(async (frameIDs: number[]): Promise<void> => {
-        const { instance: gtJob } = state.gtJob;
-        if (gtJob) {
-            dispatch(reducerActions.setFetching(true));
-            await Promise.all(frameIDs.map((frameID: number): Promise<void> => (
-                gtJob.frames.restore(frameID)
-            )));
-            const [newMeta] = await gtJob.frames.save();
-            dispatch(reducerActions.setGtJobMeta(newMeta));
-            dispatch(reducerActions.setFetching(false));
-        }
-    }, [state.gtJob.instance]);
+    const onDeleteFrames = useCallback(
+        updateMeta((frameID: number) => (state.gtJob.instance?.frames.delete(frameID))),
+        [state.gtJob.instance],
+    );
+
+    const onRestoreFrames = useCallback(
+        updateMeta((frameID: number) => (state.gtJob.instance?.frames.restore(frameID))),
+        [state.gtJob.instance],
+    );
 
     useEffect(() => {
         if (Number.isInteger(requestedInstanceID) && ['task'].includes(requestedInstanceType)) {
