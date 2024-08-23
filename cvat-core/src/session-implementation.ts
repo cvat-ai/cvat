@@ -44,9 +44,11 @@ async function deleteFrameWrapper(jobID, frame): Promise<void> {
     };
 
     await redo();
-    getHistory(this).do(HistoryActions.REMOVED_FRAME, async () => {
-        restoreFrame(jobID, frame);
-    }, redo, [], frame);
+    try {
+        getHistory(this).do(HistoryActions.REMOVED_FRAME, async () => {
+            restoreFrame(jobID, frame);
+        }, redo, [], frame);
+    } catch (error) { /* empty */ }
 }
 
 async function restoreFrameWrapper(jobID, frame): Promise<void> {
@@ -55,9 +57,11 @@ async function restoreFrameWrapper(jobID, frame): Promise<void> {
     };
 
     await redo();
-    getHistory(this).do(HistoryActions.RESTORED_FRAME, async () => {
-        deleteFrame(jobID, frame);
-    }, redo, [], frame);
+    try {
+        getHistory(this).do(HistoryActions.RESTORED_FRAME, async () => {
+            deleteFrame(jobID, frame);
+        }, redo, [], frame);
+    } catch (error) { /* empty */ }
 }
 
 export function implementJob(Job: typeof JobClass): typeof JobClass {
@@ -232,7 +236,7 @@ export function implementJob(Job: typeof JobClass): typeof JobClass {
         value: function saveFramesImplementation(
             this: JobClass,
         ): ReturnType<typeof JobClass.prototype.frames.save> {
-            return patchMeta(this.id);
+            return patchMeta(this.id).then((meta) => [meta]);
         },
     });
 
@@ -912,8 +916,7 @@ export function implementTask(Task: typeof TaskClass): typeof TaskClass {
         value: async function saveFramesImplementation(
             this: TaskClass,
         ): ReturnType<typeof TaskClass.prototype.frames.save> {
-            return Promise.all(this.jobs.map((job) => patchMeta(job.id)))
-                .then(() => Promise.resolve());
+            return Promise.all(this.jobs.map((job) => patchMeta(job.id)));
         },
     });
 

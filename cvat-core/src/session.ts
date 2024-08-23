@@ -22,7 +22,7 @@ import {
     SerializedLabel, SerializedTask,
 } from './server-response-types';
 import AnnotationGuide from './guide';
-import { FrameData } from './frames';
+import { FrameData, FramesMetaData } from './frames';
 import Statistics from './statistics';
 import { Request } from './request';
 import logger from './logger';
@@ -223,10 +223,11 @@ function buildDuplicatedAPI(prototype) {
                     );
                 },
                 async save() {
-                    await PluginRegistry.apiWrapper.call(
+                    const result = await PluginRegistry.apiWrapper.call(
                         this,
                         prototype.frames.save,
                     );
+                    return result;
                 },
                 async cachedChunks() {
                     const result = await PluginRegistry.apiWrapper.call(this, prototype.frames.cachedChunks);
@@ -377,7 +378,7 @@ export class Session {
         get: (frame: number, isPlaying?: boolean, step?: number) => Promise<FrameData>;
         delete: (frame: number) => Promise<void>;
         restore: (frame: number) => Promise<void>;
-        save: () => Promise<void>;
+        save: () => Promise<FramesMetaData[]>;
         cachedChunks: () => Promise<number[]>;
         preview: () => Promise<string>;
         contextImage: (frame: number) => Promise<Record<string, ImageBitmap>>;

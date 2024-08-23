@@ -16,30 +16,34 @@ import AllocationTableComponent from './allocation-table';
 interface Props {
     task: Task;
     gtJob: Job;
-    gtJobFramesMeta: FramesMetaData;
+    gtJobMeta: FramesMetaData;
     getQualityColor: (value?: number) => QualityColors;
+    onDeleteFrames: (frames: number[]) => void;
+    onRestoreFrames: (frames: number[]) => void;
 }
 
 function TaskQualityManagementComponent(props: Props): JSX.Element {
     const {
-        task, gtJob, getQualityColor, gtJobFramesMeta,
+        task, gtJob, gtJobMeta, getQualityColor, onDeleteFrames, onRestoreFrames,
     } = props;
 
     return (
         <div className='cvat-task-quality-page'>
             <Row>
                 <SummaryComponent
-                    excludedCount={Object.keys(gtJobFramesMeta.deletedFrames).length}
-                    activeCount={gtJobFramesMeta.size}
-                    totalCount={gtJobFramesMeta.size}
+                    excludedCount={Object.keys(gtJobMeta.deletedFrames).length}
+                    activeCount={gtJobMeta.includedFrames.length}
+                    totalCount={gtJobMeta.includedFrames.length}
                 />
             </Row>
             <Row>
                 <AllocationTableComponent
                     task={task}
                     gtJob={gtJob}
-                    gtJobFramesMeta={gtJobFramesMeta}
+                    gtJobMeta={gtJobMeta}
                     getQualityColor={getQualityColor}
+                    onDeleteFrames={onDeleteFrames}
+                    onRestoreFrames={onRestoreFrames}
                 />
             </Row>
         </div>

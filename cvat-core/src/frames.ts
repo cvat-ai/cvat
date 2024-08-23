@@ -435,8 +435,8 @@ Object.defineProperty(FrameData.prototype.data, 'implementation', {
     writable: false,
 });
 
-async function getJobMeta(jobID: number): Promise<FramesMetaData> {
-    if (!frameMetaCache[jobID]) {
+export async function getJobMeta(jobID: number, { reload } = { reload: false }): Promise<FramesMetaData> {
+    if (!frameMetaCache[jobID] || reload) {
         frameMetaCache[jobID] = serverProxy.frames.getMeta('job', jobID)
             .then((serverMeta) => new FramesMetaData({
                 ...serverMeta,
@@ -655,24 +655,25 @@ export async function getDeletedFrames(instanceType: 'job' | 'task', id): Promis
     throw new Exception(`getDeletedFrames is not implemented for ${instanceType}`);
 }
 
-export function deleteFrame(jobID: number, frame: number): void {
-    const { meta } = frameDataCache[jobID];
+export async function deleteFrame(jobID: number, frame: number): Promise<void> {
+    const meta = await frameMetaCache[jobID];
     meta.deletedFrames[frame] = true;
 }
 
-export function restoreFrame(jobID: number, frame: number): void {
-    const { meta } = frameDataCache[jobID];
+export async function restoreFrame(jobID: number, frame: number): Promise<void> {
+    const meta = await frameMetaCache[jobID];
     delete meta.deletedFrames[frame];
 }
 
-export async function patchMeta(jobID: number): Promise<void> {
-    const { meta } = frameDataCache[jobID];
+export async function patchMeta(jobID: number): Promise<FramesMetaData> {
+    const meta = await frameMetaCache[jobID];
     const updatedFields = meta.getUpdated();
 
     if (Object.keys(updatedFields).length) {
-        const newMeta = await saveJobMeta(meta, jobID);
-        frameDataCache[jobID].meta = newMeta;
+        frameMetaCache[jobID] = saveJobMeta(meta, jobID);
     }
+    const newMeta = await frameMetaCache[jobID];
+    return newMeta;
 }
 
 export async function findFrame(

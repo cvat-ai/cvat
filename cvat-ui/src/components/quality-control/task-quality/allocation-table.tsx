@@ -23,8 +23,10 @@ const RESIZE_HANDLE_OFFSET = 30;
 interface Props {
     task: Task;
     gtJob: Job;
-    gtJobFramesMeta: FramesMetaData
+    gtJobMeta: FramesMetaData;
     getQualityColor: (value?: number) => QualityColors;
+    onDeleteFrames: (frames: number[]) => void;
+    onRestoreFrames: (frames: number[]) => void;
 }
 
 function ResizableTitle(props) {
@@ -48,8 +50,10 @@ export default function AllocationTableComponent(props: Props): JSX.Element {
     const {
         task,
         gtJob,
-        gtJobFramesMeta,
+        gtJobMeta,
         getQualityColor,
+        onDeleteFrames,
+        onRestoreFrames,
     } = props;
 
     const history = useHistory();
@@ -58,10 +62,9 @@ export default function AllocationTableComponent(props: Props): JSX.Element {
         selectedRowKeys: [],
         selectedRows: [],
     });
-    const { selectedRowKeys, selectedRows } = select;
 
     const rowSelection = {
-        selectedRowKeys,
+        selectedRowKeys: select.selectedRowKeys,
         onChange: (selectedRowKeys, selectedRows) => {
             setSelect({
                 ...select,
@@ -89,7 +92,7 @@ export default function AllocationTableComponent(props: Props): JSX.Element {
         return component;
     }
     const handleResize =
-    (key) => (e, { size }) => {
+    (key: string) => (event, { size }) => {
         setColumns((prevColumns) => {
             const index = prevColumns.findIndex((col) => col.key === key);
             const nextColumns = [...prevColumns];
@@ -101,7 +104,7 @@ export default function AllocationTableComponent(props: Props): JSX.Element {
         });
     };
 
-    let [columns, setColumns] = useState([
+    const [columns, setColumns] = useState([
         {
             title: (
                 <ResizableTitle onResize={handleResize('frame')}>
@@ -195,36 +198,31 @@ export default function AllocationTableComponent(props: Props): JSX.Element {
                 { text: 'Excluded', value: false },
             ],
             onFilter: (value: boolean, record: any) => record.actions.frameData.active === value,
-            render: (): JSX.Element => (
-                // frameData.active ? (
-                //     <DeleteOutlined
-                //         onClick={() => {}}
-                //     />
-                // ) : (
-                //     <Icon
-                //         onClick={() => {}}
-                //         component={RestoreIcon}
-                //     />
-                // )
-                <DeleteOutlined
-                    onClick={() => {}}
-                />
+            render: ({ frameID, active }: { frameID: number, active: boolean }): JSX.Element => (
+                active ? (
+                    <Icon
+                        onClick={() => { onRestoreFrames([frameID]); }}
+                        component={RestoreIcon}
+                    />
+                ) : (
+                    <DeleteOutlined
+                        onClick={() => { onDeleteFrames([frameID]); }}
+                    />
+                )
             ),
         },
     ]);
 
-    const data = gtJobFramesMeta.includedFrames.map((frameID: number) => {
-        const frameData = gtJobFramesMeta.frames[frameID] || gtJobFramesMeta.frames[0];
-        return {
-            key: frameID,
-            frame: frameID,
-            name: { name: frameData.name, index: frameID },
-            useCount: frameID,
-            quality: frameID,
-            active: frameID in gtJobFramesMeta.deletedFrames,
-            actions: { meta: gtJobFramesMeta, frameData },
-        };
-    });
+    const data = gtJobMeta.includedFrames.map((frameID: number) => ({
+        key: frameID,
+        frame: frameID,
+        name: { name: gtJobMeta.frames[frameID].name, index: frameID },
+        useCount: frameID,
+        quality: frameID,
+        active: frameID in gtJobMeta.deletedFrames,
+        actions: { frameID, active: frameID in gtJobMeta.deletedFrames },
+    }),
+    );
 
     return (
         <div className='cvat-frame-allocation-list'>
@@ -233,7 +231,7 @@ export default function AllocationTableComponent(props: Props): JSX.Element {
                     <Text className='cvat-text-color cvat-frame-allocation-header'> Frames </Text>
                 </Col>
                 {
-                    selectedRowKeys.length !== 0 ? (
+                    select.selectedRowKeys.length !== 0 ? (
                         <>
                             <Col>
                                 <DeleteOutlined
@@ -273,7 +271,7 @@ export default function AllocationTableComponent(props: Props): JSX.Element {
             <Table
                 className='cvat-frame-allocation-table'
                 rowClassName={(rowData) => {
-                    if (rowData.frame in rowData.actions.meta.deletedFrames) {
+                    if (rowData.active) {
                         return 'cvat-allocation-frame-row cvat-allocation-frame-row-excluded';
                     }
                     return 'cvat-allocation-frame';

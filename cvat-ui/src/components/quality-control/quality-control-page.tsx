@@ -24,6 +24,7 @@ import { BASE_TARGET_THRESHOLD, qualityColorGenerator, QualityColors } from 'uti
 import TaskQualityComponent from './task-quality/task-quality-component';
 import TaskQualityManagementComponent from './task-quality/task-quality-magement-component';
 import QualitySettingsComponent from './quality-settings';
+import { FramesAllocation } from './task-quality/allocation-table';
 
 const core = getCore();
 
@@ -38,6 +39,16 @@ function readInstanceType(): InstanceType {
 
 function readInstanceId(): number {
     return +useParams<{ tid: string }>().tid;
+}
+
+function getFramesAllocationFromMeta(meta: FramesMetaData): FramesAllocation {
+    return {
+        includedFrames: [...meta.includedFrames],
+        deletedFrames: { ...meta.deletedFrames },
+        names: meta.includedFrames.map((frameID: number) => (
+            meta.frames[frameID].name ?? meta.frames[0].name
+        )),
+    };
 }
 
 type InstanceType = 'project' | 'task' | 'job';
@@ -66,6 +77,7 @@ enum ReducerActionType {
     SET_QUALITY_SETTINGS_FETCHING = 'SET_QUALITY_SETTINGS_FETCHING',
     SET_REPORT_REFRESHING_STATUS = 'SET_REPORT_REFRESHING_STATUS',
     SET_GT_JOB = 'SET_GT_JOB',
+    SET_GT_JOB_META = 'SET_GT_JOB_META',
 }
 
 export const reducerActions = {
@@ -90,8 +102,11 @@ export const reducerActions = {
     setReportRefreshingStatus: (status: string | null) => (
         createAction(ReducerActionType.SET_REPORT_REFRESHING_STATUS, { status })
     ),
-    setGtJob: (job: Job | null, meta: FramesMetaData | null) => (
-        createAction(ReducerActionType.SET_GT_JOB, { job, meta })
+    setGtJob: (job: Job | null) => (
+        createAction(ReducerActionType.SET_GT_JOB, { job })
+    ),
+    setGtJobMeta: (meta: FramesMetaData | null) => (
+        createAction(ReducerActionType.SET_GT_JOB_META, { meta })
     ),
 };
 
@@ -137,6 +152,15 @@ const reducer = (state: State, action: ActionUnion<typeof reducerActions>): Stat
             gtJob: {
                 ...state.gtJob,
                 instance: action.payload.job,
+            },
+        };
+    }
+
+    if (action.type === ReducerActionType.SET_GT_JOB_META) {
+        return {
+            ...state,
+            gtJob: {
+                ...state.gtJob,
                 meta: action.payload.meta,
             },
         };
@@ -173,7 +197,7 @@ function QualityControlPage(): JSX.Element {
     const receiveInstance = async (type: InstanceType, id: number): Promise<Task | null> => {
         let receivedInstance: Task | null = null;
         let gtJob: Job | null = null;
-        let gtJobMeta: any = null;
+        let gtJobMeta: FramesMetaData | null = null;
 
         try {
             switch (type) {
@@ -181,7 +205,7 @@ function QualityControlPage(): JSX.Element {
                     [receivedInstance] = await core.tasks.get({ id });
                     gtJob = receivedInstance.jobs.find((job: Job) => job.type === JobType.GROUND_TRUTH) ?? null;
                     if (gtJob) {
-                        gtJobMeta = await core.frames.getMeta('job', gtJob.id);
+                        gtJobMeta = await core.frames.getMeta('job', gtJob.id) as FramesMetaData;
                     }
                     break;
                 }
@@ -190,7 +214,8 @@ function QualityControlPage(): JSX.Element {
             }
 
             if (isMounted()) {
-                dispatch(reducerActions.setGtJob(gtJob, gtJobMeta));
+                dispatch(reducerActions.setGtJob(gtJob));
+                dispatch(reducerActions.setGtJobMeta(gtJobMeta));
                 setInstance(receivedInstance);
                 setInstanceType(type);
             }
@@ -276,6 +301,33 @@ function QualityControlPage(): JSX.Element {
         }
     }, [state.qualitySettings.settings]);
 
+    const onDeleteFrames = useCallback(async (frameIDs: number[]): Promise<void> => {
+        console.log('delete', frameIDs);
+        const { instance: gtJob } = state.gtJob;
+        if (gtJob) {
+            dispatch(reducerActions.setFetching(true));
+            await Promise.all(frameIDs.map((frameID: number): Promise<void> => (
+                gtJob.frames.delete(frameID)
+            )));
+            const [newMeta] = await gtJob.frames.save();
+            dispatch(reducerActions.setGtJobMeta(newMeta));
+            dispatch(reducerActions.setFetching(false));
+        }
+    }, [state.gtJob.instance]);
+
+    const onRestoreFrames = useCallback(async (frameIDs: number[]): Promise<void> => {
+        const { instance: gtJob } = state.gtJob;
+        if (gtJob) {
+            dispatch(reducerActions.setFetching(true));
+            await Promise.all(frameIDs.map((frameID: number): Promise<void> => (
+                gtJob.frames.restore(frameID)
+            )));
+            const [newMeta] = await gtJob.frames.save();
+            dispatch(reducerActions.setGtJobMeta(newMeta));
+            dispatch(reducerActions.setFetching(false));
+        }
+    }, [state.gtJob.instance]);
+
     useEffect(() => {
         if (Number.isInteger(requestedInstanceID) && ['task'].includes(requestedInstanceType)) {
             dispatch(reducerActions.setFetching(true));
@@ -354,7 +406,9 @@ function QualityControlPage(): JSX.Element {
                     <TaskQualityManagementComponent
                         task={instance}
                         gtJob={state.gtJob.instance}
-                        gtJobFramesMeta={state.gtJob.meta}
+                        gtJobMeta={state.gtJob.meta}
+                        onDeleteFrames={onDeleteFrames}
+                        onRestoreFrames={onRestoreFrames}
                         getQualityColor={state.qualitySettings.getQualityColor}
                     />
                 ),
