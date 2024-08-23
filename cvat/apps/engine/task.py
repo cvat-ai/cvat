@@ -3,38 +3,45 @@
 #
 # SPDX-License-Identifier: MIT
 
+import concurrent.futures
 import itertools
 import fnmatch
 import os
 import rq
 import re
+import rq
 import shutil
 from copy import deepcopy
 from rest_framework.serializers import ValidationError
 from typing import Any, Dict, Iterator, List, NamedTuple, Optional, Sequence, Union, Iterable
+from contextlib import closing
+from datetime import datetime, timezone
+from pathlib import Path
+from typing import Any, Dict, Iterator, List, NamedTuple, Optional, Sequence, Tuple, Union
 from urllib import parse as urlparse
 from urllib import request as urlrequest
-import django_rq
-import concurrent.futures
-import queue
 
+import av
+import attrs
+import django_rq
 from django.conf import settings
 from django.db import transaction
 from django.forms.models import model_to_dict
 from django.http import HttpRequest
-from datetime import datetime, timezone
-from pathlib import Path
+from rest_framework.serializers import ValidationError
 
 from cvat.apps.engine import models
 from cvat.apps.engine.log import ServerLogManager
 from cvat.apps.engine.media_extractors import (
-    MEDIA_TYPES, IMediaReader, ImageListReader, Mpeg4ChunkWriter, Mpeg4CompressedChunkWriter,
+    MEDIA_TYPES, CachingMediaIterator, IMediaReader, ImageListReader,
+    Mpeg4ChunkWriter, Mpeg4CompressedChunkWriter, RandomAccessIterator,
     ValidateDimension, ZipChunkWriter, ZipCompressedChunkWriter, get_mime, sort
 )
+from cvat.apps.engine.models import RequestAction, RequestTarget
 from cvat.apps.engine.utils import (
     av_scan_paths,get_rq_job_meta, define_dependent_job, get_rq_lock_by_user, preload_images
 )
-from cvat.apps.engine.rq_job_handler import RQIdManager
+from cvat.apps.engine.rq_job_handler import RQId
 from cvat.utils.http import make_requests_session, PROXIES_FOR_UNTRUSTED_URLS
 from utils.dataset_manifest import ImageManifestManager, VideoManifestManager, is_manifest
 from utils.dataset_manifest.core import VideoManifestValidator, is_dataset_manifest
@@ -53,7 +60,7 @@ def create(
     """Schedule a background job to create a task and return that job's identifier"""
     q = django_rq.get_queue(settings.CVAT_QUEUES.IMPORT_DATA.value)
     user_id = request.user.id
-    rq_id = RQIdManager.build('create', 'task', db_task.pk)
+    rq_id = RQId(RequestAction.CREATE, RequestTarget.TASK, db_task.pk).render()
 
     with get_rq_lock_by_user(q, user_id):
         q.enqueue_call(
@@ -121,7 +128,7 @@ def _copy_data_from_share_point(
                 os.makedirs(target_dir)
             shutil.copyfile(source_path, target_path)
 
-def _get_task_segment_data(
+def _generate_segment_params(
     db_task: models.Task,
     *,
     data_size: Optional[int] = None,
@@ -172,7 +179,7 @@ def _get_task_segment_data(
 
     return SegmentsParams(segments, segment_size, overlap)
 
-def _save_task_to_db(
+def _create_segments_and_jobs(
     db_task: models.Task,
     *,
     job_file_mapping: Optional[JobFileMapping] = None,
@@ -181,7 +188,7 @@ def _save_task_to_db(
     rq_job.meta['status'] = 'Task is being saved in database'
     rq_job.save_meta()
 
-    segments, segment_size, overlap = _get_task_segment_data(
+    segments, segment_size, overlap = _generate_segment_params(
         db_task=db_task, job_file_mapping=job_file_mapping,
     )
     db_task.segment_size = segment_size
@@ -189,8 +196,8 @@ def _save_task_to_db(
 
     for segment_idx, segment_params in enumerate(segments):
         slogger.glob.info(
-            "New segment for task #{task_id}: idx = {segment_idx}, start_frame = {start_frame}, \
-            stop_frame = {stop_frame}".format(
+            "New segment for task #{task_id}: idx = {segment_idx}, start_frame = {start_frame}, "
+            "stop_frame = {stop_frame}".format(
                 task_id=db_task.id, segment_idx=segment_idx, **segment_params._asdict()
             ))
 
@@ -364,48 +371,28 @@ def _validate_manifest(
     *,
     is_in_cloud: bool,
     db_cloud_storage: Optional[Any],
-    data_storage_method: str,
-    data_sorting_method: str,
-    isBackupRestore: bool,
 ) -> Optional[str]:
-    if manifests:
-        if len(manifests) != 1:
-            raise ValidationError('Only one manifest file can be attached to data')
-        manifest_file = manifests[0]
-        full_manifest_path = os.path.join(root_dir, manifests[0])
+    if not manifests:
+        return None
 
-        if is_in_cloud:
-            cloud_storage_instance = db_storage_to_storage_instance(db_cloud_storage)
-            # check that cloud storage manifest file exists and is up to date
-            if not os.path.exists(full_manifest_path) or \
-                    datetime.fromtimestamp(os.path.getmtime(full_manifest_path), tz=timezone.utc) \
-                    < cloud_storage_instance.get_file_last_modified(manifest_file):
-                cloud_storage_instance.download_file(manifest_file, full_manifest_path)
+    if len(manifests) != 1:
+        raise ValidationError('Only one manifest file can be attached to data')
+    manifest_file = manifests[0]
+    full_manifest_path = os.path.join(root_dir, manifests[0])
 
-        if is_manifest(full_manifest_path):
-            if not (
-                data_sorting_method == models.SortingMethod.PREDEFINED or
-                (settings.USE_CACHE and data_storage_method == models.StorageMethodChoice.CACHE) or
-                isBackupRestore or is_in_cloud
-            ):
-                cache_disabled_message = ""
-                if data_storage_method == models.StorageMethodChoice.CACHE and not settings.USE_CACHE:
-                    cache_disabled_message = (
-                        "This server doesn't allow to use cache for data. "
-                        "Please turn 'use cache' off and try to recreate the task"
-                    )
-                    slogger.glob.warning(cache_disabled_message)
+    if is_in_cloud:
+        cloud_storage_instance = db_storage_to_storage_instance(db_cloud_storage)
+        # check that cloud storage manifest file exists and is up to date
+        if not os.path.exists(full_manifest_path) or (
+            datetime.fromtimestamp(os.path.getmtime(full_manifest_path), tz=timezone.utc) \
+                < cloud_storage_instance.get_file_last_modified(manifest_file)
+        ):
+            cloud_storage_instance.download_file(manifest_file, full_manifest_path)
 
-                raise ValidationError(
-                    "A manifest file can only be used with the 'use cache' option "
-                    "or when 'sorting_method' is 'predefined'" + \
-                    (". " + cache_disabled_message if cache_disabled_message else "")
-                )
-            return manifest_file
-
+    if not is_manifest(full_manifest_path):
         raise ValidationError('Invalid manifest was uploaded')
 
-    return None
+    return manifest_file
 
 def _validate_scheme(url):
     ALLOWED_SCHEMES = ['http', 'https']
@@ -564,18 +551,18 @@ def _create_thread(
 
     slogger.glob.info("create task #{}".format(db_task.id))
 
+    job = rq.get_current_job()
+
+    def _update_status(msg: str) -> None:
+        job.meta['status'] = msg
+        job.save_meta()
+
     job_file_mapping = _validate_job_file_mapping(db_task, data)
     validation_params = _validate_validation_params(db_task, data)
 
     db_data = db_task.data
     upload_dir = db_data.get_upload_dirname() if db_data.storage != models.StorageChoice.SHARE else settings.SHARE_ROOT
     is_data_in_cloud = db_data.storage == models.StorageChoice.CLOUD_STORAGE
-
-    job = rq.get_current_job()
-
-    def _update_status(msg: str) -> None:
-        job.meta['status'] = msg
-        job.save_meta()
 
     if data['remote_files'] and not isDatasetImport:
         data['remote_files'] = _download_data(data['remote_files'], upload_dir)
@@ -594,14 +581,17 @@ def _create_thread(
     else:
         assert False, f"Unknown file storage {db_data.storage}"
 
+    if (
+        db_data.storage_method == models.StorageMethodChoice.FILE_SYSTEM and
+        not settings.MEDIA_CACHE_ALLOW_STATIC_CACHE
+    ):
+        db_data.storage_method = models.StorageMethodChoice.CACHE
+
     manifest_file = _validate_manifest(
         manifest_files,
         manifest_root,
         is_in_cloud=is_data_in_cloud,
         db_cloud_storage=db_data.cloud_storage if is_data_in_cloud else None,
-        data_storage_method=db_data.storage_method,
-        data_sorting_method=data['sorting_method'],
-        isBackupRestore=isBackupRestore,
     )
 
     manifest = None
@@ -711,14 +701,16 @@ def _create_thread(
     is_media_sorted = False
 
     if is_data_in_cloud:
-        # first we need to filter files and keep only supported ones
-        if any([v for k, v in media.items() if k != 'image']) and db_data.storage_method == models.StorageMethodChoice.CACHE:
-            # FUTURE-FIXME: This is a temporary workaround for creating tasks
-            # with unsupported cloud storage data (video, archive, pdf) when use_cache is enabled
-            db_data.storage_method = models.StorageMethodChoice.FILE_SYSTEM
-            _update_status("The 'use cache' option is ignored")
+        if (
+            # Download remote data if local storage is requested
+            # TODO: maybe move into cache building to fail faster on invalid task configurations
+            db_data.storage_method == models.StorageMethodChoice.FILE_SYSTEM or
 
-        if db_data.storage_method == models.StorageMethodChoice.FILE_SYSTEM or not settings.USE_CACHE:
+            # Packed media must be downloaded for task creation
+            any(v for k, v in media.items() if k != 'image')
+        ):
+            _update_status("Downloading input media")
+
             filtered_data = []
             for files in (i for i in media.values() if i):
                 filtered_data.extend(files)
@@ -733,9 +725,11 @@ def _create_thread(
                 step = db_data.get_frame_step()
                 if start_frame or step != 1 or stop_frame != len(filtered_data) - 1:
                     media_to_download = filtered_data[start_frame : stop_frame + 1: step]
+
             _download_data_from_cloud_storage(db_data.cloud_storage, media_to_download, upload_dir)
             del media_to_download
             del filtered_data
+
             is_data_in_cloud = False
             db_data.storage = models.StorageChoice.LOCAL
         else:
@@ -961,24 +955,10 @@ def _create_thread(
     db_data.original_chunk_type = models.DataChoice.VIDEO if task_mode == 'interpolation' else models.DataChoice.IMAGESET
 
     compressed_chunk_writer_class = Mpeg4CompressedChunkWriter if db_data.compressed_chunk_type == models.DataChoice.VIDEO else ZipCompressedChunkWriter
-    if db_data.original_chunk_type == models.DataChoice.VIDEO:
-        original_chunk_writer_class = Mpeg4ChunkWriter
-        # Let's use QP=17 (that is 67 for 0-100 range) for the original chunks, which should be visually lossless or nearly so.
-        # A lower value will significantly increase the chunk size with a slight increase of quality.
-        original_quality = 67
-    else:
-        original_chunk_writer_class = ZipChunkWriter
-        original_quality = 100
-
-    kwargs = {}
-    if validate_dimension.dimension == models.DimensionType.DIM_3D:
-        kwargs["dimension"] = validate_dimension.dimension
-    compressed_chunk_writer = compressed_chunk_writer_class(db_data.image_quality, **kwargs)
-    original_chunk_writer = original_chunk_writer_class(original_quality, **kwargs)
 
     # calculate chunk size if it isn't specified
     if db_data.chunk_size is None:
-        if isinstance(compressed_chunk_writer, ZipCompressedChunkWriter):
+        if issubclass(compressed_chunk_writer_class, ZipCompressedChunkWriter):
             first_image_idx = db_data.start_frame
             if not is_data_in_cloud:
                 w, h = extractor.get_image_size(first_image_idx)
@@ -992,28 +972,24 @@ def _create_thread(
 
     # TODO: try to pull up
     # replace manifest file (e.g was uploaded 'subdir/manifest.jsonl' or 'some_manifest.jsonl')
-    if (
-        settings.USE_CACHE and db_data.storage_method == models.StorageMethodChoice.CACHE and
-        manifest_file and not os.path.exists(db_data.get_manifest_path())
-    ):
+    if (manifest_file and not os.path.exists(db_data.get_manifest_path())):
         shutil.copyfile(os.path.join(manifest_root, manifest_file),
             db_data.get_manifest_path())
         if manifest_root and manifest_root.startswith(db_data.get_upload_dirname()):
             os.remove(os.path.join(manifest_root, manifest_file))
         manifest_file = os.path.relpath(db_data.get_manifest_path(), upload_dir)
 
+    # Create task frames from the metadata collected
     video_path: str = ""
-    video_size: tuple[int, int] = (0, 0)
+    video_frame_size: tuple[int, int] = (0, 0)
 
     images: list[models.Image] = []
 
-    # Collect media metadata
     for media_type, media_files in media.items():
         if not media_files:
             continue
 
         if task_mode == MEDIA_TYPES['video']['mode']:
-            manifest_is_prepared = False
             if manifest_file:
                 try:
                     _update_status('Validating the input manifest file')
@@ -1028,22 +1004,21 @@ def _create_thread(
                     if not len(manifest):
                         raise ValidationError("No key frames found in the manifest")
 
-                    all_frames = manifest.video_length
-                    video_size = manifest.video_resolution
-                    manifest_is_prepared = True
                 except Exception as ex:
                     manifest.remove()
                     manifest = None
 
-                    slogger.glob.warning(ex, exc_info=True)
                     if isinstance(ex, (ValidationError, AssertionError)):
-                        _update_status(f'Invalid manifest file was upload: {ex}')
+                        base_msg = f"Invalid manifest file was uploaded: {ex}"
+                    else:
+                        base_msg = "Failed to parse the uploaded manifest file"
+                        slogger.glob.warning(ex, exc_info=True)
 
-            if (
-                settings.USE_CACHE and db_data.storage_method == models.StorageMethodChoice.CACHE
-                and not manifest_is_prepared
-            ):
-                # TODO: check if we can always use video manifest for optimization
+                    _update_status(base_msg)
+            else:
+                manifest = None
+
+            if not manifest:
                 try:
                     _update_status('Preparing a manifest file')
 
@@ -1052,34 +1027,40 @@ def _create_thread(
                     manifest.link(
                         media_file=media_files[0],
                         upload_dir=upload_dir,
-                        chunk_size=db_data.chunk_size
+                        chunk_size=db_data.chunk_size, # TODO: why it's needed here?
+                        force=True
                     )
                     manifest.create()
 
                     _update_status('A manifest has been created')
 
-                    all_frames = len(manifest.reader) # TODO: check if the field access above and here are equivalent
-                    video_size = manifest.reader.resolution
-                    manifest_is_prepared = True
                 except Exception as ex:
                     manifest.remove()
                     manifest = None
 
-                    db_data.storage_method = models.StorageMethodChoice.FILE_SYSTEM
+                    if isinstance(ex, AssertionError):
+                        base_msg = f": {ex}"
+                    else:
+                        base_msg = ""
+                        slogger.glob.warning(ex, exc_info=True)
 
-                    base_msg = str(ex) if isinstance(ex, AssertionError) \
-                        else "Uploaded video does not support a quick way of task creating."
-                    _update_status("{} The task will be created using the old method".format(base_msg))
+                    _update_status(
+                        f"Failed to create manifest for the uploaded video{base_msg}. "
+                        "A manifest will not be used in this task"
+                    )
 
-            if not manifest:
-                all_frames = len(extractor)
-                video_size = extractor.get_image_size(0)
+            if manifest:
+                video_frame_count = manifest.video_length
+                video_frame_size = manifest.video_resolution
+            else:
+                video_frame_count = extractor.get_frame_count()
+                video_frame_size = extractor.get_image_size(0)
 
             db_data.size = len(range(
                 db_data.start_frame,
                 min(
-                    data['stop_frame'] + 1 if data['stop_frame'] else all_frames,
-                    all_frames,
+                    data['stop_frame'] + 1 if data['stop_frame'] else video_frame_count,
+                    video_frame_count,
                 ),
                 db_data.get_frame_step()
             ))
@@ -1087,22 +1068,20 @@ def _create_thread(
         else: # images, archive, pdf
             db_data.size = len(extractor)
 
-            manifest = None
-            if settings.USE_CACHE and db_data.storage_method == models.StorageMethodChoice.CACHE:
-                manifest = ImageManifestManager(db_data.get_manifest_path())
-                if not manifest.exists:
-                    manifest.link(
-                        sources=extractor.absolute_source_paths,
-                        meta={
-                            k: {'related_images': related_images[k] }
-                            for k in related_images
-                        },
-                        data_dir=upload_dir,
-                        DIM_3D=(db_task.dimension == models.DimensionType.DIM_3D),
-                    )
-                    manifest.create()
-                else:
-                    manifest.init_index()
+            manifest = ImageManifestManager(db_data.get_manifest_path())
+            if not manifest.exists:
+                manifest.link(
+                    sources=extractor.absolute_source_paths,
+                    meta={
+                        k: {'related_images': related_images[k] }
+                        for k in related_images
+                    },
+                    data_dir=upload_dir,
+                    DIM_3D=(db_task.dimension == models.DimensionType.DIM_3D),
+                )
+                manifest.create()
+            else:
+                manifest.init_index()
 
             for frame_id in extractor.frame_range:
                 image_path = extractor.get_path(frame_id)
@@ -1139,96 +1118,115 @@ def _create_thread(
                     )
                 )
 
+    # TODO:
     # Prepare jobs
-    frame_idx_map = None
-    if validation_params and validation_params['mode'] == models.ValidationMode.GT_POOL:
-        if db_task.mode != 'annotation':
-            raise ValidationError("gt pool can only be used with 'annotation' mode tasks")
+    # frame_idx_map = None
+    # if validation_params and validation_params['mode'] == models.ValidationMode.GT_POOL:
+    #     if db_task.mode != 'annotation':
+    #         raise ValidationError("gt pool can only be used with 'annotation' mode tasks")
 
-        # TODO: handle other input variants
-        seed = validation_params["random_seed"]
-        frames_count = validation_params["frames_count"]
-        frames_per_job_count = validation_params["frames_per_job_count"]
+    #     # TODO: handle other input variants
+    #     seed = validation_params["random_seed"]
+    #     frames_count = validation_params["frames_count"]
+    #     frames_per_job_count = validation_params["frames_per_job_count"]
 
-        # 1. select pool frames
-        # The RNG backend must not change to yield reproducible results,
-        # so here we specify it explicitly
-        from numpy import random
-        rng = random.Generator(random.MT19937(seed=seed))
+    #     # 1. select pool frames
+    #     # The RNG backend must not change to yield reproducible results,
+    #     # so here we specify it explicitly
+    #     from numpy import random
+    #     rng = random.Generator(random.MT19937(seed=seed))
 
-        all_frames = range(len(images))
-        pool_frames: list[int] = rng.choice(
-            all_frames, size=frames_count, shuffle=False, replace=False
-        ).tolist()
-        non_pool_frames = set(all_frames).difference(pool_frames)
+    #     all_frames = range(len(images))
+    #     pool_frames: list[int] = rng.choice(
+    #         all_frames, size=frames_count, shuffle=False, replace=False
+    #     ).tolist()
+    #     non_pool_frames = set(all_frames).difference(pool_frames)
 
-        # 2. distribute pool frames
-        from datumaro.util import take_by
+    #     # 2. distribute pool frames
+    #     from datumaro.util import take_by
 
-        # Allocate frames for jobs
-        job_file_mapping: JobFileMapping = []
-        new_db_images: list[models.Image] = []
-        validation_frames: list[int] = []
-        frame_idx_map: dict[int, int] = {} # new to original id
-        for job_frames in take_by(non_pool_frames, count=db_task.segment_size or db_data.size):
-            job_validation_frames = rng.choice(pool_frames, size=frames_per_job_count, replace=False)
-            job_frames += job_validation_frames.tolist()
+    #     # Allocate frames for jobs
+    #     job_file_mapping: JobFileMapping = []
+    #     new_db_images: list[models.Image] = []
+    #     validation_frames: list[int] = []
+    #     frame_idx_map: dict[int, int] = {} # new to original id
+    #     for job_frames in take_by(non_pool_frames, count=db_task.segment_size or db_data.size):
+    #         job_validation_frames = rng.choice(pool_frames, size=frames_per_job_count, replace=False)
+    #         job_frames += job_validation_frames.tolist()
 
-            random.shuffle(job_frames) # don't use the same rng
+    #         random.shuffle(job_frames) # don't use the same rng
 
-            job_images = []
-            for job_frame in job_frames:
-                # Insert placeholder frames into the frame sequence and shift frame ids
-                image = images[job_frame]
-                image = models.Image(
-                    data=db_data, **deepcopy(model_to_dict(image, exclude=["data"]))
-                )
-                image.frame = len(new_db_images)
+    #         job_images = []
+    #         for job_frame in job_frames:
+    #             # Insert placeholder frames into the frame sequence and shift frame ids
+    #             image = images[job_frame]
+    #             image = models.Image(
+    #                 data=db_data, **deepcopy(model_to_dict(image, exclude=["data"]))
+    #             )
+    #             image.frame = len(new_db_images)
 
-                if job_frame in job_validation_frames:
-                    image.is_placeholder = True
-                    image.real_frame_id = job_frame
-                    validation_frames.append(image.frame)
+    #             if job_frame in job_validation_frames:
+    #                 image.is_placeholder = True
+    #                 image.real_frame_id = job_frame
+    #                 validation_frames.append(image.frame)
 
-                job_images.append(image.path)
-                new_db_images.append(image)
-                frame_idx_map[image.frame] = job_frame
+    #             job_images.append(image.path)
+    #             new_db_images.append(image)
+    #             frame_idx_map[image.frame] = job_frame
 
-            job_file_mapping.append(job_images)
+    #         job_file_mapping.append(job_images)
 
-        # Append pool frames in the end, shift their ids, establish placeholder pointers
-        frame_id_map: dict[int, int] = {} # original to new id
-        for pool_frame in pool_frames:
-            # Insert placeholder frames into the frame sequence and shift frame ids
-            image = images[pool_frame]
-            image = models.Image(
-                data=db_data, **deepcopy(model_to_dict(image, exclude=["data"]))
-            )
-            new_frame_id = len(new_db_images)
-            image.frame = new_frame_id
+    #     # Append pool frames in the end, shift their ids, establish placeholder pointers
+    #     frame_id_map: dict[int, int] = {} # original to new id
+    #     for pool_frame in pool_frames:
+    #         # Insert placeholder frames into the frame sequence and shift frame ids
+    #         image = images[pool_frame]
+    #         image = models.Image(
+    #             data=db_data, **deepcopy(model_to_dict(image, exclude=["data"]))
+    #         )
+    #         new_frame_id = len(new_db_images)
+    #         image.frame = new_frame_id
 
-            frame_id_map[pool_frame] = new_frame_id
+    #         frame_id_map[pool_frame] = new_frame_id
 
-            new_db_images.append(image)
-            frame_idx_map[image.frame] = pool_frame
+    #         new_db_images.append(image)
+    #         frame_idx_map[image.frame] = pool_frame
 
-        pool_frames = [frame_id_map[i] for i in pool_frames if i in frame_id_map]
+    #     pool_frames = [frame_id_map[i] for i in pool_frames if i in frame_id_map]
 
-        # Store information about the real frame placement in the validation frames
-        for validation_frame in validation_frames:
-            image = new_db_images[validation_frame]
-            assert image.is_placeholder
-            image.real_frame_id = frame_id_map[image.real_frame_id] # TODO: maybe not needed
+    #     # Store information about the real frame placement in the validation frames
+    #     for validation_frame in validation_frames:
+    #         image = new_db_images[validation_frame]
+    #         assert image.is_placeholder
+    #         image.real_frame_id = frame_id_map[image.real_frame_id] # TODO: maybe not needed
 
-        db_data.size = len(new_db_images)
-        images = new_db_images
+    #     db_data.size = len(new_db_images)
+    #     images = new_db_images
+
+    # # Update manifest
+    # if task_mode == "annotation" and frame_idx_map:
+    #     manifest = ImageManifestManager(db_data.get_manifest_path())
+    #     manifest.link(
+    #         sources=[extractor.get_path(frame_idx_map[image.frame]) for image in images],
+    #         meta={
+    #             k: {'related_images': related_images[k] }
+    #             for k in related_images
+    #         },
+    #         data_dir=upload_dir,
+    #         DIM_3D=(db_task.dimension == models.DimensionType.DIM_3D),
+    #     )
+    #     manifest.create()
 
     if db_task.mode == 'annotation':
         models.Image.objects.bulk_create(images)
         images = models.Image.objects.filter(data_id=db_data.id)
 
         db_related_files = [
-            models.RelatedFile(data=image.data, primary_image=image, path=os.path.join(upload_dir, related_file_path))
+            models.RelatedFile(
+                data=image.data,
+                primary_image=image,
+                path=os.path.join(upload_dir, related_file_path),
+            )
             for image in images
             for related_file_path in related_images.get(image.path, [])
             if not image.is_placeholder # TODO
@@ -1238,7 +1236,7 @@ def _create_thread(
         models.Video.objects.create(
             data=db_data,
             path=os.path.relpath(video_path, upload_dir),
-            width=video_size[0], height=video_size[1]
+            width=video_frame_size[0], height=video_frame_size[1]
         )
 
     # validate stop_frame
@@ -1249,118 +1247,173 @@ def _create_thread(
             db_data.start_frame + (db_data.size - 1) * db_data.get_frame_step())
 
     slogger.glob.info("Found frames {} for Data #{}".format(db_data.size, db_data.id))
-    _save_task_to_db(db_task, job_file_mapping=job_file_mapping) # TODO: split into jobs and task saving
 
-    if validation_params:
-        db_gt_segment = models.Segment(
-            task=db_task,
-            start_frame=0,
-            stop_frame=db_data.stop_frame,
-            frames=pool_frames,
-            type=models.SegmentType.SPECIFIC_FRAMES,
-        )
-        db_gt_segment.save()
+    _create_segments_and_jobs(db_task, job_file_mapping=job_file_mapping)
 
-        db_gt_job = models.Job(segment=db_gt_segment, type=models.JobType.GROUND_TRUTH)
-        db_gt_job.save()
-        db_gt_job.make_dirs()
+    # TODO:
+    # if validation_params:
+    #     db_gt_segment = models.Segment(
+    #         task=db_task,
+    #         start_frame=0,
+    #         stop_frame=db_data.stop_frame,
+    #         frames=pool_frames,
+    #         type=models.SegmentType.SPECIFIC_FRAMES,
+    #     )
+    #     db_gt_segment.save()
 
-    # Update manifest
+    #     db_gt_job = models.Job(segment=db_gt_segment, type=models.JobType.GROUND_TRUTH)
+    #     db_gt_job.save()
+    #     db_gt_job.make_dirs()
+
     if (
-        settings.USE_CACHE and db_data.storage_method == models.StorageMethodChoice.CACHE
-    ) and task_mode == "annotation" and frame_idx_map:
-        manifest = ImageManifestManager(db_data.get_manifest_path())
-        manifest.link(
-            sources=[extractor.get_path(frame_idx_map[image.frame]) for image in images],
-            meta={
-                k: {'related_images': related_images[k] }
-                for k in related_images
-            },
-            data_dir=upload_dir,
-            DIM_3D=(db_task.dimension == models.DimensionType.DIM_3D),
-        )
-        manifest.create()
+        settings.MEDIA_CACHE_ALLOW_STATIC_CACHE and
+        db_data.storage_method == models.StorageMethodChoice.FILE_SYSTEM
+    ):
+        _create_static_chunks(db_task, media_extractor=extractor)
 
-    # Save chunks
-    # TODO: refactor
-    # TODO: save chunks per job
-    if db_data.storage_method == models.StorageMethodChoice.FILE_SYSTEM or not settings.USE_CACHE:
-        def update_progress(progress):
-            # TODO: refactor this function into a class
+def _create_static_chunks(db_task: models.Task, *, media_extractor: IMediaReader):
+    @attrs.define
+    class _ChunkProgressUpdater:
+        _call_counter: int = attrs.field(default=0, init=False)
+        _rq_job: rq.job.Job = attrs.field(factory=rq.get_current_job)
+
+        def update_progress(self, progress: float):
             progress_animation = '|/-\\'
-            if not hasattr(update_progress, 'call_counter'):
-                update_progress.call_counter = 0
 
             status_message = 'CVAT is preparing data chunks'
             if not progress:
-                status_message = '{} {}'.format(status_message, progress_animation[update_progress.call_counter])
-            job.meta['status'] = status_message
-            job.meta['task_progress'] = progress or 0.
-            job.save_meta()
-            update_progress.call_counter = (update_progress.call_counter + 1) % len(progress_animation)
-
-
-        if db_task.mode == "annotation" and frame_idx_map:
-            generator = (
-                (
-                    extractor.get_image(frame_idx_map[image.frame]),
-                    extractor.get_path(frame_idx_map[image.frame]),
-                    image.frame,
+                status_message = '{} {}'.format(
+                    status_message, progress_animation[self._call_counter]
                 )
-                for image in images
-            )
-        else:
-            generator = extractor
 
-        counter = itertools.count()
-        generator = itertools.groupby(generator, lambda _: next(counter) // db_data.chunk_size)
-        generator = ((chunk_idx, list(chunk_data)) for chunk_idx, chunk_data in generator)
+            self._rq_job.meta['status'] = status_message
+            self._rq_job.meta['task_progress'] = progress or 0.
+            self._rq_job.save_meta()
 
-        def save_chunks(
-            executor: concurrent.futures.ThreadPoolExecutor,
-            chunk_idx: int,
-            chunk_data: Iterable[tuple[str, str, str]]
-        ) -> list[tuple[str, int, tuple[int, int]]]:
-            if (
-                db_task.dimension == models.DimensionType.DIM_2D and
-                isinstance(extractor, (
-                    MEDIA_TYPES['image']['extractor'],
-                    MEDIA_TYPES['zip']['extractor'],
-                    MEDIA_TYPES['pdf']['extractor'],
-                    MEDIA_TYPES['archive']['extractor'],
-                ))
-            ):
-                chunk_data = preload_images(chunk_data)
+            self._call_counter = (self._call_counter + 1) % len(progress_animation)
 
-            fs_original = executor.submit(
-                original_chunk_writer.save_as_chunk,
-                images=chunk_data,
-                chunk_path=db_data.get_original_chunk_path(chunk_idx)
-            )
-            fs_compressed = executor.submit(
-                compressed_chunk_writer.save_as_chunk,
-                images=chunk_data,
-                chunk_path=db_data.get_compressed_chunk_path(chunk_idx),
-            )
-            # TODO: convert to async for proper concurrency
-            fs_original.result()
-            image_sizes = fs_compressed.result()
+    def save_chunks(
+        executor: concurrent.futures.ThreadPoolExecutor,
+        db_segment: models.Segment,
+        chunk_idx: int,
+        chunk_frame_ids: Sequence[int]
+    ):
+        chunk_data = [media_iterator[frame_idx] for frame_idx in chunk_frame_ids]
 
-            # (path, frame, size)
-            return list((i[0][1], i[0][2], i[1]) for i in zip(chunk_data, image_sizes))
+        if (
+            db_task.dimension == models.DimensionType.DIM_2D and
+            isinstance(media_extractor, (
+                MEDIA_TYPES['image']['extractor'],
+                MEDIA_TYPES['zip']['extractor'],
+                MEDIA_TYPES['pdf']['extractor'],
+                MEDIA_TYPES['archive']['extractor'],
+            ))
+        ):
+            chunk_data = preload_images(chunk_data)
 
-        def process_results(img_meta: list[tuple[str, int, tuple[int, int]]]):
-            progress = img_meta[-1][1] / db_data.size
-            update_progress(progress)
+        # TODO: extract into a class
 
-        futures = queue.Queue(maxsize=settings.CVAT_CONCURRENT_CHUNK_PROCESSING)
-        with concurrent.futures.ThreadPoolExecutor(
-            max_workers=2 * settings.CVAT_CONCURRENT_CHUNK_PROCESSING
-        ) as executor:
-            for chunk_idx, chunk_data in generator:
-                if futures.full():
-                    process_results(futures.get().result())
-                futures.put(executor.submit(save_chunks, executor, chunk_idx, chunk_data))
+        fs_original = executor.submit(
+            original_chunk_writer.save_as_chunk,
+            images=chunk_data,
+            chunk_path=db_data.get_original_segment_chunk_path(
+                chunk_idx, segment_id=db_segment.id
+            ),
+        )
+        compressed_chunk_writer.save_as_chunk(
+            images=chunk_data,
+            chunk_path=db_data.get_compressed_segment_chunk_path(
+                chunk_idx, segment_id=db_segment.id
+            ),
+        )
 
-            while not futures.empty():
-                process_results(futures.get().result())
+        fs_original.result()
+
+    db_data = db_task.data
+
+    if db_data.compressed_chunk_type == models.DataChoice.VIDEO:
+        compressed_chunk_writer_class = Mpeg4CompressedChunkWriter
+    else:
+        compressed_chunk_writer_class = ZipCompressedChunkWriter
+
+    if db_data.original_chunk_type == models.DataChoice.VIDEO:
+        original_chunk_writer_class = Mpeg4ChunkWriter
+
+        # Let's use QP=17 (that is 67 for 0-100 range) for the original chunks,
+        # which should be visually lossless or nearly so.
+        # A lower value will significantly increase the chunk size with a slight increase of quality.
+        original_quality = 67 # TODO: fix discrepancy in values in different parts of code
+    else:
+        original_chunk_writer_class = ZipChunkWriter
+        original_quality = 100
+
+    chunk_writer_kwargs = {}
+    if db_task.dimension == models.DimensionType.DIM_3D:
+        chunk_writer_kwargs["dimension"] = db_task.dimension
+    compressed_chunk_writer = compressed_chunk_writer_class(
+        db_data.image_quality, **chunk_writer_kwargs
+    )
+    original_chunk_writer = original_chunk_writer_class(original_quality, **chunk_writer_kwargs)
+
+    db_segments = db_task.segment_set.all()
+
+    if isinstance(media_extractor, MEDIA_TYPES['video']['extractor']):
+        def _get_frame_size(frame_tuple: Tuple[av.VideoFrame, Any, Any]) -> int:
+            # There is no need to be absolutely precise here,
+            # just need to provide the reasonable upper boundary.
+            # Return bytes needed for 1 frame
+            frame = frame_tuple[0]
+            return frame.width * frame.height * (frame.format.padded_bits_per_pixel // 8)
+
+        # Currently, we only optimize video creation for sequential
+        # chunks with potential overlap, so parallel processing is likely to
+        # help only for image datasets
+        media_iterator = CachingMediaIterator(
+            media_extractor,
+            max_cache_memory=2 ** 30, max_cache_entries=db_task.overlap,
+            object_size_callback=_get_frame_size
+        )
+    else:
+        media_iterator = RandomAccessIterator(media_extractor)
+
+    # if db_task.mode == "annotation" and frame_idx_map:
+    #         generator = (
+    #             (
+    #                 extractor.get_image(frame_idx_map[image.frame]),
+    #                 extractor.get_path(frame_idx_map[image.frame]),
+    #                 image.frame,
+    #             )
+    #             for image in images
+    #         )
+    #     else:
+    #         generator = extractor
+
+    with closing(media_iterator):
+        progress_updater = _ChunkProgressUpdater()
+
+        # TODO: remove 2 * or the configuration option
+        # TODO: maybe make real multithreading support, currently the code is limited by 1
+        # video segment chunk, even if more threads are available
+        max_concurrency = 2 * settings.CVAT_CONCURRENT_CHUNK_PROCESSING if not isinstance(
+            media_extractor, MEDIA_TYPES['video']['extractor']
+        ) else 2
+        with concurrent.futures.ThreadPoolExecutor(max_workers=max_concurrency) as executor:
+            frame_step = db_data.get_frame_step()
+            for segment_idx, db_segment in enumerate(db_segments):
+                frame_counter = itertools.count()
+                for chunk_idx, chunk_frame_ids in (
+                    (chunk_idx, list(chunk_frame_ids))
+                    for chunk_idx, chunk_frame_ids in itertools.groupby(
+                        (
+                            # Convert absolute to relative ids (extractor output positions)
+                            # Extractor will skip frames outside requested
+                            # TODO: handle placeholder frames
+                            (abs_frame_id - db_data.start_frame) // frame_step
+                            for abs_frame_id in db_segment.frame_set
+                        ),
+                        lambda _: next(frame_counter) // db_data.chunk_size
+                    )
+                ):
+                    save_chunks(executor, db_segment, chunk_idx, chunk_frame_ids)
+
+                progress_updater.update_progress(segment_idx / len(db_segments))

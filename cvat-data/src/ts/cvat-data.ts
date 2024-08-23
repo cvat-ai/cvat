@@ -100,11 +100,13 @@ export class FrameDecoder {
     private renderHeight: number;
     private zipWorker: Worker | null;
     private videoWorker: Worker | null;
+    private startFrame: number;
 
     constructor(
         blockType: BlockType,
         chunkSize: number,
         cachedBlockCount: number,
+        startFrame: number,
         dimension: DimensionType = DimensionType.DIMENSION_2D,
     ) {
         this.mutex = new Mutex();
@@ -118,6 +120,7 @@ export class FrameDecoder {
         this.renderWidth = 1920;
         this.renderHeight = 1080;
         this.chunkSize = chunkSize;
+        this.startFrame = startFrame;
         this.blockType = blockType;
 
         this.decodedChunks = {};
@@ -203,7 +206,7 @@ export class FrameDecoder {
     }
 
     frame(frameNumber: number): ImageBitmap | Blob | null {
-        const chunkNumber = Math.floor(frameNumber / this.chunkSize);
+        const chunkNumber = Math.floor((frameNumber - this.startFrame) / this.chunkSize);
         if (chunkNumber in this.decodedChunks) {
             return this.decodedChunks[chunkNumber][frameNumber];
         }
@@ -262,7 +265,7 @@ export class FrameDecoder {
                 throw new RequestOutdatedError();
             }
 
-            const chunkNumber = Math.floor(start / this.chunkSize);
+            const chunkNumber = Math.floor((start - this.startFrame) / this.chunkSize);
             this.orderedStack = [chunkNumber, ...this.orderedStack];
             this.cleanup();
             const decodedFrames: Record<number, ImageBitmap | Blob> = {};

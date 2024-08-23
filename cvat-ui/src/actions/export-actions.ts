@@ -25,10 +25,10 @@ export enum ExportActionTypes {
 }
 
 export const exportActions = {
-    openExportDatasetModal: (instance: any) => (
+    openExportDatasetModal: (instance: ProjectOrTaskOrJob) => (
         createAction(ExportActionTypes.OPEN_EXPORT_DATASET_MODAL, { instance })
     ),
-    closeExportDatasetModal: (instance: any) => (
+    closeExportDatasetModal: (instance: ProjectOrTaskOrJob) => (
         createAction(ExportActionTypes.CLOSE_EXPORT_DATASET_MODAL, { instance })
     ),
     exportDatasetSuccess: (
@@ -61,10 +61,10 @@ export const exportActions = {
             error,
         })
     ),
-    openExportBackupModal: (instance: any) => (
+    openExportBackupModal: (instance: ProjectOrTaskOrJob) => (
         createAction(ExportActionTypes.OPEN_EXPORT_BACKUP_MODAL, { instance })
     ),
-    closeExportBackupModal: (instance: any) => (
+    closeExportBackupModal: (instance: ProjectOrTaskOrJob) => (
         createAction(ExportActionTypes.CLOSE_EXPORT_BACKUP_MODAL, { instance })
     ),
     exportBackupSuccess: (instance: Exclude<ProjectOrTaskOrJob, Job> | RequestInstanceType, instanceType: 'task' | 'project', target?: 'local' | 'cloudstorage') => (

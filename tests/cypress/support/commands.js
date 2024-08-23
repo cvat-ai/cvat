@@ -208,7 +208,7 @@ Cypress.Commands.add(
                 cy.get('.cvat-project-search-field').first().within(() => {
                     cy.get('[type="search"]').should('have.value', projectName);
                 });
-                cy.get('.cvat-project-subset-field').type(projectSubsetFieldValue);
+                cy.get('.cvat-project-subset-field').type(`${projectSubsetFieldValue}{Enter}`);
                 cy.get('.cvat-constructor-viewer-new-item').should('not.exist');
             }
             cy.get('input[type="file"]').attachFile(image, { subjectType: 'drag-n-drop' });
@@ -219,6 +219,8 @@ Cypress.Commands.add(
             cy.get('.cvat-submit-continue-task-button').click();
             if (expectedResult === 'success') {
                 cy.get('.cvat-notification-create-task-success').should('exist').find('[data-icon="close"]').click();
+            } else if (expectedResult === 'fail') {
+                cy.get('.cvat-notification-notice-create-task-failed').should('exist').find('[data-icon="close"]').click();
             }
             if (!forProject) {
                 cy.goToTaskList();
@@ -266,7 +268,7 @@ Cypress.Commands.add('headlessLogin', (username = Cypress.env('user'), password 
     });
 });
 
-Cypress.Commands.add('headlessCreateObject', (objects, jobID) => {
+Cypress.Commands.add('headlessCreateObjects', (objects, jobID) => {
     cy.window().then(async ($win) => {
         const job = (await $win.cvat.jobs.get({ jobID }))[0];
         await job.annotations.clear({ reload: true });
@@ -275,11 +277,11 @@ Cypress.Commands.add('headlessCreateObject', (objects, jobID) => {
             .map((object) => new $win.cvat.classes
                 .ObjectState({
                     frame: object.frame,
-                    objectType: $win.cvat.enums.ObjectType[object.objectType],
-                    shapeType: $win.cvat.enums.ShapeType[object.shapeType],
+                    objectType: object.objectType,
+                    shapeType: object.shapeType,
                     points: $win.Array.from(object.points),
                     occluded: object.occluded,
-                    label: job.labels[0],
+                    label: job.labels.find((label) => label.name === object.labelName),
                     zOrder: 0,
                 }));
 
@@ -331,6 +333,13 @@ Cypress.Commands.add('headlessDeleteProject', (projectID) => {
     });
 });
 
+Cypress.Commands.add('headlessDeleteTask', (taskID) => {
+    cy.window().then(async ($win) => {
+        const [task] = await $win.cvat.tasks.get({ id: taskID });
+        await task.delete();
+    });
+});
+
 Cypress.Commands.add('headlessCreateUser', (userSpec) => {
     cy.request({
         method: 'POST',
@@ -349,6 +358,11 @@ Cypress.Commands.add('headlessCreateUser', (userSpec) => {
         },
     });
     return cy.wrap();
+});
+
+Cypress.Commands.add('headlessLogout', () => {
+    cy.clearAllCookies();
+    cy.clearAllLocalStorage();
 });
 
 Cypress.Commands.add('openTask', (taskName, projectSubsetFieldValue) => {
@@ -887,12 +901,11 @@ Cypress.Commands.add('confirmUpdate', (modalWindowClassName) => {
 });
 
 Cypress.Commands.add(
-    'uploadAnnotations', (
-        format,
-        filePath,
-        confirmModalClassName,
-        sourceStorage = null,
-        useDefaultLocation = true,
+    'uploadAnnotations', ({
+        format, filePath, confirmModalClassName,
+        sourceStorage = null, useDefaultLocation = true, waitAnnotationsGet = true,
+        expectedResult = 'success',
+    },
     ) => {
         cy.get('.cvat-modal-import-dataset').find('.cvat-modal-import-select').click();
         cy.contains('.cvat-modal-import-dataset-option-item', format).click();
@@ -925,9 +938,16 @@ Cypress.Commands.add(
         cy.confirmUpdate(confirmModalClassName);
         cy.get('.cvat-notification-notice-import-annotation-start').should('be.visible');
         cy.closeNotification('.cvat-notification-notice-import-annotation-start');
-        cy.wait('@uploadAnnotationsGet').its('response.statusCode').should('equal', 200);
-        cy.contains('Annotations have been loaded').should('be.visible');
-        cy.closeNotification('.ant-notification-notice-info');
+        if (waitAnnotationsGet) {
+            cy.wait('@uploadAnnotationsGet').its('response.statusCode').should('equal', 200);
+        }
+        if (expectedResult === 'success') {
+            cy.contains('Annotations have been loaded').should('be.visible');
+            cy.closeNotification('.ant-notification-notice-info');
+        } else if (expectedResult === 'fail') {
+            cy.contains('Could not upload annotation').should('be.visible');
+            cy.closeNotification('.ant-notification-notice-error');
+        }
     },
 );
 
@@ -1141,7 +1161,7 @@ Cypress.Commands.add('interactMenu', (choice) => {
     cy.get('.cvat-spinner').should('not.exist');
 });
 
-Cypress.Commands.add('setJobState', (choice) => {
+Cypress.Commands.add('updateJobStateOnAnnotationView', (choice) => {
     cy.interactMenu('Change job state');
     cy.get('.cvat-annotation-menu-job-state-submenu')
         .should('not.have.class', 'ant-zoom-big').within(() => {
@@ -1156,12 +1176,26 @@ Cypress.Commands.add('setJobState', (choice) => {
     cy.get('.cvat-spinner').should('not.exist');
 });
 
+Cypress.Commands.add('setJobState', (jobID, state) => {
+    cy.get('.cvat-task-job-list')
+        .contains('a', `Job #${jobID}`)
+        .parents('.cvat-job-item')
+        .find('.cvat-job-item-state').click();
+    cy.get('.cvat-job-item-state-dropdown')
+        .should('be.visible')
+        .not('.ant-select-dropdown-hidden')
+        .within(() => {
+            cy.get(`[title="${state}"]`).click();
+        });
+    cy.get('.cvat-spinner').should('not.exist');
+});
+
 Cypress.Commands.add('setJobStage', (jobID, stage) => {
     cy.get('.cvat-task-job-list')
         .contains('a', `Job #${jobID}`)
         .parents('.cvat-job-item')
         .find('.cvat-job-item-stage').click();
-    cy.get('.ant-select-dropdown')
+    cy.get('.cvat-job-item-stage-dropdown')
         .should('be.visible')
         .not('.ant-select-dropdown-hidden')
         .within(() => {
@@ -1232,14 +1266,24 @@ Cypress.Commands.add('exportTask', ({
 
 Cypress.Commands.add('exportJob', ({
     type, format, archiveCustomName,
-    targetStorage = null, useDefaultLocation = true,
-    scrollList = false,
+    targetStorage = null, useDefaultLocation = true, jobOnTaskPage = null,
 }) => {
-    cy.interactMenu('Export job dataset');
-    cy.get('.cvat-modal-export-job').should('be.visible').find('.cvat-modal-export-select').click();
-    if (scrollList) {
-        cy.contains('.cvat-modal-export-option-item', format).scrollIntoView();
+    if (!jobOnTaskPage) {
+        cy.interactMenu('Export job dataset');
+    } else {
+        cy.get('.cvat-job-item').contains('a', `Job #${jobOnTaskPage}`)
+            .parents('.cvat-job-item')
+            .find('.cvat-job-item-more-button')
+            .click();
+        cy.contains('Export annotations').click();
     }
+    cy.get('.cvat-modal-export-job').should('be.visible').find('.cvat-modal-export-select').click();
+    cy.get('.ant-select-dropdown')
+        .not('.ant-select-dropdown-hidden')
+        .not('.ant-slide-up')
+        .within(() => {
+            cy.contains('.cvat-modal-export-option-item', format).scrollIntoView();
+        });
     cy.contains('.cvat-modal-export-option-item', format).should('be.visible').click();
     cy.get('.cvat-modal-export-job').find('.cvat-modal-export-select').should('contain.text', format);
     if (type === 'dataset') {
@@ -1260,13 +1304,15 @@ Cypress.Commands.add('exportJob', ({
             cy.get('.cvat-cloud-storage-select-provider').click();
         }
     }
-    cy.contains('button', 'OK').click();
+    cy.get('.cvat-modal-export-job').contains('button', 'OK').click();
     cy.get('.cvat-notification-notice-export-job-start').should('be.visible');
     cy.closeNotification('.cvat-notification-notice-export-job-start');
 });
 
-Cypress.Commands.add('downloadExport', () => {
-    cy.verifyNotification();
+Cypress.Commands.add('downloadExport', ({ expectNotification = true } = {}) => {
+    if (expectNotification) {
+        cy.verifyNotification();
+    }
     cy.get('.cvat-header-requests-button').click();
     cy.get('.cvat-spinner').should('not.exist');
     cy.get('.cvat-requests-list').should('be.visible');
@@ -1279,7 +1325,7 @@ Cypress.Commands.add('downloadExport', () => {
         .within(() => {
             cy.contains('[role="menuitem"]', 'Download').click();
         });
-    cy.wait('@download')
+    cy.wait('@download', { requestTimeout: 10000 })
         .then((download) => {
             const filename = download.response.headers['content-disposition'].split(';')[1].split('filename=')[1];
             // need to remove quotes

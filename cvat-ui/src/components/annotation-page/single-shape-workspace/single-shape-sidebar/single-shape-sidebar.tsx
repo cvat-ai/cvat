@@ -15,21 +15,22 @@ import Checkbox, { CheckboxChangeEvent } from 'antd/lib/checkbox';
 import InputNumber from 'antd/lib/input-number';
 import Select from 'antd/lib/select';
 import Alert from 'antd/lib/alert';
-import Modal from 'antd/lib/modal';
 import Button from 'antd/lib/button';
+import message from 'antd/lib/message';
 
 import { CombinedState, NavigationType, ObjectType } from 'reducers';
 import { Canvas, CanvasMode } from 'cvat-canvas-wrapper';
-import {
-    Job, JobState, Label, LabelType,
-} from 'cvat-core-wrapper';
+import { Job, Label, LabelType } from 'cvat-core-wrapper';
 import { ActionUnion, createAction } from 'utils/redux';
 import {
-    rememberObject, changeFrameAsync, saveAnnotationsAsync, setNavigationType,
-    removeObjectAsync, updateCurrentJobAsync,
+    rememberObject, changeFrameAsync, setNavigationType,
+    removeObjectAsync, finishCurrentJobAsync,
 } from 'actions/annotation-actions';
 import LabelSelector from 'components/label-selector/label-selector';
 import GlobalHotKeys from 'utils/mousetrap-react';
+import { ShortcutScope } from 'utils/enums';
+import { registerComponentShortcuts } from 'actions/shortcuts-actions';
+import { subKeyMap } from 'utils/component-subkeymap';
 
 enum ReducerActionType {
     SWITCH_AUTO_NEXT_FRAME = 'SWITCH_AUTO_NEXT_FRAME',
@@ -45,15 +46,6 @@ function cancelCurrentCanvasOp(state: CombinedState): void {
     if (canvas.mode() !== CanvasMode.IDLE) {
         canvas.cancel();
     }
-}
-
-function showSubmittedInfo(): void {
-    Modal.info({
-        closable: false,
-        title: 'Annotations submitted',
-        content: 'You may close the window',
-        className: 'cvat-single-shape-annotation-submit-success-modal',
-    });
 }
 
 function makeMessage(label: Label, labelType: State['labelType'], pointsCount: number): JSX.Element {
@@ -77,8 +69,8 @@ function makeMessage(label: Label, labelType: State['labelType'], pointsCount: n
 }
 
 export const actionCreators = {
-    switchAutoNextFrame: () => (
-        createAction(ReducerActionType.SWITCH_AUTO_NEXT_FRAME)
+    switchAutoNextFrame: (autoNextFrame: boolean) => (
+        createAction(ReducerActionType.SWITCH_AUTO_NEXT_FRAME, { autoNextFrame })
     ),
     switchAutoSaveOnFinish: () => (
         createAction(ReducerActionType.SWITCH_AUTOSAVE_ON_FINISH)
@@ -129,7 +121,7 @@ const reducer = (state: State, action: ActionUnion<typeof actionCreators>): Stat
     if (action.type === ReducerActionType.SWITCH_AUTO_NEXT_FRAME) {
         return {
             ...state,
-            autoNextFrame: !state.autoNextFrame,
+            autoNextFrame: action.payload.autoNextFrame,
         };
     }
 
@@ -172,6 +164,30 @@ const reducer = (state: State, action: ActionUnion<typeof actionCreators>): Stat
 
     return state;
 };
+
+const componentShortcuts = {
+    SWITCH_DRAW_MODE: {
+        name: 'Draw mode',
+        description:
+            'Repeat the latest procedure of drawing with the same parameters (shift to redraw an existing shape)',
+        sequences: ['shift+n', 'n'],
+        scope: ShortcutScope.ALL,
+    },
+    CANCEL: {
+        name: 'Cancel',
+        description: 'Cancel any active canvas mode',
+        sequences: ['esc'],
+        scope: ShortcutScope.ALL,
+    },
+    DELETE_OBJECT: {
+        name: 'Delete object',
+        description: 'Delete an active object. Use shift to force delete of locked objects',
+        sequences: ['del', 'shift+del'],
+        scope: ShortcutScope.ALL,
+    },
+};
+
+registerComponentShortcuts(componentShortcuts);
 
 function SingleShapeSidebar(): JSX.Element {
     const appDispatch = useDispatch();
@@ -236,18 +252,22 @@ function SingleShapeSidebar(): JSX.Element {
 
     const getNextFrame = useCallback(() => {
         if (frame + 1 > jobInstance.stopFrame) {
-            return Promise.resolve(null);
+            dispatch(actionCreators.setNextFrame(null));
+            return;
         }
 
-        return jobInstance.annotations.search(frame + 1, jobInstance.stopFrame, {
+        jobInstance.annotations.search(frame + 1, jobInstance.stopFrame, {
             allowDeletedFrames: false,
             ...(navigationType === NavigationType.EMPTY ? {
                 generalFilters: {
                     isEmptyFrame: true,
                 },
             } : {}),
-        }) as Promise<number | null>;
-    }, [jobInstance, navigationType, frame]);
+        }).then((_frame: number | null) => {
+            dispatch(actionCreators.setNextFrame(_frame));
+        });
+        // implicitly depends on annotations because may use notEmpty filter
+    }, [jobInstance, navigationType, frame, annotations]);
 
     const finishOnThisFrame = useCallback((forceSave = false): void => {
         if (typeof state.nextFrame === 'number') {
@@ -255,21 +275,18 @@ function SingleShapeSidebar(): JSX.Element {
         } else if ((forceSave || state.saveOnFinish) && !savingRef.current) {
             savingRef.current = true;
 
-            const patchJob = (): void => {
-                appDispatch(updateCurrentJobAsync({
-                    state: JobState.COMPLETED,
-                })).then(showSubmittedInfo).finally(() => {
-                    savingRef.current = false;
+            appDispatch(finishCurrentJobAsync()).then(() => {
+                message.open({
+                    duration: 1,
+                    type: 'success',
+                    content: 'You tagged the job as completed',
+                    className: 'cvat-annotation-job-finished-success',
                 });
-            };
-
-            if (jobInstance.annotations.hasUnsavedChanges()) {
-                appDispatch(saveAnnotationsAsync(patchJob)).catch(() => {
-                    savingRef.current = false;
-                });
-            } else {
-                patchJob();
-            }
+            }).finally(() => {
+                appDispatch(setNavigationType(NavigationType.REGULAR));
+                dispatch(actionCreators.switchAutoNextFrame(false));
+                savingRef.current = false;
+            });
         }
     }, [state.saveOnFinish, state.nextFrame, jobInstance]);
 
@@ -292,9 +309,7 @@ function SingleShapeSidebar(): JSX.Element {
     }, []);
 
     useEffect(() => {
-        getNextFrame().then((_frame: number | null) => {
-            dispatch(actionCreators.setNextFrame(_frame));
-        });
+        getNextFrame();
     }, [getNextFrame]);
 
     useEffect(() => {
@@ -356,13 +371,7 @@ function SingleShapeSidebar(): JSX.Element {
         trigger: null,
     };
 
-    const subKeyMap = {
-        CANCEL: keyMap.CANCEL,
-        DELETE_OBJECT: keyMap.DELETE_OBJECT,
-        SWITCH_DRAW_MODE: keyMap.SWITCH_DRAW_MODE,
-    };
-
-    const handlers = {
+    const handlers: Record<keyof typeof componentShortcuts, (event?: KeyboardEvent) => void> = {
         CANCEL: (event: KeyboardEvent | undefined) => {
             event?.preventDefault();
             (store.getState().annotation.canvas.instance as Canvas).cancel();
@@ -397,7 +406,7 @@ function SingleShapeSidebar(): JSX.Element {
 
     return (
         <Layout.Sider {...siderProps}>
-            <GlobalHotKeys keyMap={subKeyMap} handlers={handlers} />
+            <GlobalHotKeys keyMap={subKeyMap(componentShortcuts, keyMap)} handlers={handlers} />
             { state.label !== null && state.labelType !== LabelType.ANY && (
                 <Row>
                     <Col>
@@ -540,7 +549,7 @@ function SingleShapeSidebar(): JSX.Element {
                         checked={state.autoNextFrame}
                         onChange={(): void => {
                             (window.document.activeElement as HTMLInputElement)?.blur();
-                            dispatch(actionCreators.switchAutoNextFrame());
+                            dispatch(actionCreators.switchAutoNextFrame(!state.autoNextFrame));
                         }}
                     >
                         Automatically go to the next frame

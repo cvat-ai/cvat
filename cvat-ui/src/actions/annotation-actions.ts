@@ -11,8 +11,8 @@ import {
     RectDrawingMethod, CuboidDrawingMethod, Canvas, CanvasMode as Canvas2DMode,
 } from 'cvat-canvas-wrapper';
 import {
-    getCore, MLModel, JobType, Job, QualityConflict, ObjectState,
-    JobState, JobStage,
+    getCore, MLModel, JobType, Job,
+    QualityConflict, ObjectState, JobState,
 } from 'cvat-core-wrapper';
 import logger, { EventScope } from 'cvat-logger';
 import { getCVATStore } from 'cvat-store';
@@ -86,31 +86,6 @@ export function computeZRange(states: any[]): number[] {
     });
 
     return [minZ, maxZ];
-}
-
-export async function jobInfoGenerator(job: any): Promise<Record<string, number>> {
-    const { total } = await job.annotations.statistics();
-    return {
-        'frame count': job.stopFrame - job.startFrame + 1,
-        'track count':
-            total.rectangle.shape +
-            total.rectangle.track +
-            total.polygon.shape +
-            total.polygon.track +
-            total.polyline.shape +
-            total.polyline.track +
-            total.points.shape +
-            total.points.track +
-            total.cuboid.shape +
-            total.cuboid.track,
-        'object count': total.total,
-        'box count': total.rectangle.shape + total.rectangle.track,
-        'polygon count': total.polygon.shape + total.polygon.track,
-        'polyline count': total.polyline.shape + total.polyline.track,
-        'points count': total.points.shape + total.points.track,
-        'cuboids count': total.cuboid.shape + total.cuboid.track,
-        'tag count': total.tag,
-    };
 }
 
 export enum AnnotationActionTypes {
@@ -265,6 +240,20 @@ export function highlightConflict(conflict: QualityConflict | null): AnyAction {
     };
 }
 
+function wrapAnnotationsInGTJob(states: ObjectState[]): ObjectState[] {
+    return states.map((state: ObjectState) => new Proxy(state, {
+        get(_state, prop) {
+            if (prop === 'isGroundTruth') {
+                // ground truth objects are not considered as gt objects, relatively to a gt jobs
+                // to avoid extra css styles, or restrictions applied
+                return false;
+            }
+
+            return Reflect.get(_state, prop);
+        },
+    }));
+}
+
 async function fetchAnnotations(predefinedFrame?: number): Promise<{
     states: CombinedState['annotation']['annotations']['states'];
     history: CombinedState['annotation']['annotations']['history'];
@@ -279,18 +268,9 @@ async function fetchAnnotations(predefinedFrame?: number): Promise<{
     const fetchFrame = typeof predefinedFrame === 'undefined' ? frame : predefinedFrame;
     let states = await jobInstance.annotations.get(fetchFrame, showAllInterpolationTracks, filters);
     const [minZ, maxZ] = computeZRange(states);
-    if (jobInstance.type === JobType.GROUND_TRUTH) {
-        states = states.map((state: ObjectState) => new Proxy(state, {
-            get(_state, prop) {
-                if (prop === 'isGroundTruth') {
-                    // ground truth objects are not considered as gt objects, relatively to a gt jobs
-                    // to avoid extra css styles, or restrictions applied
-                    return false;
-                }
 
-                return Reflect.get(_state, prop);
-            },
-        }));
+    if (jobInstance.type === JobType.GROUND_TRUTH) {
+        states = wrapAnnotationsInGTJob(states);
     } else if (showGroundTruth && groundTruthInstance) {
         const gtStates = await groundTruthInstance.annotations.get(fetchFrame, showAllInterpolationTracks, filters);
         states.push(...gtStates);
@@ -830,7 +810,7 @@ export function rotateCurrentFrame(rotation: Rotation): AnyAction {
 
     const frameAngle = (frameAngles[frameNumber - startFrame] + (rotation === Rotation.CLOCKWISE90 ? 90 : 270)) % 360;
 
-    job.logger.log(EventScope.rotateImage, { angle: frameAngle });
+    job.logger.log(EventScope.rotateImage);
 
     return {
         type: AnnotationActionTypes.ROTATE_FRAME,
@@ -894,7 +874,6 @@ export function getJobAsync({
 
             const {
                 settings: {
-                    workspace: { showAllInterpolationTracks },
                     player: { showDeletedFrames },
                 },
             } = state;
@@ -910,7 +889,7 @@ export function getJobAsync({
                 throw new Error('Requested resource id is not valid');
             }
 
-            const loadJobEvent = await logger.log(EventScope.loadJob, {}, true);
+            const start = Date.now();
 
             getCore().config.globalObjectsCounter = 0;
             const [job] = await cvat.jobs.get({ jobID });
@@ -939,7 +918,8 @@ export function getJobAsync({
                 // do nothing, user will be notified when data request is done
             }
 
-            const states = await job.annotations.get(frameNumber, showAllInterpolationTracks, filters);
+            await job.annotations.clear({ reload: true });
+
             const issues = await job.issues();
             const colors = [...cvat.enums.colors];
 
@@ -957,12 +937,7 @@ export function getJobAsync({
                 }
             }
 
-            loadJobEvent.close({
-                ...await jobInfoGenerator(job),
-                jobID: job.id,
-                taskID: job.taskId,
-                projectID: job.projectId,
-            });
+            await job.logger.log(EventScope.loadJob, { duration: Date.now() - start });
 
             const openTime = Date.now();
             dispatch({
@@ -974,7 +949,6 @@ export function getJobAsync({
                     groundTruthInstance: gtJob || null,
                     groundTruthJobFramesMeta,
                     issues,
-                    states,
                     conflicts,
                     frameNumber,
                     frameFilename: frameData.filename,
@@ -1001,7 +975,6 @@ export function getJobAsync({
 export function updateCurrentJobAsync(
     jobFieldsToUpdate: {
         state?: JobState;
-        stage?: JobStage;
     },
 ): ThunkAction {
     return async (dispatch: ThunkDispatch) => {
@@ -1019,7 +992,7 @@ export function updateCurrentJobAsync(
     };
 }
 
-export function saveAnnotationsAsync(afterSave?: () => void): ThunkAction {
+export function saveAnnotationsAsync(): ThunkAction {
     return async (dispatch: ThunkDispatch): Promise<void> => {
         const { jobInstance } = receiveAnnotationsParameters();
 
@@ -1045,10 +1018,6 @@ export function saveAnnotationsAsync(afterSave?: () => void): ThunkAction {
                 payload: {},
             });
 
-            if (typeof afterSave === 'function') {
-                afterSave();
-            }
-
             dispatch(fetchAnnotationsAsync());
         } catch (error) {
             dispatch({
@@ -1057,6 +1026,26 @@ export function saveAnnotationsAsync(afterSave?: () => void): ThunkAction {
                     error,
                 },
             });
+
+            throw error;
+        }
+    };
+}
+
+export function finishCurrentJobAsync(): ThunkAction {
+    return async (dispatch: ThunkDispatch, getState) => {
+        const state = getState();
+        const beforeCallbacks = state.plugins.callbacks.annotationPage.header.menu.beforeJobFinish;
+        const { jobInstance } = receiveAnnotationsParameters();
+
+        await dispatch(saveAnnotationsAsync());
+
+        for await (const callback of beforeCallbacks) {
+            await callback();
+        }
+
+        if (jobInstance.state !== JobState.COMPLETED) {
+            await dispatch(updateCurrentJobAsync({ state: JobState.COMPLETED }));
         }
     };
 }
@@ -1096,7 +1085,11 @@ export function updateAnnotationsAsync(statesToUpdate: any[]): ThunkAction {
             }
 
             const promises = statesToUpdate.map((objectState: any): Promise<any> => objectState.save());
-            const states = await Promise.all(promises);
+            let states = await Promise.all(promises);
+
+            if (jobInstance.type === JobType.GROUND_TRUTH) {
+                states = wrapAnnotationsInGTJob(states);
+            }
 
             const needToUpdateAll = states
                 .some((state: any) => state.shapeType === ShapeType.MASK || state.parentID !== null);
@@ -1362,12 +1355,17 @@ export function pasteShapeAsync(): ThunkAction {
     };
 }
 
-export function interactWithCanvas(activeInteractor: MLModel | OpenCVTool, activeLabelID: number): AnyAction {
+export function interactWithCanvas(
+    activeInteractor: MLModel | OpenCVTool,
+    activeLabelID: number,
+    activeInteractorParameters: MLModel['params']['canvas'],
+): AnyAction {
     return {
         type: AnnotationActionTypes.INTERACT_WITH_CANVAS,
         payload: {
             activeInteractor,
             activeLabelID,
+            activeInteractorParameters,
         },
     };
 }
@@ -1383,6 +1381,7 @@ export function repeatDrawShapeAsync(): ThunkAction {
             },
             drawing: {
                 activeInteractor,
+                activeInteractorParameters,
                 activeObjectType,
                 activeLabelID,
                 activeShapeType,
@@ -1393,27 +1392,29 @@ export function repeatDrawShapeAsync(): ThunkAction {
         } = getStore().getState().annotation;
 
         let activeControl = ActiveControl.CURSOR;
-        if (activeInteractor && canvasInstance instanceof Canvas) {
+        if (activeInteractor && activeInteractorParameters && activeLabelID && canvasInstance instanceof Canvas) {
             if (activeInteractor.kind.includes('tracker')) {
                 canvasInstance.interact({
                     enabled: true,
                     shapeType: 'rectangle',
                 });
-                dispatch(interactWithCanvas(activeInteractor, activeLabelID));
+                dispatch(interactWithCanvas(activeInteractor, activeLabelID, {}));
                 dispatch(switchToolsBlockerState({ buttonVisible: false }));
             } else {
                 canvasInstance.interact({
                     enabled: true,
                     shapeType: 'points',
-                    ...activeInteractor.params.canvas,
+                    ...activeInteractorParameters,
                 });
-                dispatch(interactWithCanvas(activeInteractor, activeLabelID));
+                dispatch(interactWithCanvas(activeInteractor, activeLabelID, activeInteractorParameters));
             }
 
             return;
         }
 
-        activeControl = ShapeTypeToControl[activeShapeType];
+        if (activeObjectType !== ObjectType.TAG) {
+            activeControl = ShapeTypeToControl[activeShapeType];
+        }
 
         if (canvasInstance instanceof Canvas) {
             canvasInstance.cancel();

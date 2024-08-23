@@ -25,7 +25,7 @@ const frameDataCache: Record<string, {
     latestFrameDecodeRequest: number | null;
     latestContextImagesRequest: number | null;
     provider: FrameDecoder;
-    prefetchAnalizer: PrefetchAnalyzer;
+    prefetchAnalyzer: PrefetchAnalyzer;
     decodedBlocksCacheSize: number;
     activeChunkRequest: Promise<void> | null;
     activeContextRequest: Promise<Record<number, ImageBitmap>> | null;
@@ -208,10 +208,12 @@ export class FrameData {
 class PrefetchAnalyzer {
     #chunkSize: number;
     #requestedFrames: number[];
+    #startFrame: number;
 
-    constructor(chunkSize) {
+    constructor(chunkSize, startFrame) {
         this.#chunkSize = chunkSize;
         this.#requestedFrames = [];
+        this.#startFrame = startFrame;
     }
 
     shouldPrefetchNext(current: number, isPlaying: boolean, isChunkCached: (chunk) => boolean): boolean {
@@ -219,13 +221,13 @@ class PrefetchAnalyzer {
             return true;
         }
 
-        const currentChunk = Math.floor(current / this.#chunkSize);
+        const currentChunk = Math.floor((current - this.#startFrame) / this.#chunkSize);
         const { length } = this.#requestedFrames;
         const isIncreasingOrder = this.#requestedFrames
             .every((val, index) => index === 0 || val > this.#requestedFrames[index - 1]);
         if (
             length && (isIncreasingOrder && current > this.#requestedFrames[length - 1]) &&
-            (current % this.#chunkSize) >= Math.ceil(this.#chunkSize / 2) &&
+            ((current - this.#startFrame) % this.#chunkSize) >= Math.ceil(this.#chunkSize / 2) &&
             !isChunkCached(currentChunk + 1)
         ) {
             // is increasing order including the current frame
@@ -262,19 +264,20 @@ Object.defineProperty(FrameData.prototype.data, 'implementation', {
             imageData: ImageBitmap | Blob;
         } | Blob>((resolve, reject) => {
             const {
-                provider, prefetchAnalizer, chunkSize, stopFrame, decodeForward, forwardStep, decodedBlocksCacheSize,
+                provider, prefetchAnalyzer, chunkSize, startFrame, stopFrame,
+                decodeForward, forwardStep, decodedBlocksCacheSize,
             } = frameDataCache[this.jobID];
 
             const requestId = +_.uniqueId();
-            const chunkNumber = Math.floor(this.number / chunkSize);
+            const chunkNumber = Math.floor((this.number - startFrame) / chunkSize);
             const frame = provider.frame(this.number);
 
             function findTheNextNotDecodedChunk(searchFrom: number): number {
                 let firstFrameInNextChunk = searchFrom + forwardStep;
-                let nextChunkNumber = Math.floor(firstFrameInNextChunk / chunkSize);
+                let nextChunkNumber = Math.floor((firstFrameInNextChunk - startFrame) / chunkSize);
                 while (nextChunkNumber === chunkNumber) {
                     firstFrameInNextChunk += forwardStep;
-                    nextChunkNumber = Math.floor(firstFrameInNextChunk / chunkSize);
+                    nextChunkNumber = Math.floor((firstFrameInNextChunk - startFrame) / chunkSize);
                 }
 
                 if (provider.isChunkCached(nextChunkNumber)) {
@@ -286,7 +289,7 @@ Object.defineProperty(FrameData.prototype.data, 'implementation', {
 
             if (frame) {
                 if (
-                    prefetchAnalizer.shouldPrefetchNext(
+                    prefetchAnalyzer.shouldPrefetchNext(
                         this.number,
                         decodeForward,
                         (chunk) => provider.isChunkCached(chunk),
@@ -294,7 +297,7 @@ Object.defineProperty(FrameData.prototype.data, 'implementation', {
                 ) {
                     const nextChunkNumber = findTheNextNotDecodedChunk(this.number);
                     const predecodeChunksMax = Math.floor(decodedBlocksCacheSize / 2);
-                    if (nextChunkNumber * chunkSize <= stopFrame &&
+                    if (startFrame + nextChunkNumber * chunkSize <= stopFrame &&
                         nextChunkNumber <= chunkNumber + predecodeChunksMax
                     ) {
                         frameDataCache[this.jobID].activeChunkRequest = new Promise((resolveForward) => {
@@ -316,8 +319,8 @@ Object.defineProperty(FrameData.prototype.data, 'implementation', {
                                 provider.cleanup(1);
                                 provider.requestDecodeBlock(
                                     chunk,
-                                    nextChunkNumber * chunkSize,
-                                    Math.min(stopFrame, (nextChunkNumber + 1) * chunkSize - 1),
+                                    startFrame + nextChunkNumber * chunkSize,
+                                    Math.min(stopFrame, startFrame + (nextChunkNumber + 1) * chunkSize - 1),
                                     () => {},
                                     releasePromise,
                                     releasePromise,
@@ -334,7 +337,7 @@ Object.defineProperty(FrameData.prototype.data, 'implementation', {
                     renderHeight: this.height,
                     imageData: frame,
                 });
-                prefetchAnalizer.addRequested(this.number);
+                prefetchAnalyzer.addRequested(this.number);
                 return;
             }
 
@@ -355,7 +358,7 @@ Object.defineProperty(FrameData.prototype.data, 'implementation', {
                         renderHeight: this.height,
                         imageData: currentFrame,
                     });
-                    prefetchAnalizer.addRequested(this.number);
+                    prefetchAnalyzer.addRequested(this.number);
                     return;
                 }
 
@@ -378,8 +381,8 @@ Object.defineProperty(FrameData.prototype.data, 'implementation', {
                             provider
                                 .requestDecodeBlock(
                                     chunk,
-                                    chunkNumber * chunkSize,
-                                    Math.min(stopFrame, (chunkNumber + 1) * chunkSize - 1),
+                                    startFrame + chunkNumber * chunkSize,
+                                    Math.min(stopFrame, startFrame + (chunkNumber + 1) * chunkSize - 1),
                                     (_frame: number, bitmap: ImageBitmap | Blob) => {
                                         if (decodeForward) {
                                             // resolve immediately only if is not playing
@@ -395,7 +398,7 @@ Object.defineProperty(FrameData.prototype.data, 'implementation', {
                                                 renderHeight: this.height,
                                                 imageData: bitmap,
                                             });
-                                            prefetchAnalizer.addRequested(this.number);
+                                            prefetchAnalyzer.addRequested(this.number);
                                         }
                                     }, () => {
                                         frameDataCache[this.jobID].activeChunkRequest = null;
@@ -612,9 +615,10 @@ export async function getFrame(
                 blockType,
                 chunkSize,
                 decodedBlocksCacheSize,
+                startFrame,
                 dimension,
             ),
-            prefetchAnalizer: new PrefetchAnalyzer(chunkSize),
+            prefetchAnalyzer: new PrefetchAnalyzer(chunkSize, startFrame),
             decodedBlocksCacheSize,
             activeChunkRequest: null,
             activeContextRequest: null,

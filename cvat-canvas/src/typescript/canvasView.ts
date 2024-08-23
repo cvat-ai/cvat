@@ -62,6 +62,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
     private controller: CanvasController;
     private svgShapes: Record<number, SVG.Shape>;
     private svgTexts: Record<number, SVG.Text>;
+    private isImageLoading: boolean;
     private issueRegionPattern_1: SVG.Pattern;
     private issueRegionPattern_2: SVG.Pattern;
     private drawnStates: Record<number, DrawnState>;
@@ -248,7 +249,6 @@ export class CanvasViewImpl implements CanvasView, Listener {
         shapes: InteractionResult[] | null,
         shapesUpdated = true,
         isDone = false,
-        threshold: number | null = null,
     ): void => {
         const { zLayer } = this.controller;
         if (Array.isArray(shapes)) {
@@ -260,7 +260,6 @@ export class CanvasViewImpl implements CanvasView, Listener {
                     isDone,
                     shapes,
                     zOrder: zLayer || 0,
-                    threshold,
                 },
             });
 
@@ -1075,6 +1074,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
         }
 
         if (state) {
+            let start = Date.now();
             let aborted = false;
             let skeletonSVGTemplate: SVG.G = null;
             shape.addClass('cvat_canvas_shape_draggable');
@@ -1085,6 +1085,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
             draggableInstance.on('dragstart', (): void => {
                 onDragStart();
                 this.draggableShape = shape;
+                start = Date.now();
             }).on('dragmove', (e: CustomEvent): void => {
                 onDragMove();
                 if (state.shapeType === 'skeleton' && e.target) {
@@ -1160,7 +1161,8 @@ export class CanvasViewImpl implements CanvasView, Listener {
                             bubbles: false,
                             cancelable: true,
                             detail: {
-                                id: state.clientID,
+                                state,
+                                duration: Date.now() - start,
                             },
                         }),
                     );
@@ -1244,6 +1246,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
         if (state) {
             let resized = false;
             let aborted = false;
+            let start = Date.now();
 
             (resizableInstance as any)
                 .resize({
@@ -1253,6 +1256,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
                 .on('resizestart', (): void => {
                     onResizeStart();
                     resized = false;
+                    start = Date.now();
                     this.resizableShape = shape;
                 })
                 .on('resizing', (e: CustomEvent): void => {
@@ -1345,7 +1349,8 @@ export class CanvasViewImpl implements CanvasView, Listener {
                                 bubbles: false,
                                 cancelable: true,
                                 detail: {
-                                    id: state.clientID,
+                                    state,
+                                    duration: Date.now() - start,
                                 },
                             }),
                         );
@@ -1437,6 +1442,8 @@ export class CanvasViewImpl implements CanvasView, Listener {
             editHidden: {},
             sliceHidden: {},
         };
+
+        this.isImageLoading = true;
         this.draggableShape = null;
         this.resizableShape = null;
 
@@ -1643,19 +1650,21 @@ export class CanvasViewImpl implements CanvasView, Listener {
             if (this.mode !== Mode.IDLE) return;
             if (e.ctrlKey || e.altKey) return;
 
-            const { offset } = this.controller.geometry;
-            const [x, y] = translateToSVG(this.content, [e.clientX, e.clientY]);
-            const event: CustomEvent = new CustomEvent('canvas.moved', {
-                bubbles: false,
-                cancelable: true,
-                detail: {
-                    x: x - offset,
-                    y: y - offset,
-                    states: this.controller.objects,
-                },
-            });
+            if (!this.isImageLoading) {
+                const { offset } = this.controller.geometry;
+                const [x, y] = translateToSVG(this.content, [e.clientX, e.clientY]);
+                const event: CustomEvent = new CustomEvent('canvas.moved', {
+                    bubbles: false,
+                    cancelable: true,
+                    detail: {
+                        x: x - offset,
+                        y: y - offset,
+                        states: this.controller.objects,
+                    },
+                });
 
-            this.canvas.dispatchEvent(event);
+                this.canvas.dispatchEvent(event);
+            }
         });
 
         this.content.oncontextmenu = (): boolean => false;
@@ -1787,6 +1796,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
         } else if (reason === UpdateReasons.IMAGE_CHANGED) {
             const { image } = model;
             if (image) {
+                this.isImageLoading = false;
                 const ctx = this.background.getContext('2d');
                 this.background.setAttribute('width', `${image.renderWidth}px`);
                 this.background.setAttribute('height', `${image.renderHeight}px`);
@@ -1819,6 +1829,8 @@ export class CanvasViewImpl implements CanvasView, Listener {
                 this.moveCanvas();
                 this.resizeCanvas();
                 this.transformCanvas();
+            } else {
+                this.isImageLoading = true;
             }
         } else if (reason === UpdateReasons.FITTED_CANVAS) {
             // Canvas geometry is going to be changed. Old object positions aren't valid any more
@@ -1875,6 +1887,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
                 this.canvas.style.cursor = 'pointer';
             } else {
                 this.regionSelector.select(false);
+                this.canvas.style.cursor = '';
             }
         } else if (reason === UpdateReasons.DRAG_CANVAS) {
             if (this.mode === Mode.DRAG_CANVAS) {
@@ -2398,14 +2411,14 @@ export class CanvasViewImpl implements CanvasView, Listener {
                     this.addText(state);
                 }
             } else {
+                const attrNames = Object.fromEntries(state.label.attributes.map((attr) => [attr.id, attr.name]));
                 // check if there are updates in attributes
                 for (const attrID of Object.keys(state.attributes)) {
                     if (state.attributes[attrID] !== drawnState.attributes[+attrID]) {
                         if (text) {
                             const [span] = text.node.querySelectorAll<SVGTSpanElement>(`[attrID="${attrID}"]`);
                             if (span && span.textContent) {
-                                const prefix = span.textContent.split(':').slice(0, -1).join(':');
-                                span.textContent = `${prefix}: ${state.attributes[attrID]}`;
+                                span.textContent = `${attrNames[attrID]}: ${state.attributes[attrID]}`;
                             }
                         }
                     }
@@ -2576,7 +2589,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
             }
 
             if (drawnState.shapeType === 'mask') {
-                shape.attr('opacity', `${this.configuration.shapeOpacity}`);
+                shape.attr('opacity', `${Math.sqrt(this.configuration.shapeOpacity)}`);
             } else {
                 shape.attr('fill-opacity', `${this.configuration.shapeOpacity}`);
             }
@@ -2666,7 +2679,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
         }
 
         if (state.shapeType === 'mask') {
-            shape.attr('opacity', `${this.configuration.selectedShapeOpacity}`);
+            shape.attr('opacity', `${Math.sqrt(this.configuration.selectedShapeOpacity)}`);
         } else {
             shape.attr('fill-opacity', `${this.configuration.selectedShapeOpacity}`);
         }
@@ -2982,11 +2995,8 @@ export class CanvasViewImpl implements CanvasView, Listener {
         const {
             label, clientID, attributes, source, descriptions,
         } = state;
-        const attrNames = label.attributes.reduce((acc: any, val: any): void => {
-            acc[val.id] = val.name;
-            return acc;
-        }, {});
 
+        const attrNames = Object.fromEntries(state.label.attributes.map((attr) => [attr.id, attr.name]));
         if (state.shapeType === 'skeleton') {
             state.elements.forEach((element: any) => {
                 if (!(element.clientID in this.svgTexts)) {
@@ -3172,7 +3182,8 @@ export class CanvasViewImpl implements CanvasView, Listener {
             id: `cvat_canvas_shape_${state.clientID}`,
             'shape-rendering': 'geometricprecision',
             'data-z-order': state.zOrder,
-            opacity: colorization['fill-opacity'],
+            // apply sqrt function to colorization to enhance displaying the mask on the canvas
+            opacity: Math.sqrt(colorization['fill-opacity']),
             stroke: colorization.stroke,
         }).addClass('cvat_canvas_shape');
         image.move(this.geometry.offset + left, this.geometry.offset + top);

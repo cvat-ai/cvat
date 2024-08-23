@@ -5,6 +5,7 @@
 
 import React from 'react';
 import Button from 'antd/lib/button';
+import { MenuProps } from 'antd/lib/menu';
 import Icon, {
     LinkOutlined, CopyOutlined, BlockOutlined, RetweetOutlined, DeleteOutlined, EditOutlined,
 } from '@ant-design/icons';
@@ -15,7 +16,6 @@ import {
 import CVATTooltip from 'components/common/cvat-tooltip';
 import { ObjectType, ShapeType, ColorBy } from 'reducers';
 import { DimensionType, Job } from 'cvat-core-wrapper';
-import { MenuProps } from 'antd';
 
 interface Props {
     readonly: boolean;

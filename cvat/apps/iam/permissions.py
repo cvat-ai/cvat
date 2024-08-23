@@ -49,7 +49,7 @@ def get_organization(request, obj):
             raise exc
 
         try:
-            return Organization.objects.get(id=organization_id)
+            return Organization.objects.select_related('owner').get(id=organization_id)
         except Organization.DoesNotExist:
             return None
 

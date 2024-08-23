@@ -56,7 +56,7 @@ interface SAMPlugin {
 }
 
 interface ClickType {
-    clickType: 0 | 1;
+    clickType: 0 | 1 | 2 | 3;
     x: number;
     y: number;
 }
@@ -182,8 +182,10 @@ const samPlugin: SAMPlugin = {
                     result: any,
                     taskID: number,
                     model: MLModel,
-                    { frame, pos_points, neg_points }: {
-                        frame: number, pos_points: number[][], neg_points: number[][],
+                    {
+                        frame, pos_points, neg_points, obj_bbox,
+                    }: {
+                        frame: number, pos_points: number[][], neg_points: number[][], obj_bbox: number[][],
                     },
                 ): Promise<
                     {
@@ -193,6 +195,7 @@ const samPlugin: SAMPlugin = {
                     return new Promise((resolve, reject) => {
                         if (model.id !== plugin.data.modelID) {
                             resolve(result);
+                            return;
                         }
 
                         const job = Object.values(plugin.data.jobs).find((_job) => (
@@ -228,16 +231,24 @@ const samPlugin: SAMPlugin = {
                                     scale: getModelScale(imWidth, imHeight),
                                 };
 
-                                const composedClicks = [...pos_points, ...neg_points].map(([x, y], index) => ({
-                                    clickType: index < pos_points.length ? 1 : 0 as 0 | 1,
-                                    x,
-                                    y,
-                                }));
+                                const clicks: ClickType[] = [];
+                                if (obj_bbox.length) {
+                                    clicks.push({ clickType: 2, x: obj_bbox[0][0], y: obj_bbox[0][1] });
+                                    clicks.push({ clickType: 3, x: obj_bbox[1][0], y: obj_bbox[1][1] });
+                                }
+
+                                pos_points.forEach((point) => {
+                                    clicks.push({ clickType: 1, x: point[0], y: point[1] });
+                                });
+
+                                neg_points.forEach((point) => {
+                                    clicks.push({ clickType: 0, x: point[0], y: point[1] });
+                                });
 
                                 const isLowResMaskSuitable = JSON
-                                    .stringify(composedClicks.slice(0, -1)) === JSON.stringify(plugin.data.lastClicks);
+                                    .stringify(clicks.slice(0, -1)) === JSON.stringify(plugin.data.lastClicks);
                                 const feeds = modelData({
-                                    clicks: composedClicks,
+                                    clicks,
                                     tensor: plugin.data.embeddings.get(key) as Tensor,
                                     modelScale,
                                     maskInput: isLowResMaskSuitable ? plugin.data.lowResMasks.get(key) || null : null,
@@ -280,7 +291,7 @@ const samPlugin: SAMPlugin = {
                                         } = e.data.payload;
                                         const imageData = onnxToImage(masks.data, masks.dims[3], masks.dims[2]);
                                         plugin.data.lowResMasks.set(key, lowResMasks);
-                                        plugin.data.lastClicks = composedClicks;
+                                        plugin.data.lastClicks = clicks;
 
                                         resolve({
                                             mask: imageData,

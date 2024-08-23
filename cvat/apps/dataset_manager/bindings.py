@@ -31,8 +31,8 @@ from django.conf import settings
 
 from cvat.apps.dataset_manager.formats.utils import get_label_color
 from cvat.apps.dataset_manager.util import add_prefetch_fields
-from cvat.apps.engine.frame_provider import FrameProvider
-from cvat.apps.engine.models import (AttributeSpec, AttributeType, Data, DimensionType, Job,
+from cvat.apps.engine.frame_provider import TaskFrameProvider, FrameQuality, FrameOutputType
+from cvat.apps.engine.models import (AttributeSpec, AttributeType, DimensionType, Job,
                                      JobType, Label, LabelType, Project, SegmentType, ShapeType,
                                      Task)
 from cvat.apps.engine.rq_job_handler import RQJobMetaField
@@ -200,7 +200,7 @@ class CommonData(InstanceLabelData):
     Tag = namedtuple('Tag', 'frame, label, attributes, source, group, id')
     Tag.__new__.__defaults__ = (0, None)
     Frame = namedtuple(
-        'Frame', 'idx, id, frame, name, width, height, labeled_shapes, tags, shapes, labels')
+        'Frame', 'idx, id, frame, name, width, height, labeled_shapes, tags, shapes, labels, subset')
     Label = namedtuple('Label', 'id, name, color, type')
 
     def __init__(self,
@@ -223,6 +223,7 @@ class CommonData(InstanceLabelData):
         self._db_data = db_task.data
         self._use_server_track_ids = use_server_track_ids
         self._required_frames = included_frames
+        self._db_subset = db_task.subset
 
         super().__init__(db_task)
 
@@ -239,7 +240,7 @@ class CommonData(InstanceLabelData):
 
     @property
     def stop(self) -> int:
-        return len(self)
+        return max(0, len(self) - 1)
 
     def _get_queryset(self):
         raise NotImplementedError()
@@ -268,6 +269,7 @@ class CommonData(InstanceLabelData):
                     "path": "frame_{:06d}".format(self.abs_frame_id(frame)),
                     "width": self._db_data.video.width,
                     "height": self._db_data.video.height,
+                    "subset": self._db_subset,
                 } for frame in self.rel_range
             }
         else:
@@ -278,6 +280,7 @@ class CommonData(InstanceLabelData):
                     "path": db_image.path,
                     "width": db_image.width,
                     "height": db_image.height,
+                    "subset": self._db_subset,
                 } for db_image in queryset
             }
 
@@ -373,7 +376,7 @@ class CommonData(InstanceLabelData):
     def _export_track(self, track, idx):
         track['shapes'] = list(filter(lambda x: not self._is_frame_deleted(x['frame']), track['shapes']))
         tracked_shapes = TrackManager.get_interpolated_shapes(
-            track, 0, self.stop, self._annotation_ir.dimension)
+            track, 0, self.stop + 1, self._annotation_ir.dimension)
         for tracked_shape in tracked_shapes:
             tracked_shape["attributes"] += track["attributes"]
             tracked_shape["track_id"] = track["track_id"] if self._use_server_track_ids else idx
@@ -409,6 +412,7 @@ class CommonData(InstanceLabelData):
                 frames[frame] = CommonData.Frame(
                     idx=idx,
                     id=frame_info.get("id", 0),
+                    subset=frame_info["subset"],
                     frame=frame,
                     name=frame_info["path"],
                     height=frame_info["height"],
@@ -428,7 +432,7 @@ class CommonData(InstanceLabelData):
 
         anno_manager = AnnotationManager(self._annotation_ir)
         for shape in sorted(
-            anno_manager.to_shapes(self.stop, self._annotation_ir.dimension,
+            anno_manager.to_shapes(self.stop + 1, self._annotation_ir.dimension,
                 # Skip outside, deleted and excluded frames
                 included_frames=included_frames,
                 include_outside=False,
@@ -531,7 +535,13 @@ class CommonData(InstanceLabelData):
                 self.soft_attribute_import and attrib.name not in CVAT_INTERNAL_ATTRIBUTES
             )
         ]
-        _shape['points'] = list(map(float, _shape['points']))
+
+        # TODO: remove once importers are guaranteed to return correct type
+        # (see https://github.com/cvat-ai/cvat/pull/8226/files#r1695445137)
+        points = _shape["points"]
+        for i, point in enumerate(map(float, points)):
+            points[i] = point
+
         _shape['elements'] = [self._import_shape(element, label_id) for element in _shape.get('elements', [])]
 
         return _shape
@@ -557,7 +567,11 @@ class CommonData(InstanceLabelData):
                 for attrib in shape['attributes']
                 if self._get_mutable_attribute_id(label_id, attrib.name)
             ]
-            shape['points'] = list(map(float, shape['points']))
+        # TODO: remove once importers are guaranteed to return correct type
+        # (see https://github.com/cvat-ai/cvat/pull/8226/files#r1695445137)
+            points = shape["points"]
+            for i, point in enumerate(map(float, points)):
+                points[i] = point
 
         return _track
 
@@ -749,7 +763,7 @@ class JobData(CommonData):
     @property
     def stop(self) -> int:
         segment = self._db_job.segment
-        return segment.stop_frame + 1
+        return segment.stop_frame
 
     @property
     def db_instance(self):
@@ -1319,7 +1333,7 @@ class ProjectData(InstanceLabelData):
 
 @attrs(frozen=True, auto_attribs=True)
 class ImageSource:
-    db_data: Data
+    db_task: Task
     is_video: bool = attrib(kw_only=True)
 
 class ImageProvider:
@@ -1348,8 +1362,10 @@ class ImageProvider2D(ImageProvider):
                 # optimization for videos: use numpy arrays instead of bytes
                 # some formats or transforms can require image data
                 return self._frame_provider.get_frame(frame_index,
-                    quality=FrameProvider.Quality.ORIGINAL,
-                    out_type=FrameProvider.Type.NUMPY_ARRAY)[0]
+                    quality=FrameQuality.ORIGINAL,
+                    out_type=FrameOutputType.NUMPY_ARRAY
+                ).data
+
             return dm.Image(data=video_frame_loader, **image_kwargs)
         else:
             def image_loader(_):
@@ -1357,8 +1373,10 @@ class ImageProvider2D(ImageProvider):
 
                 # for images use encoded data to avoid recoding
                 return self._frame_provider.get_frame(frame_index,
-                    quality=FrameProvider.Quality.ORIGINAL,
-                    out_type=FrameProvider.Type.BUFFER)[0].getvalue()
+                    quality=FrameQuality.ORIGINAL,
+                    out_type=FrameOutputType.BUFFER
+                ).data.getvalue()
+
             return dm.ByteImage(data=image_loader, **image_kwargs)
 
     def _load_source(self, source_id: int, source: ImageSource) -> None:
@@ -1366,7 +1384,7 @@ class ImageProvider2D(ImageProvider):
             return
 
         self._unload_source()
-        self._frame_provider = FrameProvider(source.db_data)
+        self._frame_provider = TaskFrameProvider(source.db_task)
         self._current_source_id = source_id
 
     def _unload_source(self) -> None:
@@ -1382,7 +1400,7 @@ class ImageProvider3D(ImageProvider):
         self._images_per_source = {
             source_id: {
                 image.id: image
-                for image in source.db_data.images.prefetch_related('related_files')
+                for image in source.db_task.data.images.prefetch_related('related_files')
             }
             for source_id, source in sources.items()
         }
@@ -1391,7 +1409,7 @@ class ImageProvider3D(ImageProvider):
         source = self._sources[source_id]
 
         point_cloud_path = osp.join(
-            source.db_data.get_upload_dirname(), image_kwargs['path'],
+            source.db_task.data.get_upload_dirname(), image_kwargs['path'],
         )
 
         image = self._images_per_source[source_id][frame_id]
@@ -1487,12 +1505,14 @@ class CvatTaskOrJobDataExtractor(dm.SourceExtractor, CVATDataExtractorMixin):
         dimension: DimensionType = DimensionType.DIM_2D,
         **kwargs
     ):
+        instance_meta = instance_data.meta[instance_data.META_FIELD]
         dm.SourceExtractor.__init__(
-            self, media_type=dm.Image if dimension == DimensionType.DIM_2D else PointCloud
+            self,
+            media_type=dm.Image if dimension == DimensionType.DIM_2D else PointCloud,
+            subset=instance_meta['subset'],
         )
         CVATDataExtractorMixin.__init__(self, **kwargs)
 
-        instance_meta = instance_data.meta[instance_data.META_FIELD]
         self._categories = self._load_categories(instance_meta['labels'])
         self._user = self._load_user_info(instance_meta) if dimension == DimensionType.DIM_3D else {}
         self._dimension = dimension
@@ -1502,11 +1522,18 @@ class CvatTaskOrJobDataExtractor(dm.SourceExtractor, CVATDataExtractorMixin):
         is_video = instance_meta['mode'] == 'interpolation'
         ext = ''
         if is_video:
-            ext = FrameProvider.VIDEO_FRAME_EXT
+            ext = TaskFrameProvider.VIDEO_FRAME_EXT
 
         if dimension == DimensionType.DIM_3D or include_images:
+            if isinstance(instance_data, TaskData):
+                db_task = instance_data.db_instance
+            elif isinstance(instance_data, JobData):
+                db_task = instance_data.db_instance.segment.task
+            else:
+                assert False
+
             self._image_provider = IMAGE_PROVIDERS_BY_DIMENSION[dimension](
-                {0: ImageSource(instance_data.db_data, is_video=is_video)}
+                {0: ImageSource(db_task, is_video=is_video)}
             )
 
         for frame_data in instance_data.group_by_frame(include_empty=True):
@@ -1527,6 +1554,7 @@ class CvatTaskOrJobDataExtractor(dm.SourceExtractor, CVATDataExtractorMixin):
                 dm_item = dm.DatasetItem(
                         id=osp.splitext(frame_data.name)[0],
                         annotations=dm_anno, media=dm_image,
+                        subset=frame_data.subset,
                         attributes={'frame': frame_data.frame
                     })
             elif dimension == DimensionType.DIM_3D:
@@ -1543,7 +1571,7 @@ class CvatTaskOrJobDataExtractor(dm.SourceExtractor, CVATDataExtractorMixin):
                 dm_item = dm.DatasetItem(
                     id=osp.splitext(osp.split(frame_data.name)[-1])[0],
                     annotations=dm_anno, media=PointCloud(dm_image[0]), related_images=dm_image[1],
-                    attributes=attributes
+                    attributes=attributes, subset=frame_data.subset,
                 )
 
             dm_items.append(dm_item)
@@ -1587,13 +1615,13 @@ class CVATProjectDataExtractor(dm.Extractor, CVATDataExtractorMixin):
         if self._dimension == DimensionType.DIM_3D or include_images:
             self._image_provider = IMAGE_PROVIDERS_BY_DIMENSION[self._dimension](
                 {
-                    task.id: ImageSource(task.data, is_video=task.mode == 'interpolation')
+                    task.id: ImageSource(task, is_video=task.mode == 'interpolation')
                     for task in project_data.tasks
                 }
             )
 
         ext_per_task: Dict[int, str] = {
-            task.id: FrameProvider.VIDEO_FRAME_EXT if is_video else ''
+            task.id: TaskFrameProvider.VIDEO_FRAME_EXT if is_video else ''
             for task in project_data.tasks
             for is_video in [task.mode == 'interpolation']
         }

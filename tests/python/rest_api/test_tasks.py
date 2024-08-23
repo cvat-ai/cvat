@@ -1,23 +1,31 @@
 # Copyright (C) 2022 Intel Corporation
-# Copyright (C) 2022-2023 CVAT.ai Corporation
+# Copyright (C) 2022-2024 CVAT.ai Corporation
 #
 # SPDX-License-Identifier: MIT
 
 import io
+import itertools
 import json
+import math
 import os
 import os.path as osp
 import zipfile
+from abc import ABCMeta, abstractmethod
+from contextlib import closing
 from copy import deepcopy
+from enum import Enum
 from functools import partial
 from http import HTTPStatus
 from itertools import chain, product
 from math import ceil
+from operator import itemgetter
 from pathlib import Path
 from tempfile import NamedTemporaryFile, TemporaryDirectory
 from time import sleep, time
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Callable, ClassVar, Dict, Generator, List, Optional, Tuple, Union
 
+import attrs
+import numpy as np
 import pytest
 from cvat_sdk import Client, Config, exceptions
 from cvat_sdk.api_client import models
@@ -28,6 +36,7 @@ from cvat_sdk.core.proxies.tasks import ResourceType, Task
 from cvat_sdk.core.uploading import Uploader
 from deepdiff import DeepDiff
 from PIL import Image
+from pytest_cases import fixture_ref, parametrize
 
 import shared.utils.s3 as s3
 from shared.fixtures.init import docker_exec_cvat, kube_exec_cvat
@@ -46,13 +55,15 @@ from shared.utils.helpers import (
     generate_image_files,
     generate_manifest,
     generate_video_file,
+    read_video_file,
 )
 
 from .utils import (
     CollectionSimpleFilterTestBase,
     compare_annotations,
     create_task,
-    export_dataset,
+    export_task_backup,
+    export_task_dataset,
     wait_until_task_is_created,
 )
 
@@ -206,6 +217,7 @@ class TestGetTasks:
 
         assert server_task.jobs.completed == 1
 
+    @pytest.mark.usefixtures("restore_db_per_function")
     def test_can_remove_owner_and_fetch_with_sdk(self, admin_user, tasks):
         # test for API schema regressions
         source_task = next(
@@ -272,7 +284,7 @@ class TestListTasksFilters(CollectionSimpleFilterTestBase):
         ),
     )
     def test_can_use_simple_filter_for_object_list(self, field):
-        return super().test_can_use_simple_filter_for_object_list(field)
+        return super()._test_can_use_simple_filter_for_object_list(field)
 
 
 @pytest.mark.usefixtures("restore_db_per_function")
@@ -411,6 +423,24 @@ class TestPostTasks:
         }
 
         self._test_create_task_201(username, spec)
+
+    @pytest.mark.parametrize("assignee", [None, "admin1"])
+    def test_can_create_with_assignee(self, admin_user, users_by_name, assignee):
+        task_spec = {
+            "name": "test task creation with assignee",
+            "labels": [{"name": "car"}],
+            "assignee_id": users_by_name[assignee]["id"] if assignee else None,
+        }
+
+        with make_api_client(admin_user) as api_client:
+            (task, _) = api_client.tasks_api.create(task_write_request=task_spec)
+
+            if assignee:
+                assert task.assignee.username == assignee
+                assert task.assignee_updated_date
+            else:
+                assert task.assignee is None
+                assert task.assignee_updated_date is None
 
 
 @pytest.mark.usefixtures("restore_db_per_class")
@@ -632,26 +662,70 @@ class TestPatchTaskAnnotations:
 
 
 @pytest.mark.usefixtures("restore_db_per_class")
+@pytest.mark.usefixtures("restore_redis_inmem_per_function")
 class TestGetTaskDataset:
-    def _test_export_task(self, username: str, tid: int, **kwargs):
-        with make_api_client(username) as api_client:
-            return export_dataset(api_client.tasks_api.retrieve_dataset_endpoint, id=tid, **kwargs)
 
-    def test_can_export_task_dataset(self, admin_user, tasks_with_shapes):
-        task = tasks_with_shapes[0]
-        response = self._test_export_task(admin_user, task["id"])
-        assert response.data
+    @staticmethod
+    def _test_can_export_dataset(
+        username: str,
+        task_id: int,
+        *,
+        api_version: Union[int, Tuple[int]],
+        local_download: bool = True,
+        **kwargs,
+    ) -> Optional[bytes]:
+        dataset = export_task_dataset(username, api_version, save_images=True, id=task_id, **kwargs)
+        if local_download:
+            assert zipfile.is_zipfile(io.BytesIO(dataset))
+        else:
+            assert dataset is None
 
+        return dataset
+
+    @pytest.mark.usefixtures("restore_db_per_function")
+    @pytest.mark.parametrize("api_version", product((1, 2), repeat=2))
+    @pytest.mark.parametrize(
+        "local_download", (True, pytest.param(False, marks=pytest.mark.with_external_services))
+    )
+    def test_can_export_task_dataset_locally_and_to_cloud_with_both_api_versions(
+        self,
+        admin_user,
+        tasks_with_shapes,
+        filter_tasks,
+        api_version: Tuple[int],
+        local_download: bool,
+    ):
+        filter_ = "target_storage__location"
+        if local_download:
+            filter_ = "exclude_" + filter_
+        filtered_ids = {t["id"] for t in filter_tasks(**{filter_: "cloud_storage"})}
+
+        task_id = next(iter(filtered_ids & {t["id"] for t in tasks_with_shapes}))
+        self._test_can_export_dataset(
+            admin_user,
+            task_id,
+            api_version=api_version,
+            local_download=local_download,
+        )
+
+    @pytest.mark.parametrize("api_version", (1, 2))
     @pytest.mark.parametrize("tid", [21])
     @pytest.mark.parametrize(
         "format_name", ["CVAT for images 1.1", "CVAT for video 1.1", "COCO Keypoints 1.0"]
     )
-    def test_can_export_task_with_several_jobs(self, admin_user, tid, format_name):
-        response = self._test_export_task(admin_user, tid, format=format_name)
-        assert response.data
+    def test_can_export_task_with_several_jobs(
+        self, admin_user, tid, format_name, api_version: int
+    ):
+        self._test_can_export_dataset(
+            admin_user,
+            tid,
+            format=format_name,
+            api_version=api_version,
+        )
 
+    @pytest.mark.parametrize("api_version", (1, 2))
     @pytest.mark.parametrize("tid", [8])
-    def test_can_export_task_to_coco_format(self, admin_user, tid):
+    def test_can_export_task_to_coco_format(self, admin_user: str, tid: int, api_version: int):
         # these annotations contains incorrect frame numbers
         # in order to check that server handle such cases
         annotations = {
@@ -735,9 +809,13 @@ class TestGetTaskDataset:
         )
         assert response.status_code == HTTPStatus.OK
 
-        # check that we can export task
-        response = self._test_export_task(admin_user, tid, format="COCO Keypoints 1.0")
-        assert response.status == HTTPStatus.OK
+        # check that we can export task dataset
+        self._test_can_export_dataset(
+            admin_user,
+            tid,
+            format="COCO Keypoints 1.0",
+            api_version=api_version,
+        )
 
         # check that server saved track annotations correctly
         response = get_method(admin_user, f"tasks/{tid}/annotations")
@@ -748,8 +826,9 @@ class TestGetTaskDataset:
         assert annotations["tracks"][0]["shapes"][0]["frame"] == 0
         assert annotations["tracks"][0]["elements"][0]["shapes"][0]["frame"] == 0
 
+    @pytest.mark.parametrize("api_version", (1, 2))
     @pytest.mark.usefixtures("restore_db_per_function")
-    def test_can_download_task_with_special_chars_in_name(self, admin_user):
+    def test_can_download_task_with_special_chars_in_name(self, admin_user: str, api_version: int):
         # Control characters in filenames may conflict with the Content-Disposition header
         # value restrictions, as it needs to include the downloaded file name.
 
@@ -765,11 +844,14 @@ class TestGetTaskDataset:
 
         task_id, _ = create_task(admin_user, task_spec, task_data)
 
-        response = self._test_export_task(admin_user, task_id)
-        assert response.status == HTTPStatus.OK
-        assert zipfile.is_zipfile(io.BytesIO(response.data))
+        dataset = self._test_can_export_dataset(admin_user, task_id, api_version=api_version)
+        assert zipfile.is_zipfile(io.BytesIO(dataset))
 
-    def test_export_dataset_after_deleting_related_cloud_storage(self, admin_user, tasks):
+    @pytest.mark.usefixtures("restore_db_per_function")
+    @pytest.mark.parametrize("api_version", (1, 2))
+    def test_export_dataset_after_deleting_related_cloud_storage(
+        self, admin_user: str, tasks, api_version: int
+    ):
         related_field = "target_storage"
 
         task = next(
@@ -785,8 +867,46 @@ class TestGetTaskDataset:
             result, response = api_client.tasks_api.retrieve(task_id)
             assert not result[related_field]
 
-            response = export_dataset(api_client.tasks_api.retrieve_dataset_endpoint, id=task["id"])
-            assert response.data
+            self._test_can_export_dataset(admin_user, task["id"], api_version=api_version)
+
+    @pytest.mark.parametrize(
+        "export_format, default_subset_name, subset_path_template",
+        [
+            ("Datumaro 1.0", "", "images/{subset}"),
+            ("YOLO 1.1", "train", "obj_{subset}_data"),
+        ],
+    )
+    @pytest.mark.parametrize("api_version", (1, 2))
+    def test_uses_subset_name(
+        self,
+        admin_user,
+        filter_tasks,
+        export_format,
+        default_subset_name,
+        subset_path_template,
+        api_version: int,
+    ):
+        tasks = filter_tasks(exclude_target_storage__location="cloud_storage")
+        group_key_func = itemgetter("subset")
+        subsets_and_tasks = [
+            (subset, next(group))
+            for subset, group in itertools.groupby(
+                sorted(tasks, key=group_key_func),
+                key=group_key_func,
+            )
+        ]
+        for subset_name, task in subsets_and_tasks:
+            dataset = self._test_can_export_dataset(
+                admin_user,
+                task["id"],
+                api_version=api_version,
+                format=export_format,
+            )
+            with zipfile.ZipFile(io.BytesIO(dataset)) as zip_file:
+                subset_path = subset_path_template.format(subset=subset_name or default_subset_name)
+                assert any(
+                    subset_path in path for path in zip_file.namelist()
+                ), f"No {subset_path} in {zip_file.namelist()}"
 
 
 @pytest.mark.usefixtures("restore_db_per_function")
@@ -1921,6 +2041,476 @@ class TestPostTaskData:
             assert task.size == expected_task_size
 
 
+class _SourceDataType(str, Enum):
+    images = "images"
+    video = "video"
+
+
+class _TaskSpec(models.ITaskWriteRequest, models.IDataRequest, metaclass=ABCMeta):
+    size: int
+    frame_step: int
+    source_data_type: _SourceDataType
+
+    @abstractmethod
+    def read_frame(self, i: int) -> Image.Image: ...
+
+
+@attrs.define
+class _TaskSpecBase(_TaskSpec):
+    _params: Union[Dict, models.TaskWriteRequest]
+    _data_params: Union[Dict, models.DataRequest]
+    size: int = attrs.field(kw_only=True)
+
+    @property
+    def frame_step(self) -> int:
+        v = getattr(self, "frame_filter", "step=1")
+        return int(v.split("=")[-1])
+
+    def __getattr__(self, k: str) -> Any:
+        notfound = object()
+
+        for params in [self._params, self._data_params]:
+            if isinstance(params, dict):
+                v = params.get(k, notfound)
+            else:
+                v = getattr(params, k, notfound)
+
+            if v is not notfound:
+                return v
+
+        raise AttributeError(k)
+
+
+@attrs.define
+class _ImagesTaskSpec(_TaskSpecBase):
+    source_data_type: ClassVar[_SourceDataType] = _SourceDataType.images
+
+    _get_frame: Callable[[int], bytes] = attrs.field(kw_only=True)
+
+    def read_frame(self, i: int) -> Image.Image:
+        return Image.open(io.BytesIO(self._get_frame(i)))
+
+
+@attrs.define
+class _VideoTaskSpec(_TaskSpecBase):
+    source_data_type: ClassVar[_SourceDataType] = _SourceDataType.video
+
+    _get_video_file: Callable[[], io.IOBase] = attrs.field(kw_only=True)
+
+    def read_frame(self, i: int) -> Image.Image:
+        with closing(read_video_file(self._get_video_file())) as reader:
+            for _ in range(i + 1):
+                frame = next(reader)
+
+            return frame
+
+
+@pytest.mark.usefixtures("restore_db_per_class")
+@pytest.mark.usefixtures("restore_redis_ondisk_per_class")
+@pytest.mark.usefixtures("restore_cvat_data")
+class TestTaskData:
+    _USERNAME = "admin1"
+
+    def _uploaded_images_task_fxt_base(
+        self,
+        request: pytest.FixtureRequest,
+        *,
+        frame_count: int = 10,
+        segment_size: Optional[int] = None,
+    ) -> Generator[Tuple[_TaskSpec, int], None, None]:
+        task_params = {
+            "name": request.node.name,
+            "labels": [{"name": "a"}],
+        }
+        if segment_size:
+            task_params["segment_size"] = segment_size
+
+        image_files = generate_image_files(frame_count)
+        images_data = [f.getvalue() for f in image_files]
+        data_params = {
+            "image_quality": 70,
+            "client_files": image_files,
+        }
+
+        def get_frame(i: int) -> bytes:
+            return images_data[i]
+
+        task_id, _ = create_task(self._USERNAME, spec=task_params, data=data_params)
+        yield _ImagesTaskSpec(
+            models.TaskWriteRequest._from_openapi_data(**task_params),
+            models.DataRequest._from_openapi_data(**data_params),
+            get_frame=get_frame,
+            size=len(images_data),
+        ), task_id
+
+    @pytest.fixture(scope="class")
+    def fxt_uploaded_images_task(
+        self, request: pytest.FixtureRequest
+    ) -> Generator[Tuple[_TaskSpec, int], None, None]:
+        yield from self._uploaded_images_task_fxt_base(request=request)
+
+    @pytest.fixture(scope="class")
+    def fxt_uploaded_images_task_with_segments(
+        self, request: pytest.FixtureRequest
+    ) -> Generator[Tuple[_TaskSpec, int], None, None]:
+        yield from self._uploaded_images_task_fxt_base(request=request, segment_size=4)
+
+    def _uploaded_video_task_fxt_base(
+        self,
+        request: pytest.FixtureRequest,
+        *,
+        frame_count: int = 10,
+        segment_size: Optional[int] = None,
+    ) -> Generator[Tuple[_TaskSpec, int], None, None]:
+        task_params = {
+            "name": request.node.name,
+            "labels": [{"name": "a"}],
+        }
+        if segment_size:
+            task_params["segment_size"] = segment_size
+
+        video_file = generate_video_file(frame_count)
+        video_data = video_file.getvalue()
+        data_params = {
+            "image_quality": 70,
+            "client_files": [video_file],
+        }
+
+        def get_video_file() -> io.BytesIO:
+            return io.BytesIO(video_data)
+
+        task_id, _ = create_task(self._USERNAME, spec=task_params, data=data_params)
+        yield _VideoTaskSpec(
+            models.TaskWriteRequest._from_openapi_data(**task_params),
+            models.DataRequest._from_openapi_data(**data_params),
+            get_video_file=get_video_file,
+            size=frame_count,
+        ), task_id
+
+    @pytest.fixture(scope="class")
+    def fxt_uploaded_video_task(
+        self,
+        request: pytest.FixtureRequest,
+    ) -> Generator[Tuple[_TaskSpec, int], None, None]:
+        yield from self._uploaded_video_task_fxt_base(request=request)
+
+    @pytest.fixture(scope="class")
+    def fxt_uploaded_video_task_with_segments(
+        self, request: pytest.FixtureRequest
+    ) -> Generator[Tuple[_TaskSpec, int], None, None]:
+        yield from self._uploaded_video_task_fxt_base(request=request, segment_size=4)
+
+    def _compute_segment_params(self, task_spec: _TaskSpec) -> List[Tuple[int, int]]:
+        segment_params = []
+        segment_size = getattr(task_spec, "segment_size", 0) or task_spec.size
+        start_frame = getattr(task_spec, "start_frame", 0)
+        end_frame = (getattr(task_spec, "stop_frame", None) or (task_spec.size - 1)) + 1
+        overlap = min(
+            (
+                getattr(task_spec, "overlap", None) or 0
+                if task_spec.source_data_type == _SourceDataType.images
+                else 5
+            ),
+            segment_size // 2,
+        )
+        segment_start = start_frame
+        while segment_start < end_frame:
+            if start_frame < segment_start:
+                segment_start -= overlap * task_spec.frame_step
+
+            segment_end = segment_start + task_spec.frame_step * segment_size
+
+            segment_params.append((segment_start, min(segment_end, end_frame) - 1))
+            segment_start = segment_end
+
+        return segment_params
+
+    @staticmethod
+    def _compare_images(
+        expected: Image.Image, actual: Image.Image, *, must_be_identical: bool = True
+    ):
+        expected_pixels = np.array(expected)
+        chunk_frame_pixels = np.array(actual)
+        assert expected_pixels.shape == chunk_frame_pixels.shape
+
+        if not must_be_identical:
+            # video chunks can have slightly changed colors, due to codec specifics
+            # compressed images can also be distorted
+            assert np.allclose(chunk_frame_pixels, expected_pixels, atol=2)
+        else:
+            assert np.array_equal(chunk_frame_pixels, expected_pixels)
+
+    _default_task_cases = [
+        fixture_ref("fxt_uploaded_images_task"),
+        fixture_ref("fxt_uploaded_images_task_with_segments"),
+        fixture_ref("fxt_uploaded_video_task"),
+        fixture_ref("fxt_uploaded_video_task_with_segments"),
+    ]
+
+    @parametrize("task_spec, task_id", _default_task_cases)
+    def test_can_get_task_meta(self, task_spec: _TaskSpec, task_id: int):
+        with make_api_client(self._USERNAME) as api_client:
+            (task_meta, _) = api_client.tasks_api.retrieve_data_meta(task_id)
+
+            assert task_meta.size == task_spec.size
+            assert task_meta.start_frame == getattr(task_spec, "start_frame", 0)
+            assert task_meta.stop_frame == getattr(task_spec, "stop_frame", None) or task_spec.size
+            assert task_meta.frame_filter == getattr(task_spec, "frame_filter", "")
+
+            task_frame_set = set(
+                range(task_meta.start_frame, task_meta.stop_frame + 1, task_spec.frame_step)
+            )
+            assert len(task_frame_set) == task_meta.size
+
+            if getattr(task_spec, "chunk_size", None):
+                assert task_meta.chunk_size == task_spec.chunk_size
+
+            if task_spec.source_data_type == _SourceDataType.video:
+                assert len(task_meta.frames) == 1
+            else:
+                assert len(task_meta.frames) == task_meta.size
+
+    @parametrize("task_spec, task_id", _default_task_cases)
+    def test_can_get_task_frames(self, task_spec: _TaskSpec, task_id: int):
+        with make_api_client(self._USERNAME) as api_client:
+            (task_meta, _) = api_client.tasks_api.retrieve_data_meta(task_id)
+
+            for quality, abs_frame_id in product(
+                ["original", "compressed"],
+                range(task_meta.start_frame, task_meta.stop_frame + 1, task_spec.frame_step),
+            ):
+                rel_frame_id = (
+                    abs_frame_id - getattr(task_spec, "start_frame", 0) // task_spec.frame_step
+                )
+                (_, response) = api_client.tasks_api.retrieve_data(
+                    task_id,
+                    type="frame",
+                    quality=quality,
+                    number=rel_frame_id,
+                    _parse_response=False,
+                )
+
+                if task_spec.source_data_type == _SourceDataType.video:
+                    frame_size = (task_meta.frames[0].width, task_meta.frames[0].height)
+                else:
+                    frame_size = (
+                        task_meta.frames[rel_frame_id].width,
+                        task_meta.frames[rel_frame_id].height,
+                    )
+
+                frame = Image.open(io.BytesIO(response.data))
+                assert frame_size == frame.size
+
+                self._compare_images(
+                    task_spec.read_frame(abs_frame_id),
+                    frame,
+                    must_be_identical=(
+                        task_spec.source_data_type == _SourceDataType.images
+                        and quality == "original"
+                    ),
+                )
+
+    @parametrize("task_spec, task_id", _default_task_cases)
+    def test_can_get_task_chunks(self, task_spec: _TaskSpec, task_id: int):
+        with make_api_client(self._USERNAME) as api_client:
+            (task, _) = api_client.tasks_api.retrieve(task_id)
+            (task_meta, _) = api_client.tasks_api.retrieve_data_meta(task_id)
+
+            if task_spec.source_data_type == _SourceDataType.images:
+                assert task.data_original_chunk_type == "imageset"
+                assert task.data_compressed_chunk_type == "imageset"
+            elif task_spec.source_data_type == _SourceDataType.video:
+                assert task.data_original_chunk_type == "video"
+
+                if getattr(task_spec, "use_zip_chunks", False):
+                    assert task.data_compressed_chunk_type == "imageset"
+                else:
+                    assert task.data_compressed_chunk_type == "video"
+            else:
+                assert False
+
+            chunk_count = math.ceil(task_meta.size / task_meta.chunk_size)
+            for quality, chunk_id in product(["original", "compressed"], range(chunk_count)):
+                expected_chunk_frame_ids = range(
+                    chunk_id * task_meta.chunk_size,
+                    min((chunk_id + 1) * task_meta.chunk_size, task_meta.size),
+                )
+
+                (_, response) = api_client.tasks_api.retrieve_data(
+                    task_id, type="chunk", quality=quality, number=chunk_id, _parse_response=False
+                )
+
+                chunk_file = io.BytesIO(response.data)
+                if zipfile.is_zipfile(chunk_file):
+                    with zipfile.ZipFile(chunk_file, "r") as chunk_archive:
+                        chunk_images = {
+                            int(os.path.splitext(name)[0]): np.array(
+                                Image.open(io.BytesIO(chunk_archive.read(name)))
+                            )
+                            for name in chunk_archive.namelist()
+                        }
+                        chunk_images = dict(sorted(chunk_images.items(), key=lambda e: e[0]))
+                else:
+                    chunk_images = dict(enumerate(read_video_file(chunk_file)))
+
+                assert sorted(chunk_images.keys()) == list(range(len(expected_chunk_frame_ids)))
+
+                for chunk_frame, abs_frame_id in zip(chunk_images, expected_chunk_frame_ids):
+                    self._compare_images(
+                        task_spec.read_frame(abs_frame_id),
+                        chunk_images[chunk_frame],
+                        must_be_identical=(
+                            task_spec.source_data_type == _SourceDataType.images
+                            and quality == "original"
+                        ),
+                    )
+
+    @parametrize("task_spec, task_id", _default_task_cases)
+    def test_can_get_job_meta(self, task_spec: _TaskSpec, task_id: int):
+        segment_params = self._compute_segment_params(task_spec)
+        with make_api_client(self._USERNAME) as api_client:
+            jobs = sorted(
+                get_paginated_collection(api_client.jobs_api.list_endpoint, task_id=task_id),
+                key=lambda j: j.start_frame,
+            )
+            assert len(jobs) == len(segment_params)
+
+            for (segment_start, segment_end), job in zip(segment_params, jobs):
+                (job_meta, _) = api_client.jobs_api.retrieve_data_meta(job.id)
+
+                assert (job_meta.start_frame, job_meta.stop_frame) == (segment_start, segment_end)
+                assert job_meta.frame_filter == getattr(task_spec, "frame_filter", "")
+
+                segment_size = segment_end - segment_start + 1
+                assert job_meta.size == segment_size
+
+                task_frame_set = set(
+                    range(job_meta.start_frame, job_meta.stop_frame + 1, task_spec.frame_step)
+                )
+                assert len(task_frame_set) == job_meta.size
+
+                if getattr(task_spec, "chunk_size", None):
+                    assert job_meta.chunk_size == task_spec.chunk_size
+
+                if task_spec.source_data_type == _SourceDataType.video:
+                    assert len(job_meta.frames) == 1
+                else:
+                    assert len(job_meta.frames) == job_meta.size
+
+    @parametrize("task_spec, task_id", _default_task_cases)
+    def test_can_get_job_frames(self, task_spec: _TaskSpec, task_id: int):
+        with make_api_client(self._USERNAME) as api_client:
+            jobs = sorted(
+                get_paginated_collection(api_client.jobs_api.list_endpoint, task_id=task_id),
+                key=lambda j: j.start_frame,
+            )
+            for job in jobs:
+                (job_meta, _) = api_client.jobs_api.retrieve_data_meta(job.id)
+
+                for quality, (frame_pos, abs_frame_id) in product(
+                    ["original", "compressed"],
+                    enumerate(range(job_meta.start_frame, job_meta.stop_frame)),
+                ):
+                    rel_frame_id = (
+                        abs_frame_id - getattr(task_spec, "start_frame", 0) // task_spec.frame_step
+                    )
+                    (_, response) = api_client.jobs_api.retrieve_data(
+                        job.id,
+                        type="frame",
+                        quality=quality,
+                        number=rel_frame_id,
+                        _parse_response=False,
+                    )
+
+                    if task_spec.source_data_type == _SourceDataType.video:
+                        frame_size = (job_meta.frames[0].width, job_meta.frames[0].height)
+                    else:
+                        frame_size = (
+                            job_meta.frames[frame_pos].width,
+                            job_meta.frames[frame_pos].height,
+                        )
+
+                    frame = Image.open(io.BytesIO(response.data))
+                    assert frame_size == frame.size
+
+                    self._compare_images(
+                        task_spec.read_frame(abs_frame_id),
+                        frame,
+                        must_be_identical=(
+                            task_spec.source_data_type == _SourceDataType.images
+                            and quality == "original"
+                        ),
+                    )
+
+    @parametrize("task_spec, task_id", _default_task_cases)
+    def test_can_get_job_chunks(self, task_spec: _TaskSpec, task_id: int):
+        with make_api_client(self._USERNAME) as api_client:
+            jobs = sorted(
+                get_paginated_collection(api_client.jobs_api.list_endpoint, task_id=task_id),
+                key=lambda j: j.start_frame,
+            )
+            for job in jobs:
+                (job_meta, _) = api_client.jobs_api.retrieve_data_meta(job.id)
+
+                if task_spec.source_data_type == _SourceDataType.images:
+                    assert job.data_original_chunk_type == "imageset"
+                    assert job.data_compressed_chunk_type == "imageset"
+                elif task_spec.source_data_type == _SourceDataType.video:
+                    assert job.data_original_chunk_type == "video"
+
+                    if getattr(task_spec, "use_zip_chunks", False):
+                        assert job.data_compressed_chunk_type == "imageset"
+                    else:
+                        assert job.data_compressed_chunk_type == "video"
+                else:
+                    assert False
+
+                chunk_count = math.ceil(job_meta.size / job_meta.chunk_size)
+                for quality, chunk_id in product(["original", "compressed"], range(chunk_count)):
+                    expected_chunk_abs_frame_ids = range(
+                        job_meta.start_frame
+                        + chunk_id * job_meta.chunk_size * task_spec.frame_step,
+                        job_meta.start_frame
+                        + min((chunk_id + 1) * job_meta.chunk_size, job_meta.size)
+                        * task_spec.frame_step,
+                    )
+
+                    (_, response) = api_client.jobs_api.retrieve_data(
+                        job.id,
+                        type="chunk",
+                        quality=quality,
+                        number=chunk_id,
+                        _parse_response=False,
+                    )
+
+                    chunk_file = io.BytesIO(response.data)
+                    if zipfile.is_zipfile(chunk_file):
+                        with zipfile.ZipFile(chunk_file, "r") as chunk_archive:
+                            chunk_images = {
+                                int(os.path.splitext(name)[0]): np.array(
+                                    Image.open(io.BytesIO(chunk_archive.read(name)))
+                                )
+                                for name in chunk_archive.namelist()
+                            }
+                            chunk_images = dict(sorted(chunk_images.items(), key=lambda e: e[0]))
+                    else:
+                        chunk_images = dict(enumerate(read_video_file(chunk_file)))
+
+                    assert sorted(chunk_images.keys()) == list(range(job_meta.size))
+
+                    for chunk_frame, abs_frame_id in zip(
+                        chunk_images, expected_chunk_abs_frame_ids
+                    ):
+                        self._compare_images(
+                            task_spec.read_frame(abs_frame_id),
+                            chunk_images[chunk_frame],
+                            must_be_identical=(
+                                task_spec.source_data_type == _SourceDataType.images
+                                and quality == "original"
+                            ),
+                        )
+
+
 @pytest.mark.usefixtures("restore_db_per_function")
 class TestPatchTaskLabel:
     def _get_task_labels(self, pid, user, **kwargs) -> List[models.Label]:
@@ -2176,6 +2766,7 @@ class TestWorkWithTask:
                 assert image_name in ex.body
 
 
+@pytest.mark.usefixtures("restore_redis_inmem_per_function")
 class TestTaskBackups:
     def _make_client(self) -> Client:
         return Client(BASE_URL, config=Config(status_check_period=0.01))
@@ -2189,6 +2780,23 @@ class TestTaskBackups:
 
         with self.client:
             self.client.login((self.user, USER_PASS))
+
+    @pytest.mark.parametrize("api_version", product((1, 2), repeat=2))
+    @pytest.mark.parametrize(
+        "local_download", (True, pytest.param(False, marks=pytest.mark.with_external_services))
+    )
+    def test_can_export_backup_with_both_api_versions(
+        self, filter_tasks, api_version: Tuple[int], local_download: bool
+    ):
+        task = filter_tasks(
+            **{("exclude_" if local_download else "") + "target_storage__location": "cloud_storage"}
+        )[0]
+        backup = export_task_backup(self.user, api_version, id=task["id"])
+
+        if local_download:
+            assert zipfile.is_zipfile(io.BytesIO(backup))
+        else:
+            assert backup is None
 
     @pytest.mark.parametrize("mode", ["annotation", "interpolation"])
     def test_can_export_backup(self, tasks, mode):
@@ -2655,6 +3263,36 @@ class TestPatchTask:
                 _check_status=False,
             )
         assert response.status == HTTPStatus.FORBIDDEN
+
+    @pytest.mark.parametrize("has_old_assignee", [False, True])
+    @pytest.mark.parametrize("new_assignee", [None, "same", "different"])
+    def test_can_update_assignee_updated_date_on_assignee_updates(
+        self, admin_user, tasks, users, has_old_assignee, new_assignee
+    ):
+        task = next(t for t in tasks if bool(t.get("assignee")) == has_old_assignee)
+
+        old_assignee_id = (task.get("assignee") or {}).get("id")
+
+        new_assignee_id = None
+        if new_assignee == "same":
+            new_assignee_id = old_assignee_id
+        elif new_assignee == "different":
+            new_assignee_id = next(u for u in users if u["id"] != old_assignee_id)["id"]
+
+        with make_api_client(admin_user) as api_client:
+            (updated_task, _) = api_client.tasks_api.partial_update(
+                task["id"], patched_task_write_request={"assignee_id": new_assignee_id}
+            )
+
+            if new_assignee_id == old_assignee_id:
+                assert updated_task.assignee_updated_date == task["assignee_updated_date"]
+            else:
+                assert updated_task.assignee_updated_date != task["assignee_updated_date"]
+
+            if new_assignee_id:
+                assert updated_task.assignee.id == new_assignee_id
+            else:
+                assert updated_task.assignee is None
 
 
 @pytest.mark.usefixtures("restore_db_per_function")

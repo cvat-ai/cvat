@@ -29,6 +29,7 @@ class TestTaskUsecases:
         fxt_login: Tuple[Client, str],
         fxt_logger: Tuple[Logger, io.StringIO],
         fxt_stdout: io.StringIO,
+        restore_redis_ondisk_per_function,
     ):
         self.tmp_path = tmp_path
         logger, self.logger_stream = fxt_logger

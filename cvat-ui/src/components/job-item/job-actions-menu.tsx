@@ -8,9 +8,7 @@ import { useHistory } from 'react-router';
 import Modal from 'antd/lib/modal';
 import { exportActions } from 'actions/export-actions';
 
-import {
-    Job, JobStage, JobState, JobType,
-} from 'cvat-core-wrapper';
+import { Job, JobType } from 'cvat-core-wrapper';
 import { deleteJobAsync } from 'actions/jobs-actions';
 import { importActions } from 'actions/import-actions';
 import Menu, { MenuInfo } from 'components/dropdown-menu';
@@ -21,7 +19,7 @@ interface Props {
 }
 
 function JobActionsMenu(props: Props): JSX.Element {
-    const { job, onJobUpdate } = props;
+    const { job } = props;
     const history = useHistory();
     const dispatch = useDispatch();
 
@@ -59,16 +57,6 @@ function JobActionsMenu(props: Props): JSX.Element {
                     dispatch(exportActions.openExportDatasetModal(job));
                 } else if (action.key === 'view_analytics') {
                     history.push(`/tasks/${job.taskId}/jobs/${job.id}/analytics`);
-                } else if (action.key === 'renew_job') {
-                    onJobUpdate(job, {
-                        state: JobState.NEW,
-                        stage: JobStage.ANNOTATION,
-                    });
-                } else if (action.key === 'finish_job') {
-                    onJobUpdate(job, {
-                        state: JobState.COMPLETED,
-                        stage: JobStage.ACCEPTANCE,
-                    });
                 }
             }}
         >
@@ -78,10 +66,6 @@ function JobActionsMenu(props: Props): JSX.Element {
             <Menu.Item key='import_job'>Import annotations</Menu.Item>
             <Menu.Item key='export_job'>Export annotations</Menu.Item>
             <Menu.Item key='view_analytics'>View analytics</Menu.Item>
-            {[JobStage.ANNOTATION, JobStage.VALIDATION].includes(job.stage) ?
-                <Menu.Item key='finish_job'>Finish the job</Menu.Item> : null}
-            {job.stage === JobStage.ACCEPTANCE ?
-                <Menu.Item key='renew_job'>Renew the job</Menu.Item> : null}
             <Menu.Divider />
             <Menu.Item
                 key='delete'

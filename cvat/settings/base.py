@@ -134,7 +134,7 @@ REST_FRAMEWORK = {
         'cvat.apps.iam.permissions.PolicyEnforcer',
     ],
     'DEFAULT_AUTHENTICATION_CLASSES': [
-        'cvat.apps.iam.authentication.TokenAuthenticationEx',
+        'rest_framework.authentication.TokenAuthentication',
         'cvat.apps.iam.authentication.SignatureAuthentication',
         'rest_framework.authentication.SessionAuthentication',
         'rest_framework.authentication.BasicAuthentication'
@@ -183,6 +183,7 @@ if to_bool(os.getenv('CVAT_ANALYTICS', False)):
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
+    'cvat.apps.iam.middleware.SessionRefreshMiddleware',
     'corsheaders.middleware.CorsMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
@@ -636,7 +637,7 @@ SPECTACULAR_SETTINGS = {
         'SortingMethod': 'cvat.apps.engine.models.SortingMethod',
         'WebhookType': 'cvat.apps.webhooks.models.WebhookTypeChoice',
         'WebhookContentType': 'cvat.apps.webhooks.models.WebhookContentTypeChoice',
-        'RequestStatus': 'cvat.apps.engine.serializers.RequestStatus',
+        'RequestStatus': 'cvat.apps.engine.models.RequestStatus',
         'ValidationMode': 'cvat.apps.engine.models.ValidationMode',
         'FrameSelectionMethod': 'cvat.apps.engine.models.JobFrameSelectionMethod',
     },

@@ -74,6 +74,7 @@ context('Single object annotation mode', { scrollBehavior: false }, () => {
 
         cy.get('.cvat-single-shape-annotation-sidebar-hint').should('exist');
         cy.get('.cvat-single-shape-annotation-sidebar-ux-hints').should('exist');
+        cy.get('#cvat_canvas_wrapper').should('have.css', 'cursor', 'crosshair');
     }
 
     function openJob(params) {
@@ -97,9 +98,8 @@ context('Single object annotation mode', { scrollBehavior: false }, () => {
         }
 
         cy.wait('@submitJob').its('response.statusCode').should('equal', 200);
-
-        cy.get('.cvat-single-shape-annotation-submit-success-modal').should('exist');
-        cy.get('.cvat-single-shape-annotation-submit-success-modal').within(() => { cy.contains('OK').click(); });
+        cy.get('.cvat-annotation-job-finished-success').should('exist');
+        cy.get('.cvat-annotation-job-finished-success').should('not.exist');
     }
 
     function changeLabel(labelName) {
@@ -226,7 +226,7 @@ context('Single object annotation mode', { scrollBehavior: false }, () => {
                 cy.get('[type="checkbox"]').uncheck();
             });
             clickPoints(polygonShape);
-            cy.get('.cvat-single-shape-annotation-submit-success-modal').should('not.exist');
+            cy.get('.cvat-annotation-job-finished-success').should('not.exist');
 
             // Navigate only on empty frames
             cy.get('.cvat-player-previous-button-empty').click();

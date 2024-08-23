@@ -4,6 +4,7 @@
 
 import React from 'react';
 import Text from 'antd/lib/typography/Text';
+import { BaseType } from 'antd/es/typography/Base';
 import LoadingOutlined from '@ant-design/icons/lib/icons/LoadingOutlined';
 import { RQStatus } from 'cvat-core-wrapper';
 
@@ -34,19 +35,27 @@ function StatusMessage(props: Props): JSX.Element {
     let { status, message } = props;
     message = message || '';
     status = status || RQStatus.FINISHED;
-    let textType: 'success' | 'danger' | 'warning' | undefined;
 
-    if ([RQStatus.FAILED, RQStatus.UNKNOWN].includes(status)) {
-        textType = 'danger';
-    } else if ([RQStatus.QUEUED].includes(status)) {
-        textType = 'warning';
-    } else if ([RQStatus.FINISHED].includes(status)) {
-        textType = 'success';
-    }
+    const [textType, classHelper] = ((_status: RQStatus) => {
+        if (_status === RQStatus.FINISHED) {
+            return ['success', 'success'];
+        }
+
+        if (_status === RQStatus.QUEUED) {
+            return ['warning', 'queued'];
+        }
+
+        if (_status === RQStatus.STARTED) {
+            return [undefined, 'started'];
+        }
+
+        return ['danger', 'failed'];
+    })(status);
+
     return (
         <Text
-            className='cvat-request-item-progress-message'
-            type={textType}
+            className={`cvat-request-item-progress-message cvat-request-item-progress-${classHelper}`}
+            type={textType as BaseType | undefined}
             strong
         >
             {((): JSX.Element => {
