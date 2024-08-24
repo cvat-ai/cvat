@@ -29,50 +29,97 @@ context('Customizable Shortcuts', () => {
     let taskID = null;
     let jobID = null;
 
+    const task = {
+        labels: [
+            {
+                name: 'label 1',
+                attributes: [
+                    {
+                        name: 'attribute 1',
+                        mutable: true,
+                        input_type: 'checkbox',
+                        default_value: 'false',
+                        values: ['false'],
+                    },
+                ],
+                type: 'any',
+            }, {
+                name: 'label 2',
+                attributes: [],
+                type: 'any',
+            }, {
+                name: 'label 3',
+                attributes: [],
+                type: 'any',
+            },
+        ],
+        name: taskName,
+        project_id: null,
+        source_storage: { location: 'local' },
+        target_storage: { location: 'local' },
+    };
+    const storage = {
+        server_files: serverFiles,
+        image_quality: 70,
+        use_zip_chunks: true,
+        use_cache: true,
+        sorting_method: 'lexicographical',
+    };
+
     before(() => {
         cy.visit('auth/login');
         cy.login();
         cy.get('.cvat-tasks-page').should('exist').and('be.visible');
         cy.url().should('contain', '/tasks');
-        cy.headlessCreateTask({
-            labels: [
-                {
-                    name: 'label 1',
-                    attributes: [
-                        {
-                            name: 'attribute 1',
-                            mutable: true,
-                            input_type: 'checkbox',
-                            default_value: 'false',
-                            values: ['false'],
-                        },
-                    ],
-                    type: 'any',
-                }, {
-                    name: 'label 2',
-                    attributes: [],
-                    type: 'any',
-                }, {
-                    name: 'label 3',
-                    attributes: [],
-                    type: 'any',
-                },
-            ],
-            name: taskName,
-            project_id: null,
-            source_storage: { location: 'local' },
-            target_storage: { location: 'local' },
-        }, {
-            server_files: serverFiles,
-            image_quality: 70,
-            use_zip_chunks: true,
-            use_cache: true,
-            sorting_method: 'lexicographical',
-        }).then((response) => {
+        cy.headlessCreateTask(task, storage).then((response) => {
             taskID = response.taskID;
             [jobID] = response.jobIDs;
         });
     });
+
+    function testSearchShortcuts(searchDescription) {
+        const searchItemClass = searchDescription ? '.cvat-shortcuts-settings-item-title' : '.cvat-shortcuts-settings-item-description';
+        const randomSearchItem = searchDescription ? 'random description shortcut' : 'random title shortcut';
+        cy.get('.cvat-shortcuts-settings-search input').focus();
+        for (const searchShortcut of searchShortcuts) {
+            cy.get('.cvat-shortcuts-settings-search input').type(searchDescription ? searchShortcut.description : searchShortcut.title);
+            cy.get(searchItemClass).should('have.length', 1);
+            cy.get(searchItemClass).contains(searchDescription ? searchShortcut.title : searchShortcut.description);
+            cy.get('.cvat-shortcuts-settings-search input').clear();
+        }
+        cy.get('.cvat-shortcuts-settings-search input').type(randomSearchItem);
+        cy.get(searchItemClass).should('not.exist');
+        cy.get('.cvat-shortcuts-settings-search input').clear();
+        cy.get('.cvat-shortcuts-settings-search input').blur();
+    }
+
+    function registerF2F3(shouldExist) {
+        cy.get('.ant-list-item').should('exist').and('be.visible');
+        cy.get('.ant-list-item .ant-select').first().click();
+        cy.realPress(['F2']);
+        cy.wait(200);
+        cy.realPress(['F3']);
+        cy.get('.ant-modal-content').contains('Conflicting shortcuts detected');
+        cy.get(
+            shouldExist ?
+                '.ant-modal-content .ant-modal-confirm-btns .ant-btn-primary' :
+                '.ant-modal-content .ant-modal-confirm-btns .ant-btn-default',
+        ).click();
+        cy.get('.ant-list-item .ant-select').first().within(() => {
+            cy.get('.ant-select-selection-overflow-item').contains('f2 f3').should(shouldExist ? 'exist' : 'not.exist');
+        });
+    }
+
+    function saveSettings() {
+        cy.get('.cvat-settings-modal .ant-modal-footer .ant-btn-primary').click();
+    }
+
+    function checkShortcutsMounted(label) {
+        cy.get('.cvat-shortcuts-modal-window-table').should('exist').and('be.visible');
+        for (let i = 1; i < 4; i++) {
+            cy.get('.cvat-shortcuts-modal-window-table').contains(label(i));
+        }
+    }
 
     after(() => {
         cy.logout();
@@ -83,28 +130,10 @@ context('Customizable Shortcuts', () => {
             cy.openSettings();
             cy.contains('Shortcuts').click();
             cy.get('.cvat-shortcuts-settings-search input').should('exist').and('be.visible');
-            cy.get('.cvat-shortcuts-settings-search input').focus();
-            for (const searchShortcut of searchShortcuts) {
-                cy.get('.cvat-shortcuts-settings-search input').type(searchShortcut.description);
-                cy.get('.cvat-shortcuts-settings-item-title').should('have.length', 1);
-                cy.get('.cvat-shortcuts-settings-item-title').contains(searchShortcut.title);
-                cy.get('.cvat-shortcuts-settings-search input').clear();
-            }
-            cy.get('.cvat-shortcuts-settings-search input').type('random description shortcut');
-            cy.get('.cvat-shortcuts-settings-item-title').should('not.exist');
-            cy.get('.cvat-shortcuts-settings-search input').clear();
+            testSearchShortcuts(true);
         });
         it('Searching according to title', () => {
-            for (const searchShortcut of searchShortcuts) {
-                cy.get('.cvat-shortcuts-settings-search input').type(searchShortcut.title);
-                cy.get('.cvat-shortcuts-settings-item-description').should('have.length', 1);
-                cy.get('.cvat-shortcuts-settings-item-description').contains(searchShortcut.description);
-                cy.get('.cvat-shortcuts-settings-search input').clear();
-            }
-            cy.get('.cvat-shortcuts-settings-search input').type('random title shortcut');
-            cy.get('.cvat-shortcuts-settings-item-description').should('not.exist');
-            cy.get('.cvat-shortcuts-settings-search input').clear();
-            cy.get('.cvat-shortcuts-settings-search input').blur();
+            testSearchShortcuts(false);
         });
     });
 
@@ -112,26 +141,8 @@ context('Customizable Shortcuts', () => {
         it('Registering a new shortcut', () => {
             cy.get('.cvat-shortcuts-settings-collapse').should('exist').and('be.visible');
             cy.get('.ant-collapse-header').first().click();
-            cy.get('.ant-list-item').should('exist').and('be.visible');
-            cy.get('.ant-list-item .ant-select').first().click();
-            cy.realPress(['F2']);
-            cy.wait(200);
-            cy.realPress(['F3']);
-            cy.get('.ant-modal-content').contains('Conflicting shortcuts detected');
-            cy.get('.ant-modal-content .ant-modal-confirm-btns .ant-btn-default').click();
-            cy.get('.ant-list-item .ant-select').first().within(() => {
-                cy.get('.ant-select-selection-overflow-item').contains('f2 f3').should('not.exist');
-            });
-            cy.get('.ant-list-item').should('exist').and('be.visible');
-            cy.get('.ant-list-item .ant-select').first().click();
-            cy.realPress(['F2']);
-            cy.wait(200);
-            cy.realPress(['F3']);
-            cy.get('.ant-modal-content').contains('Conflicting shortcuts detected');
-            cy.get('.ant-modal-content .ant-modal-confirm-btns .ant-btn-primary').click();
-            cy.get('.ant-list-item .ant-select').first().within(() => {
-                cy.get('.ant-select-selection-overflow-item').contains('f2 f3').should('exist');
-            });
+            registerF2F3(false);
+            registerF2F3(true);
         });
         it('Registering a combination shortcut and testing if it works or not', () => {
             cy.get('.ant-list-item').should('exist').and('be.visible');
@@ -149,7 +160,7 @@ context('Customizable Shortcuts', () => {
     describe('Saving, Clearing and Restoring to Default', () => {
         it('Saving shortcuts and checking if they persist', () => {
             cy.openSettings();
-            cy.get('.cvat-settings-modal .ant-modal-footer .ant-btn-primary').click();
+            saveSettings();
             cy.reload();
             cy.openSettings();
             cy.contains('Shortcuts').click();
@@ -175,7 +186,7 @@ context('Customizable Shortcuts', () => {
             cy.get('.ant-modal-confirm .ant-btn-primary').click();
             cy.get('.ant-list-item .ant-select .ant-select-selection-overflow-item').first().should('exist').and('be.visible');
             cy.get('.ant-list-item .ant-select .ant-select-selection-overflow-item').first().contains('f1');
-            cy.get('.cvat-settings-modal .ant-modal-footer .ant-btn-primary').click();
+            saveSettings();
         });
         it('Modifying a shortcut via local storage and testing if its conflict is resolved', () => {
             cy.window().then((window) => {
@@ -206,10 +217,7 @@ context('Customizable Shortcuts', () => {
             cy.realPress(['F1']);
             cy.get('.cvat-shortcuts-modal-window').should('exist').and('be.visible');
             cy.get('.cvat-shortcuts-modal-window .ant-pagination-item-2').click();
-            cy.get('.cvat-shortcuts-modal-window-table').should('exist').and('be.visible');
-            for (let i = 1; i < 4; i++) {
-                cy.get('.cvat-shortcuts-modal-window-table').contains(`Create a new tag "label ${i}"`);
-            }
+            checkShortcutsMounted((i) => `Create a new tag "label ${i}"`);
             cy.realPress(['F1']);
         });
         it('Attribute Annotation Mode, Dynamic Titles and Description', () => {
@@ -229,10 +237,7 @@ context('Customizable Shortcuts', () => {
             cy.realPress(['F1']);
             cy.get('.cvat-shortcuts-modal-window').should('exist').and('be.visible');
             cy.get('.cvat-shortcuts-modal-window .ant-pagination-item-5').click();
-            cy.get('.cvat-shortcuts-modal-window-table').should('exist').and('be.visible');
-            for (let i = 1; i < 4; i++) {
-                cy.get('.cvat-shortcuts-modal-window-table').contains(`Switch label to label ${i}`);
-            }
+            checkShortcutsMounted((i) => `Switch label to label ${i}`);
             cy.realPress(['F1']);
         });
     });
