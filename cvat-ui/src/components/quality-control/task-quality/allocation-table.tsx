@@ -4,15 +4,15 @@
 
 import React, { useState } from 'react';
 import { useHistory } from 'react-router';
-import { Row, Col } from 'antd/lib/grid';
 import { ResizableBox } from 'react-resizable';
+import { Row, Col } from 'antd/lib/grid';
 import Table from 'antd/lib/table';
 import Button from 'antd/lib/button';
 import Text from 'antd/lib/typography/Text';
 import Icon, { DeleteOutlined } from '@ant-design/icons';
 import { Task, Job, FramesMetaData } from 'cvat-core-wrapper';
 import { RestoreIcon } from 'icons';
-import { toRepresentation, sorter, QualityColors } from 'utils/quality';
+import { sorter, QualityColors } from 'utils/quality';
 import CVATTooltip from 'components/common/cvat-tooltip';
 
 const DEFAULT_TITLE_HEIGHT = 20;
