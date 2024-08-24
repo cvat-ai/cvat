@@ -8,12 +8,12 @@
     display: flex;
     justify-content: center;
     align-items: center;
-    padding: $grid-unit-size * 4;
+    padding: $grid-unit-size * 2;
 }
 
 .cvat-paid-feature-placeholder {
-    width: $grid-unit-size * 60;
-    height: $grid-unit-size * 85;
+    width: $grid-unit-size * 55;
+    height: $grid-unit-size * 77;
 
     .ant-card-body {
         height: 80%;

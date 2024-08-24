@@ -345,9 +345,11 @@ function QualityControlPage(): JSX.Element {
     let tabs: JSX.Element | null = null;
     if (instanceType && instance) {
         backNavigation = (
-            <Col span={22} xl={18} xxl={14} className='cvat-task-top-bar'>
-                <GoBackButton />
-            </Col>
+            <Row justify='center'>
+                <Col span={22} xl={18} xxl={14} className='cvat-task-top-bar'>
+                    <GoBackButton />
+                </Col>
+            </Row>
         );
 
         const qualityControlFor = <Link to={`/tasks/${instance.id}`}>{`Task #${instance.id}`}</Link>;
@@ -423,11 +425,15 @@ function QualityControlPage(): JSX.Element {
                     <CVATLoadingSpinner />
                 </div>
             ) : (
-                <Row justify='center' align='top' className='cvat-analytics-wrapper'>
-                    {backNavigation}
-                    <Col span={22} xl={18} xxl={14} className='cvat-analytics-inner'>
-                        {title}
-                        {tabs}
+                <Row className='cvat-analytics-wrapper'>
+                    <Col span={24}>
+                        {backNavigation}
+                        <Row justify='center'>
+                            <Col span={22} xl={18} xxl={14} className='cvat-analytics-inner'>
+                                {title}
+                                {tabs}
+                            </Col>
+                        </Row>
                     </Col>
                 </Row>
             )}
