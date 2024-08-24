@@ -4,7 +4,7 @@
 
 import React, { useState } from 'react';
 import { useHistory } from 'react-router';
-import { ResizableBox } from 'react-resizable';
+import { ResizableBox, ResizableProps, ResizeCallbackData } from 'react-resizable';
 import { Row, Col } from 'antd/lib/grid';
 import Table from 'antd/lib/table';
 import Button from 'antd/lib/button';
@@ -14,6 +14,7 @@ import { Task, Job, FramesMetaData } from 'cvat-core-wrapper';
 import { RestoreIcon } from 'icons';
 import { sorter, QualityColors } from 'utils/quality';
 import CVATTooltip from 'components/common/cvat-tooltip';
+import { Key } from 'antd/lib/table/interface';
 
 const DEFAULT_TITLE_HEIGHT = 20;
 const DEFAULT_TITLE_WIDTH = 100;
@@ -38,7 +39,7 @@ interface RowData {
     actions: { frameID: number, active: boolean },
 }
 
-function ResizableTitle(props) {
+function ResizableTitle(props: Partial<ResizableProps>) {
     const { children, onResize } = props;
     return (
         <ResizableBox
@@ -67,14 +68,14 @@ export default function AllocationTableComponent(props: Props): JSX.Element {
 
     const history = useHistory();
 
-    const [select, setSelect] = useState<{ selectedRowKeys: string[], selectedRows: RowData[] }>({
+    const [select, setSelect] = useState<{ selectedRowKeys: Key[], selectedRows: RowData[] }>({
         selectedRowKeys: [],
         selectedRows: [],
     });
 
     const rowSelection = {
         selectedRowKeys: select.selectedRowKeys,
-        onChange: (selectedRowKeys: string[], selectedRows: RowData[]) => {
+        onChange: (selectedRowKeys: Key[], selectedRows: RowData[]) => {
             setSelect({
                 ...select,
                 selectedRowKeys: [...selectedRowKeys],
@@ -101,13 +102,14 @@ export default function AllocationTableComponent(props: Props): JSX.Element {
         return component;
     }
     const handleResize =
-    (key: string) => (event, { size }) => {
+    (key: string) => (e: React.SyntheticEvent, data: ResizeCallbackData) => {
+        const { size: { width } } = data;
         setColumns((prevColumns) => {
             const index = prevColumns.findIndex((col) => col.key === key);
             const nextColumns = [...prevColumns];
-            nextColumns[index] = { ...nextColumns[index], width: size.width + RESIZE_HANDLE_OFFSET };
+            nextColumns[index] = { ...nextColumns[index], width: width + RESIZE_HANDLE_OFFSET };
             if (key === 'name') {
-                nextColumns[index].render = nameRenderFunc(size.width + RESIZE_HANDLE_OFFSET);
+                nextColumns[index].render = nameRenderFunc(width + RESIZE_HANDLE_OFFSET);
             }
             return nextColumns;
         });
@@ -206,7 +208,7 @@ export default function AllocationTableComponent(props: Props): JSX.Element {
                 { text: 'Active', value: true },
                 { text: 'Excluded', value: false },
             ],
-            onFilter: (value: boolean, record: any) => record.actions.frameData.active === value,
+            onFilter: (value: boolean | Key, record: any) => record.actions.frameData.active === value,
             render: ({ frameID, active }: { frameID: number, active: boolean }): JSX.Element => (
                 active ? (
                     <Icon
