@@ -211,24 +211,32 @@ class CachedSimilarityFunction:
         self.cache: Dict[Tuple[int, int], float] = cache or {}
         self.sim_fn = sim_fn
 
-    def __call__(self, gt_ann: dm.Annotation, ds_ann: dm.Annotation) -> float:
-        key = (
-            id(gt_ann),
-            id(ds_ann),
+    def __call__(self, a_ann: dm.Annotation, b_ann: dm.Annotation) -> float:
+        key: Tuple[int, int] = (
+            id(a_ann),
+            id(b_ann),
         )  # make sure the annotations have stable ids before calling this
+        key = self._sort_key(key)
         cached_value = self.cache.get(key)
 
         if cached_value is None:
-            cached_value = self.sim_fn(gt_ann, ds_ann)
+            cached_value = self.sim_fn(a_ann, b_ann)
             self.cache[key] = cached_value
 
         return cached_value
 
+    @staticmethod
+    def _sort_key(key: Tuple[int, int]) -> Tuple[int, int]:
+        key: Union[List[int, int], Tuple[int, int]] = list(key)
+        key.sort()
+        key = tuple(key)
+        return key
+
     def pop(self, key: Tuple[int, int]) -> float:
-        return self.cache.pop(key, None)
+        return self.cache.pop(self._sort_key(key), None)
 
     def set(self, key: Tuple[int, int], value: float):
-        self.cache[key] = value
+        self.cache[self._sort_key(key)] = value
 
     def keys(self):
         return self.cache.keys()
@@ -859,11 +867,9 @@ class SkeletonMerger(_ShapeMerger, SkeletonMatcher):
             skeleton_distance = 0
             for skeleton2 in cluster:
                 id_skeleton2 = id(skeleton2)
-                if (id_skeleton1, id_skeleton2) in self._distance.keys():
-                    skeleton_distance += self._distance.cache[id_skeleton1, id_skeleton2]
-                elif (id_skeleton2, id_skeleton1) in self._distance.keys():
-                    skeleton_distance += self._distance.cache[id_skeleton2, id_skeleton1]
-                else:
+                try:
+                    skeleton_distance += self._distance((id_skeleton1, id_skeleton2))
+                except KeyError:
                     skeleton_distance += 1
 
             dist[idx] = skeleton_distance / len(cluster)
