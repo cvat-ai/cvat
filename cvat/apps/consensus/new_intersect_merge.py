@@ -103,8 +103,23 @@ class IntersectMerge(ClassicIntersectMerge):
 
         return merged
 
-    def get_ann_dataset_id(self, ann_id):
+    def get_ann_dataset_id(self, ann_id: int) -> int:
         return self._dataset_map[self.get_ann_source(ann_id)][1]
+
+    def get_item_media_dims(self, ann_id: int) -> Tuple[int, int]:
+        return self._item_map[self._ann_map[ann_id][1]][0].image.size
+
+    def get_label_id(self, label):
+        return self._get_label_id(label)
+
+    def get_src_label_name(self, ann, label_id):
+        return self._get_src_label_name(ann, label_id)
+
+    def get_dataset_source_id(self, dataset_id: int):
+        return self._dataset_map[dataset_id][1]
+
+    def dataset_count(self) -> int:
+        return len(self._dataset_map)
 
     def merge_items(self, items):
         self._item = next(iter(items.values()))
@@ -256,6 +271,7 @@ class _ShapeMatcher(AnnotationMatcher):
 
     def __attrs_post_init__(self):
         self._distance_comparator = DistanceComparator(
+            categories=self.categories,
             iou_threshold=self._context.Conf.pairwise_dist,
             oks_sigma=self._context.Conf.sigma,
             line_torso_radius=self._context.Conf.torso_r,
@@ -403,8 +419,7 @@ class BboxMatcher(_ShapeMatcher):
                     img_w=img_w,
                 )
 
-        data_item_id = self._context._ann_map[id(item_a)][1]
-        img_h, img_w = self._context._item_map[data_item_id][0].image.size
+        img_h, img_w = self._context.get_item_media_dims(id(item_a))
         return _bbox_iou(item_a, item_b, img_h=img_h, img_w=img_w)
 
     def match_annotations_two_sources(self, item_a: List[dm.Bbox], item_b: List[dm.Bbox]):
@@ -422,8 +437,7 @@ class PolygonMatcher(_ShapeMatcher):
         from pycocotools import mask as mask_utils
 
         def _get_segment(item):
-            dataitem_id = self._context._ann_map[id(item)][1]
-            img_h, img_w = self._context._item_map[dataitem_id][0].image.size
+            img_h, img_w = self._context.get_item_media_dims(id(item))
             object_rle_groups = [to_rle(item, img_h=img_h, img_w=img_w)]
             rle = mask_utils.merge(list(itertools.chain.from_iterable(object_rle_groups)))
             return rle
@@ -440,8 +454,7 @@ class PolygonMatcher(_ShapeMatcher):
                 dm.AnnotationType.mask, item
             )
 
-        data_item_id = self._context._ann_map[id(item_a[0])][1]
-        img_h, img_w = self._context._item_map[data_item_id][0].image.size
+        img_h, img_w = self._context.get_item_media_dims(id(item_a[0]))
 
         def _find_instances(annotations):
             # Group instance annotations by label.
@@ -546,14 +559,13 @@ class PointsMatcher(_ShapeMatcher):
         for source_anns in [a.annotations, b.annotations]:
             source_instances = dm.ops.find_instances(source_anns)
             for instance_group in source_instances:
-                instance_bbox = self._instance_bbox(instance_group)
+                instance_bbox = self._distance_comparator.instance_bbox(instance_group)
 
                 for ann in instance_group:
                     if ann.type == dm.AnnotationType.points:
                         self.instance_map[id(ann)] = [instance_group, instance_bbox]
 
-        dataitem_id = self._context._ann_map[id(a)][1]
-        img_h, img_w = self._context._item_map[dataitem_id][0].image.size
+        img_h, img_w = self._context.get_item_media_dims(id(a))
         a_bbox = self.instance_map[id(a)][1]
         b_bbox = self.instance_map[id(b)][1]
         a_area = a_bbox[2] * a_bbox[3]
@@ -587,7 +599,7 @@ class PointsMatcher(_ShapeMatcher):
                     sigma=self.sigma,
                     scale=scale,
                 ),
-                dist_thresh=self.iou_threshold,
+                dist_thresh=self._distance_comparator.iou_threshold,
                 label_matcher=lambda ai, bi: True,
             )
 
@@ -703,7 +715,7 @@ class SkeletonMatcher(_ShapeMatcher):
 
         for source in [a_skeletons, b_skeletons]:
             for instance_group in dm.ops.find_instances(source):
-                instance_bbox = self._instance_bbox(instance_group)
+                instance_bbox = self._distance_comparator.instance_bbox(instance_group)
 
                 instance_group = [
                     self.skeleton_map[id(a)] if isinstance(a, dm.Skeleton) else a
@@ -756,25 +768,25 @@ class LabelMerger(LabelMatcher):
 
         votes = {}  # label -> score
         for ann in clusters[0]:
-            label = self._context._get_src_label_name(ann, ann.label)
+            label = self._context.get_src_label_name(ann, ann.label)
             votes[label] = 1 + votes.get(label, 0)
 
         merged = []
         for label, count in votes.items():
             if count < self.quorum:
                 sources = set(
-                    self.get_ann_source(id(a))
+                    self._context.get_ann_source(id(a))
                     for a in clusters[0]
-                    if label not in [self._context._get_src_label_name(l, l.label) for l in a]
+                    if label not in [self._context.get_src_label_name(l, l.label) for l in a]
                 )
-                sources = [self._context._dataset_map[s][1] for s in sources]
+                sources = [self._context.get_dataset_source_id(s) for s in sources]
                 self._context.add_item_error(FailedLabelVotingError, votes, sources=sources)
                 continue
 
             merged.append(
                 Label(
-                    self._context._get_label_id(label),
-                    attributes={"score": count / len(self._context._dataset_map)},
+                    self._context.get_label_id(label),
+                    attributes={"score": count / self._context.dataset_count()},
                 )
             )
 
@@ -791,7 +803,7 @@ class _ShapeMerger(_ShapeMatcher):
     def find_cluster_label(self, cluster):
         votes = {}
         for s in cluster:
-            label = self._context._get_src_label_name(s, s.label)
+            label = self._context.get_src_label_name(s, s.label)
             state = votes.setdefault(label, [0, 0])
             state[0] += s.attributes.get("score", 1.0)
             state[1] += 1
@@ -800,32 +812,38 @@ class _ShapeMerger(_ShapeMatcher):
         if count < self.quorum:
             self._context.add_item_error(FailedLabelVotingError, votes)
             label = None
-        score = score / len(self._context._dataset_map)
-        label = self._context._get_label_id(label)
+        score = score / self._context.dataset_count()
+        label = self._context.get_label_id(label)
         return label, score
 
     def _merge_cluster_shape_mean_box_nearest(self, cluster):
         mbbox = Bbox(*mean_bbox(cluster))
         a = cluster[0]
-        dataitem_id = self._context._ann_map[id(a)][1]
-        img_h, img_w = self._context._item_map[dataitem_id][0].image.size
+        img_h, img_w = self._context.get_item_media_dims(id(a))
         dist = []
         for s in cluster:
             if isinstance(s, dm.Bbox):
                 dist.append(
                     segment_iou(
-                        self.to_polygon(mbbox), self.to_polygon(s), img_h=img_h, img_w=img_w
+                        self._distance_comparator.to_polygon(mbbox),
+                        self._distance_comparator.to_polygon(s),
+                        img_h=img_h,
+                        img_w=img_w,
                     )
                 )
             else:
-                dist.append(segment_iou(self.to_polygon(mbbox), s, img_h=img_h, img_w=img_w))
+                dist.append(
+                    segment_iou(
+                        self._distance_comparator.to_polygon(mbbox), s, img_h=img_h, img_w=img_w
+                    )
+                )
         nearest_pos, _ = max(enumerate(dist), key=lambda e: e[1])
         return cluster[nearest_pos]
 
     def merge_cluster_shape(self, cluster):
         shape = self._merge_cluster_shape_mean_box_nearest(cluster)
         for ann in cluster:
-            dataset_id = self._context._item_map[self._context._ann_map[id(ann)][1]][1]
+            dataset_id = self._context.get_ann_source(id(ann))
             self._context.dataset_mean_consensus_score.setdefault(dataset_id, []).append(
                 max(0, self.distance(ann, shape))
             )
@@ -881,7 +899,7 @@ class SkeletonMerger(_ShapeMerger, SkeletonMatcher):
             for skeleton2 in cluster:
                 id_skeleton2 = id(skeleton2)
                 try:
-                    skeleton_distance += self._distance((id_skeleton1, id_skeleton2))
+                    skeleton_distance += self._distance.cache[(id_skeleton1, id_skeleton2)]
                 except KeyError:
                     skeleton_distance += 1
 
