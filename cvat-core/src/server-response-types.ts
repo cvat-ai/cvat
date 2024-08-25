@@ -347,6 +347,7 @@ export interface SerializedConsensusSettingsData {
     quorum?: number;
     iou_threshold?: number;
     sigma?: number;
+    line_thickness?: number;
 }
 
 export interface APIConsensusReportsFilter extends APICommonFilterParams {

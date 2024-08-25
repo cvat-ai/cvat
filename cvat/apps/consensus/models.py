@@ -67,6 +67,7 @@ class ConsensusSettings(models.Model):
     quorum = models.IntegerField(default=-1)
     iou_threshold = models.FloatField(default=0.5)
     sigma = models.FloatField(default=0.1)
+    line_thickness = models.FloatField(default=0.01)
 
     def __init__(self, *args: Any, **kwargs: Any) -> None:
         super().__init__(*args, **kwargs)

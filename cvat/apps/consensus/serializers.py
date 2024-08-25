@@ -76,7 +76,7 @@ class AssigneeConsensusReportSerializer(serializers.ModelSerializer):
 class ConsensusSettingsSerializer(serializers.ModelSerializer):
     class Meta:
         model = models.ConsensusSettings
-        fields = ("id", "task_id", "iou_threshold", "agreement_score_threshold", "quorum", "sigma")
+        fields = ("id", "task_id", "iou_threshold", "agreement_score_threshold", "quorum", "sigma", "line_thickness")
         read_only_fields = (
             "id",
             "task_id",
@@ -95,6 +95,9 @@ class ConsensusSettingsSerializer(serializers.ModelSerializer):
             "sigma": """
                 Sigma value for OKS calculation
             """,
+            "line_thickness": """
+                thickness of polylines, relatively to the (image area) ^ 0.5.
+            """,
         }.items():
             extra_kwargs.setdefault(field_name, {}).setdefault(
                 "help_text", textwrap.dedent(help_text.lstrip("\n"))
@@ -102,7 +105,7 @@ class ConsensusSettingsSerializer(serializers.ModelSerializer):
 
     def validate(self, attrs):
         for k, v in attrs.items():
-            if k.endswith("_threshold") and not 0 <= v <= 1:
+            if (k.endswith("_threshold") or k == "line_thickness") and not 0 <= v <= 1:
                 raise serializers.ValidationError(f"{k} must be in the range [0; 1]")
             elif k == "quorum" and not 0 <= v <= 10:
                 # since we have constrained max. consensus jobs per regular job to 10

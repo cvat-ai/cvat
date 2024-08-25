@@ -71,6 +71,7 @@ def _merge_consensus_jobs(task_id: int) -> None:
             output_conf_thresh=consensus_settings.agreement_score_threshold,
             quorum=consensus_settings.quorum,
             sigma=consensus_settings.sigma,
+            torso_r=consensus_settings.line_thickness,
         )
     )
 

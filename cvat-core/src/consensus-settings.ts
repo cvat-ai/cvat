@@ -13,6 +13,7 @@ export default class ConsensusSettings {
     #quorum: number;
     #agreementScoreThreshold: number;
     #sigma: number;
+    #lineThickness: number;
 
     constructor(initialData: SerializedConsensusSettingsData) {
         this.#id = initialData.id;
@@ -21,6 +22,7 @@ export default class ConsensusSettings {
         this.#agreementScoreThreshold = initialData.agreement_score_threshold;
         this.#quorum = initialData.quorum;
         this.#sigma = initialData.sigma;
+        this.#lineThickness = initialData.line_thickness;
     }
 
     get id(): number {
@@ -63,12 +65,21 @@ export default class ConsensusSettings {
         this.#agreementScoreThreshold = newVal;
     }
 
+    get lineThickness(): number {
+        return this.#lineThickness;
+    }
+
+    set lineThickness(newVal: number) {
+        this.#lineThickness = newVal;
+    }
+
     public toJSON(): SerializedConsensusSettingsData {
         const result: SerializedConsensusSettingsData = {
             iou_threshold: this.#iouThreshold,
             quorum: this.#quorum,
             agreement_score_threshold: this.#agreementScoreThreshold,
             sigma: this.#sigma,
+            line_thickness: this.#lineThickness,
         };
 
         return result;

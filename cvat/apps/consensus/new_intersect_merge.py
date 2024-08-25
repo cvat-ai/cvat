@@ -33,8 +33,9 @@ class IntersectMerge(ClassicIntersectMerge):
         sigma = attrib(converter=float, factory=float)
 
         output_conf_thresh = attrib(converter=float, default=0)
-        quorum = attrib(converter=int, default=0)
+        quorum = attrib(converter=int, default=0.1)
         ignored_attributes = attrib(converter=set, factory=set)
+        torso_r = attrib(converter=float, default=0.01)
 
         def _groups_converter(value):
             result = []

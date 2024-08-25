@@ -35,6 +35,7 @@ export default function ConsensusSettingsForm(props: Props): JSX.Element | null 
         agreementScoreThreshold: settings.agreementScoreThreshold * 100,
         quorum: settings.quorum,
         sigma: settings.sigma * 100,
+        lineThickness: settings.lineThickness * 100,
     };
 
     const onSave = useCallback(async () => {
@@ -46,6 +47,7 @@ export default function ConsensusSettingsForm(props: Props): JSX.Element | null 
                 settings.quorum = values.quorum;
                 settings.agreementScoreThreshold = values.agreementScoreThreshold / 100;
                 settings.sigma = values.sigma / 100;
+                settings.lineThickness = values.line_thickness / 100;
 
                 try {
                     const responseSettings = await settings.save();
@@ -139,6 +141,17 @@ export default function ConsensusSettingsForm(props: Props): JSX.Element | null 
                         rules={[{ required: true }]}
                     >
                         <InputNumber min={5} max={20} precision={0} />
+                    </Form.Item>
+                </Col>
+            </Row>
+            <Row>
+                <Col span={12}>
+                    <Form.Item
+                        name='lineThickness'
+                        label='Relative thickness (frame side %)'
+                        rules={[{ required: true }]}
+                    >
+                        <InputNumber min={0} max={1000} precision={0} />
                     </Form.Item>
                 </Col>
             </Row>
