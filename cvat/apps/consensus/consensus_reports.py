@@ -18,7 +18,6 @@ from datumaro.components.annotation import Annotation
 from datumaro.util import dump_json, parse_json
 from django.db import transaction
 
-from cvat.apps.engine import serializers as engine_serializers
 from cvat.apps.consensus import models
 from cvat.apps.consensus.models import (
     AssigneeConsensusReport,
@@ -29,6 +28,7 @@ from cvat.apps.consensus.models import (
 )
 from cvat.apps.consensus.new_intersect_merge import IntersectMerge
 from cvat.apps.dataset_manager.util import bulk_create
+from cvat.apps.engine import serializers as engine_serializers
 from cvat.apps.engine.models import Job, Task, User
 from cvat.apps.quality_control.quality_reports import AnnotationId, JobDataProvider, Serializable
 

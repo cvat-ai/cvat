@@ -76,7 +76,15 @@ class AssigneeConsensusReportSerializer(serializers.ModelSerializer):
 class ConsensusSettingsSerializer(serializers.ModelSerializer):
     class Meta:
         model = models.ConsensusSettings
-        fields = ("id", "task_id", "iou_threshold", "agreement_score_threshold", "quorum", "sigma", "line_thickness")
+        fields = (
+            "id",
+            "task_id",
+            "iou_threshold",
+            "agreement_score_threshold",
+            "quorum",
+            "sigma",
+            "line_thickness",
+        )
         read_only_fields = (
             "id",
             "task_id",
