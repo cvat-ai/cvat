@@ -247,12 +247,19 @@ class CachedSimilarityFunction:
 
 
 @attrs(kw_only=True)
-class _ShapeMatcher(AnnotationMatcher, DistanceComparator):
+class _ShapeMatcher(AnnotationMatcher):
     pairwise_dist = attrib(converter=float, default=0.9)
     cluster_dist = attrib(converter=float, default=-1.0)
     categories = attrib(converter=dict, default={})
     distance_index = attrib(converter=dict, default={})
-    return_distances = False
+    _distance_comparator = attrib(converter=DistanceComparator, default={})
+
+    def __attrs_post_init__(self):
+        self._distance_comparator = DistanceComparator(
+            iou_threshold=self._context.Conf.pairwise_dist,
+            oks_sigma=self._context.Conf.sigma,
+            line_torso_radius=self._context.Conf.torso_r,
+        )
 
     def _distance_func(self, item_a, item_b):
         return dm.ops.segment_iou(item_a, item_b)
@@ -290,7 +297,7 @@ class _ShapeMatcher(AnnotationMatcher, DistanceComparator):
             label_matcher = self.label_matcher
         if dist_thresh is None:
             dist_thresh = self.pairwise_dist
-        return self.match_segments(
+        return self._distance_comparator.match_segments(
             t=t,
             item_a=item_a,
             item_b=item_b,
@@ -389,10 +396,15 @@ class BboxMatcher(_ShapeMatcher):
             if a.attributes.get("rotation", 0) == b.attributes.get("rotation", 0):
                 return dm.ops.bbox_iou(a, b)
             else:
-                return segment_iou(self.to_polygon(a), self.to_polygon(b), img_h=img_h, img_w=img_w)
+                return segment_iou(
+                    self._distance_comparator.to_polygon(a),
+                    self._distance_comparator.to_polygon(b),
+                    img_h=img_h,
+                    img_w=img_w,
+                )
 
-        dataitem_id = self._context._ann_map[id(item_a)][1]
-        img_h, img_w = self._context._item_map[dataitem_id][0].image.size
+        data_item_id = self._context._ann_map[id(item_a)][1]
+        img_h, img_w = self._context._item_map[data_item_id][0].image.size
         return _bbox_iou(item_a, item_b, img_h=img_h, img_w=img_w)
 
     def match_annotations_two_sources(self, item_a: List[dm.Bbox], item_b: List[dm.Bbox]):
@@ -428,8 +440,8 @@ class PolygonMatcher(_ShapeMatcher):
                 dm.AnnotationType.mask, item
             )
 
-        dataitem_id = self._context._ann_map[id(item_a[0])][1]
-        img_h, img_w = self._context._item_map[dataitem_id][0].image.size
+        data_item_id = self._context._ann_map[id(item_a[0])][1]
+        img_h, img_w = self._context._item_map[data_item_id][0].image.size
 
         def _find_instances(annotations):
             # Group instance annotations by label.
@@ -623,9 +635,9 @@ class SkeletonMatcher(_ShapeMatcher):
             if a == b:
                 return 1
             elif (id(b), id(a)) in self._distance.keys():
-                return self._distance[(id(b), id(a))]
+                return self._distance.cache[(id(b), id(a))]
             else:
-                return self.distances[(id(a), id(b))]
+                return self._distance.cache[(id(a), id(b))]
         return matcher.distance(a, b)
 
     def _get_skeleton_info(self, skeleton_label_id: int):
