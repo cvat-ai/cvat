@@ -689,8 +689,8 @@ class SkeletonMatcher(_ShapeMatcher):
                 # Merge skeleton points into item_a single list
                 # The list is ordered by skeleton_info
                 skeleton_points = [
-                    next((p for p in skeleton.elements if p.label == sublabel), None)
-                    for sublabel in skeleton_info
+                    next((p for p in skeleton.elements if p.label == sub_label), None)
+                    for sub_label in skeleton_info
                 ]
 
                 # Build item_a single Points object for further comparisons
@@ -734,14 +734,11 @@ class SkeletonMatcher(_ShapeMatcher):
             distance=self.distance,
         )
 
-        matched = results[0]
-        if self.return_distances:
-            distances = self._distance
-
-        matched = [(points_map[id(p_a)], points_map[id(p_b)]) for (p_a, p_b) in matched]
+        matched = [(points_map[id(p_a)], points_map[id(p_b)]) for (p_a, p_b) in results[0]]
 
         # Map points back to skeletons
         if self.return_distances:
+            distances = self._distance
             for p_a_id, p_b_id in list(distances.keys()):
                 dist = distances.pop((p_a_id, p_b_id))
                 distances.set((id(points_map[p_a_id]), id(points_map[p_b_id])), dist)
