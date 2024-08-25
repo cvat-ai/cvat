@@ -700,7 +700,7 @@ def match_segments(
     return matches, mispred, a_unmatched, b_unmatched
 
 
-def OKS(a, b, sigma=0.1, bbox=None, scale=None, visibility_a=None, visibility_b=None):
+def oks(a, b, sigma=0.1, bbox=None, scale=None, visibility_a=None, visibility_b=None):
     """
     Object Keypoint Similarity metric.
     https://cocodataset.org/#keypoints-eval
@@ -743,7 +743,7 @@ class KeypointsMatcher(dm.ops.PointsMatcher):
             return 0
 
         bbox = dm.ops.mean_bbox([a_bbox, b_bbox])
-        return OKS(
+        return oks(
             a,
             b,
             sigma=self.sigma,
@@ -972,7 +972,7 @@ class DistanceComparator(dm.ops.DistanceComparator):
         self.panoptic_comparison = panoptic_comparison
         "Compare only the visible parts of polygons and masks"
 
-    def _instance_bbox(
+    def instance_bbox(
         self, instance_anns: Sequence[dm.Annotation]
     ) -> Tuple[float, float, float, float]:
         return dm.ops.max_bbox(
@@ -1267,7 +1267,7 @@ class DistanceComparator(dm.ops.DistanceComparator):
         for source_anns in [item_a.annotations, item_b.annotations]:
             source_instances = dm.ops.find_instances(source_anns)
             for instance_group in source_instances:
-                instance_bbox = self._instance_bbox(instance_group)
+                instance_bbox = self.instance_bbox(instance_group)
 
                 for ann in instance_group:
                     if ann.type == dm.AnnotationType.points:
@@ -1284,7 +1284,7 @@ class DistanceComparator(dm.ops.DistanceComparator):
             if a_area == 0 and b_area == 0:
                 # Simple case: singular points without bbox
                 # match them in the image space
-                return OKS(a, b, sigma=self.oks_sigma, scale=img_h * img_w)
+                return oks(a, b, sigma=self.oks_sigma, scale=img_h * img_w)
 
             else:
                 # Complex case: multiple points, grouped points, points with a bbox
@@ -1303,7 +1303,7 @@ class DistanceComparator(dm.ops.DistanceComparator):
                 matches, mismatches, a_extra, b_extra = match_segments(
                     range(len(a_points)),
                     range(len(b_points)),
-                    distance=lambda ai, bi: OKS(
+                    distance=lambda ai, bi: oks(
                         dm.Points(a_points[ai]),
                         dm.Points(b_points[bi]),
                         sigma=self.oks_sigma,
@@ -1404,7 +1404,7 @@ class DistanceComparator(dm.ops.DistanceComparator):
         instance_map = {}
         for source in [item_a.annotations, item_b.annotations]:
             for instance_group in dm.ops.find_instances(source):
-                instance_bbox = self._instance_bbox(instance_group)
+                instance_bbox = self.instance_bbox(instance_group)
 
                 instance_group = [
                     skeleton_map[id(a)] if isinstance(a, dm.Skeleton) else a

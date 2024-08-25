@@ -20,9 +20,9 @@ from datumaro.util.annotation_util import find_instances, max_bbox, mean_bbox
 from datumaro.util.attrs_util import ensure_cls
 
 from cvat.apps.engine.models import Label
-from cvat.apps.quality_control.quality_reports import OKS, DistanceComparator, KeypointsMatcher
+from cvat.apps.quality_control.quality_reports import DistanceComparator, KeypointsMatcher
 from cvat.apps.quality_control.quality_reports import LineMatcher as LineMatcherQualityReports
-from cvat.apps.quality_control.quality_reports import match_segments, segment_iou, to_rle
+from cvat.apps.quality_control.quality_reports import match_segments, oks, segment_iou, to_rle
 
 
 @attrs
@@ -574,7 +574,7 @@ class PointsMatcher(_ShapeMatcher):
         if a_area == 0 and b_area == 0:
             # Simple case: singular points without bbox
             # match them in the image space
-            return OKS(a, b, sigma=self.sigma, scale=img_h * img_w)
+            return oks(a, b, sigma=self.sigma, scale=img_h * img_w)
 
         else:
             # Complex case: multiple points, grouped points, points with item_a bbox
@@ -593,7 +593,7 @@ class PointsMatcher(_ShapeMatcher):
             matches, mismatches, a_extra, b_extra = match_segments(
                 range(len(a_points)),
                 range(len(b_points)),
-                distance=lambda ai, bi: OKS(
+                distance=lambda ai, bi: oks(
                     dm.Points(a_points[ai]),
                     dm.Points(b_points[bi]),
                     sigma=self.sigma,
@@ -614,7 +614,7 @@ class PointsMatcher(_ShapeMatcher):
             b_sorting_indices = [bi for _, bi in matched_points]
             b_points = b_points[b_sorting_indices]
 
-            # Compute OKS for 2 groups of points, matching points aligned
+            # Compute oks for 2 groups of points, matching points aligned
             dists = np.linalg.norm(a_points - b_points, axis=1)
             return np.sum(np.exp(-(dists**2) / (2 * scale * (2 * self.sigma) ** 2))) / (
                 len(matched_points) + len(a_extra) + len(b_extra)
