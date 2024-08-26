@@ -209,7 +209,7 @@ export default function AllocationTableComponent(props: Props): JSX.Element {
                     { text: 'Active', value: true },
                     { text: 'Excluded', value: false },
                 ],
-                onFilter: (value: boolean | Key, record: any) => record.actions.frameData.active === value,
+                onFilter: (value: boolean | Key, record: RowData) => record.actions.active === value,
                 render: ({ frameID, active }: { frameID: number, active: boolean }): JSX.Element => (
                     active ? (
                         <Icon

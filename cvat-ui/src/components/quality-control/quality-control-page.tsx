@@ -166,7 +166,7 @@ function QualityControlPage(): JSX.Element {
         },
     });
 
-    const requestedInstanceType: InstanceType = 'task' as InstanceType;
+    const requestedInstanceType: InstanceType = 'task';
     const requestedInstanceID = +useParams<{ tid: string }>().tid;
 
     const [instanceType, setInstanceType] = useState<InstanceType | null>(null);
@@ -174,24 +174,21 @@ function QualityControlPage(): JSX.Element {
     const isMounted = useIsMounted();
 
     const supportedTabs = ['overview', 'settings', 'management'];
-    const [activeTab, setTab] = useState(getTabFromHash(supportedTabs));
+    const [activeTab, setActiveTab] = useState(getTabFromHash(supportedTabs));
     const receiveInstance = async (type: InstanceType, id: number): Promise<Task | null> => {
         let receivedInstance: Task | null = null;
         let gtJob: Job | null = null;
         let gtJobMeta: FramesMetaData | null = null;
 
         try {
-            switch (type) {
-                case 'task': {
-                    [receivedInstance] = await core.tasks.get({ id });
-                    gtJob = receivedInstance.jobs.find((job: Job) => job.type === JobType.GROUND_TRUTH) ?? null;
-                    if (gtJob) {
-                        gtJobMeta = await core.frames.getMeta('job', gtJob.id) as FramesMetaData;
-                    }
-                    break;
+            if (instanceType === 'task') {
+                [receivedInstance] = await core.tasks.get({ id });
+                gtJob = receivedInstance.jobs.find((job: Job) => job.type === JobType.GROUND_TRUTH) ?? null;
+                if (gtJob) {
+                    gtJobMeta = await core.frames.getMeta('job', gtJob.id) as FramesMetaData;
                 }
-                default:
-                    return null;
+            } else {
+                return null;
             }
 
             if (isMounted()) {
@@ -328,7 +325,7 @@ function QualityControlPage(): JSX.Element {
     useEffect(() => {
         window.addEventListener('hashchange', () => {
             const hash = getTabFromHash(supportedTabs);
-            setTab(hash);
+            setActiveTab(hash);
         });
     }, []);
 
@@ -337,7 +334,7 @@ function QualityControlPage(): JSX.Element {
     }, [activeTab]);
 
     const onTabKeyChange = useCallback((key: string): void => {
-        setTab(key);
+        setActiveTab(key);
     }, []);
 
     let backNavigation: JSX.Element | null = null;

@@ -93,7 +93,7 @@ export function collectUsers(reports: Record<number, QualityReport>, path: strin
                 return report[path].username;
             }),
         ),
-    ).map((value: string | null) => ({ text: value || 'Is Empty', value: value || false }));
+    ).map((value: string | null) => ({ text: value ?? 'Is Empty', value: value ?? false }));
 }
 
 export function toRepresentation(val?: number, isPercent = true, decimals = 1): string {
