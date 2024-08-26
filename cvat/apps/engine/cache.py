@@ -100,9 +100,9 @@ class MediaCache:
     def _delete_cache_item(self, key: str):
         try:
             self._cache.delete(key)
-            slogger.glob.info(f'Removed chunk from the cache: key {key}')
+            slogger.glob.info(f"Removed chunk from the cache: key {key}")
         except pickle.UnpicklingError:
-            slogger.glob.error(f'Failed to remove item from the cache: key {key}', exc_info=True)
+            slogger.glob.error(f"Failed to remove item from the cache: key {key}", exc_info=True)
 
     def _get(self, key: str) -> Optional[DataWithMime]:
         slogger.glob.info(f"Starting to get chunk from cache: key {key}")
@@ -125,9 +125,7 @@ class MediaCache:
     ) -> str:
         return f"segment_{db_segment.id}_{chunk_number}_{quality}"
 
-    def _make_cloud_storage_preview_key(
-        self, db_cloud_storage: models.CloudStorage
-    ) -> str:
+    def _make_cloud_storage_preview_key(self, db_cloud_storage: models.CloudStorage) -> str:
         return f"cloudstorage_preview_{db_cloud_storage.id}"
 
     def get_segment_chunk(
@@ -175,9 +173,11 @@ class MediaCache:
         )
 
     def remove_segment_chunk(self, db_segment: models.Segment, chunk_number: str, *, quality: str):
-        self._delete_cache_item(self._make_segment_chunk_key(
-            db_segment=db_segment, chunk_number=chunk_number, quality=quality
-        ))
+        self._delete_cache_item(
+            self._make_segment_chunk_key(
+                db_segment=db_segment, chunk_number=chunk_number, quality=quality
+            )
+        )
 
     def get_cloud_preview(self, db_storage: models.CloudStorage) -> Optional[DataWithMime]:
         return self._get(self._make_cloud_storage_preview_key(db_storage))
@@ -385,8 +385,9 @@ class MediaCache:
             ) as read_frame_iter:
                 for frame_idx in range(db_data.chunk_size):
                     frame_idx = (
-                        db_data.start_frame +
-                        chunk_number * db_data.chunk_size + frame_idx * frame_step
+                        db_data.start_frame
+                        + chunk_number * db_data.chunk_size
+                        + frame_idx * frame_step
                     )
                     if db_data.stop_frame < frame_idx:
                         break
@@ -494,9 +495,7 @@ class MediaCache:
             return None, None
 
         with zipfile.ZipFile(zip_buffer, "a", zipfile.ZIP_DEFLATED, False) as zip_file:
-            common_path = os.path.commonpath(
-                list(map(lambda x: str(x.path), related_files))
-            )
+            common_path = os.path.commonpath(list(map(lambda x: str(x.path), related_files)))
             for related_file in related_files:
                 path = os.path.realpath(str(related_file.path))
                 name = os.path.relpath(str(related_file.path), common_path)

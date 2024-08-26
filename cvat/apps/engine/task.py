@@ -343,27 +343,36 @@ def _validate_job_file_mapping(
 def _validate_validation_params(
     db_task: models.Task, data: Dict[str, Any]
 ) -> Optional[dict[str, Any]]:
-    validation_params = data.get('validation_params', {})
-    if not validation_params:
+    params = data.get('validation_params', {})
+    if not params:
         return None
 
-    if validation_params['mode'] != models.ValidationMode.GT_POOL:
-        return validation_params
+    if (
+        params['frame_selection_method'] == models.JobFrameSelectionMethod.RANDOM_PER_JOB or
+        params['mode'] == models.ValidationMode.GT_POOL
+    ) and (frames_per_job := params.get('frames_per_job_count')):
+        if db_task.segment_size <= frames_per_job:
+            raise ValidationError(
+                "Validation frame count per job cannot be greater than segment size"
+            )
+
+    if params['mode'] != models.ValidationMode.GT_POOL:
+        return params
 
     if data.get('sorting_method', db_task.data.sorting_method) != models.SortingMethod.RANDOM:
-        raise ValidationError("validation mode '{}' can only be used with '{}' sorting".format(
+        raise ValidationError('validation mode "{}" can only be used with "{}" sorting'.format(
             models.ValidationMode.GT_POOL.value,
             models.SortingMethod.RANDOM.value,
         ))
 
     for incompatible_key in ['job_file_mapping', 'overlap']:
         if data.get(incompatible_key):
-            raise ValidationError("validation mode '{}' cannot be used with '{}'".format(
+            raise ValidationError('validation mode "{}" cannot be used with "{}"'.format(
                 models.ValidationMode.GT_POOL.value,
                 incompatible_key,
             ))
 
-    return validation_params
+    return params
 
 def _validate_manifest(
     manifests: List[str],
@@ -1118,7 +1127,7 @@ def _create_thread(
                     )
                 )
 
-    # TODO: refactor, support regular gt job
+    # TODO: refactor
     # Prepare jobs
     if validation_params and validation_params['mode'] == models.ValidationMode.GT_POOL:
         if db_task.mode != 'annotation':
@@ -1130,25 +1139,29 @@ def _create_thread(
         # The RNG backend must not change to yield reproducible frame picks,
         # so here we specify it explicitly
         from numpy import random
-        seed = validation_params["random_seed"]
+        seed = validation_params.get("random_seed")
         rng = random.Generator(random.MT19937(seed=seed))
 
+        pool_frames: list[int] = []
         match validation_params["frame_selection_method"]:
             case models.JobFrameSelectionMethod.RANDOM_UNIFORM:
                 frames_count = validation_params["frames_count"]
+                if len(images) < frames_count:
+                    raise ValidationError(
+                        f"The number of validation frames requested ({frames_count})"
+                        f"is greater that the number of task frames ({len(images)})"
+                    )
 
-                pool_frames: list[int] = rng.choice(
+                pool_frames = rng.choice(
                     all_frames, size=frames_count, shuffle=False, replace=False
                 ).tolist()
             case models.JobFrameSelectionMethod.MANUAL:
-                pool_frames: list[int] = []
-
                 known_frame_names = {frame.path: frame.frame for frame in images}
                 unknown_requested_frames = []
-                for frame_name in db_data.validation_layout.frames.all():
-                    frame_id = known_frame_names.get(frame_name)
+                for frame in db_data.validation_layout.frames.all():
+                    frame_id = known_frame_names.get(frame.path)
                     if frame_id is None:
-                        unknown_requested_frames.append(frame_name)
+                        unknown_requested_frames.append(frame.path)
                         continue
 
                     pool_frames.append(frame_id)
@@ -1164,7 +1177,15 @@ def _create_thread(
 
         # 2. distribute pool frames
         from datumaro.util import take_by
-        frames_per_job_count = validation_params["frames_per_job_count"]
+
+        if validation_params.get("frames_per_job_count"):
+            frames_per_job_count = validation_params["frames_per_job_count"]
+        elif validation_params.get("frames_per_job_percent"):
+            frames_per_job_count = max(
+                1, int(validation_params["frames_per_job_percent"] * db_task.segment_size)
+            )
+        else:
+            raise ValidationError("The number of validation frames is not specified")
 
         # Allocate frames for jobs
         job_file_mapping: JobFileMapping = []
@@ -1237,6 +1258,8 @@ def _create_thread(
         )
         manifest.create()
 
+        validation_frames = pool_frames
+
     if db_task.mode == 'annotation':
         models.Image.objects.bulk_create(images)
         images = models.Image.objects.filter(data_id=db_data.id)
@@ -1249,7 +1272,6 @@ def _create_thread(
             )
             for image in images
             for related_file_path in related_images.get(image.path, [])
-            if not image.is_placeholder # TODO
         ]
         models.RelatedFile.objects.bulk_create(db_related_files)
     else:
@@ -1270,13 +1292,76 @@ def _create_thread(
 
     _create_segments_and_jobs(db_task, job_file_mapping=job_file_mapping)
 
-    # TODO: refactor, support simple gt
-    if validation_params and validation_params['mode'] == models.ValidationMode.GT_POOL:
+    if validation_params and validation_params['mode'] == models.ValidationMode.GT:
+        # The RNG backend must not change to yield reproducible frame picks,
+        # so here we specify it explicitly
+        from numpy import random
+        seed = validation_params.get("random_seed")
+        rng = random.Generator(random.MT19937(seed=seed))
+
+        validation_frames: list[int] = []
+        match validation_params["frame_selection_method"]:
+            case models.JobFrameSelectionMethod.RANDOM_UNIFORM:
+                all_frames = range(len(images))
+
+                if validation_params.get("frames_count"):
+                    frames_count = validation_params["frames_count"]
+                    if len(images) < frames_count:
+                        raise ValidationError(
+                            f"The number of validation frames requested ({frames_count})"
+                            f"is greater that the number of task frames ({len(images)})"
+                        )
+                elif validation_params.get("frames_percent"):
+                    frames_count = max(
+                        1, int(validation_params["frames_percent"] * len(all_frames))
+                    )
+                else:
+                    raise ValidationError("The number of validation frames is not specified")
+
+                validation_frames = rng.choice(
+                    all_frames, size=frames_count, shuffle=False, replace=False
+                ).tolist()
+            case models.JobFrameSelectionMethod.RANDOM_PER_JOB:
+                if validation_params.get("frames_per_job_count"):
+                    frames_count = validation_params["frames_per_job_count"]
+                elif validation_params.get("frames_per_job_percent"):
+                    frames_count = max(
+                        1, int(validation_params["frames_per_job_percent"] * db_task.segment_size)
+                    )
+                else:
+                    raise ValidationError("The number of validation frames is not specified")
+
+                for segment in db_task.segment_set.all():
+                    validation_frames.extend(rng.choice(
+                        list(segment.frame_set), size=frames_count, shuffle=False, replace=False
+                    ).tolist())
+            case models.JobFrameSelectionMethod.MANUAL:
+                known_frame_names = {frame.path: frame.frame for frame in images}
+                unknown_requested_frames = []
+                for frame in db_data.validation_layout.frames.all():
+                    frame_id = known_frame_names.get(frame.path)
+                    if frame_id is None:
+                        unknown_requested_frames.append(frame.path)
+                        continue
+
+                    validation_frames.append(frame_id)
+
+                if unknown_requested_frames:
+                    raise ValidationError("Unknown validation frames requested: {}".format(
+                        format_list(unknown_requested_frames))
+                    )
+            case _:
+                assert False, (
+                    f'Unknown frame selection method {validation_params["frame_selection_method"]}'
+                )
+
+    # TODO: refactor
+    if validation_params:
         db_gt_segment = models.Segment(
             task=db_task,
             start_frame=0,
             stop_frame=db_data.stop_frame,
-            frames=pool_frames,
+            frames=validation_frames,
             type=models.SegmentType.SPECIFIC_FRAMES,
         )
         db_gt_segment.save()

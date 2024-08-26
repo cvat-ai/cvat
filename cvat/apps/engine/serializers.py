@@ -14,7 +14,7 @@ import rq.defaults as rq_defaults
 
 from tempfile import NamedTemporaryFile
 import textwrap
-from typing import Any, Dict, Iterable, Optional, OrderedDict, Union
+from typing import Any, Dict, Iterable, Optional, OrderedDict, Sequence, Union
 
 from rq.job import Job as RQJob, JobStatus as RQJobStatus
 from datetime import timedelta
@@ -929,6 +929,12 @@ class JobFileMapping(serializers.ListField):
         kwargs.setdefault('help_text', textwrap.dedent(__class__.__doc__))
         super().__init__(*args, **kwargs)
 
+def _validate_percent(value: float) -> float:
+    if not (0 <= value <= 1):
+        raise serializers.ValidationError("Value must be in the range [0; 1]")
+
+    return value
+
 class ValidationLayoutParamsSerializer(serializers.Serializer):
     mode = serializers.ChoiceField(choices=models.ValidationMode.choices(), required=True)
     frame_selection_method = serializers.ChoiceField(
@@ -938,32 +944,81 @@ class ValidationLayoutParamsSerializer(serializers.Serializer):
         child=serializers.CharField(max_length=MAX_FILENAME_LENGTH),
         default=[], required=False, allow_null=True
     )
-    frames_count = serializers.IntegerField(required=False, allow_null=True)
-    frames_percent = serializers.FloatField(required=False, allow_null=True)
+    frames_count = serializers.IntegerField(required=False, allow_null=True, min_value=1)
+    frames_percent = serializers.FloatField(
+        required=False, allow_null=True, validators=[_validate_percent]
+    )
     random_seed = serializers.IntegerField(required=False, allow_null=True)
-    frames_per_job_count = serializers.IntegerField(required=False, allow_null=True)
-    frames_per_job_percent = serializers.FloatField(required=False, allow_null=True)
+    frames_per_job_count = serializers.IntegerField(required=False, allow_null=True, min_value=1)
+    frames_per_job_percent = serializers.FloatField(
+        required=False, allow_null=True, validators=[_validate_percent]
+    )
 
-    # def validate(self, attrs):
-    #     if attrs['mode'] == models.ValidationMode.GT:
-    #         if not (
-    #             (
-    #                 attrs['frame_selection_method'] == models.JobFrameSelectionMethod.RANDOM_UNIFORM
-    #                 and (
-    #                     attrs.get('frames_count') is not None
-    #                     or attrs.get('frames_percent') is not None
-    #                 )
-    #                 and not attrs.get('frames')
-    #             )
-    #             ^
-    #             (
-    #                 ['frame_selection_method'] == models.JobFrameSelectionMethod.MANUAL
-    #                 and not attrs.get('frames')
-    #                 and attrs.get('frames_count') is None
-    #                 and attrs.get('frames_percent') is None
-    #             )
-    #         ):
-    #     return super().validate(attrs)
+    def validate(self, attrs):
+        def drop_none_keys(
+            d: dict[str, Any], *, keys: Optional[Sequence[str]] = None
+        ) -> dict[str, Any]:
+            if keys is None:
+                keys = d.keys()
+            return {k: v for k, v in d.items() if k in keys and v is not None}
+
+        def require_one_of_fields(keys: Sequence[str]) -> None:
+            notset = object()
+
+            active_count = sum(attrs.get(key, notset) is not notset for key in keys)
+            if active_count == 1:
+                return
+
+            options = ', '.join(f'"{k}"' for k in keys)
+
+            if not active_count:
+                raise serializers.ValidationError(f"One of the fields {options} required")
+            else:
+                raise serializers.ValidationError(f"Only 1 of the fields {options} can be used")
+
+        def require_one_of_values(key: str, values: Sequence[Any]) -> None:
+            if attrs[key] not in values:
+                raise serializers.ValidationError('"{}" must be one of {}'.format(
+                    key,
+                    ', '.join(f"{k}" for k in values)
+                ))
+
+        attrs = drop_none_keys(attrs)
+
+        if attrs["mode"] == models.ValidationMode.GT:
+            require_one_of_values("frame_selection_method", [
+                models.JobFrameSelectionMethod.MANUAL,
+                models.JobFrameSelectionMethod.RANDOM_UNIFORM,
+                models.JobFrameSelectionMethod.RANDOM_PER_JOB,
+            ])
+        elif attrs["mode"] == models.ValidationMode.GT_POOL:
+            require_one_of_values("frame_selection_method", [
+                models.JobFrameSelectionMethod.MANUAL,
+                models.JobFrameSelectionMethod.RANDOM_UNIFORM,
+            ])
+            require_one_of_fields(['frames_per_job_count', 'frames_per_job_percent'])
+        else:
+            assert False, f"Unknown validation mode {attrs['mode']}"
+
+        if attrs['frame_selection_method'] == models.JobFrameSelectionMethod.RANDOM_UNIFORM:
+            require_one_of_fields(['frames_count', 'frames_percent'])
+        elif attrs['frame_selection_method'] == models.JobFrameSelectionMethod.RANDOM_PER_JOB:
+            require_one_of_fields(['frames_per_job_count', 'frames_per_job_percent'])
+        elif attrs['frame_selection_method'] == models.JobFrameSelectionMethod.MANUAL:
+            if not attrs.get('frames'):
+                raise serializers.ValidationError('The "frames" field is required')
+
+        if (
+            attrs['frame_selection_method'] != models.JobFrameSelectionMethod.MANUAL and
+            attrs.get('frames')
+        ):
+            raise serializers.ValidationError(
+                '"frames" can only be used when "frame_selection_method" is "{}"'.format(
+                    models.JobFrameSelectionMethod.MANUAL
+                )
+            )
+
+        return super().validate(attrs)
 
     @transaction.atomic
     def create(self, validated_data):
@@ -974,7 +1029,7 @@ class ValidationLayoutParamsSerializer(serializers.Serializer):
 
         if frames:
             models.ValidationFrame.objects.bulk_create(
-                { "validation_layout": instance, "path": frame }
+                models.ValidationFrame(validation_layout=instance, path=frame)
                 for frame in frames
             )
 
@@ -994,7 +1049,7 @@ class ValidationLayoutParamsSerializer(serializers.Serializer):
                     db_frame.delete()
 
             models.ValidationFrame.objects.bulk_create(
-                { "validation_layout": instance, "path": frame }
+                models.ValidationFrame(validation_layout=instance, path=frame)
                 for frame in frames
             )
 

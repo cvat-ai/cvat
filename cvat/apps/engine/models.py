@@ -173,6 +173,7 @@ class JobType(str, Enum):
 
 class JobFrameSelectionMethod(str, Enum):
     RANDOM_UNIFORM = 'random_uniform'
+    RANDOM_PER_JOB = 'random_per_job'
     MANUAL = 'manual'
 
     @classmethod
@@ -249,7 +250,9 @@ class ValidationLayout(models.Model):
     frames_per_job_percent = models.FloatField(null=True)
 
 class ValidationFrame(models.Model):
-    validation_layout = models.ForeignKey(ValidationLayout, on_delete=models.CASCADE)
+    validation_layout = models.ForeignKey(
+        ValidationLayout, on_delete=models.CASCADE, related_name="frames"
+    )
     path = models.CharField(max_length=1024, default='')
 
 class Data(models.Model):
