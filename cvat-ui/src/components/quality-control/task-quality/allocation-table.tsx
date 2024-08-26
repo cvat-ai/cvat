@@ -15,6 +15,8 @@ import { RestoreIcon } from 'icons';
 import { sorter, QualityColors } from 'utils/quality';
 import CVATTooltip from 'components/common/cvat-tooltip';
 import { Key, ColumnType } from 'antd/lib/table/interface';
+import { usePlugins, Plugin } from 'utils/hooks';
+import { CombinedState } from 'reducers';
 
 const DEFAULT_TITLE_HEIGHT = 20;
 const DEFAULT_TITLE_WIDTH = 100;
@@ -66,6 +68,25 @@ export default function AllocationTableComponent(props: Props): JSX.Element {
     } = props;
 
     const history = useHistory();
+
+    const notAvailableComponent = (
+        <Text
+            style={{
+                color: getQualityColor(0),
+            }}
+        >
+            N/A
+        </Text>
+    )
+    const qualityColumnPlugins = usePlugins(
+        (state: CombinedState) =>
+            state.plugins.components.qualityControlPage.tabs.management.allocationTable.columns.quality, props, { frameID: null }
+    );
+
+    const useCountColumnPlugins = usePlugins(
+        (state: CombinedState) =>
+            state.plugins.components.qualityControlPage.tabs.management.allocationTable.columns.useCount, props, { frameID: null }
+    );
 
     const [select, setSelect] = useState<{ selectedRowKeys: Key[], selectedRows: RowData[] }>({
         selectedRowKeys: [],
@@ -163,15 +184,18 @@ export default function AllocationTableComponent(props: Props): JSX.Element {
                 key: 'useCount',
                 align: 'center' as const,
                 sorter: sorter('useCount'),
-                render: (): JSX.Element => (
-                    <Text
-                        style={{
-                            color: getQualityColor(0),
-                        }}
-                    >
-                        N/A
-                    </Text>
-                ),
+                render: (frameID): JSX.Element => {
+                    const useCountColumnItems: [JSX.Element, number][] = [[notAvailableComponent, 10]];
+                    useCountColumnItems.push(
+                        ...useCountColumnPlugins.map(({ component: Component, weight }, index) => {
+                            const component = <Component targetProps={props} key={index} targetState={{ frameID }}/>;
+                            return [component, weight] as [JSX.Element, number];
+                        }),
+                    );
+                    const renderedComponent = useCountColumnItems.sort((a, b) => b[1] - a[1])[0][0];
+
+                    return renderedComponent;
+                },
             },
             {
                 title: (
@@ -184,15 +208,18 @@ export default function AllocationTableComponent(props: Props): JSX.Element {
                 align: 'center' as const,
                 className: 'cvat-job-item-quality',
                 sorter: sorter('quality'),
-                render: (): JSX.Element => (
-                    <Text
-                        style={{
-                            color: getQualityColor(0),
-                        }}
-                    >
-                        N/A
-                    </Text>
-                ),
+                render: (frameID): JSX.Element => {
+                    const qualityColumnItems: [JSX.Element, number][] = [[notAvailableComponent, 10]];
+                    qualityColumnItems.push(
+                        ...qualityColumnPlugins.map(({ component: Component, weight }, index) => {
+                            const component = <Component targetProps={props} key={index} targetState={{ frameID }} />;
+                            return [component, weight] as [JSX.Element, number];
+                        }),
+                    );
+                    const renderedComponent = qualityColumnItems.sort((a, b) => b[1] - a[1])[0][0];
+
+                    return renderedComponent;
+                },
             },
             {
                 title: (

@@ -287,12 +287,14 @@ export interface PluginsState {
         qualityControlPage:{
             tabs: {
                 overview: PluginComponent[];
-                management: PluginComponent[];
-                settings: {
-                    form: {
-                        items: PluginComponent[];
-                    },
-                }
+                management: {
+                    allocationTable: {
+                        columns: {
+                            quality: PluginComponent[];
+                            useCount: PluginComponent[];
+                        }
+                    }
+                },
             },
         };
         projectActions: {

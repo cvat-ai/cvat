@@ -181,7 +181,7 @@ function QualityControlPage(): JSX.Element {
         let gtJobMeta: FramesMetaData | null = null;
 
         try {
-            if (instanceType === 'task') {
+            if (type === 'task') {
                 [receivedInstance] = await core.tasks.get({ id });
                 gtJob = receivedInstance.jobs.find((job: Job) => job.type === JobType.GROUND_TRUTH) ?? null;
                 if (gtJob) {

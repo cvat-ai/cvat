@@ -50,11 +50,13 @@ const defaultState: PluginsState = {
         qualityControlPage: {
             tabs: {
                 overview: [],
-                management: [],
-                settings: {
-                    form: {
-                        items: [],
-                    },
+                management: {
+                    allocationTable: {
+                        columns: {
+                            quality: [],
+                            useCount: [],
+                        }
+                    }
                 },
             },
         },
