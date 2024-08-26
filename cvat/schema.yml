@@ -7802,10 +7802,12 @@ components:
     FrameSelectionMethod:
       enum:
       - random_uniform
+      - random_per_job
       - manual
       type: string
       description: |-
         * `random_uniform` - RANDOM_UNIFORM
+        * `random_per_job` - RANDOM_PER_JOB
         * `manual` - MANUAL
     FunctionCall:
       type: object
@@ -10855,6 +10857,7 @@ components:
           default: []
         frames_count:
           type: integer
+          minimum: 1
           nullable: true
         frames_percent:
           type: number
@@ -10865,6 +10868,7 @@ components:
           nullable: true
         frames_per_job_count:
           type: integer
+          minimum: 1
           nullable: true
         frames_per_job_percent:
           type: number
