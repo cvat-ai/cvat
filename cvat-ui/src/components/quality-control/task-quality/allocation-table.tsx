@@ -3,6 +3,7 @@
 // SPDX-License-Identifier: MIT
 
 import React, { useEffect, useState } from 'react';
+import { useSelector } from 'react-redux';
 import { useHistory } from 'react-router';
 import { ResizableBox, ResizableProps, ResizeCallbackData } from 'react-resizable';
 import { Row, Col } from 'antd/lib/grid';
@@ -83,12 +84,18 @@ export default function AllocationTableComponent(props: Props): JSX.Element {
             state.plugins.components.qualityControlPage.tabs.management.allocationTable.columns.quality
         ), props, { frameID: null },
     );
+    const qualitySorter = useSelector((state: CombinedState) => (
+        state.plugins.callbacks.qualityControlPage.tabs.management.allocationTable.columns.quality.sorter
+    ))[0] ?? sorter('quality');
 
     const useCountColumnPlugins = usePlugins(
         (state: CombinedState) => (
             state.plugins.components.qualityControlPage.tabs.management.allocationTable.columns.useCount
         ), props, { frameID: null },
     );
+    const useCountSorter = useSelector((state: CombinedState) => (
+        state.plugins.callbacks.qualityControlPage.tabs.management.allocationTable.columns.useCount.sorter
+    ))[0] ?? sorter('useCount');
 
     const [select, setSelect] = useState<{ selectedRowKeys: Key[], selectedRows: RowData[] }>({
         selectedRowKeys: [],
@@ -185,7 +192,7 @@ export default function AllocationTableComponent(props: Props): JSX.Element {
                 dataIndex: 'useCount',
                 key: 'useCount',
                 align: 'center' as const,
-                sorter: sorter('useCount'),
+                sorter: useCountSorter,
                 render: (frameID): JSX.Element => {
                     const useCountColumnItems: [JSX.Element, number][] = [[notAvailableComponent, 10]];
                     useCountColumnItems.push(
@@ -209,7 +216,7 @@ export default function AllocationTableComponent(props: Props): JSX.Element {
                 key: 'quality',
                 align: 'center' as const,
                 className: 'cvat-job-item-quality',
-                sorter: sorter('quality'),
+                sorter: qualitySorter,
                 render: (frameID): JSX.Element => {
                     const qualityColumnItems: [JSX.Element, number][] = [[notAvailableComponent, 10]];
                     qualityColumnItems.push(

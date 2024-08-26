@@ -259,6 +259,22 @@ export interface PluginsState {
                 };
             };
         };
+        qualityControlPage:{
+            tabs: {
+                management: {
+                    allocationTable: {
+                        columns: {
+                            quality: {
+                                sorter: ((row1: any, row2: any) => number)[];
+                            };
+                            useCount: {
+                                sorter: ((row1: any, row2: any) => number)[];
+                            };
+                        }
+                    }
+                },
+            },
+        };
     };
     components: {
         header: {

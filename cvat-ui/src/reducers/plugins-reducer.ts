@@ -22,6 +22,22 @@ const defaultState: PluginsState = {
                 },
             },
         },
+        qualityControlPage: {
+            tabs: {
+                management: {
+                    allocationTable: {
+                        columns: {
+                            quality: {
+                                sorter: [],
+                            },
+                            useCount: {
+                                sorter: [],
+                            },
+                        },
+                    },
+                },
+            },
+        },
     },
     components: {
         header: {
