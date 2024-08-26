@@ -11,6 +11,7 @@ from pathlib import Path
 from typing import (
     TYPE_CHECKING,
     Any,
+    Callable,
     Dict,
     Generic,
     List,
@@ -218,7 +219,59 @@ class ModelDeleteMixin:
         self.api.destroy(id=getattr(self, self._model_id_field))
 
 
-class ExportDatasetMixin(Generic[_EntityT]):
+class _ExportMixin(Generic[_EntityT]):
+    def export(
+        self,
+        endpoint: Callable,
+        filename: StrPath,
+        *,
+        pbar: Optional[ProgressReporter] = None,
+        status_check_period: Optional[int] = None,
+        location: Optional[Location] = None,
+        cloud_storage_id: Optional[int] = None,
+        **query_params,
+    ) -> None:
+        query_params = {
+            **query_params,
+            **({"location": location} if location else {}),
+        }
+
+        if location == Location.CLOUD_STORAGE:
+            if not cloud_storage_id:
+                raise ValueError(
+                    f"Cloud storage ID must be specified when {location!r} location is used"
+                )
+
+            query_params["cloud_storage_id"] = cloud_storage_id
+
+        local_downloading = (
+            location == Location.LOCAL
+            or not location
+            and (not self.target_storage or self.target_storage.location.value == Location.LOCAL)
+        )
+
+        if not local_downloading:
+            query_params["filename"] = str(filename)
+
+        downloader = Downloader(self._client)
+        bg_request = downloader.prepare_file(
+            endpoint,
+            url_params={"id": self.id},
+            query_params=query_params,
+            status_check_period=status_check_period,
+        )
+
+        result_url = bg_request.result_url
+        if local_downloading:
+            assert result_url
+        else:
+            assert not result_url
+
+        if result_url:
+            downloader.download_file(result_url, output_path=Path(filename), pbar=pbar)
+
+
+class ExportDatasetMixin(_ExportMixin):
     def export_dataset(
         self,
         format_name: str,
@@ -233,59 +286,30 @@ class ExportDatasetMixin(Generic[_EntityT]):
         """
         Export a dataset in the specified format (e.g. 'YOLO ZIP 1.0').
         By default, a result file will be downloaded based on the default configuration.
-        To download a file locally by force, pass `location=local`.
+        To download a file locally by force, pass `location=Location.LOCAL`.
         To save a file to a specific cloud storage, use the `location` and `cloud_storage_id` arguments.
 
         Args:
-            filename (StrPath): Path to file where a file will be downloaded
+            filename (StrPath): A path to which a file will be downloaded
             status_check_period (int, optional): Sleep interval in seconds between status checks. Defaults to None.
             pbar (Optional[ProgressReporter], optional): Can be used to show a progress when downloading file locally. Defaults to None.
             location (Optional[Location], optional): Location to which a file will be uploaded. Can be Location.LOCAL or Location.CLOUD_STORAGE. Defaults to None.
-            cloud_storage_id (Optional[int], optional): ID of cloud storage to which a file will be uploaded. Defaults to None.
+            cloud_storage_id (Optional[int], optional): ID of cloud storage to which a file should be uploaded. Defaults to None.
 
         Raises:
             ValueError: When location is Location.CLOUD_STORAGE but no cloud_storage_id is passed
         """
 
-        query_params = {
-            "format": format_name,
-            "save_images": include_images,
-            **({"location": location} if location else {}),
-        }
-
-        if location == Location.CLOUD_STORAGE:
-            if not cloud_storage_id:
-                raise ValueError(
-                    f"Cloud storage ID must be specified when {location!r} location is used"
-                )
-
-            query_params = {
-                **query_params,
-                "cloud_storage_id": cloud_storage_id,
-            }
-
-        is_cloud_used_by_default = (
-            self.target_storage and self.target_storage.location.value == Location.CLOUD_STORAGE
-        )
-        if is_cloud_used_by_default or location == Location.CLOUD_STORAGE:
-            query_params["filename"] = str(filename)
-
-        downloader = Downloader(self._client)
-        bg_request = downloader.prepare_file(
+        self.export(
             self.api.create_dataset_export_endpoint,
-            url_params={"id": self.id},
-            query_params=query_params,
+            filename,
+            pbar=pbar,
             status_check_period=status_check_period,
+            location=location,
+            cloud_storage_id=cloud_storage_id,
+            format=format_name,
+            save_images=include_images,
         )
-
-        result_url = bg_request.result_url
-        if location == Location.LOCAL or not location and not is_cloud_used_by_default:
-            assert result_url
-        else:
-            assert not result_url
-
-        if result_url:
-            downloader.download_file(result_url, output_path=Path(filename), pbar=pbar)
 
         self._client.logger.info(
             f"Dataset for {self.__class__.__name__.lower()} {self.id} has been downloaded to {filename}"
@@ -306,46 +330,14 @@ class DownloadBackupMixin(Generic[_EntityT]):
         Create a resource backup and download it locally or upload to a cloud storage
         """
 
-        if location not in ("local", "cloud_storage", None):
-            raise ValueError(f"Unsupported location: {location!r}")
-
-        query_params = {
-            **({"location": location} if location else {}),
-        }
-
-        is_cloud_used_by_default = (
-            self.target_storage and self.target_storage.location.value == "cloud_storage"
-        )
-        if is_cloud_used_by_default or location == "cloud_storage":
-            query_params["filename"] = str(filename)
-
-        if location == "cloud_storage":
-            if not cloud_storage_id:
-                raise ValueError(
-                    f"Cloud storage ID must be specified when {location!r} location is used"
-                )
-
-            query_params = {
-                **query_params,
-                "cloud_storage_id": cloud_storage_id,
-            }
-
-        downloader = Downloader(self._client)
-        bg_request = downloader.prepare_file(
+        self.export(
             self.api.create_backup_export_endpoint,
-            url_params={"id": self.id},
-            query_params=query_params,
+            filename,
+            pbar=pbar,
             status_check_period=status_check_period,
+            location=location,
+            cloud_storage_id=cloud_storage_id,
         )
-
-        result_url = bg_request.result_url
-        if location == "local" or not location and not is_cloud_used_by_default:
-            assert result_url
-        else:
-            assert not result_url
-
-        if result_url:
-            downloader.download_file(result_url, output_path=Path(filename), pbar=pbar)
 
         self._client.logger.info(
             f"Backup for {self.__class__.__name__.lower()} {self.id} has been downloaded to {filename}"

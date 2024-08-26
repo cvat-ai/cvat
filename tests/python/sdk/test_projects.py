@@ -3,7 +3,6 @@
 # SPDX-License-Identifier: MIT
 
 import io
-import zipfile
 from logging import Logger
 from pathlib import Path
 from typing import Optional, Tuple
@@ -18,12 +17,12 @@ from cvat_sdk.core.utils import filter_dict
 from PIL import Image
 
 from shared.utils.config import IMPORT_EXPORT_BUCKET_ID
-from shared.utils.s3 import make_client as make_s3_client
 
+from .common import _TestDatasetExport
 from .util import make_pbar
 
 
-class TestProjectUsecases:
+class TestProjectUsecases(_TestDatasetExport):
     @pytest.fixture(autouse=True)
     def setup(
         self,
@@ -240,6 +239,7 @@ class TestProjectUsecases:
         assert "100%" in pbar_out.getvalue().strip("\r").split("\r")[-1]
         assert self.stdout.getvalue() == ""
 
+    @pytest.mark.parametrize("annotation_format", ("CVAT for images 1.1",))
     @pytest.mark.parametrize("include_images", (True, False))
     @pytest.mark.parametrize(
         "fxt_name",
@@ -251,6 +251,7 @@ class TestProjectUsecases:
     @pytest.mark.parametrize("location", (None, Location.LOCAL, Location.CLOUD_STORAGE))
     def test_can_export_dataset(
         self,
+        annotation_format: str,
         include_images: bool,
         fxt_name: str,
         location: Optional[Location],
@@ -258,57 +259,16 @@ class TestProjectUsecases:
         cloud_storages,
     ):
         project: Project = request.getfixturevalue(fxt_name)
-        path = self.tmp_path / f"project_{project.id}-cvat.zip"
-        kwargs = dict()
-
-        if (
-            location == Location.LOCAL
-            or not location
-            and (
-                not project.target_storage
-                or project.target_storage.location.value == Location.LOCAL
-            )
-        ):
-            pbar_out = io.StringIO()
-            pbar = make_pbar(file=pbar_out)
-            kwargs = {
-                **kwargs,
-                "pbar": pbar,
-            }
-
-            project.export_dataset(
-                format_name="CVAT for images 1.1",
-                filename=path,
-                include_images=include_images,
-                location=location,
-                **kwargs,
-            )
-            assert self.stdout.getvalue() == ""
-            assert "100%" in pbar_out.getvalue().strip("\r").split("\r")[-1]
-            assert path.is_file()
-        else:
-            s3_client = make_s3_client()
-            bucket = next(cs for cs in cloud_storages if cs["id"] == IMPORT_EXPORT_BUCKET_ID)[
-                "resource"
-            ]
-            request.addfinalizer(lambda: s3_client.remove_file(bucket, filename=str(path)))
-            kwargs = {
-                **kwargs,
-                "cloud_storage_id": (
-                    IMPORT_EXPORT_BUCKET_ID if location == Location.CLOUD_STORAGE else None
-                ),
-            }
-
-            project.export_dataset(
-                format_name="CVAT for images 1.1",
-                filename=path,
-                include_images=include_images,
-                location=location,
-                **kwargs,
-            )
-            assert self.stdout.getvalue() == ""
-            dataset = s3_client.download_fileobj(bucket, str(path))
-            assert zipfile.is_zipfile(io.BytesIO(dataset))
+        file_path = self.tmp_path / f"project_{project.id}-{annotation_format.lower()}.zip"
+        self._test_can_export_dataset(
+            project,
+            file_path=file_path,
+            annotation_format=annotation_format,
+            include_images=include_images,
+            location=location,
+            request=request,
+            cloud_storages=cloud_storages,
+        )
 
     def test_can_download_preview(self, fxt_project_with_shapes: Project):
         frame_encoded = fxt_project_with_shapes.get_preview()

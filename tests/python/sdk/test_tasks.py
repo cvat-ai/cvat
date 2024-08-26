@@ -19,12 +19,12 @@ from PIL import Image
 
 from shared.utils.config import IMPORT_EXPORT_BUCKET_ID
 from shared.utils.helpers import generate_image_files
-from shared.utils.s3 import make_client as make_s3_client
 
+from .common import _TestDatasetExport
 from .util import make_pbar
 
 
-class TestTaskUsecases:
+class TestTaskUsecases(_TestDatasetExport):
     @pytest.fixture(autouse=True)
     def setup(
         self,
@@ -294,6 +294,7 @@ class TestTaskUsecases:
         assert self.logger_stream.getvalue(), f".*Task ID {task_id} deleted.*"
         assert self.stdout.getvalue() == ""
 
+    @pytest.mark.parametrize("annotation_format", ("CVAT for images 1.1",))
     @pytest.mark.parametrize("include_images", (True, False))
     @pytest.mark.parametrize(
         "fxt_task_name",
@@ -303,8 +304,9 @@ class TestTaskUsecases:
         ),
     )
     @pytest.mark.parametrize("location", (None, Location.LOCAL, Location.CLOUD_STORAGE))
-    def test_can_download_dataset(
+    def test_can_export_dataset(
         self,
+        annotation_format: str,
         include_images: bool,
         fxt_task_name: str,
         location: Optional[Location],
@@ -312,54 +314,16 @@ class TestTaskUsecases:
         cloud_storages,
     ):
         task: Task = request.getfixturevalue(fxt_task_name)
-        path = self.tmp_path / f"task_{task.id}-cvat.zip"
-        kwargs = dict()
-
-        if (
-            location == Location.LOCAL
-            or not location
-            and (not task.target_storage or task.target_storage.location.value == Location.LOCAL)
-        ):
-            pbar_out = io.StringIO()
-            pbar = make_pbar(file=pbar_out)
-            kwargs = {
-                **kwargs,
-                "pbar": pbar,
-            }
-
-            task.export_dataset(
-                format_name="CVAT for images 1.1",
-                filename=path,
-                include_images=include_images,
-                location=location,
-                **kwargs,
-            )
-            assert self.stdout.getvalue() == ""
-            assert "100%" in pbar_out.getvalue().strip("\r").split("\r")[-1]
-            assert path.is_file()
-        else:
-            s3_client = make_s3_client()
-            bucket = next(cs for cs in cloud_storages if cs["id"] == IMPORT_EXPORT_BUCKET_ID)[
-                "resource"
-            ]
-            request.addfinalizer(lambda: s3_client.remove_file(bucket, filename=str(path)))
-            kwargs = {
-                **kwargs,
-                "cloud_storage_id": (
-                    IMPORT_EXPORT_BUCKET_ID if location == Location.CLOUD_STORAGE else None
-                ),
-            }
-
-            task.export_dataset(
-                format_name="CVAT for images 1.1",
-                filename=path,
-                include_images=include_images,
-                location=location,
-                **kwargs,
-            )
-            assert self.stdout.getvalue() == ""
-            dataset = s3_client.download_fileobj(bucket, str(path))
-            assert zipfile.is_zipfile(io.BytesIO(dataset))
+        file_path = self.tmp_path / f"task_{task.id}-{annotation_format.lower()}.zip"
+        self._test_can_export_dataset(
+            task,
+            file_path=file_path,
+            annotation_format=annotation_format,
+            include_images=include_images,
+            location=location,
+            request=request,
+            cloud_storages=cloud_storages,
+        )
 
     def test_can_download_dataset_twice_in_a_row(self, fxt_new_task: Task):
         pbar_out = io.StringIO()
