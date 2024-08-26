@@ -55,8 +55,8 @@ const defaultState: PluginsState = {
                         columns: {
                             quality: [],
                             useCount: [],
-                        }
-                    }
+                        },
+                    },
                 },
             },
         },

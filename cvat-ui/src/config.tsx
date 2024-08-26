@@ -139,14 +139,14 @@ const BLACKLISTED_GO_BACK_PATHS = [
 ];
 
 const PAID_PLACEHOLDER_CONFIG = {
-    url: "https://www.cvat.ai/pricing/cloud",
+    url: 'https://www.cvat.ai/pricing/cloud',
     features: {
         qualityControl:
-        "The Quality Control feature enables effortless evaluation of annotation quality by creating" +
-        " a Ground Truth job that works as benchmark. CVAT automatically compares all task-related jobs" +
-        " to this benchmark, calculating annotation precision to ensure high-quality results."
-    }
-}
+        'The Quality Control feature enables effortless evaluation of annotation quality by creating' +
+        ' a Ground Truth job that works as benchmark. CVAT automatically compares all task-related jobs' +
+        ' to this benchmark, calculating annotation precision to ensure high-quality results.',
+    },
+};
 
 export default {
     UNDEFINED_ATTRIBUTE_VALUE,

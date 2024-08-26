@@ -15,7 +15,7 @@ import { RestoreIcon } from 'icons';
 import { sorter, QualityColors } from 'utils/quality';
 import CVATTooltip from 'components/common/cvat-tooltip';
 import { Key, ColumnType } from 'antd/lib/table/interface';
-import { usePlugins, Plugin } from 'utils/hooks';
+import { usePlugins } from 'utils/hooks';
 import { CombinedState } from 'reducers';
 
 const DEFAULT_TITLE_HEIGHT = 20;
@@ -77,15 +77,17 @@ export default function AllocationTableComponent(props: Props): JSX.Element {
         >
             N/A
         </Text>
-    )
+    );
     const qualityColumnPlugins = usePlugins(
-        (state: CombinedState) =>
-            state.plugins.components.qualityControlPage.tabs.management.allocationTable.columns.quality, props, { frameID: null }
+        (state: CombinedState) => (
+            state.plugins.components.qualityControlPage.tabs.management.allocationTable.columns.quality
+        ), props, { frameID: null },
     );
 
     const useCountColumnPlugins = usePlugins(
-        (state: CombinedState) =>
-            state.plugins.components.qualityControlPage.tabs.management.allocationTable.columns.useCount, props, { frameID: null }
+        (state: CombinedState) => (
+            state.plugins.components.qualityControlPage.tabs.management.allocationTable.columns.useCount
+        ), props, { frameID: null },
     );
 
     const [select, setSelect] = useState<{ selectedRowKeys: Key[], selectedRows: RowData[] }>({
@@ -188,7 +190,7 @@ export default function AllocationTableComponent(props: Props): JSX.Element {
                     const useCountColumnItems: [JSX.Element, number][] = [[notAvailableComponent, 10]];
                     useCountColumnItems.push(
                         ...useCountColumnPlugins.map(({ component: Component, weight }, index) => {
-                            const component = <Component targetProps={props} key={index} targetState={{ frameID }}/>;
+                            const component = <Component targetProps={props} key={index} targetState={{ frameID }} />;
                             return [component, weight] as [JSX.Element, number];
                         }),
                     );
@@ -250,7 +252,7 @@ export default function AllocationTableComponent(props: Props): JSX.Element {
                     )
                 ),
             },
-        ])
+        ]);
     }, []);
 
     const data = gtJobMeta.includedFrames.map((frameID: number) => ({
