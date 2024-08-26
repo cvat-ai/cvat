@@ -47,7 +47,60 @@ export default class QualityConfigurationForm extends React.PureComponent<Props>
             });
         }
 
-        return Promise.reject(new Error('Qualiuty form ref is empty'));
+        return Promise.reject(new Error('Quality form ref is empty'));
+    }
+
+    private gtParamsBlock(): JSX.Element {
+        return (
+            <>
+                <Col>
+                    <Form.Item
+                        name='frameSelectionMethod'
+                        label='Frame selection method'
+                        rules={[{ required: true, message: 'Please, specify frame selection method' }]}
+                    >
+                        <Select className='cvat-select-frame-selection-method'>
+                            <Select.Option value={FrameSelectionMethod.RANDOM}>Random</Select.Option>
+                            <Select.Option value={FrameSelectionMethod.RANDOM_PER_JOB}>Random per job</Select.Option>
+                        </Select>
+                    </Form.Item>
+                </Col>
+                <Col span={7}>
+                    <Form.Item
+                        label='Quantity (%)'
+                        name='validationFramesPercent'
+                        rules={[{ required: true, message: 'The field is required.' }]}
+                    >
+                        <Input size='large' type='number' min={0} max={100} suffix={<PercentageOutlined />} />
+                    </Form.Item>
+                </Col>
+            </>
+        );
+    }
+
+    private honeypotsParamsBlock(): JSX.Element {
+        return (
+            <Row>
+                <Col span={7}>
+                    <Form.Item
+                        label='Overhead per job (%)'
+                        name='validationFramesPerJob'
+                        rules={[{ required: true, message: 'The field is required.' }]}
+                    >
+                        <Input size='large' type='number' min={0} max={100} suffix={<PercentageOutlined />} />
+                    </Form.Item>
+                </Col>
+                <Col span={7} offset={1}>
+                    <Form.Item
+                        label='Total honeypots (%)'
+                        name='validationFramesPercent'
+                        rules={[{ required: true, message: 'The field is required.' }]}
+                    >
+                        <Input size='large' type='number' min={0} max={100} suffix={<PercentageOutlined />} />
+                    </Form.Item>
+                </Col>
+            </Row>
+        );
     }
 
     public render(): JSX.Element {
@@ -55,75 +108,9 @@ export default class QualityConfigurationForm extends React.PureComponent<Props>
 
         let paramsBlock: JSX.Element | null = null;
         if (validationMethod === ValidationMethod.GT) {
-            paramsBlock = (
-                <>
-                    <Col>
-                        <Form.Item
-                            name='frameSelectionMethod'
-                            label='Frame selection method'
-                            rules={[{ required: true, message: 'Please, specify frame selection method' }]}
-                        >
-                            <Select
-                                className='cvat-select-frame-selection-method'
-                            >
-                                <Select.Option value={FrameSelectionMethod.RANDOM}>
-                                    Random
-                                </Select.Option>
-                                <Select.Option value={FrameSelectionMethod.RANDOM_PER_JOB}>
-                                    Random per job
-                                </Select.Option>
-                            </Select>
-                        </Form.Item>
-                    </Col>
-                    <Col span={7}>
-                        <Form.Item
-                            label='Quantity (%)'
-                            name='validationFramesPercent'
-                            rules={[
-                                {
-                                    required: true,
-                                    message: 'The field is required.',
-                                },
-                            ]}
-                        >
-                            <Input size='large' type='number' min={0} max={100} suffix={<PercentageOutlined />} />
-                        </Form.Item>
-                    </Col>
-                </>
-            );
+            paramsBlock = this.gtParamsBlock();
         } else if (validationMethod === ValidationMethod.HONEYPOTS) {
-            paramsBlock = (
-                <Row>
-                    <Col span={7}>
-                        <Form.Item
-                            label='Overhead per job (%)'
-                            name='validationFramesPerJob'
-                            rules={[
-                                {
-                                    required: true,
-                                    message: 'The field is required.',
-                                },
-                            ]}
-                        >
-                            <Input size='large' type='number' min={0} max={100} suffix={<PercentageOutlined />} />
-                        </Form.Item>
-                    </Col>
-                    <Col span={7} offset={1}>
-                        <Form.Item
-                            label='Total honeypots (%)'
-                            name='validationFramesPercent'
-                            rules={[
-                                {
-                                    required: true,
-                                    message: 'The field is required.',
-                                },
-                            ]}
-                        >
-                            <Input size='large' type='number' min={0} max={100} suffix={<PercentageOutlined />} />
-                        </Form.Item>
-                    </Col>
-                </Row>
-            );
+            paramsBlock = this.honeypotsParamsBlock();
         }
 
         return (

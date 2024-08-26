@@ -32,13 +32,12 @@ function TaskQualityManagementComponent(props: Props): JSX.Element {
         onDeleteFrames, onRestoreFrames, fetching,
     } = props;
 
-    const activeCount = gtJobMeta.includedFrames.reduce((acc: number, frameID: number) => (
-        !(frameID in gtJobMeta.deletedFrames) ? acc + 1 : acc
-    ), 0);
-
-    const excludedCount = Object.keys(gtJobMeta.deletedFrames).reduce((acc: number, frameID: string) => (
-        gtJobMeta.includedFrames.includes(+frameID) ? acc + 1 : acc
-    ), 0);
+    const activeCount = gtJobMeta.includedFrames.filter((frameID: number) => (
+        !(frameID in gtJobMeta.deletedFrames)
+    )).length;
+    const excludedCount = Object.keys(gtJobMeta.deletedFrames).filter((frameID: string) => (
+        gtJobMeta.includedFrames.includes(+frameID)
+    )).length;
 
     const managementPagePlugins = usePlugins(
         (state: CombinedState) => (

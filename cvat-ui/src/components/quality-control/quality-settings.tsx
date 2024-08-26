@@ -26,7 +26,7 @@ export default function QualitySettingsComponent(props: Props): JSX.Element | nu
     const onSave = useCallback(async () => {
         const values = await form.validateFields();
         setQualitySettings(values);
-    }, [form]);
+    }, [form, setQualitySettings]);
 
     if (fetching) {
         return (
