@@ -25,6 +25,9 @@ if settings.IAM_TYPE == 'BASIC':
             if allauth_settings.EMAIL_REQUIRED:
                 EmailAddress.objects.get_or_create(user=instance,
                     email=instance.email, primary=True, verified=True)
+        elif instance.is_staff:  # adding every staff member to analytics group
+            db_group = Group.objects.get(name=settings.IAM_ANALYTICS_ROLE)
+            instance.groups.add(db_group)
         else: # don't need to add default groups for superuser
             if created and not getattr(instance, 'skip_group_assigning', None):
                 db_group = Group.objects.get(name=settings.IAM_DEFAULT_ROLE)

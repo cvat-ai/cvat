@@ -5,6 +5,7 @@ import rego.v1
 # Groups
 ADMIN := "admin"
 BUSINESS := "business"
+ANALYTICS := "analytics"
 USER := "user"
 WORKER := "worker"
 
@@ -62,6 +63,7 @@ UPDATE_ORG := "update:organization"
 get_priority(privilege) := {
     ADMIN: 0,
     BUSINESS: 50,
+    ANALYTICS: 70,
     USER: 75,
     WORKER: 100,
     null: 1000
@@ -77,6 +79,10 @@ is_admin if {
 
 is_business if {
     input.auth.user.privilege == BUSINESS
+}
+
+is_analytics if {
+    input.auth.user.privilege == ANALYTICS
 }
 
 is_user if {
