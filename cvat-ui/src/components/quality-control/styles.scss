@@ -4,13 +4,6 @@
 
 @import 'base';
 
-.cvat-quality-settings-switch {
-    padding: $grid-unit-size $grid-unit-size * 1.25;
-    border: 1px solid lightgray;
-    margin-left: $grid-unit-size;
-    border-radius: $border-radius-base;
-}
-
 .cvat-quality-settings-title {
     margin-bottom: $grid-unit-size * 2;
     align-items: center;

@@ -44,7 +44,6 @@ interface State {
     qualitySettings: {
         settings: QualitySettings | null;
         fetching: boolean;
-        visible: boolean;
         getQualityColor: (value?: number) => QualityColors;
     },
 }
@@ -54,7 +53,6 @@ enum ReducerActionType {
     SET_TASK_REPORT = 'SET_TASK_REPORT',
     SET_JOBS_REPORTS = 'SET_JOBS_REPORTS',
     SET_QUALITY_SETTINGS = 'SET_QUALITY_SETTINGS',
-    SET_QUALITY_SETTINGS_VISIBLE = 'SET_QUALITY_SETTINGS_VISIBLE',
     SET_QUALITY_SETTINGS_FETCHING = 'SET_QUALITY_SETTINGS_FETCHING',
     SET_REPORT_REFRESHING_STATUS = 'SET_REPORT_REFRESHING_STATUS',
     SET_GT_JOB = 'SET_GT_JOB',
@@ -73,9 +71,6 @@ export const reducerActions = {
     ),
     setQualitySettings: (qualitySettings: QualitySettings) => (
         createAction(ReducerActionType.SET_QUALITY_SETTINGS, { qualitySettings })
-    ),
-    setQualitySettingsVisible: (visible: boolean) => (
-        createAction(ReducerActionType.SET_QUALITY_SETTINGS_VISIBLE, { visible })
     ),
     setQualitySettingsFetching: (fetching: boolean) => (
         createAction(ReducerActionType.SET_QUALITY_SETTINGS_FETCHING, { fetching })
@@ -161,7 +156,6 @@ function QualityControlPage(): JSX.Element {
         qualitySettings: {
             settings: null,
             fetching: true,
-            visible: false,
             getQualityColor: qualityColorGenerator(BASE_TARGET_THRESHOLD),
         },
     });
