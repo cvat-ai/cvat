@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: MIT
 
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useHistory } from 'react-router';
 import { ResizableBox, ResizableProps, ResizeCallbackData } from 'react-resizable';
 import { Row, Col } from 'antd/lib/grid';
@@ -14,7 +14,7 @@ import { Task, Job, FramesMetaData } from 'cvat-core-wrapper';
 import { RestoreIcon } from 'icons';
 import { sorter, QualityColors } from 'utils/quality';
 import CVATTooltip from 'components/common/cvat-tooltip';
-import { Key } from 'antd/lib/table/interface';
+import { Key, ColumnType } from 'antd/lib/table/interface';
 
 const DEFAULT_TITLE_HEIGHT = 20;
 const DEFAULT_TITLE_WIDTH = 100;
@@ -30,7 +30,6 @@ interface Props {
 }
 
 interface RowData {
-    key: number;
     frame: number;
     name: { name: string, index: number },
     useCount: number,
@@ -101,6 +100,8 @@ export default function AllocationTableComponent(props: Props): JSX.Element {
         );
         return component;
     }
+
+    const [columns, setColumns] = useState<ColumnType<RowData>[]>([]);
     const handleResize =
     (key: string) => (e: React.SyntheticEvent, data: ResizeCallbackData) => {
         const { size: { width } } = data;
@@ -114,115 +115,116 @@ export default function AllocationTableComponent(props: Props): JSX.Element {
             return nextColumns;
         });
     };
-
-    const [columns, setColumns] = useState([
-        {
-            title: (
-                <ResizableTitle onResize={handleResize('frame')}>
-                    <Text>Frame</Text>
-                </ResizableTitle>
-            ),
-            dataIndex: 'frame',
-            key: 'frame',
-            sorter: sorter('frame'),
-            render: (index: number): JSX.Element => (
-                <div>
-                    <Button
-                        className='cvat-open-fame-button'
-                        type='link'
-                        onClick={(e: React.MouseEvent): void => {
-                            e.preventDefault();
-                            history.push(`/tasks/${task.id}/jobs/${gtJob.id}?frame=${index}`);
+    useEffect(() => {
+        setColumns([
+            {
+                title: (
+                    <ResizableTitle onResize={handleResize('frame')}>
+                        <Text>Frame</Text>
+                    </ResizableTitle>
+                ),
+                dataIndex: 'frame',
+                key: 'frame',
+                sorter: sorter('frame'),
+                render: (index: number): JSX.Element => (
+                    <div>
+                        <Button
+                            className='cvat-open-fame-button'
+                            type='link'
+                            onClick={(e: React.MouseEvent): void => {
+                                e.preventDefault();
+                                history.push(`/tasks/${task.id}/jobs/${gtJob.id}?frame=${index}`);
+                            }}
+                        >
+                            {`#${index}`}
+                        </Button>
+                    </div>
+                ),
+            },
+            {
+                title: (
+                    <ResizableTitle onResize={handleResize('name')}>
+                        <Text>Name</Text>
+                    </ResizableTitle>
+                ),
+                dataIndex: 'name',
+                key: 'name',
+                width: DEFAULT_TITLE_WIDTH,
+                sorter: sorter('name.name'),
+                render: nameRenderFunc(DEFAULT_TITLE_WIDTH),
+            },
+            {
+                title: (
+                    <ResizableTitle onResize={handleResize('useCount')}>
+                        <Text>Use count</Text>
+                    </ResizableTitle>
+                ),
+                dataIndex: 'useCount',
+                key: 'useCount',
+                align: 'center' as const,
+                sorter: sorter('useCount'),
+                render: (): JSX.Element => (
+                    <Text
+                        style={{
+                            color: getQualityColor(0),
                         }}
                     >
-                        {`#${index}`}
-                    </Button>
-                </div>
-            ),
-        },
-        {
-            title: (
-                <ResizableTitle onResize={handleResize('name')}>
-                    <Text>Name</Text>
-                </ResizableTitle>
-            ),
-            dataIndex: 'name',
-            key: 'name',
-            width: DEFAULT_TITLE_WIDTH,
-            sorter: sorter('name.name'),
-            render: nameRenderFunc(DEFAULT_TITLE_WIDTH),
-        },
-        {
-            title: (
-                <ResizableTitle onResize={handleResize('useCount')}>
-                    <Text>Use count</Text>
-                </ResizableTitle>
-            ),
-            dataIndex: 'useCount',
-            key: 'useCount',
-            align: 'center' as const,
-            sorter: sorter('useCount'),
-            render: (): JSX.Element => (
-                <Text
-                    style={{
-                        color: getQualityColor(0),
-                    }}
-                >
-                    N/A
-                </Text>
-            ),
-        },
-        {
-            title: (
-                <ResizableTitle onResize={handleResize('quality')}>
-                    <Text>Quality</Text>
-                </ResizableTitle>
-            ),
-            dataIndex: 'quality',
-            key: 'quality',
-            align: 'center' as const,
-            className: 'cvat-job-item-quality',
-            sorter: sorter('quality'),
-            render: (): JSX.Element => (
-                <Text
-                    style={{
-                        color: getQualityColor(0),
-                    }}
-                >
-                    N/A
-                </Text>
-            ),
-        },
-        {
-            title: (
-                <ResizableTitle onResize={handleResize('actions')}>
-                    <Text>Actions</Text>
-                </ResizableTitle>
-            ),
-            dataIndex: 'actions',
-            key: 'actions',
-            align: 'center' as const,
-            className: 'cvat-job-item-quality',
-            sorter: sorter('active'),
-            filters: [
-                { text: 'Active', value: true },
-                { text: 'Excluded', value: false },
-            ],
-            onFilter: (value: boolean | Key, record: any) => record.actions.frameData.active === value,
-            render: ({ frameID, active }: { frameID: number, active: boolean }): JSX.Element => (
-                active ? (
-                    <Icon
-                        onClick={() => { onRestoreFrames([frameID]); }}
-                        component={RestoreIcon}
-                    />
-                ) : (
-                    <DeleteOutlined
-                        onClick={() => { onDeleteFrames([frameID]); }}
-                    />
-                )
-            ),
-        },
-    ]);
+                        N/A
+                    </Text>
+                ),
+            },
+            {
+                title: (
+                    <ResizableTitle onResize={handleResize('quality')}>
+                        <Text>Quality</Text>
+                    </ResizableTitle>
+                ),
+                dataIndex: 'quality',
+                key: 'quality',
+                align: 'center' as const,
+                className: 'cvat-job-item-quality',
+                sorter: sorter('quality'),
+                render: (): JSX.Element => (
+                    <Text
+                        style={{
+                            color: getQualityColor(0),
+                        }}
+                    >
+                        N/A
+                    </Text>
+                ),
+            },
+            {
+                title: (
+                    <ResizableTitle onResize={handleResize('actions')}>
+                        <Text>Actions</Text>
+                    </ResizableTitle>
+                ),
+                dataIndex: 'actions',
+                key: 'actions',
+                align: 'center' as const,
+                className: 'cvat-job-item-quality',
+                sorter: sorter('active'),
+                filters: [
+                    { text: 'Active', value: true },
+                    { text: 'Excluded', value: false },
+                ],
+                onFilter: (value: boolean | Key, record: any) => record.actions.frameData.active === value,
+                render: ({ frameID, active }: { frameID: number, active: boolean }): JSX.Element => (
+                    active ? (
+                        <Icon
+                            onClick={() => { onRestoreFrames([frameID]); }}
+                            component={RestoreIcon}
+                        />
+                    ) : (
+                        <DeleteOutlined
+                            onClick={() => { onDeleteFrames([frameID]); }}
+                        />
+                    )
+                ),
+            },
+        ])
+    }, []);
 
     const data = gtJobMeta.includedFrames.map((frameID: number) => ({
         key: frameID,
