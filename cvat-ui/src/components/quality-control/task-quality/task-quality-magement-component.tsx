@@ -11,6 +11,8 @@ import React from 'react';
 import { QualityColors } from 'utils/quality';
 import { Row } from 'antd/es/grid';
 import Spin from 'antd/lib/spin';
+import { usePlugins } from 'utils/hooks';
+import { CombinedState } from 'reducers';
 import { SummaryComponent } from './summary';
 import AllocationTableComponent from './allocation-table';
 
@@ -38,6 +40,40 @@ function TaskQualityManagementComponent(props: Props): JSX.Element {
         gtJobMeta.includedFrames.includes(+frameID) ? acc + 1 : acc
     ), 0);
 
+    const managementPagePlugins = usePlugins(
+        (state: CombinedState) => (
+            state.plugins.components.qualityControlPage.tabs.management.page
+        ), props,
+    );
+    const managementPageItems: [JSX.Element, number][] = [];
+    managementPageItems.push([(
+        <Row>
+            <SummaryComponent
+                excludedCount={excludedCount}
+                activeCount={activeCount}
+                totalCount={gtJobMeta.includedFrames.length}
+            />
+        </Row>
+    ), 10]);
+    managementPageItems.push([(
+        <Row>
+            <AllocationTableComponent
+                task={task}
+                gtJob={gtJob}
+                gtJobMeta={gtJobMeta}
+                getQualityColor={getQualityColor}
+                onDeleteFrames={onDeleteFrames}
+                onRestoreFrames={onRestoreFrames}
+            />
+        </Row>
+    ), 20]);
+    managementPageItems.push(
+        ...managementPagePlugins.map(({ component: Component, weight }, index) => {
+            const component = <Component targetProps={props} key={index} />;
+            return [component, weight] as [JSX.Element, number];
+        }),
+    );
+
     return (
         <div className='cvat-task-quality-page'>
             {
@@ -47,23 +83,10 @@ function TaskQualityManagementComponent(props: Props): JSX.Element {
                     </div>
                 )
             }
-            <Row>
-                <SummaryComponent
-                    excludedCount={excludedCount}
-                    activeCount={activeCount}
-                    totalCount={gtJobMeta.includedFrames.length}
-                />
-            </Row>
-            <Row>
-                <AllocationTableComponent
-                    task={task}
-                    gtJob={gtJob}
-                    gtJobMeta={gtJobMeta}
-                    getQualityColor={getQualityColor}
-                    onDeleteFrames={onDeleteFrames}
-                    onRestoreFrames={onRestoreFrames}
-                />
-            </Row>
+            {
+                managementPageItems.sort((item1, item2) => item1[1] - item2[1])
+                    .map((item) => item[0])
+            }
         </div>
     );
 }

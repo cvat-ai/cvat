@@ -51,6 +51,7 @@ const defaultState: PluginsState = {
             tabs: {
                 overview: [],
                 management: {
+                    page: [],
                     allocationTable: {
                         columns: {
                             quality: [],

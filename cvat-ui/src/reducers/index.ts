@@ -288,6 +288,7 @@ export interface PluginsState {
             tabs: {
                 overview: PluginComponent[];
                 management: {
+                    page: PluginComponent[];
                     allocationTable: {
                         columns: {
                             quality: PluginComponent[];
