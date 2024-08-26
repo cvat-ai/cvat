@@ -25,8 +25,10 @@ from typing import Any, Callable, ClassVar, Optional, overload
 from unittest.mock import MagicMock, patch, DEFAULT as MOCK_DEFAULT
 
 from attr import define, field
+from datumaro import AnnotationType, Points
 from datumaro.components.dataset import Dataset
-from datumaro.util.test_utils import compare_datasets, TestDir
+from datumaro.components.operations import ExactComparator
+from datumaro.util.test_utils import TestDir
 from django.contrib.auth.models import Group, User
 from PIL import Image
 from rest_framework import status
@@ -95,6 +97,29 @@ def generate_video_file(filename, width=1280, height=720, duration=1, fps=25, co
     f.seek(0)
 
     return [(width, height)] * total_frames, f
+
+
+def compare_datasets(expected: Dataset, actual: Dataset):
+    # we need this function to allow for a bit of variation in a rotation attribute and in skeleton elements order
+    comparator = ExactComparator(ignored_fields=["elements"], ignored_attrs=["rotation"])
+    _, unmatched, expected_extra, actual_extra, errors = comparator.compare_datasets(
+        expected, actual
+    )
+    assert not unmatched, f"Datasets have unmatched items: {unmatched}"
+    assert not actual_extra, f"Actual has following extra items: {actual_extra}"
+    assert not expected_extra, f"Expected has following extra items: {expected_extra}"
+    assert not errors, f"There were following errors while comparing datasets: {errors}"
+
+    for item_a, item_b in zip(expected, actual):
+        for ann_a, ann_b in zip(item_a.annotations, item_b.annotations):
+            assert (
+                abs(ann_a.attributes.get("rotation", 0) - ann_b.attributes.get("rotation", 0))
+                < 0.01
+            )
+            if ann_a.type == AnnotationType.skeleton:
+                elements_a = sorted(filter(lambda p: p.visibility[0] != Points.Visibility.absent, ann_a.elements), key=lambda s: s.label)
+                elements_b = sorted(filter(lambda p: p.visibility[0] != Points.Visibility.absent, ann_b.elements), key=lambda s: s.label)
+                assert elements_a == elements_b
 
 
 class _DbTestBase(ApiTestBase):
@@ -399,7 +424,8 @@ class TaskDumpUploadTest(_DbTestBase):
                     if dump_format_name in [
                         "Cityscapes 1.0", "COCO Keypoints 1.0",
                         "ICDAR Localization 1.0", "ICDAR Recognition 1.0",
-                        "ICDAR Segmentation 1.0", "Market-1501 1.0", "MOT 1.1"
+                        "ICDAR Segmentation 1.0", "Market-1501 1.0", "MOT 1.1",
+                        "YOLOv8 Pose 1.0",
                     ]:
                         task = self._create_task(tasks[dump_format_name], images)
                     else:
@@ -410,7 +436,9 @@ class TaskDumpUploadTest(_DbTestBase):
                         "ImageNet 1.0", "MOTS PNG 1.0",
                         "PASCAL VOC 1.1", "Segmentation mask 1.1",
                         "VGGFace2 1.0",
-                        "WiderFace 1.0", "YOLO 1.1"
+                        "WiderFace 1.0", "YOLO 1.1",
+                        "YOLOv8 Detection 1.0", "YOLOv8 Segmentation 1.0",
+                        "YOLOv8 Oriented Bounding Boxes 1.0", "YOLOv8 Pose 1.0",
                     ]:
                         self._create_annotations(task, dump_format_name, "default")
                     else:
@@ -463,7 +491,8 @@ class TaskDumpUploadTest(_DbTestBase):
                             if upload_format_name in [
                                 "Cityscapes 1.0", "COCO Keypoints 1.0",
                                 "ICDAR Localization 1.0", "ICDAR Recognition 1.0",
-                                "ICDAR Segmentation 1.0", "Market-1501 1.0", "MOT 1.1"
+                                "ICDAR Segmentation 1.0", "Market-1501 1.0", "MOT 1.1",
+                                "YOLOv8 Pose 1.0",
                             ]:
                                 task = self._create_task(tasks[upload_format_name], images)
                             else:
@@ -506,7 +535,8 @@ class TaskDumpUploadTest(_DbTestBase):
                     if dump_format_name in [
                         "Cityscapes 1.0", "COCO Keypoints 1.0",
                         "ICDAR Localization 1.0", "ICDAR Recognition 1.0",
-                        "ICDAR Segmentation 1.0", "Market-1501 1.0", "MOT 1.1"
+                        "ICDAR Segmentation 1.0", "Market-1501 1.0", "MOT 1.1",
+                        "YOLOv8 Pose 1.0",
                     ]:
                         task = self._create_task(tasks[dump_format_name], video)
                     else:
@@ -517,7 +547,9 @@ class TaskDumpUploadTest(_DbTestBase):
                             "Cityscapes 1.0", "ImageNet 1.0",
                             "MOTS PNG 1.0", "PASCAL VOC 1.1",
                             "Segmentation mask 1.1",
-                            "VGGFace2 1.0", "WiderFace 1.0", "YOLO 1.1"
+                            "VGGFace2 1.0", "WiderFace 1.0", "YOLO 1.1",
+                            "YOLOv8 Detection 1.0", "YOLOv8 Segmentation 1.0",
+                            "YOLOv8 Oriented Bounding Boxes 1.0", "YOLOv8 Pose 1.0",
                     ]:
                         self._create_annotations(task, dump_format_name, "default")
                     else:
@@ -569,7 +601,8 @@ class TaskDumpUploadTest(_DbTestBase):
                             if upload_format_name in [
                                 "Cityscapes 1.0", "COCO Keypoints 1.0",
                                 "ICDAR Localization 1.0", "ICDAR Recognition 1.0",
-                                "ICDAR Segmentation 1.0", "Market-1501 1.0", "MOT 1.1"
+                                "ICDAR Segmentation 1.0", "Market-1501 1.0", "MOT 1.1",
+                                "YOLOv8 Pose 1.0",
                             ]:
                                 task = self._create_task(tasks[upload_format_name], video)
                             else:
@@ -848,7 +881,8 @@ class TaskDumpUploadTest(_DbTestBase):
                     if dump_format_name in [
                         "Cityscapes 1.0", "COCO Keypoints 1.0",
                         "ICDAR Localization 1.0", "ICDAR Recognition 1.0",
-                        "ICDAR Segmentation 1.0", "Market-1501 1.0", "MOT 1.1"
+                        "ICDAR Segmentation 1.0", "Market-1501 1.0", "MOT 1.1",
+                        "YOLOv8 Pose 1.0",
                     ]:
                         task = self._create_task(tasks[dump_format_name], images)
                     else:
@@ -951,8 +985,8 @@ class TaskDumpUploadTest(_DbTestBase):
                     images = self._generate_task_images(3)
                     if dump_format_name in [
                         "Market-1501 1.0",
-                        "ICDAR Localization 1.0", "ICDAR Recognition 1.0", \
-                        "ICDAR Segmentation 1.0", "COCO Keypoints 1.0",
+                        "ICDAR Localization 1.0", "ICDAR Recognition 1.0",
+                        "ICDAR Segmentation 1.0", "COCO Keypoints 1.0", "YOLOv8 Pose 1.0",
                     ]:
                         task = self._create_task(tasks[dump_format_name], images)
                     else:
@@ -963,7 +997,9 @@ class TaskDumpUploadTest(_DbTestBase):
                         "MOT 1.1", "PASCAL VOC 1.1", "Segmentation mask 1.1",
                         "YOLO 1.1", "ImageNet 1.0",
                         "WiderFace 1.0", "VGGFace2 1.0",
-                        "Datumaro 1.0", "Open Images V6 1.0", "KITTI 1.0"
+                        "Datumaro 1.0", "Open Images V6 1.0", "KITTI 1.0",
+                        "YOLOv8 Detection 1.0", "YOLOv8 Segmentation 1.0",
+                        "YOLOv8 Oriented Bounding Boxes 1.0", "YOLOv8 Pose 1.0",
                     ]:
                         self._create_annotations(task, dump_format_name, "default")
                     else:
@@ -1034,7 +1070,7 @@ class TaskDumpUploadTest(_DbTestBase):
 
                     # equals annotations
                     data_from_task_after_upload = self._get_data_from_task(task_id, include_images)
-                    compare_datasets(self, data_from_task_before_upload, data_from_task_after_upload)
+                    compare_datasets(data_from_task_before_upload, data_from_task_after_upload)
 
     def test_api_v2_tasks_annotations_dump_and_upload_with_datumaro(self):
         test_name = self._testMethodName
@@ -1063,9 +1099,10 @@ class TaskDumpUploadTest(_DbTestBase):
                     # create task
                     images = self._generate_task_images(3)
                     if dump_format_name in [
-                        "Market-1501 1.0", "Cityscapes 1.0", \
-                        "ICDAR Localization 1.0", "ICDAR Recognition 1.0", \
-                        "ICDAR Segmentation 1.0", "COCO Keypoints 1.0"
+                        "Market-1501 1.0", "Cityscapes 1.0",
+                        "ICDAR Localization 1.0", "ICDAR Recognition 1.0",
+                        "ICDAR Segmentation 1.0", "COCO Keypoints 1.0",
+                        "YOLOv8 Pose 1.0",
                     ]:
                         task = self._create_task(tasks[dump_format_name], images)
                     else:
@@ -1077,7 +1114,9 @@ class TaskDumpUploadTest(_DbTestBase):
                         "PASCAL VOC 1.1", "Segmentation mask 1.1",
                         "YOLO 1.1", "ImageNet 1.0",
                         "WiderFace 1.0", "VGGFace2 1.0", "LFW 1.0",
-                        "Open Images V6 1.0", "Datumaro 1.0", "KITTI 1.0"
+                        "Open Images V6 1.0", "Datumaro 1.0", "KITTI 1.0",
+                        "YOLOv8 Detection 1.0", "YOLOv8 Segmentation 1.0",
+                        "YOLOv8 Oriented Bounding Boxes 1.0", "YOLOv8 Pose 1.0",
                     ]:
                         self._create_annotations(task, dump_format_name, "default")
                     else:
@@ -1110,7 +1149,7 @@ class TaskDumpUploadTest(_DbTestBase):
 
                             # equals annotations
                         data_from_task_after_upload = self._get_data_from_task(task_id, include_images)
-                        compare_datasets(self, data_from_task_before_upload, data_from_task_after_upload)
+                        compare_datasets(data_from_task_before_upload, data_from_task_after_upload)
 
     def test_api_v2_check_duplicated_polygon_points(self):
         test_name = self._testMethodName
@@ -1176,7 +1215,7 @@ class TaskDumpUploadTest(_DbTestBase):
 
                     # equals annotations
                     data_from_task_after_upload = self._get_data_from_task(task_id, include_images)
-                    compare_datasets(self, data_from_task_before_upload, data_from_task_after_upload)
+                    compare_datasets(data_from_task_before_upload, data_from_task_after_upload)
 
     def test_api_v2_check_mot_with_shapes_only(self):
         test_name = self._testMethodName
@@ -1212,7 +1251,7 @@ class TaskDumpUploadTest(_DbTestBase):
 
                     # equals annotations
                     data_from_task_after_upload = self._get_data_from_task(task_id, include_images)
-                    compare_datasets(self, data_from_task_before_upload, data_from_task_after_upload)
+                    compare_datasets(data_from_task_before_upload, data_from_task_after_upload)
 
     def test_api_v2_check_attribute_import_in_tracks(self):
         test_name = self._testMethodName
@@ -1249,7 +1288,7 @@ class TaskDumpUploadTest(_DbTestBase):
 
                     # equals annotations
                     data_from_task_after_upload = self._get_data_from_task(task_id, include_images)
-                    compare_datasets(self, data_from_task_before_upload, data_from_task_after_upload)
+                    compare_datasets(data_from_task_before_upload, data_from_task_after_upload)
 
 class ExportBehaviorTest(_DbTestBase):
     @define
@@ -2051,7 +2090,7 @@ class ProjectDumpUpload(_DbTestBase):
                     "Cityscapes 1.0", "Datumaro 1.0", "ImageNet 1.0",
                     "MOT 1.1", "MOTS PNG 1.0", "PASCAL VOC 1.1",
                     "Segmentation mask 1.1", "VGGFace2 1.0",
-                    "WiderFace 1.0", "YOLO 1.1"
+                    "WiderFace 1.0", "YOLO 1.1", "YOLOv8 Detection 1.0",
                 ]:
                     self._create_annotations(task, dump_format_name, "default")
                 else:
