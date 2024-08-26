@@ -11,19 +11,19 @@ import { Row, Col } from 'antd/es/grid';
 import './styles.scss';
 import { Button } from 'antd';
 import CVATMarkdown from 'components/common/cvat-markdown';
+import config from 'config';
 
 interface Props {
-    featureName: string;
     featureDescription: string;
-    pricingLink: string;
 }
 
 export default function PaidFeaturePlaceholder(props: Props): JSX.Element | null {
     const {
-        featureName,
         featureDescription,
-        pricingLink,
     } = props;
+
+    const { PAID_PLACEHOLDER_CONFIG } = config;
+    const { url } = PAID_PLACEHOLDER_CONFIG;
 
     return (
         <div className='cvat-paid-feature-placeholder-wrapper'>
@@ -55,10 +55,10 @@ export default function PaidFeaturePlaceholder(props: Props): JSX.Element | null
                                     type='primary'
                                     onClick={(event: React.MouseEvent): void => {
                                         event.preventDefault();
-                                        window.open(pricingLink, '_blank');
+                                        window.open(url, '_blank');
                                     }}
                                 >
-                            Check pricing
+                                    Check pricing
                                 </Button>
                             </Col>
                         </Row>

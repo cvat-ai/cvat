@@ -9,6 +9,7 @@ import React from 'react';
 import { QualityColors } from 'utils/quality';
 import PaidFeaturePlaceholder from 'components/paid-feature-placeholder/paid-feature-placeholder';
 import { usePlugins } from 'utils/hooks';
+import config from 'config';
 
 interface Props {
     task: Task;
@@ -20,6 +21,8 @@ function TaskQualityComponent(props: Props): JSX.Element {
         task, getQualityColor,
     } = props;
 
+    const { PAID_PLACEHOLDER_CONFIG: { features: { qualityControl: featureDescription } } } = config;
+
     const plugins = usePlugins((state) => state.plugins.components.qualityControlPage.tabs.overview, props, {
         task,
         getQualityColor,
@@ -28,9 +31,7 @@ function TaskQualityComponent(props: Props): JSX.Element {
     const items: [JSX.Element, number][] = [];
     items.push([(
         <PaidFeaturePlaceholder
-            featureName='Quality Control'
-            featureDescription='The Quality Control feature enables effortless evaluation of annotation quality by creating a Ground Truth job that works as benchmark.  CVAT automatically compares all task-related jobs to this benchmark, calculating annotation precision to ensure high-quality results.'
-            pricingLink='https://cvat.ai/pricing'
+            featureDescription={featureDescription}
         />
     ), 0]);
     items.push(...plugins.map(({ component: Component, weight }, index: number) => (
