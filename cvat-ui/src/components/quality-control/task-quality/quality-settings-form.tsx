@@ -52,6 +52,31 @@ export default function QualitySettingsForm(props: FormProps): JSX.Element | nul
     const generalTooltip = (
         <div className='cvat-analytics-settings-tooltip-inner'>
             <Text>
+                Target metric - the primary metric for annotation quality estimation.
+                Different metrics can prioritize different aspects, such as the type of the errors made,
+                per class or overall performance. This parameter affects display of the quality computed.
+            </Text>
+            <Text>
+                Target metric threshold - the minimum acceptable annotation quality level,
+                in terms of the target metric selected. This parameter affects display of the quality numbers.
+            </Text>
+        </div>
+    );
+
+    const jobValidationTooltip = (
+        <div className='cvat-analytics-settings-tooltip-inner'>
+            <Text>
+                Max validations per job - the maximum allowed number of job annotation results validations,
+                requested by job assignees, available per assignment. Requires ground truth configured.
+                If the job quality measured is below the target metric threshold,
+                the assignee is asked to check their work for errors and resubmit annotations.
+            </Text>
+        </div>
+    );
+
+    const shapeComparisonTooltip = (
+        <div className='cvat-analytics-settings-tooltip-inner'>
+            <Text>
                 Min overlap threshold(IoU) is used for distinction between matched / unmatched shapes.
             </Text>
             <Text>
@@ -131,8 +156,13 @@ export default function QualitySettingsForm(props: FormProps): JSX.Element | nul
         <>
             <Row className='cvat-quality-settings-title'>
                 <Text strong>
-                General
+                    General
                 </Text>
+                <CVATTooltip title={generalTooltip} className='cvat-analytics-tooltip' overlayStyle={{ maxWidth: '500px' }}>
+                    <QuestionCircleOutlined
+                        style={{ opacity: 0.5 }}
+                    />
+                </CVATTooltip>
             </Row>
             <Row>
                 <Col span={7}>
@@ -175,8 +205,13 @@ export default function QualitySettingsForm(props: FormProps): JSX.Element | nul
         <>
             <Row className='cvat-quality-settings-title'>
                 <Text strong>
-                Job validation
+                    Job validation
                 </Text>
+                <CVATTooltip title={jobValidationTooltip} className='cvat-analytics-tooltip' overlayStyle={{ maxWidth: '500px' }}>
+                    <QuestionCircleOutlined
+                        style={{ opacity: 0.5 }}
+                    />
+                </CVATTooltip>
             </Row>
             <Row>
                 <Col span={7}>
@@ -203,7 +238,7 @@ export default function QualitySettingsForm(props: FormProps): JSX.Element | nul
                 <Text strong>
                     Shape comparison
                 </Text>
-                <CVATTooltip title={generalTooltip} className='cvat-analytics-tooltip' overlayStyle={{ maxWidth: '500px' }}>
+                <CVATTooltip title={shapeComparisonTooltip} className='cvat-analytics-tooltip' overlayStyle={{ maxWidth: '500px' }}>
                     <QuestionCircleOutlined
                         style={{ opacity: 0.5 }}
                     />
