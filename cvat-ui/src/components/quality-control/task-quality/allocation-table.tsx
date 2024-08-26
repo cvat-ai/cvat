@@ -241,13 +241,13 @@ export default function AllocationTableComponent(props: Props): JSX.Element {
                 onFilter: (value: boolean | Key, record: RowData) => record.actions.active === value,
                 render: ({ frameID, active }: { frameID: number, active: boolean }): JSX.Element => (
                     active ? (
+                        <DeleteOutlined
+                            onClick={() => { onDeleteFrames([frameID]); }}
+                        />
+                    ) : (
                         <Icon
                             onClick={() => { onRestoreFrames([frameID]); }}
                             component={RestoreIcon}
-                        />
-                    ) : (
-                        <DeleteOutlined
-                            onClick={() => { onDeleteFrames([frameID]); }}
                         />
                     )
                 ),
@@ -258,11 +258,11 @@ export default function AllocationTableComponent(props: Props): JSX.Element {
     const data = gtJobMeta.includedFrames.map((frameID: number) => ({
         key: frameID,
         frame: frameID,
-        name: { name: gtJobMeta.frames[frameID].name, index: frameID },
+        name: { name: gtJobMeta.frames[frameID]?.name ?? gtJobMeta.frames[0].name, index: frameID },
         useCount: frameID,
         quality: frameID,
         active: !(frameID in gtJobMeta.deletedFrames),
-        actions: { frameID, active: frameID in gtJobMeta.deletedFrames },
+        actions: { frameID, active: !(frameID in gtJobMeta.deletedFrames) },
     }),
     );
 
