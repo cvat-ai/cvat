@@ -316,7 +316,7 @@ class ExportDatasetMixin(_ExportMixin):
         )
 
 
-class DownloadBackupMixin(Generic[_EntityT]):
+class DownloadBackupMixin(_ExportMixin):
     def download_backup(
         self,
         filename: StrPath,
