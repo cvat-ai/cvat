@@ -7,8 +7,8 @@ import Text from 'antd/lib/typography/Text';
 import { Col, Row } from 'antd/lib/grid';
 
 import { QualityReport, QualitySummary } from 'cvat-core-wrapper';
+import { clampValue, percent } from 'utils/quality';
 import AnalyticsCard from '../views/analytics-card';
-import { percent, clampValue } from '../utils/text-formatting';
 
 interface Props {
     taskReport: QualityReport | null;

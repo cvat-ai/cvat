@@ -17,8 +17,9 @@ import {
 } from 'cvat-core-wrapper';
 import CVATTooltip from 'components/common/cvat-tooltip';
 import Tag from 'antd/lib/tag';
-import { collectUsers, QualityColors, sorter } from 'utils/quality';
-import { toRepresentation } from '../utils/text-formatting';
+import {
+    collectUsers, QualityColors, sorter, toRepresentation,
+} from 'utils/quality';
 import { ConflictsTooltip } from './gt-conflicts';
 
 interface Props {
