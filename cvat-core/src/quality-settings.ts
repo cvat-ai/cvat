@@ -1,4 +1,4 @@
-// Copyright (C) 2023 CVAT.ai Corporation
+// Copyright (C) 2023-2024 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -6,8 +6,17 @@ import { SerializedQualitySettingsData } from './server-response-types';
 import PluginRegistry from './plugins';
 import serverProxy from './server-proxy';
 
+export enum TargetMetric {
+    ACCURACY = 'accuracy',
+    PRECISION = 'precision',
+    RECALL = 'recall',
+}
+
 export default class QualitySettings {
     #id: number;
+    #targetMetric: TargetMetric;
+    #targetMetricThreshold: number;
+    #maxValidationsPerJob: number;
     #task: number;
     #iouThreshold: number;
     #oksSigma: number;
@@ -25,6 +34,9 @@ export default class QualitySettings {
     constructor(initialData: SerializedQualitySettingsData) {
         this.#id = initialData.id;
         this.#task = initialData.task;
+        this.#targetMetric = initialData.target_metric as TargetMetric;
+        this.#targetMetricThreshold = initialData.target_metric_threshold;
+        this.#maxValidationsPerJob = initialData.max_validations_per_job;
         this.#iouThreshold = initialData.iou_threshold;
         this.#oksSigma = initialData.oks_sigma;
         this.#lineThickness = initialData.line_thickness;
@@ -143,6 +155,30 @@ export default class QualitySettings {
         this.#compareAttributes = newVal;
     }
 
+    get targetMetric(): TargetMetric {
+        return this.#targetMetric;
+    }
+
+    set targetMetric(newVal: TargetMetric) {
+        this.#targetMetric = newVal;
+    }
+
+    get targetMetricThreshold(): number {
+        return this.#targetMetricThreshold;
+    }
+
+    set targetMetricThreshold(newVal: number) {
+        this.#targetMetricThreshold = newVal;
+    }
+
+    get maxValidationsPerJob(): number {
+        return this.#maxValidationsPerJob;
+    }
+
+    set maxValidationsPerJob(newVal: number) {
+        this.#maxValidationsPerJob = newVal;
+    }
+
     public toJSON(): SerializedQualitySettingsData {
         const result: SerializedQualitySettingsData = {
             iou_threshold: this.#iouThreshold,
@@ -157,6 +193,9 @@ export default class QualitySettings {
             object_visibility_threshold: this.#objectVisibilityThreshold,
             panoptic_comparison: this.#panopticComparison,
             compare_attributes: this.#compareAttributes,
+            target_metric: this.#targetMetric,
+            target_metric_threshold: this.#targetMetricThreshold,
+            max_validations_per_job: this.#maxValidationsPerJob,
         };
 
         return result;
@@ -172,8 +211,10 @@ Object.defineProperties(QualitySettings.prototype.save, {
     implementation: {
         writable: false,
         enumerable: false,
-        value: async function implementation() {
-            const result = await serverProxy.analytics.quality.settings.update(this.id, this.toJSON());
+        value: async function implementation(): Promise<QualitySettings> {
+            const result = await serverProxy.analytics.quality.settings.update(
+                this.id, this.toJSON(),
+            );
             return new QualitySettings(result);
         },
     },

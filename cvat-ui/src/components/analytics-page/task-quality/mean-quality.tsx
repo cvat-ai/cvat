@@ -8,18 +8,21 @@ import { Col, Row } from 'antd/lib/grid';
 import Text from 'antd/lib/typography/Text';
 import Button from 'antd/lib/button';
 
-import { QualityReport, getCore } from 'cvat-core-wrapper';
+import { QualityReport, TargetMetric, getCore } from 'cvat-core-wrapper';
 import AnalyticsCard from '../views/analytics-card';
 import { toRepresentation } from '../utils/text-formatting';
 
 interface Props {
     taskID: number;
     taskReport: QualityReport | null;
+    targetMetric: TargetMetric;
     setQualitySettingsVisible: (visible: boolean) => void;
 }
 
 function MeanQuality(props: Props): JSX.Element {
-    const { taskID, taskReport, setQualitySettingsVisible } = props;
+    const {
+        taskID, taskReport, targetMetric, setQualitySettingsVisible,
+    } = props;
     const reportSummary = taskReport?.summary;
 
     const tooltip = (
@@ -87,7 +90,7 @@ function MeanQuality(props: Props): JSX.Element {
         <AnalyticsCard
             title='Mean annotation quality'
             className='cvat-task-mean-annotation-quality'
-            value={toRepresentation(reportSummary?.accuracy)}
+            value={toRepresentation(reportSummary?.[targetMetric])}
             tooltip={tooltip}
             rightElement={downloadReportButton}
         />

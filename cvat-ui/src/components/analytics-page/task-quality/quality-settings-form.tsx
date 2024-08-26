@@ -10,8 +10,9 @@ import { Col, Row } from 'antd/lib/grid';
 import Divider from 'antd/lib/divider';
 import Form, { FormInstance } from 'antd/lib/form';
 import Checkbox from 'antd/lib/checkbox/Checkbox';
+import Select from 'antd/lib/select';
 import CVATTooltip from 'components/common/cvat-tooltip';
-import { QualitySettings } from 'cvat-core-wrapper';
+import { QualitySettings, TargetMetric } from 'cvat-core-wrapper';
 
 interface FormProps {
     form: FormInstance;
@@ -22,6 +23,11 @@ export default function QualitySettingsForm(props: FormProps): JSX.Element | nul
     const { form, settings } = props;
 
     const initialValues = {
+        targetMetric: settings.targetMetric,
+        targetMetricThreshold: settings.targetMetricThreshold * 100,
+
+        maxValidationsPerJob: settings.maxValidationsPerJob,
+
         lowOverlapThreshold: settings.lowOverlapThreshold * 100,
         iouThreshold: settings.iouThreshold * 100,
         compareAttributes: settings.compareAttributes,
@@ -41,6 +47,31 @@ export default function QualitySettingsForm(props: FormProps): JSX.Element | nul
     };
 
     const generalTooltip = (
+        <div className='cvat-analytics-settings-tooltip-inner'>
+            <Text>
+                Target metric - the primary metric for annotation quality estimation.
+                Different metrics can prioritize different aspects, such as the type of the errors made,
+                per class or overall performance. This parameter affects display of the quality computed.
+            </Text>
+            <Text>
+                Target metric threshold - the minimum acceptable annotation quality level,
+                in terms of the target metric selected. This parameter affects display of the quality numbers.
+            </Text>
+        </div>
+    );
+
+    const jobValidationTooltip = (
+        <div className='cvat-analytics-settings-tooltip-inner'>
+            <Text>
+                Max validations per job - the maximum allowed number of job annotation results validations,
+                requested by job assignees, available per assignment. Requires ground truth configured.
+                If the job quality measured is below the target metric threshold,
+                the assignee is asked to check their work for errors and resubmit annotations.
+            </Text>
+        </div>
+    );
+
+    const shapeComparisonTooltip = (
         <div className='cvat-analytics-settings-tooltip-inner'>
             <Text>
                 Min overlap threshold(IoU) is used for distinction between matched / unmatched shapes.
@@ -136,6 +167,76 @@ export default function QualitySettingsForm(props: FormProps): JSX.Element | nul
             <Row>
                 <Col span={12}>
                     <Form.Item
+                        name='targetMetric'
+                        label='Target metric'
+                        rules={[{ required: true }]}
+                    >
+                        <Select
+                            style={{ width: '70%' }}
+                            virtual={false}
+                        >
+                            <Select.Option value={TargetMetric.ACCURACY}>
+                                Accuracy
+                            </Select.Option>
+                            <Select.Option value={TargetMetric.PRECISION}>
+                                Precision
+                            </Select.Option>
+                            <Select.Option value={TargetMetric.RECALL}>
+                                Recall
+                            </Select.Option>
+                        </Select>
+                    </Form.Item>
+                </Col>
+                <Col span={12}>
+                    <Form.Item
+                        name='targetMetricThreshold'
+                        label='Target metric threshold'
+                        rules={[{ required: true }]}
+                    >
+                        <InputNumber min={0} max={100} precision={0} />
+                    </Form.Item>
+                </Col>
+            </Row>
+            <Divider />
+            <Row className='cvat-quality-settings-title'>
+                <Text strong>
+                    Job validation
+                </Text>
+                <CVATTooltip title={jobValidationTooltip} className='cvat-analytics-tooltip' overlayStyle={{ maxWidth: '500px' }}>
+                    <QuestionCircleOutlined
+                        style={{ opacity: 0.5 }}
+                    />
+                </CVATTooltip>
+            </Row>
+            <Row>
+                <Col span={12}>
+                    <Form.Item
+                        name='maxValidationsPerJob'
+                        label='Max validations per job'
+                        rules={[{ required: true }]}
+                    >
+                        <InputNumber
+                            min={0}
+                            max={100}
+                            precision={0}
+                        />
+                    </Form.Item>
+                </Col>
+            </Row>
+            <Divider />
+            <Row className='cvat-quality-settings-title'>
+                <Text strong>
+                    Shape comparison
+                </Text>
+                <CVATTooltip title={shapeComparisonTooltip} className='cvat-analytics-tooltip' overlayStyle={{ maxWidth: '500px' }}>
+                    <QuestionCircleOutlined
+                        style={{ opacity: 0.5 }}
+                    />
+                </CVATTooltip>
+            </Row>
+            <Row>
+                <Col span={12}>
+                    <Form.Item
                         name='iouThreshold'
                         label='Min overlap threshold (%)'
                         rules={[{ required: true }]}
@@ -150,19 +251,6 @@ export default function QualitySettingsForm(props: FormProps): JSX.Element | nul
                         rules={[{ required: true }]}
                     >
                         <InputNumber min={0} max={100} precision={0} />
-                    </Form.Item>
-                </Col>
-            </Row>
-            <Row>
-                <Col span={12}>
-                    <Form.Item
-                        name='compareAttributes'
-                        valuePropName='checked'
-                        rules={[{ required: true }]}
-                    >
-                        <Checkbox>
-                            <Text className='cvat-text-color'>Compare attributes</Text>
-                        </Checkbox>
                     </Form.Item>
                 </Col>
             </Row>

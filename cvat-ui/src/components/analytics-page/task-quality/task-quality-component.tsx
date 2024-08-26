@@ -2,6 +2,7 @@
 //
 // SPDX-License-Identifier: MIT
 
+import React, { useEffect, useReducer } from 'react';
 import moment from 'moment';
 import { Row } from 'antd/lib/grid';
 import Text from 'antd/lib/typography/Text';
@@ -9,10 +10,10 @@ import notification from 'antd/lib/notification';
 import CVATLoadingSpinner from 'components/common/loading-spinner';
 import JobItem from 'components/job-item/job-item';
 import {
-    Job, JobType, QualityReport, QualitySettings, Task, getCore,
+    Job, JobType, QualityReport, QualitySettings, TargetMetric, Task, getCore,
 } from 'cvat-core-wrapper';
-import React, { useEffect, useReducer } from 'react';
 import { useIsMounted } from 'utils/hooks';
+import { BASE_TARGET_THRESHOLD, qualityColorGenerator, QualityColors } from 'utils/quality';
 import { ActionUnion, createAction } from 'utils/redux';
 import EmptyGtJob from './empty-job';
 import GtConflicts from './gt-conflicts';
@@ -36,6 +37,8 @@ interface State {
         settings: QualitySettings | null;
         fetching: boolean;
         visible: boolean;
+        getQualityColor: (value?: number) => QualityColors;
+        targetMetric: TargetMetric
     },
 }
 
@@ -97,6 +100,8 @@ const reducer = (state: State, action: ActionUnion<typeof reducerActions>): Stat
             qualitySettings: {
                 ...state.qualitySettings,
                 settings: action.payload.qualitySettings,
+                getQualityColor: qualityColorGenerator(action.payload.qualitySettings.targetMetricThreshold),
+                targetMetric: action.payload.qualitySettings.targetMetric,
             },
         };
     }
@@ -136,6 +141,8 @@ function TaskQualityComponent(props: Props): JSX.Element {
             settings: null,
             fetching: true,
             visible: false,
+            getQualityColor: qualityColorGenerator(BASE_TARGET_THRESHOLD),
+            targetMetric: TargetMetric.ACCURACY,
         },
     });
 
@@ -180,6 +187,7 @@ function TaskQualityComponent(props: Props): JSX.Element {
         fetching, taskReport, jobsReports,
         qualitySettings: {
             settings: qualitySettings, fetching: qualitySettingsFetching, visible: qualitySettingsVisible,
+            getQualityColor, targetMetric,
         },
     } = state;
 
@@ -205,6 +213,7 @@ function TaskQualityComponent(props: Props): JSX.Element {
                                                 (visible) => dispatch(reducerActions.setQualitySettingsVisible(visible))
                                             }
                                             taskID={task.id}
+                                            targetMetric={targetMetric}
                                         />
                                     </Row>
                                     <Row gutter={16}>
@@ -227,7 +236,12 @@ function TaskQualityComponent(props: Props): JSX.Element {
                                         <JobItem job={gtJob} task={task} onJobUpdate={onJobUpdate} />
                                     </Row>
                                     <Row>
-                                        <JobList jobsReports={jobsReports} task={task} />
+                                        <JobList
+                                            jobsReports={jobsReports}
+                                            task={task}
+                                            getQualityColor={getQualityColor}
+                                            targetMetric={targetMetric}
+                                        />
                                     </Row>
                                 </>
                             ) : (
