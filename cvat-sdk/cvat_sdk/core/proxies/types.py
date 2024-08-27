@@ -17,4 +17,4 @@ class Location(str, enum.Enum):
 
 assert all(
     [getattr(Location, k) == v for k, v in RawLocationEnum.allowed_values[("value",)].items()]
-)
+), 'SDK "Location" enum should be updated'
