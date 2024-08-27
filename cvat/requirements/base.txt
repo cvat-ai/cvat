@@ -6,7 +6,6 @@
 #    pip-compile-multi
 #
 -r ../../utils/dataset_manifest/requirements.txt
-
 asgiref==3.8.1
     # via django
 async-timeout==4.0.3
@@ -67,7 +66,7 @@ deprecated==1.2.14
     # via limits
 dj-pagination==2.5.0
     # via -r cvat/requirements/base.in
-dj-rest-auth[with-social]==5.0.2
+dj-rest-auth[with_social]==5.0.2
     # via -r cvat/requirements/base.in
 django==4.2.15
     # via
