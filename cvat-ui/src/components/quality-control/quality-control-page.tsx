@@ -381,6 +381,7 @@ function QualityControlPage(): JSX.Element {
                 <TaskQualityComponent
                     task={instance}
                     getQualityColor={getQualityColor}
+                    targetMetric={targetMetric}
                 />
             ),
         }, 10]);

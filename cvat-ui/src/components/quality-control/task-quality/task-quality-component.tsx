@@ -3,6 +3,7 @@
 // SPDX-License-Identifier: MIT
 
 import {
+    TargetMetric,
     Task,
 } from 'cvat-core-wrapper';
 import React from 'react';
@@ -14,11 +15,12 @@ import config from 'config';
 interface Props {
     task: Task;
     getQualityColor: (value?: number) => QualityColors;
+    targetMetric: TargetMetric;
 }
 
 function TaskQualityComponent(props: Props): JSX.Element {
     const {
-        task, getQualityColor,
+        task, getQualityColor, targetMetric,
     } = props;
 
     const { PAID_PLACEHOLDER_CONFIG: { features: { qualityControl: featureDescription } } } = config;
@@ -26,6 +28,7 @@ function TaskQualityComponent(props: Props): JSX.Element {
     const plugins = usePlugins((state) => state.plugins.components.qualityControlPage.tabs.overview, props, {
         task,
         getQualityColor,
+        targetMetric,
     });
 
     const items: [JSX.Element, number][] = [];
@@ -41,6 +44,7 @@ function TaskQualityComponent(props: Props): JSX.Element {
             targetState={{
                 task,
                 getQualityColor,
+                targetMetric,
             }}
         />, weight] as [JSX.Element, number]
     )));
