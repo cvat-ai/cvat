@@ -55,6 +55,76 @@ function implementationMixin(func: Function, implementation: Function): void {
     Object.assign(func, { implementation });
 }
 
+type ConflictType = ConsensusConflict | QualityConflict;
+
+function mergeConflicts<T extends ConflictType>(conflicts: T[]): T[] {
+    const frames = Array.from(new Set(conflicts.map((conflict) => conflict.frame)))
+        .sort((a, b) => a - b);
+
+    const mergedConflicts: T[] = [];
+
+    for (const frame of frames) {
+        const frameConflicts = conflicts.filter((conflict) => conflict.frame === frame);
+        const conflictsByObject: Record<string, T[]> = {};
+
+        frameConflicts.forEach((qualityConflict: T) => {
+            const { type, serverID } = qualityConflict.annotationConflicts[0];
+            const firstObjID = `${type}_${serverID}`;
+            conflictsByObject[firstObjID] = conflictsByObject[firstObjID] || [];
+            conflictsByObject[firstObjID].push(qualityConflict);
+        });
+
+        for (const objectConflicts of Object.values(conflictsByObject)) {
+            if (objectConflicts.length === 1) {
+                mergedConflicts.push(objectConflicts[0]);
+            } else {
+                const [firstConflict] = objectConflicts;
+                let mainObjectConflict: T;
+
+                if (firstConflict instanceof QualityConflict) {
+                    mainObjectConflict = objectConflicts.find(
+                        (conflict) => (conflict as QualityConflict).severity === ConflictSeverity.ERROR,
+                    ) || firstConflict;
+                } else {
+                    mainObjectConflict = firstConflict;
+                }
+                const descriptionList: string[] = [mainObjectConflict.description];
+
+                for (const objectConflict of objectConflicts) {
+                    if (objectConflict !== mainObjectConflict) {
+                        descriptionList.push(objectConflict.description);
+
+                        for (const annotationConflict of objectConflict.annotationConflicts) {
+                            if (!mainObjectConflict.annotationConflicts.find((_annotationConflict) => (
+                                _annotationConflict.serverID === annotationConflict.serverID &&
+                                _annotationConflict.type === annotationConflict.type))
+                            ) {
+                                mainObjectConflict.annotationConflicts.push(annotationConflict);
+                            }
+                        }
+                    }
+                }
+
+                const description = descriptionList.join(', ');
+                const visibleConflict = new Proxy(mainObjectConflict, {
+                    get(target, prop) {
+                        if (prop === 'description') {
+                            return description;
+                        }
+
+                        const val = Reflect.get(target, prop);
+                        return typeof val === 'function' ? (...args: any[]) => val.apply(target, args) : val;
+                    },
+                });
+
+                mergedConflicts.push(visibleConflict);
+            }
+        }
+    }
+
+    return mergedConflicts;
+}
+
 export default function implementAPI(cvat: CVATCore): CVATCore {
     implementationMixin(cvat.plugins.list, PluginRegistry.list);
     implementationMixin(cvat.plugins.register, PluginRegistry.register.bind(cvat));
@@ -450,72 +520,7 @@ export default function implementAPI(cvat: CVATCore): CVATCore {
 
         const conflictsData = await serverProxy.analytics.quality.conflicts(params);
         const conflicts = conflictsData.map((conflict) => new QualityConflict({ ...conflict }));
-        const frames = Array.from(new Set(conflicts.map((conflict) => conflict.frame)))
-            .sort((a, b) => a - b);
-
-        // each QualityConflict may have several AnnotationConflicts bound
-        // at the same time, many quality conflicts may refer
-        // to the same labeled object (e.g. mismatch label, low overlap)
-        // the code below unites quality conflicts bound to the same object into one QualityConflict object
-        const mergedConflicts: QualityConflict[] = [];
-
-        for (const frame of frames) {
-            const frameConflicts = conflicts.filter((conflict) => conflict.frame === frame);
-            const conflictsByObject: Record<string, QualityConflict[]> = {};
-
-            frameConflicts.forEach((qualityConflict: QualityConflict) => {
-                const { type, serverID } = qualityConflict.annotationConflicts[0];
-                const firstObjID = `${type}_${serverID}`;
-                conflictsByObject[firstObjID] = conflictsByObject[firstObjID] || [];
-                conflictsByObject[firstObjID].push(qualityConflict);
-            });
-
-            for (const objectConflicts of Object.values(conflictsByObject)) {
-                if (objectConflicts.length === 1) {
-                    // only one quality conflict refers to the object on current frame
-                    mergedConflicts.push(objectConflicts[0]);
-                } else {
-                    const mainObjectConflict = objectConflicts
-                        .find((conflict) => conflict.severity === ConflictSeverity.ERROR) || objectConflicts[0];
-                    const descriptionList: string[] = [mainObjectConflict.description];
-
-                    for (const objectConflict of objectConflicts) {
-                        if (objectConflict !== mainObjectConflict) {
-                            descriptionList.push(objectConflict.description);
-
-                            for (const annotationConflict of objectConflict.annotationConflicts) {
-                                if (!mainObjectConflict.annotationConflicts.find((_annotationConflict) => (
-                                    _annotationConflict.serverID === annotationConflict.serverID &&
-                                    _annotationConflict.type === annotationConflict.type))
-                                ) {
-                                    mainObjectConflict.annotationConflicts.push(annotationConflict);
-                                }
-                            }
-                        }
-                    }
-
-                    // decorate the original conflict to avoid changing it
-                    const description = descriptionList.join(', ');
-                    const visibleConflict = new Proxy(mainObjectConflict, {
-                        get(target, prop) {
-                            if (prop === 'description') {
-                                return description;
-                            }
-
-                            // By default, it looks like Reflect.get(target, prop, receiver)
-                            // which has a different value of `this`. It doesn't allow to
-                            // work with methods / properties that use private members.
-                            const val = Reflect.get(target, prop);
-                            return typeof val === 'function' ? (...args: any[]) => val.apply(target, args) : val;
-                        },
-                    });
-
-                    mergedConflicts.push(visibleConflict);
-                }
-            }
-        }
-
-        return mergedConflicts;
+        return mergeConflicts(conflicts);
     });
     implementationMixin(cvat.analytics.quality.settings.get, async (filter: QualitySettingsFilter) => {
         checkFilter(filter, {
@@ -605,71 +610,7 @@ export default function implementAPI(cvat: CVATCore): CVATCore {
 
         const conflictsData = await serverProxy.consensus.conflicts(params);
         const conflicts = conflictsData.map((conflict) => new ConsensusConflict({ ...conflict }));
-        const frames = Array.from(new Set(conflicts.map((conflict) => conflict.frame)))
-            .sort((a, b) => a - b);
-
-        // each ConsensusConflict may have several AnnotationConflicts bound
-        // at the same time, many quality conflicts may refer
-        // to the same labeled object (e.g. mismatch label, low overlap)
-        // the code below unites quality conflicts bound to the same object into one QualityConflict object
-        const mergedConflicts: ConsensusConflict[] = [];
-
-        for (const frame of frames) {
-            const frameConflicts = conflicts.filter((conflict) => conflict.frame === frame);
-            const conflictsByObject: Record<string, ConsensusConflict[]> = {};
-
-            frameConflicts.forEach((qualityConflict: ConsensusConflict) => {
-                const { type, serverID } = qualityConflict.annotationConflicts[0];
-                const firstObjID = `${type}_${serverID}`;
-                conflictsByObject[firstObjID] = conflictsByObject[firstObjID] || [];
-                conflictsByObject[firstObjID].push(qualityConflict);
-            });
-
-            for (const objectConflicts of Object.values(conflictsByObject)) {
-                if (objectConflicts.length === 1) {
-                    // only one quality conflict refers to the object on current frame
-                    mergedConflicts.push(objectConflicts[0]);
-                } else {
-                    const mainObjectConflict = objectConflicts[0];
-                    const descriptionList: string[] = [mainObjectConflict.description];
-
-                    for (const objectConflict of objectConflicts) {
-                        if (objectConflict !== mainObjectConflict) {
-                            descriptionList.push(objectConflict.description);
-
-                            for (const annotationConflict of objectConflict.annotationConflicts) {
-                                if (!mainObjectConflict.annotationConflicts.find((_annotationConflict) => (
-                                    _annotationConflict.serverID === annotationConflict.serverID &&
-                                    _annotationConflict.type === annotationConflict.type))
-                                ) {
-                                    mainObjectConflict.annotationConflicts.push(annotationConflict);
-                                }
-                            }
-                        }
-                    }
-
-                    // decorate the original conflict to avoid changing it
-                    const description = descriptionList.join(', ');
-                    const visibleConflict = new Proxy(mainObjectConflict, {
-                        get(target, prop) {
-                            if (prop === 'description') {
-                                return description;
-                            }
-
-                            // By default, it looks like Reflect.get(target, prop, receiver)
-                            // which has a different value of `this`. It doesn't allow to
-                            // work with methods / properties that use private members.
-                            const val = Reflect.get(target, prop);
-                            return typeof val === 'function' ? (...args: any[]) => val.apply(target, args) : val;
-                        },
-                    });
-
-                    mergedConflicts.push(visibleConflict);
-                }
-            }
-        }
-
-        return mergedConflicts;
+        return mergeConflicts(conflicts);
     });
     implementationMixin(cvat.analytics.performance.calculate, async (
         body: Parameters<CVATCore['analytics']['performance']['calculate']>[0],
