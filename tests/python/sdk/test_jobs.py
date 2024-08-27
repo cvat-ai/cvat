@@ -99,9 +99,34 @@ class TestJobUsecases(TestDatasetExport):
     @pytest.mark.parametrize("format_name", ("CVAT for images 1.1",))
     @pytest.mark.parametrize("include_images", (True, False))
     @parametrize(
-        "task", [fixture_ref("fxt_new_task"), fixture_ref("fxt_new_task_with_target_storage")]
+        "task, location",
+        [
+            (fixture_ref("fxt_new_task"), None),
+            (fixture_ref("fxt_new_task"), Location.LOCAL),
+            (
+                pytest.param(
+                    fixture_ref("fxt_new_task"),
+                    Location.CLOUD_STORAGE,
+                    marks=pytest.mark.with_external_services,
+                )
+            ),
+            (
+                pytest.param(
+                    fixture_ref("fxt_new_task_with_target_storage"),
+                    None,
+                    marks=pytest.mark.with_external_services,
+                )
+            ),
+            (fixture_ref("fxt_new_task_with_target_storage"), Location.LOCAL),
+            (
+                pytest.param(
+                    fixture_ref("fxt_new_task_with_target_storage"),
+                    Location.CLOUD_STORAGE,
+                    marks=pytest.mark.with_external_services,
+                )
+            ),
+        ],
     )
-    @pytest.mark.parametrize("location", (None, Location.LOCAL, Location.CLOUD_STORAGE))
     def test_can_export_dataset(
         self,
         format_name: str,
