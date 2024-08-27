@@ -3,6 +3,7 @@
 # SPDX-License-Identifier: MIT
 
 from typing import Dict, List, Tuple
+from uuid import uuid4
 
 import datumaro as dm
 import django_rq
@@ -138,14 +139,12 @@ def _merge_consensus_jobs(task_id: int) -> None:
 def merge_task(task: Task, request) -> Response:
     queue_name = settings.CVAT_QUEUES.CONSENSUS.value
     queue = django_rq.get_queue(queue_name)
-    # so a user doesn't create requests to merge same task multiple times
-    rq_id = request.data.get("rq_id", f"merge_consensus:task.id{task.id}-by-{request.user}")
+    rq_id = request.query_params.get("rq_id", uuid4().hex)
     rq_job = queue.fetch_job(rq_id)
     user_id = request.user.id
 
     if rq_job:
         if rq_job.is_finished:
-            # returned_data = rq_job.return_value()
             rq_job.delete()
             return Response(status=status.HTTP_201_CREATED)
         elif rq_job.is_failed:

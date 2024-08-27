@@ -228,11 +228,14 @@ class CachedSimilarityFunction:
         self.sim_fn = sim_fn
 
     def __call__(self, a_ann: dm.Annotation, b_ann: dm.Annotation) -> float:
-        if a_ann == b_ann:
+        a_ann_id = id(a_ann)
+        b_ann_id = id(a_ann)
+
+        if a_ann_id == b_ann_id:
             return 1
         key: Tuple[int, int] = (
-            id(a_ann),
-            id(b_ann),
+            a_ann_id,
+            b_ann_id,
         )  # make sure the annotations have stable ids before calling this
         key = self._sort_key(key)
         cached_value = self.cache.get(key)
@@ -302,7 +305,7 @@ class _ShapeMatcher(AnnotationMatcher):
     def _match_segments(
         self,
         t,
-        item_a :List[dm.Annotation],
+        item_a: List[dm.Annotation],
         item_b: List[dm.Annotation],
         *,
         distance: Callable = distance,

@@ -262,11 +262,9 @@ class ConsensusReportViewSet(
 
         queue_name = settings.CVAT_QUEUES.CONSENSUS.value
         queue = django_rq.get_queue(queue_name)
-        # rq_id = request.query_params.get(self.CREATE_REPORT_RQ_ID_PARAMETER, None)
-        rq_id = request.data.get("rq_id", f"merge_consensus:task.id{task_id}-by-{request.user}")
-        rq_job = queue.fetch_job(rq_id)
+        rq_id = request.query_params.get(self.CREATE_REPORT_RQ_ID_PARAMETER, None)
 
-        if rq_job is None:
+        if rq_id is None:
             try:
                 task = Task.objects.get(pk=task_id)
             except Task.DoesNotExist as ex:
@@ -280,6 +278,7 @@ class ConsensusReportViewSet(
                 raise ValidationError(str(ex))
 
         else:
+            rq_job = queue.fetch_job(rq_id)
             if (
                 not rq_job
                 or not ConsensusReportPermission.create_scope_check_status(
