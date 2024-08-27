@@ -16,11 +16,12 @@ import notification from 'antd/lib/notification';
 import { useIsMounted } from 'utils/hooks';
 import {
     Job, JobType, QualityReport, QualitySettings, Task, getCore, FramesMetaData,
+    TargetMetric,
 } from 'cvat-core-wrapper';
 import CVATLoadingSpinner from 'components/common/loading-spinner';
 import GoBackButton from 'components/common/go-back-button';
 import { ActionUnion, createAction } from 'utils/redux';
-import { BASE_TARGET_THRESHOLD, qualityColorGenerator, QualityColors } from 'utils/quality';
+import { qualityColorGenerator, QualityColors } from 'utils/quality';
 import TaskQualityComponent from './task-quality/task-quality-component';
 import TaskQualityManagementComponent from './task-quality/task-quality-magement-component';
 import QualitySettingsComponent from './quality-settings';
@@ -44,7 +45,8 @@ interface State {
     qualitySettings: {
         settings: QualitySettings | null;
         fetching: boolean;
-        getQualityColor: (value?: number) => QualityColors;
+        getQualityColor: ((value?: number) => QualityColors) | null;
+        targetMetric: TargetMetric | null;
     },
 }
 
@@ -101,6 +103,7 @@ const reducer = (state: State, action: ActionUnion<typeof reducerActions>): Stat
                 ...state.qualitySettings,
                 settings: action.payload.qualitySettings,
                 getQualityColor: qualityColorGenerator(action.payload.qualitySettings.targetMetricThreshold),
+                targetMetric: action.payload.qualitySettings.targetMetric,
             },
         };
     }
@@ -156,7 +159,8 @@ function QualityControlPage(): JSX.Element {
         qualitySettings: {
             settings: null,
             fetching: true,
-            getQualityColor: qualityColorGenerator(BASE_TARGET_THRESHOLD),
+            getQualityColor: null,
+            targetMetric: null,
         },
     });
 
@@ -334,7 +338,22 @@ function QualityControlPage(): JSX.Element {
     let backNavigation: JSX.Element | null = null;
     let title: JSX.Element | null = null;
     let tabs: JSX.Element | null = null;
-    if (instanceType && instance) {
+
+    const {
+        fetching,
+        gtJob: {
+            instance: gtJobInstance,
+            meta: gtJobMeta,
+        },
+        qualitySettings: {
+            settings: qualitySettings,
+            fetching: qualitySettingsFetching,
+            getQualityColor, targetMetric,
+        },
+    } = state;
+    const settingsInitialized = qualitySettings && getQualityColor && targetMetric;
+
+    if (instanceType && instance && settingsInitialized) {
         backNavigation = (
             <Row justify='center'>
                 <Col span={22} xl={18} xxl={14} className='cvat-task-top-bar'>
@@ -361,24 +380,24 @@ function QualityControlPage(): JSX.Element {
             children: (
                 <TaskQualityComponent
                     task={instance}
-                    getQualityColor={state.qualitySettings.getQualityColor}
+                    getQualityColor={getQualityColor}
                 />
             ),
         }, 10]);
 
-        if (state.gtJob.instance && state.gtJob.meta) {
+        if (gtJobInstance && gtJobMeta) {
             tabsItems.push([{
                 key: 'management',
                 label: 'Management',
                 children: (
                     <TaskQualityManagementComponent
                         task={instance}
-                        gtJob={state.gtJob.instance}
-                        gtJobMeta={state.gtJob.meta}
+                        gtJob={gtJobInstance}
+                        gtJobMeta={gtJobMeta}
                         onDeleteFrames={onDeleteFrames}
                         onRestoreFrames={onRestoreFrames}
-                        getQualityColor={state.qualitySettings.getQualityColor}
-                        fetching={state.fetching}
+                        getQualityColor={getQualityColor}
+                        fetching={fetching}
                     />
                 ),
             }, 20]);
@@ -388,8 +407,8 @@ function QualityControlPage(): JSX.Element {
                 label: 'Settings',
                 children: (
                     <QualitySettingsComponent
-                        fetching={state.qualitySettings.fetching}
-                        qualitySettings={state.qualitySettings.settings}
+                        fetching={qualitySettingsFetching}
+                        qualitySettings={qualitySettings}
                         setQualitySettings={onSaveQualitySettings}
                     />
                 ),
@@ -411,7 +430,7 @@ function QualityControlPage(): JSX.Element {
 
     return (
         <div className='cvat-analytics-page'>
-            {state.fetching && state.qualitySettings.fetching ? (
+            {fetching && qualitySettingsFetching ? (
                 <div className='cvat-analytics-loading'>
                     <CVATLoadingSpinner />
                 </div>

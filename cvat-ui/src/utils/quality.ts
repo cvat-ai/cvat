@@ -13,16 +13,14 @@ export enum QualityColors {
     GRAY = '#8c8c8c',
 }
 
-export const BASE_TARGET_THRESHOLD = 80;
-
 const ratios = {
     low: 0.82,
     middle: 0.9,
     high: 1,
 };
 
-export const qualityColorGenerator = (targetMetric?: number) => (value?: number) => {
-    const baseValue = targetMetric ?? BASE_TARGET_THRESHOLD;
+export const qualityColorGenerator = (targetMetric: number) => (value?: number) => {
+    const baseValue = targetMetric * 100;
 
     const thresholds = {
         low: baseValue * ratios.low,
@@ -82,16 +80,10 @@ export function sorter(path: string) {
     };
 }
 
-export function collectUsers(reports: Record<number, QualityReport>, path: string): ColumnFilterItem[] {
+export function collectAssignees(reports: QualityReport[]): ColumnFilterItem[] {
     return Array.from<string | null>(
         new Set(
-            Object.values(reports).map((report: QualityReport) => {
-                if (report[path] === null) {
-                    return null;
-                }
-
-                return report[path].username;
-            }),
+            reports.map((report: QualityReport) => report.assignee?.username ?? null),
         ),
     ).map((value: string | null) => ({ text: value ?? 'Is Empty', value: value ?? false }));
 }
