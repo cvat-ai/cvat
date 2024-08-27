@@ -272,9 +272,9 @@ class _ShapeMatcher(AnnotationMatcher):
     def __attrs_post_init__(self):
         self._distance_comparator = DistanceComparator(
             categories=self.categories,
-            iou_threshold=self._context.Conf.pairwise_dist,
-            oks_sigma=self._context.Conf.sigma,
-            line_torso_radius=self._context.Conf.torso_r,
+            iou_threshold=self._context.conf.pairwise_dist,
+            oks_sigma=self._context.conf.sigma,
+            line_torso_radius=self._context.conf.torso_r,
         )
 
     def _distance_func(self, item_a, item_b):
