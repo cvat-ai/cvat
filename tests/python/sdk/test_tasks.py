@@ -16,6 +16,7 @@ from cvat_sdk.core.proxies.tasks import ResourceType, Task
 from cvat_sdk.core.proxies.types import Location
 from cvat_sdk.core.uploading import Uploader, _MyTusUploader
 from PIL import Image
+from pytest_cases import fixture_ref, parametrize
 
 from shared.utils.config import IMPORT_EXPORT_BUCKET_ID
 from shared.utils.helpers import generate_image_files
@@ -53,36 +54,6 @@ class TestTaskUsecases(_TestDatasetExport):
         fxt_new_task.download_backup(backup_path)
 
         yield backup_path
-
-    @pytest.fixture
-    def fxt_new_task(self, fxt_image_file: Path):
-        task = self.client.tasks.create_from_data(
-            spec={
-                "name": "test_task",
-                "labels": [{"name": "car"}, {"name": "person"}],
-            },
-            resources=[fxt_image_file],
-            data_params={"image_quality": 80},
-        )
-
-        return task
-
-    @pytest.fixture
-    def fxt_new_task_with_target_storage(self, fxt_image_file: Path):
-        task = self.client.tasks.create_from_data(
-            spec={
-                "name": "test_task",
-                "labels": [{"name": "car"}, {"name": "person"}],
-                "target_storage": {
-                    "location": Location.CLOUD_STORAGE,
-                    "cloud_storage_id": IMPORT_EXPORT_BUCKET_ID,
-                },
-            },
-            resources=[fxt_image_file],
-            data_params={"image_quality": 80},
-        )
-
-        return task
 
     @pytest.fixture
     def fxt_new_task_without_data(self):
@@ -296,24 +267,19 @@ class TestTaskUsecases(_TestDatasetExport):
 
     @pytest.mark.parametrize("annotation_format", ("CVAT for images 1.1",))
     @pytest.mark.parametrize("include_images", (True, False))
-    @pytest.mark.parametrize(
-        "fxt_task_name",
-        (
-            "fxt_new_task",
-            "fxt_new_task_with_target_storage",
-        ),
+    @parametrize(
+        "task", [fixture_ref("fxt_new_task"), fixture_ref("fxt_new_task_with_target_storage")]
     )
     @pytest.mark.parametrize("location", (None, Location.LOCAL, Location.CLOUD_STORAGE))
     def test_can_export_dataset(
         self,
         annotation_format: str,
         include_images: bool,
-        fxt_task_name: str,
+        task: Task,
         location: Optional[Location],
         request,
         cloud_storages,
     ):
-        task: Task = request.getfixturevalue(fxt_task_name)
         file_path = self.tmp_path / f"task_{task.id}-{annotation_format.lower()}.zip"
         self._test_can_export_dataset(
             task,

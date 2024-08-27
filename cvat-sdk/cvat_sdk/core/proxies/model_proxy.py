@@ -26,8 +26,10 @@ from typing import (
 
 from typing_extensions import Self
 
+from cvat_sdk.api_client import exceptions
 from cvat_sdk.api_client.model_utils import IModelData, ModelNormal, to_json
 from cvat_sdk.core.downloading import Downloader
+from cvat_sdk.core.exceptions import OutdatedModelException
 from cvat_sdk.core.helpers import get_paginated_collection
 from cvat_sdk.core.progress import ProgressReporter
 from cvat_sdk.core.proxies.types import Location
@@ -254,18 +256,35 @@ class _ExportMixin(Generic[_EntityT]):
             query_params["filename"] = str(filename)
 
         downloader = Downloader(self._client)
-        bg_request = downloader.prepare_file(
+        export_request = downloader.prepare_file(
             endpoint,
             url_params={"id": self.id},
             query_params=query_params,
             status_check_period=status_check_period,
         )
 
-        result_url = bg_request.result_url
-        if local_downloading:
-            assert result_url
-        else:
-            assert not result_url
+        result_url = export_request.result_url
+
+        if (
+            location == Location.LOCAL
+            and not result_url
+            or location == Location.CLOUD_STORAGE
+            and result_url
+        ):
+            exceptions.ServiceException(500, "Server handled export parameters incorrectly")
+        elif not location and (
+            (not self.target_storage or self.target_storage.location.value == Location.LOCAL)
+            and not result_url
+            or (
+                self.target_storage
+                and self.target_storage.location.value == Location.CLOUD_STORAGE
+                and result_url
+            )
+        ):
+            raise OutdatedModelException(
+                f"{self.__class__.__name__.title()} was outdated. "
+                f"Use .retrieve() method to obtain {self.__class__.__name__.lower()!r} actual version"
+            )
 
         if result_url:
             downloader.download_file(result_url, output_path=Path(filename), pbar=pbar)
@@ -286,14 +305,17 @@ class ExportDatasetMixin(_ExportMixin):
         """
         Export a dataset in the specified format (e.g. 'YOLO ZIP 1.0').
         By default, a result file will be downloaded based on the default configuration.
-        To download a file locally by force, pass `location=Location.LOCAL`.
+        To force file downloading, pass `location=Location.LOCAL`.
         To save a file to a specific cloud storage, use the `location` and `cloud_storage_id` arguments.
 
         Args:
             filename (StrPath): A path to which a file will be downloaded
-            status_check_period (int, optional): Sleep interval in seconds between status checks. Defaults to None.
-            pbar (Optional[ProgressReporter], optional): Can be used to show a progress when downloading file locally. Defaults to None.
-            location (Optional[Location], optional): Location to which a file will be uploaded. Can be Location.LOCAL or Location.CLOUD_STORAGE. Defaults to None.
+            status_check_period (int, optional): Sleep interval in seconds between status checks.
+                Defaults to None, which means the `Config.status_check_period` is used.
+            pbar (Optional[ProgressReporter], optional): Can be used to show a progress when downloading file locally.
+                Defaults to None.
+            location (Optional[Location], optional): Location to which a file will be uploaded.
+                Can be Location.LOCAL or Location.CLOUD_STORAGE. Defaults to None.
             cloud_storage_id (Optional[int], optional): ID of cloud storage to which a file should be uploaded. Defaults to None.
 
         Raises:
@@ -327,7 +349,23 @@ class DownloadBackupMixin(_ExportMixin):
         cloud_storage_id: Optional[int] = None,
     ) -> None:
         """
-        Create a resource backup and download it locally or upload to a cloud storage
+        Create a resource backup and download it locally or upload to a cloud storage.
+        By default, a result file will be downloaded based on the default configuration.
+        To force file downloading, pass `location=Location.LOCAL`.
+        To save a file to a specific cloud storage, use the `location` and `cloud_storage_id` arguments.
+
+        Args:
+            filename (StrPath): A path to which a file will be downloaded
+            status_check_period (int, optional): Sleep interval in seconds between status checks.
+                Defaults to None, which means the `Config.status_check_period` is used.
+            pbar (Optional[ProgressReporter], optional): Can be used to show a progress when downloading file locally.
+                Defaults to None.
+            location (Optional[Location], optional): Location to which a file will be uploaded.
+                Can be Location.LOCAL or Location.CLOUD_STORAGE. Defaults to None.
+            cloud_storage_id (Optional[int], optional): ID of cloud storage to which a file should be uploaded. Defaults to None.
+
+        Raises:
+            ValueError: When location is Location.CLOUD_STORAGE but no cloud_storage_id is passed
         """
 
         self.export(

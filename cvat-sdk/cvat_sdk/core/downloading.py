@@ -121,12 +121,12 @@ class Downloader:
         if status_check_period is None:
             status_check_period = client.config.status_check_period
 
-        bg_request = self.prepare_file(
+        export_request = self.prepare_file(
             endpoint,
             url_params=url_params,
             query_params=query_params,
             status_check_period=status_check_period,
         )
 
-        assert bg_request.result_url, "Result url was not found in server response"
-        self.download_file(bg_request.result_url, output_path=filename, pbar=pbar)
+        assert export_request.result_url, "Result url was not found in server response"
+        self.download_file(export_request.result_url, output_path=filename, pbar=pbar)
