@@ -167,10 +167,9 @@ def make_export_filename(
     from .formats.registry import EXPORT_FORMATS
     file_ext = EXPORT_FORMATS[format_name].EXT
 
-    if save_images and all_images:
-        dataset_type = 'fulldataset'
-    else:
-        dataset_type = 'dataset' if save_images else 'annotations'
+    dataset_type = 'dataset' if save_images else 'annotations'
+    if not all_images:
+        dataset_type += "-annotated_only"
         
     filename = '%s-instance%f-%s.%s' % (
         dataset_type,
