@@ -59,15 +59,14 @@ function updatedFlatKeyMap(scope: string, flatKeyMap: FlatKeyMap): FlatKeyMapIte
         items: {},
     };
     const scopes = [];
-    if (scope === ShortcutScope.GLOBAL) {
-        scopes.push(...Object.keys(flatKeyMap));
+    if (scope === ShortcutScope.GENERAL) {
+        scopes.push(...Object.keys(ShortcutScope));
     } else {
-        scopes.push(ShortcutScope.GLOBAL);
-        if (scope === ShortcutScope.ANNOTATION_PAGE || scope === ShortcutScope.OBJECTS_SIDE_BAR) {
+        scopes.push(ShortcutScope.GENERAL);
+        if (scope === ShortcutScope.ANNOTATION_PAGE || scope === ShortcutScope.OBJECTS_SIDEBAR) {
             scopes.push(
                 ShortcutScope.ANNOTATION_PAGE,
-                ShortcutScope.OBJECTS_SIDE_BAR,
-                ShortcutScope.CONTROLS_SIDE_BAR,
+                ShortcutScope.OBJECTS_SIDEBAR,
                 ...Object.keys(ShortcutScope).filter((s) => s.includes('WORKSPACE')),
             );
         } else if (scope.includes('WORKSPACE') && !scope.includes('CONTROLS')) {
@@ -75,25 +74,16 @@ function updatedFlatKeyMap(scope: string, flatKeyMap: FlatKeyMap): FlatKeyMapIte
             scopes.push(
                 scope,
                 sidebar,
-                ShortcutScope.OBJECTS_SIDE_BAR,
-                ShortcutScope.CONTROLS_SIDE_BAR,
+                ShortcutScope.OBJECTS_SIDEBAR,
                 ShortcutScope.ANNOTATION_PAGE,
             );
         } else if (scope.includes('WORKSPACE') && scope.includes('CONTROLS')) {
-            const workspace = scope.split('_CONTROLS')[0];
+            const workspace = scope.split(' controls')[0];
             scopes.push(
                 scope,
                 workspace,
                 ShortcutScope.ANNOTATION_PAGE,
-                ShortcutScope.CONTROLS_SIDE_BAR,
-                ShortcutScope.OBJECTS_SIDE_BAR,
-            );
-        } else if (scope === ShortcutScope.CONTROLS_SIDE_BAR) {
-            scopes.push(
-                ShortcutScope.CONTROLS_SIDE_BAR,
-                ShortcutScope.OBJECTS_SIDE_BAR,
-                ShortcutScope.ANNOTATION_PAGE,
-                ...Object.keys(ShortcutScope).filter((s) => s.includes('WORKSPACE')),
+                ShortcutScope.OBJECTS_SIDEBAR,
             );
         } else {
             scopes.push(scope);
@@ -101,6 +91,9 @@ function updatedFlatKeyMap(scope: string, flatKeyMap: FlatKeyMap): FlatKeyMapIte
     }
 
     for (const s of scopes) {
+        if (!flatKeyMap[s]) {
+            continue;
+        }
         flatKeyMapUpdated.sequences.push(...flatKeyMap[s].sequences);
         flatKeyMapUpdated.items = { ...flatKeyMapUpdated.items, ...flatKeyMap[s].items };
     }

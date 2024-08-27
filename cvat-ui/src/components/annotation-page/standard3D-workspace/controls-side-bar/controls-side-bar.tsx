@@ -48,18 +48,24 @@ interface Props {
 }
 
 const componentShortcuts: Record<string, KeyMapItem> = {
-    PASTE_SHAPE_STANDARD_3D_CONTROLS: {
+    PASTE_SHAPE: {
         name: 'Paste shape',
         description: 'Paste a shape from internal CVAT clipboard',
         sequences: ['ctrl+v'],
-        scope: ShortcutScope.STANDARD_3D_WORKSPACE_CONTROLS,
+        scope: ShortcutScope.OBJECTS_SIDEBAR,
     },
     SWITCH_DRAW_MODE_STANDARD_3D_CONTROLS: {
         name: 'Draw mode',
         description:
             'Repeat the latest procedure of drawing with the same parameters (shift to redraw an existing shape)',
-        sequences: ['shift+n', 'n'],
-        scope: ShortcutScope.STANDARD_3D_WORKSPACE_CONTROLS,
+        sequences: ['n'],
+        scope: ShortcutScope['3D_ANNOTATION_WORKSPACE_CONTROLS'],
+    },
+    SWITCH_REDRAW_MODE_STANDARD_CONTROLS: {
+        name: 'Redraw shape',
+        description: 'Remove selected shape and redraw it from scratch',
+        sequences: ['shift+n'],
+        scope: ShortcutScope['3D_ANNOTATION_WORKSPACE_CONTROLS'],
     },
 };
 
@@ -93,26 +99,32 @@ export default function ControlsSideBarComponent(props: Props): JSX.Element {
         }
     };
 
+    const handleDrawMode = (event: KeyboardEvent | undefined, action: 'draw' | 'redraw'): void => {
+        preventDefault(event);
+        const drawing = [ActiveControl.DRAW_CUBOID].includes(activeControl);
+        if (!drawing) {
+            canvasInstance.cancel();
+            if (action === 'draw') {
+                repeatDrawShape();
+            } else {
+                redrawShape();
+            }
+        } else {
+            canvasInstance.draw({ enabled: false });
+        }
+    };
+
     const handlers: any = applicableLabels.length ? {
-        PASTE_SHAPE_STANDARD_3D_CONTROLS: (event: KeyboardEvent | undefined) => {
+        PASTE_SHAPE: (event: KeyboardEvent | undefined) => {
             preventDefault(event);
             canvasInstance.cancel();
             pasteShape();
         },
         SWITCH_DRAW_MODE_STANDARD_3D_CONTROLS: (event: KeyboardEvent | undefined) => {
-            preventDefault(event);
-            const drawing = [ActiveControl.DRAW_CUBOID].includes(activeControl);
-
-            if (!drawing) {
-                canvasInstance.cancel();
-                if (event && event.shiftKey) {
-                    redrawShape();
-                } else {
-                    repeatDrawShape();
-                }
-            } else {
-                canvasInstance.draw({ enabled: false });
-            }
+            handleDrawMode(event, 'draw');
+        },
+        SWITCH_REDRAW_MODE_STANDARD_CONTROLS: (event: KeyboardEvent | undefined) => {
+            handleDrawMode(event, 'redraw');
         },
     } : {};
 

@@ -42,13 +42,13 @@ const componentShortcuts = {
         name: 'Group mode',
         description: 'Activate or deactivate mode to grouping shapes',
         sequences: ['g'],
-        scope: ShortcutScope.STANDARD_3D_WORKSPACE_CONTROLS,
+        scope: ShortcutScope['3D_ANNOTATION_WORKSPACE_CONTROLS'],
     },
     RESET_GROUP_STANDARD_3D_CONTROLS: {
         name: 'Reset group',
         description: 'Reset group for selected shapes (in group mode)',
         sequences: ['shift+g'],
-        scope: ShortcutScope.STANDARD_3D_WORKSPACE_CONTROLS,
+        scope: ShortcutScope['3D_ANNOTATION_WORKSPACE_CONTROLS'],
     },
 };
 

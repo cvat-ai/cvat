@@ -166,24 +166,24 @@ const reducer = (state: State, action: ActionUnion<typeof actionCreators>): Stat
 };
 
 const componentShortcuts = {
-    SWITCH_DRAW_MODE_SINGLE_SHAPE_CONTROLS: {
+    SWITCH_DRAW_MODE_SINGLE_SHAPE: {
         name: 'Draw mode',
         description:
             'Repeat the latest procedure of drawing with the same parameters (shift to redraw an existing shape)',
-        sequences: ['shift+n', 'n'],
-        scope: ShortcutScope.SINGLE_SHAPE_WORKSPACE_CONTROLS,
+        sequences: ['n'],
+        scope: ShortcutScope.SINGLE_SHAPE_ANNOTATION_WORKSPACE,
     },
-    CANCEL_SINGLE_SHAPE_CONTROLS: {
+    CANCEL_SINGLE_SHAPE: {
         name: 'Cancel',
         description: 'Cancel any active canvas mode',
         sequences: ['esc'],
-        scope: ShortcutScope.SINGLE_SHAPE_WORKSPACE_CONTROLS,
+        scope: ShortcutScope.SINGLE_SHAPE_ANNOTATION_WORKSPACE,
     },
     DELETE_OBJECT_SINGLE_SHAPE: {
         name: 'Delete object',
         description: 'Delete an active object. Use shift to force delete of locked objects',
         sequences: ['del', 'shift+del'],
-        scope: ShortcutScope.SINGLE_SHAPE_WORKSPACE,
+        scope: ShortcutScope.SINGLE_SHAPE_ANNOTATION_WORKSPACE,
     },
 };
 
@@ -372,11 +372,11 @@ function SingleShapeSidebar(): JSX.Element {
     };
 
     const handlers: Record<keyof typeof componentShortcuts, (event?: KeyboardEvent) => void> = {
-        CANCEL_SINGLE_SHAPE_CONTROLS: (event: KeyboardEvent | undefined) => {
+        CANCEL_SINGLE_SHAPE: (event: KeyboardEvent | undefined) => {
             event?.preventDefault();
             (store.getState().annotation.canvas.instance as Canvas).cancel();
         },
-        SWITCH_DRAW_MODE_SINGLE_SHAPE_CONTROLS: (event: KeyboardEvent | undefined) => {
+        SWITCH_DRAW_MODE_SINGLE_SHAPE: (event: KeyboardEvent | undefined) => {
             event?.preventDefault();
             const canvas = store.getState().annotation.canvas.instance as Canvas;
             canvas.draw({ enabled: false });

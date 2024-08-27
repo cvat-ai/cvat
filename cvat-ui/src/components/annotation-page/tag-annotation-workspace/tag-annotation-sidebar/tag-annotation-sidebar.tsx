@@ -81,12 +81,12 @@ function mapStateToProps(state: CombinedState): StateToProps {
 }
 
 const componentShortcuts = {
-    SWITCH_DRAW_MODE_TAG_ANNOTATION_CONTROLS: {
+    SWITCH_DRAW_MODE_TAG_ANNOTATION: {
         name: 'Draw mode',
         description:
             'Repeat the latest procedure of drawing with the same parameters (shift to redraw an existing shape)',
         sequences: ['shift+n', 'n'],
-        scope: ShortcutScope.TAG_ANNOTATION_WORKSPACE_CONTROLS,
+        scope: ShortcutScope.TAG_ANNOTATION_WORKSPACE,
     },
 };
 
@@ -230,7 +230,7 @@ function TagAnnotationSidebar(props: StateToProps & DispatchToProps): JSX.Elemen
     };
 
     const handlers: Record<keyof typeof componentShortcuts, (event?: KeyboardEvent) => void> = {
-        SWITCH_DRAW_MODE_TAG_ANNOTATION_CONTROLS: (event: KeyboardEvent | undefined) => {
+        SWITCH_DRAW_MODE_TAG_ANNOTATION: (event: KeyboardEvent | undefined) => {
             preventDefault(event);
             if (selectedLabelID !== null) {
                 onShortcutPress(event, selectedLabelID);

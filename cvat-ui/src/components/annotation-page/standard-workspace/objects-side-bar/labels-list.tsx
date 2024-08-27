@@ -26,7 +26,7 @@ for (const i of [1, 2, 3, 4, 5, 6, 7, 8, 9, 0]) {
         description: 'Change label of a selected object or default label of the next created object if no one object is activated',
         sequences: [`ctrl+${i}`],
         nonActive: true,
-        scope: ShortcutScope.OBJECTS_SIDE_BAR,
+        scope: ShortcutScope.OBJECTS_SIDEBAR,
     };
 }
 

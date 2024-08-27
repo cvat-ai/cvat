@@ -76,8 +76,16 @@ function ShortcutsSettingsComponent(props: Props): JSX.Element {
             if (viewFilteredItems.length === 0) {
                 return null;
             }
+
+            let scopeTitle = scope.split('_').join(' ');
+            const firstAlphaIndex = scopeTitle.search(/[a-zA-Z]/);
+            if (firstAlphaIndex !== -1) {
+                scopeTitle = scopeTitle.slice(0, firstAlphaIndex) +
+                scopeTitle.charAt(firstAlphaIndex).toUpperCase() +
+                scopeTitle.slice(firstAlphaIndex + 1).toLowerCase();
+            }
             return {
-                label: <span className='cvat-shortcuts-settings-label'>{`${scope.split('_').join(' ').toLowerCase()}`}</span>,
+                label: <span className='cvat-shortcuts-settings-label'>{scopeTitle}</span>,
                 key: scope,
                 showArrow: !searchValue,
                 children: (
@@ -135,7 +143,7 @@ function ShortcutsSettingsComponent(props: Props): JSX.Element {
             </Row>
             <Row className='cvat-shortcuts-setting'>
                 <Col span={24}>
-                    <Alert message='Some key combinations may be reserved by the browser and cannot be overridden in CVAT.' type='warning' showIcon />
+                    <Alert message='Shortcut may consist of any combination of modifiers (alt, ctrl, or shift) and one non-modifier at the end. Some key combinations may be reserved by the browser and cannot be overridden in CVAT.' type='warning' showIcon />
                     {items ? (
                         <Collapse
                             items={items}

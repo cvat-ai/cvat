@@ -7,7 +7,7 @@ import { Select, Modal } from 'antd/lib';
 import { conflictDetector, unsetExistingShortcuts } from 'utils/conflict-detector';
 import { ShortcutScope } from 'utils/enums';
 import { KeyMapItem } from 'utils/mousetrap-react';
-import { getKeyfromCode } from 'utils/key-code-mapper';
+import { getKeyfromCode, isModifier } from 'utils/key-code-mapper';
 
 interface Props {
     id: string;
@@ -73,6 +73,19 @@ function MultipleShortcutsDisplay(props: Props): JSX.Element {
     }
 
     const finalizeCombination = (): void => {
+        const containsMoreThanOneNonModifierKey = pressedKeys.flat().filter((key) => !isModifier(key)).length > 1;
+        if (containsMoreThanOneNonModifierKey) {
+            Modal.error({
+                title: 'Invalid key combination',
+                content: 'Only one non-modifier key can be used in a combination',
+            });
+            setPressedKeys([[]]);
+            setCurrentIdx(0);
+            setTimer(null);
+            finalizedRef.current = true;
+            selectRef.current?.blur();
+            return;
+        }
         const keyCombination = pressedKeys.map((keys) => keys.join('+')).join(' ');
         if (!sequences.includes(keyCombination)) {
             conflictNotifier(id, [...sequences, keyCombination]);
@@ -109,8 +122,14 @@ function MultipleShortcutsDisplay(props: Props): JSX.Element {
         const mappedKey = getKeyfromCode(event.code);
         if (!focus) return;
         if (!mappedKey) return;
-        const newTimer = setTimeout(finalizeCombination, 1000);
-        setTimer(newTimer);
+        // to allow shortcuts to be added with a gap, comment this line
+
+        finalizeCombination();
+
+        // and uncomment the following lines
+
+        // const newTimer = setTimeout(finalizeCombination, 1000);
+        // setTimer(newTimer);
     };
 
     return (

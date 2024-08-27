@@ -18,7 +18,7 @@ const componentShortcuts = {
         name: 'Toggle layout grid',
         description: 'The grid is used to UI development',
         sequences: ['ctrl+alt+enter'],
-        scope: ShortcutScope.GLOBAL,
+        scope: ShortcutScope.GENERAL,
     },
 };
 

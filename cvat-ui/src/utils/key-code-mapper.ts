@@ -108,3 +108,7 @@ export function getKeyfromCode(code: string): string | null {
     }
     return key;
 }
+
+export function isModifier(key: string): boolean {
+    return key === 'ctrl' || key === 'alt' || key === 'shift';
+}

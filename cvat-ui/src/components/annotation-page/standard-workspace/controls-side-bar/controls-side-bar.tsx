@@ -70,17 +70,23 @@ const componentShortcuts = {
         sequences: ['ctrl+shift+r'],
         scope: ShortcutScope.STANDARD_WORKSPACE_CONTROLS,
     },
-    PASTE_SHAPE_STANDARD_CONTROLS: {
+    PASTE_SHAPE: {
         name: 'Paste shape',
         description: 'Paste a shape from internal CVAT clipboard',
         sequences: ['ctrl+v'],
-        scope: ShortcutScope.STANDARD_WORKSPACE_CONTROLS,
+        scope: ShortcutScope.OBJECTS_SIDEBAR,
     },
     SWITCH_DRAW_MODE_STANDARD_CONTROLS: {
         name: 'Draw mode',
         description:
-            'Repeat the latest procedure of drawing with the same parameters (shift to redraw an existing shape)',
-        sequences: ['shift+n', 'n'],
+            'Repeat the latest procedure of drawing with the same parameters',
+        sequences: ['n'],
+        scope: ShortcutScope.STANDARD_WORKSPACE_CONTROLS,
+    },
+    SWITCH_REDRAW_MODE_STANDARD_CONTROLS: {
+        name: 'Redraw shape',
+        description: 'Remove selected shape and redraw it from scratch',
+        sequences: ['shift+n'],
         scope: ShortcutScope.STANDARD_WORKSPACE_CONTROLS,
     },
 };
@@ -166,56 +172,63 @@ export default function ControlsSideBarComponent(props: Props): JSX.Element {
         },
     };
 
+    const handleDrawMode = (event: KeyboardEvent | undefined, action: 'draw' | 'redraw'): void => {
+        preventDefault(event);
+        const drawing = [
+            ActiveControl.DRAW_POINTS,
+            ActiveControl.DRAW_POLYGON,
+            ActiveControl.DRAW_POLYLINE,
+            ActiveControl.DRAW_RECTANGLE,
+            ActiveControl.DRAW_CUBOID,
+            ActiveControl.DRAW_ELLIPSE,
+            ActiveControl.DRAW_SKELETON,
+            ActiveControl.DRAW_MASK,
+            ActiveControl.AI_TOOLS,
+            ActiveControl.OPENCV_TOOLS,
+        ].includes(activeControl);
+        const editing = canvasInstance.mode() === CanvasMode.EDIT;
+
+        if (!drawing) {
+            if (editing) {
+                // users probably will press N as they are used to do when they want to finish editing
+                // in this case, if a mask or polyline is being edited we probably want to finish editing first
+                canvasInstance.edit({ enabled: false });
+                return;
+            }
+
+            canvasInstance.cancel();
+            // repeateDrawShapes gets all the latest parameters
+            // and calls canvasInstance.draw() with them
+
+            if (action === 'draw') {
+                repeatDrawShape();
+            } else {
+                redrawShape();
+            }
+        } else {
+            if ([ActiveControl.AI_TOOLS, ActiveControl.OPENCV_TOOLS].includes(activeControl)) {
+                // separated API method
+                canvasInstance.interact({ enabled: false });
+                return;
+            }
+
+            canvasInstance.draw({ enabled: false });
+        }
+    };
+
     if (!controlsDisabled) {
         handlers = {
             ...handlers,
-            PASTE_SHAPE_STANDARD_CONTROLS: (event: KeyboardEvent | undefined) => {
+            PASTE_SHAPE: (event: KeyboardEvent | undefined) => {
                 preventDefault(event);
                 canvasInstance.cancel();
                 pasteShape();
             },
             SWITCH_DRAW_MODE_STANDARD_CONTROLS: (event: KeyboardEvent | undefined) => {
-                preventDefault(event);
-                const drawing = [
-                    ActiveControl.DRAW_POINTS,
-                    ActiveControl.DRAW_POLYGON,
-                    ActiveControl.DRAW_POLYLINE,
-                    ActiveControl.DRAW_RECTANGLE,
-                    ActiveControl.DRAW_CUBOID,
-                    ActiveControl.DRAW_ELLIPSE,
-                    ActiveControl.DRAW_SKELETON,
-                    ActiveControl.DRAW_MASK,
-                    ActiveControl.AI_TOOLS,
-                    ActiveControl.OPENCV_TOOLS,
-                ].includes(activeControl);
-                const editing = canvasInstance.mode() === CanvasMode.EDIT;
-
-                if (!drawing) {
-                    if (editing) {
-                        // users probably will press N as they are used to do when they want to finish editing
-                        // in this case, if a mask or polyline is being edited we probably want to finish editing first
-                        canvasInstance.edit({ enabled: false });
-                        return;
-                    }
-
-                    canvasInstance.cancel();
-                    // repeateDrawShapes gets all the latest parameters
-                    // and calls canvasInstance.draw() with them
-
-                    if (event && event.shiftKey) {
-                        redrawShape();
-                    } else {
-                        repeatDrawShape();
-                    }
-                } else {
-                    if ([ActiveControl.AI_TOOLS, ActiveControl.OPENCV_TOOLS].includes(activeControl)) {
-                        // separated API method
-                        canvasInstance.interact({ enabled: false });
-                        return;
-                    }
-
-                    canvasInstance.draw({ enabled: false });
-                }
+                handleDrawMode(event, 'draw');
+            },
+            SWITCH_REDRAW_MODE_STANDARD_CONTROLS: (event: KeyboardEvent | undefined) => {
+                handleDrawMode(event, 'redraw');
             },
         };
     }
