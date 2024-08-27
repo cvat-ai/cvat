@@ -18,14 +18,14 @@ from cvat_sdk.core.uploading import Uploader, _MyTusUploader
 from PIL import Image
 from pytest_cases import fixture_ref, parametrize
 
-from shared.utils.config import IMPORT_EXPORT_BUCKET_ID
+from shared.fixtures.data import CloudStorageAssets
 from shared.utils.helpers import generate_image_files
 
-from .common import _TestDatasetExport
+from .common import TestDatasetExport
 from .util import make_pbar
 
 
-class TestTaskUsecases(_TestDatasetExport):
+class TestTaskUsecases(TestDatasetExport):
     @pytest.fixture(autouse=True)
     def setup(
         self,
@@ -265,7 +265,7 @@ class TestTaskUsecases(_TestDatasetExport):
         assert self.logger_stream.getvalue(), f".*Task ID {task_id} deleted.*"
         assert self.stdout.getvalue() == ""
 
-    @pytest.mark.parametrize("annotation_format", ("CVAT for images 1.1",))
+    @pytest.mark.parametrize("format_name", ("CVAT for images 1.1",))
     @pytest.mark.parametrize("include_images", (True, False))
     @parametrize(
         "task", [fixture_ref("fxt_new_task"), fixture_ref("fxt_new_task_with_target_storage")]
@@ -273,18 +273,18 @@ class TestTaskUsecases(_TestDatasetExport):
     @pytest.mark.parametrize("location", (None, Location.LOCAL, Location.CLOUD_STORAGE))
     def test_can_export_dataset(
         self,
-        annotation_format: str,
+        format_name: str,
         include_images: bool,
         task: Task,
         location: Optional[Location],
-        request,
-        cloud_storages,
+        request: pytest.FixtureRequest,
+        cloud_storages: CloudStorageAssets,
     ):
-        file_path = self.tmp_path / f"task_{task.id}-{annotation_format.lower()}.zip"
+        file_path = self.tmp_path / f"task_{task.id}-{format_name.lower()}.zip"
         self._test_can_export_dataset(
             task,
+            format_name=format_name,
             file_path=file_path,
-            annotation_format=annotation_format,
             include_images=include_images,
             location=location,
             request=request,

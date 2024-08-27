@@ -15,11 +15,13 @@ from cvat_sdk.core.proxies.types import Location
 from PIL import Image
 from pytest_cases import fixture_ref, parametrize
 
-from .common import _TestDatasetExport
+from shared.fixtures.data import CloudStorageAssets
+
+from .common import TestDatasetExport
 from .util import make_pbar
 
 
-class TestJobUsecases(_TestDatasetExport):
+class TestJobUsecases(TestDatasetExport):
     @pytest.fixture(autouse=True)
     def setup(
         self,
@@ -94,7 +96,7 @@ class TestJobUsecases(_TestDatasetExport):
         assert {obj.name for obj in received_labels} == expected_labels
         assert self.stdout.getvalue() == ""
 
-    @pytest.mark.parametrize("annotation_format", ("CVAT for images 1.1",))
+    @pytest.mark.parametrize("format_name", ("CVAT for images 1.1",))
     @pytest.mark.parametrize("include_images", (True, False))
     @parametrize(
         "task", [fixture_ref("fxt_new_task"), fixture_ref("fxt_new_task_with_target_storage")]
@@ -102,20 +104,20 @@ class TestJobUsecases(_TestDatasetExport):
     @pytest.mark.parametrize("location", (None, Location.LOCAL, Location.CLOUD_STORAGE))
     def test_can_export_dataset(
         self,
-        annotation_format: str,
+        format_name: str,
         include_images: bool,
         task: Task,
         location: Optional[Location],
-        request,
-        cloud_storages,
+        request: pytest.FixtureRequest,
+        cloud_storages: CloudStorageAssets,
     ):
         job_id = task.get_jobs()[0].id
         job = self.client.jobs.retrieve(job_id)
-        file_path = self.tmp_path / f"job_{job.id}-{annotation_format.lower()}.zip"
+        file_path = self.tmp_path / f"job_{job.id}-{format_name.lower()}.zip"
         self._test_can_export_dataset(
             job,
+            format_name=format_name,
             file_path=file_path,
-            annotation_format=annotation_format,
             include_images=include_images,
             location=location,
             request=request,

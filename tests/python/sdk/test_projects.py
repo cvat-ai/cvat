@@ -17,13 +17,14 @@ from cvat_sdk.core.utils import filter_dict
 from PIL import Image
 from pytest_cases import fixture_ref, parametrize
 
+from shared.fixtures.data import CloudStorageAssets
 from shared.utils.config import IMPORT_EXPORT_BUCKET_ID
 
-from .common import _TestDatasetExport
+from .common import TestDatasetExport
 from .util import make_pbar
 
 
-class TestProjectUsecases(_TestDatasetExport):
+class TestProjectUsecases(TestDatasetExport):
     @pytest.fixture(autouse=True)
     def setup(
         self,
@@ -226,7 +227,7 @@ class TestProjectUsecases(_TestDatasetExport):
         assert "100%" in pbar_out.getvalue().strip("\r").split("\r")[-1]
         assert self.stdout.getvalue() == ""
 
-    @pytest.mark.parametrize("annotation_format", ("CVAT for images 1.1",))
+    @pytest.mark.parametrize("format_name", ("CVAT for images 1.1",))
     @pytest.mark.parametrize("include_images", (True, False))
     @parametrize(
         "project",
@@ -235,18 +236,18 @@ class TestProjectUsecases(_TestDatasetExport):
     @pytest.mark.parametrize("location", (None, Location.LOCAL, Location.CLOUD_STORAGE))
     def test_can_export_dataset(
         self,
-        annotation_format: str,
+        format_name: str,
         include_images: bool,
         project: Project,
         location: Optional[Location],
-        request,
-        cloud_storages,
+        request: pytest.FixtureRequest,
+        cloud_storages: CloudStorageAssets,
     ):
-        file_path = self.tmp_path / f"project_{project.id}-{annotation_format.lower()}.zip"
+        file_path = self.tmp_path / f"project_{project.id}-{format_name.lower()}.zip"
         self._test_can_export_dataset(
             project,
+            format_name=format_name,
             file_path=file_path,
-            annotation_format=annotation_format,
             include_images=include_images,
             location=location,
             request=request,
