@@ -228,6 +228,8 @@ class CachedSimilarityFunction:
         self.sim_fn = sim_fn
 
     def __call__(self, a_ann: dm.Annotation, b_ann: dm.Annotation) -> float:
+        if a_ann == b_ann:
+            return 1
         key: Tuple[int, int] = (
             id(a_ann),
             id(b_ann),
@@ -641,33 +643,12 @@ class SkeletonMatcher(_ShapeMatcher):
     sigma: float = 0.1
     instance_map = {}
     skeleton_map = {}
-    _skeleton_info = {}
 
     def _distance_func(self, a, b):
         matcher = KeypointsMatcher(instance_map=self.instance_map, sigma=self.sigma)
         if isinstance(a, dm.Skeleton) and isinstance(b, dm.Skeleton):
-            if a == b:
-                return 1
-            elif (id(b), id(a)) in self._distance.keys():
-                return self._distance.cache[(id(b), id(a))]
-            else:
-                return self._distance.cache[(id(a), id(b))]
+            return self.distance(a, b)
         return matcher.distance(a, b)
-
-    def _get_skeleton_info(self, skeleton_label_id: int):
-        label_cat = cast(dm.LabelCategories, self.categories[dm.AnnotationType.label])
-        skeleton_info = self._skeleton_info.get(skeleton_label_id)
-
-        if skeleton_info is None:
-            skeleton_label_name = label_cat[skeleton_label_id].name
-
-            # Build item_a sorted list of sub labels to arrange skeleton points during comparison
-            skeleton_info = sorted(
-                idx for idx, label in enumerate(label_cat) if label.parent == skeleton_label_name
-            )
-            self._skeleton_info[skeleton_label_id] = skeleton_info
-
-        return skeleton_info
 
     def match_annotations_two_sources(
         self, a_skeletons: List[dm.Skeleton], b_skeletons: List[dm.Skeleton]
@@ -685,7 +666,7 @@ class SkeletonMatcher(_ShapeMatcher):
         for source, source_points in [(a_skeletons, a_points), (b_skeletons, b_points)]:
             for skeleton in source:
                 skeleton_info = skeleton_infos.setdefault(
-                    skeleton.label, self._get_skeleton_info(skeleton.label)
+                    skeleton.label, self._distance_comparator._get_skeleton_info(skeleton.label)
                 )
 
                 # Merge skeleton points into item_a single list
@@ -736,8 +717,6 @@ class SkeletonMatcher(_ShapeMatcher):
             distance=self.distance,
         )
 
-        matched = [(points_map[id(p_a)], points_map[id(p_b)]) for (p_a, p_b) in results[0]]
-
         # Map points back to skeletons
         if self.return_distances:
             distances = self._distance
@@ -745,7 +724,7 @@ class SkeletonMatcher(_ShapeMatcher):
                 dist = distances.pop((p_a_id, p_b_id))
                 distances.set((id(points_map[p_a_id]), id(points_map[p_b_id])), dist)
 
-        return matched
+        return [(points_map[id(p_a)], points_map[id(p_b)]) for (p_a, p_b) in results[0]]
 
 
 @attrs
@@ -893,14 +872,9 @@ class SkeletonMerger(_ShapeMerger, SkeletonMatcher):
     def _merge_cluster_shape_nearest(self, cluster):
         dist = {}
         for idx, skeleton1 in enumerate(cluster):
-            id_skeleton1 = id(skeleton1)
             skeleton_distance = 0
             for skeleton2 in cluster:
-                id_skeleton2 = id(skeleton2)
-                try:
-                    skeleton_distance += self._distance.cache[(id_skeleton1, id_skeleton2)]
-                except KeyError:
-                    skeleton_distance += 1
+                skeleton_distance += self.distance(skeleton1, skeleton2)
 
             dist[idx] = skeleton_distance / len(cluster)
 
