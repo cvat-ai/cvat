@@ -3,7 +3,6 @@
 // SPDX-License-Identifier: MIT
 
 import React from 'react';
-import { useSelector } from 'react-redux';
 import { QuestionCircleOutlined } from '@ant-design/icons/lib/icons';
 import Text from 'antd/lib/typography/Text';
 import InputNumber from 'antd/lib/input-number';
@@ -14,7 +13,6 @@ import Checkbox from 'antd/lib/checkbox/Checkbox';
 import Select from 'antd/lib/select';
 import CVATTooltip from 'components/common/cvat-tooltip';
 import { QualitySettings, TargetMetric } from 'cvat-core-wrapper';
-import { CombinedState } from 'reducers';
 
 interface FormProps {
     form: FormInstance;
@@ -23,10 +21,6 @@ interface FormProps {
 
 export default function QualitySettingsForm(props: FormProps): JSX.Element | null {
     const { form, settings } = props;
-
-    const schemaDescriptions = useSelector((state: CombinedState) => (
-        state.serverAPI.schema?.components.schemas.QualitySettings.properties
-    ));
 
     const initialValues = {
         targetMetric: settings.targetMetric,
@@ -51,7 +45,7 @@ export default function QualitySettingsForm(props: FormProps): JSX.Element | nul
         objectVisibilityThreshold: settings.objectVisibilityThreshold * 100,
         panopticComparison: settings.panopticComparison,
     };
-    const targetMetricDescription = `${schemaDescriptions.target_metric.description
+    const targetMetricDescription = `${settings.descriptions.targetMetric
         .replaceAll(/\* [a-z` -]+[A-Z]+/g, '')
         .replaceAll(/\n/g, '')}.`;
 
@@ -66,7 +60,7 @@ export default function QualitySettingsForm(props: FormProps): JSX.Element | nul
             <Text>
                 Target metric threshold -
                 {' '}
-                {schemaDescriptions.target_metric_threshold.description}
+                {settings.descriptions.targetMetricThreshold}
                 This parameter affects display of the quality numbers.
             </Text>
         </div>
@@ -77,7 +71,7 @@ export default function QualitySettingsForm(props: FormProps): JSX.Element | nul
             <Text>
                 Max validations per job -
                 {' '}
-                {schemaDescriptions.max_validations_per_job.description}
+                {settings.descriptions.maxValidationsPerJob}
             </Text>
         </div>
     );
@@ -87,12 +81,12 @@ export default function QualitySettingsForm(props: FormProps): JSX.Element | nul
             <Text>
                 Min overlap threshold(IoU) -
                 {' '}
-                {schemaDescriptions.iou_threshold.description}
+                {settings.descriptions.iouThreshold}
             </Text>
             <Text>
                 Low overlap threshold -
                 {' '}
-                {schemaDescriptions.low_overlap_threshold.description}
+                {settings.descriptions.lowOverlapThreshold}
             </Text>
         </div>
     );
@@ -102,7 +96,7 @@ export default function QualitySettingsForm(props: FormProps): JSX.Element | nul
             <Text>
                 Object Keypoint Similarity (OKS) -
                 {' '}
-                {schemaDescriptions.oks_sigma.description}
+                {settings.descriptions.oksSigma}
             </Text>
         </div>
     );
@@ -112,17 +106,17 @@ export default function QualitySettingsForm(props: FormProps): JSX.Element | nul
             <Text>
                 Line thickness -
                 {' '}
-                {schemaDescriptions.line_thickness.description}
+                {settings.descriptions.lineThickness}
             </Text>
             <Text>
                 Check orientation -
                 {' '}
-                {schemaDescriptions.compare_line_orientation.description}
+                {settings.descriptions.compareLineOrientation}
             </Text>
             <Text>
                 Min similarity gain -
                 {' '}
-                {schemaDescriptions.line_orientation_threshold.description}
+                {settings.descriptions.lineOrientationThreshold}
             </Text>
         </div>
     );
@@ -132,12 +126,12 @@ export default function QualitySettingsForm(props: FormProps): JSX.Element | nul
             <Text>
                 Compare groups -
                 {' '}
-                {schemaDescriptions.compare_groups.description}
+                {settings.descriptions.compareGroups}
             </Text>
             <Text>
                 Min group match threshold -
                 {' '}
-                {schemaDescriptions.group_match_threshold.description}
+                {settings.descriptions.groupMatchThreshold}
             </Text>
         </div>
     );
@@ -147,17 +141,17 @@ export default function QualitySettingsForm(props: FormProps): JSX.Element | nul
             <Text>
                 Check object visibility -
                 {' '}
-                {schemaDescriptions.check_covered_annotations.description}
+                {settings.descriptions.checkCoveredAnnotations}
             </Text>
             <Text>
                 Min visibility threshold -
                 {' '}
-                {schemaDescriptions.object_visibility_threshold.description}
+                {settings.descriptions.objectVisibilityThreshold}
             </Text>
             <Text>
                 Match only visible parts -
                 {' '}
-                {schemaDescriptions.panoptic_comparison.description}
+                {settings.descriptions.panopticComparison}
             </Text>
         </div>
     );
