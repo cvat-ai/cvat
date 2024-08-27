@@ -1,7 +1,7 @@
 openapi: 3.0.3
 info:
   title: CVAT REST API
-  version: 2.17.0
+  version: 2.18.0
   description: REST API for Computer Vision Annotation Tool (CVAT)
   termsOfService: https://www.google.com/policies/terms/
   contact:
@@ -4541,6 +4541,7 @@ paths:
         schema:
           type: string
           enum:
+          - autoannotate
           - create
           - import
           - export
@@ -9347,6 +9348,28 @@ components:
     PatchedQualitySettingsRequest:
       type: object
       properties:
+        target_metric:
+          allOf:
+          - $ref: '#/components/schemas/TargetMetricEnum'
+          description: |-
+            The primary metric used for quality estimation
+
+            * `accuracy` - ACCURACY
+            * `precision` - PRECISION
+            * `recall` - RECALL
+        target_metric_threshold:
+          type: number
+          format: double
+          description: |
+            Defines the minimal quality requirements in terms of the selected target metric.
+        max_validations_per_job:
+          type: integer
+          maximum: 2147483647
+          minimum: 0
+          description: |
+            The maximum number of job validation attempts for the job assignee.
+            The job can be automatically accepted if the job quality is above the required
+            threshold, defined by the target threshold parameter.
         iou_threshold:
           type: number
           format: double
@@ -9746,7 +9769,17 @@ components:
           type: integer
         total_count:
           type: integer
+        accuracy:
+          type: number
+          format: double
+        precision:
+          type: number
+          format: double
+        recall:
+          type: number
+          format: double
       required:
+      - accuracy
       - conflict_count
       - conflicts_by_type
       - ds_count
@@ -9754,6 +9787,8 @@ components:
       - frame_count
       - frame_share
       - gt_count
+      - precision
+      - recall
       - total_count
       - valid_count
       - warning_count
@@ -9774,6 +9809,28 @@ components:
         task_id:
           type: integer
           readOnly: true
+        target_metric:
+          allOf:
+          - $ref: '#/components/schemas/TargetMetricEnum'
+          description: |-
+            The primary metric used for quality estimation
+
+            * `accuracy` - ACCURACY
+            * `precision` - PRECISION
+            * `recall` - RECALL
+        target_metric_threshold:
+          type: number
+          format: double
+          description: |
+            Defines the minimal quality requirements in terms of the selected target metric.
+        max_validations_per_job:
+          type: integer
+          maximum: 2147483647
+          minimum: 0
+          description: |
+            The maximum number of job validation attempts for the job assignee.
+            The job can be automatically accepted if the job quality is above the required
+            threshold, defined by the target threshold parameter.
         iou_threshold:
           type: number
           format: double
@@ -9955,6 +10012,9 @@ components:
           type: integer
           nullable: true
         format:
+          type: string
+          nullable: true
+        function_id:
           type: string
           nullable: true
       required:
@@ -10352,6 +10412,16 @@ components:
           type: boolean
       required:
       - name
+    TargetMetricEnum:
+      enum:
+      - accuracy
+      - precision
+      - recall
+      type: string
+      description: |-
+        * `accuracy` - ACCURACY
+        * `precision` - PRECISION
+        * `recall` - RECALL
     TaskAnnotationsUpdateRequest:
       oneOf:
       - $ref: '#/components/schemas/LabeledDataRequest'
