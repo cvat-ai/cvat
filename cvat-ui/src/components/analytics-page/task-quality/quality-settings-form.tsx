@@ -3,6 +3,7 @@
 // SPDX-License-Identifier: MIT
 
 import React from 'react';
+import { useSelector } from 'react-redux';
 import { QuestionCircleOutlined } from '@ant-design/icons/lib/icons';
 import Text from 'antd/lib/typography/Text';
 import InputNumber from 'antd/lib/input-number';
@@ -13,6 +14,7 @@ import Checkbox from 'antd/lib/checkbox/Checkbox';
 import Select from 'antd/lib/select';
 import CVATTooltip from 'components/common/cvat-tooltip';
 import { QualitySettings, TargetMetric } from 'cvat-core-wrapper';
+import { CombinedState } from 'reducers';
 
 interface FormProps {
     form: FormInstance;
@@ -21,6 +23,10 @@ interface FormProps {
 
 export default function QualitySettingsForm(props: FormProps): JSX.Element | null {
     const { form, settings } = props;
+
+    const schemaDescriptions = useSelector((state: CombinedState) => (
+        state.serverAPI.schema?.components.schemas.QualitySettings.properties
+    ));
 
     const initialValues = {
         targetMetric: settings.targetMetric,
@@ -45,17 +51,23 @@ export default function QualitySettingsForm(props: FormProps): JSX.Element | nul
         objectVisibilityThreshold: settings.objectVisibilityThreshold * 100,
         panopticComparison: settings.panopticComparison,
     };
+    const targetMetricDescription = `${schemaDescriptions.target_metric.description
+        .replaceAll(/\* [a-z` -]+[A-Z]+/g, '')
+        .replaceAll(/\n/g, '')}.`;
 
     const generalTooltip = (
         <div className='cvat-analytics-settings-tooltip-inner'>
             <Text>
-                Target metric - the primary metric for annotation quality estimation.
-                Different metrics can prioritize different aspects, such as the type of the errors made,
-                per class or overall performance. This parameter affects display of the quality computed.
+                Target metric -
+                {' '}
+                {targetMetricDescription}
+                This parameter affects display of the quality computed.
             </Text>
             <Text>
-                Target metric threshold - the minimum acceptable annotation quality level,
-                in terms of the target metric selected. This parameter affects display of the quality numbers.
+                Target metric threshold -
+                {' '}
+                {schemaDescriptions.target_metric_threshold.description}
+                This parameter affects display of the quality numbers.
             </Text>
         </div>
     );
@@ -63,10 +75,9 @@ export default function QualitySettingsForm(props: FormProps): JSX.Element | nul
     const jobValidationTooltip = (
         <div className='cvat-analytics-settings-tooltip-inner'>
             <Text>
-                Max validations per job - the maximum allowed number of job annotation results validations,
-                requested by job assignees, available per assignment. Requires ground truth configured.
-                If the job quality measured is below the target metric threshold,
-                the assignee is asked to check their work for errors and resubmit annotations.
+                Max validations per job -
+                {' '}
+                {schemaDescriptions.max_validations_per_job.description}
             </Text>
         </div>
     );
@@ -74,10 +85,14 @@ export default function QualitySettingsForm(props: FormProps): JSX.Element | nul
     const shapeComparisonTooltip = (
         <div className='cvat-analytics-settings-tooltip-inner'>
             <Text>
-                Min overlap threshold(IoU) is used for distinction between matched / unmatched shapes.
+                Min overlap threshold(IoU) -
+                {' '}
+                {schemaDescriptions.iou_threshold.description}
             </Text>
             <Text>
-                Low overlap threshold is used for distinction between strong / weak (low overlap) matches.
+                Low overlap threshold -
+                {' '}
+                {schemaDescriptions.low_overlap_threshold.description}
             </Text>
         </div>
     );
@@ -85,21 +100,9 @@ export default function QualitySettingsForm(props: FormProps): JSX.Element | nul
     const keypointTooltip = (
         <div className='cvat-analytics-settings-tooltip-inner'>
             <Text>
-                Object Keypoint Similarity (OKS) is like IoU, but for skeleton points.
-            </Text>
-            <Text>
-                The Sigma value is the percent of the skeleton bbox area ^ 0.5.
-                Used as the radius of the circle around a GT point,
-                where the checked point is expected to be.
-            </Text>
-            <Text>
-                The value is also used to match single point annotations, in which case
-                the bbox is the whole image. For point groups the bbox is taken
-                for the whole group.
-            </Text>
-            <Text>
-                If there is a rectangle annotation in the points group or skeleton,
-                it is used as the group bbox (supposing the whole group describes a single object).
+                Object Keypoint Similarity (OKS) -
+                {' '}
+                {schemaDescriptions.oks_sigma.description}
             </Text>
         </div>
     );
@@ -107,16 +110,19 @@ export default function QualitySettingsForm(props: FormProps): JSX.Element | nul
     const linesTooltip = (
         <div className='cvat-analytics-settings-tooltip-inner'>
             <Text>
-                Line thickness - thickness of polylines, relatively to the (image area) ^ 0.5.
-                The distance to the boundary around the GT line,
-                inside of which the checked line points should be.
+                Line thickness -
+                {' '}
+                {schemaDescriptions.line_thickness.description}
             </Text>
             <Text>
-                Check orientation - Indicates that polylines have direction.
+                Check orientation -
+                {' '}
+                {schemaDescriptions.compare_line_orientation.description}
             </Text>
             <Text>
-                Min similarity gain - The minimal gain in the GT IoU between the given and reversed line directions
-                to consider the line inverted. Only useful with the Check orientation parameter.
+                Min similarity gain -
+                {' '}
+                {schemaDescriptions.line_orientation_threshold.description}
             </Text>
         </div>
     );
@@ -124,11 +130,14 @@ export default function QualitySettingsForm(props: FormProps): JSX.Element | nul
     const groupTooltip = (
         <div className='cvat-analytics-settings-tooltip-inner'>
             <Text>
-                Compare groups - Enables or disables annotation group checks.
+                Compare groups -
+                {' '}
+                {schemaDescriptions.compare_groups.description}
             </Text>
             <Text>
-                Min group match threshold - Minimal IoU for groups to be considered matching,
-                used when the Compare groups is enabled.
+                Min group match threshold -
+                {' '}
+                {schemaDescriptions.group_match_threshold.description}
             </Text>
         </div>
     );
@@ -136,14 +145,19 @@ export default function QualitySettingsForm(props: FormProps): JSX.Element | nul
     const segmentationTooltip = (
         <div className='cvat-analytics-settings-tooltip-inner'>
             <Text>
-                Check object visibility - Check for partially-covered annotations.
+                Check object visibility -
+                {' '}
+                {schemaDescriptions.check_covered_annotations.description}
             </Text>
             <Text>
-                Min visibility threshold - Minimal visible area percent of the spatial annotations (polygons, masks)
-                for reporting covered annotations, useful with the Check object visibility option.
+                Min visibility threshold -
+                {' '}
+                {schemaDescriptions.object_visibility_threshold.description}
             </Text>
             <Text>
-                Match only visible parts - Use only the visible part of the masks and polygons in comparisons.
+                Match only visible parts -
+                {' '}
+                {schemaDescriptions.panoptic_comparison.description}
             </Text>
         </div>
     );

@@ -1,4 +1,4 @@
-// Copyright (C) 2023-2024 CVAT.ai Corporation
+// Copyright (C) 2024 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -13,16 +13,14 @@ export enum QualityColors {
     GRAY = '#8c8c8c',
 }
 
-export const BASE_TARGET_THRESHOLD = 0.7;
-
 const ratios = {
     low: 0.82,
     middle: 0.9,
     high: 1,
 };
 
-export const qualityColorGenerator = (targetMetric?: number) => (value?: number) => {
-    const baseValue = (targetMetric ?? BASE_TARGET_THRESHOLD) * 100;
+export const qualityColorGenerator = (targetMetric: number) => (value?: number) => {
+    const baseValue = targetMetric * 100;
 
     const thresholds = {
         low: baseValue * ratios.low,
@@ -82,7 +80,7 @@ export function sorter(path: string) {
     };
 }
 
-export function collectUsers(reports: QualityReport[]): ColumnFilterItem[] {
+export function collectAssignees(reports: QualityReport[]): ColumnFilterItem[] {
     return Array.from<string | null>(
         new Set(
             reports.map((report: QualityReport) => report.assignee?.username ?? null),

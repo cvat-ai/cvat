@@ -18,7 +18,7 @@ import {
 import CVATTooltip from 'components/common/cvat-tooltip';
 import Tag from 'antd/lib/tag';
 import {
-    collectUsers, QualityColors, sorter, toRepresentation,
+    collectAssignees, QualityColors, sorter, toRepresentation,
 } from 'utils/quality';
 import { ConflictsTooltip } from './gt-conflicts';
 
@@ -96,7 +96,7 @@ function JobListComponent(props: Props): JSX.Element {
                 <Text>{report?.assignee?.username}</Text>
             ),
             sorter: sorter('assignee.assignee.username'),
-            filters: collectUsers(jobsReportsArray),
+            filters: collectAssignees(jobsReportsArray),
             onFilter: (value: boolean | Key, record: any) => (
                 record.assignee.assignee?.username || false
             ) === value,

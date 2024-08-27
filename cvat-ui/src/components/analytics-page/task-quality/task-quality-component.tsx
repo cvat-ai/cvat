@@ -13,7 +13,7 @@ import {
     Job, JobType, QualityReport, QualitySettings, TargetMetric, Task, getCore,
 } from 'cvat-core-wrapper';
 import { useIsMounted } from 'utils/hooks';
-import { BASE_TARGET_THRESHOLD, qualityColorGenerator, QualityColors } from 'utils/quality';
+import { qualityColorGenerator, QualityColors } from 'utils/quality';
 import { ActionUnion, createAction } from 'utils/redux';
 import EmptyGtJob from './empty-job';
 import GtConflicts from './gt-conflicts';
@@ -37,8 +37,8 @@ interface State {
         settings: QualitySettings | null;
         fetching: boolean;
         visible: boolean;
-        getQualityColor: (value?: number) => QualityColors;
-        targetMetric: TargetMetric
+        getQualityColor: ((value?: number) => QualityColors) | null;
+        targetMetric: TargetMetric | null;
     },
 }
 
@@ -141,8 +141,8 @@ function TaskQualityComponent(props: Props): JSX.Element {
             settings: null,
             fetching: true,
             visible: false,
-            getQualityColor: qualityColorGenerator(BASE_TARGET_THRESHOLD),
-            targetMetric: TargetMetric.ACCURACY,
+            getQualityColor: null,
+            targetMetric: null,
         },
     });
 
@@ -181,8 +181,6 @@ function TaskQualityComponent(props: Props): JSX.Element {
         }).catch(handleError);
     }, [task?.id]);
 
-    const gtJob = task.jobs.find((job: Job) => job.type === JobType.GROUND_TRUTH);
-
     const {
         fetching, taskReport, jobsReports,
         qualitySettings: {
@@ -190,6 +188,8 @@ function TaskQualityComponent(props: Props): JSX.Element {
             getQualityColor, targetMetric,
         },
     } = state;
+    const gtJob = task.jobs.find((job: Job) => job.type === JobType.GROUND_TRUTH);
+    const settingsInitialized = qualitySettings && getQualityColor && targetMetric;
 
     return (
         <div className='cvat-task-quality-page'>
@@ -199,7 +199,7 @@ function TaskQualityComponent(props: Props): JSX.Element {
                 ) : (
                     <>
                         {
-                            gtJob ? (
+                            gtJob && settingsInitialized ? (
                                 <>
                                     <Row>
                                         <Text type='secondary'>
