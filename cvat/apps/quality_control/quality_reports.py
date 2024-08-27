@@ -999,7 +999,7 @@ class DistanceComparator(dm.ops.DistanceComparator):
         return dm.Polygon(points)
 
     @staticmethod
-    def _get_ann_type(t, item: dm.Annotation) -> Sequence[dm.Annotation]:
+    def _get_ann_type(t, item: dm.DatasetItem) -> Sequence[dm.Annotation]:
         return [
             a for a in item.annotations if a.type == t and not a.attributes.get("outside", False)
         ]
