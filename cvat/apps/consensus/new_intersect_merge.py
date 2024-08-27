@@ -300,8 +300,8 @@ class _ShapeMatcher(AnnotationMatcher):
     def _match_segments(
         self,
         t,
-        item_a,
-        item_b,
+        item_a :List[dm.Annotation],
+        item_b: List[dm.Annotation],
         *,
         distance: Callable = distance,
         label_matcher: Callable = None,
@@ -313,6 +313,8 @@ class _ShapeMatcher(AnnotationMatcher):
             label_matcher = self.label_matcher
         if dist_thresh is None:
             dist_thresh = self.pairwise_dist
+        item_a = dm.DatasetItem(id=1, annotations=item_a)
+        item_b = dm.DatasetItem(id=2, annotations=item_b)
         return self._distance_comparator.match_segments(
             t=t,
             item_a=item_a,
