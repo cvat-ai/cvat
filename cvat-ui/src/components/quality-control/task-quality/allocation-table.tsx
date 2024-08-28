@@ -97,6 +97,19 @@ export default function AllocationTableComponent(props: Props): JSX.Element {
         state.plugins.callbacks.qualityControlPage.tabs.management.allocationTable.columns.useCount.sorter
     ))[0] ?? sorter('useCount');
 
+    const allocationTableActionsPlugins = usePlugins(
+        (state: CombinedState) => (
+            state.plugins.components.qualityControlPage.tabs.management.allocationTable.actions
+        ), props,
+    );
+    const allocationTableActionsItems: [JSX.Element, number][] = [];
+    allocationTableActionsItems.push(
+        ...allocationTableActionsPlugins.map(({ component: Component, weight }, index) => {
+            const component = <Component targetProps={props} key={index} />;
+            return [component, weight] as [JSX.Element, number];
+        }),
+    );
+
     const [select, setSelect] = useState<{ selectedRowKeys: Key[], selectedRows: RowData[] }>({
         selectedRowKeys: [],
         selectedRows: [],
@@ -279,6 +292,10 @@ export default function AllocationTableComponent(props: Props): JSX.Element {
                 <Col>
                     <Text className='cvat-text-color cvat-frame-allocation-header'> Frames </Text>
                 </Col>
+                {
+                    allocationTableActionsItems.sort((item1, item2) => item1[1] - item2[1])
+                        .map((item) => item[0])
+                }
                 {
                     select.selectedRowKeys.length !== 0 ? (
                         <>

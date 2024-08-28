@@ -73,6 +73,7 @@ const defaultState: PluginsState = {
                             quality: [],
                             useCount: [],
                         },
+                        actions: [],
                     },
                 },
             },

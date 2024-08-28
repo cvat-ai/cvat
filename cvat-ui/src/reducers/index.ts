@@ -309,7 +309,8 @@ export interface PluginsState {
                         columns: {
                             quality: PluginComponent[];
                             useCount: PluginComponent[];
-                        }
+                        },
+                        actions: PluginComponent[];
                     }
                 },
             },
