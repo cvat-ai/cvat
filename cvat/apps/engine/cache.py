@@ -58,7 +58,7 @@ class MediaCache:
     def __init__(self) -> None:
         self._cache = caches["media"]
 
-    def get_checksum(self, value: bytes) -> int:
+    def _get_checksum(self, value: bytes) -> int:
         return zlib.crc32(value)
 
     def _get_or_set_cache_item(
@@ -70,7 +70,7 @@ class MediaCache:
             slogger.glob.info(f"Ending to prepare chunk: key {key}")
 
             if item_data[0]:
-                item = (item_data[0], item_data[1], self.get_checksum(item_data[0].getbuffer()))
+                item = (item_data[0], item_data[1], self._get_checksum(item_data[0].getbuffer()))
                 self._cache.set(key, item)
             else:
                 item = (item_data[0], item_data[1], None)
@@ -84,7 +84,7 @@ class MediaCache:
             # compare checksum
             item_data = item[0].getbuffer() if isinstance(item[0], io.BytesIO) else item[0]
             item_checksum = item[2] if len(item) == 3 else None
-            if item_checksum != self.get_checksum(item_data):
+            if item_checksum != self._get_checksum(item_data):
                 slogger.glob.info(f"Recreating cache item {key} due to checksum mismatch")
                 item = create_item()
 
