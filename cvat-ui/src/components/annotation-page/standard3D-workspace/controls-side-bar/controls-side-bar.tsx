@@ -57,7 +57,7 @@ const componentShortcuts: Record<string, KeyMapItem> = {
     SWITCH_DRAW_MODE_STANDARD_3D_CONTROLS: {
         name: 'Draw mode',
         description:
-            'Repeat the latest procedure of drawing with the same parameters (shift to redraw an existing shape)',
+            'Repeat the latest procedure of drawing with the same parameters',
         sequences: ['n'],
         scope: ShortcutScope['3D_ANNOTATION_WORKSPACE_CONTROLS'],
     },

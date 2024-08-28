@@ -169,7 +169,7 @@ const componentShortcuts = {
     SWITCH_DRAW_MODE_SINGLE_SHAPE: {
         name: 'Draw mode',
         description:
-            'Repeat the latest procedure of drawing with the same parameters (shift to redraw an existing shape)',
+            'Repeat the latest procedure of drawing with the same parameters',
         sequences: ['n'],
         scope: ShortcutScope.SINGLE_SHAPE_ANNOTATION_WORKSPACE,
     },
