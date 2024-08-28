@@ -874,6 +874,7 @@ class TestGetTaskDataset:
         [
             ("Datumaro 1.0", "", "images/{subset}"),
             ("YOLO 1.1", "train", "obj_{subset}_data"),
+            ("YOLOv8 Detection 1.0", "train", "images/{subset}"),
         ],
     )
     @pytest.mark.parametrize("api_version", (1, 2))
@@ -3493,6 +3494,10 @@ class TestImportTaskAnnotations:
             "Open Images V6 1.0",
             "Datumaro 1.0",
             "Datumaro 3D 1.0",
+            "YOLOv8 Oriented Bounding Boxes 1.0",
+            "YOLOv8 Detection 1.0",
+            "YOLOv8 Pose 1.0",
+            "YOLOv8 Segmentation 1.0",
         ],
     )
     def test_check_import_error_on_wrong_file_structure(self, tasks_with_shapes, format_name):
