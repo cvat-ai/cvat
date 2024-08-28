@@ -348,13 +348,12 @@ def _validate_validation_params(
         return None
 
     if (
-        params['frame_selection_method'] == models.JobFrameSelectionMethod.RANDOM_PER_JOB or
-        params['mode'] == models.ValidationMode.GT_POOL
-    ) and (frames_per_job := params.get('frames_per_job_count')):
-        if db_task.segment_size <= frames_per_job:
-            raise ValidationError(
-                "Validation frame count per job cannot be greater than segment size"
-            )
+        params['mode'] == models.ValidationMode.GT and
+        params['frame_selection_method'] == models.JobFrameSelectionMethod.RANDOM_PER_JOB and
+        (frames_per_job := params.get('frames_per_job_count')) and
+        db_task.segment_size <= frames_per_job
+    ):
+        raise ValidationError("Validation frame count per job cannot be greater than segment size")
 
     if params['mode'] != models.ValidationMode.GT_POOL:
         return params
@@ -1145,12 +1144,16 @@ def _create_thread(
         pool_frames: list[int] = []
         match validation_params["frame_selection_method"]:
             case models.JobFrameSelectionMethod.RANDOM_UNIFORM:
-                frame_count = validation_params["frame_count"]
-                if len(images) < frame_count:
-                    raise ValidationError(
-                        f"The number of validation frames requested ({frame_count})"
-                        f"is greater that the number of task frames ({len(images)})"
-                    )
+                if frame_count := validation_params.get("frame_count"):
+                    if len(images) <= frame_count:
+                        raise ValidationError(
+                            f"The number of validation frames requested ({frame_count})"
+                            f"must be less than the number of task frames ({len(images)})"
+                        )
+                elif frame_share := validation_params.get("frame_share"):
+                    frame_count = max(1, len(images) * frame_share)
+                else:
+                    raise ValidationError("The number of validation frames is not specified")
 
                 pool_frames = rng.choice(
                     all_frames, size=frame_count, shuffle=False, replace=False
@@ -1178,14 +1181,18 @@ def _create_thread(
         # 2. distribute pool frames
         from datumaro.util import take_by
 
-        if validation_params.get("frames_per_job_count"):
-            frames_per_job_count = validation_params["frames_per_job_count"]
-        elif validation_params.get("frames_per_job_share"):
-            frames_per_job_count = max(
-                1, int(validation_params["frames_per_job_share"] * db_task.segment_size)
-            )
+        if frames_per_job_count := validation_params.get("frames_per_job_count"):
+            if len(pool_frames) < frames_per_job_count and validation_params.get("frame_count"):
+                raise ValidationError(
+                    f"The requested number of validation frames per job ({frames_per_job_count})"
+                    f"is greater than the validation pool size ({len(pool_frames)})"
+                )
+        elif frames_per_job_share := validation_params.get("frames_per_job_share"):
+            frames_per_job_count = max(1, int(frames_per_job_share * db_task.segment_size))
         else:
             raise ValidationError("The number of validation frames is not specified")
+
+        frames_per_job_count = min(len(pool_frames), frames_per_job_count)
 
         # Allocate frames for jobs
         job_file_mapping: JobFileMapping = []
@@ -1193,7 +1200,9 @@ def _create_thread(
         validation_frames: list[int] = []
         frame_idx_map: dict[int, int] = {} # new to original id
         for job_frames in take_by(non_pool_frames, count=db_task.segment_size or db_data.size):
-            job_validation_frames = rng.choice(pool_frames, size=frames_per_job_count, replace=False)
+            job_validation_frames = rng.choice(
+                pool_frames, size=frames_per_job_count, replace=False
+            )
             job_frames += job_validation_frames.tolist()
 
             random.shuffle(job_frames) # don't use the same rng
@@ -1240,7 +1249,7 @@ def _create_thread(
         for validation_frame in validation_frames:
             image = new_db_images[validation_frame]
             assert image.is_placeholder
-            image.real_frame_id = frame_id_map[image.real_frame_id] # TODO: maybe not needed
+            image.real_frame_id = frame_id_map[image.real_frame_id]
 
         images = new_db_images
         db_data.size = len(images)
@@ -1304,17 +1313,14 @@ def _create_thread(
             case models.JobFrameSelectionMethod.RANDOM_UNIFORM:
                 all_frames = range(len(images))
 
-                if validation_params.get("frame_count"):
-                    frame_count = validation_params["frame_count"]
+                if frame_count := validation_params.get("frame_count"):
                     if len(images) < frame_count:
                         raise ValidationError(
                             f"The number of validation frames requested ({frame_count})"
                             f"is greater that the number of task frames ({len(images)})"
                         )
-                elif validation_params.get("frame_share"):
-                    frame_count = max(
-                        1, int(validation_params["frame_share"] * len(all_frames))
-                    )
+                elif frame_share := validation_params.get("frame_share"):
+                    frame_count = max(1, int(frame_share * len(all_frames)))
                 else:
                     raise ValidationError("The number of validation frames is not specified")
 
@@ -1322,12 +1328,14 @@ def _create_thread(
                     all_frames, size=frame_count, shuffle=False, replace=False
                 ).tolist()
             case models.JobFrameSelectionMethod.RANDOM_PER_JOB:
-                if validation_params.get("frames_per_job_count"):
-                    frame_count = validation_params["frames_per_job_count"]
-                elif validation_params.get("frames_per_job_share"):
-                    frame_count = max(
-                        1, int(validation_params["frames_per_job_share"] * db_task.segment_size)
-                    )
+                if frame_count := validation_params.get("frames_per_job_count"):
+                    if db_task.segment_size < frame_count:
+                        raise ValidationError(
+                            "The requested number of GT frames per job must be less "
+                            f"than task segment size ({db_task.segment_size})"
+                        )
+                elif frame_share := validation_params.get("frames_per_job_share"):
+                    frame_count = max(1, int(frame_share * db_task.segment_size))
                 else:
                     raise ValidationError("The number of validation frames is not specified")
 

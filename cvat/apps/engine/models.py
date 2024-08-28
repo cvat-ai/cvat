@@ -236,7 +236,7 @@ class ValidationLayout(models.Model):
     # before data uploading and after
 
     task_data = models.OneToOneField(
-        'Data', on_delete=models.CASCADE, related_name="validation_layout_params"
+        'Data', on_delete=models.CASCADE, related_name="validation_layout"
     )
 
     mode = models.CharField(max_length=32, choices=ValidationMode.choices())
@@ -247,10 +247,10 @@ class ValidationLayout(models.Model):
     random_seed = models.IntegerField(null=True)
 
     frames: models.manager.RelatedManager[ValidationFrame]
-    frames_count = models.IntegerField(null=True)
-    frames_percent = models.FloatField(null=True)
+    frame_count = models.IntegerField(null=True)
+    frame_share = models.FloatField(null=True)
     frames_per_job_count = models.IntegerField(null=True)
-    frames_per_job_percent = models.FloatField(null=True)
+    frames_per_job_share = models.FloatField(null=True)
 
 class ValidationFrame(models.Model):
     validation_layout = models.ForeignKey(

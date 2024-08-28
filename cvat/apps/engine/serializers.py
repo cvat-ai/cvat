@@ -759,6 +759,15 @@ class JobWriteSerializer(WriteOnceMixin, serializers.ModelSerializer):
                 "Ground Truth jobs can only be added in 2d tasks"
             )
 
+        if (
+            hasattr(task.data, 'validation_layout') and
+            task.data.validation_layout.mode == models.ValidationMode.GT_POOL
+        ):
+            raise serializers.ValidationError(
+                f'Task with validation mode "{models.ValidationMode.GT_POOL}" '
+                'cannot have more than 1 GT job'
+            )
+
         size = task.data.size
         valid_frame_ids = task.data.get_valid_frame_indices()
 
@@ -1113,7 +1122,7 @@ class ValidationLayoutParamsSerializer(serializers.ModelSerializer):
 
     class Meta:
         fields = (
-            'mode', 'frame_selection_method', 'random_seed',
+            'mode', 'frame_selection_method', 'random_seed', 'frames',
             'frame_count', 'frame_share', 'frames_per_job_count', 'frames_per_job_share',
         )
         model = models.ValidationLayout
@@ -1171,7 +1180,7 @@ class ValidationLayoutParamsSerializer(serializers.ModelSerializer):
     def create(self, validated_data: dict[str, Any]) -> models.ValidationLayout:
         frames = validated_data.pop('frames', None)
 
-        instance = super().create(**validated_data)
+        instance = super().create(validated_data)
 
         if frames:
             models.ValidationFrame.objects.bulk_create(
