@@ -2210,6 +2210,7 @@ class RequestDataOperationSerializer(serializers.Serializer):
     task_id = serializers.IntegerField(required=False, allow_null=True)
     job_id = serializers.IntegerField(required=False, allow_null=True)
     format = serializers.CharField(required=False, allow_null=True)
+    function_id = serializers.CharField(required=False, allow_null=True)
 
     def to_representation(self, rq_job: RQJob) -> Dict[str, Any]:
         parsed_rq_id: RQId = rq_job.parsed_rq_id
@@ -2226,6 +2227,7 @@ class RequestDataOperationSerializer(serializers.Serializer):
             "task_id": rq_job.meta[RQJobMetaField.TASK_ID],
             "job_id": rq_job.meta[RQJobMetaField.JOB_ID],
             "format": parsed_rq_id.format,
+            "function_id": rq_job.meta.get(RQJobMetaField.FUNCTION_ID),
         }
 
 class RequestSerializer(serializers.Serializer):

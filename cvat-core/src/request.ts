@@ -13,6 +13,7 @@ type Operation = {
     jobID: number | null;
     taskID: number | null;
     projectID: number | null;
+    functionID: string | null;
 };
 
 export class Request {
@@ -72,6 +73,7 @@ export class Request {
             jobID: this.#operation.job_id,
             taskID: this.#operation.task_id,
             projectID: this.#operation.project_id,
+            functionID: this.#operation.function_id,
         };
     }
 

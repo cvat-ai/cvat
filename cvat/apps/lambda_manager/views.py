@@ -1,5 +1,5 @@
 # Copyright (C) 2022 Intel Corporation
-# Copyright (C) 2022-2023 CVAT.ai Corporation
+# Copyright (C) 2022-2024 CVAT.ai Corporation
 #
 # SPDX-License-Identifier: MIT
 
@@ -33,7 +33,10 @@ from rest_framework.request import Request
 
 import cvat.apps.dataset_manager as dm
 from cvat.apps.engine.frame_provider import FrameQuality, TaskFrameProvider
-from cvat.apps.engine.models import Job, ShapeType, SourceType, Task, Label
+from cvat.apps.engine.models import (
+    Job, ShapeType, SourceType, Task, Label, RequestAction, RequestTarget
+)
+from cvat.apps.engine.rq_job_handler import RQId, RQJobMetaField
 from cvat.apps.engine.serializers import LabeledDataSerializer
 from cvat.apps.lambda_manager.permissions import LambdaPermission
 from cvat.apps.lambda_manager.serializers import (
@@ -525,16 +528,31 @@ class LambdaQueue:
         *,
         job: Optional[int] = None
     ) -> LambdaJob:
-        jobs = self.get_jobs()
+        queue = self._get_queue()
+        rq_id = RQId(RequestAction.AUTOANNOTATE, RequestTarget.TASK, task).render()
+
         # It is still possible to run several concurrent jobs for the same task.
         # But the race isn't critical. The filtration is just a light-weight
         # protection.
-        if list(filter(lambda job: job.get_task() == task and not job.is_finished, jobs)):
+        rq_job = queue.fetch_job(rq_id)
+
+        have_conflict = rq_job and \
+            rq_job.get_status(refresh=False) not in {rq.job.JobStatus.FAILED, rq.job.JobStatus.FINISHED}
+
+        # There could be some jobs left over from before the current naming convention was adopted.
+        # TODO: remove this check after a few releases.
+        have_legacy_conflict = any(
+            job.get_task() == task and not (job.is_finished or job.is_failed)
+            for job in self.get_jobs()
+        )
+        if have_conflict or have_legacy_conflict:
             raise ValidationError(
                 "Only one running request is allowed for the same task #{}".format(task),
                 code=status.HTTP_409_CONFLICT)
 
-        queue = self._get_queue()
+        if rq_job:
+            rq_job.delete()
+
         # LambdaJob(None) is a workaround for python-rq. It has multiple issues
         # with invocation of non-trivial functions. For example, it cannot run
         # staticmethod, it cannot run a callable class. Thus I provide an object
@@ -543,6 +561,7 @@ class LambdaQueue:
 
         with get_rq_lock_by_user(queue, user_id):
             rq_job = queue.create_job(LambdaJob(None),
+                job_id=rq_id,
                 meta={
                     **get_rq_job_meta(
                         request,
@@ -550,6 +569,7 @@ class LambdaQueue:
                             Job.objects.get(pk=job) if job else Task.objects.get(pk=task)
                         ),
                     ),
+                    RQJobMetaField.FUNCTION_ID: lambda_func.id,
                     "lambda": True,
                 },
                 kwargs={
