@@ -172,6 +172,8 @@ jobs:
         id: run_tests
         run: |
           pytest tests/python/
+          ONE_RUNNING_JOB_IN_QUEUE_PER_USER="true" pytest tests/python/rest_api/test_queues.py
+          CVAT_ALLOW_STATIC_CACHE="true" pytest -k "TestTaskData" tests/python
 
       - name: Creating a log file from cvat containers
         if: failure() && steps.run_tests.conclusion == 'failure'

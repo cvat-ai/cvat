@@ -1,0 +1,16 @@
+services:
+  cvat_server:
+    environment:
+      CVAT_ALLOW_STATIC_CACHE: '${CVAT_ALLOW_STATIC_CACHE:-no}'
+
+  cvat_worker_import:
+    environment:
+      CVAT_ALLOW_STATIC_CACHE: '${CVAT_ALLOW_STATIC_CACHE:-no}'
+
+  cvat_worker_export:
+    environment:
+      CVAT_ALLOW_STATIC_CACHE: '${CVAT_ALLOW_STATIC_CACHE:-no}'
+
+  cvat_worker_annotation:
+    environment:
+      CVAT_ALLOW_STATIC_CACHE: '${CVAT_ALLOW_STATIC_CACHE:-no}'

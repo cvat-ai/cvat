@@ -170,6 +170,12 @@ jobs:
           pytest tests/python/
           pytest tests/python/ --stop-services
 
+          ONE_RUNNING_JOB_IN_QUEUE_PER_USER="true" pytest tests/python/rest_api/test_queues.py
+          pytest tests/python/ --stop-services
+
+          CVAT_ALLOW_STATIC_CACHE="true" pytest tests/python
+          pytest tests/python/ --stop-services
+
       - name: Unit tests
         env:
           HOST_COVERAGE_DATA_DIR: ${{ github.workspace }}

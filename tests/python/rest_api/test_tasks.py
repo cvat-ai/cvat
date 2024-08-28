@@ -910,7 +910,7 @@ class TestGetTaskDataset:
 
 
 @pytest.mark.usefixtures("restore_db_per_function")
-@pytest.mark.usefixtures("restore_cvat_data")
+@pytest.mark.usefixtures("restore_cvat_data_per_function")
 @pytest.mark.usefixtures("restore_redis_ondisk_per_function")
 class TestPostTaskData:
     _USERNAME = "admin1"
@@ -2107,7 +2107,7 @@ class _VideoTaskSpec(_TaskSpecBase):
 
 @pytest.mark.usefixtures("restore_db_per_class")
 @pytest.mark.usefixtures("restore_redis_ondisk_per_class")
-@pytest.mark.usefixtures("restore_cvat_data")
+@pytest.mark.usefixtures("restore_cvat_data_per_function")
 class TestTaskData:
     _USERNAME = "admin1"
 
@@ -2712,7 +2712,7 @@ class TestPatchTaskLabel:
 
 
 @pytest.mark.usefixtures("restore_db_per_function")
-@pytest.mark.usefixtures("restore_cvat_data")
+@pytest.mark.usefixtures("restore_cvat_data_per_function")
 @pytest.mark.usefixtures("restore_redis_ondisk_per_function")
 class TestWorkWithTask:
     _USERNAME = "admin1"
@@ -2772,7 +2772,13 @@ class TestTaskBackups:
         return Client(BASE_URL, config=Config(status_check_period=0.01))
 
     @pytest.fixture(autouse=True)
-    def setup(self, restore_db_per_function, restore_cvat_data, tmp_path: Path, admin_user: str):
+    def setup(
+        self,
+        restore_db_per_function,
+        restore_cvat_data_per_function,
+        tmp_path: Path,
+        admin_user: str,
+    ):
         self.tmp_dir = tmp_path
 
         self.client = self._make_client()

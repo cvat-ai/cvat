@@ -361,7 +361,7 @@ class TestDeleteJobs:
             assert response.status == expected_status
         return response
 
-    @pytest.mark.usefixtures("restore_cvat_data")
+    @pytest.mark.usefixtures("restore_cvat_data_per_function")
     @pytest.mark.parametrize("job_type, allow", (("ground_truth", True), ("annotation", False)))
     def test_destroy_job(self, admin_user, jobs, job_type, allow):
         job = next(j for j in jobs if j["type"] == job_type)
