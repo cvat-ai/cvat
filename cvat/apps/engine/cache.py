@@ -170,11 +170,9 @@ class MediaCache:
         db_task: models.Task,
         frame_ids: Sequence[int],
         *,
-        raw_data_dir: str,
         manifest_path: str,
     ):
         db_data = db_task.data
-        dimension = db_task.dimension
 
         if os.path.isfile(manifest_path) and db_data.storage == models.StorageChoice.CLOUD_STORAGE:
             reader = ImageReaderWithManifest(manifest_path)
@@ -235,6 +233,7 @@ class MediaCache:
                 .all()
             )
 
+            raw_data_dir = db_data.get_raw_data_dirname()
             media = []
             for frame_id, frame_path in db_images:
                 if frame_id == next_requested_frame_id:
@@ -248,7 +247,7 @@ class MediaCache:
 
             assert next_requested_frame_id is None
 
-            if dimension == models.DimensionType.DIM_2D:
+            if db_task.dimension == models.DimensionType.DIM_2D:
                 media = preload_images(media)
 
             yield from media
@@ -263,16 +262,10 @@ class MediaCache:
 
         db_data = db_task.data
 
-        raw_data_dir = {
-            models.StorageChoice.LOCAL: db_data.get_upload_dirname(),
-            models.StorageChoice.SHARE: settings.SHARE_ROOT,
-            models.StorageChoice.CLOUD_STORAGE: db_data.get_upload_dirname(),
-        }[db_data.storage]
-
         manifest_path = db_data.get_manifest_path()
 
         if hasattr(db_data, "video"):
-            source_path = os.path.join(raw_data_dir, db_data.video.path)
+            source_path = os.path.join(db_data.get_raw_data_dirname(), db_data.video.path)
 
             reader = VideoReaderWithManifest(
                 manifest_path=manifest_path,
@@ -298,9 +291,7 @@ class MediaCache:
                 for frame_tuple in reader.iterate_frames(frame_filter=frame_ids):
                     yield frame_tuple
         else:
-            yield from self._read_raw_images(
-                db_task, frame_ids, raw_data_dir=raw_data_dir, manifest_path=manifest_path
-            )
+            yield from self._read_raw_images(db_task, frame_ids, manifest_path=manifest_path)
 
     def prepare_segment_chunk(
         self, db_segment: models.Segment, chunk_number: int, *, quality: FrameQuality

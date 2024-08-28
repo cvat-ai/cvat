@@ -252,6 +252,13 @@ class Data(models.Model):
     def get_upload_dirname(self):
         return os.path.join(self.get_data_dirname(), "raw")
 
+    def get_raw_data_dirname(self) -> str:
+        return {
+            StorageChoice.LOCAL: self.get_upload_dirname(),
+            StorageChoice.SHARE: settings.SHARE_ROOT,
+            StorageChoice.CLOUD_STORAGE: self.get_upload_dirname(),
+        }[self.storage]
+
     def get_compressed_cache_dirname(self):
         return os.path.join(self.get_data_dirname(), "compressed")
 
