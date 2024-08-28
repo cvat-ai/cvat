@@ -232,8 +232,11 @@ class ValidationMode(str, Enum):
         return self.value
 
 class ValidationLayout(models.Model):
+    # TODO: find a way to avoid using the same mode for storing request parameters
+    # before data uploading and after
+
     task_data = models.OneToOneField(
-        'Data', on_delete=models.CASCADE, related_name="validation_layout"
+        'Data', on_delete=models.CASCADE, related_name="validation_layout_params"
     )
 
     mode = models.CharField(max_length=32, choices=ValidationMode.choices())

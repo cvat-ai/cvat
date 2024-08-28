@@ -2129,7 +2129,7 @@ class JobViewSet(viewsets.GenericViewSet, mixins.ListModelMixin, mixins.CreateMo
             Prefetch('segment__task__data',
                 queryset=(
                     models.Data.objects
-                    .select_related('video')
+                    .select_related('video', 'validation_layout')
                     .prefetch_related(
                         Prefetch('images', queryset=models.Image.objects.order_by('frame'))
                     )
@@ -2138,7 +2138,7 @@ class JobViewSet(viewsets.GenericViewSet, mixins.ListModelMixin, mixins.CreateMo
         ).get(pk=pk)
 
         if (
-            not db_job.segment.task.data.validation_layout or
+            not hasattr(db_job.segment.task.data, 'validation_layout') or
             db_job.segment.task.data.validation_layout.mode != models.ValidationMode.GT_POOL
         ):
             raise ValidationError("Honeypots are not configured in the task")
