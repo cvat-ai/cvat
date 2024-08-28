@@ -391,14 +391,13 @@ class MediaCache:
                 os.path.join(os.path.dirname(__file__), "assets/3d_preview.jpeg")
             )
         else:
-            from cvat.apps.engine.frame_provider import (
+            from cvat.apps.engine.frame_provider import (  # avoid circular import
                 FrameOutputType,
-                SegmentFrameProvider,
-                TaskFrameProvider,
+                make_frame_provider,
             )
 
-            task_frame_provider = TaskFrameProvider(db_segment.task)
-            segment_frame_provider = SegmentFrameProvider(db_segment)
+            task_frame_provider = make_frame_provider(db_segment.task)
+            segment_frame_provider = make_frame_provider(db_segment)
             preview = segment_frame_provider.get_frame(
                 task_frame_provider.get_rel_frame_number(min(db_segment.frame_set)),
                 quality=FrameQuality.COMPRESSED,

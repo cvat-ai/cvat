@@ -12,7 +12,7 @@ from abc import ABCMeta, abstractmethod
 from dataclasses import dataclass
 from enum import Enum, auto
 from io import BytesIO
-from typing import Any, Callable, Generic, Iterator, Optional, Tuple, Type, TypeVar, Union
+from typing import Any, Callable, Generic, Iterator, Optional, Tuple, Type, TypeVar, Union, overload
 
 import av
 import cv2
@@ -561,9 +561,25 @@ class JobFrameProvider(SegmentFrameProvider):
         super().__init__(db_job.segment)
 
 
-def make_frame_provider(data_source: Union[models.Job, models.Task, Any]) -> IFrameProvider:
+@overload
+def make_frame_provider(data_source: models.Job) -> JobFrameProvider: ...
+
+
+@overload
+def make_frame_provider(data_source: models.Segment) -> SegmentFrameProvider: ...
+
+
+@overload
+def make_frame_provider(data_source: models.Task) -> TaskFrameProvider: ...
+
+
+def make_frame_provider(
+    data_source: Union[models.Job, models.Segment, models.Task, Any]
+) -> IFrameProvider:
     if isinstance(data_source, models.Task):
         frame_provider = TaskFrameProvider(data_source)
+    elif isinstance(data_source, models.Segment):
+        frame_provider = SegmentFrameProvider(data_source)
     elif isinstance(data_source, models.Job):
         frame_provider = JobFrameProvider(data_source)
     else:
