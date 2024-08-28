@@ -8255,7 +8255,7 @@ components:
           description: |
             The share of frames included in the GT job from each annotation job.
             Applicable only to the "random_per_job" frame selection method
-        seed:
+        random_seed:
           type: integer
           minimum: 0
           nullable: true
@@ -10871,6 +10871,15 @@ components:
           $ref: '#/components/schemas/ValidationMode'
         frame_selection_method:
           $ref: '#/components/schemas/FrameSelectionMethod'
+        random_seed:
+          type: integer
+          minimum: 0
+          nullable: true
+          description: |
+            The seed value for the random number generator.
+            The same value will produce the same frame sets.
+            Applicable only to random frame selection methods.
+            By default, a random value is used.
         frames:
           type: array
           items:
@@ -10907,15 +10916,6 @@ components:
           description: |
             The share of frames included in the GT job from each annotation job.
             Applicable only to the "random_per_job" frame selection method
-        random_seed:
-          type: integer
-          minimum: 0
-          nullable: true
-          description: |
-            The seed value for the random number generator.
-            The same value will produce the same frame sets.
-            Applicable only to random frame selection methods.
-            By default, a random value is used.
       required:
       - frame_selection_method
       - mode
