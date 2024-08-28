@@ -8,14 +8,14 @@ import Table from 'antd/lib/table';
 import Text from 'antd/lib/typography/Text';
 
 import {
-    Task, User, AssigneeConsensusReport,
+    User, AssigneeConsensusReport,
 } from 'cvat-core-wrapper';
 import { getQualityColor } from 'utils/quality-color';
 import Tag from 'antd/lib/tag';
 import { toRepresentation } from '../utils/text-formatting';
+import { sorter } from '../task-quality/job-list';
 
 interface Props {
-    task: Task;
     assigneeReports: AssigneeConsensusReport[];
 }
 
@@ -24,39 +24,6 @@ function AssigneeListComponent(props: Props): JSX.Element {
     console.log('assigneeReportsArray', assigneeReportsArray);
     const assigneeReports: Record<number, AssigneeConsensusReport> = assigneeReportsArray
         .reduce((acc, report) => ({ ...acc, [report.assignee.id]: report }), {});
-
-    function sorter(path: string) {
-        return (obj1: any, obj2: any): number => {
-            let currentObj1 = obj1;
-            let currentObj2 = obj2;
-            let field1: string | number | null = null;
-            let field2: string | number | null = null;
-            for (const pathSegment of path.split('.')) {
-                field1 = currentObj1 && pathSegment in currentObj1 ? currentObj1[pathSegment] : null;
-                field2 = currentObj2 && pathSegment in currentObj2 ? currentObj2[pathSegment] : null;
-                currentObj1 = currentObj1 && pathSegment in currentObj1 ? currentObj1[pathSegment] : null;
-                currentObj2 = currentObj2 && pathSegment in currentObj2 ? currentObj2[pathSegment] : null;
-            }
-
-            if (field1 !== null && field2 !== null) {
-                if (typeof field1 === 'string' && typeof field2 === 'string') return field1.localeCompare(field2);
-                if (
-                    typeof field1 === 'number' &&
-                    typeof field2 === 'number' &&
-                    Number.isFinite(field1) &&
-                    Number.isFinite(field2)
-                ) return field1 - field2;
-            }
-
-            if (field1 === null && field2 === null) return 0;
-
-            if (field1 === null || (typeof field1 === 'number' && !Number.isFinite(field1))) {
-                return -1;
-            }
-
-            return 1;
-        };
-    }
 
     function collectUsers(path: string): ColumnFilterItem[] {
         return Array.from<string | null>(
@@ -69,7 +36,7 @@ function AssigneeListComponent(props: Props): JSX.Element {
                     return report[path].username;
                 }),
             ),
-        ).map((value: string | null) => ({ text: value || 'Is Empty', value: value || false }));
+        ).map((value: string | null) => ({ text: value ?? 'Is Empty', value: value ?? false }));
     }
 
     const columns = [

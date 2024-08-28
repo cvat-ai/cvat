@@ -25,6 +25,35 @@ interface Props {
     jobsReports: QualityReport[];
 }
 
+export function sorter(path: string) {
+    return (obj1: any, obj2: any): number => {
+        let currentObj1 = obj1;
+        let currentObj2 = obj2;
+        let field1: string | number | null = null;
+        let field2: string | number | null = null;
+        for (const pathSegment of path.split('.')) {
+            field1 = currentObj1 && pathSegment in currentObj1 ? currentObj1[pathSegment] : null;
+            field2 = currentObj2 && pathSegment in currentObj2 ? currentObj2[pathSegment] : null;
+            currentObj1 = currentObj1 && pathSegment in currentObj1 ? currentObj1[pathSegment] : null;
+            currentObj2 = currentObj2 && pathSegment in currentObj2 ? currentObj2[pathSegment] : null;
+        }
+
+        if (field1 !== null && field2 !== null) {
+            if (typeof field1 === 'string' && typeof field2 === 'string') return field1.localeCompare(field2);
+            if (typeof field1 === 'number' && typeof field2 === 'number' &&
+            Number.isFinite(field1) && Number.isFinite(field2)) return field1 - field2;
+        }
+
+        if (field1 === null && field2 === null) return 0;
+
+        if (field1 === null || (typeof field1 === 'number' && !Number.isFinite(field1))) {
+            return -1;
+        }
+
+        return 1;
+    };
+}
+
 function JobListComponent(props: Props): JSX.Element {
     const {
         task: taskInstance,
@@ -37,35 +66,6 @@ function JobListComponent(props: Props): JSX.Element {
     const { id: taskId, jobs } = taskInstance;
     const [renderedJobs] = useState<Job[]>(jobs.filter((job: Job) => job.type === JobType.ANNOTATION));
 
-    function sorter(path: string) {
-        return (obj1: any, obj2: any): number => {
-            let currentObj1 = obj1;
-            let currentObj2 = obj2;
-            let field1: string | number | null = null;
-            let field2: string | number | null = null;
-            for (const pathSegment of path.split('.')) {
-                field1 = currentObj1 && pathSegment in currentObj1 ? currentObj1[pathSegment] : null;
-                field2 = currentObj2 && pathSegment in currentObj2 ? currentObj2[pathSegment] : null;
-                currentObj1 = currentObj1 && pathSegment in currentObj1 ? currentObj1[pathSegment] : null;
-                currentObj2 = currentObj2 && pathSegment in currentObj2 ? currentObj2[pathSegment] : null;
-            }
-
-            if (field1 !== null && field2 !== null) {
-                if (typeof field1 === 'string' && typeof field2 === 'string') return field1.localeCompare(field2);
-                if (typeof field1 === 'number' && typeof field2 === 'number' &&
-                Number.isFinite(field1) && Number.isFinite(field2)) return field1 - field2;
-            }
-
-            if (field1 === null && field2 === null) return 0;
-
-            if (field1 === null || (typeof field1 === 'number' && !Number.isFinite(field1))) {
-                return -1;
-            }
-
-            return 1;
-        };
-    }
-
     function collectUsers(path: string): ColumnFilterItem[] {
         return Array.from<string | null>(
             new Set(
@@ -77,7 +77,7 @@ function JobListComponent(props: Props): JSX.Element {
                     return report[path].username;
                 }),
             ),
-        ).map((value: string | null) => ({ text: value || 'Is Empty', value: value || false }));
+        ).map((value: string | null) => ({ text: value ?? 'Is Empty', value: value ?? false }));
     }
 
     const columns = [
