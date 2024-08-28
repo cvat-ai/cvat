@@ -19,13 +19,21 @@
   "model": "auth.group",
   "pk": 3,
   "fields": {
-    "name": "user",
+    "name": "analytics",
     "permissions": []
   }
 },
 {
   "model": "auth.group",
   "pk": 4,
+  "fields": {
+    "name": "user",
+    "permissions": []
+  }
+},
+{
+  "model": "auth.group",
+  "pk": 5,
   "fields": {
     "name": "worker",
     "permissions": []
