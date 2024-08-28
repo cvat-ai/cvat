@@ -27,7 +27,7 @@ from django.utils import timezone
 
 from cvat.apps.dataset_manager.formats.utils import get_label_color
 from cvat.apps.engine.utils import parse_exception_message
-from cvat.apps.engine import models
+from cvat.apps.engine import field_validation, models
 from cvat.apps.engine.cloud_provider import get_cloud_storage_instance, Credentials, Status
 from cvat.apps.engine.log import ServerLogManager
 from cvat.apps.engine.permissions import TaskPermission
@@ -645,29 +645,69 @@ class JobWriteSerializer(WriteOnceMixin, serializers.ModelSerializer):
 
     task_id = serializers.IntegerField()
     frame_selection_method = serializers.ChoiceField(
-        choices=models.JobFrameSelectionMethod.choices(), required=False)
-
-    frame_count = serializers.IntegerField(min_value=0, required=False,
+        choices=models.JobFrameSelectionMethod.choices(), required=False
+    )
+    frames = serializers.ListField(
+        child=serializers.IntegerField(min_value=0),
+        required=False,
+        allow_null=True,
+        default=None,
         help_text=textwrap.dedent("""\
-            The number of frames included in the job.
-            Applicable only to the random frame selection
-        """))
-    seed = serializers.IntegerField(min_value=0, required=False,
+            The list of frame ids. Applicable only to the "{}" frame selection method
+        """.format(models.JobFrameSelectionMethod.MANUAL))
+    )
+    frame_count = serializers.IntegerField(
+        min_value=1,
+        required=False,
+        help_text=textwrap.dedent("""\
+            The number of frames included in the GT job.
+            Applicable only to the "{}" frame selection method
+        """.format(models.JobFrameSelectionMethod.RANDOM_UNIFORM))
+    )
+    frame_share = serializers.FloatField(
+        required=False,
+        allow_null=True,
+        validators=[field_validation.validate_percent],
+        help_text=textwrap.dedent("""\
+            The share of frames included in the GT job.
+            Applicable only to the "{}" frame selection method
+        """.format(models.JobFrameSelectionMethod.RANDOM_UNIFORM))
+    )
+    frames_per_job_count = serializers.IntegerField(
+        min_value=1,
+        required=False,
+        allow_null=True,
+        help_text=textwrap.dedent("""\
+            The number of frames included in the GT job from each annotation job.
+            Applicable only to the "{}" frame selection method
+        """.format(models.JobFrameSelectionMethod.RANDOM_PER_JOB))
+    )
+    frames_per_job_share = serializers.FloatField(
+        required=False,
+        allow_null=True,
+        validators=[field_validation.validate_percent],
+        help_text=textwrap.dedent("""\
+            The share of frames included in the GT job from each annotation job.
+            Applicable only to the "{}" frame selection method
+        """.format(models.JobFrameSelectionMethod.RANDOM_PER_JOB))
+    )
+    seed = serializers.IntegerField(
+        min_value=0,
+        required=False,
+        allow_null=True,
         help_text=textwrap.dedent("""\
             The seed value for the random number generator.
             The same value will produce the same frame sets.
-            Applicable only to the random frame selection.
+            Applicable only to random frame selection methods.
             By default, a random value is used.
-        """))
-
-    frames = serializers.ListField(child=serializers.IntegerField(min_value=0),
-        required=False, help_text=textwrap.dedent("""\
-            The list of frame ids. Applicable only to the manual frame selection
-        """))
+        """)
+    )
 
     class Meta:
         model = models.Job
-        random_selection_params = ('frame_count', 'seed',)
+        random_selection_params = (
+            'frame_count', 'frame_share', 'frames_per_job_count', 'frames_per_job_share', 'seed',
+        )
         manual_selection_params = ('frames',)
         write_once_fields = ('type', 'task_id', 'frame_selection_method',) \
             + random_selection_params + manual_selection_params
@@ -676,6 +716,30 @@ class JobWriteSerializer(WriteOnceMixin, serializers.ModelSerializer):
     def to_representation(self, instance):
         serializer = JobReadSerializer(instance, context=self.context)
         return serializer.data
+
+    def validate(self, attrs):
+        attrs = field_validation.drop_null_keys(attrs)
+
+        if attrs['frame_selection_method'] == models.JobFrameSelectionMethod.RANDOM_UNIFORM:
+            field_validation.require_one_of_fields(attrs, ['frame_count', 'frame_share'])
+        elif attrs['frame_selection_method'] == models.JobFrameSelectionMethod.RANDOM_PER_JOB:
+            field_validation.require_one_of_fields(
+                attrs, ['frames_per_job_count', 'frames_per_job_share']
+            )
+        elif attrs['frame_selection_method'] == models.JobFrameSelectionMethod.MANUAL:
+            field_validation.require_field("frames")
+
+        if (
+            attrs['frame_selection_method'] != models.JobFrameSelectionMethod.MANUAL and
+            attrs.get('frames')
+        ):
+            raise serializers.ValidationError(
+                '"frames" can only be used when "frame_selection_method" is "{}"'.format(
+                    models.JobFrameSelectionMethod.MANUAL
+                )
+            )
+
+        return super().validate(attrs)
 
     @transaction.atomic
     def create(self, validated_data):
@@ -695,13 +759,20 @@ class JobWriteSerializer(WriteOnceMixin, serializers.ModelSerializer):
             size = task.data.size
             valid_frame_ids = task.data.get_valid_frame_indices()
 
+            # TODO: refactor, test
             frame_selection_method = validated_data.pop("frame_selection_method", None)
             if frame_selection_method == models.JobFrameSelectionMethod.RANDOM_UNIFORM:
-                frame_count = validated_data.pop("frame_count")
-                if size < frame_count:
+                if frame_count := validated_data.pop("frame_count", None):
+                    if size < frame_count:
+                        raise serializers.ValidationError(
+                            f"The number of frames requested ({frame_count}) "
+                            f"must be not be greater than the number of the task frames ({size})"
+                        )
+                elif frame_share := validated_data.pop("frame_share", None):
+                    frame_count = max(1, int(frame_share * size))
+                else:
                     raise serializers.ValidationError(
-                        f"The number of frames requested ({frame_count}) "
-                        f"must be not be greater than the number of the task frames ({size})"
+                        "The number of validation frames is not specified"
                     )
 
                 seed = validated_data.pop("seed", None)
@@ -720,6 +791,32 @@ class JobWriteSerializer(WriteOnceMixin, serializers.ModelSerializer):
                 frames = rng.choice(
                     list(valid_frame_ids), size=frame_count, shuffle=False, replace=False
                 ).tolist()
+            elif frame_selection_method == models.JobFrameSelectionMethod.RANDOM_PER_JOB:
+                if frame_count := validated_data.pop("frames_per_job_count", None):
+                    if size < frame_count:
+                        raise serializers.ValidationError(
+                            f"The number of frames requested ({frame_count}) "
+                            f"must be not be greater than the segment size ({task.segment_size})"
+                        )
+                elif frame_share := validated_data.pop("frames_per_job_share", None):
+                    frame_count = max(1, int(frame_share * size))
+                else:
+                    raise serializers.ValidationError(
+                        "The number of validation frames is not specified"
+                    )
+
+                seed = validated_data.pop("seed", None)
+
+                # The RNG backend must not change to yield reproducible results,
+                # so here we specify it explicitly
+                from numpy import random
+                rng = random.Generator(random.MT19937(seed=seed))
+
+                frames = []
+                for segment in task.segment_set.all():
+                    frames.extend(rng.choice(
+                        list(segment.frame_set), size=frame_count, shuffle=False, replace=False
+                    ).tolist())
             elif frame_selection_method == models.JobFrameSelectionMethod.MANUAL:
                 frames = validated_data.pop("frames")
 
@@ -929,84 +1026,103 @@ class JobFileMapping(serializers.ListField):
         kwargs.setdefault('help_text', textwrap.dedent(__class__.__doc__))
         super().__init__(*args, **kwargs)
 
-def _validate_percent(value: float) -> float:
-    if not (0 <= value <= 1):
-        raise serializers.ValidationError("Value must be in the range [0; 1]")
-
-    return value
-
 class ValidationLayoutParamsSerializer(serializers.Serializer):
     mode = serializers.ChoiceField(choices=models.ValidationMode.choices(), required=True)
     frame_selection_method = serializers.ChoiceField(
         choices=models.JobFrameSelectionMethod.choices(), required=True
     )
-    frames = serializers.ListSerializer(
+    frames = serializers.ListField(
         child=serializers.CharField(max_length=MAX_FILENAME_LENGTH),
-        default=[], required=False, allow_null=True
+        default=None,
+        required=False,
+        allow_null=True,
+        help_text=textwrap.dedent("""\
+            The list of frame ids. Applicable only to the "{}" frame selection method
+        """.format(models.JobFrameSelectionMethod.MANUAL))
     )
-    frames_count = serializers.IntegerField(required=False, allow_null=True, min_value=1)
-    frames_percent = serializers.FloatField(
-        required=False, allow_null=True, validators=[_validate_percent]
+    frame_count = serializers.IntegerField(
+        min_value=1,
+        required=False,
+        help_text=textwrap.dedent("""\
+            The number of frames included in the GT job.
+            Applicable only to the "{}" frame selection method
+        """.format(models.JobFrameSelectionMethod.RANDOM_UNIFORM))
     )
-    random_seed = serializers.IntegerField(required=False, allow_null=True)
-    frames_per_job_count = serializers.IntegerField(required=False, allow_null=True, min_value=1)
-    frames_per_job_percent = serializers.FloatField(
-        required=False, allow_null=True, validators=[_validate_percent]
+    frame_share = serializers.FloatField(
+        required=False,
+        allow_null=True,
+        validators=[field_validation.validate_percent],
+        help_text=textwrap.dedent("""\
+            The share of frames included in the GT job.
+            Applicable only to the "{}" frame selection method
+        """.format(models.JobFrameSelectionMethod.RANDOM_UNIFORM))
+    )
+    frames_per_job_count = serializers.IntegerField(
+        min_value=1,
+        required=False,
+        allow_null=True,
+        help_text=textwrap.dedent("""\
+            The number of frames included in the GT job from each annotation job.
+            Applicable only to the "{}" frame selection method
+        """.format(models.JobFrameSelectionMethod.RANDOM_PER_JOB))
+    )
+    frames_per_job_share = serializers.FloatField(
+        required=False,
+        allow_null=True,
+        validators=[field_validation.validate_percent],
+        help_text=textwrap.dedent("""\
+            The share of frames included in the GT job from each annotation job.
+            Applicable only to the "{}" frame selection method
+        """.format(models.JobFrameSelectionMethod.RANDOM_PER_JOB))
+    )
+    random_seed = serializers.IntegerField(
+        min_value=0,
+        required=False,
+        allow_null=True,
+        help_text=textwrap.dedent("""\
+            The seed value for the random number generator.
+            The same value will produce the same frame sets.
+            Applicable only to random frame selection methods.
+            By default, a random value is used.
+        """)
     )
 
     def validate(self, attrs):
-        def drop_none_keys(
-            d: dict[str, Any], *, keys: Optional[Sequence[str]] = None
-        ) -> dict[str, Any]:
-            if keys is None:
-                keys = d.keys()
-            return {k: v for k, v in d.items() if k in keys and v is not None}
-
-        def require_one_of_fields(keys: Sequence[str]) -> None:
-            notset = object()
-
-            active_count = sum(attrs.get(key, notset) is not notset for key in keys)
-            if active_count == 1:
-                return
-
-            options = ', '.join(f'"{k}"' for k in keys)
-
-            if not active_count:
-                raise serializers.ValidationError(f"One of the fields {options} required")
-            else:
-                raise serializers.ValidationError(f"Only 1 of the fields {options} can be used")
-
-        def require_one_of_values(key: str, values: Sequence[Any]) -> None:
-            if attrs[key] not in values:
-                raise serializers.ValidationError('"{}" must be one of {}'.format(
-                    key,
-                    ', '.join(f"{k}" for k in values)
-                ))
-
-        attrs = drop_none_keys(attrs)
+        attrs = field_validation.drop_null_keys(attrs)
 
         if attrs["mode"] == models.ValidationMode.GT:
-            require_one_of_values("frame_selection_method", [
-                models.JobFrameSelectionMethod.MANUAL,
-                models.JobFrameSelectionMethod.RANDOM_UNIFORM,
-                models.JobFrameSelectionMethod.RANDOM_PER_JOB,
-            ])
+            field_validation.require_one_of_values(
+                attrs,
+                "frame_selection_method",
+                [
+                    models.JobFrameSelectionMethod.MANUAL,
+                    models.JobFrameSelectionMethod.RANDOM_UNIFORM,
+                    models.JobFrameSelectionMethod.RANDOM_PER_JOB,
+                ]
+            )
         elif attrs["mode"] == models.ValidationMode.GT_POOL:
-            require_one_of_values("frame_selection_method", [
-                models.JobFrameSelectionMethod.MANUAL,
-                models.JobFrameSelectionMethod.RANDOM_UNIFORM,
-            ])
-            require_one_of_fields(['frames_per_job_count', 'frames_per_job_percent'])
+            field_validation.require_one_of_values(
+                attrs,
+                "frame_selection_method",
+                [
+                    models.JobFrameSelectionMethod.MANUAL,
+                    models.JobFrameSelectionMethod.RANDOM_UNIFORM,
+                ]
+            )
+            field_validation.require_one_of_fields(
+                attrs, ['frames_per_job_count', 'frames_per_job_share']
+            )
         else:
             assert False, f"Unknown validation mode {attrs['mode']}"
 
         if attrs['frame_selection_method'] == models.JobFrameSelectionMethod.RANDOM_UNIFORM:
-            require_one_of_fields(['frames_count', 'frames_percent'])
+            field_validation.require_one_of_fields(attrs, ['frame_count', 'frame_share'])
         elif attrs['frame_selection_method'] == models.JobFrameSelectionMethod.RANDOM_PER_JOB:
-            require_one_of_fields(['frames_per_job_count', 'frames_per_job_percent'])
+            field_validation.require_one_of_fields(
+                attrs, ['frames_per_job_count', 'frames_per_job_share']
+            )
         elif attrs['frame_selection_method'] == models.JobFrameSelectionMethod.MANUAL:
-            if not attrs.get('frames'):
-                raise serializers.ValidationError('The "frames" field is required')
+            field_validation.require_field("frames")
 
         if (
             attrs['frame_selection_method'] != models.JobFrameSelectionMethod.MANUAL and

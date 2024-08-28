@@ -1145,15 +1145,15 @@ def _create_thread(
         pool_frames: list[int] = []
         match validation_params["frame_selection_method"]:
             case models.JobFrameSelectionMethod.RANDOM_UNIFORM:
-                frames_count = validation_params["frames_count"]
-                if len(images) < frames_count:
+                frame_count = validation_params["frame_count"]
+                if len(images) < frame_count:
                     raise ValidationError(
-                        f"The number of validation frames requested ({frames_count})"
+                        f"The number of validation frames requested ({frame_count})"
                         f"is greater that the number of task frames ({len(images)})"
                     )
 
                 pool_frames = rng.choice(
-                    all_frames, size=frames_count, shuffle=False, replace=False
+                    all_frames, size=frame_count, shuffle=False, replace=False
                 ).tolist()
             case models.JobFrameSelectionMethod.MANUAL:
                 known_frame_names = {frame.path: frame.frame for frame in images}
@@ -1180,9 +1180,9 @@ def _create_thread(
 
         if validation_params.get("frames_per_job_count"):
             frames_per_job_count = validation_params["frames_per_job_count"]
-        elif validation_params.get("frames_per_job_percent"):
+        elif validation_params.get("frames_per_job_share"):
             frames_per_job_count = max(
-                1, int(validation_params["frames_per_job_percent"] * db_task.segment_size)
+                1, int(validation_params["frames_per_job_share"] * db_task.segment_size)
             )
         else:
             raise ValidationError("The number of validation frames is not specified")
@@ -1304,36 +1304,36 @@ def _create_thread(
             case models.JobFrameSelectionMethod.RANDOM_UNIFORM:
                 all_frames = range(len(images))
 
-                if validation_params.get("frames_count"):
-                    frames_count = validation_params["frames_count"]
-                    if len(images) < frames_count:
+                if validation_params.get("frame_count"):
+                    frame_count = validation_params["frame_count"]
+                    if len(images) < frame_count:
                         raise ValidationError(
-                            f"The number of validation frames requested ({frames_count})"
+                            f"The number of validation frames requested ({frame_count})"
                             f"is greater that the number of task frames ({len(images)})"
                         )
-                elif validation_params.get("frames_percent"):
-                    frames_count = max(
-                        1, int(validation_params["frames_percent"] * len(all_frames))
+                elif validation_params.get("frame_share"):
+                    frame_count = max(
+                        1, int(validation_params["frame_share"] * len(all_frames))
                     )
                 else:
                     raise ValidationError("The number of validation frames is not specified")
 
                 validation_frames = rng.choice(
-                    all_frames, size=frames_count, shuffle=False, replace=False
+                    all_frames, size=frame_count, shuffle=False, replace=False
                 ).tolist()
             case models.JobFrameSelectionMethod.RANDOM_PER_JOB:
                 if validation_params.get("frames_per_job_count"):
-                    frames_count = validation_params["frames_per_job_count"]
-                elif validation_params.get("frames_per_job_percent"):
-                    frames_count = max(
-                        1, int(validation_params["frames_per_job_percent"] * db_task.segment_size)
+                    frame_count = validation_params["frames_per_job_count"]
+                elif validation_params.get("frames_per_job_share"):
+                    frame_count = max(
+                        1, int(validation_params["frames_per_job_share"] * db_task.segment_size)
                     )
                 else:
                     raise ValidationError("The number of validation frames is not specified")
 
                 for segment in db_task.segment_set.all():
                     validation_frames.extend(rng.choice(
-                        list(segment.frame_set), size=frames_count, shuffle=False, replace=False
+                        list(segment.frame_set), size=frame_count, shuffle=False, replace=False
                     ).tolist())
             case models.JobFrameSelectionMethod.MANUAL:
                 known_frame_names = {frame.path: frame.frame for frame in images}

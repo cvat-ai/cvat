@@ -8230,25 +8230,48 @@ components:
           $ref: '#/components/schemas/FrameSelectionMethod'
         frame_count:
           type: integer
-          minimum: 0
+          minimum: 1
           description: |
-            The number of frames included in the job.
-            Applicable only to the random frame selection
+            The number of frames included in the GT job.
+            Applicable only to the "random_uniform" frame selection method
+        frame_share:
+          type: number
+          format: double
+          nullable: true
+          description: |
+            The share of frames included in the GT job.
+            Applicable only to the "random_uniform" frame selection method
+        frames_per_job_count:
+          type: integer
+          minimum: 1
+          nullable: true
+          description: |
+            The number of frames included in the GT job from each annotation job.
+            Applicable only to the "random_per_job" frame selection method
+        frames_per_job_share:
+          type: number
+          format: double
+          nullable: true
+          description: |
+            The share of frames included in the GT job from each annotation job.
+            Applicable only to the "random_per_job" frame selection method
         seed:
           type: integer
           minimum: 0
+          nullable: true
           description: |
             The seed value for the random number generator.
             The same value will produce the same frame sets.
-            Applicable only to the random frame selection.
+            Applicable only to random frame selection methods.
             By default, a random value is used.
         frames:
           type: array
           items:
             type: integer
             minimum: 0
+          nullable: true
           description: |
-            The list of frame ids. Applicable only to the manual frame selection
+            The list of frame ids. Applicable only to the "manual" frame selection method
       required:
       - task_id
       - type
@@ -10853,27 +10876,46 @@ components:
           items:
             type: string
             minLength: 1
+            maxLength: 1024
           nullable: true
-          default: []
-        frames_count:
+          description: |
+            The list of frame ids. Applicable only to the "manual" frame selection method
+        frame_count:
           type: integer
           minimum: 1
-          nullable: true
-        frames_percent:
+          description: |
+            The number of frames included in the GT job.
+            Applicable only to the "random_uniform" frame selection method
+        frame_share:
           type: number
           format: double
           nullable: true
-        random_seed:
-          type: integer
-          nullable: true
+          description: |
+            The share of frames included in the GT job.
+            Applicable only to the "random_uniform" frame selection method
         frames_per_job_count:
           type: integer
           minimum: 1
           nullable: true
-        frames_per_job_percent:
+          description: |
+            The number of frames included in the GT job from each annotation job.
+            Applicable only to the "random_per_job" frame selection method
+        frames_per_job_share:
           type: number
           format: double
           nullable: true
+          description: |
+            The share of frames included in the GT job from each annotation job.
+            Applicable only to the "random_per_job" frame selection method
+        random_seed:
+          type: integer
+          minimum: 0
+          nullable: true
+          description: |
+            The seed value for the random number generator.
+            The same value will produce the same frame sets.
+            Applicable only to random frame selection methods.
+            By default, a random value is used.
       required:
       - frame_selection_method
       - mode
