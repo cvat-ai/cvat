@@ -61,7 +61,7 @@ const componentShortcuts: Record<string, KeyMapItem> = {
         sequences: ['n'],
         scope: ShortcutScope['3D_ANNOTATION_WORKSPACE_CONTROLS'],
     },
-    SWITCH_REDRAW_MODE_STANDARD_CONTROLS: {
+    SWITCH_REDRAW_MODE_STANDARD_3D_CONTROLS: {
         name: 'Redraw shape',
         description: 'Remove selected shape and redraw it from scratch',
         sequences: ['shift+n'],
@@ -123,7 +123,7 @@ export default function ControlsSideBarComponent(props: Props): JSX.Element {
         SWITCH_DRAW_MODE_STANDARD_3D_CONTROLS: (event: KeyboardEvent | undefined) => {
             handleDrawMode(event, 'draw');
         },
-        SWITCH_REDRAW_MODE_STANDARD_CONTROLS: (event: KeyboardEvent | undefined) => {
+        SWITCH_REDRAW_MODE_STANDARD_3D_CONTROLS: (event: KeyboardEvent | undefined) => {
             handleDrawMode(event, 'redraw');
         },
     } : {};
