@@ -967,6 +967,18 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
         return self.export_backup_v1(request)
 
     @extend_schema(summary="Aggregate data of a task",
+        parameters=[
+            OpenApiParameter(
+                "rq_id",
+                type=str,
+                description=textwrap.dedent(
+                    """\
+                    The report creation request id. Can be specified to check the report
+                    creation status.
+                """
+                ),
+            )
+        ],
         responses={
             '201': OpenApiResponse(description='Consensus Jobs Aggregated'),
             '202': OpenApiResponse(description='Agreegation of Consensus Jobs started'),
@@ -977,14 +989,10 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
     def aggregate(self, request, pk=None):
         task = self.get_object()
 
-        merged_response = merge_task(
+        return merge_task(
             task,
             request
         )
-        if isinstance(merged_response, str):
-            return Response(status=status.HTTP_202_ACCEPTED)
-        else:
-            return merged_response
 
     @transaction.atomic
     def perform_update(self, serializer):

@@ -793,11 +793,16 @@ async function deleteTask(id: number, organizationID: string | null = null): Pro
 async function mergeConsensusJobs(id: number): Promise<void> {
     const { backendAPI } = config;
     const url = `${backendAPI}/tasks/${id}/aggregate`;
+    const params = {
+        rq_id: null,
+    };
 
     return new Promise<void>((resolve, reject) => {
         async function request() {
             try {
-                const response = await Axios.put(url);
+                console.log('rq_id:', params.rq_id);
+                const response = await Axios.put(url, null, { params });
+                params.rq_id = response.data.rq_id;
                 const { status } = response;
                 if (status === 202) {
                     setTimeout(request, 3000);

@@ -25,6 +25,7 @@ from cvat.apps.consensus.new_intersect_merge import IntersectMerge
 from cvat.apps.dataset_manager.bindings import import_dm_annotations
 from cvat.apps.dataset_manager.task import PatchAction, patch_job_data
 from cvat.apps.engine.models import Job, JobType, StageChoice, StateChoice, Task, User
+from cvat.apps.engine.serializers import RqIdSerializer
 from cvat.apps.engine.utils import (
     define_dependent_job,
     get_rq_job_meta,
@@ -142,17 +143,18 @@ def merge_task(task: Task, request) -> Response:
     rq_id = request.query_params.get("rq_id", uuid4().hex)
     rq_job = queue.fetch_job(rq_id)
     user_id = request.user.id
+    serializer = RqIdSerializer({"rq_id": rq_id})
 
     if rq_job:
         if rq_job.is_finished:
             rq_job.delete()
-            return Response(status=status.HTTP_201_CREATED)
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
         elif rq_job.is_failed:
             exc_info = process_failed_job(rq_job)
             return Response(data=exc_info, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
         else:
             # rq_job is in queued stage or might be running
-            return Response(status=status.HTTP_202_ACCEPTED)
+            return Response(serializer.data, status=status.HTTP_202_ACCEPTED)
 
     func = _merge_consensus_jobs
     func_args = [task.id]
@@ -166,4 +168,4 @@ def merge_task(task: Task, request) -> Response:
             depends_on=define_dependent_job(queue, user_id),
         )
 
-    return rq_id
+    return Response(serializer.data, status=status.HTTP_202_ACCEPTED)
