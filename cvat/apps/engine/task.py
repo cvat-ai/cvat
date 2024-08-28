@@ -1130,7 +1130,10 @@ def _create_thread(
     # Prepare jobs
     if validation_params and validation_params['mode'] == models.ValidationMode.GT_POOL:
         if db_task.mode != 'annotation':
-            raise ValidationError("gt pool can only be used with 'annotation' mode tasks")
+            raise ValidationError(
+                f"validation mode '{models.ValidationMode.GT_POOL}' can only be used "
+                "with 'annotation' mode tasks"
+            )
 
         # 1. select pool frames
         all_frames = range(len(images))
@@ -1147,11 +1150,11 @@ def _create_thread(
                 if frame_count := validation_params.get("frame_count"):
                     if len(images) <= frame_count:
                         raise ValidationError(
-                            f"The number of validation frames requested ({frame_count})"
+                            f"The number of validation frames requested ({frame_count}) "
                             f"must be less than the number of task frames ({len(images)})"
                         )
                 elif frame_share := validation_params.get("frame_share"):
-                    frame_count = max(1, len(images) * frame_share)
+                    frame_count = max(1, int(len(images) * frame_share))
                 else:
                     raise ValidationError("The number of validation frames is not specified")
 
@@ -1184,7 +1187,7 @@ def _create_thread(
         if frames_per_job_count := validation_params.get("frames_per_job_count"):
             if len(pool_frames) < frames_per_job_count and validation_params.get("frame_count"):
                 raise ValidationError(
-                    f"The requested number of validation frames per job ({frames_per_job_count})"
+                    f"The requested number of validation frames per job ({frames_per_job_count}) "
                     f"is greater than the validation pool size ({len(pool_frames)})"
                 )
         elif frames_per_job_share := validation_params.get("frames_per_job_share"):
@@ -1316,7 +1319,7 @@ def _create_thread(
                 if frame_count := validation_params.get("frame_count"):
                     if len(images) < frame_count:
                         raise ValidationError(
-                            f"The number of validation frames requested ({frame_count})"
+                            f"The number of validation frames requested ({frame_count}) "
                             f"is greater that the number of task frames ({len(images)})"
                         )
                 elif frame_share := validation_params.get("frame_share"):
