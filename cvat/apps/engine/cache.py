@@ -21,7 +21,6 @@ import av
 import cv2
 import PIL.Image
 import PIL.ImageOps
-from django.conf import settings
 from django.core.cache import caches
 from rest_framework.exceptions import NotFound, ValidationError
 
