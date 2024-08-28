@@ -923,11 +923,9 @@ def _create_thread(
     db_data.compressed_chunk_type = models.DataChoice.VIDEO if task_mode == 'interpolation' and not data['use_zip_chunks'] else models.DataChoice.IMAGESET
     db_data.original_chunk_type = models.DataChoice.VIDEO if task_mode == 'interpolation' else models.DataChoice.IMAGESET
 
-    compressed_chunk_writer_class = Mpeg4CompressedChunkWriter if db_data.compressed_chunk_type == models.DataChoice.VIDEO else ZipCompressedChunkWriter
-
     # calculate chunk size if it isn't specified
     if db_data.chunk_size is None:
-        if issubclass(compressed_chunk_writer_class, ZipCompressedChunkWriter):
+        if db_data.compressed_chunk_type == models.DataChoice.IMAGESET:
             first_image_idx = db_data.start_frame
             if not is_data_in_cloud:
                 w, h = extractor.get_image_size(first_image_idx)
