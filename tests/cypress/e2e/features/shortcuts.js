@@ -5,16 +5,6 @@
 /// <reference types="cypress" />
 
 context('Customizable Shortcuts', () => {
-    const searchShortcuts = [
-        {
-            title: 'Save the job',
-            description: 'Send all changes of annotations to the server',
-        },
-        {
-            title: 'Switch automatic bordering',
-            description: 'Switch automatic bordering for polygons and polylines during drawing/editing',
-        },
-    ];
     const taskName = 'A task with markdown';
     const serverFiles = ['images/image_1.jpg'];
     const createRectangleShape2Points = {
@@ -77,14 +67,24 @@ context('Customizable Shortcuts', () => {
         });
     });
 
-    function testSearchShortcuts(searchDescription) {
-        const searchItemClass = searchDescription ? '.cvat-shortcuts-settings-item-title' : '.cvat-shortcuts-settings-item-description';
-        const randomSearchItem = searchDescription ? 'random description shortcut' : 'random title shortcut';
+    function testSearchShortcuts(search) {
+        const searchShortcuts = [
+            {
+                title: 'Save the job',
+                description: 'Send all changes of annotations to the server',
+            },
+            {
+                title: 'Switch automatic bordering',
+                description: 'Switch automatic bordering for polygons and polylines during drawing/editing',
+            },
+        ];
+        const searchItemClass = search === 'description' ? '.cvat-shortcuts-settings-item-title' : '.cvat-shortcuts-settings-item-description';
+        const randomSearchItem = search === 'description' ? 'random description shortcut' : 'random title shortcut';
         cy.get('.cvat-shortcuts-settings-search input').focus();
         for (const searchShortcut of searchShortcuts) {
-            cy.get('.cvat-shortcuts-settings-search input').type(searchDescription ? searchShortcut.description : searchShortcut.title);
+            cy.get('.cvat-shortcuts-settings-search input').type(search === 'description' ? searchShortcut.description : searchShortcut.title);
             cy.get(searchItemClass).should('have.length', 1);
-            cy.get(searchItemClass).contains(searchDescription ? searchShortcut.title : searchShortcut.description);
+            cy.get(searchItemClass).contains(search === 'description' ? searchShortcut.title : searchShortcut.description);
             cy.get('.cvat-shortcuts-settings-search input').clear();
         }
         cy.get('.cvat-shortcuts-settings-search input').type(randomSearchItem);
@@ -93,12 +93,17 @@ context('Customizable Shortcuts', () => {
         cy.get('.cvat-shortcuts-settings-search input').blur();
     }
 
-    function registerF2F3(shouldExist) {
+    function checkShortcutsMounted(label) {
+        cy.get('.cvat-shortcuts-modal-window-table').should('exist').and('be.visible');
+        for (let i = 1; i < 3; i++) {
+            cy.get('.cvat-shortcuts-modal-window-table').contains(label(i));
+        }
+    }
+
+    function registerF2(shouldExist) {
         cy.get('.ant-list-item').should('exist').and('be.visible');
         cy.get('.ant-list-item .ant-select').first().click();
         cy.realPress(['F2']);
-        cy.wait(200);
-        cy.realPress(['F3']);
         cy.get('.ant-modal-content').contains('Conflicting shortcuts detected');
         cy.get(
             shouldExist ?
@@ -106,18 +111,13 @@ context('Customizable Shortcuts', () => {
                 '.ant-modal-content .ant-modal-confirm-btns .ant-btn-default',
         ).click();
         cy.get('.ant-list-item .ant-select').first().within(() => {
-            cy.get('.ant-select-selection-overflow-item').contains('f2 f3').should(shouldExist ? 'exist' : 'not.exist');
+            cy.get('.ant-select-selection-overflow-item').contains('f2').should(shouldExist ? 'exist' : 'not.exist');
         });
-    }
-
-    function saveSettings() {
-        cy.get('.cvat-settings-modal .ant-modal-footer .ant-btn-primary').click();
-    }
-
-    function checkShortcutsMounted(label) {
-        cy.get('.cvat-shortcuts-modal-window-table').should('exist').and('be.visible');
-        for (let i = 1; i < 4; i++) {
-            cy.get('.cvat-shortcuts-modal-window-table').contains(label(i));
+        if (shouldExist) {
+            cy.closeSettings();
+            cy.realPress(['F2']);
+            cy.get('.cvat-shortcuts-modal-window').should('exist').and('be.visible');
+            cy.realPress(['F2']);
         }
     }
 
@@ -126,67 +126,65 @@ context('Customizable Shortcuts', () => {
     });
 
     describe('Searching for a shortcut', () => {
-        it('Searching according to description', () => {
+        it('Search a shortcut by its description', () => {
             cy.openSettings();
             cy.contains('Shortcuts').click();
             cy.get('.cvat-shortcuts-settings-search input').should('exist').and('be.visible');
-            testSearchShortcuts(true);
+            testSearchShortcuts('description');
         });
-        it('Searching according to title', () => {
-            testSearchShortcuts(false);
+        it('Search a shortcut by its title', () => {
+            testSearchShortcuts('title');
         });
     });
 
     describe('Registration and testing of new shortcuts', () => {
-        it('Registering a new shortcut', () => {
-            cy.get('.cvat-shortcuts-settings-collapse').should('exist').and('be.visible');
-            cy.get('.ant-collapse-header').first().click();
-            registerF2F3(false);
-            registerF2F3(true);
-        });
         it('Registering a combination shortcut and testing if it works or not', () => {
-            cy.get('.ant-list-item').should('exist').and('be.visible');
-            cy.get('.ant-list-item .ant-select').first().click();
+            cy.get('.cvat-shortcuts-settings-collapse').should('exist').and('be.visible');
+            cy.get('.cvat-shortcuts-settings-label').first().click();
+            cy.get('.cvat-shortcuts-settings-collapse-item').should('exist').and('be.visible');
+            cy.get('.cvat-shortcuts-settings-collapse-item .cvat-shortcuts-settings-select').first().click();
             cy.realPress(['Control', 'Space']);
-            cy.wait(1050);
             cy.closeSettings();
             cy.realPress(['Control', 'Space']);
             cy.get('.cvat-shortcuts-modal-window').should('exist').and('be.visible');
-            cy.wait(150);
             cy.realPress(['Control', 'Space']);
+            cy.openSettings();
+            registerF2(false);
+            registerF2(true);
         });
     });
 
     describe('Saving, Clearing and Restoring to Default', () => {
         it('Saving shortcuts and checking if they persist', () => {
             cy.openSettings();
-            saveSettings();
+            cy.saveSettings();
             cy.reload();
             cy.openSettings();
             cy.contains('Shortcuts').click();
             cy.get('.cvat-shortcuts-settings-collapse').should('exist').and('be.visible');
-            cy.get('.ant-collapse-header').first().click();
-            cy.get('.ant-list-item .ant-select').first().within(() => {
+            cy.get('.cvat-shortcuts-settings-label').first().click();
+            cy.get('.cvat-shortcuts-settings-collapse-item .cvat-shortcuts-settings-select').first().within(() => {
                 cy.get('.ant-select-selection-overflow-item').contains('ctrl+space').should('exist');
             });
         });
         it('Cleaning Shortcuts', () => {
-            cy.get('.ant-list-item .ant-select').first().click();
-            cy.get('.ant-list-item .ant-select .ant-select-selection-item-remove').first().click();
-            cy.get('.ant-list-item .ant-select').first().within(() => {
+            cy.get('.cvat-shortcuts-settings-collapse-item .cvat-shortcuts-settings-select').first().click();
+            cy.get('.cvat-shortcuts-settings-collapse-item .cvat-shortcuts-settings-select .ant-select-selection-item-remove').first().click();
+            cy.get('.cvat-shortcuts-settings-collapse-item .cvat-shortcuts-settings-select').first().within(() => {
                 cy.get('.ant-select-selection-overflow-item').contains('f1').should('not.exist');
             });
-            cy.get('.ant-list-item .ant-select .ant-select-clear').first().click();
-            cy.get('.ant-list-item .ant-select').first().within(() => {
+            cy.get('.cvat-shortcuts-settings-collapse-item .cvat-shortcuts-settings-select .ant-select-clear').first().click();
+            cy.get('.cvat-shortcuts-settings-collapse-item .cvat-shortcuts-settings-select').first().within(() => {
                 cy.get('.ant-select-selection-overflow-item').should('not.have.text');
             });
         });
         it('Restoring Defaults', () => {
-            cy.get('.cvat-settings-modal .cvat-shortcuts-setting .ant-btn-lg').eq(1).click();
-            cy.get('.ant-modal-confirm .ant-btn-primary').click();
-            cy.get('.ant-list-item .ant-select .ant-select-selection-overflow-item').first().should('exist').and('be.visible');
-            cy.get('.ant-list-item .ant-select .ant-select-selection-overflow-item').first().contains('f1');
-            saveSettings();
+            cy.get('.cvat-shortcuts-settings-restore').click();
+            cy.get('.cvat-shortcuts-settings-restore-modal .ant-btn-primary').click();
+            cy.get(
+                '.cvat-shortcuts-settings-collapse-item .cvat-shortcuts-settings-select .ant-select-selection-overflow-item').first().should('exist').and('be.visible');
+            cy.get('.cvat-shortcuts-settings-collapse-item .cvat-shortcuts-settings-select .ant-select-selection-overflow-item').first().contains('f1');
+            cy.saveSettings();
         });
         it('Modifying a shortcut via local storage and testing if its conflict is resolved', () => {
             cy.window().then((window) => {
@@ -199,11 +197,11 @@ context('Customizable Shortcuts', () => {
             cy.openSettings();
             cy.contains('Shortcuts').click();
             cy.get('.cvat-shortcuts-settings-collapse').should('exist').and('be.visible');
-            cy.get('.ant-collapse-header').first().click();
-            cy.get('.ant-list-item .ant-select .ant-select-selection-overflow-item').first().contains('f2');
-            cy.get('.ant-list-item .ant-select .ant-select-selection-overflow-item').eq(1).should('not.have.text');
-            cy.get('.cvat-settings-modal .cvat-shortcuts-setting .ant-btn-lg').eq(1).click();
-            cy.get('.ant-modal-confirm .ant-btn-primary').click();
+            cy.get('.cvat-shortcuts-settings-label').first().click();
+            cy.get('.cvat-shortcuts-settings-collapse-item .cvat-shortcuts-settings-select .ant-select-selection-overflow-item').first().contains('f2');
+            cy.get('.cvat-shortcuts-settings-collapse-item .cvat-shortcuts-settings-select .ant-select-selection-overflow-item').eq(1).should('not.have.text');
+            cy.get('.cvat-shortcuts-settings-restore').click();
+            cy.get('.cvat-shortcuts-settings-restore-modal .ant-btn-primary').click();
         });
     });
 
