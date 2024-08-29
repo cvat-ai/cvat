@@ -10,7 +10,7 @@ import { Col, Row } from 'antd/lib/grid';
 import Form from 'antd/lib/form';
 import CVATTooltip from 'components/common/cvat-tooltip';
 import { ConsensusSettings } from 'cvat-core-wrapper';
-import { Button } from 'antd/lib';
+import { Button, Divider } from 'antd/lib';
 import notification from 'antd/lib/notification';
 import { LoadingOutlined } from '@ant-design/icons';
 
@@ -25,9 +25,7 @@ export default function ConsensusSettingsForm(props: Props): JSX.Element | null 
     const [updatingConsensusSetting, setUpdatingConsensusSetting] = useState<boolean>(false);
 
     if (!settings) {
-        return (
-            <Text>No quality settings</Text>
-        );
+        return <Text>No quality settings</Text>;
     }
 
     const initialValues = {
@@ -71,50 +69,76 @@ export default function ConsensusSettingsForm(props: Props): JSX.Element | null 
         }
     }, [settings]);
 
-    const generalTooltip = (
+    const shapeComparisonTooltip = (
+        <div className='cvat-analytics-settings-tooltip-inner'>
+            <Text>Min overlap threshold(IoU) is used for distinction between matched / unmatched shapes.</Text>
+        </div>
+    );
+
+    const KeypointTooltip = (
+        <div className='cvat-analytics-settings-tooltip-inner'>
+            <Text>Sigma is used for calculating the OKS distance.</Text>
+        </div>
+    );
+
+    const LineThicknessTooltip = (
+        <div className='cvat-analytics-settings-tooltip-inner'>
+            <Text>Relative thickness is used for calculating the line thickness.</Text>
+        </div>
+    );
+
+    const validationTooltip = (
         <div className='cvat-analytics-settings-tooltip-inner'>
             <Text>
-                Min overlap threshold(IoU) is used for distinction between matched / unmatched shapes.
+                Quorum is the minimum number of annotations that should be present in a cluster for it to be considered.
             </Text>
             <Text>
-                Agreement score threshold is used for distinction between strong / weak consensus.
-            </Text>
-            <Text>
-                Quorum is used for voting a label and attribute results to be counted
-            </Text>
-            <Text>
-                Sigma is used while calculating the OKS distance
+                Agreement score threshold prevents merged annotations with low overlap (IoU) in their cluster from being
+                accepted.
             </Text>
         </div>
     );
 
     return (
-        <Form
-            form={form}
-            layout='vertical'
-            initialValues={initialValues}
-        >
+        <Form form={form} layout='vertical' initialValues={initialValues}>
             <Row className='cvat-quality-settings-title'>
-                <Text strong>
-                    Consensus Settings
-                </Text>
-                <CVATTooltip title={generalTooltip} className='cvat-analytics-tooltip' overlayStyle={{ maxWidth: '500px' }}>
-                    <QuestionCircleOutlined
-                        style={{ opacity: 0.5 }}
-                    />
+                <Text strong>Consensus Settings</Text>
+            </Row>
+            <Row className='cvat-quality-settings-title'>
+                <Text strong>Shape comparison</Text>
+                <CVATTooltip
+                    title={shapeComparisonTooltip}
+                    className='cvat-analytics-tooltip'
+                    overlayStyle={{ maxWidth: '500px' }}
+                >
+                    <QuestionCircleOutlined style={{ opacity: 0.5 }} />
                 </CVATTooltip>
             </Row>
             <Row>
                 <Col span={12}>
-                    <Form.Item
-                        name='iouThreshold'
-                        label='Min Overlap Threshold (%)'
-                        rules={[{ required: true }]}
-                    >
+                    <Form.Item name='iouThreshold' label='Min Overlap Threshold (%)' rules={[{ required: true }]}>
                         <InputNumber min={0} max={100} precision={0} />
                     </Form.Item>
                 </Col>
-                <Col span={12}>
+            </Row>
+            <Divider />
+            <Row className='cvat-quality-settings-title'>
+                <Text strong>Consensus Validation</Text>
+                <CVATTooltip
+                    title={validationTooltip}
+                    className='cvat-analytics-tooltip'
+                    overlayStyle={{ maxWidth: '500px' }}
+                >
+                    <QuestionCircleOutlined style={{ opacity: 0.5 }} />
+                </CVATTooltip>
+            </Row>
+            <Row>
+                <Col span={6}>
+                    <Form.Item name='quorum' label='Quorum' rules={[{ required: true }]}>
+                        <InputNumber min={0} max={10} precision={0} step={1} />
+                    </Form.Item>
+                </Col>
+                <Col span={6}>
                     <Form.Item
                         name='agreementScoreThreshold'
                         label='Agreement Score Threshold (%)'
@@ -124,25 +148,34 @@ export default function ConsensusSettingsForm(props: Props): JSX.Element | null 
                     </Form.Item>
                 </Col>
             </Row>
+            <Divider />
+            <Row className='cvat-quality-settings-title'>
+                <Text strong>Keypoint Comparison</Text>
+                <CVATTooltip
+                    title={KeypointTooltip}
+                    className='cvat-analytics-tooltip'
+                    overlayStyle={{ maxWidth: '500px' }}
+                >
+                    <QuestionCircleOutlined style={{ opacity: 0.5 }} />
+                </CVATTooltip>
+            </Row>
             <Row>
                 <Col span={12}>
-                    <Form.Item
-                        name='quorum'
-                        label='Quorum'
-                        rules={[{ required: true }]}
-                    >
-                        <InputNumber min={0} max={10} precision={0} step={1} />
-                    </Form.Item>
-                </Col>
-                <Col span={12}>
-                    <Form.Item
-                        name='sigma'
-                        label='Sigma'
-                        rules={[{ required: true }]}
-                    >
+                    <Form.Item name='sigma' label='Sigma' rules={[{ required: true }]}>
                         <InputNumber min={5} max={20} precision={0} />
                     </Form.Item>
                 </Col>
+            </Row>
+            <Divider />
+            <Row className='cvat-quality-settings-title'>
+                <Text strong>Line Comparison</Text>
+                <CVATTooltip
+                    title={LineThicknessTooltip}
+                    className='cvat-analytics-tooltip'
+                    overlayStyle={{ maxWidth: '500px' }}
+                >
+                    <QuestionCircleOutlined style={{ opacity: 0.5 }} />
+                </CVATTooltip>
             </Row>
             <Row>
                 <Col span={12}>
@@ -156,7 +189,7 @@ export default function ConsensusSettingsForm(props: Props): JSX.Element | null 
                 </Col>
             </Row>
             <Row>
-                <Col span={11} offset={6}>
+                <Col span={9} offset={4}>
                     <Button
                         type='primary'
                         disabled={updatingConsensusSetting}
