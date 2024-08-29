@@ -107,7 +107,7 @@ from cvat.apps.engine.permissions import (CloudStoragePermission,
     CommentPermission, IssuePermission, JobPermission, LabelPermission, ProjectPermission,
     TaskPermission, UserPermission)
 from cvat.apps.engine.view_utils import tus_chunk_action
-from cvat.apps.consensus.merge_consensus_jobs import merge_task
+from cvat.apps.consensus.merge_consensus_jobs import scehdule_consensus_merging
 
 slogger = ServerLogManager(__name__)
 
@@ -989,7 +989,7 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
     def aggregate(self, request, pk=None):
         task = self.get_object()
 
-        return merge_task(
+        return scehdule_consensus_merging(
             task,
             request
         )
@@ -1999,6 +1999,33 @@ class JobViewSet(viewsets.GenericViewSet, mixins.ListModelMixin, mixins.CreateMo
                     return Response(data=str(e), status=status.HTTP_400_BAD_REQUEST)
                 return Response(data)
 
+    @extend_schema(summary="Aggregate data of the parent job",
+        parameters=[
+            OpenApiParameter(
+                "rq_id",
+                type=str,
+                description=textwrap.dedent(
+                    """\
+                    The report creation request id. Can be specified to check the report
+                    creation status.
+                """
+                ),
+            )
+        ],
+        responses={
+            '201': OpenApiResponse(description='Specific Consensus Jobs Aggregated'),
+            '202': OpenApiResponse(description='Agreegation of specific Consensus Jobs started'),
+            '400': OpenApiResponse(description='Agreegating a job without data is not allowed'),
+        },
+    )
+    @action(methods=['PUT'], detail=True, url_path=r'aggregate/?$')
+    def aggregate(self, request, pk=None):
+        parent_job = self.get_object()
+
+        return scehdule_consensus_merging(
+            parent_job,
+            request
+        )
 
     @tus_chunk_action(detail=True, suffix_base="annotations")
     def append_annotations_chunk(self, request, pk, file_id):

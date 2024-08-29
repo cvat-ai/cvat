@@ -766,6 +766,40 @@ export default function (state = defaultState, action: AnyAction): Notifications
                 },
             };
         }
+        case ConsensusActionTypes.MERGE_SPECIFIC_CONSENSUS_JOBS_FAILED: {
+            const { jobID, taskID } = action.payload;
+            return {
+                ...state,
+                errors: {
+                    ...state.errors,
+                    tasks: {
+                        ...state.errors.tasks,
+                        mergingConsensus: {
+                            message: `Could not merge the [job ${jobID}](/tasks/${taskID}/jobs/${jobID})`,
+                            reason: action.payload.error,
+                            shouldLog: !(action.payload.error instanceof ServerError),
+                            className: 'cvat-notification-notice-merge-task-failed',
+                        },
+                    },
+                },
+            };
+        }
+        case ConsensusActionTypes.MERGE_SPECIFIC_CONSENSUS_JOBS_SUCCESS: {
+            const { jobID, taskID } = action.payload;
+            return {
+                ...state,
+                messages: {
+                    ...state.messages,
+                    tasks: {
+                        ...state.messages.tasks,
+                        mergingConsensusDone: {
+                            message: `Consensus Jobs in the [job ${jobID}](/tasks/${taskID}/jobs/${jobID}) \
+                                have been merged`,
+                        },
+                    },
+                },
+            };
+        }
         case TasksActionTypes.CREATE_TASK_FAILED: {
             return {
                 ...state,

@@ -148,9 +148,7 @@ function JobItem(props: Props): JSX.Element {
                     <Col span={7}>
                         <Row>
                             <Col>
-                                <Link to={`/tasks/${job.taskId}/jobs/${job.id}`}>
-                                    { jobName }
-                                </Link>
+                                <Link to={`/tasks/${job.taskId}/jobs/${job.id}`}>{jobName}</Link>
                             </Col>
                             {tag}
                             {job.type !== JobType.GROUND_TRUTH && (
@@ -230,15 +228,11 @@ function JobItem(props: Props): JSX.Element {
                                                 onJobUpdate(job, { state: newValue });
                                             }}
                                         >
-                                            <Select.Option value={JobState.NEW}>
-                                                {JobState.NEW}
-                                            </Select.Option>
+                                            <Select.Option value={JobState.NEW}>{JobState.NEW}</Select.Option>
                                             <Select.Option value={JobState.IN_PROGRESS}>
                                                 {JobState.IN_PROGRESS}
                                             </Select.Option>
-                                            <Select.Option value={JobState.REJECTED}>
-                                                {JobState.REJECTED}
-                                            </Select.Option>
+                                            <Select.Option value={JobState.REJECTED}>{JobState.REJECTED}</Select.Option>
                                             <Select.Option value={JobState.COMPLETED}>
                                                 {JobState.COMPLETED}
                                             </Select.Option>
@@ -255,7 +249,11 @@ function JobItem(props: Props): JSX.Element {
                                     <Col>
                                         <Icon component={DurationIcon} />
                                         <Text>Duration: </Text>
-                                        <Text type='secondary'>{`${moment.duration(now.diff(created)).humanize()}`}</Text>
+                                        <Text type='secondary'>
+                                            {`${moment
+                                                .duration(now.diff(created))
+                                                .humanize()}`}
+                                        </Text>
                                     </Col>
                                 </Row>
                                 <Row>
@@ -267,19 +265,17 @@ function JobItem(props: Props): JSX.Element {
                                         </Text>
                                     </Col>
                                 </Row>
-                                {
-                                    job.type !== JobType.GROUND_TRUTH && (
-                                        <Row>
-                                            <Col>
-                                                <Icon component={FramesIcon} />
-                                                <Text>Frame range: </Text>
-                                                <Text type='secondary' className='cvat-job-item-frame-range'>
-                                                    {`${job.startFrame}-${job.stopFrame}`}
-                                                </Text>
-                                            </Col>
-                                        </Row>
-                                    )
-                                }
+                                {job.type !== JobType.GROUND_TRUTH && (
+                                    <Row>
+                                        <Col>
+                                            <Icon component={FramesIcon} />
+                                            <Text>Frame range: </Text>
+                                            <Text type='secondary' className='cvat-job-item-frame-range'>
+                                                {`${job.startFrame}-${job.stopFrame}`}
+                                            </Text>
+                                        </Col>
+                                    </Row>
+                                )}
                             </Col>
                         </Row>
                     </Col>
@@ -288,26 +284,28 @@ function JobItem(props: Props): JSX.Element {
                     trigger={['click']}
                     destroyPopupOnHide
                     className='job-actions-menu'
-                    overlay={<JobActionsMenu job={job} onJobUpdate={onJobUpdate} />}
+                    overlay={(
+                        <JobActionsMenu
+                            job={job}
+                            onJobUpdate={onJobUpdate}
+                            consensusJobsPresent={Boolean(task.consensusJobsPerRegularJob)}
+                        />
+                    )}
                 >
                     <MoreOutlined className='cvat-job-item-more-button' />
                 </Dropdown>
-                {consensusJobs.length > 0 &&
-                    (
-                        <Collapse
-                            className='cvat-consensus-job-collapse'
-                            items={[{
+                {consensusJobs.length > 0 && (
+                    <Collapse
+                        className='cvat-consensus-job-collapse'
+                        items={[
+                            {
                                 key: '1',
-                                label:
-                                    <Text>
-                                        {`${consensusJobs.length} Consensus Jobs`}
-                                    </Text>,
-                                children: (
-                                    consensusJobViews
-                                ),
-                            }]}
-                        />
-                    )}
+                                label: <Text>{`${consensusJobs.length} Consensus Jobs`}</Text>,
+                                children: consensusJobViews,
+                            },
+                        ]}
+                    />
+                )}
             </Card>
         </Col>
     );

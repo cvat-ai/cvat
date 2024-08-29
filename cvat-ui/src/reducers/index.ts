@@ -171,8 +171,9 @@ export interface ConsensusState {
     fetching: boolean;
     consensusSettings: any | null;
     taskInstance: any | null;
+    jobInstance: any | null;
     mergingConsensus: {
-        [tid: number]: boolean;
+        [tid: string]: boolean;
     };
 }
 

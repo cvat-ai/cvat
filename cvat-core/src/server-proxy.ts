@@ -790,9 +790,9 @@ async function deleteTask(id: number, organizationID: string | null = null): Pro
     }
 }
 
-async function mergeConsensusJobs(id: number): Promise<void> {
+async function mergeConsensusJobs(id: number, instanceType: string): Promise<void> {
     const { backendAPI } = config;
-    const url = `${backendAPI}/tasks/${id}/aggregate`;
+    const url = instanceType === 'tasks' ? `${backendAPI}/tasks/${id}/aggregate` : `${backendAPI}/jobs/${id}/aggregate`;
     const params = {
         rq_id: null,
     };
@@ -2523,6 +2523,7 @@ export default Object.freeze({
         create: createJob,
         delete: deleteJob,
         exportDataset: exportDataset('jobs'),
+        mergeConsensusJobs,
     }),
 
     users: Object.freeze({

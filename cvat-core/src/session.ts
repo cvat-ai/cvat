@@ -698,6 +698,11 @@ export class Job extends Session {
         const result = await PluginRegistry.apiWrapper.call(this, Job.prototype.delete);
         return result;
     }
+
+    async mergeConsensusJobs(): Promise<void> {
+        const result = await PluginRegistry.apiWrapper.call(this, Job.prototype.mergeConsensusJobs);
+        return result;
+    }
 }
 
 export class Task extends Session {

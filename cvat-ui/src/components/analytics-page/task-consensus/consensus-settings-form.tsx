@@ -47,7 +47,7 @@ export default function ConsensusSettingsForm(props: Props): JSX.Element | null 
                 settings.quorum = values.quorum;
                 settings.agreementScoreThreshold = values.agreementScoreThreshold / 100;
                 settings.sigma = values.sigma / 100;
-                settings.lineThickness = values.line_thickness / 100;
+                settings.lineThickness = values.lineThickness / 100;
 
                 try {
                     const responseSettings = await settings.save();

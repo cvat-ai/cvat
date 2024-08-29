@@ -3,7 +3,7 @@
 // SPDX-License-Identifier: MIT
 
 import { ActionUnion, createAction, ThunkAction } from 'utils/redux';
-import { ConsensusSettings, Task } from 'cvat-core-wrapper';
+import { ConsensusSettings, Job, Task } from 'cvat-core-wrapper';
 
 export enum ConsensusActionTypes {
     SET_FETCHING = 'SET_FETCHING',
@@ -11,6 +11,9 @@ export enum ConsensusActionTypes {
     MERGE_CONSENSUS_JOBS = 'MERGE_CONSENSUS_JOBS',
     MERGE_CONSENSUS_JOBS_SUCCESS = 'MERGE_CONSENSUS_JOBS_SUCCESS',
     MERGE_CONSENSUS_JOBS_FAILED = 'MERGE_CONSENSUS_JOBS_FAILED',
+    MERGE_SPECIFIC_CONSENSUS_JOBS = 'MERGE_SPECIFIC_CONSENSUS_JOBS',
+    MERGE_SPECIFIC_CONSENSUS_JOBS_SUCCESS = 'MERGE_SPECIFIC_CONSENSUS_JOBS_SUCCESS',
+    MERGE_SPECIFIC_CONSENSUS_JOBS_FAILED = 'MERGE_SPECIFIC_CONSENSUS_JOBS_FAILED',
 }
 
 export const consensusActions = {
@@ -29,6 +32,15 @@ export const consensusActions = {
     mergeTaskConsensusJobsFailed: (taskID: number, error: any) => (
         createAction(ConsensusActionTypes.MERGE_CONSENSUS_JOBS_FAILED, { taskID, error })
     ),
+    mergeSpecificTaskConsensusJobs: (jobID: number) => (
+        createAction(ConsensusActionTypes.MERGE_SPECIFIC_CONSENSUS_JOBS, { jobID })
+    ),
+    mergeSpecificTaskConsensusJobsSuccess: (jobID: number, taskID: number) => (
+        createAction(ConsensusActionTypes.MERGE_SPECIFIC_CONSENSUS_JOBS_SUCCESS, { jobID, taskID })
+    ),
+    mergeSpecificTaskConsensusJobsFailed: (jobID: number, taskID: number, error: any) => (
+        createAction(ConsensusActionTypes.MERGE_SPECIFIC_CONSENSUS_JOBS_FAILED, { jobID, taskID, error })
+    ),
 };
 
 export const mergeTaskConsensusJobsAsync = (
@@ -43,6 +55,20 @@ export const mergeTaskConsensusJobsAsync = (
     }
 
     dispatch(consensusActions.mergeTaskConsensusJobsSuccess(taskInstance.id));
+};
+
+export const mergeTaskSpecificConsensusJobsAsync = (
+    jobInstance: Job,
+): ThunkAction => async (dispatch) => {
+    try {
+        dispatch(consensusActions.mergeSpecificTaskConsensusJobs(jobInstance.id));
+        await jobInstance.mergeConsensusJobs();
+    } catch (error) {
+        dispatch(consensusActions.mergeSpecificTaskConsensusJobsFailed(jobInstance.id, jobInstance.taskId, error));
+        return;
+    }
+
+    dispatch(consensusActions.mergeSpecificTaskConsensusJobsSuccess(jobInstance.id, jobInstance.taskId));
 };
 
 export type ConsensusActions = ActionUnion<typeof consensusActions>;

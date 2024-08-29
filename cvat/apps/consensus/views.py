@@ -21,7 +21,7 @@ from rest_framework.exceptions import NotFound, ValidationError
 from rest_framework.response import Response
 
 from cvat.apps.consensus.consensus_reports import prepare_report_for_downloading
-from cvat.apps.consensus.merge_consensus_jobs import merge_task
+from cvat.apps.consensus.merge_consensus_jobs import scehdule_consensus_merging
 from cvat.apps.consensus.models import (
     AssigneeConsensusReport,
     ConsensusConflict,
@@ -271,7 +271,7 @@ class ConsensusReportViewSet(
                 raise NotFound(f"Task {task_id} does not exist") from ex
 
             try:
-                rq_id = merge_task(task, request)
+                rq_id = scehdule_consensus_merging(task, request)
                 serializer = RqIdSerializer({"rq_id": rq_id})
                 return Response(serializer.data, status=status.HTTP_202_ACCEPTED)
             except Exception as ex:
