@@ -416,6 +416,50 @@
     ],
     "tracks": []
   },
+  "many jobs skeleton tracks with missing shapes": {
+    "version": 0,
+    "tags": [],
+    "shapes": [],
+    "tracks": [
+      {
+        "frame": 10,
+        "group": 0,
+        "source": "file",
+        "shapes": [
+          {
+            "type": "skeleton",
+            "occluded": false,
+            "outside": false,
+            "z_order": 0,
+            "rotation": 0,
+            "points": [],
+            "frame": 10,
+            "attributes": []
+          }
+        ],
+        "attributes": [],
+        "elements": [
+          {
+            "frame": 10,
+            "group": 0,
+            "source": "file",
+            "shapes": [],
+            "attributes": [],
+            "label_id": null
+          },
+          {
+            "frame": 10,
+            "group": 0,
+            "source": "file",
+            "shapes": [],
+            "attributes": [],
+            "label_id": null
+          }
+        ],
+        "label_id": null
+      }
+    ]
+  },
   "ICDAR Localization 1.0": {
     "version": 0,
     "tags": [],

@@ -236,7 +236,8 @@ class _DbTestBase(ApiTestBase):
             response = self.client.delete(path)
         return response
 
-    def _create_annotations(self, task, name_ann, key_get_values):
+    @staticmethod
+    def _make_annotations_for_task(task, name_ann, key_get_values):
         tmp_annotations = copy.deepcopy(annotations[name_ann])
 
         # change attributes in all annotations
@@ -300,45 +301,17 @@ class _DbTestBase(ApiTestBase):
                                     "spec_id": spec_id,
                                     "value": value,
                                 })
+        return tmp_annotations
+
+    def _create_annotations(self, task, name_ann, key_get_values):
+        tmp_annotations = self._make_annotations_for_task(task, name_ann, key_get_values)
         response = self._put_api_v2_task_id_annotations(task["id"], tmp_annotations)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
 
     def _create_annotations_in_job(self, task, job_id,  name_ann, key_get_values):
-        tmp_annotations = copy.deepcopy(annotations[name_ann])
-
-        # change attributes in all annotations
-        for item in tmp_annotations:
-            if item in ["tags", "shapes", "tracks"]:
-                for index_elem, _ in enumerate(tmp_annotations[item]):
-                    tmp_annotations[item][index_elem]["label_id"] = task["labels"][0]["id"]
-
-                    for index_attribute, attribute in enumerate(task["labels"][0]["attributes"]):
-                        spec_id = task["labels"][0]["attributes"][index_attribute]["id"]
-
-                        if key_get_values == "random":
-                            if attribute["input_type"] == "number":
-                                start = int(attribute["values"][0])
-                                stop = int(attribute["values"][1]) + 1
-                                step = int(attribute["values"][2])
-                                value = str(random.randrange(start, stop, step))
-                            else:
-                                value = random.choice(task["labels"][0]["attributes"][index_attribute]["values"])
-                        elif key_get_values == "default":
-                            value = attribute["default_value"]
-
-                        if item == "tracks" and attribute["mutable"]:
-                            for index_shape, _ in enumerate(tmp_annotations[item][index_elem]["shapes"]):
-                                tmp_annotations[item][index_elem]["shapes"][index_shape]["attributes"].append({
-                                    "spec_id": spec_id,
-                                    "value": value,
-                                })
-                        else:
-                            tmp_annotations[item][index_elem]["attributes"].append({
-                                "spec_id": spec_id,
-                                "value": value,
-                            })
+        tmp_annotations = self._make_annotations_for_task(task, name_ann, key_get_values)
         response = self._put_api_v2_job_id_annotations(job_id, tmp_annotations)
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.status_code, status.HTTP_200_OK, msg=response.json())
 
     def _download_file(self, url, data, user, file_name):
         response = self._get_request_with_data(url, data, user)
@@ -1289,6 +1262,45 @@ class TaskDumpUploadTest(_DbTestBase):
                     # equals annotations
                     data_from_task_after_upload = self._get_data_from_task(task_id, include_images)
                     compare_datasets(data_from_task_before_upload, data_from_task_after_upload)
+
+    def test_api_v2_check_skeleton_tracks_with_missing_shapes(self):
+        test_name = self._testMethodName
+        format_name = "COCO Keypoints 1.0"
+        name_ann = 'many jobs skeleton tracks with missing shapes'
+
+        # create task with annotations
+        for whole_task in (False, True):
+            with self.subTest():
+                images = self._generate_task_images(25)
+                task = self._create_task(tasks['many jobs skeleton'], images)
+                task_id = task["id"]
+
+                if whole_task:
+                    self._create_annotations(task, name_ann, "default")
+                else:
+                    job_id = next(
+                        job["id"]
+                        for job in self._get_jobs(task_id)
+                        if job["start_frame"] == annotations[name_ann]["tracks"][0]["frame"]
+                    )
+                    self._create_annotations_in_job(task, job_id, name_ann, "default")
+
+                # dump annotations
+                url = self._generate_url_dump_tasks_annotations(task_id)
+                data = {"format": format_name}
+                with TestDir() as test_dir:
+                    file_zip_name = osp.join(test_dir, f'{test_name}_{format_name}.zip')
+                    self._download_file(url, data, self.admin, file_zip_name)
+                    self._check_downloaded_file(file_zip_name)
+
+                    # remove annotations
+                    self._remove_annotations(url, self.admin)
+
+                    # upload annotations
+                    url = self._generate_url_upload_tasks_annotations(task_id, format_name)
+                    with open(file_zip_name, 'rb') as binary_file:
+                        self._upload_file(url, binary_file, self.admin)
+
 
 class ExportBehaviorTest(_DbTestBase):
     @define
