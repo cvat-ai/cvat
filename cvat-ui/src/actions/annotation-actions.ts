@@ -88,31 +88,6 @@ export function computeZRange(states: any[]): number[] {
     return [minZ, maxZ];
 }
 
-export async function jobInfoGenerator(job: any): Promise<Record<string, number>> {
-    const { total } = await job.annotations.statistics();
-    return {
-        'frame count': job.stopFrame - job.startFrame + 1,
-        'track count':
-            total.rectangle.shape +
-            total.rectangle.track +
-            total.polygon.shape +
-            total.polygon.track +
-            total.polyline.shape +
-            total.polyline.track +
-            total.points.shape +
-            total.points.track +
-            total.cuboid.shape +
-            total.cuboid.track,
-        'object count': total.total,
-        'box count': total.rectangle.shape + total.rectangle.track,
-        'polygon count': total.polygon.shape + total.polygon.track,
-        'polyline count': total.polyline.shape + total.polyline.track,
-        'points count': total.points.shape + total.points.track,
-        'cuboids count': total.cuboid.shape + total.cuboid.track,
-        'tag count': total.tag,
-    };
-}
-
 export enum AnnotationActionTypes {
     GET_JOB = 'GET_JOB',
     GET_JOB_SUCCESS = 'GET_JOB_SUCCESS',
@@ -835,7 +810,7 @@ export function rotateCurrentFrame(rotation: Rotation): AnyAction {
 
     const frameAngle = (frameAngles[frameNumber - startFrame] + (rotation === Rotation.CLOCKWISE90 ? 90 : 270)) % 360;
 
-    job.logger.log(EventScope.rotateImage, { angle: frameAngle });
+    job.logger.log(EventScope.rotateImage);
 
     return {
         type: AnnotationActionTypes.ROTATE_FRAME,
@@ -914,7 +889,7 @@ export function getJobAsync({
                 throw new Error('Requested resource id is not valid');
             }
 
-            const loadJobEvent = await logger.log(EventScope.loadJob, {}, true);
+            const start = Date.now();
 
             getCore().config.globalObjectsCounter = 0;
             const [job] = await cvat.jobs.get({ jobID });
@@ -962,12 +937,7 @@ export function getJobAsync({
                 }
             }
 
-            loadJobEvent.close({
-                ...await jobInfoGenerator(job),
-                jobID: job.id,
-                taskID: job.taskId,
-                projectID: job.projectId,
-            });
+            await job.logger.log(EventScope.loadJob, { duration: Date.now() - start });
 
             const openTime = Date.now();
             dispatch({
@@ -1442,7 +1412,9 @@ export function repeatDrawShapeAsync(): ThunkAction {
             return;
         }
 
-        activeControl = ShapeTypeToControl[activeShapeType];
+        if (activeObjectType !== ObjectType.TAG) {
+            activeControl = ShapeTypeToControl[activeShapeType];
+        }
 
         if (canvasInstance instanceof Canvas) {
             canvasInstance.cancel();

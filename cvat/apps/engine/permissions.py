@@ -305,12 +305,17 @@ class ProjectPermission(OpenPolicyAgentPermission):
         return scopes
 
     @classmethod
-    def create_scope_view(cls, iam_context, project_id):
-        try:
-            obj = Project.objects.get(id=project_id)
-        except Project.DoesNotExist as ex:
-            raise ValidationError(str(ex))
-        return cls(**iam_context, obj=obj, scope=__class__.Scopes.VIEW)
+    def create_scope_view(cls, request, project: Union[int, Project], iam_context=None):
+        if isinstance(project, int):
+            try:
+                project = Project.objects.get(id=project)
+            except Project.DoesNotExist as ex:
+                raise ValidationError(str(ex))
+
+        if not iam_context and request:
+            iam_context = get_iam_context(request, project)
+
+        return cls(**iam_context, obj=project, scope=__class__.Scopes.VIEW)
 
     @classmethod
     def create_scope_create(cls, request, org_id):
@@ -422,7 +427,7 @@ class TaskPermission(OpenPolicyAgentPermission):
                 permissions.append(perm)
 
             if project_id:
-                perm = ProjectPermission.create_scope_view(iam_context, project_id)
+                perm = ProjectPermission.create_scope_view(request, int(project_id), iam_context)
                 permissions.append(perm)
 
             for field_source, field in [
@@ -684,12 +689,17 @@ class JobPermission(OpenPolicyAgentPermission):
         return cls(**iam_context, obj=obj, scope='view:data')
 
     @classmethod
-    def create_scope_view(cls, iam_context, job_id):
-        try:
-            obj = Job.objects.get(id=job_id)
-        except Job.DoesNotExist as ex:
-            raise ValidationError(str(ex))
-        return cls(**iam_context, obj=obj, scope=__class__.Scopes.VIEW)
+    def create_scope_view(cls, request, job: Union[int, Job], iam_context=None):
+        if isinstance(job, int):
+            try:
+                job = Job.objects.get(id=job)
+            except Job.DoesNotExist as ex:
+                raise ValidationError(str(ex))
+
+        if not iam_context and request:
+            iam_context = get_iam_context(request, job)
+
+        return cls(**iam_context, obj=job, scope=__class__.Scopes.VIEW)
 
     def __init__(self, **kwargs):
         self.task_id = kwargs.pop('task_id', None)
@@ -1227,7 +1237,7 @@ class RequestPermission(OpenPolicyAgentPermission):
                         ('export', 'task', 'backup'): (TaskPermission, TaskPermission.Scopes.EXPORT_BACKUP),
                         ('export', 'job', 'annotations'): (JobPermission, JobPermission.Scopes.EXPORT_ANNOTATIONS),
                         ('export', 'job', 'dataset'): (JobPermission, JobPermission.Scopes.EXPORT_DATASET),
-                    }[(parsed_rq_id.action, parsed_rq_id.resource, parsed_rq_id.subresource)]
+                    }[(parsed_rq_id.action, parsed_rq_id.target, parsed_rq_id.subresource)]
 
 
                     resource = None
@@ -1236,12 +1246,12 @@ class RequestPermission(OpenPolicyAgentPermission):
                             'project': Project,
                             'task': Task,
                             'job': Job,
-                        }[parsed_rq_id.resource]
+                        }[parsed_rq_id.target]
 
                         try:
                             resource = resource_model.objects.get(id=resource_id)
                         except resource_model.DoesNotExist as ex:
-                            raise NotFound(f'The {parsed_rq_id.resource!r} with specified id#{resource_id} does not exist') from ex
+                            raise NotFound(f'The {parsed_rq_id.target!r} with specified id#{resource_id} does not exist') from ex
 
                     permissions.append(permission_class.create_base_perm(request, view, scope=resource_scope, iam_context=iam_context, obj=resource))
 

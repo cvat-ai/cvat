@@ -19,7 +19,7 @@ from django.core.files.storage import FileSystemStorage
 from django.core.exceptions import ValidationError
 from django.db import IntegrityError, models, transaction
 from django.db.models.fields import FloatField
-from django.db.models import Q
+from django.db.models import Q, TextChoices
 from drf_spectacular.types import OpenApiTypes
 from drf_spectacular.utils import extend_schema_field
 from cvat.apps.engine.lazy_list import LazyList
@@ -1199,3 +1199,25 @@ class Asset(models.Model):
 
     def get_asset_dir(self):
         return os.path.join(settings.ASSETS_ROOT, str(self.uuid))
+
+class RequestStatus(TextChoices):
+    QUEUED = "queued"
+    STARTED = "started"
+    FAILED = "failed"
+    FINISHED = "finished"
+
+class RequestAction(TextChoices):
+    AUTOANNOTATE = "autoannotate"
+    CREATE = "create"
+    IMPORT = "import"
+    EXPORT = "export"
+
+class RequestTarget(TextChoices):
+    PROJECT = "project"
+    TASK = "task"
+    JOB = "job"
+
+class RequestSubresource(TextChoices):
+    ANNOTATIONS = "annotations"
+    DATASET = "dataset"
+    BACKUP = "backup"

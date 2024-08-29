@@ -11,7 +11,7 @@ import { Canvas } from 'cvat-canvas-wrapper';
 import { Canvas3d } from 'cvat-canvas3d-wrapper';
 import { ActiveControl, CombinedState } from 'reducers';
 import CVATTooltip from 'components/common/cvat-tooltip';
-import GlobalHotKeys, { KeyMapItem } from 'utils/mousetrap-react';
+import GlobalHotKeys from 'utils/mousetrap-react';
 import { registerComponentShortcuts } from 'actions/shortcuts-actions';
 import { ShortcutScope } from 'utils/enums';
 import { useSelector } from 'react-redux';
@@ -22,20 +22,20 @@ export interface Props {
     canvasInstance: Canvas | Canvas3d;
     activeControl: ActiveControl;
     disabled?: boolean;
-    shortcuts: {
-        SWITCH_MERGE_MODE: {
-            details: KeyMapItem;
-            displayValue: string;
-        }
-    };
 }
 
 const componentShortcuts = {
-    SWITCH_MERGE_MODE: {
+    SWITCH_MERGE_MODE_STANDARD_CONTROLS: {
         name: 'Merge mode',
         description: 'Activate or deactivate mode to merging shapes',
         sequences: ['m'],
-        scope: ShortcutScope.ALL,
+        scope: ShortcutScope.STANDARD_WORKSPACE_CONTROLS,
+    },
+    SWITCH_MERGE_MODE_STANDARD_3D_CONTROLS: {
+        name: 'Merge mode',
+        description: 'Activate or deactivate mode to merging shapes',
+        sequences: ['m'],
+        scope: ShortcutScope['3D_ANNOTATION_WORKSPACE_CONTROLS'],
     },
 };
 
@@ -43,10 +43,10 @@ registerComponentShortcuts(componentShortcuts);
 
 function MergeControl(props: Props): JSX.Element {
     const {
-        shortcuts, activeControl, canvasInstance, updateActiveControl, disabled,
+        activeControl, canvasInstance, updateActiveControl, disabled,
     } = props;
 
-    const { keyMap } = useSelector((state: CombinedState) => state.shortcuts);
+    const { keyMap, normalizedKeyMap } = useSelector((state: CombinedState) => state.shortcuts);
 
     const dynamicIconProps =
         activeControl === ActiveControl.MERGE ?
@@ -66,11 +66,14 @@ function MergeControl(props: Props): JSX.Element {
                 },
             };
 
-    const handlers: Record<keyof typeof componentShortcuts, (event?: KeyboardEvent) => void> = {
-        SWITCH_MERGE_MODE: (event: KeyboardEvent | undefined) => {
-            if (event) event.preventDefault();
-            dynamicIconProps.onClick();
-        },
+    const handleMergeMode = (event: KeyboardEvent | undefined): void => {
+        if (event) event.preventDefault();
+        dynamicIconProps.onClick();
+    };
+
+    const handlers: Partial<Record<keyof typeof componentShortcuts, (event?: KeyboardEvent) => void>> = {
+        SWITCH_MERGE_MODE_STANDARD_CONTROLS: handleMergeMode,
+        SWITCH_MERGE_MODE_STANDARD_3D_CONTROLS: handleMergeMode,
     };
 
     return disabled ? (
@@ -81,7 +84,7 @@ function MergeControl(props: Props): JSX.Element {
                 keyMap={subKeyMap(componentShortcuts, keyMap)}
                 handlers={handlers}
             />
-            <CVATTooltip title={`Merge shapes/tracks ${shortcuts.SWITCH_MERGE_MODE.displayValue}`} placement='right'>
+            <CVATTooltip title={`Merge shapes/tracks ${normalizedKeyMap.SWITCH_MERGE_MODE_STANDARD_CONTROLS}`} placement='right'>
                 <Icon {...dynamicIconProps} component={MergeIcon} />
             </CVATTooltip>
         </>
