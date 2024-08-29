@@ -17,7 +17,6 @@ import Text from 'antd/lib/typography/Text';
 
 import LogoutComponent from 'components/logout-component';
 import LoginPageContainer from 'containers/login-page/login-page';
-import LoginWithTokenComponent from 'components/login-with-token/login-with-token';
 import RegisterPageContainer from 'containers/register-page/register-page';
 import ResetPasswordPageConfirmComponent from 'components/reset-password-confirm-page/reset-password-confirm-page';
 import ResetPasswordPageComponent from 'components/reset-password-page/reset-password-page';
@@ -98,6 +97,7 @@ interface CVATAppProps {
     initInvitations: () => void;
     initRequests: () => void;
     loadServerAPISchema: () => void;
+    onChangeLocation: (from: string, to: string) => void;
     userInitialized: boolean;
     userFetching: boolean;
     organizationFetching: boolean;
@@ -142,7 +142,7 @@ class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentP
 
     public componentDidMount(): void {
         const core = getCore();
-        const { history, location } = this.props;
+        const { history, location, onChangeLocation } = this.props;
         const {
             HEALTH_CHECK_RETRIES, HEALTH_CHECK_PERIOD, HEALTH_CHECK_REQUEST_TIMEOUT,
             SERVER_UNAVAILABLE_COMPONENT, RESET_NOTIFICATIONS_PATHS,
@@ -174,6 +174,9 @@ class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentP
         history.listen((newLocation) => {
             customWaViewHit(newLocation.pathname, newLocation.search, newLocation.hash);
             const { location: prevLocation } = this.props;
+
+            onChangeLocation(prevLocation.pathname, newLocation.pathname);
+
             const shouldResetNotifications = RESET_NOTIFICATIONS_PATHS.from.some(
                 (pathname) => prevLocation.pathname === pathname,
             );
@@ -498,11 +501,6 @@ class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentP
                                 <Layout.Content style={{ height: '100%' }}>
                                     <ShortcutsDialog />
                                     <Switch>
-                                        <Route
-                                            exact
-                                            path='/auth/login-with-token/:token'
-                                            component={LoginWithTokenComponent}
-                                        />
                                         <Route exact path='/auth/logout' component={LogoutComponent} />
                                         <Route exact path='/projects' component={ProjectsPageComponent} />
                                         <Route exact path='/projects/create' component={CreateProjectPageComponent} />
@@ -588,11 +586,6 @@ class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentP
                             <Route exact path='/auth/email-verification-sent' component={EmailVerificationSentPage} />
                             <Route exact path='/auth/incorrect-email-confirmation' component={IncorrectEmailConfirmationPage} />
                             <Route exact path='/auth/login' component={LoginPageContainer} />
-                            <Route
-                                exact
-                                path='/auth/login-with-token/:token'
-                                component={LoginWithTokenComponent}
-                            />
                             {isPasswordResetEnabled && (
                                 <Route exact path='/auth/password/reset' component={ResetPasswordPageComponent} />
                             )}

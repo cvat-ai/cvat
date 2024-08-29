@@ -135,7 +135,7 @@ REST_FRAMEWORK = {
         'cvat.apps.iam.permissions.PolicyEnforcer',
     ],
     'DEFAULT_AUTHENTICATION_CLASSES': [
-        'cvat.apps.iam.authentication.TokenAuthenticationEx',
+        'rest_framework.authentication.TokenAuthentication',
         'cvat.apps.iam.authentication.SignatureAuthentication',
         'rest_framework.authentication.SessionAuthentication',
         'rest_framework.authentication.BasicAuthentication'

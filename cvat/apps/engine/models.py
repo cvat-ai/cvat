@@ -1208,6 +1208,7 @@ class RequestStatus(TextChoices):
     FINISHED = "finished"
 
 class RequestAction(TextChoices):
+    AUTOANNOTATE = "autoannotate"
     CREATE = "create"
     IMPORT = "import"
     EXPORT = "export"

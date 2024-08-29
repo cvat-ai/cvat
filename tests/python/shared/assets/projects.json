@@ -470,13 +470,13 @@
         "username": "business1"
       },
       "source_storage": {
-        "cloud_storage_id": 2,
+        "cloud_storage_id": 3,
         "id": 3,
         "location": "cloud_storage"
       },
       "status": "annotation",
       "target_storage": {
-        "cloud_storage_id": 2,
+        "cloud_storage_id": 3,
         "id": 1,
         "location": "cloud_storage"
       },

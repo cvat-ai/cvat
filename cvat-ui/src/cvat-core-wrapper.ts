@@ -21,7 +21,7 @@ import { Job, Task } from 'cvat-core/src/session';
 import Project from 'cvat-core/src/project';
 import QualityReport, { QualitySummary } from 'cvat-core/src/quality-report';
 import QualityConflict, { AnnotationConflict, ConflictSeverity } from 'cvat-core/src/quality-conflict';
-import QualitySettings from 'cvat-core/src/quality-settings';
+import QualitySettings, { TargetMetric } from 'cvat-core/src/quality-settings';
 import ConsensusSettings from 'cvat-core/src/consensus-settings';
 import { FramesMetaData, FrameData } from 'cvat-core/src/frames';
 import { ServerError, RequestError } from 'cvat-core/src/exceptions';
@@ -97,6 +97,7 @@ export {
     ConsensusSettings,
     ConsensusReport,
     AssigneeConsensusReport,
+    TargetMetric,
     AnnotationConflict,
     ConflictSeverity,
     FramesMetaData,

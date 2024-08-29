@@ -43,6 +43,7 @@ import QualitySettings from './quality-settings';
 import { FramesMetaData } from './frames';
 import AnalyticsReport from './analytics-report';
 import { listActions, registerAction, runActions } from './annotations-actions';
+import { convertDescriptions, getServerAPISchema } from './server-schema';
 import { JobType } from './enums';
 import { PaginatedResource } from './core-types';
 import CVATCore from '.';
@@ -214,16 +215,15 @@ export default function implementAPI(cvat: CVATCore): CVATCore {
         const result = await serverProxy.server.setAuthData(response);
         return result;
     });
-    implementationMixin(cvat.server.removeAuthData, async () => {
-        const result = await serverProxy.server.removeAuthData();
-        return result;
-    });
     implementationMixin(cvat.server.installedApps, async () => {
         const result = await serverProxy.server.installedApps();
         return result;
     });
 
-    implementationMixin(cvat.server.apiSchema, serverProxy.server.apiSchema);
+    implementationMixin(cvat.server.apiSchema, async () => {
+        const result = await getServerAPISchema();
+        return result;
+    });
 
     implementationMixin(cvat.assets.create, async (file: File, guideId: number): Promise<SerializedAsset> => {
         if (!(file instanceof File)) {
@@ -530,7 +530,11 @@ export default function implementAPI(cvat: CVATCore): CVATCore {
         const params = fieldsToSnakeCase(filter);
 
         const settings = await serverProxy.analytics.quality.settings.get(params);
-        return new QualitySettings({ ...settings });
+        const schema = await getServerAPISchema();
+        const descriptions = convertDescriptions(schema.components.schemas.QualitySettings.properties);
+        return new QualitySettings({
+            ...settings, descriptions,
+        });
     });
     implementationMixin(cvat.consensus.reports, async (filter: ConsensusReportsFilter) => {
         checkFilter(filter, {

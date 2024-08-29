@@ -2306,6 +2306,7 @@ class QualityReportUpdateManager:
                     target_last_updated=job.updated_date,
                     gt_last_updated=gt_job.updated_date,
                     assignee_id=job.assignee_id,
+                    assignee_last_updated=job.assignee_updated_date,
                     data=job_comparison_report.to_json(),
                     conflicts=[c.to_dict() for c in job_comparison_report.conflicts],
                 )
@@ -2318,6 +2319,7 @@ class QualityReportUpdateManager:
                     target_last_updated=task.updated_date,
                     gt_last_updated=gt_job.updated_date,
                     assignee_id=task.assignee_id,
+                    assignee_last_updated=task.assignee_updated_date,
                     data=task_comparison_report.to_json(),
                     conflicts=[],  # the task doesn't have own conflicts
                 ),
@@ -2424,6 +2426,7 @@ class QualityReportUpdateManager:
             target_last_updated=task_report["target_last_updated"],
             gt_last_updated=task_report["gt_last_updated"],
             assignee_id=task_report["assignee_id"],
+            assignee_last_updated=task_report["assignee_last_updated"],
             data=task_report["data"],
         )
         db_task_report.save()
@@ -2436,6 +2439,7 @@ class QualityReportUpdateManager:
                 target_last_updated=job_report["target_last_updated"],
                 gt_last_updated=job_report["gt_last_updated"],
                 assignee_id=job_report["assignee_id"],
+                assignee_last_updated=job_report["assignee_last_updated"],
                 data=job_report["data"],
             )
             db_job_reports.append(db_job_report)

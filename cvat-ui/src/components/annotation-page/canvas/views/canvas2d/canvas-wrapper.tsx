@@ -264,8 +264,8 @@ const componentShortcuts = {
     SWITCH_AUTOMATIC_BORDERING: {
         name: 'Switch automatic bordering',
         description: 'Switch automatic bordering for polygons and polylines during drawing/editing',
-        sequences: ['ctrl'],
-        scope: ShortcutScope.ALL,
+        sequences: ['ctrl+a'],
+        scope: ShortcutScope.STANDARD_WORKSPACE,
     },
 };
 
@@ -603,8 +603,8 @@ class CanvasWrapperComponent extends React.PureComponent<Props> {
 
         canvasInstance.html().removeEventListener('canvas.zoom', this.onCanvasZoomChanged);
         canvasInstance.html().removeEventListener('canvas.fit', this.onCanvasImageFitted);
-        canvasInstance.html().removeEventListener('canvas.dragshape', this.onCanvasShapeDragged);
-        canvasInstance.html().removeEventListener('canvas.resizeshape', this.onCanvasShapeResized);
+        canvasInstance.html().removeEventListener('canvas.dragshape', this.onCanvasShapeDragged as EventListener);
+        canvasInstance.html().removeEventListener('canvas.resizeshape', this.onCanvasShapeResized as EventListener);
         canvasInstance.html().removeEventListener('canvas.clicked', this.onCanvasShapeClicked);
         canvasInstance.html().removeEventListener('canvas.drawn', this.onCanvasShapeDrawn);
         canvasInstance.html().removeEventListener('canvas.merged', this.onCanvasObjectsMerged);
@@ -663,20 +663,10 @@ class CanvasWrapperComponent extends React.PureComponent<Props> {
             });
         }
 
-        const payload = {
-            object_type: state.objectType,
-            label: state.label.name,
-            frame: state.frame,
-            rotation: state.rotation,
-            occluded: state.occluded,
-            outside: state.outside,
-            shape_type: state.shapeType,
-        };
-
         if (isDrawnFromScratch) {
-            jobInstance.logger.log(EventScope.drawObject, { count: 1, duration, ...payload });
+            jobInstance.logger.log(EventScope.drawObject, { count: 1, duration });
         } else {
-            jobInstance.logger.log(EventScope.pasteObject, { count: 1, duration, ...payload });
+            jobInstance.logger.log(EventScope.pasteObject, { count: 1, duration });
         }
 
         const objectState = new cvat.classes.ObjectState(state);
@@ -762,16 +752,23 @@ class CanvasWrapperComponent extends React.PureComponent<Props> {
         }
     };
 
-    private onCanvasShapeDragged = (e: any): void => {
+    private onCanvasShapeDragged = (e: CustomEvent<{ duration: number; state: ObjectState }>): void => {
         const { jobInstance } = this.props;
-        const { id } = e.detail;
-        jobInstance.logger.log(EventScope.dragObject, { id });
+        const { detail: { duration, state: { serverID } } } = e;
+        jobInstance.logger.log(
+            EventScope.dragObject,
+            { duration, ...(serverID ? { obj_id: serverID } : {}) },
+        );
     };
 
-    private onCanvasShapeResized = (e: any): void => {
+    private onCanvasShapeResized = (e: CustomEvent<{ duration: number; state: ObjectState }>): void => {
         const { jobInstance } = this.props;
-        const { id } = e.detail;
-        jobInstance.logger.log(EventScope.resizeObject, { id });
+        const { detail: { duration, state: { serverID } } } = e;
+
+        jobInstance.logger.log(
+            EventScope.resizeObject,
+            { duration, ...(serverID ? { obj_id: serverID } : {}) },
+        );
     };
 
     private onCanvasImageFitted = (): void => {
@@ -862,7 +859,6 @@ class CanvasWrapperComponent extends React.PureComponent<Props> {
         jobInstance.logger.log(EventScope.sliceObject, {
             count: 1,
             duration,
-            clientID: state.clientID,
         });
         onSliceAnnotations(state, results);
     };
@@ -1064,8 +1060,8 @@ class CanvasWrapperComponent extends React.PureComponent<Props> {
 
         canvasInstance.html().addEventListener('canvas.zoom', this.onCanvasZoomChanged);
         canvasInstance.html().addEventListener('canvas.fit', this.onCanvasImageFitted);
-        canvasInstance.html().addEventListener('canvas.dragshape', this.onCanvasShapeDragged);
-        canvasInstance.html().addEventListener('canvas.resizeshape', this.onCanvasShapeResized);
+        canvasInstance.html().addEventListener('canvas.dragshape', this.onCanvasShapeDragged as EventListener);
+        canvasInstance.html().addEventListener('canvas.resizeshape', this.onCanvasShapeResized as EventListener);
         canvasInstance.html().addEventListener('canvas.clicked', this.onCanvasShapeClicked);
         canvasInstance.html().addEventListener('canvas.drawn', this.onCanvasShapeDrawn);
         canvasInstance.html().addEventListener('canvas.merged', this.onCanvasObjectsMerged);

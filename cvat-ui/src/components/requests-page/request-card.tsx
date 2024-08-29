@@ -196,11 +196,13 @@ function RequestCard(props: Props): JSX.Element {
                                 {' '}
                             </Text>
                         </Col>
-                        <Col className='cvat-requests-name'>
-                            {linkToEntity ?
-                                (<Link to={linkToEntity}>{name}</Link>) :
-                                <Text>{name}</Text>}
-                        </Col>
+                        {name && (
+                            <Col className='cvat-requests-name'>
+                                {linkToEntity ?
+                                    (<Link to={linkToEntity}>{name}</Link>) :
+                                    <Text>{name}</Text>}
+                            </Col>
+                        )}
                     </Row>
                     {timestamps}
                 </Col>

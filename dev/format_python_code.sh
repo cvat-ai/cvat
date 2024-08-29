@@ -25,6 +25,7 @@ for paths in \
     "cvat/apps/analytics_report" \
     "cvat/apps/consensus" \
     "cvat/apps/engine/lazy_list.py" \
+    "cvat/apps/engine/background.py" \
     ; do
     ${BLACK} -- ${paths}
     ${ISORT} -- ${paths}

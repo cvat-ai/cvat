@@ -11,7 +11,7 @@ import {
     Request,
 } from 'cvat-core-wrapper';
 import { IntelligentScissors } from 'utils/opencv-wrapper/intelligent-scissors';
-import { KeyMap } from 'utils/mousetrap-react';
+import { KeyMap, KeyMapItem } from 'utils/mousetrap-react';
 import { OpenCVTracker } from 'utils/opencv-wrapper/opencv-interfaces';
 import { ImageFilter } from 'utils/image-processing';
 
@@ -891,6 +891,7 @@ export interface ShortcutsState {
     visibleShortcutsHelp: boolean;
     keyMap: KeyMap;
     normalizedKeyMap: Record<string, string>;
+    defaultState: Record<string, KeyMapItem>
 }
 
 export enum StorageLocation {
@@ -978,6 +979,10 @@ export interface RequestsState {
     query: RequestsQuery;
 }
 
+export interface NavigationState {
+    prevLocation: string | null;
+}
+
 export interface CombinedState {
     auth: AuthState;
     projects: ProjectsState;
@@ -1002,6 +1007,7 @@ export interface CombinedState {
     webhooks: WebhooksState;
     requests: RequestsState;
     serverAPI: ServerAPIState;
+    navigation: NavigationState;
 }
 
 export interface Indexable {
