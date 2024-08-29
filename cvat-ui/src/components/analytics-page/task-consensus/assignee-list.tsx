@@ -10,10 +10,8 @@ import Text from 'antd/lib/typography/Text';
 import {
     User, AssigneeConsensusReport,
 } from 'cvat-core-wrapper';
-import { getQualityColor } from 'utils/quality-color';
 import Tag from 'antd/lib/tag';
-import { toRepresentation } from '../utils/text-formatting';
-import { sorter } from '../task-quality/job-list';
+import { sorter, toRepresentation, qualityColorGenerator } from 'utils/quality';
 
 interface Props {
     assigneeReports: AssigneeConsensusReport[];
@@ -70,13 +68,13 @@ function AssigneeListComponent(props: Props): JSX.Element {
                 return consensusScoreRepresentation.includes('N/A') ? (
                     <Text
                         style={{
-                            color: getQualityColor(value),
+                            color: qualityColorGenerator(0.9)(value),
                         }}
                     >
                         N/A
                     </Text>
                 ) : (
-                    <Tag color={getQualityColor(value)}>{consensusScoreRepresentation}</Tag>
+                    <Tag color={qualityColorGenerator(0.9)(value)}>{consensusScoreRepresentation}</Tag>
                 );
             },
         },

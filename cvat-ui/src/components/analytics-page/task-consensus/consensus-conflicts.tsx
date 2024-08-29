@@ -7,8 +7,8 @@ import Text from 'antd/lib/typography/Text';
 import { Col, Row } from 'antd/lib/grid';
 
 import ConsensusReport, { ConsensusSummary } from 'cvat-core/src/consensus-report';
+import { clampValue } from 'utils/quality';
 import AnalyticsCard from '../views/analytics-card';
-import { clampValue } from '../utils/text-formatting';
 
 interface Props {
     taskReport: ConsensusReport | null;

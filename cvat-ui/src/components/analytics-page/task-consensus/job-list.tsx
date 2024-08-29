@@ -14,11 +14,9 @@ import {
     Task, Job, JobType, getCore, ConsensusReport,
 } from 'cvat-core-wrapper';
 import CVATTooltip from 'components/common/cvat-tooltip';
-import { getQualityColor } from 'utils/quality-color';
 import Tag from 'antd/lib/tag';
-import { toRepresentation } from '../utils/text-formatting';
+import { sorter, toRepresentation, qualityColorGenerator } from 'utils/quality';
 import { ConflictsTooltip } from './consensus-conflicts';
-import { sorter } from '../task-quality/job-list';
 
 interface Props {
     task: Task;
@@ -143,13 +141,13 @@ function JobListComponent(props: Props): JSX.Element {
                 return consensusScoreRepresentation.includes('N/A') ? (
                     <Text
                         style={{
-                            color: getQualityColor(meanConsensusScore),
+                            color: qualityColorGenerator(0.9)(meanConsensusScore),
                         }}
                     >
                         N/A
                     </Text>
                 ) : (
-                    <Tag color={getQualityColor(meanConsensusScore)}>{consensusScoreRepresentation}</Tag>
+                    <Tag color={qualityColorGenerator(0.9)(meanConsensusScore)}>{consensusScoreRepresentation}</Tag>
                 );
             },
         },

@@ -9,8 +9,8 @@ import Text from 'antd/lib/typography/Text';
 import Button from 'antd/lib/button';
 
 import { ConsensusReport, getCore } from 'cvat-core-wrapper';
+import { toRepresentation } from 'utils/quality';
 import AnalyticsCard from '../views/analytics-card';
-import { toRepresentation } from '../utils/text-formatting';
 
 interface Props {
     taskID: number;
