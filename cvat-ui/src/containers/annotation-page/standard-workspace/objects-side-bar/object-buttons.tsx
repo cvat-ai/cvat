@@ -7,7 +7,6 @@ import React from 'react';
 import { connect } from 'react-redux';
 
 import { ObjectState, Job } from 'cvat-core-wrapper';
-import { EventScope } from 'cvat-logger';
 import isAbleToChangeFrame from 'utils/is-able-to-change-frame';
 import { ThunkDispatch } from 'utils/redux';
 import { updateAnnotationsAsync, changeFrameAsync } from 'actions/annotation-actions';
@@ -114,18 +113,16 @@ class ItemButtonsWrapper extends React.PureComponent<StateToProps & DispatchToPr
     };
 
     private lock = (): void => {
-        const { objectState, jobInstance, readonly } = this.props;
+        const { objectState, readonly } = this.props;
         if (!readonly) {
-            jobInstance.logger.log(EventScope.lockObject, { locked: true });
             objectState.lock = true;
             this.commit();
         }
     };
 
     private unlock = (): void => {
-        const { objectState, jobInstance, readonly } = this.props;
+        const { objectState, readonly } = this.props;
         if (!readonly) {
-            jobInstance.logger.log(EventScope.lockObject, { locked: false });
             objectState.lock = false;
             this.commit();
         }

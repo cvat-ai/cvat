@@ -16,7 +16,7 @@ from django.db.models import Q
 from django.db.models.query import QuerySet
 from django.utils.translation import gettext_lazy as _
 from django.utils.encoding import force_str
-from django.http import HttpRequest
+from rest_framework.request import Request
 from rest_framework import filters
 from rest_framework.compat import coreapi, coreschema
 from rest_framework.exceptions import ValidationError
@@ -412,11 +412,11 @@ class NonModelSimpleFilter(SimpleFilter, _NestedAttributeHandler):
                 parameters.append(parameter)
         return parameters
 
-    def filter_queryset(self, request: HttpRequest, queryset: Iterable, view):
+    def filter_queryset(self, request: Request, queryset: Iterable, view):
         filtered_queryset = queryset
 
         query_params = request.query_params
-        filters_to_use = set(query_params)
+        filters_to_use = set(query_params.keys())
 
         simple_filters = getattr(view, self.filter_fields_attr, None)
         lookup_fields = self.get_lookup_fields(view)
@@ -465,7 +465,7 @@ class NonModelOrderingFilter(OrderingFilter, _NestedAttributeHandler):
 
         return result, reverse
 
-    def filter_queryset(self, request: HttpRequest, queryset: Iterable, view) -> Iterable:
+    def filter_queryset(self, request: Request, queryset: Iterable, view) -> Iterable:
         ordering, reverse = self.get_ordering(request, queryset, view)
 
         if ordering:
@@ -520,7 +520,7 @@ class NonModelJsonLogicFilter(JsonLogicFilter, _NestedAttributeHandler):
         else:
             raise ValidationError(f'filter: {op} operation with {args} arguments is not implemented')
 
-    def filter_queryset(self, request: HttpRequest, queryset: Iterable, view) -> Iterable:
+    def filter_queryset(self, request: Request, queryset: Iterable, view) -> Iterable:
         filtered_queryset = queryset
         json_rules = request.query_params.get(self.filter_param)
         if json_rules:

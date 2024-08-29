@@ -33,6 +33,12 @@ export default function QualitySettingsModal(props: Props): JSX.Element | null {
         try {
             if (settings) {
                 const values = await form.validateFields();
+
+                settings.targetMetric = values.targetMetric;
+                settings.targetMetricThreshold = values.targetMetricThreshold / 100;
+
+                settings.maxValidationsPerJob = values.maxValidationsPerJob;
+
                 settings.lowOverlapThreshold = values.lowOverlapThreshold / 100;
                 settings.iouThreshold = values.iouThreshold / 100;
                 settings.compareAttributes = values.compareAttributes;

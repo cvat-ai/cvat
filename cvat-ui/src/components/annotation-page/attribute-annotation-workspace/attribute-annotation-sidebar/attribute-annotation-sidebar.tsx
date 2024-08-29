@@ -1,5 +1,5 @@
 // Copyright (C) 2020-2022 Intel Corporation
-// Copyright (C) 2022-2023 CVAT.ai Corporation
+// Copyright (C) 2022-2024 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -11,7 +11,6 @@ import Text from 'antd/lib/typography/Text';
 
 import { filterApplicableLabels } from 'utils/filter-applicable-labels';
 import { Label } from 'cvat-core-wrapper';
-import { EventScope } from 'cvat-logger';
 import {
     activateObject as activateObjectAction,
     changeFrameAsync,
@@ -36,7 +35,6 @@ interface StateToProps {
     activatedAttributeID: number | null;
     states: any[];
     labels: any[];
-    jobInstance: any;
     keyMap: KeyMap;
     normalizedKeyMap: Record<string, string>;
     canvasIsReady: boolean;
@@ -58,55 +56,55 @@ const componentShortcuts = {
         name: 'Next attribute',
         description: 'Go to the next attribute',
         sequences: ['down'],
-        scope: ShortcutScope.ALL,
+        scope: ShortcutScope.ATTRIBUTE_ANNOTATION_WORKSPACE,
     },
     PREVIOUS_ATTRIBUTE: {
         name: 'Previous attribute',
         description: 'Go to the previous attribute',
         sequences: ['up'],
-        scope: ShortcutScope.ALL,
+        scope: ShortcutScope.ATTRIBUTE_ANNOTATION_WORKSPACE,
     },
     NEXT_OBJECT: {
         name: 'Next object',
         description: 'Go to the next object',
         sequences: ['tab'],
-        scope: ShortcutScope.ALL,
+        scope: ShortcutScope.ATTRIBUTE_ANNOTATION_WORKSPACE,
     },
     PREVIOUS_OBJECT: {
         name: 'Previous object',
         description: 'Go to the previous object',
         sequences: ['shift+tab'],
-        scope: ShortcutScope.ALL,
+        scope: ShortcutScope.ATTRIBUTE_ANNOTATION_WORKSPACE,
     },
     SWITCH_LOCK: {
         name: 'Lock/unlock an object',
         description: 'Change locked state for an active object',
         sequences: ['l'],
-        scope: ShortcutScope.ALL,
+        scope: ShortcutScope.OBJECTS_SIDEBAR,
     },
     SWITCH_OCCLUDED: {
         name: 'Switch occluded',
         description: 'Change occluded property for an active object',
         sequences: ['q', '/'],
-        scope: ShortcutScope.ALL,
+        scope: ShortcutScope.OBJECTS_SIDEBAR,
     },
     SWITCH_PINNED: {
         name: 'Switch pinned property',
         description: 'Change pinned property for an active object',
         sequences: ['p'],
-        scope: ShortcutScope.ALL,
+        scope: ShortcutScope.OBJECTS_SIDEBAR,
     },
     NEXT_KEY_FRAME: {
         name: 'Next keyframe',
         description: 'Go to the next keyframe of an active track',
         sequences: ['r'],
-        scope: ShortcutScope.ALL,
+        scope: ShortcutScope.OBJECTS_SIDEBAR,
     },
     PREV_KEY_FRAME: {
         name: 'Previous keyframe',
         description: 'Go to the previous keyframe of an active track',
         sequences: ['e'],
-        scope: ShortcutScope.ALL,
+        scope: ShortcutScope.OBJECTS_SIDEBAR,
     },
 };
 
@@ -121,14 +119,13 @@ function mapStateToProps(state: CombinedState): StateToProps {
                 states,
                 zLayer: { cur },
             },
-            job: { instance: jobInstance, labels },
+            job: { labels },
             canvas: { ready: canvasIsReady },
         },
         shortcuts: { keyMap, normalizedKeyMap },
     } = state;
 
     return {
-        jobInstance,
         labels,
         activatedStateID,
         activatedAttributeID,
@@ -160,7 +157,6 @@ function AttributeAnnotationSidebar(props: StateToProps & DispatchToProps): JSX.
         states,
         activatedStateID,
         activatedAttributeID,
-        jobInstance,
         updateAnnotations,
         changeFrame,
         activateObject,
@@ -362,11 +358,6 @@ function AttributeAnnotationSidebar(props: StateToProps & DispatchToProps): JSX.
                     currentLabel={activeObjectState.label.id}
                     labels={applicableLabels}
                     changeLabel={(value: Label): void => {
-                        jobInstance.logger.log(EventScope.changeLabel, {
-                            object_id: activeObjectState.clientID,
-                            from: activeObjectState.label.id,
-                            to: value.id,
-                        });
                         activeObjectState.label = value;
                         updateAnnotations([activeObjectState]);
                     }}
@@ -393,11 +384,6 @@ function AttributeAnnotationSidebar(props: StateToProps & DispatchToProps): JSX.
                             currentValue={activeObjectState.attributes[activeAttribute.id]}
                             onChange={(value: string) => {
                                 const { attributes } = activeObjectState;
-                                jobInstance.logger.log(EventScope.changeAttribute, {
-                                    id: activeAttribute.id,
-                                    object_id: activeObjectState.clientID,
-                                    value,
-                                });
                                 attributes[activeAttribute.id] = value;
                                 activeObjectState.attributes = attributes;
                                 updateAnnotations([activeObjectState]);

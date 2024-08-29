@@ -18,7 +18,7 @@ from operator import itemgetter
 from pathlib import Path
 from tempfile import NamedTemporaryFile, TemporaryDirectory
 from time import sleep, time
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Optional, Tuple, Union
 
 import pytest
 from cvat_sdk import Client, Config, exceptions
@@ -54,7 +54,8 @@ from .utils import (
     CollectionSimpleFilterTestBase,
     compare_annotations,
     create_task,
-    export_dataset,
+    export_task_backup,
+    export_task_dataset,
     wait_until_task_is_created,
 )
 
@@ -275,7 +276,7 @@ class TestListTasksFilters(CollectionSimpleFilterTestBase):
         ),
     )
     def test_can_use_simple_filter_for_object_list(self, field):
-        return super().test_can_use_simple_filter_for_object_list(field)
+        return super()._test_can_use_simple_filter_for_object_list(field)
 
 
 @pytest.mark.usefixtures("restore_db_per_function")
@@ -653,26 +654,70 @@ class TestPatchTaskAnnotations:
 
 
 @pytest.mark.usefixtures("restore_db_per_class")
+@pytest.mark.usefixtures("restore_redis_inmem_per_function")
 class TestGetTaskDataset:
-    def _test_export_task(self, username: str, tid: int, **kwargs):
-        with make_api_client(username) as api_client:
-            return export_dataset(api_client.tasks_api.retrieve_dataset_endpoint, id=tid, **kwargs)
 
-    def test_can_export_task_dataset(self, admin_user, tasks_with_shapes):
-        task = tasks_with_shapes[0]
-        response = self._test_export_task(admin_user, task["id"])
-        assert response.data
+    @staticmethod
+    def _test_can_export_dataset(
+        username: str,
+        task_id: int,
+        *,
+        api_version: Union[int, Tuple[int]],
+        local_download: bool = True,
+        **kwargs,
+    ) -> Optional[bytes]:
+        dataset = export_task_dataset(username, api_version, save_images=True, id=task_id, **kwargs)
+        if local_download:
+            assert zipfile.is_zipfile(io.BytesIO(dataset))
+        else:
+            assert dataset is None
 
+        return dataset
+
+    @pytest.mark.usefixtures("restore_db_per_function")
+    @pytest.mark.parametrize("api_version", product((1, 2), repeat=2))
+    @pytest.mark.parametrize(
+        "local_download", (True, pytest.param(False, marks=pytest.mark.with_external_services))
+    )
+    def test_can_export_task_dataset_locally_and_to_cloud_with_both_api_versions(
+        self,
+        admin_user,
+        tasks_with_shapes,
+        filter_tasks,
+        api_version: Tuple[int],
+        local_download: bool,
+    ):
+        filter_ = "target_storage__location"
+        if local_download:
+            filter_ = "exclude_" + filter_
+        filtered_ids = {t["id"] for t in filter_tasks(**{filter_: "cloud_storage"})}
+
+        task_id = next(iter(filtered_ids & {t["id"] for t in tasks_with_shapes}))
+        self._test_can_export_dataset(
+            admin_user,
+            task_id,
+            api_version=api_version,
+            local_download=local_download,
+        )
+
+    @pytest.mark.parametrize("api_version", (1, 2))
     @pytest.mark.parametrize("tid", [21])
     @pytest.mark.parametrize(
         "format_name", ["CVAT for images 1.1", "CVAT for video 1.1", "COCO Keypoints 1.0"]
     )
-    def test_can_export_task_with_several_jobs(self, admin_user, tid, format_name):
-        response = self._test_export_task(admin_user, tid, format=format_name)
-        assert response.data
+    def test_can_export_task_with_several_jobs(
+        self, admin_user, tid, format_name, api_version: int
+    ):
+        self._test_can_export_dataset(
+            admin_user,
+            tid,
+            format=format_name,
+            api_version=api_version,
+        )
 
+    @pytest.mark.parametrize("api_version", (1, 2))
     @pytest.mark.parametrize("tid", [8])
-    def test_can_export_task_to_coco_format(self, admin_user, tid):
+    def test_can_export_task_to_coco_format(self, admin_user: str, tid: int, api_version: int):
         # these annotations contains incorrect frame numbers
         # in order to check that server handle such cases
         annotations = {
@@ -756,9 +801,13 @@ class TestGetTaskDataset:
         )
         assert response.status_code == HTTPStatus.OK
 
-        # check that we can export task
-        response = self._test_export_task(admin_user, tid, format="COCO Keypoints 1.0")
-        assert response.status == HTTPStatus.OK
+        # check that we can export task dataset
+        self._test_can_export_dataset(
+            admin_user,
+            tid,
+            format="COCO Keypoints 1.0",
+            api_version=api_version,
+        )
 
         # check that server saved track annotations correctly
         response = get_method(admin_user, f"tasks/{tid}/annotations")
@@ -769,8 +818,9 @@ class TestGetTaskDataset:
         assert annotations["tracks"][0]["shapes"][0]["frame"] == 0
         assert annotations["tracks"][0]["elements"][0]["shapes"][0]["frame"] == 0
 
+    @pytest.mark.parametrize("api_version", (1, 2))
     @pytest.mark.usefixtures("restore_db_per_function")
-    def test_can_download_task_with_special_chars_in_name(self, admin_user):
+    def test_can_download_task_with_special_chars_in_name(self, admin_user: str, api_version: int):
         # Control characters in filenames may conflict with the Content-Disposition header
         # value restrictions, as it needs to include the downloaded file name.
 
@@ -786,11 +836,14 @@ class TestGetTaskDataset:
 
         task_id, _ = create_task(admin_user, task_spec, task_data)
 
-        response = self._test_export_task(admin_user, task_id)
-        assert response.status == HTTPStatus.OK
-        assert zipfile.is_zipfile(io.BytesIO(response.data))
+        dataset = self._test_can_export_dataset(admin_user, task_id, api_version=api_version)
+        assert zipfile.is_zipfile(io.BytesIO(dataset))
 
-    def test_export_dataset_after_deleting_related_cloud_storage(self, admin_user, tasks):
+    @pytest.mark.usefixtures("restore_db_per_function")
+    @pytest.mark.parametrize("api_version", (1, 2))
+    def test_export_dataset_after_deleting_related_cloud_storage(
+        self, admin_user: str, tasks, api_version: int
+    ):
         related_field = "target_storage"
 
         task = next(
@@ -806,19 +859,27 @@ class TestGetTaskDataset:
             result, response = api_client.tasks_api.retrieve(task_id)
             assert not result[related_field]
 
-            response = export_dataset(api_client.tasks_api.retrieve_dataset_endpoint, id=task["id"])
-            assert response.data
+            self._test_can_export_dataset(admin_user, task["id"], api_version=api_version)
 
     @pytest.mark.parametrize(
         "export_format, default_subset_name, subset_path_template",
         [
             ("Datumaro 1.0", "", "images/{subset}"),
             ("YOLO 1.1", "train", "obj_{subset}_data"),
+            ("YOLOv8 Detection 1.0", "train", "images/{subset}"),
         ],
     )
+    @pytest.mark.parametrize("api_version", (1, 2))
     def test_uses_subset_name(
-        self, tasks, admin_user, export_format, default_subset_name, subset_path_template
+        self,
+        admin_user,
+        filter_tasks,
+        export_format,
+        default_subset_name,
+        subset_path_template,
+        api_version: int,
     ):
+        tasks = filter_tasks(exclude_target_storage__location="cloud_storage")
         group_key_func = itemgetter("subset")
         subsets_and_tasks = [
             (subset, next(group))
@@ -828,8 +889,13 @@ class TestGetTaskDataset:
             )
         ]
         for subset_name, task in subsets_and_tasks:
-            response = self._test_export_task(admin_user, tid=task["id"], format=export_format)
-            with zipfile.ZipFile(io.BytesIO(response.data)) as zip_file:
+            dataset = self._test_can_export_dataset(
+                admin_user,
+                task["id"],
+                api_version=api_version,
+                format=export_format,
+            )
+            with zipfile.ZipFile(io.BytesIO(dataset)) as zip_file:
                 subset_path = subset_path_template.format(subset=subset_name or default_subset_name)
                 assert any(
                     subset_path in path for path in zip_file.namelist()
@@ -2223,6 +2289,7 @@ class TestWorkWithTask:
                 assert image_name in ex.body
 
 
+@pytest.mark.usefixtures("restore_redis_inmem_per_function")
 class TestTaskBackups:
     def _make_client(self) -> Client:
         return Client(BASE_URL, config=Config(status_check_period=0.01))
@@ -2236,6 +2303,23 @@ class TestTaskBackups:
 
         with self.client:
             self.client.login((self.user, USER_PASS))
+
+    @pytest.mark.parametrize("api_version", product((1, 2), repeat=2))
+    @pytest.mark.parametrize(
+        "local_download", (True, pytest.param(False, marks=pytest.mark.with_external_services))
+    )
+    def test_can_export_backup_with_both_api_versions(
+        self, filter_tasks, api_version: Tuple[int], local_download: bool
+    ):
+        task = filter_tasks(
+            **{("exclude_" if local_download else "") + "target_storage__location": "cloud_storage"}
+        )[0]
+        backup = export_task_backup(self.user, api_version, id=task["id"])
+
+        if local_download:
+            assert zipfile.is_zipfile(io.BytesIO(backup))
+        else:
+            assert backup is None
 
     @pytest.mark.parametrize("mode", ["annotation", "interpolation"])
     def test_can_export_backup(self, tasks, mode):
@@ -2926,6 +3010,10 @@ class TestImportTaskAnnotations:
             "Open Images V6 1.0",
             "Datumaro 1.0",
             "Datumaro 3D 1.0",
+            "YOLOv8 Oriented Bounding Boxes 1.0",
+            "YOLOv8 Detection 1.0",
+            "YOLOv8 Pose 1.0",
+            "YOLOv8 Segmentation 1.0",
         ],
     )
     def test_check_import_error_on_wrong_file_structure(self, tasks_with_shapes, format_name):
