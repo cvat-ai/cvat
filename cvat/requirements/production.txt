@@ -27,7 +27,7 @@ uvicorn[standard]==0.22.0
     # via -r cvat/requirements/production.in
 uvloop==0.20.0
     # via uvicorn
-watchfiles==0.23.0
+watchfiles==0.24.0
     # via uvicorn
-websockets==12.0
+websockets==13.0
     # via uvicorn
