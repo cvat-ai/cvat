@@ -468,7 +468,7 @@ export class Job extends Session {
         frame_count?: number;
         project_id: number | null;
         guide_id: number | null;
-        task_id: number | null;
+        task_id: number;
         labels: Label[];
         dimension?: DimensionType;
         data_compressed_chunk_type?: ChunkType;
@@ -617,7 +617,7 @@ export class Job extends Session {
         return this.#data.guide_id;
     }
 
-    public get taskId(): number | null {
+    public get taskId(): number {
         return this.#data.task_id;
     }
 
