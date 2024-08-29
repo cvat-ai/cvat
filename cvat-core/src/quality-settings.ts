@@ -1,13 +1,24 @@
-// Copyright (C) 2023 CVAT.ai Corporation
+// Copyright (C) 2023-2024 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
+import _ from 'lodash';
 import { SerializedQualitySettingsData } from './server-response-types';
 import PluginRegistry from './plugins';
 import serverProxy from './server-proxy';
+import { convertDescriptions, getServerAPISchema } from './server-schema';
+
+export enum TargetMetric {
+    ACCURACY = 'accuracy',
+    PRECISION = 'precision',
+    RECALL = 'recall',
+}
 
 export default class QualitySettings {
     #id: number;
+    #targetMetric: TargetMetric;
+    #targetMetricThreshold: number;
+    #maxValidationsPerJob: number;
     #task: number;
     #iouThreshold: number;
     #oksSigma: number;
@@ -21,10 +32,14 @@ export default class QualitySettings {
     #objectVisibilityThreshold: number;
     #panopticComparison: boolean;
     #compareAttributes: boolean;
+    #descriptions: Record<string, string>;
 
     constructor(initialData: SerializedQualitySettingsData) {
         this.#id = initialData.id;
         this.#task = initialData.task;
+        this.#targetMetric = initialData.target_metric as TargetMetric;
+        this.#targetMetricThreshold = initialData.target_metric_threshold;
+        this.#maxValidationsPerJob = initialData.max_validations_per_job;
         this.#iouThreshold = initialData.iou_threshold;
         this.#oksSigma = initialData.oks_sigma;
         this.#lineThickness = initialData.line_thickness;
@@ -37,6 +52,7 @@ export default class QualitySettings {
         this.#objectVisibilityThreshold = initialData.object_visibility_threshold;
         this.#panopticComparison = initialData.panoptic_comparison;
         this.#compareAttributes = initialData.compare_attributes;
+        this.#descriptions = initialData.descriptions;
     }
 
     get id(): number {
@@ -143,6 +159,40 @@ export default class QualitySettings {
         this.#compareAttributes = newVal;
     }
 
+    get targetMetric(): TargetMetric {
+        return this.#targetMetric;
+    }
+
+    set targetMetric(newVal: TargetMetric) {
+        this.#targetMetric = newVal;
+    }
+
+    get targetMetricThreshold(): number {
+        return this.#targetMetricThreshold;
+    }
+
+    set targetMetricThreshold(newVal: number) {
+        this.#targetMetricThreshold = newVal;
+    }
+
+    get maxValidationsPerJob(): number {
+        return this.#maxValidationsPerJob;
+    }
+
+    set maxValidationsPerJob(newVal: number) {
+        this.#maxValidationsPerJob = newVal;
+    }
+
+    get descriptions(): Record<string, string> {
+        const descriptions: Record<string, string> = Object.keys(this.#descriptions).reduce((acc, key) => {
+            const camelCaseKey = _.camelCase(key);
+            acc[camelCaseKey] = this.#descriptions[key];
+            return acc;
+        }, {});
+
+        return descriptions;
+    }
+
     public toJSON(): SerializedQualitySettingsData {
         const result: SerializedQualitySettingsData = {
             iou_threshold: this.#iouThreshold,
@@ -157,6 +207,9 @@ export default class QualitySettings {
             object_visibility_threshold: this.#objectVisibilityThreshold,
             panoptic_comparison: this.#panopticComparison,
             compare_attributes: this.#compareAttributes,
+            target_metric: this.#targetMetric,
+            target_metric_threshold: this.#targetMetricThreshold,
+            max_validations_per_job: this.#maxValidationsPerJob,
         };
 
         return result;
@@ -172,9 +225,13 @@ Object.defineProperties(QualitySettings.prototype.save, {
     implementation: {
         writable: false,
         enumerable: false,
-        value: async function implementation() {
-            const result = await serverProxy.analytics.quality.settings.update(this.id, this.toJSON());
-            return new QualitySettings(result);
+        value: async function implementation(): Promise<QualitySettings> {
+            const result = await serverProxy.analytics.quality.settings.update(
+                this.id, this.toJSON(),
+            );
+            const schema = await getServerAPISchema();
+            const descriptions = convertDescriptions(schema.components.schemas.QualitySettings.properties);
+            return new QualitySettings({ ...result, descriptions });
         },
     },
 });
