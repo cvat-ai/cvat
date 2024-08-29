@@ -26,12 +26,12 @@ import MergeControl, {
 import SplitControl, {
     Props as SplitControlProps,
 } from 'components/annotation-page/standard-workspace/controls-side-bar/split-control';
-import GlobalHotKeys, { KeyMap } from 'utils/mousetrap-react';
+import GlobalHotKeys, { KeyMap, KeyMapItem } from 'utils/mousetrap-react';
 import ControlVisibilityObserver from 'components/annotation-page/standard-workspace/controls-side-bar/control-visibility-observer';
 import { filterApplicableForType } from 'utils/filter-applicable-labels';
+import { subKeyMap } from 'utils/component-subkeymap';
 import { ShortcutScope } from 'utils/enums';
 import { registerComponentShortcuts } from 'actions/shortcuts-actions';
-import { subKeyMap } from 'utils/component-subkeymap';
 
 interface Props {
     keyMap: KeyMap;
@@ -47,19 +47,25 @@ interface Props {
     updateActiveControl(activeControl: ActiveControl): void;
 }
 
-const componentShortcuts = {
+const componentShortcuts: Record<string, KeyMapItem> = {
     PASTE_SHAPE: {
         name: 'Paste shape',
         description: 'Paste a shape from internal CVAT clipboard',
         sequences: ['ctrl+v'],
-        scope: ShortcutScope.ALL,
+        scope: ShortcutScope.OBJECTS_SIDEBAR,
     },
-    SWITCH_DRAW_MODE: {
+    SWITCH_DRAW_MODE_STANDARD_3D_CONTROLS: {
         name: 'Draw mode',
         description:
-            'Repeat the latest procedure of drawing with the same parameters (shift to redraw an existing shape)',
-        sequences: ['shift+n', 'n'],
-        scope: ShortcutScope.ALL,
+            'Repeat the latest procedure of drawing with the same parameters',
+        sequences: ['n'],
+        scope: ShortcutScope['3D_ANNOTATION_WORKSPACE_CONTROLS'],
+    },
+    SWITCH_REDRAW_MODE_STANDARD_3D_CONTROLS: {
+        name: 'Redraw shape',
+        description: 'Remove selected shape and redraw it from scratch',
+        sequences: ['shift+n'],
+        scope: ShortcutScope['3D_ANNOTATION_WORKSPACE_CONTROLS'],
     },
 };
 
@@ -93,26 +99,32 @@ export default function ControlsSideBarComponent(props: Props): JSX.Element {
         }
     };
 
+    const handleDrawMode = (event: KeyboardEvent | undefined, action: 'draw' | 'redraw'): void => {
+        preventDefault(event);
+        const drawing = [ActiveControl.DRAW_CUBOID].includes(activeControl);
+        if (!drawing) {
+            canvasInstance.cancel();
+            if (action === 'draw') {
+                repeatDrawShape();
+            } else {
+                redrawShape();
+            }
+        } else {
+            canvasInstance.draw({ enabled: false });
+        }
+    };
+
     const handlers: any = applicableLabels.length ? {
         PASTE_SHAPE: (event: KeyboardEvent | undefined) => {
             preventDefault(event);
             canvasInstance.cancel();
             pasteShape();
         },
-        SWITCH_DRAW_MODE: (event: KeyboardEvent | undefined) => {
-            preventDefault(event);
-            const drawing = [ActiveControl.DRAW_CUBOID].includes(activeControl);
-
-            if (!drawing) {
-                canvasInstance.cancel();
-                if (event && event.shiftKey) {
-                    redrawShape();
-                } else {
-                    repeatDrawShape();
-                }
-            } else {
-                canvasInstance.draw({ enabled: false });
-            }
+        SWITCH_DRAW_MODE_STANDARD_3D_CONTROLS: (event: KeyboardEvent | undefined) => {
+            handleDrawMode(event, 'draw');
+        },
+        SWITCH_REDRAW_MODE_STANDARD_3D_CONTROLS: (event: KeyboardEvent | undefined) => {
+            handleDrawMode(event, 'redraw');
         },
     } : {};
 
@@ -127,12 +139,6 @@ export default function ControlsSideBarComponent(props: Props): JSX.Element {
                 cursorShortkey={normalizedKeyMap.CANCEL}
                 canvasInstance={canvasInstance}
                 activeControl={activeControl}
-                shortcuts={{
-                    CANCEL: {
-                        details: keyMap.CANCEL,
-                        displayValue: normalizedKeyMap.CANCEL,
-                    },
-                }}
             />
             <ObservedMoveControl canvasInstance={canvasInstance} activeControl={activeControl} />
             <ObservedDrawCuboidControl
@@ -148,12 +154,6 @@ export default function ControlsSideBarComponent(props: Props): JSX.Element {
                 canvasInstance={canvasInstance}
                 activeControl={activeControl}
                 disabled={controlsDisabled}
-                shortcuts={{
-                    SWITCH_MERGE_MODE: {
-                        details: keyMap.SWITCH_MERGE_MODE,
-                        displayValue: normalizedKeyMap.SWITCH_MERGE_MODE,
-                    },
-                }}
             />
             <ObservedGroupControl
                 updateActiveControl={updateActiveControl}
@@ -161,28 +161,12 @@ export default function ControlsSideBarComponent(props: Props): JSX.Element {
                 canvasInstance={canvasInstance}
                 activeControl={activeControl}
                 disabled={controlsDisabled}
-                shortcuts={{
-                    SWITCH_GROUP_MODE: {
-                        details: keyMap.SWITCH_GROUP_MODE,
-                        displayValue: normalizedKeyMap.SWITCH_GROUP_MODE,
-                    },
-                    RESET_GROUP: {
-                        details: keyMap.RESET_GROUP,
-                        displayValue: normalizedKeyMap.RESET_GROUP,
-                    },
-                }}
             />
             <ObservedSplitControl
                 updateActiveControl={updateActiveControl}
                 canvasInstance={canvasInstance}
                 activeControl={activeControl}
                 disabled={controlsDisabled}
-                shortcuts={{
-                    SWITCH_SPLIT_MODE: {
-                        details: keyMap.SWITCH_SPLIT_MODE,
-                        displayValue: normalizedKeyMap.SWITCH_SPLIT_MODE,
-                    },
-                }}
             />
         </Layout.Sider>
     );
