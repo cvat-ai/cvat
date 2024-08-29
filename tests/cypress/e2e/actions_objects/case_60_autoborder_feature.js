@@ -82,7 +82,7 @@ context('Autoborder feature.', () => {
 
             cy.interactControlButton('draw-polygon');
             cy.get('.cvat-draw-polygon-popover').find('[type="button"]').contains('Shape').click();
-            cy.get('body').type('{Ctrl}'); // Autoborder activation
+            cy.get('body').type('{Ctrl}a'); // Autoborder activation
             testAutoborderPointsCount(8); // 8 points at the rectangles
             cy.get('.cvat-canvas-container').click(400, 350);
             cy.get('.cvat-canvas-container').click(450, 250);

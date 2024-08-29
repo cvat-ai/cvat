@@ -66,12 +66,6 @@ function ShortcutsDialog(props: StateToProps & DispatchToProps): JSX.Element | n
             render: splitToRows,
         },
         {
-            title: 'Action',
-            dataIndex: 'action',
-            key: 'action',
-            render: splitToRows,
-        },
-        {
             title: 'Description',
             dataIndex: 'description',
             key: 'description',
@@ -79,12 +73,12 @@ function ShortcutsDialog(props: StateToProps & DispatchToProps): JSX.Element | n
     ];
 
     const dataSource = Object.keys(keyMap)
+        .filter((key: string) => (!keyMap[key].nonActive))
         .map((key: string, id: number) => ({
             key: id,
             name: keyMap[key].name || key,
             description: keyMap[key].description || '',
             shortcut: keyMap[key].sequences,
-            action: [keyMap[key].action],
         }));
 
     return (
