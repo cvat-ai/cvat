@@ -168,6 +168,7 @@ class ComparisonParameters(Serializable):
     quorum: int
     iou_threshold: float
     sigma: float
+    line_thickness: float
 
     def _value_serializer(self, v):
         if isinstance(v, dm.AnnotationType):
@@ -242,7 +243,6 @@ def generate_assignee_consensus_report(
     assignee_report_data: Dict[User, Dict[str, Union[List[float], float]]] = {}
     for idx, _ in enumerate(consensus_job_ids):
         if not assignees[idx]:
-
             continue
         assignee_report_data.setdefault(
             assignees[idx], {"consensus_score": [], "conflict_count": 0}
