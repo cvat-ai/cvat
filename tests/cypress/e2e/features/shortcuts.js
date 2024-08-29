@@ -101,8 +101,7 @@ context('Customizable Shortcuts', () => {
     }
 
     function registerF2(shouldExist) {
-        cy.get('.ant-list-item').should('exist').and('be.visible');
-        cy.get('.ant-list-item .ant-select').first().click();
+        cy.get('.cvat-shortcuts-settings-collapse-item .cvat-shortcuts-settings-select').first().click();
         cy.realPress(['F2']);
         cy.get('.ant-modal-content').contains('Conflicting shortcuts detected');
         cy.get(
@@ -110,7 +109,7 @@ context('Customizable Shortcuts', () => {
                 '.ant-modal-content .ant-modal-confirm-btns .ant-btn-primary' :
                 '.ant-modal-content .ant-modal-confirm-btns .ant-btn-default',
         ).click();
-        cy.get('.ant-list-item .ant-select').first().within(() => {
+        cy.get('.cvat-shortcuts-settings-collapse-item .cvat-shortcuts-settings-select').first().within(() => {
             cy.get('.ant-select-selection-overflow-item').contains('f2').should(shouldExist ? 'exist' : 'not.exist');
         });
         if (shouldExist) {
