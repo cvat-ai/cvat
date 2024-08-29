@@ -99,7 +99,7 @@ def generate_video_file(filename, width=1280, height=720, duration=1, fps=25, co
 
 
 def compare_datasets(expected: Dataset, actual: Dataset):
-    # we need this function to allow for a bit of variation in a rotation attribute and in skeleton elements order
+    # we need this function to allow for a bit of variation in the rotation attribute
     comparator = ExactComparator(ignored_attrs=["rotation"])
     _, unmatched, expected_extra, actual_extra, errors = comparator.compare_datasets(
         expected, actual
