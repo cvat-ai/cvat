@@ -11,7 +11,7 @@ import shutil
 import uuid
 from enum import Enum
 from functools import cached_property
-from typing import Any, Collection, Dict, Optional
+from typing import Any, ClassVar, Collection, Dict, Optional
 
 from django.conf import settings
 from django.contrib.auth.models import User
@@ -259,6 +259,8 @@ class ValidationFrame(models.Model):
     path = models.CharField(max_length=1024, default='')
 
 class Data(models.Model):
+    MANIFEST_FILENAME: ClassVar[str] = 'manifest.jsonl'
+
     chunk_size = models.PositiveIntegerField(null=True)
     size = models.PositiveIntegerField(default=0)
     image_quality = models.PositiveSmallIntegerField(default=50)
@@ -274,7 +276,7 @@ class Data(models.Model):
     cloud_storage = models.ForeignKey('CloudStorage', on_delete=models.SET_NULL, null=True, related_name='data')
     sorting_method = models.CharField(max_length=15, choices=SortingMethod.choices(), default=SortingMethod.LEXICOGRAPHICAL)
     deleted_frames = IntArrayField(store_sorted=True, unique_values=True)
-    validation_layout: ValidationLayout
+    validation_layout: ValidationLayout # TODO: maybe allow None to avoid hasattr everywhere
 
     class Meta:
         default_permissions = ()
@@ -291,6 +293,13 @@ class Data(models.Model):
 
     def get_upload_dirname(self):
         return os.path.join(self.get_data_dirname(), "raw")
+
+    def get_raw_data_dirname(self) -> str:
+        return {
+            StorageChoice.LOCAL: self.get_upload_dirname(),
+            StorageChoice.SHARE: settings.SHARE_ROOT,
+            StorageChoice.CLOUD_STORAGE: self.get_upload_dirname(),
+        }[self.storage]
 
     def get_compressed_cache_dirname(self):
         return os.path.join(self.get_data_dirname(), "compressed")
@@ -323,11 +332,8 @@ class Data(models.Model):
         return os.path.join(self.get_compressed_cache_dirname(),
             self._get_compressed_chunk_name(segment_id, chunk_number))
 
-    def get_manifest_path(self):
-        return os.path.join(self.get_upload_dirname(), 'manifest.jsonl')
-
-    def get_index_path(self):
-        return os.path.join(self.get_upload_dirname(), 'index.json')
+    def get_manifest_path(self) -> str:
+        return os.path.join(self.get_upload_dirname(), self.MANIFEST_FILENAME)
 
     def make_dirs(self):
         data_path = self.get_data_dirname()

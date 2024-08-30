@@ -728,7 +728,7 @@ class JobWriteSerializer(WriteOnceMixin, serializers.ModelSerializer):
                 attrs, ['frames_per_job_count', 'frames_per_job_share']
             )
         elif attrs['frame_selection_method'] == models.JobFrameSelectionMethod.MANUAL:
-            field_validation.require_field("frames")
+            field_validation.require_field(attrs, "frames")
 
         if (
             attrs['frame_selection_method'] != models.JobFrameSelectionMethod.MANUAL and
@@ -850,6 +850,32 @@ class JobWriteSerializer(WriteOnceMixin, serializers.ModelSerializer):
                 f"Unexpected frame selection method '{frame_selection_method}'"
             )
 
+        # Update validation layout in the task
+        frame_paths = list(
+            models.Image.objects
+            .order_by('frame')
+            .values_list('path', flat=True)
+            .iterator(chunk_size=10000)
+        )
+        validation_layout_params = {
+            "mode": models.ValidationMode.GT,
+            "frame_selection_method": models.JobFrameSelectionMethod.MANUAL,
+            "frames": [frame_paths[frame_id] for frame_id in frames],
+
+            # reset other fields
+            "random_seed": None,
+            "frame_count": None,
+            "frame_share": None,
+            "frames_per_job_count": None,
+            "frames_per_job_share": None,
+        }
+        validation_layout_serializer = ValidationLayoutParamsSerializer(
+            instance=getattr(task.data, 'validation_layout', None), data=validation_layout_params
+        )
+        assert validation_layout_serializer.is_valid(raise_exception=False)
+        validation_layout_serializer.save(task_data=task.data)
+
+        # Save the new job
         segment = models.Segment.objects.create(
             start_frame=0,
             stop_frame=task.data.size - 1,
@@ -871,28 +897,6 @@ class JobWriteSerializer(WriteOnceMixin, serializers.ModelSerializer):
             job.save(update_fields=["assignee_updated_date"])
 
         job.make_dirs()
-
-        # Update validation layout in the task
-        validation_layout_params = {
-            "mode": models.ValidationMode.GT,
-            "frame_selection_method": models.JobFrameSelectionMethod.MANUAL,
-
-            # reset other fields
-            "random_seed": None,
-            "frame_count": None,
-            "frame_share": None,
-            "frames_per_job_count": None,
-            "frames_per_job_share": None,
-        }
-        validation_layout_serializer = ValidationLayoutParamsSerializer()
-        if not hasattr(task.data, 'validation_layout'):
-            validation_layout = validation_layout_serializer.create(validation_layout_params)
-            validation_layout.task_data_id = task.data_id
-            validation_layout.save(update_fields=["task_data_id"])
-        else:
-            validation_layout_serializer.update(
-                task.data.validation_layout, validation_layout_params
-            )
 
         return job
 
@@ -1065,6 +1069,7 @@ class ValidationLayoutParamsSerializer(serializers.ModelSerializer):
         choices=models.JobFrameSelectionMethod.choices(), required=True
     )
     frames = serializers.ListField(
+        write_only=True,
         child=serializers.CharField(max_length=MAX_FILENAME_LENGTH),
         default=None,
         required=False,
@@ -1162,7 +1167,7 @@ class ValidationLayoutParamsSerializer(serializers.ModelSerializer):
                 attrs, ['frames_per_job_count', 'frames_per_job_share']
             )
         elif attrs['frame_selection_method'] == models.JobFrameSelectionMethod.MANUAL:
-            field_validation.require_field("frames")
+            field_validation.require_field(attrs, "frames")
 
         if (
             attrs['frame_selection_method'] != models.JobFrameSelectionMethod.MANUAL and
@@ -1372,6 +1377,7 @@ class DataSerializer(serializers.ModelSerializer):
     @transaction.atomic
     def create(self, validated_data):
         files = self._pop_data(validated_data)
+        validation_params = validated_data.pop('validation_params', None)
 
         db_data = models.Data.objects.create(**validated_data)
         db_data.make_dirs()
@@ -1380,11 +1386,10 @@ class DataSerializer(serializers.ModelSerializer):
 
         db_data.save()
 
-        validation_params = validated_data.pop('validation_params', None)
-        if validation_params.get("mode"):
-            validation_params["task_data"] = db_data
-            validation_layout_params_serializer = ValidationLayoutParamsSerializer()
-            validation_layout_params_serializer.create(validation_params)
+        if validation_params:
+            validation_params_serializer = ValidationLayoutParamsSerializer(data=validation_params)
+            validation_params_serializer.is_valid(raise_exception=True)
+            db_data.validation_layout = validation_params_serializer.save(task_data=db_data)
 
         return db_data
 
@@ -1400,21 +1405,11 @@ class DataSerializer(serializers.ModelSerializer):
         instance.save()
 
         if validation_params:
-            db_validation_layout = getattr(instance, "validation_layout", None)
-            validation_layout_params_serializer = ValidationLayoutParamsSerializer(
-                instance=db_validation_layout
+            validation_params_serializer = ValidationLayoutParamsSerializer(
+                instance=getattr(instance, "validation_layout", None), data=validation_params
             )
-            if not db_validation_layout:
-                validation_params["task_data"] = instance
-                db_validation_layout = validation_layout_params_serializer.create(
-                    validation_params
-                )
-            else:
-                db_validation_layout = validation_layout_params_serializer.update(
-                    db_validation_layout, validation_params
-                )
-
-            instance.validation_layout = db_validation_layout
+            validation_params_serializer.is_valid(raise_exception=True)
+            instance.validation_layout = validation_params_serializer.save(task_data=instance)
 
         return instance
 

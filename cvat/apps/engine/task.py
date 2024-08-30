@@ -7,7 +7,6 @@ import concurrent.futures
 import itertools
 import fnmatch
 import os
-import rq
 import re
 import rq
 import shutil
@@ -24,6 +23,7 @@ from urllib import request as urlrequest
 import av
 import attrs
 import django_rq
+from datumaro.util import take_by
 from django.conf import settings
 from django.db import transaction
 from django.forms.models import model_to_dict
@@ -38,6 +38,7 @@ from cvat.apps.engine.media_extractors import (
     ValidateDimension, ZipChunkWriter, ZipCompressedChunkWriter, get_mime, sort
 )
 from cvat.apps.engine.models import RequestAction, RequestTarget
+from cvat.apps.engine.serializers import ValidationLayoutParamsSerializer
 from cvat.apps.engine.utils import (
     av_scan_paths, format_list,get_rq_job_meta, define_dependent_job, get_rq_lock_by_user, preload_images
 )
@@ -309,7 +310,8 @@ def _validate_job_file_mapping(
 
     if job_file_mapping is None:
         return None
-    elif not list(itertools.chain.from_iterable(job_file_mapping)):
+
+    if not list(itertools.chain.from_iterable(job_file_mapping)):
         raise ValidationError("job_file_mapping cannot be empty")
 
     if db_task.segment_size:
@@ -341,7 +343,7 @@ def _validate_job_file_mapping(
     return job_file_mapping
 
 def _validate_validation_params(
-    db_task: models.Task, data: Dict[str, Any]
+    db_task: models.Task, data: Dict[str, Any], *, is_backup_restore: bool = False
 ) -> Optional[dict[str, Any]]:
     params = data.get('validation_params', {})
     if not params:
@@ -358,13 +360,19 @@ def _validate_validation_params(
     if params['mode'] != models.ValidationMode.GT_POOL:
         return params
 
-    if data.get('sorting_method', db_task.data.sorting_method) != models.SortingMethod.RANDOM:
+    if (
+        data.get('sorting_method', db_task.data.sorting_method) != models.SortingMethod.RANDOM and
+        not is_backup_restore
+    ):
         raise ValidationError('validation mode "{}" can only be used with "{}" sorting'.format(
             models.ValidationMode.GT_POOL.value,
             models.SortingMethod.RANDOM.value,
         ))
 
     for incompatible_key in ['job_file_mapping', 'overlap']:
+        if incompatible_key == 'job_file_mapping' and is_backup_restore:
+            continue
+
         if data.get(incompatible_key):
             raise ValidationError('validation mode "{}" cannot be used with "{}"'.format(
                 models.ValidationMode.GT_POOL.value,
@@ -551,8 +559,8 @@ def _create_thread(
     db_task: Union[int, models.Task],
     data: Dict[str, Any],
     *,
-    isBackupRestore: bool = False,
-    isDatasetImport: bool = False,
+    is_backup_restore: bool = False,
+    is_dataset_import: bool = False,
 ) -> None:
     if isinstance(db_task, int):
         db_task = models.Task.objects.select_for_update().get(pk=db_task)
@@ -566,13 +574,16 @@ def _create_thread(
         job.save_meta()
 
     job_file_mapping = _validate_job_file_mapping(db_task, data)
-    validation_params = _validate_validation_params(db_task, data)
+
+    validation_params = _validate_validation_params(
+        db_task, data, is_backup_restore=is_backup_restore
+    )
 
     db_data = db_task.data
     upload_dir = db_data.get_upload_dirname() if db_data.storage != models.StorageChoice.SHARE else settings.SHARE_ROOT
     is_data_in_cloud = db_data.storage == models.StorageChoice.CLOUD_STORAGE
 
-    if data['remote_files'] and not isDatasetImport:
+    if data['remote_files'] and not is_dataset_import:
         data['remote_files'] = _download_data(data['remote_files'], upload_dir)
 
     # find and validate manifest file
@@ -788,12 +799,12 @@ def _create_thread(
         )
         media['directory'] = []
 
-    if (not isBackupRestore and manifest_file and
+    if (not is_backup_restore and manifest_file and
         data['sorting_method'] == models.SortingMethod.RANDOM
     ):
         raise ValidationError("It isn't supported to upload manifest file and use random sorting")
 
-    if (isBackupRestore and db_data.storage_method == models.StorageMethodChoice.FILE_SYSTEM and
+    if (is_backup_restore and db_data.storage_method == models.StorageMethodChoice.FILE_SYSTEM and
         data['sorting_method'] in {models.SortingMethod.RANDOM, models.SortingMethod.PREDEFINED}
     ):
         raise ValidationError(
@@ -811,7 +822,7 @@ def _create_thread(
         if extractor is not None:
             raise ValidationError('Combined data types are not supported')
 
-        if (isDatasetImport or isBackupRestore) and media_type == 'image' and db_data.storage == models.StorageChoice.SHARE:
+        if (is_dataset_import or is_backup_restore) and media_type == 'image' and db_data.storage == models.StorageChoice.SHARE:
             manifest_index = _get_manifest_frame_indexer(db_data.start_frame, db_data.get_frame_step())
             db_data.start_frame = 0
             data['stop_frame'] = None
@@ -880,7 +891,7 @@ def _create_thread(
         # When a task is created, the sorting method can be random and in this case, reinitialization will be with correct sorting
         # but when a task is restored from a backup, a random sorting is changed to predefined and we need to manually sort files
         # in the correct order.
-        source_files = absolute_keys_of_related_files if not isBackupRestore else \
+        source_files = absolute_keys_of_related_files if not is_backup_restore else \
             [item for item in extractor.absolute_source_paths if item in absolute_keys_of_related_files]
         extractor.reconcile(
             source_files=source_files,
@@ -898,12 +909,12 @@ def _create_thread(
     if validate_dimension.dimension != models.DimensionType.DIM_3D and (
         (
             not isinstance(extractor, MEDIA_TYPES['video']['extractor']) and
-            isBackupRestore and
+            is_backup_restore and
             db_data.storage_method == models.StorageMethodChoice.CACHE and
             db_data.sorting_method in {models.SortingMethod.RANDOM, models.SortingMethod.PREDEFINED}
         ) or (
-            not isDatasetImport and
-            not isBackupRestore and
+            not is_dataset_import and
+            not is_backup_restore and
             data['sorting_method'] == models.SortingMethod.PREDEFINED and (
                 # Sorting with manifest is required for zip
                 isinstance(extractor, MEDIA_TYPES['zip']['extractor']) or
@@ -1128,7 +1139,46 @@ def _create_thread(
 
     # TODO: refactor
     # Prepare jobs
-    if validation_params and validation_params['mode'] == models.ValidationMode.GT_POOL:
+    if validation_params and (
+        validation_params['mode'] == models.ValidationMode.GT_POOL and is_backup_restore
+    ):
+        # Validation frames must be in the end of the images list. Collect their ids
+        frame_idx_map: dict[str, int] = {}
+        for i, frame_name in enumerate(validation_params['frames']):
+            image = images[-len(validation_params['frames']) + i]
+            assert frame_name == image.path
+            frame_idx_map[image.path] = image.frame
+
+        # Store information about the real frame placement in validation frames in jobs
+        for image in images:
+            real_frame_idx = frame_idx_map.get(image.path)
+            if real_frame_idx is not None:
+                image.is_placeholder = True
+                image.real_frame_id = real_frame_idx
+
+        # Exclude the previous GT job from the list of jobs to be created with normal segments
+        # It must be the last one
+        assert job_file_mapping[-1] == validation_params['frames']
+        job_file_mapping.pop(-1)
+
+        validation_frames = list(frame_idx_map.values())
+
+        # Save the created validation layout
+        validation_params = {
+            "mode": models.ValidationMode.GT_POOL,
+            "frame_selection_method": models.JobFrameSelectionMethod.MANUAL,
+            "frames": [images[frame_id].path for frame_id in validation_frames],
+            "frames_per_job_count": validation_params['frames_per_job_count'],
+
+            # reset other fields
+            "random_seed": None,
+            "frame_count": None,
+            "frame_share": None,
+            "frames_per_job_share": None,
+        }
+        validation_layout_serializer = ValidationLayoutParamsSerializer()
+        validation_layout_serializer.update(db_data.validation_layout, validation_params)
+    elif validation_params and validation_params['mode'] == models.ValidationMode.GT_POOL:
         if db_task.mode != 'annotation':
             raise ValidationError(
                 f"validation mode '{models.ValidationMode.GT_POOL}' can only be used "
@@ -1179,11 +1229,7 @@ def _create_thread(
             case _:
                 assert False
 
-        non_pool_frames = set(all_frames).difference(pool_frames)
-
         # 2. distribute pool frames
-        from datumaro.util import take_by
-
         if frames_per_job_count := validation_params.get("frames_per_job_count"):
             if len(pool_frames) < frames_per_job_count and validation_params.get("frame_count"):
                 raise ValidationError(
@@ -1202,6 +1248,7 @@ def _create_thread(
         new_db_images: list[models.Image] = []
         validation_frames: list[int] = []
         frame_idx_map: dict[int, int] = {} # new to original id
+        non_pool_frames = set(all_frames).difference(pool_frames)
         for job_frames in take_by(non_pool_frames, count=db_task.segment_size or db_data.size):
             job_validation_frames = rng.choice(
                 pool_frames, size=frames_per_job_count, replace=False
@@ -1271,6 +1318,24 @@ def _create_thread(
         manifest.create()
 
         validation_frames = pool_frames
+
+        # Save the created validation layout
+        # TODO: try to find a way to avoid using the same model for storing the user request
+        # and internal data
+        validation_params = {
+            "mode": models.ValidationMode.GT_POOL,
+            "frame_selection_method": models.JobFrameSelectionMethod.MANUAL,
+            "frames": [new_db_images[frame_id].path for frame_id in validation_frames],
+            "frames_per_job_count": frames_per_job_count,
+
+            # reset other fields
+            "random_seed": None,
+            "frame_count": None,
+            "frame_share": None,
+            "frames_per_job_share": None,
+        }
+        validation_layout_serializer = ValidationLayoutParamsSerializer()
+        validation_layout_serializer.update(db_data.validation_layout, validation_params)
 
     if db_task.mode == 'annotation':
         models.Image.objects.bulk_create(images)
@@ -1366,12 +1431,30 @@ def _create_thread(
                     f'Unknown frame selection method {validation_params["frame_selection_method"]}'
                 )
 
+        # Save the created validation layout
+        # TODO: try to find a way to avoid using the same model for storing the user request
+        # and internal data
+        validation_params = {
+            "mode": models.ValidationMode.GT,
+            "frame_selection_method": models.JobFrameSelectionMethod.MANUAL,
+            "frames": [new_db_images[frame_id].path for frame_id in validation_frames],
+
+            # reset other fields
+            "random_seed": None,
+            "frame_count": None,
+            "frame_share": None,
+            "frames_per_job_count": None,
+            "frames_per_job_share": None,
+        }
+        validation_layout_serializer = ValidationLayoutParamsSerializer()
+        validation_layout_serializer.update(db_data.validation_layout, validation_params)
+
     # TODO: refactor
     if validation_params:
         db_gt_segment = models.Segment(
             task=db_task,
             start_frame=0,
-            stop_frame=db_data.stop_frame,
+            stop_frame=db_data.size - 1,
             frames=validation_frames,
             type=models.SegmentType.SPECIFIC_FRAMES,
         )
@@ -1380,6 +1463,8 @@ def _create_thread(
         db_gt_job = models.Job(segment=db_gt_segment, type=models.JobType.GROUND_TRUTH)
         db_gt_job.save()
         db_gt_job.make_dirs()
+
+    db_task.save()
 
     if (
         settings.MEDIA_CACHE_ALLOW_STATIC_CACHE and
