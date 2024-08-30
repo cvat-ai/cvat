@@ -36,6 +36,7 @@ from cvat.apps.engine.models import (AttributeSpec, AttributeType, Data, Dimensi
                                      JobType, Label, LabelType, Project, SegmentType, ShapeType,
                                      Task)
 from cvat.apps.engine.rq_job_handler import RQJobMetaField
+from cvat.apps.engine.lazy_list import LazyList
 
 from .annotation import AnnotationIR, AnnotationManager, TrackManager
 from .formats.transformations import MaskConverter, EllipsesToMasks
@@ -536,12 +537,7 @@ class CommonData(InstanceLabelData):
             )
         ]
 
-        # TODO: remove once importers are guaranteed to return correct type
-        # (see https://github.com/cvat-ai/cvat/pull/8226/files#r1695445137)
-        points = _shape["points"]
-        for i, point in enumerate(map(float, points)):
-            points[i] = point
-
+        self._ensure_points_converted_to_floats(_shape)
         _shape['elements'] = [self._import_shape(element, label_id) for element in _shape.get('elements', [])]
 
         return _shape
@@ -567,13 +563,26 @@ class CommonData(InstanceLabelData):
                 for attrib in shape['attributes']
                 if self._get_mutable_attribute_id(label_id, attrib.name)
             ]
-        # TODO: remove once importers are guaranteed to return correct type
-        # (see https://github.com/cvat-ai/cvat/pull/8226/files#r1695445137)
-            points = shape["points"]
-            for i, point in enumerate(map(float, points)):
-                points[i] = point
+            self._ensure_points_converted_to_floats(shape)
 
         return _track
+
+    def _ensure_points_converted_to_floats(self, shape) -> None:
+        """
+        Historically, there were importers that were not converting points to ints/floats.
+        The only place to make sure that all points in shapes have the right type was this one.
+        However, this does eat up a lot of memory for some reason.
+        (see https://github.com/cvat-ai/cvat/pull/8226/files#r1695445137)
+
+        So, before we can guarantee that all the importers are returning the right data,
+        we have to have this conversion.
+        """
+        # if points is LazyList or tuple, we can be sure it has the right type already
+        if isinstance(points := shape["points"], LazyList | tuple):
+            return
+
+        for i, point in enumerate(map(float, points)):
+            points[i] = point
 
     def _call_callback(self):
         if self._len() > self._MAX_ANNO_SIZE:
@@ -2056,11 +2065,11 @@ def import_dm_annotations(dm_dataset: dm.Dataset, instance_data: Union[ProjectDa
                 if ann.type in shapes:
                     points = []
                     if ann.type == dm.AnnotationType.cuboid_3d:
-                        points = [*ann.position, *ann.rotation, *ann.scale, 0, 0, 0, 0, 0, 0, 0]
+                        points = (*ann.position, *ann.rotation, *ann.scale, 0, 0, 0, 0, 0, 0, 0)
                     elif ann.type == dm.AnnotationType.mask:
-                        points = MaskConverter.dm_mask_to_cvat_rle(ann)
+                        points = tuple(MaskConverter.dm_mask_to_cvat_rle(ann))
                     elif ann.type != dm.AnnotationType.skeleton:
-                        points = ann.points
+                        points = tuple(ann.points)
 
                     rotation = ann.attributes.pop('rotation', 0.0)
                     # Use safe casting to bool instead of plain reading
