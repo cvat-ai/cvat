@@ -270,7 +270,7 @@ class _ExportMixin(Generic[_EntityT]):
             or location == Location.CLOUD_STORAGE
             and result_url
         ):
-            exceptions.ServiceException(500, "Server handled export parameters incorrectly")
+            raise exceptions.ServiceException(500, "Server handled export parameters incorrectly")
         elif not location and (
             (not self.target_storage or self.target_storage.location.value == Location.LOCAL)
             and not result_url
