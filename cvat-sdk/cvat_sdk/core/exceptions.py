@@ -13,7 +13,3 @@ class InvalidHostException(CvatSdkException):
 
 class IncompatibleVersionException(CvatSdkException):
     """Indicates server and SDK version mismatch"""
-
-
-class OutdatedModelException(CvatSdkException):
-    """Indicates that SDK model is outdated and needs refreshing from the server"""

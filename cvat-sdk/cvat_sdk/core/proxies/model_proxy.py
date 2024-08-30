@@ -29,7 +29,6 @@ from typing_extensions import Self
 from cvat_sdk.api_client import exceptions
 from cvat_sdk.api_client.model_utils import IModelData, ModelNormal, to_json
 from cvat_sdk.core.downloading import Downloader
-from cvat_sdk.core.exceptions import OutdatedModelException
 from cvat_sdk.core.helpers import get_paginated_collection
 from cvat_sdk.core.progress import ProgressReporter
 from cvat_sdk.core.proxies.types import Location
@@ -281,9 +280,11 @@ class _ExportMixin(Generic[_EntityT]):
                 and result_url
             )
         ):
-            raise OutdatedModelException(
+            # SDK should not raise an exception here, because most likely
+            # a SDK model was outdated while export finished successfully
+            self._client.logger.warn(
                 f"{self.__class__.__name__.title()} was outdated. "
-                f"Use .retrieve() method to obtain {self.__class__.__name__.lower()!r} actual version"
+                f"Use .fetch() method to obtain {self.__class__.__name__.lower()!r} actual version"
             )
 
         if result_url:
