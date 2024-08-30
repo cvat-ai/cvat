@@ -89,6 +89,24 @@ const componentShortcuts = {
         sequences: ['shift+n'],
         scope: ShortcutScope.STANDARD_WORKSPACE_CONTROLS,
     },
+    SWITCH_GROUP_MODE_STANDARD_CONTROLS: {
+        name: 'Group mode',
+        description: 'Activate or deactivate mode to grouping shapes',
+        sequences: ['g'],
+        scope: ShortcutScope.STANDARD_WORKSPACE_CONTROLS,
+    },
+    RESET_GROUP_STANDARD_CONTROLS: {
+        name: 'Reset group',
+        description: 'Reset group for selected shapes (in group mode)',
+        sequences: ['shift+g'],
+        scope: ShortcutScope.STANDARD_WORKSPACE_CONTROLS,
+    },
+    SWITCH_MERGE_MODE_STANDARD_CONTROLS: {
+        name: 'Merge mode',
+        description: 'Activate or deactivate mode to merging shapes',
+        sequences: ['m'],
+        scope: ShortcutScope.STANDARD_WORKSPACE_CONTROLS,
+    },
 };
 
 registerComponentShortcuts(componentShortcuts);
@@ -161,6 +179,42 @@ export default function ControlsSideBarComponent(props: Props): JSX.Element {
         }
     };
 
+    const dynamicMergeIconProps =
+        activeControl === ActiveControl.MERGE ?
+            {
+                className: 'cvat-merge-control cvat-active-canvas-control',
+                onClick: (): void => {
+                    canvasInstance.merge({ enabled: false });
+                    updateActiveControl(ActiveControl.CURSOR);
+                },
+            } :
+            {
+                className: 'cvat-merge-control',
+                onClick: (): void => {
+                    canvasInstance.cancel();
+                    canvasInstance.merge({ enabled: true });
+                    updateActiveControl(ActiveControl.MERGE);
+                },
+            };
+
+    const dynamicGroupIconProps =
+    activeControl === ActiveControl.GROUP ?
+        {
+            className: 'cvat-group-control cvat-active-canvas-control',
+            onClick: (): void => {
+                canvasInstance.group({ enabled: false });
+                updateActiveControl(ActiveControl.CURSOR);
+            },
+        } :
+        {
+            className: 'cvat-group-control',
+            onClick: (): void => {
+                canvasInstance.cancel();
+                canvasInstance.group({ enabled: true });
+                updateActiveControl(ActiveControl.GROUP);
+            },
+        };
+
     let handlers: Partial<Record<keyof typeof componentShortcuts, (event?: KeyboardEvent) => void>> = {
         CLOCKWISE_ROTATION_STANDARD_CONTROLS: (event: KeyboardEvent | undefined) => {
             preventDefault(event);
@@ -169,6 +223,24 @@ export default function ControlsSideBarComponent(props: Props): JSX.Element {
         ANTICLOCKWISE_ROTATION_STANDARD_CONTROLS: (event: KeyboardEvent | undefined) => {
             preventDefault(event);
             rotateFrame(Rotation.ANTICLOCKWISE90);
+        },
+        SWITCH_GROUP_MODE_STANDARD_CONTROLS: (event: KeyboardEvent | undefined): void => {
+            if (event) event.preventDefault();
+            dynamicGroupIconProps.onClick();
+        },
+        RESET_GROUP_STANDARD_CONTROLS: (event: KeyboardEvent | undefined): void => {
+            if (event) event.preventDefault();
+            const grouping = activeControl === ActiveControl.GROUP;
+            if (!grouping) {
+                return;
+            }
+            resetGroup();
+            canvasInstance.group({ enabled: false });
+            updateActiveControl(ActiveControl.CURSOR);
+        },
+        SWITCH_MERGE_MODE_STANDARD_CONTROLS: (event: KeyboardEvent | undefined): void => {
+            if (event) event.preventDefault();
+            dynamicMergeIconProps.onClick();
         },
     };
 
@@ -339,16 +411,13 @@ export default function ControlsSideBarComponent(props: Props): JSX.Element {
             <hr />
 
             <ObservedMergeControl
-                updateActiveControl={updateActiveControl}
                 canvasInstance={canvasInstance}
-                activeControl={activeControl}
+                dynamicIconProps={dynamicMergeIconProps}
                 disabled={controlsDisabled}
             />
             <ObservedGroupControl
-                updateActiveControl={updateActiveControl}
-                resetGroup={resetGroup}
                 canvasInstance={canvasInstance}
-                activeControl={activeControl}
+                dynamicIconProps={dynamicGroupIconProps}
                 disabled={controlsDisabled}
             />
             <ObservedSplitControl
