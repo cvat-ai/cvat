@@ -3,14 +3,16 @@
 # SPDX-License-Identifier: MIT
 
 from pathlib import Path
+from typing import Tuple
 from zipfile import ZipFile
 
 import pytest
 from cvat_sdk import Client
+from cvat_sdk.core.proxies.types import Location
 from PIL import Image
 
-from shared.utils.config import BASE_URL, USER_PASS
-from shared.utils.helpers import generate_image_file, generate_image_files
+from shared.utils.config import BASE_URL, IMPORT_EXPORT_BUCKET_ID, USER_PASS
+from shared.utils.helpers import generate_image_file
 
 from .util import generate_coco_json
 
@@ -82,3 +84,37 @@ def fxt_coco_dataset(tmp_path: Path, fxt_image_file: Path, fxt_coco_file: Path):
         f.write(fxt_coco_file, arcname="annotations/instances_default.json")
 
     yield dataset_path
+
+
+@pytest.fixture
+def fxt_new_task(fxt_image_file: Path, fxt_login: Tuple[Client, str]):
+    client, _ = fxt_login
+    task = client.tasks.create_from_data(
+        spec={
+            "name": "test_task",
+            "labels": [{"name": "car"}, {"name": "person"}],
+        },
+        resources=[fxt_image_file],
+        data_params={"image_quality": 80},
+    )
+
+    yield task
+
+
+@pytest.fixture
+def fxt_new_task_with_target_storage(fxt_image_file: Path, fxt_login: Tuple[Client, str]):
+    client, _ = fxt_login
+    task = client.tasks.create_from_data(
+        spec={
+            "name": "test_task",
+            "labels": [{"name": "car"}, {"name": "person"}],
+            "target_storage": {
+                "location": Location.CLOUD_STORAGE,
+                "cloud_storage_id": IMPORT_EXPORT_BUCKET_ID,
+            },
+        },
+        resources=[fxt_image_file],
+        data_params={"image_quality": 80},
+    )
+
+    yield task

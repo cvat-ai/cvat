@@ -16,12 +16,13 @@ from typing import TYPE_CHECKING, Any, Dict, List, Optional, Sequence
 from PIL import Image
 
 from cvat_sdk.api_client import apis, exceptions, models
-from cvat_sdk.core.downloading import Downloader
 from cvat_sdk.core.helpers import get_paginated_collection
 from cvat_sdk.core.progress import ProgressReporter
 from cvat_sdk.core.proxies.annotations import AnnotationCrudMixin
 from cvat_sdk.core.proxies.jobs import Job
 from cvat_sdk.core.proxies.model_proxy import (
+    DownloadBackupMixin,
+    ExportDatasetMixin,
     ModelCreateMixin,
     ModelDeleteMixin,
     ModelListMixin,
@@ -59,6 +60,8 @@ class Task(
     ModelUpdateMixin[models.IPatchedTaskWriteRequest],
     ModelDeleteMixin,
     AnnotationCrudMixin,
+    ExportDatasetMixin,
+    DownloadBackupMixin,
 ):
     _model_partial_update_arg = "patched_task_write_request"
     _put_annotations_data_param = "task_annotations_update_request"
@@ -257,30 +260,23 @@ class Task(
         pbar: Optional[ProgressReporter] = None,
         status_check_period: Optional[int] = None,
         include_images: bool = True,
-        all_images: bool = True,
     ) -> None:
         """
         Download annotations for a task in the specified format (e.g. 'YOLO ZIP 1.0').
         """
 
         filename = Path(filename)
-        method: str
 
         if include_images:
-            endpoint = self.api.create_dataset_export_endpoint
-            method = "POST"
-            query_params = {"format": format_name, "save_images": include_images, "all_images": all_images}
+            endpoint = self.api.retrieve_dataset_endpoint
         else:
             endpoint = self.api.retrieve_annotations_endpoint
-            method = "GET"
-            query_params = {"format": format_name}
 
         Downloader(self._client).prepare_and_download_file_from_endpoint(
             endpoint=endpoint,
             filename=filename,
-            methodType = method,
             url_params={"id": self.id},
-            query_params = query_params,
+            query_params={"format": format_name},
             pbar=pbar,
             status_check_period=status_check_period,
         )
