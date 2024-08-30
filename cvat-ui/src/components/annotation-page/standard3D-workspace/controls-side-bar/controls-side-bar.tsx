@@ -7,7 +7,8 @@ import React from 'react';
 import Layout from 'antd/lib/layout';
 import { ActiveControl } from 'reducers';
 import { Label, LabelType } from 'cvat-core-wrapper';
-import { Canvas3d as Canvas } from 'cvat-canvas3d-wrapper';
+import { Canvas3d } from 'cvat-canvas3d-wrapper';
+import { Canvas } from 'cvat-canvas-wrapper';
 import MoveControl, {
     Props as MoveControlProps,
 } from 'components/annotation-page/standard-workspace/controls-side-bar/move-control';
@@ -102,6 +103,36 @@ const ObservedGroupControl = ControlVisibilityObserver<GroupControlProps>(GroupC
 const ObservedMergeControl = ControlVisibilityObserver<MergeControlProps>(MergeControl);
 const ObservedSplitControl = ControlVisibilityObserver<SplitControlProps>(SplitControl);
 
+export const initializeDynamicIconProps = (
+    canvasInstance: Canvas | Canvas3d,
+    controlType: ActiveControl,
+    activeControl: ActiveControl,
+    canvasAction: 'merge' | 'group' | 'split',
+    className: string,
+    updateActiveControl: (activeControl: ActiveControl) => void,
+): any => {
+    const isActive = activeControl === controlType;
+    const baseClassName = `cvat-${className}-control`;
+    return isActive ?
+        {
+            className: `${baseClassName} cvat-active-canvas-control`,
+            onClick: (): void => {
+                canvasInstance[canvasAction]({ enabled: false });
+                if (canvasAction !== 'split') {
+                    updateActiveControl(ActiveControl.CURSOR);
+                }
+            },
+        } :
+        {
+            className: baseClassName,
+            onClick: (): void => {
+                canvasInstance.cancel();
+                canvasInstance[canvasAction]({ enabled: true });
+                updateActiveControl(controlType);
+            },
+        };
+};
+
 export default function ControlsSideBarComponent(props: Props): JSX.Element {
     const {
         canvasInstance,
@@ -138,57 +169,32 @@ export default function ControlsSideBarComponent(props: Props): JSX.Element {
         }
     };
 
-    const dynamicMergeIconProps =
-        activeControl === ActiveControl.MERGE ?
-            {
-                className: 'cvat-merge-control cvat-active-canvas-control',
-                onClick: (): void => {
-                    canvasInstance.merge({ enabled: false });
-                    updateActiveControl(ActiveControl.CURSOR);
-                },
-            } :
-            {
-                className: 'cvat-merge-control',
-                onClick: (): void => {
-                    canvasInstance.cancel();
-                    canvasInstance.merge({ enabled: true });
-                    updateActiveControl(ActiveControl.MERGE);
-                },
-            };
+    const dynamicMergeIconProps = initializeDynamicIconProps(
+        canvasInstance,
+        ActiveControl.MERGE,
+        activeControl,
+        'merge',
+        'merge',
+        updateActiveControl,
+    );
 
-    const dynamicGroupIconProps =
-    activeControl === ActiveControl.GROUP ?
-        {
-            className: 'cvat-group-control cvat-active-canvas-control',
-            onClick: (): void => {
-                canvasInstance.group({ enabled: false });
-                updateActiveControl(ActiveControl.CURSOR);
-            },
-        } :
-        {
-            className: 'cvat-group-control',
-            onClick: (): void => {
-                canvasInstance.cancel();
-                canvasInstance.group({ enabled: true });
-                updateActiveControl(ActiveControl.GROUP);
-            },
-        };
+    const dynamicGroupIconProps = initializeDynamicIconProps(
+        canvasInstance,
+        ActiveControl.GROUP,
+        activeControl,
+        'group',
+        'group',
+        updateActiveControl,
+    );
 
-    const dynamicTrackIconProps = activeControl === ActiveControl.SPLIT ?
-        {
-            className: 'cvat-split-track-control cvat-active-canvas-control',
-            onClick: (): void => {
-                canvasInstance.split({ enabled: false });
-            },
-        } :
-        {
-            className: 'cvat-split-track-control',
-            onClick: (): void => {
-                canvasInstance.cancel();
-                canvasInstance.split({ enabled: true });
-                updateActiveControl(ActiveControl.SPLIT);
-            },
-        };
+    const dynamicTrackIconProps = initializeDynamicIconProps(
+        canvasInstance,
+        ActiveControl.SPLIT,
+        activeControl,
+        'split',
+        'split-track',
+        updateActiveControl,
+    );
 
     let handlers: any = {
         SWITCH_GROUP_MODE_STANDARD_3D_CONTROLS: (event: KeyboardEvent | undefined): void => {

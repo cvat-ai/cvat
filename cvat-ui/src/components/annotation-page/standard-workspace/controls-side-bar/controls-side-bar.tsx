@@ -16,6 +16,7 @@ import { LabelType } from 'cvat-core-wrapper';
 import { ShortcutScope } from 'utils/enums';
 import { registerComponentShortcuts } from 'actions/shortcuts-actions';
 import { subKeyMap } from 'utils/component-subkeymap';
+import { initializeDynamicIconProps } from 'components/annotation-page/standard3D-workspace/controls-side-bar/controls-side-bar';
 import ControlVisibilityObserver, { ExtraControlsControl } from './control-visibility-observer';
 import RotateControl, { Props as RotateControlProps } from './rotate-control';
 import CursorControl, { Props as CursorControlProps } from './cursor-control';
@@ -185,57 +186,32 @@ export default function ControlsSideBarComponent(props: Props): JSX.Element {
         }
     };
 
-    const dynamicMergeIconProps =
-        activeControl === ActiveControl.MERGE ?
-            {
-                className: 'cvat-merge-control cvat-active-canvas-control',
-                onClick: (): void => {
-                    canvasInstance.merge({ enabled: false });
-                    updateActiveControl(ActiveControl.CURSOR);
-                },
-            } :
-            {
-                className: 'cvat-merge-control',
-                onClick: (): void => {
-                    canvasInstance.cancel();
-                    canvasInstance.merge({ enabled: true });
-                    updateActiveControl(ActiveControl.MERGE);
-                },
-            };
+    const dynamicMergeIconProps = initializeDynamicIconProps(
+        canvasInstance,
+        ActiveControl.MERGE,
+        activeControl,
+        'merge',
+        'merge',
+        updateActiveControl,
+    );
 
-    const dynamicGroupIconProps =
-    activeControl === ActiveControl.GROUP ?
-        {
-            className: 'cvat-group-control cvat-active-canvas-control',
-            onClick: (): void => {
-                canvasInstance.group({ enabled: false });
-                updateActiveControl(ActiveControl.CURSOR);
-            },
-        } :
-        {
-            className: 'cvat-group-control',
-            onClick: (): void => {
-                canvasInstance.cancel();
-                canvasInstance.group({ enabled: true });
-                updateActiveControl(ActiveControl.GROUP);
-            },
-        };
+    const dynamicGroupIconProps = initializeDynamicIconProps(
+        canvasInstance,
+        ActiveControl.GROUP,
+        activeControl,
+        'group',
+        'group',
+        updateActiveControl,
+    );
 
-    const dynamicTrackIconProps = activeControl === ActiveControl.SPLIT ?
-        {
-            className: 'cvat-split-track-control cvat-active-canvas-control',
-            onClick: (): void => {
-                canvasInstance.split({ enabled: false });
-            },
-        } :
-        {
-            className: 'cvat-split-track-control',
-            onClick: (): void => {
-                canvasInstance.cancel();
-                canvasInstance.split({ enabled: true });
-                updateActiveControl(ActiveControl.SPLIT);
-            },
-        };
+    const dynamicTrackIconProps = initializeDynamicIconProps(
+        canvasInstance,
+        ActiveControl.SPLIT,
+        activeControl,
+        'split',
+        'split-track',
+        updateActiveControl,
+    );
 
     let handlers: Partial<Record<keyof typeof componentShortcuts, (event?: KeyboardEvent) => void>> = {
         CLOCKWISE_ROTATION_STANDARD_CONTROLS: (event: KeyboardEvent | undefined) => {
