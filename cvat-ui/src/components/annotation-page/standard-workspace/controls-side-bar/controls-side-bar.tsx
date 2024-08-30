@@ -107,6 +107,12 @@ const componentShortcuts = {
         sequences: ['m'],
         scope: ShortcutScope.STANDARD_WORKSPACE_CONTROLS,
     },
+    SWITCH_SPLIT_MODE_STANDARD_CONTROLS: {
+        name: 'Split mode',
+        description: 'Activate or deactivate mode to splitting shapes',
+        sequences: ['alt+m'],
+        scope: ShortcutScope.STANDARD_WORKSPACE_CONTROLS,
+    },
 };
 
 registerComponentShortcuts(componentShortcuts);
@@ -215,6 +221,22 @@ export default function ControlsSideBarComponent(props: Props): JSX.Element {
             },
         };
 
+    const dynamicTrackIconProps = activeControl === ActiveControl.SPLIT ?
+        {
+            className: 'cvat-split-track-control cvat-active-canvas-control',
+            onClick: (): void => {
+                canvasInstance.split({ enabled: false });
+            },
+        } :
+        {
+            className: 'cvat-split-track-control',
+            onClick: (): void => {
+                canvasInstance.cancel();
+                canvasInstance.split({ enabled: true });
+                updateActiveControl(ActiveControl.SPLIT);
+            },
+        };
+
     let handlers: Partial<Record<keyof typeof componentShortcuts, (event?: KeyboardEvent) => void>> = {
         CLOCKWISE_ROTATION_STANDARD_CONTROLS: (event: KeyboardEvent | undefined) => {
             preventDefault(event);
@@ -241,6 +263,10 @@ export default function ControlsSideBarComponent(props: Props): JSX.Element {
         SWITCH_MERGE_MODE_STANDARD_CONTROLS: (event: KeyboardEvent | undefined): void => {
             if (event) event.preventDefault();
             dynamicMergeIconProps.onClick();
+        },
+        SWITCH_SPLIT_MODE_STANDARD_CONTROLS: (event: KeyboardEvent | undefined) => {
+            if (event) event.preventDefault();
+            dynamicTrackIconProps.onClick();
         },
     };
 
@@ -421,9 +447,8 @@ export default function ControlsSideBarComponent(props: Props): JSX.Element {
                 disabled={controlsDisabled}
             />
             <ObservedSplitControl
-                updateActiveControl={updateActiveControl}
                 canvasInstance={canvasInstance}
-                activeControl={activeControl}
+                dynamicIconProps={dynamicTrackIconProps}
                 disabled={controlsDisabled}
             />
             <ObservedJoinControl
