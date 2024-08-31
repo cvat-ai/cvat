@@ -2,7 +2,7 @@
 title: 'Shortcuts'
 linkTitle: 'Shortcuts'
 weight: 23
-description: 'List of available mouse and keyboard shortcuts and their customization.'
+description: 'List of available keyboard shortcuts and notes about their customization.'
 ---
 
 CVAT provides a wide range of customizable shortcuts, with many UI elements offering shortcut hints when hovered over with the mouse.
