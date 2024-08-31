@@ -42,7 +42,7 @@ You can customize shortcuts in CVAT settings.
 - All sections collapsable, so you can easily navigate through the list of shortcuts. Here is the Global scope expanded:\
 ![](/images/shortcuts04.png)
 
-- To add a custom shortcut all you have to do is click in the input field and start pressing the sequence you want to assign to the action. As an example `f3` has been set here for Show Shortcuts along with `f1`:\
+- To add a custom shortcut all you have to do is to click the input field and start pressing the sequence you want to assign to the action. As an example `f3` has been set here for Show Shortcuts along with `f1`:\
 ![](/images/shortcuts05.png)
 
 - Shortcuts can be any combination of modifiers(ctrl, shift or alt) and up to one non-modifier key e.g. `ctrl+shift+key` etc.\
