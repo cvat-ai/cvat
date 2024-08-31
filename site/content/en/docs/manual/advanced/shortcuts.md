@@ -37,7 +37,7 @@ You can customize shortcuts in CVAT settings.
 - You'll see the shortcuts customization menu:\
 ![](/images/shortcuts03.png)
 
-- As it can be seen there is a warning, that some shortcuts are reserved by the browser and cannot be overridden by CVAT, there isn't a specific list available for such combinations, but shortcuts such as ctrl + tab (switching tabs) or ctrl + w (closing tabs) etc, are reserved by the browser and shortcuts such as alt + f4 (closing the window) are reserved by the operating system.
+- As it can be seen there is a warning, that some shortcuts are reserved by a browser and cannot be overridden in CVAT, there isn't a specific list available for such combinations, but shortcuts such as ctrl + tab (switching tabs) or ctrl + w (closing tabs) etc, are reserved by the browser and shortcuts such as alt + f4 (closing the window) are usually reserved by your operating system.
 
 - All sections collapsable, so you can easily navigate through the list of shortcuts. Here is the Global scope expanded:\
 ![](/images/shortcuts04.png)
