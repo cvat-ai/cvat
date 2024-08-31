@@ -26,7 +26,7 @@ These shortcuts are organized by scopes. Some are global, meaning they work acro
 
 ## Shortcuts Customization
 
-You can customize shortcuts in the CVAT settings.
+You can customize shortcuts in CVAT settings.
 
 - Open Settings:\
 ![](/images/shortcuts01.png)
