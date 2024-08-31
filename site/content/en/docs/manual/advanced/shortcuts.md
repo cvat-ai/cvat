@@ -5,24 +5,30 @@ weight: 23
 description: 'List of available keyboard shortcuts and notes about their customization.'
 ---
 
-CVAT provides a wide range of customizable shortcuts, with many UI elements offering shortcut hints when hovered over with the mouse.
+CVAT provides a wide range of customizable shortcuts, with many UI elements
+ offering shortcut hints when hovered over with the mouse.
 
 ![](/images/image075.jpg)
 
-These shortcuts are organized by scopes. Some are global, meaning they work across the entire application, while others are specific to certain sections or workspaces. This approach allows reusing the same shortcuts in different scopes, depending on whether they might conflict. For example, global shortcuts must be unique since they apply across all pages and workspaces. However, similar shortcuts can be used in different workspaces, like having the same shortcuts in both the Standard Workspace and the Standard 3D Workspace, as these two do not coexist.
+These shortcuts are organized by scopes. Some are global, meaning they work across the entire application,
+ while others are specific to certain sections or workspaces.
+ This approach allows reusing the same shortcuts in different scopes, depending on whether they might conflict.
+ For example, global shortcuts must be unique since they apply across all pages and workspaces.
+ However, similar shortcuts can be used in different workspaces, like having the same shortcuts
+ in both the Standard Workspace and the Standard 3D Workspace, as these two do not coexist.
 
-| **Scope**                        | **Shortcut Conflicts**                                                             |
-|----------------------------------|------------------------------------------------------------------------------------|
-| **Global**                       | Must be unique across all scopes, as they apply universally.                       |
-| **Annotation Page**              | Must be unique across all scopes, except Labels Editor.                            |
-| **Standard Workspace**           | Must be unique across itself, Annotation Page and Global Scope.                    |
-| **Standard 3D Workspace**        | Must be unique across itself, Annotation Page and Global Scope.                    |
-| **Attribute Annotation Workspace** | Must be unique across itself, Annotation Page and Global Scope.                  |
-| **Review Workspace**             | Must be unique across itself, Annotation Page and Global Scope.                    |
-| **Tag Annotation Workspace**     | Must be unique across itself, Annotation Page and Global Scope.                    |
-| **Control Sidebar**              | Must be unique across itself, all workspaces, Annotation Page and Global Scope.    |
-| **Objects Sidebar**              | Must be unique across itself, all workspaces, Annotation Page and Global Scope.    |
-| **Labels Editor**                | Must be unique across itself and Global Scope.                                     |
+| **Scope**                        | **Shortcut Conflicts**                                                          |
+|----------------------------------|---------------------------------------------------------------------------------|
+| **Global**                       | Must be unique across all scopes, as they apply universally.                    |
+| **Annotation Page**              | Must be unique across all scopes, except Labels Editor.                         |
+| **Standard Workspace**           | Must be unique across itself, Annotation Page and Global Scope.                 |
+| **Standard 3D Workspace**        | Must be unique across itself, Annotation Page and Global Scope.                 |
+| **Attribute Annotation Workspace** | Must be unique across itself, Annotation Page and Global Scope.               |
+| **Review Workspace**             | Must be unique across itself, Annotation Page and Global Scope.                 |
+| **Tag Annotation Workspace**     | Must be unique across itself, Annotation Page and Global Scope.                 |
+| **Control Sidebar**              | Must be unique across itself, all workspaces, Annotation Page and Global Scope. |
+| **Objects Sidebar**              | Must be unique across itself, all workspaces, Annotation Page and Global Scope. |
+| **Labels Editor**                | Must be unique across itself and Global Scope.                                  |
 
 ## Shortcuts Customization
 
