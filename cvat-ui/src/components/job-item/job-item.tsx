@@ -5,7 +5,7 @@
 import './styles.scss';
 
 import React, { useEffect, useState } from 'react';
-import { useSelector } from 'react-redux';
+import { useDispatch, useSelector } from 'react-redux';
 import { Link } from 'react-router-dom';
 import { CombinedState } from 'reducers';
 import moment from 'moment';
@@ -28,6 +28,7 @@ import { useIsMounted } from 'utils/hooks';
 import UserSelector from 'components/task-page/user-selector';
 import CVATTooltip from 'components/common/cvat-tooltip';
 import Collapse from 'antd/lib/collapse';
+import { collapseRegularJob } from 'actions/jobs-actions';
 import JobActionsMenu from './job-actions-menu';
 
 interface Props {
@@ -102,6 +103,7 @@ function ReviewSummaryComponent({ jobInstance }: { jobInstance: any }): JSX.Elem
 function JobItem(props: Props): JSX.Element {
     const { job, task, onJobUpdate } = props;
     const { stage, id } = job;
+    const dispatch = useDispatch();
     const created = moment(job.createdDate);
     const updated = moment(job.updatedDate);
     const now = moment(moment.now());
@@ -126,6 +128,13 @@ function JobItem(props: Props): JSX.Element {
     const consensusJobViews: React.JSX.Element[] = consensusJobs.map((eachJob: Job) => (
         <JobItem key={eachJob.id} job={eachJob} task={task} onJobUpdate={onJobUpdate} />
     ));
+
+    const regularJobViewUncollapse = useSelector((state: CombinedState) => state.jobs.regularJobViewUncollapse);
+    const regularJobUncollapsed = regularJobViewUncollapse[job.id];
+    const handleCollapseChange = async (): Promise<void> => {
+        await dispatch(collapseRegularJob(job.id, !regularJobUncollapsed));
+    };
+
     let tag = null;
     if (job.type === JobType.GROUND_TRUTH) {
         tag = (
@@ -297,6 +306,8 @@ function JobItem(props: Props): JSX.Element {
                 {consensusJobs.length > 0 && (
                     <Collapse
                         className='cvat-consensus-job-collapse'
+                        activeKey={regularJobUncollapsed ? ['1'] : []}
+                        onChange={handleCollapseChange}
                         items={[
                             {
                                 key: '1',
