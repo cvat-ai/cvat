@@ -9,7 +9,7 @@ CVAT provides a wide range of customizable shortcuts, with many UI elements offe
 
 ![](/images/image075.jpg)
 
-These shortcuts are organized by scopes. Some are global, meaning they work across the entire application, while others are specific to certain sections or workspaces. This setup allows for shortcut reuse in different scopes, depending on whether they might conflict. For example, global shortcuts must be unique since they apply across all pages and workspaces. However, similar shortcuts can be used in different workspaces, like having the same shortcuts in both the Standard Workspace and the Standard 3D Workspace, as these two do not coexist.
+These shortcuts are organized by scopes. Some are global, meaning they work across the entire application, while others are specific to certain sections or workspaces. This approach allows reusing the same shortcuts in different scopes, depending on whether they might conflict. For example, global shortcuts must be unique since they apply across all pages and workspaces. However, similar shortcuts can be used in different workspaces, like having the same shortcuts in both the Standard Workspace and the Standard 3D Workspace, as these two do not coexist.
 
 | **Scope**                        | **Shortcut Conflicts**                                                                       |
 |----------------------------------|----------------------------------------------------------------------------------------------|
