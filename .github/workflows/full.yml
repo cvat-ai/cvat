@@ -75,19 +75,19 @@ jobs:
           cp -r cvat-sdk/* /tmp/cvat_sdk/
 
       - name: Upload CVAT server artifact
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: cvat_server
           path: /tmp/cvat_server/image.tar
 
       - name: Upload CVAT UI artifact
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: cvat_ui
           path: /tmp/cvat_ui/image.tar
 
       - name: Upload CVAT SDK artifact
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: cvat_sdk
           path: /tmp/cvat_sdk/
@@ -105,19 +105,19 @@ jobs:
           python-version: '3.8'
 
       - name: Download CVAT server image
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: cvat_server
           path: /tmp/cvat_server/
 
       - name: Download CVAT UI images
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: cvat_ui
           path: /tmp/cvat_ui/
 
       - name: Download CVAT SDK package
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: cvat_sdk
           path: /tmp/cvat_sdk/
@@ -150,13 +150,6 @@ jobs:
           docker run --rm cvat/server:${CVAT_VERSION} bash \
             -c 'python manage.py makemigrations --check'
 
-      - name: Upload expected schema as an artifact
-        if: failure() && steps.verify_schema.conclusion == 'failure'
-        uses: actions/upload-artifact@v3.1.2
-        with:
-          name: expected_schema
-          path: cvat/schema-expected.yml
-
       - name: Generate SDK
         run: |
           pip3 install -r cvat-sdk/gen/requirements.txt
@@ -186,7 +179,7 @@ jobs:
 
       - name: Uploading "cvat" container logs as an artifact
         if: failure() && steps.run_tests.conclusion == 'failure'
-        uses: actions/upload-artifact@v3.1.2
+        uses: actions/upload-artifact@v4
         with:
           name: rest_api_container_logs
           path: "${{ github.workspace }}/rest_api_testing"
@@ -200,7 +193,7 @@ jobs:
           ref: ${{ inputs.ref }}
 
       - name: Download CVAT server image
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: cvat_server
           path: /tmp/cvat_server/
@@ -245,7 +238,7 @@ jobs:
 
       - name: Uploading "cvat" container logs as an artifact
         if: failure()
-        uses: actions/upload-artifact@v3.1.1
+        uses: actions/upload-artifact@v4
         with:
           name: unit_tests_container_logs
           path: "${{ github.workspace }}/unit_testing"
@@ -270,13 +263,13 @@ jobs:
             node-version: '16.x'
 
       - name: Download CVAT server image
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: cvat_server
           path: /tmp/cvat_server/
 
       - name: Download CVAT UI image
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: cvat_ui
           path: /tmp/cvat_ui/
@@ -345,14 +338,14 @@ jobs:
 
       - name: Uploading "cvat" container logs as an artifact
         if: failure()
-        uses: actions/upload-artifact@v3.1.1
+        uses: actions/upload-artifact@v4
         with:
-          name: e2e_container_logs
+          name: e2e_container_logs_${{ matrix.specs }}
           path: ${{ github.workspace }}/tests/cvat_${{ matrix.specs }}.log
 
       - name: Uploading cypress screenshots as an artifact
         if: failure()
-        uses: actions/upload-artifact@v3.1.1
+        uses: actions/upload-artifact@v4
         with:
           name: cypress_screenshots_${{ matrix.specs }}
           path: ${{ github.workspace }}/tests/cypress/screenshots
