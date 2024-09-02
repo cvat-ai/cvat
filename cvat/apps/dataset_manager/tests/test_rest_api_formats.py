@@ -232,26 +232,25 @@ class _DbTestBase(ApiTestBase):
         return response
 
     @staticmethod
-    def _make_annotations_for_task(task, name_ann, key_get_values):
+    def _make_attribute_value(key_get_values, attribute):
         assert key_get_values in ["default", "random"]
+        if key_get_values == "random":
+            if attribute["input_type"] == "number":
+                start = int(attribute["values"][0])
+                stop = int(attribute["values"][1]) + 1
+                step = int(attribute["values"][2])
+                return str(random.randrange(start, stop, step))
+            return random.choice(attribute["values"])  # nosec B311 NOSONAR
+        assert key_get_values == "default"
+        return attribute["default_value"]
 
-        def make_attribute_value(attribute, attribute_spec):
-            value = attribute["default_value"]
-            if key_get_values == "random":
-                if attribute["input_type"] == "number":
-                    start = int(attribute["values"][0])
-                    stop = int(attribute["values"][1]) + 1
-                    step = int(attribute["values"][2])
-                    value = str(random.randrange(start, stop, step))
-                else:
-                    value = random.choice(attribute_spec["values"])  # nosec B311 NOSONAR
-            return value
+    @staticmethod
+    def _make_annotations_for_task(task, name_ann, key_get_values):
+        def fill_one_attribute_in_element(is_item_tracks, element, attribute):
+            spec_id = attribute["id"]
+            value = _DbTestBase._make_attribute_value(key_get_values, attribute)
 
-        def fill_one_attribute(item, attribute, attribute_spec):
-            spec_id = attribute_spec["id"]
-            value = make_attribute_value(attribute, attribute_spec)
-
-            if item == "tracks" and attribute["mutable"]:
+            if is_item_tracks and attribute["mutable"]:
                 for index_shape, _ in enumerate(element["shapes"]):
                     element["shapes"][index_shape]["attributes"].append({
                         "spec_id": spec_id,
@@ -263,22 +262,22 @@ class _DbTestBase(ApiTestBase):
                     "value": value,
                 })
 
-        def fill_all_element_attributes(item, element, label):
+        def fill_all_attributes_in_element(is_item_tracks, element, label):
             element["label_id"] = label["id"]
 
-            for index_attribute, attribute in enumerate(label["attributes"]):
-                fill_one_attribute(item, attribute, label["attributes"][index_attribute])
+            for attribute in label["attributes"]:
+                fill_one_attribute_in_element(is_item_tracks, element, attribute)
 
             sub_elements = element.get("elements", [])
             sub_labels = label.get("sublabels", [])
             for sub_element, sub_label in zip(sub_elements, sub_labels):
-                fill_all_element_attributes(item, sub_element, sub_label)
+                fill_all_attributes_in_element(is_item_tracks, sub_element, sub_label)
 
         tmp_annotations = copy.deepcopy(annotations[name_ann])
 
         for item in ["tags", "shapes", "tracks"]:
-            for element in tmp_annotations.get(item, []):
-                fill_all_element_attributes(item, element, task["labels"][0])
+            for _element in tmp_annotations.get(item, []):
+                fill_all_attributes_in_element(item == "tracks", _element, task["labels"][0])
 
         return tmp_annotations
 
