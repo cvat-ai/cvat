@@ -6,7 +6,7 @@
 from copy import copy, deepcopy
 
 import math
-from typing import Optional, Sequence
+from typing import Container, Optional, Sequence
 import numpy as np
 from itertools import chain
 from scipy.optimize import linear_sum_assignment
@@ -14,7 +14,7 @@ from shapely import geometry
 
 from cvat.apps.engine.models import ShapeType, DimensionType
 from cvat.apps.engine.serializers import LabeledDataSerializer
-from cvat.apps.dataset_manager.util import deepcopy_simple
+from cvat.apps.dataset_manager.util import faster_deepcopy
 
 
 class AnnotationIR:
@@ -169,29 +169,43 @@ class AnnotationIR:
         self.tracks = []
 
 class AnnotationManager:
-    def __init__(self, data):
+    def __init__(self, data: AnnotationIR, *, dimension: DimensionType):
         self.data = data
+        self.dimension = dimension
 
-    def merge(self, data, start_frame, overlap, dimension):
-        tags = TagManager(self.data.tags)
-        tags.merge(data.tags, start_frame, overlap, dimension)
+    def merge(self, data: AnnotationIR, start_frame: int, overlap: int):
+        tags = TagManager(self.data.tags, dimension=self.dimension)
+        tags.merge(data.tags, start_frame, overlap)
 
-        shapes = ShapeManager(self.data.shapes)
-        shapes.merge(data.shapes, start_frame, overlap, dimension)
+        shapes = ShapeManager(self.data.shapes, dimension=self.dimension)
+        shapes.merge(data.shapes, start_frame, overlap)
 
-        tracks = TrackManager(self.data.tracks, dimension)
-        tracks.merge(data.tracks, start_frame, overlap, dimension)
+        tracks = TrackManager(self.data.tracks, dimension=self.dimension)
+        tracks.merge(data.tracks, start_frame, overlap)
+
+    def clear_frames(self, frames: Container[int]):
+        if not isinstance(frames, set):
+            frames = set(frames)
+
+        tags = TagManager(self.data.tags, dimension=self.dimension)
+        tags.clear_frames(frames)
+
+        shapes = ShapeManager(self.data.shapes, dimension=self.dimension)
+        shapes.clear_frames(frames)
+
+        if self.data.tracks:
+            # Tracks are not expected in the cases this function is supposed to be used
+            raise AssertionError("Partial annotation cleanup is not supported for tracks")
 
     def to_shapes(self,
         end_frame: int,
-        dimension: DimensionType,
         *,
         included_frames: Optional[Sequence[int]] = None,
         include_outside: bool = False,
         use_server_track_ids: bool = False
     ) -> list:
         shapes = self.data.shapes
-        tracks = TrackManager(self.data.tracks, dimension)
+        tracks = TrackManager(self.data.tracks, dimension=self.dimension)
 
         if included_frames is not None:
             shapes = [s for s in shapes if s["frame"] in included_frames]
@@ -208,8 +222,9 @@ class AnnotationManager:
         return tracks + shapes.to_tracks()
 
 class ObjectManager:
-    def __init__(self, objects):
+    def __init__(self, objects, *, dimension: DimensionType):
         self.objects = objects
+        self.dimension = dimension
 
     @staticmethod
     def _get_objects_by_frame(objects, start_frame):
@@ -238,7 +253,7 @@ class ObjectManager:
     def _modify_unmatched_object(self, obj, end_frame):
         raise NotImplementedError()
 
-    def merge(self, objects, start_frame, overlap, dimension):
+    def merge(self, objects, start_frame, overlap):
         # 1. Split objects on two parts: new and which can be intersected
         # with existing objects.
         new_objects = [obj for obj in objects
@@ -277,7 +292,7 @@ class ObjectManager:
                 for i, int_obj in enumerate(int_objects):
                     for j, old_obj in enumerate(old_objects):
                         cost_matrix[i][j] = 1 - self._calc_objects_similarity(
-                            int_obj, old_obj, start_frame, overlap, dimension)
+                            int_obj, old_obj, start_frame, overlap, self.dimension)
 
                 # 6. Find optimal solution using Hungarian algorithm.
                 row_ind, col_ind = linear_sum_assignment(cost_matrix)
@@ -305,6 +320,11 @@ class ObjectManager:
             else:
                 # We don't have old objects on the frame. Let's add all new ones.
                 self.objects.extend(int_objects_by_frame[frame])
+
+    def clear_frames(self, frames: Container[int]):
+        new_objects = [obj for obj in self.objects if obj["frame"] not in frames]
+        self.objects.clear()
+        self.objects.extend(new_objects)
 
 class TagManager(ObjectManager):
     @staticmethod
@@ -439,10 +459,6 @@ class ShapeManager(ObjectManager):
         pass
 
 class TrackManager(ObjectManager):
-    def __init__(self, objects, dimension):
-        self._dimension = dimension
-        super().__init__(objects)
-
     def to_shapes(self, end_frame: int, *,
         included_frames: Optional[Sequence[int]] = None,
         include_outside: bool = False,
@@ -457,7 +473,7 @@ class TrackManager(ObjectManager):
                 track,
                 0,
                 end_frame,
-                self._dimension,
+                self.dimension,
                 include_outside=include_outside,
                 included_frames=included_frames,
             ):
@@ -475,7 +491,7 @@ class TrackManager(ObjectManager):
                 continue
 
             if track.get("elements"):
-                track_elements = TrackManager(track["elements"], self._dimension)
+                track_elements = TrackManager(track["elements"], dimension=self.dimension)
                 element_shapes = track_elements.to_shapes(end_frame,
                     included_frames=set(track_shapes.keys()).intersection(included_frames or []),
                     include_outside=True, # elements are controlled by the parent shape
@@ -570,7 +586,7 @@ class TrackManager(ObjectManager):
     ):
         def copy_shape(source, frame, points=None, rotation=None):
             copied = source.copy()
-            copied["attributes"] = deepcopy_simple(source["attributes"])
+            copied["attributes"] = faster_deepcopy(source["attributes"])
 
             copied["keyframe"] = False
             copied["frame"] = frame
@@ -693,7 +709,7 @@ class TrackManager(ObjectManager):
             def match_right_left(left_curve, right_curve, left_right_matching):
                 matched_right_points = list(chain.from_iterable(left_right_matching.values()))
                 unmatched_right_points = filter(lambda x: x not in matched_right_points, range(len(right_curve)))
-                updated_matching = deepcopy_simple(left_right_matching)
+                updated_matching = faster_deepcopy(left_right_matching)
 
                 for right_point in unmatched_right_points:
                     left_point = find_nearest_pair(right_curve[right_point], left_curve)
@@ -934,7 +950,7 @@ class TrackManager(ObjectManager):
                 # Propagate attributes
                 for attr in prev_shape["attributes"]:
                     if attr["spec_id"] not in map(lambda el: el["spec_id"], shape["attributes"]):
-                        shape["attributes"].append(deepcopy_simple(attr))
+                        shape["attributes"].append(faster_deepcopy(attr))
 
                 if not prev_shape["outside"] or include_outside:
                     shapes.extend(interpolate(prev_shape, shape))
@@ -983,3 +999,6 @@ class TrackManager(ObjectManager):
         track["shapes"] = list(sorted(shapes.values(), key=lambda shape: shape["frame"]))
 
         return track
+
+    def clear_frames(self, frames: Container[int]):
+        raise AssertionError("This function is not supported for tracks")

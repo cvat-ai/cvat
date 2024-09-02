@@ -3,11 +3,13 @@
 #
 # SPDX-License-Identifier: MIT
 
+import itertools
 import os
 from collections import OrderedDict
 from copy import deepcopy
 from enum import Enum
 from tempfile import TemporaryDirectory
+from typing import Container, Optional
 from datumaro.components.errors import DatasetError, DatasetImportError, DatasetNotFoundError
 
 from django.db import transaction
@@ -25,7 +27,9 @@ from cvat.apps.profiler import silk_profile
 from cvat.apps.dataset_manager.annotation import AnnotationIR, AnnotationManager
 from cvat.apps.dataset_manager.bindings import TaskData, JobData, CvatImportError, CvatDatasetNotFoundError
 from cvat.apps.dataset_manager.formats.registry import make_exporter, make_importer
-from cvat.apps.dataset_manager.util import add_prefetch_fields, bulk_create, get_cached
+from cvat.apps.dataset_manager.util import (
+    add_prefetch_fields, bulk_create, get_cached, faster_deepcopy
+)
 
 dlogger = DatasetLogManager()
 
@@ -763,15 +767,27 @@ class JobAnnotation:
         self.create(job_data.data.slice(self.start_frame, self.stop_frame).serialize())
 
 class TaskAnnotation:
+    # For GT pool-enabled tasks, we:
+    # - copy GT job annotations into validation frames in normal jobs on task export
+    # - copy GT annotations into validation frames in normal and GT jobs on task import
+
     def __init__(self, pk):
         self.db_task = models.Task.objects.prefetch_related(
             Prefetch('data__images', queryset=models.Image.objects.order_by('frame'))
         ).get(id=pk)
 
-        # Postgres doesn't guarantee an order by default without explicit order_by
-        self.db_jobs = models.Job.objects.select_related("segment").filter(
-            segment__task_id=pk, type=models.JobType.ANNOTATION.value,
-        ).order_by('id')
+        requested_job_types = [models.JobType.ANNOTATION]
+        if hasattr(self.db_task.data, 'validation_layout') and (
+            self.db_task.data.validation_layout.mode == models.ValidationMode.GT_POOL
+        ):
+            requested_job_types.append(models.JobType.GROUND_TRUTH)
+
+        self.db_jobs = (
+            models.Job.objects
+            .select_related("segment")
+            .filter(segment__task_id=pk, type__in=requested_job_types)
+        )
+
         self.ir_data = AnnotationIR(self.db_task.dimension)
 
     def reset(self):
@@ -794,13 +810,21 @@ class TaskAnnotation:
                 _data.data = put_job_data(jid, job_data)
             else:
                 _data.data = patch_job_data(jid, job_data, action)
+
             if _data.version > self.ir_data.version:
                 self.ir_data.version = _data.version
-            self._merge_data(_data, jobs[jid]["start"], self.db_task.overlap, self.db_task.dimension)
 
-    def _merge_data(self, data, start_frame, overlap, dimension):
-        annotation_manager = AnnotationManager(self.ir_data)
-        annotation_manager.merge(data, start_frame, overlap, dimension)
+            self._merge_data(_data, jobs[jid]["start"])
+
+    def _merge_data(
+        self, data, start_frame: int, *, override_frames: Optional[Container[int]] = None
+    ):
+        annotation_manager = AnnotationManager(self.ir_data, dimension=self.db_task.dimension)
+
+        if override_frames:
+            annotation_manager.clear_frames(override_frames)
+
+        annotation_manager.merge(data, start_frame, overlap=self.db_task.overlap)
 
     def put(self, data):
         self._patch_data(data, None)
@@ -821,19 +845,62 @@ class TaskAnnotation:
     def init_from_db(self):
         self.reset()
 
+        gt_job = None
         for db_job in self.db_jobs:
-            if db_job.type != models.JobType.ANNOTATION:
+            if db_job.type == models.JobType.GROUND_TRUTH:
+                gt_job = db_job
                 continue
 
-            annotation = JobAnnotation(db_job.id, is_prefetched=True)
-            annotation.init_from_db()
-            if annotation.ir_data.version > self.ir_data.version:
-                self.ir_data.version = annotation.ir_data.version
-            db_segment = db_job.segment
-            start_frame = db_segment.start_frame
-            overlap = self.db_task.overlap
-            dimension = self.db_task.dimension
-            self._merge_data(annotation.ir_data, start_frame, overlap, dimension)
+            gt_annotation = JobAnnotation(db_job.id, is_prefetched=True)
+            gt_annotation.init_from_db()
+            if gt_annotation.ir_data.version > self.ir_data.version:
+                self.ir_data.version = gt_annotation.ir_data.version
+
+            self._merge_data(gt_annotation.ir_data, start_frame=db_job.segment.start_frame)
+
+        if (
+            hasattr(self.db_task.data, 'validation_layout') and
+            self.db_task.data.validation_layout.mode == models.ValidationMode.GT_POOL
+        ):
+            self._init_gt_pool_annotations(gt_job)
+
+    def _init_gt_pool_annotations(self, gt_job: models.Job):
+        # Copy GT pool annotations into normal jobs
+        gt_pool_frames = gt_job.segment.frame_set
+        task_validation_frame_groups: dict[int, int] = {} # real_id -> [placeholder_id, ...]
+        task_validation_frame_ids: set[int] = set()
+        for frame_id, real_frame_id in (
+            self.db_task.data.images
+            .filter(is_placeholder=True, real_frame_id__in=gt_pool_frames)
+            .values_list('frame', 'real_frame_id')
+            .iterator(chunk_size=1000)
+        ):
+            task_validation_frame_ids.add(frame_id)
+            task_validation_frame_groups.setdefault(real_frame_id, []).append(frame_id)
+
+        gt_annotations = JobAnnotation(gt_job.id, is_prefetched=True)
+        gt_annotations.init_from_db()
+        if gt_annotations.ir_data.version > self.ir_data.version:
+            self.ir_data.version = gt_annotations.ir_data.version
+
+        task_annotation_manager = AnnotationManager(self.ir_data, dimension=self.db_task.dimension)
+        task_annotation_manager.clear_frames(task_validation_frame_ids)
+
+        for ann_type, gt_annotation in itertools.chain(
+            zip(itertools.repeat('tag'), gt_annotations.ir_data.tags),
+            zip(itertools.repeat('shape'), gt_annotations.ir_data.shapes),
+        ):
+            for placeholder_frame_id in task_validation_frame_groups[gt_annotation["frame"]]:
+                gt_annotation = faster_deepcopy(gt_annotation)
+                gt_annotation["frame"] = placeholder_frame_id
+
+                if ann_type == 'tag':
+                    self.ir_data.add_tag(gt_annotation)
+                elif ann_type == 'shape':
+                    self.ir_data.add_shape(gt_annotation)
+                else:
+                    # It's only supported for tags and shapes
+                    assert False
 
     def export(self, dst_file, exporter, host='', **options):
         task_data = TaskData(

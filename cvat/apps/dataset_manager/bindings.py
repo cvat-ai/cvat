@@ -430,9 +430,12 @@ class CommonData(InstanceLabelData):
             for idx in sorted(set(self._frame_info) & included_frames):
                 get_frame(idx)
 
-        anno_manager = AnnotationManager(self._annotation_ir)
+        anno_manager = AnnotationManager(
+            self._annotation_ir, dimension=self._annotation_ir.dimension
+        )
         for shape in sorted(
-            anno_manager.to_shapes(self.stop + 1, self._annotation_ir.dimension,
+            anno_manager.to_shapes(
+                self.stop + 1,
                 # Skip outside, deleted and excluded frames
                 included_frames=included_frames,
                 include_outside=False,
@@ -1174,10 +1177,12 @@ class ProjectData(InstanceLabelData):
                     get_frame(*ident)
 
         for task in self._db_tasks.values():
-            anno_manager = AnnotationManager(self._annotation_irs[task.id])
+            anno_manager = AnnotationManager(
+                self._annotation_irs[task.id], dimension=self._annotation_irs[task.id].dimension
+            )
             for shape in sorted(
                 anno_manager.to_shapes(
-                    task.data.size, self._annotation_irs[task.id].dimension,
+                    task.data.size,
                     include_outside=False,
                     use_server_track_ids=self._use_server_track_ids
                 ),
