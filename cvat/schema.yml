@@ -1263,10 +1263,8 @@ paths:
           type: string
           enum:
           - no_matching_item
-          - failed_attribute_voting
           - no_matching_annotation
           - annotation_too_close
-          - wrong_group
           - failed_label_voting
       tags:
       - consensus
@@ -2564,6 +2562,45 @@ paths:
       responses:
         '204':
           description: The job has been deleted
+  /api/jobs/{id}/aggregate/:
+    put:
+      operationId: jobs_update_aggregate
+      summary: Aggregate data of the parent job
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this job.
+        required: true
+      - in: query
+        name: rq_id
+        schema:
+          type: string
+        description: |
+          The report creation request id. Can be specified to check the report
+          creation status.
+      tags:
+      - jobs
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/JobWriteRequest'
+        required: true
+      security:
+      - sessionAuth: []
+        csrfAuth: []
+        tokenAuth: []
+      - signatureAuth: []
+      - basicAuth: []
+      responses:
+        '201':
+          description: Specific Consensus Jobs Aggregated
+        '202':
+          description: Agreegation of specific Consensus Jobs started
+        '400':
+          description: Agreegating a job without data is not allowed
   /api/jobs/{id}/annotations/:
     get:
       operationId: jobs_retrieve_annotations
@@ -5737,6 +5774,13 @@ paths:
           type: integer
         description: A unique integer value identifying this task.
         required: true
+      - in: query
+        name: rq_id
+        schema:
+          type: string
+        description: |
+          The report creation request id. Can be specified to check the report
+          creation status.
       tags:
       - tasks
       requestBody:
@@ -7458,6 +7502,9 @@ components:
         consensus_report_id:
           type: integer
           readOnly: true
+        conflict_count:
+          type: integer
+          readOnly: true
     Attribute:
       type: object
       properties:
@@ -7846,18 +7893,14 @@ components:
     ConsensusConflictTypeEnum:
       enum:
       - no_matching_item
-      - failed_attribute_voting
       - no_matching_annotation
       - annotation_too_close
-      - wrong_group
       - failed_label_voting
       type: string
       description: |-
         * `no_matching_item` - NoMatchingItemError
-        * `failed_attribute_voting` - FailedAttrVotingError
         * `no_matching_annotation` - NoMatchingAnnError
         * `annotation_too_close` - AnnotationsTooCloseError
-        * `wrong_group` - WrongGroupError
         * `failed_label_voting` - FailedLabelVotingError
     ConsensusReport:
       type: object
@@ -7949,6 +7992,11 @@ components:
           format: double
           description: |
             Sigma value for OKS calculation
+        line_thickness:
+          type: number
+          format: double
+          description: |
+            thickness of polylines, relatively to the (image area) ^ 0.5.
     CredentialsTypeEnum:
       enum:
       - KEY_SECRET_KEY_PAIR
@@ -8848,8 +8896,6 @@ components:
           nullable: true
         parent_job_id:
           type: integer
-          maximum: 2147483647
-          minimum: 0
           nullable: true
           readOnly: true
       required:
@@ -10025,6 +10071,11 @@ components:
           format: double
           description: |
             Sigma value for OKS calculation
+        line_thickness:
+          type: number
+          format: double
+          description: |
+            thickness of polylines, relatively to the (image area) ^ 0.5.
     PatchedDataMetaWriteRequest:
       type: object
       properties:
