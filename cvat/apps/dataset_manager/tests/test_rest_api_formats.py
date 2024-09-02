@@ -25,7 +25,6 @@ from typing import Any, Callable, ClassVar, Optional, overload
 from unittest.mock import MagicMock, patch, DEFAULT as MOCK_DEFAULT
 
 from attr import define, field
-from datumaro import AnnotationType, Points
 from datumaro.components.dataset import Dataset
 from datumaro.components.operations import ExactComparator
 from datumaro.util.test_utils import TestDir
@@ -100,8 +99,8 @@ def generate_video_file(filename, width=1280, height=720, duration=1, fps=25, co
 
 
 def compare_datasets(expected: Dataset, actual: Dataset):
-    # we need this function to allow for a bit of variation in a rotation attribute and in skeleton elements order
-    comparator = ExactComparator(ignored_fields=["elements"], ignored_attrs=["rotation"])
+    # we need this function to allow for a bit of variation in the rotation attribute
+    comparator = ExactComparator(ignored_attrs=["rotation"])
     _, unmatched, expected_extra, actual_extra, errors = comparator.compare_datasets(
         expected, actual
     )
@@ -116,10 +115,6 @@ def compare_datasets(expected: Dataset, actual: Dataset):
                 abs(ann_a.attributes.get("rotation", 0) - ann_b.attributes.get("rotation", 0))
                 < 0.01
             )
-            if ann_a.type == AnnotationType.skeleton:
-                elements_a = sorted(filter(lambda p: p.visibility[0] != Points.Visibility.absent, ann_a.elements), key=lambda s: s.label)
-                elements_b = sorted(filter(lambda p: p.visibility[0] != Points.Visibility.absent, ann_b.elements), key=lambda s: s.label)
-                assert elements_a == elements_b
 
 
 class _DbTestBase(ApiTestBase):
