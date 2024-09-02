@@ -235,67 +235,47 @@ class _DbTestBase(ApiTestBase):
     def _make_annotations_for_task(task, name_ann, key_get_values):
         tmp_annotations = copy.deepcopy(annotations[name_ann])
 
+        def fill_element_attributes(element, label):
+            element["label_id"] = label["id"]
+
+            for index_attribute, attribute in enumerate(label["attributes"]):
+                spec_id = label["attributes"][index_attribute]["id"]
+
+                if key_get_values == "random":
+                    if attribute["input_type"] == "number":
+                        start = int(attribute["values"][0])
+                        stop = int(attribute["values"][1]) + 1
+                        step = int(attribute["values"][2])
+                        value = str(random.randrange(start, stop, step))
+                    else:
+                        value = random.choice(label["attributes"][index_attribute]["values"])
+                else:
+                    assert key_get_values == "default"
+                    value = attribute["default_value"]
+
+                if item == "tracks" and attribute["mutable"]:
+                    for index_shape, _ in enumerate(element["shapes"]):
+                        element["shapes"][index_shape]["attributes"].append({
+                            "spec_id": spec_id,
+                            "value": value,
+                        })
+                else:
+                    element["attributes"].append({
+                        "spec_id": spec_id,
+                        "value": value,
+                    })
+
         # change attributes in all annotations
         for item in tmp_annotations:
             if item in ["tags", "shapes", "tracks"]:
-                for index_elem, _ in enumerate(tmp_annotations[item]):
-                    tmp_annotations[item][index_elem]["label_id"] = task["labels"][0]["id"]
+                for element in tmp_annotations[item]:
+                    fill_element_attributes(element, task["labels"][0])
 
-                    for index_attribute, attribute in enumerate(task["labels"][0]["attributes"]):
-                        spec_id = task["labels"][0]["attributes"][index_attribute]["id"]
-
-                        if key_get_values == "random":
-                            if attribute["input_type"] == "number":
-                                start = int(attribute["values"][0])
-                                stop = int(attribute["values"][1]) + 1
-                                step = int(attribute["values"][2])
-                                value = str(random.randrange(start, stop, step))
-                            else:
-                                value = random.choice(task["labels"][0]["attributes"][index_attribute]["values"])
-                        elif key_get_values == "default":
-                            value = attribute["default_value"]
-
-                        if item == "tracks" and attribute["mutable"]:
-                            for index_shape, _ in enumerate(tmp_annotations[item][index_elem]["shapes"]):
-                                tmp_annotations[item][index_elem]["shapes"][index_shape]["attributes"].append({
-                                    "spec_id": spec_id,
-                                    "value": value,
-                                })
-                        else:
-                            tmp_annotations[item][index_elem]["attributes"].append({
-                                "spec_id": spec_id,
-                                "value": value,
-                            })
-                    elements = tmp_annotations[item][index_elem].get("elements", [])
+                    sub_elements = element.get("elements", [])
                     labels = task["labels"][0].get("sublabels", [])
-                    for element, label in zip(elements, labels):
-                        element["label_id"] = label["id"]
+                    for sub_element, sub_label in zip(sub_elements, labels):
+                        fill_element_attributes(sub_element, sub_label)
 
-                        for index_attribute, attribute in enumerate(label["attributes"]):
-                            spec_id = label["attributes"][index_attribute]["id"]
-
-                            if key_get_values == "random":
-                                if attribute["input_type"] == "number":
-                                    start = int(attribute["values"][0])
-                                    stop = int(attribute["values"][1]) + 1
-                                    step = int(attribute["values"][2])
-                                    value = str(random.randrange(start, stop, step))
-                                else:
-                                    value = random.choice(label["attributes"][index_attribute]["values"])
-                            elif key_get_values == "default":
-                                value = attribute["default_value"]
-
-                            if item == "tracks" and attribute["mutable"]:
-                                for index_shape, _ in enumerate(element["shapes"]):
-                                    element["shapes"][index_shape]["attributes"].append({
-                                        "spec_id": spec_id,
-                                        "value": value,
-                                    })
-                            else:
-                                element["attributes"].append({
-                                    "spec_id": spec_id,
-                                    "value": value,
-                                })
         return tmp_annotations
 
     def _create_annotations(self, task, name_ann, key_get_values):
