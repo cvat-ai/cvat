@@ -778,7 +778,6 @@ async function mergeConsensusJobs(id: number, instanceType: string): Promise<voi
     return new Promise<void>((resolve, reject) => {
         async function request() {
             try {
-                console.log('rq_id:', params.rq_id);
                 const response = await Axios.put(url, null, { params });
                 params.rq_id = response.data.rq_id;
                 const { status } = response;

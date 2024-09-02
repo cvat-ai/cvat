@@ -19,7 +19,6 @@ interface Props {
 
 function AssigneeListComponent(props: Props): JSX.Element {
     const { assigneeReports: assigneeReportsArray } = props;
-    console.log('assigneeReportsArray', assigneeReportsArray);
     const assigneeReports: Record<number, AssigneeConsensusReport> = assigneeReportsArray
         .reduce((acc, report) => ({ ...acc, [report?.assignee?.id]: report }), {});
 

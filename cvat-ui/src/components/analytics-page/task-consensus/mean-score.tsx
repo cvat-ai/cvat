@@ -52,7 +52,6 @@ function MeanQuality(props: Props): JSX.Element {
             </Row>
         </div>
     );
-    console.log(taskReport);
 
     return (
         <AnalyticsCard

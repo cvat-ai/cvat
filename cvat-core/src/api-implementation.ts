@@ -552,7 +552,6 @@ export default function implementAPI(cvat: CVATCore): CVATCore {
         const params = fieldsToSnakeCase({ ...filter, sort: '-created_date' });
 
         const reportsData = await serverProxy.consensus.reports(params);
-        console.log(reportsData);
         const reports = Object.assign(
             reportsData.map((report) => new ConsensusReport({ ...report })),
             { count: reportsData.count },
@@ -573,7 +572,6 @@ export default function implementAPI(cvat: CVATCore): CVATCore {
         const params = fieldsToSnakeCase({ ...filter, sort: '-id' });
 
         const reportsData = await serverProxy.consensus.assignee_reports(params);
-        console.log(reportsData);
         const reports = Object.assign(
             reportsData.map((report) => new AssigneeConsensusReport({ ...report })),
             { count: reportsData.count },
