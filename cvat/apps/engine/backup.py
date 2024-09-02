@@ -660,6 +660,16 @@ class TaskImporter(_ImporterBase, _TaskBackupBase):
 
         for i, segment in enumerate(jobs):
             segment_size = segment['stop_frame'] - segment['start_frame'] + 1
+            if segment_frames := segment.get('frames'):
+                segment_frames = set(segment_frames)
+                segment_range = range(segment['start_frame'], segment['stop_frame'] + 1)
+                if not segment_frames.issubset(segment_range):
+                    raise ValidationError(
+                        "Segment frames must be inside the range [start_frame; stop_frame]"
+                    )
+
+                segment_size = len(segment_frames)
+
             segment_files = segment['files']
             if len(segment_files) != segment_size:
                 raise ValidationError(f"segment {i}: segment files do not match segment size")

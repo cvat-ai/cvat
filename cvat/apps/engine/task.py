@@ -1150,7 +1150,7 @@ def _create_thread(
             frame_idx_map[image.path] = image.frame
 
         # Store information about the real frame placement in validation frames in jobs
-        for image in images:
+        for image in images[:-len(validation_params['frames'])]:
             real_frame_idx = frame_idx_map.get(image.path)
             if real_frame_idx is not None:
                 image.is_placeholder = True
