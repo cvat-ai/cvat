@@ -129,7 +129,7 @@ function TaskConsensusComponent(props: Props): JSX.Element {
 
         core.consensus
             .reports({
-                pageSize: 1, target: 'task', jobID: null, taskID: task.id,
+                pageSize: 1, target: 'task', taskID: task.id,
             })
             .then(([report]) => {
                 let reportRequest = Promise.resolve<ConsensusReport[]>([]);

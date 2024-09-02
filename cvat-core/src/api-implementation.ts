@@ -542,7 +542,7 @@ export default function implementAPI(cvat: CVATCore): CVATCore {
             pageSize: isPageSize,
             projectID: isInteger,
             taskID: isInteger,
-            jobID: (value: any) => isInteger(value) || value === null,
+            jobID: isInteger,
             filter: isString,
             search: isString,
             target: isString,
