@@ -239,7 +239,7 @@ class _DbTestBase(ApiTestBase):
                 start = int(attribute["values"][0])
                 stop = int(attribute["values"][1]) + 1
                 step = int(attribute["values"][2])
-                return str(random.randrange(start, stop, step))
+                return str(random.randrange(start, stop, step))  # nosec B311 NOSONAR
             return random.choice(attribute["values"])  # nosec B311 NOSONAR
         assert key_get_values == "default"
         return attribute["default_value"]
