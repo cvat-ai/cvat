@@ -233,7 +233,19 @@ class _DbTestBase(ApiTestBase):
 
     @staticmethod
     def _make_annotations_for_task(task, name_ann, key_get_values):
-        tmp_annotations = copy.deepcopy(annotations[name_ann])
+        assert key_get_values in ["default", "random"]
+
+        def make_attribute_value(attribute, attribute_spec):
+            value = attribute["default_value"]
+            if key_get_values == "random":
+                if attribute["input_type"] == "number":
+                    start = int(attribute["values"][0])
+                    stop = int(attribute["values"][1]) + 1
+                    step = int(attribute["values"][2])
+                    value = str(random.randrange(start, stop, step))
+                else:
+                    value = random.choice(attribute_spec["values"])
+            return value
 
         def fill_element_attributes(element, label):
             element["label_id"] = label["id"]
@@ -241,17 +253,7 @@ class _DbTestBase(ApiTestBase):
             for index_attribute, attribute in enumerate(label["attributes"]):
                 spec_id = label["attributes"][index_attribute]["id"]
 
-                if key_get_values == "random":
-                    if attribute["input_type"] == "number":
-                        start = int(attribute["values"][0])
-                        stop = int(attribute["values"][1]) + 1
-                        step = int(attribute["values"][2])
-                        value = str(random.randrange(start, stop, step))
-                    else:
-                        value = random.choice(label["attributes"][index_attribute]["values"])
-                else:
-                    assert key_get_values == "default"
-                    value = attribute["default_value"]
+                value = make_attribute_value(attribute, label["attributes"][index_attribute])
 
                 if item == "tracks" and attribute["mutable"]:
                     for index_shape, _ in enumerate(element["shapes"]):
@@ -265,16 +267,16 @@ class _DbTestBase(ApiTestBase):
                         "value": value,
                     })
 
+        tmp_annotations = copy.deepcopy(annotations[name_ann])
         # change attributes in all annotations
-        for item in tmp_annotations:
-            if item in ["tags", "shapes", "tracks"]:
-                for element in tmp_annotations[item]:
-                    fill_element_attributes(element, task["labels"][0])
+        for item in ["tags", "shapes", "tracks"]:
+            for element in tmp_annotations.get(item, []):
+                fill_element_attributes(element, task["labels"][0])
 
-                    sub_elements = element.get("elements", [])
-                    labels = task["labels"][0].get("sublabels", [])
-                    for sub_element, sub_label in zip(sub_elements, labels):
-                        fill_element_attributes(sub_element, sub_label)
+                sub_elements = element.get("elements", [])
+                labels = task["labels"][0].get("sublabels", [])
+                for sub_element, sub_label in zip(sub_elements, labels):
+                    fill_element_attributes(sub_element, sub_label)
 
         return tmp_annotations
 
