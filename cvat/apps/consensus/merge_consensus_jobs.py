@@ -36,13 +36,12 @@ from cvat.apps.quality_control.quality_reports import JobDataProvider
 
 
 class MergeConsensusJobs:
-    jobs: Dict[int, List[Tuple[int, User]]]
-    parent_jobs: List[Job]
-    merger: IntersectMerge
-    consensus_settings: ConsensusSettings
-    assignee_jobs_count: Dict[User, int]
-
     def __init__(self, task_id: int) -> None:
+        self.jobs: Dict[int, List[Tuple[int, User]]]
+        self.parent_jobs: List[Job]
+        self.merger: IntersectMerge
+        self.consensus_settings: ConsensusSettings
+        self.assignee_jobs_count: Dict[User, int]
         self.task_id = task_id
         self.get_consensus_jobs(task_id)
         self.get_assignee_jobs_count()
@@ -186,6 +185,7 @@ class MergeConsensusJobs:
             task_mean_consensus_score,
         )
 
+    @transaction.atomic
     def merge_single_consensus_jobs(self, parent_job_id: int) -> None:
         job_comparison_reports: Dict[int, ComparisonReport] = {}
         assignee_reports: Dict[User, Dict[str, float]] = {}

@@ -4,7 +4,7 @@
 
 import itertools
 import logging as log
-from functools import cached_property
+from functools import cache, cached_property
 from typing import Callable, Dict, List, Optional, Sequence, Tuple, Union, cast
 
 import attr
@@ -37,18 +37,7 @@ class IntersectMerge(ClassicIntersectMerge):
         ignored_attributes = attrib(converter=set, factory=set)
         torso_r = attrib(converter=float, default=0.01)
 
-        def _groups_converter(value):
-            result = []
-            for group in value:
-                rg = set()
-                for label in group:
-                    optional = label.endswith("?")
-                    name = label if not optional else label[:-1]
-                    rg.add((name, optional))
-                result.append(rg)
-            return result
-
-        groups = attrib(converter=_groups_converter, factory=list)
+        groups = []
         close_distance = attrib(converter=float, default=0.75)
 
     conf = attrib(converter=ensure_cls(Conf), factory=Conf)
@@ -229,7 +218,7 @@ class CachedSimilarityFunction:
 
     def __call__(self, a_ann: dm.Annotation, b_ann: dm.Annotation) -> float:
         a_ann_id = id(a_ann)
-        b_ann_id = id(a_ann)
+        b_ann_id = id(b_ann)
 
         if a_ann_id == b_ann_id:
             return 1
@@ -273,6 +262,7 @@ class _ShapeMatcher(AnnotationMatcher):
     categories = attrib(converter=dict, default={})
     distance_index = attrib(converter=dict, default={})
     _distance_comparator = attrib(converter=DistanceComparator, default={})
+    _distance = attrib(converter=CachedSimilarityFunction, default=None)
 
     def __attrs_post_init__(self):
         self._distance_comparator = DistanceComparator(
@@ -281,17 +271,16 @@ class _ShapeMatcher(AnnotationMatcher):
             oks_sigma=self._context.conf.sigma,
             line_torso_radius=self._context.conf.torso_r,
         )
+        self._distance = CachedSimilarityFunction(self._distance_func)
 
     def _distance_func(self, item_a, item_b):
         return dm.ops.segment_iou(item_a, item_b)
 
-    @cached_property
-    def _distance(self) -> CachedSimilarityFunction:
-        return CachedSimilarityFunction(self._distance_func)
+    # def _distance(self) -> CachedSimilarityFunction:
+    #     return CachedSimilarityFunction(self._distance_func)
 
     def distance(self, a, b):
-        dist_fn = self._distance
-        return dist_fn(a, b)
+        return self._distance(a, b)
 
     def label_matcher(self, a, b):
         a_label = self._context.get_any_label_name(a, a.label)
