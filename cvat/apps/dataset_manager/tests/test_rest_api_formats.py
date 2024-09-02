@@ -247,36 +247,38 @@ class _DbTestBase(ApiTestBase):
                     value = random.choice(attribute_spec["values"])  # nosec B311 NOSONAR
             return value
 
-        def fill_element_attributes(element, label):
-            element["label_id"] = label["id"]
+        def fill_one_attribute(item, attribute, attribute_spec):
+            spec_id = attribute_spec["id"]
+            value = make_attribute_value(attribute, attribute_spec)
 
-            for index_attribute, attribute in enumerate(label["attributes"]):
-                spec_id = label["attributes"][index_attribute]["id"]
-
-                value = make_attribute_value(attribute, label["attributes"][index_attribute])
-
-                if item == "tracks" and attribute["mutable"]:
-                    for index_shape, _ in enumerate(element["shapes"]):
-                        element["shapes"][index_shape]["attributes"].append({
-                            "spec_id": spec_id,
-                            "value": value,
-                        })
-                else:
-                    element["attributes"].append({
+            if item == "tracks" and attribute["mutable"]:
+                for index_shape, _ in enumerate(element["shapes"]):
+                    element["shapes"][index_shape]["attributes"].append({
                         "spec_id": spec_id,
                         "value": value,
                     })
+            else:
+                element["attributes"].append({
+                    "spec_id": spec_id,
+                    "value": value,
+                })
+
+        def fill_all_element_attributes(item, element, label):
+            element["label_id"] = label["id"]
+
+            for index_attribute, attribute in enumerate(label["attributes"]):
+                fill_one_attribute(item, attribute, label["attributes"][index_attribute])
+
+            sub_elements = element.get("elements", [])
+            sub_labels = label.get("sublabels", [])
+            for sub_element, sub_label in zip(sub_elements, sub_labels):
+                fill_all_element_attributes(item, sub_element, sub_label)
 
         tmp_annotations = copy.deepcopy(annotations[name_ann])
-        # change attributes in all annotations
+
         for item in ["tags", "shapes", "tracks"]:
             for element in tmp_annotations.get(item, []):
-                fill_element_attributes(element, task["labels"][0])
-
-                sub_elements = element.get("elements", [])
-                labels = task["labels"][0].get("sublabels", [])
-                for sub_element, sub_label in zip(sub_elements, labels):
-                    fill_element_attributes(sub_element, sub_label)
+                fill_all_element_attributes(item, element, task["labels"][0])
 
         return tmp_annotations
 
