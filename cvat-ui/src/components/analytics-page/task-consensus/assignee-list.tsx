@@ -21,7 +21,7 @@ function AssigneeListComponent(props: Props): JSX.Element {
     const { assigneeReports: assigneeReportsArray } = props;
     console.log('assigneeReportsArray', assigneeReportsArray);
     const assigneeReports: Record<number, AssigneeConsensusReport> = assigneeReportsArray
-        .reduce((acc, report) => ({ ...acc, [report.assignee.id]: report }), {});
+        .reduce((acc, report) => ({ ...acc, [report?.assignee?.id]: report }), {});
 
     function collectUsers(path: string): ColumnFilterItem[] {
         return Array.from<string | null>(
@@ -46,7 +46,7 @@ function AssigneeListComponent(props: Props): JSX.Element {
             render: (assignee: User): JSX.Element => <Text>{assignee?.username}</Text>,
             sorter: sorter('assignee.username'),
             filters: collectUsers('assignee'),
-            onFilter: (value: boolean | Key, assignee: any) => (assignee.assignee?.username || false) === value,
+            onFilter: (value: boolean | Key, assignee: any) => (assignee?.assignee?.username || false) === value,
         },
         {
             title: 'Conflicts',
@@ -80,12 +80,12 @@ function AssigneeListComponent(props: Props): JSX.Element {
         },
     ];
     const data = assigneeReportsArray.reduce((acc: any[], assigneeReport: any) => {
-        const report = assigneeReports[assigneeReport.assignee.id];
+        const report = assigneeReports[assigneeReport?.assignee?.id];
         acc.push({
-            key: report.assignee.id,
-            assignee: report.assignee,
-            quality: report.consensusScore,
-            conflict_count: report.conflictCount,
+            key: report?.assignee?.id || 0,
+            assignee: report?.assignee,
+            quality: report?.consensusScore,
+            conflict_count: report?.conflictCount,
         });
 
         return acc;
