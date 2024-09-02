@@ -721,17 +721,18 @@ class JobWriteSerializer(WriteOnceMixin, serializers.ModelSerializer):
     def validate(self, attrs):
         attrs = field_validation.drop_null_keys(attrs)
 
-        if attrs['frame_selection_method'] == models.JobFrameSelectionMethod.RANDOM_UNIFORM:
+        frame_selection_method = attrs.get('frame_selection_method')
+        if frame_selection_method == models.JobFrameSelectionMethod.RANDOM_UNIFORM:
             field_validation.require_one_of_fields(attrs, ['frame_count', 'frame_share'])
-        elif attrs['frame_selection_method'] == models.JobFrameSelectionMethod.RANDOM_PER_JOB:
+        elif frame_selection_method == models.JobFrameSelectionMethod.RANDOM_PER_JOB:
             field_validation.require_one_of_fields(
                 attrs, ['frames_per_job_count', 'frames_per_job_share']
             )
-        elif attrs['frame_selection_method'] == models.JobFrameSelectionMethod.MANUAL:
+        elif frame_selection_method == models.JobFrameSelectionMethod.MANUAL:
             field_validation.require_field(attrs, "frames")
 
         if (
-            attrs['frame_selection_method'] != models.JobFrameSelectionMethod.MANUAL and
+            frame_selection_method != models.JobFrameSelectionMethod.MANUAL and
             attrs.get('frames')
         ):
             raise serializers.ValidationError(
