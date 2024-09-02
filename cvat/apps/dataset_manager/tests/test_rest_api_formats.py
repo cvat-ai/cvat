@@ -244,7 +244,7 @@ class _DbTestBase(ApiTestBase):
                     step = int(attribute["values"][2])
                     value = str(random.randrange(start, stop, step))
                 else:
-                    value = random.choice(attribute_spec["values"])
+                    value = random.choice(attribute_spec["values"])  # nosec B311 NOSONAR
             return value
 
         def fill_element_attributes(element, label):
