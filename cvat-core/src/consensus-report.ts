@@ -10,10 +10,8 @@ export interface ConsensusSummary {
     conflictCount: number;
     conflictsByType: {
         no_matching_item: number;
-        failed_attribute_voting: number;
         no_matching_annotation: number;
         annotation_too_close: number;
-        wrong_group: number;
         failed_label_voting: number;
     }
 }
@@ -78,10 +76,8 @@ export default class ConsensusReport {
             conflictCount: this.#summary.conflict_count,
             conflictsByType: {
                 no_matching_item: this.#summary.conflicts_by_type?.no_matching_item,
-                failed_attribute_voting: this.#summary.conflicts_by_type?.failed_attribute_voting,
                 no_matching_annotation: this.#summary.conflicts_by_type?.no_matching_annotation,
                 annotation_too_close: this.#summary.conflicts_by_type?.annotation_too_close,
-                wrong_group: this.#summary.conflicts_by_type?.wrong_group,
                 failed_label_voting: this.#summary.conflicts_by_type?.failed_label_voting,
             },
         };

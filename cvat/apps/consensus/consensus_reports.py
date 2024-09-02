@@ -278,7 +278,10 @@ def generate_job_consensus_report(
 
     for error in errors:
         error_type = str(type(error)).split(".")[-1].split("'")[0]
-        error_type = ConsensusConflictType[error_type].value
+        try:
+            error_type = ConsensusConflictType[error_type].value
+        except KeyError:
+            continue
         annotation_ids = []
         error_annotations = []
 

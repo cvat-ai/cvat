@@ -16,10 +16,8 @@ from cvat.apps.engine.models import Job, ShapeType, Task, User
 
 class ConsensusConflictType(str, Enum):
     NoMatchingItemError = "no_matching_item"
-    FailedAttrVotingError = "failed_attribute_voting"
     NoMatchingAnnError = "no_matching_annotation"
     AnnotationsTooCloseError = "annotation_too_close"
-    WrongGroupError = "wrong_group"
     FailedLabelVotingError = "failed_label_voting"
 
     def __str__(self) -> str:

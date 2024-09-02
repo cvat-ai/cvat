@@ -7,10 +7,8 @@ import { ObjectType } from './enums';
 
 export enum ConsensusConflictType {
     NO_MATCHING_ITEM = 'no_matching_item',
-    FAILED_ATTRIBUTE_VOTING = 'failed_attribute_voting',
     NO_MATCHING_ANNOTATION = 'no_matching_annotation',
     ANNOTATION_TOO_CLOSE = 'annotation_too_close',
-    WRONG_GROUP = 'wrong_group',
     FAILED_LABEL_VOTING = 'failed_label_voting',
 }
 

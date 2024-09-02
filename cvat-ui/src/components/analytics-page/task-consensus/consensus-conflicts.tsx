@@ -29,20 +29,12 @@ export function ConflictsTooltip(props: ConflictTooltipProps): JSX.Element {
                     {reportSummary?.conflictsByType.no_matching_item || 0}
                 </Text>
                 <Text>
-                    Failed attribute voting:&nbsp;
-                    {reportSummary?.conflictsByType.failed_attribute_voting || 0}
-                </Text>
-                <Text>
                     No matching annotation:&nbsp;
                     {reportSummary?.conflictsByType.no_matching_annotation || 0}
                 </Text>
                 <Text>
                     Annotation too close:&nbsp;
                     {reportSummary?.conflictsByType.annotation_too_close || 0}
-                </Text>
-                <Text>
-                    Wrong group:&nbsp;
-                    {reportSummary?.conflictsByType.wrong_group || 0}
                 </Text>
                 <Text>
                     Failed label voting:&nbsp;
