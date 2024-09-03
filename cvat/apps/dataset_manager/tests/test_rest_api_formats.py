@@ -1244,40 +1244,44 @@ class TaskDumpUploadTest(_DbTestBase):
     def test_api_v2_check_skeleton_tracks_with_missing_shapes(self):
         test_name = self._testMethodName
         format_name = "COCO Keypoints 1.0"
-        name_ann = 'many jobs skeleton tracks with missing shapes'
 
         # create task with annotations
         for whole_task in (False, True):
-            with self.subTest():
-                images = self._generate_task_images(25)
-                task = self._create_task(tasks['many jobs skeleton'], images)
-                task_id = task["id"]
+            for name_ann in [
+                "many jobs skeleton tracks with missing shapes",
+                "many jobs skeleton tracks with missing shapes - skeleton is outside",
+                "many jobs skeleton tracks with missing shapes - some points present",
+            ]:
+                with self.subTest():
+                    images = self._generate_task_images(25)
+                    task = self._create_task(tasks['many jobs skeleton'], images)
+                    task_id = task["id"]
 
-                if whole_task:
-                    self._create_annotations(task, name_ann, "default")
-                else:
-                    job_id = next(
-                        job["id"]
-                        for job in self._get_jobs(task_id)
-                        if job["start_frame"] == annotations[name_ann]["tracks"][0]["frame"]
-                    )
-                    self._create_annotations_in_job(task, job_id, name_ann, "default")
+                    if whole_task:
+                        self._create_annotations(task, name_ann, "default")
+                    else:
+                        job_id = next(
+                            job["id"]
+                            for job in self._get_jobs(task_id)
+                            if job["start_frame"] == annotations[name_ann]["tracks"][0]["frame"]
+                        )
+                        self._create_annotations_in_job(task, job_id, name_ann, "default")
 
-                # dump annotations
-                url = self._generate_url_dump_tasks_annotations(task_id)
-                data = {"format": format_name}
-                with TestDir() as test_dir:
-                    file_zip_name = osp.join(test_dir, f'{test_name}_{format_name}.zip')
-                    self._download_file(url, data, self.admin, file_zip_name)
-                    self._check_downloaded_file(file_zip_name)
+                    # dump annotations
+                    url = self._generate_url_dump_tasks_annotations(task_id)
+                    data = {"format": format_name}
+                    with TestDir() as test_dir:
+                        file_zip_name = osp.join(test_dir, f'{test_name}_{format_name}.zip')
+                        self._download_file(url, data, self.admin, file_zip_name)
+                        self._check_downloaded_file(file_zip_name)
 
-                    # remove annotations
-                    self._remove_annotations(url, self.admin)
+                        # remove annotations
+                        self._remove_annotations(url, self.admin)
 
-                    # upload annotations
-                    url = self._generate_url_upload_tasks_annotations(task_id, format_name)
-                    with open(file_zip_name, 'rb') as binary_file:
-                        self._upload_file(url, binary_file, self.admin)
+                        # upload annotations
+                        url = self._generate_url_upload_tasks_annotations(task_id, format_name)
+                        with open(file_zip_name, 'rb') as binary_file:
+                            self._upload_file(url, binary_file, self.admin)
 
 
 class ExportBehaviorTest(_DbTestBase):
