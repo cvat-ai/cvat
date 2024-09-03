@@ -29,7 +29,7 @@ interface Props {
 
 export default function ControlsSideBarComponent(props: Props): JSX.Element {
     const {
-        canvasInstance, activeControl, normalizedKeyMap, keyMap, rotateFrame, updateActiveControl, frameIsDeleted,
+        canvasInstance, activeControl, normalizedKeyMap, rotateFrame, updateActiveControl, frameIsDeleted,
     } = props;
 
     const controlsDisabled = frameIsDeleted;
@@ -40,12 +40,6 @@ export default function ControlsSideBarComponent(props: Props): JSX.Element {
                 cursorShortkey={normalizedKeyMap.CANCEL}
                 canvasInstance={canvasInstance}
                 activeControl={activeControl}
-                shortcuts={{
-                    CANCEL: {
-                        details: keyMap.CANCEL,
-                        displayValue: normalizedKeyMap.CANCEL,
-                    },
-                }}
             />
             <MoveControl canvasInstance={canvasInstance} activeControl={activeControl} />
             <RotateControl
@@ -65,12 +59,6 @@ export default function ControlsSideBarComponent(props: Props): JSX.Element {
                 activeControl={activeControl}
                 updateActiveControl={updateActiveControl}
                 disabled={controlsDisabled}
-                shortcuts={{
-                    OPEN_REVIEW_ISSUE: {
-                        details: keyMap.OPEN_REVIEW_ISSUE,
-                        displayValue: normalizedKeyMap.OPEN_REVIEW_ISSUE,
-                    },
-                }}
             />
         </Layout.Sider>
     );

@@ -39,9 +39,11 @@ from cvat.apps.engine.utils import (
     get_rq_job_meta, import_resource_with_clean_up_after,
     define_dependent_job, get_rq_lock_by_user,
 )
-from cvat.apps.engine.rq_job_handler import RQIdManager, RQJobMetaField
+from cvat.apps.engine.rq_job_handler import RQId, RQJobMetaField
 from cvat.apps.engine.models import (
-    StorageChoice, StorageMethodChoice, DataChoice, Project, Location)
+    StorageChoice, StorageMethodChoice, DataChoice, Project, Location,
+    RequestAction, RequestTarget, RequestSubresource,
+)
 from cvat.apps.engine.task import JobFileMapping, _create_thread
 from cvat.apps.engine.cloud_provider import import_resource_from_cloud_storage
 from cvat.apps.engine.location import StorageType, get_location_configuration
@@ -385,7 +387,7 @@ class TaskExporter(_ExporterBase, _TaskBackupBase):
             for field in ('url', 'owner', 'assignee'):
                 task_serializer.fields.pop(field)
 
-            task_labels = LabelSerializer(self._db_task.get_labels(), many=True)
+            task_labels = LabelSerializer(self._db_task.get_labels(prefetch=True), many=True)
 
             task = self._prepare_task_meta(task_serializer.data)
             task['labels'] = [self._prepare_label_meta(l) for l in task_labels.data if not l['has_parent']]
@@ -790,7 +792,7 @@ class ProjectExporter(_ExporterBase, _ProjectBackupBase):
             for field in ('assignee', 'owner', 'url'):
                 project_serializer.fields.pop(field)
 
-            project_labels = LabelSerializer(self._db_project.get_labels(), many=True).data
+            project_labels = LabelSerializer(self._db_project.get_labels(prefetch=True), many=True).data
 
             project = self._prepare_project_meta(project_serializer.data)
             project['labels'] = [self._prepare_label_meta(l) for l in project_labels if not l['has_parent']]
@@ -1013,7 +1015,10 @@ def import_project(request, queue_name, filename=None):
     if 'rq_id' in request.data:
         rq_id = request.data['rq_id']
     else:
-        rq_id = RQIdManager.build('import', 'project', uuid.uuid4(), subresource='backup')
+        rq_id = RQId(
+            RequestAction.IMPORT, RequestTarget.PROJECT, uuid.uuid4(),
+            subresource=RequestSubresource.BACKUP,
+        ).render()
     Serializer = ProjectFileSerializer
     file_field_name = 'project_file'
 
@@ -1036,7 +1041,10 @@ def import_project(request, queue_name, filename=None):
     )
 
 def import_task(request, queue_name, filename=None):
-    rq_id = request.data.get('rq_id', RQIdManager.build('import', 'task', uuid.uuid4(), subresource='backup'))
+    rq_id = request.data.get('rq_id', RQId(
+        RequestAction.IMPORT, RequestTarget.TASK, uuid.uuid4(),
+        subresource=RequestSubresource.BACKUP,
+    ).render())
     Serializer = TaskFileSerializer
     file_field_name = 'task_file'
 

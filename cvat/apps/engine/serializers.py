@@ -23,7 +23,6 @@ from decimal import Decimal
 from rest_framework import serializers, exceptions
 from django.contrib.auth.models import User, Group
 from django.db import transaction
-from django.db.models import TextChoices
 from django.utils import timezone
 
 from cvat.apps.dataset_manager.formats.utils import get_label_color
@@ -1360,10 +1359,10 @@ class ProjectReadSerializer(serializers.ModelSerializer):
 
     def to_representation(self, instance):
         response = super().to_representation(instance)
-        task_subsets = set(instance.tasks.values_list('subset', flat=True))
+        task_subsets = {task.subset for task in instance.tasks.all()}
         task_subsets.discard('')
         response['task_subsets'] = list(task_subsets)
-        response['dimension'] = instance.tasks.first().dimension if instance.tasks.count() else None
+        response['dimension'] = getattr(instance.tasks.first(), 'dimension', None)
         return response
 
 class ProjectWriteSerializer(serializers.ModelSerializer):
@@ -2190,32 +2189,6 @@ class AnnotationGuideWriteSerializer(WriteOnceMixin, serializers.ModelSerializer
         db_data = models.AnnotationGuide.objects.create(**validated_data, project = project, task = task)
         return db_data
 
-    @transaction.atomic
-    def save(self, **kwargs):
-        instance = super().save(**kwargs)
-        def _update_assets(guide):
-            md_assets = []
-            current_assets = list(guide.assets.all())
-            markdown = guide.markdown
-
-            # pylint: disable=anomalous-backslash-in-string
-            pattern = re.compile(r'\(/api/assets/([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12})\)')
-            results = re.findall(pattern, markdown)
-
-            for asset_id in results:
-                db_asset = models.Asset.objects.get(pk=asset_id)
-                if db_asset.guide_id != guide.id:
-                    raise serializers.ValidationError('Asset is already related to another guide')
-                md_assets.append(db_asset)
-
-            for current_asset in current_assets:
-                if current_asset not in md_assets:
-                    current_asset.delete()
-
-        _update_assets(instance)
-        return instance
-
-
     class Meta:
         model = models.AnnotationGuide
         fields = ('id', 'task_id', 'project_id', 'markdown', )
@@ -2227,34 +2200,15 @@ class UserIdentifiersSerializer(BasicUserSerializer):
             "username",
         )
 
-class RequestStatus(TextChoices):
-    QUEUED = "queued"
-    STARTED = "started"
-    FAILED = "failed"
-    FINISHED = "finished"
-
-class RequestAction(TextChoices):
-    CREATE = "create"
-    IMPORT = "import"
-    EXPORT = "export"
-
-class RequestTarget(TextChoices):
-    PROJECT = "project"
-    TASK = "task"
-    JOB = "job"
-
-class RequestSubresource(TextChoices):
-    ANNOTATIONS = "annotations"
-    DATASET = "dataset"
-    BACKUP = "backup"
 
 class RequestDataOperationSerializer(serializers.Serializer):
     type = serializers.CharField()
-    target = serializers.ChoiceField(choices=RequestTarget.choices)
+    target = serializers.ChoiceField(choices=models.RequestTarget.choices)
     project_id = serializers.IntegerField(required=False, allow_null=True)
     task_id = serializers.IntegerField(required=False, allow_null=True)
     job_id = serializers.IntegerField(required=False, allow_null=True)
     format = serializers.CharField(required=False, allow_null=True)
+    function_id = serializers.CharField(required=False, allow_null=True)
 
     def to_representation(self, rq_job: RQJob) -> Dict[str, Any]:
         parsed_rq_id: RQId = rq_job.parsed_rq_id
@@ -2263,14 +2217,15 @@ class RequestDataOperationSerializer(serializers.Serializer):
             "type": ":".join(
                 [
                     parsed_rq_id.action,
-                    parsed_rq_id.subresource or parsed_rq_id.resource,
+                    parsed_rq_id.subresource or parsed_rq_id.target,
                 ]
             ),
-            "target": parsed_rq_id.resource,
+            "target": parsed_rq_id.target,
             "project_id": rq_job.meta[RQJobMetaField.PROJECT_ID],
             "task_id": rq_job.meta[RQJobMetaField.TASK_ID],
             "job_id": rq_job.meta[RQJobMetaField.JOB_ID],
             "format": parsed_rq_id.format,
+            "function_id": rq_job.meta.get(RQJobMetaField.FUNCTION_ID),
         }
 
 class RequestSerializer(serializers.Serializer):
@@ -2278,7 +2233,7 @@ class RequestSerializer(serializers.Serializer):
     # Marking them as read_only leads to generating type as allOf with one reference to RequestStatus component.
     # The client generated using openapi-generator from such a schema contains wrong type like:
     # status (bool, date, datetime, dict, float, int, list, str, none_type): [optional]
-    status = serializers.ChoiceField(source="get_status", choices=RequestStatus.choices)
+    status = serializers.ChoiceField(source="get_status", choices=models.RequestStatus.choices)
     message = serializers.SerializerMethodField()
     id = serializers.CharField()
     operation = RequestDataOperationSerializer(source="*")
@@ -2346,7 +2301,10 @@ class RequestSerializer(serializers.Serializer):
             if result_url := rq_job.meta.get(RQJobMetaField.RESULT_URL):
                 representation["result_url"] = result_url
 
-            if rq_job.parsed_rq_id.action == RequestAction.IMPORT and rq_job.parsed_rq_id.subresource == RequestSubresource.BACKUP:
+            if (
+                rq_job.parsed_rq_id.action == models.RequestAction.IMPORT
+                and rq_job.parsed_rq_id.subresource == models.RequestSubresource.BACKUP
+            ):
                 representation["result_id"] = rq_job.return_value()
 
         return representation

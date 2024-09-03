@@ -69,6 +69,19 @@ class QualityReportTarget(str, Enum):
         return tuple((x.value, x.name) for x in cls)
 
 
+class QualityTargetMetricType(str, Enum):
+    ACCURACY = "accuracy"
+    PRECISION = "precision"
+    RECALL = "recall"
+
+    def __str__(self) -> str:
+        return self.value
+
+    @classmethod
+    def choices(cls):
+        return tuple((x.value, x.name) for x in cls)
+
+
 class QualityReport(models.Model):
     job = models.ForeignKey(
         Job, on_delete=models.CASCADE, related_name="quality_reports", null=True, blank=True
@@ -89,6 +102,7 @@ class QualityReport(models.Model):
     assignee = models.ForeignKey(
         User, on_delete=models.SET_NULL, related_name="quality_reports", null=True, blank=True
     )
+    assignee_last_updated = models.DateTimeField(null=True)
 
     data = models.JSONField()
 
@@ -203,6 +217,16 @@ class QualitySettings(models.Model):
     panoptic_comparison = models.BooleanField()
 
     compare_attributes = models.BooleanField()
+
+    target_metric = models.CharField(
+        max_length=32,
+        choices=QualityTargetMetricType.choices(),
+        default=QualityTargetMetricType.ACCURACY,
+    )
+
+    target_metric_threshold = models.FloatField(default=0.7)
+
+    max_validations_per_job = models.PositiveIntegerField(default=0)
 
     def __init__(self, *args: Any, **kwargs: Any) -> None:
         defaults = deepcopy(self.get_defaults())

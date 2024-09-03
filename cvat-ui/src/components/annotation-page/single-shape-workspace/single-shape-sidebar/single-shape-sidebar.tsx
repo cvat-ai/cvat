@@ -28,6 +28,9 @@ import {
 } from 'actions/annotation-actions';
 import LabelSelector from 'components/label-selector/label-selector';
 import GlobalHotKeys from 'utils/mousetrap-react';
+import { ShortcutScope } from 'utils/enums';
+import { registerComponentShortcuts } from 'actions/shortcuts-actions';
+import { subKeyMap } from 'utils/component-subkeymap';
 
 enum ReducerActionType {
     SWITCH_AUTO_NEXT_FRAME = 'SWITCH_AUTO_NEXT_FRAME',
@@ -161,6 +164,30 @@ const reducer = (state: State, action: ActionUnion<typeof actionCreators>): Stat
 
     return state;
 };
+
+const componentShortcuts = {
+    SWITCH_DRAW_MODE_SINGLE_SHAPE: {
+        name: 'Draw mode',
+        description:
+            'Repeat the latest procedure of drawing with the same parameters',
+        sequences: ['n'],
+        scope: ShortcutScope.SINGLE_SHAPE_ANNOTATION_WORKSPACE,
+    },
+    CANCEL_SINGLE_SHAPE: {
+        name: 'Cancel',
+        description: 'Cancel any active canvas mode',
+        sequences: ['esc'],
+        scope: ShortcutScope.SINGLE_SHAPE_ANNOTATION_WORKSPACE,
+    },
+    DELETE_OBJECT_SINGLE_SHAPE: {
+        name: 'Delete object',
+        description: 'Delete an active object. Use shift to force delete of locked objects',
+        sequences: ['del', 'shift+del'],
+        scope: ShortcutScope.SINGLE_SHAPE_ANNOTATION_WORKSPACE,
+    },
+};
+
+registerComponentShortcuts(componentShortcuts);
 
 function SingleShapeSidebar(): JSX.Element {
     const appDispatch = useDispatch();
@@ -344,23 +371,17 @@ function SingleShapeSidebar(): JSX.Element {
         trigger: null,
     };
 
-    const subKeyMap = {
-        CANCEL: keyMap.CANCEL,
-        DELETE_OBJECT: keyMap.DELETE_OBJECT,
-        SWITCH_DRAW_MODE: keyMap.SWITCH_DRAW_MODE,
-    };
-
-    const handlers = {
-        CANCEL: (event: KeyboardEvent | undefined) => {
+    const handlers: Record<keyof typeof componentShortcuts, (event?: KeyboardEvent) => void> = {
+        CANCEL_SINGLE_SHAPE: (event: KeyboardEvent | undefined) => {
             event?.preventDefault();
             (store.getState().annotation.canvas.instance as Canvas).cancel();
         },
-        SWITCH_DRAW_MODE: (event: KeyboardEvent | undefined) => {
+        SWITCH_DRAW_MODE_SINGLE_SHAPE: (event: KeyboardEvent | undefined) => {
             event?.preventDefault();
             const canvas = store.getState().annotation.canvas.instance as Canvas;
             canvas.draw({ enabled: false });
         },
-        DELETE_OBJECT: (event: KeyboardEvent | undefined) => {
+        DELETE_OBJECT_SINGLE_SHAPE: (event: KeyboardEvent | undefined) => {
             event?.preventDefault();
             const objectStateToRemove = annotations.find((_state) => _state.clientID === activatedStateID);
             if (objectStateToRemove) {
@@ -385,7 +406,7 @@ function SingleShapeSidebar(): JSX.Element {
 
     return (
         <Layout.Sider {...siderProps}>
-            <GlobalHotKeys keyMap={subKeyMap} handlers={handlers} />
+            <GlobalHotKeys keyMap={subKeyMap(componentShortcuts, keyMap)} handlers={handlers} />
             { state.label !== null && state.labelType !== LabelType.ANY && (
                 <Row>
                     <Col>
@@ -447,7 +468,11 @@ function SingleShapeSidebar(): JSX.Element {
                                         <li>
                                             <Text>
                                                 Press
-                                                <Text strong>{` ${normalizedKeyMap.CANCEL} `}</Text>
+                                                <Text strong>
+                                                    {` ${
+                                                        normalizedKeyMap.CANCEL_SINGLE_SHAPE_CONTROLS
+                                                    } `}
+                                                </Text>
                                                 to reset drawing process
                                             </Text>
                                         </li>
@@ -457,7 +482,11 @@ function SingleShapeSidebar(): JSX.Element {
                                         <li>
                                             <Text>
                                                 Press
-                                                <Text strong>{` ${normalizedKeyMap.SWITCH_DRAW_MODE} `}</Text>
+                                                <Text strong>
+                                                    {` ${
+                                                        normalizedKeyMap.SWITCH_DRAW_MODE_SINGLE_SHAPE_CONTROLS
+                                                    } `}
+                                                </Text>
                                                 to finish drawing process
                                             </Text>
                                         </li>
@@ -466,7 +495,11 @@ function SingleShapeSidebar(): JSX.Element {
                                         <li>
                                             <Text>
                                                 Press
-                                                <Text strong>{` ${normalizedKeyMap.DELETE_OBJECT} `}</Text>
+                                                <Text strong>
+                                                    {` ${
+                                                        normalizedKeyMap.DELETE_OBJECT_SINGLE_SHAPE
+                                                    } `}
+                                                </Text>
                                                 to delete current object
                                             </Text>
                                         </li>

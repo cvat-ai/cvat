@@ -241,6 +241,9 @@ export type QualitySettingsFilter = Camelized<APIQualitySettingsFilter>;
 export interface SerializedQualitySettingsData {
     id?: number;
     task?: number;
+    target_metric?: string;
+    target_metric_threshold?: number;
+    max_validations_per_job?: number;
     iou_threshold?: number;
     oks_sigma?: number;
     line_thickness?: number;
@@ -253,6 +256,7 @@ export interface SerializedQualitySettingsData {
     object_visibility_threshold?: number;
     panoptic_comparison?: boolean;
     compare_attributes?: boolean;
+    descriptions?: Record<string, string>;
 }
 
 export interface APIQualityConflictsFilter extends APICommonFilterParams {

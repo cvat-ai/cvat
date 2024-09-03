@@ -9,7 +9,7 @@ from typing import Any, Dict, List, Optional, Sequence, Union, cast
 from django.shortcuts import get_object_or_404
 from django.conf import settings
 
-from rest_framework.exceptions import ValidationError, PermissionDenied, NotFound
+from rest_framework.exceptions import ValidationError, PermissionDenied
 from rq.job import Job as RQJob
 
 from cvat.apps.engine.rq_job_handler import is_rq_job_owner
@@ -305,12 +305,17 @@ class ProjectPermission(OpenPolicyAgentPermission):
         return scopes
 
     @classmethod
-    def create_scope_view(cls, iam_context, project_id):
-        try:
-            obj = Project.objects.get(id=project_id)
-        except Project.DoesNotExist as ex:
-            raise ValidationError(str(ex))
-        return cls(**iam_context, obj=obj, scope=__class__.Scopes.VIEW)
+    def create_scope_view(cls, request, project: Union[int, Project], iam_context=None):
+        if isinstance(project, int):
+            try:
+                project = Project.objects.get(id=project)
+            except Project.DoesNotExist as ex:
+                raise ValidationError(str(ex))
+
+        if not iam_context and request:
+            iam_context = get_iam_context(request, project)
+
+        return cls(**iam_context, obj=project, scope=__class__.Scopes.VIEW)
 
     @classmethod
     def create_scope_create(cls, request, org_id):
@@ -422,7 +427,7 @@ class TaskPermission(OpenPolicyAgentPermission):
                 permissions.append(perm)
 
             if project_id:
-                perm = ProjectPermission.create_scope_view(iam_context, project_id)
+                perm = ProjectPermission.create_scope_view(request, int(project_id), iam_context)
                 permissions.append(perm)
 
             for field_source, field in [
@@ -684,12 +689,17 @@ class JobPermission(OpenPolicyAgentPermission):
         return cls(**iam_context, obj=obj, scope='view:data')
 
     @classmethod
-    def create_scope_view(cls, iam_context, job_id):
-        try:
-            obj = Job.objects.get(id=job_id)
-        except Job.DoesNotExist as ex:
-            raise ValidationError(str(ex))
-        return cls(**iam_context, obj=obj, scope=__class__.Scopes.VIEW)
+    def create_scope_view(cls, request, job: Union[int, Job], iam_context=None):
+        if isinstance(job, int):
+            try:
+                job = Job.objects.get(id=job)
+            except Job.DoesNotExist as ex:
+                raise ValidationError(str(ex))
+
+        if not iam_context and request:
+            iam_context = get_iam_context(request, job)
+
+        return cls(**iam_context, obj=job, scope=__class__.Scopes.VIEW)
 
     def __init__(self, **kwargs):
         self.task_id = kwargs.pop('task_id', None)
@@ -1092,7 +1102,6 @@ class AnnotationGuidePermission(OpenPolicyAgentPermission):
 
     @classmethod
     def create(cls, request, view, obj, iam_context):
-        Scopes = __class__.Scopes
         permissions = []
 
         if view.basename == 'annotationguide':
@@ -1101,13 +1110,8 @@ class AnnotationGuidePermission(OpenPolicyAgentPermission):
             params = { 'project_id': project_id, 'task_id': task_id }
 
             for scope in cls.get_scopes(request, view, obj):
-                if scope == Scopes.VIEW and isinstance(obj, Job):
-                    permissions.append(JobPermission.create_base_perm(
-                        request, view, JobPermission.Scopes.VIEW, iam_context, obj=obj,
-                    ))
-                else:
-                    self = cls.create_base_perm(request, view, scope, iam_context, obj, **params)
-                    permissions.append(self)
+                self = cls.create_base_perm(request, view, scope, iam_context, obj, **params)
+                permissions.append(self)
 
         return permissions
 
@@ -1215,42 +1219,6 @@ class RequestPermission(OpenPolicyAgentPermission):
         permissions = []
         if view.basename == 'request':
             for scope in cls.get_scopes(request, view, obj):
-                if scope == cls.Scopes.CANCEL:
-                    parsed_rq_id = obj.parsed_rq_id
-
-                    permission_class, resource_scope = {
-                        ('import', 'project', 'dataset'): (ProjectPermission, ProjectPermission.Scopes.IMPORT_DATASET),
-                        ('import', 'project', 'backup'): (ProjectPermission, ProjectPermission.Scopes.IMPORT_BACKUP),
-                        ('import', 'task', 'annotations'): (TaskPermission, TaskPermission.Scopes.IMPORT_ANNOTATIONS),
-                        ('import', 'task', 'backup'): (TaskPermission, TaskPermission.Scopes.IMPORT_BACKUP),
-                        ('import', 'job', 'annotations'): (JobPermission, JobPermission.Scopes.IMPORT_ANNOTATIONS),
-                        ('create', 'task', None): (TaskPermission, TaskPermission.Scopes.VIEW),
-                        ('export', 'project', 'annotations'): (ProjectPermission, ProjectPermission.Scopes.EXPORT_ANNOTATIONS),
-                        ('export', 'project', 'dataset'): (ProjectPermission, ProjectPermission.Scopes.EXPORT_DATASET),
-                        ('export', 'project', 'backup'): (ProjectPermission, ProjectPermission.Scopes.EXPORT_BACKUP),
-                        ('export', 'task', 'annotations'): (TaskPermission, TaskPermission.Scopes.EXPORT_ANNOTATIONS),
-                        ('export', 'task', 'dataset'): (TaskPermission, TaskPermission.Scopes.EXPORT_DATASET),
-                        ('export', 'task', 'backup'): (TaskPermission, TaskPermission.Scopes.EXPORT_BACKUP),
-                        ('export', 'job', 'annotations'): (JobPermission, JobPermission.Scopes.EXPORT_ANNOTATIONS),
-                        ('export', 'job', 'dataset'): (JobPermission, JobPermission.Scopes.EXPORT_DATASET),
-                    }[(parsed_rq_id.action, parsed_rq_id.resource, parsed_rq_id.subresource)]
-
-
-                    resource = None
-                    if (resource_id := parsed_rq_id.identifier) and isinstance(resource_id, int):
-                        resource_model = {
-                            'project': Project,
-                            'task': Task,
-                            'job': Job,
-                        }[parsed_rq_id.resource]
-
-                        try:
-                            resource = resource_model.objects.get(id=resource_id)
-                        except resource_model.DoesNotExist as ex:
-                            raise NotFound(f'The {parsed_rq_id.resource!r} with specified id#{resource_id} does not exist') from ex
-
-                    permissions.append(permission_class.create_base_perm(request, view, scope=resource_scope, iam_context=iam_context, obj=resource))
-
                 if scope != cls.Scopes.LIST:
                     user_id = request.user.id
                     if not is_rq_job_owner(obj, user_id):
