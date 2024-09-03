@@ -5,7 +5,6 @@
 
 from __future__ import annotations
 
-import logging
 import os.path as osp
 import re
 import sys
@@ -40,6 +39,9 @@ from cvat.apps.engine.lazy_list import LazyList
 
 from .annotation import AnnotationIR, AnnotationManager, TrackManager
 from .formats.transformations import MaskConverter, EllipsesToMasks
+from ..engine.log import ServerLogManager
+
+slogger = ServerLogManager(__name__)
 
 CVAT_INTERNAL_ATTRIBUTES = {'occluded', 'outside', 'keyframe', 'track_id', 'rotation'}
 
@@ -641,11 +643,11 @@ class CommonData(InstanceLabelData):
 
         for point in points:
             if not isinstance(point, int | float):
-                logging.error(
+                slogger.glob.error(
                     f"Points must be type of "
                     f"`tuple[int | float] | list[int | float] | LazyList`, "
                     f"not `{points.__class__.__name__}[{point.__class__.__name__}]`"
-                    "Please, update import code to return the correct type"
+                    "Please, update import code to return the correct type."
                 )
                 shape["points"] = tuple(map(float, points))
                 return
