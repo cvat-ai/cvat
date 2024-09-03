@@ -5,6 +5,7 @@
 
 from __future__ import annotations
 
+import logging
 import os.path as osp
 import re
 import sys
@@ -572,7 +573,7 @@ class CommonData(InstanceLabelData):
         Historically, there were importers that were not converting points to ints/floats.
         The only place to make sure that all points in shapes have the right type was this one.
         However, this does eat up a lot of memory for some reason.
-        (see https://github.com/cvat-ai/cvat/pull/8226/files#r1695445137)
+        (see https://github.com/cvat-ai/cvat/pull/1898)
 
         So, before we can guarantee that all the importers are returning the right data,
         we have to have this conversion.
@@ -581,8 +582,16 @@ class CommonData(InstanceLabelData):
         if isinstance(points := shape["points"], LazyList | tuple):
             return
 
-        for i, point in enumerate(map(float, points)):
-            points[i] = point
+        for point in points:
+            if not isinstance(point, int | float):
+                logging.error(
+                    f"Points must be type of "
+                    f"`tuple[int | float] | list[int | float] | LazyList`, "
+                    f"not `{points.__class__.__name__}[{point.__class__.__name__}]`"
+                    "Please, update import code to return the correct type"
+                )
+                shape["points"] = tuple(map(float, points))
+                return
 
     def _call_callback(self):
         if self._len() > self._MAX_ANNO_SIZE:
