@@ -205,12 +205,12 @@ class CommonData(InstanceLabelData):
         occluded: bool
         attributes: Sequence[CommonData.Attribute]
         source: str | None
-        rotation: float
-        group: int
-        z_order: int
-        elements: Sequence[CommonData.LabeledShape]
-        outside: bool
-        id: int | None
+        rotation: float = 0
+        group: int = 0
+        z_order: int = 0
+        elements: Sequence[CommonData.LabeledShape] = ()
+        outside: bool = False
+        id: int | None = None
 
     class TrackedShape(NamedTuple):
         type: int
@@ -220,30 +220,30 @@ class CommonData(InstanceLabelData):
         outside: bool
         keyframe: bool
         attributes: Sequence[CommonData.Attribute]
-        rotation: float | None
-        source: str
-        group: int
-        z_order: int
-        label: str | None
-        track_id: int
-        elements: Sequence[CommonData.TrackedShape]
-        id: int | None
+        rotation: float = 0
+        source: str = "manual"
+        group: int = 0
+        z_order: int = 0
+        label: str | None = None
+        track_id: int = 0
+        elements: Sequence[CommonData.TrackedShape] = ()
+        id: int | None = None
 
     class Track(NamedTuple):
         label: int
         group: int
         source: str
         shapes: Sequence[CommonData.TrackedShape]
-        elements: Sequence[int]
-        id: int | None
+        elements: Sequence[int] = ()
+        id: int | None = None
 
     class Tag(NamedTuple):
         frame: int
         label: int
         attributes: Sequence[CommonData.Attribute]
         source: str | None
-        group: int | None
-        id: int | None
+        group: int | None = 0
+        id: int | None = None
 
     class Frame(NamedTuple):
         idx: int
