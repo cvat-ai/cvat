@@ -45,7 +45,9 @@ from .formats.transformations import MaskConverter, EllipsesToMasks
 CVAT_INTERNAL_ATTRIBUTES = {'occluded', 'outside', 'keyframe', 'track_id', 'rotation'}
 
 class InstanceLabelData:
-    Attribute = NamedTuple('Attribute', [('name', str), ('value', Any)])
+    class Attribute(NamedTuple):
+        name: str
+        value: Any
 
     @classmethod
     def add_prefetch_info(cls, queryset: QuerySet):
@@ -190,20 +192,76 @@ class InstanceLabelData:
         return exported_attributes
 
 class CommonData(InstanceLabelData):
-    Shape = namedtuple("Shape", 'id, label_id')  # 3d
-    LabeledShape = namedtuple(
-        'LabeledShape', 'type, frame, label, points, occluded, attributes, source, rotation, group, z_order, elements, outside, id')
-    LabeledShape.__new__.__defaults__ = (0, 0, 0, [], False, None)
-    TrackedShape = namedtuple(
-        'TrackedShape', 'type, frame, points, occluded, outside, keyframe, attributes, rotation, source, group, z_order, label, track_id, elements, id')
-    TrackedShape.__new__.__defaults__ = (0, 'manual', 0, 0, None, 0, [], None)
-    Track = namedtuple('Track', 'label, group, source, shapes, elements, id')
-    Track.__new__.__defaults__ = ([], None)
-    Tag = namedtuple('Tag', 'frame, label, attributes, source, group, id')
-    Tag.__new__.__defaults__ = (0, None)
-    Frame = namedtuple(
-        'Frame', 'idx, id, frame, name, width, height, labeled_shapes, tags, shapes, labels, subset')
-    Label = namedtuple('Label', 'id, name, color, type')
+    class Shape(NamedTuple):
+        id: int
+        label_id: int
+
+    class LabeledShape(NamedTuple):
+        type: int = 0
+        frame: int = 0
+        label: int = 0
+        points: Sequence[int] = ()
+        occluded: bool = False
+        attributes: dict | None = None
+        source: str | None = None
+        rotation: float = 0.0
+        group: int = 0
+        z_order: int = 0
+        elements: Sequence[CommonData.LabeledShape] = ()
+        outside: bool = False
+        id: int | None = None
+
+    class TrackedShape(NamedTuple):
+        type: int = 0
+        frame: int = 0
+        points: Sequence[int] = ()
+        occluded: bool = False
+        outside: bool = False
+        keyframe: bool = False
+        attributes: Sequence[int] = ()
+        rotation: float | None = None
+        source: str = "manual"
+        group: int = 0
+        z_order: int = 0
+        label: str | None = None
+        track_id: int = 0
+        elements: Sequence[CommonData.TrackedShape] = ()
+        id: int | None = None
+
+    class Track(NamedTuple):
+        label: int
+        group: int
+        source: str
+        shapes: Sequence[CommonData.TrackedShape] = ()
+        elements: Sequence[int] = ()
+        id: int | None = None
+
+    class Tag(NamedTuple):
+        frame: int
+        label: int
+        attributes: Sequence[InstanceLabelData.Attribute] = ()
+        source: str | None = None
+        group: int | None = None
+        id: int | None = None
+
+    class Frame(NamedTuple):
+        idx: int
+        id: int
+        frame: int
+        name: str
+        width: int
+        height: int
+        labeled_shapes: Sequence[CommonData.LabeledShape]
+        tags: Sequence[CommonData.Tag]
+        shapes: Sequence[CommonData.Shape]
+        labels: Sequence[CommonData.Label]
+        subset: str
+
+    class Label(NamedTuple):
+        id: int
+        name: str
+        color: str | None = None
+        type: str | None = None
 
     def __init__(self,
         annotation_ir,
