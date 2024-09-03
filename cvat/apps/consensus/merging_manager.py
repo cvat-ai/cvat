@@ -20,8 +20,8 @@ from cvat.apps.consensus.consensus_reports import (
     generate_task_consensus_report,
     save_report,
 )
-from cvat.apps.consensus.models import AssigneeConsensusReport, ConsensusReport, ConsensusSettings
 from cvat.apps.consensus.intersect_merge import IntersectMerge
+from cvat.apps.consensus.models import AssigneeConsensusReport, ConsensusReport, ConsensusSettings
 from cvat.apps.dataset_manager.bindings import import_dm_annotations
 from cvat.apps.dataset_manager.task import PatchAction, patch_job_data
 from cvat.apps.engine.models import Job, JobType, StageChoice, StateChoice, Task, User

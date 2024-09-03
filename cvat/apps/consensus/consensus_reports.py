@@ -19,6 +19,7 @@ from datumaro.util import dump_json, parse_json
 from django.db import transaction
 
 from cvat.apps.consensus import models
+from cvat.apps.consensus.intersect_merge import IntersectMerge
 from cvat.apps.consensus.models import (
     AssigneeConsensusReport,
     ConsensusConflict,
@@ -26,7 +27,6 @@ from cvat.apps.consensus.models import (
     ConsensusReport,
     ConsensusSettings,
 )
-from cvat.apps.consensus.intersect_merge import IntersectMerge
 from cvat.apps.dataset_manager.util import bulk_create
 from cvat.apps.engine import serializers as engine_serializers
 from cvat.apps.engine.models import Job, Task, User
