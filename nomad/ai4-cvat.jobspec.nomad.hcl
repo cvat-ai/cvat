@@ -471,10 +471,6 @@ job "{###JOB_UUID###}" {
     }
     
     task "server" {
-      lifecycle {
-        hook = "poststart"
-        sidecar = "true"
-      }
       driver = "docker"
       resources {
         cores = 1
