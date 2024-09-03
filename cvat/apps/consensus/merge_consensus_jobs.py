@@ -43,8 +43,8 @@ class MergeConsensusJobs:
         self.consensus_settings: ConsensusSettings
         self.assignee_jobs_count: Dict[User, int]
         self.task_id = task_id
-        self.get_consensus_jobs(task_id)
-        self.get_assignee_jobs_count()
+        self._get_consensus_jobs(task_id)
+        self._get_assignee_jobs_count()
         self.consensus_settings = ConsensusSettings.objects.filter(task=task_id).first()
         self.merger = IntersectMerge(
             conf=IntersectMerge.Conf(
@@ -60,7 +60,7 @@ class MergeConsensusJobs:
                 "No annotated consensus jobs found or no regular jobs in annotation stage"
             )
 
-    def get_consensus_jobs(self, task_id: int) -> None:
+    def _get_consensus_jobs(self, task_id: int) -> None:
         job_map = {}  # parent_job_id -> [(consensus_job_id, assignee)]
         parent_jobs: dict[int, Job] = {}
         for job in (
@@ -79,7 +79,7 @@ class MergeConsensusJobs:
         self.jobs = job_map
         self.parent_jobs = list(parent_jobs.values())
 
-    def get_assignee_jobs_count(self) -> None:
+    def _get_assignee_jobs_count(self) -> None:
         assignee_jobs_count = {}
         for assignees in self.jobs.values():
             for _, assignee in assignees:
@@ -90,7 +90,7 @@ class MergeConsensusJobs:
         self.assignee_jobs_count = assignee_jobs_count
 
     @staticmethod
-    def get_annotations(job_id: int) -> dm.Dataset:
+    def _get_annotations(job_id: int) -> dm.Dataset:
         return JobDataProvider(job_id).dm_dataset
 
     def _merge_consensus_jobs(self, parent_job_id: int):
@@ -186,7 +186,7 @@ class MergeConsensusJobs:
         )
 
     @transaction.atomic
-    def merge_single_consensus_jobs(self, parent_job_id: int) -> None:
+    def merge_single_consensus_job(self, parent_job_id: int) -> None:
         job_comparison_reports: Dict[int, ComparisonReport] = {}
         assignee_reports: Dict[User, Dict[str, float]] = {}
 
@@ -266,7 +266,7 @@ def scehdule_consensus_merging(instance: Union[Job, Task], request) -> Response:
         func = consensus_job_merger.merge_all_consensus_jobs
     else:
         consensus_job_merger = MergeConsensusJobs(task_id=instance.get_task_id())
-        func = consensus_job_merger.merge_single_consensus_jobs
+        func = consensus_job_merger.merge_single_consensus_job
 
     func_args = [instance.id]
 
