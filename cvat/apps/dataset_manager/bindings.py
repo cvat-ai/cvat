@@ -196,52 +196,52 @@ class CommonData(InstanceLabelData):
         label_id: int
 
     class LabeledShape(NamedTuple):
-        type: int = 0
-        frame: int = 0
-        label: int = 0
-        points: Sequence[int] = ()
-        occluded: bool = False
-        attributes: dict | None = None
-        source: str | None = None
-        rotation: float = 0.0
-        group: int = 0
-        z_order: int = 0
-        elements: Sequence[CommonData.LabeledShape] = ()
-        outside: bool = False
-        id: int | None = None
+        type: int
+        frame: int
+        label: int
+        points: Sequence[int]
+        occluded: bool
+        attributes: Sequence[CommonData.Attribute]
+        source: str | None
+        rotation: float
+        group: int
+        z_order: int
+        elements: Sequence[CommonData.LabeledShape]
+        outside: bool
+        id: int | None
 
     class TrackedShape(NamedTuple):
-        type: int = 0
-        frame: int = 0
-        points: Sequence[int] = ()
-        occluded: bool = False
-        outside: bool = False
-        keyframe: bool = False
-        attributes: Sequence[int] = ()
-        rotation: float | None = None
-        source: str = "manual"
-        group: int = 0
-        z_order: int = 0
-        label: str | None = None
-        track_id: int = 0
-        elements: Sequence[CommonData.TrackedShape] = ()
-        id: int | None = None
+        type: int
+        frame: int
+        points: Sequence[int]
+        occluded: bool
+        outside: bool
+        keyframe: bool
+        attributes: Sequence[CommonData.Attribute]
+        rotation: float | None
+        source: str
+        group: int
+        z_order: int
+        label: str | None
+        track_id: int
+        elements: Sequence[CommonData.TrackedShape]
+        id: int | None
 
     class Track(NamedTuple):
         label: int
         group: int
         source: str
-        shapes: Sequence[CommonData.TrackedShape] = ()
-        elements: Sequence[int] = ()
-        id: int | None = None
+        shapes: Sequence[CommonData.TrackedShape]
+        elements: Sequence[int]
+        id: int | None
 
     class Tag(NamedTuple):
         frame: int
         label: int
-        attributes: Sequence[InstanceLabelData.Attribute] = ()
-        source: str | None = None
-        group: int | None = None
-        id: int | None = None
+        attributes: Sequence[CommonData.Attribute]
+        source: str | None
+        group: int | None
+        id: int | None
 
     class Frame(NamedTuple):
         idx: int
@@ -259,8 +259,8 @@ class CommonData(InstanceLabelData):
     class Label(NamedTuple):
         id: int
         name: str
-        color: str | None = None
-        type: str | None = None
+        color: str | None
+        type: str | None
 
     def __init__(self,
         annotation_ir,
