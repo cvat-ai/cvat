@@ -1,10 +1,12 @@
-// Copyright (C) 2023 CVAT.ai Corporation
+// Copyright (C) 2023-2024 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
+import _ from 'lodash';
 import { SerializedQualitySettingsData } from './server-response-types';
 import PluginRegistry from './plugins';
 import serverProxy from './server-proxy';
+import { convertDescriptions, getServerAPISchema } from './server-schema';
 
 export enum TargetMetric {
     ACCURACY = 'accuracy',
@@ -30,6 +32,7 @@ export default class QualitySettings {
     #objectVisibilityThreshold: number;
     #panopticComparison: boolean;
     #compareAttributes: boolean;
+    #descriptions: Record<string, string>;
 
     constructor(initialData: SerializedQualitySettingsData) {
         this.#id = initialData.id;
@@ -49,6 +52,7 @@ export default class QualitySettings {
         this.#objectVisibilityThreshold = initialData.object_visibility_threshold;
         this.#panopticComparison = initialData.panoptic_comparison;
         this.#compareAttributes = initialData.compare_attributes;
+        this.#descriptions = initialData.descriptions;
     }
 
     get id(): number {
@@ -179,6 +183,16 @@ export default class QualitySettings {
         this.#maxValidationsPerJob = newVal;
     }
 
+    get descriptions(): Record<string, string> {
+        const descriptions: Record<string, string> = Object.keys(this.#descriptions).reduce((acc, key) => {
+            const camelCaseKey = _.camelCase(key);
+            acc[camelCaseKey] = this.#descriptions[key];
+            return acc;
+        }, {});
+
+        return descriptions;
+    }
+
     public toJSON(): SerializedQualitySettingsData {
         const result: SerializedQualitySettingsData = {
             iou_threshold: this.#iouThreshold,
@@ -215,7 +229,9 @@ Object.defineProperties(QualitySettings.prototype.save, {
             const result = await serverProxy.analytics.quality.settings.update(
                 this.id, this.toJSON(),
             );
-            return new QualitySettings(result);
+            const schema = await getServerAPISchema();
+            const descriptions = convertDescriptions(schema.components.schemas.QualitySettings.properties);
+            return new QualitySettings({ ...result, descriptions });
         },
     },
 });

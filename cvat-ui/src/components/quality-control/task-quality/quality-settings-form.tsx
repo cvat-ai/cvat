@@ -3,7 +3,6 @@
 // SPDX-License-Identifier: MIT
 
 import React from 'react';
-import { useSelector } from 'react-redux';
 import { QuestionCircleOutlined } from '@ant-design/icons/lib/icons';
 import Text from 'antd/lib/typography/Text';
 import InputNumber from 'antd/lib/input-number';
@@ -11,8 +10,8 @@ import { Col, Row } from 'antd/lib/grid';
 import Divider from 'antd/lib/divider';
 import Form, { FormInstance } from 'antd/lib/form';
 import Checkbox from 'antd/lib/checkbox/Checkbox';
-import { Button, Select } from 'antd/lib';
-import { CombinedState } from 'reducers';
+import Button from 'antd/lib/button';
+import Select from 'antd/lib/select';
 import CVATTooltip from 'components/common/cvat-tooltip';
 import { QualitySettings, TargetMetric } from 'cvat-core-wrapper';
 
@@ -23,13 +22,7 @@ interface FormProps {
 }
 
 export default function QualitySettingsForm(props: FormProps): JSX.Element | null {
-    const {
-        form, settings, onSave,
-    } = props;
-
-    const schemaDescriptions = useSelector((state: CombinedState) => (
-        state.serverAPI.schema?.components.schemas.QualitySettings.properties
-    ));
+    const { form, settings, onSave } = props;
 
     const initialValues = {
         targetMetric: settings.targetMetric,
@@ -54,8 +47,7 @@ export default function QualitySettingsForm(props: FormProps): JSX.Element | nul
         objectVisibilityThreshold: settings.objectVisibilityThreshold * 100,
         panopticComparison: settings.panopticComparison,
     };
-
-    const targetMetricDescription = `${schemaDescriptions.target_metric.description
+    const targetMetricDescription = `${settings.descriptions.targetMetric
         .replaceAll(/\* [a-z` -]+[A-Z]+/g, '')
         .replaceAll(/\n/g, '')}.`;
 
@@ -70,7 +62,7 @@ export default function QualitySettingsForm(props: FormProps): JSX.Element | nul
             <Text>
                 Target metric threshold -
                 {' '}
-                {schemaDescriptions.target_metric_threshold.description}
+                {settings.descriptions.targetMetricThreshold}
                 This parameter affects display of the quality numbers.
             </Text>
         </div>
@@ -81,7 +73,7 @@ export default function QualitySettingsForm(props: FormProps): JSX.Element | nul
             <Text>
                 Max validations per job -
                 {' '}
-                {schemaDescriptions.max_validations_per_job.description}
+                {settings.descriptions.maxValidationsPerJob}
             </Text>
         </div>
     );
@@ -91,12 +83,12 @@ export default function QualitySettingsForm(props: FormProps): JSX.Element | nul
             <Text>
                 Min overlap threshold(IoU) -
                 {' '}
-                {schemaDescriptions.iou_threshold.description}
+                {settings.descriptions.iouThreshold}
             </Text>
             <Text>
                 Low overlap threshold -
                 {' '}
-                {schemaDescriptions.low_overlap_threshold.description}
+                {settings.descriptions.lowOverlapThreshold}
             </Text>
         </div>
     );
@@ -106,7 +98,7 @@ export default function QualitySettingsForm(props: FormProps): JSX.Element | nul
             <Text>
                 Object Keypoint Similarity (OKS) -
                 {' '}
-                {schemaDescriptions.oks_sigma.description}
+                {settings.descriptions.oksSigma}
             </Text>
         </div>
     );
@@ -116,17 +108,17 @@ export default function QualitySettingsForm(props: FormProps): JSX.Element | nul
             <Text>
                 Line thickness -
                 {' '}
-                {schemaDescriptions.line_thickness.description}
+                {settings.descriptions.lineThickness}
             </Text>
             <Text>
                 Check orientation -
                 {' '}
-                {schemaDescriptions.compare_line_orientation.description}
+                {settings.descriptions.compareLineOrientation}
             </Text>
             <Text>
                 Min similarity gain -
                 {' '}
-                {schemaDescriptions.line_orientation_threshold.description}
+                {settings.descriptions.lineOrientationThreshold}
             </Text>
         </div>
     );
@@ -136,12 +128,12 @@ export default function QualitySettingsForm(props: FormProps): JSX.Element | nul
             <Text>
                 Compare groups -
                 {' '}
-                {schemaDescriptions.compare_groups.description}
+                {settings.descriptions.compareGroups}
             </Text>
             <Text>
                 Min group match threshold -
                 {' '}
-                {schemaDescriptions.group_match_threshold.description}
+                {settings.descriptions.groupMatchThreshold}
             </Text>
         </div>
     );
@@ -151,17 +143,17 @@ export default function QualitySettingsForm(props: FormProps): JSX.Element | nul
             <Text>
                 Check object visibility -
                 {' '}
-                {schemaDescriptions.check_covered_annotations.description}
+                {settings.descriptions.checkCoveredAnnotations}
             </Text>
             <Text>
                 Min visibility threshold -
                 {' '}
-                {schemaDescriptions.object_visibility_threshold.description}
+                {settings.descriptions.objectVisibilityThreshold}
             </Text>
             <Text>
                 Match only visible parts -
                 {' '}
-                {schemaDescriptions.panoptic_comparison.description}
+                {settings.descriptions.panopticComparison}
             </Text>
         </div>
     );
@@ -262,6 +254,76 @@ export default function QualitySettingsForm(props: FormProps): JSX.Element | nul
             </Row>
             <Row>
                 <Col span={7}>
+                    <Form.Item
+                        name='targetMetric'
+                        label='Target metric'
+                        rules={[{ required: true }]}
+                    >
+                        <Select
+                            style={{ width: '70%' }}
+                            virtual={false}
+                        >
+                            <Select.Option value={TargetMetric.ACCURACY}>
+                                Accuracy
+                            </Select.Option>
+                            <Select.Option value={TargetMetric.PRECISION}>
+                                Precision
+                            </Select.Option>
+                            <Select.Option value={TargetMetric.RECALL}>
+                                Recall
+                            </Select.Option>
+                        </Select>
+                    </Form.Item>
+                </Col>
+                <Col span={12}>
+                    <Form.Item
+                        name='targetMetricThreshold'
+                        label='Target metric threshold'
+                        rules={[{ required: true }]}
+                    >
+                        <InputNumber min={0} max={100} precision={0} />
+                    </Form.Item>
+                </Col>
+            </Row>
+            <Divider />
+            <Row className='cvat-quality-settings-title'>
+                <Text strong>
+                    Job validation
+                </Text>
+                <CVATTooltip title={jobValidationTooltip} className='cvat-analytics-tooltip' overlayStyle={{ maxWidth: '500px' }}>
+                    <QuestionCircleOutlined
+                        style={{ opacity: 0.5 }}
+                    />
+                </CVATTooltip>
+            </Row>
+            <Row>
+                <Col span={12}>
+                    <Form.Item
+                        name='maxValidationsPerJob'
+                        label='Max validations per job'
+                        rules={[{ required: true }]}
+                    >
+                        <InputNumber
+                            min={0}
+                            max={100}
+                            precision={0}
+                        />
+                    </Form.Item>
+                </Col>
+            </Row>
+            <Divider />
+            <Row className='cvat-quality-settings-title'>
+                <Text strong>
+                    Shape comparison
+                </Text>
+                <CVATTooltip title={shapeComparisonTooltip} className='cvat-analytics-tooltip' overlayStyle={{ maxWidth: '500px' }}>
+                    <QuestionCircleOutlined
+                        style={{ opacity: 0.5 }}
+                    />
+                </CVATTooltip>
+            </Row>
+            <Row>
+                <Col span={12}>
                     <Form.Item
                         name='iouThreshold'
                         label='Min overlap threshold (%)'

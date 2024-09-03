@@ -41,7 +41,6 @@ import isAbleToChangeFrame from 'utils/is-able-to-change-frame';
 import { KeyMap } from 'utils/mousetrap-react';
 import { switchToolsBlockerState } from 'actions/settings-actions';
 import { writeLatestFrame } from 'utils/remember-latest-frame';
-import { registerComponentShortcuts } from 'actions/shortcuts-actions';
 
 interface StateToProps {
     jobInstance: Job;
@@ -97,13 +96,6 @@ interface DispatchToProps {
     switchNavigationBlocked(blocked: boolean): void;
     setNavigationType(navigationType: NavigationType): void;
 }
-
-// this shortcut is declared here because the shortcut handler is in a file which doesn't belong to cvat-ui
-const componentShortcuts = {
-
-};
-
-registerComponentShortcuts(componentShortcuts);
 
 function mapStateToProps(state: CombinedState): StateToProps {
     const {

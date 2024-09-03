@@ -11,13 +11,15 @@ import Radio, { RadioChangeEvent } from 'antd/lib/radio';
 import Input from 'antd/lib/input';
 import { TextAreaRef } from 'antd/lib/input/TextArea';
 import InputNumber from 'antd/lib/input-number';
-import GlobalHotKeys from 'utils/mousetrap-react';
+import GlobalHotKeys, { KeyMap, KeyMapItem } from 'utils/mousetrap-react';
 import config from 'config';
 import { ShortcutScope } from 'utils/enums';
 import { registerComponentShortcuts } from 'actions/shortcuts-actions';
 import { subKeyMap } from 'utils/component-subkeymap';
-import { CombinedState, ShortcutsState } from 'reducers';
+import { isEqual } from 'lodash';
+import { CombinedState } from 'reducers';
 import { useSelector } from 'react-redux';
+import { useResetShortcutsOnUnmount } from 'utils/hooks';
 
 interface InputElementParameters {
     clientID: number;
@@ -28,68 +30,17 @@ interface InputElementParameters {
     onChange(value: string): void;
 }
 
-const componentShortcuts = {
-    SET_0_VALUE: {
-        name: 'Set 1st value to the current attribute',
-        description: 'Change current value for the attribute to the 1th value in the list',
-        sequences: ['0'],
-        scope: ShortcutScope.ALL,
-    },
-    SET_1_VALUE: {
-        name: 'Set 2nd value to the current attribute',
-        description: 'Change current value for the attribute to the 2nd value in the list',
-        scope: ShortcutScope.ALL,
-        sequences: ['1'],
-    },
-    SET_2_VALUE: {
-        name: 'Set 3rd value to the current attribute',
-        description: 'Change current value for the attribute to the 3rd value in the list',
-        scope: ShortcutScope.ALL,
-        sequences: ['2'],
-    },
-    SET_3_VALUE: {
-        name: 'Set 4th value to the current attribute',
-        description: 'Change current value for the attribute to the 4th value in the list',
-        scope: ShortcutScope.ALL,
-        sequences: ['3'],
-    },
-    SET_4_VALUE: {
-        name: 'Set 5th value to the current attribute',
-        description: 'Change current value for the attribute to the 5th value in the list',
-        scope: ShortcutScope.ALL,
-        sequences: ['4'],
-    },
-    SET_5_VALUE: {
-        name: 'Set 6th value to the current attribute',
-        description: 'Change current value for the attribute to the 6th value in the list',
-        scope: ShortcutScope.ALL,
-        sequences: ['5'],
-    },
-    SET_6_VALUE: {
-        name: 'Set 7th value to the current attribute',
-        description: 'Change current value for the attribute to the 7th value in the list',
-        scope: ShortcutScope.ALL,
-        sequences: ['6'],
-    },
-    SET_7_VALUE: {
-        name: 'Set 8th value to the current attribute',
-        description: 'Change current value for the attribute to the 8th value in the list',
-        scope: ShortcutScope.ALL,
-        sequences: ['7'],
-    },
-    SET_8_VALUE: {
-        name: 'Set 9th value to the current attribute',
-        description: 'Change current value for the attribute to the 9th value in the list',
-        scope: ShortcutScope.ALL,
-        sequences: ['8'],
-    },
-    SET_10_VALUE: {
-        name: 'Set 10th value to the current attribute',
-        description: 'Change current value for the attribute to the 10th value in the list',
-        scope: ShortcutScope.ALL,
-        sequences: ['9'],
-    },
-};
+const componentShortcuts: Record<string, KeyMapItem> = {};
+
+for (const idx of Array.from({ length: 10 }, (_, i) => i)) {
+    componentShortcuts[`SET_${idx}_VALUE`] = {
+        name: `Set ${idx + 1} value to the current attribute`,
+        description: `Change current value for the attribute to the ${idx + 1} value in the list`,
+        sequences: [`${idx}`],
+        nonActive: true,
+        scope: ShortcutScope.ATTRIBUTE_ANNOTATION_WORKSPACE,
+    };
+}
 
 registerComponentShortcuts(componentShortcuts);
 
@@ -250,20 +201,52 @@ function renderInputElement(parameters: InputElementParameters): JSX.Element {
     return <div className='cvat-attribute-annotation-sidebar-attr-editor'>{element}</div>;
 }
 
-interface ListParameters {
+interface ListProps {
     inputType: string;
     values: string[];
     onChange(value: string): void;
 }
 
-function renderList(parameters: ListParameters, keyMap: ShortcutsState['keyMap']): JSX.Element | null {
-    const { inputType, values, onChange } = parameters;
-    if (inputType === 'checkbox') {
-        const sortedValues = ['true', 'false'];
-        if (values[0].toLowerCase() !== 'true') {
-            sortedValues.reverse();
-        }
+function AttrValuesList(props: ListProps): JSX.Element | null {
+    const { inputType, values, onChange } = props;
+    const { keyMap } = useSelector((state: CombinedState) => state.shortcuts);
+    const sortedValues = ['true', 'false'];
+    const filteredValues = values.filter((value: string): boolean => value !== config.UNDEFINED_ATTRIBUTE_VALUE);
+    const prevValuesRef = useRef<string[] | null>(null);
 
+    useResetShortcutsOnUnmount(componentShortcuts);
+
+    useEffect(() => {
+        if (!isEqual(values, prevValuesRef.current)) {
+            const updatedComponentShortcuts = Object.keys(componentShortcuts).reduce((acc: KeyMap, key: string) => {
+                acc[key] = {
+                    ...componentShortcuts[key],
+                    sequences: keyMap[key].sequences,
+                };
+                return acc;
+            }, {});
+            let processedValues = sortedValues;
+            if (inputType === 'checkbox' && values[0].toLowerCase() !== 'true') {
+                processedValues = [...sortedValues].reverse();
+            } else if (inputType === 'radio' || inputType === 'select') {
+                processedValues = filteredValues.slice(0, 10);
+            }
+
+            processedValues.forEach((value: string, index: number): void => {
+                const key = `SET_${index}_VALUE`;
+                updatedComponentShortcuts[key] = {
+                    ...updatedComponentShortcuts[key],
+                    nonActive: false,
+                    name: `Assign attribute value ${value}`,
+                    description: `Change current value for the attribute to ${value}`,
+                };
+            });
+            registerComponentShortcuts({ ...updatedComponentShortcuts });
+            prevValuesRef.current = values;
+        }
+    }, [values]);
+
+    if (inputType === 'checkbox') {
         const handlers: {
             [key: string]: (keyEvent?: KeyboardEvent) => void;
         } = {};
@@ -299,7 +282,6 @@ function renderList(parameters: ListParameters, keyMap: ShortcutsState['keyMap']
             [key: string]: (keyEvent?: KeyboardEvent) => void;
         } = {};
 
-        const filteredValues = values.filter((value: string): boolean => value !== config.UNDEFINED_ATTRIBUTE_VALUE);
         filteredValues.slice(0, 10).forEach((value: string, index: number): void => {
             const key = `SET_${index}_VALUE`;
             handlers[key] = (event: KeyboardEvent | undefined) => {
@@ -359,13 +341,11 @@ function AttributeEditor(props: Props): JSX.Element {
     const {
         attribute, currentValue, onChange, clientID,
     } = props;
-
-    const keyMap = useSelector((state: CombinedState) => state.shortcuts.keyMap);
     const { inputType, values, id: attrID } = attribute;
 
     return (
         <div className='attribute-annotations-sidebar-attribute-editor'>
-            {renderList({ values, inputType, onChange }, keyMap)}
+            <AttrValuesList values={values} inputType={inputType} onChange={onChange} />
             <hr />
             {renderInputElement({
                 clientID,
