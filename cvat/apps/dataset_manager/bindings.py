@@ -9,7 +9,6 @@ import logging
 import os.path as osp
 import re
 import sys
-from collections import namedtuple
 from functools import reduce
 from operator import add
 from pathlib import Path
