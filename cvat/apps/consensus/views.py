@@ -21,7 +21,7 @@ from rest_framework.exceptions import NotFound, ValidationError
 from rest_framework.response import Response
 
 from cvat.apps.consensus.consensus_reports import prepare_report_for_downloading
-from cvat.apps.consensus.merge_consensus_jobs import scehdule_consensus_merging
+from cvat.apps.consensus.merging_manager import scehdule_consensus_merging
 from cvat.apps.consensus.models import (
     AssigneeConsensusReport,
     ConsensusConflict,

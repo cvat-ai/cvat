@@ -107,7 +107,7 @@ from cvat.apps.engine.permissions import (CloudStoragePermission,
     CommentPermission, IssuePermission, JobPermission, LabelPermission, ProjectPermission,
     TaskPermission, UserPermission)
 from cvat.apps.engine.view_utils import tus_chunk_action
-from cvat.apps.consensus.merge_consensus_jobs import scehdule_consensus_merging
+from cvat.apps.consensus.merging_manager import scehdule_consensus_merging
 
 slogger = ServerLogManager(__name__)
 

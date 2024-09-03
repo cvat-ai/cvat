@@ -4,8 +4,7 @@
 
 import itertools
 import logging as log
-from functools import cache, cached_property
-from typing import Callable, Dict, List, Optional, Sequence, Tuple, Union, cast
+from typing import Callable, Dict, List, Optional, Sequence, Tuple, Union
 
 import attr
 import datumaro as dm
@@ -15,7 +14,6 @@ from datumaro.components.annotation import AnnotationType, Bbox
 from datumaro.components.dataset import Dataset
 from datumaro.components.errors import FailedLabelVotingError, NoMatchingItemError
 from datumaro.components.operations import ExactMerge
-from datumaro.components.operations import IntersectMerge as ClassicIntersectMerge
 from datumaro.util.annotation_util import find_instances, max_bbox, mean_bbox
 from datumaro.util.attrs_util import ensure_cls
 
@@ -26,7 +24,7 @@ from cvat.apps.quality_control.quality_reports import match_segments, oks, segme
 
 
 @attrs
-class IntersectMerge(ClassicIntersectMerge):
+class IntersectMerge(dm.ops.IntersectMerge):
     @attrs(repr_ns="IntersectMerge", kw_only=True)
     class Conf:
         pairwise_dist = attrib(converter=float, default=0.5)
@@ -126,6 +124,9 @@ class IntersectMerge(ClassicIntersectMerge):
         annotations = [
             a for a in annotations if self.conf.output_conf_thresh <= a.attributes.get("score", 1)
         ]
+
+        for annotation in annotations:
+            annotation.attributes["source"] = "consensus"
 
         return self._item.wrap(annotations=annotations)
 
