@@ -2,10 +2,10 @@
 #
 # SPDX-License-Identifier: MIT
 
+import math
 from django.db.models.signals import post_save
 from django.dispatch import receiver
 
-# from cvat.apps.quality_control import quality_reports as qc
 from cvat.apps.consensus.models import ConsensusSettings
 from cvat.apps.engine.models import Job, Task
 
@@ -33,5 +33,5 @@ def __save_task__initialize_consensus_settings(instance, created, **kwargs):
             assert False
 
         ConsensusSettings.objects.get_or_create(
-            task=task, quorum=task.consensus_jobs_per_regular_job // 2
+            task=task, quorum=math.ceil(task.consensus_jobs_per_regular_job / 2)
         )
