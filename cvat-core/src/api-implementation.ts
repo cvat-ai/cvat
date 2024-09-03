@@ -520,9 +520,8 @@ export default function implementAPI(cvat: CVATCore): CVATCore {
         const settings = await serverProxy.analytics.quality.settings.get(params);
         const schema = await getServerAPISchema();
         const descriptions = convertDescriptions(schema.components.schemas.QualitySettings.properties);
-        return new QualitySettings({
-            ...settings, descriptions,
-        });
+
+        return new QualitySettings({ ...settings, descriptions });
     });
     implementationMixin(cvat.analytics.performance.reports, async (filter: AnalyticsReportFilter) => {
         checkFilter(filter, {

@@ -10,5 +10,5 @@
 
 ### Added
 
-- Quality management tab on `quality control` allowing to enable/disable GT frames
+- Quality management tab on `quality control` allows to enabling/disabling GT frames
   (<https://github.com/cvat-ai/cvat/pull/8329>)
