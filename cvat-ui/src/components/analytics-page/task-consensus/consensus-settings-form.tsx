@@ -162,7 +162,7 @@ export default function ConsensusSettingsForm(props: Props): JSX.Element | null 
             <Row>
                 <Col span={12}>
                     <Form.Item name='sigma' label='Sigma' rules={[{ required: true }]}>
-                        <InputNumber min={5} max={20} precision={0} />
+                        <InputNumber min={0} max={100} precision={0} />
                     </Form.Item>
                 </Col>
             </Row>
