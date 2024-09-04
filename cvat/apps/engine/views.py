@@ -2159,10 +2159,11 @@ class JobViewSet(viewsets.GenericViewSet, mixins.ListModelMixin, mixins.CreateMo
 
         db_segment = db_job.segment
         db_task = db_segment.task
+        db_data = db_task.data
         task_all_honeypots = set(db_task.gt_job.segment.frame_set)
 
         db_task_frames: dict[int, models.Image] = {
-            frame.frame: frame for frame in db_task.data.images.all()
+            frame.frame: frame for frame in db_data.images.all()
         }
         task_placeholder_frames = set(
             frame_id for frame_id, frame in db_task_frames.items()
@@ -2175,7 +2176,7 @@ class JobViewSet(viewsets.GenericViewSet, mixins.ListModelMixin, mixins.CreateMo
             request_serializer.is_valid(raise_exception=True)
             input_data = request_serializer.validated_data
 
-            deleted_task_frames = db_task.data.deleted_frames
+            deleted_task_frames = db_data.deleted_frames
             task_active_honeypots = task_all_honeypots.difference(deleted_task_frames)
 
             segment_honeypots_count = len(segment_honeypots)
@@ -2327,7 +2328,7 @@ class JobViewSet(viewsets.GenericViewSet, mixins.ListModelMixin, mixins.CreateMo
                     for quality in FrameQuality.__members__.values():
                         media_cache.remove_segment_chunk(db_segment, chunk_id, quality=quality)
 
-                        if db_task.data.storage_method != models.StorageMethodChoice.FILE_SYSTEM:
+                        if db_data.storage_method != models.StorageMethodChoice.FILE_SYSTEM:
                             continue
 
                         # Write updated chunks
@@ -2341,8 +2342,8 @@ class JobViewSet(viewsets.GenericViewSet, mixins.ListModelMixin, mixins.CreateMo
                             )
 
                             get_chunk_path = {
-                                FrameQuality.COMPRESSED: db_task.data.get_compressed_segment_chunk_path,
-                                FrameQuality.ORIGINAL: db_task.data.get_original_segment_chunk_path,
+                                FrameQuality.COMPRESSED: db_data.get_compressed_segment_chunk_path,
+                                FrameQuality.ORIGINAL: db_data.get_original_segment_chunk_path,
                             }[quality]
 
                             with open(get_chunk_path(chunk_id, db_segment.id), 'bw') as f:
