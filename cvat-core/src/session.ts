@@ -664,7 +664,7 @@ export class Job extends Session {
         return this.#data.target_storage;
     }
 
-    async save(fields: any): Promise<Job> {
+    async save(fields: Record<string, any> = {}): Promise<Job> {
         const result = await PluginRegistry.apiWrapper.call(this, Job.prototype.save, fields);
         return result;
     }
@@ -728,7 +728,7 @@ export class Task extends Session {
     public readonly useZipChunks: boolean;
     public readonly useCache: boolean;
     public readonly copyData: boolean;
-    public readonly cloudStorageID: number;
+    public readonly cloudStorageId: number;
     public readonly sortingMethod: string;
 
     public readonly validationMethod: string;
@@ -780,11 +780,6 @@ export class Task extends Session {
             cloud_storage_id: undefined,
             sorting_method: undefined,
             files: undefined,
-
-            validation_method: undefined,
-            validation_frames_percent: undefined,
-            validation_frames_per_job: undefined,
-            frame_selection_method: undefined,
         };
 
         const updateTrigger = new FieldUpdateTrigger();
@@ -1112,18 +1107,6 @@ export class Task extends Session {
                 progress: {
                     get: () => data.progress,
                 },
-                validationFramesPercent: {
-                    get: () => data.validation_frames_percent,
-                },
-                validationFramesPerJob: {
-                    get: () => data.validation_frames_per_job,
-                },
-                frameSelectionMethod: {
-                    get: () => data.frame_selection_method,
-                },
-                validationMethod: {
-                    get: () => data.validation_method,
-                },
                 _internalData: {
                     get: () => data,
                 },
@@ -1139,8 +1122,11 @@ export class Task extends Session {
         return result;
     }
 
-    async save(options?: { requestStatusCallback?: (request: Request) => void }): Promise<Task> {
-        const result = await PluginRegistry.apiWrapper.call(this, Task.prototype.save, options);
+    async save(
+        fields: Record<string, any> = {},
+        options?: { requestStatusCallback?: (request: Request) => void },
+    ): Promise<Task> {
+        const result = await PluginRegistry.apiWrapper.call(this, fields, Task.prototype.save, options);
         return result;
     }
 

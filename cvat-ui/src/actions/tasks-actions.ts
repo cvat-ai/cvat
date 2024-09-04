@@ -255,22 +255,22 @@ ThunkAction {
             description.cloud_storage_id = data.cloudStorageId;
         }
 
-        if (data.quality.validationMethod === ValidationMethod.GT) {
-            description.validation_method = ValidationMethod.GT;
-            description.validation_frames_percent = data.quality.validationFramesPercent;
-            description.frame_selection_method = data.quality.frameSelectionMethod;
-        } else if (data.quality.validationMethod === ValidationMethod.HONEYPOTS) {
-            description.validation_method = ValidationMethod.HONEYPOTS;
-            description.validation_frames_percent = data.quality.validationFramesPercent;
-            description.validation_frames_per_job = data.quality.validationFramesPerJob;
-        }
+        const extras = data.quality.validationMethod === ValidationMethod.GT ? {
+            validation_method: ValidationMethod.GT,
+            validation_frames_percent: data.quality.validationFramesPercent,
+            frame_selection_method: data.quality.frameSelectionMethod,
+        } : {
+            validation_method: ValidationMethod.HONEYPOTS,
+            validation_frames_percent: data.quality.validationFramesPercent,
+            validation_frames_per_job: data.quality.validationFramesPerJob,
+        };
 
         const taskInstance = new cvat.classes.Task(description);
         taskInstance.clientFiles = data.files.local;
         taskInstance.serverFiles = data.files.share.concat(data.files.cloudStorage);
         taskInstance.remoteFiles = data.files.remote;
         try {
-            const savedTask = await taskInstance.save({
+            const savedTask = await taskInstance.save(extras, {
                 requestStatusCallback(request) {
                     let { message } = request;
                     let helperMessage = '';
