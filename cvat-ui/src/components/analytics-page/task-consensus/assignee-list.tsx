@@ -80,12 +80,14 @@ function AssigneeListComponent(props: Props): JSX.Element {
     ];
     const data = assigneeReportsArray.reduce((acc: any[], assigneeReport: any) => {
         const report = assigneeReports[assigneeReport?.assignee?.id];
-        acc.push({
-            key: report?.assignee?.id || 0,
-            assignee: report?.assignee,
-            quality: report?.consensusScore,
-            conflict_count: report?.conflictCount,
-        });
+        if (report?.assignee) {
+            acc.push({
+                key: report.assignee.id || 0,
+                assignee: report.assignee,
+                quality: report.consensusScore,
+                conflict_count: report.conflictCount,
+            });
+        }
 
         return acc;
     }, []);
