@@ -255,15 +255,23 @@ ThunkAction {
             description.cloud_storage_id = data.cloudStorageId;
         }
 
-        const extras = data.quality.validationMethod === ValidationMethod.GT ? {
-            validation_method: ValidationMethod.GT,
-            validation_frames_percent: data.quality.validationFramesPercent,
-            frame_selection_method: data.quality.frameSelectionMethod,
-        } : {
-            validation_method: ValidationMethod.HONEYPOTS,
-            validation_frames_percent: data.quality.validationFramesPercent,
-            validation_frames_per_job: data.quality.validationFramesPerJob,
-        };
+        let extras = {};
+
+        if (data.quality.validationMethod === ValidationMethod.GT) {
+            extras = {
+                validation_method: ValidationMethod.GT,
+                validation_frames_percent: data.quality.validationFramesPercent,
+                frame_selection_method: data.quality.frameSelectionMethod,
+            };
+        }
+
+        if (data.quality.validationMethod === ValidationMethod.HONEYPOTS) {
+            extras = {
+                validation_method: ValidationMethod.HONEYPOTS,
+                validation_frames_percent: data.quality.validationFramesPercent,
+                validation_frames_per_job: data.quality.validationFramesPerJob,
+            };
+        }
 
         const taskInstance = new cvat.classes.Task(description);
         taskInstance.clientFiles = data.files.local;
