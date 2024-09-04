@@ -511,6 +511,26 @@ def handle_dataset_import(
 ) -> None:
     handle_dataset_io(instance, "import", format_name=format_name, cloud_storage_id=cloud_storage_id)
 
+def handle_function_call(
+    function_id: str,
+    target: Union[Task, Job],
+    **payload_fields,
+) -> None:
+    record_server_event(
+        scope=event_scope("call", "function"),
+        request_id=request_id(),
+        project_id=project_id(target),
+        task_id=task_id(target),
+        job_id=job_id(target),
+        user_id=user_id(),
+        user_name=user_name(),
+        user_email=user_email(),
+        payload={
+            "function": {"id": function_id},
+            **payload_fields,
+        },
+    )
+
 def handle_rq_exception(rq_job, exc_type, exc_value, tb):
     oid = rq_job.meta.get(RQJobMetaField.ORG_ID, None)
     oslug = rq_job.meta.get(RQJobMetaField.ORG_SLUG, None)
