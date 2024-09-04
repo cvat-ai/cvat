@@ -13,7 +13,7 @@ from functools import reduce
 from operator import add
 from pathlib import Path
 from types import SimpleNamespace
-from typing import (Any, Callable, DefaultDict, Dict, Iterable, List, Literal, Mapping,
+from typing import (Any, Callable, DefaultDict, Dict, Iterable, Iterator, List, Literal, Mapping,
                     NamedTuple, Optional, OrderedDict, Sequence, Set, Tuple, Union)
 
 from attrs.converters import to_bool
@@ -31,6 +31,7 @@ from django.conf import settings
 
 from cvat.apps.dataset_manager.formats.utils import get_label_color
 from cvat.apps.dataset_manager.util import add_prefetch_fields
+from cvat.apps.engine import models
 from cvat.apps.engine.frame_provider import TaskFrameProvider, FrameQuality, FrameOutputType
 from cvat.apps.engine.models import (AttributeSpec, AttributeType, DimensionType, Job,
                                      JobType, Label, LabelType, Project, SegmentType, ShapeType,
@@ -204,10 +205,10 @@ class CommonData(InstanceLabelData):
     Label = namedtuple('Label', 'id, name, color, type')
 
     def __init__(self,
-        annotation_ir,
-        db_task,
+        annotation_ir: AnnotationIR,
+        db_task: Task,
         *,
-        host='',
+        host: str = '',
         create_callback=None,
         use_server_track_ids: bool = False,
         included_frames: Optional[Sequence[int]] = None
@@ -220,7 +221,7 @@ class CommonData(InstanceLabelData):
         self._frame_info = {}
         self._frame_mapping: Dict[str, int] = {}
         self._frame_step = db_task.data.get_frame_step()
-        self._db_data = db_task.data
+        self._db_data: models.Data = db_task.data
         self._use_server_track_ids = use_server_track_ids
         self._required_frames = included_frames
         self._db_subset = db_task.subset
@@ -242,7 +243,7 @@ class CommonData(InstanceLabelData):
     def stop(self) -> int:
         return max(0, len(self) - 1)
 
-    def _get_queryset(self):
+    def _get_db_images(self) -> Iterator[models.Image]:
         raise NotImplementedError()
 
     def abs_frame_id(self, relative_id):
@@ -273,7 +274,6 @@ class CommonData(InstanceLabelData):
                 } for frame in self.rel_range
             }
         else:
-            queryset = self._get_queryset()
             self._frame_info = {
                 self.rel_frame_id(db_image.frame): {
                     "id": db_image.id,
@@ -281,7 +281,7 @@ class CommonData(InstanceLabelData):
                     "width": db_image.width,
                     "height": db_image.height,
                     "subset": self._db_subset,
-                } for db_image in queryset
+                } for db_image in self._get_db_images()
             }
 
         self._frame_mapping = {
@@ -671,7 +671,7 @@ class CommonData(InstanceLabelData):
 
 class JobData(CommonData):
     META_FIELD = "job"
-    def __init__(self, annotation_ir, db_job, **kwargs):
+    def __init__(self, annotation_ir: AnnotationIR, db_job: Job, **kwargs):
         self._db_job = db_job
         self._db_task = db_job.segment.task
 
@@ -742,7 +742,7 @@ class JobData(CommonData):
         segment = self._db_job.segment
         return segment.stop_frame - segment.start_frame + 1
 
-    def _get_queryset(self):
+    def _get_db_images(self):
         return (image for image in self._db_data.images.all() if image.frame in self.abs_range)
 
     @property
@@ -775,7 +775,7 @@ class JobData(CommonData):
 
 class TaskData(CommonData):
     META_FIELD = "task"
-    def __init__(self, annotation_ir, db_task, **kwargs):
+    def __init__(self, annotation_ir: AnnotationIR, db_task: Task, **kwargs):
         self._db_task = db_task
         super().__init__(annotation_ir, db_task, **kwargs)
 
@@ -851,8 +851,32 @@ class TaskData(CommonData):
     def db_instance(self):
         return self._db_task
 
-    def _get_queryset(self):
+    def _get_db_images(self):
         return self._db_data.images.all()
+
+    def _init_frame_info(self):
+        super()._init_frame_info()
+
+        if hasattr(self.db_data, 'validation_layout') and (
+            self.db_data.validation_layout.mode == models.ValidationMode.GT_POOL
+        ):
+            # For GT pool-enabled tasks, we:
+            # - skip validation frames in normal jobs on annotation export
+            # - load annotations for GT pool frames on annotation import
+
+            assert not hasattr(self.db_data, 'video')
+
+            for db_image in self._get_db_images():
+                # We should not include placeholder frames in task export, so we exclude them
+                if db_image.is_placeholder:
+                    self._excluded_frames.add(db_image.frame)
+                    continue
+
+                # We should not match placeholder frames during task import,
+                # so we update the frame matching index
+                self._frame_mapping[self._get_filename(db_image.path)] = (
+                    self.rel_frame_id(db_image.frame)
+                )
 
 class ProjectData(InstanceLabelData):
     META_FIELD = 'project'

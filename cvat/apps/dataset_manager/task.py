@@ -9,7 +9,7 @@ from collections import OrderedDict
 from copy import deepcopy
 from enum import Enum
 from tempfile import TemporaryDirectory
-from typing import Container, Optional
+from typing import Optional, Union
 from datumaro.components.errors import DatasetError, DatasetImportError, DatasetNotFoundError
 
 from django.db import transaction
@@ -416,6 +416,8 @@ class JobAnnotation:
         self._save_tracks_to_db(data["tracks"])
 
     def create(self, data):
+        data = self._validate_input_annotations(data)
+
         self._create(data)
         handle_annotations_change(self.db_job, self.data, "create")
 
@@ -423,6 +425,8 @@ class JobAnnotation:
             self._set_updated_date()
 
     def put(self, data):
+        data = self._validate_input_annotations(data)
+
         deleted_data = self._delete()
         handle_annotations_change(self.db_job, deleted_data, "delete")
 
@@ -435,12 +439,30 @@ class JobAnnotation:
             self._set_updated_date()
 
     def update(self, data):
+        data = self._validate_input_annotations(data)
+
         self._delete(data)
         self._create(data)
         handle_annotations_change(self.db_job, self.data, "update")
 
         if not self._data_is_empty(self.data):
             self._set_updated_date()
+
+    def _validate_input_annotations(self, data: Union[AnnotationIR, dict]) -> AnnotationIR:
+        if not isinstance(data, AnnotationIR):
+            data = AnnotationIR(self.db_job.segment.task.dimension, data)
+
+        db_data = self.db_job.segment.task.data
+
+        if data.tracks and hasattr(db_data, 'validation_layout') and (
+            db_data.validation_layout.mode == models.ValidationMode.GT_POOL
+        ):
+            # Only tags and shapes can be used in tasks with GT pool
+            raise ValidationError("Tracks are not supported when task validation mode is {}".format(
+                models.ValidationMode.GT_POOL
+            ))
+
+        return data
 
     def _delete_job_labeledimages(self, ids__UNSAFE: list[int]) -> None:
         # ids__UNSAFE is a list, received from the user
@@ -767,10 +789,6 @@ class JobAnnotation:
         self.create(job_data.data.slice(self.start_frame, self.stop_frame).serialize())
 
 class TaskAnnotation:
-    # For GT pool-enabled tasks, we:
-    # - copy GT job annotations into validation frames in normal jobs on task export
-    # - copy GT annotations into validation frames in normal and GT jobs on task import
-
     def __init__(self, pk):
         self.db_task = models.Task.objects.prefetch_related(
             Prefetch('data__images', queryset=models.Image.objects.order_by('frame'))
@@ -793,8 +811,16 @@ class TaskAnnotation:
     def reset(self):
         self.ir_data.reset()
 
-    def _patch_data(self, data, action):
-        _data = data if isinstance(data, AnnotationIR) else AnnotationIR(self.db_task.dimension, data)
+    def _patch_data(self, data: Union[AnnotationIR, dict], action: Optional[PatchAction]):
+        if not isinstance(data, AnnotationIR):
+            data = AnnotationIR(self.db_task.dimension, data)
+
+        if action != PatchAction.DELETE and (
+            hasattr(self.db_task.data, 'validation_layout') and
+            self.db_task.data.validation_layout.mode == models.ValidationMode.GT_POOL
+        ):
+            self._preprocess_input_annotations_for_gt_pool_task(data)
+
         splitted_data = {}
         jobs = {}
         for db_job in self.db_jobs:
@@ -802,28 +828,22 @@ class TaskAnnotation:
             start = db_job.segment.start_frame
             stop = db_job.segment.stop_frame
             jobs[jid] = { "start": start, "stop": stop }
-            splitted_data[jid] = _data.slice(start, stop)
+            splitted_data[jid] = data.slice(start, stop)
 
         for jid, job_data in splitted_data.items():
-            _data = AnnotationIR(self.db_task.dimension)
+            data = AnnotationIR(self.db_task.dimension)
             if action is None:
-                _data.data = put_job_data(jid, job_data)
+                data.data = put_job_data(jid, job_data)
             else:
-                _data.data = patch_job_data(jid, job_data, action)
+                data.data = patch_job_data(jid, job_data, action)
 
-            if _data.version > self.ir_data.version:
-                self.ir_data.version = _data.version
+            if data.version > self.ir_data.version:
+                self.ir_data.version = data.version
 
-            self._merge_data(_data, jobs[jid]["start"])
+            self._merge_data(data, jobs[jid]["start"])
 
-    def _merge_data(
-        self, data, start_frame: int, *, override_frames: Optional[Container[int]] = None
-    ):
+    def _merge_data(self, data: AnnotationIR, start_frame: int):
         annotation_manager = AnnotationManager(self.ir_data, dimension=self.db_task.dimension)
-
-        if override_frames:
-            annotation_manager.clear_frames(override_frames)
-
         annotation_manager.merge(data, start_frame, overlap=self.db_task.overlap)
 
     def put(self, data):
@@ -831,6 +851,58 @@ class TaskAnnotation:
 
     def create(self, data):
         self._patch_data(data, PatchAction.CREATE)
+
+    def _preprocess_input_annotations_for_gt_pool_task(
+        self, data: Union[AnnotationIR, dict]
+    ) -> AnnotationIR:
+        if not isinstance(data, AnnotationIR):
+            data = AnnotationIR(self.db_task.dimension, data)
+
+        if data.tracks:
+            # Only tags and shapes are supported in tasks with GT pool
+            raise ValidationError("Tracks are not supported when task validation mode is {}".format(
+                models.ValidationMode.GT_POOL
+            ))
+
+        gt_job = next(
+            db_job for db_job in self.db_jobs if db_job.type == models.JobType.GROUND_TRUTH
+        )
+
+        # Copy GT pool annotations into normal jobs
+        gt_pool_frames = gt_job.segment.frame_set
+        task_validation_frame_groups: dict[int, int] = {} # real_id -> [placeholder_id, ...]
+        task_validation_frame_ids: set[int] = set()
+        for frame_id, real_frame_id in (
+            self.db_task.data.images
+            .filter(is_placeholder=True, real_frame_id__in=gt_pool_frames)
+            .values_list('frame', 'real_frame_id')
+            .iterator(chunk_size=1000)
+        ):
+            task_validation_frame_ids.add(frame_id)
+            task_validation_frame_groups.setdefault(real_frame_id, []).append(frame_id)
+
+        assert sorted(gt_pool_frames) == list(range(min(gt_pool_frames), max(gt_pool_frames) + 1))
+        gt_annotations = data.slice(min(gt_pool_frames), max(gt_pool_frames))
+
+        task_annotation_manager = AnnotationManager(data, dimension=self.db_task.dimension)
+        task_annotation_manager.clear_frames(task_validation_frame_ids)
+
+        for ann_type, gt_annotation in itertools.chain(
+            zip(itertools.repeat('tag'), gt_annotations.tags),
+            zip(itertools.repeat('shape'), gt_annotations.shapes),
+        ):
+            for placeholder_frame_id in task_validation_frame_groups[gt_annotation["frame"]]:
+                gt_annotation = faster_deepcopy(gt_annotation)
+                gt_annotation["frame"] = placeholder_frame_id
+
+                if ann_type == 'tag':
+                    data.add_tag(gt_annotation)
+                elif ann_type == 'shape':
+                    data.add_shape(gt_annotation)
+                else:
+                    assert False
+
+        return data
 
     def update(self, data):
         self._patch_data(data, PatchAction.UPDATE)
@@ -845,10 +917,11 @@ class TaskAnnotation:
     def init_from_db(self):
         self.reset()
 
-        gt_job = None
         for db_job in self.db_jobs:
-            if db_job.type == models.JobType.GROUND_TRUTH:
-                gt_job = db_job
+            if db_job.type == models.JobType.GROUND_TRUTH and not (
+                hasattr(self.db_task.data, 'validation_layout') and
+                self.db_task.data.validation_layout.mode == models.ValidationMode.GT_POOL
+            ):
                 continue
 
             gt_annotation = JobAnnotation(db_job.id, is_prefetched=True)
@@ -857,50 +930,6 @@ class TaskAnnotation:
                 self.ir_data.version = gt_annotation.ir_data.version
 
             self._merge_data(gt_annotation.ir_data, start_frame=db_job.segment.start_frame)
-
-        if (
-            hasattr(self.db_task.data, 'validation_layout') and
-            self.db_task.data.validation_layout.mode == models.ValidationMode.GT_POOL
-        ):
-            self._init_gt_pool_annotations(gt_job)
-
-    def _init_gt_pool_annotations(self, gt_job: models.Job):
-        # Copy GT pool annotations into normal jobs
-        gt_pool_frames = gt_job.segment.frame_set
-        task_validation_frame_groups: dict[int, int] = {} # real_id -> [placeholder_id, ...]
-        task_validation_frame_ids: set[int] = set()
-        for frame_id, real_frame_id in (
-            self.db_task.data.images
-            .filter(is_placeholder=True, real_frame_id__in=gt_pool_frames)
-            .values_list('frame', 'real_frame_id')
-            .iterator(chunk_size=1000)
-        ):
-            task_validation_frame_ids.add(frame_id)
-            task_validation_frame_groups.setdefault(real_frame_id, []).append(frame_id)
-
-        gt_annotations = JobAnnotation(gt_job.id, is_prefetched=True)
-        gt_annotations.init_from_db()
-        if gt_annotations.ir_data.version > self.ir_data.version:
-            self.ir_data.version = gt_annotations.ir_data.version
-
-        task_annotation_manager = AnnotationManager(self.ir_data, dimension=self.db_task.dimension)
-        task_annotation_manager.clear_frames(task_validation_frame_ids)
-
-        for ann_type, gt_annotation in itertools.chain(
-            zip(itertools.repeat('tag'), gt_annotations.ir_data.tags),
-            zip(itertools.repeat('shape'), gt_annotations.ir_data.shapes),
-        ):
-            for placeholder_frame_id in task_validation_frame_groups[gt_annotation["frame"]]:
-                gt_annotation = faster_deepcopy(gt_annotation)
-                gt_annotation["frame"] = placeholder_frame_id
-
-                if ann_type == 'tag':
-                    self.ir_data.add_tag(gt_annotation)
-                elif ann_type == 'shape':
-                    self.ir_data.add_shape(gt_annotation)
-                else:
-                    # It's only supported for tags and shapes
-                    assert False
 
     def export(self, dst_file, exporter, host='', **options):
         task_data = TaskData(
