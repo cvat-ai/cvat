@@ -16,6 +16,128 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 <!-- scriv-insert-here -->
 
+<a id='changelog-2.17.0'></a>
+## \[2.17.0\] - 2024-08-27
+
+### Added
+
+- Added support for YOLOv8 formats
+  (<https://github.com/cvat-ai/cvat/pull/8240>)
+
+- Last assignee update date in quality reports, new options in quality settings
+  (<https://github.com/cvat-ai/cvat/pull/8321>)
+
+### Changed
+
+- User sessions now expire after two weeks of inactivity
+  (<https://github.com/cvat-ai/cvat/pull/8289>)
+
+- A user changing their password will now invalidate all of their sessions
+  except for the current one
+  (<https://github.com/cvat-ai/cvat/pull/8289>)
+
+### Deprecated
+
+- Client events `upload:annotations`, `lock:object`, `change:attribute`, `change:label`
+ (<https://github.com/cvat-ai/cvat/pull/8304>)
+
+### Removed
+
+- Client event `restore:job` (<https://github.com/cvat-ai/cvat/pull/8304>)
+
+- Removed the `/auth/login-with-token` page
+  (<https://github.com/cvat-ai/cvat/pull/8336>)
+
+### Fixed
+
+- Go back button behavior on analytics page
+  (<https://github.com/cvat-ai/cvat/pull/8277>)
+
+- Logging out of one session will no longer log the user out of all their
+  other sessions
+  (<https://github.com/cvat-ai/cvat/pull/8289>)
+
+- Prevent export process from restarting when downloading a result file,
+  that resulted in downloading a file with new request ID
+  (<https://github.com/cvat-ai/cvat/pull/8216>)
+- Race condition occurred while handling parallel export requests
+  (<https://github.com/cvat-ai/cvat/pull/8216>)
+- Requests filtering using format and target filters
+  (<https://github.com/cvat-ai/cvat/pull/8216>)
+
+- Sometimes it is not possible to switch workspace because active control broken after
+trying to create a tag with a shortcut (<https://github.com/cvat-ai/cvat/pull/8334>)
+
+<a id='changelog-2.16.3'></a>
+## \[2.16.3\] - 2024-08-13
+
+### Added
+
+- Labels mapper on UI now supports attributes for skeleton points
+  (<https://github.com/cvat-ai/cvat/pull/8251>)
+
+- Segment Anything now supports bounding box input
+  (<https://github.com/cvat-ai/cvat/pull/8270>)
+
+### Changed
+
+- Player navigation not blocked anymore if a frame is being loaded from the server
+  (<https://github.com/cvat-ai/cvat/pull/8284>)
+
+- Accelerated implementation of IntelligentScissors from OpenCV
+  (<https://github.com/cvat-ai/cvat/pull/8293>)
+
+### Fixed
+
+- Issue tool was not reset after creating new issue
+  (<https://github.com/cvat-ai/cvat/pull/8236>)
+
+- Fixed issue with slices handling in `LazyList` which caused problems with exporting masks
+  in `CVAT for images 1.1` format.
+  (<https://github.com/cvat-ai/cvat/pull/8299>)
+
+<a id='changelog-2.16.2'></a>
+## \[2.16.2\] - 2024-08-06
+
+### Changed
+
+- Following the link in notification no longer reloads the page
+  (<https://github.com/cvat-ai/cvat/pull/8197>)
+
+### Fixed
+
+- Copy/paste annotation guide with assets did not work, showing the message
+**Asset is already related to another guide** (<https://github.com/cvat-ai/cvat/pull/7989>)
+
+- Undo can't be done when a shape is rotated
+  (<https://github.com/cvat-ai/cvat/pull/8129>)
+
+- Exporting a skeleton track in a format defined for shapes raises error
+`operands could not be broadcast together with shapes (X, ) (Y, )`
+  (<https://github.com/cvat-ai/cvat/pull/8179>)
+
+- Delete label modal window does not have cancellation button
+  (<https://github.com/cvat-ai/cvat/pull/8196>)
+
+- Export and export cache clean rq job retries' hangs
+  (<https://github.com/cvat-ai/cvat/pull/8198>)
+
+- The automatic annotation process failed for tasks from cloud data
+  (<https://github.com/cvat-ai/cvat/pull/8199>)
+
+- Request card was not disabed properly after downloading
+  (<https://github.com/cvat-ai/cvat/pull/8197>)
+
+- Annotations in a ground truth jobs marked as GT annotations after modifying
+  (<https://github.com/cvat-ai/cvat/pull/8206>)
+
+- API call to run automatic annotations fails on a model with attributes
+ when mapping not provided in the request (<https://github.com/cvat-ai/cvat/pull/8250>)
+
+- Fixed a label collision issue where labels with similar prefixes
+and numeric suffixes could conflict, causing error on export.
+  (<https://github.com/cvat-ai/cvat/pull/8262>)
+
 <a id='changelog-2.16.1'></a>
 ## \[2.16.1\] - 2024-07-18
 

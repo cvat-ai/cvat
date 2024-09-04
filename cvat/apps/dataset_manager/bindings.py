@@ -535,7 +535,13 @@ class CommonData(InstanceLabelData):
                 self.soft_attribute_import and attrib.name not in CVAT_INTERNAL_ATTRIBUTES
             )
         ]
-        _shape['points'] = list(map(float, _shape['points']))
+
+        # TODO: remove once importers are guaranteed to return correct type
+        # (see https://github.com/cvat-ai/cvat/pull/8226/files#r1695445137)
+        points = _shape["points"]
+        for i, point in enumerate(map(float, points)):
+            points[i] = point
+
         _shape['elements'] = [self._import_shape(element, label_id) for element in _shape.get('elements', [])]
 
         return _shape
@@ -561,7 +567,11 @@ class CommonData(InstanceLabelData):
                 for attrib in shape['attributes']
                 if self._get_mutable_attribute_id(label_id, attrib.name)
             ]
-            shape['points'] = list(map(float, shape['points']))
+        # TODO: remove once importers are guaranteed to return correct type
+        # (see https://github.com/cvat-ai/cvat/pull/8226/files#r1695445137)
+            points = shape["points"]
+            for i, point in enumerate(map(float, points)):
+                points[i] = point
 
         return _track
 

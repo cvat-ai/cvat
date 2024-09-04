@@ -203,6 +203,10 @@ def get_rq_lock_by_user(queue: DjangoRQ, user_id: int) -> Union[Lock, nullcontex
         return queue.connection.lock(f'{queue.name}-lock-{user_id}', timeout=30)
     return nullcontext()
 
+def get_rq_lock_for_job(queue: DjangoRQ, rq_id: str) -> Lock:
+    # lock timeout corresponds to the nginx request timeout (proxy_read_timeout)
+    return queue.connection.lock(f'lock-for-job-{rq_id}'.lower(), timeout=60)
+
 def get_rq_job_meta(
     request: HttpRequest,
     db_obj: Any,
@@ -412,3 +416,7 @@ def directory_tree(path, max_depth=None) -> str:
 
 def is_dataset_export(request: HttpRequest) -> bool:
     return to_bool(request.query_params.get('save_images', False))
+
+def chunked_list(lst, chunk_size):
+    for i in range(0, len(lst), chunk_size):
+        yield lst[i:i + chunk_size]

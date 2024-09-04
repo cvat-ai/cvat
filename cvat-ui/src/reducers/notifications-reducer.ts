@@ -542,10 +542,10 @@ export default function (state = defaultState, action: AnyAction): Notifications
             } = action.payload;
             let description = `Export ${resource} for ${instanceType} ${instance.id} is finished. `;
             if (target === 'local') {
-                description += 'You can [download it here](/requests)';
+                description += 'You can [download it here](/requests).';
             } else if (target === 'cloudstorage') {
                 description =
-                    `Export ${resource} for ${instanceType} ${instance.id} has been uploaded to cloud storage`;
+                    `Export ${resource} for ${instanceType} ${instance.id} has been uploaded to cloud storage.`;
             }
             return {
                 ...state,
@@ -586,10 +586,10 @@ export default function (state = defaultState, action: AnyAction): Notifications
             } = action.payload;
             let description = `Backup for the ${instanceType} ${instance.id} is finished. `;
             if (target === 'local') {
-                description += 'You can [download it here](/requests)';
+                description += 'You can [download it here](/requests).';
             } else if (target === 'cloudstorage') {
                 description =
-                    `Backup for the ${instanceType} ${instance.id} has been uploaded to cloud storage`;
+                    `Backup for the ${instanceType} ${instance.id} has been uploaded to cloud storage.`;
             }
             return {
                 ...state,

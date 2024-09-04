@@ -11,7 +11,7 @@ import {
     Request,
 } from 'cvat-core-wrapper';
 import { IntelligentScissors } from 'utils/opencv-wrapper/intelligent-scissors';
-import { KeyMap } from 'utils/mousetrap-react';
+import { KeyMap, KeyMapItem } from 'utils/mousetrap-react';
 import { OpenCVTracker } from 'utils/opencv-wrapper/opencv-interfaces';
 import { ImageFilter } from 'utils/image-processing';
 
@@ -737,6 +737,7 @@ export interface AnnotationState {
     };
     drawing: {
         activeInteractor?: MLModel | OpenCVTool;
+        activeInteractorParameters?: MLModel['params']['canvas'];
         activeShapeType: ShapeType;
         activeRectDrawingMethod?: RectDrawingMethod;
         activeCuboidDrawingMethod?: CuboidDrawingMethod;
@@ -878,6 +879,7 @@ export interface ShortcutsState {
     visibleShortcutsHelp: boolean;
     keyMap: KeyMap;
     normalizedKeyMap: Record<string, string>;
+    defaultState: Record<string, KeyMapItem>
 }
 
 export enum StorageLocation {
@@ -891,11 +893,19 @@ export enum ReviewStatus {
     REVIEW_FURTHER = 'review_further',
 }
 
+export enum NewIssueSource {
+    ISSUE_TOOL = 'tool',
+    QUICK_ISSUE = 'quick_issue',
+}
+
 export interface ReviewState {
     issues: any[];
     frameIssues: any[];
     latestComments: string[];
-    newIssuePosition: number[] | null;
+    newIssue: {
+        position: number[] | null;
+        source: NewIssueSource | null;
+    }
     issuesHidden: boolean;
     issuesResolvedHidden: boolean;
     conflicts: QualityConflict[];
@@ -953,8 +963,12 @@ export interface RequestsState {
     fetching: boolean;
     initialized: boolean;
     requests: Record<string, Request>;
-    urls: string[];
+    disabled: Record<string, boolean>;
     query: RequestsQuery;
+}
+
+export interface NavigationState {
+    prevLocation: string | null;
 }
 
 export interface CombinedState {
@@ -980,6 +994,7 @@ export interface CombinedState {
     webhooks: WebhooksState;
     requests: RequestsState;
     serverAPI: ServerAPIState;
+    navigation: NavigationState;
 }
 
 export interface Indexable {

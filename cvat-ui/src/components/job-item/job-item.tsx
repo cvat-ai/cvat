@@ -190,6 +190,7 @@ function JobItem(props: Props): JSX.Element {
                                         </Row>
                                         <Select
                                             className='cvat-job-item-stage'
+                                            popupClassName='cvat-job-item-stage-dropdown'
                                             value={stage}
                                             onChange={(newValue: JobStage) => {
                                                 onJobUpdate(job, { stage: newValue });
@@ -214,6 +215,7 @@ function JobItem(props: Props): JSX.Element {
                                         </Row>
                                         <Select
                                             className='cvat-job-item-state'
+                                            popupClassName='cvat-job-item-state-dropdown'
                                             value={job.state}
                                             onChange={(newValue: JobState) => {
                                                 onJobUpdate(job, { state: newValue });

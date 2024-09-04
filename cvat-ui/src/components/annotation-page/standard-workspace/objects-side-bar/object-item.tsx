@@ -33,8 +33,8 @@ interface Props {
     activate(activeElementID?: number): void;
     copy(): void;
     propagate(): void;
-    createURL(): void;
     switchOrientation(): void;
+    createURL(): void;
     toBackground(): void;
     toForeground(): void;
     remove(): void;

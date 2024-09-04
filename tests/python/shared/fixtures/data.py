@@ -3,8 +3,10 @@
 # SPDX-License-Identifier: MIT
 
 import json
+import operator
 from collections import defaultdict
 from copy import deepcopy
+from typing import Iterable
 
 import pytest
 
@@ -58,6 +60,51 @@ def memberships():
 def tasks():
     with open(ASSETS_DIR / "tasks.json") as f:
         return Container(json.load(f)["results"])
+
+
+def filter_assets(resources: Iterable, **kwargs):
+    filtered_resources = []
+    exclude_prefix = "exclude_"
+
+    for resource in resources:
+        for key, value in kwargs.items():
+            op = operator.eq
+            if key.startswith(exclude_prefix):
+                key = key[len(exclude_prefix) :]
+                op = operator.ne
+
+            cur_value, rest = resource, key
+            while rest:
+                field_and_rest = rest.split("__", maxsplit=1)
+                if 2 == len(field_and_rest):
+                    field, rest = field_and_rest
+                else:
+                    field, rest = field_and_rest[0], None
+                cur_value = cur_value[field]
+                # e.g. task has null target_storage
+                if not cur_value:
+                    break
+
+            if not rest and op(cur_value, value) or rest and op == operator.ne:
+                filtered_resources.append(resource)
+
+    return filtered_resources
+
+
+@pytest.fixture(scope="session")
+def filter_projects(projects):
+    def filter_(**kwargs):
+        return filter_assets(projects, **kwargs)
+
+    return filter_
+
+
+@pytest.fixture(scope="session")
+def filter_tasks(tasks):
+    def filter_(**kwargs):
+        return filter_assets(tasks, **kwargs)
+
+    return filter_
 
 
 @pytest.fixture(scope="session")

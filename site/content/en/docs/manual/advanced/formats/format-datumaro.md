@@ -20,8 +20,8 @@ For more information, see:
 
 For export of images: any 2D shapes, tags
 
-- Supported annotations: Bounding Boxes, Polygons, Polylines,
-  Masks, Points, Cuboids, Tags, Skeletons
+- Supported annotations: Bounding Boxes, Polygons,
+Polylines, Points, Cuboids, Tags, Ellipses, Masks, Skeletons.
 - Attributes: Supported.
 - Tracks: Supported.
 

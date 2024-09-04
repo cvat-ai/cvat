@@ -95,17 +95,22 @@ jobs:
         id: verify_schema
         run: |
           docker load --input /tmp/cvat_server/image.tar
-          docker run --rm --entrypoint /bin/bash cvat/server \
+          docker run --rm cvat/server bash \
             -c 'python manage.py spectacular' > cvat/schema-expected.yml
 
           if ! git diff --no-index cvat/schema.yml cvat/schema-expected.yml; then
             echo
             echo 'API schema has changed! Please update cvat/schema.yml:'
             echo
-            echo '  docker run --rm --entrypoint /bin/bash cvat/server:dev \'
+            echo '  docker run --rm cvat/server:dev bash \'
             echo "    -c 'python manage.py spectacular' > cvat/schema.yml"
             exit 1
           fi
+
+      - name: Verify migrations
+        run: |
+          docker run --rm cvat/server bash \
+            -c 'python manage.py makemigrations --check'
 
       - name: Upload CVAT server artifact
         uses: actions/upload-artifact@v3
@@ -243,7 +248,7 @@ jobs:
           while [[  $(curl -s -o /dev/null -w "%{http_code}" localhost:8181/health?bundles) != "200" && max_tries -gt 0 ]]; do (( max_tries-- )); sleep 5; done
 
           docker compose -f docker-compose.yml -f docker-compose.dev.yml -f docker-compose.ci.yml run cvat_ci /bin/bash \
-            -c 'coverage run -a manage.py test cvat/apps && coverage json && mv coverage.json ${CONTAINER_COVERAGE_DATA_DIR}/unit_tests_coverage.json'
+            -c 'coverage run -a manage.py test -v 2 cvat/apps && coverage json && mv coverage.json ${CONTAINER_COVERAGE_DATA_DIR}/unit_tests_coverage.json'
 
           docker compose -f docker-compose.yml -f docker-compose.dev.yml -f docker-compose.ci.yml run cvat_ci /bin/bash \
             -c 'DISABLE_HUSKY=1 yarn --frozen-lockfile && yarn workspace cvat-core run test && mv cvat-core/reports/coverage/coverage-final.json ${CONTAINER_COVERAGE_DATA_DIR}'

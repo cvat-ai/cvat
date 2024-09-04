@@ -850,7 +850,7 @@
       "parent_job_id": null,
       "project_id": 2,
       "source_storage": {
-        "cloud_storage_id": 2,
+        "cloud_storage_id": 3,
         "id": 4,
         "location": "cloud_storage"
       },
@@ -860,7 +860,7 @@
       "status": "annotation",
       "stop_frame": 10,
       "target_storage": {
-        "cloud_storage_id": 2,
+        "cloud_storage_id": 3,
         "id": 2,
         "location": "cloud_storage"
       },

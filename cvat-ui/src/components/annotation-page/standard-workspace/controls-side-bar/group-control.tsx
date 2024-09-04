@@ -9,9 +9,13 @@ import Icon from '@ant-design/icons';
 import { GroupIcon } from 'icons';
 import { Canvas } from 'cvat-canvas-wrapper';
 import { Canvas3d } from 'cvat-canvas3d-wrapper';
-import { ActiveControl } from 'reducers';
+import { ActiveControl, CombinedState } from 'reducers';
 import CVATTooltip from 'components/common/cvat-tooltip';
-import GlobalHotKeys, { KeyMapItem } from 'utils/mousetrap-react';
+import GlobalHotKeys from 'utils/mousetrap-react';
+import { ShortcutScope } from 'utils/enums';
+import { registerComponentShortcuts } from 'actions/shortcuts-actions';
+import { subKeyMap } from 'utils/component-subkeymap';
+import { useSelector } from 'react-redux';
 
 export interface Props {
     updateActiveControl(activeControl: ActiveControl): void;
@@ -19,17 +23,36 @@ export interface Props {
     canvasInstance: Canvas | Canvas3d;
     activeControl: ActiveControl;
     disabled?: boolean;
-    shortcuts: {
-        SWITCH_GROUP_MODE: {
-            details: KeyMapItem;
-            displayValue: string;
-        };
-        RESET_GROUP: {
-            details: KeyMapItem;
-            displayValue: string;
-        };
-    }
 }
+
+const componentShortcuts = {
+    SWITCH_GROUP_MODE_STANDARD_CONTROLS: {
+        name: 'Group mode',
+        description: 'Activate or deactivate mode to grouping shapes',
+        sequences: ['g'],
+        scope: ShortcutScope.STANDARD_WORKSPACE_CONTROLS,
+    },
+    RESET_GROUP_STANDARD_CONTROLS: {
+        name: 'Reset group',
+        description: 'Reset group for selected shapes (in group mode)',
+        sequences: ['shift+g'],
+        scope: ShortcutScope.STANDARD_WORKSPACE_CONTROLS,
+    },
+    SWITCH_GROUP_MODE_STANDARD_3D_CONTROLS: {
+        name: 'Group mode',
+        description: 'Activate or deactivate mode to grouping shapes',
+        sequences: ['g'],
+        scope: ShortcutScope['3D_ANNOTATION_WORKSPACE_CONTROLS'],
+    },
+    RESET_GROUP_STANDARD_3D_CONTROLS: {
+        name: 'Reset group',
+        description: 'Reset group for selected shapes (in group mode)',
+        sequences: ['shift+g'],
+        scope: ShortcutScope['3D_ANNOTATION_WORKSPACE_CONTROLS'],
+    },
+};
+
+registerComponentShortcuts(componentShortcuts);
 
 function GroupControl(props: Props): JSX.Element {
     const {
@@ -38,8 +61,9 @@ function GroupControl(props: Props): JSX.Element {
         activeControl,
         canvasInstance,
         disabled,
-        shortcuts,
     } = props;
+
+    const { keyMap, normalizedKeyMap } = useSelector((state: CombinedState) => state.shortcuts);
 
     const dynamicIconProps =
         activeControl === ActiveControl.GROUP ?
@@ -59,9 +83,32 @@ function GroupControl(props: Props): JSX.Element {
                 },
             };
 
+    const handleSwitchGroupMode = (event: KeyboardEvent | undefined): void => {
+        if (event) event.preventDefault();
+        dynamicIconProps.onClick();
+    };
+
+    const handleResetGroup = (event: KeyboardEvent | undefined): void => {
+        if (event) event.preventDefault();
+        const grouping = activeControl === ActiveControl.GROUP;
+        if (!grouping) {
+            return;
+        }
+        resetGroup();
+        canvasInstance.group({ enabled: false });
+        updateActiveControl(ActiveControl.CURSOR);
+    };
+
+    const handlers: Partial<Record<keyof typeof componentShortcuts, (event?: KeyboardEvent) => void>> = {
+        SWITCH_GROUP_MODE_STANDARD_CONTROLS: handleSwitchGroupMode,
+        RESET_GROUP_STANDARD_CONTROLS: handleResetGroup,
+        SWITCH_GROUP_MODE_STANDARD_3D_CONTROLS: handleSwitchGroupMode,
+        RESET_GROUP_STANDARD_3D_CONTROLS: handleResetGroup,
+    };
+
     const title = [
-        `Group shapes/tracks ${shortcuts.SWITCH_GROUP_MODE.displayValue}`,
-        `Select and press ${shortcuts.RESET_GROUP.displayValue} to reset a group.`,
+        `Group shapes/tracks ${normalizedKeyMap.SWITCH_GROUP_MODE_STANDARD_CONTROLS}`,
+        `Select and press ${normalizedKeyMap.RESET_GROUP_STANDARD_CONTROLS} to reset a group.`,
     ].join(' ');
 
     return disabled ? (
@@ -69,26 +116,8 @@ function GroupControl(props: Props): JSX.Element {
     ) : (
         <>
             <GlobalHotKeys
-                keyMap={{
-                    SWITCH_GROUP_MODE: shortcuts.SWITCH_GROUP_MODE.details,
-                    RESET_GROUP: shortcuts.RESET_GROUP.details,
-                }}
-                handlers={{
-                    SWITCH_GROUP_MODE: (event: KeyboardEvent | undefined) => {
-                        if (event) event.preventDefault();
-                        dynamicIconProps.onClick();
-                    },
-                    RESET_GROUP: (event: KeyboardEvent | undefined) => {
-                        if (event) event.preventDefault();
-                        const grouping = activeControl === ActiveControl.GROUP;
-                        if (!grouping) {
-                            return;
-                        }
-                        resetGroup();
-                        canvasInstance.group({ enabled: false });
-                        updateActiveControl(ActiveControl.CURSOR);
-                    },
-                }}
+                keyMap={subKeyMap(componentShortcuts, keyMap)}
+                handlers={handlers}
             />
             <CVATTooltip title={title} placement='right'>
                 <Icon {...dynamicIconProps} component={GroupIcon} />

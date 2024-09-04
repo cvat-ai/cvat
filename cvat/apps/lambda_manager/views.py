@@ -33,7 +33,10 @@ from rest_framework.request import Request
 
 import cvat.apps.dataset_manager as dm
 from cvat.apps.engine.frame_provider import FrameProvider
-from cvat.apps.engine.models import Job, ShapeType, SourceType, Task, Label
+from cvat.apps.engine.models import (
+    Job, ShapeType, SourceType, Task, Label, RequestAction, RequestTarget,
+)
+from cvat.apps.engine.rq_job_handler import RQId, RQJobMetaField
 from cvat.apps.engine.serializers import LabeledDataSerializer
 from cvat.apps.lambda_manager.permissions import LambdaPermission
 from cvat.apps.lambda_manager.serializers import (
@@ -194,6 +197,7 @@ class LambdaFunction:
         self.min_pos_points = int(meta_anno.get('min_pos_points', 1))
         self.min_neg_points = int(meta_anno.get('min_neg_points', -1))
         self.startswith_box = bool(meta_anno.get('startswith_box', False))
+        self.startswith_box_optional = bool(meta_anno.get('startswith_box_optional', False))
         self.animated_gif = meta_anno.get('animated_gif', '')
         self.version = int(meta_anno.get('version', '1'))
         self.help_message = meta_anno.get('help_message', '')
@@ -214,6 +218,7 @@ class LambdaFunction:
                 'min_pos_points': self.min_pos_points,
                 'min_neg_points': self.min_neg_points,
                 'startswith_box': self.startswith_box,
+                'startswith_box_optional': self.startswith_box_optional,
                 'help_message': self.help_message,
                 'animated_gif': self.animated_gif
             })
@@ -253,7 +258,7 @@ class LambdaFunction:
         mapping = data.get("mapping", {})
 
         model_labels = self.labels
-        task_labels = db_task.get_labels().prefetch_related('attributespec_set')
+        task_labels = db_task.get_labels(prefetch=True)
 
         def labels_compatible(model_label: Dict, task_label: Label) -> bool:
             model_type = model_label['type']
@@ -271,9 +276,9 @@ class LambdaFunction:
                     if task_label.name == model_label['name'] and labels_compatible(model_label, task_label):
                         attributes_default_mapping = {}
                         for model_attr in model_label.get('attributes', {}):
-                            for db_attr in model_label.attributespec_set.all():
+                            for db_attr in task_label.attributespec_set.all():
                                 if db_attr.name == model_attr['name']:
-                                    attributes_default_mapping[model_attr] = db_attr.name
+                                    attributes_default_mapping[model_attr['name']] = db_attr.name
 
                         mapping_by_default[model_label['name']] = {
                             'name': task_label.name,
@@ -343,6 +348,11 @@ class LambdaFunction:
                 )
 
                 if md_label['type'] == 'skeleton' and db_label.type == 'skeleton':
+                    if 'sublabels' not in mapping_item:
+                        raise ValidationError(
+                            f'Mapping for elements was not specified in skeleton "{model_label_name}" '
+                        )
+
                     validate_labels_mapping(
                         mapping_item['sublabels'],
                         md_label['sublabels'],
@@ -383,9 +393,9 @@ class LambdaFunction:
         elif self.kind == LambdaType.INTERACTOR:
             payload.update({
                 "image": self._get_image(db_task, mandatory_arg("frame"), quality),
-                "pos_points": mandatory_arg("pos_points")[2:] if self.startswith_box else mandatory_arg("pos_points"),
+                "pos_points": mandatory_arg("pos_points"),
                 "neg_points": mandatory_arg("neg_points"),
-                "obj_bbox": mandatory_arg("pos_points")[0:2] if self.startswith_box else None
+                "obj_bbox": data.get("obj_bbox", None)
             })
         elif self.kind == LambdaType.REID:
             payload.update({
@@ -518,16 +528,31 @@ class LambdaQueue:
         *,
         job: Optional[int] = None
     ) -> LambdaJob:
-        jobs = self.get_jobs()
+        queue = self._get_queue()
+        rq_id = RQId(RequestAction.AUTOANNOTATE, RequestTarget.TASK, task).render()
+
         # It is still possible to run several concurrent jobs for the same task.
         # But the race isn't critical. The filtration is just a light-weight
         # protection.
-        if list(filter(lambda job: job.get_task() == task and not job.is_finished, jobs)):
+        rq_job = queue.fetch_job(rq_id)
+
+        have_conflict = rq_job and \
+            rq_job.get_status(refresh=False) not in {rq.job.JobStatus.FAILED, rq.job.JobStatus.FINISHED}
+
+        # There could be some jobs left over from before the current naming convention was adopted.
+        # TODO: remove this check after a few releases.
+        have_legacy_conflict = any(
+            job.get_task() == task and not (job.is_finished or job.is_failed)
+            for job in self.get_jobs()
+        )
+        if have_conflict or have_legacy_conflict:
             raise ValidationError(
                 "Only one running request is allowed for the same task #{}".format(task),
                 code=status.HTTP_409_CONFLICT)
 
-        queue = self._get_queue()
+        if rq_job:
+            rq_job.delete()
+
         # LambdaJob(None) is a workaround for python-rq. It has multiple issues
         # with invocation of non-trivial functions. For example, it cannot run
         # staticmethod, it cannot run a callable class. Thus I provide an object
@@ -536,6 +561,7 @@ class LambdaQueue:
 
         with get_rq_lock_by_user(queue, user_id):
             rq_job = queue.create_job(LambdaJob(None),
+                job_id=rq_id,
                 meta={
                     **get_rq_job_meta(
                         request,
@@ -543,6 +569,7 @@ class LambdaQueue:
                             Job.objects.get(pk=job) if job else Task.objects.get(pk=task)
                         ),
                     ),
+                    RQJobMetaField.FUNCTION_ID: lambda_func.id,
                     "lambda": True,
                 },
                 kwargs={
@@ -948,7 +975,7 @@ class LambdaJob:
                     labels[label.name]['attributes'][attr['name']] = attr['id']
             return labels
 
-        labels = convert_labels(db_task.get_labels().prefetch_related('attributespec_set'))
+        labels = convert_labels(db_task.get_labels(prefetch=True))
 
         if function.kind == LambdaType.DETECTOR:
             cls._call_detector(function, db_task, labels, quality,

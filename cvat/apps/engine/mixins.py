@@ -14,6 +14,7 @@ from tempfile import NamedTemporaryFile
 from unittest import mock
 from textwrap import dedent
 from typing import Optional, Callable, Dict, Any, Mapping
+from urllib.parse import urljoin
 
 import django_rq
 from attr.converters import to_bool
@@ -28,13 +29,13 @@ from rest_framework.authentication import SessionAuthentication
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from cvat.apps.engine.background_operations import (BackupExportManager,
+from cvat.apps.engine.background import (BackupExportManager,
                                                     DatasetExportManager)
 from cvat.apps.engine.handlers import clear_import_cache
 from cvat.apps.engine.location import StorageType, get_location_configuration
 from cvat.apps.engine.log import ServerLogManager
-from cvat.apps.engine.models import Location
-from cvat.apps.engine.rq_job_handler import RQIdManager
+from cvat.apps.engine.models import Location, RequestAction, RequestTarget, RequestSubresource
+from cvat.apps.engine.rq_job_handler import RQId
 from cvat.apps.engine.serializers import DataSerializer, RqIdSerializer
 from cvat.apps.engine.utils import is_dataset_export
 
@@ -275,7 +276,10 @@ class UploadMixin:
             if file_exists:
                 # check whether the rq_job is in progress or has been finished/failed
                 object_class_name = self._object.__class__.__name__.lower()
-                template = RQIdManager.build('import', object_class_name, self._object.pk, subresource=import_type)
+                template = RQId(
+                    RequestAction.IMPORT, RequestTarget(object_class_name), self._object.pk,
+                    subresource=RequestSubresource(import_type)
+                ).render()
                 queue = django_rq.get_queue(settings.CVAT_QUEUES.IMPORT_DATA.value)
                 finished_job_ids = queue.finished_job_registry.get_job_ids()
                 failed_job_ids = queue.failed_job_registry.get_job_ids()
@@ -315,7 +319,7 @@ class UploadMixin:
 
             return self._tus_response(
                 status=status.HTTP_201_CREATED,
-                extra_headers={'Location': '{}{}'.format(location, tus_file.file_id),
+                extra_headers={'Location': urljoin(location, tus_file.file_id),
                                'Upload-Filename': tus_file.filename})
 
     def append_tus_chunk(self, request, file_id):
@@ -473,7 +477,7 @@ class DatasetMixin:
         return dataset_export_manager.export()
 
     # FUTURE-TODO: migrate to new API
-    def import_annotations(self, request, db_obj, import_func, rq_func, rq_id_template):
+    def import_annotations(self, request, db_obj, import_func, rq_func, rq_id_factory):
         is_tus_request = request.headers.get('Upload-Length', None) is not None or \
             request.method == 'OPTIONS'
         if is_tus_request:
@@ -492,7 +496,7 @@ class DatasetMixin:
 
             return import_func(
                 request=request,
-                rq_id_template=rq_id_template,
+                rq_id_factory=rq_id_factory,
                 rq_func=rq_func,
                 db_obj=self._object,
                 format_name=format_name,

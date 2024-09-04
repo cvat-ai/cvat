@@ -11,9 +11,15 @@ import Radio, { RadioChangeEvent } from 'antd/lib/radio';
 import Input from 'antd/lib/input';
 import { TextAreaRef } from 'antd/lib/input/TextArea';
 import InputNumber from 'antd/lib/input-number';
-
-import GlobalHotKeys, { KeyMap } from 'utils/mousetrap-react';
+import GlobalHotKeys, { KeyMap, KeyMapItem } from 'utils/mousetrap-react';
 import config from 'config';
+import { ShortcutScope } from 'utils/enums';
+import { registerComponentShortcuts } from 'actions/shortcuts-actions';
+import { subKeyMap } from 'utils/component-subkeymap';
+import { isEqual } from 'lodash';
+import { CombinedState } from 'reducers';
+import { useSelector } from 'react-redux';
+import { useResetShortcutsOnUnmount } from 'utils/hooks';
 
 interface InputElementParameters {
     clientID: number;
@@ -23,6 +29,20 @@ interface InputElementParameters {
     currentValue: string;
     onChange(value: string): void;
 }
+
+const componentShortcuts: Record<string, KeyMapItem> = {};
+
+for (const idx of Array.from({ length: 10 }, (_, i) => i)) {
+    componentShortcuts[`SET_${idx}_VALUE`] = {
+        name: `Set ${idx + 1} value to the current attribute`,
+        description: `Change current value for the attribute to the ${idx + 1} value in the list`,
+        sequences: [`${idx}`],
+        nonActive: true,
+        scope: ShortcutScope.ATTRIBUTE_ANNOTATION_WORKSPACE,
+    };
+}
+
+registerComponentShortcuts(componentShortcuts);
 
 function renderInputElement(parameters: InputElementParameters): JSX.Element {
     const {
@@ -181,35 +201,58 @@ function renderInputElement(parameters: InputElementParameters): JSX.Element {
     return <div className='cvat-attribute-annotation-sidebar-attr-editor'>{element}</div>;
 }
 
-interface ListParameters {
+interface ListProps {
     inputType: string;
     values: string[];
     onChange(value: string): void;
 }
 
-function renderList(parameters: ListParameters): JSX.Element | null {
-    const { inputType, values, onChange } = parameters;
+function AttrValuesList(props: ListProps): JSX.Element | null {
+    const { inputType, values, onChange } = props;
+    const { keyMap } = useSelector((state: CombinedState) => state.shortcuts);
+    const sortedValues = ['true', 'false'];
+    const filteredValues = values.filter((value: string): boolean => value !== config.UNDEFINED_ATTRIBUTE_VALUE);
+    const prevValuesRef = useRef<string[] | null>(null);
+
+    useResetShortcutsOnUnmount(componentShortcuts);
+
+    useEffect(() => {
+        if (!isEqual(values, prevValuesRef.current)) {
+            const updatedComponentShortcuts = Object.keys(componentShortcuts).reduce((acc: KeyMap, key: string) => {
+                acc[key] = {
+                    ...componentShortcuts[key],
+                    sequences: keyMap[key].sequences,
+                };
+                return acc;
+            }, {});
+            let processedValues = sortedValues;
+            if (inputType === 'checkbox' && values[0].toLowerCase() !== 'true') {
+                processedValues = [...sortedValues].reverse();
+            } else if (inputType === 'radio' || inputType === 'select') {
+                processedValues = filteredValues.slice(0, 10);
+            }
+
+            processedValues.forEach((value: string, index: number): void => {
+                const key = `SET_${index}_VALUE`;
+                updatedComponentShortcuts[key] = {
+                    ...updatedComponentShortcuts[key],
+                    nonActive: false,
+                    name: `Assign attribute value ${value}`,
+                    description: `Change current value for the attribute to ${value}`,
+                };
+            });
+            registerComponentShortcuts({ ...updatedComponentShortcuts });
+            prevValuesRef.current = values;
+        }
+    }, [values]);
 
     if (inputType === 'checkbox') {
-        const sortedValues = ['true', 'false'];
-        if (values[0].toLowerCase() !== 'true') {
-            sortedValues.reverse();
-        }
-
-        const keyMap: KeyMap = {};
         const handlers: {
             [key: string]: (keyEvent?: KeyboardEvent) => void;
         } = {};
 
         sortedValues.forEach((value: string, index: number): void => {
             const key = `SET_${index}_VALUE`;
-            keyMap[key] = {
-                name: `Set value "${value}"`,
-                description: `Change current value for the attribute to "${value}"`,
-                sequences: [`${index}`],
-                action: 'keydown',
-            };
-
             handlers[key] = (event: KeyboardEvent | undefined) => {
                 if (event) {
                     event.preventDefault();
@@ -221,7 +264,7 @@ function renderList(parameters: ListParameters): JSX.Element | null {
 
         return (
             <div className='attribute-annotation-sidebar-attr-list-wrapper'>
-                <GlobalHotKeys keyMap={keyMap} handlers={handlers} />
+                <GlobalHotKeys keyMap={subKeyMap(componentShortcuts, keyMap)} handlers={handlers} />
                 <div>
                     <Text strong>0:</Text>
                     <Text>{` ${sortedValues[0]}`}</Text>
@@ -235,21 +278,12 @@ function renderList(parameters: ListParameters): JSX.Element | null {
     }
 
     if (inputType === 'radio' || inputType === 'select') {
-        const keyMap: KeyMap = {};
         const handlers: {
             [key: string]: (keyEvent?: KeyboardEvent) => void;
         } = {};
 
-        const filteredValues = values.filter((value: string): boolean => value !== config.UNDEFINED_ATTRIBUTE_VALUE);
         filteredValues.slice(0, 10).forEach((value: string, index: number): void => {
             const key = `SET_${index}_VALUE`;
-            keyMap[key] = {
-                name: `Set value "${value}"`,
-                description: `Change current value for the attribute to "${value}"`,
-                sequences: [`${index}`],
-                action: 'keydown',
-            };
-
             handlers[key] = (event: KeyboardEvent | undefined) => {
                 if (event) {
                     event.preventDefault();
@@ -261,7 +295,7 @@ function renderList(parameters: ListParameters): JSX.Element | null {
 
         return (
             <div className='attribute-annotation-sidebar-attr-list-wrapper'>
-                <GlobalHotKeys keyMap={keyMap} handlers={handlers} />
+                <GlobalHotKeys keyMap={subKeyMap(componentShortcuts, keyMap)} handlers={handlers} />
                 {filteredValues.map(
                     (value: string, index: number): JSX.Element => (
                         <div key={value}>
@@ -311,7 +345,7 @@ function AttributeEditor(props: Props): JSX.Element {
 
     return (
         <div className='attribute-annotations-sidebar-attribute-editor'>
-            {renderList({ values, inputType, onChange })}
+            <AttrValuesList values={values} inputType={inputType} onChange={onChange} />
             <hr />
             {renderInputElement({
                 clientID,
