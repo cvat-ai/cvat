@@ -404,11 +404,6 @@ class ConsensusSettingsViewSet(
             OpenApiParameter(
                 "task_id", type=OpenApiTypes.INT, description="A simple equality filter for task id"
             ),
-            OpenApiParameter(
-                "consensus_report_id",
-                type=OpenApiTypes.INT,
-                description="A simple equality filter for target",
-            ),
         ],
         responses={
             "200": AssigneeConsensusReportSerializer(many=True),
@@ -430,6 +425,7 @@ class AssigneeConsensusReportViewSet(
     search_fields = []
     filter_fields = list(search_fields) + [
         "id",
+        "consensus_report_id"
     ]
     simple_filters = list(set(filter_fields) - {"id"})
     ordering_fields = list(filter_fields)
@@ -456,9 +452,6 @@ class AssigneeConsensusReportViewSet(
             else:
                 perm = AssigneeConsensusReportPermission.create_scope_list(self.request)
                 queryset = perm.filter(queryset)
-
-        if consensus_report_id := self.request.query_params.get("consensus_report_id", None):
-            queryset = queryset.filter(consensus_report_id=consensus_report_id)
 
         return queryset
 
