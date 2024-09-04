@@ -5,7 +5,6 @@
 import React from 'react';
 import Text from 'antd/lib/typography/Text';
 import Card from 'antd/es/card/Card';
-import PaidFeaturePlaceholderImg from 'assets/paid-feature.png';
 import { Row, Col } from 'antd/es/grid';
 
 import './styles.scss';
@@ -29,7 +28,7 @@ export default function PaidFeaturePlaceholder(props: Props): JSX.Element | null
         <div className='cvat-paid-feature-placeholder-wrapper'>
             <Card
                 className='cvat-paid-feature-placeholder'
-                cover={<img src={PaidFeaturePlaceholderImg} alt='some text' />}
+                cover={<img src='/assets/paid-feature.png' alt='some text' />}
             >
                 <Row className='cvat-paid-feature-placeholder-inner-wrapper'>
                     <Col span={24}>
