@@ -553,14 +553,12 @@ class PointsMatcher(_ShapeMatcher):
     instance_map = attrib(converter=dict)
 
     def _distance_func(self, a, b):
-        for source_anns in [a.annotations, b.annotations]:
-            source_instances = dm.ops.find_instances(source_anns)
-            for instance_group in source_instances:
-                instance_bbox = self._distance_comparator.instance_bbox(instance_group)
+        for instance_group in [[a], [b]]:
+            instance_bbox = self._distance_comparator.instance_bbox(instance_group)
 
-                for ann in instance_group:
-                    if ann.type == dm.AnnotationType.points:
-                        self.instance_map[id(ann)] = [instance_group, instance_bbox]
+            for ann in instance_group:
+                if ann.type == dm.AnnotationType.points:
+                    self.instance_map[id(ann)] = [instance_group, instance_bbox]
 
         img_h, img_w = self._context.get_item_media_dims(id(a))
         a_bbox = self.instance_map[id(a)][1]
@@ -793,21 +791,15 @@ class _ShapeMerger(_ShapeMatcher):
         img_h, img_w = self._context.get_item_media_dims(id(a))
         dist = []
         for s in cluster:
-            if isinstance(s, dm.Bbox):
-                dist.append(
-                    segment_iou(
-                        self._distance_comparator.to_polygon(mbbox),
-                        self._distance_comparator.to_polygon(s),
-                        img_h=img_h,
-                        img_w=img_w,
-                    )
+            if isinstance(s, dm.Points):
+                s = self._distance_comparator.to_polygon(Bbox(*s.get_bbox()))
+            elif isinstance(s, dm.Bbox):
+                s = self._distance_comparator.to_polygon(s)
+            dist.append(
+                segment_iou(
+                    self._distance_comparator.to_polygon(mbbox), s, img_h=img_h, img_w=img_w
                 )
-            else:
-                dist.append(
-                    segment_iou(
-                        self._distance_comparator.to_polygon(mbbox), s, img_h=img_h, img_w=img_w
-                    )
-                )
+            )
         nearest_pos, _ = max(enumerate(dist), key=lambda e: e[1])
         return cluster[nearest_pos]
 
