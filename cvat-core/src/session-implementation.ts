@@ -44,11 +44,9 @@ async function deleteFrameWrapper(jobID, frame): Promise<void> {
     };
 
     await redo();
-    try {
-        getHistory(this).do(HistoryActions.REMOVED_FRAME, async () => {
-            restoreFrame(jobID, frame);
-        }, redo, [], frame);
-    } catch (error) { /* empty */ }
+    getHistory(this).do(HistoryActions.REMOVED_FRAME, async () => {
+        restoreFrame(jobID, frame);
+    }, redo, [], frame);
 }
 
 async function restoreFrameWrapper(jobID, frame): Promise<void> {
@@ -57,11 +55,9 @@ async function restoreFrameWrapper(jobID, frame): Promise<void> {
     };
 
     await redo();
-    try {
-        getHistory(this).do(HistoryActions.RESTORED_FRAME, async () => {
-            deleteFrame(jobID, frame);
-        }, redo, [], frame);
-    } catch (error) { /* empty */ }
+    getHistory(this).do(HistoryActions.RESTORED_FRAME, async () => {
+        deleteFrame(jobID, frame);
+    }, redo, [], frame);
 }
 
 export function implementJob(Job: typeof JobClass): typeof JobClass {

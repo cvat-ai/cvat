@@ -37,7 +37,7 @@ import {
 import QualityReport from './quality-report';
 import QualityConflict, { ConflictSeverity } from './quality-conflict';
 import QualitySettings from './quality-settings';
-import { FramesMetaData, getJobMeta } from './frames';
+import { getFramesMeta } from './frames';
 import AnalyticsReport from './analytics-report';
 import { listActions, registerAction, runActions } from './annotations-actions';
 import { convertDescriptions, getServerAPISchema } from './server-schema';
@@ -556,16 +556,8 @@ export default function implementAPI(cvat: CVATCore): CVATCore {
         const params = fieldsToSnakeCase(body);
         await serverProxy.analytics.performance.calculate(params, onUpdate);
     });
-    implementationMixin(cvat.frames.getMeta, async (type, id) => {
-        if (type === 'task') {
-            const result = await serverProxy.frames.getMeta(type, id);
-            return new FramesMetaData({
-                ...result,
-                deleted_frames: Object.fromEntries(result.deleted_frames.map((_frame) => [_frame, true])),
-            });
-        }
-
-        const result = await getJobMeta(id, { reload: true });
+    implementationMixin(cvat.frames.getMeta, async (type: 'job' | 'task', id: number) => {
+        const result = await getFramesMeta(type, id);
         return result;
     });
 

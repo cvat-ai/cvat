@@ -435,19 +435,27 @@ Object.defineProperty(FrameData.prototype.data, 'implementation', {
     writable: false,
 });
 
-export async function getJobMeta(jobID: number, { reload } = { reload: false }): Promise<FramesMetaData> {
-    if (!frameMetaCache[jobID] || reload) {
-        frameMetaCache[jobID] = serverProxy.frames.getMeta('job', jobID)
+export async function getFramesMeta(type: 'job' | 'task', id: number, forceReload = false): Promise<FramesMetaData> {
+    if (type === 'task') {
+        // we do not cache task meta currently. So, each new call will results to the server request
+        const result = await serverProxy.frames.getMeta('task', id);
+        return new FramesMetaData({
+            ...result,
+            deleted_frames: Object.fromEntries(result.deleted_frames.map((_frame) => [_frame, true])),
+        });
+    }
+    if (!frameMetaCache[id] || forceReload) {
+        frameMetaCache[id] = serverProxy.frames.getMeta('job', id)
             .then((serverMeta) => new FramesMetaData({
                 ...serverMeta,
                 deleted_frames: Object.fromEntries(serverMeta.deleted_frames.map((_frame) => [_frame, true])),
             }))
             .catch((error) => {
-                delete frameMetaCache[jobID];
+                delete frameMetaCache[id];
                 throw error;
             });
     }
-    return frameMetaCache[jobID];
+    return frameMetaCache[id];
 }
 
 async function saveJobMeta(meta: FramesMetaData, jobID: number): Promise<FramesMetaData> {
@@ -588,7 +596,7 @@ export async function getFrame(
 ): Promise<FrameData> {
     if (!(jobID in frameDataCache)) {
         const blockType = chunkType === 'video' ? BlockType.MP4VIDEO : BlockType.ARCHIVE;
-        const meta = await getJobMeta(jobID);
+        const meta = await getFramesMeta('job', jobID);
 
         const mean = meta.frames.reduce((a, b) => a + b.width * b.height, 0) / meta.frames.length;
         const stdDev = Math.sqrt(
@@ -680,7 +688,7 @@ export async function findFrame(
     jobID: number, frameFrom: number, frameTo: number, filters: { offset?: number, notDeleted: boolean },
 ): Promise<number | null> {
     const offset = filters.offset || 1;
-    const meta = await getJobMeta(jobID);
+    const meta = await getFramesMeta('job', jobID);
 
     const sign = Math.sign(frameTo - frameFrom);
     const predicate = sign > 0 ? (frame) => frame <= frameTo : (frame) => frame >= frameTo;
