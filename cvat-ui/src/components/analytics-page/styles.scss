@@ -55,8 +55,8 @@
 .cvat-analytics-settings-tooltip-inner {
     @extend .cvat-analytics-tooltip-inner;
 
-    span:not(:last-child) {
-        margin-bottom: $grid-unit-size;
+    div:not(:last-child) {
+        margin-bottom: $grid-unit-size * 2;
     }
 }
 

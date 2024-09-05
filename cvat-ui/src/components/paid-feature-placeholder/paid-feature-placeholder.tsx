@@ -17,9 +17,7 @@ interface Props {
 }
 
 export default function PaidFeaturePlaceholder(props: Props): JSX.Element | null {
-    const {
-        featureDescription,
-    } = props;
+    const { featureDescription } = props;
 
     const { PAID_PLACEHOLDER_CONFIG } = config;
     const { url } = PAID_PLACEHOLDER_CONFIG;

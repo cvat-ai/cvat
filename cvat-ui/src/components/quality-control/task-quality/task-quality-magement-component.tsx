@@ -2,14 +2,10 @@
 //
 // SPDX-License-Identifier: MIT
 
-import {
-    FramesMetaData,
-    Job,
-    Task,
-} from 'cvat-core-wrapper';
+import { FramesMetaData, Job, Task } from 'cvat-core-wrapper';
 import React from 'react';
 import { QualityColors } from 'utils/quality';
-import { Row } from 'antd/es/grid';
+import { Row, Col } from 'antd/es/grid';
 import Spin from 'antd/lib/spin';
 import { usePlugins } from 'utils/hooks';
 import { CombinedState } from 'reducers';
@@ -32,40 +28,46 @@ function TaskQualityManagementComponent(props: Props): JSX.Element {
         onDeleteFrames, onRestoreFrames, fetching,
     } = props;
 
-    const activeCount = gtJobMeta.includedFrames.filter((frameID: number) => (
-        !(frameID in gtJobMeta.deletedFrames)
-    )).length;
-    const excludedCount = Object.keys(gtJobMeta.deletedFrames).filter((frameID: string) => (
-        gtJobMeta.includedFrames.includes(+frameID)
-    )).length;
-
     const managementPagePlugins = usePlugins(
         (state: CombinedState) => (
             state.plugins.components.qualityControlPage.tabs.management.page
         ), props,
     );
+
+    const activeCount = gtJobMeta.includedFrames
+        .filter((frameID: number) => !(frameID in gtJobMeta.deletedFrames)).length;
+
+    const excludedCount = Object.keys(gtJobMeta.deletedFrames)
+        .filter((frameID: string) => gtJobMeta.includedFrames.includes(+frameID)).length;
+
     const managementPageItems: [JSX.Element, number][] = [];
     managementPageItems.push([(
-        <Row>
-            <SummaryComponent
-                excludedCount={excludedCount}
-                activeCount={activeCount}
-                totalCount={gtJobMeta.includedFrames.length}
-            />
+        <Row key='summary'>
+            <Col span={24}>
+                <SummaryComponent
+                    excludedCount={excludedCount}
+                    activeCount={activeCount}
+                    totalCount={gtJobMeta.includedFrames.length}
+                />
+            </Col>
         </Row>
     ), 10]);
+
     managementPageItems.push([(
-        <Row>
-            <AllocationTableComponent
-                task={task}
-                gtJob={gtJob}
-                gtJobMeta={gtJobMeta}
-                getQualityColor={getQualityColor}
-                onDeleteFrames={onDeleteFrames}
-                onRestoreFrames={onRestoreFrames}
-            />
+        <Row key='allocation_table'>
+            <Col span={24}>
+                <AllocationTableComponent
+                    task={task}
+                    gtJob={gtJob}
+                    gtJobMeta={gtJobMeta}
+                    getQualityColor={getQualityColor}
+                    onDeleteFrames={onDeleteFrames}
+                    onRestoreFrames={onRestoreFrames}
+                />
+            </Col>
         </Row>
     ), 20]);
+
     managementPageItems.push(
         ...managementPagePlugins.map(({ component: Component, weight }, index) => {
             const component = <Component targetProps={props} key={index} />;
