@@ -13,15 +13,13 @@ import Result from 'antd/lib/result';
 import notification from 'antd/lib/notification';
 
 import { getInferenceStatusAsync } from 'actions/models-actions';
-import { deleteJobAsync, updateJobAsync } from 'actions/jobs-actions';
+import { updateJobAsync } from 'actions/jobs-actions';
 import { getCore, Task, Job } from 'cvat-core-wrapper';
 import JobListComponent from 'components/task-page/job-list';
 import ModelRunnerModal from 'components/model-runner-modal/model-runner-dialog';
 import CVATLoadingSpinner from 'components/common/loading-spinner';
 import MoveTaskModal from 'components/move-task-modal/move-task-modal';
 import { CombinedState } from 'reducers';
-import { exportActions } from 'actions/export-actions';
-import { importActions } from 'actions/import-actions';
 import TopBarComponent from './top-bar';
 import DetailsComponent from './details';
 
@@ -125,18 +123,6 @@ function TaskPageComponent(): JSX.Element {
         });
     };
 
-    const onJobDelete = (job: Job): void => {
-        dispatch(deleteJobAsync(job));
-    };
-
-    const onJobExport = (job: Job): void => {
-        dispatch(exportActions.openExportDatasetModal(job));
-    };
-
-    const onJobImport = (job: Job): void => {
-        dispatch(importActions.openImportDatasetModal(job));
-    };
-
     return (
         <div className='cvat-task-page'>
             { updatingTask ? <CVATLoadingSpinner size='large' /> : null }
@@ -148,13 +134,7 @@ function TaskPageComponent(): JSX.Element {
                 <Col span={22} xl={18} xxl={14}>
                     <TopBarComponent taskInstance={taskInstance} />
                     <DetailsComponent task={taskInstance} onUpdateTask={onUpdateTask} />
-                    <JobListComponent
-                        task={taskInstance}
-                        onJobUpdate={onJobUpdate}
-                        onJobDelete={onJobDelete}
-                        onJobExport={onJobExport}
-                        onJobImport={onJobImport}
-                    />
+                    <JobListComponent task={taskInstance} onJobUpdate={onJobUpdate} />
                 </Col>
             </Row>
             <ModelRunnerModal />

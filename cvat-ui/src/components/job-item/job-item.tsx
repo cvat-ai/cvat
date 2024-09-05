@@ -25,12 +25,13 @@ import {
 import { useIsMounted } from 'utils/hooks';
 import UserSelector from 'components/task-page/user-selector';
 import CVATTooltip from 'components/common/cvat-tooltip';
+import { useSelector } from 'react-redux';
+import { CombinedState } from 'reducers';
 import JobActionsMenu from './job-actions-menu';
 
 interface Props {
     job: Job;
     task: Task;
-    deleted: boolean;
     onJobUpdate: (job: Job, fields: Parameters<Job['save']>[0]) => void;
 }
 
@@ -98,9 +99,11 @@ function ReviewSummaryComponent({ jobInstance }: { jobInstance: any }): JSX.Elem
 }
 
 function JobItem(props: Props): JSX.Element {
-    const {
-        job, task, deleted, onJobUpdate,
-    } = props;
+    const { job, task, onJobUpdate } = props;
+
+    const deletes = useSelector((state: CombinedState) => state.jobs.activities.deletes);
+    const deleted = job.id in deletes ? deletes[job.id] === true : false;
+
     const { stage } = job;
     const created = moment(job.createdDate);
     const updated = moment(job.updatedDate);

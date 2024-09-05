@@ -6,7 +6,7 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import jsonLogic from 'json-logic-js';
 import _ from 'lodash';
-import { CombinedState, Indexable, JobsQuery } from 'reducers';
+import { Indexable, JobsQuery } from 'reducers';
 import { useHistory } from 'react-router';
 import { Row, Col } from 'antd/lib/grid';
 import Text from 'antd/lib/typography/Text';
@@ -19,7 +19,6 @@ import JobItem from 'components/job-item/job-item';
 import {
     SortingComponent, ResourceFilterHOC, defaultVisibility, updateHistoryFromQuery,
 } from 'components/resource-sorting-filtering';
-import { useSelector } from 'react-redux';
 import {
     localStorageRecentKeyword, localStorageRecentCapacity, predefinedFilterValues, config,
 } from './jobs-filter-configuration';
@@ -31,9 +30,6 @@ const FilteringComponent = ResourceFilterHOC(
 interface Props {
     task: Task;
     onJobUpdate(job: Job, data: Parameters<Job['save']>[0]): void;
-    onJobDelete: (job: Job) => void;
-    onJobExport: (job: Job) => void;
-    onJobImport: (job: Job) => void;
 }
 
 const PAGE_SIZE = 10;
@@ -67,12 +63,8 @@ function setUpJobsList(jobs: Job[], query: JobsQuery): Job[] {
 }
 
 function JobListComponent(props: Props): JSX.Element {
-    const {
-        task: taskInstance, onJobUpdate, onJobDelete, onJobExport, onJobImport,
-    } = props;
+    const { task: taskInstance, onJobUpdate } = props;
     const [visibility, setVisibility] = useState(defaultVisibility);
-
-    const deletedJobs = useSelector((state: CombinedState) => state.jobs.activities.deletes);
 
     const history = useHistory();
     const { id: taskId } = taskInstance;
@@ -100,11 +92,7 @@ function JobListComponent(props: Props): JSX.Element {
                 key={job.id}
                 job={job}
                 task={taskInstance}
-                deleted={job.id in deletedJobs}
                 onJobUpdate={onJobUpdate}
-                onJobDelete={onJobDelete}
-                onJobExport={onJobExport}
-                onJobImport={onJobImport}
             />
         ));
     useEffect(() => {
