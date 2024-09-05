@@ -92,7 +92,7 @@ function validateURL(_: RuleObject, value: string): Promise<void> {
     return Promise.resolve();
 }
 
-export const isInteger = ({ min, max }: { min?: number; max?: number }) => (
+const isInteger = ({ min, max }: { min?: number; max?: number }) => (
     _: RuleObject,
     value?: number | string,
 ): Promise<void> => {

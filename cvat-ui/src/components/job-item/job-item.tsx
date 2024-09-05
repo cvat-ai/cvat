@@ -32,9 +32,6 @@ interface Props {
     task: Task;
     deleted: boolean;
     onJobUpdate: (job: Job, fields: Parameters<Job['save']>[0]) => void;
-    onJobDelete: (job: Job) => void;
-    onJobExport: (job: Job) => void;
-    onJobImport: (job: Job) => void;
 }
 
 function ReviewSummaryComponent({ jobInstance }: { jobInstance: any }): JSX.Element {
@@ -102,7 +99,7 @@ function ReviewSummaryComponent({ jobInstance }: { jobInstance: any }): JSX.Elem
 
 function JobItem(props: Props): JSX.Element {
     const {
-        job, task, deleted, onJobUpdate, onJobDelete, onJobExport, onJobImport,
+        job, task, deleted, onJobUpdate,
     } = props;
     const { stage } = job;
     const created = moment(job.createdDate);
@@ -265,14 +262,7 @@ function JobItem(props: Props): JSX.Element {
                 <Dropdown
                     trigger={['click']}
                     destroyPopupOnHide
-                    overlay={(
-                        <JobActionsMenu
-                            job={job}
-                            onJobDelete={onJobDelete}
-                            onJobImport={onJobImport}
-                            onJobExport={onJobExport}
-                        />
-                    )}
+                    overlay={<JobActionsMenu job={job} />}
                 >
                     <MoreOutlined className='cvat-job-item-more-button' />
                 </Dropdown>

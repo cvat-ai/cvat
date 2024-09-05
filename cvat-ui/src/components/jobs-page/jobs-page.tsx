@@ -11,14 +11,11 @@ import Spin from 'antd/lib/spin';
 import { Col, Row } from 'antd/lib/grid';
 import Pagination from 'antd/lib/pagination';
 
-import { Job } from 'cvat-core-wrapper';
 import { updateHistoryFromQuery } from 'components/resource-sorting-filtering';
 import { CombinedState, Indexable, JobsQuery } from 'reducers';
-import { deleteJobAsync, getJobsAsync } from 'actions/jobs-actions';
+import { getJobsAsync } from 'actions/jobs-actions';
 import { anySearch } from 'utils/any-search';
 
-import { exportActions } from 'actions/export-actions';
-import { importActions } from 'actions/import-actions';
 import TopBarComponent from './top-bar';
 import JobsContentComponent from './jobs-content';
 import EmptyListComponent from './empty-list';
@@ -30,15 +27,6 @@ function JobsPageComponent(): JSX.Element {
     const query = useSelector((state: CombinedState) => state.jobs.query);
     const fetching = useSelector((state: CombinedState) => state.jobs.fetching);
     const count = useSelector((state: CombinedState) => state.jobs.count);
-    const onJobDelete = (job: Job): void => {
-        dispatch(deleteJobAsync(job));
-    };
-    const onJobExport = (job: Job): void => {
-        dispatch(exportActions.openExportDatasetModal(job));
-    };
-    const onJobImport = (job: Job): void => {
-        dispatch(importActions.openImportDatasetModal(job));
-    };
 
     const queryParams = new URLSearchParams(history.location.search);
     const updatedQuery = { ...query };
@@ -66,11 +54,7 @@ function JobsPageComponent(): JSX.Element {
 
     const content = count ? (
         <>
-            <JobsContentComponent
-                onJobDelete={onJobDelete}
-                onJobExport={onJobExport}
-                onJobImport={onJobImport}
-            />
+            <JobsContentComponent />
             <Row justify='space-around' about='middle'>
                 <Col md={22} lg={18} xl={16} xxl={16}>
                     <Pagination
