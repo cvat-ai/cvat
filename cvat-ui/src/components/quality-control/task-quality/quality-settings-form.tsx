@@ -15,13 +15,13 @@ import Select from 'antd/lib/select';
 import CVATTooltip from 'components/common/cvat-tooltip';
 import { QualitySettings, TargetMetric } from 'cvat-core-wrapper';
 
-interface FormProps {
+interface Props {
     form: FormInstance;
     settings: QualitySettings;
     onSave: () => void;
 }
 
-export default function QualitySettingsForm(props: FormProps): JSX.Element | null {
+export default function QualitySettingsForm(props: Readonly<Props>): JSX.Element | null {
     const { form, settings, onSave } = props;
 
     const initialValues = {

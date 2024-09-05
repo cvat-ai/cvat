@@ -10,7 +10,7 @@ import React, {
 import { useParams } from 'react-router';
 import { Link } from 'react-router-dom';
 import { Row, Col } from 'antd/lib/grid';
-import Tabs from 'antd/lib/tabs';
+import Tabs, { TabsProps } from 'antd/lib/tabs';
 import Title from 'antd/lib/typography/Title';
 import notification from 'antd/lib/notification';
 import { useIsMounted } from 'utils/hooks';
@@ -373,7 +373,7 @@ function QualityControlPage(): JSX.Element {
             </Col>
         );
 
-        const tabsItems = [];
+        const tabsItems: [NonNullable<TabsProps['items']>[0], number][] = [];
         tabsItems.push([{
             key: 'overview',
             label: 'Overview',
@@ -416,6 +416,8 @@ function QualityControlPage(): JSX.Element {
             }, 30]);
         }
 
+        tabsItems.sort((item1, item2) => item1[1] - item2[1]);
+
         tabs = (
             <Tabs
                 type='card'
@@ -423,8 +425,7 @@ function QualityControlPage(): JSX.Element {
                 defaultActiveKey='Overview'
                 onChange={onTabKeyChange}
                 className='cvat-task-control-tabs'
-                items={tabsItems.sort((item1, item2) => item1[1] - item2[1])
-                    .map((item) => item[0])}
+                items={tabsItems.map((item) => item[0])}
             />
         );
     }

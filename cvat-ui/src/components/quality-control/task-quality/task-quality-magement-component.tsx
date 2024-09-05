@@ -22,7 +22,7 @@ interface Props {
     onRestoreFrames: (frames: number[]) => void;
 }
 
-function TaskQualityManagementComponent(props: Props): JSX.Element {
+function TaskQualityManagementComponent(props: Readonly<Props>): JSX.Element {
     const {
         task, gtJob, gtJobMeta, getQualityColor,
         onDeleteFrames, onRestoreFrames, fetching,

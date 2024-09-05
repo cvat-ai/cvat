@@ -23,8 +23,8 @@ const jobHistoryCache = new WeakMap<Task | Job, AnnotationsHistory>();
 const taskHistoryCache = new WeakMap<Task | Job, AnnotationsHistory>();
 
 function getCache(sessionType: 'task' | 'job'): {
-    collection: typeof jobCollectionCache & typeof taskCollectionCache,
-    history: typeof jobHistoryCache & typeof jobHistoryCache
+    collection: typeof jobCollectionCache;
+    history: typeof jobHistoryCache;
 } {
     if (sessionType === 'task') {
         return {

@@ -15,7 +15,7 @@ interface Props {
     setQualitySettings: (settings: QualitySettings) => void;
 }
 
-export default function QualitySettingsComponent(props: Props): JSX.Element | null {
+export default function QualitySettingsComponent(props: Readonly<Props>): JSX.Element | null {
     const {
         fetching,
         qualitySettings: settings,

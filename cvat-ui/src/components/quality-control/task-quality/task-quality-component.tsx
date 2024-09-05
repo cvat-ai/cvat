@@ -18,7 +18,7 @@ interface Props {
     targetMetric: TargetMetric;
 }
 
-function TaskQualityComponent(props: Props): JSX.Element {
+function TaskQualityComponent(props: Readonly<Props>): JSX.Element {
     const {
         task, getQualityColor, targetMetric,
     } = props;
@@ -32,11 +32,7 @@ function TaskQualityComponent(props: Props): JSX.Element {
     });
 
     const items: [JSX.Element, number][] = [];
-    items.push([(
-        <PaidFeaturePlaceholder
-            featureDescription={featureDescription}
-        />
-    ), 0]);
+
     items.push(...plugins.map(({ component: Component, weight }, index: number) => (
         [<Component
             key={index}
@@ -48,10 +44,12 @@ function TaskQualityComponent(props: Props): JSX.Element {
             }}
         />, weight] as [JSX.Element, number]
     )));
+
     const renderedComponent = items.sort((a, b) => b[1] - a[1])[0][0];
 
     return (
         <div className='cvat-task-quality-page'>
+            <PaidFeaturePlaceholder featureDescription={featureDescription} />
             {renderedComponent}
         </div>
     );

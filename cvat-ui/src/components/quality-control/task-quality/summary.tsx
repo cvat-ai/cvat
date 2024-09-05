@@ -13,7 +13,7 @@ export interface Props {
     activeCount: number;
 }
 
-export function SummaryComponent(props: Props): JSX.Element {
+export function SummaryComponent(props: Readonly<Props>): JSX.Element {
     const { excludedCount, totalCount, activeCount } = props;
 
     const reportInfo = (

@@ -41,7 +41,7 @@ interface RowData {
     actions: { frameID: number, active: boolean },
 }
 
-function ResizableTitle(props: Partial<ResizableProps>) {
+function ResizableTitle(props: Partial<ResizableProps>): JSX.Element {
     const { children, onResize } = props;
     return (
         <ResizableBox
@@ -58,7 +58,7 @@ function ResizableTitle(props: Partial<ResizableProps>) {
     );
 }
 
-export default function AllocationTableComponent(props: Props): JSX.Element {
+export default function AllocationTableComponent(props: Readonly<Props>): JSX.Element {
     const {
         task,
         gtJob,
@@ -126,11 +126,11 @@ export default function AllocationTableComponent(props: Props): JSX.Element {
         },
     };
 
-    function nameRenderFunc(width: number) {
-        const component = ({ index, name }: { index: number, name: string }): JSX.Element => (
+    const nameRenderFunc = (width: number) => ({ index, name }: { index: number, name: string }): JSX.Element => {
+        return (
             <CVATTooltip title={name}>
                 <Button
-                    className='cvat-open-fame-button'
+                    className='cvat-open-frame-button'
                     type='link'
                     onClick={(e: React.MouseEvent): void => {
                         e.preventDefault();
@@ -141,12 +141,10 @@ export default function AllocationTableComponent(props: Props): JSX.Element {
                 </Button>
             </CVATTooltip>
         );
-        return component;
-    }
+    };
 
     const [columns, setColumns] = useState<ColumnType<RowData>[]>([]);
-    const handleResize =
-    (key: string) => (e: React.SyntheticEvent, data: ResizeCallbackData) => {
+    const handleResize = (key: string) => (_: React.SyntheticEvent, data: ResizeCallbackData) => {
         const { size: { width } } = data;
         setColumns((prevColumns) => {
             const index = prevColumns.findIndex((col) => col.key === key);
@@ -158,6 +156,7 @@ export default function AllocationTableComponent(props: Props): JSX.Element {
             return nextColumns;
         });
     };
+
     useEffect(() => {
         setColumns([
             {
@@ -172,7 +171,7 @@ export default function AllocationTableComponent(props: Props): JSX.Element {
                 render: (index: number): JSX.Element => (
                     <div>
                         <Button
-                            className='cvat-open-fame-button'
+                            className='cvat-open-frame-button'
                             type='link'
                             onClick={(e: React.MouseEvent): void => {
                                 e.preventDefault();

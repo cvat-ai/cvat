@@ -12,10 +12,10 @@ import Button from 'antd/lib/button';
 import Text from 'antd/lib/typography/Text';
 
 interface Props {
-    taskID: number,
+    taskID: number;
 }
 
-function EmptyJobComponent(props: Props): JSX.Element {
+function EmptyJobComponent(props: Readonly<Props>): JSX.Element {
     const { taskID } = props;
 
     return (
