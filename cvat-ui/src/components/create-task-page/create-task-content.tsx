@@ -304,9 +304,10 @@ class CreateTaskContent extends React.PureComponent<Props & RouteComponentProps,
     };
 
     private handleValidationMethodChange = (value: ValidationMethod): void => {
-        this.setState((state) => ({
+        this.qualityConfigurationComponent.current?.resetFields();
+        this.setState(() => ({
             quality: {
-                ...state.quality,
+                ...defaultState.quality,
                 validationMethod: value,
             },
         }));
@@ -459,34 +460,38 @@ class CreateTaskContent extends React.PureComponent<Props & RouteComponentProps,
         this.basicConfigurationComponent.current
             .submit()
             .then(() => {
-                if (this.qualityConfigurationComponent.current) {
-                    this.qualityConfigurationComponent.current.submit();
-                }
+                const promises = [];
+
                 if (this.advancedConfigurationComponent.current) {
-                    return this.advancedConfigurationComponent.current.submit();
+                    promises.push(this.advancedConfigurationComponent.current.submit());
                 }
+
+                if (this.qualityConfigurationComponent.current) {
+                    promises.push(this.qualityConfigurationComponent.current.submit());
+                }
+
+                return Promise.all(promises);
+            }).then(() => {
                 if (projectId) {
-                    return core.projects.get({ id: projectId })
-                        .then((response: any) => {
-                            const [project] = response;
-                            const { advanced } = this.state;
-                            return this.handleSubmitAdvancedConfiguration({
-                                ...advanced,
-                                sourceStorage: new Storage(
-                                    project.sourceStorage || { location: StorageLocation.LOCAL },
-                                ),
-                                targetStorage: new Storage(
-                                    project.targetStorage || { location: StorageLocation.LOCAL },
-                                ),
-                            });
-                        })
-                        .catch((error: Error): void => {
-                            throw new Error(`Couldn't fetch the project ${projectId} ${error.toString()}`);
+                    return core.projects.get({ id: projectId }).then((response) => {
+                        const [project] = response;
+                        const { advanced } = this.state;
+                        return this.handleSubmitAdvancedConfiguration({
+                            ...advanced,
+                            sourceStorage: new Storage(
+                                project.sourceStorage || { location: StorageLocation.LOCAL },
+                            ),
+                            targetStorage: new Storage(
+                                project.targetStorage || { location: StorageLocation.LOCAL },
+                            ),
                         });
+                    }).catch((error: Error): void => {
+                        throw new Error(`Couldn't fetch the project ${projectId} ${error.toString()}`);
+                    });
                 }
+
                 return Promise.resolve();
-            })
-            .then(resolve)
+            }).then(resolve)
             .catch((error: Error | ValidateErrorEntity): void => {
                 notification.error({
                     message: 'Could not create a task',

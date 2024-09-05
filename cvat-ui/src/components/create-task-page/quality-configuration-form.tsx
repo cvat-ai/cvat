@@ -50,6 +50,10 @@ export default class QualityConfigurationForm extends React.PureComponent<Props>
         return Promise.reject(new Error('Quality form ref is empty'));
     }
 
+    public resetFields(): void {
+        this.formRef.current?.resetFields(['validationFramesPercent', 'validationFramesPerJob', 'frameSelectionMethod']);
+    }
+
     private gtParamsBlock(): JSX.Element {
         return (
             <>
@@ -69,9 +73,21 @@ export default class QualityConfigurationForm extends React.PureComponent<Props>
                     <Form.Item
                         label='Quantity (%)'
                         name='validationFramesPercent'
-                        rules={[{ required: true, message: 'The field is required.' }]}
+                        normalize={(value) => +value}
+                        rules={[
+                            { required: true, message: 'The field is required' },
+                            {
+                                type: 'number', min: 0, max: 100, message: 'Value is not valid',
+                            },
+                        ]}
                     >
-                        <Input size='large' type='number' min={0} max={100} suffix={<PercentageOutlined />} />
+                        <Input
+                            size='large'
+                            type='number'
+                            min={0}
+                            max={100}
+                            suffix={<PercentageOutlined />}
+                        />
                     </Form.Item>
                 </Col>
             </>
@@ -85,7 +101,13 @@ export default class QualityConfigurationForm extends React.PureComponent<Props>
                     <Form.Item
                         label='Overhead per job (%)'
                         name='validationFramesPerJob'
-                        rules={[{ required: true, message: 'The field is required.' }]}
+                        normalize={(value) => +value}
+                        rules={[
+                            { required: true, message: 'The field is required' },
+                            {
+                                type: 'number', min: 0, max: 100, message: 'Value is not valid',
+                            },
+                        ]}
                     >
                         <Input size='large' type='number' min={0} max={100} suffix={<PercentageOutlined />} />
                     </Form.Item>
@@ -94,7 +116,13 @@ export default class QualityConfigurationForm extends React.PureComponent<Props>
                     <Form.Item
                         label='Total honeypots (%)'
                         name='validationFramesPercent'
-                        rules={[{ required: true, message: 'The field is required.' }]}
+                        normalize={(value) => +value}
+                        rules={[
+                            { required: true, message: 'The field is required' },
+                            {
+                                type: 'number', min: 0, max: 100, message: 'Value is not valid',
+                            },
+                        ]}
                     >
                         <Input size='large' type='number' min={0} max={100} suffix={<PercentageOutlined />} />
                     </Form.Item>
