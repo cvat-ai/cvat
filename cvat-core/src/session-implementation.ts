@@ -671,6 +671,7 @@ export function implementTask(Task: typeof TaskClass): typeof TaskClass {
             }
 
             const taskSpec: any = {
+                ...fields,
                 name: this.name,
                 labels: this.labels.map((el) => el.toJSON()),
             };
