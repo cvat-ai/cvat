@@ -933,6 +933,31 @@ class SimpleJobSerializer(serializers.ModelSerializer):
         fields = ('url', 'id', 'assignee', 'status', 'stage', 'state', 'type')
         read_only_fields = fields
 
+class JobHoneypotWriteSerializer(serializers.Serializer):
+    frame_selection_method = serializers.ChoiceField(
+        choices=models.JobFrameSelectionMethod.choices(), required=True
+    )
+    frames = serializers.ListSerializer(
+        child=serializers.CharField(max_length=MAX_FILENAME_LENGTH),
+        default=[], required=False, allow_null=True
+    )
+
+    def validate(self, attrs):
+        frame_selection_method = attrs["frame_selection_method"]
+        if frame_selection_method == models.JobFrameSelectionMethod.MANUAL:
+            required_field_name = "frames"
+            if required_field_name not in attrs:
+                raise serializers.ValidationError("'{}' must be set".format(required_field_name))
+        elif frame_selection_method == models.JobFrameSelectionMethod.RANDOM_UNIFORM:
+            pass
+        else:
+            assert False
+
+        return super().validate(attrs)
+
+class JobHoneypotReadSerializer(serializers.Serializer):
+    frames = serializers.ListSerializer(child=serializers.IntegerField(), allow_empty=True)
+
 class SegmentSerializer(serializers.ModelSerializer):
     jobs = SimpleJobSerializer(many=True, source='job_set')
     frames = serializers.ListSerializer(child=serializers.IntegerField(), allow_empty=True)

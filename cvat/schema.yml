@@ -2565,6 +2565,62 @@ paths:
           description: Format is not available
         '409':
           description: Exporting is already in progress
+  /api/jobs/{id}/honeypot:
+    get:
+      operationId: jobs_retrieve_honeypot
+      summary: Allows to get current honeypot frames
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this job.
+        required: true
+      tags:
+      - jobs
+      security:
+      - sessionAuth: []
+        csrfAuth: []
+        tokenAuth: []
+      - signatureAuth: []
+      - basicAuth: []
+      responses:
+        '200':
+          content:
+            application/vnd.cvat+json:
+              schema:
+                $ref: '#/components/schemas/JobHoneypotRead'
+          description: ''
+    patch:
+      operationId: jobs_partial_update_honeypot
+      summary: Allows to update current honeypot frames
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this job.
+        required: true
+      tags:
+      - jobs
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedJobHoneypotWriteRequest'
+      security:
+      - sessionAuth: []
+        csrfAuth: []
+        tokenAuth: []
+      - signatureAuth: []
+      - basicAuth: []
+      responses:
+        '200':
+          content:
+            application/vnd.cvat+json:
+              schema:
+                $ref: '#/components/schemas/JobHoneypotRead'
+          description: ''
   /api/jobs/{id}/preview:
     get:
       operationId: jobs_retrieve_preview
@@ -8006,6 +8062,15 @@ components:
       oneOf:
       - $ref: '#/components/schemas/LabeledDataRequest'
       - $ref: '#/components/schemas/AnnotationFileRequest'
+    JobHoneypotRead:
+      type: object
+      properties:
+        frames:
+          type: array
+          items:
+            type: integer
+      required:
+      - frames
     JobRead:
       type: object
       properties:
@@ -9236,6 +9301,18 @@ components:
           nullable: true
         resolved:
           type: boolean
+    PatchedJobHoneypotWriteRequest:
+      type: object
+      properties:
+        frame_selection_method:
+          $ref: '#/components/schemas/FrameSelectionMethod'
+        frames:
+          type: array
+          items:
+            type: string
+            minLength: 1
+          nullable: true
+          default: []
     PatchedJobWriteRequest:
       type: object
       properties:
