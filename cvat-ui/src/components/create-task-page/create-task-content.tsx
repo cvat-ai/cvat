@@ -1030,7 +1030,7 @@ class CreateTaskContent extends React.PureComponent<Props & RouteComponentProps,
                 {this.renderLabelsBlock()}
                 {this.renderFilesBlock()}
                 {this.renderAdvancedBlock()}
-                {this.renderQualityBlock()}
+                {/* {this.renderQualityBlock()} disabled while https://github.com/cvat-ai/cvat/pull/8348 not merged */}
 
                 <Col span={24} className='cvat-create-task-content-footer'>
                     {many ? this.renderFooterMultiTasks() : this.renderFooterSingleTask() }
