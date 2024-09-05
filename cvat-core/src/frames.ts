@@ -444,7 +444,7 @@ export async function getFramesMeta(type: 'job' | 'task', id: number, forceReloa
             deleted_frames: Object.fromEntries(result.deleted_frames.map((_frame) => [_frame, true])),
         });
     }
-    if (!frameMetaCache[id] || forceReload) {
+    if (!(id in frameMetaCache) || forceReload) {
         frameMetaCache[id] = serverProxy.frames.getMeta('job', id)
             .then((serverMeta) => new FramesMetaData({
                 ...serverMeta,
