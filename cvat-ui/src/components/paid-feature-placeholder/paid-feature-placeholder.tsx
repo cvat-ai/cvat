@@ -5,10 +5,10 @@
 import React from 'react';
 import Text from 'antd/lib/typography/Text';
 import Card from 'antd/es/card/Card';
+import Button from 'antd/lib/button';
 import { Row, Col } from 'antd/es/grid';
 
 import './styles.scss';
-import { Button } from 'antd';
 import CVATMarkdown from 'components/common/cvat-markdown';
 import config from 'config';
 

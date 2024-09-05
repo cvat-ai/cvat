@@ -14,6 +14,8 @@ import Select from 'antd/lib/select';
 import notification from 'antd/lib/notification';
 import Text from 'antd/lib/typography/Text';
 import Modal from 'antd/lib/modal';
+import Alert from 'antd/lib/alert';
+import InputNumber from 'antd/lib/input-number';
 
 import config from 'config';
 import { useIsMounted } from 'utils/hooks';
@@ -25,7 +27,6 @@ import {
 import { Canvas } from 'cvat-canvas-wrapper';
 import { fetchAnnotationsAsync, saveAnnotationsAsync } from 'actions/annotation-actions';
 import { switchAutoSave } from 'actions/settings-actions';
-import { Alert, InputNumber } from 'antd';
 import { clamp } from 'utils/math';
 
 const core = getCore();
