@@ -30,7 +30,7 @@ export default function QualitySettingsComponent(props: Props): JSX.Element | nu
 
     if (fetching) {
         return (
-            <div className='cvat-analytics-loading'>
+            <div className='cvat-control-loading'>
                 <CVATLoadingSpinner />
             </div>
         );

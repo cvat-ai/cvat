@@ -212,7 +212,7 @@ function QualityControlPage(): JSX.Element {
             if (isMounted()) {
                 notification.error({
                     description: error.toString(),
-                    message: 'Could not initialize quality analytics page',
+                    message: 'Could not initialize quality control page',
                 });
             }
         }
@@ -422,7 +422,7 @@ function QualityControlPage(): JSX.Element {
                 activeKey={activeTab}
                 defaultActiveKey='Overview'
                 onChange={onTabKeyChange}
-                className='cvat-task-analytics-tabs'
+                className='cvat-task-control-tabs'
                 items={tabsItems.sort((item1, item2) => item1[1] - item2[1])
                     .map((item) => item[0])}
             />
