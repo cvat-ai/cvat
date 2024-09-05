@@ -100,25 +100,49 @@ class MediaCache:
 
         return item
 
+    def _make_cache_key_prefix(
+        self, obj: Union[models.Task, models.Segment, models.Job, models.CloudStorage]
+    ) -> str:
+        if isinstance(obj, models.Task):
+            return f"task_{obj.id}"
+        elif isinstance(obj, models.Segment):
+            return f"segment_{obj.id}"
+        elif isinstance(obj, models.Job):
+            return f"job_{obj.id}"
+        elif isinstance(obj, models.CloudStorage):
+            return f"cloudstorage_{obj.id}"
+        else:
+            assert False, f"Unexpected object type {type(obj)}"
+
+    def _make_chunk_key(
+        self,
+        db_obj: Union[models.Task, models.Segment, models.Job],
+        chunk_number: int,
+        *,
+        quality: FrameQuality,
+    ) -> str:
+        return f"{self._make_cache_key_prefix(db_obj)}_{chunk_number}_{quality}"
+
+    def _make_preview_key(self, db_obj: Union[models.Segment, models.CloudStorage]) -> str:
+        return f"{self._make_cache_key_prefix(db_obj)}_preview"
+
+    def _make_context_image_preview_key(self, db_data: models.Data, frame_number: int) -> str:
+        return f"context_image_{db_data.id}_{frame_number}_preview"
+
     def get_segment_chunk(
         self, db_segment: models.Segment, chunk_number: int, *, quality: FrameQuality
     ) -> DataWithMime:
         return self._get_or_set_cache_item(
-            key=f"segment_{db_segment.id}_{chunk_number}_{quality}",
+            key=self._make_chunk_key(db_segment, chunk_number, quality=quality),
             create_callback=lambda: self.prepare_segment_chunk(
                 db_segment, chunk_number, quality=quality
             ),
         )
 
-    def _make_task_chunk_key(
-        self, db_task: models.Task, chunk_number: int, *, quality: FrameQuality
-    ) -> str:
-        return f"task_{db_task.id}_{chunk_number}_{quality}"
-
     def get_task_chunk(
         self, db_task: models.Task, chunk_number: int, *, quality: FrameQuality
     ) -> Optional[DataWithMime]:
-        return self._get(key=self._make_task_chunk_key(db_task, chunk_number, quality=quality))
+        return self._get(key=self._make_chunk_key(db_task, chunk_number, quality=quality))
 
     def get_or_set_task_chunk(
         self,
@@ -129,7 +153,7 @@ class MediaCache:
         set_callback: Callable[[], DataWithMime],
     ) -> DataWithMime:
         return self._get_or_set_cache_item(
-            key=self._make_task_chunk_key(db_task, chunk_number, quality=quality),
+            key=self._make_chunk_key(db_task, chunk_number, quality=quality),
             create_callback=set_callback,
         )
 
@@ -137,7 +161,7 @@ class MediaCache:
         self, db_job: models.Job, chunk_number: int, *, quality: FrameQuality
     ) -> DataWithMime:
         return self._get_or_set_cache_item(
-            key=f"job_{db_job.id}_{chunk_number}_{quality}",
+            key=self._make_chunk_key(db_job, chunk_number, quality=quality),
             create_callback=lambda: self.prepare_masked_range_segment_chunk(
                 db_job.segment, chunk_number, quality=quality
             ),
@@ -145,22 +169,22 @@ class MediaCache:
 
     def get_or_set_segment_preview(self, db_segment: models.Segment) -> DataWithMime:
         return self._get_or_set_cache_item(
-            f"segment_preview_{db_segment.id}",
+            self._make_preview_key(db_segment),
             create_callback=lambda: self._prepare_segment_preview(db_segment),
         )
 
     def get_cloud_preview(self, db_storage: models.CloudStorage) -> Optional[DataWithMime]:
-        return self._get(f"cloudstorage_{db_storage.id}_preview")
+        return self._get(self._make_preview_key(db_storage))
 
     def get_or_set_cloud_preview(self, db_storage: models.CloudStorage) -> DataWithMime:
         return self._get_or_set_cache_item(
-            f"cloudstorage_{db_storage.id}_preview",
+            self._make_preview_key(db_storage),
             create_callback=lambda: self._prepare_cloud_preview(db_storage),
         )
 
     def get_frame_context_images(self, db_data: models.Data, frame_number: int) -> DataWithMime:
         return self._get_or_set_cache_item(
-            key=f"context_image_{db_data.id}_{frame_number}",
+            key=self._make_context_image_preview_key(db_data, frame_number),
             create_callback=lambda: self.prepare_context_images(db_data, frame_number),
         )
 
