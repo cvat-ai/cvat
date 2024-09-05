@@ -261,6 +261,7 @@ function QualityControlPage(): JSX.Element {
                     dispatch(reducerActions.setQualitySettingsFetching(true));
                     const responseSettings = await settings.save();
                     dispatch(reducerActions.setQualitySettings(responseSettings));
+                    notification.info({ message: 'Settings have been updated' });
                 } catch (error: unknown) {
                     notification.error({
                         message: 'Could not save quality settings',

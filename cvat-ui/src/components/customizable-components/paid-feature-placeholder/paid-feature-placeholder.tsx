@@ -16,7 +16,7 @@ interface Props {
     featureDescription: string;
 }
 
-export default function PaidFeaturePlaceholder(props: Readonly<Props>): JSX.Element | null {
+function PaidFeaturePlaceholder(props: Readonly<Props>): JSX.Element | null {
     const { featureDescription } = props;
 
     const { PAID_PLACEHOLDER_CONFIG } = config;
@@ -65,3 +65,5 @@ export default function PaidFeaturePlaceholder(props: Readonly<Props>): JSX.Elem
         </div>
     );
 }
+
+export default React.memo(PaidFeaturePlaceholder);

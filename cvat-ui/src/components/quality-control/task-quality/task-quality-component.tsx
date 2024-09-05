@@ -2,15 +2,11 @@
 //
 // SPDX-License-Identifier: MIT
 
-import {
-    TargetMetric,
-    Task,
-} from 'cvat-core-wrapper';
 import React from 'react';
+
+import { TargetMetric, Task } from 'cvat-core-wrapper';
 import { QualityColors } from 'utils/quality';
-import PaidFeaturePlaceholder from 'components/paid-feature-placeholder/paid-feature-placeholder';
-import { usePlugins } from 'utils/hooks';
-import config from 'config';
+import CustomizableComponents from 'components/customizable-components';
 
 interface Props {
     task: Task;
@@ -19,38 +15,13 @@ interface Props {
 }
 
 function TaskQualityComponent(props: Readonly<Props>): JSX.Element {
-    const {
-        task, getQualityColor, targetMetric,
-    } = props;
+    const { task, getQualityColor, targetMetric } = props;
 
-    const { PAID_PLACEHOLDER_CONFIG: { features: { qualityControl: featureDescription } } } = config;
-
-    const plugins = usePlugins((state) => state.plugins.components.qualityControlPage.tabs.overview, props, {
-        task,
-        getQualityColor,
-        targetMetric,
-    });
-
-    const items: [JSX.Element, number][] = [];
-
-    items.push(...plugins.map(({ component: Component, weight }, index: number) => (
-        [<Component
-            key={index}
-            targetProps={props}
-            targetState={{
-                task,
-                getQualityColor,
-                targetMetric,
-            }}
-        />, weight] as [JSX.Element, number]
-    )));
-
-    const renderedComponent = items.sort((a, b) => b[1] - a[1])[0][0];
+    const Component = CustomizableComponents.QUALITY_CONTROL_OVERVIEW;
 
     return (
         <div className='cvat-task-quality-page'>
-            <PaidFeaturePlaceholder featureDescription={featureDescription} />
-            {renderedComponent}
+            <Component task={task} getQualityColor={getQualityColor} targetMetric={targetMetric} />
         </div>
     );
 }

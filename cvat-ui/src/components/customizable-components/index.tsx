@@ -9,6 +9,8 @@ import Button from 'antd/lib/button';
 import { SaveIcon } from 'icons';
 import GlobalHotKeys from 'utils/mousetrap-react';
 import CVATTooltip from 'components/common/cvat-tooltip';
+import PaidFeaturePlaceholder from 'components/customizable-components/paid-feature-placeholder/paid-feature-placeholder';
+import config from 'config';
 import { CombinedState } from 'reducers';
 import { ShortcutScope } from 'utils/enums';
 import { registerComponentShortcuts } from 'actions/shortcuts-actions';
@@ -55,6 +57,10 @@ const storage = {
             </>
         );
     },
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    QUALITY_CONTROL_OVERVIEW: (_: any) => (
+        <PaidFeaturePlaceholder featureDescription={config.PAID_PLACEHOLDER_CONFIG.features.qualityControl} />
+    ),
 };
 
 export default storage;

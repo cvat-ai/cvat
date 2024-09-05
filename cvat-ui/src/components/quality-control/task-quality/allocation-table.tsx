@@ -2,26 +2,22 @@
 //
 // SPDX-License-Identifier: MIT
 
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import { useSelector } from 'react-redux';
 import { useHistory } from 'react-router';
-import { ResizableBox, ResizableProps, ResizeCallbackData } from 'react-resizable';
 import { Row, Col } from 'antd/lib/grid';
 import Table from 'antd/lib/table';
 import Button from 'antd/lib/button';
 import Text from 'antd/lib/typography/Text';
+import { Key } from 'antd/lib/table/interface';
 import Icon, { DeleteOutlined } from '@ant-design/icons';
-import { Task, Job, FramesMetaData } from 'cvat-core-wrapper';
+
 import { RestoreIcon } from 'icons';
+import { Task, Job, FramesMetaData } from 'cvat-core-wrapper';
 import { sorter, QualityColors } from 'utils/quality';
 import CVATTooltip from 'components/common/cvat-tooltip';
-import { Key, ColumnType } from 'antd/lib/table/interface';
 import { usePlugins } from 'utils/hooks';
 import { CombinedState } from 'reducers';
-
-const DEFAULT_TITLE_HEIGHT = 20;
-const DEFAULT_TITLE_WIDTH = 100;
-const RESIZE_HANDLE_OFFSET = 30;
 
 interface Props {
     task: Task;
@@ -41,23 +37,6 @@ interface RowData {
     actions: { frameID: number, active: boolean },
 }
 
-function ResizableTitle(props: Partial<ResizableProps>): JSX.Element {
-    const { children, onResize } = props;
-    return (
-        <ResizableBox
-            height={DEFAULT_TITLE_HEIGHT}
-            width={DEFAULT_TITLE_WIDTH}
-            minConstraints={[DEFAULT_TITLE_WIDTH, DEFAULT_TITLE_HEIGHT]}
-            maxConstraints={[DEFAULT_TITLE_WIDTH * 3, DEFAULT_TITLE_HEIGHT]}
-            onResize={onResize}
-            axis='x'
-            draggableOpts={{ enableUserSelectHack: false }}
-        >
-            {children}
-        </ResizableBox>
-    );
-}
-
 export default function AllocationTableComponent(props: Readonly<Props>): JSX.Element {
     const {
         task,
@@ -69,16 +48,8 @@ export default function AllocationTableComponent(props: Readonly<Props>): JSX.El
     } = props;
 
     const history = useHistory();
+    const notAvailableComponent = <Text style={{ color: getQualityColor(0) }}>Unknown</Text>;
 
-    const notAvailableComponent = (
-        <Text
-            style={{
-                color: getQualityColor(0),
-            }}
-        >
-            N/A
-        </Text>
-    );
     const qualityColumnPlugins = usePlugins(
         (state: CombinedState) => (
             state.plugins.components.qualityControlPage.tabs.management.allocationTable.columns.quality
@@ -102,6 +73,7 @@ export default function AllocationTableComponent(props: Readonly<Props>): JSX.El
             state.plugins.components.qualityControlPage.tabs.management.allocationTable.actions
         ), props,
     );
+
     const allocationTableActionsItems: [JSX.Element, number][] = [];
     allocationTableActionsItems.push(
         ...allocationTableActionsPlugins.map(({ component: Component, weight }, index) => {
@@ -126,153 +98,117 @@ export default function AllocationTableComponent(props: Readonly<Props>): JSX.El
         },
     };
 
-    const nameRenderFunc = (width: number) => ({ index, name }: { index: number, name: string }): JSX.Element => {
-        return (
-            <CVATTooltip title={name}>
-                <Button
-                    className='cvat-open-frame-button'
-                    type='link'
-                    onClick={(e: React.MouseEvent): void => {
-                        e.preventDefault();
-                        history.push(`/tasks/${task.id}/jobs/${gtJob.id}?frame=${index}`);
-                    }}
-                >
-                    <span style={{ width }}>{name}</span>
-                </Button>
-            </CVATTooltip>
-        );
-    };
+    const columns = [
+        {
+            title: 'Frame',
+            dataIndex: 'frame',
+            key: 'frame',
+            width: 50,
+            sorter: sorter('frame'),
+            render: (frame: number): JSX.Element => (
+                <div>
+                    <Button
+                        className='cvat-open-frame-button'
+                        type='link'
+                        onClick={(e: React.MouseEvent): void => {
+                            e.preventDefault();
+                            history.push(`/tasks/${task.id}/jobs/${gtJob.id}?frame=${frame}`);
+                        }}
+                    >
+                        {`#${frame}`}
+                    </Button>
+                </div>
+            ),
+        },
+        {
+            title: 'Name',
+            dataIndex: 'name',
+            key: 'name',
+            width: 300,
+            sorter: sorter('name.name'),
+            render: ({ name, index }: { name: string, index: number }) => (
+                <CVATTooltip title={name}>
+                    <Button
+                        className='cvat-open-frame-button'
+                        type='link'
+                        onClick={(e: React.MouseEvent): void => {
+                            e.preventDefault();
+                            history.push(`/tasks/${task.id}/jobs/${gtJob.id}?frame=${index}`);
+                        }}
+                    >
+                        {name}
+                    </Button>
+                </CVATTooltip>
+            ),
+        },
+        {
+            title: 'Use count',
+            dataIndex: 'useCount',
+            key: 'useCount',
+            align: 'center' as const,
+            width: 100,
+            sorter: useCountSorter,
+            render: (frameID: number): JSX.Element => {
+                const useCountColumnItems: [JSX.Element, number][] = [[notAvailableComponent, 10]];
+                useCountColumnItems.push(
+                    ...useCountColumnPlugins.map(({ component: Component, weight }, index) => {
+                        const component = <Component targetProps={props} key={index} targetState={{ frameID }} />;
+                        return [component, weight] as [JSX.Element, number];
+                    }),
+                );
+                const renderedComponent = useCountColumnItems.sort((a, b) => b[1] - a[1])[0][0];
 
-    const [columns, setColumns] = useState<ColumnType<RowData>[]>([]);
-    const handleResize = (key: string) => (_: React.SyntheticEvent, data: ResizeCallbackData) => {
-        const { size: { width } } = data;
-        setColumns((prevColumns) => {
-            const index = prevColumns.findIndex((col) => col.key === key);
-            const nextColumns = [...prevColumns];
-            nextColumns[index] = { ...nextColumns[index], width: width + RESIZE_HANDLE_OFFSET };
-            if (key === 'name') {
-                nextColumns[index].render = nameRenderFunc(width + RESIZE_HANDLE_OFFSET);
-            }
-            return nextColumns;
-        });
-    };
+                return renderedComponent;
+            },
+        },
+        {
+            title: 'Quality',
+            dataIndex: 'quality',
+            key: 'quality',
+            align: 'center' as const,
+            className: 'cvat-job-item-quality',
+            width: 50,
+            sorter: qualitySorter,
+            render: (frameID: number): JSX.Element => {
+                const qualityColumnItems: [JSX.Element, number][] = [[notAvailableComponent, 10]];
+                qualityColumnItems.push(
+                    ...qualityColumnPlugins.map(({ component: Component, weight }, index) => {
+                        const component = <Component targetProps={props} key={index} targetState={{ frameID }} />;
+                        return [component, weight] as [JSX.Element, number];
+                    }),
+                );
+                const renderedComponent = qualityColumnItems.sort((a, b) => b[1] - a[1])[0][0];
 
-    useEffect(() => {
-        setColumns([
-            {
-                title: (
-                    <ResizableTitle onResize={handleResize('frame')}>
-                        <Text>Frame</Text>
-                    </ResizableTitle>
-                ),
-                dataIndex: 'frame',
-                key: 'frame',
-                sorter: sorter('frame'),
-                render: (index: number): JSX.Element => (
-                    <div>
-                        <Button
-                            className='cvat-open-frame-button'
-                            type='link'
-                            onClick={(e: React.MouseEvent): void => {
-                                e.preventDefault();
-                                history.push(`/tasks/${task.id}/jobs/${gtJob.id}?frame=${index}`);
-                            }}
-                        >
-                            {`#${index}`}
-                        </Button>
-                    </div>
-                ),
+                return renderedComponent;
             },
-            {
-                title: (
-                    <ResizableTitle onResize={handleResize('name')}>
-                        <Text>Name</Text>
-                    </ResizableTitle>
-                ),
-                dataIndex: 'name',
-                key: 'name',
-                width: DEFAULT_TITLE_WIDTH,
-                sorter: sorter('name.name'),
-                render: nameRenderFunc(DEFAULT_TITLE_WIDTH),
-            },
-            {
-                title: (
-                    <ResizableTitle onResize={handleResize('useCount')}>
-                        <Text>Use count</Text>
-                    </ResizableTitle>
-                ),
-                dataIndex: 'useCount',
-                key: 'useCount',
-                align: 'center' as const,
-                sorter: useCountSorter,
-                render: (frameID): JSX.Element => {
-                    const useCountColumnItems: [JSX.Element, number][] = [[notAvailableComponent, 10]];
-                    useCountColumnItems.push(
-                        ...useCountColumnPlugins.map(({ component: Component, weight }, index) => {
-                            const component = <Component targetProps={props} key={index} targetState={{ frameID }} />;
-                            return [component, weight] as [JSX.Element, number];
-                        }),
-                    );
-                    const renderedComponent = useCountColumnItems.sort((a, b) => b[1] - a[1])[0][0];
-
-                    return renderedComponent;
-                },
-            },
-            {
-                title: (
-                    <ResizableTitle onResize={handleResize('quality')}>
-                        <Text>Quality</Text>
-                    </ResizableTitle>
-                ),
-                dataIndex: 'quality',
-                key: 'quality',
-                align: 'center' as const,
-                className: 'cvat-job-item-quality',
-                sorter: qualitySorter,
-                render: (frameID): JSX.Element => {
-                    const qualityColumnItems: [JSX.Element, number][] = [[notAvailableComponent, 10]];
-                    qualityColumnItems.push(
-                        ...qualityColumnPlugins.map(({ component: Component, weight }, index) => {
-                            const component = <Component targetProps={props} key={index} targetState={{ frameID }} />;
-                            return [component, weight] as [JSX.Element, number];
-                        }),
-                    );
-                    const renderedComponent = qualityColumnItems.sort((a, b) => b[1] - a[1])[0][0];
-
-                    return renderedComponent;
-                },
-            },
-            {
-                title: (
-                    <ResizableTitle onResize={handleResize('actions')}>
-                        <Text>Actions</Text>
-                    </ResizableTitle>
-                ),
-                dataIndex: 'actions',
-                key: 'actions',
-                align: 'center' as const,
-                className: 'cvat-job-item-quality',
-                sorter: sorter('active'),
-                filters: [
-                    { text: 'Active', value: true },
-                    { text: 'Excluded', value: false },
-                ],
-                onFilter: (value: boolean | Key, record: RowData) => record.actions.active === value,
-                render: ({ frameID, active }: { frameID: number, active: boolean }): JSX.Element => (
-                    active ? (
-                        <DeleteOutlined
-                            onClick={() => { onDeleteFrames([frameID]); }}
-                        />
-                    ) : (
-                        <Icon
-                            onClick={() => { onRestoreFrames([frameID]); }}
-                            component={RestoreIcon}
-                        />
-                    )
-                ),
-            },
-        ]);
-    }, []);
+        },
+        {
+            title: 'Actions',
+            dataIndex: 'actions',
+            key: 'actions',
+            align: 'center' as const,
+            className: 'cvat-job-item-quality',
+            width: 20,
+            filters: [
+                { text: 'Active', value: true },
+                { text: 'Excluded', value: false },
+            ],
+            sorter: sorter('active'),
+            onFilter: (value: boolean | Key, record: RowData) => record.actions.active === value,
+            render: ({ frameID, active }: { frameID: number, active: boolean }): JSX.Element => (
+                active ? (
+                    <DeleteOutlined
+                        onClick={() => { onDeleteFrames([frameID]); }}
+                    />
+                ) : (
+                    <Icon
+                        onClick={() => { onRestoreFrames([frameID]); }}
+                        component={RestoreIcon}
+                    />
+                )
+            ),
+        },
+    ];
 
     const data = gtJobMeta.includedFrames.map((frameID: number) => ({
         key: frameID,
