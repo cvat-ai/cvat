@@ -4,6 +4,19 @@
 
 @import 'base';
 
+.cvat-quality-control-inner {
+    background: $background-color-1;
+    min-height: $grid-unit-size * 95;
+    padding: $grid-unit-size * 4;
+    padding-bottom: $grid-unit-size;
+    padding-top: 0;
+    border-radius: $border-radius-base;
+
+    .ant-tabs {
+        height: 100%;
+    }
+}
+
 .cvat-quality-settings-title {
     margin-bottom: $grid-unit-size * 2;
     align-items: center;
@@ -12,8 +25,8 @@
 .cvat-quality-settings-form {
     display: block;
     position: relative;
-    max-height: $grid-unit-size * 80;
-    overflow-y: scroll;
+    height: $grid-unit-size * 90;
+    overflow-y: auto;
 
     &::-webkit-scrollbar {
         background-color: #fff;

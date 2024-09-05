@@ -430,17 +430,17 @@ function QualityControlPage(): JSX.Element {
     }
 
     return (
-        <div className='cvat-analytics-page'>
+        <div className='cvat-quality-control-page'>
             {fetching && qualitySettingsFetching ? (
-                <div className='cvat-analytics-loading'>
+                <div className='cvat-quality-control-loading'>
                     <CVATLoadingSpinner />
                 </div>
             ) : (
-                <Row className='cvat-analytics-wrapper'>
+                <Row className='cvat-quality-control-wrapper'>
                     <Col span={24}>
                         {backNavigation}
                         <Row justify='center'>
-                            <Col span={22} xl={18} xxl={14} className='cvat-analytics-inner'>
+                            <Col span={22} xl={18} xxl={14} className='cvat-quality-control-inner'>
                                 {title}
                                 {tabs}
                             </Col>
