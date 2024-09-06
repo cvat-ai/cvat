@@ -21,6 +21,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Added custom certificates documentation
+  (<https://github.com/cvat-ai/cvat/pull/7508>)
+
 - Added support for YOLOv8 formats
   (<https://github.com/cvat-ai/cvat/pull/8240>)
 
