@@ -173,7 +173,7 @@ job "{###JOB_UUID###}" {
         RCLONE_CONFIG_RSHARE_VENDOR = "${NOMAD_META_RCLONE_CONFIG_RSHARE_VENDOR}"
         RCLONE_CONFIG_RSHARE_USER   = "${NOMAD_META_RCLONE_CONFIG_RSHARE_USER}"
         RCLONE_CONFIG_RSHARE_PASS   = "${NOMAD_META_RCLONE_CONFIG_RSHARE_PASS}"
-        REMOTE_PATH                 = "rshare:${NOMAD_META_RCLONE_REMOTE_PATH}/${NOMAD_META_job_uuid}"
+        REMOTE_PATH                 = "rshare:${NOMAD_META_RCLONE_REMOTE_PATH}"
         LOCAL_PATH                  = "/storage"
       }
       config {
